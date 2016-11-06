@@ -1,0 +1,1082 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/io.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - io.c<span style="font-size: 80%;"> (source / <a href="io.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">326</td>
+            <td class="headerCovTableEntry">417</td>
+            <td class="headerCovTableEntryMed">78.2 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2016-11-06</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">20</td>
+            <td class="headerCovTableEntry">31</td>
+            <td class="headerCovTableEntryLo">64.5 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2016 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #include &quot;io.h&quot;
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /**
+<a name="23"><span class="lineNum">      23 </span>            :  * Get the next block position to process.</a>
+<span class="lineNum">      24 </span>            :  */
+<span class="lineNum">      25 </span><span class="lineCov">     162223 : static block_off_t io_position_next(struct snapraid_io* io)</span>
+<span class="lineNum">      26 </span>            : {
+<span class="lineNum">      27 </span>            :         block_off_t blockcur;
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span>            :         /* get the next position */
+<span class="lineNum">      30 </span><span class="lineCov">     647783 :         while (io-&gt;block_next &lt; io-&gt;block_max &amp;&amp; !io-&gt;block_is_enabled(io-&gt;block_arg, io-&gt;block_next))</span>
+<span class="lineNum">      31 </span><span class="lineCov">     323337 :                 ++io-&gt;block_next;</span>
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span><span class="lineCov">     162223 :         blockcur = io-&gt;block_next;</span>
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            :         /* next block for the next call */
+<span class="lineNum">      36 </span><span class="lineCov">     162223 :         ++io-&gt;block_next;</span>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span><span class="lineCov">     162223 :         return blockcur;</span>
+<span class="lineNum">      39 </span>            : }
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : /**
+<a name="42"><span class="lineNum">      42 </span>            :  * Setup the next pending task for all readers.</a>
+<span class="lineNum">      43 </span>            :  */
+<span class="lineNum">      44 </span><span class="lineCov">     162223 : static void io_reader_sched(struct snapraid_io* io, int task_index, block_off_t blockcur)</span>
+<span class="lineNum">      45 </span>            : {
+<span class="lineNum">      46 </span>            :         unsigned i;
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span><span class="lineCov">    1356349 :         for (i = 0; i &lt; io-&gt;reader_max; ++i) {</span>
+<span class="lineNum">      49 </span><span class="lineCov">    1194126 :                 struct snapraid_worker* worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">      50 </span><span class="lineCov">    1194126 :                 struct snapraid_task* task = &amp;worker-&gt;task_map[task_index];</span>
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            :                 /* setup the new pending task */
+<span class="lineNum">      53 </span><span class="lineCov">    1194126 :                 if (blockcur &lt; io-&gt;block_max)</span>
+<span class="lineNum">      54 </span><span class="lineCov">    1110414 :                         task-&gt;state = TASK_STATE_READY;</span>
+<span class="lineNum">      55 </span>            :                 else
+<span class="lineNum">      56 </span><span class="lineCov">      83712 :                         task-&gt;state = TASK_STATE_EMPTY;</span>
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span><span class="lineCov">    1194126 :                 task-&gt;path[0] = 0;</span>
+<span class="lineNum">      59 </span><span class="lineCov">    1194126 :                 if (worker-&gt;handle)</span>
+<span class="lineNum">      60 </span><span class="lineCov">     973338 :                         task-&gt;disk = worker-&gt;handle-&gt;disk;</span>
+<span class="lineNum">      61 </span>            :                 else
+<span class="lineNum">      62 </span><span class="lineCov">     220788 :                         task-&gt;disk = 0;</span>
+<span class="lineNum">      63 </span><span class="lineCov">    1194126 :                 task-&gt;buffer = io-&gt;buffer_map[task_index][worker-&gt;buffer_skew + i];</span>
+<span class="lineNum">      64 </span><span class="lineCov">    1194126 :                 task-&gt;position = blockcur;</span>
+<span class="lineNum">      65 </span><span class="lineCov">    1194126 :                 task-&gt;block = 0;</span>
+<span class="lineNum">      66 </span><span class="lineCov">    1194126 :                 task-&gt;file = 0;</span>
+<span class="lineNum">      67 </span><span class="lineCov">    1194126 :                 task-&gt;file_pos = 0;</span>
+<span class="lineNum">      68 </span><span class="lineCov">    1194126 :                 task-&gt;read_size = 0;</span>
+<span class="lineNum">      69 </span><span class="lineCov">    1194126 :                 task-&gt;is_timestamp_different = 0;</span>
+<span class="lineNum">      70 </span>            :         }
+<span class="lineNum">      71 </span><span class="lineCov">     162223 : }</span>
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span>            : /**
+<a name="74"><span class="lineNum">      74 </span>            :  * Setup the next pending task for all writers.</a>
+<span class="lineNum">      75 </span>            :  */
+<span class="lineNum">      76 </span><span class="lineCov">     112466 : static void io_writer_sched(struct snapraid_io* io, int task_index, block_off_t blockcur)</span>
+<span class="lineNum">      77 </span>            : {
+<span class="lineNum">      78 </span>            :         unsigned i;
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span><span class="lineCov">     657157 :         for (i = 0; i &lt; io-&gt;writer_max; ++i) {</span>
+<span class="lineNum">      81 </span><span class="lineCov">     544691 :                 struct snapraid_worker* worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">      82 </span><span class="lineCov">     544691 :                 struct snapraid_task* task = &amp;worker-&gt;task_map[task_index];</span>
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            :                 /* setup the new pending task */
+<span class="lineNum">      85 </span><span class="lineCov">     544691 :                 task-&gt;state = TASK_STATE_READY;</span>
+<span class="lineNum">      86 </span><span class="lineCov">     544691 :                 task-&gt;path[0] = 0;</span>
+<span class="lineNum">      87 </span><span class="lineCov">     544691 :                 task-&gt;disk = 0;</span>
+<span class="lineNum">      88 </span><span class="lineCov">     544691 :                 task-&gt;buffer = io-&gt;buffer_map[task_index][worker-&gt;buffer_skew + i];</span>
+<span class="lineNum">      89 </span><span class="lineCov">     544691 :                 task-&gt;position = blockcur;</span>
+<span class="lineNum">      90 </span><span class="lineCov">     544691 :                 task-&gt;block = 0;</span>
+<span class="lineNum">      91 </span><span class="lineCov">     544691 :                 task-&gt;file = 0;</span>
+<span class="lineNum">      92 </span><span class="lineCov">     544691 :                 task-&gt;file_pos = 0;</span>
+<span class="lineNum">      93 </span><span class="lineCov">     544691 :                 task-&gt;read_size = 0;</span>
+<span class="lineNum">      94 </span><span class="lineCov">     544691 :                 task-&gt;is_timestamp_different = 0;</span>
+<span class="lineNum">      95 </span>            :         }
+<span class="lineNum">      96 </span><span class="lineCov">     112466 : }</span>
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span>            : /**
+<a name="99"><span class="lineNum">      99 </span>            :  * Setup an empty next pending task for all writers.</a>
+<span class="lineNum">     100 </span>            :  */
+<span class="lineNum">     101 </span><span class="lineCov">       2335 : static void io_writer_sched_empty(struct snapraid_io* io, int task_index, block_off_t blockcur)</span>
+<span class="lineNum">     102 </span>            : {
+<span class="lineNum">     103 </span>            :         unsigned i;
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span><span class="lineCov">      16345 :         for (i = 0; i &lt; io-&gt;writer_max; ++i) {</span>
+<span class="lineNum">     106 </span><span class="lineCov">      14010 :                 struct snapraid_worker* worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     107 </span><span class="lineCov">      14010 :                 struct snapraid_task* task = &amp;worker-&gt;task_map[task_index];</span>
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :                 /* setup the new pending task */
+<span class="lineNum">     110 </span><span class="lineCov">      14010 :                 task-&gt;state = TASK_STATE_EMPTY;</span>
+<span class="lineNum">     111 </span><span class="lineCov">      14010 :                 task-&gt;path[0] = 0;</span>
+<span class="lineNum">     112 </span><span class="lineCov">      14010 :                 task-&gt;disk = 0;</span>
+<span class="lineNum">     113 </span><span class="lineCov">      14010 :                 task-&gt;buffer = 0;</span>
+<span class="lineNum">     114 </span><span class="lineCov">      14010 :                 task-&gt;position = blockcur;</span>
+<span class="lineNum">     115 </span><span class="lineCov">      14010 :                 task-&gt;block = 0;</span>
+<span class="lineNum">     116 </span><span class="lineCov">      14010 :                 task-&gt;file = 0;</span>
+<span class="lineNum">     117 </span><span class="lineCov">      14010 :                 task-&gt;file_pos = 0;</span>
+<span class="lineNum">     118 </span><span class="lineCov">      14010 :                 task-&gt;read_size = 0;</span>
+<span class="lineNum">     119 </span><span class="lineCov">      14010 :                 task-&gt;is_timestamp_different = 0;</span>
+<span class="lineNum">     120 </span>            :         }
+<span class="lineNum">     121 </span><span class="lineCov">       2335 : }</span>
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            : /*****************************************************************************/
+<a name="124"><span class="lineNum">     124 </span>            : /* mono thread */</a>
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 : static block_off_t io_read_next_mono(struct snapraid_io* io, void*** buffer)</span>
+<span class="lineNum">     127 </span>            : {
+<span class="lineNum">     128 </span>            :         block_off_t blockcur_schedule;
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span>            :         /* reset the index */
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 :         io-&gt;reader_index = 0;</span>
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span><span class="lineNoCov">          0 :         blockcur_schedule = io_position_next(io);</span>
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            :         /* schedule the next read */
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :         io_reader_sched(io, 0, blockcur_schedule);</span>
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span>            :         /* set the buffer to use */
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :         *buffer = io-&gt;buffer_map[0];</span>
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :         return blockcur_schedule;</span>
+<a name="142"><span class="lineNum">     142 </span>            : }</a>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 : static void io_write_preset_mono(struct snapraid_io* io, block_off_t blockcur, int skip)</span>
+<span class="lineNum">     145 </span>            : {
+<span class="lineNum">     146 </span>            :         unsigned i;
+<span class="lineNum">     147 </span>            : 
+<span class="lineNum">     148 </span>            :         /* reset the index */
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :         io-&gt;writer_index = 0;</span>
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            :         /* clear errors */
+<span class="lineNum">     152 </span><span class="lineNoCov">          0 :         for (i = 0; i &lt; IO_WRITER_ERROR_MAX; ++i)</span>
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :                 io-&gt;writer_error[i] = 0;</span>
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :         if (skip) {</span>
+<span class="lineNum">     156 </span>            :                 /* skip the next write */
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :                 io_writer_sched_empty(io, 0, blockcur);</span>
+<span class="lineNum">     158 </span>            :         } else {
+<span class="lineNum">     159 </span>            :                 /* schedule the next write */
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :                 io_writer_sched(io, 0, blockcur);</span>
+<span class="lineNum">     161 </span>            :         }
+<a name="162"><span class="lineNum">     162 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 : static void io_write_next_mono(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)</span>
+<span class="lineNum">     165 </span>            : {
+<span class="lineNum">     166 </span>            :         unsigned i;
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            :         (void)blockcur;
+<span class="lineNum">     169 </span>            :         (void)skip;
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            :         /* report errors */
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :         for (i = 0; i &lt; IO_WRITER_ERROR_MAX; ++i)</span>
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :                 writer_error[i] = io-&gt;writer_error[i];</span>
+<a name="174"><span class="lineNum">     174 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 : static void io_refresh_mono(struct snapraid_io* io)</span>
+<span class="lineNum">     177 </span>            : {
+<span class="lineNum">     178 </span>            :         (void)io;
+<a name="179"><span class="lineNum">     179 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 : static struct snapraid_task* io_task_read_mono(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     182 </span>            : {
+<span class="lineNum">     183 </span>            :         struct snapraid_worker* worker;
+<span class="lineNum">     184 </span>            :         struct snapraid_task* task;
+<span class="lineNum">     185 </span>            :         unsigned i;
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            :         /* get the next task */
+<span class="lineNum">     188 </span><span class="lineNoCov">          0 :         i = io-&gt;reader_index++;</span>
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :         assert(base &lt;= i &amp;&amp; i &lt; base + count);</span>
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :         worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :         task = &amp;worker-&gt;task_map[0];</span>
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span>            :         /* do the work */
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :         if (task-&gt;state != TASK_STATE_EMPTY)</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :                 worker-&gt;func(worker, task);</span>
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span>            :         /* return the position */
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :         *pos = i - base;</span>
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :         /* store the waiting index */
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :         waiting_map[0] = i - base;</span>
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 :         *waiting_mac = 1;</span>
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :         return task;</span>
+<a name="207"><span class="lineNum">     207 </span>            : }</a>
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span><span class="lineNoCov">          0 : static struct snapraid_task* io_data_read_mono(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     210 </span>            : {
+<span class="lineNum">     211 </span><span class="lineNoCov">          0 :         return io_task_read_mono(io, io-&gt;data_base, io-&gt;data_count, pos, waiting_map, waiting_mac);</span>
+<a name="212"><span class="lineNum">     212 </span>            : }</a>
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 : static struct snapraid_task* io_parity_read_mono(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     215 </span>            : {
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :         return io_task_read_mono(io, io-&gt;parity_base, io-&gt;parity_count, pos, waiting_map, waiting_mac);</span>
+<a name="217"><span class="lineNum">     217 </span>            : }</a>
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 : static void io_parity_write_mono(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     220 </span>            : {
+<span class="lineNum">     221 </span>            :         struct snapraid_worker* worker;
+<span class="lineNum">     222 </span>            :         struct snapraid_task* task;
+<span class="lineNum">     223 </span>            :         unsigned i;
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            :         /* get the next task */
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :         i = io-&gt;writer_index++;</span>
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span><span class="lineNoCov">          0 :         worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :         task = &amp;worker-&gt;task_map[0];</span>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :         io-&gt;writer_error[i] = 0;</span>
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            :         /* do the work */
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 :         if (task-&gt;state != TASK_STATE_EMPTY)</span>
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :                 worker-&gt;func(worker, task);</span>
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            :         /* return the position */
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :         *pos = i;</span>
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span>            :         /* store the waiting index */
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :         waiting_map[0] = i;</span>
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 :         *waiting_mac = 1;</span>
+<a name="243"><span class="lineNum">     243 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     244 </span>            : 
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 : static void io_start_mono(struct snapraid_io* io,</span>
+<span class="lineNum">     246 </span>            :         block_off_t blockstart, block_off_t blockmax,
+<span class="lineNum">     247 </span>            :         int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
+<span class="lineNum">     248 </span>            : {
+<span class="lineNum">     249 </span><span class="lineNoCov">          0 :         io-&gt;block_start = blockstart;</span>
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :         io-&gt;block_max = blockmax;</span>
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :         io-&gt;block_is_enabled = block_is_enabled;</span>
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :         io-&gt;block_arg = blockarg;</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :         io-&gt;block_next = blockstart;</span>
+<a name="254"><span class="lineNum">     254 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 : static void io_stop_mono(struct snapraid_io* io)</span>
+<span class="lineNum">     257 </span>            : {
+<span class="lineNum">     258 </span>            :         (void)io;
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span>            : /*****************************************************************************/
+<span class="lineNum">     262 </span>            : /* multi thread */
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span>            : /* disable multithread if pthread is not present */
+<span class="lineNum">     265 </span>            : #if HAVE_PTHREAD
+<span class="lineNum">     266 </span>            : 
+<span class="lineNum">     267 </span>            : /**
+<span class="lineNum">     268 </span>            :  * Get the next task to work on for a reader.
+<span class="lineNum">     269 </span>            :  *
+<a name="270"><span class="lineNum">     270 </span>            :  * This is the synchronization point for workers with the io.</a>
+<span class="lineNum">     271 </span>            :  */
+<span class="lineNum">     272 </span><span class="lineCov">    1192431 : static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)</span>
+<span class="lineNum">     273 </span>            : {
+<span class="lineNum">     274 </span><span class="lineCov">    1192431 :         struct snapraid_io* io = worker-&gt;io;</span>
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     277 </span><span class="lineCov">    1192431 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     278 </span>            : 
+<span class="lineNum">     279 </span>            :         while (1) {
+<span class="lineNum">     280 </span>            :                 unsigned next_index;
+<span class="lineNum">     281 </span>            : 
+<span class="lineNum">     282 </span>            :                 /* check if the worker has to exit */
+<span class="lineNum">     283 </span>            :                 /* even if there is work to do */
+<span class="lineNum">     284 </span><span class="lineCov">    2189373 :                 if (io-&gt;done) {</span>
+<span class="lineNum">     285 </span><span class="lineCov">        654 :                         thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     286 </span><span class="lineCov">        654 :                         return 0;</span>
+<span class="lineNum">     287 </span>            :                 }
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span>            :                 /* get the next pending task */
+<span class="lineNum">     290 </span><span class="lineCov">    2188719 :                 next_index = (worker-&gt;index + 1) % io-&gt;io_max;</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            :                 /* if the queue of pending tasks is not empty */
+<span class="lineNum">     293 </span><span class="lineCov">    2188719 :                 if (next_index != io-&gt;reader_index) {</span>
+<span class="lineNum">     294 </span>            :                         struct snapraid_task* task;
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span>            :                         /* the index that the IO may be waiting for */
+<span class="lineNum">     297 </span><span class="lineCov">    1192780 :                         unsigned waiting_index = io-&gt;reader_index;</span>
+<span class="lineNum">     298 </span>            : 
+<span class="lineNum">     299 </span>            :                         /* the index that worker just completed */
+<span class="lineNum">     300 </span><span class="lineCov">    1192780 :                         unsigned done_index = worker-&gt;index;</span>
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span>            :                         /* get the new working task */
+<span class="lineNum">     303 </span><span class="lineCov">    1192780 :                         worker-&gt;index = next_index;</span>
+<span class="lineNum">     304 </span><span class="lineCov">    1192780 :                         task = &amp;worker-&gt;task_map[worker-&gt;index];</span>
+<span class="lineNum">     305 </span>            : 
+<span class="lineNum">     306 </span>            :                         /* if the just completed task is at this index */
+<span class="lineNum">     307 </span><span class="lineCov">    1192780 :                         if (done_index == waiting_index) {</span>
+<span class="lineNum">     308 </span>            :                                 /* notify the IO that a new read is complete */
+<span class="lineNum">     309 </span><span class="lineCov">       1809 :                                 thread_cond_signal_and_unlock(&amp;io-&gt;read_done, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     310 </span>            :                         } else {
+<span class="lineNum">     311 </span><span class="lineCov">    1190971 :                                 thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     312 </span>            :                         }
+<span class="lineNum">     313 </span>            : 
+<span class="lineNum">     314 </span>            :                         /* return the new task */
+<span class="lineNum">     315 </span><span class="lineCov">    1192656 :                         return task;</span>
+<span class="lineNum">     316 </span>            :                 }
+<span class="lineNum">     317 </span>            : 
+<span class="lineNum">     318 </span>            :                 /* otherwise wait for a read_sched event */
+<span class="lineNum">     319 </span><span class="lineCov">     995939 :                 thread_cond_wait(&amp;io-&gt;read_sched, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     320 </span><span class="lineCov">     995939 :         }</span>
+<span class="lineNum">     321 </span>            : }
+<span class="lineNum">     322 </span>            : 
+<span class="lineNum">     323 </span>            : /**
+<span class="lineNum">     324 </span>            :  * Get the next task to work on for a writer.
+<span class="lineNum">     325 </span>            :  *
+<a name="326"><span class="lineNum">     326 </span>            :  * This is the synchronization point for workers with the io.</a>
+<span class="lineNum">     327 </span>            :  */
+<span class="lineNum">     328 </span><span class="lineCov">     559155 : static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int state)</span>
+<span class="lineNum">     329 </span>            : {
+<span class="lineNum">     330 </span><span class="lineCov">     559155 :         struct snapraid_io* io = worker-&gt;io;</span>
+<span class="lineNum">     331 </span>            :         int error_index;
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     334 </span><span class="lineCov">     559155 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span>            :         /* counts the number of errors in the global state */
+<span class="lineNum">     337 </span><span class="lineCov">     559164 :         error_index = state - IO_WRITER_ERROR_BASE;</span>
+<span class="lineNum">     338 </span><span class="lineCov">     559164 :         if (error_index &gt;= 0 &amp;&amp; error_index &lt; IO_WRITER_ERROR_MAX)</span>
+<span class="lineNum">     339 </span><span class="lineNoCov">          0 :                 ++io-&gt;writer_error[error_index];</span>
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span>            :         while (1) {
+<span class="lineNum">     342 </span>            :                 unsigned next_index;
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span>            :                 /* get the next pending task */
+<span class="lineNum">     345 </span><span class="lineCov">     620524 :                 next_index = (worker-&gt;index + 1) % io-&gt;io_max;</span>
+<span class="lineNum">     346 </span>            : 
+<span class="lineNum">     347 </span>            :                 /* if the queue of pending tasks is not empty */
+<span class="lineNum">     348 </span><span class="lineCov">     620524 :                 if (next_index != io-&gt;writer_index) {</span>
+<span class="lineNum">     349 </span>            :                         struct snapraid_task* task;
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span>            :                         /* the index that the IO may be waiting for */
+<span class="lineNum">     352 </span><span class="lineCov">     558701 :                         unsigned waiting_index = (io-&gt;writer_index + 1) % io-&gt;io_max;</span>
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span>            :                         /* the index that worker just completed */
+<span class="lineNum">     355 </span><span class="lineCov">     558701 :                         unsigned done_index = worker-&gt;index;</span>
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span>            :                         /* get the new working task */
+<span class="lineNum">     358 </span><span class="lineCov">     558701 :                         worker-&gt;index = next_index;</span>
+<span class="lineNum">     359 </span><span class="lineCov">     558701 :                         task = &amp;worker-&gt;task_map[worker-&gt;index];</span>
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span>            :                         /* if the just completed task is at this index */
+<span class="lineNum">     362 </span><span class="lineCov">     558701 :                         if (done_index == waiting_index) {</span>
+<span class="lineNum">     363 </span>            :                                 /* notify the IO that a new write is complete */
+<span class="lineNum">     364 </span><span class="lineCov">      85443 :                                 thread_cond_signal_and_unlock(&amp;io-&gt;write_done, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     365 </span>            :                         } else {
+<span class="lineNum">     366 </span><span class="lineCov">     473258 :                                 thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     367 </span>            :                         }
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span>            :                         /* return the new task */
+<span class="lineNum">     370 </span><span class="lineCov">     558690 :                         return task;</span>
+<span class="lineNum">     371 </span>            :                 }
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span>            :                 /* check if the worker has to exit */
+<span class="lineNum">     374 </span>            :                 /* but only if there is no work to do */
+<span class="lineNum">     375 </span><span class="lineCov">      61823 :                 if (io-&gt;done) {</span>
+<span class="lineNum">     376 </span><span class="lineCov">        463 :                         thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     377 </span><span class="lineCov">        463 :                         return 0;</span>
+<span class="lineNum">     378 </span>            :                 }
+<span class="lineNum">     379 </span>            : 
+<span class="lineNum">     380 </span>            :                 /* otherwise wait for a write_sched event */
+<span class="lineNum">     381 </span><span class="lineCov">      61360 :                 thread_cond_wait(&amp;io-&gt;write_sched, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     382 </span><span class="lineCov">      61360 :         }</span>
+<span class="lineNum">     383 </span>            : }
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span>            : /**
+<span class="lineNum">     386 </span>            :  * Get the next block position to operate on.
+<span class="lineNum">     387 </span>            :  *
+<a name="388"><span class="lineNum">     388 </span>            :  * This is the synchronization point for workers with the io.</a>
+<span class="lineNum">     389 </span>            :  */
+<span class="lineNum">     390 </span><span class="lineCov">     150031 : static block_off_t io_read_next_thread(struct snapraid_io* io, void*** buffer)</span>
+<span class="lineNum">     391 </span>            : {
+<span class="lineNum">     392 </span>            :         block_off_t blockcur_schedule;
+<span class="lineNum">     393 </span>            :         block_off_t blockcur_caller;
+<span class="lineNum">     394 </span>            :         unsigned i;
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span>            :         /* get the next parity position to process */
+<span class="lineNum">     397 </span><span class="lineCov">     150031 :         blockcur_schedule = io_position_next(io);</span>
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span>            :         /* ensure that all data/parity was read */
+<span class="lineNum">     400 </span><span class="lineCov">     150031 :         assert(io-&gt;reader_list[0] == io-&gt;reader_max);</span>
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span>            :         /* setup the list of workers to process */
+<span class="lineNum">     403 </span><span class="lineCov">    1411130 :         for (i = 0; i &lt;= io-&gt;reader_max; ++i)</span>
+<span class="lineNum">     404 </span><span class="lineCov">    1261099 :                 io-&gt;reader_list[i] = i;</span>
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     407 </span><span class="lineCov">     150031 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            :         /* schedule the next read */
+<span class="lineNum">     410 </span><span class="lineCov">     150031 :         io_reader_sched(io, io-&gt;reader_index, blockcur_schedule);</span>
+<span class="lineNum">     411 </span>            : 
+<span class="lineNum">     412 </span>            :         /* set the index for the tasks to return to the caller */
+<span class="lineNum">     413 </span><span class="lineCov">     150031 :         io-&gt;reader_index = (io-&gt;reader_index + 1) % io-&gt;io_max;</span>
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span>            :         /* get the position to operate at high level from one task */
+<span class="lineNum">     416 </span><span class="lineCov">     150031 :         blockcur_caller = io-&gt;reader_map[0].task_map[io-&gt;reader_index].position;</span>
+<span class="lineNum">     417 </span>            : 
+<span class="lineNum">     418 </span>            :         /* set the buffer to use */
+<span class="lineNum">     419 </span><span class="lineCov">     150031 :         *buffer = io-&gt;buffer_map[io-&gt;reader_index];</span>
+<span class="lineNum">     420 </span>            : 
+<span class="lineNum">     421 </span>            :         /* signal all the workers that there is a new pending task */
+<span class="lineNum">     422 </span><span class="lineCov">     150031 :         thread_cond_broadcast_and_unlock(&amp;io-&gt;read_sched, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span><span class="lineCov">     150031 :         return blockcur_caller;</span>
+<a name="425"><span class="lineNum">     425 </span>            : }</a>
+<span class="lineNum">     426 </span>            : 
+<span class="lineNum">     427 </span><span class="lineCov">     114801 : static void io_write_preset_thread(struct snapraid_io* io, block_off_t blockcur, int skip)</span>
+<span class="lineNum">     428 </span>            : {
+<span class="lineNum">     429 </span>            :         (void)io;
+<span class="lineNum">     430 </span>            :         (void)blockcur;
+<span class="lineNum">     431 </span>            :         (void)skip;
+<a name="432"><span class="lineNum">     432 </span><span class="lineCov">     114801 : }</span></a>
+<span class="lineNum">     433 </span>            : 
+<span class="lineNum">     434 </span><span class="lineCov">     114801 : static void io_write_next_thread(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)</span>
+<span class="lineNum">     435 </span>            : {
+<span class="lineNum">     436 </span>            :         unsigned i;
+<span class="lineNum">     437 </span>            : 
+<span class="lineNum">     438 </span>            :         /* ensure that all parity was written */
+<span class="lineNum">     439 </span><span class="lineCov">     114801 :         assert(io-&gt;writer_list[0] == io-&gt;writer_max);</span>
+<span class="lineNum">     440 </span>            : 
+<span class="lineNum">     441 </span>            :         /* setup the list of workers to process */
+<span class="lineNum">     442 </span><span class="lineCov">     788303 :         for (i = 0; i &lt;= io-&gt;writer_max; ++i)</span>
+<span class="lineNum">     443 </span><span class="lineCov">     673502 :                 io-&gt;writer_list[i] = i;</span>
+<span class="lineNum">     444 </span>            : 
+<span class="lineNum">     445 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     446 </span><span class="lineCov">     114801 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     447 </span>            : 
+<span class="lineNum">     448 </span>            :         /* report errors */
+<span class="lineNum">     449 </span><span class="lineCov">     574005 :         for (i = 0; i &lt; IO_WRITER_ERROR_MAX; ++i) {</span>
+<span class="lineNum">     450 </span><span class="lineCov">     459204 :                 writer_error[i] = io-&gt;writer_error[i];</span>
+<span class="lineNum">     451 </span><span class="lineCov">     459204 :                 io-&gt;writer_error[i] = 0;</span>
+<span class="lineNum">     452 </span>            :         }
+<span class="lineNum">     453 </span>            : 
+<span class="lineNum">     454 </span><span class="lineCov">     114801 :         if (skip) {</span>
+<span class="lineNum">     455 </span>            :                 /* skip the next write */
+<span class="lineNum">     456 </span><span class="lineCov">       2335 :                 io_writer_sched_empty(io, io-&gt;writer_index, blockcur);</span>
+<span class="lineNum">     457 </span>            :         } else {
+<span class="lineNum">     458 </span>            :                 /* schedule the next write */
+<span class="lineNum">     459 </span><span class="lineCov">     112466 :                 io_writer_sched(io, io-&gt;writer_index, blockcur);</span>
+<span class="lineNum">     460 </span>            :         }
+<span class="lineNum">     461 </span>            : 
+<span class="lineNum">     462 </span>            :         /* at this point the writers must be in sync with the readers */
+<span class="lineNum">     463 </span><span class="lineCov">     114801 :         assert(io-&gt;writer_index == io-&gt;reader_index);</span>
+<span class="lineNum">     464 </span>            : 
+<span class="lineNum">     465 </span>            :         /* set the index to be used for the next write */
+<span class="lineNum">     466 </span><span class="lineCov">     114801 :         io-&gt;writer_index = (io-&gt;writer_index + 1) % io-&gt;io_max;</span>
+<span class="lineNum">     467 </span>            : 
+<span class="lineNum">     468 </span>            :         /* signal all the workers that there is a new pending task */
+<span class="lineNum">     469 </span><span class="lineCov">     114801 :         thread_cond_broadcast_and_unlock(&amp;io-&gt;write_sched, &amp;io-&gt;io_mutex);</span>
+<a name="470"><span class="lineNum">     470 </span><span class="lineCov">     114801 : }</span></a>
+<span class="lineNum">     471 </span>            : 
+<span class="lineNum">     472 </span><span class="lineNoCov">          0 : static void io_refresh_thread(struct snapraid_io* io)</span>
+<span class="lineNum">     473 </span>            : {
+<span class="lineNum">     474 </span>            :         unsigned i;
+<span class="lineNum">     475 </span>            : 
+<span class="lineNum">     476 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span>            :         /* for all readers, count the number of read blocks */
+<span class="lineNum">     480 </span><span class="lineNoCov">          0 :         for (i = 0; i &lt; io-&gt;reader_max; ++i) {</span>
+<span class="lineNum">     481 </span>            :                 unsigned begin, end, cached;
+<span class="lineNum">     482 </span><span class="lineNoCov">          0 :                 struct snapraid_worker* worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">     483 </span>            : 
+<span class="lineNum">     484 </span>            :                 /* the first block read */
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :                 begin = io-&gt;reader_index + 1;</span>
+<span class="lineNum">     486 </span>            :                 /* the block in reading */
+<span class="lineNum">     487 </span><span class="lineNoCov">          0 :                 end = worker-&gt;index;</span>
+<span class="lineNum">     488 </span><span class="lineNoCov">          0 :                 if (begin &gt; end)</span>
+<span class="lineNum">     489 </span><span class="lineNoCov">          0 :                         end += io-&gt;io_max;</span>
+<span class="lineNum">     490 </span><span class="lineNoCov">          0 :                 cached = end - begin;</span>
+<span class="lineNum">     491 </span>            : 
+<span class="lineNum">     492 </span><span class="lineNoCov">          0 :                 if (worker-&gt;parity_handle)</span>
+<span class="lineNum">     493 </span><span class="lineNoCov">          0 :                         io-&gt;state-&gt;parity[worker-&gt;parity_handle-&gt;level].cached = cached;</span>
+<span class="lineNum">     494 </span>            :                 else
+<span class="lineNum">     495 </span><span class="lineNoCov">          0 :                         worker-&gt;handle-&gt;disk-&gt;cached = cached;</span>
+<span class="lineNum">     496 </span>            :         }
+<span class="lineNum">     497 </span>            : 
+<span class="lineNum">     498 </span>            :         /* for all writers, count the number of written blocks */
+<span class="lineNum">     499 </span>            :         /* note that this is a kind of &quot;opposite&quot; of cached blocks */
+<span class="lineNum">     500 </span><span class="lineNoCov">          0 :         for (i = 0; i &lt; io-&gt;writer_max; ++i) {</span>
+<span class="lineNum">     501 </span>            :                 unsigned begin, end, cached;
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :                 struct snapraid_worker* worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     503 </span>            : 
+<span class="lineNum">     504 </span>            :                 /* the first block written */
+<span class="lineNum">     505 </span><span class="lineNoCov">          0 :                 begin = io-&gt;writer_index + 1;</span>
+<span class="lineNum">     506 </span>            :                 /* the block in writing */
+<span class="lineNum">     507 </span><span class="lineNoCov">          0 :                 end = worker-&gt;index;</span>
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 :                 if (begin &gt; end)</span>
+<span class="lineNum">     509 </span><span class="lineNoCov">          0 :                         end += io-&gt;io_max;</span>
+<span class="lineNum">     510 </span><span class="lineNoCov">          0 :                 cached = end - begin;</span>
+<span class="lineNum">     511 </span>            : 
+<span class="lineNum">     512 </span><span class="lineNoCov">          0 :                 io-&gt;state-&gt;parity[worker-&gt;parity_handle-&gt;level].cached = cached;</span>
+<span class="lineNum">     513 </span>            :         }
+<span class="lineNum">     514 </span>            : 
+<span class="lineNum">     515 </span><span class="lineNoCov">          0 :         thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<a name="516"><span class="lineNum">     516 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     517 </span>            : 
+<span class="lineNum">     518 </span><span class="lineCov">    1110414 : static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     519 </span>            : {
+<span class="lineNum">     520 </span>            :         unsigned waiting_cycle;
+<span class="lineNum">     521 </span>            : 
+<span class="lineNum">     522 </span>            :         /* count the waiting cycle */
+<span class="lineNum">     523 </span><span class="lineCov">    1110414 :         waiting_cycle = 0;</span>
+<span class="lineNum">     524 </span>            : 
+<span class="lineNum">     525 </span>            :         /* clear the waiting indexes */
+<span class="lineNum">     526 </span><span class="lineCov">    1110414 :         *waiting_mac = 0;</span>
+<span class="lineNum">     527 </span>            : 
+<span class="lineNum">     528 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     529 </span><span class="lineCov">    1110414 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     530 </span>            : 
+<span class="lineNum">     531 </span>            :         while (1) {
+<span class="lineNum">     532 </span>            :                 unsigned char* let;
+<span class="lineNum">     533 </span>            :                 unsigned busy_index;
+<span class="lineNum">     534 </span>            : 
+<span class="lineNum">     535 </span>            :                 /* get the index the IO is using */
+<span class="lineNum">     536 </span>            :                 /* we must ensure that this index has not a read in progress */
+<span class="lineNum">     537 </span>            :                 /* to avoid a concurrent access */
+<span class="lineNum">     538 </span><span class="lineCov">    1112080 :                 busy_index = io-&gt;reader_index;</span>
+<span class="lineNum">     539 </span>            : 
+<span class="lineNum">     540 </span>            :                 /* search for a worker that has already finished */
+<span class="lineNum">     541 </span><span class="lineCov">    1112080 :                 let = &amp;io-&gt;reader_list[0];</span>
+<span class="lineNum">     542 </span>            :                 while (1) {
+<span class="lineNum">     543 </span><span class="lineCov">    1120487 :                         unsigned i = *let;</span>
+<span class="lineNum">     544 </span>            : 
+<span class="lineNum">     545 </span>            :                         /* if we are at the end */
+<span class="lineNum">     546 </span><span class="lineCov">    1120487 :                         if (i == io-&gt;reader_max)</span>
+<span class="lineNum">     547 </span><span class="lineCov">       1666 :                                 break;</span>
+<span class="lineNum">     548 </span>            : 
+<span class="lineNum">     549 </span>            :                         /* if it's in range */
+<span class="lineNum">     550 </span><span class="lineCov">    1118821 :                         if (base &lt;= i &amp;&amp; i &lt; base + count) {</span>
+<span class="lineNum">     551 </span>            :                                 struct snapraid_worker* worker;
+<span class="lineNum">     552 </span>            : 
+<span class="lineNum">     553 </span>            :                                 /* if it's the first cycle */
+<span class="lineNum">     554 </span><span class="lineCov">    1118503 :                                 if (waiting_cycle == 0) {</span>
+<span class="lineNum">     555 </span>            :                                         /* store the waiting indexes */
+<span class="lineNum">     556 </span><span class="lineCov">    1116663 :                                         waiting_map[(*waiting_mac)++] = i - base;</span>
+<span class="lineNum">     557 </span>            :                                 }
+<span class="lineNum">     558 </span>            : 
+<span class="lineNum">     559 </span><span class="lineCov">    1118503 :                                 worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">     560 </span>            : 
+<span class="lineNum">     561 </span>            :                                 /* if the worker has finished this index */
+<span class="lineNum">     562 </span><span class="lineCov">    1118503 :                                 if (busy_index != worker-&gt;index) {</span>
+<span class="lineNum">     563 </span>            :                                         struct snapraid_task* task;
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span><span class="lineCov">    1110414 :                                         task = &amp;worker-&gt;task_map[io-&gt;reader_index];</span>
+<span class="lineNum">     566 </span>            : 
+<span class="lineNum">     567 </span><span class="lineCov">    1110414 :                                         thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     568 </span>            : 
+<span class="lineNum">     569 </span>            :                                         /* mark the worker as processed */
+<span class="lineNum">     570 </span>            :                                         /* setting the previous one to point at the next one */
+<span class="lineNum">     571 </span><span class="lineCov">    1110414 :                                         *let = io-&gt;reader_list[i + 1];</span>
+<span class="lineNum">     572 </span>            : 
+<span class="lineNum">     573 </span>            :                                         /* return the position */
+<span class="lineNum">     574 </span><span class="lineCov">    1110414 :                                         *pos = i - base;</span>
+<span class="lineNum">     575 </span>            : 
+<span class="lineNum">     576 </span>            :                                         /* on the first cycle, no one is waiting */
+<span class="lineNum">     577 </span><span class="lineCov">    1110414 :                                         if (waiting_cycle == 0)</span>
+<span class="lineNum">     578 </span><span class="lineCov">    1108759 :                                                 *waiting_mac = 0;</span>
+<span class="lineNum">     579 </span>            : 
+<span class="lineNum">     580 </span><span class="lineCov">    2220828 :                                         return task;</span>
+<span class="lineNum">     581 </span>            :                                 }
+<span class="lineNum">     582 </span>            :                         }
+<span class="lineNum">     583 </span>            : 
+<span class="lineNum">     584 </span>            :                         /* next position to check */
+<span class="lineNum">     585 </span><span class="lineCov">       8407 :                         let = &amp;io-&gt;reader_list[i + 1];</span>
+<span class="lineNum">     586 </span><span class="lineCov">       8407 :                 }</span>
+<span class="lineNum">     587 </span>            : 
+<span class="lineNum">     588 </span>            :                 /* if no worker is ready, wait for an event */
+<span class="lineNum">     589 </span><span class="lineCov">       1666 :                 thread_cond_wait(&amp;io-&gt;read_done, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     590 </span>            : 
+<span class="lineNum">     591 </span>            :                 /* count the cycles */
+<span class="lineNum">     592 </span><span class="lineCov">       1666 :                 ++waiting_cycle;</span>
+<span class="lineNum">     593 </span><span class="lineCov">       1666 :         }</span>
+<a name="594"><span class="lineNum">     594 </span>            : }</a>
+<span class="lineNum">     595 </span>            : 
+<span class="lineNum">     596 </span><span class="lineCov">     899610 : static struct snapraid_task* io_data_read_thread(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     597 </span>            : {
+<span class="lineNum">     598 </span><span class="lineCov">     899610 :         return io_task_read_thread(io, io-&gt;data_base, io-&gt;data_count, pos, waiting_map, waiting_mac);</span>
+<a name="599"><span class="lineNum">     599 </span>            : }</a>
+<span class="lineNum">     600 </span>            : 
+<span class="lineNum">     601 </span><span class="lineCov">     210804 : static struct snapraid_task* io_parity_read_thread(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     602 </span>            : {
+<span class="lineNum">     603 </span><span class="lineCov">     210804 :         return io_task_read_thread(io, io-&gt;parity_base, io-&gt;parity_count, pos, waiting_map, waiting_mac);</span>
+<a name="604"><span class="lineNum">     604 </span>            : }</a>
+<span class="lineNum">     605 </span>            : 
+<span class="lineNum">     606 </span><span class="lineCov">     558701 : static void io_parity_write_thread(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)</span>
+<span class="lineNum">     607 </span>            : {
+<span class="lineNum">     608 </span>            :         unsigned waiting_cycle;
+<span class="lineNum">     609 </span>            : 
+<span class="lineNum">     610 </span>            :         /* count the waiting cycle */
+<span class="lineNum">     611 </span><span class="lineCov">     558701 :         waiting_cycle = 0;</span>
+<span class="lineNum">     612 </span>            : 
+<span class="lineNum">     613 </span>            :         /* clear the waiting indexes */
+<span class="lineNum">     614 </span><span class="lineCov">     558701 :         *waiting_mac = 0;</span>
+<span class="lineNum">     615 </span>            : 
+<span class="lineNum">     616 </span>            :         /* the synchronization is protected by the io mutex */
+<span class="lineNum">     617 </span><span class="lineCov">     558701 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     618 </span>            : 
+<span class="lineNum">     619 </span>            :         while (1) {
+<span class="lineNum">     620 </span>            :                 unsigned char* let;
+<span class="lineNum">     621 </span>            :                 unsigned busy_index;
+<span class="lineNum">     622 </span>            : 
+<span class="lineNum">     623 </span>            :                 /* get the next index the IO is going to use */
+<span class="lineNum">     624 </span>            :                 /* we must ensure that this index has not a write in progress */
+<span class="lineNum">     625 </span>            :                 /* to avoid a concurrent access */
+<span class="lineNum">     626 </span>            :                 /* note that we are already sure that a write is not in progress */
+<span class="lineNum">     627 </span>            :                 /* at the index the IO is using at now */
+<span class="lineNum">     628 </span><span class="lineCov">     625597 :                 busy_index = (io-&gt;writer_index + 1) % io-&gt;io_max;</span>
+<span class="lineNum">     629 </span>            : 
+<span class="lineNum">     630 </span>            :                 /* search for a worker that has already finished */
+<span class="lineNum">     631 </span><span class="lineCov">     625597 :                 let = &amp;io-&gt;writer_list[0];</span>
+<span class="lineNum">     632 </span>            :                 while (1) {
+<span class="lineNum">     633 </span><span class="lineCov">     852608 :                         unsigned i = *let;</span>
+<span class="lineNum">     634 </span>            :                         struct snapraid_worker* worker;
+<span class="lineNum">     635 </span>            : 
+<span class="lineNum">     636 </span>            :                         /* if we are at the end */
+<span class="lineNum">     637 </span><span class="lineCov">     852608 :                         if (i == io-&gt;writer_max)</span>
+<span class="lineNum">     638 </span><span class="lineCov">      66896 :                                 break;</span>
+<span class="lineNum">     639 </span>            : 
+<span class="lineNum">     640 </span>            :                         /* if it's the first cycle */
+<span class="lineNum">     641 </span><span class="lineCov">     785712 :                         if (waiting_cycle == 0) {</span>
+<span class="lineNum">     642 </span>            :                                 /* store the waiting indexes */
+<span class="lineNum">     643 </span><span class="lineCov">     717809 :                                 waiting_map[(*waiting_mac)++] = i;</span>
+<span class="lineNum">     644 </span>            :                         }
+<span class="lineNum">     645 </span>            : 
+<span class="lineNum">     646 </span><span class="lineCov">     785712 :                         worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     647 </span>            : 
+<span class="lineNum">     648 </span>            :                         /* the two indexes cannot be equal */
+<span class="lineNum">     649 </span><span class="lineCov">     785712 :                         assert(io-&gt;writer_index != worker-&gt;index);</span>
+<span class="lineNum">     650 </span>            : 
+<span class="lineNum">     651 </span>            :                         /* if the worker has finished this index */
+<span class="lineNum">     652 </span><span class="lineCov">     785712 :                         if (busy_index != worker-&gt;index) {</span>
+<span class="lineNum">     653 </span><span class="lineCov">     558701 :                                 thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     654 </span>            : 
+<span class="lineNum">     655 </span>            :                                 /* mark the worker as processed */
+<span class="lineNum">     656 </span>            :                                 /* setting the previous one to point at the next one */
+<span class="lineNum">     657 </span><span class="lineCov">     558701 :                                 *let = io-&gt;writer_list[i + 1];</span>
+<span class="lineNum">     658 </span>            : 
+<span class="lineNum">     659 </span>            :                                 /* return the position */
+<span class="lineNum">     660 </span><span class="lineCov">     558701 :                                 *pos = i;</span>
+<span class="lineNum">     661 </span>            : 
+<span class="lineNum">     662 </span>            :                                 /* on the first cycle, no one is waiting */
+<span class="lineNum">     663 </span><span class="lineCov">     558701 :                                 if (waiting_cycle == 0)</span>
+<span class="lineNum">     664 </span><span class="lineCov">     491805 :                                         *waiting_mac = 0;</span>
+<span class="lineNum">     665 </span>            : 
+<span class="lineNum">     666 </span><span class="lineCov">    1117402 :                                 return;</span>
+<span class="lineNum">     667 </span>            :                         }
+<span class="lineNum">     668 </span>            : 
+<span class="lineNum">     669 </span>            :                         /* next position to check */
+<span class="lineNum">     670 </span><span class="lineCov">     227011 :                         let = &amp;io-&gt;writer_list[i + 1];</span>
+<span class="lineNum">     671 </span><span class="lineCov">     227011 :                 }</span>
+<span class="lineNum">     672 </span>            : 
+<span class="lineNum">     673 </span>            :                 /* if no worker is ready, wait for an event */
+<span class="lineNum">     674 </span><span class="lineCov">      66896 :                 thread_cond_wait(&amp;io-&gt;write_done, &amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     675 </span>            : 
+<span class="lineNum">     676 </span>            :                 /* count the cycles */
+<span class="lineNum">     677 </span><span class="lineCov">      66896 :                 ++waiting_cycle;</span>
+<span class="lineNum">     678 </span><span class="lineCov">      66896 :         }</span>
+<a name="679"><span class="lineNum">     679 </span>            : }</a>
+<span class="lineNum">     680 </span>            : 
+<span class="lineNum">     681 </span><span class="lineCov">    1110427 : static void io_reader_worker(struct snapraid_worker* worker, struct snapraid_task* task)</span>
+<span class="lineNum">     682 </span>            : {
+<span class="lineNum">     683 </span>            :         /* if we reached the end */
+<span class="lineNum">     684 </span><span class="lineCov">    1110427 :         if (task-&gt;position &gt;= worker-&gt;io-&gt;block_max) {</span>
+<span class="lineNum">     685 </span>            :                 /* complete a dummy task */
+<span class="lineNum">     686 </span><span class="lineCov">        120 :                 task-&gt;state = TASK_STATE_EMPTY;</span>
+<span class="lineNum">     687 </span>            :         } else {
+<span class="lineNum">     688 </span><span class="lineCov">    1110307 :                 worker-&gt;func(worker, task);</span>
+<span class="lineNum">     689 </span>            :         }
+<a name="690"><span class="lineNum">     690 </span><span class="lineCov">    1109892 : }</span></a>
+<span class="lineNum">     691 </span>            : 
+<span class="lineNum">     692 </span><span class="lineCov">        654 : static void* io_reader_thread(void* arg)</span>
+<span class="lineNum">     693 </span>            : {
+<span class="lineNum">     694 </span><span class="lineCov">        654 :         struct snapraid_worker* worker = arg;</span>
+<span class="lineNum">     695 </span>            : 
+<span class="lineNum">     696 </span>            :         /* force completion of the first task */
+<span class="lineNum">     697 </span><span class="lineCov">        654 :         io_reader_worker(worker, &amp;worker-&gt;task_map[0]);</span>
+<span class="lineNum">     698 </span>            : 
+<span class="lineNum">     699 </span>            :         while (1) {
+<span class="lineNum">     700 </span>            :                 struct snapraid_task* task;
+<span class="lineNum">     701 </span>            : 
+<span class="lineNum">     702 </span>            :                 /* get the new task */
+<span class="lineNum">     703 </span><span class="lineCov">    1192158 :                 task = io_reader_step(worker);</span>
+<span class="lineNum">     704 </span>            : 
+<span class="lineNum">     705 </span>            :                 /* if no task, it means to exit */
+<span class="lineNum">     706 </span><span class="lineCov">    1193232 :                 if (!task)</span>
+<span class="lineNum">     707 </span><span class="lineCov">        654 :                         break;</span>
+<span class="lineNum">     708 </span>            : 
+<span class="lineNum">     709 </span>            :                 /* nothing more to do */
+<span class="lineNum">     710 </span><span class="lineCov">    1192578 :                 if (task-&gt;state == TASK_STATE_EMPTY)</span>
+<span class="lineNum">     711 </span><span class="lineCov">      82770 :                         continue;</span>
+<span class="lineNum">     712 </span>            : 
+<span class="lineNum">     713 </span><span class="lineCov">    1109808 :                 assert(task-&gt;state == TASK_STATE_READY);</span>
+<span class="lineNum">     714 </span>            : 
+<span class="lineNum">     715 </span>            :                 /* work on the assigned task */
+<span class="lineNum">     716 </span><span class="lineCov">    1109808 :                 io_reader_worker(worker, task);</span>
+<span class="lineNum">     717 </span><span class="lineCov">    1191512 :         }</span>
+<span class="lineNum">     718 </span>            : 
+<span class="lineNum">     719 </span><span class="lineCov">        654 :         return 0;</span>
+<a name="720"><span class="lineNum">     720 </span>            : }</a>
+<span class="lineNum">     721 </span>            : 
+<span class="lineNum">     722 </span><span class="lineCov">        463 : static void* io_writer_thread(void* arg)</span>
+<span class="lineNum">     723 </span>            : {
+<span class="lineNum">     724 </span><span class="lineCov">        463 :         struct snapraid_worker* worker = arg;</span>
+<span class="lineNum">     725 </span><span class="lineCov">        463 :         int latest_state = TASK_STATE_DONE;</span>
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span>            :         while (1) {
+<span class="lineNum">     728 </span>            :                 struct snapraid_task* task;
+<span class="lineNum">     729 </span>            : 
+<span class="lineNum">     730 </span>            :                 /* get the new task */
+<span class="lineNum">     731 </span><span class="lineCov">     559153 :                 task = io_writer_step(worker, latest_state);</span>
+<span class="lineNum">     732 </span>            : 
+<span class="lineNum">     733 </span>            :                 /* if no task, it means to exit */
+<span class="lineNum">     734 </span><span class="lineCov">     559158 :                 if (!task)</span>
+<span class="lineNum">     735 </span><span class="lineCov">        463 :                         break;</span>
+<span class="lineNum">     736 </span>            : 
+<span class="lineNum">     737 </span>            :                 /* nothing more to do */
+<span class="lineNum">     738 </span><span class="lineCov">     558695 :                 if (task-&gt;state == TASK_STATE_EMPTY) {</span>
+<span class="lineNum">     739 </span><span class="lineCov">      14011 :                         latest_state = TASK_STATE_DONE;</span>
+<span class="lineNum">     740 </span><span class="lineCov">      14011 :                         continue;</span>
+<span class="lineNum">     741 </span>            :                 }
+<span class="lineNum">     742 </span>            : 
+<span class="lineNum">     743 </span><span class="lineCov">     544684 :                 assert(task-&gt;state == TASK_STATE_READY);</span>
+<span class="lineNum">     744 </span>            : 
+<span class="lineNum">     745 </span>            :                 /* work on the assigned task */
+<span class="lineNum">     746 </span><span class="lineCov">     544684 :                 worker-&gt;func(worker, task);</span>
+<span class="lineNum">     747 </span>            : 
+<span class="lineNum">     748 </span>            :                 /* save the resulting state */
+<span class="lineNum">     749 </span><span class="lineCov">     544679 :                 latest_state = task-&gt;state;</span>
+<span class="lineNum">     750 </span><span class="lineCov">     558690 :         }</span>
+<span class="lineNum">     751 </span>            : 
+<span class="lineNum">     752 </span><span class="lineCov">        463 :         return 0;</span>
+<a name="753"><span class="lineNum">     753 </span>            : }</a>
+<span class="lineNum">     754 </span>            : 
+<span class="lineNum">     755 </span><span class="lineCov">         96 : static void io_start_thread(struct snapraid_io* io,</span>
+<span class="lineNum">     756 </span>            :         block_off_t blockstart, block_off_t blockmax,
+<span class="lineNum">     757 </span>            :         int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
+<span class="lineNum">     758 </span>            : {
+<span class="lineNum">     759 </span>            :         unsigned i;
+<span class="lineNum">     760 </span>            : 
+<span class="lineNum">     761 </span><span class="lineCov">         96 :         io-&gt;block_start = blockstart;</span>
+<span class="lineNum">     762 </span><span class="lineCov">         96 :         io-&gt;block_max = blockmax;</span>
+<span class="lineNum">     763 </span><span class="lineCov">         96 :         io-&gt;block_is_enabled = block_is_enabled;</span>
+<span class="lineNum">     764 </span><span class="lineCov">         96 :         io-&gt;block_arg = blockarg;</span>
+<span class="lineNum">     765 </span><span class="lineCov">         96 :         io-&gt;block_next = blockstart;</span>
+<span class="lineNum">     766 </span>            : 
+<span class="lineNum">     767 </span><span class="lineCov">         96 :         io-&gt;done = 0;</span>
+<span class="lineNum">     768 </span><span class="lineCov">         96 :         io-&gt;reader_index = io-&gt;io_max - 1;</span>
+<span class="lineNum">     769 </span><span class="lineCov">         96 :         io-&gt;writer_index = 0;</span>
+<span class="lineNum">     770 </span>            : 
+<span class="lineNum">     771 </span>            :         /* clear writer errors */
+<span class="lineNum">     772 </span><span class="lineCov">        480 :         for (i = 0; i &lt; IO_WRITER_ERROR_MAX; ++i)</span>
+<span class="lineNum">     773 </span><span class="lineCov">        384 :                 io-&gt;writer_error[i] = 0;</span>
+<span class="lineNum">     774 </span>            : 
+<span class="lineNum">     775 </span>            :         /* setup the initial read pending tasks, except the latest one, */
+<span class="lineNum">     776 </span>            :         /* the latest will be initialized at the fist io_read_next() call */
+<span class="lineNum">     777 </span><span class="lineCov">      12288 :         for (i = 0; i &lt; io-&gt;io_max - 1; ++i) {</span>
+<span class="lineNum">     778 </span><span class="lineCov">      12192 :                 block_off_t blockcur = io_position_next(io);</span>
+<span class="lineNum">     779 </span>            : 
+<span class="lineNum">     780 </span><span class="lineCov">      12192 :                 io_reader_sched(io, i, blockcur);</span>
+<span class="lineNum">     781 </span>            :         }
+<span class="lineNum">     782 </span>            : 
+<span class="lineNum">     783 </span>            :         /* setup the lists of workers to process */
+<span class="lineNum">     784 </span><span class="lineCov">         96 :         io-&gt;reader_list[0] = io-&gt;reader_max;</span>
+<span class="lineNum">     785 </span><span class="lineCov">        655 :         for (i = 0; i &lt;= io-&gt;writer_max; ++i)</span>
+<span class="lineNum">     786 </span><span class="lineCov">        559 :                 io-&gt;writer_list[i] = i;</span>
+<span class="lineNum">     787 </span>            : 
+<span class="lineNum">     788 </span>            :         /* start the reader threads */
+<span class="lineNum">     789 </span><span class="lineCov">        750 :         for (i = 0; i &lt; io-&gt;reader_max; ++i) {</span>
+<span class="lineNum">     790 </span><span class="lineCov">        654 :                 struct snapraid_worker* worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">     791 </span>            : 
+<span class="lineNum">     792 </span><span class="lineCov">        654 :                 worker-&gt;index = 0;</span>
+<span class="lineNum">     793 </span>            : 
+<span class="lineNum">     794 </span><span class="lineCov">        654 :                 thread_create(&amp;worker-&gt;thread, 0, io_reader_thread, worker);</span>
+<span class="lineNum">     795 </span>            :         }
+<span class="lineNum">     796 </span>            : 
+<span class="lineNum">     797 </span>            :         /* start the writer threads */
+<span class="lineNum">     798 </span><span class="lineCov">        559 :         for (i = 0; i &lt; io-&gt;writer_max; ++i) {</span>
+<span class="lineNum">     799 </span><span class="lineCov">        463 :                 struct snapraid_worker* worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     800 </span>            : 
+<span class="lineNum">     801 </span><span class="lineCov">        463 :                 worker-&gt;index = io-&gt;io_max - 1;</span>
+<span class="lineNum">     802 </span>            : 
+<span class="lineNum">     803 </span><span class="lineCov">        463 :                 thread_create(&amp;worker-&gt;thread, 0, io_writer_thread, worker);</span>
+<span class="lineNum">     804 </span>            :         }
+<a name="805"><span class="lineNum">     805 </span><span class="lineCov">         96 : }</span></a>
+<span class="lineNum">     806 </span>            : 
+<span class="lineNum">     807 </span><span class="lineCov">         96 : static void io_stop_thread(struct snapraid_io* io)</span>
+<span class="lineNum">     808 </span>            : {
+<span class="lineNum">     809 </span>            :         unsigned i;
+<span class="lineNum">     810 </span>            : 
+<span class="lineNum">     811 </span><span class="lineCov">         96 :         thread_mutex_lock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     812 </span>            : 
+<span class="lineNum">     813 </span>            :         /* mark that we are stopping */
+<span class="lineNum">     814 </span><span class="lineCov">         96 :         io-&gt;done = 1;</span>
+<span class="lineNum">     815 </span>            : 
+<span class="lineNum">     816 </span>            :         /* signal all the threads to recognize the new state */
+<span class="lineNum">     817 </span><span class="lineCov">         96 :         thread_cond_broadcast(&amp;io-&gt;read_sched);</span>
+<span class="lineNum">     818 </span><span class="lineCov">         96 :         thread_cond_broadcast(&amp;io-&gt;write_sched);</span>
+<span class="lineNum">     819 </span>            : 
+<span class="lineNum">     820 </span><span class="lineCov">         96 :         thread_mutex_unlock(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     821 </span>            : 
+<span class="lineNum">     822 </span>            :         /* wait for all readers to terminate */
+<span class="lineNum">     823 </span><span class="lineCov">        750 :         for (i = 0; i &lt; io-&gt;reader_max; ++i) {</span>
+<span class="lineNum">     824 </span><span class="lineCov">        654 :                 struct snapraid_worker* worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">     825 </span>            :                 void* retval;
+<span class="lineNum">     826 </span>            : 
+<span class="lineNum">     827 </span>            :                 /* wait for thread termination */
+<span class="lineNum">     828 </span><span class="lineCov">        654 :                 thread_join(worker-&gt;thread, &amp;retval);</span>
+<span class="lineNum">     829 </span>            :         }
+<span class="lineNum">     830 </span>            : 
+<span class="lineNum">     831 </span>            :         /* wait for all writers to terminate */
+<span class="lineNum">     832 </span><span class="lineCov">        559 :         for (i = 0; i &lt; io-&gt;writer_max; ++i) {</span>
+<span class="lineNum">     833 </span><span class="lineCov">        463 :                 struct snapraid_worker* worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     834 </span>            :                 void* retval;
+<span class="lineNum">     835 </span>            : 
+<span class="lineNum">     836 </span>            :                 /* wait for thread termination */
+<span class="lineNum">     837 </span><span class="lineCov">        463 :                 thread_join(worker-&gt;thread, &amp;retval);</span>
+<span class="lineNum">     838 </span>            :         }
+<span class="lineNum">     839 </span><span class="lineCov">         96 : }</span>
+<span class="lineNum">     840 </span>            : 
+<span class="lineNum">     841 </span>            : #endif
+<span class="lineNum">     842 </span>            : 
+<span class="lineNum">     843 </span>            : /*****************************************************************************/
+<a name="844"><span class="lineNum">     844 </span>            : /* global */</a>
+<span class="lineNum">     845 </span>            : 
+<span class="lineNum">     846 </span><span class="lineCov">         96 : void io_init(struct snapraid_io* io, struct snapraid_state* state,</span>
+<span class="lineNum">     847 </span>            :         unsigned io_cache, unsigned buffer_max,
+<span class="lineNum">     848 </span>            :         void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
+<span class="lineNum">     849 </span>            :         struct snapraid_handle* handle_map, unsigned handle_max,
+<span class="lineNum">     850 </span>            :         void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
+<span class="lineNum">     851 </span>            :         void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
+<span class="lineNum">     852 </span>            :         struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
+<span class="lineNum">     853 </span>            : {
+<span class="lineNum">     854 </span>            :         unsigned i;
+<span class="lineNum">     855 </span>            :         size_t allocated;
+<span class="lineNum">     856 </span>            : 
+<span class="lineNum">     857 </span><span class="lineCov">         96 :         io-&gt;state = state;</span>
+<span class="lineNum">     858 </span>            : 
+<span class="lineNum">     859 </span>            : #if HAVE_PTHREAD
+<span class="lineNum">     860 </span><span class="lineCov">         96 :         if (io_cache == 0) {</span>
+<span class="lineNum">     861 </span>            :                 /* default is 8 MiB of cache */
+<span class="lineNum">     862 </span>            :                 /* this seems to be a good tradeoff between speed and memory usage */
+<span class="lineNum">     863 </span><span class="lineCov">         96 :                 io-&gt;io_max = 8 * 1024 * 1024 / state-&gt;block_size;</span>
+<span class="lineNum">     864 </span><span class="lineCov">         96 :                 if (io-&gt;io_max &lt; IO_MIN)</span>
+<span class="lineNum">     865 </span><span class="lineNoCov">          0 :                         io-&gt;io_max = IO_MIN;</span>
+<span class="lineNum">     866 </span><span class="lineCov">         96 :                 if (io-&gt;io_max &gt; IO_MAX)</span>
+<span class="lineNum">     867 </span><span class="lineCov">         96 :                         io-&gt;io_max = IO_MAX;</span>
+<span class="lineNum">     868 </span>            :         } else {
+<span class="lineNum">     869 </span><span class="lineNoCov">          0 :                 io-&gt;io_max = io_cache;</span>
+<span class="lineNum">     870 </span>            :         }
+<span class="lineNum">     871 </span>            : #else
+<span class="lineNum">     872 </span>            :         (void)io_cache;
+<span class="lineNum">     873 </span>            : 
+<span class="lineNum">     874 </span>            :         /* without pthread force the mono thread mode */
+<span class="lineNum">     875 </span>            :         io-&gt;io_max = 1;
+<span class="lineNum">     876 </span>            : #endif
+<span class="lineNum">     877 </span>            : 
+<span class="lineNum">     878 </span><span class="lineCov">         96 :         assert(io-&gt;io_max == 1 || (io-&gt;io_max &gt;= IO_MIN &amp;&amp; io-&gt;io_max &lt;= IO_MAX));</span>
+<span class="lineNum">     879 </span>            : 
+<span class="lineNum">     880 </span><span class="lineCov">         96 :         io-&gt;buffer_max = buffer_max;</span>
+<span class="lineNum">     881 </span><span class="lineCov">         96 :         allocated = 0;</span>
+<span class="lineNum">     882 </span><span class="lineCov">      12384 :         for (i = 0; i &lt; io-&gt;io_max; ++i) {</span>
+<span class="lineNum">     883 </span><span class="lineCov">      12288 :                 if (state-&gt;file_mode != ADVISE_DIRECT)</span>
+<span class="lineNum">     884 </span><span class="lineCov">      12288 :                         io-&gt;buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, state-&gt;block_size, &amp;io-&gt;buffer_alloc_map[i]);</span>
+<span class="lineNum">     885 </span>            :                 else
+<span class="lineNum">     886 </span><span class="lineNoCov">          0 :                         io-&gt;buffer_map[i] = malloc_nofail_vector_direct(handle_max, buffer_max, state-&gt;block_size, &amp;io-&gt;buffer_alloc_map[i]);</span>
+<span class="lineNum">     887 </span><span class="lineCov">      12288 :                 if (!state-&gt;opt.skip_self)</span>
+<span class="lineNum">     888 </span><span class="lineNoCov">          0 :                         mtest_vector(io-&gt;buffer_max, state-&gt;block_size, io-&gt;buffer_map[i]);</span>
+<span class="lineNum">     889 </span><span class="lineCov">      12288 :                 allocated += state-&gt;block_size * buffer_max;</span>
+<span class="lineNum">     890 </span>            :         }
+<span class="lineNum">     891 </span>            : 
+<span class="lineNum">     892 </span><span class="lineCov">         96 :         msg_progress(&quot;Using %u MiB of memory for %u blocks of IO cache.\n&quot;, (unsigned)(allocated / MEBI), io-&gt;io_max);</span>
+<span class="lineNum">     893 </span>            : 
+<span class="lineNum">     894 </span><span class="lineCov">         96 :         if (parity_writer) {</span>
+<span class="lineNum">     895 </span><span class="lineCov">         83 :                 io-&gt;reader_max = handle_max;</span>
+<span class="lineNum">     896 </span><span class="lineCov">         83 :                 io-&gt;writer_max = parity_handle_max;</span>
+<span class="lineNum">     897 </span>            :         } else {
+<span class="lineNum">     898 </span><span class="lineCov">         13 :                 io-&gt;reader_max = handle_max + parity_handle_max;</span>
+<span class="lineNum">     899 </span><span class="lineCov">         13 :                 io-&gt;writer_max = 0;</span>
+<span class="lineNum">     900 </span>            :         }
+<span class="lineNum">     901 </span>            : 
+<span class="lineNum">     902 </span><span class="lineCov">         96 :         io-&gt;reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io-&gt;reader_max);</span>
+<span class="lineNum">     903 </span><span class="lineCov">         96 :         io-&gt;reader_list = malloc_nofail(io-&gt;reader_max + 1);</span>
+<span class="lineNum">     904 </span><span class="lineCov">         96 :         io-&gt;writer_map = malloc_nofail(sizeof(struct snapraid_worker) * io-&gt;writer_max);</span>
+<span class="lineNum">     905 </span><span class="lineCov">         96 :         io-&gt;writer_list = malloc_nofail(io-&gt;writer_max + 1);</span>
+<span class="lineNum">     906 </span>            : 
+<span class="lineNum">     907 </span><span class="lineCov">         96 :         io-&gt;data_base = 0;</span>
+<span class="lineNum">     908 </span><span class="lineCov">         96 :         io-&gt;data_count = handle_max;</span>
+<span class="lineNum">     909 </span><span class="lineCov">         96 :         io-&gt;parity_base = handle_max;</span>
+<span class="lineNum">     910 </span><span class="lineCov">         96 :         io-&gt;parity_count = parity_handle_max;</span>
+<span class="lineNum">     911 </span>            : 
+<span class="lineNum">     912 </span><span class="lineCov">        750 :         for (i = 0; i &lt; io-&gt;reader_max; ++i) {</span>
+<span class="lineNum">     913 </span><span class="lineCov">        654 :                 struct snapraid_worker* worker = &amp;io-&gt;reader_map[i];</span>
+<span class="lineNum">     914 </span>            : 
+<span class="lineNum">     915 </span><span class="lineCov">        654 :                 worker-&gt;io = io;</span>
+<span class="lineNum">     916 </span>            : 
+<span class="lineNum">     917 </span><span class="lineCov">        654 :                 if (i &lt; handle_max) {</span>
+<span class="lineNum">     918 </span>            :                         /* it's a data read */
+<span class="lineNum">     919 </span><span class="lineCov">        576 :                         worker-&gt;handle = &amp;handle_map[i];</span>
+<span class="lineNum">     920 </span><span class="lineCov">        576 :                         worker-&gt;parity_handle = 0;</span>
+<span class="lineNum">     921 </span><span class="lineCov">        576 :                         worker-&gt;func = data_reader;</span>
+<span class="lineNum">     922 </span>            : 
+<span class="lineNum">     923 </span>            :                         /* data read is put in lower buffer index */
+<span class="lineNum">     924 </span><span class="lineCov">        576 :                         worker-&gt;buffer_skew = 0;</span>
+<span class="lineNum">     925 </span>            :                 } else {
+<span class="lineNum">     926 </span>            :                         /* it's a parity read */
+<span class="lineNum">     927 </span><span class="lineCov">         78 :                         worker-&gt;handle = 0;</span>
+<span class="lineNum">     928 </span><span class="lineCov">         78 :                         worker-&gt;parity_handle = &amp;parity_handle_map[i - handle_max];</span>
+<span class="lineNum">     929 </span><span class="lineCov">         78 :                         worker-&gt;func = parity_reader;</span>
+<span class="lineNum">     930 </span>            : 
+<span class="lineNum">     931 </span>            :                         /* parity read is put after data and computed parity */
+<span class="lineNum">     932 </span><span class="lineCov">         78 :                         worker-&gt;buffer_skew = parity_handle_max;</span>
+<span class="lineNum">     933 </span>            :                 }
+<span class="lineNum">     934 </span>            :         }
+<span class="lineNum">     935 </span>            : 
+<span class="lineNum">     936 </span><span class="lineCov">        559 :         for (i = 0; i &lt; io-&gt;writer_max; ++i) {</span>
+<span class="lineNum">     937 </span><span class="lineCov">        463 :                 struct snapraid_worker* worker = &amp;io-&gt;writer_map[i];</span>
+<span class="lineNum">     938 </span>            : 
+<span class="lineNum">     939 </span><span class="lineCov">        463 :                 worker-&gt;io = io;</span>
+<span class="lineNum">     940 </span>            : 
+<span class="lineNum">     941 </span>            :                 /* it's a parity write */
+<span class="lineNum">     942 </span><span class="lineCov">        463 :                 worker-&gt;handle = 0;</span>
+<span class="lineNum">     943 </span><span class="lineCov">        463 :                 worker-&gt;parity_handle = &amp;parity_handle_map[i];</span>
+<span class="lineNum">     944 </span><span class="lineCov">        463 :                 worker-&gt;func = parity_writer;</span>
+<span class="lineNum">     945 </span>            : 
+<span class="lineNum">     946 </span>            :                 /* parity to write is put after data */
+<span class="lineNum">     947 </span><span class="lineCov">        463 :                 worker-&gt;buffer_skew = handle_max;</span>
+<span class="lineNum">     948 </span>            :         }
+<span class="lineNum">     949 </span>            : 
+<span class="lineNum">     950 </span>            : #if HAVE_PTHREAD
+<span class="lineNum">     951 </span><span class="lineCov">         96 :         if (io-&gt;io_max &gt; 1) {</span>
+<span class="lineNum">     952 </span><span class="lineCov">         96 :                 io_read_next = io_read_next_thread;</span>
+<span class="lineNum">     953 </span><span class="lineCov">         96 :                 io_write_preset = io_write_preset_thread;</span>
+<span class="lineNum">     954 </span><span class="lineCov">         96 :                 io_write_next = io_write_next_thread;</span>
+<span class="lineNum">     955 </span><span class="lineCov">         96 :                 io_refresh = io_refresh_thread;</span>
+<span class="lineNum">     956 </span><span class="lineCov">         96 :                 io_data_read = io_data_read_thread;</span>
+<span class="lineNum">     957 </span><span class="lineCov">         96 :                 io_parity_read = io_parity_read_thread;</span>
+<span class="lineNum">     958 </span><span class="lineCov">         96 :                 io_parity_write = io_parity_write_thread;</span>
+<span class="lineNum">     959 </span><span class="lineCov">         96 :                 io_start = io_start_thread;</span>
+<span class="lineNum">     960 </span><span class="lineCov">         96 :                 io_stop = io_stop_thread;</span>
+<span class="lineNum">     961 </span>            : 
+<span class="lineNum">     962 </span><span class="lineCov">         96 :                 thread_mutex_init(&amp;io-&gt;io_mutex, 0);</span>
+<span class="lineNum">     963 </span><span class="lineCov">         96 :                 thread_cond_init(&amp;io-&gt;read_done, 0);</span>
+<span class="lineNum">     964 </span><span class="lineCov">         96 :                 thread_cond_init(&amp;io-&gt;read_sched, 0);</span>
+<span class="lineNum">     965 </span><span class="lineCov">         96 :                 thread_cond_init(&amp;io-&gt;write_done, 0);</span>
+<span class="lineNum">     966 </span><span class="lineCov">         96 :                 thread_cond_init(&amp;io-&gt;write_sched, 0);</span>
+<span class="lineNum">     967 </span>            :         } else
+<span class="lineNum">     968 </span>            : #endif
+<span class="lineNum">     969 </span>            :         {
+<span class="lineNum">     970 </span><span class="lineNoCov">          0 :                 io_read_next = io_read_next_mono;</span>
+<span class="lineNum">     971 </span><span class="lineNoCov">          0 :                 io_write_preset = io_write_preset_mono;</span>
+<span class="lineNum">     972 </span><span class="lineNoCov">          0 :                 io_write_next = io_write_next_mono;</span>
+<span class="lineNum">     973 </span><span class="lineNoCov">          0 :                 io_refresh = io_refresh_mono;</span>
+<span class="lineNum">     974 </span><span class="lineNoCov">          0 :                 io_data_read = io_data_read_mono;</span>
+<span class="lineNum">     975 </span><span class="lineNoCov">          0 :                 io_parity_read = io_parity_read_mono;</span>
+<span class="lineNum">     976 </span><span class="lineNoCov">          0 :                 io_parity_write = io_parity_write_mono;</span>
+<span class="lineNum">     977 </span><span class="lineNoCov">          0 :                 io_start = io_start_mono;</span>
+<span class="lineNum">     978 </span><span class="lineNoCov">          0 :                 io_stop = io_stop_mono;</span>
+<span class="lineNum">     979 </span>            :         }
+<a name="980"><span class="lineNum">     980 </span><span class="lineCov">         96 : }</span></a>
+<span class="lineNum">     981 </span>            : 
+<span class="lineNum">     982 </span><span class="lineCov">         96 : void io_done(struct snapraid_io* io)</span>
+<span class="lineNum">     983 </span>            : {
+<span class="lineNum">     984 </span>            :         unsigned i;
+<span class="lineNum">     985 </span>            : 
+<span class="lineNum">     986 </span><span class="lineCov">      12384 :         for (i = 0; i &lt; io-&gt;io_max; ++i) {</span>
+<span class="lineNum">     987 </span><span class="lineCov">      12288 :                 free(io-&gt;buffer_map[i]);</span>
+<span class="lineNum">     988 </span><span class="lineCov">      12288 :                 free(io-&gt;buffer_alloc_map[i]);</span>
+<span class="lineNum">     989 </span>            :         }
+<span class="lineNum">     990 </span>            : 
+<span class="lineNum">     991 </span><span class="lineCov">         96 :         free(io-&gt;reader_map);</span>
+<span class="lineNum">     992 </span><span class="lineCov">         96 :         free(io-&gt;reader_list);</span>
+<span class="lineNum">     993 </span><span class="lineCov">         96 :         free(io-&gt;writer_map);</span>
+<span class="lineNum">     994 </span><span class="lineCov">         96 :         free(io-&gt;writer_list);</span>
+<span class="lineNum">     995 </span>            : 
+<span class="lineNum">     996 </span>            : #if HAVE_PTHREAD
+<span class="lineNum">     997 </span><span class="lineCov">         96 :         if (io-&gt;io_max &gt; 1) {</span>
+<span class="lineNum">     998 </span><span class="lineCov">         96 :                 thread_mutex_destroy(&amp;io-&gt;io_mutex);</span>
+<span class="lineNum">     999 </span><span class="lineCov">         96 :                 thread_cond_destroy(&amp;io-&gt;read_done);</span>
+<span class="lineNum">    1000 </span><span class="lineCov">         96 :                 thread_cond_destroy(&amp;io-&gt;read_sched);</span>
+<span class="lineNum">    1001 </span><span class="lineCov">         96 :                 thread_cond_destroy(&amp;io-&gt;write_done);</span>
+<span class="lineNum">    1002 </span><span class="lineCov">         96 :                 thread_cond_destroy(&amp;io-&gt;write_sched);</span>
+<span class="lineNum">    1003 </span>            :         }
+<span class="lineNum">    1004 </span>            : #endif
+<span class="lineNum">    1005 </span><span class="lineCov">         96 : }</span>
+<span class="lineNum">    1006 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

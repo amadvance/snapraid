@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -92,38 +92,38 @@
 <span class="lineNum">      30 </span>            : /******************************************************************************/
 <a name="31"><span class="lineNum">      31 </span>            : /* array */</a>
 <span class="lineNum">      32 </span>            : 
-<span class="lineNum">      33 </span><span class="lineCov">        506 : void tommy_array_init(tommy_array* array)</span>
+<span class="lineNum">      33 </span><span class="lineCov">        519 : void tommy_array_init(tommy_array* array)</span>
 <span class="lineNum">      34 </span>            : {
 <span class="lineNum">      35 </span>            :         tommy_uint_t i;
 <span class="lineNum">      36 </span>            : 
 <span class="lineNum">      37 </span>            :         /* fixed initial size */
-<span class="lineNum">      38 </span><span class="lineCov">        506 :         array-&gt;bucket_bit = TOMMY_ARRAY_BIT;</span>
-<span class="lineNum">      39 </span><span class="lineCov">        506 :         array-&gt;bucket_max = 1 &lt;&lt; array-&gt;bucket_bit;</span>
-<span class="lineNum">      40 </span><span class="lineCov">        506 :         array-&gt;bucket[0] = tommy_cast(void**, tommy_calloc(array-&gt;bucket_max, sizeof(void*)));</span>
-<span class="lineNum">      41 </span><span class="lineCov">       3036 :         for (i = 1; i &lt; TOMMY_ARRAY_BIT; ++i)</span>
-<span class="lineNum">      42 </span><span class="lineCov">       2530 :                 array-&gt;bucket[i] = array-&gt;bucket[0];</span>
+<span class="lineNum">      38 </span><span class="lineCov">        519 :         array-&gt;bucket_bit = TOMMY_ARRAY_BIT;</span>
+<span class="lineNum">      39 </span><span class="lineCov">        519 :         array-&gt;bucket_max = 1 &lt;&lt; array-&gt;bucket_bit;</span>
+<span class="lineNum">      40 </span><span class="lineCov">        519 :         array-&gt;bucket[0] = tommy_cast(void**, tommy_calloc(array-&gt;bucket_max, sizeof(void*)));</span>
+<span class="lineNum">      41 </span><span class="lineCov">       3114 :         for (i = 1; i &lt; TOMMY_ARRAY_BIT; ++i)</span>
+<span class="lineNum">      42 </span><span class="lineCov">       2595 :                 array-&gt;bucket[i] = array-&gt;bucket[0];</span>
 <span class="lineNum">      43 </span>            : 
-<span class="lineNum">      44 </span><span class="lineCov">        506 :         array-&gt;count = 0;</span>
-<a name="45"><span class="lineNum">      45 </span><span class="lineCov">        506 : }</span></a>
+<span class="lineNum">      44 </span><span class="lineCov">        519 :         array-&gt;count = 0;</span>
+<a name="45"><span class="lineNum">      45 </span><span class="lineCov">        519 : }</span></a>
 <span class="lineNum">      46 </span>            : 
-<span class="lineNum">      47 </span><span class="lineCov">        483 : void tommy_array_done(tommy_array* array)</span>
+<span class="lineNum">      47 </span><span class="lineCov">        496 : void tommy_array_done(tommy_array* array)</span>
 <span class="lineNum">      48 </span>            : {
 <span class="lineNum">      49 </span>            :         tommy_uint_t i;
 <span class="lineNum">      50 </span>            : 
-<span class="lineNum">      51 </span><span class="lineCov">        483 :         tommy_free(array-&gt;bucket[0]);</span>
-<span class="lineNum">      52 </span><span class="lineCov">        485 :         for (i = TOMMY_ARRAY_BIT; i &lt; array-&gt;bucket_bit; ++i) {</span>
+<span class="lineNum">      51 </span><span class="lineCov">        496 :         tommy_free(array-&gt;bucket[0]);</span>
+<span class="lineNum">      52 </span><span class="lineCov">        498 :         for (i = TOMMY_ARRAY_BIT; i &lt; array-&gt;bucket_bit; ++i) {</span>
 <span class="lineNum">      53 </span><span class="lineCov">          2 :                 void** segment = array-&gt;bucket[i];</span>
 <span class="lineNum">      54 </span><span class="lineCov">          2 :                 tommy_free(&amp;segment[((tommy_ptrdiff_t)1) &lt;&lt; i]);</span>
 <span class="lineNum">      55 </span>            :         }
-<a name="56"><span class="lineNum">      56 </span><span class="lineCov">        483 : }</span></a>
+<a name="56"><span class="lineNum">      56 </span><span class="lineCov">        496 : }</span></a>
 <span class="lineNum">      57 </span>            : 
-<span class="lineNum">      58 </span><span class="lineCov">       2147 : void tommy_array_grow(tommy_array* array, tommy_count_t count)</span>
+<span class="lineNum">      58 </span><span class="lineCov">       2202 : void tommy_array_grow(tommy_array* array, tommy_count_t count)</span>
 <span class="lineNum">      59 </span>            : {
-<span class="lineNum">      60 </span><span class="lineCov">       2147 :         if (array-&gt;count &gt;= count)</span>
-<span class="lineNum">      61 </span><span class="lineCov">       2147 :                 return;</span>
-<span class="lineNum">      62 </span><span class="lineCov">       2147 :         array-&gt;count = count;</span>
+<span class="lineNum">      60 </span><span class="lineCov">       2202 :         if (array-&gt;count &gt;= count)</span>
+<span class="lineNum">      61 </span><span class="lineCov">       2202 :                 return;</span>
+<span class="lineNum">      62 </span><span class="lineCov">       2202 :         array-&gt;count = count;</span>
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span><span class="lineCov">       4296 :         while (count &gt; array-&gt;bucket_max) {</span>
+<span class="lineNum">      64 </span><span class="lineCov">       4406 :         while (count &gt; array-&gt;bucket_max) {</span>
 <span class="lineNum">      65 </span>            :                 void** segment;
 <span class="lineNum">      66 </span>            : 
 <span class="lineNum">      67 </span>            :                 /* allocate one more segment */
@@ -138,9 +138,9 @@
 <span class="lineNum">      76 </span>            :         }
 <a name="77"><span class="lineNum">      77 </span>            : }</a>
 <span class="lineNum">      78 </span>            : 
-<span class="lineNum">      79 </span><span class="lineCov">          3 : tommy_size_t tommy_array_memory_usage(tommy_array* array)</span>
+<span class="lineNum">      79 </span><span class="lineCov">          2 : tommy_size_t tommy_array_memory_usage(tommy_array* array)</span>
 <span class="lineNum">      80 </span>            : {
-<span class="lineNum">      81 </span><span class="lineCov">          3 :         return array-&gt;bucket_max * (tommy_size_t)sizeof(void*);</span>
+<span class="lineNum">      81 </span><span class="lineCov">          2 :         return array-&gt;bucket_max * (tommy_size_t)sizeof(void*);</span>
 <span class="lineNum">      82 </span>            : }
 <span class="lineNum">      83 </span>            : 
 </pre>

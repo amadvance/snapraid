@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">135</td>
             <td class="headerCovTableEntry">140</td>
-            <td class="headerCovTableEntry">140</td>
-            <td class="headerCovTableEntryHi">100.0 %</td>
+            <td class="headerCovTableEntryHi">96.4 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -268,7 +268,7 @@
 <span class="lineNum">     206 </span>            : #endif
 <span class="lineNum">     207 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     208 </span><span class="lineCov">          2 :                         if (raid_cpu_has_avx2())</span>
-<span class="lineNum">     209 </span><span class="lineCov">          2 :                                 f[i][nf[i]++] = raid_rec1_avx2;</span>
+<span class="lineNum">     209 </span><span class="lineNoCov">          0 :                                 f[i][nf[i]++] = raid_rec1_avx2;</span>
 <span class="lineNum">     210 </span>            : #endif
 <span class="lineNum">     211 </span>            : #endif
 <span class="lineNum">     212 </span><span class="lineCov">          7 :                 } else if (i == 1) {</span>
@@ -280,7 +280,7 @@
 <span class="lineNum">     218 </span>            : #endif
 <span class="lineNum">     219 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     220 </span><span class="lineCov">          2 :                         if (raid_cpu_has_avx2())</span>
-<span class="lineNum">     221 </span><span class="lineCov">          2 :                                 f[i][nf[i]++] = raid_rec2_avx2;</span>
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :                                 f[i][nf[i]++] = raid_rec2_avx2;</span>
 <span class="lineNum">     222 </span>            : #endif
 <span class="lineNum">     223 </span>            : #endif
 <span class="lineNum">     224 </span>            :                 } else {
@@ -292,7 +292,7 @@
 <span class="lineNum">     230 </span>            : #endif
 <span class="lineNum">     231 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     232 </span><span class="lineCov">          5 :                         if (raid_cpu_has_avx2())</span>
-<span class="lineNum">     233 </span><span class="lineCov">          5 :                                 f[i][nf[i]++] = raid_recX_avx2;</span>
+<span class="lineNum">     233 </span><span class="lineNoCov">          0 :                                 f[i][nf[i]++] = raid_recX_avx2;</span>
 <span class="lineNum">     234 </span>            : #endif
 <span class="lineNum">     235 </span>            : #endif
 <span class="lineNum">     236 </span>            :                 }
@@ -314,22 +314,22 @@
 <span class="lineNum">     252 </span>            :                         combination_first(nr, np, ip);
 <span class="lineNum">     253 </span>            :                         do {
 <span class="lineNum">     254 </span>            :                                 /* for each recover function */
-<span class="lineNum">     255 </span><span class="lineCov">      76068 :                                 for (j = 0; j &lt; nf[nr - 1]; ++j) {</span>
+<span class="lineNum">     255 </span><span class="lineCov">      57051 :                                 for (j = 0; j &lt; nf[nr - 1]; ++j) {</span>
 <span class="lineNum">     256 </span>            :                                         /* set */
-<span class="lineNum">     257 </span><span class="lineCov">     283095 :                                         for (i = 0; i &lt; nr; ++i) {</span>
+<span class="lineNum">     257 </span><span class="lineCov">     188730 :                                         for (i = 0; i &lt; nr; ++i) {</span>
 <span class="lineNum">     258 </span>            :                                                 /* remove the missing data */
-<span class="lineNum">     259 </span><span class="lineCov">     226044 :                                                 data_save[i] = data[id[i]];</span>
-<span class="lineNum">     260 </span><span class="lineCov">     226044 :                                                 data[id[i]] = test[i];</span>
+<span class="lineNum">     259 </span><span class="lineCov">     150696 :                                                 data_save[i] = data[id[i]];</span>
+<span class="lineNum">     260 </span><span class="lineCov">     150696 :                                                 data[id[i]] = test[i];</span>
 <span class="lineNum">     261 </span>            :                                                 /* set the parity to use */
-<span class="lineNum">     262 </span><span class="lineCov">     226044 :                                                 parity[ip[i]] = parity_save[ip[i]];</span>
+<span class="lineNum">     262 </span><span class="lineCov">     150696 :                                                 parity[ip[i]] = parity_save[ip[i]];</span>
 <span class="lineNum">     263 </span>            :                                         }
 <span class="lineNum">     264 </span>            : 
 <span class="lineNum">     265 </span>            :                                         /* recover */
-<span class="lineNum">     266 </span><span class="lineCov">      57051 :                                         f[nr - 1][j](nr, id, ip, nd, size, v);</span>
+<span class="lineNum">     266 </span><span class="lineCov">      38034 :                                         f[nr - 1][j](nr, id, ip, nd, size, v);</span>
 <span class="lineNum">     267 </span>            : 
 <span class="lineNum">     268 </span>            :                                         /* check */
-<span class="lineNum">     269 </span><span class="lineCov">     283095 :                                         for (i = 0; i &lt; nr; ++i) {</span>
-<span class="lineNum">     270 </span><span class="lineCov">     226044 :                                                 if (memcmp(test[i], data_save[i], size) != 0) {</span>
+<span class="lineNum">     269 </span><span class="lineCov">     188730 :                                         for (i = 0; i &lt; nr; ++i) {</span>
+<span class="lineNum">     270 </span><span class="lineCov">     150696 :                                                 if (memcmp(test[i], data_save[i], size) != 0) {</span>
 <span class="lineNum">     271 </span>            :                                                         /* LCOV_EXCL_START */
 <span class="lineNum">     272 </span>            :                                                         goto bail;
 <span class="lineNum">     273 </span>            :                                                         /* LCOV_EXCL_STOP */
@@ -337,11 +337,11 @@
 <span class="lineNum">     275 </span>            :                                         }
 <span class="lineNum">     276 </span>            : 
 <span class="lineNum">     277 </span>            :                                         /* restore */
-<span class="lineNum">     278 </span><span class="lineCov">     283095 :                                         for (i = 0; i &lt; nr; ++i) {</span>
+<span class="lineNum">     278 </span><span class="lineCov">     188730 :                                         for (i = 0; i &lt; nr; ++i) {</span>
 <span class="lineNum">     279 </span>            :                                                 /* restore the data */
-<span class="lineNum">     280 </span><span class="lineCov">     226044 :                                                 data[id[i]] = data_save[i];</span>
+<span class="lineNum">     280 </span><span class="lineCov">     150696 :                                                 data[id[i]] = data_save[i];</span>
 <span class="lineNum">     281 </span>            :                                                 /* restore the parity */
-<span class="lineNum">     282 </span><span class="lineCov">     226044 :                                                 parity[ip[i]] = waste;</span>
+<span class="lineNum">     282 </span><span class="lineCov">     150696 :                                                 parity[ip[i]] = waste;</span>
 <span class="lineNum">     283 </span>            :                                         }
 <span class="lineNum">     284 </span>            :                                 }
 <span class="lineNum">     285 </span><span class="lineCov">      19017 :                         } while (combination_next(nr, np, ip));</span>
@@ -423,8 +423,8 @@
 <span class="lineNum">     361 </span>            : 
 <span class="lineNum">     362 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     363 </span><span class="lineCov">          3 :         if (raid_cpu_has_avx2()) {</span>
-<span class="lineNum">     364 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen1_avx2;</span>
-<span class="lineNum">     365 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen2_avx2;</span>
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :                 f[nf++] = raid_gen1_avx2;</span>
+<span class="lineNum">     365 </span><span class="lineNoCov">          0 :                 f[nf++] = raid_gen2_avx2;</span>
 <span class="lineNum">     366 </span>            :         }
 <span class="lineNum">     367 </span>            : #endif
 <span class="lineNum">     368 </span>            : #endif /* CONFIG_X86 */
@@ -486,13 +486,13 @@
 <span class="lineNum">     424 </span>            :         }
 <span class="lineNum">     425 </span>            : 
 <span class="lineNum">     426 </span>            :         /* check all the functions */
-<span class="lineNum">     427 </span><span class="lineCov">         46 :         for (j = 0; j &lt; nf; ++j) {</span>
+<span class="lineNum">     427 </span><span class="lineCov">         40 :         for (j = 0; j &lt; nf; ++j) {</span>
 <span class="lineNum">     428 </span>            :                 /* compute parity */
-<span class="lineNum">     429 </span><span class="lineCov">         43 :                 f[j](nd, size, v);</span>
+<span class="lineNum">     429 </span><span class="lineCov">         37 :                 f[j](nd, size, v);</span>
 <span class="lineNum">     430 </span>            : 
 <span class="lineNum">     431 </span>            :                 /* check it */
-<span class="lineNum">     432 </span><span class="lineCov">        268 :                 for (i = 0; i &lt; np; ++i) {</span>
-<span class="lineNum">     433 </span><span class="lineCov">        225 :                         if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {</span>
+<span class="lineNum">     432 </span><span class="lineCov">        232 :                 for (i = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     433 </span><span class="lineCov">        195 :                         if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {</span>
 <span class="lineNum">     434 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     435 </span>            :                                 goto bail;
 <span class="lineNum">     436 </span>            :                                 /* LCOV_EXCL_STOP */

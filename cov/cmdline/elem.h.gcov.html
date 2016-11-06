@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">121</td>
-            <td class="headerCovTableEntry">122</td>
-            <td class="headerCovTableEntryHi">99.2 %</td>
+            <td class="headerCovTableEntry">129</td>
+            <td class="headerCovTableEntry">133</td>
+            <td class="headerCovTableEntryHi">97.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">41</td>
@@ -87,1094 +87,1211 @@
 <span class="lineNum">      25 </span>            : #include &quot;tommyds/tommytree.h&quot;
 <span class="lineNum">      26 </span>            : #include &quot;tommyds/tommyhashdyn.h&quot;
 <span class="lineNum">      27 </span>            : #include &quot;tommyds/tommyarray.h&quot;
-<span class="lineNum">      28 </span>            : #include &quot;tommyds/tommyarrayblk.h&quot;
-<span class="lineNum">      29 </span>            : #include &quot;tommyds/tommyarrayblkof.h&quot;
-<span class="lineNum">      30 </span>            : 
-<span class="lineNum">      31 </span>            : /****************************************************************************/
-<span class="lineNum">      32 </span>            : /* snapraid */
-<span class="lineNum">      33 </span>            : 
-<span class="lineNum">      34 </span>            : /**
-<span class="lineNum">      35 </span>            :  * Max UUID length.
-<span class="lineNum">      36 </span>            :  */
-<span class="lineNum">      37 </span>            : #define UUID_MAX 128
-<span class="lineNum">      38 </span>            : 
-<span class="lineNum">      39 </span>            : /**
-<span class="lineNum">      40 </span>            :  * Invalid position.
-<span class="lineNum">      41 </span>            :  */
-<span class="lineNum">      42 </span>            : #define POS_INVALID ((block_off_t)-1)
-<span class="lineNum">      43 </span>            : 
-<span class="lineNum">      44 </span>            : /**
-<span class="lineNum">      45 </span>            :  * Basic block position type.
-<span class="lineNum">      46 </span>            :  * With 32 bits and 128k blocks you can address 256 TB.
-<span class="lineNum">      47 </span>            :  */
-<span class="lineNum">      48 </span>            : typedef uint32_t block_off_t;
-<span class="lineNum">      49 </span>            : 
-<span class="lineNum">      50 </span>            : /**
-<span class="lineNum">      51 </span>            :  * Basic data position type.
-<span class="lineNum">      52 </span>            :  * It's signed as file size and offset are usually signed.
-<span class="lineNum">      53 </span>            :  */
-<span class="lineNum">      54 </span>            : typedef int64_t data_off_t;
-<span class="lineNum">      55 </span>            : 
-<span class="lineNum">      56 </span>            : /**
-<span class="lineNum">      57 </span>            :  * Content file specification.
-<span class="lineNum">      58 </span>            :  */
-<span class="lineNum">      59 </span>            : struct snapraid_content {
-<span class="lineNum">      60 </span>            :         char content[PATH_MAX]; /**&lt; Path of the content file. */
-<span class="lineNum">      61 </span>            :         uint64_t device; /**&lt; Device identifier. */
-<span class="lineNum">      62 </span>            :         void* context; /**&lt; Context used for multithread operations. */
-<span class="lineNum">      63 </span>            :         tommy_node node; /**&lt; Next node in the list. */
-<span class="lineNum">      64 </span>            : };
-<span class="lineNum">      65 </span>            : 
-<span class="lineNum">      66 </span>            : /**
-<span class="lineNum">      67 </span>            :  * Filter for paths.
-<span class="lineNum">      68 </span>            :  */
-<span class="lineNum">      69 </span>            : struct snapraid_filter {
-<span class="lineNum">      70 </span>            :         char pattern[PATH_MAX]; /**&lt; Filter pattern. */
-<span class="lineNum">      71 </span>            :         int is_disk; /**&lt; If the pattern is a disk one. */
-<span class="lineNum">      72 </span>            :         int is_path; /**&lt; If the pattern is only for the complete path. */
-<span class="lineNum">      73 </span>            :         int is_dir; /**&lt; If the pattern is only for dir. */
-<span class="lineNum">      74 </span>            :         int direction; /**&lt; If it's an inclusion (=1) or an exclusion (=-1). */
-<span class="lineNum">      75 </span>            :         tommy_node node; /**&lt; Next node in the list. */
-<span class="lineNum">      76 </span>            : };
-<span class="lineNum">      77 </span>            : 
-<span class="lineNum">      78 </span>            : /**
-<span class="lineNum">      79 </span>            :  * Block pointer used to represent unused blocks.
-<span class="lineNum">      80 </span>            :  */
-<span class="lineNum">      81 </span>            : #define BLOCK_EMPTY 0
-<span class="lineNum">      82 </span>            : 
-<span class="lineNum">      83 </span>            : /**
-<span class="lineNum">      84 </span>            :  * This block is an empty one.
-<span class="lineNum">      85 </span>            :  * Note that an empty block is represent with ::BLOCK_EMPTY.
-<span class="lineNum">      86 </span>            :  */
-<span class="lineNum">      87 </span>            : #define BLOCK_STATE_EMPTY 0
-<span class="lineNum">      88 </span>            : 
-<span class="lineNum">      89 </span>            : /**
-<span class="lineNum">      90 </span>            :  * The block has both the hash and the parity computed.
-<span class="lineNum">      91 </span>            :  * This is the normal state of a saved block.
-<span class="lineNum">      92 </span>            :  *
-<span class="lineNum">      93 </span>            :  * The block hash field IS set.
-<span class="lineNum">      94 </span>            :  * The parity for this disk is updated.
-<span class="lineNum">      95 </span>            :  */
-<span class="lineNum">      96 </span>            : #define BLOCK_STATE_BLK 1
-<span class="lineNum">      97 </span>            : 
-<span class="lineNum">      98 </span>            : /**
-<span class="lineNum">      99 </span>            :  * The block is new and not yet hashed.
-<span class="lineNum">     100 </span>            :  * This happens when a new block overwrite a just removed block, or an empty space.
+<span class="lineNum">      28 </span>            : #include &quot;tommyds/tommyarrayblkof.h&quot;
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : /****************************************************************************/
+<span class="lineNum">      31 </span>            : /* snapraid */
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : /**
+<span class="lineNum">      34 </span>            :  * Number of measures of the operation progress.
+<span class="lineNum">      35 </span>            :  */
+<span class="lineNum">      36 </span>            : #define PROGRESS_MAX 100
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            : /**
+<span class="lineNum">      39 </span>            :  * Max UUID length.
+<span class="lineNum">      40 </span>            :  */
+<span class="lineNum">      41 </span>            : #define UUID_MAX 128
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : /**
+<span class="lineNum">      44 </span>            :  * Invalid position.
+<span class="lineNum">      45 </span>            :  */
+<span class="lineNum">      46 </span>            : #define POS_NULL ((block_off_t)-1)
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span>            : /**
+<span class="lineNum">      49 </span>            :  * Content file specification.
+<span class="lineNum">      50 </span>            :  */
+<span class="lineNum">      51 </span>            : struct snapraid_content {
+<span class="lineNum">      52 </span>            :         char content[PATH_MAX]; /**&lt; Path of the content file. */
+<span class="lineNum">      53 </span>            :         uint64_t device; /**&lt; Device identifier. */
+<span class="lineNum">      54 </span>            :         void* context; /**&lt; Context used for multithread operations. */
+<span class="lineNum">      55 </span>            :         tommy_node node; /**&lt; Next node in the list. */
+<span class="lineNum">      56 </span>            : };
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            : /**
+<span class="lineNum">      59 </span>            :  * Filter for paths.
+<span class="lineNum">      60 </span>            :  */
+<span class="lineNum">      61 </span>            : struct snapraid_filter {
+<span class="lineNum">      62 </span>            :         char pattern[PATH_MAX]; /**&lt; Filter pattern. */
+<span class="lineNum">      63 </span>            :         int is_disk; /**&lt; If the pattern is a disk one. */
+<span class="lineNum">      64 </span>            :         int is_path; /**&lt; If the pattern is only for the complete path. */
+<span class="lineNum">      65 </span>            :         int is_dir; /**&lt; If the pattern is only for dir. */
+<span class="lineNum">      66 </span>            :         int direction; /**&lt; If it's an inclusion (=1) or an exclusion (=-1). */
+<span class="lineNum">      67 </span>            :         tommy_node node; /**&lt; Next node in the list. */
+<span class="lineNum">      68 </span>            : };
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : /**
+<span class="lineNum">      71 </span>            :  * Block pointer used to represent unused blocks.
+<span class="lineNum">      72 </span>            :  */
+<span class="lineNum">      73 </span>            : #define BLOCK_NULL 0
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            : /**
+<span class="lineNum">      76 </span>            :  * This block is an empty one.
+<span class="lineNum">      77 </span>            :  * Note that an empty block is represent with ::BLOCK_NULL.
+<span class="lineNum">      78 </span>            :  */
+<span class="lineNum">      79 </span>            : #define BLOCK_STATE_EMPTY 0
+<span class="lineNum">      80 </span>            : 
+<span class="lineNum">      81 </span>            : /**
+<span class="lineNum">      82 </span>            :  * The block has both the hash and the parity computed.
+<span class="lineNum">      83 </span>            :  * This is the normal state of a saved block.
+<span class="lineNum">      84 </span>            :  *
+<span class="lineNum">      85 </span>            :  * The block hash field IS set.
+<span class="lineNum">      86 </span>            :  * The parity for this disk is updated.
+<span class="lineNum">      87 </span>            :  */
+<span class="lineNum">      88 </span>            : #define BLOCK_STATE_BLK 1
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            : /**
+<span class="lineNum">      91 </span>            :  * The block is new and not yet hashed.
+<span class="lineNum">      92 </span>            :  * This happens when a new block overwrite a just removed block, or an empty space.
+<span class="lineNum">      93 </span>            :  *
+<span class="lineNum">      94 </span>            :  * The block hash field MAY be set and it represents the hash of the OLD data.
+<span class="lineNum">      95 </span>            :  * The hash may be also INVALID or ZERO.
+<span class="lineNum">      96 </span>            :  *
+<span class="lineNum">      97 </span>            :  * If the OLD block was empty, the hash is set to the special ZERO value.
+<span class="lineNum">      98 </span>            :  * If the OLD block was lost, the hash is set to the special INVALID value.
+<span class="lineNum">      99 </span>            :  *
+<span class="lineNum">     100 </span>            :  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
 <span class="lineNum">     101 </span>            :  *
-<span class="lineNum">     102 </span>            :  * The block hash field MAY be set and it represents the hash of the OLD data.
-<span class="lineNum">     103 </span>            :  * The hash may be also INVALID or ZERO.
-<span class="lineNum">     104 </span>            :  *
-<span class="lineNum">     105 </span>            :  * If the OLD block was empty, the hash is set to the special ZERO value.
-<span class="lineNum">     106 </span>            :  * If the OLD block was lost, the hash is set to the special INVALID value.
-<span class="lineNum">     107 </span>            :  *
-<span class="lineNum">     108 </span>            :  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
-<span class="lineNum">     109 </span>            :  *
-<span class="lineNum">     110 </span>            :  * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
-<span class="lineNum">     111 </span>            :  * data used to compute the parity, because the sync process was interrupted at an unknown point,
-<span class="lineNum">     112 </span>            :  * and the parity may or may not be updated.
-<span class="lineNum">     113 </span>            :  *
-<span class="lineNum">     114 </span>            :  * For this reason we clear all such hashes when reading the state from an incomplete sync before
-<span class="lineNum">     115 </span>            :  * starting a new sync, because sync is affected by such hashes, as sync updates the parity, only
-<span class="lineNum">     116 </span>            :  * if the new data read for CHG blocks has a mismatching hash.
-<span class="lineNum">     117 </span>            :  * Clearing is done setting the ::clear_past_hash flag before reading the state.
-<span class="lineNum">     118 </span>            :  * No clearing is done in other commands, as check and fix are instead able to work with unsynced
-<span class="lineNum">     119 </span>            :  * hashes, and scrub ignores CHG/DELETED blocks.
-<span class="lineNum">     120 </span>            :  */
-<span class="lineNum">     121 </span>            : #define BLOCK_STATE_CHG 2
-<span class="lineNum">     122 </span>            : 
-<span class="lineNum">     123 </span>            : /**
-<span class="lineNum">     124 </span>            :  * The block is new and hashed.
-<span class="lineNum">     125 </span>            :  * This happens when a new block overwrite a just removed block, or an empty space.
-<span class="lineNum">     126 </span>            :  *
-<span class="lineNum">     127 </span>            :  * Note that when the file copy heuristic is enabled, the REP blocks may be set
-<span class="lineNum">     128 </span>            :  * using this heuristic, meaning that the hash may be wrong.
-<span class="lineNum">     129 </span>            :  *
-<span class="lineNum">     130 </span>            :  * For this reason, when the ::force_nocopy flag is enabled in sync, we convert all the REP blocks
-<span class="lineNum">     131 </span>            :  * to CHG, invalidating the stored hash.
-<span class="lineNum">     132 </span>            :  * Clearing is done setting the ::clear_past_hash flag before reading the state.
-<span class="lineNum">     133 </span>            :  * No clearing is done in other commands, as they don't stop the process like in sync
-<span class="lineNum">     134 </span>            :  * when there is a false silent error.
-<span class="lineNum">     135 </span>            :  *
-<span class="lineNum">     136 </span>            :  * The block hash field IS set, and it represents the hash of the new data.
-<span class="lineNum">     137 </span>            :  * The parity for this disk is not updated.
-<span class="lineNum">     138 </span>            :  */
-<span class="lineNum">     139 </span>            : #define BLOCK_STATE_REP 3
-<span class="lineNum">     140 </span>            : 
-<span class="lineNum">     141 </span>            : /**
-<span class="lineNum">     142 </span>            :  * This block is a deleted one.
-<span class="lineNum">     143 </span>            :  * This happens when a file is deleted.
+<span class="lineNum">     102 </span>            :  * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
+<span class="lineNum">     103 </span>            :  * data used to compute the parity, because the sync process was interrupted at an unknown point,
+<span class="lineNum">     104 </span>            :  * and the parity may or may not be updated.
+<span class="lineNum">     105 </span>            :  *
+<span class="lineNum">     106 </span>            :  * For this reason we clear all such hashes when reading the state from an incomplete sync before
+<span class="lineNum">     107 </span>            :  * starting a new sync, because sync is affected by such hashes, as sync updates the parity, only
+<span class="lineNum">     108 </span>            :  * if the new data read for CHG blocks has a mismatching hash.
+<span class="lineNum">     109 </span>            :  * Clearing is done setting the ::clear_past_hash flag before reading the state.
+<span class="lineNum">     110 </span>            :  * No clearing is done in other commands, as check and fix are instead able to work with unsynced
+<span class="lineNum">     111 </span>            :  * hashes, and scrub ignores CHG/DELETED blocks.
+<span class="lineNum">     112 </span>            :  */
+<span class="lineNum">     113 </span>            : #define BLOCK_STATE_CHG 2
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            : /**
+<span class="lineNum">     116 </span>            :  * The block is new and hashed.
+<span class="lineNum">     117 </span>            :  * This happens when a new block overwrite a just removed block, or an empty space.
+<span class="lineNum">     118 </span>            :  *
+<span class="lineNum">     119 </span>            :  * Note that when the file copy heuristic is enabled, the REP blocks may be set
+<span class="lineNum">     120 </span>            :  * using this heuristic, meaning that the hash may be wrong.
+<span class="lineNum">     121 </span>            :  *
+<span class="lineNum">     122 </span>            :  * For this reason, when the ::force_nocopy flag is enabled in sync, we convert all the REP blocks
+<span class="lineNum">     123 </span>            :  * to CHG, invalidating the stored hash.
+<span class="lineNum">     124 </span>            :  * Clearing is done setting the ::clear_past_hash flag before reading the state.
+<span class="lineNum">     125 </span>            :  * No clearing is done in other commands, as they don't stop the process like in sync
+<span class="lineNum">     126 </span>            :  * when there is a false silent error.
+<span class="lineNum">     127 </span>            :  *
+<span class="lineNum">     128 </span>            :  * The block hash field IS set, and it represents the hash of the new data.
+<span class="lineNum">     129 </span>            :  * The parity for this disk is not updated.
+<span class="lineNum">     130 </span>            :  */
+<span class="lineNum">     131 </span>            : #define BLOCK_STATE_REP 3
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            : /**
+<span class="lineNum">     134 </span>            :  * This block is a deleted one.
+<span class="lineNum">     135 </span>            :  * This happens when a file is deleted.
+<span class="lineNum">     136 </span>            :  *
+<span class="lineNum">     137 </span>            :  * The block hash field IS set, and it represents the hash of the previous data,
+<span class="lineNum">     138 </span>            :  * but only if it's different by all 0.
+<span class="lineNum">     139 </span>            :  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
+<span class="lineNum">     140 </span>            :  *
+<span class="lineNum">     141 </span>            :  * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
+<span class="lineNum">     142 </span>            :  * data used to compute the parity, because the sync process was interrupted at an unknown point,
+<span class="lineNum">     143 </span>            :  * and the parity may or may not be updated.
 <span class="lineNum">     144 </span>            :  *
-<span class="lineNum">     145 </span>            :  * The block hash field IS set, and it represents the hash of the previous data,
-<span class="lineNum">     146 </span>            :  * but only if it's different by all 0.
-<span class="lineNum">     147 </span>            :  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
-<span class="lineNum">     148 </span>            :  *
-<span class="lineNum">     149 </span>            :  * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
-<span class="lineNum">     150 </span>            :  * data used to compute the parity, because the sync process was interrupted at an unknown point,
-<span class="lineNum">     151 </span>            :  * and the parity may or may not be updated.
-<span class="lineNum">     152 </span>            :  *
-<span class="lineNum">     153 </span>            :  * A now the sync process is not affected by DELETED hash, so clearing won't be really needed,
-<span class="lineNum">     154 </span>            :  * but considering that we have to do it for CHG blocks, we do it also for DELETED ones,
-<span class="lineNum">     155 </span>            :  * clearing all the past hashes.
-<span class="lineNum">     156 </span>            :  * Clearing is done setting the ::clear_past_hash flag before reading the state.
-<span class="lineNum">     157 </span>            :  * No clearing is done in other commands, as check and fix are instead able to work with unsynced
-<span class="lineNum">     158 </span>            :  * hashes, and scrub ignores CHG/DELETED blocks.
-<span class="lineNum">     159 </span>            :  */
-<span class="lineNum">     160 </span>            : #define BLOCK_STATE_DELETED 4
-<span class="lineNum">     161 </span>            : 
-<span class="lineNum">     162 </span>            : /**
-<span class="lineNum">     163 </span>            :  * Block of a file.
-<span class="lineNum">     164 </span>            :  */
-<span class="lineNum">     165 </span>            : struct snapraid_block {
-<span class="lineNum">     166 </span>            :         unsigned char hash[HASH_SIZE]; /**&lt; Hash of the block. */
-<span class="lineNum">     167 </span>            :         unsigned char state; /**&lt; State of the block. */
-<span class="lineNum">     168 </span>            : };
-<span class="lineNum">     169 </span>            : 
-<span class="lineNum">     170 </span>            : /**
-<span class="lineNum">     171 </span>            :  * If a file is present in the disk.
-<span class="lineNum">     172 </span>            :  * It's used only in scan to detect present and missing files.
-<span class="lineNum">     173 </span>            :  */
-<span class="lineNum">     174 </span>            : #define FILE_IS_PRESENT 0x01
-<span class="lineNum">     175 </span>            : 
-<span class="lineNum">     176 </span>            : /**
-<span class="lineNum">     177 </span>            :  * If it's an excluded file from the processing.
-<span class="lineNum">     178 </span>            :  * It's used in both check and fix to mark files to exclude from the processing.
-<span class="lineNum">     179 </span>            :  */
-<span class="lineNum">     180 </span>            : #define FILE_IS_EXCLUDED 0x02
-<span class="lineNum">     181 </span>            : 
-<span class="lineNum">     182 </span>            : /**
-<span class="lineNum">     183 </span>            :  * If a fix was attempted but it failed.
-<span class="lineNum">     184 </span>            :  * It's used only in fix to mark that some data is unrecoverable.
-<span class="lineNum">     185 </span>            :  */
-<span class="lineNum">     186 </span>            : #define FILE_IS_DAMAGED 0x04
-<span class="lineNum">     187 </span>            : 
-<span class="lineNum">     188 </span>            : /**
-<span class="lineNum">     189 </span>            :  * If a fix was done.
-<span class="lineNum">     190 </span>            :  * It's used only in fix to mark that some data was recovered.
-<span class="lineNum">     191 </span>            :  */
-<span class="lineNum">     192 </span>            : #define FILE_IS_FIXED 0x08
-<span class="lineNum">     193 </span>            : 
-<span class="lineNum">     194 </span>            : /**
-<span class="lineNum">     195 </span>            :  * If the file was originally missing, and it was created in the fix process.
-<span class="lineNum">     196 </span>            :  * It's used only in fix to mark files recovered from scratch,
-<span class="lineNum">     197 </span>            :  * meaning that they don't have any previous content.
-<span class="lineNum">     198 </span>            :  * This is important because it means that deleting them, you are not going
-<span class="lineNum">     199 </span>            :  * to lose something that cannot be recovered.
-<span class="lineNum">     200 </span>            :  * Note that excluded files won't ever get this flag.
-<span class="lineNum">     201 </span>            :  */
-<span class="lineNum">     202 </span>            : #define FILE_IS_CREATED 0x10
-<span class="lineNum">     203 </span>            : 
-<span class="lineNum">     204 </span>            : /**
-<span class="lineNum">     205 </span>            :  * If the file has completed its processing, meaning that it won't be opened anymore.
-<span class="lineNum">     206 </span>            :  * It's used only in fix to mark when we finish processing one file.
-<span class="lineNum">     207 </span>            :  * Note that excluded files won't ever get this flag.
-<span class="lineNum">     208 </span>            :  */
-<span class="lineNum">     209 </span>            : #define FILE_IS_FINISHED 0x20
-<span class="lineNum">     210 </span>            : 
-<span class="lineNum">     211 </span>            : /**
-<span class="lineNum">     212 </span>            :  * If the file hash was obtained from a file copy
-<span class="lineNum">     213 </span>            :  * identified by the same name, size and stamp.
-<span class="lineNum">     214 </span>            :  */
-<span class="lineNum">     215 </span>            : #define FILE_IS_COPY 0x40
-<span class="lineNum">     216 </span>            : 
-<span class="lineNum">     217 </span>            : /**
-<span class="lineNum">     218 </span>            :  * If the file was opened.
-<span class="lineNum">     219 </span>            :  * It's used in fix to detect if it's the first time a file is opened.
-<span class="lineNum">     220 </span>            :  */
-<span class="lineNum">     221 </span>            : #define FILE_IS_OPENED 0x80
-<span class="lineNum">     222 </span>            : 
-<span class="lineNum">     223 </span>            : /**
-<span class="lineNum">     224 </span>            :  * If the file is modified from the latest sync.
-<span class="lineNum">     225 </span>            :  * It's used in fix to store if the state of the file before being modified.
-<span class="lineNum">     226 </span>            :  */
-<span class="lineNum">     227 </span>            : #define FILE_IS_UNSYNCED 0x100
-<span class="lineNum">     228 </span>            : 
-<span class="lineNum">     229 </span>            : /**
-<span class="lineNum">     230 </span>            :  * If the file is without inode.
-<span class="lineNum">     231 </span>            :  * It could happen in file-system where inodes are not persistent,
-<span class="lineNum">     232 </span>            :  * or when restoring a full disk with &quot;fix&quot;.
-<span class="lineNum">     233 </span>            :  * In such cases we have to clear any stored duplicate inode.
-<span class="lineNum">     234 </span>            :  * After the scan process completes, no file should have this flag set.
-<span class="lineNum">     235 </span>            :  */
-<span class="lineNum">     236 </span>            : #define FILE_IS_WITHOUT_INODE 0x200
-<span class="lineNum">     237 </span>            : 
-<span class="lineNum">     238 </span>            : /**
-<span class="lineNum">     239 </span>            :  * The file is deleted.
-<span class="lineNum">     240 </span>            :  * This happens when a file is deleted from the array,
-<span class="lineNum">     241 </span>            :  * but it's keep inside the parity until the next sync.
-<span class="lineNum">     242 </span>            :  *
-<span class="lineNum">     243 </span>            :  * During the file-system check we needs this information,
-<span class="lineNum">     244 </span>            :  * because deleted files may be present only partially.
-<span class="lineNum">     245 </span>            :  */
-<span class="lineNum">     246 </span>            : #define FILE_IS_DELETED 0x400
-<span class="lineNum">     247 </span>            : 
-<span class="lineNum">     248 </span>            : /**
-<span class="lineNum">     249 </span>            :  * The file is missing.
-<span class="lineNum">     250 </span>            :  * This happens in fix/check when a file is cannot be opened,
-<span class="lineNum">     251 </span>            :  * and marking it as such prevents to retry to open it again.
-<span class="lineNum">     252 </span>            :  */
-<span class="lineNum">     253 </span>            : #define FILE_IS_MISSING 0x800
-<span class="lineNum">     254 </span>            : 
-<span class="lineNum">     255 </span>            : #define FILE_IS_HARDLINK 0x1000 /**&lt; If it's an hardlink. */
-<span class="lineNum">     256 </span>            : #define FILE_IS_SYMLINK 0x2000 /**&lt; If it's a file symlink. */
-<span class="lineNum">     257 </span>            : #define FILE_IS_SYMDIR 0x4000 /**&lt; If it's a dir symlink for Windows. Not yet supported. */
-<span class="lineNum">     258 </span>            : #define FILE_IS_JUNCTION 0x8000 /**&lt; If it's a junction for Windows. Not yet supported. */
-<span class="lineNum">     259 </span>            : #define FILE_IS_LINK_MASK 0xF000 /**&lt; Mask for link type. */
-<span class="lineNum">     260 </span>            : 
-<span class="lineNum">     261 </span>            : /**
-<span class="lineNum">     262 </span>            :  * File.
-<span class="lineNum">     263 </span>            :  */
-<span class="lineNum">     264 </span>            : struct snapraid_file {
-<span class="lineNum">     265 </span>            :         int64_t mtime_sec; /**&lt; Modification time. */
-<span class="lineNum">     266 </span>            :         uint64_t inode; /**&lt; Inode. */
-<span class="lineNum">     267 </span>            :         uint64_t physical; /**&lt; Physical offset of the file. */
-<span class="lineNum">     268 </span>            :         data_off_t size; /**&lt; Size of the file. */
-<span class="lineNum">     269 </span>            :         struct snapraid_block* blockvec; /**&lt; All the blocks of the file. */
-<span class="lineNum">     270 </span>            :         int mtime_nsec; /**&lt; Modification time nanoseconds. In the range 0 &lt;= x &lt; 1,000,000,000, or STAT_NSEC_INVALID if not present. */
-<span class="lineNum">     271 </span>            :         block_off_t blockmax; /**&lt; Number of blocks. */
-<span class="lineNum">     272 </span>            :         unsigned flag; /**&lt; FILE_IS_* flags. */
-<span class="lineNum">     273 </span>            :         char* sub; /**&lt; Sub path of the file. Without the disk dir. The disk is implicit. */
-<span class="lineNum">     274 </span>            : 
-<span class="lineNum">     275 </span>            :         /* nodes for data structures */
-<span class="lineNum">     276 </span>            :         tommy_node nodelist;
-<span class="lineNum">     277 </span>            :         tommy_hashdyn_node nodeset;
-<span class="lineNum">     278 </span>            :         tommy_hashdyn_node pathset;
-<span class="lineNum">     279 </span>            :         tommy_hashdyn_node stampset;
-<span class="lineNum">     280 </span>            : };
-<span class="lineNum">     281 </span>            : 
-<span class="lineNum">     282 </span>            : /**
-<span class="lineNum">     283 </span>            :  * Symbolic Link.
-<span class="lineNum">     284 </span>            :  */
-<span class="lineNum">     285 </span>            : struct snapraid_link {
-<span class="lineNum">     286 </span>            :         unsigned flag; /**&lt; FILE_IS_* flags. */
-<span class="lineNum">     287 </span>            :         char* sub; /**&lt; Sub path of the file. Without the disk dir. The disk is implicit. */
-<span class="lineNum">     288 </span>            :         char* linkto; /**&lt; Link to. */
-<span class="lineNum">     289 </span>            : 
-<span class="lineNum">     290 </span>            :         /* nodes for data structures */
-<span class="lineNum">     291 </span>            :         tommy_node nodelist;
-<span class="lineNum">     292 </span>            :         tommy_hashdyn_node nodeset;
-<span class="lineNum">     293 </span>            : };
+<span class="lineNum">     145 </span>            :  * A now the sync process is not affected by DELETED hash, so clearing won't be really needed,
+<span class="lineNum">     146 </span>            :  * but considering that we have to do it for CHG blocks, we do it also for DELETED ones,
+<span class="lineNum">     147 </span>            :  * clearing all the past hashes.
+<span class="lineNum">     148 </span>            :  * Clearing is done setting the ::clear_past_hash flag before reading the state.
+<span class="lineNum">     149 </span>            :  * No clearing is done in other commands, as check and fix are instead able to work with unsynced
+<span class="lineNum">     150 </span>            :  * hashes, and scrub ignores CHG/DELETED blocks.
+<span class="lineNum">     151 </span>            :  */
+<span class="lineNum">     152 </span>            : #define BLOCK_STATE_DELETED 4
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span>            : /**
+<span class="lineNum">     155 </span>            :  * Block hash size.
+<span class="lineNum">     156 </span>            :  *
+<span class="lineNum">     157 </span>            :  * At max HASH_MAX.
+<span class="lineNum">     158 </span>            :  */
+<span class="lineNum">     159 </span>            : extern int BLOCK_HASH_SIZE;
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span>            : /**
+<span class="lineNum">     162 </span>            :  * Block of a file.
+<span class="lineNum">     163 </span>            :  */
+<span class="lineNum">     164 </span>            : struct snapraid_block {
+<span class="lineNum">     165 </span>            :         unsigned char state; /**&lt; State of the block. */
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            :         /**
+<span class="lineNum">     168 </span>            :          * Hash of the block.
+<span class="lineNum">     169 </span>            :          *
+<span class="lineNum">     170 </span>            :          * The effective stored size is BLOCK_HASH_SIZE.
+<span class="lineNum">     171 </span>            :          */
+<span class="lineNum">     172 </span>            :         unsigned char hash[HASH_MAX];
+<span class="lineNum">     173 </span>            : };
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span>            : /**
+<span class="lineNum">     176 </span>            :  * If a file is present in the disk.
+<span class="lineNum">     177 </span>            :  * It's used only in scan to detect present and missing files.
+<span class="lineNum">     178 </span>            :  */
+<span class="lineNum">     179 </span>            : #define FILE_IS_PRESENT 0x01
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span>            : /**
+<span class="lineNum">     182 </span>            :  * If it's an excluded file from the processing.
+<span class="lineNum">     183 </span>            :  * It's used in both check and fix to mark files to exclude from the processing.
+<span class="lineNum">     184 </span>            :  */
+<span class="lineNum">     185 </span>            : #define FILE_IS_EXCLUDED 0x02
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            : /**
+<span class="lineNum">     188 </span>            :  * If a fix was attempted but it failed.
+<span class="lineNum">     189 </span>            :  * It's used only in fix to mark that some data is unrecoverable.
+<span class="lineNum">     190 </span>            :  */
+<span class="lineNum">     191 </span>            : #define FILE_IS_DAMAGED 0x04
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span>            : /**
+<span class="lineNum">     194 </span>            :  * If a fix was done.
+<span class="lineNum">     195 </span>            :  * It's used only in fix to mark that some data was recovered.
+<span class="lineNum">     196 </span>            :  */
+<span class="lineNum">     197 </span>            : #define FILE_IS_FIXED 0x08
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span>            : /**
+<span class="lineNum">     200 </span>            :  * If the file was originally missing, and it was created in the fix process.
+<span class="lineNum">     201 </span>            :  * It's used only in fix to mark files recovered from scratch,
+<span class="lineNum">     202 </span>            :  * meaning that they don't have any previous content.
+<span class="lineNum">     203 </span>            :  * This is important because it means that deleting them, you are not going
+<span class="lineNum">     204 </span>            :  * to lose something that cannot be recovered.
+<span class="lineNum">     205 </span>            :  * Note that excluded files won't ever get this flag.
+<span class="lineNum">     206 </span>            :  */
+<span class="lineNum">     207 </span>            : #define FILE_IS_CREATED 0x10
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span>            : /**
+<span class="lineNum">     210 </span>            :  * If the file has completed its processing, meaning that it won't be opened anymore.
+<span class="lineNum">     211 </span>            :  * It's used only in fix to mark when we finish processing one file.
+<span class="lineNum">     212 </span>            :  * Note that excluded files won't ever get this flag.
+<span class="lineNum">     213 </span>            :  */
+<span class="lineNum">     214 </span>            : #define FILE_IS_FINISHED 0x20
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span>            : /**
+<span class="lineNum">     217 </span>            :  * If the file hash was obtained from a file copy
+<span class="lineNum">     218 </span>            :  * identified by the same name, size and stamp.
+<span class="lineNum">     219 </span>            :  */
+<span class="lineNum">     220 </span>            : #define FILE_IS_COPY 0x40
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span>            : /**
+<span class="lineNum">     223 </span>            :  * If the file was opened.
+<span class="lineNum">     224 </span>            :  * It's used in fix to detect if it's the first time a file is opened.
+<span class="lineNum">     225 </span>            :  */
+<span class="lineNum">     226 </span>            : #define FILE_IS_OPENED 0x80
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            : /**
+<span class="lineNum">     229 </span>            :  * If the file is modified from the latest sync.
+<span class="lineNum">     230 </span>            :  * It's used in fix to store if the state of the file before being modified.
+<span class="lineNum">     231 </span>            :  */
+<span class="lineNum">     232 </span>            : #define FILE_IS_UNSYNCED 0x100
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span>            : /**
+<span class="lineNum">     235 </span>            :  * If the file is without inode.
+<span class="lineNum">     236 </span>            :  * It could happen in file-system where inodes are not persistent,
+<span class="lineNum">     237 </span>            :  * or when restoring a full disk with &quot;fix&quot;.
+<span class="lineNum">     238 </span>            :  * In such cases we have to clear any stored duplicate inode.
+<span class="lineNum">     239 </span>            :  * After the scan process completes, no file should have this flag set.
+<span class="lineNum">     240 </span>            :  */
+<span class="lineNum">     241 </span>            : #define FILE_IS_WITHOUT_INODE 0x200
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span>            : /**
+<span class="lineNum">     244 </span>            :  * The file is deleted.
+<span class="lineNum">     245 </span>            :  * This happens when a file is deleted from the array,
+<span class="lineNum">     246 </span>            :  * but it's keep inside the parity until the next sync.
+<span class="lineNum">     247 </span>            :  *
+<span class="lineNum">     248 </span>            :  * During the file-system check we needs this information,
+<span class="lineNum">     249 </span>            :  * because deleted files may be present only partially.
+<span class="lineNum">     250 </span>            :  */
+<span class="lineNum">     251 </span>            : #define FILE_IS_DELETED 0x400
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span>            : /**
+<span class="lineNum">     254 </span>            :  * The file is missing.
+<span class="lineNum">     255 </span>            :  * This happens in fix/check when a file is cannot be opened,
+<span class="lineNum">     256 </span>            :  * and marking it as such prevents to retry to open it again.
+<span class="lineNum">     257 </span>            :  */
+<span class="lineNum">     258 </span>            : #define FILE_IS_MISSING 0x800
+<span class="lineNum">     259 </span>            : 
+<span class="lineNum">     260 </span>            : #define FILE_IS_HARDLINK 0x1000 /**&lt; If it's an hardlink. */
+<span class="lineNum">     261 </span>            : #define FILE_IS_SYMLINK 0x2000 /**&lt; If it's a file symlink. */
+<span class="lineNum">     262 </span>            : #define FILE_IS_SYMDIR 0x4000 /**&lt; If it's a dir symlink for Windows. Not yet supported. */
+<span class="lineNum">     263 </span>            : #define FILE_IS_JUNCTION 0x8000 /**&lt; If it's a junction for Windows. Not yet supported. */
+<span class="lineNum">     264 </span>            : #define FILE_IS_LINK_MASK 0xF000 /**&lt; Mask for link type. */
+<span class="lineNum">     265 </span>            : 
+<span class="lineNum">     266 </span>            : /**
+<span class="lineNum">     267 </span>            :  * File.
+<span class="lineNum">     268 </span>            :  */
+<span class="lineNum">     269 </span>            : struct snapraid_file {
+<span class="lineNum">     270 </span>            :         int64_t mtime_sec; /**&lt; Modification time. */
+<span class="lineNum">     271 </span>            :         uint64_t inode; /**&lt; Inode. */
+<span class="lineNum">     272 </span>            :         uint64_t physical; /**&lt; Physical offset of the file. */
+<span class="lineNum">     273 </span>            :         data_off_t size; /**&lt; Size of the file. */
+<span class="lineNum">     274 </span>            :         struct snapraid_block* blockvec; /**&lt; All the blocks of the file. */
+<span class="lineNum">     275 </span>            :         int mtime_nsec; /**&lt; Modification time nanoseconds. In the range 0 &lt;= x &lt; 1,000,000,000, or STAT_NSEC_INVALID if not present. */
+<span class="lineNum">     276 </span>            :         block_off_t blockmax; /**&lt; Number of blocks. */
+<span class="lineNum">     277 </span>            :         unsigned flag; /**&lt; FILE_IS_* flags. */
+<span class="lineNum">     278 </span>            :         char* sub; /**&lt; Sub path of the file. Without the disk dir. The disk is implicit. */
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            :         /* nodes for data structures */
+<span class="lineNum">     281 </span>            :         tommy_node nodelist;
+<span class="lineNum">     282 </span>            :         tommy_hashdyn_node nodeset;
+<span class="lineNum">     283 </span>            :         tommy_hashdyn_node pathset;
+<span class="lineNum">     284 </span>            :         tommy_hashdyn_node stampset;
+<span class="lineNum">     285 </span>            : };
+<span class="lineNum">     286 </span>            : 
+<span class="lineNum">     287 </span>            : /**
+<span class="lineNum">     288 </span>            :  * Symbolic Link.
+<span class="lineNum">     289 </span>            :  */
+<span class="lineNum">     290 </span>            : struct snapraid_link {
+<span class="lineNum">     291 </span>            :         unsigned flag; /**&lt; FILE_IS_* flags. */
+<span class="lineNum">     292 </span>            :         char* sub; /**&lt; Sub path of the file. Without the disk dir. The disk is implicit. */
+<span class="lineNum">     293 </span>            :         char* linkto; /**&lt; Link to. */
 <span class="lineNum">     294 </span>            : 
-<span class="lineNum">     295 </span>            : /**
-<span class="lineNum">     296 </span>            :  * Dir.
-<span class="lineNum">     297 </span>            :  */
-<span class="lineNum">     298 </span>            : struct snapraid_dir {
-<span class="lineNum">     299 </span>            :         unsigned flag; /**&lt; FILE_IS_* flags. */
-<span class="lineNum">     300 </span>            :         char* sub; /**&lt; Sub path of the file. Without the disk dir. The disk is implicit. */
-<span class="lineNum">     301 </span>            : 
-<span class="lineNum">     302 </span>            :         /* nodes for data structures */
-<span class="lineNum">     303 </span>            :         tommy_node nodelist;
-<span class="lineNum">     304 </span>            :         tommy_hashdyn_node nodeset;
-<span class="lineNum">     305 </span>            : };
+<span class="lineNum">     295 </span>            :         /* nodes for data structures */
+<span class="lineNum">     296 </span>            :         tommy_node nodelist;
+<span class="lineNum">     297 </span>            :         tommy_hashdyn_node nodeset;
+<span class="lineNum">     298 </span>            : };
+<span class="lineNum">     299 </span>            : 
+<span class="lineNum">     300 </span>            : /**
+<span class="lineNum">     301 </span>            :  * Dir.
+<span class="lineNum">     302 </span>            :  */
+<span class="lineNum">     303 </span>            : struct snapraid_dir {
+<span class="lineNum">     304 </span>            :         unsigned flag; /**&lt; FILE_IS_* flags. */
+<span class="lineNum">     305 </span>            :         char* sub; /**&lt; Sub path of the file. Without the disk dir. The disk is implicit. */
 <span class="lineNum">     306 </span>            : 
-<span class="lineNum">     307 </span>            : /**
-<span class="lineNum">     308 </span>            :  * Chunk.
-<span class="lineNum">     309 </span>            :  *
-<span class="lineNum">     310 </span>            :  * A chunk represents a fragment of a file mapped into the parity.
-<span class="lineNum">     311 </span>            :  */
-<span class="lineNum">     312 </span>            : struct snapraid_chunk {
-<span class="lineNum">     313 </span>            :         struct snapraid_file* file; /**&lt; File containing this chunk. */
-<span class="lineNum">     314 </span>            :         block_off_t parity_pos; /**&lt; Parity position. */
-<span class="lineNum">     315 </span>            :         block_off_t file_pos; /**&lt; Position in the file. */
-<span class="lineNum">     316 </span>            :         block_off_t count; /**&lt; Number of sequential blocks in the file and parity. */
-<span class="lineNum">     317 </span>            :         tommy_tree_node parity_node; /**&lt; Tree sorted by &lt;parity_pos&gt;. */
-<span class="lineNum">     318 </span>            :         tommy_tree_node file_node; /**&lt; Tree sorter by &lt;file,file_pos&gt;. */
-<span class="lineNum">     319 </span>            : };
-<span class="lineNum">     320 </span>            : 
-<span class="lineNum">     321 </span>            : /**
-<span class="lineNum">     322 </span>            :  * Disk.
-<span class="lineNum">     323 </span>            :  */
-<span class="lineNum">     324 </span>            : struct snapraid_disk {
-<span class="lineNum">     325 </span>            :         char name[PATH_MAX]; /**&lt; Name of the disk. */
-<span class="lineNum">     326 </span>            :         char dir[PATH_MAX]; /**&lt; Mount point of the disk. It always terminates with /. */
-<span class="lineNum">     327 </span>            :         char smartctl[PATH_MAX]; /**&lt; Custom command for smartctl. Empty means auto. */
-<span class="lineNum">     328 </span>            :         char uuid[UUID_MAX]; /**&lt; UUID of the disk. */
-<span class="lineNum">     329 </span>            : 
-<span class="lineNum">     330 </span>            :         uint64_t device; /**&lt; Device identifier. */
-<span class="lineNum">     331 </span>            :         uint64_t tick; /**&lt; Usage time of the disk. */
-<span class="lineNum">     332 </span>            :         block_off_t total_blocks; /**&lt; Number of total blocks. */
-<span class="lineNum">     333 </span>            :         block_off_t free_blocks; /**&lt; Number of free blocks at the last sync. */
+<span class="lineNum">     307 </span>            :         /* nodes for data structures */
+<span class="lineNum">     308 </span>            :         tommy_node nodelist;
+<span class="lineNum">     309 </span>            :         tommy_hashdyn_node nodeset;
+<span class="lineNum">     310 </span>            : };
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span>            : /**
+<span class="lineNum">     313 </span>            :  * Chunk.
+<span class="lineNum">     314 </span>            :  *
+<span class="lineNum">     315 </span>            :  * A extent represents a fragment of a file mapped into the parity.
+<span class="lineNum">     316 </span>            :  */
+<span class="lineNum">     317 </span>            : struct snapraid_extent {
+<span class="lineNum">     318 </span>            :         struct snapraid_file* file; /**&lt; File containing this extent. */
+<span class="lineNum">     319 </span>            :         block_off_t parity_pos; /**&lt; Parity position. */
+<span class="lineNum">     320 </span>            :         block_off_t file_pos; /**&lt; Position in the file. */
+<span class="lineNum">     321 </span>            :         block_off_t count; /**&lt; Number of sequential blocks in the file and parity. */
+<span class="lineNum">     322 </span>            :         tommy_tree_node parity_node; /**&lt; Tree sorted by &lt;parity_pos&gt;. */
+<span class="lineNum">     323 </span>            :         tommy_tree_node file_node; /**&lt; Tree sorter by &lt;file,file_pos&gt;. */
+<span class="lineNum">     324 </span>            : };
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span>            : /**
+<span class="lineNum">     327 </span>            :  * Disk.
+<span class="lineNum">     328 </span>            :  */
+<span class="lineNum">     329 </span>            : struct snapraid_disk {
+<span class="lineNum">     330 </span>            :         char name[PATH_MAX]; /**&lt; Name of the disk. */
+<span class="lineNum">     331 </span>            :         char dir[PATH_MAX]; /**&lt; Mount point of the disk. It always terminates with /. */
+<span class="lineNum">     332 </span>            :         char smartctl[PATH_MAX]; /**&lt; Custom command for smartctl. Empty means auto. */
+<span class="lineNum">     333 </span>            :         char uuid[UUID_MAX]; /**&lt; UUID of the disk. */
 <span class="lineNum">     334 </span>            : 
-<span class="lineNum">     335 </span>            :         /**
-<span class="lineNum">     336 </span>            :          * First free searching block.
-<span class="lineNum">     337 </span>            :          * Note that it doesn't necessarily point at the first free block,
-<span class="lineNum">     338 </span>            :          * but it just tell you that no free block is present before this position.
-<span class="lineNum">     339 </span>            :          */
-<span class="lineNum">     340 </span>            :         block_off_t first_free_block;
-<span class="lineNum">     341 </span>            : 
-<span class="lineNum">     342 </span>            :         int has_volatile_inodes; /**&lt; If the underline file-system has not persistent inodes. */
-<span class="lineNum">     343 </span>            :         int has_unreliable_physical; /**&lt; If the physical offset of files has duplicates. */
-<span class="lineNum">     344 </span>            :         int has_different_uuid; /**&lt; If the disk has a different UUID, meaning that it is not the same file-system. */
-<span class="lineNum">     345 </span>            :         int has_unsupported_uuid; /**&lt; If the disk doesn't report UUID, meaning it's not supported. */
-<span class="lineNum">     346 </span>            :         int had_empty_uuid; /**&lt; If the disk had an empty UUID, meaning that it's a new disk. */
-<span class="lineNum">     347 </span>            :         int mapping_idx; /**&lt; Index in the mapping vector. Used only as buffer when writing the content file. */
-<span class="lineNum">     348 </span>            :         int skip_access; /**&lt; If the disk is inaccessible and it should be skipped. */
+<span class="lineNum">     335 </span>            :         uint64_t device; /**&lt; Device identifier. */
+<span class="lineNum">     336 </span>            :         block_off_t total_blocks; /**&lt; Number of total blocks. */
+<span class="lineNum">     337 </span>            :         block_off_t free_blocks; /**&lt; Number of free blocks at the last sync. */
+<span class="lineNum">     338 </span>            : 
+<span class="lineNum">     339 </span>            :         uint64_t tick; /**&lt; Usage time. */
+<span class="lineNum">     340 </span>            :         uint64_t progress_tick[PROGRESS_MAX]; /**&lt; Last ticks of progress. */
+<span class="lineNum">     341 </span>            :         unsigned cached; /**&lt; Number of IO blocks cached. */
+<span class="lineNum">     342 </span>            : 
+<span class="lineNum">     343 </span>            :         /**
+<span class="lineNum">     344 </span>            :          * First free searching block.
+<span class="lineNum">     345 </span>            :          * Note that it doesn't necessarily point at the first free block,
+<span class="lineNum">     346 </span>            :          * but it just tell you that no free block is present before this position.
+<span class="lineNum">     347 </span>            :          */
+<span class="lineNum">     348 </span>            :         block_off_t first_free_block;
 <span class="lineNum">     349 </span>            : 
-<span class="lineNum">     350 </span>            :         /**
-<span class="lineNum">     351 </span>            :          * Mapping of chunks in the parity.
-<span class="lineNum">     352 </span>            :          * Sorted by &lt;parity_pos&gt; and by &lt;file,file_pos&gt;
-<span class="lineNum">     353 </span>            :          */
-<span class="lineNum">     354 </span>            :         tommy_tree fs_parity;
-<span class="lineNum">     355 </span>            :         tommy_tree fs_file;
-<span class="lineNum">     356 </span>            : 
-<span class="lineNum">     357 </span>            :         /**
-<span class="lineNum">     358 </span>            :          * Last chunk we accessed.
-<span class="lineNum">     359 </span>            :          * It's used to optimize access of sequential blocks.
-<span class="lineNum">     360 </span>            :          */
-<span class="lineNum">     361 </span>            :         struct snapraid_chunk* fs_last;
-<span class="lineNum">     362 </span>            : 
-<span class="lineNum">     363 </span>            :         /**
-<span class="lineNum">     364 </span>            :          * List of all the snapraid_file for the disk.
-<span class="lineNum">     365 </span>            :          */
-<span class="lineNum">     366 </span>            :         tommy_list filelist;
-<span class="lineNum">     367 </span>            : 
-<span class="lineNum">     368 </span>            :         /**
-<span class="lineNum">     369 </span>            :          * List of all the deleted file for the disk.
-<span class="lineNum">     370 </span>            :          *
-<span class="lineNum">     371 </span>            :          * These files are kept allocated, because the blocks are still referenced in
-<span class="lineNum">     372 </span>            :          * the ::blockarr.
-<span class="lineNum">     373 </span>            :          */
-<span class="lineNum">     374 </span>            :         tommy_list deletedlist;
-<span class="lineNum">     375 </span>            : 
-<span class="lineNum">     376 </span>            :         tommy_hashdyn inodeset; /**&lt; Hashtable by inode of all the files. */
-<span class="lineNum">     377 </span>            :         tommy_hashdyn pathset; /**&lt; Hashtable by path of all the files. */
-<span class="lineNum">     378 </span>            :         tommy_hashdyn stampset; /**&lt; Hashtable by stamp (size and time) of all the files. */
-<span class="lineNum">     379 </span>            :         tommy_list linklist; /**&lt; List of all the links. */
-<span class="lineNum">     380 </span>            :         tommy_hashdyn linkset; /**&lt; Hashtable by name of all the links. */
-<span class="lineNum">     381 </span>            :         tommy_list dirlist; /**&lt; List of all the dirs. */
-<span class="lineNum">     382 </span>            :         tommy_hashdyn dirset; /**&lt; Hashtable by name of all the dirs. */
+<span class="lineNum">     350 </span>            :         int has_volatile_inodes; /**&lt; If the underline file-system has not persistent inodes. */
+<span class="lineNum">     351 </span>            :         int has_unreliable_physical; /**&lt; If the physical offset of files has duplicates. */
+<span class="lineNum">     352 </span>            :         int has_different_uuid; /**&lt; If the disk has a different UUID, meaning that it is not the same file-system. */
+<span class="lineNum">     353 </span>            :         int has_unsupported_uuid; /**&lt; If the disk doesn't report UUID, meaning it's not supported. */
+<span class="lineNum">     354 </span>            :         int had_empty_uuid; /**&lt; If the disk had an empty UUID, meaning that it's a new disk. */
+<span class="lineNum">     355 </span>            :         int mapping_idx; /**&lt; Index in the mapping vector. Used only as buffer when writing the content file. */
+<span class="lineNum">     356 </span>            :         int skip_access; /**&lt; If the disk is inaccessible and it should be skipped. */
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span>            : #if HAVE_PTHREAD
+<span class="lineNum">     359 </span>            :         /**
+<span class="lineNum">     360 </span>            :          * Mutex for protecting the filesystem structure.
+<span class="lineNum">     361 </span>            :          *
+<span class="lineNum">     362 </span>            :          * Specifically, this protects ::fs_parity, ::fs_file, and ::fs_last,
+<span class="lineNum">     363 </span>            :          * meaning that it protects only extents.
+<span class="lineNum">     364 </span>            :          *
+<span class="lineNum">     365 </span>            :          * Files, links and dirs are not protected as they are not expected to
+<span class="lineNum">     366 </span>            :          * change during multithread processing.
+<span class="lineNum">     367 </span>            :          */
+<span class="lineNum">     368 </span>            :         pthread_mutex_t fs_mutex;
+<span class="lineNum">     369 </span>            : #endif
+<span class="lineNum">     370 </span>            : 
+<span class="lineNum">     371 </span>            :         /**
+<span class="lineNum">     372 </span>            :          * Mapping of extents in the parity.
+<span class="lineNum">     373 </span>            :          * Sorted by &lt;parity_pos&gt; and by &lt;file,file_pos&gt;
+<span class="lineNum">     374 </span>            :          */
+<span class="lineNum">     375 </span>            :         tommy_tree fs_parity;
+<span class="lineNum">     376 </span>            :         tommy_tree fs_file;
+<span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span>            :         /**
+<span class="lineNum">     379 </span>            :          * Last extent we accessed.
+<span class="lineNum">     380 </span>            :          * It's used to optimize access of sequential blocks.
+<span class="lineNum">     381 </span>            :          */
+<span class="lineNum">     382 </span>            :         struct snapraid_extent* fs_last;
 <span class="lineNum">     383 </span>            : 
-<span class="lineNum">     384 </span>            :         /* nodes for data structures */
-<span class="lineNum">     385 </span>            :         tommy_node node;
-<span class="lineNum">     386 </span>            : };
-<span class="lineNum">     387 </span>            : 
-<span class="lineNum">     388 </span>            : /**
-<span class="lineNum">     389 </span>            :  * Disk mapping.
-<span class="lineNum">     390 </span>            :  */
-<span class="lineNum">     391 </span>            : struct snapraid_map {
-<span class="lineNum">     392 </span>            :         char name[PATH_MAX]; /**&lt; Name of the disk. */
-<span class="lineNum">     393 </span>            :         char uuid[UUID_MAX]; /**&lt; UUID of the disk. Empty if unknown. */
-<span class="lineNum">     394 </span>            :         block_off_t total_blocks; /**&lt; Number of total blocks. */
-<span class="lineNum">     395 </span>            :         block_off_t free_blocks; /**&lt; Number of free blocks at last 'sync'. */
-<span class="lineNum">     396 </span>            :         unsigned position; /**&lt; Position of the disk in the parity. */
-<span class="lineNum">     397 </span>            : 
-<span class="lineNum">     398 </span>            :         /* nodes for data structures */
-<span class="lineNum">     399 </span>            :         tommy_node node;
-<span class="lineNum">     400 </span>            : };
-<span class="lineNum">     401 </span>            : 
-<span class="lineNum">     402 </span>            : /**
-<span class="lineNum">     403 </span>            :  * Parity.
-<span class="lineNum">     404 </span>            :  */
-<span class="lineNum">     405 </span>            : struct snapraid_parity {
-<span class="lineNum">     406 </span>            :         char path[PATH_MAX]; /**&lt; Path of the parity file. */
-<span class="lineNum">     407 </span>            :         char uuid[UUID_MAX]; /**&lt; UUID of the disk. Empty if unknown. */
-<span class="lineNum">     408 </span>            :         char smartctl[PATH_MAX]; /**&lt; Custom command for smartctl. Empty means auto. */
-<span class="lineNum">     409 </span>            :         uint64_t device; /**&lt; Device identifier of the parity. */
-<span class="lineNum">     410 </span>            :         block_off_t total_blocks; /**&lt; Number of total blocks. */
-<span class="lineNum">     411 </span>            :         block_off_t free_blocks; /**&lt; Number of free blocks at the last sync. */
-<span class="lineNum">     412 </span>            :         int skip_access; /**&lt; If the disk is inaccessible and it should be skipped. */
-<span class="lineNum">     413 </span>            :         int is_excluded; /**&lt; If the parity is excluded by disk filter. */
-<span class="lineNum">     414 </span>            : 
-<span class="lineNum">     415 </span>            :         /**
-<span class="lineNum">     416 </span>            :          * Cumulative time used for parity disks.
-<span class="lineNum">     417 </span>            :          */
-<span class="lineNum">     418 </span>            :         uint64_t tick;
-<span class="lineNum">     419 </span>            : };
-<span class="lineNum">     420 </span>            : 
-<span class="lineNum">     421 </span>            : /**
-<span class="lineNum">     422 </span>            :  * Info.
-<span class="lineNum">     423 </span>            :  */
-<span class="lineNum">     424 </span>            : typedef uint32_t snapraid_info;
-<span class="lineNum">     425 </span>            : 
-<span class="lineNum">     426 </span>            : /**
-<span class="lineNum">     427 </span>            :  * Allocate a content.
-<span class="lineNum">     428 </span>            :  */
-<span class="lineNum">     429 </span>            : struct snapraid_content* content_alloc(const char* path, uint64_t dev);
-<span class="lineNum">     430 </span>            : 
-<span class="lineNum">     431 </span>            : /**
-<span class="lineNum">     432 </span>            :  * Deallocate a content.
-<span class="lineNum">     433 </span>            :  */
-<span class="lineNum">     434 </span>            : void content_free(struct snapraid_content* content);
-<span class="lineNum">     435 </span>            : 
-<span class="lineNum">     436 </span>            : /**
-<span class="lineNum">     437 </span>            :  * Allocate a filter pattern for files and directories.
-<span class="lineNum">     438 </span>            :  */
-<span class="lineNum">     439 </span>            : struct snapraid_filter* filter_alloc_file(int is_include, const char* pattern);
-<span class="lineNum">     440 </span>            : 
-<span class="lineNum">     441 </span>            : /**
-<span class="lineNum">     442 </span>            :  * Allocate a filter pattern for disks.
-<span class="lineNum">     443 </span>            :  */
-<span class="lineNum">     444 </span>            : struct snapraid_filter* filter_alloc_disk(int is_include, const char* pattern);
-<span class="lineNum">     445 </span>            : 
-<span class="lineNum">     446 </span>            : /**
-<span class="lineNum">     447 </span>            :  * Deallocate an exclusion.
-<span class="lineNum">     448 </span>            :  */
-<span class="lineNum">     449 </span>            : void filter_free(struct snapraid_filter* filter);
-<span class="lineNum">     450 </span>            : 
-<span class="lineNum">     451 </span>            : /**
-<span class="lineNum">     452 </span>            :  * Filter type description.
-<span class="lineNum">     453 </span>            :  */
-<span class="lineNum">     454 </span>            : const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_size);
-<span class="lineNum">     455 </span>            : 
-<span class="lineNum">     456 </span>            : /**
-<span class="lineNum">     457 </span>            :  * Filter hidden files.
-<a name="458"><span class="lineNum">     458 </span>            :  * Return !=0 if it matches and it should be excluded.</a>
+<span class="lineNum">     384 </span>            :         /**
+<span class="lineNum">     385 </span>            :          * List of all the snapraid_file for the disk.
+<span class="lineNum">     386 </span>            :          */
+<span class="lineNum">     387 </span>            :         tommy_list filelist;
+<span class="lineNum">     388 </span>            : 
+<span class="lineNum">     389 </span>            :         /**
+<span class="lineNum">     390 </span>            :          * List of all the deleted file for the disk.
+<span class="lineNum">     391 </span>            :          *
+<span class="lineNum">     392 </span>            :          * These files are kept allocated, because the blocks are still referenced in
+<span class="lineNum">     393 </span>            :          * the ::blockarr.
+<span class="lineNum">     394 </span>            :          */
+<span class="lineNum">     395 </span>            :         tommy_list deletedlist;
+<span class="lineNum">     396 </span>            : 
+<span class="lineNum">     397 </span>            :         tommy_hashdyn inodeset; /**&lt; Hashtable by inode of all the files. */
+<span class="lineNum">     398 </span>            :         tommy_hashdyn pathset; /**&lt; Hashtable by path of all the files. */
+<span class="lineNum">     399 </span>            :         tommy_hashdyn stampset; /**&lt; Hashtable by stamp (size and time) of all the files. */
+<span class="lineNum">     400 </span>            :         tommy_list linklist; /**&lt; List of all the links. */
+<span class="lineNum">     401 </span>            :         tommy_hashdyn linkset; /**&lt; Hashtable by name of all the links. */
+<span class="lineNum">     402 </span>            :         tommy_list dirlist; /**&lt; List of all the empty dirs. */
+<span class="lineNum">     403 </span>            :         tommy_hashdyn dirset; /**&lt; Hashtable by name of all the empty dirs. */
+<span class="lineNum">     404 </span>            : 
+<span class="lineNum">     405 </span>            :         /* nodes for data structures */
+<span class="lineNum">     406 </span>            :         tommy_node node;
+<span class="lineNum">     407 </span>            : };
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            : /**
+<span class="lineNum">     410 </span>            :  * Disk mapping.
+<span class="lineNum">     411 </span>            :  */
+<span class="lineNum">     412 </span>            : struct snapraid_map {
+<span class="lineNum">     413 </span>            :         char name[PATH_MAX]; /**&lt; Name of the disk. */
+<span class="lineNum">     414 </span>            :         char uuid[UUID_MAX]; /**&lt; UUID of the disk. Empty if unknown. */
+<span class="lineNum">     415 </span>            :         block_off_t total_blocks; /**&lt; Number of total blocks. */
+<span class="lineNum">     416 </span>            :         block_off_t free_blocks; /**&lt; Number of free blocks at last 'sync'. */
+<span class="lineNum">     417 </span>            :         unsigned position; /**&lt; Position of the disk in the parity. */
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span>            :         /* nodes for data structures */
+<span class="lineNum">     420 </span>            :         tommy_node node;
+<span class="lineNum">     421 </span>            : };
+<span class="lineNum">     422 </span>            : 
+<span class="lineNum">     423 </span>            : /**
+<span class="lineNum">     424 </span>            :  * Max number of parity split.
+<span class="lineNum">     425 </span>            :  */
+<span class="lineNum">     426 </span>            : #define SPLIT_MAX 8
+<span class="lineNum">     427 </span>            : 
+<span class="lineNum">     428 </span>            : /**
+<span class="lineNum">     429 </span>            :  * Invalid parity size.
+<span class="lineNum">     430 </span>            :  *
+<span class="lineNum">     431 </span>            :  * This value is used to identify new parities,
+<span class="lineNum">     432 </span>            :  * like when you alter the configuration adding
+<span class="lineNum">     433 </span>            :  * a new parity level, creating it with 'fix'.
+<span class="lineNum">     434 </span>            :  * Given that 'fix' doesn't write the content file,
+<span class="lineNum">     435 </span>            :  * the new size will be written only at the next
+<span class="lineNum">     436 </span>            :  * 'sync'.
+<span class="lineNum">     437 </span>            :  */
+<span class="lineNum">     438 </span>            : #define PARITY_SIZE_INVALID -1LL
+<span class="lineNum">     439 </span>            : 
+<span class="lineNum">     440 </span>            : /**
+<span class="lineNum">     441 </span>            :  * Parity split.
+<span class="lineNum">     442 </span>            :  */
+<span class="lineNum">     443 </span>            : struct snapraid_split {
+<span class="lineNum">     444 </span>            :         char path[PATH_MAX]; /**&lt; Path of the parity file. */
+<span class="lineNum">     445 </span>            :         char uuid[UUID_MAX]; /**&lt; UUID of the disk. Empty if unknown. */
+<span class="lineNum">     446 </span>            : 
+<span class="lineNum">     447 </span>            :         /**
+<span class="lineNum">     448 </span>            :          * Size of the parity split.
+<span class="lineNum">     449 </span>            :          * Only the latest not zero size is allowed to grow.
+<span class="lineNum">     450 </span>            :          * If the value is unset, it's PARITY_SIZE_INVALID.
+<span class="lineNum">     451 </span>            :          */
+<span class="lineNum">     452 </span>            :         data_off_t size;
+<span class="lineNum">     453 </span>            : 
+<span class="lineNum">     454 </span>            :         uint64_t device; /**&lt; Device identifier of the parity. */
+<span class="lineNum">     455 </span>            : };
+<span class="lineNum">     456 </span>            : 
+<span class="lineNum">     457 </span>            : /**
+<span class="lineNum">     458 </span>            :  * Parity.
 <span class="lineNum">     459 </span>            :  */
-<span class="lineNum">     460 </span><span class="lineCov">    3114995 : static inline int filter_hidden(int enable, struct dirent* dd)</span>
-<span class="lineNum">     461 </span>            : {
-<span class="lineNum">     462 </span><span class="lineCov">    3114995 :         if (enable &amp;&amp; dirent_hidden(dd)) {</span>
-<span class="lineNum">     463 </span><span class="lineNoCov">          0 :                 return 1; /* filter out */</span>
-<span class="lineNum">     464 </span>            :         }
-<span class="lineNum">     465 </span>            : 
-<span class="lineNum">     466 </span><span class="lineCov">    3114995 :         return 0;</span>
-<span class="lineNum">     467 </span>            : }
-<span class="lineNum">     468 </span>            : 
-<span class="lineNum">     469 </span>            : /**
-<span class="lineNum">     470 </span>            :  * Filter a path using a list of filters.
-<span class="lineNum">     471 </span>            :  * For each element of the path all the filters are applied, until the first one that matches.
-<span class="lineNum">     472 </span>            :  * Return !=0 if it should be excluded.
-<span class="lineNum">     473 </span>            :  */
-<span class="lineNum">     474 </span>            : int filter_path(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
-<span class="lineNum">     475 </span>            : 
-<span class="lineNum">     476 </span>            : /**
-<span class="lineNum">     477 </span>            :  * Filter a file/link/dir if missing.
-<span class="lineNum">     478 </span>            :  * This call imply a disk check for the file presence.
-<span class="lineNum">     479 </span>            :  * Return !=0 if the file is present and it should be excluded.
+<span class="lineNum">     460 </span>            : struct snapraid_parity {
+<span class="lineNum">     461 </span>            :         struct snapraid_split split_map[SPLIT_MAX]; /**&lt; Parity splits. */
+<span class="lineNum">     462 </span>            :         unsigned split_mac; /**&lt; Number of parity splits. */
+<span class="lineNum">     463 </span>            :         char smartctl[PATH_MAX]; /**&lt; Custom command for smartctl. Empty means auto. */
+<span class="lineNum">     464 </span>            :         block_off_t total_blocks; /**&lt; Number of total blocks. */
+<span class="lineNum">     465 </span>            :         block_off_t free_blocks; /**&lt; Number of free blocks at the last sync. */
+<span class="lineNum">     466 </span>            :         int is_excluded; /**&lt; If the parity is excluded by disk filter. */
+<span class="lineNum">     467 </span>            :         int skip_access; /**&lt; If at least one of the parity disk is inaccessible and it should be skipped. */
+<span class="lineNum">     468 </span>            :         uint64_t tick; /**&lt; Usage time. */
+<span class="lineNum">     469 </span>            :         uint64_t progress_tick[PROGRESS_MAX]; /**&lt; Last cpu ticks of progress. */
+<span class="lineNum">     470 </span>            :         unsigned cached; /**&lt; Number of IO blocks cached. */
+<span class="lineNum">     471 </span>            : };
+<span class="lineNum">     472 </span>            : 
+<span class="lineNum">     473 </span>            : /**
+<span class="lineNum">     474 </span>            :  * Info.
+<span class="lineNum">     475 </span>            :  */
+<span class="lineNum">     476 </span>            : typedef uint32_t snapraid_info;
+<span class="lineNum">     477 </span>            : 
+<span class="lineNum">     478 </span>            : /**
+<span class="lineNum">     479 </span>            :  * Allocate a content.
 <span class="lineNum">     480 </span>            :  */
-<span class="lineNum">     481 </span>            : int filter_existence(int filter_missing, const char* dir, const char* sub);
+<span class="lineNum">     481 </span>            : struct snapraid_content* content_alloc(const char* path, uint64_t dev);
 <span class="lineNum">     482 </span>            : 
 <span class="lineNum">     483 </span>            : /**
-<span class="lineNum">     484 </span>            :  * Filter a file if bad.
-<span class="lineNum">     485 </span>            :  * Return !=0 if the file is correct and it should be excluded.
-<span class="lineNum">     486 </span>            :  */
-<span class="lineNum">     487 </span>            : int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_file* file);
-<span class="lineNum">     488 </span>            : 
-<span class="lineNum">     489 </span>            : /**
-<span class="lineNum">     490 </span>            :  * Filter a dir using a list of filters.
-<span class="lineNum">     491 </span>            :  * For each element of the path all the filters are applied, until the first one that matches.
-<span class="lineNum">     492 </span>            :  * Return !=0 if should be excluded.
-<span class="lineNum">     493 </span>            :  */
-<span class="lineNum">     494 </span>            : int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
-<span class="lineNum">     495 </span>            : 
-<span class="lineNum">     496 </span>            : /**
-<span class="lineNum">     497 </span>            :  * Filter a path if it's a content file.
-<span class="lineNum">     498 </span>            :  * Return !=0 if should be excluded.
-<span class="lineNum">     499 </span>            :  */
-<span class="lineNum">     500 </span>            : int filter_content(tommy_list* contentlist, const char* path);
-<span class="lineNum">     501 </span>            : 
-<span class="lineNum">     502 </span>            : /**
-<span class="lineNum">     503 </span>            :  * Check if the specified hash is invalid.
-<span class="lineNum">     504 </span>            :  *
-<a name="505"><span class="lineNum">     505 </span>            :  * An invalid hash is represented with all bytes at 0x00.</a>
-<span class="lineNum">     506 </span>            :  */
-<span class="lineNum">     507 </span><span class="lineCov">     759088 : static inline int hash_is_invalid(const unsigned char* hash)</span>
-<span class="lineNum">     508 </span>            : {
-<span class="lineNum">     509 </span>            :         unsigned i;
-<span class="lineNum">     510 </span>            : 
-<span class="lineNum">     511 </span><span class="lineCov">    1178874 :         for (i = 0; i &lt; HASH_SIZE; ++i)</span>
-<span class="lineNum">     512 </span><span class="lineCov">    1152810 :                 if (hash[i] != 0x00)</span>
-<span class="lineNum">     513 </span><span class="lineCov">     733024 :                         return 0;</span>
-<span class="lineNum">     514 </span>            : 
-<span class="lineNum">     515 </span><span class="lineCov">      26064 :         return 1;</span>
-<span class="lineNum">     516 </span>            : }
+<span class="lineNum">     484 </span>            :  * Deallocate a content.
+<span class="lineNum">     485 </span>            :  */
+<span class="lineNum">     486 </span>            : void content_free(struct snapraid_content* content);
+<span class="lineNum">     487 </span>            : 
+<span class="lineNum">     488 </span>            : /**
+<span class="lineNum">     489 </span>            :  * Allocate a filter pattern for files and directories.
+<span class="lineNum">     490 </span>            :  */
+<span class="lineNum">     491 </span>            : struct snapraid_filter* filter_alloc_file(int is_include, const char* pattern);
+<span class="lineNum">     492 </span>            : 
+<span class="lineNum">     493 </span>            : /**
+<span class="lineNum">     494 </span>            :  * Allocate a filter pattern for disks.
+<span class="lineNum">     495 </span>            :  */
+<span class="lineNum">     496 </span>            : struct snapraid_filter* filter_alloc_disk(int is_include, const char* pattern);
+<span class="lineNum">     497 </span>            : 
+<span class="lineNum">     498 </span>            : /**
+<span class="lineNum">     499 </span>            :  * Deallocate an exclusion.
+<span class="lineNum">     500 </span>            :  */
+<span class="lineNum">     501 </span>            : void filter_free(struct snapraid_filter* filter);
+<span class="lineNum">     502 </span>            : 
+<span class="lineNum">     503 </span>            : /**
+<span class="lineNum">     504 </span>            :  * Filter type description.
+<span class="lineNum">     505 </span>            :  */
+<span class="lineNum">     506 </span>            : const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_size);
+<span class="lineNum">     507 </span>            : 
+<span class="lineNum">     508 </span>            : /**
+<span class="lineNum">     509 </span>            :  * Filter hidden files.
+<a name="510"><span class="lineNum">     510 </span>            :  * Return !=0 if it matches and it should be excluded.</a>
+<span class="lineNum">     511 </span>            :  */
+<span class="lineNum">     512 </span><span class="lineCov">    3173426 : static inline int filter_hidden(int enable, struct dirent* dd)</span>
+<span class="lineNum">     513 </span>            : {
+<span class="lineNum">     514 </span><span class="lineCov">    3173426 :         if (enable &amp;&amp; dirent_hidden(dd)) {</span>
+<span class="lineNum">     515 </span><span class="lineNoCov">          0 :                 return 1; /* filter out */</span>
+<span class="lineNum">     516 </span>            :         }
 <span class="lineNum">     517 </span>            : 
-<span class="lineNum">     518 </span>            : /**
-<span class="lineNum">     519 </span>            :  * Check if the specified hash represent the zero block.
-<span class="lineNum">     520 </span>            :  *
-<a name="521"><span class="lineNum">     521 </span>            :  * A zero hash is represented with all bytes at 0xFF.</a>
-<span class="lineNum">     522 </span>            :  */
-<span class="lineNum">     523 </span><span class="lineCov">     760550 : static inline int hash_is_zero(const unsigned char* hash)</span>
-<span class="lineNum">     524 </span>            : {
-<span class="lineNum">     525 </span>            :         unsigned i;
-<span class="lineNum">     526 </span>            : 
-<span class="lineNum">     527 </span><span class="lineCov">     994989 :         for (i = 0; i &lt; HASH_SIZE; ++i)</span>
-<span class="lineNum">     528 </span><span class="lineCov">     980520 :                 if (hash[i] != 0xFF)</span>
-<span class="lineNum">     529 </span><span class="lineCov">     746081 :                         return 0;</span>
-<span class="lineNum">     530 </span>            : 
-<span class="lineNum">     531 </span><span class="lineCov">      14469 :         return 1;</span>
-<span class="lineNum">     532 </span>            : }
-<span class="lineNum">     533 </span>            : 
-<span class="lineNum">     534 </span>            : /**
-<a name="535"><span class="lineNum">     535 </span>            :  * Check if the specified hash is a real hash.</a>
-<span class="lineNum">     536 </span>            :  */
-<span class="lineNum">     537 </span><span class="lineCov">      44212 : static inline int hash_is_real(const unsigned char* hash)</span>
-<span class="lineNum">     538 </span>            : {
-<span class="lineNum">     539 </span><span class="lineCov">      44212 :         return !hash_is_zero(hash) &amp;&amp; !hash_is_invalid(hash);</span>
-<span class="lineNum">     540 </span>            : }
-<span class="lineNum">     541 </span>            : 
-<span class="lineNum">     542 </span>            : /**
-<a name="543"><span class="lineNum">     543 </span>            :  * Set the hash to the special INVALID value.</a>
-<span class="lineNum">     544 </span>            :  */
-<span class="lineNum">     545 </span><span class="lineCov">    9042162 : static inline void hash_invalid_set(unsigned char* hash)</span>
-<span class="lineNum">     546 </span>            : {
-<span class="lineNum">     547 </span><span class="lineCov">    9042162 :         memset(hash, 0x00, HASH_SIZE);</span>
-<span class="lineNum">     548 </span><span class="lineCov">    9042162 : }</span>
-<span class="lineNum">     549 </span>            : 
-<span class="lineNum">     550 </span>            : /**
-<a name="551"><span class="lineNum">     551 </span>            :  * Set the hash to the special ZERO value.</a>
-<span class="lineNum">     552 </span>            :  */
-<span class="lineNum">     553 </span><span class="lineCov">     115543 : static inline void hash_zero_set(unsigned char* hash)</span>
-<span class="lineNum">     554 </span>            : {
-<span class="lineNum">     555 </span><span class="lineCov">     115543 :         memset(hash, 0xFF, HASH_SIZE);</span>
-<span class="lineNum">     556 </span><span class="lineCov">     115543 : }</span>
-<span class="lineNum">     557 </span>            : 
-<span class="lineNum">     558 </span>            : /**
-<span class="lineNum">     559 </span>            :  * Get the state of the block.
-<span class="lineNum">     560 </span>            :  *
-<span class="lineNum">     561 </span>            :  * For this function, it's allowed to pass a NULL block
-<a name="562"><span class="lineNum">     562 </span>            :  * pointer than results in the BLOCK_STATE_EMPTY state.</a>
-<span class="lineNum">     563 </span>            :  */
-<span class="lineNum">     564 </span><span class="lineCov">   49924589 : static inline unsigned block_state_get(const struct snapraid_block* block)</span>
-<span class="lineNum">     565 </span>            : {
-<span class="lineNum">     566 </span><span class="lineCov">   49924589 :         if (block == BLOCK_EMPTY)</span>
-<span class="lineNum">     567 </span><span class="lineCov">    1624550 :                 return BLOCK_STATE_EMPTY;</span>
-<span class="lineNum">     568 </span>            : 
-<span class="lineNum">     569 </span><span class="lineCov">   48300039 :         return block-&gt;state;</span>
-<span class="lineNum">     570 </span>            : }
-<span class="lineNum">     571 </span>            : 
-<span class="lineNum">     572 </span>            : /**
-<a name="573"><span class="lineNum">     573 </span>            :  * Set the state of the block.</a>
-<span class="lineNum">     574 </span>            :  */
-<span class="lineNum">     575 </span><span class="lineCov">   18644176 : static inline void block_state_set(struct snapraid_block* block, unsigned state)</span>
-<span class="lineNum">     576 </span>            : {
-<span class="lineNum">     577 </span><span class="lineCov">   18644176 :         block-&gt;state = state;</span>
-<span class="lineNum">     578 </span><span class="lineCov">   18644176 : }</span>
-<span class="lineNum">     579 </span>            : 
-<span class="lineNum">     580 </span>            : /**
-<span class="lineNum">     581 </span>            :  * Check if the specified block has an updated hash.
-<span class="lineNum">     582 </span>            :  *
-<a name="583"><span class="lineNum">     583 </span>            :  * Note that EMPTY / CHG / DELETED return 0.</a>
-<span class="lineNum">     584 </span>            :  */
-<span class="lineNum">     585 </span><span class="lineCov">    2074724 : static inline int block_has_updated_hash(const struct snapraid_block* block)</span>
-<span class="lineNum">     586 </span>            : {
-<span class="lineNum">     587 </span><span class="lineCov">    2074724 :         unsigned state = block_state_get(block);</span>
-<span class="lineNum">     588 </span>            : 
-<span class="lineNum">     589 </span><span class="lineCov">    2074724 :         return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;</span>
-<span class="lineNum">     590 </span>            : }
-<span class="lineNum">     591 </span>            : 
-<span class="lineNum">     592 </span>            : /**
-<span class="lineNum">     593 </span>            :  * Check if the specified block has a past hash,
-<span class="lineNum">     594 </span>            :  * i.e. the hash of the data that it's now overwritten or lost.
-<span class="lineNum">     595 </span>            :  *
-<a name="596"><span class="lineNum">     596 </span>            :  * Note that EMPTY / BLK / REP return 0.</a>
-<span class="lineNum">     597 </span>            :  */
-<span class="lineNum">     598 </span><span class="lineCov">    2403226 : static inline int block_has_past_hash(const struct snapraid_block* block)</span>
-<span class="lineNum">     599 </span>            : {
-<span class="lineNum">     600 </span><span class="lineCov">    2403226 :         unsigned state = block_state_get(block);</span>
-<span class="lineNum">     601 </span>            : 
-<span class="lineNum">     602 </span><span class="lineCov">    2403226 :         return state == BLOCK_STATE_CHG || state == BLOCK_STATE_DELETED;</span>
-<span class="lineNum">     603 </span>            : }
-<span class="lineNum">     604 </span>            : 
-<span class="lineNum">     605 </span>            : /**
-<span class="lineNum">     606 </span>            :  * Check if the specified block is part of a file.
-<span class="lineNum">     607 </span>            :  *
-<a name="608"><span class="lineNum">     608 </span>            :  * Note that EMPTY / DELETED return 0.</a>
-<span class="lineNum">     609 </span>            :  */
-<span class="lineNum">     610 </span><span class="lineCov">   13254717 : static inline int block_has_file(const struct snapraid_block* block)</span>
-<span class="lineNum">     611 </span>            : {
-<span class="lineNum">     612 </span><span class="lineCov">   13254717 :         unsigned state = block_state_get(block);</span>
-<span class="lineNum">     613 </span>            : 
-<span class="lineNum">     614 </span><span class="lineCov">   13254717 :         return state == BLOCK_STATE_BLK</span>
-<span class="lineNum">     615 </span><span class="lineCov">   13254717 :                || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;</span>
-<span class="lineNum">     616 </span>            : }
-<span class="lineNum">     617 </span>            : 
-<span class="lineNum">     618 </span>            : /**
-<span class="lineNum">     619 </span>            :  * Check if the block has an invalid parity than needs to be updated.
-<span class="lineNum">     620 </span>            :  *
-<a name="621"><span class="lineNum">     621 </span>            :  * Note that EMPTY / BLK return 0.</a>
+<span class="lineNum">     518 </span><span class="lineCov">    3173426 :         return 0;</span>
+<span class="lineNum">     519 </span>            : }
+<span class="lineNum">     520 </span>            : 
+<span class="lineNum">     521 </span>            : /**
+<span class="lineNum">     522 </span>            :  * Filter a path using a list of filters.
+<span class="lineNum">     523 </span>            :  * For each element of the path all the filters are applied, until the first one that matches.
+<span class="lineNum">     524 </span>            :  * Return !=0 if it should be excluded.
+<span class="lineNum">     525 </span>            :  */
+<span class="lineNum">     526 </span>            : int filter_path(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
+<span class="lineNum">     527 </span>            : 
+<span class="lineNum">     528 </span>            : /**
+<span class="lineNum">     529 </span>            :  * Filter a file/link/dir if missing.
+<span class="lineNum">     530 </span>            :  * This call imply a disk check for the file presence.
+<span class="lineNum">     531 </span>            :  * Return !=0 if the file is present and it should be excluded.
+<span class="lineNum">     532 </span>            :  */
+<span class="lineNum">     533 </span>            : int filter_existence(int filter_missing, const char* dir, const char* sub);
+<span class="lineNum">     534 </span>            : 
+<span class="lineNum">     535 </span>            : /**
+<span class="lineNum">     536 </span>            :  * Filter a file if bad.
+<span class="lineNum">     537 </span>            :  * Return !=0 if the file is correct and it should be excluded.
+<span class="lineNum">     538 </span>            :  */
+<span class="lineNum">     539 </span>            : int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_file* file);
+<span class="lineNum">     540 </span>            : 
+<span class="lineNum">     541 </span>            : /**
+<span class="lineNum">     542 </span>            :  * Filter a dir using a list of filters.
+<span class="lineNum">     543 </span>            :  * For each element of the path all the filters are applied, until the first one that matches.
+<span class="lineNum">     544 </span>            :  * Thesesdir are always by included by default, to allow to apply rules at the contained files.
+<span class="lineNum">     545 </span>            :  * Return !=0 if should be excluded.
+<span class="lineNum">     546 </span>            :  */
+<span class="lineNum">     547 </span>            : int filter_subdir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
+<span class="lineNum">     548 </span>            : 
+<span class="lineNum">     549 </span>            : /**
+<span class="lineNum">     550 </span>            :  * Filter a dir using a list of filters.
+<span class="lineNum">     551 </span>            :  * For each element of the path all the filters are applied, until the first one that matches.
+<span class="lineNum">     552 </span>            :  * Return !=0 if should be excluded.
+<span class="lineNum">     553 </span>            :  */
+<span class="lineNum">     554 </span>            : int filter_emptydir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
+<span class="lineNum">     555 </span>            : 
+<span class="lineNum">     556 </span>            : /**
+<span class="lineNum">     557 </span>            :  * Filter a path if it's a content file.
+<span class="lineNum">     558 </span>            :  * Return !=0 if should be excluded.
+<span class="lineNum">     559 </span>            :  */
+<span class="lineNum">     560 </span>            : int filter_content(tommy_list* contentlist, const char* path);
+<span class="lineNum">     561 </span>            : 
+<span class="lineNum">     562 </span>            : /**
+<span class="lineNum">     563 </span>            :  * Check if the specified hash is invalid.
+<span class="lineNum">     564 </span>            :  *
+<span class="lineNum">     565 </span>            :  * An invalid hash is represented with all bytes at 0x00.
+<span class="lineNum">     566 </span>            :  *
+<a name="567"><span class="lineNum">     567 </span>            :  * If working with reduced hash lengths, this function always return 0.</a>
+<span class="lineNum">     568 </span>            :  */
+<span class="lineNum">     569 </span><span class="lineCov">     758437 : static inline int hash_is_invalid(const unsigned char* hash)</span>
+<span class="lineNum">     570 </span>            : {
+<span class="lineNum">     571 </span>            :         int i;
+<span class="lineNum">     572 </span>            : 
+<span class="lineNum">     573 </span>            :         /* if the hash is reduced, we cannot grant that it's a specific kind of hash */
+<span class="lineNum">     574 </span><span class="lineCov">     758437 :         if (BLOCK_HASH_SIZE != HASH_MAX)</span>
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     576 </span>            : 
+<span class="lineNum">     577 </span><span class="lineCov">    1178475 :         for (i = 0; i &lt; BLOCK_HASH_SIZE; ++i)</span>
+<span class="lineNum">     578 </span><span class="lineCov">    1152411 :                 if (hash[i] != 0x00)</span>
+<span class="lineNum">     579 </span><span class="lineCov">     732373 :                         return 0;</span>
+<span class="lineNum">     580 </span>            : 
+<span class="lineNum">     581 </span><span class="lineCov">      26064 :         return 1;</span>
+<span class="lineNum">     582 </span>            : }
+<span class="lineNum">     583 </span>            : 
+<span class="lineNum">     584 </span>            : /**
+<span class="lineNum">     585 </span>            :  * Check if the specified hash represent the zero block.
+<span class="lineNum">     586 </span>            :  *
+<span class="lineNum">     587 </span>            :  * A zero hash is represented with all bytes at 0xFF.
+<span class="lineNum">     588 </span>            :  *
+<a name="589"><span class="lineNum">     589 </span>            :  * If working with reduced hash lengths, this function always return 0.</a>
+<span class="lineNum">     590 </span>            :  */
+<span class="lineNum">     591 </span><span class="lineCov">     759899 : static inline int hash_is_zero(const unsigned char* hash)</span>
+<span class="lineNum">     592 </span>            : {
+<span class="lineNum">     593 </span>            :         int i;
+<span class="lineNum">     594 </span>            : 
+<span class="lineNum">     595 </span>            :         /* if the hash is reduced, we cannot grant that it's a specific kind of hash */
+<span class="lineNum">     596 </span><span class="lineCov">     759899 :         if (BLOCK_HASH_SIZE != HASH_MAX)</span>
+<span class="lineNum">     597 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     598 </span>            : 
+<span class="lineNum">     599 </span><span class="lineCov">     994501 :         for (i = 0; i &lt; BLOCK_HASH_SIZE; ++i)</span>
+<span class="lineNum">     600 </span><span class="lineCov">     980032 :                 if (hash[i] != 0xFF)</span>
+<span class="lineNum">     601 </span><span class="lineCov">     745430 :                         return 0;</span>
+<span class="lineNum">     602 </span>            : 
+<span class="lineNum">     603 </span><span class="lineCov">      14469 :         return 1;</span>
+<span class="lineNum">     604 </span>            : }
+<span class="lineNum">     605 </span>            : 
+<span class="lineNum">     606 </span>            : /**
+<span class="lineNum">     607 </span>            :  * Check if the specified hash is unequivocally representing the data.
+<span class="lineNum">     608 </span>            :  *
+<a name="609"><span class="lineNum">     609 </span>            :  * If working with reduced hash lengths, this function always return 0.</a>
+<span class="lineNum">     610 </span>            :  */
+<span class="lineNum">     611 </span><span class="lineCov">      44326 : static inline int hash_is_unique(const unsigned char* hash)</span>
+<span class="lineNum">     612 </span>            : {
+<span class="lineNum">     613 </span>            :         /* if the hash is reduced, we cannot grant that it's a specific kind of hash */
+<span class="lineNum">     614 </span><span class="lineCov">      44326 :         if (BLOCK_HASH_SIZE != HASH_MAX)</span>
+<span class="lineNum">     615 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     616 </span>            : 
+<span class="lineNum">     617 </span><span class="lineCov">      44326 :         return !hash_is_zero(hash) &amp;&amp; !hash_is_invalid(hash);</span>
+<span class="lineNum">     618 </span>            : }
+<span class="lineNum">     619 </span>            : 
+<span class="lineNum">     620 </span>            : /**
+<a name="621"><span class="lineNum">     621 </span>            :  * Set the hash to the special INVALID value.</a>
 <span class="lineNum">     622 </span>            :  */
-<span class="lineNum">     623 </span><span class="lineCov">   11847406 : static inline int block_has_invalid_parity(const struct snapraid_block* block)</span>
+<span class="lineNum">     623 </span><span class="lineCov">    9234981 : static inline void hash_invalid_set(unsigned char* hash)</span>
 <span class="lineNum">     624 </span>            : {
-<span class="lineNum">     625 </span><span class="lineCov">   11847406 :         unsigned state = block_state_get(block);</span>
-<span class="lineNum">     626 </span>            : 
-<span class="lineNum">     627 </span><span class="lineCov">   11847406 :         return state == BLOCK_STATE_DELETED</span>
-<span class="lineNum">     628 </span><span class="lineCov">   11847406 :                || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;</span>
-<span class="lineNum">     629 </span>            : }
-<span class="lineNum">     630 </span>            : 
-<span class="lineNum">     631 </span>            : /**
-<span class="lineNum">     632 </span>            :  * Check if the block is part of a file with valid parity.
-<span class="lineNum">     633 </span>            :  *
-<a name="634"><span class="lineNum">     634 </span>            :  * Note that anything different than BLK return 0.</a>
-<span class="lineNum">     635 </span>            :  */
-<span class="lineNum">     636 </span><span class="lineCov">     257940 : static inline int block_has_file_and_valid_parity(const struct snapraid_block* block)</span>
-<span class="lineNum">     637 </span>            : {
-<span class="lineNum">     638 </span><span class="lineCov">     257940 :         unsigned state = block_state_get(block);</span>
-<span class="lineNum">     639 </span>            : 
-<span class="lineNum">     640 </span><span class="lineCov">     257940 :         return state == BLOCK_STATE_BLK;</span>
-<a name="641"><span class="lineNum">     641 </span>            : }</a>
-<span class="lineNum">     642 </span>            : 
-<span class="lineNum">     643 </span><span class="lineCov">   33676848 : static inline int file_flag_has(const struct snapraid_file* file, unsigned mask)</span>
-<span class="lineNum">     644 </span>            : {
-<span class="lineNum">     645 </span><span class="lineCov">   33676848 :         return (file-&gt;flag &amp; mask) == mask;</span>
-<a name="646"><span class="lineNum">     646 </span>            : }</a>
-<span class="lineNum">     647 </span>            : 
-<span class="lineNum">     648 </span><span class="lineCov">    5249321 : static inline void file_flag_set(struct snapraid_file* file, unsigned mask)</span>
-<span class="lineNum">     649 </span>            : {
-<span class="lineNum">     650 </span><span class="lineCov">    5249321 :         file-&gt;flag |= mask;</span>
-<a name="651"><span class="lineNum">     651 </span><span class="lineCov">    5249321 : }</span></a>
-<span class="lineNum">     652 </span>            : 
-<span class="lineNum">     653 </span><span class="lineCov">      19577 : static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)</span>
-<span class="lineNum">     654 </span>            : {
-<span class="lineNum">     655 </span><span class="lineCov">      19577 :         file-&gt;flag &amp;= ~mask;</span>
-<span class="lineNum">     656 </span><span class="lineCov">      19577 : }</span>
+<span class="lineNum">     625 </span><span class="lineCov">    9234981 :         memset(hash, 0x00, BLOCK_HASH_SIZE);</span>
+<span class="lineNum">     626 </span><span class="lineCov">    9234981 : }</span>
+<span class="lineNum">     627 </span>            : 
+<span class="lineNum">     628 </span>            : /**
+<a name="629"><span class="lineNum">     629 </span>            :  * Set the hash to the special ZERO value.</a>
+<span class="lineNum">     630 </span>            :  */
+<span class="lineNum">     631 </span><span class="lineCov">     115543 : static inline void hash_zero_set(unsigned char* hash)</span>
+<span class="lineNum">     632 </span>            : {
+<span class="lineNum">     633 </span><span class="lineCov">     115543 :         memset(hash, 0xFF, BLOCK_HASH_SIZE);</span>
+<span class="lineNum">     634 </span><span class="lineCov">     115543 : }</span>
+<span class="lineNum">     635 </span>            : 
+<span class="lineNum">     636 </span>            : /**
+<a name="637"><span class="lineNum">     637 </span>            :  * Allocated space for block.</a>
+<span class="lineNum">     638 </span>            :  */
+<span class="lineNum">     639 </span><span class="lineCov">   58067981 : static inline size_t block_sizeof(void)</span>
+<span class="lineNum">     640 </span>            : {
+<span class="lineNum">     641 </span><span class="lineCov">   58067981 :         return 1 + BLOCK_HASH_SIZE;</span>
+<span class="lineNum">     642 </span>            : }
+<span class="lineNum">     643 </span>            : 
+<span class="lineNum">     644 </span>            : /**
+<span class="lineNum">     645 </span>            :  * Get the state of the block.
+<span class="lineNum">     646 </span>            :  *
+<span class="lineNum">     647 </span>            :  * For this function, it's allowed to pass a NULL block
+<a name="648"><span class="lineNum">     648 </span>            :  * pointer than results in the BLOCK_STATE_EMPTY state.</a>
+<span class="lineNum">     649 </span>            :  */
+<span class="lineNum">     650 </span><span class="lineCov">   52305148 : static inline unsigned block_state_get(const struct snapraid_block* block)</span>
+<span class="lineNum">     651 </span>            : {
+<span class="lineNum">     652 </span><span class="lineCov">   52305148 :         if (block == BLOCK_NULL)</span>
+<span class="lineNum">     653 </span><span class="lineCov">    1721828 :                 return BLOCK_STATE_EMPTY;</span>
+<span class="lineNum">     654 </span>            : 
+<span class="lineNum">     655 </span><span class="lineCov">   50583320 :         return block-&gt;state;</span>
+<span class="lineNum">     656 </span>            : }
 <span class="lineNum">     657 </span>            : 
 <span class="lineNum">     658 </span>            : /**
-<span class="lineNum">     659 </span>            :  * Allocate a file.
+<a name="659"><span class="lineNum">     659 </span>            :  * Set the state of the block.</a>
 <span class="lineNum">     660 </span>            :  */
-<span class="lineNum">     661 </span>            : struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
-<span class="lineNum">     662 </span>            : 
-<span class="lineNum">     663 </span>            : /**
-<span class="lineNum">     664 </span>            :  * Duplicate a file.
-<span class="lineNum">     665 </span>            :  */
-<span class="lineNum">     666 </span>            : struct snapraid_file* file_dup(struct snapraid_file* copy);
-<span class="lineNum">     667 </span>            : 
-<span class="lineNum">     668 </span>            : /**
-<span class="lineNum">     669 </span>            :  * Deallocate a file.
+<span class="lineNum">     661 </span><span class="lineCov">   19119503 : static inline void block_state_set(struct snapraid_block* block, unsigned state)</span>
+<span class="lineNum">     662 </span>            : {
+<span class="lineNum">     663 </span><span class="lineCov">   19119503 :         block-&gt;state = state;</span>
+<span class="lineNum">     664 </span><span class="lineCov">   19119503 : }</span>
+<span class="lineNum">     665 </span>            : 
+<span class="lineNum">     666 </span>            : /**
+<span class="lineNum">     667 </span>            :  * Check if the specified block has an updated hash.
+<span class="lineNum">     668 </span>            :  *
+<a name="669"><span class="lineNum">     669 </span>            :  * Note that EMPTY / CHG / DELETED return 0.</a>
 <span class="lineNum">     670 </span>            :  */
-<span class="lineNum">     671 </span>            : void file_free(struct snapraid_file* file);
-<span class="lineNum">     672 </span>            : 
-<span class="lineNum">     673 </span>            : /**
-<span class="lineNum">     674 </span>            :  * Rename a file.
-<span class="lineNum">     675 </span>            :  */
-<span class="lineNum">     676 </span>            : void file_rename(struct snapraid_file* file, const char* sub);
+<span class="lineNum">     671 </span><span class="lineCov">    2216978 : static inline int block_has_updated_hash(const struct snapraid_block* block)</span>
+<span class="lineNum">     672 </span>            : {
+<span class="lineNum">     673 </span><span class="lineCov">    2216978 :         unsigned state = block_state_get(block);</span>
+<span class="lineNum">     674 </span>            : 
+<span class="lineNum">     675 </span><span class="lineCov">    2216978 :         return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;</span>
+<span class="lineNum">     676 </span>            : }
 <span class="lineNum">     677 </span>            : 
 <span class="lineNum">     678 </span>            : /**
-<span class="lineNum">     679 </span>            :  * Copy a file.
-<span class="lineNum">     680 </span>            :  */
-<span class="lineNum">     681 </span>            : void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
-<span class="lineNum">     682 </span>            : 
-<span class="lineNum">     683 </span>            : /**
-<span class="lineNum">     684 </span>            :  * Return the name of the file, without the dir.
-<span class="lineNum">     685 </span>            :  */
-<span class="lineNum">     686 </span>            : const char* file_name(const struct snapraid_file* file);
+<span class="lineNum">     679 </span>            :  * Check if the specified block has a past hash,
+<span class="lineNum">     680 </span>            :  * i.e. the hash of the data that it's now overwritten or lost.
+<span class="lineNum">     681 </span>            :  *
+<a name="682"><span class="lineNum">     682 </span>            :  * Note that EMPTY / BLK / REP return 0.</a>
+<span class="lineNum">     683 </span>            :  */
+<span class="lineNum">     684 </span><span class="lineCov">    2543126 : static inline int block_has_past_hash(const struct snapraid_block* block)</span>
+<span class="lineNum">     685 </span>            : {
+<span class="lineNum">     686 </span><span class="lineCov">    2543126 :         unsigned state = block_state_get(block);</span>
 <span class="lineNum">     687 </span>            : 
-<span class="lineNum">     688 </span>            : /**
-<span class="lineNum">     689 </span>            :  * Check if the block is the last in the file.
-<span class="lineNum">     690 </span>            :  */
-<span class="lineNum">     691 </span>            : int file_block_is_last(struct snapraid_file* file, block_off_t file_pos);
-<span class="lineNum">     692 </span>            : 
-<span class="lineNum">     693 </span>            : /**
-<span class="lineNum">     694 </span>            :  * Get the size in bytes of the block.
-<span class="lineNum">     695 </span>            :  * If it's the last block of a file it could be less than block_size.
-<span class="lineNum">     696 </span>            :  */
-<span class="lineNum">     697 </span>            : unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size);
-<span class="lineNum">     698 </span>            : 
-<span class="lineNum">     699 </span>            : /**
-<span class="lineNum">     700 </span>            :  * Compare a file with an inode.
-<span class="lineNum">     701 </span>            :  */
-<span class="lineNum">     702 </span>            : int file_inode_compare_to_arg(const void* void_arg, const void* void_data);
+<span class="lineNum">     688 </span><span class="lineCov">    2543126 :         return state == BLOCK_STATE_CHG || state == BLOCK_STATE_DELETED;</span>
+<span class="lineNum">     689 </span>            : }
+<span class="lineNum">     690 </span>            : 
+<span class="lineNum">     691 </span>            : /**
+<span class="lineNum">     692 </span>            :  * Check if the specified block is part of a file.
+<span class="lineNum">     693 </span>            :  *
+<a name="694"><span class="lineNum">     694 </span>            :  * Note that EMPTY / DELETED return 0.</a>
+<span class="lineNum">     695 </span>            :  */
+<span class="lineNum">     696 </span><span class="lineCov">   14591698 : static inline int block_has_file(const struct snapraid_block* block)</span>
+<span class="lineNum">     697 </span>            : {
+<span class="lineNum">     698 </span><span class="lineCov">   14591698 :         unsigned state = block_state_get(block);</span>
+<span class="lineNum">     699 </span>            : 
+<span class="lineNum">     700 </span><span class="lineCov">   14591866 :         return state == BLOCK_STATE_BLK</span>
+<span class="lineNum">     701 </span><span class="lineCov">   14591866 :                || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;</span>
+<span class="lineNum">     702 </span>            : }
 <span class="lineNum">     703 </span>            : 
 <span class="lineNum">     704 </span>            : /**
-<span class="lineNum">     705 </span>            :  * Compare files by inode.
-<span class="lineNum">     706 </span>            :  */
-<span class="lineNum">     707 </span>            : int file_inode_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     708 </span>            : 
-<span class="lineNum">     709 </span>            : /**
-<span class="lineNum">     710 </span>            :  * Compare files by path.
-<span class="lineNum">     711 </span>            :  */
-<span class="lineNum">     712 </span>            : int file_path_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     713 </span>            : 
-<span class="lineNum">     714 </span>            : /**
-<span class="lineNum">     715 </span>            :  * Compare files by physical address.
-<span class="lineNum">     716 </span>            :  */
-<span class="lineNum">     717 </span>            : int file_physical_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     718 </span>            : 
-<span class="lineNum">     719 </span>            : /**
-<a name="720"><span class="lineNum">     720 </span>            :  * Compute the hash of a file inode.</a>
+<span class="lineNum">     705 </span>            :  * Check if the block has an invalid parity than needs to be updated.
+<span class="lineNum">     706 </span>            :  *
+<a name="707"><span class="lineNum">     707 </span>            :  * Note that EMPTY / BLK return 0.</a>
+<span class="lineNum">     708 </span>            :  */
+<span class="lineNum">     709 </span><span class="lineCov">   12320608 : static inline int block_has_invalid_parity(const struct snapraid_block* block)</span>
+<span class="lineNum">     710 </span>            : {
+<span class="lineNum">     711 </span><span class="lineCov">   12320608 :         unsigned state = block_state_get(block);</span>
+<span class="lineNum">     712 </span>            : 
+<span class="lineNum">     713 </span><span class="lineCov">   12320608 :         return state == BLOCK_STATE_DELETED</span>
+<span class="lineNum">     714 </span><span class="lineCov">   12320608 :                || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;</span>
+<span class="lineNum">     715 </span>            : }
+<span class="lineNum">     716 </span>            : 
+<span class="lineNum">     717 </span>            : /**
+<span class="lineNum">     718 </span>            :  * Check if the block is part of a file with valid parity.
+<span class="lineNum">     719 </span>            :  *
+<a name="720"><span class="lineNum">     720 </span>            :  * Note that anything different than BLK return 0.</a>
 <span class="lineNum">     721 </span>            :  */
-<span class="lineNum">     722 </span><span class="lineCov">    4923043 : static inline tommy_uint32_t file_inode_hash(uint64_t inode)</span>
+<span class="lineNum">     722 </span><span class="lineCov">     220959 : static inline int block_has_file_and_valid_parity(const struct snapraid_block* block)</span>
 <span class="lineNum">     723 </span>            : {
-<span class="lineNum">     724 </span><span class="lineCov">    4923043 :         return (tommy_uint32_t)tommy_inthash_u64(inode);</span>
-<span class="lineNum">     725 </span>            : }
-<span class="lineNum">     726 </span>            : 
-<span class="lineNum">     727 </span>            : /**
-<span class="lineNum">     728 </span>            :  * Compare a file with a path.
-<span class="lineNum">     729 </span>            :  */
-<span class="lineNum">     730 </span>            : int file_path_compare_to_arg(const void* void_arg, const void* void_data);
-<span class="lineNum">     731 </span>            : 
-<span class="lineNum">     732 </span>            : /**
-<span class="lineNum">     733 </span>            :  * Compare a file with another file for name, stamp, and both.
-<span class="lineNum">     734 </span>            :  */
-<span class="lineNum">     735 </span>            : int file_name_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     736 </span>            : int file_stamp_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     737 </span>            : int file_namestamp_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     738 </span>            : int file_pathstamp_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     739 </span>            : 
-<span class="lineNum">     740 </span>            : /**
-<a name="741"><span class="lineNum">     741 </span>            :  * Compute the hash of a file path.</a>
-<span class="lineNum">     742 </span>            :  */
-<span class="lineNum">     743 </span><span class="lineCov">    3814698 : static inline tommy_uint32_t file_path_hash(const char* sub)</span>
-<span class="lineNum">     744 </span>            : {
-<span class="lineNum">     745 </span><span class="lineCov">    3814698 :         return tommy_hash_u32(0, sub, strlen(sub));</span>
-<span class="lineNum">     746 </span>            : }
-<span class="lineNum">     747 </span>            : 
-<span class="lineNum">     748 </span>            : /**
-<a name="749"><span class="lineNum">     749 </span>            :  * Compute the hash of a file stamp.</a>
-<span class="lineNum">     750 </span>            :  */
-<span class="lineNum">     751 </span><span class="lineCov">    6199048 : static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)</span>
-<span class="lineNum">     752 </span>            : {
-<span class="lineNum">     753 </span><span class="lineCov">    6199048 :         return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32(mtime_sec ^ tommy_inthash_u32(mtime_nsec)));</span>
-<span class="lineNum">     754 </span>            : }
-<span class="lineNum">     755 </span>            : 
-<span class="lineNum">     756 </span>            : /**
-<span class="lineNum">     757 </span>            :  * Allocate a chunk.
-<span class="lineNum">     758 </span>            :  */
-<span class="lineNum">     759 </span>            : struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count);
-<span class="lineNum">     760 </span>            : 
-<span class="lineNum">     761 </span>            : /**
-<span class="lineNum">     762 </span>            :  * Deallocate a chunk.
-<span class="lineNum">     763 </span>            :  */
-<span class="lineNum">     764 </span>            : void chunk_free(struct snapraid_chunk* chunk);
-<span class="lineNum">     765 </span>            : 
-<span class="lineNum">     766 </span>            : /**
-<span class="lineNum">     767 </span>            :  * Compare chunk by parity position.
-<span class="lineNum">     768 </span>            :  */
-<span class="lineNum">     769 </span>            : int chunk_parity_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     770 </span>            : 
-<span class="lineNum">     771 </span>            : /**
-<span class="lineNum">     772 </span>            :  * Compare chunk by file and file position.
+<span class="lineNum">     724 </span><span class="lineCov">     220959 :         unsigned state = block_state_get(block);</span>
+<span class="lineNum">     725 </span>            : 
+<span class="lineNum">     726 </span><span class="lineCov">     220959 :         return state == BLOCK_STATE_BLK;</span>
+<a name="727"><span class="lineNum">     727 </span>            : }</a>
+<span class="lineNum">     728 </span>            : 
+<span class="lineNum">     729 </span><span class="lineCov">   34094875 : static inline int file_flag_has(const struct snapraid_file* file, unsigned mask)</span>
+<span class="lineNum">     730 </span>            : {
+<span class="lineNum">     731 </span><span class="lineCov">   34094875 :         return (file-&gt;flag &amp; mask) == mask;</span>
+<a name="732"><span class="lineNum">     732 </span>            : }</a>
+<span class="lineNum">     733 </span>            : 
+<span class="lineNum">     734 </span><span class="lineCov">    5299884 : static inline void file_flag_set(struct snapraid_file* file, unsigned mask)</span>
+<span class="lineNum">     735 </span>            : {
+<span class="lineNum">     736 </span><span class="lineCov">    5299884 :         file-&gt;flag |= mask;</span>
+<a name="737"><span class="lineNum">     737 </span><span class="lineCov">    5299884 : }</span></a>
+<span class="lineNum">     738 </span>            : 
+<span class="lineNum">     739 </span><span class="lineCov">      16752 : static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)</span>
+<span class="lineNum">     740 </span>            : {
+<span class="lineNum">     741 </span><span class="lineCov">      16752 :         file-&gt;flag &amp;= ~mask;</span>
+<span class="lineNum">     742 </span><span class="lineCov">      16752 : }</span>
+<span class="lineNum">     743 </span>            : 
+<span class="lineNum">     744 </span>            : /**
+<span class="lineNum">     745 </span>            :  * Allocate a file.
+<span class="lineNum">     746 </span>            :  */
+<span class="lineNum">     747 </span>            : struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
+<span class="lineNum">     748 </span>            : 
+<span class="lineNum">     749 </span>            : /**
+<span class="lineNum">     750 </span>            :  * Duplicate a file.
+<span class="lineNum">     751 </span>            :  */
+<span class="lineNum">     752 </span>            : struct snapraid_file* file_dup(struct snapraid_file* copy);
+<span class="lineNum">     753 </span>            : 
+<span class="lineNum">     754 </span>            : /**
+<span class="lineNum">     755 </span>            :  * Deallocate a file.
+<span class="lineNum">     756 </span>            :  */
+<span class="lineNum">     757 </span>            : void file_free(struct snapraid_file* file);
+<span class="lineNum">     758 </span>            : 
+<span class="lineNum">     759 </span>            : /**
+<span class="lineNum">     760 </span>            :  * Rename a file.
+<span class="lineNum">     761 </span>            :  */
+<span class="lineNum">     762 </span>            : void file_rename(struct snapraid_file* file, const char* sub);
+<span class="lineNum">     763 </span>            : 
+<span class="lineNum">     764 </span>            : /**
+<span class="lineNum">     765 </span>            :  * Copy a file.
+<span class="lineNum">     766 </span>            :  */
+<span class="lineNum">     767 </span>            : void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
+<span class="lineNum">     768 </span>            : 
+<span class="lineNum">     769 </span>            : /**
+<span class="lineNum">     770 </span>            :  * Return the block at the specified position.
+<span class="lineNum">     771 </span>            :  *
+<a name="772"><span class="lineNum">     772 </span>            :  * Note that the block size if a runtime value.</a>
 <span class="lineNum">     773 </span>            :  */
-<a name="774"><span class="lineNum">     774 </span>            : int chunk_file_compare(const void* void_a, const void* void_b);</a>
-<span class="lineNum">     775 </span>            : 
-<span class="lineNum">     776 </span><span class="lineCov">     205549 : static inline int link_flag_has(const struct snapraid_link* slink, unsigned mask)</span>
-<span class="lineNum">     777 </span>            : {
-<span class="lineNum">     778 </span><span class="lineCov">     205549 :         return (slink-&gt;flag &amp; mask) == mask;</span>
-<a name="779"><span class="lineNum">     779 </span>            : }</a>
+<span class="lineNum">     774 </span><span class="lineCov">   54353544 : static inline struct snapraid_block* file_block(struct snapraid_file* file, size_t pos)</span>
+<span class="lineNum">     775 </span>            : {
+<span class="lineNum">     776 </span><span class="lineCov">   54353544 :         unsigned char* ptr = (unsigned char*)file-&gt;blockvec;</span>
+<span class="lineNum">     777 </span>            : 
+<span class="lineNum">     778 </span><span class="lineCov">   54353544 :         return (struct snapraid_block*)(ptr + pos * block_sizeof());</span>
+<span class="lineNum">     779 </span>            : }
 <span class="lineNum">     780 </span>            : 
-<span class="lineNum">     781 </span><span class="lineCov">      37571 : static inline void link_flag_set(struct snapraid_link* slink, unsigned mask)</span>
-<span class="lineNum">     782 </span>            : {
-<span class="lineNum">     783 </span><span class="lineCov">      37571 :         slink-&gt;flag |= mask;</span>
-<span class="lineNum">     784 </span><span class="lineCov">      37571 : }</span>
+<span class="lineNum">     781 </span>            : /**
+<span class="lineNum">     782 </span>            :  * Return the name of the file, without the dir.
+<span class="lineNum">     783 </span>            :  */
+<span class="lineNum">     784 </span>            : const char* file_name(const struct snapraid_file* file);
 <span class="lineNum">     785 </span>            : 
-<span class="lineNum">     786 </span>            : static inline void link_flag_clear(struct snapraid_link* slink, unsigned mask)
-<span class="lineNum">     787 </span>            : {
-<span class="lineNum">     788 </span>            :         slink-&gt;flag &amp;= ~mask;
-<a name="789"><span class="lineNum">     789 </span>            : }</a>
+<span class="lineNum">     786 </span>            : /**
+<span class="lineNum">     787 </span>            :  * Check if the block is the last in the file.
+<span class="lineNum">     788 </span>            :  */
+<span class="lineNum">     789 </span>            : int file_block_is_last(struct snapraid_file* file, block_off_t file_pos);
 <span class="lineNum">     790 </span>            : 
-<span class="lineNum">     791 </span><span class="lineCov">          6 : static inline void link_flag_let(struct snapraid_link* slink, unsigned flag, unsigned mask)</span>
-<span class="lineNum">     792 </span>            : {
-<span class="lineNum">     793 </span><span class="lineCov">          6 :         slink-&gt;flag &amp;= ~mask;</span>
-<span class="lineNum">     794 </span><span class="lineCov">          6 :         slink-&gt;flag |= flag &amp; mask;</span>
-<a name="795"><span class="lineNum">     795 </span><span class="lineCov">          6 : }</span></a>
+<span class="lineNum">     791 </span>            : /**
+<span class="lineNum">     792 </span>            :  * Get the size in bytes of the block.
+<span class="lineNum">     793 </span>            :  * If it's the last block of a file it could be less than block_size.
+<span class="lineNum">     794 </span>            :  */
+<span class="lineNum">     795 </span>            : unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size);
 <span class="lineNum">     796 </span>            : 
-<span class="lineNum">     797 </span><span class="lineCov">      89093 : static inline unsigned link_flag_get(struct snapraid_link* slink, unsigned mask)</span>
-<span class="lineNum">     798 </span>            : {
-<span class="lineNum">     799 </span><span class="lineCov">      89093 :         return slink-&gt;flag &amp; mask;</span>
-<span class="lineNum">     800 </span>            : }
+<span class="lineNum">     797 </span>            : /**
+<span class="lineNum">     798 </span>            :  * Compare a file with an inode.
+<span class="lineNum">     799 </span>            :  */
+<span class="lineNum">     800 </span>            : int file_inode_compare_to_arg(const void* void_arg, const void* void_data);
 <span class="lineNum">     801 </span>            : 
 <span class="lineNum">     802 </span>            : /**
-<span class="lineNum">     803 </span>            :  * Allocate a link.
+<span class="lineNum">     803 </span>            :  * Compare files by inode.
 <span class="lineNum">     804 </span>            :  */
-<span class="lineNum">     805 </span>            : struct snapraid_link* link_alloc(const char* name, const char* slink, unsigned link_flag);
+<span class="lineNum">     805 </span>            : int file_inode_compare(const void* void_a, const void* void_b);
 <span class="lineNum">     806 </span>            : 
 <span class="lineNum">     807 </span>            : /**
-<span class="lineNum">     808 </span>            :  * Deallocate a link.
+<span class="lineNum">     808 </span>            :  * Compare files by path.
 <span class="lineNum">     809 </span>            :  */
-<span class="lineNum">     810 </span>            : void link_free(struct snapraid_link* slink);
+<span class="lineNum">     810 </span>            : int file_path_compare(const void* void_a, const void* void_b);
 <span class="lineNum">     811 </span>            : 
 <span class="lineNum">     812 </span>            : /**
-<span class="lineNum">     813 </span>            :  * Compare a link with a name.
+<span class="lineNum">     813 </span>            :  * Compare files by physical address.
 <span class="lineNum">     814 </span>            :  */
-<span class="lineNum">     815 </span>            : int link_name_compare_to_arg(const void* void_arg, const void* void_data);
+<span class="lineNum">     815 </span>            : int file_physical_compare(const void* void_a, const void* void_b);
 <span class="lineNum">     816 </span>            : 
 <span class="lineNum">     817 </span>            : /**
-<span class="lineNum">     818 </span>            :  * Compare links by path.
+<a name="818"><span class="lineNum">     818 </span>            :  * Compute the hash of a file inode.</a>
 <span class="lineNum">     819 </span>            :  */
-<span class="lineNum">     820 </span>            : int link_alpha_compare(const void* void_a, const void* void_b);
-<span class="lineNum">     821 </span>            : 
-<span class="lineNum">     822 </span>            : /**
-<a name="823"><span class="lineNum">     823 </span>            :  * Compute the hash of a link name.</a>
-<span class="lineNum">     824 </span>            :  */
-<span class="lineNum">     825 </span><span class="lineCov">     151170 : static inline tommy_uint32_t link_name_hash(const char* name)</span>
-<span class="lineNum">     826 </span>            : {
-<span class="lineNum">     827 </span><span class="lineCov">     151170 :         return tommy_hash_u32(0, name, strlen(name));</span>
-<a name="828"><span class="lineNum">     828 </span>            : }</a>
+<span class="lineNum">     820 </span><span class="lineCov">    5047944 : static inline tommy_uint32_t file_inode_hash(uint64_t inode)</span>
+<span class="lineNum">     821 </span>            : {
+<span class="lineNum">     822 </span><span class="lineCov">    5047944 :         return (tommy_uint32_t)tommy_inthash_u64(inode);</span>
+<span class="lineNum">     823 </span>            : }
+<span class="lineNum">     824 </span>            : 
+<span class="lineNum">     825 </span>            : /**
+<span class="lineNum">     826 </span>            :  * Compare a file with a path.
+<span class="lineNum">     827 </span>            :  */
+<span class="lineNum">     828 </span>            : int file_path_compare_to_arg(const void* void_arg, const void* void_data);
 <span class="lineNum">     829 </span>            : 
-<span class="lineNum">     830 </span><span class="lineCov">        900 : static inline int dir_flag_has(const struct snapraid_dir* dir, unsigned mask)</span>
-<span class="lineNum">     831 </span>            : {
-<span class="lineNum">     832 </span><span class="lineCov">        900 :         return (dir-&gt;flag &amp; mask) == mask;</span>
-<a name="833"><span class="lineNum">     833 </span>            : }</a>
-<span class="lineNum">     834 </span>            : 
-<span class="lineNum">     835 </span><span class="lineCov">        247 : static inline void dir_flag_set(struct snapraid_dir* dir, unsigned mask)</span>
-<span class="lineNum">     836 </span>            : {
-<span class="lineNum">     837 </span><span class="lineCov">        247 :         dir-&gt;flag |= mask;</span>
-<span class="lineNum">     838 </span><span class="lineCov">        247 : }</span>
-<span class="lineNum">     839 </span>            : 
-<span class="lineNum">     840 </span>            : static inline void dir_flag_clear(struct snapraid_dir* dir, unsigned mask)
-<span class="lineNum">     841 </span>            : {
-<span class="lineNum">     842 </span>            :         dir-&gt;flag &amp;= ~mask;
-<span class="lineNum">     843 </span>            : }
-<span class="lineNum">     844 </span>            : 
-<span class="lineNum">     845 </span>            : /**
-<span class="lineNum">     846 </span>            :  * Allocate a dir.
-<span class="lineNum">     847 </span>            :  */
-<span class="lineNum">     848 </span>            : struct snapraid_dir* dir_alloc(const char* name);
-<span class="lineNum">     849 </span>            : 
-<span class="lineNum">     850 </span>            : /**
-<span class="lineNum">     851 </span>            :  * Deallocate a dir.
-<span class="lineNum">     852 </span>            :  */
-<span class="lineNum">     853 </span>            : void dir_free(struct snapraid_dir* dir);
-<span class="lineNum">     854 </span>            : 
-<span class="lineNum">     855 </span>            : /**
-<span class="lineNum">     856 </span>            :  * Compare a dir with a name.
-<span class="lineNum">     857 </span>            :  */
-<span class="lineNum">     858 </span>            : int dir_name_compare(const void* void_arg, const void* void_data);
-<span class="lineNum">     859 </span>            : 
-<span class="lineNum">     860 </span>            : /**
-<a name="861"><span class="lineNum">     861 </span>            :  * Compute the hash of a dir name.</a>
-<span class="lineNum">     862 </span>            :  */
-<span class="lineNum">     863 </span><span class="lineCov">       1011 : static inline tommy_uint32_t dir_name_hash(const char* name)</span>
-<span class="lineNum">     864 </span>            : {
-<span class="lineNum">     865 </span><span class="lineCov">       1011 :         return tommy_hash_u32(0, name, strlen(name));</span>
-<span class="lineNum">     866 </span>            : }
-<span class="lineNum">     867 </span>            : 
-<span class="lineNum">     868 </span>            : /**
-<span class="lineNum">     869 </span>            :  * Allocate a disk.
-<span class="lineNum">     870 </span>            :  */
-<span class="lineNum">     871 </span>            : struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip);
-<span class="lineNum">     872 </span>            : 
-<span class="lineNum">     873 </span>            : /**
-<span class="lineNum">     874 </span>            :  * Deallocate a disk.
-<span class="lineNum">     875 </span>            :  */
-<span class="lineNum">     876 </span>            : void disk_free(struct snapraid_disk* disk);
-<span class="lineNum">     877 </span>            : 
-<span class="lineNum">     878 </span>            : /**
-<span class="lineNum">     879 </span>            :  * Get the size of the disk in blocks.
-<span class="lineNum">     880 </span>            :  */
-<span class="lineNum">     881 </span>            : block_off_t disk_size(struct snapraid_disk* disk);
-<span class="lineNum">     882 </span>            : 
-<span class="lineNum">     883 </span>            : /**
-<span class="lineNum">     884 </span>            :  * Check if a disk is totally empty and can be discarded from the content file.
-<span class="lineNum">     885 </span>            :  * A disk is empty if it doesn't contain any file, symlink, hardlink or dir
-<span class="lineNum">     886 </span>            :  * and without any DELETED block.
-<span class="lineNum">     887 </span>            :  * The blockmax is used to limit the search of DELETED block up to blockmax.
-<span class="lineNum">     888 </span>            :  */
-<span class="lineNum">     889 </span>            : int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
-<span class="lineNum">     890 </span>            : 
-<span class="lineNum">     891 </span>            : /**
-<span class="lineNum">     892 </span>            :  * Check the file-system for errors.
-<span class="lineNum">     893 </span>            :  * Return 0 if it's OK.
-<span class="lineNum">     894 </span>            :  */
-<span class="lineNum">     895 </span>            : int fs_check(struct snapraid_disk* disk);
-<span class="lineNum">     896 </span>            : 
-<span class="lineNum">     897 </span>            : /**
-<span class="lineNum">     898 </span>            :  * Allocate a parity position for the specified file position.
-<span class="lineNum">     899 </span>            :  *
-<span class="lineNum">     900 </span>            :  * After this call you can use the par2file/par2block operations
-<span class="lineNum">     901 </span>            :  * to query the relation.
-<span class="lineNum">     902 </span>            :  *
-<span class="lineNum">     903 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache. +
-<span class="lineNum">     904 </span>            :  */
-<span class="lineNum">     905 </span>            : void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
-<span class="lineNum">     906 </span>            : 
-<span class="lineNum">     907 </span>            : /**
-<span class="lineNum">     908 </span>            :  * Deallocate the parity position.
-<span class="lineNum">     909 </span>            :  *
-<span class="lineNum">     910 </span>            :  * After this call the par2file/par2block operations
-<span class="lineNum">     911 </span>            :  * won't find anymore the parity association.
-<span class="lineNum">     912 </span>            :  *
-<span class="lineNum">     913 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache.
-<span class="lineNum">     914 </span>            :  */
-<span class="lineNum">     915 </span>            : void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
-<span class="lineNum">     916 </span>            : 
-<span class="lineNum">     917 </span>            : /**
-<span class="lineNum">     918 </span>            :  * Get the block from the file position.
-<span class="lineNum">     919 </span>            :  */
-<span class="lineNum">     920 </span>            : struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos);
-<span class="lineNum">     921 </span>            : 
-<span class="lineNum">     922 </span>            : /**
-<span class="lineNum">     923 </span>            :  * Like fs_file2par_get() but thread-safe.
-<span class="lineNum">     924 </span>            :  */
-<span class="lineNum">     925 </span>            : struct snapraid_file* fs_par2file_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t parity_pos, block_off_t* file_pos);
-<span class="lineNum">     926 </span>            : 
-<span class="lineNum">     927 </span>            : /**
-<span class="lineNum">     928 </span>            :  * Get the file position from the parity position.
-<span class="lineNum">     929 </span>            :  * Return 0 if no file is using it.
-<a name="930"><span class="lineNum">     930 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache.</a>
-<span class="lineNum">     931 </span>            :  */
-<span class="lineNum">     932 </span><span class="lineCov">   11584623 : static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)</span>
-<span class="lineNum">     933 </span>            : {
-<span class="lineNum">     934 </span><span class="lineCov">   11584623 :         return fs_par2file_get_ts(disk, &amp;disk-&gt;fs_last, parity_pos, file_pos);</span>
-<span class="lineNum">     935 </span>            : }
-<span class="lineNum">     936 </span>            : 
-<span class="lineNum">     937 </span>            : /**
-<span class="lineNum">     938 </span>            :  * Like fs_file2par_get() but thread-safe.
-<span class="lineNum">     939 </span>            :  */
-<span class="lineNum">     940 </span>            : block_off_t fs_file2par_maybe_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos);
-<span class="lineNum">     941 </span>            : 
-<span class="lineNum">     942 </span>            : /**
-<span class="lineNum">     943 </span>            :  * Get the parity position from the file position.
-<span class="lineNum">     944 </span>            :  * Return POS_INVALID if no parity is allocated.
-<a name="945"><span class="lineNum">     945 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache.</a>
-<span class="lineNum">     946 </span>            :  */
-<span class="lineNum">     947 </span><span class="lineCov">     142395 : static inline block_off_t fs_file2par_maybe(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)</span>
-<span class="lineNum">     948 </span>            : {
-<span class="lineNum">     949 </span><span class="lineCov">     142395 :         return fs_file2par_maybe_ts(disk, &amp;disk-&gt;fs_last, file, file_pos);</span>
-<span class="lineNum">     950 </span>            : }
-<span class="lineNum">     951 </span>            : 
-<span class="lineNum">     952 </span>            : /**
-<a name="953"><span class="lineNum">     953 </span>            :  * Like fs_file2par_get() but thread-safe.</a>
-<span class="lineNum">     954 </span>            :  */
-<span class="lineNum">     955 </span><span class="lineCov">    4698533 : static inline block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos)</span>
-<span class="lineNum">     956 </span>            : {
-<span class="lineNum">     957 </span>            :         block_off_t ret;
-<span class="lineNum">     958 </span>            : 
-<span class="lineNum">     959 </span><span class="lineCov">    4698533 :         ret = fs_file2par_maybe_ts(disk, fs_last, file, file_pos);</span>
-<span class="lineNum">     960 </span><span class="lineCov">    4698533 :         if (ret == POS_INVALID) {</span>
-<span class="lineNum">     961 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     962 </span>            :                 log_fatal(&quot;Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n&quot;, file-&gt;sub, file_pos, file-&gt;blockmax, disk-&gt;name);
-<span class="lineNum">     963 </span>            :                 os_abort();
-<span class="lineNum">     964 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     965 </span>            :         }
-<span class="lineNum">     966 </span>            : 
-<span class="lineNum">     967 </span><span class="lineCov">    4698533 :         return ret;</span>
-<span class="lineNum">     968 </span>            : }
-<span class="lineNum">     969 </span>            : 
-<span class="lineNum">     970 </span>            : /**
-<span class="lineNum">     971 </span>            :  * Get the parity position from the file position.
-<a name="972"><span class="lineNum">     972 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache.</a>
+<span class="lineNum">     830 </span>            : /**
+<span class="lineNum">     831 </span>            :  * Compare a file with another file for name, stamp, and both.
+<span class="lineNum">     832 </span>            :  */
+<span class="lineNum">     833 </span>            : int file_name_compare(const void* void_a, const void* void_b);
+<span class="lineNum">     834 </span>            : int file_stamp_compare(const void* void_a, const void* void_b);
+<span class="lineNum">     835 </span>            : int file_namestamp_compare(const void* void_a, const void* void_b);
+<span class="lineNum">     836 </span>            : int file_pathstamp_compare(const void* void_a, const void* void_b);
+<span class="lineNum">     837 </span>            : 
+<span class="lineNum">     838 </span>            : /**
+<a name="839"><span class="lineNum">     839 </span>            :  * Compute the hash of a file path.</a>
+<span class="lineNum">     840 </span>            :  */
+<span class="lineNum">     841 </span><span class="lineCov">    3886220 : static inline tommy_uint32_t file_path_hash(const char* sub)</span>
+<span class="lineNum">     842 </span>            : {
+<span class="lineNum">     843 </span><span class="lineCov">    3886220 :         return tommy_hash_u32(0, sub, strlen(sub));</span>
+<span class="lineNum">     844 </span>            : }
+<span class="lineNum">     845 </span>            : 
+<span class="lineNum">     846 </span>            : /**
+<a name="847"><span class="lineNum">     847 </span>            :  * Compute the hash of a file stamp.</a>
+<span class="lineNum">     848 </span>            :  */
+<span class="lineNum">     849 </span><span class="lineCov">    6275777 : static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)</span>
+<span class="lineNum">     850 </span>            : {
+<span class="lineNum">     851 </span><span class="lineCov">    6275777 :         return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32(mtime_sec ^ tommy_inthash_u32(mtime_nsec)));</span>
+<span class="lineNum">     852 </span>            : }
+<span class="lineNum">     853 </span>            : 
+<span class="lineNum">     854 </span>            : /**
+<span class="lineNum">     855 </span>            :  * Allocate a extent.
+<span class="lineNum">     856 </span>            :  */
+<span class="lineNum">     857 </span>            : struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count);
+<span class="lineNum">     858 </span>            : 
+<span class="lineNum">     859 </span>            : /**
+<span class="lineNum">     860 </span>            :  * Deallocate a extent.
+<span class="lineNum">     861 </span>            :  */
+<span class="lineNum">     862 </span>            : void extent_free(struct snapraid_extent* extent);
+<span class="lineNum">     863 </span>            : 
+<span class="lineNum">     864 </span>            : /**
+<span class="lineNum">     865 </span>            :  * Compare extent by parity position.
+<span class="lineNum">     866 </span>            :  */
+<span class="lineNum">     867 </span>            : int extent_parity_compare(const void* void_a, const void* void_b);
+<span class="lineNum">     868 </span>            : 
+<span class="lineNum">     869 </span>            : /**
+<span class="lineNum">     870 </span>            :  * Compare extent by file and file position.
+<span class="lineNum">     871 </span>            :  */
+<a name="872"><span class="lineNum">     872 </span>            : int extent_file_compare(const void* void_a, const void* void_b);</a>
+<span class="lineNum">     873 </span>            : 
+<span class="lineNum">     874 </span><span class="lineCov">     209329 : static inline int link_flag_has(const struct snapraid_link* slink, unsigned mask)</span>
+<span class="lineNum">     875 </span>            : {
+<span class="lineNum">     876 </span><span class="lineCov">     209329 :         return (slink-&gt;flag &amp; mask) == mask;</span>
+<a name="877"><span class="lineNum">     877 </span>            : }</a>
+<span class="lineNum">     878 </span>            : 
+<span class="lineNum">     879 </span><span class="lineCov">      39461 : static inline void link_flag_set(struct snapraid_link* slink, unsigned mask)</span>
+<span class="lineNum">     880 </span>            : {
+<span class="lineNum">     881 </span><span class="lineCov">      39461 :         slink-&gt;flag |= mask;</span>
+<span class="lineNum">     882 </span><span class="lineCov">      39461 : }</span>
+<span class="lineNum">     883 </span>            : 
+<span class="lineNum">     884 </span>            : static inline void link_flag_clear(struct snapraid_link* slink, unsigned mask)
+<span class="lineNum">     885 </span>            : {
+<span class="lineNum">     886 </span>            :         slink-&gt;flag &amp;= ~mask;
+<a name="887"><span class="lineNum">     887 </span>            : }</a>
+<span class="lineNum">     888 </span>            : 
+<span class="lineNum">     889 </span><span class="lineCov">          6 : static inline void link_flag_let(struct snapraid_link* slink, unsigned flag, unsigned mask)</span>
+<span class="lineNum">     890 </span>            : {
+<span class="lineNum">     891 </span><span class="lineCov">          6 :         slink-&gt;flag &amp;= ~mask;</span>
+<span class="lineNum">     892 </span><span class="lineCov">          6 :         slink-&gt;flag |= flag &amp; mask;</span>
+<a name="893"><span class="lineNum">     893 </span><span class="lineCov">          6 : }</span></a>
+<span class="lineNum">     894 </span>            : 
+<span class="lineNum">     895 </span><span class="lineCov">      91794 : static inline unsigned link_flag_get(struct snapraid_link* slink, unsigned mask)</span>
+<span class="lineNum">     896 </span>            : {
+<span class="lineNum">     897 </span><span class="lineCov">      91794 :         return slink-&gt;flag &amp; mask;</span>
+<span class="lineNum">     898 </span>            : }
+<span class="lineNum">     899 </span>            : 
+<span class="lineNum">     900 </span>            : /**
+<span class="lineNum">     901 </span>            :  * Allocate a link.
+<span class="lineNum">     902 </span>            :  */
+<span class="lineNum">     903 </span>            : struct snapraid_link* link_alloc(const char* name, const char* slink, unsigned link_flag);
+<span class="lineNum">     904 </span>            : 
+<span class="lineNum">     905 </span>            : /**
+<span class="lineNum">     906 </span>            :  * Deallocate a link.
+<span class="lineNum">     907 </span>            :  */
+<span class="lineNum">     908 </span>            : void link_free(struct snapraid_link* slink);
+<span class="lineNum">     909 </span>            : 
+<span class="lineNum">     910 </span>            : /**
+<span class="lineNum">     911 </span>            :  * Compare a link with a name.
+<span class="lineNum">     912 </span>            :  */
+<span class="lineNum">     913 </span>            : int link_name_compare_to_arg(const void* void_arg, const void* void_data);
+<span class="lineNum">     914 </span>            : 
+<span class="lineNum">     915 </span>            : /**
+<span class="lineNum">     916 </span>            :  * Compare links by path.
+<span class="lineNum">     917 </span>            :  */
+<span class="lineNum">     918 </span>            : int link_alpha_compare(const void* void_a, const void* void_b);
+<span class="lineNum">     919 </span>            : 
+<span class="lineNum">     920 </span>            : /**
+<a name="921"><span class="lineNum">     921 </span>            :  * Compute the hash of a link name.</a>
+<span class="lineNum">     922 </span>            :  */
+<span class="lineNum">     923 </span><span class="lineCov">     155706 : static inline tommy_uint32_t link_name_hash(const char* name)</span>
+<span class="lineNum">     924 </span>            : {
+<span class="lineNum">     925 </span><span class="lineCov">     155706 :         return tommy_hash_u32(0, name, strlen(name));</span>
+<a name="926"><span class="lineNum">     926 </span>            : }</a>
+<span class="lineNum">     927 </span>            : 
+<span class="lineNum">     928 </span><span class="lineCov">        940 : static inline int dir_flag_has(const struct snapraid_dir* dir, unsigned mask)</span>
+<span class="lineNum">     929 </span>            : {
+<span class="lineNum">     930 </span><span class="lineCov">        940 :         return (dir-&gt;flag &amp; mask) == mask;</span>
+<a name="931"><span class="lineNum">     931 </span>            : }</a>
+<span class="lineNum">     932 </span>            : 
+<span class="lineNum">     933 </span><span class="lineCov">        278 : static inline void dir_flag_set(struct snapraid_dir* dir, unsigned mask)</span>
+<span class="lineNum">     934 </span>            : {
+<span class="lineNum">     935 </span><span class="lineCov">        278 :         dir-&gt;flag |= mask;</span>
+<span class="lineNum">     936 </span><span class="lineCov">        278 : }</span>
+<span class="lineNum">     937 </span>            : 
+<span class="lineNum">     938 </span>            : static inline void dir_flag_clear(struct snapraid_dir* dir, unsigned mask)
+<span class="lineNum">     939 </span>            : {
+<span class="lineNum">     940 </span>            :         dir-&gt;flag &amp;= ~mask;
+<span class="lineNum">     941 </span>            : }
+<span class="lineNum">     942 </span>            : 
+<span class="lineNum">     943 </span>            : /**
+<span class="lineNum">     944 </span>            :  * Allocate a dir.
+<span class="lineNum">     945 </span>            :  */
+<span class="lineNum">     946 </span>            : struct snapraid_dir* dir_alloc(const char* name);
+<span class="lineNum">     947 </span>            : 
+<span class="lineNum">     948 </span>            : /**
+<span class="lineNum">     949 </span>            :  * Deallocate a dir.
+<span class="lineNum">     950 </span>            :  */
+<span class="lineNum">     951 </span>            : void dir_free(struct snapraid_dir* dir);
+<span class="lineNum">     952 </span>            : 
+<span class="lineNum">     953 </span>            : /**
+<span class="lineNum">     954 </span>            :  * Compare a dir with a name.
+<span class="lineNum">     955 </span>            :  */
+<span class="lineNum">     956 </span>            : int dir_name_compare(const void* void_arg, const void* void_data);
+<span class="lineNum">     957 </span>            : 
+<span class="lineNum">     958 </span>            : /**
+<a name="959"><span class="lineNum">     959 </span>            :  * Compute the hash of a dir name.</a>
+<span class="lineNum">     960 </span>            :  */
+<span class="lineNum">     961 </span><span class="lineCov">       1059 : static inline tommy_uint32_t dir_name_hash(const char* name)</span>
+<span class="lineNum">     962 </span>            : {
+<span class="lineNum">     963 </span><span class="lineCov">       1059 :         return tommy_hash_u32(0, name, strlen(name));</span>
+<span class="lineNum">     964 </span>            : }
+<span class="lineNum">     965 </span>            : 
+<span class="lineNum">     966 </span>            : /**
+<span class="lineNum">     967 </span>            :  * Allocate a disk.
+<span class="lineNum">     968 </span>            :  */
+<span class="lineNum">     969 </span>            : struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip);
+<span class="lineNum">     970 </span>            : 
+<span class="lineNum">     971 </span>            : /**
+<span class="lineNum">     972 </span>            :  * Deallocate a disk.
 <span class="lineNum">     973 </span>            :  */
-<span class="lineNum">     974 </span><span class="lineCov">     377489 : static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)</span>
-<span class="lineNum">     975 </span>            : {
-<span class="lineNum">     976 </span><span class="lineCov">     377489 :         return fs_file2par_get_ts(disk, &amp;disk-&gt;fs_last, file, file_pos);</span>
-<span class="lineNum">     977 </span>            : }
-<span class="lineNum">     978 </span>            : 
-<span class="lineNum">     979 </span>            : /**
-<span class="lineNum">     980 </span>            :  * Like fs_par2block_get() but thread-safe.
-<span class="lineNum">     981 </span>            :  */
-<span class="lineNum">     982 </span>            : struct snapraid_block* fs_par2block_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t parity_pos);
-<span class="lineNum">     983 </span>            : 
-<span class="lineNum">     984 </span>            : /**
-<span class="lineNum">     985 </span>            :  * Get the block from the parity position.
-<span class="lineNum">     986 </span>            :  * Return BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
-<a name="987"><span class="lineNum">     987 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache. </a>
-<span class="lineNum">     988 </span>            :  */
-<span class="lineNum">     989 </span><span class="lineCov">   22233152 : static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)</span>
-<span class="lineNum">     990 </span>            : {
-<span class="lineNum">     991 </span><span class="lineCov">   22233152 :         return fs_par2block_get_ts(disk, &amp;disk-&gt;fs_last, parity_pos);</span>
-<span class="lineNum">     992 </span>            : }
-<span class="lineNum">     993 </span>            : 
-<span class="lineNum">     994 </span>            : /**
-<span class="lineNum">     995 </span>            :  * Allocate a disk mapping.
-<span class="lineNum">     996 </span>            :  * Uses uuid=&quot;&quot; if not available.
-<span class="lineNum">     997 </span>            :  */
-<span class="lineNum">     998 </span>            : struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t total_blocks, block_off_t free_blocks, const char* uuid);
-<span class="lineNum">     999 </span>            : 
-<span class="lineNum">    1000 </span>            : /**
-<span class="lineNum">    1001 </span>            :  * Deallocate a disk mapping.
+<span class="lineNum">     974 </span>            : void disk_free(struct snapraid_disk* disk);
+<span class="lineNum">     975 </span>            : 
+<span class="lineNum">     976 </span>            : /**
+<span class="lineNum">     977 </span>            :  * Get the size of the disk in blocks.
+<span class="lineNum">     978 </span>            :  */
+<span class="lineNum">     979 </span>            : block_off_t fs_size(struct snapraid_disk* disk);
+<span class="lineNum">     980 </span>            : 
+<span class="lineNum">     981 </span>            : /**
+<span class="lineNum">     982 </span>            :  * Check if a disk is totally empty and can be discarded from the content file.
+<span class="lineNum">     983 </span>            :  * A disk is empty if it doesn't contain any file, symlink, hardlink or dir
+<span class="lineNum">     984 </span>            :  * and without any DELETED block.
+<span class="lineNum">     985 </span>            :  * The blockmax is used to limit the search of DELETED block up to blockmax.
+<span class="lineNum">     986 </span>            :  */
+<span class="lineNum">     987 </span>            : int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
+<span class="lineNum">     988 </span>            : 
+<span class="lineNum">     989 </span>            : /**
+<span class="lineNum">     990 </span>            :  * Check the file-system for errors.
+<span class="lineNum">     991 </span>            :  * Return 0 if it's OK.
+<span class="lineNum">     992 </span>            :  */
+<span class="lineNum">     993 </span>            : int fs_check(struct snapraid_disk* disk);
+<span class="lineNum">     994 </span>            : 
+<span class="lineNum">     995 </span>            : /**
+<span class="lineNum">     996 </span>            :  * Allocate a parity position for the specified file position.
+<span class="lineNum">     997 </span>            :  *
+<span class="lineNum">     998 </span>            :  * After this call you can use the par2file/par2block operations
+<span class="lineNum">     999 </span>            :  * to query the relation.
+<span class="lineNum">    1000 </span>            :  *
+<span class="lineNum">    1001 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache. +
 <span class="lineNum">    1002 </span>            :  */
-<span class="lineNum">    1003 </span>            : void map_free(struct snapraid_map* map);
+<span class="lineNum">    1003 </span>            : void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
 <span class="lineNum">    1004 </span>            : 
 <span class="lineNum">    1005 </span>            : /**
-<span class="lineNum">    1006 </span>            :  * Mask used to store additional information in the info bits.
+<span class="lineNum">    1006 </span>            :  * Deallocate the parity position.
 <span class="lineNum">    1007 </span>            :  *
-<span class="lineNum">    1008 </span>            :  * These bits reduce the granularity of the time in the memory representation.
-<span class="lineNum">    1009 </span>            :  */
-<span class="lineNum">    1010 </span>            : #define INFO_MASK 0x7
-<span class="lineNum">    1011 </span>            : 
-<span class="lineNum">    1012 </span>            : /**
-<a name="1013"><span class="lineNum">    1013 </span>            :  * Make an info.</a>
-<span class="lineNum">    1014 </span>            :  */
-<span class="lineNum">    1015 </span><span class="lineCov">     174544 : static inline snapraid_info info_make(time_t last_access, int error, int rehash, int justsynced)</span>
-<span class="lineNum">    1016 </span>            : {
-<span class="lineNum">    1017 </span>            :         /* clear the lowest bits as reserved for other information */
-<span class="lineNum">    1018 </span><span class="lineCov">     174544 :         snapraid_info info = last_access &amp; ~INFO_MASK;</span>
+<span class="lineNum">    1008 </span>            :  * After this call the par2file/par2block operations
+<span class="lineNum">    1009 </span>            :  * won't find anymore the parity association.
+<span class="lineNum">    1010 </span>            :  *
+<span class="lineNum">    1011 </span>            :  * \note This function is NOT thread-safe as it uses the the disk cache.
+<span class="lineNum">    1012 </span>            :  */
+<span class="lineNum">    1013 </span>            : void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
+<span class="lineNum">    1014 </span>            : 
+<span class="lineNum">    1015 </span>            : /**
+<span class="lineNum">    1016 </span>            :  * Get the block from the file position.
+<span class="lineNum">    1017 </span>            :  */
+<span class="lineNum">    1018 </span>            : struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos);
 <span class="lineNum">    1019 </span>            : 
-<span class="lineNum">    1020 </span><span class="lineCov">     174544 :         if (error != 0)</span>
-<span class="lineNum">    1021 </span><span class="lineCov">       5311 :                 info |= 0x1;</span>
-<span class="lineNum">    1022 </span><span class="lineCov">     174544 :         if (rehash != 0)</span>
-<span class="lineNum">    1023 </span><span class="lineCov">      14426 :                 info |= 0x2;</span>
-<span class="lineNum">    1024 </span><span class="lineCov">     174544 :         if (justsynced != 0)</span>
-<span class="lineNum">    1025 </span><span class="lineCov">     122837 :                 info |= 0x4;</span>
-<span class="lineNum">    1026 </span><span class="lineCov">     174544 :         return info;</span>
-<span class="lineNum">    1027 </span>            : }
-<span class="lineNum">    1028 </span>            : 
-<span class="lineNum">    1029 </span>            : /**
-<span class="lineNum">    1030 </span>            :  * Extract the time information.
-<span class="lineNum">    1031 </span>            :  * This is the last time when the block was know to be correct.
-<a name="1032"><span class="lineNum">    1032 </span>            :  * The &quot;scrubbed&quot; info tells if the time is referreing at the latest sync or scrub.</a>
-<span class="lineNum">    1033 </span>            :  */
-<span class="lineNum">    1034 </span><span class="lineCov">     884150 : static inline time_t info_get_time(snapraid_info info)</span>
-<span class="lineNum">    1035 </span>            : {
-<span class="lineNum">    1036 </span><span class="lineCov">     884150 :         return info &amp; ~INFO_MASK;</span>
-<span class="lineNum">    1037 </span>            : }
-<span class="lineNum">    1038 </span>            : 
-<span class="lineNum">    1039 </span>            : /**
-<span class="lineNum">    1040 </span>            :  * Extract the error information.
-<a name="1041"><span class="lineNum">    1041 </span>            :  * Report if the block address had some problem.</a>
-<span class="lineNum">    1042 </span>            :  */
-<span class="lineNum">    1043 </span><span class="lineCov">     339090 : static inline int info_get_bad(snapraid_info info)</span>
-<span class="lineNum">    1044 </span>            : {
-<span class="lineNum">    1045 </span><span class="lineCov">     339090 :         return (info &amp; 0x1) != 0;</span>
-<span class="lineNum">    1046 </span>            : }
-<span class="lineNum">    1047 </span>            : 
-<span class="lineNum">    1048 </span>            : /**
-<span class="lineNum">    1049 </span>            :  * Extract the rehash information.
-<a name="1050"><span class="lineNum">    1050 </span>            :  * Report if the block address is using the old hash and needs to be rehashed.</a>
-<span class="lineNum">    1051 </span>            :  */
-<span class="lineNum">    1052 </span><span class="lineCov">    2053300 : static inline int info_get_rehash(snapraid_info info)</span>
-<span class="lineNum">    1053 </span>            : {
-<span class="lineNum">    1054 </span><span class="lineCov">    2053300 :         return (info &amp; 0x2) != 0;</span>
-<span class="lineNum">    1055 </span>            : }
+<span class="lineNum">    1020 </span>            : /**
+<span class="lineNum">    1021 </span>            :  * Get the file position from the parity position.
+<span class="lineNum">    1022 </span>            :  * Return 0 if no file is using it.
+<span class="lineNum">    1023 </span>            :  */
+<span class="lineNum">    1024 </span>            : struct snapraid_file* fs_par2file_find(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
+<span class="lineNum">    1025 </span>            : 
+<span class="lineNum">    1026 </span>            : /**
+<a name="1027"><span class="lineNum">    1027 </span>            :  * Get the file position from the parity position.</a>
+<span class="lineNum">    1028 </span>            :  */
+<span class="lineNum">    1029 </span><span class="lineCov">   11724320 : static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)</span>
+<span class="lineNum">    1030 </span>            : {
+<span class="lineNum">    1031 </span>            :         struct snapraid_file* ret;
+<span class="lineNum">    1032 </span>            : 
+<span class="lineNum">    1033 </span><span class="lineCov">   11724320 :         ret = fs_par2file_find(disk, parity_pos, file_pos);</span>
+<span class="lineNum">    1034 </span><span class="lineCov">   11724505 :         if (ret == 0) {</span>
+<span class="lineNum">    1035 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">    1036 </span>            :                 log_fatal(&quot;Internal inconsistency when deresolving parity to file at position '%u' in disk '%s'\n&quot;, parity_pos, disk-&gt;name);
+<span class="lineNum">    1037 </span>            :                 os_abort();
+<span class="lineNum">    1038 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">    1039 </span>            :         }
+<span class="lineNum">    1040 </span>            : 
+<span class="lineNum">    1041 </span><span class="lineCov">   11724505 :         return ret;</span>
+<span class="lineNum">    1042 </span>            : }
+<span class="lineNum">    1043 </span>            : 
+<span class="lineNum">    1044 </span>            : /**
+<span class="lineNum">    1045 </span>            :  * Get the parity position from the file position.
+<span class="lineNum">    1046 </span>            :  * Return POS_NULL if no parity is allocated.
+<span class="lineNum">    1047 </span>            :  */
+<span class="lineNum">    1048 </span>            : block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
+<span class="lineNum">    1049 </span>            : 
+<span class="lineNum">    1050 </span>            : /**
+<a name="1051"><span class="lineNum">    1051 </span>            :  * Get the parity position from the file position.</a>
+<span class="lineNum">    1052 </span>            :  */
+<span class="lineNum">    1053 </span><span class="lineCov">    4755275 : static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)</span>
+<span class="lineNum">    1054 </span>            : {
+<span class="lineNum">    1055 </span>            :         block_off_t ret;
 <span class="lineNum">    1056 </span>            : 
-<span class="lineNum">    1057 </span>            : /**
-<span class="lineNum">    1058 </span>            :  * Extract the scrubbed information.
-<a name="1059"><span class="lineNum">    1059 </span>            :  * Report if the block address was never scrubbed.</a>
-<span class="lineNum">    1060 </span>            :  */
-<span class="lineNum">    1061 </span><span class="lineCov">      79114 : static inline int info_get_justsynced(snapraid_info info)</span>
-<span class="lineNum">    1062 </span>            : {
-<span class="lineNum">    1063 </span><span class="lineCov">      79114 :         return (info &amp; 0x4) != 0;</span>
-<span class="lineNum">    1064 </span>            : }
-<span class="lineNum">    1065 </span>            : 
-<span class="lineNum">    1066 </span>            : /**
-<a name="1067"><span class="lineNum">    1067 </span>            :  * Mark the block address as with error.</a>
-<span class="lineNum">    1068 </span>            :  */
-<span class="lineNum">    1069 </span><span class="lineCov">       1772 : static inline snapraid_info info_set_bad(snapraid_info info)</span>
-<span class="lineNum">    1070 </span>            : {
-<span class="lineNum">    1071 </span><span class="lineCov">       1772 :         return info | 0x1;</span>
-<span class="lineNum">    1072 </span>            : }
+<span class="lineNum">    1057 </span><span class="lineCov">    4755275 :         ret = fs_file2par_find(disk, file, file_pos);</span>
+<span class="lineNum">    1058 </span><span class="lineCov">    4755275 :         if (ret == POS_NULL) {</span>
+<span class="lineNum">    1059 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">    1060 </span>            :                 log_fatal(&quot;Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n&quot;, file-&gt;sub, file_pos, file-&gt;blockmax, disk-&gt;name);
+<span class="lineNum">    1061 </span>            :                 os_abort();
+<span class="lineNum">    1062 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">    1063 </span>            :         }
+<span class="lineNum">    1064 </span>            : 
+<span class="lineNum">    1065 </span><span class="lineCov">    4755275 :         return ret;</span>
+<span class="lineNum">    1066 </span>            : }
+<span class="lineNum">    1067 </span>            : 
+<span class="lineNum">    1068 </span>            : /**
+<span class="lineNum">    1069 </span>            :  * Get the block from the parity position.
+<span class="lineNum">    1070 </span>            :  * Return BLOCK_NULL==0 if the block is over the end of the disk or not used.
+<span class="lineNum">    1071 </span>            :  */
+<span class="lineNum">    1072 </span>            : struct snapraid_block* fs_par2block_find(struct snapraid_disk* disk, block_off_t parity_pos);
 <span class="lineNum">    1073 </span>            : 
 <span class="lineNum">    1074 </span>            : /**
-<a name="1075"><span class="lineNum">    1075 </span>            :  * Mark the block address as with rehash.</a>
+<a name="1075"><span class="lineNum">    1075 </span>            :  * Get the block from the parity position.</a>
 <span class="lineNum">    1076 </span>            :  */
-<span class="lineNum">    1077 </span><span class="lineCov">       9215 : static inline snapraid_info info_set_rehash(snapraid_info info)</span>
+<span class="lineNum">    1077 </span><span class="lineCov">      15867 : static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)</span>
 <span class="lineNum">    1078 </span>            : {
-<span class="lineNum">    1079 </span><span class="lineCov">       9215 :         return info | 0x2;</span>
-<span class="lineNum">    1080 </span>            : }
-<span class="lineNum">    1081 </span>            : 
-<span class="lineNum">    1082 </span>            : /**
-<span class="lineNum">    1083 </span>            :  * Set the info at the specified position.
-<a name="1084"><span class="lineNum">    1084 </span>            :  * The position is allocated if not yet done.</a>
-<span class="lineNum">    1085 </span>            :  */
-<span class="lineNum">    1086 </span><span class="lineCov">    1641726 : static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info info)</span>
-<span class="lineNum">    1087 </span>            : {
-<span class="lineNum">    1088 </span><span class="lineCov">    1641726 :         tommy_arrayblkof_grow(array, pos + 1);</span>
-<span class="lineNum">    1089 </span>            : 
-<span class="lineNum">    1090 </span><span class="lineCov">    1641726 :         memcpy(tommy_arrayblkof_ref(array, pos), &amp;info, sizeof(snapraid_info));</span>
-<span class="lineNum">    1091 </span><span class="lineCov">    1641726 : }</span>
-<span class="lineNum">    1092 </span>            : 
-<span class="lineNum">    1093 </span>            : /**
-<span class="lineNum">    1094 </span>            :  * Get the info at the specified position.
-<a name="1095"><span class="lineNum">    1095 </span>            :  * For not allocated position, 0 is returned.</a>
-<span class="lineNum">    1096 </span>            :  */
-<span class="lineNum">    1097 </span><span class="lineCov">    5095494 : static inline snapraid_info info_get(tommy_arrayblkof* array, unsigned pos)</span>
-<span class="lineNum">    1098 </span>            : {
-<span class="lineNum">    1099 </span>            :         snapraid_info info;
-<span class="lineNum">    1100 </span>            : 
-<span class="lineNum">    1101 </span><span class="lineCov">    5095494 :         if (pos &gt;= tommy_arrayblkof_size(array))</span>
-<span class="lineNum">    1102 </span><span class="lineCov">     262643 :                 return 0;</span>
-<span class="lineNum">    1103 </span>            : 
-<span class="lineNum">    1104 </span><span class="lineCov">    4832851 :         memcpy(&amp;info, tommy_arrayblkof_ref(array, pos), sizeof(snapraid_info));</span>
-<span class="lineNum">    1105 </span>            : 
-<span class="lineNum">    1106 </span><span class="lineCov">    4832851 :         return info;</span>
-<span class="lineNum">    1107 </span>            : }
-<span class="lineNum">    1108 </span>            : 
-<span class="lineNum">    1109 </span>            : /**
-<span class="lineNum">    1110 </span>            :  * Compare times
-<span class="lineNum">    1111 </span>            :  */
-<span class="lineNum">    1112 </span>            : int time_compare(const void* void_a, const void* void_b);
-<span class="lineNum">    1113 </span>            : 
-<span class="lineNum">    1114 </span>            : #endif
-<span class="lineNum">    1115 </span>            : 
+<span class="lineNum">    1079 </span>            :         struct snapraid_block* ret;
+<span class="lineNum">    1080 </span>            : 
+<span class="lineNum">    1081 </span><span class="lineCov">      15867 :         ret = fs_par2block_find(disk, parity_pos);</span>
+<span class="lineNum">    1082 </span><span class="lineCov">      15867 :         if (ret == BLOCK_NULL) {</span>
+<span class="lineNum">    1083 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">    1084 </span>            :                 log_fatal(&quot;Internal inconsistency when deresolving parity to block at position '%u' in disk '%s'\n&quot;, parity_pos, disk-&gt;name);
+<span class="lineNum">    1085 </span>            :                 os_abort();
+<span class="lineNum">    1086 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">    1087 </span>            :         }
+<span class="lineNum">    1088 </span>            : 
+<span class="lineNum">    1089 </span><span class="lineCov">      15867 :         return ret;</span>
+<span class="lineNum">    1090 </span>            : }
+<span class="lineNum">    1091 </span>            : 
+<span class="lineNum">    1092 </span>            : /**
+<span class="lineNum">    1093 </span>            :  * Allocate a disk mapping.
+<span class="lineNum">    1094 </span>            :  * Uses uuid=&quot;&quot; if not available.
+<span class="lineNum">    1095 </span>            :  */
+<span class="lineNum">    1096 </span>            : struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t total_blocks, block_off_t free_blocks, const char* uuid);
+<span class="lineNum">    1097 </span>            : 
+<span class="lineNum">    1098 </span>            : /**
+<span class="lineNum">    1099 </span>            :  * Deallocate a disk mapping.
+<span class="lineNum">    1100 </span>            :  */
+<span class="lineNum">    1101 </span>            : void map_free(struct snapraid_map* map);
+<span class="lineNum">    1102 </span>            : 
+<span class="lineNum">    1103 </span>            : /**
+<span class="lineNum">    1104 </span>            :  * Mask used to store additional information in the info bits.
+<span class="lineNum">    1105 </span>            :  *
+<span class="lineNum">    1106 </span>            :  * These bits reduce the granularity of the time in the memory representation.
+<span class="lineNum">    1107 </span>            :  */
+<span class="lineNum">    1108 </span>            : #define INFO_MASK 0x7
+<span class="lineNum">    1109 </span>            : 
+<span class="lineNum">    1110 </span>            : /**
+<a name="1111"><span class="lineNum">    1111 </span>            :  * Make an info.</a>
+<span class="lineNum">    1112 </span>            :  */
+<span class="lineNum">    1113 </span><span class="lineCov">     183427 : static inline snapraid_info info_make(time_t last_access, int error, int rehash, int justsynced)</span>
+<span class="lineNum">    1114 </span>            : {
+<span class="lineNum">    1115 </span>            :         /* clear the lowest bits as reserved for other information */
+<span class="lineNum">    1116 </span><span class="lineCov">     183427 :         snapraid_info info = last_access &amp; ~INFO_MASK;</span>
+<span class="lineNum">    1117 </span>            : 
+<span class="lineNum">    1118 </span><span class="lineCov">     183427 :         if (error != 0)</span>
+<span class="lineNum">    1119 </span><span class="lineCov">       5308 :                 info |= 0x1;</span>
+<span class="lineNum">    1120 </span><span class="lineCov">     183427 :         if (rehash != 0)</span>
+<span class="lineNum">    1121 </span><span class="lineCov">      14181 :                 info |= 0x2;</span>
+<span class="lineNum">    1122 </span><span class="lineCov">     183427 :         if (justsynced != 0)</span>
+<span class="lineNum">    1123 </span><span class="lineCov">     131834 :                 info |= 0x4;</span>
+<span class="lineNum">    1124 </span><span class="lineCov">     183427 :         return info;</span>
+<span class="lineNum">    1125 </span>            : }
+<span class="lineNum">    1126 </span>            : 
+<span class="lineNum">    1127 </span>            : /**
+<span class="lineNum">    1128 </span>            :  * Extract the time information.
+<span class="lineNum">    1129 </span>            :  * This is the last time when the block was know to be correct.
+<a name="1130"><span class="lineNum">    1130 </span>            :  * The &quot;scrubbed&quot; info tells if the time is referreing at the latest sync or scrub.</a>
+<span class="lineNum">    1131 </span>            :  */
+<span class="lineNum">    1132 </span><span class="lineCov">     878516 : static inline time_t info_get_time(snapraid_info info)</span>
+<span class="lineNum">    1133 </span>            : {
+<span class="lineNum">    1134 </span><span class="lineCov">     878516 :         return info &amp; ~INFO_MASK;</span>
+<span class="lineNum">    1135 </span>            : }
+<span class="lineNum">    1136 </span>            : 
+<span class="lineNum">    1137 </span>            : /**
+<span class="lineNum">    1138 </span>            :  * Extract the error information.
+<a name="1139"><span class="lineNum">    1139 </span>            :  * Report if the block address had some problem.</a>
+<span class="lineNum">    1140 </span>            :  */
+<span class="lineNum">    1141 </span><span class="lineCov">     347310 : static inline int info_get_bad(snapraid_info info)</span>
+<span class="lineNum">    1142 </span>            : {
+<span class="lineNum">    1143 </span><span class="lineCov">     347310 :         return (info &amp; 0x1) != 0;</span>
+<span class="lineNum">    1144 </span>            : }
+<span class="lineNum">    1145 </span>            : 
+<span class="lineNum">    1146 </span>            : /**
+<span class="lineNum">    1147 </span>            :  * Extract the rehash information.
+<a name="1148"><span class="lineNum">    1148 </span>            :  * Report if the block address is using the old hash and needs to be rehashed.</a>
+<span class="lineNum">    1149 </span>            :  */
+<span class="lineNum">    1150 </span><span class="lineCov">    2042164 : static inline int info_get_rehash(snapraid_info info)</span>
+<span class="lineNum">    1151 </span>            : {
+<span class="lineNum">    1152 </span><span class="lineCov">    2042164 :         return (info &amp; 0x2) != 0;</span>
+<span class="lineNum">    1153 </span>            : }
+<span class="lineNum">    1154 </span>            : 
+<span class="lineNum">    1155 </span>            : /**
+<span class="lineNum">    1156 </span>            :  * Extract the scrubbed information.
+<a name="1157"><span class="lineNum">    1157 </span>            :  * Report if the block address was never scrubbed.</a>
+<span class="lineNum">    1158 </span>            :  */
+<span class="lineNum">    1159 </span><span class="lineCov">      63947 : static inline int info_get_justsynced(snapraid_info info)</span>
+<span class="lineNum">    1160 </span>            : {
+<span class="lineNum">    1161 </span><span class="lineCov">      63947 :         return (info &amp; 0x4) != 0;</span>
+<span class="lineNum">    1162 </span>            : }
+<span class="lineNum">    1163 </span>            : 
+<span class="lineNum">    1164 </span>            : /**
+<a name="1165"><span class="lineNum">    1165 </span>            :  * Mark the block address as with error.</a>
+<span class="lineNum">    1166 </span>            :  */
+<span class="lineNum">    1167 </span><span class="lineCov">       1772 : static inline snapraid_info info_set_bad(snapraid_info info)</span>
+<span class="lineNum">    1168 </span>            : {
+<span class="lineNum">    1169 </span><span class="lineCov">       1772 :         return info | 0x1;</span>
+<span class="lineNum">    1170 </span>            : }
+<span class="lineNum">    1171 </span>            : 
+<span class="lineNum">    1172 </span>            : /**
+<a name="1173"><span class="lineNum">    1173 </span>            :  * Mark the block address as with rehash.</a>
+<span class="lineNum">    1174 </span>            :  */
+<span class="lineNum">    1175 </span><span class="lineCov">       9215 : static inline snapraid_info info_set_rehash(snapraid_info info)</span>
+<span class="lineNum">    1176 </span>            : {
+<span class="lineNum">    1177 </span><span class="lineCov">       9215 :         return info | 0x2;</span>
+<span class="lineNum">    1178 </span>            : }
+<span class="lineNum">    1179 </span>            : 
+<span class="lineNum">    1180 </span>            : /**
+<span class="lineNum">    1181 </span>            :  * Set the info at the specified position.
+<a name="1182"><span class="lineNum">    1182 </span>            :  * The position is allocated if not yet done.</a>
+<span class="lineNum">    1183 </span>            :  */
+<span class="lineNum">    1184 </span><span class="lineCov">    1698035 : static inline void info_set(tommy_arrayblkof* array, block_off_t pos, snapraid_info info)</span>
+<span class="lineNum">    1185 </span>            : {
+<span class="lineNum">    1186 </span><span class="lineCov">    1698035 :         tommy_arrayblkof_grow(array, pos + 1);</span>
+<span class="lineNum">    1187 </span>            : 
+<span class="lineNum">    1188 </span><span class="lineCov">    1698035 :         memcpy(tommy_arrayblkof_ref(array, pos), &amp;info, sizeof(snapraid_info));</span>
+<span class="lineNum">    1189 </span><span class="lineCov">    1698035 : }</span>
+<span class="lineNum">    1190 </span>            : 
+<span class="lineNum">    1191 </span>            : /**
+<span class="lineNum">    1192 </span>            :  * Get the info at the specified position.
+<a name="1193"><span class="lineNum">    1193 </span>            :  * For not allocated position, 0 is returned.</a>
+<span class="lineNum">    1194 </span>            :  */
+<span class="lineNum">    1195 </span><span class="lineCov">    5093871 : static inline snapraid_info info_get(tommy_arrayblkof* array, block_off_t pos)</span>
+<span class="lineNum">    1196 </span>            : {
+<span class="lineNum">    1197 </span>            :         snapraid_info info;
+<span class="lineNum">    1198 </span>            : 
+<span class="lineNum">    1199 </span><span class="lineCov">    5093871 :         if (pos &gt;= tommy_arrayblkof_size(array))</span>
+<span class="lineNum">    1200 </span><span class="lineCov">     262643 :                 return 0;</span>
+<span class="lineNum">    1201 </span>            : 
+<span class="lineNum">    1202 </span><span class="lineCov">    4831228 :         memcpy(&amp;info, tommy_arrayblkof_ref(array, pos), sizeof(snapraid_info));</span>
+<span class="lineNum">    1203 </span>            : 
+<span class="lineNum">    1204 </span><span class="lineCov">    4831228 :         return info;</span>
+<span class="lineNum">    1205 </span>            : }
+<span class="lineNum">    1206 </span>            : 
+<span class="lineNum">    1207 </span>            : /**
+<span class="lineNum">    1208 </span>            :  * Compare times
+<span class="lineNum">    1209 </span>            :  */
+<span class="lineNum">    1210 </span>            : int time_compare(const void* void_a, const void* void_b);
+<span class="lineNum">    1211 </span>            : 
+<span class="lineNum">    1212 </span>            : /****************************************************************************/
+<span class="lineNum">    1213 </span>            : /* format */
+<span class="lineNum">    1214 </span>            : 
+<span class="lineNum">    1215 </span>            : #define FMT_FILE 0 /**&lt; Print only the file. */
+<span class="lineNum">    1216 </span>            : #define FMT_DISK 1 /**&lt; Print the disk name and the file. */
+<span class="lineNum">    1217 </span>            : #define FMT_PATH 2 /**&lt; Print the full path. */
+<span class="lineNum">    1218 </span>            : 
+<span class="lineNum">    1219 </span>            : extern int FMT_MODE;
+<span class="lineNum">    1220 </span>            : 
+<span class="lineNum">    1221 </span>            : /**
+<span class="lineNum">    1222 </span>            :  * Format a file path for poll reference
+<span class="lineNum">    1223 </span>            :  */
+<span class="lineNum">    1224 </span>            : const char* fmt_poll(const struct snapraid_disk* disk, const char* str, char* buffer);
+<span class="lineNum">    1225 </span>            : 
+<span class="lineNum">    1226 </span>            : /**
+<span class="lineNum">    1227 </span>            :  * Format a path name for terminal reference
+<span class="lineNum">    1228 </span>            :  */
+<span class="lineNum">    1229 </span>            : const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* buffer);
+<span class="lineNum">    1230 </span>            : 
+<span class="lineNum">    1231 </span>            : #endif
+<span class="lineNum">    1232 </span>            : 
 </pre>
       </td>
     </tr>

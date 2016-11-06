@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -114,11 +114,11 @@
 <span class="lineNum">      52 </span>            : 
 <span class="lineNum">      53 </span>            :         /* copy the present hash as previous one */
 <span class="lineNum">      54 </span><span class="lineCov">          1 :         state-&gt;prevhash = state-&gt;hash;</span>
-<span class="lineNum">      55 </span><span class="lineCov">          1 :         memcpy(state-&gt;prevhashseed, state-&gt;hashseed, HASH_SIZE);</span>
+<span class="lineNum">      55 </span><span class="lineCov">          1 :         memcpy(state-&gt;prevhashseed, state-&gt;hashseed, HASH_MAX);</span>
 <span class="lineNum">      56 </span>            : 
 <span class="lineNum">      57 </span>            :         /* set the new hash and seed */
 <span class="lineNum">      58 </span><span class="lineCov">          1 :         state-&gt;hash = state-&gt;besthash;</span>
-<span class="lineNum">      59 </span><span class="lineCov">          1 :         if (randomize(state-&gt;hashseed, HASH_SIZE) != 0) {</span>
+<span class="lineNum">      59 </span><span class="lineCov">          1 :         if (randomize(state-&gt;hashseed, HASH_MAX) != 0) {</span>
 <span class="lineNum">      60 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      61 </span>            :                 log_fatal(&quot;Failed to get random values.\n&quot;);
 <span class="lineNum">      62 </span>            :                 exit(EXIT_FAILURE);

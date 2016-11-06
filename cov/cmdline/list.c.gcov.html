@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -88,99 +88,101 @@
 <span class="lineNum">      26 </span>            : /****************************************************************************/
 <a name="27"><span class="lineNum">      27 </span>            : /* list */</a>
 <span class="lineNum">      28 </span>            : 
-<span class="lineNum">      29 </span><span class="lineCov">          3 : void state_list(struct snapraid_state* state)</span>
+<span class="lineNum">      29 </span><span class="lineCov">          5 : void state_list(struct snapraid_state* state)</span>
 <span class="lineNum">      30 </span>            : {
 <span class="lineNum">      31 </span>            :         tommy_node* i;
 <span class="lineNum">      32 </span>            :         unsigned file_count;
 <span class="lineNum">      33 </span>            :         data_off_t file_size;
 <span class="lineNum">      34 </span>            :         unsigned link_count;
-<span class="lineNum">      35 </span>            : 
-<span class="lineNum">      36 </span><span class="lineCov">          3 :         file_count = 0;</span>
-<span class="lineNum">      37 </span><span class="lineCov">          3 :         file_size = 0;</span>
-<span class="lineNum">      38 </span><span class="lineCov">          3 :         link_count = 0;</span>
-<span class="lineNum">      39 </span>            : 
-<span class="lineNum">      40 </span><span class="lineCov">          3 :         msg_progress(&quot;Listing...\n&quot;);</span>
+<span class="lineNum">      35 </span>            :         char esc_buffer[ESC_MAX];
+<span class="lineNum">      36 </span>            :         char esc_buffer_alt[ESC_MAX];
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span><span class="lineCov">          5 :         file_count = 0;</span>
+<span class="lineNum">      39 </span><span class="lineCov">          5 :         file_size = 0;</span>
+<span class="lineNum">      40 </span><span class="lineCov">          5 :         link_count = 0;</span>
 <span class="lineNum">      41 </span>            : 
-<span class="lineNum">      42 </span>            :         /* for each disk */
-<span class="lineNum">      43 </span><span class="lineCov">         21 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">      44 </span>            :                 tommy_node* j;
-<span class="lineNum">      45 </span><span class="lineCov">         18 :                 struct snapraid_disk* disk = i-&gt;data;</span>
-<span class="lineNum">      46 </span>            : 
-<span class="lineNum">      47 </span>            :                 /* sort by name */
-<span class="lineNum">      48 </span><span class="lineCov">         18 :                 tommy_list_sort(&amp;disk-&gt;filelist, file_path_compare);</span>
-<span class="lineNum">      49 </span>            : 
-<span class="lineNum">      50 </span>            :                 /* for each file */
-<span class="lineNum">      51 </span><span class="lineCov">      17018 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">      52 </span><span class="lineCov">      17000 :                         struct snapraid_file* file = j-&gt;data;</span>
-<span class="lineNum">      53 </span>            : #if HAVE_LOCALTIME_R
-<span class="lineNum">      54 </span>            :                         struct tm tm_res;
-<span class="lineNum">      55 </span>            : #endif
-<span class="lineNum">      56 </span>            :                         struct tm* tm;
-<span class="lineNum">      57 </span>            :                         time_t t;
-<span class="lineNum">      58 </span>            : 
-<span class="lineNum">      59 </span><span class="lineCov">      17000 :                         ++file_count;</span>
-<span class="lineNum">      60 </span><span class="lineCov">      17000 :                         file_size += file-&gt;size;</span>
-<span class="lineNum">      61 </span>            : 
-<span class="lineNum">      62 </span><span class="lineCov">      17000 :                         log_tag(&quot;file:%s:%s:%&quot; PRIu64 &quot;:%&quot; PRIi64 &quot;:%u:%&quot; PRIi64 &quot;\n&quot;, disk-&gt;name, esc(file-&gt;sub), file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec, file-&gt;inode);</span>
+<span class="lineNum">      42 </span><span class="lineCov">          5 :         msg_progress(&quot;Listing...\n&quot;);</span>
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            :         /* for each disk */
+<span class="lineNum">      45 </span><span class="lineCov">         35 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">      46 </span>            :                 tommy_node* j;
+<span class="lineNum">      47 </span><span class="lineCov">         30 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            :                 /* sort by name */
+<span class="lineNum">      50 </span><span class="lineCov">         30 :                 tommy_list_sort(&amp;disk-&gt;filelist, file_path_compare);</span>
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            :                 /* for each file */
+<span class="lineNum">      53 </span><span class="lineCov">      39578 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">      54 </span><span class="lineCov">      39548 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">      55 </span>            : #if HAVE_LOCALTIME_R
+<span class="lineNum">      56 </span>            :                         struct tm tm_res;
+<span class="lineNum">      57 </span>            : #endif
+<span class="lineNum">      58 </span>            :                         struct tm* tm;
+<span class="lineNum">      59 </span>            :                         time_t t;
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span><span class="lineCov">      39548 :                         ++file_count;</span>
+<span class="lineNum">      62 </span><span class="lineCov">      39548 :                         file_size += file-&gt;size;</span>
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span><span class="lineCov">      17000 :                         t = file-&gt;mtime_sec;</span>
-<span class="lineNum">      65 </span>            : #if HAVE_LOCALTIME_R
-<span class="lineNum">      66 </span><span class="lineCov">      17000 :                         tm = localtime_r(&amp;t, &amp;tm_res);</span>
-<span class="lineNum">      67 </span>            : #else
-<span class="lineNum">      68 </span>            :                         tm = localtime(&amp;t);
-<span class="lineNum">      69 </span>            : #endif
-<span class="lineNum">      70 </span>            : 
-<span class="lineNum">      71 </span><span class="lineCov">      17000 :                         printf(&quot;%12&quot; PRIu64 &quot; &quot;, file-&gt;size);</span>
-<span class="lineNum">      72 </span><span class="lineCov">      17000 :                         if (tm) {</span>
-<span class="lineNum">      73 </span><span class="lineCov">      17000 :                                 printf(&quot;%04u/%02u/%02u %02u:%02u&quot;, tm-&gt;tm_year + 1900, tm-&gt;tm_mon + 1, tm-&gt;tm_mday, tm-&gt;tm_hour, tm-&gt;tm_min);</span>
-<span class="lineNum">      74 </span><span class="lineCov">      17000 :                                 if (msg_level &gt;= MSG_VERBOSE)</span>
-<span class="lineNum">      75 </span><span class="lineCov">      17000 :                                         printf(&quot;:%02u.%03u&quot;, tm-&gt;tm_sec, file-&gt;mtime_nsec / 1000000);</span>
-<span class="lineNum">      76 </span><span class="lineCov">      17000 :                                 printf(&quot; &quot;);</span>
-<span class="lineNum">      77 </span>            :                         }
-<span class="lineNum">      78 </span><span class="lineCov">      17000 :                         printf(&quot;%s%s\n&quot;, disk-&gt;dir, file-&gt;sub);</span>
-<span class="lineNum">      79 </span>            :                 }
-<span class="lineNum">      80 </span>            : 
-<span class="lineNum">      81 </span>            :                 /* sort by name */
-<span class="lineNum">      82 </span><span class="lineCov">         18 :                 tommy_list_sort(&amp;disk-&gt;linklist, link_alpha_compare);</span>
-<span class="lineNum">      83 </span>            : 
-<span class="lineNum">      84 </span>            :                 /* for each link */
-<span class="lineNum">      85 </span><span class="lineCov">        607 :                 for (j = disk-&gt;linklist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">      86 </span><span class="lineCov">        589 :                         struct snapraid_link* slink = j-&gt;data;</span>
-<span class="lineNum">      87 </span>            :                         const char* type;
-<span class="lineNum">      88 </span>            : 
-<span class="lineNum">      89 </span><span class="lineCov">        589 :                         switch (slink-&gt;flag &amp; FILE_IS_LINK_MASK) {</span>
-<span class="lineNum">      90 </span><span class="lineCov">          3 :                         case FILE_IS_HARDLINK : type = &quot;hardlink&quot;; break;</span>
-<span class="lineNum">      91 </span><span class="lineCov">        586 :                         case FILE_IS_SYMLINK : type = &quot;symlink&quot;; break;</span>
-<span class="lineNum">      92 </span><span class="lineNoCov">          0 :                         case FILE_IS_SYMDIR : type = &quot;symdir&quot;; break;</span>
-<span class="lineNum">      93 </span><span class="lineNoCov">          0 :                         case FILE_IS_JUNCTION : type = &quot;junction&quot;; break;</span>
-<span class="lineNum">      94 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">      95 </span>            :                         default : type = &quot;unknown&quot;; break;
-<span class="lineNum">      96 </span>            :                                 /* LCOV_EXCL_STOP */
-<span class="lineNum">      97 </span>            :                         }
-<span class="lineNum">      98 </span>            : 
-<span class="lineNum">      99 </span><span class="lineCov">        589 :                         ++link_count;</span>
+<span class="lineNum">      64 </span><span class="lineCov">      39548 :                         log_tag(&quot;file:%s:%s:%&quot; PRIu64 &quot;:%&quot; PRIi64 &quot;:%u:%&quot; PRIi64 &quot;\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec, file-&gt;inode);</span>
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span><span class="lineCov">      39548 :                         t = file-&gt;mtime_sec;</span>
+<span class="lineNum">      67 </span>            : #if HAVE_LOCALTIME_R
+<span class="lineNum">      68 </span><span class="lineCov">      39548 :                         tm = localtime_r(&amp;t, &amp;tm_res);</span>
+<span class="lineNum">      69 </span>            : #else
+<span class="lineNum">      70 </span>            :                         tm = localtime(&amp;t);
+<span class="lineNum">      71 </span>            : #endif
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span><span class="lineCov">      39548 :                         printf(&quot;%12&quot; PRIu64 &quot; &quot;, file-&gt;size);</span>
+<span class="lineNum">      74 </span><span class="lineCov">      39548 :                         if (tm) {</span>
+<span class="lineNum">      75 </span><span class="lineCov">      39548 :                                 printf(&quot;%04u/%02u/%02u %02u:%02u&quot;, tm-&gt;tm_year + 1900, tm-&gt;tm_mon + 1, tm-&gt;tm_mday, tm-&gt;tm_hour, tm-&gt;tm_min);</span>
+<span class="lineNum">      76 </span><span class="lineCov">      39548 :                                 if (msg_level &gt;= MSG_VERBOSE)</span>
+<span class="lineNum">      77 </span><span class="lineCov">      39548 :                                         printf(&quot;:%02u.%03u&quot;, tm-&gt;tm_sec, file-&gt;mtime_nsec / 1000000);</span>
+<span class="lineNum">      78 </span><span class="lineCov">      39548 :                                 printf(&quot; &quot;);</span>
+<span class="lineNum">      79 </span>            :                         }
+<span class="lineNum">      80 </span><span class="lineCov">      39548 :                         printf(&quot;%s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span>
+<span class="lineNum">      81 </span>            :                 }
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :                 /* sort by name */
+<span class="lineNum">      84 </span><span class="lineCov">         30 :                 tommy_list_sort(&amp;disk-&gt;linklist, link_alpha_compare);</span>
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            :                 /* for each link */
+<span class="lineNum">      87 </span><span class="lineCov">       1375 :                 for (j = disk-&gt;linklist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">      88 </span><span class="lineCov">       1345 :                         struct snapraid_link* slink = j-&gt;data;</span>
+<span class="lineNum">      89 </span>            :                         const char* type;
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span><span class="lineCov">       1345 :                         switch (slink-&gt;flag &amp; FILE_IS_LINK_MASK) {</span>
+<span class="lineNum">      92 </span><span class="lineCov">          9 :                         case FILE_IS_HARDLINK : type = &quot;hardlink&quot;; break;</span>
+<span class="lineNum">      93 </span><span class="lineCov">       1336 :                         case FILE_IS_SYMLINK : type = &quot;symlink&quot;; break;</span>
+<span class="lineNum">      94 </span><span class="lineNoCov">          0 :                         case FILE_IS_SYMDIR : type = &quot;symdir&quot;; break;</span>
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 :                         case FILE_IS_JUNCTION : type = &quot;junction&quot;; break;</span>
+<span class="lineNum">      96 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">      97 </span>            :                         default : type = &quot;unknown&quot;; break;
+<span class="lineNum">      98 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">      99 </span>            :                         }
 <span class="lineNum">     100 </span>            : 
-<span class="lineNum">     101 </span><span class="lineCov">        589 :                         log_tag(&quot;link_%s:%s:%s:%s\n&quot;, type, disk-&gt;name, esc(slink-&gt;sub), esc(slink-&gt;linkto));</span>
+<span class="lineNum">     101 </span><span class="lineCov">       1345 :                         ++link_count;</span>
 <span class="lineNum">     102 </span>            : 
-<span class="lineNum">     103 </span><span class="lineCov">        589 :                         printf(&quot;%12s &quot;, type);</span>
-<span class="lineNum">     104 </span><span class="lineCov">        589 :                         printf(&quot;                 &quot;);</span>
-<span class="lineNum">     105 </span><span class="lineCov">        589 :                         if (msg_level &gt;= MSG_VERBOSE)</span>
-<span class="lineNum">     106 </span><span class="lineCov">        589 :                                 printf(&quot;       &quot;);</span>
-<span class="lineNum">     107 </span><span class="lineCov">        589 :                         printf(&quot;%s%s -&gt; %s%s\n&quot;, disk-&gt;dir, slink-&gt;sub, disk-&gt;dir, slink-&gt;linkto);</span>
-<span class="lineNum">     108 </span>            :                 }
-<span class="lineNum">     109 </span>            :         }
-<span class="lineNum">     110 </span>            : 
-<span class="lineNum">     111 </span><span class="lineCov">          3 :         msg_status(&quot;\n&quot;);</span>
-<span class="lineNum">     112 </span><span class="lineCov">          3 :         msg_status(&quot;%8u files, for %&quot; PRIu64 &quot; GB\n&quot;, file_count, file_size / GIGA);</span>
-<span class="lineNum">     113 </span><span class="lineCov">          3 :         msg_status(&quot;%8u links\n&quot;, link_count);</span>
-<span class="lineNum">     114 </span>            : 
-<span class="lineNum">     115 </span><span class="lineCov">          3 :         log_tag(&quot;summary:file_count:%u\n&quot;, file_count);</span>
-<span class="lineNum">     116 </span><span class="lineCov">          3 :         log_tag(&quot;summary:file_size:%&quot; PRIu64 &quot;\n&quot;, file_size);</span>
-<span class="lineNum">     117 </span><span class="lineCov">          3 :         log_tag(&quot;summary:link_count:%u\n&quot;, link_count);</span>
-<span class="lineNum">     118 </span><span class="lineCov">          3 :         log_tag(&quot;summary:exit:ok\n&quot;);</span>
-<span class="lineNum">     119 </span><span class="lineCov">          3 :         log_flush();</span>
-<span class="lineNum">     120 </span><span class="lineCov">          3 : }</span>
-<span class="lineNum">     121 </span>            : 
+<span class="lineNum">     103 </span><span class="lineCov">       1345 :                         log_tag(&quot;link_%s:%s:%s:%s\n&quot;, type, disk-&gt;name, esc_tag(slink-&gt;sub, esc_buffer), esc_tag(slink-&gt;linkto, esc_buffer_alt));</span>
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span><span class="lineCov">       1345 :                         printf(&quot;%12s &quot;, type);</span>
+<span class="lineNum">     106 </span><span class="lineCov">       1345 :                         printf(&quot;                 &quot;);</span>
+<span class="lineNum">     107 </span><span class="lineCov">       1345 :                         if (msg_level &gt;= MSG_VERBOSE)</span>
+<span class="lineNum">     108 </span><span class="lineCov">       1345 :                                 printf(&quot;       &quot;);</span>
+<span class="lineNum">     109 </span><span class="lineCov">       1345 :                         printf(&quot;%s -&gt; %s\n&quot;, fmt_term(disk, slink-&gt;sub, esc_buffer), fmt_term(disk, slink-&gt;linkto, esc_buffer_alt));</span>
+<span class="lineNum">     110 </span>            :                 }
+<span class="lineNum">     111 </span>            :         }
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span><span class="lineCov">          5 :         msg_status(&quot;\n&quot;);</span>
+<span class="lineNum">     114 </span><span class="lineCov">          5 :         msg_status(&quot;%8u files, for %&quot; PRIu64 &quot; GB\n&quot;, file_count, file_size / GIGA);</span>
+<span class="lineNum">     115 </span><span class="lineCov">          5 :         msg_status(&quot;%8u links\n&quot;, link_count);</span>
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span><span class="lineCov">          5 :         log_tag(&quot;summary:file_count:%u\n&quot;, file_count);</span>
+<span class="lineNum">     118 </span><span class="lineCov">          5 :         log_tag(&quot;summary:file_size:%&quot; PRIu64 &quot;\n&quot;, file_size);</span>
+<span class="lineNum">     119 </span><span class="lineCov">          5 :         log_tag(&quot;summary:link_count:%u\n&quot;, link_count);</span>
+<span class="lineNum">     120 </span><span class="lineCov">          5 :         log_tag(&quot;summary:exit:ok\n&quot;);</span>
+<span class="lineNum">     121 </span><span class="lineCov">          5 :         log_flush();</span>
+<span class="lineNum">     122 </span><span class="lineCov">          5 : }</span>
+<span class="lineNum">     123 </span>            : 
 </pre>
       </td>
     </tr>

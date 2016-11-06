@@ -31,17 +31,17 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">4</td>
-            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntry">6</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
-            <td class="headerCovTableEntry">2</td>
-            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
@@ -256,7 +256,7 @@
 <span class="lineNum">     194 </span>            :         struct tommy_node_struct* prev;
 <span class="lineNum">     195 </span>            : 
 <span class="lineNum">     196 </span>            :         /**
-<span class="lineNum">     197 </span>            :          * Pointer at the object containing the node.
+<span class="lineNum">     197 </span>            :          * Pointer to the object containing the node.
 <span class="lineNum">     198 </span>            :          * This field is initialized when inserting nodes into a data structure.
 <span class="lineNum">     199 </span>            :          */
 <span class="lineNum">     200 </span>            :         void* data;
@@ -274,8 +274,8 @@
 <span class="lineNum">     212 </span>            : 
 <span class="lineNum">     213 </span>            : /**
 <span class="lineNum">     214 </span>            :  * Compare function for elements.
-<span class="lineNum">     215 </span>            :  * \param obj_a Pointer at the first object to compare.
-<span class="lineNum">     216 </span>            :  * \param obj_b Pointer at the second object to compare.
+<span class="lineNum">     215 </span>            :  * \param obj_a Pointer to the first object to compare.
+<span class="lineNum">     216 </span>            :  * \param obj_b Pointer to the second object to compare.
 <span class="lineNum">     217 </span>            :  * \return &lt;0 if the first element is less than the second, ==0 equal, &gt;0 if greather.
 <span class="lineNum">     218 </span>            :  *
 <span class="lineNum">     219 </span>            :  * This function is like the C strcmp().
@@ -303,173 +303,187 @@
 <span class="lineNum">     241 </span>            : 
 <span class="lineNum">     242 </span>            : /**
 <span class="lineNum">     243 </span>            :  * Search function for elements.
-<span class="lineNum">     244 </span>            :  * \param arg Pointer at the value to search.
-<span class="lineNum">     245 </span>            :  * \param obj Pointer at the object to compare to.
+<span class="lineNum">     244 </span>            :  * \param arg Pointer to the value to search as passed at the search function.
+<span class="lineNum">     245 </span>            :  * \param obj Pointer to the object to compare to.
 <span class="lineNum">     246 </span>            :  * \return ==0 if the value matches the element. !=0 if different.
 <span class="lineNum">     247 </span>            :  *
-<span class="lineNum">     248 </span>            :  * Note that the first argument is a pointer to the value to search and
-<span class="lineNum">     249 </span>            :  * the second one is a pointer to the object to compare.
-<span class="lineNum">     250 </span>            :  * They are pointers of two different types.
+<span class="lineNum">     248 </span>            :  * The first argument is a pointer to the value to search exactly
+<span class="lineNum">     249 </span>            :  * as it's passed at the search function called.
+<span class="lineNum">     250 </span>            :  * The second argument is a pointer to the object inside the hashtable to compare.
 <span class="lineNum">     251 </span>            :  *
-<span class="lineNum">     252 </span>            :  * \code
-<span class="lineNum">     253 </span>            :  * struct object {
-<span class="lineNum">     254 </span>            :  *     tommy_node node;
-<span class="lineNum">     255 </span>            :  *     int value;
-<span class="lineNum">     256 </span>            :  * };
-<span class="lineNum">     257 </span>            :  *
-<span class="lineNum">     258 </span>            :  * int compare(const void* arg, const void* obj)
-<span class="lineNum">     259 </span>            :  * {
-<span class="lineNum">     260 </span>            :  *     return *(const int*)arg != ((const struct object*)obj)-&gt;value;
-<span class="lineNum">     261 </span>            :  * }
-<span class="lineNum">     262 </span>            :  *
-<span class="lineNum">     263 </span>            :  * int value_to_find = 1;
-<span class="lineNum">     264 </span>            :  * struct object* obj = tommy_hashtable_search(&amp;hashtable, compare, &amp;value_to_find, tommy_inthash_u32(value_to_find));
-<span class="lineNum">     265 </span>            :  * if (!obj) {
-<span class="lineNum">     266 </span>            :  *     // not found
-<span class="lineNum">     267 </span>            :  * } else {
-<span class="lineNum">     268 </span>            :  *     // found
-<span class="lineNum">     269 </span>            :  * }
-<span class="lineNum">     270 </span>            :  * \endcode
-<span class="lineNum">     271 </span>            :  *
-<span class="lineNum">     272 </span>            :  */
-<span class="lineNum">     273 </span>            : typedef int tommy_search_func(const void* arg, const void* obj);
-<span class="lineNum">     274 </span>            : 
-<span class="lineNum">     275 </span>            : /**
-<span class="lineNum">     276 </span>            :  * Foreach function.
-<span class="lineNum">     277 </span>            :  * \param obj Pointer at the object to iterate.
-<span class="lineNum">     278 </span>            :  *
-<span class="lineNum">     279 </span>            :  * A typical example is to use free() to deallocate all the objects in a list.
-<span class="lineNum">     280 </span>            :  * \code
-<span class="lineNum">     281 </span>            :  * tommy_list_foreach(&amp;list, (tommy_foreach_func*)free);
-<span class="lineNum">     282 </span>            :  * \endcode
-<span class="lineNum">     283 </span>            :  */
-<span class="lineNum">     284 </span>            : typedef void tommy_foreach_func(void* obj);
-<span class="lineNum">     285 </span>            : 
-<span class="lineNum">     286 </span>            : /**
-<span class="lineNum">     287 </span>            :  * Foreach function with an argument.
-<span class="lineNum">     288 </span>            :  * \param arg Pointer at a generic argument.
-<span class="lineNum">     289 </span>            :  * \param obj Pointer at the object to iterate.
-<span class="lineNum">     290 </span>            :  */
-<span class="lineNum">     291 </span>            : typedef void tommy_foreach_arg_func(void* arg, void* obj);
-<span class="lineNum">     292 </span>            : 
-<span class="lineNum">     293 </span>            : /******************************************************************************/
-<span class="lineNum">     294 </span>            : /* bit hacks */
-<span class="lineNum">     295 </span>            : 
-<span class="lineNum">     296 </span>            : #if defined(_MSC_VER) &amp;&amp; !defined(__cplusplus)
-<span class="lineNum">     297 </span>            : #include &lt;intrin.h&gt;
-<span class="lineNum">     298 </span>            : #pragma intrinsic(_BitScanReverse)
-<span class="lineNum">     299 </span>            : #pragma intrinsic(_BitScanForward)
-<span class="lineNum">     300 </span>            : #endif
-<span class="lineNum">     301 </span>            : 
-<span class="lineNum">     302 </span>            : /** \internal
-<span class="lineNum">     303 </span>            :  * Integer log2 for constants.
-<span class="lineNum">     304 </span>            :  * You can use it only for exact power of 2 up to 256.
-<span class="lineNum">     305 </span>            :  */
-<span class="lineNum">     306 </span>            : #define TOMMY_ILOG2(value) ((value) == 256 ? 8 : (value) == 128 ? 7 : (value) == 64 ? 6 : (value) == 32 ? 5 : (value) == 16 ? 4 : (value) == 8 ? 3 : (value) == 4 ? 2 : (value) == 2 ? 1 : 0)
-<span class="lineNum">     307 </span>            : 
-<span class="lineNum">     308 </span>            : /**
-<span class="lineNum">     309 </span>            :  * Bit scan reverse or integer log2.
-<span class="lineNum">     310 </span>            :  * Return the bit index of the most significant 1 bit.
-<span class="lineNum">     311 </span>            :  *
-<span class="lineNum">     312 </span>            :  * If no bit is set, the result is undefined.
-<span class="lineNum">     313 </span>            :  * To force a return 0 in this case, you can use tommy_ilog2_u32(value | 1).
-<span class="lineNum">     314 </span>            :  *
-<span class="lineNum">     315 </span>            :  * Other interesting ways for bitscan are at:
+<span class="lineNum">     252 </span>            :  * The return value has to be 0 if the values are equal. != 0 if they are different.
+<span class="lineNum">     253 </span>            :  *
+<span class="lineNum">     254 </span>            :  * \code
+<span class="lineNum">     255 </span>            :  * struct object {
+<span class="lineNum">     256 </span>            :  *     tommy_node node;
+<span class="lineNum">     257 </span>            :  *     int value;
+<span class="lineNum">     258 </span>            :  * };
+<span class="lineNum">     259 </span>            :  *
+<span class="lineNum">     260 </span>            :  * int compare(const void* arg, const void* obj)
+<span class="lineNum">     261 </span>            :  * {
+<span class="lineNum">     262 </span>            :  *     const int* value_to_find = arg;
+<span class="lineNum">     263 </span>            :  *     const struct object* object_to_compare = obj;
+<span class="lineNum">     264 </span>            :  *
+<span class="lineNum">     265 </span>            :  *     return *value_to_find != object_to_compare-&gt;value;
+<span class="lineNum">     266 </span>            :  * }
+<span class="lineNum">     267 </span>            :  *
+<span class="lineNum">     268 </span>            :  * int value_to_find = 1;
+<span class="lineNum">     269 </span>            :  * struct object* obj = tommy_hashtable_search(&amp;hashtable, compare, &amp;value_to_find, tommy_inthash_u32(value_to_find));
+<span class="lineNum">     270 </span>            :  * if (!obj) {
+<span class="lineNum">     271 </span>            :  *     // not found
+<span class="lineNum">     272 </span>            :  * } else {
+<span class="lineNum">     273 </span>            :  *     // found
+<span class="lineNum">     274 </span>            :  * }
+<span class="lineNum">     275 </span>            :  * \endcode
+<span class="lineNum">     276 </span>            :  *
+<span class="lineNum">     277 </span>            :  */
+<span class="lineNum">     278 </span>            : typedef int tommy_search_func(const void* arg, const void* obj);
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            : /**
+<span class="lineNum">     281 </span>            :  * Foreach function.
+<span class="lineNum">     282 </span>            :  * \param obj Pointer to the object to iterate.
+<span class="lineNum">     283 </span>            :  *
+<span class="lineNum">     284 </span>            :  * A typical example is to use free() to deallocate all the objects in a list.
+<span class="lineNum">     285 </span>            :  * \code
+<span class="lineNum">     286 </span>            :  * tommy_list_foreach(&amp;list, (tommy_foreach_func*)free);
+<span class="lineNum">     287 </span>            :  * \endcode
+<span class="lineNum">     288 </span>            :  */
+<span class="lineNum">     289 </span>            : typedef void tommy_foreach_func(void* obj);
+<span class="lineNum">     290 </span>            : 
+<span class="lineNum">     291 </span>            : /**
+<span class="lineNum">     292 </span>            :  * Foreach function with an argument.
+<span class="lineNum">     293 </span>            :  * \param arg Pointer to a generic argument.
+<span class="lineNum">     294 </span>            :  * \param obj Pointer to the object to iterate.
+<span class="lineNum">     295 </span>            :  */
+<span class="lineNum">     296 </span>            : typedef void tommy_foreach_arg_func(void* arg, void* obj);
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span>            : /******************************************************************************/
+<span class="lineNum">     299 </span>            : /* bit hacks */
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            : #if defined(_MSC_VER) &amp;&amp; !defined(__cplusplus)
+<span class="lineNum">     302 </span>            : #include &lt;intrin.h&gt;
+<span class="lineNum">     303 </span>            : #pragma intrinsic(_BitScanReverse)
+<span class="lineNum">     304 </span>            : #pragma intrinsic(_BitScanForward)
+<span class="lineNum">     305 </span>            : #endif
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span>            : /** \internal
+<span class="lineNum">     308 </span>            :  * Integer log2 for constants.
+<span class="lineNum">     309 </span>            :  * You can use it only for exact power of 2 up to 256.
+<span class="lineNum">     310 </span>            :  */
+<span class="lineNum">     311 </span>            : #define TOMMY_ILOG2(value) ((value) == 256 ? 8 : (value) == 128 ? 7 : (value) == 64 ? 6 : (value) == 32 ? 5 : (value) == 16 ? 4 : (value) == 8 ? 3 : (value) == 4 ? 2 : (value) == 2 ? 1 : 0)
+<span class="lineNum">     312 </span>            : 
+<span class="lineNum">     313 </span>            : /**
+<span class="lineNum">     314 </span>            :  * Bit scan reverse or integer log2.
+<span class="lineNum">     315 </span>            :  * Return the bit index of the most significant 1 bit.
 <span class="lineNum">     316 </span>            :  *
-<span class="lineNum">     317 </span>            :  * Bit Twiddling Hacks
-<span class="lineNum">     318 </span>            :  * http://graphics.stanford.edu/~seander/bithacks.html
+<span class="lineNum">     317 </span>            :  * If no bit is set, the result is undefined.
+<span class="lineNum">     318 </span>            :  * To force a return 0 in this case, you can use tommy_ilog2_u32(value | 1).
 <span class="lineNum">     319 </span>            :  *
-<span class="lineNum">     320 </span>            :  * Chess Programming BitScan
-<span class="lineNum">     321 </span>            :  * http://chessprogramming.wikispaces.com/BitScan
-<span class="lineNum">     322 </span>            :  *
-<span class="lineNum">     323 </span>            :  * \param value Value to scan. 0 is not allowed.
-<a name="324"><span class="lineNum">     324 </span>            :  * \return The index of the most significant bit set.</a>
-<span class="lineNum">     325 </span>            :  */
-<span class="lineNum">     326 </span><span class="lineCov">   10127992 : tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)</span>
-<span class="lineNum">     327 </span>            : {
-<span class="lineNum">     328 </span>            : #if defined(_MSC_VER)
-<span class="lineNum">     329 </span>            :         unsigned long count;
-<span class="lineNum">     330 </span>            :         _BitScanReverse(&amp;count, value);
-<span class="lineNum">     331 </span>            :         return count;
-<span class="lineNum">     332 </span>            : #elif defined(__GNUC__)
-<span class="lineNum">     333 </span>            :         /*
-<span class="lineNum">     334 </span>            :          * GCC implements __builtin_clz(x) as &quot;__builtin_clz(x) = bsr(x) ^ 31&quot;
-<span class="lineNum">     335 </span>            :          *
-<span class="lineNum">     336 </span>            :          * Where &quot;x ^ 31 = 31 - x&quot;, but gcc does not optimize &quot;31 - __builtin_clz(x)&quot; to bsr(x),
-<span class="lineNum">     337 </span>            :          * but generates 31 - (bsr(x) xor 31).
-<span class="lineNum">     338 </span>            :          *
-<span class="lineNum">     339 </span>            :          * So we write &quot;__builtin_clz(x) ^ 31&quot; instead of &quot;31 - __builtin_clz(x)&quot;,
-<span class="lineNum">     340 </span>            :          * to allow the double xor to be optimized out.
-<span class="lineNum">     341 </span>            :          */
-<span class="lineNum">     342 </span><span class="lineCov">   10127992 :         return __builtin_clz(value) ^ 31;</span>
-<span class="lineNum">     343 </span>            : #else
-<span class="lineNum">     344 </span>            :         /* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
-<span class="lineNum">     345 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
-<span class="lineNum">     346 </span>            :         static unsigned char TOMMY_DE_BRUIJN_INDEX_ILOG2[32] = {
-<span class="lineNum">     347 </span>            :                 0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30,
-<span class="lineNum">     348 </span>            :                 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31
-<span class="lineNum">     349 </span>            :         };
-<span class="lineNum">     350 </span>            : 
-<span class="lineNum">     351 </span>            :         value |= value &gt;&gt; 1;
-<span class="lineNum">     352 </span>            :         value |= value &gt;&gt; 2;
-<span class="lineNum">     353 </span>            :         value |= value &gt;&gt; 4;
-<span class="lineNum">     354 </span>            :         value |= value &gt;&gt; 8;
-<span class="lineNum">     355 </span>            :         value |= value &gt;&gt; 16;
-<span class="lineNum">     356 </span>            : 
-<span class="lineNum">     357 </span>            :         return TOMMY_DE_BRUIJN_INDEX_ILOG2[(tommy_uint32_t)(value * 0x07C4ACDDU) &gt;&gt; 27];
-<span class="lineNum">     358 </span>            : #endif
-<span class="lineNum">     359 </span>            : }
-<span class="lineNum">     360 </span>            : 
-<span class="lineNum">     361 </span>            : /**
-<span class="lineNum">     362 </span>            :  * Bit scan forward or trailing zero count.
-<span class="lineNum">     363 </span>            :  * Return the bit index of the least significant 1 bit.
-<span class="lineNum">     364 </span>            :  *
-<span class="lineNum">     365 </span>            :  * If no bit is set, the result is undefined.
-<span class="lineNum">     366 </span>            :  * \param value Value to scan. 0 is not allowed.
-<a name="367"><span class="lineNum">     367 </span>            :  * \return The index of the least significant bit set.</a>
-<span class="lineNum">     368 </span>            :  */
-<span class="lineNum">     369 </span><span class="lineCov">       1571 : tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)</span>
-<span class="lineNum">     370 </span>            : {
-<span class="lineNum">     371 </span>            : #if defined(_MSC_VER)
-<span class="lineNum">     372 </span>            :         unsigned long count;
-<span class="lineNum">     373 </span>            :         _BitScanForward(&amp;count, value);
-<span class="lineNum">     374 </span>            :         return count;
-<span class="lineNum">     375 </span>            : #elif defined(__GNUC__)
-<span class="lineNum">     376 </span><span class="lineCov">       1571 :         return __builtin_ctz(value);</span>
-<span class="lineNum">     377 </span>            : #else
-<span class="lineNum">     378 </span>            :         /* Count the consecutive zero bits (trailing) on the right with multiply and lookup */
-<span class="lineNum">     379 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
-<span class="lineNum">     380 </span>            :         static const unsigned char TOMMY_DE_BRUIJN_INDEX_CTZ[32] = {
-<span class="lineNum">     381 </span>            :                 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
-<span class="lineNum">     382 </span>            :                 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
-<span class="lineNum">     383 </span>            :         };
-<span class="lineNum">     384 </span>            : 
-<span class="lineNum">     385 </span>            :         return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value &amp; - value) * 0x077CB531U)) &gt;&gt; 27];
-<span class="lineNum">     386 </span>            : #endif
-<span class="lineNum">     387 </span>            : }
-<span class="lineNum">     388 </span>            : 
-<span class="lineNum">     389 </span>            : /**
-<span class="lineNum">     390 </span>            :  * Rounds up to the next power of 2.
-<span class="lineNum">     391 </span>            :  * For the value 0, the result is undefined.
-<span class="lineNum">     392 </span>            :  * \return The smallest power of 2 not less than the specified value.
-<span class="lineNum">     393 </span>            :  */
-<span class="lineNum">     394 </span>            : tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
-<span class="lineNum">     395 </span>            : {
-<span class="lineNum">     396 </span>            :         /* Round up to the next highest power of 2 */
-<span class="lineNum">     397 </span>            :         /* from http://www-graphics.stanford.edu/~seander/bithacks.html */
-<span class="lineNum">     398 </span>            : 
-<span class="lineNum">     399 </span>            :         --value;
-<span class="lineNum">     400 </span>            :         value |= value &gt;&gt; 1;
-<span class="lineNum">     401 </span>            :         value |= value &gt;&gt; 2;
-<span class="lineNum">     402 </span>            :         value |= value &gt;&gt; 4;
-<span class="lineNum">     403 </span>            :         value |= value &gt;&gt; 8;
-<span class="lineNum">     404 </span>            :         value |= value &gt;&gt; 16;
-<span class="lineNum">     405 </span>            :         ++value;
-<span class="lineNum">     406 </span>            : 
-<span class="lineNum">     407 </span>            :         return value;
-<span class="lineNum">     408 </span>            : }
-<span class="lineNum">     409 </span>            : #endif
-<span class="lineNum">     410 </span>            : 
+<span class="lineNum">     320 </span>            :  * Other interesting ways for bitscan are at:
+<span class="lineNum">     321 </span>            :  *
+<span class="lineNum">     322 </span>            :  * Bit Twiddling Hacks
+<span class="lineNum">     323 </span>            :  * http://graphics.stanford.edu/~seander/bithacks.html
+<span class="lineNum">     324 </span>            :  *
+<span class="lineNum">     325 </span>            :  * Chess Programming BitScan
+<span class="lineNum">     326 </span>            :  * http://chessprogramming.wikispaces.com/BitScan
+<span class="lineNum">     327 </span>            :  *
+<span class="lineNum">     328 </span>            :  * \param value Value to scan. 0 is not allowed.
+<a name="329"><span class="lineNum">     329 </span>            :  * \return The index of the most significant bit set.</a>
+<span class="lineNum">     330 </span>            :  */
+<span class="lineNum">     331 </span><span class="lineCov">   10264168 : tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     332 </span>            : {
+<span class="lineNum">     333 </span>            : #if defined(_MSC_VER)
+<span class="lineNum">     334 </span>            :         unsigned long count;
+<span class="lineNum">     335 </span>            :         _BitScanReverse(&amp;count, value);
+<span class="lineNum">     336 </span>            :         return count;
+<span class="lineNum">     337 </span>            : #elif defined(__GNUC__)
+<span class="lineNum">     338 </span>            :         /*
+<span class="lineNum">     339 </span>            :          * GCC implements __builtin_clz(x) as &quot;__builtin_clz(x) = bsr(x) ^ 31&quot;
+<span class="lineNum">     340 </span>            :          *
+<span class="lineNum">     341 </span>            :          * Where &quot;x ^ 31 = 31 - x&quot;, but gcc does not optimize &quot;31 - __builtin_clz(x)&quot; to bsr(x),
+<span class="lineNum">     342 </span>            :          * but generates 31 - (bsr(x) xor 31).
+<span class="lineNum">     343 </span>            :          *
+<span class="lineNum">     344 </span>            :          * So we write &quot;__builtin_clz(x) ^ 31&quot; instead of &quot;31 - __builtin_clz(x)&quot;,
+<span class="lineNum">     345 </span>            :          * to allow the double xor to be optimized out.
+<span class="lineNum">     346 </span>            :          */
+<span class="lineNum">     347 </span><span class="lineCov">   10264168 :         return __builtin_clz(value) ^ 31;</span>
+<span class="lineNum">     348 </span>            : #else
+<span class="lineNum">     349 </span>            :         /* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
+<span class="lineNum">     350 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
+<span class="lineNum">     351 </span>            :         static unsigned char TOMMY_DE_BRUIJN_INDEX_ILOG2[32] = {
+<span class="lineNum">     352 </span>            :                 0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30,
+<span class="lineNum">     353 </span>            :                 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31
+<span class="lineNum">     354 </span>            :         };
+<span class="lineNum">     355 </span>            : 
+<span class="lineNum">     356 </span>            :         value |= value &gt;&gt; 1;
+<span class="lineNum">     357 </span>            :         value |= value &gt;&gt; 2;
+<span class="lineNum">     358 </span>            :         value |= value &gt;&gt; 4;
+<span class="lineNum">     359 </span>            :         value |= value &gt;&gt; 8;
+<span class="lineNum">     360 </span>            :         value |= value &gt;&gt; 16;
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span>            :         return TOMMY_DE_BRUIJN_INDEX_ILOG2[(tommy_uint32_t)(value * 0x07C4ACDDU) &gt;&gt; 27];
+<span class="lineNum">     363 </span>            : #endif
+<span class="lineNum">     364 </span>            : }
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span>            : /**
+<span class="lineNum">     367 </span>            :  * Bit scan forward or trailing zero count.
+<span class="lineNum">     368 </span>            :  * Return the bit index of the least significant 1 bit.
+<span class="lineNum">     369 </span>            :  *
+<span class="lineNum">     370 </span>            :  * If no bit is set, the result is undefined.
+<span class="lineNum">     371 </span>            :  * \param value Value to scan. 0 is not allowed.
+<a name="372"><span class="lineNum">     372 </span>            :  * \return The index of the least significant bit set.</a>
+<span class="lineNum">     373 </span>            :  */
+<span class="lineNum">     374 </span><span class="lineCov">       1684 : tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     375 </span>            : {
+<span class="lineNum">     376 </span>            : #if defined(_MSC_VER)
+<span class="lineNum">     377 </span>            :         unsigned long count;
+<span class="lineNum">     378 </span>            :         _BitScanForward(&amp;count, value);
+<span class="lineNum">     379 </span>            :         return count;
+<span class="lineNum">     380 </span>            : #elif defined(__GNUC__)
+<span class="lineNum">     381 </span><span class="lineCov">       1684 :         return __builtin_ctz(value);</span>
+<span class="lineNum">     382 </span>            : #else
+<span class="lineNum">     383 </span>            :         /* Count the consecutive zero bits (trailing) on the right with multiply and lookup */
+<span class="lineNum">     384 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
+<span class="lineNum">     385 </span>            :         static const unsigned char TOMMY_DE_BRUIJN_INDEX_CTZ[32] = {
+<span class="lineNum">     386 </span>            :                 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
+<span class="lineNum">     387 </span>            :                 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+<span class="lineNum">     388 </span>            :         };
+<span class="lineNum">     389 </span>            : 
+<span class="lineNum">     390 </span>            :         return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value &amp; - value) * 0x077CB531U)) &gt;&gt; 27];
+<span class="lineNum">     391 </span>            : #endif
+<span class="lineNum">     392 </span>            : }
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span>            : /**
+<span class="lineNum">     395 </span>            :  * Rounds up to the next power of 2.
+<span class="lineNum">     396 </span>            :  * For the value 0, the result is undefined.
+<span class="lineNum">     397 </span>            :  * \return The smallest power of 2 not less than the specified value.
+<span class="lineNum">     398 </span>            :  */
+<span class="lineNum">     399 </span>            : tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
+<span class="lineNum">     400 </span>            : {
+<span class="lineNum">     401 </span>            :         /* Round up to the next highest power of 2 */
+<span class="lineNum">     402 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
+<span class="lineNum">     403 </span>            : 
+<span class="lineNum">     404 </span>            :         --value;
+<span class="lineNum">     405 </span>            :         value |= value &gt;&gt; 1;
+<span class="lineNum">     406 </span>            :         value |= value &gt;&gt; 2;
+<span class="lineNum">     407 </span>            :         value |= value &gt;&gt; 4;
+<span class="lineNum">     408 </span>            :         value |= value &gt;&gt; 8;
+<span class="lineNum">     409 </span>            :         value |= value &gt;&gt; 16;
+<span class="lineNum">     410 </span>            :         ++value;
+<span class="lineNum">     411 </span>            : 
+<span class="lineNum">     412 </span>            :         return value;
+<span class="lineNum">     413 </span>            : }
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span>            : /**
+<span class="lineNum">     416 </span>            :  * Check if the specified word has a byte at 0.
+<a name="417"><span class="lineNum">     417 </span>            :  * \return 0 or 1.</a>
+<span class="lineNum">     418 </span>            :  */
+<span class="lineNum">     419 </span><span class="lineCov">         85 : tommy_inline int tommy_haszero_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     420 </span>            : {
+<span class="lineNum">     421 </span><span class="lineCov">         85 :         return ((value - 0x01010101) &amp; ~value &amp; 0x80808080) != 0;</span>
+<span class="lineNum">     422 </span>            : }
+<span class="lineNum">     423 </span>            : #endif
+<span class="lineNum">     424 </span>            : 
 </pre>
       </td>
     </tr>

@@ -31,17 +31,17 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">67</td>
-            <td class="headerCovTableEntry">67</td>
+            <td class="headerCovTableEntry">106</td>
+            <td class="headerCovTableEntry">106</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
-            <td class="headerCovTableEntry">3</td>
-            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
@@ -92,12 +92,12 @@
 <span class="lineNum">      30 </span>            : /******************************************************************************/
 <a name="31"><span class="lineNum">      31 </span>            : /* hash */</a>
 <span class="lineNum">      32 </span>            : 
-<span class="lineNum">      33 </span><span class="lineCov">   11375662 : tommy_inline tommy_uint32_t tommy_le_uint32_read(const void* ptr)</span>
+<span class="lineNum">      33 </span><span class="lineCov">   11588068 : tommy_inline tommy_uint32_t tommy_le_uint32_read(const void* ptr)</span>
 <span class="lineNum">      34 </span>            : {
 <span class="lineNum">      35 </span>            :         /* allow unaligned read on Intel x86 and x86_64 platforms */
 <span class="lineNum">      36 </span>            : #if defined(__i386__) || defined(_M_IX86) || defined(_X86_) || defined(__x86_64__) || defined(_M_X64)
 <span class="lineNum">      37 </span>            :         /* defines from http://predef.sourceforge.net/ */
-<span class="lineNum">      38 </span><span class="lineCov">   11375662 :         return *(const tommy_uint32_t*)ptr;</span>
+<span class="lineNum">      38 </span><span class="lineCov">   11588068 :         return *(const tommy_uint32_t*)ptr;</span>
 <span class="lineNum">      39 </span>            : #else
 <span class="lineNum">      40 </span>            :         const unsigned char* ptr8 = tommy_cast(const unsigned char*, ptr);
 <span class="lineNum">      41 </span>            :         return ptr8[0] + ((tommy_uint32_t)ptr8[1] &lt;&lt; 8) + ((tommy_uint32_t)ptr8[2] &lt;&lt; 16) + ((tommy_uint32_t)ptr8[3] &lt;&lt; 24);
@@ -128,53 +128,53 @@
 <span class="lineNum">      66 </span>            :                 c ^= b; c -= tommy_rot(b, 24); \
 <a name="67"><span class="lineNum">      67 </span>            :         } while (0)</a>
 <span class="lineNum">      68 </span>            : 
-<span class="lineNum">      69 </span><span class="lineCov">    3983874 : tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len)</span>
+<span class="lineNum">      69 </span><span class="lineCov">    4059980 : tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len)</span>
 <span class="lineNum">      70 </span>            : {
-<span class="lineNum">      71 </span><span class="lineCov">    3983874 :         const unsigned char* key = tommy_cast(const unsigned char*, void_key);</span>
+<span class="lineNum">      71 </span><span class="lineCov">    4059980 :         const unsigned char* key = tommy_cast(const unsigned char*, void_key);</span>
 <span class="lineNum">      72 </span>            :         tommy_uint32_t a, b, c;
 <span class="lineNum">      73 </span>            : 
-<span class="lineNum">      74 </span><span class="lineCov">    3983874 :         a = b = c = 0xdeadbeef + ((tommy_uint32_t)key_len) + init_val;</span>
+<span class="lineNum">      74 </span><span class="lineCov">    4059980 :         a = b = c = 0xdeadbeef + ((tommy_uint32_t)key_len) + init_val;</span>
 <span class="lineNum">      75 </span>            : 
-<span class="lineNum">      76 </span><span class="lineCov">   10049450 :         while (key_len &gt; 12) {</span>
-<span class="lineNum">      77 </span><span class="lineCov">    2081702 :                 a += tommy_le_uint32_read(key + 0);</span>
-<span class="lineNum">      78 </span><span class="lineCov">    2081702 :                 b += tommy_le_uint32_read(key + 4);</span>
-<span class="lineNum">      79 </span><span class="lineCov">    2081702 :                 c += tommy_le_uint32_read(key + 8);</span>
+<span class="lineNum">      76 </span><span class="lineCov">   10240282 :         while (key_len &gt; 12) {</span>
+<span class="lineNum">      77 </span><span class="lineCov">    2120322 :                 a += tommy_le_uint32_read(key + 0);</span>
+<span class="lineNum">      78 </span><span class="lineCov">    2120322 :                 b += tommy_le_uint32_read(key + 4);</span>
+<span class="lineNum">      79 </span><span class="lineCov">    2120322 :                 c += tommy_le_uint32_read(key + 8);</span>
 <span class="lineNum">      80 </span>            : 
-<span class="lineNum">      81 </span><span class="lineCov">    2081702 :                 tommy_mix(a, b, c);</span>
+<span class="lineNum">      81 </span><span class="lineCov">    2120322 :                 tommy_mix(a, b, c);</span>
 <span class="lineNum">      82 </span>            : 
-<span class="lineNum">      83 </span><span class="lineCov">    2081702 :                 key_len -= 12;</span>
-<span class="lineNum">      84 </span><span class="lineCov">    2081702 :                 key += 12;</span>
+<span class="lineNum">      83 </span><span class="lineCov">    2120322 :                 key_len -= 12;</span>
+<span class="lineNum">      84 </span><span class="lineCov">    2120322 :                 key += 12;</span>
 <span class="lineNum">      85 </span>            :         }
 <span class="lineNum">      86 </span>            : 
-<span class="lineNum">      87 </span><span class="lineCov">    3983874 :         switch (key_len) {</span>
+<span class="lineNum">      87 </span><span class="lineCov">    4059980 :         switch (key_len) {</span>
 <span class="lineNum">      88 </span>            :         case 0 :
 <span class="lineNum">      89 </span><span class="lineCov">          1 :                 return c; /* used only when called with a zero length */</span>
 <span class="lineNum">      90 </span>            :         case 12 :
-<span class="lineNum">      91 </span><span class="lineCov">     204186 :                 c += tommy_le_uint32_read(key + 8);</span>
-<span class="lineNum">      92 </span><span class="lineCov">     204186 :                 b += tommy_le_uint32_read(key + 4);</span>
-<span class="lineNum">      93 </span><span class="lineCov">     204186 :                 a += tommy_le_uint32_read(key + 0);</span>
-<span class="lineNum">      94 </span><span class="lineCov">     204186 :                 break;</span>
-<span class="lineNum">      95 </span><span class="lineCov">     213450 :         case 11 : c += ((tommy_uint32_t)key[10]) &lt;&lt; 16;</span>
-<span class="lineNum">      96 </span><span class="lineCov">     628360 :         case 10 : c += ((tommy_uint32_t)key[9]) &lt;&lt; 8;</span>
-<span class="lineNum">      97 </span><span class="lineCov">    1040399 :         case 9 : c += key[8];</span>
+<span class="lineNum">      91 </span><span class="lineCov">     207725 :                 c += tommy_le_uint32_read(key + 8);</span>
+<span class="lineNum">      92 </span><span class="lineCov">     207725 :                 b += tommy_le_uint32_read(key + 4);</span>
+<span class="lineNum">      93 </span><span class="lineCov">     207725 :                 a += tommy_le_uint32_read(key + 0);</span>
+<span class="lineNum">      94 </span><span class="lineCov">     207725 :                 break;</span>
+<span class="lineNum">      95 </span><span class="lineCov">     217414 :         case 11 : c += ((tommy_uint32_t)key[10]) &lt;&lt; 16;</span>
+<span class="lineNum">      96 </span><span class="lineCov">     640353 :         case 10 : c += ((tommy_uint32_t)key[9]) &lt;&lt; 8;</span>
+<span class="lineNum">      97 </span><span class="lineCov">    1060088 :         case 9 : c += key[8];</span>
 <span class="lineNum">      98 </span>            :         case 8 :
-<span class="lineNum">      99 </span><span class="lineCov">    1443638 :                 b += tommy_le_uint32_read(key + 4);</span>
-<span class="lineNum">     100 </span><span class="lineCov">    1443638 :                 a += tommy_le_uint32_read(key + 0);</span>
-<span class="lineNum">     101 </span><span class="lineCov">    1443638 :                 break;</span>
-<span class="lineNum">     102 </span><span class="lineCov">     405083 :         case 7 : b += ((tommy_uint32_t)key[6]) &lt;&lt; 16;</span>
-<span class="lineNum">     103 </span><span class="lineCov">     797509 :         case 6 : b += ((tommy_uint32_t)key[5]) &lt;&lt; 8;</span>
-<span class="lineNum">     104 </span><span class="lineCov">    1206545 :         case 5 : b += key[4];</span>
+<span class="lineNum">      99 </span><span class="lineCov">    1471035 :                 b += tommy_le_uint32_read(key + 4);</span>
+<span class="lineNum">     100 </span><span class="lineCov">    1471035 :                 a += tommy_le_uint32_read(key + 0);</span>
+<span class="lineNum">     101 </span><span class="lineCov">    1471035 :                 break;</span>
+<span class="lineNum">     102 </span><span class="lineCov">     413146 :         case 7 : b += ((tommy_uint32_t)key[6]) &lt;&lt; 16;</span>
+<span class="lineNum">     103 </span><span class="lineCov">     812931 :         case 6 : b += ((tommy_uint32_t)key[5]) &lt;&lt; 8;</span>
+<span class="lineNum">     104 </span><span class="lineCov">    1229650 :         case 5 : b += key[4];</span>
 <span class="lineNum">     105 </span>            :         case 4 :
-<span class="lineNum">     106 </span><span class="lineCov">    1630673 :                 a += tommy_le_uint32_read(key + 0);</span>
-<span class="lineNum">     107 </span><span class="lineCov">    1630673 :                 break;</span>
-<span class="lineNum">     108 </span><span class="lineCov">     295523 :         case 3 : a += ((tommy_uint32_t)key[2]) &lt;&lt; 16;</span>
-<span class="lineNum">     109 </span><span class="lineCov">     499392 :         case 2 : a += ((tommy_uint32_t)key[1]) &lt;&lt; 8;</span>
-<span class="lineNum">     110 </span><span class="lineCov">     705376 :         case 1 : a += key[0];</span>
+<span class="lineNum">     106 </span><span class="lineCov">    1661723 :                 a += tommy_le_uint32_read(key + 0);</span>
+<span class="lineNum">     107 </span><span class="lineCov">    1661723 :                 break;</span>
+<span class="lineNum">     108 </span><span class="lineCov">     301724 :         case 3 : a += ((tommy_uint32_t)key[2]) &lt;&lt; 16;</span>
+<span class="lineNum">     109 </span><span class="lineCov">     509517 :         case 2 : a += ((tommy_uint32_t)key[1]) &lt;&lt; 8;</span>
+<span class="lineNum">     110 </span><span class="lineCov">     719496 :         case 1 : a += key[0];</span>
 <span class="lineNum">     111 </span>            :         }
 <span class="lineNum">     112 </span>            : 
-<span class="lineNum">     113 </span><span class="lineCov">    3983873 :         tommy_final(a, b, c);</span>
+<span class="lineNum">     113 </span><span class="lineCov">    4059979 :         tommy_final(a, b, c);</span>
 <span class="lineNum">     114 </span>            : 
-<span class="lineNum">     115 </span><span class="lineCov">    3983873 :         return c;</span>
+<span class="lineNum">     115 </span><span class="lineCov">    4059979 :         return c;</span>
 <a name="116"><span class="lineNum">     116 </span>            : }</a>
 <span class="lineNum">     117 </span>            : 
 <span class="lineNum">     118 </span><span class="lineCov">         19 : tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tommy_size_t key_len)</span>
@@ -225,8 +225,82 @@
 <span class="lineNum">     163 </span><span class="lineCov">         18 :         tommy_final(a, b, c);</span>
 <span class="lineNum">     164 </span>            : 
 <span class="lineNum">     165 </span><span class="lineCov">         18 :         return c + ((tommy_uint64_t)b &lt;&lt; 32);</span>
-<span class="lineNum">     166 </span>            : }
+<a name="166"><span class="lineNum">     166 </span>            : }</a>
 <span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span><span class="lineCov">         23 : tommy_uint32_t tommy_strhash_u32(tommy_uint64_t init_val, const void* void_key)</span>
+<span class="lineNum">     169 </span>            : {
+<span class="lineNum">     170 </span><span class="lineCov">         23 :         const unsigned char* key = tommy_cast(const unsigned char*, void_key);</span>
+<span class="lineNum">     171 </span>            :         tommy_uint32_t a, b, c;
+<span class="lineNum">     172 </span><span class="lineCov">         23 :         tommy_uint32_t m[3] = { 0xff, 0xff00, 0xff0000 };</span>
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span><span class="lineCov">         23 :         a = b = c = 0xdeadbeef + init_val;</span>
+<span class="lineNum">     175 </span>            :         /* this is different than original lookup3 and the result won't match */
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :         while (1) {
+<span class="lineNum">     178 </span><span class="lineCov">         39 :                 tommy_uint32_t v = tommy_le_uint32_read(key);</span>
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span><span class="lineCov">         39 :                 if (tommy_haszero_u32(v)) {</span>
+<span class="lineNum">     181 </span><span class="lineCov">         13 :                         if (v &amp; m[0]) {</span>
+<span class="lineNum">     182 </span><span class="lineCov">         11 :                                 a += v &amp; m[0];</span>
+<span class="lineNum">     183 </span><span class="lineCov">         11 :                                 if (v &amp; m[1]) {</span>
+<span class="lineNum">     184 </span><span class="lineCov">          8 :                                         a += v &amp; m[1];</span>
+<span class="lineNum">     185 </span><span class="lineCov">          8 :                                         if (v &amp; m[2])</span>
+<span class="lineNum">     186 </span><span class="lineCov">          3 :                                                 a += v &amp; m[2];</span>
+<span class="lineNum">     187 </span>            :                                 }
+<span class="lineNum">     188 </span>            :                         }
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span><span class="lineCov">         13 :                         break;</span>
+<span class="lineNum">     191 </span>            :                 }
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span><span class="lineCov">         26 :                 a += v;</span>
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span><span class="lineCov">         26 :                 v = tommy_le_uint32_read(key + 4);</span>
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span><span class="lineCov">         26 :                 if (tommy_haszero_u32(v)) {</span>
+<span class="lineNum">     198 </span><span class="lineCov">          6 :                         if (v &amp; m[0]) {</span>
+<span class="lineNum">     199 </span><span class="lineCov">          4 :                                 b += v &amp; m[0];</span>
+<span class="lineNum">     200 </span><span class="lineCov">          4 :                                 if (v &amp; m[1]) {</span>
+<span class="lineNum">     201 </span><span class="lineCov">          3 :                                         b += v &amp; m[1];</span>
+<span class="lineNum">     202 </span><span class="lineCov">          3 :                                         if (v &amp; m[2])</span>
+<span class="lineNum">     203 </span><span class="lineCov">          2 :                                                 b += v &amp; m[2];</span>
+<span class="lineNum">     204 </span>            :                                 }
+<span class="lineNum">     205 </span>            :                         }
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span><span class="lineCov">          6 :                         break;</span>
+<span class="lineNum">     208 </span>            :                 }
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span><span class="lineCov">         20 :                 b += v;</span>
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span><span class="lineCov">         20 :                 v = tommy_le_uint32_read(key + 8);</span>
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span><span class="lineCov">         20 :                 if (tommy_haszero_u32(v)) {</span>
+<span class="lineNum">     215 </span><span class="lineCov">          4 :                         if (v &amp; m[0]) {</span>
+<span class="lineNum">     216 </span><span class="lineCov">          3 :                                 c += v &amp; m[0];</span>
+<span class="lineNum">     217 </span><span class="lineCov">          3 :                                 if (v &amp; m[1]) {</span>
+<span class="lineNum">     218 </span><span class="lineCov">          2 :                                         c += v &amp; m[1];</span>
+<span class="lineNum">     219 </span><span class="lineCov">          2 :                                         if (v &amp; m[2])</span>
+<span class="lineNum">     220 </span><span class="lineCov">          1 :                                                 c += v &amp; m[2];</span>
+<span class="lineNum">     221 </span>            :                                 }
+<span class="lineNum">     222 </span>            :                         }
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span><span class="lineCov">          4 :                         break;</span>
+<span class="lineNum">     225 </span>            :                 }
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span><span class="lineCov">         16 :                 c += v;</span>
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span><span class="lineCov">         16 :                 tommy_mix(a, b, c);</span>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineCov">         16 :                 key += 12;</span>
+<span class="lineNum">     232 </span><span class="lineCov">         16 :         }</span>
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span>            :         /* for lengths that are multiplers of 12 we already have called mix */
+<span class="lineNum">     235 </span>            :         /* this is different than the original lookup3 and the result won't match */
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span><span class="lineCov">         23 :         tommy_final(a, b, c);</span>
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span><span class="lineCov">         23 :         return c;</span>
+<span class="lineNum">     240 </span>            : }
+<span class="lineNum">     241 </span>            : 
 </pre>
       </td>
     </tr>

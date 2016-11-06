@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -122,9 +122,9 @@
 <span class="lineNum">      60 </span>            :  *
 <span class="lineNum">      61 </span>            :  * \code
 <span class="lineNum">      62 </span>            :  * struct object {
-<span class="lineNum">      63 </span>            :  *     tommy_node node;
+<span class="lineNum">      63 </span>            :  *     int value;
 <span class="lineNum">      64 </span>            :  *     // other fields
-<span class="lineNum">      65 </span>            :  *     int value;
+<span class="lineNum">      65 </span>            :  *     tommy_node node;
 <span class="lineNum">      66 </span>            :  * };
 <span class="lineNum">      67 </span>            :  *
 <span class="lineNum">      68 </span>            :  * struct object* obj = malloc(sizeof(struct object)); // creates the object
@@ -267,9 +267,9 @@
 <span class="lineNum">     205 </span>            :  * \param hash Hash of the element to find.
 <a name="206"><span class="lineNum">     206 </span>            :  * \return The head of the bucket, or 0 if empty.</a>
 <span class="lineNum">     207 </span>            :  */
-<span class="lineNum">     208 </span><span class="lineCov">    3056605 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span>
+<span class="lineNum">     208 </span><span class="lineCov">    3107888 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span>
 <span class="lineNum">     209 </span>            : {
-<span class="lineNum">     210 </span><span class="lineCov">    3056605 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span>
+<span class="lineNum">     210 </span><span class="lineCov">    3107888 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span>
 <span class="lineNum">     211 </span>            : }
 <span class="lineNum">     212 </span>            : 
 <span class="lineNum">     213 </span>            : /**
@@ -282,17 +282,17 @@
 <span class="lineNum">     220 </span>            :  * \param hash Hash of the element to find.
 <a name="221"><span class="lineNum">     221 </span>            :  * \return The first element found, or 0 if none.</a>
 <span class="lineNum">     222 </span>            :  */
-<span class="lineNum">     223 </span><span class="lineCov">    3056605 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span>
+<span class="lineNum">     223 </span><span class="lineCov">    3107888 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span>
 <span class="lineNum">     224 </span>            : {
-<span class="lineNum">     225 </span><span class="lineCov">    3056605 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span>
+<span class="lineNum">     225 </span><span class="lineCov">    3107888 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span>
 <span class="lineNum">     226 </span>            : 
-<span class="lineNum">     227 </span><span class="lineCov">    6779601 :         while (i) {</span>
+<span class="lineNum">     227 </span><span class="lineCov">    6891902 :         while (i) {</span>
 <span class="lineNum">     228 </span>            :                 /* we first check if the hash matches, as in the same bucket we may have multiples hash values */
-<span class="lineNum">     229 </span><span class="lineCov">    1775042 :                 if (i-&gt;key == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span>
-<span class="lineNum">     230 </span><span class="lineCov">    1108651 :                         return i-&gt;data;</span>
-<span class="lineNum">     231 </span><span class="lineCov">     666391 :                 i = i-&gt;next;</span>
+<span class="lineNum">     229 </span><span class="lineCov">    1840795 :                 if (i-&gt;key == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span>
+<span class="lineNum">     230 </span><span class="lineCov">    1164669 :                         return i-&gt;data;</span>
+<span class="lineNum">     231 </span><span class="lineCov">     676126 :                 i = i-&gt;next;</span>
 <span class="lineNum">     232 </span>            :         }
-<span class="lineNum">     233 </span><span class="lineCov">    1947954 :         return 0;</span>
+<span class="lineNum">     233 </span><span class="lineCov">    1943219 :         return 0;</span>
 <span class="lineNum">     234 </span>            : }
 <span class="lineNum">     235 </span>            : 
 <span class="lineNum">     236 </span>            : /**
@@ -305,56 +305,57 @@
 <span class="lineNum">     243 </span>            : /**
 <span class="lineNum">     244 </span>            :  * Calls the specified function for each element in the hashtable.
 <span class="lineNum">     245 </span>            :  *
-<span class="lineNum">     246 </span>            :  * You can use this function to deallocate all the elements inserted.
-<span class="lineNum">     247 </span>            :  *
-<span class="lineNum">     248 </span>            :  * \code
-<span class="lineNum">     249 </span>            :  * tommy_hashdyn hashdyn;
-<span class="lineNum">     250 </span>            :  *
-<span class="lineNum">     251 </span>            :  * // initializes the hashtable
-<span class="lineNum">     252 </span>            :  * tommy_hashdyn_init(&amp;hashdyn);
-<span class="lineNum">     253 </span>            :  *
-<span class="lineNum">     254 </span>            :  * ...
-<span class="lineNum">     255 </span>            :  *
-<span class="lineNum">     256 </span>            :  * // creates an object
-<span class="lineNum">     257 </span>            :  * struct object* obj = malloc(sizeof(struct object));
-<span class="lineNum">     258 </span>            :  *
-<span class="lineNum">     259 </span>            :  * ...
-<span class="lineNum">     260 </span>            :  *
-<span class="lineNum">     261 </span>            :  * // insert it in the hashtable
-<span class="lineNum">     262 </span>            :  * tommy_hashdyn_insert(&amp;hashdyn, &amp;obj-&gt;node, obj, tommy_inthash_u32(obj-&gt;value));
-<span class="lineNum">     263 </span>            :  *
-<span class="lineNum">     264 </span>            :  * ...
-<span class="lineNum">     265 </span>            :  *
-<span class="lineNum">     266 </span>            :  * // deallocates all the objects iterating the hashtable
-<span class="lineNum">     267 </span>            :  * tommy_hashdyn_foreach(&amp;hashdyn, free);
-<span class="lineNum">     268 </span>            :  *
-<span class="lineNum">     269 </span>            :  * // deallocates the hashtable
-<span class="lineNum">     270 </span>            :  * tommy_hashdyn_done(&amp;hashdyn);
-<span class="lineNum">     271 </span>            :  * \endcode
-<span class="lineNum">     272 </span>            :  */
-<span class="lineNum">     273 </span>            : void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func);
-<span class="lineNum">     274 </span>            : 
-<span class="lineNum">     275 </span>            : /**
-<span class="lineNum">     276 </span>            :  * Calls the specified function with an argument for each element in the hashtable.
-<span class="lineNum">     277 </span>            :  */
-<span class="lineNum">     278 </span>            : void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* func, void* arg);
-<span class="lineNum">     279 </span>            : 
-<span class="lineNum">     280 </span>            : /**
-<a name="281"><span class="lineNum">     281 </span>            :  * Gets the number of elements.</a>
-<span class="lineNum">     282 </span>            :  */
-<span class="lineNum">     283 </span><span class="lineCov">          3 : tommy_inline tommy_count_t tommy_hashdyn_count(tommy_hashdyn* hashdyn)</span>
-<span class="lineNum">     284 </span>            : {
-<span class="lineNum">     285 </span><span class="lineCov">          3 :         return hashdyn-&gt;count;</span>
-<span class="lineNum">     286 </span>            : }
-<span class="lineNum">     287 </span>            : 
-<span class="lineNum">     288 </span>            : /**
-<span class="lineNum">     289 </span>            :  * Gets the size of allocated memory.
-<span class="lineNum">     290 </span>            :  * It includes the size of the ::tommy_hashdyn_node of the stored elements.
-<span class="lineNum">     291 </span>            :  */
-<span class="lineNum">     292 </span>            : tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn);
-<span class="lineNum">     293 </span>            : 
-<span class="lineNum">     294 </span>            : #endif
-<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     246 </span>            :  * You cannot add or remove elements from the inside of the callback,
+<span class="lineNum">     247 </span>            :  * but can use it to deallocate them.
+<span class="lineNum">     248 </span>            :  *
+<span class="lineNum">     249 </span>            :  * \code
+<span class="lineNum">     250 </span>            :  * tommy_hashdyn hashdyn;
+<span class="lineNum">     251 </span>            :  *
+<span class="lineNum">     252 </span>            :  * // initializes the hashtable
+<span class="lineNum">     253 </span>            :  * tommy_hashdyn_init(&amp;hashdyn);
+<span class="lineNum">     254 </span>            :  *
+<span class="lineNum">     255 </span>            :  * ...
+<span class="lineNum">     256 </span>            :  *
+<span class="lineNum">     257 </span>            :  * // creates an object
+<span class="lineNum">     258 </span>            :  * struct object* obj = malloc(sizeof(struct object));
+<span class="lineNum">     259 </span>            :  *
+<span class="lineNum">     260 </span>            :  * ...
+<span class="lineNum">     261 </span>            :  *
+<span class="lineNum">     262 </span>            :  * // insert it in the hashtable
+<span class="lineNum">     263 </span>            :  * tommy_hashdyn_insert(&amp;hashdyn, &amp;obj-&gt;node, obj, tommy_inthash_u32(obj-&gt;value));
+<span class="lineNum">     264 </span>            :  *
+<span class="lineNum">     265 </span>            :  * ...
+<span class="lineNum">     266 </span>            :  *
+<span class="lineNum">     267 </span>            :  * // deallocates all the objects iterating the hashtable
+<span class="lineNum">     268 </span>            :  * tommy_hashdyn_foreach(&amp;hashdyn, free);
+<span class="lineNum">     269 </span>            :  *
+<span class="lineNum">     270 </span>            :  * // deallocates the hashtable
+<span class="lineNum">     271 </span>            :  * tommy_hashdyn_done(&amp;hashdyn);
+<span class="lineNum">     272 </span>            :  * \endcode
+<span class="lineNum">     273 </span>            :  */
+<span class="lineNum">     274 </span>            : void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func);
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span>            : /**
+<span class="lineNum">     277 </span>            :  * Calls the specified function with an argument for each element in the hashtable.
+<span class="lineNum">     278 </span>            :  */
+<span class="lineNum">     279 </span>            : void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* func, void* arg);
+<span class="lineNum">     280 </span>            : 
+<span class="lineNum">     281 </span>            : /**
+<a name="282"><span class="lineNum">     282 </span>            :  * Gets the number of elements.</a>
+<span class="lineNum">     283 </span>            :  */
+<span class="lineNum">     284 </span><span class="lineCov">          3 : tommy_inline tommy_count_t tommy_hashdyn_count(tommy_hashdyn* hashdyn)</span>
+<span class="lineNum">     285 </span>            : {
+<span class="lineNum">     286 </span><span class="lineCov">          3 :         return hashdyn-&gt;count;</span>
+<span class="lineNum">     287 </span>            : }
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span>            : /**
+<span class="lineNum">     290 </span>            :  * Gets the size of allocated memory.
+<span class="lineNum">     291 </span>            :  * It includes the size of the ::tommy_hashdyn_node of the stored elements.
+<span class="lineNum">     292 </span>            :  */
+<span class="lineNum">     293 </span>            : tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn);
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            : #endif
+<span class="lineNum">     296 </span>            : 
 </pre>
       </td>
     </tr>

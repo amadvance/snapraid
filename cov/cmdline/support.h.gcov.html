@@ -1,0 +1,507 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/support.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - support.h<span style="font-size: 80%;"> (source / <a href="support.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2016-11-06</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2011 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #ifndef __SUPPORT_H
+<span class="lineNum">      19 </span>            : #define __SUPPORT_H
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : /****************************************************************************/
+<span class="lineNum">      22 </span>            : /* lock */
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : /**
+<span class="lineNum">      25 </span>            :  * Initialize and destroy the locks.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : void lock_init(void);
+<span class="lineNum">      28 </span>            : void lock_done(void);
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : /**
+<span class="lineNum">      31 </span>            :  * Lock used for printf.
+<span class="lineNum">      32 </span>            :  *
+<span class="lineNum">      33 </span>            :  * In Windows printf() is not atomic, and multiple threads
+<span class="lineNum">      34 </span>            :  * will have output interleaved.
+<span class="lineNum">      35 </span>            :  *
+<span class="lineNum">      36 </span>            :  * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
+<span class="lineNum">      37 </span>            :  *
+<span class="lineNum">      38 </span>            :  * See for example:
+<span class="lineNum">      39 </span>            :  *
+<span class="lineNum">      40 </span>            :  * Weird output when I use pthread and printf.
+<span class="lineNum">      41 </span>            :  * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
+<span class="lineNum">      42 </span>            :  *
+<span class="lineNum">      43 </span>            :  * This is also required in other OS because we split output in stdlog in
+<span class="lineNum">      44 </span>            :  * two fprintf calls.
+<span class="lineNum">      45 </span>            :  */
+<span class="lineNum">      46 </span>            : void lock_msg(void);
+<span class="lineNum">      47 </span>            : void unlock_msg(void);
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : /**
+<span class="lineNum">      50 </span>            :  * Lock used for memory counter.
+<span class="lineNum">      51 </span>            :  */
+<span class="lineNum">      52 </span>            : void lock_memory(void);
+<span class="lineNum">      53 </span>            : void unlock_memory(void);
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            : /****************************************************************************/
+<span class="lineNum">      56 </span>            : /* log */
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            : /**
+<span class="lineNum">      59 </span>            :  * Fatal error messages.
+<span class="lineNum">      60 </span>            :  *
+<span class="lineNum">      61 </span>            :  * Messages printed before an early termination.
+<span class="lineNum">      62 </span>            :  *
+<span class="lineNum">      63 </span>            :  * These messages go in the log file and in stderr unconditionally.
+<span class="lineNum">      64 </span>            :  */
+<span class="lineNum">      65 </span>            : void log_fatal(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : /**
+<span class="lineNum">      68 </span>            :  * Unexpected error messages.
+<span class="lineNum">      69 </span>            :  *
+<span class="lineNum">      70 </span>            :  * Messages reporting error conditions that don't prevent the program to run.
+<span class="lineNum">      71 </span>            :  *
+<span class="lineNum">      72 </span>            :  * Some of them could be also serious errors, like &quot;silent errors&quot;.
+<span class="lineNum">      73 </span>            :  * In such case, the summary result is always printed as error,
+<span class="lineNum">      74 </span>            :  * and we are sure to notify the user in some way.
+<span class="lineNum">      75 </span>            :  *
+<span class="lineNum">      76 </span>            :  * These messages go in the log file if specified, otherwise they go in stderr.
+<span class="lineNum">      77 </span>            :  */
+<span class="lineNum">      78 </span>            : void log_error(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            : /**
+<span class="lineNum">      81 </span>            :  * Expected error messages, without fallback to stderr.
+<span class="lineNum">      82 </span>            :  *
+<span class="lineNum">      83 </span>            :  * These errors are &quot;someway&quot; expected, and then they never go to screen.
+<span class="lineNum">      84 </span>            :  * For example, when undeleting missing files, the messages for missing files
+<span class="lineNum">      85 </span>            :  * are not shown.
+<span class="lineNum">      86 </span>            :  *
+<span class="lineNum">      87 </span>            :  * These messages go in the log file if specified, otherwise they are lost.
+<span class="lineNum">      88 </span>            :  */
+<span class="lineNum">      89 </span>            : void log_expected(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            : /**
+<span class="lineNum">      92 </span>            :  * Tag messages.
+<span class="lineNum">      93 </span>            :  *
+<span class="lineNum">      94 </span>            :  * Messages are in tag format, like &quot;tag:entry:...&quot;.
+<span class="lineNum">      95 </span>            :  *
+<span class="lineNum">      96 </span>            :  * These messages never go on the screen, but only in the log file if specified.
+<span class="lineNum">      97 </span>            :  *
+<span class="lineNum">      98 </span>            :  * Note that this function, allows not \n terminated strings.
+<span class="lineNum">      99 </span>            :  *
+<span class="lineNum">     100 </span>            :  * These messages are buffered. Use msg_flush() to flush them.
+<span class="lineNum">     101 </span>            :  */
+<span class="lineNum">     102 </span>            : void log_tag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : /**
+<span class="lineNum">     105 </span>            :  * Flush the log.
+<span class="lineNum">     106 </span>            :  */
+<span class="lineNum">     107 </span>            : void log_flush(void);
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            : /**
+<span class="lineNum">     110 </span>            :  * Pointer to log function.
+<span class="lineNum">     111 </span>            :  */
+<span class="lineNum">     112 </span>            : typedef void fptr(const char* format, ...);
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span>            : /****************************************************************************/
+<span class="lineNum">     115 </span>            : /* message */
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span>            : /**
+<span class="lineNum">     118 </span>            :  * Message levels.
+<span class="lineNum">     119 </span>            :  *
+<span class="lineNum">     120 </span>            :  * The levels control the amount of information printed on the screen.
+<span class="lineNum">     121 </span>            :  * Note that log_fatal(), log_error(), log_expected() and log_tag() are not affected by this option.
+<span class="lineNum">     122 </span>            :  *
+<span class="lineNum">     123 </span>            :  * From the most quiet to the most verbose.
+<span class="lineNum">     124 </span>            :  */
+<span class="lineNum">     125 </span>            : #define MSG_STATUS -3
+<span class="lineNum">     126 </span>            : #define MSG_INFO -2
+<span class="lineNum">     127 </span>            : #define MSG_PROGRESS -1
+<span class="lineNum">     128 </span>            : #define MSG_BAR 0
+<span class="lineNum">     129 </span>            : #define MSG_VERBOSE 1
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span>            : /**
+<span class="lineNum">     132 </span>            :  * Selected message level.
+<span class="lineNum">     133 </span>            :  */
+<span class="lineNum">     134 </span>            : extern int msg_level;
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span>            : /**
+<span class="lineNum">     137 </span>            :  * State messages.
+<span class="lineNum">     138 </span>            :  *
+<span class="lineNum">     139 </span>            :  * Messages that tell what the program is doing or did, but limited to few lines.
+<span class="lineNum">     140 </span>            :  * They are status information, and summary results.
+<span class="lineNum">     141 </span>            :  */
+<span class="lineNum">     142 </span>            : void msg_status(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span>            : /**
+<span class="lineNum">     145 </span>            :  * Info messages.
+<span class="lineNum">     146 </span>            :  *
+<span class="lineNum">     147 </span>            :  * Messages that tell what was done.
+<span class="lineNum">     148 </span>            :  * Potentially a lot of messages are possible. They can still be on the screen,
+<span class="lineNum">     149 </span>            :  * as losing them we don't lose information.
+<span class="lineNum">     150 </span>            :  *
+<span class="lineNum">     151 </span>            :  * These messages never go in the log file, because there is always a corresponding log_tag().
+<span class="lineNum">     152 </span>            :  */
+<span class="lineNum">     153 </span>            : void msg_info(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            : /**
+<span class="lineNum">     156 </span>            :  * Progress messages.
+<span class="lineNum">     157 </span>            :  *
+<span class="lineNum">     158 </span>            :  * Message that tell the progress of program.
+<span class="lineNum">     159 </span>            :  *
+<span class="lineNum">     160 </span>            :  * These messages also go in the log file.
+<span class="lineNum">     161 </span>            :  */
+<span class="lineNum">     162 </span>            : void msg_progress(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span>            : /**
+<span class="lineNum">     165 </span>            :  * Progress bar messages.
+<span class="lineNum">     166 </span>            :  *
+<span class="lineNum">     167 </span>            :  * Message that show the percentage of the progress.
+<span class="lineNum">     168 </span>            :  *
+<span class="lineNum">     169 </span>            :  * These messages never go in the log file.
+<span class="lineNum">     170 </span>            :  *
+<span class="lineNum">     171 </span>            :  * These messages are buffered. Use msg_flush() to flush them.
+<span class="lineNum">     172 </span>            :  */
+<span class="lineNum">     173 </span>            : void msg_bar(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span>            : /**
+<span class="lineNum">     176 </span>            :  * Verbose messages.
+<span class="lineNum">     177 </span>            :  *
+<span class="lineNum">     178 </span>            :  * Message that tell what is already expected.
+<span class="lineNum">     179 </span>            :  *
+<span class="lineNum">     180 </span>            :  * These messages also go in the log file.
+<span class="lineNum">     181 </span>            :  */
+<span class="lineNum">     182 </span>            : void msg_verbose(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+<span class="lineNum">     183 </span>            : 
+<span class="lineNum">     184 </span>            : /**
+<span class="lineNum">     185 </span>            :  * Flush the output.
+<span class="lineNum">     186 </span>            :  */
+<span class="lineNum">     187 </span>            : void msg_flush(void);
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span>            : /****************************************************************************/
+<span class="lineNum">     190 </span>            : /* print */
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span>            : /**
+<span class="lineNum">     193 </span>            :  * Print a repeated char.
+<span class="lineNum">     194 </span>            :  */
+<span class="lineNum">     195 </span>            : void printc(char c, size_t pad);
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            : /**
+<span class="lineNum">     198 </span>            :  * Print a string with right space padding.
+<span class="lineNum">     199 </span>            :  */
+<span class="lineNum">     200 </span>            : void printr(const char* str, size_t pad);
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            : /**
+<span class="lineNum">     203 </span>            :  * Print a string with left space padding.
+<span class="lineNum">     204 </span>            :  */
+<span class="lineNum">     205 </span>            : void printl(const char* str, size_t pad);
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            : /**
+<span class="lineNum">     208 </span>            :  * Print a probability with space padding.
+<span class="lineNum">     209 </span>            :  */
+<span class="lineNum">     210 </span>            : void printp(double v, size_t pad);
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span>            : /****************************************************************************/
+<span class="lineNum">     213 </span>            : /* string */
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            : #define ESC_MAX (PATH_MAX*2 + 1)
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span>            : /**
+<span class="lineNum">     218 </span>            :  * Escape a string for the log.
+<span class="lineNum">     219 </span>            :  *
+<span class="lineNum">     220 </span>            :  * \param buffer Preallocated buffer of ESC_MAX size.
+<span class="lineNum">     221 </span>            :  *
+<span class="lineNum">     222 </span>            :  * Chars ':', '\n', '\r' and '\' are escaped to '\d', '\\n', '\\r' and '\\'.
+<span class="lineNum">     223 </span>            :  */
+<span class="lineNum">     224 </span>            : const char* esc_tag(const char* str, char* buffer);
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span>            : /**
+<span class="lineNum">     227 </span>            :  * Escape a string for the shell.
+<span class="lineNum">     228 </span>            :  *
+<span class="lineNum">     229 </span>            :  * \param buffer Preallocated buffer of ESC_MAX size.
+<a name="230"><span class="lineNum">     230 </span>            :  */</a>
+<span class="lineNum">     231 </span>            : const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer);
+<span class="lineNum">     232 </span><span class="lineCov">     331733 : static inline const char* esc_shell(const char* str, char* buffer)</span>
+<span class="lineNum">     233 </span>            : {
+<span class="lineNum">     234 </span><span class="lineCov">     331733 :         return esc_shell_multi(&amp;str, 1, buffer);</span>
+<span class="lineNum">     235 </span>            : }
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            : /**
+<span class="lineNum">     238 </span>            :  * Polish a string.
+<span class="lineNum">     239 </span>            :  *
+<span class="lineNum">     240 </span>            :  * Not printable chars are replaced by spaces.
+<span class="lineNum">     241 </span>            :  *
+<span class="lineNum">     242 </span>            :  * Note that the passed string is modified.
+<span class="lineNum">     243 </span>            :  */
+<span class="lineNum">     244 </span>            : char* strpolish(char* s);
+<span class="lineNum">     245 </span>            : 
+<span class="lineNum">     246 </span>            : /**
+<span class="lineNum">     247 </span>            :  * Split a string in multiple tokens separated by delimiters.
+<span class="lineNum">     248 </span>            :  *
+<span class="lineNum">     249 </span>            :  * Multiple delimiters are grouped together.
+<span class="lineNum">     250 </span>            :  */
+<span class="lineNum">     251 </span>            : unsigned strsplit(char** split_map, unsigned split_max, char* line, const char* delimiters);
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span>            : /****************************************************************************/
+<span class="lineNum">     254 </span>            : /* path */
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span>            : /**
+<span class="lineNum">     257 </span>            :  * Copy a path limiting the size.
+<span class="lineNum">     258 </span>            :  * Abort if too long.
+<span class="lineNum">     259 </span>            :  */
+<span class="lineNum">     260 </span>            : void pathcpy(char* dst, size_t size, const char* src);
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span>            : /**
+<span class="lineNum">     263 </span>            :  * Concatenate a path limiting the size.
+<span class="lineNum">     264 </span>            :  * Abort if too long.
+<span class="lineNum">     265 </span>            :  */
+<span class="lineNum">     266 </span>            : void pathcat(char* dst, size_t size, const char* src);
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : /**
+<span class="lineNum">     269 </span>            :  * Concatenate a path limiting the size.
+<span class="lineNum">     270 </span>            :  * Abort if too long.
+<span class="lineNum">     271 </span>            :  */
+<span class="lineNum">     272 </span>            : void pathcatc(char* dst, size_t size, char c);
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            : /**
+<span class="lineNum">     275 </span>            :  * Import a path limiting the size.
+<span class="lineNum">     276 </span>            :  * In Windows all the backslash are converted to the C standard of forward slash.
+<span class="lineNum">     277 </span>            :  * Abort if too long.
+<span class="lineNum">     278 </span>            :  */
+<span class="lineNum">     279 </span>            : void pathimport(char* dst, size_t size, const char* src);
+<span class="lineNum">     280 </span>            : 
+<span class="lineNum">     281 </span>            : /**
+<span class="lineNum">     282 </span>            :  * Export a path limiting the size.
+<span class="lineNum">     283 </span>            :  * In Windows all the C slashes are converted to the Windows backslash.
+<span class="lineNum">     284 </span>            :  * Abort if too long.
+<span class="lineNum">     285 </span>            :  */
+<span class="lineNum">     286 </span>            : void pathexport(char* dst, size_t size, const char* src);
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            : /**
+<span class="lineNum">     289 </span>            :  * Print a path.
+<span class="lineNum">     290 </span>            :  * Abort if too long.
+<span class="lineNum">     291 </span>            :  */
+<span class="lineNum">     292 </span>            : void pathprint(char* dst, size_t size, const char* format, ...) __attribute__((format(attribute_printf, 3, 4)));
+<span class="lineNum">     293 </span>            : 
+<span class="lineNum">     294 </span>            : /**
+<span class="lineNum">     295 </span>            :  * Ensure the presence of a terminating slash, if it isn't empty.
+<span class="lineNum">     296 </span>            :  * Abort if too long.
+<span class="lineNum">     297 </span>            :  */
+<span class="lineNum">     298 </span>            : void pathslash(char* dst, size_t size);
+<span class="lineNum">     299 </span>            : 
+<span class="lineNum">     300 </span>            : /**
+<span class="lineNum">     301 </span>            :  * Cut everything after the latest slash.
+<span class="lineNum">     302 </span>            :  */
+<span class="lineNum">     303 </span>            : void pathcut(char* dst);
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span>            : /**
+<span class="lineNum">     306 </span>            :  * Compare two paths.
+<span class="lineNum">     307 </span>            :  * In Windows it's case insensitive and assumes \ equal at /.
+<span class="lineNum">     308 </span>            :  */
+<span class="lineNum">     309 </span>            : int pathcmp(const char* a, const char* b);
+<span class="lineNum">     310 </span>            : 
+<span class="lineNum">     311 </span>            : /****************************************************************************/
+<span class="lineNum">     312 </span>            : /* file-system */
+<span class="lineNum">     313 </span>            : 
+<span class="lineNum">     314 </span>            : /**
+<span class="lineNum">     315 </span>            :  * Create all the ancestor directories if missing.
+<span class="lineNum">     316 </span>            :  * The file name, after the last /, is ignored.
+<span class="lineNum">     317 </span>            :  */
+<span class="lineNum">     318 </span>            : int mkancestor(const char* file);
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span>            : /**
+<span class="lineNum">     321 </span>            :  * Change the modification time of an open file.
+<span class="lineNum">     322 </span>            :  */
+<span class="lineNum">     323 </span>            : int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
+<span class="lineNum">     324 </span>            : 
+<span class="lineNum">     325 </span>            : /****************************************************************************/
+<span class="lineNum">     326 </span>            : /* advise */
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span>            : /**
+<span class="lineNum">     329 </span>            :  * Advise modes.
+<span class="lineNum">     330 </span>            :  */
+<span class="lineNum">     331 </span>            : #define ADVISE_DEFAULT 0 /**&lt; Default mode. */
+<span class="lineNum">     332 </span>            : #define ADVISE_NONE 1 /**&lt; Bare read/write mode. */
+<span class="lineNum">     333 </span>            : #define ADVISE_SEQUENTIAL 2 /**&lt; Sequential mode. */
+<span class="lineNum">     334 </span>            : #define ADVISE_FLUSH 3 /**&lt; Flush mode. */
+<span class="lineNum">     335 </span>            : #define ADVISE_FLUSH_WINDOW 4 /**&lt; Flush mode with a window of 8MB. */
+<span class="lineNum">     336 </span>            : #define ADVISE_DISCARD 5 /**&lt; Discard the cache after every operation. */
+<span class="lineNum">     337 </span>            : #define ADVISE_DISCARD_WINDOW 6 /**&lt; Discard the cache with a window of 8MB. */
+<span class="lineNum">     338 </span>            : #define ADVISE_DIRECT 7 /**&lt; Direct mode. */
+<span class="lineNum">     339 </span>            : 
+<span class="lineNum">     340 </span>            : #define ADVISE_WINDOW_SIZE (8 * 1024 * 1024) /**&lt; Window size. */
+<span class="lineNum">     341 </span>            : 
+<span class="lineNum">     342 </span>            : struct advise_struct {
+<span class="lineNum">     343 </span>            :         int mode;
+<span class="lineNum">     344 </span>            :         data_off_t dirty_begin;
+<span class="lineNum">     345 </span>            :         data_off_t dirty_end;
+<span class="lineNum">     346 </span>            : };
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span>            : void advise_init(struct advise_struct* advise, int mode);
+<span class="lineNum">     349 </span>            : int advise_flags(struct advise_struct* advise);
+<span class="lineNum">     350 </span>            : int advise_open(struct advise_struct* advise, int f);
+<span class="lineNum">     351 </span>            : int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
+<span class="lineNum">     352 </span>            : int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span>            : /****************************************************************************/
+<span class="lineNum">     355 </span>            : /* memory */
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span>            : /**
+<span class="lineNum">     358 </span>            :  * Return the size of the allocated memory.
+<span class="lineNum">     359 </span>            :  */
+<span class="lineNum">     360 </span>            : size_t malloc_counter_get(void);
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span>            : /**
+<span class="lineNum">     363 </span>            :  * Safe malloc.
+<span class="lineNum">     364 </span>            :  * If no memory is available, it aborts.
+<span class="lineNum">     365 </span>            :  */
+<span class="lineNum">     366 </span>            : void* malloc_nofail(size_t size);
+<span class="lineNum">     367 </span>            : 
+<span class="lineNum">     368 </span>            : /**
+<span class="lineNum">     369 </span>            :  * Safe cmalloc.
+<span class="lineNum">     370 </span>            :  * If no memory is available, it aborts.
+<span class="lineNum">     371 </span>            :  */
+<span class="lineNum">     372 </span>            : void* calloc_nofail(size_t count, size_t size);
+<span class="lineNum">     373 </span>            : 
+<span class="lineNum">     374 </span>            : /**
+<span class="lineNum">     375 </span>            :  * Safe strdup.
+<span class="lineNum">     376 </span>            :  * If no memory is available, it aborts.
+<span class="lineNum">     377 </span>            :  */
+<span class="lineNum">     378 </span>            : char* strdup_nofail(const char* str);
+<span class="lineNum">     379 </span>            : 
+<span class="lineNum">     380 </span>            : /**
+<span class="lineNum">     381 </span>            :  * Helper for printing an error about a failed allocation.
+<span class="lineNum">     382 </span>            :  */
+<span class="lineNum">     383 </span>            : void malloc_fail(size_t size);
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span>            : /****************************************************************************/
+<span class="lineNum">     386 </span>            : /* smartctl */
+<span class="lineNum">     387 </span>            : 
+<span class="lineNum">     388 </span>            : /**
+<span class="lineNum">     389 </span>            :  * Read smartctl attributes from a stream.
+<span class="lineNum">     390 </span>            :  * Return 0 on success.
+<span class="lineNum">     391 </span>            :  */
+<span class="lineNum">     392 </span>            : int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial, char* vendor, char* model);
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span>            : /**
+<span class="lineNum">     395 </span>            :  * Flush smartctl output from a stream.
+<span class="lineNum">     396 </span>            :  */
+<span class="lineNum">     397 </span>            : int smartctl_flush(FILE* f, const char* file, const char* name);
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span>            : /****************************************************************************/
+<span class="lineNum">     400 </span>            : /* thread */
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span>            : #if HAVE_PTHREAD
+<span class="lineNum">     403 </span>            : /**
+<span class="lineNum">     404 </span>            :  * Control when to signal the condition variables.
+<span class="lineNum">     405 </span>            :  *
+<span class="lineNum">     406 </span>            :  * Default is inside the mutex.
+<span class="lineNum">     407 </span>            :  *
+<span class="lineNum">     408 </span>            :  * Ensure to change that before starting any thread.
+<span class="lineNum">     409 </span>            :  */
+<span class="lineNum">     410 </span>            : int thread_cond_signal_outside;
+<span class="lineNum">     411 </span>            : 
+<span class="lineNum">     412 </span>            : /**
+<span class="lineNum">     413 </span>            :  * Thread wrappers to handle error conditions.
+<span class="lineNum">     414 </span>            :  */
+<span class="lineNum">     415 </span>            : void thread_mutex_init(pthread_mutex_t* mutex, pthread_mutexattr_t* attr);
+<span class="lineNum">     416 </span>            : void thread_mutex_destroy(pthread_mutex_t* mutex);
+<span class="lineNum">     417 </span>            : void thread_mutex_lock(pthread_mutex_t* mutex);
+<span class="lineNum">     418 </span>            : void thread_mutex_unlock(pthread_mutex_t* mutex);
+<span class="lineNum">     419 </span>            : void thread_cond_init(pthread_cond_t* cond, pthread_condattr_t* attr);
+<span class="lineNum">     420 </span>            : void thread_cond_destroy(pthread_cond_t* cond);
+<span class="lineNum">     421 </span>            : void thread_cond_signal(pthread_cond_t* cond);
+<span class="lineNum">     422 </span>            : void thread_cond_broadcast(pthread_cond_t* cond);
+<span class="lineNum">     423 </span>            : void thread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex);
+<span class="lineNum">     424 </span>            : void thread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+<span class="lineNum">     425 </span>            : void thread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+<span class="lineNum">     426 </span>            : void thread_create(pthread_t* thread, pthread_attr_t* attr, void *(* func)(void *), void *arg);
+<span class="lineNum">     427 </span>            : void thread_join(pthread_t thread, void** retval);
+<span class="lineNum">     428 </span>            : #endif
+<span class="lineNum">     429 </span>            : 
+<span class="lineNum">     430 </span>            : #endif
+<span class="lineNum">     431 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

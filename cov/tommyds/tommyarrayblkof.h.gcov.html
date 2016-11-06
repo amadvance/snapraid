@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-16</td>
+            <td class="headerValue">2016-11-06</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -95,7 +95,7 @@
 <span class="lineNum">      33 </span>            :  * This is very similar at ::tommy_arrayblk, but it allows to store elements of any
 <span class="lineNum">      34 </span>            :  * size and not just pointers.
 <span class="lineNum">      35 </span>            :  *
-<span class="lineNum">      36 </span>            :  * Note that in this case tommy_arrayblkof_ref() returns a pointer at the element,
+<span class="lineNum">      36 </span>            :  * Note that in this case tommy_arrayblkof_ref() returns a pointer to the element,
 <span class="lineNum">      37 </span>            :  * that should be used for getting and setting elements in the array,
 <span class="lineNum">      38 </span>            :  * as generic getter and setter are not available.
 <span class="lineNum">      39 </span>            :  */
@@ -148,23 +148,23 @@
 <span class="lineNum">      86 </span>            :  * You must be sure that space for this position is already
 <a name="87"><span class="lineNum">      87 </span>            :  * allocated calling tommy_arrayblkof_grow().</a>
 <span class="lineNum">      88 </span>            :  */
-<span class="lineNum">      89 </span><span class="lineCov">    6475089 : tommy_inline void* tommy_arrayblkof_ref(tommy_arrayblkof* array, tommy_count_t pos)</span>
+<span class="lineNum">      89 </span><span class="lineCov">    6529775 : tommy_inline void* tommy_arrayblkof_ref(tommy_arrayblkof* array, tommy_count_t pos)</span>
 <span class="lineNum">      90 </span>            : {
 <span class="lineNum">      91 </span>            :         unsigned char* base;
 <span class="lineNum">      92 </span>            : 
-<span class="lineNum">      93 </span><span class="lineCov">    6475089 :         assert(pos &lt; array-&gt;count);</span>
+<span class="lineNum">      93 </span><span class="lineCov">    6529775 :         assert(pos &lt; array-&gt;count);</span>
 <span class="lineNum">      94 </span>            : 
-<span class="lineNum">      95 </span><span class="lineCov">    6475089 :         base = tommy_cast(unsigned char*, tommy_array_get(&amp;array-&gt;block, pos / TOMMY_ARRAYBLKOF_SIZE));</span>
+<span class="lineNum">      95 </span><span class="lineCov">    6529775 :         base = tommy_cast(unsigned char*, tommy_array_get(&amp;array-&gt;block, pos / TOMMY_ARRAYBLKOF_SIZE));</span>
 <span class="lineNum">      96 </span>            : 
-<span class="lineNum">      97 </span><span class="lineCov">    6475089 :         return base + (pos % TOMMY_ARRAYBLKOF_SIZE) * array-&gt;element_size;</span>
+<span class="lineNum">      97 </span><span class="lineCov">    6529775 :         return base + (pos % TOMMY_ARRAYBLKOF_SIZE) * array-&gt;element_size;</span>
 <span class="lineNum">      98 </span>            : }
 <span class="lineNum">      99 </span>            : 
 <span class="lineNum">     100 </span>            : /**
 <a name="101"><span class="lineNum">     101 </span>            :  * Gets the initialized size of the array.</a>
 <span class="lineNum">     102 </span>            :  */
-<span class="lineNum">     103 </span><span class="lineCov">    5095494 : tommy_inline tommy_count_t tommy_arrayblkof_size(tommy_arrayblkof* array)</span>
+<span class="lineNum">     103 </span><span class="lineCov">    5093871 : tommy_inline tommy_count_t tommy_arrayblkof_size(tommy_arrayblkof* array)</span>
 <span class="lineNum">     104 </span>            : {
-<span class="lineNum">     105 </span><span class="lineCov">    5095494 :         return array-&gt;count;</span>
+<span class="lineNum">     105 </span><span class="lineCov">    5093871 :         return array-&gt;count;</span>
 <span class="lineNum">     106 </span>            : }
 <span class="lineNum">     107 </span>            : 
 <span class="lineNum">     108 </span>            : /**
