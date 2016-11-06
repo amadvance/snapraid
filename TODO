@@ -7,9 +7,6 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
-* Check if Puppy Linux has /dev/block
-See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/ccb7be2f/
-
 * Add a "noaccessdenied" config option to exclude not readable files/dirs.
 Like the "nohidden".
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
@@ -136,7 +133,7 @@ With a dedicated disk manually chosen, it's instead optimal.
 + We can limit this coexist possibility only to latest parity file,
 allowing the user to choose where to put it.
 
-* Allocate parity minimizing concurreng use of it
+* Allocate parity minimizing concurrent use of it
 Each parity allocation should check for a parity
 range with less utilization by other disks.
 We need to take care do disable this meachnism when the parity space
