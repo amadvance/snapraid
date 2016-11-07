@@ -364,12 +364,6 @@ AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
 AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
 
-dnl Expand default prefix, required to expand sysconfdir=$prefix/etc
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-
-dnl Set the configuration directory in config.h
-AC_DEFINE_UNQUOTED([SYSCONFDIR],["$(eval echo $sysconfdir)"],[Configuration directory])
-
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
