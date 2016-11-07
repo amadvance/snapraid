@@ -11,6 +11,9 @@ This is the list of TODO items for SnapRAID.
 Like the "nohidden".
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
 
+* Add markdown support for output
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/661cce8b/
+
 * Add ZFS support for SMART and UUID.
 See latest messages at: https://sourceforge.net/p/snapraid/discussion/1677233/thread/42defa3b/
 
