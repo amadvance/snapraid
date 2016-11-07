@@ -16,7 +16,7 @@ Synopsis
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-	:	|up|down|pool|devices|touch|rehash
+	:	|pool|devices|touch|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -612,16 +612,6 @@ Commands
 	Lists all the duplicate files. Two files are assumed equal if their
 	hashes are matching. The file data is not read, but only the
 	precomputed hashes are used.
-
-	Nothing is modified.
-
-  up
-	Spins up all the disks of the array.
-
-	Nothing is modified.
-
-  down
-	Spins down all the disks of the array.
 
 	Nothing is modified.
 

@@ -20,7 +20,7 @@ snapraid [-c, --conf CONFIG]
 	[-L, --error-limit NUMBER]
 	[-v, --verbose] [-q, --quiet]
 	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-	|up|down|pool|devices|touch|rehash
+	|pool|devices|touch|rehash
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -661,21 +661,7 @@ precomputed hashes are used.
 
 Nothing is modified.
 
-5.12 up
--------
-
-Spins up all the disks of the array.
-
-Nothing is modified.
-
-5.13 down
----------
-
-Spins down all the disks of the array.
-
-Nothing is modified.
-
-5.14 pool
+5.12 pool
 ---------
 
 Creates or updates in the "pooling" directory a virtual view of all
@@ -690,7 +676,7 @@ view of the array. Any other regular file is left in place.
 
 Nothing is modified outside the pool directory.
 
-5.15 devices
+5.13 devices
 ------------
 
 Prints the low level devices used by the array.
@@ -708,7 +694,7 @@ low level devices used by a single disk in the array.
 
 Nothing is modified.
 
-5.16 touch
+5.14 touch
 ----------
 
 Sets arbitrarely the sub-second timestamp of all the files
@@ -727,7 +713,7 @@ size and timestamp.
 Note that the second precision timestamp is not modified,
 and all the dates and times of your files will be maintained.
 
-5.17 rehash
+5.15 rehash
 -----------
 
 Schedules a rehash of the whole array.
