@@ -81,18 +81,12 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 	const uint32_t* blocks;
 	const uint32_t* end;
 	size_t size_remainder;
+	uint32_t h1, h2, h3, h4;
 
-	uint32_t h1 = ((const uint32_t*)seed)[0];
-	uint32_t h2 = ((const uint32_t*)seed)[1];
-	uint32_t h3 = ((const uint32_t*)seed)[2];
-	uint32_t h4 = ((const uint32_t*)seed)[3];
-
-#if WORDS_BIGENDIAN
-	h1 = util_swap32(h1);
-	h2 = util_swap32(h2);
-	h3 = util_swap32(h3);
-	h4 = util_swap32(h4);
-#endif
+	h1 = util_read32(seed + 0);
+	h2 = util_read32(seed + 4);
+	h3 = util_read32(seed + 8);
+	h4 = util_read32(seed + 12);
 
 	nblocks = size / 16;
 	blocks = data;
@@ -178,16 +172,9 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 	h1 += h2; h1 += h3; h1 += h4;
 	h2 += h1; h3 += h1; h4 += h1;
 
-#if WORDS_BIGENDIAN
-	h1 = util_swap32(h1);
-	h2 = util_swap32(h2);
-	h3 = util_swap32(h3);
-	h4 = util_swap32(h4);
-#endif
-
-	((uint32_t*)digest)[0] = h1;
-	((uint32_t*)digest)[1] = h2;
-	((uint32_t*)digest)[2] = h3;
-	((uint32_t*)digest)[3] = h4;
+	util_write32(digest + 0, h1);
+	util_write32(digest + 4, h2);
+	util_write32(digest + 8, h3);
+	util_write32(digest + 12, h4);
 }
 

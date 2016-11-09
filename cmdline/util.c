@@ -502,6 +502,42 @@ static inline uint64_t util_swap64(uint64_t v)
 }
 #endif
 
+static inline uint32_t util_read32(const void* ptr)
+{
+	uint32_t v;
+	memcpy(&v, ptr, sizeof(v));
+#if WORDS_BIGENDIAN
+	v = util_swap32(v);
+#endif
+	return v;
+}
+
+static inline uint64_t util_read64(const void* ptr)
+{
+	uint64_t v;
+	memcpy(&v, ptr, sizeof(v));
+#if WORDS_BIGENDIAN
+	v = util_swap64(v);
+#endif
+	return v;
+}
+
+static inline void util_write32(void* ptr, uint32_t v)
+{
+#if WORDS_BIGENDIAN
+	v = util_swap32(v);
+#endif
+	memcpy(ptr, &v, sizeof(v));
+}
+
+static inline void util_write64(void* ptr, uint64_t v)
+{
+#if WORDS_BIGENDIAN
+	v = util_swap64(v);
+#endif
+	memcpy(ptr, &v, sizeof(v));
+}
+
 /****************************************************************************/
 /* hash */
 

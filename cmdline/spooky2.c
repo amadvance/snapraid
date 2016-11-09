@@ -116,18 +116,12 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	const uint64_t* blocks;
 	const uint64_t* end;
 	size_t size_remainder;
-
 #if WORDS_BIGENDIAN
 	unsigned i;
 #endif
 
-	h9 = ((const uint64_t*)seed)[0];
-	h10 = ((const uint64_t*)seed)[1];
-
-#if WORDS_BIGENDIAN
-	h9 = util_swap64(h9);
-	h10 = util_swap64(h10);
-#endif
+	h9 = util_read64(seed + 0);
+	h10 = util_read64(seed + 8);
 
 	h0 = h3 = h6 = h9;
 	h1 = h4 = h7 = h10;
@@ -160,15 +154,9 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	for (i = 0; i < sc_numVars; ++i)
 		buf[i] = util_swap64(buf[i]);
 #endif
-
 	End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
 
-#if WORDS_BIGENDIAN
-	h0 = util_swap64(h0);
-	h1 = util_swap64(h1);
-#endif
-
-	((uint64_t*)digest)[0] = h0;
-	((uint64_t*)digest)[1] = h1;
+	util_write64(digest + 0, h0);
+	util_write64(digest + 8, h1);
 }
 
