@@ -173,7 +173,11 @@ CHECKFLAGS = $(CHECKFLAGS_ALPHA) -q -q -q
 
 # Number of files to create
 if !HAVE_MEMORY_CHECKER
+if HAVE_POSIX
 CHECKCOUNT = 1000
+else
+CHECKCOUNT = 500
+endif
 else
 CHECKCOUNT = 500
 endif
@@ -274,7 +278,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) devices
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --no-warnings
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --test-fake-device --test-expect-failure
-if HAVE_SYMLINK
+if HAVE_POSIX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
@@ -372,7 +376,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-read
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test.log
-if HAVE_SYMLINK
+if HAVE_POSIX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check
@@ -400,7 +404,11 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf bench/content
 	$(MSG) Filter
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -d disk1 check > output.log
+if HAVE_POSIX
+# Only in real unix, as with MingW the * trigger path replacement
+# Like /b/a* -> B:/a* and SnapRAID then complain about relative paths
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -f \\*a -f a/ -f /b/a\\* check > output.log
+endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f . check > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f ./ check > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f a/a check > output.log
@@ -433,9 +441,11 @@ endif
 	ln bench/disk1/target1 bench/disk1/file_hardlink1
 	ln bench/disk1/target1 bench/disk1/file_hardlink2
 	ln bench/disk1/target1 bench/disk1/file_hardlink3
+if HAVE_POSIX
 	ln -s bench/disk1/target1 bench/disk1/file_symlink1
 	ln -s bench/disk1/target1 bench/disk1/file_symlink2
 	ln -s bench/disk1/target1 bench/disk1/file_symlink3
+endif
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
@@ -449,8 +459,10 @@ endif
 	echo TARGET22 > bench/disk1/target2
 	rm bench/disk1/file_hardlink1
 	ln bench/disk1/target2 bench/disk1/file_hardlink1
+if HAVE_POSIX
 	rm bench/disk1/file_symlink1
 	ln -s bench/disk1/target2 bench/disk1/file_symlink1
+endif
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) sync -l ">&1"
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check -l ">&1"
@@ -460,7 +472,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list --test-fmt file > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list --test-fmt disk > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list --test-fmt path > output.log
-if HAVE_SYMLINK
+if HAVE_POSIX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
 	$(MSG) Extend PAR1 to max parity with fix and check
@@ -486,10 +498,12 @@ endif
 	echo RUN > bench/disk1/RUN-RM
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/RUN-RM" --test-expect-failure sync
 	echo RUN > bench/disk1/RUN-CHMOD
+if HAVE_POSIX
 # Doesn't run this test as root because the root user overrride permissions
 	if [[ $$EUID -ne 0 ]]; then \
 		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync; \
 	fi
+endif
 	echo RUN > bench/disk1/RUN-SIZE
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "echo RUNRUN > bench/disk1/RUN-SIZE" --test-expect-failure sync
 	echo RUN > bench/disk1/RUN-TOUCH
@@ -504,10 +518,12 @@ endif
 	echo HASH > bench/disk1/HASH-RM
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/HASH-RM" --test-expect-failure -h sync
 	echo HASH > bench/disk1/HASH-CHMOD
+if HAVE_POSIX
 # Doesn't run this test as root because the root user override permissions
 	if [[ $$EUID -ne 0 ]]; then \
 		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync; \
 	fi
+endif
 	echo HASH > bench/disk1/HASH-SIZE
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "echo HASHHASH > bench/disk1/HASH-SIZE" --test-expect-failure -h sync
 	echo HASH > bench/disk1/HASH-TOUCH

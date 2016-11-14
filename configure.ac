@@ -216,9 +216,9 @@ AS_CASE([$host],
 	TESTENV="$WINE"
 	FAILENV="$TESTENV"
 	],
-	[SYMLINK=1]
+	[POSIX=1]
 )
-AM_CONDITIONAL(HAVE_SYMLINK, [test x"$SYMLINK" != x])
+AM_CONDITIONAL(HAVE_POSIX, [test x"$POSIX" != x])
 
 AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],
