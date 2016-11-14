@@ -1743,7 +1743,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 	if (done) {
-		log_fatal(". Move operations won't be optimal.\n");
+		log_fatal(". Not using inodes to detect move operations.\n");
 	}
 
 	/* check for disks with changed UUID */
@@ -1765,7 +1765,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 	if (done) {
-		log_fatal(". Move operations won't be optimal.\n");
+		log_fatal(". Not using inodes to detect move operations.\n");
 	}
 
 	/* check for disks with unsupported UUID */
@@ -1783,7 +1783,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 	if (done) {
-		log_fatal(". Move operations won't be optimal.\n");
+		log_fatal(". Not using inodes to detect move operations.\n");
 #if defined(_linux) && !HAVE_BLKID
 		log_fatal("The 'blkid' library is not linked in SnapRAID!\n");
 		log_fatal("Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
