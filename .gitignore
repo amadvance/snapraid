@@ -46,8 +46,13 @@ mkstream
 *.epr
 *.geany
 
+# AFL
+makeafl.sh
+afl/
+afl_corpus/
+
 # specific
-cov_release/
+cov/
 contrib/
 paper/
 kernel/
