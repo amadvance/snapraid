@@ -57,11 +57,12 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
 &nbsp;&nbsp;&nbsp;&nbsp;[-U, --force-uuid] [-D, --force-device]
 &nbsp;&nbsp;&nbsp;&nbsp;[-N, --force-nocopy] [-F, --force-full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-R, --force-realloc]
 &nbsp;&nbsp;&nbsp;&nbsp;[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 &nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NUMBER]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-&nbsp;&nbsp;&nbsp;&nbsp;|up|down|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|pool|devices|touch|rehash
 </pre>
 <p>
 <pre>
@@ -416,7 +417,7 @@ and share the following dirs in the network:
 <p>
 to allow remote clients to access all the files at \\darkstar\\pool.
 <p>
-You may also need to configure remote clients enablinh access at remote
+You may also need to configure remote clients enabling access at remote
 symlinks with the command:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
@@ -885,18 +886,6 @@ precomputed hashes are used.
 <p>
 Nothing is modified.
 <h3><a name="5.12">5.12</a> 
-up
-</h3>
-Spins up all the disks of the array.
-<p>
-Nothing is modified.
-<h3><a name="5.13">5.13</a> 
-down
-</h3>
-Spins down all the disks of the array.
-<p>
-Nothing is modified.
-<h3><a name="5.14">5.14</a> 
 pool
 </h3>
 Creates or updates in the "pooling" directory a virtual view of all
@@ -910,7 +899,7 @@ subdirectories are deleted and replaced with the new
 view of the array. Any other regular file is left in place.
 <p>
 Nothing is modified outside the pool directory.
-<h3><a name="5.15">5.15</a> 
+<h3><a name="5.13">5.13</a> 
 devices
 </h3>
 Prints the low level devices used by the array.
@@ -927,7 +916,7 @@ array, but in some more complex configurations, you may have multiple
 low level devices used by a single disk in the array.
 <p>
 Nothing is modified.
-<h3><a name="5.16">5.16</a> 
+<h3><a name="5.14">5.14</a> 
 touch
 </h3>
 Sets arbitrarely the sub-second timestamp of all the files
@@ -940,12 +929,12 @@ removing possible duplicates.
 More specifically, if the sub-second timestamp is not zero,
 a moved or copied file is identified as such if it matches
 the name, size and timestamp. If instead the sub-second timestamp
-is zero, it's cosidered a copy only if it matches the full path,
+is zero, it's considered a copy only if it matches the full path,
 size and timestamp.
 <p>
 Note that the second precision timestamp is not modified,
 and all the dates and times of your files will be maintained.
-<h3><a name="5.17">5.17</a> 
+<h3><a name="5.15">5.15</a> 
 rehash
 </h3>
 Schedules a rehash of the whole array.
@@ -973,9 +962,11 @@ SnapRAID provides the following options:
 <tr valign="top" align="left"><td><strong>
 -c, --conf CONFIG
 </strong></td></tr><tr><td>
-Selects the configuration file. If not specified it's assumed
-the file "/etc/snapraid.conf" in Unix, and "snapraid.conf" in
-the current directory in Windows.
+Selects the configuration file to use. If not specified in Unix
+it's used the file "/usr/local/etc/snapraid.conf" if it exists,
+or "/etc/snapraid.conf" otherwise.
+In Windows it's used the file "snapraid.conf" in the same
+directory of "snapraid.exe".
 </td></tr>
 </table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
@@ -1184,12 +1175,25 @@ This option can be used only with "sync", "check" and "fix".
 -F, --force-full
 </strong></td></tr><tr><td>
 In "sync" forces a full rebuild of the parity.
-This option can be used when you reverted back to an old content
-file, but using a more recent parity data.
+This option can be used when you add a new parity level, or if
+you reverted back to an old content file using a more recent parity data.
 Instead of recomputing the parity from scratch, this allows
 to reuse the hashes present in the content file to validate data,
 and to maintain data protection during the "sync" process using
-the old content file and the parity data you have.
+the parity data you have.
+This option can be used only with "sync".
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-R, --force-realloc
+</strong></td></tr><tr><td>
+In "sync" forces a full reallocation of files and rebuild of the parity.
+This option can be used to completely reallocate all the files
+removing the fragmentation, but reusing the hashes present in the content
+file to validate data.
+Compared to -F, --force-full, this option reallocates all the parity
+not having data protection during the operation.
 This option can be used only with "sync".
 </td></tr>
 </table>
@@ -1299,38 +1303,47 @@ Configuration
 SnapRAID requires a configuration file to know where your disk array
 is located, and where storing the parity information.
 <p>
-This configuration file is located in /etc/snapraid.conf in Unix or
-in the execution directory in Windows.
+In Unix it's used the file "/usr/local/etc/snapraid.conf" if it exists,
+or "/etc/snapraid.conf" otherwise.
+In Windows it's used the file "snapraid.conf" in the same
+directory of "snapraid.exe".
 <p>
 It should contain the following options (case sensitive):
 <h3><a name="7.1">7.1</a> 
-parity FILE
+parity FILE [,FILE] ...
 </h3>
-Defines the file to use to store the parity information.
+Defines the files to use to store the parity information.
 The parity enables the protection from a single disk
 failure, like RAID5.
 <p>
-It must be placed in a disk dedicated for this purpose with
-as much free space as the biggest disk in the array.
-Leaving the parity disk reserved for only this file ensures that
+You can specify multiples files that should be in different disks.
+When a file cannot grow anymore, the next one is used.
+The total space available must be as big as the biggest data disk in
+the array.
+<p>
+Leaving the parity disks reserved for parity ensures that
 it doesn't get fragmented, improving the performance.
+<p>
+In Windows 256 MB are left unused in each disk to avoid the
+warning about full disks.
 <p>
 This option is mandatory and it can be used only one time.
 <h3><a name="7.2">7.2</a> 
-[2,3,4,5,6]-parity FILE
+(2,3,4,5,6)-parity FILE [,FILE] ...
 </h3>
 Defines the files to use to store extra parity information.
-For each parity file specified, one additional level of protection
+<p>
+For each parity specified, one additional level of protection
 is enabled:
 <ul>
 <li>
-2-parity enables RAID6 double parity.
+2-parity enables RAID6 dual parity.
 </li>
 <li>
 3-parity enables triple parity
 </li>
 <li>
-4-parity enables quad parity
+4-parity enables quad (four) parity
 </li>
 <li>
 5-parity enables penta (five) parity
@@ -1340,26 +1353,24 @@ is enabled:
 </li>
 </ul>
 <p>
-Each parity level requires also all the files of the previous levels.
+Each parity level requires the precence of all the previous parity
+levels.
 <p>
-Each file must be placed in a disk dedicated for this purpose with
-as much free space as the biggest disk in the array.
-Leaving the parity disks reserved for only these files ensures that
-they doesn't get fragmented, improving the performance.
+The same considerations of the 'parity' option apply.
 <p>
 These options are optional and they can be used only one time.
 <h3><a name="7.3">7.3</a> 
-z-parity FILE
+z-parity FILE [,FILE] ...
 </h3>
 Defines an alternate file and format to store the triple parity.
 <p>
 This option is an alternative at '3-parity' mainly intended for
 low-end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
-support the SSSE3 instructions set, and in such case it provides
+support the SSSE3 instructions set. In such cases it provides
 a better performance.
 <p>
-This format is similar, but faster, at the one used by the ZFS RAIDZ3,
-but it doesn't work beyond triple parity.
+This format is similar, but faster, at the one used by the ZFS RAIDZ3.
+Like ZFS, it doesn't work beyond triple parity.
 <p>
 When using '3-parity' you will be warned if it's recommended to use
 the 'z-parity' format for a performance improvement.
@@ -1427,26 +1438,16 @@ This option can be used many times.
 blocksize SIZE_IN_KIBIBYTES
 </h3>
 Defines the basic block size in kibi bytes of the parity.
-One kibi bytes is 1024 bytes. The default blocksize is 256
-and it should work for most cases.
+One kibi bytes is 1024 bytes.
 <p>
-A reason to use a different blocksize is if your system has less
-than 4 GiB of memory. As a rule of thumb, with 4 GiB or more memory
-use the default 256, with 2 GiB use 512, and with 1 GiB use 1024.
+The default blocksize is 256 and it should work for most cases.
 <p>
-In more details SnapRAID requires about TS*17/BS bytes of RAM memory.
-Where TS is the total size in bytes of your disk array, and BS is the
-block size in bytes.
+WARNING! This option is for experts only, and it's highly
+recommended to not change it. To change again this value in
+future you'll have to recreate the whole parity!
 <p>
-For example with 8 disks of 4 TB and a block size of 256 KiB
-(1 KiB = 1024 bytes) you have:
-<p>
-<pre>
-RAM = (8 * 4 * 10^12) * 17 / (256 * 2^10) = 1.9 GiB
-</pre>
-<p>
-Another reason to use a different blocksize is if you have a lot of
-small files. In the order of many millions.
+A reason to use a different hashsize is if you have a lot of small
+files. In the order of many millions.
 <p>
 For each file, even of few bytes, a whole block of parity is allocated,
 and with many files this may result in a lot of unused parity space.
@@ -1485,6 +1486,51 @@ This results in about 1.5% of extra space. Meaning about 60 GB for
 a 4 TB disk, that allows about 460000 files in each data disk without
 any wasted space.
 <h3><a name="7.9">7.9</a> 
+hashsize SIZE_IN_BYTES
+</h3>
+Defines the hash size in bytes of the saved blocks.
+<p>
+The default hashsize is 16 bytes (128 bits), and it should work
+for most cases.
+<p>
+WARNING! This option is for experts only, and it's highly
+recommended to not change it. To change again this value in
+future you'll have to recreate the whole parity!
+<p>
+A reason to use a different hashsize is if your system has
+small memory. As a rule of thumb SnapRAID usually requires
+1 GiB of RAM memory for each 16 TB of data in the array.
+<p>
+Specifically, to store the hashes of the data, SnapRAID requires
+about TS*(1+HS)/BS bytes of RAM memory.
+Where TS is the total size in bytes of your disk array, BS is the
+block size in bytes, and HS is the hash size in bytes.
+<p>
+For example with 8 disks of 4 TB and a block size of 256 KiB
+(1 KiB = 1024 bytes), and an hash size of 16, you get:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
+</pre>
+<p>
+Switching to a hash size of 8, you get:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
+</pre>
+<p>
+Switching to a block size of 512, you get:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
+</pre>
+<p>
+Switching to both a hash size of 8, and a block size of 512 you get:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
+</pre>
+<h3><a name="7.10">7.10</a> 
 autosave SIZE_IN_GIGABYTES
 </h3>
 Automatically save the state when syncing or scrubbing after the specified amount
@@ -1492,14 +1538,14 @@ of GB processed.
 This option is useful to avoid to restart from scratch long "sync"
 commands interrupted by a machine crash, or any other event that
 may interrupt SnapRAID.
-<h3><a name="7.10">7.10</a> 
+<h3><a name="7.11">7.11</a> 
 pool DIR
 </h3>
 Defines the pooling directory where the virtual view of the disk
 array is created using the "pool" command.
 <p>
 The directory must already exist.
-<h3><a name="7.11">7.11</a> 
+<h3><a name="7.12">7.12</a> 
 share UNC_DIR
 </h3>
 Defines the Windows UNC path required to access the disks remotely.
@@ -1514,7 +1560,7 @@ disk name as specified in the "disk" option, and finally adding the
 file dir and name.
 <p>
 This option is only required for Windows.
-<h3><a name="7.12">7.12</a> 
+<h3><a name="7.13">7.13</a> 
 smartctl DISK/PARITY OPTIONS...
 </h3>
 Defines a custom smartctl command to obtain the SMART attributes
@@ -1522,7 +1568,7 @@ for each disk. This may be required for RAID controllers and for
 some USB disk that cannot be auto-detected.
 <p>
 DISK is the same disk name specified in the "disk" option.
-PARITY is one of the parity name as "parity,[1,2,3,4,5,6,z]-parity".
+PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
 <p>
 In the specified OPTIONS, the "%s" string is replaced by the
 device name. Note that in case of RAID controllers the device is likely
@@ -1536,7 +1582,7 @@ https://www.smartmontools.org/wiki/Supported_RAID-Controllers
 https://www.smartmontools.org/wiki/Supported_USB-Devices
 </pre>
 </td></tr></table>
-<h3><a name="7.13">7.13</a> 
+<h3><a name="7.14">7.14</a> 
 Examples
 </h3>
 An example of a typical configuration for Unix is:
@@ -1633,7 +1679,7 @@ to exclude them you must use a file rule, and not a directory one.
 <p>
 If the file name you want to use really contains a '*', '?', '[',
 or ']' char, you have to escape it to avoid to have interpreted as a
-globbing character. In Unix the escape char is '\' in Windows it's '^'.
+globbing character. In Unix the escape char is '\', in Windows it's '^'.
 Note that when the pattern is on the command line, you have to double the
 escape character to avoid to have it interpreted by the command shell.
 <p>
