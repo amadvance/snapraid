@@ -1501,6 +1501,7 @@ static void state_map(struct snapraid_state* state)
 
 	/* recommend number of parities */
 	if (!state->opt.no_warnings) {
+		/* intentionally use log_fatal() instead of log_error() to give more visibility at the warning */
 		if (diskcount >= 36 && state->level < 6) {
 			log_fatal("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
 		} else if (diskcount >= 29 && state->level < 5) {
