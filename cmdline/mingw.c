@@ -1457,16 +1457,28 @@ int windows_link(const char* existing, const char* file)
 	return 0;
 }
 
+/**
+ * In Windows 10 allow creationg of symblink by not priviliged user.
+ *
+ * See: Symlinks in Windows 10!
+ * https://blogs.windows.com/buildingapps/2016/12/02/symlinks-windows-10/#cQG7cx48oGH86lkI.97
+ * "Specify this flag to allow creation of symbolic links when the process is not elevated"
+ */
+#ifndef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+#define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE 0x2
+#endif
+
 int windows_symlink(const char* existing, const char* file)
 {
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
+	DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
 
 	/* We must convert to the extended-length \\?\ format if the path is too long */
 	/* otherwise the link creation fails. */
 	/* But we don't want to always convert it, to avoid to recreate */
 	/* user symlinks different than they were before */
-	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), 0)) {
+	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), flags)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
