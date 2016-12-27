@@ -1324,14 +1324,11 @@ WARNING! Unexpected data modification of a file without parity!
 </pre>
 
 <p>
-This happens because Excel modifies the files after opening them, even you don't press 'Save'.
+This happens because Excel modifies the files after opening them, even if you don't press 'Save'.
 It stores the name of the last user that opened it to be able to report if another user tries
 to open the same file at the same time.
-But to avoid to have the file triggered as modified, it restores the time-stamp to its original value.
-</p>
-
-<p>
-You have then a file with the same time-stamp but different content. And this is not good for SnapRAID.
+To avoid to have the file triggered as modified, it restores the time-stamp to its original value.
+But the file was modified, and SnapRAID reports it.
 </p>
 
 <p>
