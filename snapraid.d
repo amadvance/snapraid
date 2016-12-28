@@ -290,22 +290,22 @@ Getting Started
 		:snapraid fix -m
 
   Recovering
-	The worst happened, and you lost a disk!
+	The worst happened, and you lost one or more disks!
 
-	DO NOT PANIC! You will be able to recover it!
+	DO NOT PANIC! You will be able to recover them!
 
-	The first thing you have to do is to avoid further changes at you disk array.
+	The first thing you have to do is to avoid further changes at your disk array.
 	Disable any remote connection to it, any scheduled process, including any
 	scheduled SnapRAID nightly sync or scrub.
 
 	Then proceed with the following steps.
 
     STEP 1 -> Reconfigure
-	You need some space to recover, even better if you already have an additional
-	disk, but in case, also an external USB or remote disk is enough.
+	You need some space to recover, even better if you already have additional
+	spare disks, but in case, also an external USB or remote disk is enough.
 
-	Change the SnapRAID configuration file to make the "disk" option
-	of the failed disk to point to the place where you have enough empty
+	Change the SnapRAID configuration file to make the "data" or "parity"
+	option of the failed disk to point to the place where you have enough empty
 	space to recover the files.
 
 	For example, if you have that disk "d1" failed, you can change from:
@@ -316,12 +316,20 @@ Getting Started
 
 		:data d1 /mnt/new_spare_disk/
 
+	If the disk to recover is a parity disk, change the appropriate "parity"
+	option.
+	If you have more broken disks, change all their configuration options.
+
     STEP 2 -> Fix
 	Run the fix command, storing the log in an external file with:
 
 		:snapraid -d NAME -l fix.log fix
 
 	Where NAME is the name of the disk, like "d1" as in our previous example.
+	In case the disk to recover is a parity disk, use the "parity", "2-parity"
+	names.
+	If you have more broken disks, use multiple -d options to specify all
+	of them.
 
 	This command will take a long time.
 

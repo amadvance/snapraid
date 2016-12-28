@@ -551,21 +551,21 @@ snapraid fix \-m
 .PD
 .RE
 .SS Recovering 
-The worst happened, and you lost a disk!
+The worst happened, and you lost one or more disks!
 .PP
-DO NOT PANIC! You will be able to recover it!
+DO NOT PANIC! You will be able to recover them!
 .PP
-The first thing you have to do is to avoid further changes at you disk array.
+The first thing you have to do is to avoid further changes at your disk array.
 Disable any remote connection to it, any scheduled process, including any
 scheduled SnapRAID nightly sync or scrub.
 .PP
 Then proceed with the following steps.
 .SS STEP 1 \-> Reconfigure 
-You need some space to recover, even better if you already have an additional
-disk, but in case, also an external USB or remote disk is enough.
+You need some space to recover, even better if you already have additional
+spare disks, but in case, also an external USB or remote disk is enough.
 .PP
-Change the SnapRAID configuration file to make the \[dq]disk\[dq] option
-of the failed disk to point to the place where you have enough empty
+Change the SnapRAID configuration file to make the \[dq]data\[dq] or \[dq]parity\[dq]
+option of the failed disk to point to the place where you have enough empty
 space to recover the files.
 .PP
 For example, if you have that disk \[dq]d1\[dq] failed, you can change from:
@@ -585,6 +585,10 @@ data d1 /mnt/new_spare_disk/
 .PP
 .PD
 .RE
+.PP
+If the disk to recover is a parity disk, change the appropriate \[dq]parity\[dq]
+option.
+If you have more broken disks, change all their configuration options.
 .SS STEP 2 \-> Fix 
 Run the fix command, storing the log in an external file with:
 .PP
@@ -596,6 +600,10 @@ snapraid \-d NAME \-l fix.log fix
 .RE
 .PP
 Where NAME is the name of the disk, like \[dq]d1\[dq] as in our previous example.
+In case the disk to recover is a parity disk, use the \[dq]parity\[dq], \[dq]2\-parity\[dq]
+names.
+If you have more broken disks, use multiple \-d options to specify all
+of them.
 .PP
 This command will take a long time.
 .PP
