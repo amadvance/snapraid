@@ -31,6 +31,7 @@ AC_HEADER_ASSERT
 AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_HEADER_SYS_WAIT
+AC_HEADER_MAJOR
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
 AC_CHECK_HEADERS([pthread.h math.h])

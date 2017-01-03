@@ -198,6 +198,12 @@
 #include <sys/types.h>
 #endif
 
+#if MAJOR_IN_MKDEV
+#include <sys/mkdev.h>
+#elif MAJOR_IN_SYSMACROS
+#include <sys/sysmacros.h>
+#endif
+
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
