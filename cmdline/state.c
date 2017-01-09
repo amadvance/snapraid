@@ -621,7 +621,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 			state->block_size *= KIBI;
-		} else if (strcmp(tag, "hash_size") == 0) {
+		} else if (strcmp(tag, "hashsize") == 0
+			|| strcmp(tag, "hash_size") == 0 /* v11.0 used incorretly this one, kept now for backward compatibility */
+		) {
 			uint32_t hash_size;
 
 			ret = sgetu32(f, &hash_size);
