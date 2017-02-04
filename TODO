@@ -7,6 +7,10 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
+* Extend haspdeep to support the SnapRAID hash :
+https://github.com/jessek/hashdeep/
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
+
 * Add a "noaccessdenied" config option to exclude not readable files/dirs.
 Like the "nohidden".
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
