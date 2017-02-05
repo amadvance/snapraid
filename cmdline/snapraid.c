@@ -464,7 +464,7 @@ struct option long_options[] = {
 	/* Skip space holder file in parity disks */
 	{ "test-skip-space-holder", 0, 0, OPT_TEST_SKIP_SPACE_HOLDER },
 
-	/* Set the ourput format */
+	/* Set the output format */
 	{ "test-fmt", 1, 0, OPT_TEST_FORMAT },
 
 	{ 0, 0, 0, 0 }
