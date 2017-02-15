@@ -18,6 +18,10 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
 Like the "nohidden".
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
 
+* Don't insert new files if they are new opened by other applications.
+Not yet sure how to check if a file is open in a fast way.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a1683dd9/?limit=25#1e16
+
 * Add markdown support for output
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/661cce8b/
 
@@ -66,9 +70,6 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/57d40108/
 * Allow to filter also in diff, to limit the output
 to some dir or disk. Also excluding a specific disk could
 be useful.
-
-* Don't insert new files if they are too recent and opened by other
-applications.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
