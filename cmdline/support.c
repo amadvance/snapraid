@@ -527,32 +527,29 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 				*p++ = c;
 			}
 			break;
-		default :
-			/* unquoted */
-			if (p == end)
-				goto bail;
-			*p++ = c;
-			break;
 #else
-		case 'a' ... 'z' :
-		case 'A' ... 'Z' :
-		case '0' ... '9' :
-		case ',' :
-		case '.' :
-		case '_' :
-		case '+' :
-		case ':' :
-		case '@' :
-		case '%' :
-		case '/' :
-		case '-' :
-			/* safe chars for all shells, unquoted */
-			if (p == end)
-				goto bail;
-			*p++ = c;
-			break;
-		default :
-			/* all the others are quoted with \ */
+		/* special chars that need to be quoted */
+		case ' ' : /* space */
+		case '~' : /* home */
+		case '`' : /* command */
+		case '#' : /* comment */
+		case '$' : /* variable */
+		case '&' : /* background job */
+		case '*' : /* wildcard */
+		case '(' : /* shell */
+		case ')' : /* shell */
+		case '\\': /* quote */
+		case '|' : /* pipe */
+		case '[' : /* wildcard */
+		case ']' : /* wildcard */
+		case '{' : /* code */
+		case '}' : /* code */
+		case ';' : /* separator */
+		case '\'': /* quote */
+		case '"' : /* quote */
+		case '<' : /* redirect */
+		case '>' : /* redirect */
+		case '?' : /* wildcard */
 			if (p == end)
 				goto bail;
 			*p++ = '\\';
@@ -561,6 +558,12 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 			*p++ = c;
 			break;
 #endif
+		default :
+			/* unquoted */
+			if (p == end)
+				goto bail;
+			*p++ = c;
+			break;
 		}
 
 		++str;

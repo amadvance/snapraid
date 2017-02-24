@@ -1,8 +1,9 @@
 SnapRAID HISTORY
 ================
 
-11.1 2017/01
+11.1 2017/02
 ============
+ * Fixed quoting when printing in Linux. This fixes the UTF-8 output.
  * Fixed recognition of 'hashsize' in the configuration file.
    The previous incorrect 'hash_size' is still supported for backward
    compatibility.
