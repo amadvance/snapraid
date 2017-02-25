@@ -3,11 +3,14 @@ SnapRAID HISTORY
 
 11.1 2017/02
 ============
- * Fixed quoting when printing in Linux. This fixes the UTF-8 output.
+ * Fixed quoting when printing in Linux. This fixes the UTF-8 screen
+   output. Windows version was not affected.
  * Fixed recognition of 'hashsize' in the configuration file.
    The previous incorrect 'hash_size' is still supported for backward
    compatibility.
- * Added support for the Windows 10 symbolic link unprivilged creation,
+ * Fixed building in platforms that don't provide major/minor definitions
+   in sys/types.h.
+ * Added support for the Windows 10 symbolic link unprivileged creation,
    using SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE.
  * Windows binaries built with gcc 4.9.4 using the MXE cross compiler at
    commit ae56efa2b23a793b0146508bfef33027cdb09fd2 with targets
