@@ -105,7 +105,7 @@ AC_CHECK_FUNCS([mach_absolute_time])
 AC_CHECK_FUNCS([backtrace backtrace_symbols])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
-AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", [])
+AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", CFLAGS="$CFLAGS -D_REENTRANT")
 AC_CHECK_FUNCS([pthread_create])
 AC_SEARCH_LIBS([exp], [m])
 
