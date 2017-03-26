@@ -446,6 +446,9 @@ Commands
 
 	You can spin-up only some specific disks using the -d, --filter-disk option.
 
+	Take care that spinniup-up all the disks at the same time needs a lot of power.
+	Ensure that your power-supply can sustain that.
+
 	Nothing is modified.
 
   down
