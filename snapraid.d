@@ -947,6 +947,9 @@ Configuration
 	The total space available must be as big as the biggest data disk in
 	the array.
 
+	You can add additional parity files at later time, but you
+	cannot reorder or remove them.
+
 	Leaving the parity disks reserved for parity ensures that
 	it doesn't get fragmented, improving the performance.
 
