@@ -1,8 +1,9 @@
 SnapRAID HISTORY
 ================
 
-11.1 2017/02
+11.1 2017/04
 ============
+ * Allow increasing the number of parity splits of existing parity.
  * Fixed quoting when printing in Linux. This fixes the UTF-8 screen
    output. Windows version was not affected.
  * Fixed recognition of 'hashsize' in the configuration file.
