@@ -164,6 +164,11 @@ Rejected TODO
 
 This is a list of rejected TODO items.
 
+* Directly access disks for parity skipping the filesystem layer
+- No real performance or space gain compared to a custom filesystem configuration like:
+mkfs.ext3 -i 16777216 -m0 -O ^dir_index,large_file,sparse_super /dev/sdX1
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/9c0ef324/?limit=25
+
 * Allow to specify more than one disk directories to cover the case of multi partitions.
 Different partitions have duplicate inode. The only way to support this is to
 add also a kind of device_id, increasing the memory required.
