@@ -20,6 +20,7 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
 
 * Don't insert new files if they are new opened by other applications.
 Not yet sure how to check if a file is open in a fast way.
+In case we can exclude files created too recently, like with a --min-age option.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a1683dd9/?limit=25#1e16
 
 * Add markdown support for output
