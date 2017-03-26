@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 11.1 2017/04
 ============
+ * Fixed the check command to correctly ignore errors on unused parity.
+   This was broken in version 9.0.
  * Allow increasing the number of parity splits of existing parity.
  * Fixed quoting when printing in Linux. This fixes the UTF-8 screen
    output. Windows version was not affected.

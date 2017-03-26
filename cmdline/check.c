@@ -815,14 +815,16 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 			return 0;
 	}
 
-	/* for each parity */
+	/* now apply the filters */
+
+	/* if a parity is not excluded, include all blocks, even unused ones */
 	for (l = 0; l < state->level; ++l) {
-		if (!state->parity[l].is_excluded) {
+		if (!state->parity[l].is_excluded_by_filter) {
 			return 1;
 		}
 	}
 
-	/* for each disk */
+	/* otherwise include only used blocks */
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_block* block;
 
@@ -902,6 +904,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	for (i = blockstart; i < blockmax; ++i) {
 		unsigned failed_count;
 		int valid_parity;
+		int used_parity;
 		snapraid_info info;
 		int rehash;
 
@@ -926,6 +929,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* Note that with auditonly, we anyway skip the full parity check, */
 		/* because we also don't read it at all */
 		valid_parity = 1;
+
+		/* If the parity is used by at least one file */
+		used_parity = 0;
 
 		/* keep track of the number of failed blocks */
 		failed_count = 0;
@@ -991,6 +997,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++failed_count;
 				continue;
 			}
+
+			/* here we are sure that the parity is used by a file */
+			used_parity = 1;
 
 			/* get the file of this block */
 			file = fs_par2file_get(disk, i, &file_pos);
@@ -1270,10 +1279,16 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					++unrecoverable_error;
 				}
 
-				/* now check parities, but only if all the blocks have it computed */
-				/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
-				/* and doesn't make sense to try to fix it */
-				if (valid_parity) {
+				/*
+				 * Check parities, but only if all the blocks have it computed and it's used.
+				 *
+				 * If you check/fix after a partial sync, it's OK to have parity errors
+				 * on the blocks with invalid parity and doesn't make sense to try to fix it.
+				 *
+				 * It's also OK to have data errors on unused parity, because sync doesn't
+				 * update it.
+				 */
+				if (used_parity && valid_parity) {
 					/* check the parity */
 					for (l = 0; l < state->level; ++l) {
 						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
@@ -1334,10 +1349,17 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						++recovered_error;
 					}
 
-					/* update parity only if all the blocks have it computed */
-					/* if you check/fix after a partial sync, you do not want to fix parity */
-					/* for blocks that are going to have it computed in the sync completion */
-					if (valid_parity) {
+					/*
+					 * Update parity only if all the blocks have it computed and it's used.
+					 *
+					 * If you check/fix after a partial sync, you do not want to fix parity
+					 * for blocks that are going to have it computed in the sync completion.
+					 *
+					 * For unused parity there is no need to write it, because when fixing
+					 * we already have allocated space for it on parity file creation,
+					 * and its content doesn't matter.
+					 */
+					if (used_parity && valid_parity) {
 						/* update the parity */
 						for (l = 0; l < state->level; ++l) {
 							/* if the parity on disk is wrong */
@@ -1345,7 +1367,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							        /* and we have access at the parity */
 								&& parity[l] != 0
 							        /* and the parity is not excluded */
-								&& !state->parity[l].is_excluded
+								&& !state->parity[l].is_excluded_by_filter
 							) {
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 								if (ret == -1) {

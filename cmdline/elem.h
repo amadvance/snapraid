@@ -463,7 +463,7 @@ struct snapraid_parity {
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
-	int is_excluded; /**< If the parity is excluded by disk filter. */
+	int is_excluded_by_filter; /**< If the parity is excluded by filters. */
 	int skip_access; /**< If at least one of the parity disk is inaccessible and it should be skipped. */
 	uint64_t tick; /**< Usage time. */
 	uint64_t progress_tick[PROGRESS_MAX]; /**< Last cpu ticks of progress. */

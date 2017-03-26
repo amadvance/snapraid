@@ -162,7 +162,7 @@ void state_init(struct snapraid_state* state)
 		state->parity[l].skip_access = 0;
 		state->parity[l].tick = 0;
 		state->parity[l].cached = 0;
-		state->parity[l].is_excluded = 0;
+		state->parity[l].is_excluded_by_filter = 0;
 	}
 	state->tick_io = 0;
 	state->tick_misc = 0;
@@ -4061,14 +4061,14 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		}
 	}
 
-	/* if we are filtering by disk */
+	/* if we are filtering by disk, exclude any parity not explicitely included */
 	if (!tommy_list_empty(filterlist_disk)) {
 		/* for each parity disk */
 		for (l = 0; l < state->level; ++l) {
 			/* check if the parity is excluded by name */
 			if (filter_path(filterlist_disk, 0, lev_config_name(l), 0) != 0) {
 				/* excluded the parity from further operation */
-				state->parity[l].is_excluded = 1;
+				state->parity[l].is_excluded_by_filter = 1;
 			}
 		}
 	} else {
@@ -4076,7 +4076,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		if (filter_missing || !tommy_list_empty(filterlist_file)) {
 			/* for each parity disk */
 			for (l = 0; l < state->level; ++l) {
-				state->parity[l].is_excluded = 1;
+				state->parity[l].is_excluded_by_filter = 1;
 			}
 		}
 	}
