@@ -7,6 +7,9 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
+* Allow to filter in diff/list by disk name.
+Not checked disks should be allowed to be missing.
+
 * Add an option to ignore subsecond timestamp.
 Like when you copy data to a filesystem with less timestamp precision.
 
@@ -70,10 +73,6 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/57d40108/
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
-
-* Allow to filter also in diff, to limit the output
-to some dir or disk. Also excluding a specific disk could
-be useful.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
