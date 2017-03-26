@@ -114,6 +114,7 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 		char* separator;
 		char* majorminor;
 		char* mountpoint;
+		char* fs;
 		char* mountsource;
 
 		s = fgets(buf, sizeof(buf), f);
@@ -141,18 +142,31 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 
 		majorminor = first_map[2];
 		mountpoint = first_map[4];
+		fs = second_map[0];
 		mountsource = second_map[1];
-
-		/* accept only /dev/... mountsource */
-		/* this excludes ZFS that has the bare label, like "tank" */
-		if (strncmp(mountsource, "/dev/", 5) != 0)
-			continue;
 
 		/* compare major:minor from mountinfo */
 		if (strcmp(majorminor, match) == 0) {
+			/*
+			 * Accept only /dev/... mountsource
+			 *
+			 * This excludes ZFS that uses a bare label for mountsource, like "tank".
+			 *
+			 * 410 408 0:193 / /XXX rw,relatime shared:217 - zfs tank/system/data/var/lib/docker/XXX rw,xattr,noacl
+			 *
+			 * Also excludes AUTOFS unmounted devices that point to a fake filesystem
+			 * used to remount them at the first use.
+			 *
+			 * 97 25 0:42 / /XXX rw,relatime shared:76 - autofs /etc/auto.seed rw,fd=6,pgrp=952,timeout=30,minproto=5,maxproto=5,indirect
+			 */
+			if (strncmp(mountsource, "/dev/", 5) != 0) {
+				log_tag("resolve:proc:%u:%u: match skipped for not /dev/ mountsource for %s %s\n", major(device), minor(device), fs, mountsource);
+				continue;
+			}
+
 			pathcpy(path, path_size, mountsource);
 
-			log_tag("resolve:proc:%u:%u:%s: found mountinfo device %s\n", major(device), minor(device), path, match);
+			log_tag("resolve:proc:%u:%u: found device %s matching device %s\n", major(device), minor(device), path, match);
 
 			fclose(f);
 			return 0;
@@ -161,9 +175,14 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 		/* get the device of the mount point */
 		/* in Btrfs it could be different than the one in mountinfo */
 		if (stat(mountpoint, &st) == 0 && st.st_dev == device) {
+			if (strncmp(mountsource, "/dev/", 5) != 0) {
+				log_tag("resolve:proc:%u:%u: match skipped for not /dev/ mountsource for %s %s\n", major(device), minor(device), fs, mountsource);
+				continue;
+			}
+
 			pathcpy(path, path_size, mountsource);
 
-			log_tag("resolve:proc:%u:%u:%s: found mountpoint %s\n", major(device), minor(device), path, mountpoint);
+			log_tag("resolve:proc:%u:%u: found device %s matching mountpoint %s\n", major(device), minor(device), path, mountpoint);
 
 			fclose(f);
 			return 0;
