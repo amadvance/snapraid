@@ -2655,8 +2655,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 			/* if we use this parity entry */
 			if (v_level < state->level) {
+				/* if the configuration has more splits, keep them */
+				if (state->parity[v_level].split_mac < 1)
+					state->parity[v_level].split_mac = 1;
 				/* set the parity info */
-				state->parity[v_level].split_mac = 1;
 				pathcpy(state->parity[v_level].split_map[0].uuid, sizeof(state->parity[v_level].split_map[0].uuid), v_uuid);
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
