@@ -3,6 +3,7 @@ SnapRAID INSTALL
 
 As root or user type:
 
+    ./autogen.sh
     ./configure
     make
 
