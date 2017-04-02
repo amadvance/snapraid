@@ -1,12 +1,18 @@
 SnapRAID INSTALL
 ================
 
-As root or user type:
+To build and install SnapRAID you need to download the source
+code from http://www.snapraid.it and unpack it with:
+
+    tar xf snapraid-*.tar.gz
+    cd snapraid-*
+
+To configure and build run:
 
     ./configure
     make
 
-When you have to check for correctness the application typing:
+To check for correctness of the application run:
 
     make check
 
