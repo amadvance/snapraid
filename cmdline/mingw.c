@@ -1040,6 +1040,70 @@ int windows_futimens(int fd, struct windows_timespec tv[2])
 	return 0;
 }
 
+int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], int flags)
+{
+	wchar_t conv_buf[CONV_MAX];
+	HANDLE h;
+	FILETIME ft;
+	uint64_t mtime;
+	DWORD wflags;
+
+	/*
+	 * Support only the absolute paths
+	 */
+	if (fd != AT_FDCWD) {
+		errno = EBADF;
+		return -1;
+	}
+
+	/*
+	 * Open the handle of the file.
+	 *
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
+	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
+	 *
+	 * Note that even with FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	 * and FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT some paths
+	 * cannot be opened like "C:\System Volume Information" resulting
+	 * in error ERROR_ACCESS_DENIED.
+	 */
+	wflags = FILE_FLAG_BACKUP_SEMANTICS;
+	if ((flags & AT_SYMLINK_NOFOLLOW) != 0)
+		wflags |= FILE_FLAG_OPEN_REPARSE_POINT;
+	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, wflags, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/*
+	 * Convert to windows time
+	 *
+	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
+	 * http://support.microsoft.com/kb/167296
+	 */
+	mtime = tv[0].tv_sec;
+	mtime *= 10000000;
+	mtime += tv[0].tv_nsec / 100;
+	mtime += 116444736000000000;
+
+	ft.dwHighDateTime = mtime >> 32;
+	ft.dwLowDateTime = mtime;
+
+	if (!SetFileTime(h, 0, 0, &ft)) {
+		windows_errno(GetLastError());
+		CloseHandle(h);
+		return -1;
+	}
+
+	if (!CloseHandle(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
 int windows_rename(const char* from, const char* to)
 {
 	wchar_t conv_buf_from[CONV_MAX];

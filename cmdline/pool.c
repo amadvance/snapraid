@@ -147,7 +147,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 /**
  * Create a link to the specified disk entry.
  */
-static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub)
+static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub, int64_t mtime_sec, int mtime_nsec)
 {
 	char path[PATH_MAX];
 	char linkto[PATH_MAX];
@@ -196,6 +196,16 @@ static void make_link(const char* pool_dir, const char* share_dir, struct snapra
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	if (mtime_sec) {
+		ret = lmtime(path, mtime_sec, mtime_nsec);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error setting time to symlink '%s'. %s.\n", path, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
 }
 
 void state_pool(struct snapraid_state* state)
@@ -236,14 +246,14 @@ void state_pool(struct snapraid_state* state)
 		/* for each file */
 		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
-			make_link(pool_dir, share_dir, disk, file->sub);
+			make_link(pool_dir, share_dir, disk, file->sub, file->mtime_sec, file->mtime_nsec);
 			++count;
 		}
 
 		/* for each link */
 		for (j = disk->linklist; j != 0; j = j->next) {
 			struct snapraid_link* slink = j->data;
-			make_link(pool_dir, share_dir, disk, slink->sub);
+			make_link(pool_dir, share_dir, disk, slink->sub, 0, 0);
 			++count;
 		}
 

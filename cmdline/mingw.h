@@ -85,6 +85,11 @@
 #define HAVE_FUTIMENS 1
 #undef futimens
 #define futimens windows_futimens
+#define HAVE_UTIMENSAT 1
+#define AT_FDCWD -1
+#define AT_SYMLINK_NOFOLLOW 1
+#undef utimensat
+#define utimensat windows_utimensat
 #define O_NOFOLLOW 0
 #define dirent_hidden windows_dirent_hidden
 #define HAVE_STRUCT_DIRENT_D_STAT 1
@@ -240,6 +245,11 @@ struct windows_timespec {
  * Like the C futimens().
  */
 int windows_futimens(int fd, struct windows_timespec tv[2]);
+
+/**
+ * Like the C utimensat().
+ */
+int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], int flags);
 
 /**
  * Like the C rename().

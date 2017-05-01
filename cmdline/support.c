@@ -897,6 +897,52 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec)
 	return ret;
 }
 
+int lmtime(const char* path, int64_t mtime_sec, int mtime_nsec)
+{
+#if HAVE_UTIMENSAT
+	struct timespec tv[2];
+#else
+	struct timeval tv[2];
+#endif
+	int ret;
+
+#if HAVE_UTIMENSAT /* utimensat() is preferred because it gives nanosecond precision */
+	tv[0].tv_sec = mtime_sec;
+	if (mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_nsec = mtime_nsec;
+	else
+		tv[0].tv_nsec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_nsec = tv[0].tv_nsec;
+
+	ret = utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
+#elif HAVE_LUTIMES /* fallback to lutimes() if nanosecond precision is not available */
+	tv[0].tv_sec = mtime_sec;
+	if (mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_usec = mtime_nsec / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = lutimes(path, tv);
+#elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
+	tv[0].tv_sec = mtime_sec;
+	if (mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_usec = mtime_nsec / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimesat(AT_FDCWD, path, tv);
+#else
+#error No function available to set file timestamps with sub-second precision
+#endif
+
+	return ret;
+}
+
 /****************************************************************************/
 /* advise */
 

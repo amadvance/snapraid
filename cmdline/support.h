@@ -322,6 +322,12 @@ int mkancestor(const char* file);
  */
 int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 
+/**
+ * Change the modification time of a file or link.
+ * Note that links are NOT deferenced.
+ */
+int lmtime(const char* path, int64_t mtime_sec, int mtime_nsec);
+
 /****************************************************************************/
 /* advise */
 
