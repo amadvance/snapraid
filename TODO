@@ -5,6 +5,9 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* When creating links, set the mtime like the linked file.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/936f0087/?limit=25#b3d6
+
 - Minor
 
 * Allow to filter in diff/list by disk name.
