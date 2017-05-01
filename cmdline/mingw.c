@@ -47,10 +47,22 @@ int exit_sync_needed = 2;
 static BOOLEAN (WINAPI* ptr_RtlGenRandom)(PVOID, ULONG);
 
 /**
+ * Direct access to GetTickCount64().
+ * This function is available only from Windows Vista.
+ */
+static ULONGLONG (WINAPI* ptr_GetTickCount64)(void);
+
+/**
  * Description of the last error.
  * It's stored in the thread local storage.
  */
 static pthread_key_t last_error;
+
+/**
+ * Monotone tick counter
+ */
+static pthread_mutex_t tick_lock;
+static uint64_t tick_last;
 
 /**
  * If we are running in Wine.
@@ -112,6 +124,12 @@ void os_init(int opt)
 		exit(EXIT_FAILURE);
 	}
 
+	tick_last = 0;
+	if (pthread_mutex_init(&tick_lock, 0) != 0) {
+		log_fatal("Error calling pthread_mutex_init().\n");
+		exit(EXIT_FAILURE);
+	}
+
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
 		log_fatal("Error loading the NTDLL module.\n");
@@ -139,6 +157,9 @@ void os_init(int opt)
 	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 
+	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
+	ptr_GetTickCount64 = (void*)GetProcAddress(kernel32, "GetTickCount64");
+
 	/* set the thread execution level to avoid sleep */
 	/* first try for Windows 7 */
 	if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
@@ -153,6 +174,8 @@ void os_done(void)
 {
 	/* delete the thread local storage for strerror() */
 	pthread_key_delete(last_error);
+
+	pthread_mutex_destroy(&tick_lock);
 
 	/* restore the normal execution level */
 	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
@@ -1968,16 +1991,40 @@ size_t windows_direct_size(void)
 uint64_t tick(void)
 {
 	LARGE_INTEGER t;
+	uint64_t r;
 
-	if (!QueryPerformanceCounter(&t))
-		return 0;
+	/*
+	 * Ensure to return a strict monotone tick counter.
+	 *
+	 * We had reports of invalid stats due faulty High Precision Event Timer.
+	 * See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a2122fd6/
+	 */
+	pthread_mutex_lock(&tick_lock);
 
-	return t.QuadPart;
+	/*
+	 * MSDN 'QueryPerformanceCounter'
+	 * "On systems that run Windows XP or later, the function"
+	 * "will always succeed and will thus never return zero."
+	 */
+	r = 0;
+	if (QueryPerformanceCounter(&t))
+		r = t.QuadPart;
+
+	if (r < tick_last)
+		r = tick_last;
+	tick_last = r;
+
+	pthread_mutex_unlock(&tick_lock);
+
+	return r;
 }
 
 uint64_t tick_ms(void)
 {
 	/* GetTickCount64() isn't supported in Windows XP */
+	if (ptr_GetTickCount64 != 0)
+		return ptr_GetTickCount64();
+
 	return GetTickCount();
 }
 
