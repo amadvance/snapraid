@@ -132,21 +132,6 @@ hash file at startup in a memory mapped "temporary" file.
 It may takes some time to create it, but then it will be fast.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/cdea773f/
 
-* Allow multiple parity files and to coexist with data
-in the same disk.
-This is possible if the data in the same disk uses parity addresses not
-contained in the parity file present in the same disk.
-+ It's a nice trick. The disk containing parity, will have less space available,
-and then it will need less parity, resolving the problem of the parity disk being too small.
-+ We can also think at an automated parity files naming and creation, removing
-the need of the user to specify that. We can also completely remove the
-concept of parity drive, automatically allocating parity in the most free data drives.
-- The problem is that it would be not nice to have the program to automatically
-choose where to create the parity, because the choice cannot be optimal.
-With a dedicated disk manually chosen, it's instead optimal.
-+ We can limit this coexist possibility only to latest parity file,
-allowing the user to choose where to put it.
-
 * Allocate parity minimizing concurrent use of it
 Each parity allocation should check for a parity
 range with less utilization by other disks.
@@ -163,6 +148,28 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* Allow multiple parity files and to coexist with data
+in the same disk.
+This is possible if the data in the same disk uses parity addresses not
+contained in the parity file present in the same disk.
++ It's a nice trick. The disk containing parity, will have less space available,
+and then it will need less parity, resolving the problem of the parity disk being too small.
++ We can also think at an automated parity files naming and creation, removing
+the need of the user to specify that. We can also completely remove the
+concept of parity drive, automatically allocating parity in the most free data drives.
+- It won't be not nice to have the program to automatically
+choose where to create the parity, because the choice cannot be optimal.
+With a dedicated disk manually chosen, it's instead optimal.
++ We can limit this coexist possibility only to latest parity file,
+allowing the user to choose where to put it.
+- It won't work with disks of different size.
+Suppose to have all disks of size N, with only one of size M>N.
+To fully use the M space, you can allocate a full N parity in such disk,
+but the remaning space will also need additional parity in the other disks,
+in fact requiring a total of M parity for the array.
+In the end, we cannot avoid that the first biggest disk added is fully
+dedicated to parity, even if it means to leave some space unused.
 
 * Directly access disks for parity skipping the filesystem layer
 - No real performance or space gain compared to a custom filesystem configuration like:
