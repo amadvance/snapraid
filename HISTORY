@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-11.1 2017/04
+11.1 2017/05
 ============
  * Fixed the check command to correctly ignore errors on unused parity.
    This was broken in version 9.0.
