@@ -1559,15 +1559,25 @@ int windows_symlink(const char* existing, const char* file)
 {
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
-	DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
 
 	/* We must convert to the extended-length \\?\ format if the path is too long */
 	/* otherwise the link creation fails. */
 	/* But we don't want to always convert it, to avoid to recreate */
 	/* user symlinks different than they were before */
-	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), flags)) {
-		windows_errno(GetLastError());
-		return -1;
+	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing),
+		SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
+	) {
+		DWORD error = GetLastError();
+		if (GetLastError() != ERROR_INVALID_PARAMETER) {
+			windows_errno(error);
+			return -1;
+		}
+
+		/* retry without the new flag SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */
+		if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), 0)) {
+			windows_errno(GetLastError());
+			return -1;
+		}
 	}
 
 	return 0;
