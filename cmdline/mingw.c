@@ -1093,7 +1093,7 @@ int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], i
 	wflags = FILE_FLAG_BACKUP_SEMANTICS;
 	if ((flags & AT_SYMLINK_NOFOLLOW) != 0)
 		wflags |= FILE_FLAG_OPEN_REPARSE_POINT;
-	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, wflags, 0);
+	h = CreateFileW(convert(conv_buf, file), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, wflags, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
