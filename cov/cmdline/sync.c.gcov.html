@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">501</td>
+            <td class="headerCovTableEntry">499</td>
             <td class="headerCovTableEntry">546</td>
-            <td class="headerCovTableEntryHi">91.8 %</td>
+            <td class="headerCovTableEntryHi">91.4 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-11-21</td>
+            <td class="headerValue">2017-05-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -483,9 +483,9 @@
 <span class="lineNum">     421 </span><span class="lineCov">        852 :         const struct failed_struct* b = void_b;</span>
 <span class="lineNum">     422 </span>            : 
 <span class="lineNum">     423 </span><span class="lineCov">        852 :         if (a-&gt;index &lt; b-&gt;index)</span>
-<span class="lineNum">     424 </span><span class="lineCov">        850 :                 return -1;</span>
-<span class="lineNum">     425 </span><span class="lineCov">          2 :         if (a-&gt;index &gt; b-&gt;index)</span>
-<span class="lineNum">     426 </span><span class="lineCov">          2 :                 return 1;</span>
+<span class="lineNum">     424 </span><span class="lineCov">        852 :                 return -1;</span>
+<span class="lineNum">     425 </span><span class="lineNoCov">          0 :         if (a-&gt;index &gt; b-&gt;index)</span>
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 :                 return 1;</span>
 <span class="lineNum">     427 </span><span class="lineNoCov">          0 :         return 0;</span>
 <span class="lineNum">     428 </span>            : }
 <span class="lineNum">     429 </span>            : 
@@ -524,56 +524,56 @@
 <span class="lineNum">     462 </span><span class="lineCov">    4688742 :                         one_valid = 1;</span>
 <span class="lineNum">     463 </span>            : 
 <span class="lineNum">     464 </span><span class="lineCov">    4911646 :                 if (block_has_invalid_parity(block) || plan-&gt;force_full)</span>
-<span class="lineNum">     465 </span><span class="lineCov">     753240 :                         one_invalid = 1;</span>
+<span class="lineNum">     465 </span><span class="lineCov">     753392 :                         one_invalid = 1;</span>
 <span class="lineNum">     466 </span>            :         }
 <span class="lineNum">     467 </span>            : 
 <span class="lineNum">     468 </span>            :         /* if none valid or none invalid, we don't need to update */
 <span class="lineNum">     469 </span><span class="lineCov">     820170 :         if (!one_invalid || !one_valid)</span>
-<span class="lineNum">     470 </span><span class="lineCov">     590712 :                 return 0;</span>
+<span class="lineNum">     470 </span><span class="lineCov">     590600 :                 return 0;</span>
 <span class="lineNum">     471 </span>            : 
-<span class="lineNum">     472 </span><span class="lineCov">     229458 :         return 1;</span>
+<span class="lineNum">     472 </span><span class="lineCov">     229570 :         return 1;</span>
 <a name="473"><span class="lineNum">     473 </span>            : }</a>
 <span class="lineNum">     474 </span>            : 
-<span class="lineNum">     475 </span><span class="lineCov">     688232 : static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)</span>
+<span class="lineNum">     475 </span><span class="lineCov">     688270 : static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)</span>
 <span class="lineNum">     476 </span>            : {
-<span class="lineNum">     477 </span><span class="lineCov">     688232 :         struct snapraid_io* io = worker-&gt;io;</span>
-<span class="lineNum">     478 </span><span class="lineCov">     688232 :         struct snapraid_state* state = io-&gt;state;</span>
-<span class="lineNum">     479 </span><span class="lineCov">     688232 :         struct snapraid_handle* handle = worker-&gt;handle;</span>
-<span class="lineNum">     480 </span><span class="lineCov">     688232 :         struct snapraid_disk* disk = handle-&gt;disk;</span>
-<span class="lineNum">     481 </span><span class="lineCov">     688232 :         block_off_t blockcur = task-&gt;position;</span>
-<span class="lineNum">     482 </span><span class="lineCov">     688232 :         unsigned char* buffer = task-&gt;buffer;</span>
+<span class="lineNum">     477 </span><span class="lineCov">     688270 :         struct snapraid_io* io = worker-&gt;io;</span>
+<span class="lineNum">     478 </span><span class="lineCov">     688270 :         struct snapraid_state* state = io-&gt;state;</span>
+<span class="lineNum">     479 </span><span class="lineCov">     688270 :         struct snapraid_handle* handle = worker-&gt;handle;</span>
+<span class="lineNum">     480 </span><span class="lineCov">     688270 :         struct snapraid_disk* disk = handle-&gt;disk;</span>
+<span class="lineNum">     481 </span><span class="lineCov">     688270 :         block_off_t blockcur = task-&gt;position;</span>
+<span class="lineNum">     482 </span><span class="lineCov">     688270 :         unsigned char* buffer = task-&gt;buffer;</span>
 <span class="lineNum">     483 </span>            :         int ret;
 <span class="lineNum">     484 </span>            :         char esc_buffer[ESC_MAX];
 <span class="lineNum">     485 </span>            : 
 <span class="lineNum">     486 </span>            :         /* if the disk position is not used */
-<span class="lineNum">     487 </span><span class="lineCov">     688232 :         if (!disk) {</span>
+<span class="lineNum">     487 </span><span class="lineCov">     688270 :         if (!disk) {</span>
 <span class="lineNum">     488 </span>            :                 /* use an empty block */
 <span class="lineNum">     489 </span><span class="lineNoCov">          0 :                 memset(buffer, 0, state-&gt;block_size);</span>
 <span class="lineNum">     490 </span><span class="lineNoCov">          0 :                 task-&gt;state = TASK_STATE_DONE;</span>
-<span class="lineNum">     491 </span><span class="lineCov">      92183 :                 return;</span>
+<span class="lineNum">     491 </span><span class="lineCov">      92084 :                 return;</span>
 <span class="lineNum">     492 </span>            :         }
 <span class="lineNum">     493 </span>            : 
 <span class="lineNum">     494 </span>            :         /* get the block */
-<span class="lineNum">     495 </span><span class="lineCov">     688237 :         task-&gt;block = fs_par2block_find(disk, blockcur);</span>
+<span class="lineNum">     495 </span><span class="lineCov">     688275 :         task-&gt;block = fs_par2block_find(disk, blockcur);</span>
 <span class="lineNum">     496 </span>            : 
 <span class="lineNum">     497 </span>            :         /* if the block has no file, meaning that it's EMPTY or DELETED, */
 <span class="lineNum">     498 </span>            :         /* it doesn't participate in the new parity computation */
-<span class="lineNum">     499 </span><span class="lineCov">     688177 :         if (!block_has_file(task-&gt;block)) {</span>
+<span class="lineNum">     499 </span><span class="lineCov">     688010 :         if (!block_has_file(task-&gt;block)) {</span>
 <span class="lineNum">     500 </span>            :                 /* use an empty block */
-<span class="lineNum">     501 </span><span class="lineCov">      92175 :                 memset(buffer, 0, state-&gt;block_size);</span>
-<span class="lineNum">     502 </span><span class="lineCov">      92175 :                 task-&gt;state = TASK_STATE_DONE;</span>
-<span class="lineNum">     503 </span><span class="lineCov">      92175 :                 return;</span>
+<span class="lineNum">     501 </span><span class="lineCov">      92076 :                 memset(buffer, 0, state-&gt;block_size);</span>
+<span class="lineNum">     502 </span><span class="lineCov">      92076 :                 task-&gt;state = TASK_STATE_DONE;</span>
+<span class="lineNum">     503 </span><span class="lineCov">      92076 :                 return;</span>
 <span class="lineNum">     504 </span>            :         }
 <span class="lineNum">     505 </span>            : 
 <span class="lineNum">     506 </span>            :         /* get the file of this block */
-<span class="lineNum">     507 </span><span class="lineCov">     595953 :         task-&gt;file = fs_par2file_get(disk, blockcur, &amp;task-&gt;file_pos);</span>
+<span class="lineNum">     507 </span><span class="lineCov">     595621 :         task-&gt;file = fs_par2file_get(disk, blockcur, &amp;task-&gt;file_pos);</span>
 <span class="lineNum">     508 </span>            : 
 <span class="lineNum">     509 </span>            :         /* if the file is different than the current one, close it */
-<span class="lineNum">     510 </span><span class="lineCov">     596099 :         if (handle-&gt;file != 0 &amp;&amp; handle-&gt;file != task-&gt;file) {</span>
+<span class="lineNum">     510 </span><span class="lineCov">     596270 :         if (handle-&gt;file != 0 &amp;&amp; handle-&gt;file != task-&gt;file) {</span>
 <span class="lineNum">     511 </span>            :                 /* keep a pointer at the file we are going to close for error reporting */
-<span class="lineNum">     512 </span><span class="lineCov">     246100 :                 struct snapraid_file* report = handle-&gt;file;</span>
-<span class="lineNum">     513 </span><span class="lineCov">     246100 :                 ret = handle_close(handle);</span>
-<span class="lineNum">     514 </span><span class="lineCov">     246014 :                 if (ret == -1) {</span>
+<span class="lineNum">     512 </span><span class="lineCov">     246082 :                 struct snapraid_file* report = handle-&gt;file;</span>
+<span class="lineNum">     513 </span><span class="lineCov">     246082 :                 ret = handle_close(handle);</span>
+<span class="lineNum">     514 </span><span class="lineCov">     245642 :                 if (ret == -1) {</span>
 <span class="lineNum">     515 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     516 </span>            :                         /* This one is really an unexpected error, because we are only reading */
 <span class="lineNum">     517 </span>            :                         /* and closing a descriptor should never fail */
@@ -596,8 +596,8 @@
 <span class="lineNum">     534 </span>            :                 }
 <span class="lineNum">     535 </span>            :         }
 <span class="lineNum">     536 </span>            : 
-<span class="lineNum">     537 </span><span class="lineCov">     596013 :         ret = handle_open(handle, task-&gt;file, state-&gt;file_mode, log_error, 0);</span>
-<span class="lineNum">     538 </span><span class="lineCov">     596027 :         if (ret == -1) {</span>
+<span class="lineNum">     537 </span><span class="lineCov">     595830 :         ret = handle_open(handle, task-&gt;file, state-&gt;file_mode, log_error, 0);</span>
+<span class="lineNum">     538 </span><span class="lineCov">     591402 :         if (ret == -1) {</span>
 <span class="lineNum">     539 </span><span class="lineCov">         12 :                 if (errno == EIO) {</span>
 <span class="lineNum">     540 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     541 </span>            :                         log_tag(&quot;error:%u:%s:%s: Open EIO error. %s\n&quot;, blockcur, disk-&gt;name, esc_tag(task-&gt;file-&gt;sub, esc_buffer), strerror(errno));
@@ -641,10 +641,10 @@
 <span class="lineNum">     579 </span>            :         }
 <span class="lineNum">     580 </span>            : 
 <span class="lineNum">     581 </span>            :         /* check if the file is changed */
-<span class="lineNum">     582 </span><span class="lineCov">     596015 :         if (handle-&gt;st.st_size != task-&gt;file-&gt;size</span>
-<span class="lineNum">     583 </span><span class="lineCov">     596023 :                 || handle-&gt;st.st_mtime != task-&gt;file-&gt;mtime_sec</span>
-<span class="lineNum">     584 </span><span class="lineCov">     596052 :                 || STAT_NSEC(&amp;handle-&gt;st) != task-&gt;file-&gt;mtime_nsec</span>
-<span class="lineNum">     585 </span><span class="lineCov">     596047 :                 || handle-&gt;st.st_ino != task-&gt;file-&gt;inode</span>
+<span class="lineNum">     582 </span><span class="lineCov">     591390 :         if (handle-&gt;st.st_size != task-&gt;file-&gt;size</span>
+<span class="lineNum">     583 </span><span class="lineCov">     592816 :                 || handle-&gt;st.st_mtime != task-&gt;file-&gt;mtime_sec</span>
+<span class="lineNum">     584 </span><span class="lineCov">     594857 :                 || STAT_NSEC(&amp;handle-&gt;st) != task-&gt;file-&gt;mtime_nsec</span>
+<span class="lineNum">     585 </span><span class="lineCov">     595324 :                 || handle-&gt;st.st_ino != task-&gt;file-&gt;inode</span>
 <span class="lineNum">     586 </span>            :         ) {
 <span class="lineNum">     587 </span><span class="lineNoCov">          0 :                 log_tag(&quot;error:%u:%s:%s: Unexpected attribute change\n&quot;, blockcur, disk-&gt;name, esc_tag(task-&gt;file-&gt;sub, esc_buffer));</span>
 <span class="lineNum">     588 </span><span class="lineCov">          6 :                 if (handle-&gt;st.st_size != task-&gt;file-&gt;size) {</span>
@@ -663,8 +663,8 @@
 <span class="lineNum">     601 </span><span class="lineCov">          6 :                 return;</span>
 <span class="lineNum">     602 </span>            :         }
 <span class="lineNum">     603 </span>            : 
-<span class="lineNum">     604 </span><span class="lineCov">     596041 :         task-&gt;read_size = handle_read(handle, task-&gt;file_pos, buffer, state-&gt;block_size, log_error, 0);</span>
-<span class="lineNum">     605 </span><span class="lineCov">     595681 :         if (task-&gt;read_size == -1) {</span>
+<span class="lineNum">     604 </span><span class="lineCov">     594859 :         task-&gt;read_size = handle_read(handle, task-&gt;file_pos, buffer, state-&gt;block_size, log_error, 0);</span>
+<span class="lineNum">     605 </span><span class="lineCov">     592671 :         if (task-&gt;read_size == -1) {</span>
 <span class="lineNum">     606 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     607 </span>            :                 if (errno == EIO) {
 <span class="lineNum">     608 </span>            :                         log_tag(&quot;error:%u:%s:%s: Read EIO error at position %u. %s\n&quot;, blockcur, disk-&gt;name, esc_tag(task-&gt;file-&gt;sub, esc_buffer), task-&gt;file_pos, strerror(errno));
@@ -683,24 +683,24 @@
 <span class="lineNum">     621 </span>            :         }
 <span class="lineNum">     622 </span>            : 
 <span class="lineNum">     623 </span>            :         /* store the path of the opened file */
-<span class="lineNum">     624 </span><span class="lineCov">     595681 :         pathcpy(task-&gt;path, sizeof(task-&gt;path), handle-&gt;path);</span>
+<span class="lineNum">     624 </span><span class="lineCov">     592671 :         pathcpy(task-&gt;path, sizeof(task-&gt;path), handle-&gt;path);</span>
 <span class="lineNum">     625 </span>            : 
-<span class="lineNum">     626 </span><span class="lineCov">     595979 :         task-&gt;state = TASK_STATE_DONE;</span>
+<span class="lineNum">     626 </span><span class="lineCov">     588699 :         task-&gt;state = TASK_STATE_DONE;</span>
 <a name="627"><span class="lineNum">     627 </span>            : }</a>
 <span class="lineNum">     628 </span>            : 
-<span class="lineNum">     629 </span><span class="lineCov">     544522 : static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_task* task)</span>
+<span class="lineNum">     629 </span><span class="lineCov">     544910 : static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_task* task)</span>
 <span class="lineNum">     630 </span>            : {
-<span class="lineNum">     631 </span><span class="lineCov">     544522 :         struct snapraid_io* io = worker-&gt;io;</span>
-<span class="lineNum">     632 </span><span class="lineCov">     544522 :         struct snapraid_state* state = io-&gt;state;</span>
-<span class="lineNum">     633 </span><span class="lineCov">     544522 :         struct snapraid_parity_handle* parity_handle = worker-&gt;parity_handle;</span>
-<span class="lineNum">     634 </span><span class="lineCov">     544522 :         unsigned level = parity_handle-&gt;level;</span>
-<span class="lineNum">     635 </span><span class="lineCov">     544522 :         block_off_t blockcur = task-&gt;position;</span>
-<span class="lineNum">     636 </span><span class="lineCov">     544522 :         unsigned char* buffer = task-&gt;buffer;</span>
+<span class="lineNum">     631 </span><span class="lineCov">     544910 :         struct snapraid_io* io = worker-&gt;io;</span>
+<span class="lineNum">     632 </span><span class="lineCov">     544910 :         struct snapraid_state* state = io-&gt;state;</span>
+<span class="lineNum">     633 </span><span class="lineCov">     544910 :         struct snapraid_parity_handle* parity_handle = worker-&gt;parity_handle;</span>
+<span class="lineNum">     634 </span><span class="lineCov">     544910 :         unsigned level = parity_handle-&gt;level;</span>
+<span class="lineNum">     635 </span><span class="lineCov">     544910 :         block_off_t blockcur = task-&gt;position;</span>
+<span class="lineNum">     636 </span><span class="lineCov">     544910 :         unsigned char* buffer = task-&gt;buffer;</span>
 <span class="lineNum">     637 </span>            :         int ret;
 <span class="lineNum">     638 </span>            : 
 <span class="lineNum">     639 </span>            :         /* write parity */
-<span class="lineNum">     640 </span><span class="lineCov">     544522 :         ret = parity_write(parity_handle, blockcur, buffer, state-&gt;block_size);</span>
-<span class="lineNum">     641 </span><span class="lineCov">     544519 :         if (ret == -1) {</span>
+<span class="lineNum">     640 </span><span class="lineCov">     544910 :         ret = parity_write(parity_handle, blockcur, buffer, state-&gt;block_size);</span>
+<span class="lineNum">     641 </span><span class="lineCov">     544712 :         if (ret == -1) {</span>
 <span class="lineNum">     642 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     643 </span>            :                 if (errno == EIO) {
 <span class="lineNum">     644 </span>            :                         log_tag(&quot;parity_error:%u:%s: Write EIO error. %s\n&quot;, blockcur, lev_config_name(level), strerror(errno));
@@ -718,7 +718,7 @@
 <span class="lineNum">     656 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     657 </span>            :         }
 <span class="lineNum">     658 </span>            : 
-<span class="lineNum">     659 </span><span class="lineCov">     544519 :         task-&gt;state = TASK_STATE_DONE;</span>
+<span class="lineNum">     659 </span><span class="lineCov">     544712 :         task-&gt;state = TASK_STATE_DONE;</span>
 <a name="660"><span class="lineNum">     660 </span>            : }</a>
 <span class="lineNum">     661 </span>            : 
 <span class="lineNum">     662 </span><span class="lineCov">         83 : static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)</span>
@@ -799,8 +799,8 @@
 <span class="lineNum">     737 </span><span class="lineCov">         83 :         plan.force_full = state-&gt;opt.force_full;</span>
 <span class="lineNum">     738 </span><span class="lineCov">     410168 :         for (blockcur = blockstart; blockcur &lt; blockmax; ++blockcur) {</span>
 <span class="lineNum">     739 </span><span class="lineCov">     410085 :                 if (!block_is_enabled(&amp;plan, blockcur))</span>
-<span class="lineNum">     740 </span><span class="lineCov">     295356 :                         continue;</span>
-<span class="lineNum">     741 </span><span class="lineCov">     114729 :                 ++countmax;</span>
+<span class="lineNum">     740 </span><span class="lineCov">     295300 :                         continue;</span>
+<span class="lineNum">     741 </span><span class="lineCov">     114785 :                 ++countmax;</span>
 <span class="lineNum">     742 </span>            :         }
 <span class="lineNum">     743 </span>            : 
 <span class="lineNum">     744 </span>            :         /* compute the autosave size for all disk, even if not read */
@@ -836,31 +836,31 @@
 <span class="lineNum">     774 </span>            :                 int writer_error[IO_WRITER_ERROR_MAX];
 <span class="lineNum">     775 </span>            : 
 <span class="lineNum">     776 </span>            :                 /* go to the next block */
-<span class="lineNum">     777 </span><span class="lineCov">     114812 :                 blockcur = io_read_next(&amp;io, &amp;buffer);</span>
-<span class="lineNum">     778 </span><span class="lineCov">     114812 :                 if (blockcur &gt;= blockmax)</span>
+<span class="lineNum">     777 </span><span class="lineCov">     114868 :                 blockcur = io_read_next(&amp;io, &amp;buffer);</span>
+<span class="lineNum">     778 </span><span class="lineCov">     114868 :                 if (blockcur &gt;= blockmax)</span>
 <span class="lineNum">     779 </span><span class="lineCov">        166 :                         break;</span>
 <span class="lineNum">     780 </span>            : 
 <span class="lineNum">     781 </span>            :                 /* until now is scheduling */
-<span class="lineNum">     782 </span><span class="lineCov">     114729 :                 state_usage_sched(state);</span>
+<span class="lineNum">     782 </span><span class="lineCov">     114785 :                 state_usage_sched(state);</span>
 <span class="lineNum">     783 </span>            : 
 <span class="lineNum">     784 </span>            :                 /* one more block processed for autosave */
-<span class="lineNum">     785 </span><span class="lineCov">     114729 :                 ++autosavedone;</span>
-<span class="lineNum">     786 </span><span class="lineCov">     114729 :                 --autosavemissing;</span>
+<span class="lineNum">     785 </span><span class="lineCov">     114785 :                 ++autosavedone;</span>
+<span class="lineNum">     786 </span><span class="lineCov">     114785 :                 --autosavemissing;</span>
 <span class="lineNum">     787 </span>            : 
 <span class="lineNum">     788 </span>            :                 /* by default process the block, and skip it if something goes wrong */
-<span class="lineNum">     789 </span><span class="lineCov">     114729 :                 error_on_this_block = 0;</span>
-<span class="lineNum">     790 </span><span class="lineCov">     114729 :                 silent_error_on_this_block = 0;</span>
-<span class="lineNum">     791 </span><span class="lineCov">     114729 :                 io_error_on_this_block = 0;</span>
-<span class="lineNum">     792 </span><span class="lineCov">     114729 :                 fixed_error_on_this_block = 0;</span>
+<span class="lineNum">     789 </span><span class="lineCov">     114785 :                 error_on_this_block = 0;</span>
+<span class="lineNum">     790 </span><span class="lineCov">     114785 :                 silent_error_on_this_block = 0;</span>
+<span class="lineNum">     791 </span><span class="lineCov">     114785 :                 io_error_on_this_block = 0;</span>
+<span class="lineNum">     792 </span><span class="lineCov">     114785 :                 fixed_error_on_this_block = 0;</span>
 <span class="lineNum">     793 </span>            : 
 <span class="lineNum">     794 </span>            :                 /* keep track of the number of failed blocks */
-<span class="lineNum">     795 </span><span class="lineCov">     114729 :                 failed_count = 0;</span>
+<span class="lineNum">     795 </span><span class="lineCov">     114785 :                 failed_count = 0;</span>
 <span class="lineNum">     796 </span>            : 
 <span class="lineNum">     797 </span>            :                 /* get block specific info */
-<span class="lineNum">     798 </span><span class="lineCov">     114729 :                 info = info_get(&amp;state-&gt;infoarr, blockcur);</span>
+<span class="lineNum">     798 </span><span class="lineCov">     114785 :                 info = info_get(&amp;state-&gt;infoarr, blockcur);</span>
 <span class="lineNum">     799 </span>            : 
 <span class="lineNum">     800 </span>            :                 /* if we have to use the old hash */
-<span class="lineNum">     801 </span><span class="lineCov">     114729 :                 rehash = info_get_rehash(info);</span>
+<span class="lineNum">     801 </span><span class="lineCov">     114785 :                 rehash = info_get_rehash(info);</span>
 <span class="lineNum">     802 </span>            : 
 <span class="lineNum">     803 </span>            :                 /* if the parity requires to be updated */
 <span class="lineNum">     804 </span>            :                 /* It could happens that all the blocks are EMPTY/BLK and CHG but with the hash */
@@ -869,18 +869,18 @@
 <span class="lineNum">     807 </span>            :                 /* Note that CHG/DELETED blocks already present in the content file loaded */
 <span class="lineNum">     808 </span>            :                 /* have the hash cleared (::clear_past_hash flag), and then they won't never match the hash. */
 <span class="lineNum">     809 </span>            :                 /* We are treating only CHG blocks created at runtime. */
-<span class="lineNum">     810 </span><span class="lineCov">     114729 :                 parity_needs_to_be_updated = state-&gt;opt.force_full || state-&gt;opt.force_parity_update;</span>
+<span class="lineNum">     810 </span><span class="lineCov">     114785 :                 parity_needs_to_be_updated = state-&gt;opt.force_full || state-&gt;opt.force_parity_update;</span>
 <span class="lineNum">     811 </span>            : 
 <span class="lineNum">     812 </span>            :                 /* if the parity is going to be updated */
-<span class="lineNum">     813 </span><span class="lineCov">     114729 :                 parity_going_to_be_updated = 0;</span>
+<span class="lineNum">     813 </span><span class="lineCov">     114785 :                 parity_going_to_be_updated = 0;</span>
 <span class="lineNum">     814 </span>            : 
 <span class="lineNum">     815 </span>            :                 /* if the block is marked as bad, we force the parity update */
 <span class="lineNum">     816 </span>            :                 /* because the bad block may be the result of a wrong parity */
-<span class="lineNum">     817 </span><span class="lineCov">     114729 :                 if (info_get_bad(info))</span>
+<span class="lineNum">     817 </span><span class="lineCov">     114785 :                 if (info_get_bad(info))</span>
 <span class="lineNum">     818 </span><span class="lineNoCov">          0 :                         parity_needs_to_be_updated = 1;</span>
 <span class="lineNum">     819 </span>            : 
 <span class="lineNum">     820 </span>            :                 /* for each disk, process the block */
-<span class="lineNum">     821 </span><span class="lineCov">     803103 :                 for (j = 0; j &lt; diskmax; ++j) {</span>
+<span class="lineNum">     821 </span><span class="lineCov">     803495 :                 for (j = 0; j &lt; diskmax; ++j) {</span>
 <span class="lineNum">     822 </span>            :                         struct snapraid_task* task;
 <span class="lineNum">     823 </span>            :                         int read_size;
 <span class="lineNum">     824 </span>            :                         unsigned char hash[HASH_MAX];
@@ -892,45 +892,45 @@
 <span class="lineNum">     830 </span>            :                         unsigned diskcur;
 <span class="lineNum">     831 </span>            : 
 <span class="lineNum">     832 </span>            :                         /* until now is misc */
-<span class="lineNum">     833 </span><span class="lineCov">     688374 :                         state_usage_misc(state);</span>
+<span class="lineNum">     833 </span><span class="lineCov">     688710 :                         state_usage_misc(state);</span>
 <span class="lineNum">     834 </span>            : 
-<span class="lineNum">     835 </span><span class="lineCov">     688374 :                         task = io_data_read(&amp;io, &amp;diskcur, waiting_map, &amp;waiting_mac);</span>
+<span class="lineNum">     835 </span><span class="lineCov">     688710 :                         task = io_data_read(&amp;io, &amp;diskcur, waiting_map, &amp;waiting_mac);</span>
 <span class="lineNum">     836 </span>            : 
 <span class="lineNum">     837 </span>            :                         /* until now is disk */
-<span class="lineNum">     838 </span><span class="lineCov">     688374 :                         state_usage_disk(state, handle, waiting_map, waiting_mac);</span>
+<span class="lineNum">     838 </span><span class="lineCov">     688710 :                         state_usage_disk(state, handle, waiting_map, waiting_mac);</span>
 <span class="lineNum">     839 </span>            : 
 <span class="lineNum">     840 </span>            :                         /* get the results */
-<span class="lineNum">     841 </span><span class="lineCov">     688374 :                         disk = task-&gt;disk;</span>
-<span class="lineNum">     842 </span><span class="lineCov">     688374 :                         block = task-&gt;block;</span>
-<span class="lineNum">     843 </span><span class="lineCov">     688374 :                         file = task-&gt;file;</span>
-<span class="lineNum">     844 </span><span class="lineCov">     688374 :                         file_pos = task-&gt;file_pos;</span>
-<span class="lineNum">     845 </span><span class="lineCov">     688374 :                         read_size = task-&gt;read_size;</span>
+<span class="lineNum">     841 </span><span class="lineCov">     688710 :                         disk = task-&gt;disk;</span>
+<span class="lineNum">     842 </span><span class="lineCov">     688710 :                         block = task-&gt;block;</span>
+<span class="lineNum">     843 </span><span class="lineCov">     688710 :                         file = task-&gt;file;</span>
+<span class="lineNum">     844 </span><span class="lineCov">     688710 :                         file_pos = task-&gt;file_pos;</span>
+<span class="lineNum">     845 </span><span class="lineCov">     688710 :                         read_size = task-&gt;read_size;</span>
 <span class="lineNum">     846 </span>            : 
 <span class="lineNum">     847 </span>            :                         /* by default no rehash in case of &quot;continue&quot; */
-<span class="lineNum">     848 </span><span class="lineCov">     688374 :                         rehandle[diskcur].block = 0;</span>
+<span class="lineNum">     848 </span><span class="lineCov">     688710 :                         rehandle[diskcur].block = 0;</span>
 <span class="lineNum">     849 </span>            : 
 <span class="lineNum">     850 </span>            :                         /* if the disk position is not used */
-<span class="lineNum">     851 </span><span class="lineCov">     688374 :                         if (!disk)</span>
-<span class="lineNum">     852 </span><span class="lineCov">      93074 :                                 continue;</span>
+<span class="lineNum">     851 </span><span class="lineCov">     688710 :                         if (!disk)</span>
+<span class="lineNum">     852 </span><span class="lineCov">      93042 :                                 continue;</span>
 <span class="lineNum">     853 </span>            : 
 <span class="lineNum">     854 </span>            :                         /* get the state of the block */
-<span class="lineNum">     855 </span><span class="lineCov">     688374 :                         block_state = block_state_get(block);</span>
+<span class="lineNum">     855 </span><span class="lineCov">     688710 :                         block_state = block_state_get(block);</span>
 <span class="lineNum">     856 </span>            : 
 <span class="lineNum">     857 </span>            :                         /* if the block has invalid parity, */
 <span class="lineNum">     858 </span>            :                         /* we have to take care of it in case of recover */
-<span class="lineNum">     859 </span><span class="lineCov">     688374 :                         if (block_has_invalid_parity(block)) {</span>
+<span class="lineNum">     859 </span><span class="lineCov">     688710 :                         if (block_has_invalid_parity(block)) {</span>
 <span class="lineNum">     860 </span>            :                                 /* store it in the failed set, because */
 <span class="lineNum">     861 </span>            :                                 /* the parity may be still computed with the previous content */
-<span class="lineNum">     862 </span><span class="lineCov">     182822 :                                 failed[failed_count].index = diskcur;</span>
-<span class="lineNum">     863 </span><span class="lineCov">     182822 :                                 failed[failed_count].size = state-&gt;block_size;</span>
-<span class="lineNum">     864 </span><span class="lineCov">     182822 :                                 failed[failed_count].block = block;</span>
-<span class="lineNum">     865 </span><span class="lineCov">     182822 :                                 ++failed_count;</span>
+<span class="lineNum">     862 </span><span class="lineCov">     182898 :                                 failed[failed_count].index = diskcur;</span>
+<span class="lineNum">     863 </span><span class="lineCov">     182898 :                                 failed[failed_count].size = state-&gt;block_size;</span>
+<span class="lineNum">     864 </span><span class="lineCov">     182898 :                                 failed[failed_count].block = block;</span>
+<span class="lineNum">     865 </span><span class="lineCov">     182898 :                                 ++failed_count;</span>
 <span class="lineNum">     866 </span>            : 
 <span class="lineNum">     867 </span>            :                                 /* if the block has invalid parity, we have to update the parity */
 <span class="lineNum">     868 </span>            :                                 /* to include this block change */
 <span class="lineNum">     869 </span>            :                                 /* This also apply to CHG blocks, but we are going to handle */
 <span class="lineNum">     870 </span>            :                                 /* later this case to do the updates only if really needed */
-<span class="lineNum">     871 </span><span class="lineCov">     182822 :                                 if (block_state != BLOCK_STATE_CHG)</span>
+<span class="lineNum">     871 </span><span class="lineCov">     182898 :                                 if (block_state != BLOCK_STATE_CHG)</span>
 <span class="lineNum">     872 </span><span class="lineCov">      88225 :                                         parity_needs_to_be_updated = 1;</span>
 <span class="lineNum">     873 </span>            : 
 <span class="lineNum">     874 </span>            :                                 /* note that DELETE blocks are skipped in the next check */
@@ -941,28 +941,28 @@
 <span class="lineNum">     879 </span>            :                         }
 <span class="lineNum">     880 </span>            : 
 <span class="lineNum">     881 </span>            :                         /* if the block is not used */
-<span class="lineNum">     882 </span><span class="lineCov">     688374 :                         if (!block_has_file(block))</span>
-<span class="lineNum">     883 </span><span class="lineCov">      92203 :                                 continue;</span>
+<span class="lineNum">     882 </span><span class="lineCov">     688710 :                         if (!block_has_file(block))</span>
+<span class="lineNum">     883 </span><span class="lineCov">      92171 :                                 continue;</span>
 <span class="lineNum">     884 </span>            : 
 <span class="lineNum">     885 </span>            :                         /* handle error conditions */
-<span class="lineNum">     886 </span><span class="lineCov">     596171 :                         if (task-&gt;state == TASK_STATE_IOERROR) {</span>
+<span class="lineNum">     886 </span><span class="lineCov">     596539 :                         if (task-&gt;state == TASK_STATE_IOERROR) {</span>
 <span class="lineNum">     887 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     888 </span>            :                                 ++io_error;
 <span class="lineNum">     889 </span>            :                                 goto bail;
 <span class="lineNum">     890 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     891 </span>            :                         }
-<span class="lineNum">     892 </span><span class="lineCov">     596171 :                         if (task-&gt;state == TASK_STATE_ERROR) {</span>
+<span class="lineNum">     892 </span><span class="lineCov">     596539 :                         if (task-&gt;state == TASK_STATE_ERROR) {</span>
 <span class="lineNum">     893 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     894 </span>            :                                 ++error;
 <span class="lineNum">     895 </span>            :                                 goto bail;
 <span class="lineNum">     896 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     897 </span>            :                         }
-<span class="lineNum">     898 </span><span class="lineCov">     596171 :                         if (task-&gt;state == TASK_STATE_ERROR_CONTINUE) {</span>
+<span class="lineNum">     898 </span><span class="lineCov">     596539 :                         if (task-&gt;state == TASK_STATE_ERROR_CONTINUE) {</span>
 <span class="lineNum">     899 </span><span class="lineCov">         18 :                                 ++error;</span>
 <span class="lineNum">     900 </span><span class="lineCov">         18 :                                 error_on_this_block = 1;</span>
 <span class="lineNum">     901 </span><span class="lineCov">         18 :                                 continue;</span>
 <span class="lineNum">     902 </span>            :                         }
-<span class="lineNum">     903 </span><span class="lineCov">     596153 :                         if (task-&gt;state == TASK_STATE_IOERROR_CONTINUE) {</span>
+<span class="lineNum">     903 </span><span class="lineCov">     596521 :                         if (task-&gt;state == TASK_STATE_IOERROR_CONTINUE) {</span>
 <span class="lineNum">     904 </span><span class="lineNoCov">          0 :                                 ++io_error;</span>
 <span class="lineNum">     905 </span><span class="lineNoCov">          0 :                                 if (io_error &gt;= state-&gt;opt.io_error_limit) {</span>
 <span class="lineNum">     906 </span>            :                                         /* LCOV_EXCL_START */
@@ -977,32 +977,32 @@
 <span class="lineNum">     915 </span><span class="lineNoCov">          0 :                                 io_error_on_this_block = 1;</span>
 <span class="lineNum">     916 </span><span class="lineNoCov">          0 :                                 continue;</span>
 <span class="lineNum">     917 </span>            :                         }
-<span class="lineNum">     918 </span><span class="lineCov">     596153 :                         if (task-&gt;state != TASK_STATE_DONE) {</span>
+<span class="lineNum">     918 </span><span class="lineCov">     596521 :                         if (task-&gt;state != TASK_STATE_DONE) {</span>
 <span class="lineNum">     919 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     920 </span>            :                                 log_fatal(&quot;Internal inconsistency in task state\n&quot;);
 <span class="lineNum">     921 </span>            :                                 os_abort();
 <span class="lineNum">     922 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     923 </span>            :                         }
 <span class="lineNum">     924 </span>            : 
-<span class="lineNum">     925 </span><span class="lineCov">     596153 :                         countsize += read_size;</span>
+<span class="lineNum">     925 </span><span class="lineCov">     596521 :                         countsize += read_size;</span>
 <span class="lineNum">     926 </span>            : 
 <span class="lineNum">     927 </span>            :                         /* now compute the hash */
-<span class="lineNum">     928 </span><span class="lineCov">     596153 :                         if (rehash) {</span>
+<span class="lineNum">     928 </span><span class="lineCov">     596521 :                         if (rehash) {</span>
 <span class="lineNum">     929 </span><span class="lineCov">      27243 :                                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, hash, buffer[diskcur], read_size);</span>
 <span class="lineNum">     930 </span>            : 
 <span class="lineNum">     931 </span>            :                                 /* compute the new hash, and store it */
 <span class="lineNum">     932 </span><span class="lineCov">      27243 :                                 rehandle[diskcur].block = block;</span>
 <span class="lineNum">     933 </span><span class="lineCov">      27243 :                                 memhash(state-&gt;hash, state-&gt;hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size);</span>
 <span class="lineNum">     934 </span>            :                         } else {
-<span class="lineNum">     935 </span><span class="lineCov">     568910 :                                 memhash(state-&gt;hash, state-&gt;hashseed, hash, buffer[diskcur], read_size);</span>
+<span class="lineNum">     935 </span><span class="lineCov">     569278 :                                 memhash(state-&gt;hash, state-&gt;hashseed, hash, buffer[diskcur], read_size);</span>
 <span class="lineNum">     936 </span>            :                         }
 <span class="lineNum">     937 </span>            : 
 <span class="lineNum">     938 </span>            :                         /* until now is hash */
-<span class="lineNum">     939 </span><span class="lineCov">     596153 :                         state_usage_hash(state);</span>
+<span class="lineNum">     939 </span><span class="lineCov">     596521 :                         state_usage_hash(state);</span>
 <span class="lineNum">     940 </span>            : 
-<span class="lineNum">     941 </span><span class="lineCov">     596153 :                         if (block_has_updated_hash(block)) {</span>
+<span class="lineNum">     941 </span><span class="lineCov">     596521 :                         if (block_has_updated_hash(block)) {</span>
 <span class="lineNum">     942 </span>            :                                 /* compare the hash */
-<span class="lineNum">     943 </span><span class="lineCov">     501574 :                                 if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span>
+<span class="lineNum">     943 </span><span class="lineCov">     501866 :                                 if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span>
 <span class="lineNum">     944 </span>            :                                         /* if the file has invalid parity, it's a REP changed during the sync */
 <span class="lineNum">     945 </span><span class="lineCov">        853 :                                         if (block_has_invalid_parity(block)) {</span>
 <span class="lineNum">     946 </span><span class="lineCov">          1 :                                                 log_tag(&quot;error:%u:%s:%s: Unexpected data change\n&quot;, blockcur, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span>
@@ -1026,8 +1026,8 @@
 <span class="lineNum">     964 </span><span class="lineCov">          1 :                                                 continue;</span>
 <span class="lineNum">     965 </span>            :                                         } else { /* otherwise it's a BLK with silent error */
 <span class="lineNum">     966 </span><span class="lineCov">        852 :                                                 unsigned diff = memdiff(hash, block-&gt;hash, BLOCK_HASH_SIZE);</span>
-<span class="lineNum">     967 </span><span class="lineCov">        852 :                                                 log_tag(&quot;error:%u:%s:%s: Data error at position %u, diff bits %u\n&quot;, blockcur, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, diff);</span>
-<span class="lineNum">     968 </span><span class="lineCov">        852 :                                                 log_error(&quot;Data error in file '%s' at position '%u', diff bits %u\n&quot;, task-&gt;path, file_pos, diff);</span>
+<span class="lineNum">     967 </span><span class="lineCov">        852 :                                                 log_tag(&quot;error:%u:%s:%s: Data error at position %u, diff bits %u/%u\n&quot;, blockcur, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE*8);</span>
+<span class="lineNum">     968 </span><span class="lineCov">        852 :                                                 log_error(&quot;Data error in file '%s' at position '%u', diff bits %u/%u\n&quot;, task-&gt;path, file_pos, diff, BLOCK_HASH_SIZE*8);</span>
 <span class="lineNum">     969 </span>            : 
 <span class="lineNum">     970 </span>            :                                                 /* save the failed block for the fix */
 <span class="lineNum">     971 </span><span class="lineCov">        852 :                                                 failed[failed_count].index = diskcur;</span>
@@ -1045,28 +1045,28 @@
 <span class="lineNum">     983 </span>            :                                 }
 <span class="lineNum">     984 </span>            :                         } else {
 <span class="lineNum">     985 </span>            :                                 /* if until now the parity doesn't need to be updated */
-<span class="lineNum">     986 </span><span class="lineCov">      94579 :                                 if (!parity_needs_to_be_updated) {</span>
+<span class="lineNum">     986 </span><span class="lineCov">      94655 :                                 if (!parity_needs_to_be_updated) {</span>
 <span class="lineNum">     987 </span>            :                                         /* for sure it's a CHG block, because EMPTY are processed before with &quot;continue&quot; */
 <span class="lineNum">     988 </span>            :                                         /* and BLK and REP have &quot;block_has_updated_hash()&quot; as 1, and all the others */
 <span class="lineNum">     989 </span>            :                                         /* have &quot;parity_needs_to_be_updated&quot; already at 1 */
-<span class="lineNum">     990 </span><span class="lineCov">      35226 :                                         assert(block_state_get(block) == BLOCK_STATE_CHG);</span>
+<span class="lineNum">     990 </span><span class="lineCov">      35282 :                                         assert(block_state_get(block) == BLOCK_STATE_CHG);</span>
 <span class="lineNum">     991 </span>            : 
 <span class="lineNum">     992 </span>            :                                         /* if the hash represents the data unequivocally */
-<span class="lineNum">     993 </span><span class="lineCov">      35226 :                                         if (hash_is_unique(block-&gt;hash)) {</span>
+<span class="lineNum">     993 </span><span class="lineCov">      35282 :                                         if (hash_is_unique(block-&gt;hash)) {</span>
 <span class="lineNum">     994 </span>            :                                                 /* check if the hash is changed */
-<span class="lineNum">     995 </span><span class="lineCov">       8551 :                                                 if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span>
+<span class="lineNum">     995 </span><span class="lineCov">       8608 :                                                 if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span>
 <span class="lineNum">     996 </span>            :                                                         /* the block is different, and we must update parity */
-<span class="lineNum">     997 </span><span class="lineCov">       6039 :                                                         parity_needs_to_be_updated = 1;</span>
+<span class="lineNum">     997 </span><span class="lineCov">       6111 :                                                         parity_needs_to_be_updated = 1;</span>
 <span class="lineNum">     998 </span>            :                                                 }
 <span class="lineNum">     999 </span>            :                                         } else {
 <span class="lineNum">    1000 </span>            :                                                 /* if the hash is already invalid, we update parity */
-<span class="lineNum">    1001 </span><span class="lineCov">      26675 :                                                 parity_needs_to_be_updated = 1;</span>
+<span class="lineNum">    1001 </span><span class="lineCov">      26674 :                                                 parity_needs_to_be_updated = 1;</span>
 <span class="lineNum">    1002 </span>            :                                         }
 <span class="lineNum">    1003 </span>            :                                 }
 <span class="lineNum">    1004 </span>            : 
 <span class="lineNum">    1005 </span>            :                                 /* copy the hash in the block, but doesn't mark the block as hashed */
 <span class="lineNum">    1006 </span>            :                                 /* this allow in case of skipped block to do not save the failed computation */
-<span class="lineNum">    1007 </span><span class="lineCov">      94579 :                                 memcpy(block-&gt;hash, hash, BLOCK_HASH_SIZE);</span>
+<span class="lineNum">    1007 </span><span class="lineCov">      94655 :                                 memcpy(block-&gt;hash, hash, BLOCK_HASH_SIZE);</span>
 <span class="lineNum">    1008 </span>            : 
 <span class="lineNum">    1009 </span>            :                                 /* note that in case of rehash, this is the wrong hash, */
 <span class="lineNum">    1010 </span>            :                                 /* but it will be overwritten later */
@@ -1076,7 +1076,7 @@
 <span class="lineNum">    1014 </span>            :                 /* if we have only silent errors we can try to fix them on-the-fly */
 <span class="lineNum">    1015 </span>            :                 /* note the the fix is not written to disk, but used only to */
 <span class="lineNum">    1016 </span>            :                 /* compute the new parity */
-<span class="lineNum">    1017 </span><span class="lineCov">     114729 :                 if (!error_on_this_block &amp;&amp; !io_error_on_this_block &amp;&amp; silent_error_on_this_block) {</span>
+<span class="lineNum">    1017 </span><span class="lineCov">     114785 :                 if (!error_on_this_block &amp;&amp; !io_error_on_this_block &amp;&amp; silent_error_on_this_block) {</span>
 <span class="lineNum">    1018 </span>            :                         unsigned failed_mac;
 <span class="lineNum">    1019 </span><span class="lineCov">        852 :                         int something_to_recover = 0;</span>
 <span class="lineNum">    1020 </span>            : 
@@ -1213,44 +1213,44 @@
 <span class="lineNum">    1151 </span>            :                 }
 <span class="lineNum">    1152 </span>            : 
 <span class="lineNum">    1153 </span>            :                 /* if we have read all the data required and it's correct, proceed with the parity */
-<span class="lineNum">    1154 </span><span class="lineCov">     114729 :                 if (!error_on_this_block &amp;&amp; !io_error_on_this_block</span>
-<span class="lineNum">    1155 </span><span class="lineCov">     114710 :                         &amp;&amp; (!silent_error_on_this_block || fixed_error_on_this_block)</span>
+<span class="lineNum">    1154 </span><span class="lineCov">     114785 :                 if (!error_on_this_block &amp;&amp; !io_error_on_this_block</span>
+<span class="lineNum">    1155 </span><span class="lineCov">     114766 :                         &amp;&amp; (!silent_error_on_this_block || fixed_error_on_this_block)</span>
 <span class="lineNum">    1156 </span>            :                 ) {
 <span class="lineNum">    1157 </span>            :                         /* update the parity only if really needed */
-<span class="lineNum">    1158 </span><span class="lineCov">     114710 :                         if (parity_needs_to_be_updated) {</span>
+<span class="lineNum">    1158 </span><span class="lineCov">     114766 :                         if (parity_needs_to_be_updated) {</span>
 <span class="lineNum">    1159 </span>            :                                 /* compute the parity */
-<span class="lineNum">    1160 </span><span class="lineCov">     112438 :                                 raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</span>
+<span class="lineNum">    1160 </span><span class="lineCov">     112510 :                                 raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</span>
 <span class="lineNum">    1161 </span>            : 
 <span class="lineNum">    1162 </span>            :                                 /* until now is raid */
-<span class="lineNum">    1163 </span><span class="lineCov">     112438 :                                 state_usage_raid(state);</span>
+<span class="lineNum">    1163 </span><span class="lineCov">     112510 :                                 state_usage_raid(state);</span>
 <span class="lineNum">    1164 </span>            : 
 <span class="lineNum">    1165 </span>            :                                 /* mark that the parity is going to be written */
-<span class="lineNum">    1166 </span><span class="lineCov">     112438 :                                 parity_going_to_be_updated = 1;</span>
+<span class="lineNum">    1166 </span><span class="lineCov">     112510 :                                 parity_going_to_be_updated = 1;</span>
 <span class="lineNum">    1167 </span>            :                         }
 <span class="lineNum">    1168 </span>            : 
 <span class="lineNum">    1169 </span>            :                         /* for each disk, mark the blocks as processed */
-<span class="lineNum">    1170 </span><span class="lineCov">     802970 :                         for (j = 0; j &lt; diskmax; ++j) {</span>
+<span class="lineNum">    1170 </span><span class="lineCov">     803362 :                         for (j = 0; j &lt; diskmax; ++j) {</span>
 <span class="lineNum">    1171 </span>            :                                 struct snapraid_block* block;
 <span class="lineNum">    1172 </span>            : 
-<span class="lineNum">    1173 </span><span class="lineCov">     688260 :                                 if (!handle[j].disk)</span>
+<span class="lineNum">    1173 </span><span class="lineCov">     688596 :                                 if (!handle[j].disk)</span>
 <span class="lineNum">    1174 </span><span class="lineNoCov">          0 :                                         continue;</span>
 <span class="lineNum">    1175 </span>            : 
-<span class="lineNum">    1176 </span><span class="lineCov">     688260 :                                 block = fs_par2block_find(handle[j].disk, blockcur);</span>
+<span class="lineNum">    1176 </span><span class="lineCov">     688596 :                                 block = fs_par2block_find(handle[j].disk, blockcur);</span>
 <span class="lineNum">    1177 </span>            : 
-<span class="lineNum">    1178 </span><span class="lineCov">     688260 :                                 if (block == BLOCK_NULL) {</span>
+<span class="lineNum">    1178 </span><span class="lineCov">     688596 :                                 if (block == BLOCK_NULL) {</span>
 <span class="lineNum">    1179 </span>            :                                         /* nothing to do */
-<span class="lineNum">    1180 </span><span class="lineCov">      81248 :                                         continue;</span>
+<span class="lineNum">    1180 </span><span class="lineCov">      81216 :                                         continue;</span>
 <span class="lineNum">    1181 </span>            :                                 }
 <span class="lineNum">    1182 </span>            : 
 <span class="lineNum">    1183 </span>            :                                 /* if it's a deleted block */
-<span class="lineNum">    1184 </span><span class="lineCov">     607012 :                                 if (block_state_get(block) == BLOCK_STATE_DELETED) {</span>
+<span class="lineNum">    1184 </span><span class="lineCov">     607380 :                                 if (block_state_get(block) == BLOCK_STATE_DELETED) {</span>
 <span class="lineNum">    1185 </span>            :                                         /* the parity is now updated without this block, so it's now empty */
 <span class="lineNum">    1186 </span><span class="lineCov">      10953 :                                         fs_deallocate(handle[j].disk, blockcur);</span>
 <span class="lineNum">    1187 </span><span class="lineCov">      10953 :                                         continue;</span>
 <span class="lineNum">    1188 </span>            :                                 }
 <span class="lineNum">    1189 </span>            : 
 <span class="lineNum">    1190 </span>            :                                 /* now all the blocks have the hash and the parity computed */
-<span class="lineNum">    1191 </span><span class="lineCov">     596059 :                                 block_state_set(block, BLOCK_STATE_BLK);</span>
+<span class="lineNum">    1191 </span><span class="lineCov">     596427 :                                 block_state_set(block, BLOCK_STATE_BLK);</span>
 <span class="lineNum">    1192 </span>            :                         }
 <span class="lineNum">    1193 </span>            : 
 <span class="lineNum">    1194 </span>            :                         /* we update the info block only if we really have updated the parity */
@@ -1258,11 +1258,11 @@
 <span class="lineNum">    1196 </span>            :                         /* wrote the parity at this time */
 <span class="lineNum">    1197 </span>            :                         /* we also update the info block only if no silent error was found */
 <span class="lineNum">    1198 </span>            :                         /* because has no sense to refresh the time for data that we know bad */
-<span class="lineNum">    1199 </span><span class="lineCov">     114710 :                         if (parity_needs_to_be_updated</span>
-<span class="lineNum">    1200 </span><span class="lineCov">     112438 :                                 &amp;&amp; !silent_error_on_this_block</span>
+<span class="lineNum">    1199 </span><span class="lineCov">     114766 :                         if (parity_needs_to_be_updated</span>
+<span class="lineNum">    1200 </span><span class="lineCov">     112510 :                                 &amp;&amp; !silent_error_on_this_block</span>
 <span class="lineNum">    1201 </span>            :                         ) {
 <span class="lineNum">    1202 </span>            :                                 /* if rehash is needed */
-<span class="lineNum">    1203 </span><span class="lineCov">     112099 :                                 if (rehash) {</span>
+<span class="lineNum">    1203 </span><span class="lineCov">     112174 :                                 if (rehash) {</span>
 <span class="lineNum">    1204 </span>            :                                         /* store all the new hash already computed */
 <span class="lineNum">    1205 </span><span class="lineCov">      32249 :                                         for (j = 0; j &lt; diskmax; ++j) {</span>
 <span class="lineNum">    1206 </span><span class="lineCov">      27642 :                                                 if (rehandle[j].block)</span>
@@ -1272,14 +1272,14 @@
 <span class="lineNum">    1210 </span>            : 
 <span class="lineNum">    1211 </span>            :                                 /* update the time info of the block */
 <span class="lineNum">    1212 </span>            :                                 /* we are also clearing any previous bad and rehash flag */
-<span class="lineNum">    1213 </span><span class="lineCov">     112099 :                                 info_set(&amp;state-&gt;infoarr, blockcur, info_make(now, 0, 0, 1));</span>
+<span class="lineNum">    1213 </span><span class="lineCov">     112174 :                                 info_set(&amp;state-&gt;infoarr, blockcur, info_make(now, 0, 0, 1));</span>
 <span class="lineNum">    1214 </span>            :                         }
 <span class="lineNum">    1215 </span>            :                 }
 <span class="lineNum">    1216 </span>            : 
 <span class="lineNum">    1217 </span>            :                 /* if a silent (even if corrected) or input/output error was found */
 <span class="lineNum">    1218 </span>            :                 /* mark the block as bad to have check/fix to handle it */
 <span class="lineNum">    1219 </span>            :                 /* because our correction is in memory only and not yet written */
-<span class="lineNum">    1220 </span><span class="lineCov">     114729 :                 if (silent_error_on_this_block || io_error_on_this_block) {</span>
+<span class="lineNum">    1220 </span><span class="lineCov">     114785 :                 if (silent_error_on_this_block || io_error_on_this_block) {</span>
 <span class="lineNum">    1221 </span>            :                         /* set the error status keeping the other info */
 <span class="lineNum">    1222 </span><span class="lineCov">        852 :                         info_set(&amp;state-&gt;infoarr, blockcur, info_set_bad(info));</span>
 <span class="lineNum">    1223 </span>            :                 }
@@ -1288,27 +1288,27 @@
 <span class="lineNum">    1226 </span>            :                 /* Note that the calls to io_parity_write() are mandatory */
 <span class="lineNum">    1227 </span>            :                 /* even if the parity doesn't need to be updated */
 <span class="lineNum">    1228 </span>            :                 /* This because we want to keep track of the time usage */
-<span class="lineNum">    1229 </span><span class="lineCov">     114729 :                 state_usage_misc(state);</span>
+<span class="lineNum">    1229 </span><span class="lineCov">     114785 :                 state_usage_misc(state);</span>
 <span class="lineNum">    1230 </span>            : 
 <span class="lineNum">    1231 </span>            :                 /* write start */
-<span class="lineNum">    1232 </span><span class="lineCov">     114729 :                 io_write_preset(&amp;io, blockcur, !parity_going_to_be_updated);</span>
+<span class="lineNum">    1232 </span><span class="lineCov">     114785 :                 io_write_preset(&amp;io, blockcur, !parity_going_to_be_updated);</span>
 <span class="lineNum">    1233 </span>            : 
 <span class="lineNum">    1234 </span>            :                 /* write the parity */
-<span class="lineNum">    1235 </span><span class="lineCov">     672998 :                 for (l = 0; l &lt; state-&gt;level; ++l) {</span>
+<span class="lineNum">    1235 </span><span class="lineCov">     673390 :                 for (l = 0; l &lt; state-&gt;level; ++l) {</span>
 <span class="lineNum">    1236 </span>            :                         unsigned levcur;
 <span class="lineNum">    1237 </span>            : 
-<span class="lineNum">    1238 </span><span class="lineCov">     558269 :                         io_parity_write(&amp;io, &amp;levcur, waiting_map, &amp;waiting_mac);</span>
+<span class="lineNum">    1238 </span><span class="lineCov">     558605 :                         io_parity_write(&amp;io, &amp;levcur, waiting_map, &amp;waiting_mac);</span>
 <span class="lineNum">    1239 </span>            : 
 <span class="lineNum">    1240 </span>            :                         /* until now is parity */
-<span class="lineNum">    1241 </span><span class="lineCov">     558269 :                         state_usage_parity(state, waiting_map, waiting_mac);</span>
+<span class="lineNum">    1241 </span><span class="lineCov">     558605 :                         state_usage_parity(state, waiting_map, waiting_mac);</span>
 <span class="lineNum">    1242 </span>            :                 }
 <span class="lineNum">    1243 </span>            : 
 <span class="lineNum">    1244 </span>            :                 /* write finished */
-<span class="lineNum">    1245 </span><span class="lineCov">     114729 :                 io_write_next(&amp;io, blockcur, !parity_going_to_be_updated, writer_error);</span>
+<span class="lineNum">    1245 </span><span class="lineCov">     114785 :                 io_write_next(&amp;io, blockcur, !parity_going_to_be_updated, writer_error);</span>
 <span class="lineNum">    1246 </span>            : 
 <span class="lineNum">    1247 </span>            :                 /* handle errors reported */
-<span class="lineNum">    1248 </span><span class="lineCov">     573645 :                 for (j = 0; j &lt; IO_WRITER_ERROR_MAX; ++j) {</span>
-<span class="lineNum">    1249 </span><span class="lineCov">     458916 :                         if (writer_error[j]) {</span>
+<span class="lineNum">    1248 </span><span class="lineCov">     573925 :                 for (j = 0; j &lt; IO_WRITER_ERROR_MAX; ++j) {</span>
+<span class="lineNum">    1249 </span><span class="lineCov">     459140 :                         if (writer_error[j]) {</span>
 <span class="lineNum">    1250 </span><span class="lineNoCov">          0 :                                 switch (j + IO_WRITER_ERROR_BASE) {</span>
 <span class="lineNum">    1251 </span>            :                                 case TASK_STATE_IOERROR_CONTINUE :
 <span class="lineNum">    1252 </span><span class="lineNoCov">          0 :                                         ++io_error;</span>
@@ -1338,24 +1338,24 @@
 <span class="lineNum">    1276 </span>            :                 }
 <span class="lineNum">    1277 </span>            : 
 <span class="lineNum">    1278 </span>            :                 /* mark the state as needing write */
-<span class="lineNum">    1279 </span><span class="lineCov">     114729 :                 state-&gt;need_write = 1;</span>
+<span class="lineNum">    1279 </span><span class="lineCov">     114785 :                 state-&gt;need_write = 1;</span>
 <span class="lineNum">    1280 </span>            : 
 <span class="lineNum">    1281 </span>            :                 /* count the number of processed block */
-<span class="lineNum">    1282 </span><span class="lineCov">     114729 :                 ++countpos;</span>
+<span class="lineNum">    1282 </span><span class="lineCov">     114785 :                 ++countpos;</span>
 <span class="lineNum">    1283 </span>            : 
 <span class="lineNum">    1284 </span>            :                 /* progress */
-<span class="lineNum">    1285 </span><span class="lineCov">     114729 :                 if (state_progress(state, &amp;io, blockcur, countpos, countmax, countsize)) {</span>
+<span class="lineNum">    1285 </span><span class="lineCov">     114785 :                 if (state_progress(state, &amp;io, blockcur, countpos, countmax, countsize)) {</span>
 <span class="lineNum">    1286 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">    1287 </span>            :                         break;
 <span class="lineNum">    1288 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    1289 </span>            :                 }
 <span class="lineNum">    1290 </span>            : 
 <span class="lineNum">    1291 </span>            :                 /* autosave */
-<span class="lineNum">    1292 </span><span class="lineCov">     114729 :                 if ((state-&gt;autosave != 0</span>
+<span class="lineNum">    1292 </span><span class="lineCov">     114785 :                 if ((state-&gt;autosave != 0</span>
 <span class="lineNum">    1293 </span><span class="lineCov">      26021 :                         &amp;&amp; autosavedone &gt;= autosavelimit /* if we have reached the limit */</span>
 <span class="lineNum">    1294 </span><span class="lineNoCov">          0 :                         &amp;&amp; autosavemissing &gt;= autosavelimit) /* if we have at least a full step to do */</span>
 <span class="lineNum">    1295 </span>            :                         /* or if we have a forced autosave at the specified block */
-<span class="lineNum">    1296 </span><span class="lineCov">     114729 :                         || (state-&gt;opt.force_autosave_at != 0 &amp;&amp; state-&gt;opt.force_autosave_at == blockcur)</span>
+<span class="lineNum">    1296 </span><span class="lineCov">     114785 :                         || (state-&gt;opt.force_autosave_at != 0 &amp;&amp; state-&gt;opt.force_autosave_at == blockcur)</span>
 <span class="lineNum">    1297 </span>            :                 ) {
 <span class="lineNum">    1298 </span><span class="lineCov">          1 :                         autosavedone = 0; /* restart the counter */</span>
 <span class="lineNum">    1299 </span>            : 
@@ -1390,7 +1390,7 @@
 <span class="lineNum">    1328 </span>            :                         /* drop until now */
 <span class="lineNum">    1329 </span><span class="lineCov">          1 :                         state_usage_waste(state);</span>
 <span class="lineNum">    1330 </span>            :                 }
-<span class="lineNum">    1331 </span><span class="lineCov">     114729 :         }</span>
+<span class="lineNum">    1331 </span><span class="lineCov">     114785 :         }</span>
 <span class="lineNum">    1332 </span>            : 
 <span class="lineNum">    1333 </span>            : end:
 <span class="lineNum">    1334 </span><span class="lineCov">         83 :         state_progress_end(state, countpos, countmax, countsize);</span>

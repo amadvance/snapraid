@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-11-21</td>
+            <td class="headerValue">2017-05-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -167,17 +167,17 @@
 <span class="lineNum">     105 </span>            :  * Implementation of the Robert Jenkins &quot;4-byte Integer Hashing&quot;,
 <a name="106"><span class="lineNum">     106 </span>            :  * from http://burtleburtle.net/bob/hash/integer.html</a>
 <span class="lineNum">     107 </span>            :  */
-<span class="lineNum">     108 </span><span class="lineCov">   18826263 : tommy_inline tommy_uint32_t tommy_inthash_u32(tommy_uint32_t key)</span>
+<span class="lineNum">     108 </span><span class="lineCov">   18826860 : tommy_inline tommy_uint32_t tommy_inthash_u32(tommy_uint32_t key)</span>
 <span class="lineNum">     109 </span>            : {
-<span class="lineNum">     110 </span><span class="lineCov">   18826263 :         key -= key &lt;&lt; 6;</span>
-<span class="lineNum">     111 </span><span class="lineCov">   18826263 :         key ^= key &gt;&gt; 17;</span>
-<span class="lineNum">     112 </span><span class="lineCov">   18826263 :         key -= key &lt;&lt; 9;</span>
-<span class="lineNum">     113 </span><span class="lineCov">   18826263 :         key ^= key &lt;&lt; 4;</span>
-<span class="lineNum">     114 </span><span class="lineCov">   18826263 :         key -= key &lt;&lt; 3;</span>
-<span class="lineNum">     115 </span><span class="lineCov">   18826263 :         key ^= key &lt;&lt; 10;</span>
-<span class="lineNum">     116 </span><span class="lineCov">   18826263 :         key ^= key &gt;&gt; 15;</span>
+<span class="lineNum">     110 </span><span class="lineCov">   18826860 :         key -= key &lt;&lt; 6;</span>
+<span class="lineNum">     111 </span><span class="lineCov">   18826860 :         key ^= key &gt;&gt; 17;</span>
+<span class="lineNum">     112 </span><span class="lineCov">   18826860 :         key -= key &lt;&lt; 9;</span>
+<span class="lineNum">     113 </span><span class="lineCov">   18826860 :         key ^= key &lt;&lt; 4;</span>
+<span class="lineNum">     114 </span><span class="lineCov">   18826860 :         key -= key &lt;&lt; 3;</span>
+<span class="lineNum">     115 </span><span class="lineCov">   18826860 :         key ^= key &lt;&lt; 10;</span>
+<span class="lineNum">     116 </span><span class="lineCov">   18826860 :         key ^= key &gt;&gt; 15;</span>
 <span class="lineNum">     117 </span>            : 
-<span class="lineNum">     118 </span><span class="lineCov">   18826263 :         return key;</span>
+<span class="lineNum">     118 </span><span class="lineCov">   18826860 :         return key;</span>
 <span class="lineNum">     119 </span>            : }
 <span class="lineNum">     120 </span>            : 
 <span class="lineNum">     121 </span>            : /**
@@ -185,17 +185,17 @@
 <span class="lineNum">     123 </span>            :  * Implementation of the Thomas Wang &quot;Integer Hash Function&quot;,
 <a name="124"><span class="lineNum">     124 </span>            :  * from http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm</a>
 <span class="lineNum">     125 </span>            :  */
-<span class="lineNum">     126 </span><span class="lineCov">    5042449 : tommy_inline tommy_uint64_t tommy_inthash_u64(tommy_uint64_t key)</span>
+<span class="lineNum">     126 </span><span class="lineCov">    5055357 : tommy_inline tommy_uint64_t tommy_inthash_u64(tommy_uint64_t key)</span>
 <span class="lineNum">     127 </span>            : {
-<span class="lineNum">     128 </span><span class="lineCov">    5042449 :         key = ~key + (key &lt;&lt; 21);</span>
-<span class="lineNum">     129 </span><span class="lineCov">    5042449 :         key = key ^ (key &gt;&gt; 24);</span>
-<span class="lineNum">     130 </span><span class="lineCov">    5042449 :         key = key + (key &lt;&lt; 3) + (key &lt;&lt; 8);</span>
-<span class="lineNum">     131 </span><span class="lineCov">    5042449 :         key = key ^ (key &gt;&gt; 14);</span>
-<span class="lineNum">     132 </span><span class="lineCov">    5042449 :         key = key + (key &lt;&lt; 2) + (key &lt;&lt; 4);</span>
-<span class="lineNum">     133 </span><span class="lineCov">    5042449 :         key = key ^ (key &gt;&gt; 28);</span>
-<span class="lineNum">     134 </span><span class="lineCov">    5042449 :         key = key + (key &lt;&lt; 31);</span>
+<span class="lineNum">     128 </span><span class="lineCov">    5055357 :         key = ~key + (key &lt;&lt; 21);</span>
+<span class="lineNum">     129 </span><span class="lineCov">    5055357 :         key = key ^ (key &gt;&gt; 24);</span>
+<span class="lineNum">     130 </span><span class="lineCov">    5055357 :         key = key + (key &lt;&lt; 3) + (key &lt;&lt; 8);</span>
+<span class="lineNum">     131 </span><span class="lineCov">    5055357 :         key = key ^ (key &gt;&gt; 14);</span>
+<span class="lineNum">     132 </span><span class="lineCov">    5055357 :         key = key + (key &lt;&lt; 2) + (key &lt;&lt; 4);</span>
+<span class="lineNum">     133 </span><span class="lineCov">    5055357 :         key = key ^ (key &gt;&gt; 28);</span>
+<span class="lineNum">     134 </span><span class="lineCov">    5055357 :         key = key + (key &lt;&lt; 31);</span>
 <span class="lineNum">     135 </span>            : 
-<span class="lineNum">     136 </span><span class="lineCov">    5042449 :         return key;</span>
+<span class="lineNum">     136 </span><span class="lineCov">    5055357 :         return key;</span>
 <span class="lineNum">     137 </span>            : }
 <span class="lineNum">     138 </span>            : 
 <span class="lineNum">     139 </span>            : #endif

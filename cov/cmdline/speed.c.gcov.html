@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-11-21</td>
+            <td class="headerValue">2017-05-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -100,14 +100,14 @@
 <span class="lineNum">      38 </span>            : /**
 <a name="39"><span class="lineNum">      39 </span>            :  * Differential us of two timeval.</a>
 <span class="lineNum">      40 </span>            :  */
-<span class="lineNum">      41 </span><span class="lineCov">       1814 : static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)</span>
+<span class="lineNum">      41 </span><span class="lineCov">       1849 : static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)</span>
 <span class="lineNum">      42 </span>            : {
 <span class="lineNum">      43 </span>            :         int64_t d;
 <span class="lineNum">      44 </span>            : 
-<span class="lineNum">      45 </span><span class="lineCov">       1814 :         d = 1000000LL * (stop-&gt;tv_sec - start-&gt;tv_sec);</span>
-<span class="lineNum">      46 </span><span class="lineCov">       1814 :         d += stop-&gt;tv_usec - start-&gt;tv_usec;</span>
+<span class="lineNum">      45 </span><span class="lineCov">       1849 :         d = 1000000LL * (stop-&gt;tv_sec - start-&gt;tv_sec);</span>
+<span class="lineNum">      46 </span><span class="lineCov">       1849 :         d += stop-&gt;tv_usec - start-&gt;tv_usec;</span>
 <span class="lineNum">      47 </span>            : 
-<span class="lineNum">      48 </span><span class="lineCov">       1814 :         return d;</span>
+<span class="lineNum">      48 </span><span class="lineCov">       1849 :         return d;</span>
 <span class="lineNum">      49 </span>            : }
 <span class="lineNum">      50 </span>            : 
 <span class="lineNum">      51 </span>            : /**
@@ -232,10 +232,10 @@
 <span class="lineNum">     170 </span><span class="lineCov">          4 :         printf(&quot;%8s&quot;, &quot;memset&quot;);</span>
 <span class="lineNum">     171 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     172 </span>            : 
-<span class="lineNum">     173 </span><span class="lineCov">        374 :         SPEED_START {</span>
-<span class="lineNum">     174 </span><span class="lineCov">       3330 :                 for (j = 0; j &lt; nd; ++j)</span>
-<span class="lineNum">     175 </span><span class="lineCov">       2960 :                         memset(v[j], j, size);</span>
-<span class="lineNum">     176 </span><span class="lineCov">        370 :         } SPEED_STOP</span>
+<span class="lineNum">     173 </span><span class="lineCov">        375 :         SPEED_START {</span>
+<span class="lineNum">     174 </span><span class="lineCov">       3339 :                 for (j = 0; j &lt; nd; ++j)</span>
+<span class="lineNum">     175 </span><span class="lineCov">       2968 :                         memset(v[j], j, size);</span>
+<span class="lineNum">     176 </span><span class="lineCov">        371 :         } SPEED_STOP</span>
 <span class="lineNum">     177 </span>            : 
 <span class="lineNum">     178 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     179 </span><span class="lineCov">          4 :         printf(&quot;\n&quot;);</span>
@@ -260,10 +260,10 @@
 <span class="lineNum">     198 </span>            : 
 <span class="lineNum">     199 </span>            : #if HAVE_SSE42
 <span class="lineNum">     200 </span><span class="lineCov">          4 :         if (raid_cpu_has_crc32()) {</span>
-<span class="lineNum">     201 </span><span class="lineCov">         58 :                 SPEED_START {</span>
-<span class="lineNum">     202 </span><span class="lineCov">        504 :                         for (j = 0; j &lt; nd; ++j)</span>
-<span class="lineNum">     203 </span><span class="lineCov">        448 :                                 side_effect += crc32c_x86(0, v[j], size);</span>
-<span class="lineNum">     204 </span><span class="lineCov">         56 :                 } SPEED_STOP</span>
+<span class="lineNum">     201 </span><span class="lineCov">         60 :                 SPEED_START {</span>
+<span class="lineNum">     202 </span><span class="lineCov">        522 :                         for (j = 0; j &lt; nd; ++j)</span>
+<span class="lineNum">     203 </span><span class="lineCov">        464 :                                 side_effect += crc32c_x86(0, v[j], size);</span>
+<span class="lineNum">     204 </span><span class="lineCov">         58 :                 } SPEED_STOP</span>
 <span class="lineNum">     205 </span>            : 
 <span class="lineNum">     206 </span><span class="lineCov">          2 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     207 </span>            :         }
@@ -302,10 +302,10 @@
 <span class="lineNum">     240 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     241 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     242 </span>            : 
-<span class="lineNum">     243 </span><span class="lineCov">         30 :         SPEED_START {</span>
-<span class="lineNum">     244 </span><span class="lineCov">        234 :                 for (j = 0; j &lt; nd; ++j)</span>
-<span class="lineNum">     245 </span><span class="lineCov">        208 :                         memhash(HASH_SPOOKY2, seed, digest, v[j], size);</span>
-<span class="lineNum">     246 </span><span class="lineCov">         26 :         } SPEED_STOP</span>
+<span class="lineNum">     243 </span><span class="lineCov">         32 :         SPEED_START {</span>
+<span class="lineNum">     244 </span><span class="lineCov">        252 :                 for (j = 0; j &lt; nd; ++j)</span>
+<span class="lineNum">     245 </span><span class="lineCov">        224 :                         memhash(HASH_SPOOKY2, seed, digest, v[j], size);</span>
+<span class="lineNum">     246 </span><span class="lineCov">         28 :         } SPEED_STOP</span>
 <span class="lineNum">     247 </span>            : 
 <span class="lineNum">     248 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     249 </span><span class="lineCov">          4 :         printf(&quot;\n&quot;);</span>
@@ -341,16 +341,16 @@
 <span class="lineNum">     279 </span>            : 
 <span class="lineNum">     280 </span><span class="lineCov">          4 :         printf(&quot;%8s&quot;, &quot;&quot;);</span>
 <span class="lineNum">     281 </span>            : 
-<span class="lineNum">     282 </span><span class="lineCov">        114 :         SPEED_START {</span>
-<span class="lineNum">     283 </span><span class="lineCov">        110 :                 raid_gen1_int32(nd, size, v);</span>
-<span class="lineNum">     284 </span><span class="lineCov">        110 :         } SPEED_STOP</span>
+<span class="lineNum">     282 </span><span class="lineCov">        119 :         SPEED_START {</span>
+<span class="lineNum">     283 </span><span class="lineCov">        115 :                 raid_gen1_int32(nd, size, v);</span>
+<span class="lineNum">     284 </span><span class="lineCov">        115 :         } SPEED_STOP</span>
 <span class="lineNum">     285 </span>            : 
 <span class="lineNum">     286 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     287 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     288 </span>            : 
-<span class="lineNum">     289 </span><span class="lineCov">        181 :         SPEED_START {</span>
-<span class="lineNum">     290 </span><span class="lineCov">        177 :                 raid_gen1_int64(nd, size, v);</span>
-<span class="lineNum">     291 </span><span class="lineCov">        177 :         } SPEED_STOP</span>
+<span class="lineNum">     289 </span><span class="lineCov">        184 :         SPEED_START {</span>
+<span class="lineNum">     290 </span><span class="lineCov">        180 :                 raid_gen1_int64(nd, size, v);</span>
+<span class="lineNum">     291 </span><span class="lineCov">        180 :         } SPEED_STOP</span>
 <span class="lineNum">     292 </span>            : 
 <span class="lineNum">     293 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     294 </span><span class="lineCov">          4 :         fflush(stdout);</span>
@@ -358,9 +358,9 @@
 <span class="lineNum">     296 </span>            : #ifdef CONFIG_X86
 <span class="lineNum">     297 </span>            : #ifdef CONFIG_SSE2
 <span class="lineNum">     298 </span><span class="lineCov">          4 :         if (raid_cpu_has_sse2()) {</span>
-<span class="lineNum">     299 </span><span class="lineCov">        305 :                 SPEED_START {</span>
-<span class="lineNum">     300 </span><span class="lineCov">        301 :                         raid_gen1_sse2(nd, size, v);</span>
-<span class="lineNum">     301 </span><span class="lineCov">        301 :                 } SPEED_STOP</span>
+<span class="lineNum">     299 </span><span class="lineCov">        309 :                 SPEED_START {</span>
+<span class="lineNum">     300 </span><span class="lineCov">        305 :                         raid_gen1_sse2(nd, size, v);</span>
+<span class="lineNum">     301 </span><span class="lineCov">        305 :                 } SPEED_STOP</span>
 <span class="lineNum">     302 </span>            : 
 <span class="lineNum">     303 </span><span class="lineCov">          4 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     304 </span><span class="lineCov">          4 :                 fflush(stdout);</span>
@@ -376,9 +376,9 @@
 <span class="lineNum">     314 </span>            : #endif
 <span class="lineNum">     315 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     316 </span><span class="lineCov">          4 :         if (raid_cpu_has_avx2()) {</span>
-<span class="lineNum">     317 </span><span class="lineCov">         13 :                 SPEED_START {</span>
-<span class="lineNum">     318 </span><span class="lineCov">         12 :                         raid_gen1_avx2(nd, size, v);</span>
-<span class="lineNum">     319 </span><span class="lineCov">         12 :                 } SPEED_STOP</span>
+<span class="lineNum">     317 </span><span class="lineCov">         14 :                 SPEED_START {</span>
+<span class="lineNum">     318 </span><span class="lineCov">         13 :                         raid_gen1_avx2(nd, size, v);</span>
+<span class="lineNum">     319 </span><span class="lineCov">         13 :                 } SPEED_STOP</span>
 <span class="lineNum">     320 </span>            : 
 <span class="lineNum">     321 </span><span class="lineCov">          1 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     322 </span><span class="lineCov">          1 :                 fflush(stdout);</span>
@@ -394,16 +394,16 @@
 <span class="lineNum">     332 </span>            : 
 <span class="lineNum">     333 </span><span class="lineCov">          4 :         printf(&quot;%8s&quot;, &quot;&quot;);</span>
 <span class="lineNum">     334 </span>            : 
-<span class="lineNum">     335 </span><span class="lineCov">         47 :         SPEED_START {</span>
-<span class="lineNum">     336 </span><span class="lineCov">         43 :                 raid_gen2_int32(nd, size, v);</span>
-<span class="lineNum">     337 </span><span class="lineCov">         43 :         } SPEED_STOP</span>
+<span class="lineNum">     335 </span><span class="lineCov">         48 :         SPEED_START {</span>
+<span class="lineNum">     336 </span><span class="lineCov">         44 :                 raid_gen2_int32(nd, size, v);</span>
+<span class="lineNum">     337 </span><span class="lineCov">         44 :         } SPEED_STOP</span>
 <span class="lineNum">     338 </span>            : 
 <span class="lineNum">     339 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     340 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     341 </span>            : 
-<span class="lineNum">     342 </span><span class="lineCov">         47 :         SPEED_START {</span>
-<span class="lineNum">     343 </span><span class="lineCov">         43 :                 raid_gen2_int64(nd, size, v);</span>
-<span class="lineNum">     344 </span><span class="lineCov">         43 :         } SPEED_STOP</span>
+<span class="lineNum">     342 </span><span class="lineCov">         48 :         SPEED_START {</span>
+<span class="lineNum">     343 </span><span class="lineCov">         44 :                 raid_gen2_int64(nd, size, v);</span>
+<span class="lineNum">     344 </span><span class="lineCov">         44 :         } SPEED_STOP</span>
 <span class="lineNum">     345 </span>            : 
 <span class="lineNum">     346 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     347 </span><span class="lineCov">          4 :         fflush(stdout);</span>
@@ -411,9 +411,9 @@
 <span class="lineNum">     349 </span>            : #ifdef CONFIG_X86
 <span class="lineNum">     350 </span>            : #ifdef CONFIG_SSE2
 <span class="lineNum">     351 </span><span class="lineCov">          4 :         if (raid_cpu_has_sse2()) {</span>
-<span class="lineNum">     352 </span><span class="lineCov">        143 :                 SPEED_START {</span>
-<span class="lineNum">     353 </span><span class="lineCov">        139 :                         raid_gen2_sse2(nd, size, v);</span>
-<span class="lineNum">     354 </span><span class="lineCov">        139 :                 } SPEED_STOP</span>
+<span class="lineNum">     352 </span><span class="lineCov">        150 :                 SPEED_START {</span>
+<span class="lineNum">     353 </span><span class="lineCov">        146 :                         raid_gen2_sse2(nd, size, v);</span>
+<span class="lineNum">     354 </span><span class="lineCov">        146 :                 } SPEED_STOP</span>
 <span class="lineNum">     355 </span>            : 
 <span class="lineNum">     356 </span><span class="lineCov">          4 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     357 </span><span class="lineCov">          4 :                 fflush(stdout);</span>
@@ -470,9 +470,9 @@
 <span class="lineNum">     408 </span>            : #ifdef CONFIG_X86
 <span class="lineNum">     409 </span>            : #ifdef CONFIG_SSE2
 <span class="lineNum">     410 </span><span class="lineCov">          4 :         if (raid_cpu_has_sse2()) {</span>
-<span class="lineNum">     411 </span><span class="lineCov">         87 :                 SPEED_START {</span>
-<span class="lineNum">     412 </span><span class="lineCov">         83 :                         raid_genz_sse2(nd, size, v);</span>
-<span class="lineNum">     413 </span><span class="lineCov">         83 :                 } SPEED_STOP</span>
+<span class="lineNum">     411 </span><span class="lineCov">         91 :                 SPEED_START {</span>
+<span class="lineNum">     412 </span><span class="lineCov">         87 :                         raid_genz_sse2(nd, size, v);</span>
+<span class="lineNum">     413 </span><span class="lineCov">         87 :                 } SPEED_STOP</span>
 <span class="lineNum">     414 </span>            : 
 <span class="lineNum">     415 </span><span class="lineCov">          4 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     416 </span><span class="lineCov">          4 :                 fflush(stdout);</span>
@@ -537,9 +537,9 @@
 <span class="lineNum">     475 </span>            : #ifdef CONFIG_X86
 <span class="lineNum">     476 </span>            : #ifdef CONFIG_SSSE3
 <span class="lineNum">     477 </span><span class="lineCov">          4 :         if (raid_cpu_has_ssse3()) {</span>
-<span class="lineNum">     478 </span><span class="lineCov">         52 :                 SPEED_START {</span>
-<span class="lineNum">     479 </span><span class="lineCov">         49 :                         raid_gen3_ssse3(nd, size, v);</span>
-<span class="lineNum">     480 </span><span class="lineCov">         49 :                 } SPEED_STOP</span>
+<span class="lineNum">     478 </span><span class="lineCov">         51 :                 SPEED_START {</span>
+<span class="lineNum">     479 </span><span class="lineCov">         48 :                         raid_gen3_ssse3(nd, size, v);</span>
+<span class="lineNum">     480 </span><span class="lineCov">         48 :                 } SPEED_STOP</span>
 <span class="lineNum">     481 </span>            : 
 <span class="lineNum">     482 </span><span class="lineCov">          3 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     483 </span><span class="lineCov">          3 :                 fflush(stdout);</span>
@@ -667,9 +667,9 @@
 <span class="lineNum">     605 </span>            : #ifdef CONFIG_X86
 <span class="lineNum">     606 </span>            : #ifdef CONFIG_SSSE3
 <span class="lineNum">     607 </span><span class="lineCov">          4 :         if (raid_cpu_has_ssse3()) {</span>
-<span class="lineNum">     608 </span><span class="lineCov">         25 :                 SPEED_START {</span>
-<span class="lineNum">     609 </span><span class="lineCov">         22 :                         raid_gen5_ssse3(nd, size, v);</span>
-<span class="lineNum">     610 </span><span class="lineCov">         22 :                 } SPEED_STOP</span>
+<span class="lineNum">     608 </span><span class="lineCov">         27 :                 SPEED_START {</span>
+<span class="lineNum">     609 </span><span class="lineCov">         24 :                         raid_gen5_ssse3(nd, size, v);</span>
+<span class="lineNum">     610 </span><span class="lineCov">         24 :                 } SPEED_STOP</span>
 <span class="lineNum">     611 </span>            : 
 <span class="lineNum">     612 </span><span class="lineCov">          3 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     613 </span><span class="lineCov">          3 :                 fflush(stdout);</span>
@@ -707,9 +707,9 @@
 <span class="lineNum">     645 </span><span class="lineCov">          4 :         printf(&quot;%8s&quot;, raid_gen6_tag());</span>
 <span class="lineNum">     646 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     647 </span>            : 
-<span class="lineNum">     648 </span><span class="lineCov">          9 :         SPEED_START {</span>
-<span class="lineNum">     649 </span><span class="lineCov">          5 :                 raid_gen6_int8(nd, size, v);</span>
-<span class="lineNum">     650 </span><span class="lineCov">          5 :         } SPEED_STOP</span>
+<span class="lineNum">     648 </span><span class="lineCov">         12 :         SPEED_START {</span>
+<span class="lineNum">     649 </span><span class="lineCov">          8 :                 raid_gen6_int8(nd, size, v);</span>
+<span class="lineNum">     650 </span><span class="lineCov">          8 :         } SPEED_STOP</span>
 <span class="lineNum">     651 </span>            : 
 <span class="lineNum">     652 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     653 </span><span class="lineCov">          4 :         fflush(stdout);</span>

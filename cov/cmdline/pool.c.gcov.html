@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">64</td>
-            <td class="headerCovTableEntry">68</td>
-            <td class="headerCovTableEntryHi">94.1 %</td>
+            <td class="headerCovTableEntry">67</td>
+            <td class="headerCovTableEntry">71</td>
+            <td class="headerCovTableEntryHi">94.4 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-11-21</td>
+            <td class="headerValue">2017-05-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -209,7 +209,7 @@
 <span class="lineNum">     147 </span>            : /**
 <a name="148"><span class="lineNum">     148 </span>            :  * Create a link to the specified disk entry.</a>
 <span class="lineNum">     149 </span>            :  */
-<span class="lineNum">     150 </span><span class="lineCov">      17589 : static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub)</span>
+<span class="lineNum">     150 </span><span class="lineCov">      17589 : static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub, int64_t mtime_sec, int mtime_nsec)</span>
 <span class="lineNum">     151 </span>            : {
 <span class="lineNum">     152 </span>            :         char path[PATH_MAX];
 <span class="lineNum">     153 </span>            :         char linkto[PATH_MAX];
@@ -258,70 +258,80 @@
 <span class="lineNum">     196 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     197 </span>            :                 }
 <span class="lineNum">     198 </span>            :         }
-<a name="199"><span class="lineNum">     199 </span><span class="lineCov">      17589 : }</span></a>
-<span class="lineNum">     200 </span>            : 
-<span class="lineNum">     201 </span><span class="lineCov">          3 : void state_pool(struct snapraid_state* state)</span>
-<span class="lineNum">     202 </span>            : {
-<span class="lineNum">     203 </span>            :         tommy_node* i;
-<span class="lineNum">     204 </span>            :         char pool_dir[PATH_MAX];
-<span class="lineNum">     205 </span>            :         char share_dir[PATH_MAX];
-<span class="lineNum">     206 </span>            :         unsigned count;
-<span class="lineNum">     207 </span>            : 
-<span class="lineNum">     208 </span><span class="lineCov">          3 :         if (state-&gt;pool[0] == 0) {</span>
-<span class="lineNum">     209 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     210 </span>            :                 log_fatal(&quot;To use the 'pool' command you must set the pool directory in the configuration file\n&quot;);
-<span class="lineNum">     211 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     212 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     213 </span>            :         }
-<span class="lineNum">     214 </span>            : 
-<span class="lineNum">     215 </span><span class="lineCov">          3 :         msg_progress(&quot;Cleaning...\n&quot;);</span>
-<span class="lineNum">     216 </span>            : 
-<span class="lineNum">     217 </span>            :         /* pool directory with final slash */
-<span class="lineNum">     218 </span><span class="lineCov">          3 :         pathprint(pool_dir, sizeof(pool_dir), &quot;%s&quot;, state-&gt;pool);</span>
-<span class="lineNum">     219 </span><span class="lineCov">          3 :         pathslash(pool_dir, sizeof(pool_dir));</span>
-<span class="lineNum">     220 </span>            : 
-<span class="lineNum">     221 </span>            :         /* share directory with final slash */
-<span class="lineNum">     222 </span><span class="lineCov">          3 :         pathprint(share_dir, sizeof(share_dir), &quot;%s&quot;, state-&gt;share);</span>
-<span class="lineNum">     223 </span><span class="lineCov">          3 :         pathslash(share_dir, sizeof(share_dir));</span>
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span><span class="lineCov">      17589 :         if (mtime_sec) {</span>
+<span class="lineNum">     201 </span><span class="lineCov">      17000 :                 ret = lmtime(path, mtime_sec, mtime_nsec);</span>
+<span class="lineNum">     202 </span><span class="lineCov">      17000 :                 if (ret != 0) {</span>
+<span class="lineNum">     203 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     204 </span>            :                         log_fatal(&quot;Error setting time to symlink '%s'. %s.\n&quot;, path, strerror(errno));
+<span class="lineNum">     205 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     206 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     207 </span>            :                 }
+<span class="lineNum">     208 </span>            :         }
+<a name="209"><span class="lineNum">     209 </span><span class="lineCov">      17589 : }</span></a>
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span><span class="lineCov">          3 : void state_pool(struct snapraid_state* state)</span>
+<span class="lineNum">     212 </span>            : {
+<span class="lineNum">     213 </span>            :         tommy_node* i;
+<span class="lineNum">     214 </span>            :         char pool_dir[PATH_MAX];
+<span class="lineNum">     215 </span>            :         char share_dir[PATH_MAX];
+<span class="lineNum">     216 </span>            :         unsigned count;
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span><span class="lineCov">          3 :         if (state-&gt;pool[0] == 0) {</span>
+<span class="lineNum">     219 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     220 </span>            :                 log_fatal(&quot;To use the 'pool' command you must set the pool directory in the configuration file\n&quot;);
+<span class="lineNum">     221 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     222 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     223 </span>            :         }
 <span class="lineNum">     224 </span>            : 
-<span class="lineNum">     225 </span>            :         /* first clear the previous pool tree */
-<span class="lineNum">     226 </span><span class="lineCov">          3 :         clean_dir(state, pool_dir);</span>
-<span class="lineNum">     227 </span>            : 
-<span class="lineNum">     228 </span><span class="lineCov">          3 :         msg_progress(&quot;Pooling...\n&quot;);</span>
-<span class="lineNum">     229 </span>            : 
-<span class="lineNum">     230 </span>            :         /* for each disk */
-<span class="lineNum">     231 </span><span class="lineCov">          3 :         count = 0;</span>
-<span class="lineNum">     232 </span><span class="lineCov">         21 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">     233 </span>            :                 tommy_node* j;
-<span class="lineNum">     234 </span><span class="lineCov">         18 :                 struct snapraid_disk* disk = i-&gt;data;</span>
-<span class="lineNum">     235 </span>            : 
-<span class="lineNum">     236 </span>            :                 /* for each file */
-<span class="lineNum">     237 </span><span class="lineCov">      17018 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">     238 </span><span class="lineCov">      17000 :                         struct snapraid_file* file = j-&gt;data;</span>
-<span class="lineNum">     239 </span><span class="lineCov">      17000 :                         make_link(pool_dir, share_dir, disk, file-&gt;sub);</span>
-<span class="lineNum">     240 </span><span class="lineCov">      17000 :                         ++count;</span>
-<span class="lineNum">     241 </span>            :                 }
-<span class="lineNum">     242 </span>            : 
-<span class="lineNum">     243 </span>            :                 /* for each link */
-<span class="lineNum">     244 </span><span class="lineCov">        607 :                 for (j = disk-&gt;linklist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">     245 </span><span class="lineCov">        589 :                         struct snapraid_link* slink = j-&gt;data;</span>
-<span class="lineNum">     246 </span><span class="lineCov">        589 :                         make_link(pool_dir, share_dir, disk, slink-&gt;sub);</span>
-<span class="lineNum">     247 </span><span class="lineCov">        589 :                         ++count;</span>
-<span class="lineNum">     248 </span>            :                 }
-<span class="lineNum">     249 </span>            : 
-<span class="lineNum">     250 </span>            :                 /* we ignore empty dirs in disk-&gt;dir */
-<span class="lineNum">     251 </span>            :         }
+<span class="lineNum">     225 </span><span class="lineCov">          3 :         msg_progress(&quot;Cleaning...\n&quot;);</span>
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span>            :         /* pool directory with final slash */
+<span class="lineNum">     228 </span><span class="lineCov">          3 :         pathprint(pool_dir, sizeof(pool_dir), &quot;%s&quot;, state-&gt;pool);</span>
+<span class="lineNum">     229 </span><span class="lineCov">          3 :         pathslash(pool_dir, sizeof(pool_dir));</span>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span>            :         /* share directory with final slash */
+<span class="lineNum">     232 </span><span class="lineCov">          3 :         pathprint(share_dir, sizeof(share_dir), &quot;%s&quot;, state-&gt;share);</span>
+<span class="lineNum">     233 </span><span class="lineCov">          3 :         pathslash(share_dir, sizeof(share_dir));</span>
+<span class="lineNum">     234 </span>            : 
+<span class="lineNum">     235 </span>            :         /* first clear the previous pool tree */
+<span class="lineNum">     236 </span><span class="lineCov">          3 :         clean_dir(state, pool_dir);</span>
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineCov">          3 :         msg_progress(&quot;Pooling...\n&quot;);</span>
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span>            :         /* for each disk */
+<span class="lineNum">     241 </span><span class="lineCov">          3 :         count = 0;</span>
+<span class="lineNum">     242 </span><span class="lineCov">         21 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     243 </span>            :                 tommy_node* j;
+<span class="lineNum">     244 </span><span class="lineCov">         18 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">     245 </span>            : 
+<span class="lineNum">     246 </span>            :                 /* for each file */
+<span class="lineNum">     247 </span><span class="lineCov">      17018 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">     248 </span><span class="lineCov">      17000 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">     249 </span><span class="lineCov">      17000 :                         make_link(pool_dir, share_dir, disk, file-&gt;sub, file-&gt;mtime_sec, file-&gt;mtime_nsec);</span>
+<span class="lineNum">     250 </span><span class="lineCov">      17000 :                         ++count;</span>
+<span class="lineNum">     251 </span>            :                 }
 <span class="lineNum">     252 </span>            : 
-<span class="lineNum">     253 </span><span class="lineCov">          3 :         if (count)</span>
-<span class="lineNum">     254 </span><span class="lineCov">          2 :                 msg_status(&quot;%u links created\n&quot;, count);</span>
-<span class="lineNum">     255 </span>            :         else
-<span class="lineNum">     256 </span><span class="lineCov">          1 :                 msg_status(&quot;No link created\n&quot;);</span>
-<span class="lineNum">     257 </span>            : 
-<span class="lineNum">     258 </span><span class="lineCov">          3 :         log_tag(&quot;summary:link_count::%u\n&quot;, count);</span>
-<span class="lineNum">     259 </span><span class="lineCov">          3 :         log_tag(&quot;summary:exit:ok\n&quot;);</span>
-<span class="lineNum">     260 </span><span class="lineCov">          3 :         log_flush();</span>
-<span class="lineNum">     261 </span><span class="lineCov">          3 : }</span>
+<span class="lineNum">     253 </span>            :                 /* for each link */
+<span class="lineNum">     254 </span><span class="lineCov">        607 :                 for (j = disk-&gt;linklist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">     255 </span><span class="lineCov">        589 :                         struct snapraid_link* slink = j-&gt;data;</span>
+<span class="lineNum">     256 </span><span class="lineCov">        589 :                         make_link(pool_dir, share_dir, disk, slink-&gt;sub, 0, 0);</span>
+<span class="lineNum">     257 </span><span class="lineCov">        589 :                         ++count;</span>
+<span class="lineNum">     258 </span>            :                 }
+<span class="lineNum">     259 </span>            : 
+<span class="lineNum">     260 </span>            :                 /* we ignore empty dirs in disk-&gt;dir */
+<span class="lineNum">     261 </span>            :         }
 <span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span><span class="lineCov">          3 :         if (count)</span>
+<span class="lineNum">     264 </span><span class="lineCov">          2 :                 msg_status(&quot;%u links created\n&quot;, count);</span>
+<span class="lineNum">     265 </span>            :         else
+<span class="lineNum">     266 </span><span class="lineCov">          1 :                 msg_status(&quot;No link created\n&quot;);</span>
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span><span class="lineCov">          3 :         log_tag(&quot;summary:link_count::%u\n&quot;, count);</span>
+<span class="lineNum">     269 </span><span class="lineCov">          3 :         log_tag(&quot;summary:exit:ok\n&quot;);</span>
+<span class="lineNum">     270 </span><span class="lineCov">          3 :         log_flush();</span>
+<span class="lineNum">     271 </span><span class="lineCov">          3 : }</span>
+<span class="lineNum">     272 </span>            : 
 </pre>
       </td>
     </tr>
