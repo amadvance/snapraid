@@ -9,6 +9,7 @@ code from http://www.snapraid.it and unpack it with:
 
 To configure and build run:
 
+    ./autogen.sh
     ./configure
     make
 
