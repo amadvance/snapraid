@@ -431,6 +431,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			for (j = i->next; j != 0; j = j->next) {
 				struct snapraid_content* other = j->data;
 				if (content->device == other->device) {
+					log_fatal("WARNING! Content files on the same disk: '%s' and '%s'.\n", content->content, other->content);
 					break;
 				}
 			}
