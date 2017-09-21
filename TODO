@@ -5,6 +5,11 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Better "pool" command without deleting/creating unchanged links.
+
+* Fix dup command with symlinks. They are reported as dups.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/57f99656/?limit=25#80c1
+
 - Minor
 
 * Allow to filter in diff/list by disk name.
