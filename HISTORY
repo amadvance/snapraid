@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+11.2 2017/10
+============
+ * More efficient 'pool' command that updates only the links
+   that need to be updated. This ensures that no change is
+   done, avoiding to trigger a directory rescan of other programs.
+
 11.1 2017/05
 ============
  * Fixed the check command to correctly ignore errors on unused parity.
