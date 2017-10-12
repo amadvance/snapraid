@@ -5,7 +5,7 @@ CHECK=check
 DEBUG=
 
 if test "x$1" = "x-f"; then
-CHECK=clean
+CHECK=all
 fi
 
 if test "x$1" = "x-d"; then
@@ -21,15 +21,15 @@ if ! ./configure.windows-x86 $DEBUG; then
 	exit 1
 fi
 
-if ! make $CHECK; then
-	exit 1
-fi
-
 if ! make distwindows-x86 distclean; then
 	exit 1
 fi
 
 if ! ./configure.windows-x64 $DEBUG; then
+	exit 1
+fi
+
+if ! make -j4 $CHECK; then
 	exit 1
 fi
 
