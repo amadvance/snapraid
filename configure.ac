@@ -313,17 +313,19 @@ AM_CONDITIONAL(HAVE_THREAD_CHECKER, [test x"$THREAD_CHECKER" != x])
 
 AC_ARG_ENABLE([sde],
 	[AS_HELP_STRING([--enable-sde],[enable the use of SDE emulator in testing])],
-dnl p4 -> Pentium4 with SSE2
+dnl p4p -> Pentium4 Prescott with SSE2
 dnl mrm -> Merom with SSSE3
 dnl nhm -> Nehalem with SSE4.2
 dnl hsw -> Haswell with AVX2
 dnl knl -> Knights Landing with AVX512
 	[
-	TESTENV_SSE2="$SDE -p4 --"
+	TESTENV_SSE2="$SDE -p4p --"
 	TESTENV_SSSE3="$SDE -mrm --"
 	TESTENV_SSE42="$SDE -nhm --"
 	TESTENV_AVX2="$SDE -hsw --"
 	EMULATOR=1
+	# Target CPU compatible with P4 Prescott
+	CFLAGS="$CFLAGS -march=athlon64"
 	],
 	[])
 AM_CONDITIONAL(HAVE_EMULATOR, [test x"$EMULATOR" != x])
