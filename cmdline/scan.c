@@ -729,17 +729,40 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			return;
 		}
 
-		/* here the file matches the inode, but not the other info */
-		/* if could be a modified file with the same name, */
-		/* or a restored/copied file that get assigned a previously used inode, */
-		/* or a file-system with not persistent inodes */
-
-		/* for sure it cannot be already present */
+		/*
+		 * Here the file matches the inode, but not the other info
+		 *
+		 * It could be a modified file with the same name,
+		 * or a restored/copied file that get assigned a previously used inode,
+		 * or a file-system with not persistent inodes.
+		 *
+		 * In NTFS it could be also a hardlink, because in NTFS
+		 * hardlink don't share the same directory information,
+		 * like attribute and time.
+		 *
+		 * For example:
+		 *   C:> echo A > A
+		 *   C:> mklink /H B A
+		 *   ...wait one minute
+		 *   C:> echo AAAAAAAAAAAAAA > A
+		 *   C:> dir
+		 *   ...both time and size of A and B don't match!
+		 */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
+#ifdef _WIN32
+			/* "suppose" a hardlink */
+			scan_link(scan, is_diff, sub, file->sub, FILE_IS_HARDLINK);
+			return;
+#else
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
+			log_fatal("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' with same inode but different (size %" PRIu64 "?%" PRIu64 ", sec %" PRIu64 "?%" PRIu64 ", nsec %d?%d)\n",
+				file->inode, disk->dir, sub, disk->dir, file->sub,
+				file->size, (uint64_t)st->st_size,
+				file->mtime_sec, (uint64_t)st->st_mtime,
+				file->mtime_nsec, STAT_NSEC(st));
 			os_abort();
 			/* LCOV_EXCL_STOP */
+#endif
 		}
 
 		/* assume a previously used inode, it's the worst case */
