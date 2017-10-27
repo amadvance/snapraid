@@ -992,7 +992,7 @@ snapraid.1 : snapraid.d
 	advd2 man < $(srcdir)/$< > $@
 
 snapraid.txt : snapraid.d
-	advd2 txt < $(srcdir)/$< | utod > $@
+	advd2 txt < $(srcdir)/$< | todos > $@
 
 snapraid.html : snapraid.d
 	advd2 html < $(srcdir)/$< > $@
@@ -1012,13 +1012,13 @@ distwindows-x86: $(DISTWIN)
 	mkdir tmp
 	cp $(DISTWIN) tmp
 	cp support/smartctl.exe tmp/smartctl.exe
-	utod < snapraid.conf.example.windows > tmp/snapraid.conf.example
-	utod < INSTALL.windows > tmp/install.txt
-	utod < README > tmp/readme.txt
-	utod < AUTHORS > tmp/authors.txt
-	utod < HISTORY > tmp/history.txt
-	utod < COPYING > tmp/copying.txt
-	utod < TODO > tmp/todo.txt
+	todos < snapraid.conf.example.windows > tmp/snapraid.conf.example
+	todos < INSTALL.windows > tmp/install.txt
+	todos < README > tmp/readme.txt
+	todos < AUTHORS > tmp/authors.txt
+	todos < HISTORY > tmp/history.txt
+	todos < COPYING > tmp/copying.txt
+	todos < TODO > tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
 	rm -r tmp
 
@@ -1027,13 +1027,13 @@ distwindows-x64: $(DISTWIN)
 	mkdir tmp
 	cp $(DISTWIN) tmp
 	cp support/smartctl.exe tmp/smartctl.exe
-	utod < snapraid.conf.example.windows > tmp/snapraid.conf.example
-	utod < INSTALL.windows > tmp/install.txt
-	utod < README > tmp/readme.txt
-	utod < AUTHORS > tmp/authors.txt
-	utod < HISTORY > tmp/history.txt
-	utod < COPYING > tmp/copying.txt
-	utod < TODO > tmp/todo.txt
+	todos < snapraid.conf.example.windows > tmp/snapraid.conf.example
+	todos < INSTALL.windows > tmp/install.txt
+	todos < README > tmp/readme.txt
+	todos < AUTHORS > tmp/authors.txt
+	todos < HISTORY > tmp/history.txt
+	todos < COPYING > tmp/copying.txt
+	todos < TODO > tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp
 
