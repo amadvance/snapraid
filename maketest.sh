@@ -3,10 +3,18 @@
 # Run all the Coverage and Valgrind tests
 #
 
+# Source directory
+SOURCE=`pwd`
+
+# Dest directory
+DEST=`mktemp -d`
+
 make distclean
 
+cd $DEST
+
 # Coverage
-if ! ./configure --enable-coverage --enable-sde; then
+if ! $SOURCE/configure --enable-coverage --enable-sde; then
 	exit 1
 fi
 
@@ -19,7 +27,7 @@ if ! make distclean; then
 fi
 
 # Valgrind
-if ! ./configure --enable-valgrind; then
+if ! $SOURCE/configure --enable-valgrind; then
 	exit 1
 fi
 
@@ -28,7 +36,7 @@ if ! make check distclean; then
 fi
 
 # Helgrind
-if ! ./configure --enable-helgrind; then
+if ! $SOURCE/configure --enable-helgrind; then
 	exit 1
 fi
 
@@ -37,7 +45,7 @@ if ! make check distclean; then
 fi
 
 # Drd
-if ! ./configure --enable-drd; then
+if ! $SOURCE/configure --enable-drd; then
 	exit 1
 fi
 
@@ -45,7 +53,9 @@ if ! make check distclean; then
 	exit 1
 fi
 
-if ! ./configure ; then
+cd $SOURCE
+
+if ! ./configure; then
 	exit 1
 fi
 

@@ -13,10 +13,18 @@ COMPILER=clang
 #   External libraries are not supported by the Sanitizers
 OPTIONS="--disable-asm --without-blkid"
 
+# Source directory
+SOURCE=`pwd`
+
+# Dest directory
+DEST=`mktemp -d`
+
 make distclean
 
+cd $DEST
+
 # AddressSanitizer
-if ! ./configure --enable-asan $OPTIONS CC=$COMPILER; then
+if ! $SOURCE/configure --enable-asan $OPTIONS CC=$COMPILER; then
 	exit 1
 fi
 
@@ -25,7 +33,7 @@ if ! make check distclean; then
 fi
 
 # UndefinedBehaviourSanitizer
-if ! ./configure --enable-ubsan $OPTIONS CC=$COMPILER; then
+if ! $SOURCE/configure --enable-ubsan $OPTIONS CC=$COMPILER; then
 	exit 1
 fi
 
@@ -34,7 +42,7 @@ if ! make check distclean; then
 fi
 
 # MemorySanitizer
-if ! ./configure --enable-msan $OPTIONS CC=$COMPILER; then
+if ! $SOURCE/configure --enable-msan $OPTIONS CC=$COMPILER; then
 	exit 1
 fi
 
@@ -43,7 +51,7 @@ if ! make check distclean; then
 fi
 
 # ThreadSanitizer
-if ! ./configure --enable-tsan $OPTIONS CC=$COMPILER; then
+if ! $SOURCE/configure --enable-tsan $OPTIONS CC=$COMPILER; then
 	exit 1
 fi
 
@@ -51,7 +59,9 @@ if ! make check distclean; then
 	exit 1
 fi
 
-if ! ./configure ; then
+cd $SOURCE
+
+if ! ./configure; then
 	exit 1
 fi
 
