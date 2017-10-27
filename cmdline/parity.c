@@ -574,12 +574,12 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 		if (split->st.st_size > run) {
 			/* LCOV_EXCL_START */
-			log_fatal("Unexpected over resizing parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, split->st.st_size);
+			log_fatal("Unexpected over resizing parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else if (is_fixed && split->st.st_size < run) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed restoring parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, split->st.st_size);
+			log_fatal("Failed restoring parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else {

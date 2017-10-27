@@ -1473,7 +1473,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			} else if (st.st_size != 0) {
 				unsuccesful = 1;
 
-				log_tag("error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), st.st_size);
+				log_tag("error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), (uint64_t)st.st_size);
 				++error;
 			}
 

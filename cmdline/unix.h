@@ -34,11 +34,11 @@
 
 /* Check if we have nanoseconds support */
 #if HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-#define STAT_NSEC(st) (st)->st_mtim.tv_nsec /* Linux */
+#define STAT_NSEC(st) ((int)(st)->st_mtim.tv_nsec) /* Linux */
 #elif HAVE_STRUCT_STAT_ST_MTIMENSEC
-#define STAT_NSEC(st) (st)->st_mtimensec /* NetBSD */
+#define STAT_NSEC(st) ((int)(st)->st_mtimensec) /* NetBSD */
 #elif HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
-#define STAT_NSEC(st) (st)->st_mtimespec.tv_nsec /* FreeBSD, Mac OS X */
+#define STAT_NSEC(st) ((int)(st)->st_mtimespec.tv_nsec) /* FreeBSD, Mac OS X */
 #else
 #define STAT_NSEC(st) STAT_NSEC_INVALID
 #endif

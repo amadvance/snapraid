@@ -209,10 +209,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			) {
 				log_tag("error:%u:%s:%s: Unexpected attribute change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
 				if (handle[j].st.st_size != file->size) {
-					log_error("Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle[j].path, file->size, handle[j].st.st_size);
+					log_error("Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle[j].path, file->size, (uint64_t)handle[j].st.st_size);
 				} else if (handle[j].st.st_mtime != file->mtime_sec
 					|| STAT_NSEC(&handle[j].st) != file->mtime_nsec) {
-					log_error("Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
+					log_error("Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, STAT_NSEC(&handle[j].st));
 				} else {
 					log_error("Unexpected inode change from %" PRIu64 " to %" PRIu64 " at file '%s'.\n", file->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
 				}
@@ -586,10 +586,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	) {
 		log_tag("error:%u:%s:%s: Unexpected attribute change\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer));
 		if (handle->st.st_size != task->file->size) {
-			log_error("Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle->path, task->file->size, handle->st.st_size);
+			log_error("Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle->path, task->file->size, (uint64_t)handle->st.st_size);
 		} else if (handle->st.st_mtime != task->file->mtime_sec
 			|| STAT_NSEC(&handle->st) != task->file->mtime_nsec) {
-			log_error("Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle->path, task->file->mtime_sec, task->file->mtime_nsec, (uint64_t)handle->st.st_mtime, (uint32_t)STAT_NSEC(&handle->st));
+			log_error("Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle->path, task->file->mtime_sec, task->file->mtime_nsec, (uint64_t)handle->st.st_mtime, STAT_NSEC(&handle->st));
 		} else {
 			log_error("Unexpected inode change from %" PRIu64 " to %" PRIu64 " at file '%s'.\n", task->file->inode, (uint64_t)handle->st.st_ino, handle->path);
 		}

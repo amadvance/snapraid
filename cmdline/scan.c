@@ -970,8 +970,8 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			++scan->count_change;
 
 			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc_tag(sub, esc_buffer),
-				(uint64_t)file_already_present_size, (uint64_t)file_already_present_mtime_sec, file_already_present_mtime_nsec,
-				(uint64_t)file->size, (uint64_t)file->mtime_sec, file->mtime_nsec
+				file_already_present_size, file_already_present_mtime_sec, file_already_present_mtime_nsec,
+				file->size, file->mtime_sec, file->mtime_nsec
 			);
 
 			if (is_diff) {

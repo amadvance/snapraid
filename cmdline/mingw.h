@@ -136,7 +136,7 @@
 #define STAT_NSEC_INVALID -1
 
 /* We have nano second support */
-#define STAT_NSEC(st) (st)->st_mtimensec
+#define STAT_NSEC(st) ((int)(st)->st_mtimensec)
 
 /**
  * Generic stat information.
