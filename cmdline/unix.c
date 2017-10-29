@@ -644,7 +644,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)
+int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space)
 {
 	char type[64];
 	const char* ptype;
@@ -693,8 +693,26 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 			break;
 		}
 #else
-		/* by default assume yes */
+		/* in Unix inodes are persistent by default */
 		*has_persistent_inode = 1;
+#endif
+	}
+
+	if (has_syncronized_hardlinks) {
+#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
+		switch (st.f_type) {
+		case 0x5346544E : /* NTFS */
+		case 0x4d44 : /* VFAT, "msdos" in the stat command */
+			*has_syncronized_hardlinks = 0;
+			break;
+		default :
+			/* by default assume yes */
+			*has_syncronized_hardlinks = 1;
+			break;
+		}
+#else
+		/* in Unix hardlinks share the same metadata by default */
+		*has_syncronized_hardlinks = 1;
 #endif
 	}
 

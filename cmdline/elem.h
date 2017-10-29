@@ -348,6 +348,7 @@ struct snapraid_disk {
 	block_off_t first_free_block;
 
 	int has_volatile_inodes; /**< If the underline file-system has not persistent inodes. */
+	int has_volatile_hardlinks; /**< If the underline file-system has not syncronized metadata for hardlink (NTFS). */
 	int has_unreliable_physical; /**< If the physical offset of files has duplicates. */
 	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same file-system. */
 	int has_unsupported_uuid; /**< If the disk doesn't report UUID, meaning it's not supported. */

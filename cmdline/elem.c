@@ -760,6 +760,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->free_blocks = 0;
 	disk->first_free_block = 0;
 	disk->has_volatile_inodes = 0;
+	disk->has_volatile_hardlinks = 0;
 	disk->has_unreliable_physical = 0;
 	disk->has_different_uuid = 0;
 	disk->has_unsupported_uuid = *uuid == 0; /* empty UUID means unsupported */

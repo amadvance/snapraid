@@ -1540,7 +1540,7 @@ void state_refresh(struct snapraid_state* state)
 			/* LCOV_EXCL_STOP */
 		}
 
-		ret = fsinfo(disk->dir, 0, &total_space, &free_space);
+		ret = fsinfo(disk->dir, 0, 0, &total_space, &free_space);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
@@ -1568,7 +1568,7 @@ void state_refresh(struct snapraid_state* state)
 			uint64_t free_space;
 			int ret;
 
-			ret = fsinfo(state->parity[l].split_map[s].path, 0, &total_space, &free_space);
+			ret = fsinfo(state->parity[l].split_map[s].path, 0, 0, &total_space, &free_space);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error accessing file '%s' to get file-system info. %s.\n", state->parity[l].split_map[s].path, strerror(errno));

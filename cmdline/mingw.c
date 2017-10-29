@@ -501,6 +501,8 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	st->st_ino <<= 32;
 	st->st_ino |= info->nFileIndexLow;
 
+	st->st_nlink = info->nNumberOfLinks;
+
 	st->st_dev = info->dwVolumeSerialNumber;
 
 	/* GetFileInformationByHandle() ensures to return synced information */
@@ -553,6 +555,8 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 
 	st->st_ino = stream->FileId.QuadPart;
 
+	st->st_nlink = info->nNumberOfLinks;
+
 	st->st_dev = info->dwVolumeSerialNumber;
 
 	/* directory listing doesn't ensure to return synced information */
@@ -597,6 +601,9 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 
 	/* No inode information available */
 	st->st_ino = 0;
+
+	/* No link information available */
+	st->st_nlink = 0;
 
 	/* No device information available */
 	st->st_dev = 0;
@@ -1705,13 +1712,17 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)
+int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space)
 {
 	wchar_t conv_buf[CONV_MAX];
 
 	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
 	if (has_persistent_inode)
 		*has_persistent_inode = 1;
+
+	/* NTFS doesn't syncronize hardlinks metadata */
+	if (has_syncronized_hardlinks)
+		*has_syncronized_hardlinks = 0;
 
 	if (free_space || total_space) {
 		ULARGE_INTEGER total_bytes;

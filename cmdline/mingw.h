@@ -94,7 +94,7 @@
 #define dirent_hidden windows_dirent_hidden
 #define HAVE_STRUCT_DIRENT_D_STAT 1
 #undef HAVE_STRUCT_DIRENT_D_INO
-#undef HAVE_STRUCT_STAT_ST_NLINK
+#define HAVE_STRUCT_STAT_ST_NLINK 1
 #define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
 #undef sleep
@@ -148,6 +148,7 @@ struct windows_stat {
 	int32_t st_mtimensec;
 	uint32_t st_mode;
 	uint32_t st_dev;
+	uint32_t st_nlink;
 	int st_hidden;
 	const char* st_desc;
 	int st_sync; /**< If the information are in sync with the file-system. */

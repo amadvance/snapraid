@@ -501,11 +501,16 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			 * because the metadata in the directory is updated only when the file
 			 * is closed.
 			 *
+			 * The same happens for hardlinks that duplicate metatada.
+			 * The link metadata is updated only when the link is opened.
+			 * This extends also to st_size and st_nlink.
+			 *
 			 * See also:
 			 * Why is the file size reported incorrectly for files that are still being written to?
 			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
 			 */
-			log_fatal("WARNING! Detected uncached time change for file '%s'\n", sub);
+			log_fatal("WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
+				(uint64_t)st->st_mtime, (uint32_t)st->st_mtimensec, (uint64_t)synced_st.st_mtime, (uint32_t)synced_st.st_mtimensec, sub);
 			log_fatal("It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_mtime = synced_st.st_mtime;
@@ -514,15 +519,26 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (st->st_size != synced_st.st_size) {
 #ifndef _WIN32
-			log_fatal("WARNING! Detected uncached size change for file '%s'\n", sub);
+			log_fatal("WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
+				(uint64_t)st->st_size, (uint64_t)synced_st.st_size, sub);
 			log_fatal("It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_size = synced_st.st_size;
 		}
 
+		if (st->st_nlink != synced_st.st_nlink) {
+#ifndef _WIN32
+			log_fatal("WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
+				(uint32_t)st->st_nlink , (uint32_t)synced_st.st_nlink, sub);
+			log_fatal("It's better if you run SnapRAID without other processes running.\n");
+#endif
+			st->st_nlink = synced_st.st_nlink;
+		}
+
 		if (st->st_ino != synced_st.st_ino) {
-			log_fatal("DANGER! Detected uncached inode change for file '%s'\n", sub);
-			log_fatal("Please ensure to run SnapRAID without other processes running.\n");
+			log_fatal("DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
+				(uint64_t)st->st_ino, (uint64_t)synced_st.st_ino, sub);
+			log_fatal("It's better if you run SnapRAID without other processes running.\n");
 			/* at this point, it's too late to change inode */
 			/* and having inconsistent inodes may result to internal failures */
 			/* so, it's better to abort */
@@ -666,14 +682,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		) {
 			/* check if multiple files have the same inode */
 			if (file_flag_has(file, FILE_IS_PRESENT)) {
-#if HAVE_STRUCT_STAT_ST_NLINK
-				if (st->st_nlink <= 1) {
+				/* if has_volatile_hardlinks is true, the nlink value is not reliable */
+				if (!disk->has_volatile_hardlinks && st->st_nlink == 1) {
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
-#endif
+
 				/* it's a hardlink */
 				scan_link(scan, is_diff, sub, file->sub, FILE_IS_HARDLINK);
 				return;
@@ -749,20 +765,23 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		 *   ...both time and size of A and B don't match!
 		 */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
-#ifdef _WIN32
-			/* "suppose" a hardlink */
+			/* if has_volatile_hardlinks is true, the nlink value is not reliable */
+			if (!disk->has_volatile_hardlinks && st->st_nlink == 1) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' with same inode but different attributes: size %" PRIu64 "?%" PRIu64 ", sec %" PRIu64 "?%" PRIu64 ", nsec %d?%d\n",
+					file->inode, disk->dir, sub, disk->dir, file->sub,
+					file->size, (uint64_t)st->st_size,
+					file->mtime_sec, (uint64_t)st->st_mtime,
+					file->mtime_nsec, STAT_NSEC(st));
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* LCOV_EXCL_START */
+			/* suppose it's hardlink with not synced metadata */
 			scan_link(scan, is_diff, sub, file->sub, FILE_IS_HARDLINK);
 			return;
-#else
-			/* LCOV_EXCL_START */
-			log_fatal("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' with same inode but different (size %" PRIu64 "?%" PRIu64 ", sec %" PRIu64 "?%" PRIu64 ", nsec %d?%d)\n",
-				file->inode, disk->dir, sub, disk->dir, file->sub,
-				file->size, (uint64_t)st->st_size,
-				file->mtime_sec, (uint64_t)st->st_mtime,
-				file->mtime_nsec, STAT_NSEC(st));
-			os_abort();
 			/* LCOV_EXCL_STOP */
-#endif
 		}
 
 		/* assume a previously used inode, it's the worst case */
@@ -1351,7 +1370,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 #if HAVE_LSTAT_SYNC
 				/* if the st_ino field is missing, takes care to fill it using the extended lstat() */
 				/* this can happen only in Windows */
-				if (st->st_ino == 0) {
+				if (st->st_ino == 0 || st->st_nlink == 0) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
@@ -1470,7 +1489,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		struct snapraid_scan* scan;
 		tommy_node* node;
 		int ret;
-		int has_persistent_inode;
+		int has_persistent_inodes;
+		int has_syncronized_hardlinks;
 
 		scan = malloc_nofail(sizeof(struct snapraid_scan));
 		scan->state = state;
@@ -1492,15 +1512,18 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			msg_progress("Scanning disk %s...\n", disk->name);
 
 		/* check if the disk supports persistent inodes */
-		ret = fsinfo(disk->dir, &has_persistent_inode, 0, 0);
+		ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0);
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-		if (!has_persistent_inode) {
+		if (!has_persistent_inodes) {
 			disk->has_volatile_inodes = 1;
+		}
+		if (!has_syncronized_hardlinks) {
+			disk->has_volatile_hardlinks = 1;
 		}
 
 		/* if inodes or UUID are not persistent/changed/unsupported */
