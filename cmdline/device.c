@@ -486,14 +486,13 @@ static double smart_afr(uint64_t* smart, const char* model)
 
 	if (
 		/**
-		 * Don't check Command_Timeout (188) for Seagate SMR (Shingled
-		 * Magnetic Recording) disks.
+		 * Don't check Command_Timeout (188) for Seagate disks.
 		 *
-		 * It's reported by users to be a not significative test as
+		 * It's reported by users that for Archive SMR (Shingled Magnetic Recording)
+		 * and IronWolf disks to be a not significative test as
 		 * this value increases too often also on sane disks.
 		 */
-		strcmp(model, "ST8000AS0002-1NA17Z") != 0
-		&& smart[188] != SMART_UNASSIGNED
+		strncmp(model, "ST", 2) != 0 && smart[188] != SMART_UNASSIGNED
 	) {
 		/* with Seagate disks, there are three different 16 bits value reported */
 		/* the lowest one is the most significant */
