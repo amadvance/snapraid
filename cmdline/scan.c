@@ -529,7 +529,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 		if (st->st_nlink != synced_st.st_nlink) {
 #ifndef _WIN32
 			log_fatal("WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
-				(uint32_t)st->st_nlink , (uint32_t)synced_st.st_nlink, sub);
+				(uint32_t)st->st_nlink, (uint32_t)synced_st.st_nlink, sub);
 			log_fatal("It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_nlink = synced_st.st_nlink;

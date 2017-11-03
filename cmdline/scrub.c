@@ -473,14 +473,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 					unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 
-					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE*8);
+					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						log_error("Data error in file '%s' at position '%u', diff bits %u/%u\n", task->path, file_pos, diff, BLOCK_HASH_SIZE*8);
+						log_error("Data error in file '%s' at position '%u', diff bits %u/%u\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -566,14 +566,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
 					unsigned diff = memdiff(buffer[diskmax + l], buffer_recov[l], state->block_size);
 
-					log_tag("parity_error:%u:%s: Data error, diff bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size*8);
+					log_tag("parity_error:%u:%s: Data error, diff bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
 
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						log_fatal("Data error in parity '%s' at position '%u', diff bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size*8);
+						log_fatal("Data error in parity '%s' at position '%u', diff bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}

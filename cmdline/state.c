@@ -342,7 +342,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	if (!state->opt.skip_device && !state->opt.skip_parity_access) {
 		for (l = 0; l < state->level; ++l) {
 			for (s = 0; s < state->parity[l].split_mac; ++s) {
-				unsigned j,t;
+				unsigned j, t;
 
 				/* skip parity disks that are not accessible */
 				if (state->parity[l].skip_access)
@@ -657,7 +657,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			BLOCK_HASH_SIZE = hash_size;
 		} else if (lev_config_scan(tag, &level, &state->raid_mode) == 0) {
 			char device[PATH_MAX];
-			char* split_map[SPLIT_MAX+1];
+			char* split_map[SPLIT_MAX + 1];
 			unsigned split_mac;
 			char* slash;
 			uint64_t dev;
@@ -685,7 +685,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			split_mac = strsplit(split_map, SPLIT_MAX+1, buffer, ",");
+			split_mac = strsplit(split_map, SPLIT_MAX + 1, buffer, ",");
 
 			if (split_mac > SPLIT_MAX) {
 				/* LCOV_EXCL_START */

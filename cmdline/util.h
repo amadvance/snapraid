@@ -86,7 +86,7 @@ static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)
 {
 #if HAVE_SSE42
 	if (tommy_likely(crc_x86)) {
-		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (c));
+		asm ("crc32b %1, %0\n" : "+r" (crc) : "m" (c));
 		return crc;
 	}
 #endif
@@ -123,20 +123,20 @@ static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, 
 #ifdef CONFIG_X86_64
 	uint64_t crc64 = crc;
 	while (size >= 8) {
-		asm("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
+		asm ("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
 		ptr += 8;
 		size -= 8;
 	}
 	crc = crc64;
 #else
 	while (size >= 4) {
-		asm("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
+		asm ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
 		ptr += 4;
 		size -= 4;
 	}
 #endif
 	while (size) {
-		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
+		asm ("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
 		++ptr;
 		--size;
 	}

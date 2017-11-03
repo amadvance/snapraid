@@ -26,7 +26,7 @@
 /**
  * Pseudo random limits for parity
  */
-#define PARITY_LIMIT(size,split,level) \
+#define PARITY_LIMIT(size, split, level) \
 	size ? size + (123562341 + split * 634542351 + level * 983491341) % size : 0
 
 /****************************************************************************/
@@ -165,7 +165,7 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 	/* now compute the size summing all the parity splits */
 	size = 0;
 
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 
 		size += split->size;
@@ -185,7 +185,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 	handle->level = level;
 	handle->split_mac = 0;
 
-	for (s = 0;s < parity->split_mac;++s) {
+	for (s = 0; s < parity->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 		int flags;
@@ -247,7 +247,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 
 bail:
 	/* LCOV_EXCL_START */
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		close(split->f);
 		split->f = -1;
@@ -311,7 +311,7 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t si
 	 *
 	 * See: man fallocate
 	 * ENOSYS - This kernel does not implement fallocate().
-         * EOPNOTSUPP - The file system containing the file referred to by fd does not support this operation
+	 * EOPNOTSUPP - The file system containing the file referred to by fd does not support this operation
 	 */
 	if (ret != 0 && (errno == EOPNOTSUPP || errno == ENOSYS)) {
 		/* fallback using ftruncate() */
@@ -536,7 +536,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		/* LCOV_EXCL_STOP */
 	}
 
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int is_fixed = parity_split_is_fixed(handle, s);
 		data_off_t run;
@@ -564,7 +564,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 			/* otherwise tries to allocate all the needed remaining size */
 			run = size;
 		}
-		
+
 		ret = parity_handle_chsize(split, run, block_size, skip_fallocate, skip_space_holder);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -613,7 +613,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	if (is_modified)
 		*is_modified = 0;
 
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 
 		if (parity->split_map[s].size != split->size) {
@@ -637,7 +637,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 	/* mask of bits used by the block size */
 	block_mask = ((data_off_t)block_size) - 1;
 
-	for (s = 0;s < parity->split_mac;++s) {
+	for (s = 0; s < parity->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 		int flags;
@@ -701,7 +701,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 
 bail:
 	/* LCOV_EXCL_START */
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		close(split->f);
 		split->f = -1;
@@ -715,7 +715,7 @@ int parity_sync(struct snapraid_parity_handle* handle)
 #if HAVE_FSYNC
 	unsigned s;
 
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 
@@ -740,7 +740,7 @@ int parity_close(struct snapraid_parity_handle* handle)
 	unsigned s;
 	int f_ret = 0;
 
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 
@@ -771,7 +771,7 @@ struct snapraid_split_handle* parity_split_find(struct snapraid_parity_handle* h
 	if (*offset < 0)
 		return 0;
 
-	for (s = 0;s < handle->split_mac;++s) {
+	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 
 		if (*offset < split->size)
