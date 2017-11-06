@@ -22,6 +22,8 @@ if ! make lcov_reset check lcov_capture lcov_html; then
 	exit 1
 fi
 
+cp -a cov $SOURCE/cov
+
 if ! make distclean; then
 	exit 1
 fi
