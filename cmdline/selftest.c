@@ -359,6 +359,9 @@ static void test_tommy(void)
 		*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) = i;
 	}
 
+	tommy_array_grow(&array, TOMMY_SIZE);
+	tommy_arrayblkof_grow(&arrayblkof, TOMMY_SIZE);
+
 	if (tommy_array_memory_usage(&array) < TOMMY_SIZE * sizeof(void*)) {
 		/* LCOV_EXCL_START */
 		goto bail;
