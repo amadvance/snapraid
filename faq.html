@@ -529,10 +529,12 @@ You can anyway use it if you limit the use of the parity disk to contain only th
 
 <p>
 In Linux, to get more space for the parity, it's recommended to format the parity file-system with the <em>-m 0 -T largefile4</em> options.
-On a 8 TB disk you can save about 400 GB. This is also expected to be as fast as the default, if not faster.
 Like:
 </p>
 <pre>mkfs.ext4 -m 0 -T largefile4 DEVICE</pre>
+<p>
+On a 8 TB disk you can save about 400 GB. This is also expected to be as fast as the default, if not faster.
+</p>
 
 <h3 id="hardware">Which hardware configuration is recommended?</h3>
 <p>
