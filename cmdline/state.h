@@ -348,6 +348,11 @@ void state_usage_raid(struct snapraid_state* state);
 void state_usage_hash(struct snapraid_state* state);
 
 /**
+ * Set the last file used
+ */
+void state_usage_file(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file);
+
+/**
  * Set the usage time for a set of data disks.
  */
 void state_usage_disk(struct snapraid_state* state, struct snapraid_handle* handle_map, unsigned* waiting_map, unsigned waiting_mac);

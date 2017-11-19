@@ -161,7 +161,7 @@ void state_init(struct snapraid_state* state)
 		state->parity[l].free_blocks = 0;
 		state->parity[l].skip_access = 0;
 		state->parity[l].tick = 0;
-		state->parity[l].cached = 0;
+		state->parity[l].cached_blocks = 0;
 		state->parity[l].is_excluded_by_filter = 0;
 	}
 	state->tick_io = 0;
@@ -4253,17 +4253,23 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 
 		printf("\n");
 
+		/* search for the slowest */
 		for (i = state->disklist; i != 0; i = i->next) {
 			struct snapraid_disk* disk = i->data;
-			v = disk->cached;
+			v = disk->cached_blocks;
 			printr(disk->name, pad);
 			printf("%4" PRIu64 " | ", v);
-			printc('o', v * bar / io->io_max);
+
+			if (disk->progress_file && disk->progress_file->sub)
+				printf("%s", disk->progress_file->sub);
+			else
+				printf("-");
+
 			printf("\n");
 		}
 
 		for (l = 0; l < state->level; ++l) {
-			v = state->parity[l].cached;
+			v = state->parity[l].cached_blocks;
 			printr(lev_config_name(l), pad);
 			printf("%4" PRIu64 " | ", v);
 			printc('o', v * bar / io->io_max);
@@ -4289,6 +4295,9 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 		printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
 		printc('*', v * bar / tick_total);
 		printf("\n");
+
+		/* clear the file in progress */
+		disk->progress_file = 0;
 	}
 
 	for (l = 0; l < state->level; ++l) {
@@ -4541,6 +4550,13 @@ void state_usage_hash(struct snapraid_state* state)
 	state->tick_hash += delta;
 
 	state->tick_last = now;
+}
+
+void state_usage_file(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+{
+	(void)state;
+
+	disk->progress_file = file;
 }
 
 void state_usage_disk(struct snapraid_state* state, struct snapraid_handle* handle_map, unsigned* waiting_map, unsigned waiting_mac)

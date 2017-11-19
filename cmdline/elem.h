@@ -338,7 +338,8 @@ struct snapraid_disk {
 
 	uint64_t tick; /**< Usage time. */
 	uint64_t progress_tick[PROGRESS_MAX]; /**< Last ticks of progress. */
-	unsigned cached; /**< Number of IO blocks cached. */
+	unsigned cached_blocks; /**< Number of IO blocks cached. */
+	struct snapraid_file* progress_file; /**< File in progress. */
 
 	/**
 	 * First free searching block.
@@ -468,7 +469,7 @@ struct snapraid_parity {
 	int skip_access; /**< If at least one of the parity disk is inaccessible and it should be skipped. */
 	uint64_t tick; /**< Usage time. */
 	uint64_t progress_tick[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
-	unsigned cached; /**< Number of IO blocks cached. */
+	unsigned cached_blocks; /**< Number of IO blocks cached. */
 };
 
 /**

@@ -392,6 +392,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (!disk)
 				continue;
 
+			state_usage_file(state, disk, file);
+
 			/* if the block is unsynced, errors are expected */
 			if (block_has_invalid_parity(block)) {
 				/* report that the block and the file are not synced */

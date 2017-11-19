@@ -248,6 +248,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			if (!disk)
 				continue;
 
+			state_usage_file(state, disk, task->file);
+
 			/* if the block is not used */
 			if (!block_has_file(block))
 				continue;

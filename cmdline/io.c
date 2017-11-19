@@ -490,9 +490,9 @@ static void io_refresh_thread(struct snapraid_io* io)
 		cached = end - begin;
 
 		if (worker->parity_handle)
-			io->state->parity[worker->parity_handle->level].cached = cached;
+			io->state->parity[worker->parity_handle->level].cached_blocks = cached;
 		else
-			worker->handle->disk->cached = cached;
+			worker->handle->disk->cached_blocks = cached;
 	}
 
 	/* for all writers, count the number of written blocks */
@@ -509,7 +509,7 @@ static void io_refresh_thread(struct snapraid_io* io)
 			end += io->io_max;
 		cached = end - begin;
 
-		io->state->parity[worker->parity_handle->level].cached = cached;
+		io->state->parity[worker->parity_handle->level].cached_blocks = cached;
 	}
 
 	thread_mutex_unlock(&io->io_mutex);

@@ -248,6 +248,8 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			/* until now is disk */
 			state_usage_disk(state, handle, &j, 1);
 
+			state_usage_file(state, disk, file);
+
 			countsize += read_size;
 
 			/* now compute the hash */
@@ -850,6 +852,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* if the disk position is not used */
 			if (!disk)
 				continue;
+
+			state_usage_file(state, disk, file);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
