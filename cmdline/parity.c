@@ -332,12 +332,26 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t pr
 	ret = ftruncate(split->f, size);
 #endif
 
+	if (ret != 0)
+		log_tag("split:grow:%s:%" PRIu64 ": failed with error %s\n", split->path, size, strerror(errno));
+	else
+		log_tag("split:grow:%s:%" PRIu64 ": ok\n", split->path, size);
+
 	return ret;
 }
 
 static int parity_handle_shrink(struct snapraid_split_handle* split, data_off_t size)
 {
-	return ftruncate(split->f, size);
+	int ret;
+
+	ret = ftruncate(split->f, size);
+
+	if (ret != 0)
+		log_tag("split:shrink:%s:%" PRIu64 ": failed with error %s\n", split->path, size, strerror(errno));
+	else
+		log_tag("split:shrink:%s:%" PRIu64 ": ok\n", split->path, size);
+
+	return ret;
 }
 
 /**
@@ -422,6 +436,8 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	/* size we have to increase */
 	delta = size - base;
 
+	log_tag("split:fill:%s:%" PRIu64 ":%" PRIu64 ":\n", split->path, base, size);
+
 	/* grow the size one bit at time, like a kind of binary search */
 	while (delta != 0) {
 		int ret;
@@ -429,6 +445,8 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 
 		/* mask out the bit we process */
 		delta &= ~run;
+
+		log_tag("split:delta:%s:%" PRIu64 ":%" PRIu64 ":\n", split->path, base, run);
 
 		ret = parity_handle_grow(split, base, base + run, skip_fallocate);
 		if (ret != 0) {
