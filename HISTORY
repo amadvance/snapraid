@@ -3,7 +3,7 @@ SnapRAID HISTORY
 
 11.2 2017/11
 ============
- * Fix recognition of NTFS hardlinks. They behave differently than
+ * Fixed recognition of NTFS hardlinks. They behave differently than
    standard Unix hardlinks and this could result in SnapRAID reporting
    internal incosistency errors for detecting links to the same file
    with different metadata attributes.
