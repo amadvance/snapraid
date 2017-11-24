@@ -10,6 +10,9 @@ SnapRAID HISTORY
  * More efficient 'pool' command that updates only the links
    that need to be updated. This ensures that no change is
    done, avoiding to trigger a directory rescan of other programs.
+ * In Linux use by default the advise "discard" mode instead of "flush".
+   This avoids to swap-out the other process memory, leaving the system
+   more responsive.
  * Changed the --test-io-stats screen to print the file name in process
    for each disk.
 

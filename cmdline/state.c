@@ -538,7 +538,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		state->file_mode = state->opt.file_mode;
 	} else {
 		/* default mode, if nothing is specified */
-		state->file_mode = ADVISE_FLUSH;
+		state->file_mode = ADVISE_DISCARD;
 	}
 
 	/* store current command */
