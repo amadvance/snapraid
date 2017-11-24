@@ -13,6 +13,7 @@ SnapRAID HISTORY
  * In Linux use by default the advise "discard" mode instead of "flush".
    This avoids to swap-out the other process memory, leaving the system
    more responsive.
+ * Changed the fallocate() use to work better with Btrfs with parity disks.
  * Changed the --test-io-stats screen to print the file name in process
    for each disk.
 

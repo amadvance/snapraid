@@ -256,9 +256,11 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t size, int skip_fallocate)
+static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t previous_size, data_off_t size, int skip_fallocate)
 {
 	int ret;
+
+	(void)previous_size;
 
 	/* simulate a failure for testing limits */
 	if (split->limit_size != 0 && size > (data_off_t)split->limit_size)
@@ -276,8 +278,14 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t si
 		 *
 		 * See: fallocate vs posix_fallocate
 		 * http://stackoverflow.com/questions/14063046/fallocate-vs-posix-fallocate
+		 *
+		 * To work better with Btrfs, use as offset the previous allocated size.
+		 * Otherwise Btrfs will count as space needed even the already allocated one.
+		 *
+		 * See: Massive loss of disk space
+		 * https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg66454.html
 		 */
-		ret = fallocate(split->f, 0, 0, size);
+		ret = fallocate(split->f, 0, previous_size, size - previous_size);
 
 		/*
 		 * In some legacy system fallocate() may return the error number
@@ -422,7 +430,7 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 		/* mask out the bit we process */
 		delta &= ~run;
 
-		ret = parity_handle_grow(split, base + run, skip_fallocate);
+		ret = parity_handle_grow(split, base, base + run, skip_fallocate);
 		if (ret != 0) {
 			/* we cannot grow, fallback enabling all the smaller bits */
 			delta = run - 1;
