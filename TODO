@@ -10,6 +10,9 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/57f99656/?limi
 
 - Minor
 
+* Add a new -u, --filter-updated command that filters files
+with a different timestamp.
+
 * Allow to filter in diff/list by disk name.
 Not checked disks should be allowed to be missing.
 
