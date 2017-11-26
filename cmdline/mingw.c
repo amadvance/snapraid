@@ -690,8 +690,11 @@ static void windows_errno(DWORD error)
 	case ERROR_NOT_SUPPORTED : /* in CreateSymlinkW() if not present in kernel32 */
 		errno = ENOSYS;
 		break;
-	case ERROR_PRIVILEGE_NOT_HELD : /* in CreateSymlinkW if no SeCreateSymbolicLinkPrivilige permission */
+	case ERROR_PRIVILEGE_NOT_HELD : /* in CreateSymlinkW() if no SeCreateSymbolicLinkPrivilige permission */
 		errno = EPERM;
+		break;
+	case ERROR_IO_DEVICE : /* in ReadFile() and WriteFile() */
+		errno = EIO;
 		break;
 	default :
 		log_fatal("Unexpected Windows error %d.\n", (int)error);
