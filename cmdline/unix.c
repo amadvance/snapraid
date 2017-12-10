@@ -539,7 +539,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 	if (devuuid_blkid(device, uuid, uuid_size) == 0)
 		return 0;
 #else
-	log_tag("uuid:blkid:%u:%u: blkid not supported\n", major(device), minor(device));
+	log_tag("uuid:blkid:%u:%u: blkid support not compiled in\n", major(device), minor(device));
 #endif
 
 	log_tag("uuid:notfound:%u:%u:\n", major(device), minor(device));
