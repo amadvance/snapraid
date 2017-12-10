@@ -423,7 +423,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 	/* scan the UUID directory searching for the device */
 	d = opendir("/dev/disk/by-uuid");
 	if (!d) {
-		log_tag("uuid:by-uuidd:%u:%u: opendir(/dev/disk/by-uuid) failed, %s\n", major(device), minor(device), strerror(errno));
+		log_tag("uuid:by-uuid:%u:%u: opendir(/dev/disk/by-uuid) failed, %s\n", major(device), minor(device), strerror(errno));
 		/* directory missing?, likely we are not in Linux */
 		return -1;
 	}
@@ -435,7 +435,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 
 		ret = fstatat(dirfd(d), dd->d_name, &st, 0);
 		if (ret != 0) {
-			log_tag("uuid:by-uuidd:%u:%u: fstatat(%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
+			log_tag("uuid:by-uuid:%u:%u: fstatat(%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
 			/* generic error, ignore and continue the search */
 			continue;
 		}
@@ -449,7 +449,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 			pathprint(path, sizeof(path), "/dev/disk/by-uuid/%s", dd->d_name);
 			ret = readlink(path, buf, sizeof(buf));
 			if (ret < 0 || ret == sizeof(buf)) {
-				log_tag("uuid:by-uuidd:%u:%u: readlink(/dev/disk/by-uuid/%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
+				log_tag("uuid:by-uuid:%u:%u: readlink(/dev/disk/by-uuid/%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
 				/* generic error, ignore and continue the search */
 				continue;
 			}
@@ -465,7 +465,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 		}
 	}
 
-	log_tag("uuid:by-uuidd:%u:%u: /dev/disk/by-uuid doesn't contain a matching block device\n", major(device), minor(device));
+	log_tag("uuid:by-uuid:%u:%u: /dev/disk/by-uuid doesn't contain a matching block device\n", major(device), minor(device));
 
 	/* not found */
 	closedir(d);
@@ -531,7 +531,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 	if (devuuid_dev(device, uuid, uuid_size) == 0)
 		return 0;
 #else
-	log_tag("uuid:by-uuidd:%u:%u: by-uuid not supported\n", major(device), minor(device));
+	log_tag("uuid:by-uuid:%u:%u: by-uuid not supported\n", major(device), minor(device));
 #endif
 
 	/* fall back to blkid for other cases */
