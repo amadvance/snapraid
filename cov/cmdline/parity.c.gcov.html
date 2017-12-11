@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - parity.c<span style="font-size: 80%;"> (source / <a href="parity.c.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - parity.c<span style="font-size: 80%;"> (source / <a href="parity.c.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">18</td>
@@ -88,7 +88,7 @@
 <span class="lineNum">      26 </span>            : /**
 <span class="lineNum">      27 </span>            :  * Pseudo random limits for parity
 <span class="lineNum">      28 </span>            :  */
-<span class="lineNum">      29 </span>            : #define PARITY_LIMIT(size,split,level) \
+<span class="lineNum">      29 </span>            : #define PARITY_LIMIT(size, split, level) \
 <span class="lineNum">      30 </span>            :         size ? size + (123562341 + split * 634542351 + level * 983491341) % size : 0
 <span class="lineNum">      31 </span>            : 
 <span class="lineNum">      32 </span>            : /****************************************************************************/
@@ -227,7 +227,7 @@
 <span class="lineNum">     165 </span>            :         /* now compute the size summing all the parity splits */
 <span class="lineNum">     166 </span><span class="lineCov">        487 :         size = 0;</span>
 <span class="lineNum">     167 </span>            : 
-<span class="lineNum">     168 </span><span class="lineCov">       2435 :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {</span>
+<span class="lineNum">     168 </span><span class="lineCov">       2435 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     169 </span><span class="lineCov">       1948 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     170 </span>            : 
 <span class="lineNum">     171 </span><span class="lineCov">       1948 :                 size += split-&gt;size;</span>
@@ -247,7 +247,7 @@
 <span class="lineNum">     185 </span><span class="lineCov">        621 :         handle-&gt;level = level;</span>
 <span class="lineNum">     186 </span><span class="lineCov">        621 :         handle-&gt;split_mac = 0;</span>
 <span class="lineNum">     187 </span>            : 
-<span class="lineNum">     188 </span><span class="lineCov">       3105 :         for (s = 0;s &lt; parity-&gt;split_mac;++s) {</span>
+<span class="lineNum">     188 </span><span class="lineCov">       3105 :         for (s = 0; s &lt; parity-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     189 </span><span class="lineCov">       2484 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     190 </span>            :                 int ret;
 <span class="lineNum">     191 </span>            :                 int flags;
@@ -309,7 +309,7 @@
 <span class="lineNum">     247 </span>            : 
 <span class="lineNum">     248 </span>            : bail:
 <span class="lineNum">     249 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     250 </span>            :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {
+<span class="lineNum">     250 </span>            :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {
 <span class="lineNum">     251 </span>            :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];
 <span class="lineNum">     252 </span>            :                 close(split-&gt;f);
 <span class="lineNum">     253 </span>            :                 split-&gt;f = -1;
@@ -598,7 +598,7 @@
 <span class="lineNum">     536 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     537 </span>            :         }
 <span class="lineNum">     538 </span>            : 
-<span class="lineNum">     539 </span><span class="lineCov">       3075 :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {</span>
+<span class="lineNum">     539 </span><span class="lineCov">       3075 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     540 </span><span class="lineCov">       2460 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     541 </span><span class="lineCov">       2460 :                 int is_fixed = parity_split_is_fixed(handle, s);</span>
 <span class="lineNum">     542 </span>            :                 data_off_t run;
@@ -626,7 +626,7 @@
 <span class="lineNum">     564 </span>            :                         /* otherwise tries to allocate all the needed remaining size */
 <span class="lineNum">     565 </span><span class="lineCov">       1849 :                         run = size;</span>
 <span class="lineNum">     566 </span>            :                 }
-<span class="lineNum">     567 </span>            :                 
+<span class="lineNum">     567 </span>            : 
 <span class="lineNum">     568 </span><span class="lineCov">       2460 :                 ret = parity_handle_chsize(split, run, block_size, skip_fallocate, skip_space_holder);</span>
 <span class="lineNum">     569 </span><span class="lineCov">       2460 :                 if (ret != 0) {</span>
 <span class="lineNum">     570 </span>            :                         /* LCOV_EXCL_START */
@@ -636,12 +636,12 @@
 <span class="lineNum">     574 </span>            : 
 <span class="lineNum">     575 </span><span class="lineCov">       2460 :                 if (split-&gt;st.st_size &gt; run) {</span>
 <span class="lineNum">     576 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     577 </span>            :                         log_fatal(&quot;Unexpected over resizing parity file '%s' to size %&quot; PRIu64 &quot; resulting in size %&quot; PRIu64 &quot;.\n&quot;, split-&gt;path, run, split-&gt;st.st_size);
+<span class="lineNum">     577 </span>            :                         log_fatal(&quot;Unexpected over resizing parity file '%s' to size %&quot; PRIu64 &quot; resulting in size %&quot; PRIu64 &quot;.\n&quot;, split-&gt;path, run, (uint64_t)split-&gt;st.st_size);
 <span class="lineNum">     578 </span>            :                         return -1;
 <span class="lineNum">     579 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     580 </span><span class="lineCov">       2460 :                 } else if (is_fixed &amp;&amp; split-&gt;st.st_size &lt; run) {</span>
 <span class="lineNum">     581 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     582 </span>            :                         log_fatal(&quot;Failed restoring parity file '%s' to size %&quot; PRIu64 &quot; resulting in size %&quot; PRIu64 &quot;.\n&quot;, split-&gt;path, run, split-&gt;st.st_size);
+<span class="lineNum">     582 </span>            :                         log_fatal(&quot;Failed restoring parity file '%s' to size %&quot; PRIu64 &quot; resulting in size %&quot; PRIu64 &quot;.\n&quot;, split-&gt;path, run, (uint64_t)split-&gt;st.st_size);
 <span class="lineNum">     583 </span>            :                         return -1;
 <span class="lineNum">     584 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     585 </span>            :                 } else {
@@ -675,7 +675,7 @@
 <span class="lineNum">     613 </span><span class="lineCov">        615 :         if (is_modified)</span>
 <span class="lineNum">     614 </span><span class="lineCov">        481 :                 *is_modified = 0;</span>
 <span class="lineNum">     615 </span>            : 
-<span class="lineNum">     616 </span><span class="lineCov">       3075 :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {</span>
+<span class="lineNum">     616 </span><span class="lineCov">       3075 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     617 </span><span class="lineCov">       2460 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     618 </span>            : 
 <span class="lineNum">     619 </span><span class="lineCov">       2460 :                 if (parity-&gt;split_map[s].size != split-&gt;size) {</span>
@@ -699,7 +699,7 @@
 <span class="lineNum">     637 </span>            :         /* mask of bits used by the block size */
 <span class="lineNum">     638 </span><span class="lineCov">        402 :         block_mask = ((data_off_t)block_size) - 1;</span>
 <span class="lineNum">     639 </span>            : 
-<span class="lineNum">     640 </span><span class="lineCov">       2006 :         for (s = 0;s &lt; parity-&gt;split_mac;++s) {</span>
+<span class="lineNum">     640 </span><span class="lineCov">       2006 :         for (s = 0; s &lt; parity-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     641 </span><span class="lineCov">       1605 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     642 </span>            :                 int ret;
 <span class="lineNum">     643 </span>            :                 int flags;
@@ -763,7 +763,7 @@
 <span class="lineNum">     701 </span>            : 
 <span class="lineNum">     702 </span>            : bail:
 <span class="lineNum">     703 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     704 </span>            :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {
+<span class="lineNum">     704 </span>            :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {
 <span class="lineNum">     705 </span>            :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];
 <span class="lineNum">     706 </span>            :                 close(split-&gt;f);
 <span class="lineNum">     707 </span>            :                 split-&gt;f = -1;
@@ -777,7 +777,7 @@
 <span class="lineNum">     715 </span>            : #if HAVE_FSYNC
 <span class="lineNum">     716 </span>            :         unsigned s;
 <span class="lineNum">     717 </span>            : 
-<span class="lineNum">     718 </span><span class="lineCov">       2345 :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {</span>
+<span class="lineNum">     718 </span><span class="lineCov">       2345 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     719 </span><span class="lineCov">       1876 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     720 </span>            :                 int ret;
 <span class="lineNum">     721 </span>            : 
@@ -802,7 +802,7 @@
 <span class="lineNum">     740 </span>            :         unsigned s;
 <span class="lineNum">     741 </span><span class="lineCov">       1022 :         int f_ret = 0;</span>
 <span class="lineNum">     742 </span>            : 
-<span class="lineNum">     743 </span><span class="lineCov">       5110 :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {</span>
+<span class="lineNum">     743 </span><span class="lineCov">       5110 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span>
 <span class="lineNum">     744 </span><span class="lineCov">       4088 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     745 </span>            :                 int ret;
 <span class="lineNum">     746 </span>            : 
@@ -826,44 +826,44 @@
 <span class="lineNum">     764 </span><span class="lineCov">       1022 :         return f_ret;</span>
 <a name="765"><span class="lineNum">     765 </span>            : }</a>
 <span class="lineNum">     766 </span>            : 
-<span class="lineNum">     767 </span><span class="lineCov">    4114072 : struct snapraid_split_handle* parity_split_find(struct snapraid_parity_handle* handle, data_off_t* offset)</span>
+<span class="lineNum">     767 </span><span class="lineCov">    4111987 : struct snapraid_split_handle* parity_split_find(struct snapraid_parity_handle* handle, data_off_t* offset)</span>
 <span class="lineNum">     768 </span>            : {
 <span class="lineNum">     769 </span>            :         unsigned s;
 <span class="lineNum">     770 </span>            : 
-<span class="lineNum">     771 </span><span class="lineCov">    4114072 :         if (*offset &lt; 0)</span>
+<span class="lineNum">     771 </span><span class="lineCov">    4111987 :         if (*offset &lt; 0)</span>
 <span class="lineNum">     772 </span><span class="lineNoCov">          0 :                 return 0;</span>
 <span class="lineNum">     773 </span>            : 
-<span class="lineNum">     774 </span><span class="lineCov">    6502675 :         for (s = 0;s &lt; handle-&gt;split_mac;++s) {</span>
-<span class="lineNum">     775 </span><span class="lineCov">    6491315 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
+<span class="lineNum">     774 </span><span class="lineCov">    6499462 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span>
+<span class="lineNum">     775 </span><span class="lineCov">    6488102 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span>
 <span class="lineNum">     776 </span>            : 
-<span class="lineNum">     777 </span><span class="lineCov">    6491315 :                 if (*offset &lt; split-&gt;size)</span>
-<span class="lineNum">     778 </span><span class="lineCov">    4102712 :                         return split;</span>
+<span class="lineNum">     777 </span><span class="lineCov">    6488102 :                 if (*offset &lt; split-&gt;size)</span>
+<span class="lineNum">     778 </span><span class="lineCov">    4100627 :                         return split;</span>
 <span class="lineNum">     779 </span>            : 
-<span class="lineNum">     780 </span><span class="lineCov">    2388603 :                 *offset -= split-&gt;size;</span>
+<span class="lineNum">     780 </span><span class="lineCov">    2387475 :                 *offset -= split-&gt;size;</span>
 <span class="lineNum">     781 </span>            :         }
 <span class="lineNum">     782 </span>            : 
 <span class="lineNum">     783 </span><span class="lineCov">      11360 :         return 0;</span>
 <a name="784"><span class="lineNum">     784 </span>            : }</a>
 <span class="lineNum">     785 </span>            : 
-<span class="lineNum">     786 </span><span class="lineCov">     612363 : int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span>
+<span class="lineNum">     786 </span><span class="lineCov">     610499 : int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span>
 <span class="lineNum">     787 </span>            : {
 <span class="lineNum">     788 </span>            :         ssize_t write_ret;
 <span class="lineNum">     789 </span>            :         data_off_t offset;
 <span class="lineNum">     790 </span>            :         struct snapraid_split_handle* split;
 <span class="lineNum">     791 </span>            :         int ret;
 <span class="lineNum">     792 </span>            : 
-<span class="lineNum">     793 </span><span class="lineCov">     612363 :         offset = pos * (data_off_t)block_size;</span>
+<span class="lineNum">     793 </span><span class="lineCov">     610499 :         offset = pos * (data_off_t)block_size;</span>
 <span class="lineNum">     794 </span>            : 
-<span class="lineNum">     795 </span><span class="lineCov">     612363 :         split = parity_split_find(handle, &amp;offset);</span>
-<span class="lineNum">     796 </span><span class="lineCov">     612400 :         if (!split) {</span>
+<span class="lineNum">     795 </span><span class="lineCov">     610499 :         split = parity_split_find(handle, &amp;offset);</span>
+<span class="lineNum">     796 </span><span class="lineCov">     611049 :         if (!split) {</span>
 <span class="lineNum">     797 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     798 </span>            :                 log_fatal(&quot;Writing parity data outside range at extra offset %&quot; PRIu64 &quot;.\n&quot;, offset);
 <span class="lineNum">     799 </span>            :                 return -1;
 <span class="lineNum">     800 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     801 </span>            :         }
 <span class="lineNum">     802 </span>            : 
-<span class="lineNum">     803 </span><span class="lineCov">     612400 :         write_ret = pwrite(split-&gt;f, block_buffer, block_size, offset);</span>
-<span class="lineNum">     804 </span><span class="lineCov">     612277 :         if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */</span>
+<span class="lineNum">     803 </span><span class="lineCov">     611049 :         write_ret = pwrite(split-&gt;f, block_buffer, block_size, offset);</span>
+<span class="lineNum">     804 </span><span class="lineCov">     606938 :         if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */</span>
 <span class="lineNum">     805 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     806 </span>            :                 if (errno == ENOSPC) {
 <span class="lineNum">     807 </span>            :                         log_fatal(&quot;Failed to grow parity file '%s' using write due lack of space.\n&quot;, split-&gt;path);
@@ -874,18 +874,18 @@
 <span class="lineNum">     812 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     813 </span>            :         }
 <span class="lineNum">     814 </span>            : 
-<span class="lineNum">     815 </span><span class="lineCov">     612277 :         ret = advise_write(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span>
-<span class="lineNum">     816 </span><span class="lineCov">     612100 :         if (ret != 0) {</span>
+<span class="lineNum">     815 </span><span class="lineCov">     606938 :         ret = advise_write(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span>
+<span class="lineNum">     816 </span><span class="lineCov">     607802 :         if (ret != 0) {</span>
 <span class="lineNum">     817 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     818 </span>            :                 log_fatal(&quot;Error advising parity file '%s'. %s.\n&quot;, split-&gt;path, strerror(errno));
 <span class="lineNum">     819 </span>            :                 return -1;
 <span class="lineNum">     820 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     821 </span>            :         }
 <span class="lineNum">     822 </span>            : 
-<span class="lineNum">     823 </span><span class="lineCov">     612100 :         return 0;</span>
+<span class="lineNum">     823 </span><span class="lineCov">     607802 :         return 0;</span>
 <a name="824"><span class="lineNum">     824 </span>            : }</a>
 <span class="lineNum">     825 </span>            : 
-<span class="lineNum">     826 </span><span class="lineCov">    3501740 : int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)</span>
+<span class="lineNum">     826 </span><span class="lineCov">    3501702 : int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)</span>
 <span class="lineNum">     827 </span>            : {
 <span class="lineNum">     828 </span>            :         ssize_t read_ret;
 <span class="lineNum">     829 </span>            :         data_off_t offset;
@@ -893,44 +893,44 @@
 <span class="lineNum">     831 </span>            :         struct snapraid_split_handle* split;
 <span class="lineNum">     832 </span>            :         int ret;
 <span class="lineNum">     833 </span>            : 
-<span class="lineNum">     834 </span><span class="lineCov">    3501740 :         offset = pos * (data_off_t)block_size;</span>
+<span class="lineNum">     834 </span><span class="lineCov">    3501702 :         offset = pos * (data_off_t)block_size;</span>
 <span class="lineNum">     835 </span>            : 
-<span class="lineNum">     836 </span><span class="lineCov">    3501740 :         split = parity_split_find(handle, &amp;offset);</span>
-<span class="lineNum">     837 </span><span class="lineCov">    3501789 :         if (!split) {</span>
+<span class="lineNum">     836 </span><span class="lineCov">    3501702 :         split = parity_split_find(handle, &amp;offset);</span>
+<span class="lineNum">     837 </span><span class="lineCov">    3501739 :         if (!split) {</span>
 <span class="lineNum">     838 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     839 </span>            :                 out(&quot;Reading parity data outside range at extra offset %&quot; PRIu64 &quot;.\n&quot;, offset);
 <span class="lineNum">     840 </span>            :                 return -1;
 <span class="lineNum">     841 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     842 </span>            :         }
 <span class="lineNum">     843 </span>            : 
-<span class="lineNum">     844 </span><span class="lineCov">    3490429 :         count = 0;</span>
+<span class="lineNum">     844 </span><span class="lineCov">    3490379 :         count = 0;</span>
 <span class="lineNum">     845 </span>            :         do {
-<span class="lineNum">     846 </span><span class="lineCov">    3490283 :                 read_ret = pread(split-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
-<span class="lineNum">     847 </span><span class="lineCov">    3490289 :                 if (read_ret &lt; 0) {</span>
+<span class="lineNum">     846 </span><span class="lineCov">    3490327 :                 read_ret = pread(split-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
+<span class="lineNum">     847 </span><span class="lineCov">    3490305 :                 if (read_ret &lt; 0) {</span>
 <span class="lineNum">     848 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     849 </span>            :                         out(&quot;Error reading file '%s' at offset %&quot; PRIu64 &quot; for size %u. %s.\n&quot;, split-&gt;path, offset + count, block_size - count, strerror(errno));
 <span class="lineNum">     850 </span>            :                         return -1;
 <span class="lineNum">     851 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     852 </span>            :                 }
-<span class="lineNum">     853 </span><span class="lineCov">    3490289 :                 if (read_ret == 0) {</span>
+<span class="lineNum">     853 </span><span class="lineCov">    3490305 :                 if (read_ret == 0) {</span>
 <span class="lineNum">     854 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     855 </span>            :                         out(&quot;Unexpected end of file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, split-&gt;path, offset, strerror(errno));
 <span class="lineNum">     856 </span>            :                         return -1;
 <span class="lineNum">     857 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     858 </span>            :                 }
 <span class="lineNum">     859 </span>            : 
-<span class="lineNum">     860 </span><span class="lineCov">    3490289 :                 count += read_ret;</span>
-<span class="lineNum">     861 </span><span class="lineCov">    3490289 :         } while (count &lt; block_size);</span>
+<span class="lineNum">     860 </span><span class="lineCov">    3490305 :                 count += read_ret;</span>
+<span class="lineNum">     861 </span><span class="lineCov">    3490305 :         } while (count &lt; block_size);</span>
 <span class="lineNum">     862 </span>            : 
-<span class="lineNum">     863 </span><span class="lineCov">    3490435 :         ret = advise_read(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span>
-<span class="lineNum">     864 </span><span class="lineCov">    3490346 :         if (ret != 0) {</span>
+<span class="lineNum">     863 </span><span class="lineCov">    3490357 :         ret = advise_read(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span>
+<span class="lineNum">     864 </span><span class="lineCov">    3490309 :         if (ret != 0) {</span>
 <span class="lineNum">     865 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     866 </span>            :                 out(&quot;Error advising parity file '%s'. %s.\n&quot;, split-&gt;path, strerror(errno));
 <span class="lineNum">     867 </span>            :                 return -1;
 <span class="lineNum">     868 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     869 </span>            :         }
 <span class="lineNum">     870 </span>            : 
-<span class="lineNum">     871 </span><span class="lineCov">    3490346 :         return block_size;</span>
+<span class="lineNum">     871 </span><span class="lineCov">    3490309 :         return block_size;</span>
 <span class="lineNum">     872 </span>            : }
 <span class="lineNum">     873 </span>            : 
 </pre>
@@ -941,7 +941,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 

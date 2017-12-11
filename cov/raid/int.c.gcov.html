@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - int.c<span style="font-size: 80%;"> (source / <a href="int.c.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - int.c<span style="font-size: 80%;"> (source / <a href="int.c.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">240</td>
-            <td class="headerCovTableEntry">240</td>
+            <td class="headerCovTableEntry">241</td>
+            <td class="headerCovTableEntry">241</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">11</td>
@@ -80,9 +80,9 @@
 <span class="lineNum">      18 </span>            : /*
 <a name="19"><span class="lineNum">      19 </span>            :  * GEN1 (RAID5 with xor) 32bit C implementation</a>
 <span class="lineNum">      20 </span>            :  */
-<span class="lineNum">      21 </span><span class="lineCov">        118 : void raid_gen1_int32(int nd, size_t size, void **vv)</span>
+<span class="lineNum">      21 </span><span class="lineCov">        129 : void raid_gen1_int32(int nd, size_t size, void **vv)</span>
 <span class="lineNum">      22 </span>            : {
-<span class="lineNum">      23 </span><span class="lineCov">        118 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">      23 </span><span class="lineCov">        129 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">      24 </span>            :         uint8_t *p;
 <span class="lineNum">      25 </span>            :         int d, l;
 <span class="lineNum">      26 </span>            :         size_t i;
@@ -90,27 +90,27 @@
 <span class="lineNum">      28 </span>            :         uint32_t p0;
 <span class="lineNum">      29 </span>            :         uint32_t p1;
 <span class="lineNum">      30 </span>            : 
-<span class="lineNum">      31 </span><span class="lineCov">        118 :         l = nd - 1;</span>
-<span class="lineNum">      32 </span><span class="lineCov">        118 :         p = v[nd];</span>
+<span class="lineNum">      31 </span><span class="lineCov">        129 :         l = nd - 1;</span>
+<span class="lineNum">      32 </span><span class="lineCov">        129 :         p = v[nd];</span>
 <span class="lineNum">      33 </span>            : 
-<span class="lineNum">      34 </span><span class="lineCov">    3768534 :         for (i = 0; i &lt; size; i += 8) {</span>
-<span class="lineNum">      35 </span><span class="lineCov">    3768416 :                 p0 = v_32(v[l][i]);</span>
-<span class="lineNum">      36 </span><span class="lineCov">    3768416 :                 p1 = v_32(v[l][i + 4]);</span>
-<span class="lineNum">      37 </span><span class="lineCov">   30148640 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
-<span class="lineNum">      38 </span><span class="lineCov">   26380224 :                         p0 ^= v_32(v[d][i]);</span>
-<span class="lineNum">      39 </span><span class="lineCov">   26380224 :                         p1 ^= v_32(v[d][i + 4]);</span>
+<span class="lineNum">      34 </span><span class="lineCov">    4128993 :         for (i = 0; i &lt; size; i += 8) {</span>
+<span class="lineNum">      35 </span><span class="lineCov">    4128864 :                 p0 = v_32(v[l][i]);</span>
+<span class="lineNum">      36 </span><span class="lineCov">    4128864 :                 p1 = v_32(v[l][i + 4]);</span>
+<span class="lineNum">      37 </span><span class="lineCov">   33032224 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
+<span class="lineNum">      38 </span><span class="lineCov">   28903360 :                         p0 ^= v_32(v[d][i]);</span>
+<span class="lineNum">      39 </span><span class="lineCov">   28903360 :                         p1 ^= v_32(v[d][i + 4]);</span>
 <span class="lineNum">      40 </span>            :                 }
-<span class="lineNum">      41 </span><span class="lineCov">    3768416 :                 v_32(p[i]) = p0;</span>
-<span class="lineNum">      42 </span><span class="lineCov">    3768416 :                 v_32(p[i + 4]) = p1;</span>
+<span class="lineNum">      41 </span><span class="lineCov">    4128864 :                 v_32(p[i]) = p0;</span>
+<span class="lineNum">      42 </span><span class="lineCov">    4128864 :                 v_32(p[i + 4]) = p1;</span>
 <span class="lineNum">      43 </span>            :         }
-<span class="lineNum">      44 </span><span class="lineCov">        118 : }</span>
+<span class="lineNum">      44 </span><span class="lineCov">        129 : }</span>
 <span class="lineNum">      45 </span>            : 
 <span class="lineNum">      46 </span>            : /*
 <a name="47"><span class="lineNum">      47 </span>            :  * GEN1 (RAID5 with xor) 64bit C implementation</a>
 <span class="lineNum">      48 </span>            :  */
-<span class="lineNum">      49 </span><span class="lineCov">        183 : void raid_gen1_int64(int nd, size_t size, void **vv)</span>
+<span class="lineNum">      49 </span><span class="lineCov">        245 : void raid_gen1_int64(int nd, size_t size, void **vv)</span>
 <span class="lineNum">      50 </span>            : {
-<span class="lineNum">      51 </span><span class="lineCov">        183 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">      51 </span><span class="lineCov">        245 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">      52 </span>            :         uint8_t *p;
 <span class="lineNum">      53 </span>            :         int d, l;
 <span class="lineNum">      54 </span>            :         size_t i;
@@ -118,27 +118,27 @@
 <span class="lineNum">      56 </span>            :         uint64_t p0;
 <span class="lineNum">      57 </span>            :         uint64_t p1;
 <span class="lineNum">      58 </span>            : 
-<span class="lineNum">      59 </span><span class="lineCov">        183 :         l = nd - 1;</span>
-<span class="lineNum">      60 </span><span class="lineCov">        183 :         p = v[nd];</span>
+<span class="lineNum">      59 </span><span class="lineCov">        245 :         l = nd - 1;</span>
+<span class="lineNum">      60 </span><span class="lineCov">        245 :         p = v[nd];</span>
 <span class="lineNum">      61 </span>            : 
-<span class="lineNum">      62 </span><span class="lineCov">    2949351 :         for (i = 0; i &lt; size; i += 16) {</span>
-<span class="lineNum">      63 </span><span class="lineCov">    2949168 :                 p0 = v_64(v[l][i]);</span>
-<span class="lineNum">      64 </span><span class="lineCov">    2949168 :                 p1 = v_64(v[l][i + 8]);</span>
-<span class="lineNum">      65 </span><span class="lineCov">   23594000 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
-<span class="lineNum">      66 </span><span class="lineCov">   20644832 :                         p0 ^= v_64(v[d][i]);</span>
-<span class="lineNum">      67 </span><span class="lineCov">   20644832 :                         p1 ^= v_64(v[d][i + 8]);</span>
+<span class="lineNum">      62 </span><span class="lineCov">    3965221 :         for (i = 0; i &lt; size; i += 16) {</span>
+<span class="lineNum">      63 </span><span class="lineCov">    3964976 :                 p0 = v_64(v[l][i]);</span>
+<span class="lineNum">      64 </span><span class="lineCov">    3964976 :                 p1 = v_64(v[l][i + 8]);</span>
+<span class="lineNum">      65 </span><span class="lineCov">   31720464 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
+<span class="lineNum">      66 </span><span class="lineCov">   27755488 :                         p0 ^= v_64(v[d][i]);</span>
+<span class="lineNum">      67 </span><span class="lineCov">   27755488 :                         p1 ^= v_64(v[d][i + 8]);</span>
 <span class="lineNum">      68 </span>            :                 }
-<span class="lineNum">      69 </span><span class="lineCov">    2949168 :                 v_64(p[i]) = p0;</span>
-<span class="lineNum">      70 </span><span class="lineCov">    2949168 :                 v_64(p[i + 8]) = p1;</span>
+<span class="lineNum">      69 </span><span class="lineCov">    3964976 :                 v_64(p[i]) = p0;</span>
+<span class="lineNum">      70 </span><span class="lineCov">    3964976 :                 v_64(p[i + 8]) = p1;</span>
 <span class="lineNum">      71 </span>            :         }
-<span class="lineNum">      72 </span><span class="lineCov">        183 : }</span>
+<span class="lineNum">      72 </span><span class="lineCov">        245 : }</span>
 <span class="lineNum">      73 </span>            : 
 <span class="lineNum">      74 </span>            : /*
 <a name="75"><span class="lineNum">      75 </span>            :  * GEN2 (RAID6 with powers of 2) 32bit C implementation</a>
 <span class="lineNum">      76 </span>            :  */
-<span class="lineNum">      77 </span><span class="lineCov">         47 : void raid_gen2_int32(int nd, size_t size, void **vv)</span>
+<span class="lineNum">      77 </span><span class="lineCov">         51 : void raid_gen2_int32(int nd, size_t size, void **vv)</span>
 <span class="lineNum">      78 </span>            : {
-<span class="lineNum">      79 </span><span class="lineCov">         47 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">      79 </span><span class="lineCov">         51 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">      80 </span>            :         uint8_t *p;
 <span class="lineNum">      81 </span>            :         uint8_t *q;
 <span class="lineNum">      82 </span>            :         int d, l;
@@ -147,39 +147,39 @@
 <span class="lineNum">      85 </span>            :         uint32_t d0, q0, p0;
 <span class="lineNum">      86 </span>            :         uint32_t d1, q1, p1;
 <span class="lineNum">      87 </span>            : 
-<span class="lineNum">      88 </span><span class="lineCov">         47 :         l = nd - 1;</span>
-<span class="lineNum">      89 </span><span class="lineCov">         47 :         p = v[nd];</span>
-<span class="lineNum">      90 </span><span class="lineCov">         47 :         q = v[nd + 1];</span>
+<span class="lineNum">      88 </span><span class="lineCov">         51 :         l = nd - 1;</span>
+<span class="lineNum">      89 </span><span class="lineCov">         51 :         p = v[nd];</span>
+<span class="lineNum">      90 </span><span class="lineCov">         51 :         q = v[nd + 1];</span>
 <span class="lineNum">      91 </span>            : 
-<span class="lineNum">      92 </span><span class="lineCov">    1441935 :         for (i = 0; i &lt; size; i += 8) {</span>
-<span class="lineNum">      93 </span><span class="lineCov">    1441888 :                 q0 = p0 = v_32(v[l][i]);</span>
-<span class="lineNum">      94 </span><span class="lineCov">    1441888 :                 q1 = p1 = v_32(v[l][i + 4]);</span>
-<span class="lineNum">      95 </span><span class="lineCov">   11536416 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
-<span class="lineNum">      96 </span><span class="lineCov">   10094528 :                         d0 = v_32(v[d][i]);</span>
-<span class="lineNum">      97 </span><span class="lineCov">   10094528 :                         d1 = v_32(v[d][i + 4]);</span>
+<span class="lineNum">      92 </span><span class="lineCov">    1573011 :         for (i = 0; i &lt; size; i += 8) {</span>
+<span class="lineNum">      93 </span><span class="lineCov">    1572960 :                 q0 = p0 = v_32(v[l][i]);</span>
+<span class="lineNum">      94 </span><span class="lineCov">    1572960 :                 q1 = p1 = v_32(v[l][i + 4]);</span>
+<span class="lineNum">      95 </span><span class="lineCov">   12584992 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
+<span class="lineNum">      96 </span><span class="lineCov">   11012032 :                         d0 = v_32(v[d][i]);</span>
+<span class="lineNum">      97 </span><span class="lineCov">   11012032 :                         d1 = v_32(v[d][i + 4]);</span>
 <span class="lineNum">      98 </span>            : 
-<span class="lineNum">      99 </span><span class="lineCov">   10094528 :                         p0 ^= d0;</span>
-<span class="lineNum">     100 </span><span class="lineCov">   10094528 :                         p1 ^= d1;</span>
+<span class="lineNum">      99 </span><span class="lineCov">   11012032 :                         p0 ^= d0;</span>
+<span class="lineNum">     100 </span><span class="lineCov">   11012032 :                         p1 ^= d1;</span>
 <span class="lineNum">     101 </span>            : 
-<span class="lineNum">     102 </span><span class="lineCov">   10094528 :                         q0 = x2_32(q0);</span>
-<span class="lineNum">     103 </span><span class="lineCov">   10094528 :                         q1 = x2_32(q1);</span>
+<span class="lineNum">     102 </span><span class="lineCov">   11012032 :                         q0 = x2_32(q0);</span>
+<span class="lineNum">     103 </span><span class="lineCov">   11012032 :                         q1 = x2_32(q1);</span>
 <span class="lineNum">     104 </span>            : 
-<span class="lineNum">     105 </span><span class="lineCov">   10094528 :                         q0 ^= d0;</span>
-<span class="lineNum">     106 </span><span class="lineCov">   10094528 :                         q1 ^= d1;</span>
+<span class="lineNum">     105 </span><span class="lineCov">   11012032 :                         q0 ^= d0;</span>
+<span class="lineNum">     106 </span><span class="lineCov">   11012032 :                         q1 ^= d1;</span>
 <span class="lineNum">     107 </span>            :                 }
-<span class="lineNum">     108 </span><span class="lineCov">    1441888 :                 v_32(p[i]) = p0;</span>
-<span class="lineNum">     109 </span><span class="lineCov">    1441888 :                 v_32(p[i + 4]) = p1;</span>
-<span class="lineNum">     110 </span><span class="lineCov">    1441888 :                 v_32(q[i]) = q0;</span>
-<span class="lineNum">     111 </span><span class="lineCov">    1441888 :                 v_32(q[i + 4]) = q1;</span>
+<span class="lineNum">     108 </span><span class="lineCov">    1572960 :                 v_32(p[i]) = p0;</span>
+<span class="lineNum">     109 </span><span class="lineCov">    1572960 :                 v_32(p[i + 4]) = p1;</span>
+<span class="lineNum">     110 </span><span class="lineCov">    1572960 :                 v_32(q[i]) = q0;</span>
+<span class="lineNum">     111 </span><span class="lineCov">    1572960 :                 v_32(q[i + 4]) = q1;</span>
 <span class="lineNum">     112 </span>            :         }
-<span class="lineNum">     113 </span><span class="lineCov">         47 : }</span>
+<span class="lineNum">     113 </span><span class="lineCov">         51 : }</span>
 <span class="lineNum">     114 </span>            : 
 <span class="lineNum">     115 </span>            : /*
 <a name="116"><span class="lineNum">     116 </span>            :  * GEN2 (RAID6 with powers of 2) 64bit C implementation</a>
 <span class="lineNum">     117 </span>            :  */
-<span class="lineNum">     118 </span><span class="lineCov">         47 : void raid_gen2_int64(int nd, size_t size, void **vv)</span>
+<span class="lineNum">     118 </span><span class="lineCov">         95 : void raid_gen2_int64(int nd, size_t size, void **vv)</span>
 <span class="lineNum">     119 </span>            : {
-<span class="lineNum">     120 </span><span class="lineCov">         47 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">     120 </span><span class="lineCov">         95 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">     121 </span>            :         uint8_t *p;
 <span class="lineNum">     122 </span>            :         uint8_t *q;
 <span class="lineNum">     123 </span>            :         int d, l;
@@ -188,32 +188,32 @@
 <span class="lineNum">     126 </span>            :         uint64_t d0, q0, p0;
 <span class="lineNum">     127 </span>            :         uint64_t d1, q1, p1;
 <span class="lineNum">     128 </span>            : 
-<span class="lineNum">     129 </span><span class="lineCov">         47 :         l = nd - 1;</span>
-<span class="lineNum">     130 </span><span class="lineCov">         47 :         p = v[nd];</span>
-<span class="lineNum">     131 </span><span class="lineCov">         47 :         q = v[nd + 1];</span>
+<span class="lineNum">     129 </span><span class="lineCov">         95 :         l = nd - 1;</span>
+<span class="lineNum">     130 </span><span class="lineCov">         95 :         p = v[nd];</span>
+<span class="lineNum">     131 </span><span class="lineCov">         95 :         q = v[nd + 1];</span>
 <span class="lineNum">     132 </span>            : 
-<span class="lineNum">     133 </span><span class="lineCov">     720991 :         for (i = 0; i &lt; size; i += 16) {</span>
-<span class="lineNum">     134 </span><span class="lineCov">     720944 :                 q0 = p0 = v_64(v[l][i]);</span>
-<span class="lineNum">     135 </span><span class="lineCov">     720944 :                 q1 = p1 = v_64(v[l][i + 8]);</span>
-<span class="lineNum">     136 </span><span class="lineCov">    5768208 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
-<span class="lineNum">     137 </span><span class="lineCov">    5047264 :                         d0 = v_64(v[d][i]);</span>
-<span class="lineNum">     138 </span><span class="lineCov">    5047264 :                         d1 = v_64(v[d][i + 8]);</span>
+<span class="lineNum">     133 </span><span class="lineCov">    1507471 :         for (i = 0; i &lt; size; i += 16) {</span>
+<span class="lineNum">     134 </span><span class="lineCov">    1507376 :                 q0 = p0 = v_64(v[l][i]);</span>
+<span class="lineNum">     135 </span><span class="lineCov">    1507376 :                 q1 = p1 = v_64(v[l][i + 8]);</span>
+<span class="lineNum">     136 </span><span class="lineCov">   12059664 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
+<span class="lineNum">     137 </span><span class="lineCov">   10552288 :                         d0 = v_64(v[d][i]);</span>
+<span class="lineNum">     138 </span><span class="lineCov">   10552288 :                         d1 = v_64(v[d][i + 8]);</span>
 <span class="lineNum">     139 </span>            : 
-<span class="lineNum">     140 </span><span class="lineCov">    5047264 :                         p0 ^= d0;</span>
-<span class="lineNum">     141 </span><span class="lineCov">    5047264 :                         p1 ^= d1;</span>
+<span class="lineNum">     140 </span><span class="lineCov">   10552288 :                         p0 ^= d0;</span>
+<span class="lineNum">     141 </span><span class="lineCov">   10552288 :                         p1 ^= d1;</span>
 <span class="lineNum">     142 </span>            : 
-<span class="lineNum">     143 </span><span class="lineCov">    5047264 :                         q0 = x2_64(q0);</span>
-<span class="lineNum">     144 </span><span class="lineCov">    5047264 :                         q1 = x2_64(q1);</span>
+<span class="lineNum">     143 </span><span class="lineCov">   10552288 :                         q0 = x2_64(q0);</span>
+<span class="lineNum">     144 </span><span class="lineCov">   10552288 :                         q1 = x2_64(q1);</span>
 <span class="lineNum">     145 </span>            : 
-<span class="lineNum">     146 </span><span class="lineCov">    5047264 :                         q0 ^= d0;</span>
-<span class="lineNum">     147 </span><span class="lineCov">    5047264 :                         q1 ^= d1;</span>
+<span class="lineNum">     146 </span><span class="lineCov">   10552288 :                         q0 ^= d0;</span>
+<span class="lineNum">     147 </span><span class="lineCov">   10552288 :                         q1 ^= d1;</span>
 <span class="lineNum">     148 </span>            :                 }
-<span class="lineNum">     149 </span><span class="lineCov">     720944 :                 v_64(p[i]) = p0;</span>
-<span class="lineNum">     150 </span><span class="lineCov">     720944 :                 v_64(p[i + 8]) = p1;</span>
-<span class="lineNum">     151 </span><span class="lineCov">     720944 :                 v_64(q[i]) = q0;</span>
-<span class="lineNum">     152 </span><span class="lineCov">     720944 :                 v_64(q[i + 8]) = q1;</span>
+<span class="lineNum">     149 </span><span class="lineCov">    1507376 :                 v_64(p[i]) = p0;</span>
+<span class="lineNum">     150 </span><span class="lineCov">    1507376 :                 v_64(p[i + 8]) = p1;</span>
+<span class="lineNum">     151 </span><span class="lineCov">    1507376 :                 v_64(q[i]) = q0;</span>
+<span class="lineNum">     152 </span><span class="lineCov">    1507376 :                 v_64(q[i + 8]) = q1;</span>
 <span class="lineNum">     153 </span>            :         }
-<span class="lineNum">     154 </span><span class="lineCov">         47 : }</span>
+<span class="lineNum">     154 </span><span class="lineCov">         95 : }</span>
 <span class="lineNum">     155 </span>            : 
 <span class="lineNum">     156 </span>            : /*
 <span class="lineNum">     157 </span>            :  * GEN3 (triple parity with Cauchy matrix) 8bit C implementation
@@ -223,9 +223,9 @@
 <span class="lineNum">     161 </span>            :  * But this is only a kind of reference function, and we are not really
 <a name="162"><span class="lineNum">     162 </span>            :  * interested in speed.</a>
 <span class="lineNum">     163 </span>            :  */
-<span class="lineNum">     164 </span><span class="lineCov">         26 : void raid_gen3_int8(int nd, size_t size, void **vv)</span>
+<span class="lineNum">     164 </span><span class="lineCov">         30 : void raid_gen3_int8(int nd, size_t size, void **vv)</span>
 <span class="lineNum">     165 </span>            : {
-<span class="lineNum">     166 </span><span class="lineCov">         26 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">     166 </span><span class="lineCov">         30 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">     167 </span>            :         uint8_t *p;
 <span class="lineNum">     168 </span>            :         uint8_t *q;
 <span class="lineNum">     169 </span>            :         uint8_t *r;
@@ -234,33 +234,33 @@
 <span class="lineNum">     172 </span>            : 
 <span class="lineNum">     173 </span>            :         uint8_t d0, r0, q0, p0;
 <span class="lineNum">     174 </span>            : 
-<span class="lineNum">     175 </span><span class="lineCov">         26 :         l = nd - 1;</span>
-<span class="lineNum">     176 </span><span class="lineCov">         26 :         p = v[nd];</span>
-<span class="lineNum">     177 </span><span class="lineCov">         26 :         q = v[nd + 1];</span>
-<span class="lineNum">     178 </span><span class="lineCov">         26 :         r = v[nd + 2];</span>
+<span class="lineNum">     175 </span><span class="lineCov">         30 :         l = nd - 1;</span>
+<span class="lineNum">     176 </span><span class="lineCov">         30 :         p = v[nd];</span>
+<span class="lineNum">     177 </span><span class="lineCov">         30 :         q = v[nd + 1];</span>
+<span class="lineNum">     178 </span><span class="lineCov">         30 :         r = v[nd + 2];</span>
 <span class="lineNum">     179 </span>            : 
-<span class="lineNum">     180 </span><span class="lineCov">    6291994 :         for (i = 0; i &lt; size; i += 1) {</span>
-<span class="lineNum">     181 </span><span class="lineCov">    6291968 :                 p0 = q0 = r0 = 0;</span>
-<span class="lineNum">     182 </span><span class="lineCov">   50340096 :                 for (d = l; d &gt; 0; --d) {</span>
-<span class="lineNum">     183 </span><span class="lineCov">   44048128 :                         d0 = v_8(v[d][i]);</span>
+<span class="lineNum">     180 </span><span class="lineCov">    7340574 :         for (i = 0; i &lt; size; i += 1) {</span>
+<span class="lineNum">     181 </span><span class="lineCov">    7340544 :                 p0 = q0 = r0 = 0;</span>
+<span class="lineNum">     182 </span><span class="lineCov">   58728704 :                 for (d = l; d &gt; 0; --d) {</span>
+<span class="lineNum">     183 </span><span class="lineCov">   51388160 :                         d0 = v_8(v[d][i]);</span>
 <span class="lineNum">     184 </span>            : 
-<span class="lineNum">     185 </span><span class="lineCov">   44048128 :                         p0 ^= d0;</span>
-<span class="lineNum">     186 </span><span class="lineCov">   44048128 :                         q0 ^= gfmul[d0][gfgen[1][d]];</span>
-<span class="lineNum">     187 </span><span class="lineCov">   44048128 :                         r0 ^= gfmul[d0][gfgen[2][d]];</span>
+<span class="lineNum">     185 </span><span class="lineCov">   51388160 :                         p0 ^= d0;</span>
+<span class="lineNum">     186 </span><span class="lineCov">   51388160 :                         q0 ^= gfmul[d0][gfgen[1][d]];</span>
+<span class="lineNum">     187 </span><span class="lineCov">   51388160 :                         r0 ^= gfmul[d0][gfgen[2][d]];</span>
 <span class="lineNum">     188 </span>            :                 }
 <span class="lineNum">     189 </span>            : 
 <span class="lineNum">     190 </span>            :                 /* first disk with all coefficients at 1 */
-<span class="lineNum">     191 </span><span class="lineCov">    6291968 :                 d0 = v_8(v[0][i]);</span>
+<span class="lineNum">     191 </span><span class="lineCov">    7340544 :                 d0 = v_8(v[0][i]);</span>
 <span class="lineNum">     192 </span>            : 
-<span class="lineNum">     193 </span><span class="lineCov">    6291968 :                 p0 ^= d0;</span>
-<span class="lineNum">     194 </span><span class="lineCov">    6291968 :                 q0 ^= d0;</span>
-<span class="lineNum">     195 </span><span class="lineCov">    6291968 :                 r0 ^= d0;</span>
+<span class="lineNum">     193 </span><span class="lineCov">    7340544 :                 p0 ^= d0;</span>
+<span class="lineNum">     194 </span><span class="lineCov">    7340544 :                 q0 ^= d0;</span>
+<span class="lineNum">     195 </span><span class="lineCov">    7340544 :                 r0 ^= d0;</span>
 <span class="lineNum">     196 </span>            : 
-<span class="lineNum">     197 </span><span class="lineCov">    6291968 :                 v_8(p[i]) = p0;</span>
-<span class="lineNum">     198 </span><span class="lineCov">    6291968 :                 v_8(q[i]) = q0;</span>
-<span class="lineNum">     199 </span><span class="lineCov">    6291968 :                 v_8(r[i]) = r0;</span>
+<span class="lineNum">     197 </span><span class="lineCov">    7340544 :                 v_8(p[i]) = p0;</span>
+<span class="lineNum">     198 </span><span class="lineCov">    7340544 :                 v_8(q[i]) = q0;</span>
+<span class="lineNum">     199 </span><span class="lineCov">    7340544 :                 v_8(r[i]) = r0;</span>
 <span class="lineNum">     200 </span>            :         }
-<span class="lineNum">     201 </span><span class="lineCov">         26 : }</span>
+<span class="lineNum">     201 </span><span class="lineCov">         30 : }</span>
 <span class="lineNum">     202 </span>            : 
 <span class="lineNum">     203 </span>            : /*
 <span class="lineNum">     204 </span>            :  * GEN4 (quad parity with Cauchy matrix) 8bit C implementation
@@ -270,9 +270,9 @@
 <span class="lineNum">     208 </span>            :  * But this is only a kind of reference function, and we are not really
 <a name="209"><span class="lineNum">     209 </span>            :  * interested in speed.</a>
 <span class="lineNum">     210 </span>            :  */
-<span class="lineNum">     211 </span><span class="lineCov">         18 : void raid_gen4_int8(int nd, size_t size, void **vv)</span>
+<span class="lineNum">     211 </span><span class="lineCov">         21 : void raid_gen4_int8(int nd, size_t size, void **vv)</span>
 <span class="lineNum">     212 </span>            : {
-<span class="lineNum">     213 </span><span class="lineCov">         18 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">     213 </span><span class="lineCov">         21 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">     214 </span>            :         uint8_t *p;
 <span class="lineNum">     215 </span>            :         uint8_t *q;
 <span class="lineNum">     216 </span>            :         uint8_t *r;
@@ -282,37 +282,37 @@
 <span class="lineNum">     220 </span>            : 
 <span class="lineNum">     221 </span>            :         uint8_t d0, s0, r0, q0, p0;
 <span class="lineNum">     222 </span>            : 
-<span class="lineNum">     223 </span><span class="lineCov">         18 :         l = nd - 1;</span>
-<span class="lineNum">     224 </span><span class="lineCov">         18 :         p = v[nd];</span>
-<span class="lineNum">     225 </span><span class="lineCov">         18 :         q = v[nd + 1];</span>
-<span class="lineNum">     226 </span><span class="lineCov">         18 :         r = v[nd + 2];</span>
-<span class="lineNum">     227 </span><span class="lineCov">         18 :         s = v[nd + 3];</span>
+<span class="lineNum">     223 </span><span class="lineCov">         21 :         l = nd - 1;</span>
+<span class="lineNum">     224 </span><span class="lineCov">         21 :         p = v[nd];</span>
+<span class="lineNum">     225 </span><span class="lineCov">         21 :         q = v[nd + 1];</span>
+<span class="lineNum">     226 </span><span class="lineCov">         21 :         r = v[nd + 2];</span>
+<span class="lineNum">     227 </span><span class="lineCov">         21 :         s = v[nd + 3];</span>
 <span class="lineNum">     228 </span>            : 
-<span class="lineNum">     229 </span><span class="lineCov">    4194834 :         for (i = 0; i &lt; size; i += 1) {</span>
-<span class="lineNum">     230 </span><span class="lineCov">    4194816 :                 p0 = q0 = r0 = s0 = 0;</span>
-<span class="lineNum">     231 </span><span class="lineCov">   33562880 :                 for (d = l; d &gt; 0; --d) {</span>
-<span class="lineNum">     232 </span><span class="lineCov">   29368064 :                         d0 = v_8(v[d][i]);</span>
+<span class="lineNum">     229 </span><span class="lineCov">    4981269 :         for (i = 0; i &lt; size; i += 1) {</span>
+<span class="lineNum">     230 </span><span class="lineCov">    4981248 :                 p0 = q0 = r0 = s0 = 0;</span>
+<span class="lineNum">     231 </span><span class="lineCov">   39854336 :                 for (d = l; d &gt; 0; --d) {</span>
+<span class="lineNum">     232 </span><span class="lineCov">   34873088 :                         d0 = v_8(v[d][i]);</span>
 <span class="lineNum">     233 </span>            : 
-<span class="lineNum">     234 </span><span class="lineCov">   29368064 :                         p0 ^= d0;</span>
-<span class="lineNum">     235 </span><span class="lineCov">   29368064 :                         q0 ^= gfmul[d0][gfgen[1][d]];</span>
-<span class="lineNum">     236 </span><span class="lineCov">   29368064 :                         r0 ^= gfmul[d0][gfgen[2][d]];</span>
-<span class="lineNum">     237 </span><span class="lineCov">   29368064 :                         s0 ^= gfmul[d0][gfgen[3][d]];</span>
+<span class="lineNum">     234 </span><span class="lineCov">   34873088 :                         p0 ^= d0;</span>
+<span class="lineNum">     235 </span><span class="lineCov">   34873088 :                         q0 ^= gfmul[d0][gfgen[1][d]];</span>
+<span class="lineNum">     236 </span><span class="lineCov">   34873088 :                         r0 ^= gfmul[d0][gfgen[2][d]];</span>
+<span class="lineNum">     237 </span><span class="lineCov">   34873088 :                         s0 ^= gfmul[d0][gfgen[3][d]];</span>
 <span class="lineNum">     238 </span>            :                 }
 <span class="lineNum">     239 </span>            : 
 <span class="lineNum">     240 </span>            :                 /* first disk with all coefficients at 1 */
-<span class="lineNum">     241 </span><span class="lineCov">    4194816 :                 d0 = v_8(v[0][i]);</span>
+<span class="lineNum">     241 </span><span class="lineCov">    4981248 :                 d0 = v_8(v[0][i]);</span>
 <span class="lineNum">     242 </span>            : 
-<span class="lineNum">     243 </span><span class="lineCov">    4194816 :                 p0 ^= d0;</span>
-<span class="lineNum">     244 </span><span class="lineCov">    4194816 :                 q0 ^= d0;</span>
-<span class="lineNum">     245 </span><span class="lineCov">    4194816 :                 r0 ^= d0;</span>
-<span class="lineNum">     246 </span><span class="lineCov">    4194816 :                 s0 ^= d0;</span>
+<span class="lineNum">     243 </span><span class="lineCov">    4981248 :                 p0 ^= d0;</span>
+<span class="lineNum">     244 </span><span class="lineCov">    4981248 :                 q0 ^= d0;</span>
+<span class="lineNum">     245 </span><span class="lineCov">    4981248 :                 r0 ^= d0;</span>
+<span class="lineNum">     246 </span><span class="lineCov">    4981248 :                 s0 ^= d0;</span>
 <span class="lineNum">     247 </span>            : 
-<span class="lineNum">     248 </span><span class="lineCov">    4194816 :                 v_8(p[i]) = p0;</span>
-<span class="lineNum">     249 </span><span class="lineCov">    4194816 :                 v_8(q[i]) = q0;</span>
-<span class="lineNum">     250 </span><span class="lineCov">    4194816 :                 v_8(r[i]) = r0;</span>
-<span class="lineNum">     251 </span><span class="lineCov">    4194816 :                 v_8(s[i]) = s0;</span>
+<span class="lineNum">     248 </span><span class="lineCov">    4981248 :                 v_8(p[i]) = p0;</span>
+<span class="lineNum">     249 </span><span class="lineCov">    4981248 :                 v_8(q[i]) = q0;</span>
+<span class="lineNum">     250 </span><span class="lineCov">    4981248 :                 v_8(r[i]) = r0;</span>
+<span class="lineNum">     251 </span><span class="lineCov">    4981248 :                 v_8(s[i]) = s0;</span>
 <span class="lineNum">     252 </span>            :         }
-<span class="lineNum">     253 </span><span class="lineCov">         18 : }</span>
+<span class="lineNum">     253 </span><span class="lineCov">         21 : }</span>
 <span class="lineNum">     254 </span>            : 
 <span class="lineNum">     255 </span>            : /*
 <span class="lineNum">     256 </span>            :  * GEN5 (penta parity with Cauchy matrix) 8bit C implementation
@@ -460,7 +460,7 @@
 <span class="lineNum">     398 </span>            :         /* if it's RAID5 uses the faster function */
 <span class="lineNum">     399 </span><span class="lineCov">        164 :         if (ip[0] == 0) {</span>
 <span class="lineNum">     400 </span><span class="lineCov">         24 :                 raid_rec1of1(id, nd, size, vv);</span>
-<span class="lineNum">     401 </span><span class="lineCov">        188 :                 return;</span>
+<span class="lineNum">     401 </span><span class="lineCov">         24 :                 return;</span>
 <span class="lineNum">     402 </span>            :         }
 <span class="lineNum">     403 </span>            : 
 <span class="lineNum">     404 </span>            :         /* setup the coefficients matrix */
@@ -499,7 +499,7 @@
 <a name="437"><span class="lineNum">     437 </span>            :  * we solve inverting the coefficients matrix.</a>
 <span class="lineNum">     438 </span>            :  */
 <span class="lineNum">     439 </span><span class="lineCov">       1220 : void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)</span>
-<span class="lineNum">     440 </span>            : {
+<span class="lineNum">     440 </span><span class="lineCov">       1220 : {</span>
 <span class="lineNum">     441 </span><span class="lineCov">       1220 :         uint8_t **v = (uint8_t **)vv;</span>
 <span class="lineNum">     442 </span>            :         uint8_t *p;
 <span class="lineNum">     443 </span>            :         uint8_t *pa;
@@ -517,7 +517,7 @@
 <span class="lineNum">     455 </span>            :         /* if it's RAID6 recovering with P and Q uses the faster function */
 <span class="lineNum">     456 </span><span class="lineCov">       1220 :         if (ip[0] == 0 &amp;&amp; ip[1] == 1) {</span>
 <span class="lineNum">     457 </span><span class="lineCov">        132 :                 raid_rec2of2_int8(id, ip, nd, size, vv);</span>
-<span class="lineNum">     458 </span><span class="lineCov">       1352 :                 return;</span>
+<span class="lineNum">     458 </span><span class="lineCov">        132 :                 return;</span>
 <span class="lineNum">     459 </span>            :         }
 <span class="lineNum">     460 </span>            : 
 <span class="lineNum">     461 </span>            :         /* setup the coefficients matrix */
@@ -624,7 +624,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 

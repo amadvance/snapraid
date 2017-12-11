@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - selftest.c<span style="font-size: 80%;"> (source / <a href="selftest.c.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - selftest.c<span style="font-size: 80%;"> (source / <a href="selftest.c.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">145</td>
-            <td class="headerCovTableEntry">145</td>
+            <td class="headerCovTableEntry">147</td>
+            <td class="headerCovTableEntry">147</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">8</td>
@@ -421,282 +421,285 @@
 <span class="lineNum">     359 </span><span class="lineCov">        256 :                 *(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) = i;</span>
 <span class="lineNum">     360 </span>            :         }
 <span class="lineNum">     361 </span>            : 
-<span class="lineNum">     362 </span><span class="lineCov">          1 :         if (tommy_array_memory_usage(&amp;array) &lt; TOMMY_SIZE * sizeof(void*)) {</span>
-<span class="lineNum">     363 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     364 </span>            :                 goto bail;
-<span class="lineNum">     365 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     366 </span>            :         }
-<span class="lineNum">     367 </span><span class="lineCov">          1 :         if (tommy_arrayblkof_memory_usage(&amp;arrayblkof) &lt; TOMMY_SIZE * sizeof(unsigned)) {</span>
-<span class="lineNum">     368 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     369 </span>            :                 goto bail;
-<span class="lineNum">     370 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     371 </span>            :         }
-<span class="lineNum">     372 </span>            : 
-<span class="lineNum">     373 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
-<span class="lineNum">     374 </span><span class="lineCov">        256 :                 if (tommy_array_get(&amp;array, i) != &amp;node[i]) {</span>
-<span class="lineNum">     375 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     376 </span>            :                         goto bail;
-<span class="lineNum">     377 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     378 </span>            :                 }
-<span class="lineNum">     379 </span><span class="lineCov">        256 :                 if (*(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) != i) {</span>
-<span class="lineNum">     380 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     381 </span>            :                         goto bail;
-<span class="lineNum">     382 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     383 </span>            :                 }
-<span class="lineNum">     384 </span>            :         }
-<span class="lineNum">     385 </span>            : 
-<span class="lineNum">     386 </span><span class="lineCov">          1 :         tommy_arrayblkof_done(&amp;arrayblkof);</span>
-<span class="lineNum">     387 </span><span class="lineCov">          1 :         tommy_array_done(&amp;array);</span>
+<span class="lineNum">     362 </span><span class="lineCov">          1 :         tommy_array_grow(&amp;array, TOMMY_SIZE);</span>
+<span class="lineNum">     363 </span><span class="lineCov">          1 :         tommy_arrayblkof_grow(&amp;arrayblkof, TOMMY_SIZE);</span>
+<span class="lineNum">     364 </span>            : 
+<span class="lineNum">     365 </span><span class="lineCov">          1 :         if (tommy_array_memory_usage(&amp;array) &lt; TOMMY_SIZE * sizeof(void*)) {</span>
+<span class="lineNum">     366 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     367 </span>            :                 goto bail;
+<span class="lineNum">     368 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     369 </span>            :         }
+<span class="lineNum">     370 </span><span class="lineCov">          1 :         if (tommy_arrayblkof_memory_usage(&amp;arrayblkof) &lt; TOMMY_SIZE * sizeof(unsigned)) {</span>
+<span class="lineNum">     371 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     372 </span>            :                 goto bail;
+<span class="lineNum">     373 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     374 </span>            :         }
+<span class="lineNum">     375 </span>            : 
+<span class="lineNum">     376 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
+<span class="lineNum">     377 </span><span class="lineCov">        256 :                 if (tommy_array_get(&amp;array, i) != &amp;node[i]) {</span>
+<span class="lineNum">     378 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     379 </span>            :                         goto bail;
+<span class="lineNum">     380 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     381 </span>            :                 }
+<span class="lineNum">     382 </span><span class="lineCov">        256 :                 if (*(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) != i) {</span>
+<span class="lineNum">     383 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     384 </span>            :                         goto bail;
+<span class="lineNum">     385 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     386 </span>            :                 }
+<span class="lineNum">     387 </span>            :         }
 <span class="lineNum">     388 </span>            : 
-<span class="lineNum">     389 </span><span class="lineCov">          1 :         tommy_list_init(&amp;list);</span>
-<span class="lineNum">     390 </span>            : 
-<span class="lineNum">     391 </span><span class="lineCov">          1 :         if (!tommy_list_empty(&amp;list)) {</span>
-<span class="lineNum">     392 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     393 </span>            :                 goto bail;
-<span class="lineNum">     394 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     395 </span>            :         }
-<span class="lineNum">     396 </span>            : 
-<span class="lineNum">     397 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list)) {</span>
-<span class="lineNum">     398 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     399 </span>            :                 goto bail;
-<span class="lineNum">     400 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     401 </span>            :         }
-<span class="lineNum">     402 </span>            : 
-<span class="lineNum">     403 </span><span class="lineCov">          1 :         if (tommy_list_head(&amp;list)) {</span>
-<span class="lineNum">     404 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     405 </span>            :                 goto bail;
-<span class="lineNum">     406 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     407 </span>            :         }
-<span class="lineNum">     408 </span>            : 
-<span class="lineNum">     409 </span><span class="lineCov">          1 :         tommy_list_insert_tail(&amp;list, &amp;node[0], &amp;node[0]);</span>
-<span class="lineNum">     410 </span>            : 
-<span class="lineNum">     411 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list) != tommy_list_head(&amp;list)) {</span>
-<span class="lineNum">     412 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     413 </span>            :                 goto bail;
-<span class="lineNum">     414 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     415 </span>            :         }
-<span class="lineNum">     416 </span>            : 
-<span class="lineNum">     417 </span><span class="lineCov">          1 :         tommy_hashdyn_init(&amp;hashdyn);</span>
-<span class="lineNum">     418 </span>            : 
-<span class="lineNum">     419 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
-<span class="lineNum">     420 </span><span class="lineCov">        256 :                 tommy_hashdyn_insert(&amp;hashdyn, &amp;node[i], &amp;node[i], i % 64);</span>
+<span class="lineNum">     389 </span><span class="lineCov">          1 :         tommy_arrayblkof_done(&amp;arrayblkof);</span>
+<span class="lineNum">     390 </span><span class="lineCov">          1 :         tommy_array_done(&amp;array);</span>
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span><span class="lineCov">          1 :         tommy_list_init(&amp;list);</span>
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span><span class="lineCov">          1 :         if (!tommy_list_empty(&amp;list)) {</span>
+<span class="lineNum">     395 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     396 </span>            :                 goto bail;
+<span class="lineNum">     397 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     398 </span>            :         }
+<span class="lineNum">     399 </span>            : 
+<span class="lineNum">     400 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list)) {</span>
+<span class="lineNum">     401 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     402 </span>            :                 goto bail;
+<span class="lineNum">     403 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     404 </span>            :         }
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span><span class="lineCov">          1 :         if (tommy_list_head(&amp;list)) {</span>
+<span class="lineNum">     407 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     408 </span>            :                 goto bail;
+<span class="lineNum">     409 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     410 </span>            :         }
+<span class="lineNum">     411 </span>            : 
+<span class="lineNum">     412 </span><span class="lineCov">          1 :         tommy_list_insert_tail(&amp;list, &amp;node[0], &amp;node[0]);</span>
+<span class="lineNum">     413 </span>            : 
+<span class="lineNum">     414 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list) != tommy_list_head(&amp;list)) {</span>
+<span class="lineNum">     415 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     416 </span>            :                 goto bail;
+<span class="lineNum">     417 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     418 </span>            :         }
+<span class="lineNum">     419 </span>            : 
+<span class="lineNum">     420 </span><span class="lineCov">          1 :         tommy_hashdyn_init(&amp;hashdyn);</span>
 <span class="lineNum">     421 </span>            : 
-<span class="lineNum">     422 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != TOMMY_SIZE) {</span>
-<span class="lineNum">     423 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     424 </span>            :                 goto bail;
-<span class="lineNum">     425 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     426 </span>            :         }
-<span class="lineNum">     427 </span>            : 
-<span class="lineNum">     428 </span><span class="lineCov">          1 :         if (tommy_hashdyn_memory_usage(&amp;hashdyn) &lt; TOMMY_SIZE * sizeof(tommy_node)) {</span>
-<span class="lineNum">     429 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     430 </span>            :                 goto bail;
-<span class="lineNum">     431 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     432 </span>            :         }
-<span class="lineNum">     433 </span>            : 
-<span class="lineNum">     434 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
-<span class="lineNum">     435 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach(&amp;hashdyn, tommy_test_foreach);</span>
-<span class="lineNum">     436 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
-<span class="lineNum">     437 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     438 </span>            :                 goto bail;
-<span class="lineNum">     439 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     440 </span>            :         }
-<span class="lineNum">     441 </span>            : 
-<span class="lineNum">     442 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
-<span class="lineNum">     443 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach_arg(&amp;hashdyn, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
-<span class="lineNum">     444 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
-<span class="lineNum">     445 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     446 </span>            :                 goto bail;
-<span class="lineNum">     447 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     448 </span>            :         }
-<span class="lineNum">     449 </span>            : 
-<span class="lineNum">     450 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
-<span class="lineNum">     451 </span><span class="lineCov">        128 :                 tommy_hashdyn_remove_existing(&amp;hashdyn, &amp;node[i]);</span>
+<span class="lineNum">     422 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     423 </span><span class="lineCov">        256 :                 tommy_hashdyn_insert(&amp;hashdyn, &amp;node[i], &amp;node[i], i % 64);</span>
+<span class="lineNum">     424 </span>            : 
+<span class="lineNum">     425 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != TOMMY_SIZE) {</span>
+<span class="lineNum">     426 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     427 </span>            :                 goto bail;
+<span class="lineNum">     428 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     429 </span>            :         }
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span><span class="lineCov">          1 :         if (tommy_hashdyn_memory_usage(&amp;hashdyn) &lt; TOMMY_SIZE * sizeof(tommy_node)) {</span>
+<span class="lineNum">     432 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     433 </span>            :                 goto bail;
+<span class="lineNum">     434 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     435 </span>            :         }
+<span class="lineNum">     436 </span>            : 
+<span class="lineNum">     437 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     438 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach(&amp;hashdyn, tommy_test_foreach);</span>
+<span class="lineNum">     439 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
+<span class="lineNum">     440 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     441 </span>            :                 goto bail;
+<span class="lineNum">     442 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     443 </span>            :         }
+<span class="lineNum">     444 </span>            : 
+<span class="lineNum">     445 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     446 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach_arg(&amp;hashdyn, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
+<span class="lineNum">     447 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
+<span class="lineNum">     448 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     449 </span>            :                 goto bail;
+<span class="lineNum">     450 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     451 </span>            :         }
 <span class="lineNum">     452 </span>            : 
-<span class="lineNum">     453 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i) {</span>
-<span class="lineNum">     454 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) != 0) {</span>
-<span class="lineNum">     455 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     456 </span>            :                         goto bail;
-<span class="lineNum">     457 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     458 </span>            :                 }
-<span class="lineNum">     459 </span>            :         }
-<span class="lineNum">     460 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i) {</span>
-<span class="lineNum">     461 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) == 0) {</span>
-<span class="lineNum">     462 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     463 </span>            :                         goto bail;
-<span class="lineNum">     464 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     465 </span>            :                 }
-<span class="lineNum">     466 </span>            :         }
-<span class="lineNum">     467 </span>            : 
-<span class="lineNum">     468 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != 0) {</span>
-<span class="lineNum">     469 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     470 </span>            :                 goto bail;
-<span class="lineNum">     471 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     472 </span>            :         }
-<span class="lineNum">     473 </span>            : 
-<span class="lineNum">     474 </span><span class="lineCov">          1 :         tommy_hashdyn_done(&amp;hashdyn);</span>
-<span class="lineNum">     475 </span>            : 
-<span class="lineNum">     476 </span><span class="lineCov">          1 :         tommy_tree_init(&amp;tree, tommy_test_compare);</span>
-<span class="lineNum">     477 </span>            : 
-<span class="lineNum">     478 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
-<span class="lineNum">     479 </span><span class="lineCov">        256 :                 tommy_tree_insert(&amp;tree, &amp;node[i], (void*)(uintptr_t)(i + 1));</span>
+<span class="lineNum">     453 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     454 </span><span class="lineCov">        128 :                 tommy_hashdyn_remove_existing(&amp;hashdyn, &amp;node[i]);</span>
+<span class="lineNum">     455 </span>            : 
+<span class="lineNum">     456 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i) {</span>
+<span class="lineNum">     457 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) != 0) {</span>
+<span class="lineNum">     458 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     459 </span>            :                         goto bail;
+<span class="lineNum">     460 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     461 </span>            :                 }
+<span class="lineNum">     462 </span>            :         }
+<span class="lineNum">     463 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i) {</span>
+<span class="lineNum">     464 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) == 0) {</span>
+<span class="lineNum">     465 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     466 </span>            :                         goto bail;
+<span class="lineNum">     467 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     468 </span>            :                 }
+<span class="lineNum">     469 </span>            :         }
+<span class="lineNum">     470 </span>            : 
+<span class="lineNum">     471 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != 0) {</span>
+<span class="lineNum">     472 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     473 </span>            :                 goto bail;
+<span class="lineNum">     474 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     475 </span>            :         }
+<span class="lineNum">     476 </span>            : 
+<span class="lineNum">     477 </span><span class="lineCov">          1 :         tommy_hashdyn_done(&amp;hashdyn);</span>
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span><span class="lineCov">          1 :         tommy_tree_init(&amp;tree, tommy_test_compare);</span>
 <span class="lineNum">     480 </span>            : 
-<span class="lineNum">     481 </span>            :         /* try to insert a duplicate, count should not change */
-<span class="lineNum">     482 </span><span class="lineCov">          1 :         tommy_tree_insert(&amp;tree, &amp;node[TOMMY_SIZE], (void*)(uintptr_t)1);</span>
+<span class="lineNum">     481 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     482 </span><span class="lineCov">        256 :                 tommy_tree_insert(&amp;tree, &amp;node[i], (void*)(uintptr_t)(i + 1));</span>
 <span class="lineNum">     483 </span>            : 
-<span class="lineNum">     484 </span><span class="lineCov">          1 :         if (tommy_tree_count(&amp;tree) != TOMMY_SIZE) {</span>
-<span class="lineNum">     485 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     486 </span>            :                 goto bail;
-<span class="lineNum">     487 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     488 </span>            :         }
-<span class="lineNum">     489 </span><span class="lineCov">          1 :         if (tommy_tree_memory_usage(&amp;tree) &lt; TOMMY_SIZE * sizeof(tommy_node)) {</span>
-<span class="lineNum">     490 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     491 </span>            :                 goto bail;
-<span class="lineNum">     492 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     493 </span>            :         }
-<span class="lineNum">     494 </span><span class="lineCov">          1 :         if (tommy_tree_search(&amp;tree, (void*)1) != (void*)1) {</span>
-<span class="lineNum">     495 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     496 </span>            :                 goto bail;
-<span class="lineNum">     497 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     498 </span>            :         }
-<span class="lineNum">     499 </span><span class="lineCov">          1 :         if (tommy_tree_search(&amp;tree, (void*)-1) != 0) {</span>
-<span class="lineNum">     500 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     501 </span>            :                 goto bail;
-<span class="lineNum">     502 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     503 </span>            :         }
-<span class="lineNum">     504 </span><span class="lineCov">          1 :         if (tommy_tree_search_compare(&amp;tree, tommy_test_compare, (void*)1) != (void*)1) {</span>
-<span class="lineNum">     505 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     506 </span>            :                 goto bail;
-<span class="lineNum">     507 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     508 </span>            :         }
-<span class="lineNum">     509 </span><span class="lineCov">          1 :         if (tommy_tree_search_compare(&amp;tree, tommy_test_compare, (void*)-1) != 0) {</span>
-<span class="lineNum">     510 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     511 </span>            :                 goto bail;
-<span class="lineNum">     512 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     513 </span>            :         }
-<span class="lineNum">     514 </span>            : 
-<span class="lineNum">     515 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
-<span class="lineNum">     516 </span><span class="lineCov">          1 :         tommy_tree_foreach(&amp;tree, tommy_test_foreach);</span>
-<span class="lineNum">     517 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
-<span class="lineNum">     518 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     519 </span>            :                 goto bail;
-<span class="lineNum">     520 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     521 </span>            :         }
-<span class="lineNum">     522 </span>            : 
-<span class="lineNum">     523 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
-<span class="lineNum">     524 </span><span class="lineCov">          1 :         tommy_tree_foreach_arg(&amp;tree, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
-<span class="lineNum">     525 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
-<span class="lineNum">     526 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     527 </span>            :                 goto bail;
-<span class="lineNum">     528 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     529 </span>            :         }
-<span class="lineNum">     530 </span>            : 
-<span class="lineNum">     531 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
-<span class="lineNum">     532 </span><span class="lineCov">        128 :                 tommy_tree_remove_existing(&amp;tree, &amp;node[i]);</span>
+<span class="lineNum">     484 </span>            :         /* try to insert a duplicate, count should not change */
+<span class="lineNum">     485 </span><span class="lineCov">          1 :         tommy_tree_insert(&amp;tree, &amp;node[TOMMY_SIZE], (void*)(uintptr_t)1);</span>
+<span class="lineNum">     486 </span>            : 
+<span class="lineNum">     487 </span><span class="lineCov">          1 :         if (tommy_tree_count(&amp;tree) != TOMMY_SIZE) {</span>
+<span class="lineNum">     488 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     489 </span>            :                 goto bail;
+<span class="lineNum">     490 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     491 </span>            :         }
+<span class="lineNum">     492 </span><span class="lineCov">          1 :         if (tommy_tree_memory_usage(&amp;tree) &lt; TOMMY_SIZE * sizeof(tommy_node)) {</span>
+<span class="lineNum">     493 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     494 </span>            :                 goto bail;
+<span class="lineNum">     495 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     496 </span>            :         }
+<span class="lineNum">     497 </span><span class="lineCov">          1 :         if (tommy_tree_search(&amp;tree, (void*)1) != (void*)1) {</span>
+<span class="lineNum">     498 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     499 </span>            :                 goto bail;
+<span class="lineNum">     500 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     501 </span>            :         }
+<span class="lineNum">     502 </span><span class="lineCov">          1 :         if (tommy_tree_search(&amp;tree, (void*)-1) != 0) {</span>
+<span class="lineNum">     503 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     504 </span>            :                 goto bail;
+<span class="lineNum">     505 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     506 </span>            :         }
+<span class="lineNum">     507 </span><span class="lineCov">          1 :         if (tommy_tree_search_compare(&amp;tree, tommy_test_compare, (void*)1) != (void*)1) {</span>
+<span class="lineNum">     508 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     509 </span>            :                 goto bail;
+<span class="lineNum">     510 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     511 </span>            :         }
+<span class="lineNum">     512 </span><span class="lineCov">          1 :         if (tommy_tree_search_compare(&amp;tree, tommy_test_compare, (void*)-1) != 0) {</span>
+<span class="lineNum">     513 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     514 </span>            :                 goto bail;
+<span class="lineNum">     515 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     516 </span>            :         }
+<span class="lineNum">     517 </span>            : 
+<span class="lineNum">     518 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     519 </span><span class="lineCov">          1 :         tommy_tree_foreach(&amp;tree, tommy_test_foreach);</span>
+<span class="lineNum">     520 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
+<span class="lineNum">     521 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     522 </span>            :                 goto bail;
+<span class="lineNum">     523 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     524 </span>            :         }
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     527 </span><span class="lineCov">          1 :         tommy_tree_foreach_arg(&amp;tree, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
+<span class="lineNum">     528 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE) {</span>
+<span class="lineNum">     529 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     530 </span>            :                 goto bail;
+<span class="lineNum">     531 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     532 </span>            :         }
 <span class="lineNum">     533 </span>            : 
-<span class="lineNum">     534 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i) {</span>
-<span class="lineNum">     535 </span><span class="lineCov">        128 :                 if (tommy_tree_remove(&amp;tree, (void*)(uintptr_t)(i + 1)) != 0) {</span>
-<span class="lineNum">     536 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     537 </span>            :                         goto bail;
-<span class="lineNum">     538 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     539 </span>            :                 }
-<span class="lineNum">     540 </span>            :         }
-<span class="lineNum">     541 </span>            : 
-<span class="lineNum">     542 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i) {</span>
-<span class="lineNum">     543 </span><span class="lineCov">        128 :                 if (tommy_tree_remove(&amp;tree, (void*)(uintptr_t)(i + 1)) == 0) {</span>
-<span class="lineNum">     544 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     545 </span>            :                         goto bail;
-<span class="lineNum">     546 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     547 </span>            :                 }
-<span class="lineNum">     548 </span>            :         }
-<span class="lineNum">     549 </span>            : 
-<span class="lineNum">     550 </span><span class="lineCov">          1 :         if (tommy_tree_count(&amp;tree) != 0) {</span>
-<span class="lineNum">     551 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     552 </span>            :                 goto bail;
-<span class="lineNum">     553 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     554 </span>            :         }
-<span class="lineNum">     555 </span>            : 
-<span class="lineNum">     556 </span><span class="lineCov">          2 :         return;</span>
-<span class="lineNum">     557 </span>            : bail:
-<span class="lineNum">     558 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     559 </span>            :         log_fatal(&quot;Failed tommy test\n&quot;);
-<span class="lineNum">     560 </span>            :         exit(EXIT_FAILURE);
-<span class="lineNum">     561 </span>            :         /* LCOV_EXCL_STOP */
-<a name="562"><span class="lineNum">     562 </span>            : }</a>
-<span class="lineNum">     563 </span>            : 
-<span class="lineNum">     564 </span><span class="lineCov">          1 : void selftest(void)</span>
-<span class="lineNum">     565 </span>            : {
-<span class="lineNum">     566 </span><span class="lineCov">          1 :         log_tag(&quot;selftest:\n&quot;);</span>
-<span class="lineNum">     567 </span><span class="lineCov">          1 :         log_flush();</span>
-<span class="lineNum">     568 </span>            : 
-<span class="lineNum">     569 </span><span class="lineCov">          1 :         msg_progress(&quot;Self test...\n&quot;);</span>
-<span class="lineNum">     570 </span>            : 
-<span class="lineNum">     571 </span>            :         /* large file check */
-<span class="lineNum">     572 </span>            :         if (sizeof(off_t) &lt; sizeof(uint64_t)) {
-<span class="lineNum">     573 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     574 </span>            :                 log_fatal(&quot;Missing support for large files\n&quot;);
-<span class="lineNum">     575 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     576 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     577 </span>            :         }
-<span class="lineNum">     578 </span>            : 
-<span class="lineNum">     579 </span><span class="lineCov">          1 :         test_hash();</span>
-<span class="lineNum">     580 </span><span class="lineCov">          1 :         test_crc32c();</span>
-<span class="lineNum">     581 </span><span class="lineCov">          1 :         test_tommy();</span>
-<span class="lineNum">     582 </span><span class="lineCov">          1 :         if (raid_selftest() != 0) {</span>
-<span class="lineNum">     583 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     584 </span>            :                 log_fatal(&quot;Failed SELF test\n&quot;);
-<span class="lineNum">     585 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     586 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     587 </span>            :         }
-<span class="lineNum">     588 </span><span class="lineCov">          1 :         if (raid_test_sort() != 0) {</span>
-<span class="lineNum">     589 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     590 </span>            :                 log_fatal(&quot;Failed SORT test\n&quot;);
-<span class="lineNum">     591 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     592 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     593 </span>            :         }
-<span class="lineNum">     594 </span><span class="lineCov">          1 :         if (raid_test_insert() != 0) {</span>
-<span class="lineNum">     595 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     596 </span>            :                 log_fatal(&quot;Failed INSERT test\n&quot;);
-<span class="lineNum">     597 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     598 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     599 </span>            :         }
-<span class="lineNum">     600 </span><span class="lineCov">          1 :         if (raid_test_combo() != 0) {</span>
-<span class="lineNum">     601 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     602 </span>            :                 log_fatal(&quot;Failed COMBO test\n&quot;);
-<span class="lineNum">     603 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     604 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     605 </span>            :         }
-<span class="lineNum">     606 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {</span>
-<span class="lineNum">     607 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     608 </span>            :                 log_fatal(&quot;Failed GEN Vandermonde test\n&quot;);
-<span class="lineNum">     609 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     610 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     611 </span>            :         }
-<span class="lineNum">     612 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {</span>
-<span class="lineNum">     613 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     614 </span>            :                 log_fatal(&quot;Failed REC Vandermonde test\n&quot;);
-<span class="lineNum">     615 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     616 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     617 </span>            :         }
-<span class="lineNum">     618 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {</span>
-<span class="lineNum">     619 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     620 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test\n&quot;);
-<span class="lineNum">     621 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     622 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     623 </span>            :         }
-<span class="lineNum">     624 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {</span>
-<span class="lineNum">     625 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     626 </span>            :                 log_fatal(&quot;Failed REC Cauchy test\n&quot;);
-<span class="lineNum">     627 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     628 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     629 </span>            :         }
-<span class="lineNum">     630 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {</span>
-<span class="lineNum">     631 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     632 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test sigle data disk\n&quot;);
-<span class="lineNum">     633 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     634 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     635 </span>            :         }
-<span class="lineNum">     636 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     637 </span>            : 
+<span class="lineNum">     534 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     535 </span><span class="lineCov">        128 :                 tommy_tree_remove_existing(&amp;tree, &amp;node[i]);</span>
+<span class="lineNum">     536 </span>            : 
+<span class="lineNum">     537 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i) {</span>
+<span class="lineNum">     538 </span><span class="lineCov">        128 :                 if (tommy_tree_remove(&amp;tree, (void*)(uintptr_t)(i + 1)) != 0) {</span>
+<span class="lineNum">     539 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     540 </span>            :                         goto bail;
+<span class="lineNum">     541 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     542 </span>            :                 }
+<span class="lineNum">     543 </span>            :         }
+<span class="lineNum">     544 </span>            : 
+<span class="lineNum">     545 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i) {</span>
+<span class="lineNum">     546 </span><span class="lineCov">        128 :                 if (tommy_tree_remove(&amp;tree, (void*)(uintptr_t)(i + 1)) == 0) {</span>
+<span class="lineNum">     547 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     548 </span>            :                         goto bail;
+<span class="lineNum">     549 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     550 </span>            :                 }
+<span class="lineNum">     551 </span>            :         }
+<span class="lineNum">     552 </span>            : 
+<span class="lineNum">     553 </span><span class="lineCov">          1 :         if (tommy_tree_count(&amp;tree) != 0) {</span>
+<span class="lineNum">     554 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     555 </span>            :                 goto bail;
+<span class="lineNum">     556 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     557 </span>            :         }
+<span class="lineNum">     558 </span>            : 
+<span class="lineNum">     559 </span><span class="lineCov">          2 :         return;</span>
+<span class="lineNum">     560 </span>            : bail:
+<span class="lineNum">     561 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     562 </span>            :         log_fatal(&quot;Failed tommy test\n&quot;);
+<span class="lineNum">     563 </span>            :         exit(EXIT_FAILURE);
+<span class="lineNum">     564 </span>            :         /* LCOV_EXCL_STOP */
+<a name="565"><span class="lineNum">     565 </span>            : }</a>
+<span class="lineNum">     566 </span>            : 
+<span class="lineNum">     567 </span><span class="lineCov">          1 : void selftest(void)</span>
+<span class="lineNum">     568 </span>            : {
+<span class="lineNum">     569 </span><span class="lineCov">          1 :         log_tag(&quot;selftest:\n&quot;);</span>
+<span class="lineNum">     570 </span><span class="lineCov">          1 :         log_flush();</span>
+<span class="lineNum">     571 </span>            : 
+<span class="lineNum">     572 </span><span class="lineCov">          1 :         msg_progress(&quot;Self test...\n&quot;);</span>
+<span class="lineNum">     573 </span>            : 
+<span class="lineNum">     574 </span>            :         /* large file check */
+<span class="lineNum">     575 </span>            :         if (sizeof(off_t) &lt; sizeof(uint64_t)) {
+<span class="lineNum">     576 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     577 </span>            :                 log_fatal(&quot;Missing support for large files\n&quot;);
+<span class="lineNum">     578 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     579 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     580 </span>            :         }
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span><span class="lineCov">          1 :         test_hash();</span>
+<span class="lineNum">     583 </span><span class="lineCov">          1 :         test_crc32c();</span>
+<span class="lineNum">     584 </span><span class="lineCov">          1 :         test_tommy();</span>
+<span class="lineNum">     585 </span><span class="lineCov">          1 :         if (raid_selftest() != 0) {</span>
+<span class="lineNum">     586 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     587 </span>            :                 log_fatal(&quot;Failed SELF test\n&quot;);
+<span class="lineNum">     588 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     589 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     590 </span>            :         }
+<span class="lineNum">     591 </span><span class="lineCov">          1 :         if (raid_test_sort() != 0) {</span>
+<span class="lineNum">     592 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     593 </span>            :                 log_fatal(&quot;Failed SORT test\n&quot;);
+<span class="lineNum">     594 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     595 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     596 </span>            :         }
+<span class="lineNum">     597 </span><span class="lineCov">          1 :         if (raid_test_insert() != 0) {</span>
+<span class="lineNum">     598 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     599 </span>            :                 log_fatal(&quot;Failed INSERT test\n&quot;);
+<span class="lineNum">     600 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     601 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     602 </span>            :         }
+<span class="lineNum">     603 </span><span class="lineCov">          1 :         if (raid_test_combo() != 0) {</span>
+<span class="lineNum">     604 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     605 </span>            :                 log_fatal(&quot;Failed COMBO test\n&quot;);
+<span class="lineNum">     606 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     607 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     608 </span>            :         }
+<span class="lineNum">     609 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {</span>
+<span class="lineNum">     610 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     611 </span>            :                 log_fatal(&quot;Failed GEN Vandermonde test\n&quot;);
+<span class="lineNum">     612 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     613 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     614 </span>            :         }
+<span class="lineNum">     615 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {</span>
+<span class="lineNum">     616 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     617 </span>            :                 log_fatal(&quot;Failed REC Vandermonde test\n&quot;);
+<span class="lineNum">     618 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     619 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     620 </span>            :         }
+<span class="lineNum">     621 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {</span>
+<span class="lineNum">     622 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     623 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test\n&quot;);
+<span class="lineNum">     624 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     625 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     626 </span>            :         }
+<span class="lineNum">     627 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {</span>
+<span class="lineNum">     628 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     629 </span>            :                 log_fatal(&quot;Failed REC Cauchy test\n&quot;);
+<span class="lineNum">     630 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     631 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     632 </span>            :         }
+<span class="lineNum">     633 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {</span>
+<span class="lineNum">     634 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     635 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test sigle data disk\n&quot;);
+<span class="lineNum">     636 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     637 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     638 </span>            :         }
+<span class="lineNum">     639 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     640 </span>            : 
 </pre>
       </td>
     </tr>
@@ -705,7 +708,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 

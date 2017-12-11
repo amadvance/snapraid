@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - gf.h<span style="font-size: 80%;"> (source / <a href="gf.h.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - gf.h<span style="font-size: 80%;"> (source / <a href="gf.h.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">0</td>
@@ -88,7 +88,7 @@
 <span class="lineNum">      26 </span>            :  */
 <span class="lineNum">      27 </span>            : static __always_inline uint8_t mul(uint8_t a, uint8_t b)
 <span class="lineNum">      28 </span>            : {
-<span class="lineNum">      29 </span><span class="lineCov">   23793674 :         return gfmul[a][b];</span>
+<span class="lineNum">      29 </span><span class="lineCov">   23796250 :         return gfmul[a][b];</span>
 <span class="lineNum">      30 </span>            : }
 <span class="lineNum">      31 </span>            : 
 <span class="lineNum">      32 </span>            : /*
@@ -97,9 +97,9 @@
 <span class="lineNum">      35 </span>            :  */
 <span class="lineNum">      36 </span>            : static __always_inline uint8_t inv(uint8_t v)
 <span class="lineNum">      37 </span>            : {
-<span class="lineNum">      38 </span><span class="lineCov">     635642 :         BUG_ON(v == 0); /* division by zero */</span>
+<span class="lineNum">      38 </span><span class="lineCov">     636114 :         BUG_ON(v == 0); /* division by zero */</span>
 <span class="lineNum">      39 </span>            : 
-<span class="lineNum">      40 </span><span class="lineCov">     635642 :         return gfinv[v];</span>
+<span class="lineNum">      40 </span><span class="lineCov">     636114 :         return gfinv[v];</span>
 <span class="lineNum">      41 </span>            : }
 <span class="lineNum">      42 </span>            : 
 <span class="lineNum">      43 </span>            : /*
@@ -125,7 +125,7 @@
 <span class="lineNum">      63 </span>            :  */
 <span class="lineNum">      64 </span>            : static __always_inline uint8_t A(int p, int d)
 <span class="lineNum">      65 </span>            : {
-<span class="lineNum">      66 </span><span class="lineCov">    2604878 :         return gfgen[p][d];</span>
+<span class="lineNum">      66 </span><span class="lineCov">    2605672 :         return gfgen[p][d];</span>
 <span class="lineNum">      67 </span>            : }
 <span class="lineNum">      68 </span>            : 
 <span class="lineNum">      69 </span>            : /*
@@ -148,12 +148,12 @@
 <span class="lineNum">      86 </span>            :  */
 <span class="lineNum">      87 </span>            : static __always_inline uint32_t x2_32(uint32_t v)
 <span class="lineNum">      88 </span>            : {
-<span class="lineNum">      89 </span><span class="lineCov">   33036096 :         uint32_t mask = v &amp; 0x80808080U;</span>
+<span class="lineNum">      89 </span><span class="lineCov">   35788608 :         uint32_t mask = v &amp; 0x80808080U;</span>
 <span class="lineNum">      90 </span>            : 
-<span class="lineNum">      91 </span><span class="lineCov">   33036096 :         mask = (mask &lt;&lt; 1) - (mask &gt;&gt; 7);</span>
-<span class="lineNum">      92 </span><span class="lineCov">   33036096 :         v = (v &lt;&lt; 1) &amp; 0xfefefefeU;</span>
-<span class="lineNum">      93 </span><span class="lineCov">   33036096 :         v ^= mask &amp; 0x1d1d1d1dU;</span>
-<span class="lineNum">      94 </span><span class="lineCov">   33036096 :         return v;</span>
+<span class="lineNum">      91 </span><span class="lineCov">   35788608 :         mask = (mask &lt;&lt; 1) - (mask &gt;&gt; 7);</span>
+<span class="lineNum">      92 </span><span class="lineCov">   35788608 :         v = (v &lt;&lt; 1) &amp; 0xfefefefeU;</span>
+<span class="lineNum">      93 </span><span class="lineCov">   35788608 :         v ^= mask &amp; 0x1d1d1d1dU;</span>
+<span class="lineNum">      94 </span><span class="lineCov">   35788608 :         return v;</span>
 <span class="lineNum">      95 </span>            : }
 <span class="lineNum">      96 </span>            : 
 <span class="lineNum">      97 </span>            : /*
@@ -161,12 +161,12 @@
 <span class="lineNum">      99 </span>            :  */
 <span class="lineNum">     100 </span>            : static __always_inline uint64_t x2_64(uint64_t v)
 <span class="lineNum">     101 </span>            : {
-<span class="lineNum">     102 </span><span class="lineCov">   16518048 :         uint64_t mask = v &amp; 0x8080808080808080ULL;</span>
+<span class="lineNum">     102 </span><span class="lineCov">   34409376 :         uint64_t mask = v &amp; 0x8080808080808080ULL;</span>
 <span class="lineNum">     103 </span>            : 
-<span class="lineNum">     104 </span><span class="lineCov">   16518048 :         mask = (mask &lt;&lt; 1) - (mask &gt;&gt; 7);</span>
-<span class="lineNum">     105 </span><span class="lineCov">   16518048 :         v = (v &lt;&lt; 1) &amp; 0xfefefefefefefefeULL;</span>
-<span class="lineNum">     106 </span><span class="lineCov">   16518048 :         v ^= mask &amp; 0x1d1d1d1d1d1d1d1dULL;</span>
-<span class="lineNum">     107 </span><span class="lineCov">   16518048 :         return v;</span>
+<span class="lineNum">     104 </span><span class="lineCov">   34409376 :         mask = (mask &lt;&lt; 1) - (mask &gt;&gt; 7);</span>
+<span class="lineNum">     105 </span><span class="lineCov">   34409376 :         v = (v &lt;&lt; 1) &amp; 0xfefefefefefefefeULL;</span>
+<span class="lineNum">     106 </span><span class="lineCov">   34409376 :         v ^= mask &amp; 0x1d1d1d1d1d1d1d1dULL;</span>
+<span class="lineNum">     107 </span><span class="lineCov">   34409376 :         return v;</span>
 <span class="lineNum">     108 </span>            : }
 <span class="lineNum">     109 </span>            : 
 <span class="lineNum">     110 </span>            : /*
@@ -174,12 +174,12 @@
 <span class="lineNum">     112 </span>            :  */
 <span class="lineNum">     113 </span>            : static __always_inline uint32_t d2_32(uint32_t v)
 <span class="lineNum">     114 </span>            : {
-<span class="lineNum">     115 </span><span class="lineCov">   12847040 :         uint32_t mask = v &amp; 0x01010101U;</span>
+<span class="lineNum">     115 </span><span class="lineCov">   13764544 :         uint32_t mask = v &amp; 0x01010101U;</span>
 <span class="lineNum">     116 </span>            : 
-<span class="lineNum">     117 </span><span class="lineCov">   12847040 :         mask = (mask &lt;&lt; 8) - mask;</span>
-<span class="lineNum">     118 </span><span class="lineCov">   12847040 :         v = (v &gt;&gt; 1) &amp; 0x7f7f7f7fU;</span>
-<span class="lineNum">     119 </span><span class="lineCov">   12847040 :         v ^= mask &amp; 0x8e8e8e8eU;</span>
-<span class="lineNum">     120 </span><span class="lineCov">   12847040 :         return v;</span>
+<span class="lineNum">     117 </span><span class="lineCov">   13764544 :         mask = (mask &lt;&lt; 8) - mask;</span>
+<span class="lineNum">     118 </span><span class="lineCov">   13764544 :         v = (v &gt;&gt; 1) &amp; 0x7f7f7f7fU;</span>
+<span class="lineNum">     119 </span><span class="lineCov">   13764544 :         v ^= mask &amp; 0x8e8e8e8eU;</span>
+<span class="lineNum">     120 </span><span class="lineCov">   13764544 :         return v;</span>
 <span class="lineNum">     121 </span>            : }
 <span class="lineNum">     122 </span>            : 
 <span class="lineNum">     123 </span>            : /*
@@ -187,12 +187,12 @@
 <span class="lineNum">     125 </span>            :  */
 <span class="lineNum">     126 </span>            : static __always_inline uint64_t d2_64(uint64_t v)
 <span class="lineNum">     127 </span>            : {
-<span class="lineNum">     128 </span><span class="lineCov">    6423520 :         uint64_t mask = v &amp; 0x0101010101010101ULL;</span>
+<span class="lineNum">     128 </span><span class="lineCov">   13304800 :         uint64_t mask = v &amp; 0x0101010101010101ULL;</span>
 <span class="lineNum">     129 </span>            : 
-<span class="lineNum">     130 </span><span class="lineCov">    6423520 :         mask = (mask &lt;&lt; 8) - mask;</span>
-<span class="lineNum">     131 </span><span class="lineCov">    6423520 :         v = (v &gt;&gt; 1) &amp; 0x7f7f7f7f7f7f7f7fULL;</span>
-<span class="lineNum">     132 </span><span class="lineCov">    6423520 :         v ^= mask &amp; 0x8e8e8e8e8e8e8e8eULL;</span>
-<span class="lineNum">     133 </span><span class="lineCov">    6423520 :         return v;</span>
+<span class="lineNum">     130 </span><span class="lineCov">   13304800 :         mask = (mask &lt;&lt; 8) - mask;</span>
+<span class="lineNum">     131 </span><span class="lineCov">   13304800 :         v = (v &gt;&gt; 1) &amp; 0x7f7f7f7f7f7f7f7fULL;</span>
+<span class="lineNum">     132 </span><span class="lineCov">   13304800 :         v ^= mask &amp; 0x8e8e8e8e8e8e8e8eULL;</span>
+<span class="lineNum">     133 </span><span class="lineCov">   13304800 :         return v;</span>
 <span class="lineNum">     134 </span>            : }
 <span class="lineNum">     135 </span>            : 
 <span class="lineNum">     136 </span>            : #endif
@@ -205,7 +205,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 

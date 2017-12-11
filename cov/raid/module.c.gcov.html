@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - module.c<span style="font-size: 80%;"> (source / <a href="module.c.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - module.c<span style="font-size: 80%;"> (source / <a href="module.c.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">159</td>
-            <td class="headerCovTableEntry">159</td>
-            <td class="headerCovTableEntryHi">100.0 %</td>
+            <td class="headerCovTableEntry">167</td>
+            <td class="headerCovTableEntry">172</td>
+            <td class="headerCovTableEntryHi">97.1 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -89,13 +89,13 @@
 <span class="lineNum">      27 </span><span class="lineCov">        271 :         raid_gen_ptr[5] = raid_gen6_int8;</span>
 <span class="lineNum">      28 </span>            : 
 <span class="lineNum">      29 </span>            :         if (sizeof(void *) == 4) {
-<span class="lineNum">      30 </span><span class="lineCov">        271 :                 raid_gen_ptr[0] = raid_gen1_int32;</span>
-<span class="lineNum">      31 </span><span class="lineCov">        271 :                 raid_gen_ptr[1] = raid_gen2_int32;</span>
-<span class="lineNum">      32 </span><span class="lineCov">        271 :                 raid_genz_ptr = raid_genz_int32;</span>
+<span class="lineNum">      30 </span>            :                 raid_gen_ptr[0] = raid_gen1_int32;
+<span class="lineNum">      31 </span>            :                 raid_gen_ptr[1] = raid_gen2_int32;
+<span class="lineNum">      32 </span>            :                 raid_genz_ptr = raid_genz_int32;
 <span class="lineNum">      33 </span>            :         } else {
-<span class="lineNum">      34 </span>            :                 raid_gen_ptr[0] = raid_gen1_int64;
-<span class="lineNum">      35 </span>            :                 raid_gen_ptr[1] = raid_gen2_int64;
-<span class="lineNum">      36 </span>            :                 raid_genz_ptr = raid_genz_int64;
+<span class="lineNum">      34 </span><span class="lineCov">        271 :                 raid_gen_ptr[0] = raid_gen1_int64;</span>
+<span class="lineNum">      35 </span><span class="lineCov">        271 :                 raid_gen_ptr[1] = raid_gen2_int64;</span>
+<span class="lineNum">      36 </span><span class="lineCov">        271 :                 raid_genz_ptr = raid_genz_int64;</span>
 <span class="lineNum">      37 </span>            :         }
 <span class="lineNum">      38 </span>            : 
 <span class="lineNum">      39 </span><span class="lineCov">        271 :         raid_rec_ptr[0] = raid_rec1_int8;</span>
@@ -110,16 +110,16 @@
 <span class="lineNum">      48 </span><span class="lineCov">        271 :         if (raid_cpu_has_sse2()) {</span>
 <span class="lineNum">      49 </span><span class="lineCov">        271 :                 raid_gen_ptr[0] = raid_gen1_sse2;</span>
 <span class="lineNum">      50 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">      51 </span>            :                 if (raid_cpu_has_slowextendedreg()) {
-<span class="lineNum">      52 </span>            :                         raid_gen_ptr[1] = raid_gen2_sse2;
+<span class="lineNum">      51 </span><span class="lineCov">        271 :                 if (raid_cpu_has_slowextendedreg()) {</span>
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :                         raid_gen_ptr[1] = raid_gen2_sse2;</span>
 <span class="lineNum">      53 </span>            :                 } else {
-<span class="lineNum">      54 </span>            :                         raid_gen_ptr[1] = raid_gen2_sse2ext;
+<span class="lineNum">      54 </span><span class="lineCov">        271 :                         raid_gen_ptr[1] = raid_gen2_sse2ext;</span>
 <span class="lineNum">      55 </span>            :                 }
 <span class="lineNum">      56 </span>            :                 /* note that raid_cpu_has_slowextendedreg() doesn't affect parz */
-<span class="lineNum">      57 </span>            :                 raid_genz_ptr = raid_genz_sse2ext;
+<span class="lineNum">      57 </span><span class="lineCov">        271 :                 raid_genz_ptr = raid_genz_sse2ext;</span>
 <span class="lineNum">      58 </span>            : #else
-<span class="lineNum">      59 </span><span class="lineCov">        271 :                 raid_gen_ptr[1] = raid_gen2_sse2;</span>
-<span class="lineNum">      60 </span><span class="lineCov">        271 :                 raid_genz_ptr = raid_genz_sse2;</span>
+<span class="lineNum">      59 </span>            :                 raid_gen_ptr[1] = raid_gen2_sse2;
+<span class="lineNum">      60 </span>            :                 raid_genz_ptr = raid_genz_sse2;
 <span class="lineNum">      61 </span>            : #endif
 <span class="lineNum">      62 </span>            :         }
 <span class="lineNum">      63 </span>            : #endif
@@ -127,22 +127,22 @@
 <span class="lineNum">      65 </span>            : #ifdef CONFIG_SSSE3
 <span class="lineNum">      66 </span><span class="lineCov">        271 :         if (raid_cpu_has_ssse3()) {</span>
 <span class="lineNum">      67 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">      68 </span>            :                 if (raid_cpu_has_slowextendedreg()) {
-<span class="lineNum">      69 </span>            :                         raid_gen3_ptr = raid_gen3_ssse3;
-<span class="lineNum">      70 </span>            :                         raid_gen_ptr[3] = raid_gen4_ssse3;
-<span class="lineNum">      71 </span>            :                         raid_gen_ptr[4] = raid_gen5_ssse3;
-<span class="lineNum">      72 </span>            :                         raid_gen_ptr[5] = raid_gen6_ssse3;
+<span class="lineNum">      68 </span><span class="lineCov">        270 :                 if (raid_cpu_has_slowextendedreg()) {</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :                         raid_gen3_ptr = raid_gen3_ssse3;</span>
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :                         raid_gen_ptr[3] = raid_gen4_ssse3;</span>
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :                         raid_gen_ptr[4] = raid_gen5_ssse3;</span>
+<span class="lineNum">      72 </span><span class="lineNoCov">          0 :                         raid_gen_ptr[5] = raid_gen6_ssse3;</span>
 <span class="lineNum">      73 </span>            :                 } else {
-<span class="lineNum">      74 </span>            :                         raid_gen3_ptr = raid_gen3_ssse3ext;
-<span class="lineNum">      75 </span>            :                         raid_gen_ptr[3] = raid_gen4_ssse3ext;
-<span class="lineNum">      76 </span>            :                         raid_gen_ptr[4] = raid_gen5_ssse3ext;
-<span class="lineNum">      77 </span>            :                         raid_gen_ptr[5] = raid_gen6_ssse3ext;
+<span class="lineNum">      74 </span><span class="lineCov">        270 :                         raid_gen3_ptr = raid_gen3_ssse3ext;</span>
+<span class="lineNum">      75 </span><span class="lineCov">        270 :                         raid_gen_ptr[3] = raid_gen4_ssse3ext;</span>
+<span class="lineNum">      76 </span><span class="lineCov">        270 :                         raid_gen_ptr[4] = raid_gen5_ssse3ext;</span>
+<span class="lineNum">      77 </span><span class="lineCov">        270 :                         raid_gen_ptr[5] = raid_gen6_ssse3ext;</span>
 <span class="lineNum">      78 </span>            :                 }
 <span class="lineNum">      79 </span>            : #else
-<span class="lineNum">      80 </span><span class="lineCov">        270 :                 raid_gen3_ptr = raid_gen3_ssse3;</span>
-<span class="lineNum">      81 </span><span class="lineCov">        270 :                 raid_gen_ptr[3] = raid_gen4_ssse3;</span>
-<span class="lineNum">      82 </span><span class="lineCov">        270 :                 raid_gen_ptr[4] = raid_gen5_ssse3;</span>
-<span class="lineNum">      83 </span><span class="lineCov">        270 :                 raid_gen_ptr[5] = raid_gen6_ssse3;</span>
+<span class="lineNum">      80 </span>            :                 raid_gen3_ptr = raid_gen3_ssse3;
+<span class="lineNum">      81 </span>            :                 raid_gen_ptr[3] = raid_gen4_ssse3;
+<span class="lineNum">      82 </span>            :                 raid_gen_ptr[4] = raid_gen5_ssse3;
+<span class="lineNum">      83 </span>            :                 raid_gen_ptr[5] = raid_gen6_ssse3;
 <span class="lineNum">      84 </span>            : #endif
 <span class="lineNum">      85 </span><span class="lineCov">        270 :                 raid_rec_ptr[0] = raid_rec1_ssse3;</span>
 <span class="lineNum">      86 </span><span class="lineCov">        270 :                 raid_rec_ptr[1] = raid_rec2_ssse3;</span>
@@ -158,11 +158,11 @@
 <span class="lineNum">      96 </span><span class="lineCov">          2 :                 raid_gen_ptr[0] = raid_gen1_avx2;</span>
 <span class="lineNum">      97 </span><span class="lineCov">          2 :                 raid_gen_ptr[1] = raid_gen2_avx2;</span>
 <span class="lineNum">      98 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">      99 </span>            :                 raid_gen3_ptr = raid_gen3_avx2ext;
-<span class="lineNum">     100 </span>            :                 raid_genz_ptr = raid_genz_avx2ext;
-<span class="lineNum">     101 </span>            :                 raid_gen_ptr[3] = raid_gen4_avx2ext;
-<span class="lineNum">     102 </span>            :                 raid_gen_ptr[4] = raid_gen5_avx2ext;
-<span class="lineNum">     103 </span>            :                 raid_gen_ptr[5] = raid_gen6_avx2ext;
+<span class="lineNum">      99 </span><span class="lineCov">          2 :                 raid_gen3_ptr = raid_gen3_avx2ext;</span>
+<span class="lineNum">     100 </span><span class="lineCov">          2 :                 raid_genz_ptr = raid_genz_avx2ext;</span>
+<span class="lineNum">     101 </span><span class="lineCov">          2 :                 raid_gen_ptr[3] = raid_gen4_avx2ext;</span>
+<span class="lineNum">     102 </span><span class="lineCov">          2 :                 raid_gen_ptr[4] = raid_gen5_avx2ext;</span>
+<span class="lineNum">     103 </span><span class="lineCov">          2 :                 raid_gen_ptr[5] = raid_gen6_avx2ext;</span>
 <span class="lineNum">     104 </span>            : #endif
 <span class="lineNum">     105 </span><span class="lineCov">          2 :                 raid_rec_ptr[0] = raid_rec1_avx2;</span>
 <span class="lineNum">     106 </span><span class="lineCov">          2 :                 raid_rec_ptr[1] = raid_rec2_avx2;</span>
@@ -369,7 +369,7 @@
 <a name="307"><span class="lineNum">     307 </span>            :  * Basic functionality self test.</a>
 <span class="lineNum">     308 </span>            :  */
 <span class="lineNum">     309 </span><span class="lineCov">          1 : int raid_selftest(void)</span>
-<span class="lineNum">     310 </span>            : {
+<span class="lineNum">     310 </span><span class="lineCov">          1 : {</span>
 <span class="lineNum">     311 </span><span class="lineCov">          1 :         const int nd = TEST_COUNT;</span>
 <span class="lineNum">     312 </span><span class="lineCov">          1 :         const size_t size = TEST_SIZE;</span>
 <span class="lineNum">     313 </span><span class="lineCov">          1 :         const int nv = nd + RAID_PARITY_MAX * 2 + 1;</span>
@@ -541,7 +541,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 

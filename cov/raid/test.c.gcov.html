@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - test.c<span style="font-size: 80%;"> (source / <a href="test.c.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - test.c<span style="font-size: 80%;"> (source / <a href="test.c.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">140</td>
-            <td class="headerCovTableEntry">140</td>
+            <td class="headerCovTableEntry">153</td>
+            <td class="headerCovTableEntry">153</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -416,7 +416,7 @@
 <span class="lineNum">     354 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen1_sse2;</span>
 <span class="lineNum">     355 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen2_sse2;</span>
 <span class="lineNum">     356 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">     357 </span>            :                 f[nf++] = raid_gen2_sse2ext;
+<span class="lineNum">     357 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen2_sse2ext;</span>
 <span class="lineNum">     358 </span>            : #endif
 <span class="lineNum">     359 </span>            :         }
 <span class="lineNum">     360 </span>            : #endif
@@ -443,21 +443,21 @@
 <span class="lineNum">     381 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen5_ssse3;</span>
 <span class="lineNum">     382 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen6_ssse3;</span>
 <span class="lineNum">     383 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">     384 </span>            :                         f[nf++] = raid_gen3_ssse3ext;
-<span class="lineNum">     385 </span>            :                         f[nf++] = raid_gen4_ssse3ext;
-<span class="lineNum">     386 </span>            :                         f[nf++] = raid_gen5_ssse3ext;
-<span class="lineNum">     387 </span>            :                         f[nf++] = raid_gen6_ssse3ext;
+<span class="lineNum">     384 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen3_ssse3ext;</span>
+<span class="lineNum">     385 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen4_ssse3ext;</span>
+<span class="lineNum">     386 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen5_ssse3ext;</span>
+<span class="lineNum">     387 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen6_ssse3ext;</span>
 <span class="lineNum">     388 </span>            : #endif
 <span class="lineNum">     389 </span>            :                 }
 <span class="lineNum">     390 </span>            : #endif
 <span class="lineNum">     391 </span>            : 
 <span class="lineNum">     392 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     393 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">     394 </span>            :                 if (raid_cpu_has_avx2()) {
-<span class="lineNum">     395 </span>            :                         f[nf++] = raid_gen3_avx2ext;
-<span class="lineNum">     396 </span>            :                         f[nf++] = raid_gen4_avx2ext;
-<span class="lineNum">     397 </span>            :                         f[nf++] = raid_gen5_avx2ext;
-<span class="lineNum">     398 </span>            :                         f[nf++] = raid_gen6_avx2ext;
+<span class="lineNum">     394 </span><span class="lineCov">          2 :                 if (raid_cpu_has_avx2()) {</span>
+<span class="lineNum">     395 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen3_avx2ext;</span>
+<span class="lineNum">     396 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen4_avx2ext;</span>
+<span class="lineNum">     397 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen5_avx2ext;</span>
+<span class="lineNum">     398 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen6_avx2ext;</span>
 <span class="lineNum">     399 </span>            :                 }
 <span class="lineNum">     400 </span>            : #endif
 <span class="lineNum">     401 </span>            : #endif
@@ -471,28 +471,28 @@
 <span class="lineNum">     409 </span><span class="lineCov">          1 :                 if (raid_cpu_has_sse2()) {</span>
 <span class="lineNum">     410 </span><span class="lineCov">          1 :                         f[nf++] = raid_genz_sse2;</span>
 <span class="lineNum">     411 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">     412 </span>            :                         f[nf++] = raid_genz_sse2ext;
+<span class="lineNum">     412 </span><span class="lineCov">          1 :                         f[nf++] = raid_genz_sse2ext;</span>
 <span class="lineNum">     413 </span>            : #endif
 <span class="lineNum">     414 </span>            :                 }
 <span class="lineNum">     415 </span>            : #endif
 <span class="lineNum">     416 </span>            : 
 <span class="lineNum">     417 </span>            : #ifdef CONFIG_AVX2
 <span class="lineNum">     418 </span>            : #ifdef CONFIG_X86_64
-<span class="lineNum">     419 </span>            :                 if (raid_cpu_has_avx2())
-<span class="lineNum">     420 </span>            :                         f[nf++] = raid_genz_avx2ext;
+<span class="lineNum">     419 </span><span class="lineCov">          1 :                 if (raid_cpu_has_avx2())</span>
+<span class="lineNum">     420 </span><span class="lineCov">          1 :                         f[nf++] = raid_genz_avx2ext;</span>
 <span class="lineNum">     421 </span>            : #endif
 <span class="lineNum">     422 </span>            : #endif
 <span class="lineNum">     423 </span>            : #endif /* CONFIG_X86 */
 <span class="lineNum">     424 </span>            :         }
 <span class="lineNum">     425 </span>            : 
 <span class="lineNum">     426 </span>            :         /* check all the functions */
-<span class="lineNum">     427 </span><span class="lineCov">         46 :         for (j = 0; j &lt; nf; ++j) {</span>
+<span class="lineNum">     427 </span><span class="lineCov">         67 :         for (j = 0; j &lt; nf; ++j) {</span>
 <span class="lineNum">     428 </span>            :                 /* compute parity */
-<span class="lineNum">     429 </span><span class="lineCov">         43 :                 f[j](nd, size, v);</span>
+<span class="lineNum">     429 </span><span class="lineCov">         64 :                 f[j](nd, size, v);</span>
 <span class="lineNum">     430 </span>            : 
 <span class="lineNum">     431 </span>            :                 /* check it */
-<span class="lineNum">     432 </span><span class="lineCov">        268 :                 for (i = 0; i &lt; np; ++i) {</span>
-<span class="lineNum">     433 </span><span class="lineCov">        225 :                         if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {</span>
+<span class="lineNum">     432 </span><span class="lineCov">        406 :                 for (i = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     433 </span><span class="lineCov">        342 :                         if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {</span>
 <span class="lineNum">     434 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     435 </span>            :                                 goto bail;
 <span class="lineNum">     436 </span>            :                                 /* LCOV_EXCL_STOP */
@@ -520,7 +520,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 

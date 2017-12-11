@@ -19,7 +19,7 @@
         <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - status.c<span style="font-size: 80%;"> (source / <a href="status.c.func.html">functions</a>)</span></td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - status.c<span style="font-size: 80%;"> (source / <a href="status.c.func-sort-c.html">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="15%"></td>
             <td width="10%" class="headerCovTableHead">Hit</td>
@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">270</td>
+            <td class="headerCovTableEntry">271</td>
             <td class="headerCovTableEntry">283</td>
-            <td class="headerCovTableEntryHi">95.4 %</td>
+            <td class="headerCovTableEntryHi">95.8 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-05-13</td>
+            <td class="headerValue">2017-11-06 22:14:04</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -383,10 +383,10 @@
 <span class="lineNum">     321 </span>            :                         time_t scrub_time;
 <span class="lineNum">     322 </span>            : 
 <span class="lineNum">     323 </span><span class="lineCov">      39808 :                         if (info_get_bad(info)) {</span>
-<span class="lineNum">     324 </span><span class="lineCov">       1772 :                                 if (bad == 0)</span>
+<span class="lineNum">     324 </span><span class="lineCov">       1773 :                                 if (bad == 0)</span>
 <span class="lineNum">     325 </span><span class="lineCov">          2 :                                         bad_first = i;</span>
-<span class="lineNum">     326 </span><span class="lineCov">       1772 :                                 bad_last = i;</span>
-<span class="lineNum">     327 </span><span class="lineCov">       1772 :                                 ++bad;</span>
+<span class="lineNum">     326 </span><span class="lineCov">       1773 :                                 bad_last = i;</span>
+<span class="lineNum">     327 </span><span class="lineCov">       1773 :                                 ++bad;</span>
 <span class="lineNum">     328 </span>            :                         }
 <span class="lineNum">     329 </span>            : 
 <span class="lineNum">     330 </span><span class="lineCov">      39808 :                         if (info_get_rehash(info))</span>
@@ -395,10 +395,10 @@
 <span class="lineNum">     333 </span><span class="lineCov">      39808 :                         scrub_time = info_get_time(info);</span>
 <span class="lineNum">     334 </span>            : 
 <span class="lineNum">     335 </span><span class="lineCov">      39808 :                         if (info_get_justsynced(info)) {</span>
-<span class="lineNum">     336 </span><span class="lineCov">      20520 :                                 ++unscrubbed_blocks;</span>
+<span class="lineNum">     336 </span><span class="lineCov">      20494 :                                 ++unscrubbed_blocks;</span>
 <span class="lineNum">     337 </span>            : 
 <span class="lineNum">     338 </span>            :                                 /* mark the time as not scrubbed */
-<span class="lineNum">     339 </span><span class="lineCov">      20520 :                                 scrub_time |= TIME_NEW;</span>
+<span class="lineNum">     339 </span><span class="lineCov">      20494 :                                 scrub_time |= TIME_NEW;</span>
 <span class="lineNum">     340 </span>            :                         }
 <span class="lineNum">     341 </span>            : 
 <span class="lineNum">     342 </span><span class="lineCov">      39808 :                         timemap[count++] = scrub_time;</span>
@@ -430,16 +430,16 @@
 <span class="lineNum">     368 </span>            :         /* output the info map */
 <span class="lineNum">     369 </span><span class="lineCov">          9 :         i = 0;</span>
 <span class="lineNum">     370 </span><span class="lineCov">          9 :         log_tag(&quot;info_count:%u\n&quot;, count);</span>
-<span class="lineNum">     371 </span><span class="lineCov">         39 :         while (i &lt; count) {</span>
-<span class="lineNum">     372 </span><span class="lineCov">         21 :                 unsigned j = i + 1;</span>
-<span class="lineNum">     373 </span><span class="lineCov">      39829 :                 while (j &lt; count &amp;&amp; timemap[i] == timemap[j])</span>
-<span class="lineNum">     374 </span><span class="lineCov">      39787 :                         ++j;</span>
-<span class="lineNum">     375 </span><span class="lineCov">         21 :                 if ((timemap[i] &amp; TIME_NEW) == 0) {</span>
-<span class="lineNum">     376 </span><span class="lineCov">          7 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:scrubbed\n&quot;, (uint64_t)timemap[i], j - i);</span>
+<span class="lineNum">     371 </span><span class="lineCov">         35 :         while (i &lt; count) {</span>
+<span class="lineNum">     372 </span><span class="lineCov">         17 :                 unsigned j = i + 1;</span>
+<span class="lineNum">     373 </span><span class="lineCov">      39825 :                 while (j &lt; count &amp;&amp; timemap[i] == timemap[j])</span>
+<span class="lineNum">     374 </span><span class="lineCov">      39791 :                         ++j;</span>
+<span class="lineNum">     375 </span><span class="lineCov">         17 :                 if ((timemap[i] &amp; TIME_NEW) == 0) {</span>
+<span class="lineNum">     376 </span><span class="lineCov">          6 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:scrubbed\n&quot;, (uint64_t)timemap[i], j - i);</span>
 <span class="lineNum">     377 </span>            :                 } else {
-<span class="lineNum">     378 </span><span class="lineCov">         14 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:new\n&quot;, (uint64_t)(timemap[i] &amp; ~TIME_NEW), j - i);</span>
+<span class="lineNum">     378 </span><span class="lineCov">         11 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:new\n&quot;, (uint64_t)(timemap[i] &amp; ~TIME_NEW), j - i);</span>
 <span class="lineNum">     379 </span>            :                 }
-<span class="lineNum">     380 </span><span class="lineCov">         21 :                 i = j;</span>
+<span class="lineNum">     380 </span><span class="lineCov">         17 :                 i = j;</span>
 <span class="lineNum">     381 </span>            :         }
 <span class="lineNum">     382 </span>            : 
 <span class="lineNum">     383 </span><span class="lineCov">          9 :         oldest = timemap[0];</span>
@@ -462,14 +462,14 @@
 <span class="lineNum">     400 </span><span class="lineCov">        630 :                 step_new = 0;</span>
 <span class="lineNum">     401 </span><span class="lineCov">      41068 :                 while (barpos &lt; count &amp;&amp; timemap[barpos] &lt;= limit) {</span>
 <span class="lineNum">     402 </span><span class="lineCov">      39808 :                         if ((timemap[barpos] &amp; TIME_NEW) != 0)</span>
-<span class="lineNum">     403 </span><span class="lineCov">      20520 :                                 ++step_new;</span>
+<span class="lineNum">     403 </span><span class="lineCov">      20494 :                                 ++step_new;</span>
 <span class="lineNum">     404 </span>            :                         else
-<span class="lineNum">     405 </span><span class="lineCov">      19288 :                                 ++step_scrubbed;</span>
+<span class="lineNum">     405 </span><span class="lineCov">      19314 :                                 ++step_scrubbed;</span>
 <span class="lineNum">     406 </span><span class="lineCov">      39808 :                         ++barpos;</span>
 <span class="lineNum">     407 </span>            :                 }
 <span class="lineNum">     408 </span>            : 
 <span class="lineNum">     409 </span><span class="lineCov">        630 :                 if (step_new + step_scrubbed &gt; barmax)</span>
-<span class="lineNum">     410 </span><span class="lineCov">         12 :                         barmax = step_new + step_scrubbed;</span>
+<span class="lineNum">     410 </span><span class="lineCov">         11 :                         barmax = step_new + step_scrubbed;</span>
 <span class="lineNum">     411 </span>            : 
 <span class="lineNum">     412 </span><span class="lineCov">        630 :                 bar_scrubbed[i] = step_scrubbed;</span>
 <span class="lineNum">     413 </span><span class="lineCov">        630 :                 bar_new[i] = step_new;</span>
@@ -494,20 +494,20 @@
 <span class="lineNum">     432 </span><span class="lineCov">       9450 :                         unsigned scrubbed = bar_scrubbed[x];</span>
 <span class="lineNum">     433 </span>            : 
 <span class="lineNum">     434 </span><span class="lineCov">       9450 :                         if (both &gt; pivot_upper) {</span>
-<span class="lineNum">     435 </span><span class="lineCov">        159 :                                 if (scrubbed &gt; pivot_lower)</span>
-<span class="lineNum">     436 </span><span class="lineCov">         63 :                                         printf(&quot;*&quot;);</span>
+<span class="lineNum">     435 </span><span class="lineCov">        155 :                                 if (scrubbed &gt; pivot_lower)</span>
+<span class="lineNum">     436 </span><span class="lineCov">         60 :                                         printf(&quot;*&quot;);</span>
 <span class="lineNum">     437 </span>            :                                 else
-<span class="lineNum">     438 </span><span class="lineCov">         96 :                                         printf(&quot;o&quot;);</span>
-<span class="lineNum">     439 </span><span class="lineCov">       9291 :                         } else if (both &gt; pivot_lower) {</span>
-<span class="lineNum">     440 </span><span class="lineCov">         21 :                                 if (scrubbed == both)</span>
-<span class="lineNum">     441 </span><span class="lineCov">          7 :                                         printf(&quot;*&quot;);</span>
+<span class="lineNum">     438 </span><span class="lineCov">         95 :                                         printf(&quot;o&quot;);</span>
+<span class="lineNum">     439 </span><span class="lineCov">       9295 :                         } else if (both &gt; pivot_lower) {</span>
+<span class="lineNum">     440 </span><span class="lineCov">         17 :                                 if (scrubbed == both)</span>
+<span class="lineNum">     441 </span><span class="lineCov">          6 :                                         printf(&quot;*&quot;);</span>
 <span class="lineNum">     442 </span>            :                                 else
-<span class="lineNum">     443 </span><span class="lineCov">         14 :                                         printf(&quot;o&quot;);</span>
+<span class="lineNum">     443 </span><span class="lineCov">         11 :                                         printf(&quot;o&quot;);</span>
 <span class="lineNum">     444 </span>            :                         } else {
-<span class="lineNum">     445 </span><span class="lineCov">       9270 :                                 if (y == GRAPH_ROW - 1)</span>
-<span class="lineNum">     446 </span><span class="lineCov">        609 :                                         printf(&quot;_&quot;);</span>
+<span class="lineNum">     445 </span><span class="lineCov">       9278 :                                 if (y == GRAPH_ROW - 1)</span>
+<span class="lineNum">     446 </span><span class="lineCov">        613 :                                         printf(&quot;_&quot;);</span>
 <span class="lineNum">     447 </span>            :                                 else
-<span class="lineNum">     448 </span><span class="lineCov">       8661 :                                         printf(&quot; &quot;);</span>
+<span class="lineNum">     448 </span><span class="lineCov">       8665 :                                         printf(&quot; &quot;);</span>
 <span class="lineNum">     449 </span>            :                         }
 <span class="lineNum">     450 </span>            :                 }
 <span class="lineNum">     451 </span><span class="lineCov">        135 :                 printf(&quot;\n&quot;);</span>
@@ -544,9 +544,9 @@
 <span class="lineNum">     482 </span><span class="lineCov">          1 :                 printf(&quot;You have a rehash in progress at %u%%.\n&quot;, (count - rehash) * 100 / count);</span>
 <span class="lineNum">     483 </span>            :         } else {
 <span class="lineNum">     484 </span><span class="lineCov">          8 :                 if (state-&gt;besthash != state-&gt;hash) {</span>
-<span class="lineNum">     485 </span><span class="lineNoCov">          0 :                         printf(&quot;No rehash is in progress, but for optimal performance one is recommended.\n&quot;);</span>
+<span class="lineNum">     485 </span><span class="lineCov">          7 :                         printf(&quot;No rehash is in progress, but for optimal performance one is recommended.\n&quot;);</span>
 <span class="lineNum">     486 </span>            :                 } else {
-<span class="lineNum">     487 </span><span class="lineCov">          8 :                         printf(&quot;No rehash is in progress or needed.\n&quot;);</span>
+<span class="lineNum">     487 </span><span class="lineCov">          1 :                         printf(&quot;No rehash is in progress or needed.\n&quot;);</span>
 <span class="lineNum">     488 </span>            :                 }
 <span class="lineNum">     489 </span>            :         }
 <span class="lineNum">     490 </span>            : 
@@ -559,19 +559,19 @@
 <span class="lineNum">     497 </span>            : 
 <span class="lineNum">     498 </span>            :                 /* print some of the errors */
 <span class="lineNum">     499 </span><span class="lineCov">          2 :                 bad_print = 0;</span>
-<span class="lineNum">     500 </span><span class="lineCov">        723 :                 for (i = 0; i &lt; blockmax; ++i) {</span>
-<span class="lineNum">     501 </span><span class="lineCov">        723 :                         snapraid_info info = info_get(&amp;state-&gt;infoarr, i);</span>
+<span class="lineNum">     500 </span><span class="lineCov">        715 :                 for (i = 0; i &lt; blockmax; ++i) {</span>
+<span class="lineNum">     501 </span><span class="lineCov">        715 :                         snapraid_info info = info_get(&amp;state-&gt;infoarr, i);</span>
 <span class="lineNum">     502 </span>            : 
 <span class="lineNum">     503 </span>            :                         /* skip unused blocks */
-<span class="lineNum">     504 </span><span class="lineCov">        723 :                         if (info == 0)</span>
+<span class="lineNum">     504 </span><span class="lineCov">        715 :                         if (info == 0)</span>
 <span class="lineNum">     505 </span><span class="lineNoCov">          0 :                                 continue;</span>
 <span class="lineNum">     506 </span>            : 
-<span class="lineNum">     507 </span><span class="lineCov">        723 :                         if (info_get_bad(info)) {</span>
+<span class="lineNum">     507 </span><span class="lineCov">        715 :                         if (info_get_bad(info)) {</span>
 <span class="lineNum">     508 </span><span class="lineCov">        202 :                                 printf(&quot; %u&quot;, i);</span>
 <span class="lineNum">     509 </span><span class="lineCov">        202 :                                 ++bad_print;</span>
 <span class="lineNum">     510 </span>            :                         }
 <span class="lineNum">     511 </span>            : 
-<span class="lineNum">     512 </span><span class="lineCov">        723 :                         if (bad_print &gt; 100) {</span>
+<span class="lineNum">     512 </span><span class="lineCov">        715 :                         if (bad_print &gt; 100) {</span>
 <span class="lineNum">     513 </span><span class="lineCov">          2 :                                 printf(&quot; and %u more...&quot;, bad - bad_print);</span>
 <span class="lineNum">     514 </span><span class="lineCov">          2 :                                 break;</span>
 <span class="lineNum">     515 </span>            :                         }
@@ -599,7 +599,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
   </table>
   <br>
 
