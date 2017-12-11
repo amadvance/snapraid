@@ -247,7 +247,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 			int ret;
 
 			ret = readlink(path_next, linkto, sizeof(linkto));
-			if (ret < 0 || ret == sizeof(linkto)) {
+			if (ret < 0 || ret >= PATH_MAX) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error in readlink symlink '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);

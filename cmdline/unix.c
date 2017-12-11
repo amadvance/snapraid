@@ -448,7 +448,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 			/* resolve the link */
 			pathprint(path, sizeof(path), "/dev/disk/by-uuid/%s", dd->d_name);
 			ret = readlink(path, buf, sizeof(buf));
-			if (ret < 0 || ret == sizeof(buf)) {
+			if (ret < 0 || ret >= PATH_MAX) {
 				log_tag("uuid:by-uuid:%u:%u: readlink(/dev/disk/by-uuid/%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
 				/* generic error, ignore and continue the search */
 				continue;
