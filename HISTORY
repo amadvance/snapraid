@@ -1,11 +1,11 @@
 SnapRAID HISTORY
 ================
 
-11.2 2017/11
+11.2 2017/12
 ============
  * Fixed recognition of NTFS hardlinks. They behave differently than
    standard Unix hardlinks and this could result in SnapRAID reporting
-   internal incosistency errors for detecting links to the same file
+   internal inconsistency errors for detecting links to the same file
    with different metadata attributes.
  * More efficient 'pool' command that updates only the links
    that need to be updated. This ensures that no change is
