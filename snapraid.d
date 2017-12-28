@@ -370,7 +370,7 @@ Getting Started
 	you can skip it.
 
     STEP 4 -> Sync
-	Run the "sync" command to resynchronize the array with the new disk.
+	Run the "sync" command to re-synchronize the array with the new disk.
 
 		:snapraid sync
 
@@ -446,7 +446,7 @@ Commands
 
 	You can spin-up only some specific disks using the -d, --filter-disk option.
 
-	Take care that spinniup-up all the disks at the same time needs a lot of power.
+	Take care that spinning-up all the disks at the same time needs a lot of power.
 	Ensure that your power-supply can sustain that.
 
 	Nothing is modified.
@@ -601,7 +601,7 @@ Commands
 	It works like "fix", but it only simulates a recovery and no change
 	is written in the array.
 
-	This command is mostly intended for manual verifications,
+	This command is mostly intended for manual verification,
 	like after a recovery process or in other special conditions.
 	For periodic and scheduled checks uses "scrub".
 
@@ -622,7 +622,7 @@ Commands
   dup
 	Lists all the duplicate files. Two files are assumed equal if their
 	hashes are matching. The file data is not read, but only the
-	precomputed hashes are used.
+	pre-computed hashes are used.
 
 	Nothing is modified.
 
@@ -634,7 +634,7 @@ Commands
 	symbolic links.
 
 	When updating, all the present symbolic links and empty
-	subdirectories are deleted and replaced with the new
+	sub-directories are deleted and replaced with the new
 	view of the array. Any other regular file is left in place.
 
 	Nothing is modified outside the pool directory.
@@ -656,20 +656,20 @@ Commands
 	Nothing is modified.
 
   touch
-	Sets arbitrarely the sub-second timestamp of all the files
+	Sets arbitrarily the sub-second time-stamp of all the files
 	that have it at zero.
 
 	This improves the SnapRAID capability to recognize moved
-	and copied files as it makes the timestamp almost unique,
+	and copied files as it makes the time-stamp almost unique,
 	removing possible duplicates.
 
-	More specifically, if the sub-second timestamp is not zero,
+	More specifically, if the sub-second time-stamp is not zero,
 	a moved or copied file is identified as such if it matches
-	the name, size and timestamp. If instead the sub-second timestamp
+	the name, size and time-stamp. If instead the sub-second time-stamp
 	is zero, it's considered a copy only if it matches the full path,
-	size and timestamp.
+	size and time-stamp.
 
-	Note that the second precision timestamp is not modified,
+	Note that the second precision time-stamp is not modified,
 	and all the dates and times of your files will be maintained.
 
   rehash
@@ -786,7 +786,7 @@ Options
 		from the array after the last "sync".
 		If you still have such files, they could be used by "check"
 		and "fix" to improve the recover process.
-		The files are read also in subdirectories and they are
+		The files are read also in sub-directories and they are
 		identified regardless of their name.
 		This option can be used only with "check" and "fix".
 
@@ -842,7 +842,7 @@ Options
 		to another, and to reuse the already computed hash information
 		to detect silent errors or to recover missing files.
 		This behavior, in some rare cases, may result in false positives,
-		or in a slow process due the many hash verifications, and this
+		or in a slow process due the many hash verification, and this
 		option allows to resolve them.
 		This option can be used only with "sync", "check" and "fix".
 
@@ -973,7 +973,7 @@ Configuration
 	* 5-parity enables penta (five) parity
 	* 6-parity enables hexa (six) parity
 
-	Each parity level requires the precence of all the previous parity
+	Each parity level requires the presence of all the previous parity
 	levels.
 
 	The same considerations of the 'parity' option apply.
