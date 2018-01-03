@@ -917,18 +917,20 @@ static int devtree(const char* name, const char* custom, dev_t device, devinfo_t
 
 		while ((dd = readdir(d)) != 0) {
 			if (dd->d_name[0] != '.') {
+				dev_t subdev;
+
 				/* for each slave, expand the full potential tree */
 				pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/slaves/%s/dev", major(device), minor(device), dd->d_name);
 
-				device = devread(path);
-				if (!device) {
+				subdev = devread(path);
+				if (!subdev) {
 					/* LCOV_EXCL_START */
 					closedir(d);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(name, custom, device, parent, list) != 0) {
+				if (devtree(name, custom, subdev, parent, list) != 0) {
 					/* LCOV_EXCL_START */
 					closedir(d);
 					return -1;
