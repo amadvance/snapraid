@@ -1091,7 +1091,7 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-		/* follow */
+		/* fallthrough */
 	case OPERATION_SPINUP :
 	case OPERATION_SPINDOWN :
 		if (!tommy_list_empty(&filterlist_file)) {
