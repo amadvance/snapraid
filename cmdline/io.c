@@ -889,7 +889,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		allocated += state->block_size * buffer_max;
 	}
 
-	msg_progress("Using %u MiB of memory for %u blocks of IO cache.\n", (unsigned)(allocated / MEBI), io->io_max);
+	msg_progress("Using %u MiB of memory for %u cached blocks.\n", (unsigned)(allocated / MEBI), io->io_max);
 
 	if (parity_writer) {
 		io->reader_max = handle_max;
