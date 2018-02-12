@@ -17,6 +17,11 @@ Not checked disks should be allowed to be missing.
 * Add an option to ignore subsecond timestamp.
 Like when you copy data to a filesystem with less timestamp precision.
 
+* Use threads to scan all the disks at the same time.
+- After 7.0 Windows changes it seems fast enough even
+with a mono thread implementation with 100.0000 files.
++ But if you have millions of files, it could take minutes.
+
 * Extend haspdeep to support the SnapRAID hash :
 https://github.com/jessek/hashdeep/
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
@@ -221,10 +226,6 @@ because we read the data two times for hash and and parity,
 and if we manage to keep it in the cache, we should save time.
 - We now hash first the faster disks, and this could
 reduce performance as we'll have to wait for all disks.
-
-* Use threads to scan all the disks at the same time.
-- After 7.0 Windows changes it seems fast enough even
-with a mono thread implementation.
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
 But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
