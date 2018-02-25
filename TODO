@@ -22,6 +22,13 @@ Like when you copy data to a filesystem with less timestamp precision.
 with a mono thread implementation with 100.0000 files.
 + But if you have millions of files, it could take minutes.
 
+* Support more parity levels
+It can be done with a generic computation function, using
+intrinsic for SSSE3 and AVX instructions.
+It would be intersting to compare performance with the hand-written
+assembler functions. Eventially we can convert them to use intrinsic also.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/9dbd7581/
+
 * Extend haspdeep to support the SnapRAID hash :
 https://github.com/jessek/hashdeep/
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
