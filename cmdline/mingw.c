@@ -694,6 +694,7 @@ static void windows_errno(DWORD error)
 		errno = EPERM;
 		break;
 	case ERROR_IO_DEVICE : /* in ReadFile() and WriteFile() */
+	case ERROR_CRC : /* in ReadFile() */
 		errno = EIO;
 		break;
 	default :
