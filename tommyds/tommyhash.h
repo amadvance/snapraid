@@ -38,11 +38,6 @@
 /* hash */
 
 /**
- * Hash type used in hashtables.
- */
-typedef tommy_key_t tommy_hash_t;
-
-/**
  * Hash function with a 32 bits result.
  * Implementation of the Robert Jenkins "lookup3" hash 32 bits version,
  * from http://www.burtleburtle.net/bob/hash/doobs.html, function hashlittle().

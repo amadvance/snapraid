@@ -36,7 +36,7 @@ void tommy_array_init(tommy_array* array)
 
 	/* fixed initial size */
 	array->bucket_bit = TOMMY_ARRAY_BIT;
-	array->bucket_max = 1 << array->bucket_bit;
+	array->bucket_max = (tommy_size_t)1 << array->bucket_bit;
 	array->bucket[0] = tommy_cast(void**, tommy_calloc(array->bucket_max, sizeof(void*)));
 	for (i = 1; i < TOMMY_ARRAY_BIT; ++i)
 		array->bucket[i] = array->bucket[0];
@@ -51,11 +51,11 @@ void tommy_array_done(tommy_array* array)
 	tommy_free(array->bucket[0]);
 	for (i = TOMMY_ARRAY_BIT; i < array->bucket_bit; ++i) {
 		void** segment = array->bucket[i];
-		tommy_free(&segment[((tommy_ptrdiff_t)1) << i]);
+		tommy_free(&segment[(tommy_ptrdiff_t)1 << i]);
 	}
 }
 
-void tommy_array_grow(tommy_array* array, tommy_count_t count)
+void tommy_array_grow(tommy_array* array, tommy_size_t count)
 {
 	if (array->count >= count)
 		return;
@@ -72,7 +72,7 @@ void tommy_array_grow(tommy_array* array, tommy_count_t count)
 		array->bucket[array->bucket_bit] = &segment[-(tommy_ptrdiff_t)array->bucket_max];
 
 		++array->bucket_bit;
-		array->bucket_max = 1 << array->bucket_bit;
+		array->bucket_max = (tommy_size_t)1 << array->bucket_bit;
 	}
 }
 

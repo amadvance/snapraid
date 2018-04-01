@@ -24,7 +24,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /** \file
  * Generic types.
  */
@@ -37,17 +36,37 @@
 
 #include <stddef.h>
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 typedef unsigned tommy_uint32_t; /**< Generic uint32_t type. */
 typedef unsigned _int64 tommy_uint64_t; /**< Generic uint64_t type. */
 typedef size_t tommy_uintptr_t; /**< Generic uintptr_t type. */
+#ifdef _WIN64
+#define TOMMY_SIZE_BIT 64
+typedef unsigned _int64_t tommy_size_t; /**< Generic size_t type. */
+typedef _int64_t tommy_ssize_t; /**< Generic ssize_t type. */
+#else
+#define TOMMY_SIZE_BIT 32
+typedef unsigned tommy_size_t; /**< Generic size_t type. */
+typedef int tommy_ssize_t; /**< Generic ssize_t type. */
+#endif
 #else
 #include <stdint.h>
 typedef uint32_t tommy_uint32_t; /**< Generic uint32_t type. */
 typedef uint64_t tommy_uint64_t; /**< Generic uint64_t type. */
 typedef uintptr_t tommy_uintptr_t; /**< Generic uintptr_t type. */
+#if SIZE_MAX == UINT64_MAX
+#define TOMMY_SIZE_BIT 64
+typedef uint64_t tommy_size_t; /**< Generic size_t type. */
+typedef int64_t tommy_ssize_t; /**< Generic ssize_t type. */
+#elif SIZE_MAX == UINT32_MAX
+#define TOMMY_SIZE_BIT 32
+typedef uint32_t tommy_size_t; /**< Generic size_t type. */
+typedef int32_t tommy_ssize_t; /**< Generic ssize_t type. */
+#else
+#error Unsupported SIZE_MAX
 #endif
-typedef size_t tommy_size_t; /**< Generic size_t type. */
+#endif
+
 typedef ptrdiff_t tommy_ptrdiff_t; /**< Generic ptrdiff_t type. */
 typedef int tommy_bool_t; /**< Generic boolean type. */
 
@@ -58,13 +77,6 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
  * To make the code more efficient, a full 32 bit integer is used.
  */
 typedef tommy_uint32_t tommy_uint_t;
-
-/**
- * Generic unsigned integer for counting objects.
- *
- * TommyDS doesn't support more than 2^32-1 objects.
- */
-typedef tommy_uint32_t tommy_count_t;
 
 /** \internal
  * Type cast required for the C++ compilation.
@@ -152,17 +164,17 @@ typedef tommy_uint32_t tommy_count_t;
 #endif
 
 /******************************************************************************/
-/* key */
+/* key/hash */
 
 /**
- * Key type used in indexed data structures to store the key or the hash value.
+ * Type used in indexed data structures to store the key of a object.
  */
-typedef tommy_uint32_t tommy_key_t;
+typedef tommy_size_t tommy_key_t;
 
 /**
- * Bits into the ::tommy_key_t type.
+ * Type used in hashtables to store the hash of a object.
  */
-#define TOMMY_KEY_BIT (sizeof(tommy_key_t) * 8)
+typedef tommy_size_t tommy_hash_t;
 
 /******************************************************************************/
 /* node */
@@ -200,11 +212,12 @@ typedef struct tommy_node_struct {
 	void* data;
 
 	/**
-	 * Key used to store the node.
+	 * Index of the node.
+	 * With tries this field is used to store the key.
 	 * With hashtables this field is used to store the hash value.
 	 * With lists this field is not used.
 	 */
-	tommy_key_t key;
+	tommy_size_t index;
 } tommy_node;
 
 /******************************************************************************/
@@ -302,6 +315,10 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
 #include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanForward)
+#if TOMMY_SIZE_BIT == 64
+#pragma intrinsic(_BitScanReverse64)
+#pragma intrinsic(_BitScanForward64)
+#endif
 #endif
 
 /** \internal
@@ -363,6 +380,29 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 #endif
 }
 
+#if TOMMY_SIZE_BIT == 64
+/**
+ * Bit scan reverse or integer log2 for 64 bits.
+ */
+tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)
+{
+#if defined(_MSC_VER)
+	unsigned long count;
+	_BitScanReverse64(&count, value);
+	return count;
+#elif defined(__GNUC__)
+	return __builtin_clzll(value) ^ 63;
+#else
+	uint32_t l = value & 0xFFFFFFFFU;
+	uint32_t h = value >> 32;
+	if (h)
+		return tommy_ilog2_u32(h) + 32;
+	else
+		return tommy_ilog2_u32(l);
+#endif
+}
+#endif
+
 /**
  * Bit scan forward or trailing zero count.
  * Return the bit index of the least significant 1 bit.
@@ -391,6 +431,29 @@ tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)
 #endif
 }
 
+#if TOMMY_SIZE_BIT == 64
+/**
+ * Bit scan forward or trailing zero count for 64 bits.
+ */
+tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)
+{
+#if defined(_MSC_VER)
+	unsigned long count;
+	_BitScanForward64(&count, value);
+	return count;
+#elif defined(__GNUC__)
+	return __builtin_ctzll(value);
+#else
+	uint32_t l = value & 0xFFFFFFFFU;
+	uint32_t h = value >> 32;
+	if (l)
+		return tommy_ctz_u32(l);
+	else
+		return tommy_ctz_u32(h) + 32;
+#endif
+}
+#endif
+
 /**
  * Rounds up to the next power of 2.
  * For the value 0, the result is undefined.
@@ -413,6 +476,23 @@ tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
 }
 
 /**
+ * Rounds up to the next power of 2 for 64 bits.
+ */
+tommy_inline tommy_uint64_t tommy_roundup_pow2_u64(tommy_uint64_t value)
+{
+	--value;
+	value |= value >> 1;
+	value |= value >> 2;
+	value |= value >> 4;
+	value |= value >> 8;
+	value |= value >> 16;
+	value |= value >> 32;
+	++value;
+
+	return value;
+}
+
+/**
  * Check if the specified word has a byte at 0.
  * \return 0 or 1.
  */
@@ -420,5 +500,19 @@ tommy_inline int tommy_haszero_u32(tommy_uint32_t value)
 {
 	return ((value - 0x01010101) & ~value & 0x80808080) != 0;
 }
+
+/*
+ * Bit depth mapping.
+ */
+#if TOMMY_SIZE_BIT == 64
+#define tommy_ilog2 tommy_ilog2_u64
+#define tommy_ctz tommy_ctz_u64
+#define tommy_roundup_pow2 tommy_roundup_pow2_u64
+#else
+#define tommy_ilog2 tommy_ilog2_u32
+#define tommy_ctz tommy_ctz_u32
+#define tommy_roundup_pow2 tommy_roundup_pow2_u32
+#endif
+
 #endif
 

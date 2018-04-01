@@ -117,8 +117,8 @@ typedef tommy_node tommy_tree_node;
  */
 typedef struct tommy_tree_struct {
 	tommy_tree_node* root; /**< Root node. */
-	tommy_count_t count; /**< Number of elements. */
 	tommy_compare_func* cmp; /**< Comparison function. */
+	tommy_size_t count; /**< Number of elements. */
 } tommy_tree;
 
 /**
@@ -213,7 +213,7 @@ void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void
 /**
  * Gets the number of elements.
  */
-tommy_inline tommy_count_t tommy_tree_count(tommy_tree* tree)
+tommy_inline tommy_size_t tommy_tree_count(tommy_tree* tree)
 {
 	return tree->count;
 }
