@@ -5,6 +5,8 @@ SnapRAID HISTORY
 ==================
  * Fixed handing of Linux devices that have multiple slaves. This affects
    the smart/list/devices/down commands [Valentin Hilbig].
+ * The 'list' command in verbose mode prints the full nanosecond
+   timestamp precision.
 
 11.2 2017/12
 ============

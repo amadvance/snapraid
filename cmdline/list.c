@@ -74,7 +74,7 @@ void state_list(struct snapraid_state* state)
 			if (tm) {
 				printf("%04u/%02u/%02u %02u:%02u", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
 				if (msg_level >= MSG_VERBOSE)
-					printf(":%02u.%03u", tm->tm_sec, file->mtime_nsec / 1000000);
+					printf(":%02u.%09u", tm->tm_sec, file->mtime_nsec);
 				printf(" ");
 			}
 			printf("%s\n", fmt_term(disk, file->sub, esc_buffer));
@@ -105,7 +105,7 @@ void state_list(struct snapraid_state* state)
 			printf("%12s ", type);
 			printf("                 ");
 			if (msg_level >= MSG_VERBOSE)
-				printf("       ");
+				printf("             ");
 			printf("%s -> %s\n", fmt_term(disk, slink->sub, esc_buffer), fmt_term(disk, slink->linkto, esc_buffer_alt));
 		}
 	}
