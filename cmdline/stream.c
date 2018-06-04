@@ -112,7 +112,8 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 
 	pathcpy(s->handle[i].path, sizeof(s->handle[i].path), file);
 
-	f = open(file, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 0600);
+	/* O_EXCL to be resilent ensure to always create a new file and not use a stale link to the original file */
+	f = open(file, O_WRONLY | O_CREAT | O_EXCL | O_BINARY | O_SEQUENTIAL, 0600);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
 		return -1;

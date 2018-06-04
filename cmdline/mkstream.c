@@ -41,6 +41,7 @@ void test(void)
 	s = sopen_multi_write(STREAM_MAX);
 	for (i = 0; i < STREAM_MAX; ++i) {
 		snprintf(file, sizeof(file), "stream%u.bin", i);
+		remove(file);
 		if (sopen_multi_file(s, i, file) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);

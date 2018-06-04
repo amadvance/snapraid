@@ -299,6 +299,8 @@ void pathslash(char* dst, size_t size);
 
 /**
  * Cut everything after the latest slash.
+ *
+ * If the string doesn't contain any slash, it returns the empty string.
  */
 void pathcut(char* dst);
 

@@ -3434,10 +3434,21 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		msg_progress("Saving state to %s...\n", content->content);
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+
+		/* ensure to delete a previous stale file */
+		if (remove(tmp) != 0) {
+			if (errno != ENOENT) {
+				/* LCOV_EXCL_START */
+				log_fatal("Error removing the stale content file '%s'. %s.\n", tmp, strerror(errno));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
 		f = sopen_write(tmp);
 		if (f == 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
+			log_fatal("Error opening the temporary content file '%s'. %s.\n", tmp, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -3562,12 +3573,24 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		struct snapraid_content* content = i->data;
 		char tmp[PATH_MAX];
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+
+		/* ensure to delete a previous stale file */
+		if (remove(tmp) != 0) {
+			if (errno != ENOENT) {
+				/* LCOV_EXCL_START */
+				log_fatal("Error removing the stale content file '%s'. %s.\n", tmp, strerror(errno));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
 		if (sopen_multi_file(f, k, tmp) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
+			log_fatal("Error opening the temporary content file '%s'. %s.\n", tmp, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+
 		++k;
 		i = i->next;
 	}
@@ -3851,11 +3874,10 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		msg_progress("Verifying %s...\n", content->content);
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-
 		f = sopen_read(tmp);
 		if (f == 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error reopening the content file '%s'. %s.\n", tmp, strerror(errno));
+			log_fatal("Error reopening the temporary content file '%s'. %s.\n", tmp, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -3924,6 +3946,59 @@ static void state_rename_content(struct snapraid_state* state)
 {
 	tommy_node* i;
 
+#if defined(_linux) /* this sequence is linux specific */
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		char tmp[PATH_MAX];
+		char dir[PATH_MAX];
+		char* slash;
+		int handle;
+
+		pathcpy(dir, sizeof(dir), content->content);
+
+		slash = strrchr(tmp, '/');
+		if (slash)
+			*slash = 0;
+		else
+			pathcpy(dir, sizeof(dir), ".");
+
+		/* open the directory to get the handle */
+		handle = open(dir, O_RDONLY | O_DIRECTORY);
+		if (handle < 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error opening the directory '%s'. %s.\n", dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* now rename the just written copy with the correct name */
+		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+		if (rename(tmp, content->content) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error renaming the content file '%s' to '%s'. %s.\n", tmp, content->content, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* sync the directory */
+		if (fsync(handle) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error syncing the directory '%s'. %s.\n", dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (close(handle) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error closing the directory '%s'. %s.\n", dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		i = i->next;
+	}
+#else
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
@@ -3940,6 +4015,7 @@ static void state_rename_content(struct snapraid_state* state)
 
 		i = i->next;
 	}
+#endif
 }
 
 void state_write(struct snapraid_state* state)
