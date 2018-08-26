@@ -1536,7 +1536,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 				data_off_t out_size;
 				parity_size(&parity_handle[l], &out_size);
 				parity_overflow(state, out_size);
-				log_fatal("WARNING! Without an unsable %s file, it isn't possible to sync.\n", lev_name(l));
+				log_fatal("WARNING! Without an usable %s file, it isn't possible to sync.\n", lev_name(l));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
