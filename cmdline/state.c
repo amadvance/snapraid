@@ -3278,7 +3278,12 @@ static void* state_write_thread(void* arg)
 				flag |= 8;
 			sputb32(flag, f);
 
-			t = info_get_time(info) - info_oldest;
+			/* the oldest info is computed only on required blocks, so it may not be the absolute oldest */
+			if (info_get_time(info) >= info_oldest)
+				t = info_get_time(info) - info_oldest;
+			else
+				t = 0;
+
 			sputb32(t, f);
 		} else {
 			/* write a special 0 flag to mark missing info */

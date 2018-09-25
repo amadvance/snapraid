@@ -1,13 +1,14 @@
 SnapRAID HISTORY
 ================
 
-11.3 2018/06 (WIP)
+11.3 2018/09 (WIP)
 ==================
  * Fixed handing of Linux devices that have multiple slaves. This affects
    the smart/list/devices/down commands [Valentin Hilbig].
  * The 'list' command in verbose mode prints the full nanosecond
    timestamp precision.
  * After writing content files also sync their directory.
+ * Fix a invalid time computation that could result in future scrub times.
 
 11.2 2017/12
 ============
