@@ -29,6 +29,10 @@
 
 unsigned day_ago(time_t ref, time_t now)
 {
+	/* in case some dates is in the future */
+	if (now < ref)
+		return 0;
+
 	return (now - ref) / (24 * 3600);
 }
 
@@ -457,6 +461,10 @@ int state_status(struct snapraid_state* state)
 	printf("The oldest block was scrubbed %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
 
 	printf("\n");
+
+	if (newest > now) {
+		printf("WARNING! You have scrub dates in the future! The next sync/scrub will truncate them!\n");
+	}
 
 	if (unsynced_blocks) {
 		printf("WARNING! The array is NOT fully synced.\n");

@@ -2872,6 +2872,7 @@ struct state_write_thread_context {
 	/* input */
 	block_off_t blockmax;
 	time_t info_oldest;
+	time_t info_now;
 	int info_has_rehash;
 	STREAM* f;
 	/* output */
@@ -2888,6 +2889,7 @@ static void* state_write_thread(void* arg)
 	struct snapraid_state* state = context->state;
 	block_off_t blockmax = context->blockmax;
 	time_t info_oldest = context->info_oldest;
+	time_t info_now = context->info_now;
 	int info_has_rehash = context->info_has_rehash;
 	STREAM* f = context->f;
 	uint32_t crc;
@@ -3278,11 +3280,17 @@ static void* state_write_thread(void* arg)
 				flag |= 8;
 			sputb32(flag, f);
 
+			t = info_get_time(info);
+
+			/* truncate any time that is in the future */
+			if (t > info_now)
+				t = info_now;
+
 			/* the oldest info is computed only on required blocks, so it may not be the absolute oldest */
-			if (info_get_time(info) >= info_oldest)
-				t = info_get_time(info) - info_oldest;
-			else
+			if (t < info_oldest)
 				t = 0;
+			else
+				t -= info_oldest;
 
 			sputb32(t, f);
 		} else {
@@ -3358,6 +3366,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	tommy_node* i;
 	block_off_t blockmax;
 	time_t info_oldest;
+	time_t info_now;
 	int info_has_rehash;
 	int mapping_idx;
 	block_off_t idx;
@@ -3376,6 +3385,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	/* clear the info for unused blocks */
 	/* and get some other info */
 	info_oldest = 0; /* oldest time in info */
+	info_now = time(0); /* get the present time */
 	info_has_rehash = 0; /* if there is a rehash info */
 	for (idx = 0; idx < blockmax; ++idx) {
 		/* if the position is used */
@@ -3466,6 +3476,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		context->state = state;
 		context->blockmax = blockmax;
 		context->info_oldest = info_oldest;
+		context->info_now = info_now;
 		context->info_has_rehash = info_has_rehash;
 		context->f = f;
 
@@ -3607,6 +3618,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	context->state = state;
 	context->blockmax = blockmax;
 	context->info_oldest = info_oldest;
+	context->info_now = info_now;
 	context->info_has_rehash = info_has_rehash;
 	context->f = f;
 

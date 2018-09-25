@@ -8,7 +8,8 @@ SnapRAID HISTORY
  * The 'list' command in verbose mode prints the full nanosecond
    timestamp precision.
  * After writing content files also sync their directory.
- * Fix a invalid time computation that could result in future scrub times.
+ * Fix a invalid time computation that could result in future scrub dates.
+   Such dates are fixed automatically at the next scrub or sync.
 
 11.2 2017/12
 ============
