@@ -1074,8 +1074,8 @@ static int devscan(tommy_list* list)
 #if HAVE_LINUX_DEVICE
 static int devsmart(dev_t device, const char* name, const char* custom, uint64_t* smart, char* serial, char* vendor, char* model)
 {
-	char cmd[128];
-	char file[128];
+	char cmd[PATH_MAX + 64];
+	char file[PATH_MAX];
 	FILE* f;
 	int ret;
 
@@ -1088,7 +1088,7 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 
 	/* if there is a custom command */
 	if (custom[0]) {
-		char option[128];
+		char option[PATH_MAX];
 		snprintf(option, sizeof(option), custom, file);
 		snprintf(cmd, sizeof(cmd), "smartctl -a %s", option);
 	} else {
@@ -1142,8 +1142,8 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 #if HAVE_LINUX_DEVICE
 static int devdown(dev_t device, const char* name, const char* custom)
 {
-	char cmd[128];
-	char file[128];
+	char cmd[PATH_MAX + 64];
+	char file[PATH_MAX];
 	FILE* f;
 	int ret;
 
@@ -1156,7 +1156,7 @@ static int devdown(dev_t device, const char* name, const char* custom)
 
 	/* if there is a custom command */
 	if (custom[0]) {
-		char option[128];
+		char option[PATH_MAX];
 		snprintf(option, sizeof(option), custom, file);
 		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s", option);
 	} else {
