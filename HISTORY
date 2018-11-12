@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+11.4 2018/12
+============
+ * Removed a build warning about major/minor defined now in sys/sysmacros.h.
+
 11.3 2018/11
 ============
  * Fixed handing of Linux devices that have multiple slaves. This affects
