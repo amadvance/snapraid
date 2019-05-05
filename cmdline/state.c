@@ -310,15 +310,23 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				for (l = 0; l < state->level; ++l) {
 					for (s = 0; s < state->parity[l].split_mac; ++s) {
 						if (disk->device == state->parity[l].split_map[s].device) {
-							/* LCOV_EXCL_START */
-							log_fatal("Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].split_map[s].path);
+							if (state->opt.force_device) {
+								/* note tha we just ignore the issue */
+								/* and we DON'T mark the disk to be skipped */
+								/* because we want to use these disks */
+								if (!state->opt.no_warnings)
+									log_fatal("DANGER! Ignoring that disks '%s' and %s '%s' are on the same device\n", disk->dir, lev_name(l), state->parity[l].split_map[s].path);
+							} else {
+								/* LCOV_EXCL_START */
+								log_fatal("Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].split_map[s].path);
 #ifdef _WIN32
-							log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
-							log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-							log_fatal("to change one of the disk serial.\n");
+								log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
+								log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+								log_fatal("to change one of the disk serial.\n");
 #endif
-							exit(EXIT_FAILURE);
-							/* LCOV_EXCL_STOP */
+								exit(EXIT_FAILURE);
+								/* LCOV_EXCL_STOP */
+							}
 						}
 					}
 				}

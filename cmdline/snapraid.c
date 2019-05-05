@@ -1001,6 +1001,10 @@ int main(int argc, char* argv[])
 	switch (operation) {
 	case OPERATION_FIX :
 	case OPERATION_CHECK :
+	case OPERATION_SMART :
+	case OPERATION_DEVICES :
+	case OPERATION_SPINUP :
+	case OPERATION_SPINDOWN :
 		break;
 	default :
 		if (opt.force_device) {
