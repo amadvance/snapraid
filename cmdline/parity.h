@@ -37,6 +37,13 @@ struct snapraid_split_handle {
 	data_off_t size;
 
 	/**
+	 * Valid size of the parity split.
+	 * This is the size effectively written, and not the reult of a chsize operation.
+	 * It's used to make read operations failing if read over that size.
+	 */
+	data_off_t valid_size;
+
+	/**
 	 * Artificial size limit for testing.
 	 * 0 means unlimited.
 	 */
@@ -47,6 +54,7 @@ struct snapraid_parity_handle {
 	struct snapraid_split_handle split_map[SPLIT_MAX];
 	unsigned split_mac; /**< Number of parity splits. */
 	unsigned level; /**< Level of the parity. */
+	int has_write_access; /**< If the parity is open for writing. */
 };
 
 /**

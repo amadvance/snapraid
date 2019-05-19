@@ -109,7 +109,7 @@ void log_flush(void);
 /**
  * Pointer to log function.
  */
-typedef void fptr(const char* format, ...);
+typedef void fptr(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /****************************************************************************/
 /* message */
