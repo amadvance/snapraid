@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 11.4 2019/05
 ============
+ * In fixing, if a parity is filtered out, don't attempt to recover its size,
+   and proceed without it if missing.
  * Avoid unnecessary parity read when fixing the parity itself.
    This improves the 'fix' speed when a parity file is completely missing.
  * Removed a build warning about major/minor defined now in sys/sysmacros.h.

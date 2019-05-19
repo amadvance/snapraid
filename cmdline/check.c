@@ -1973,20 +1973,32 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			}
 
 			parity_ptr[l] = &parity[l];
-			ret = parity_create(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
-			if (ret == -1) {
-				/* LCOV_EXCL_START */
-				log_fatal("WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
 
-			ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
-			if (ret == -1) {
-				/* LCOV_EXCL_START */
-				log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
+			/* if the parity is excluded */
+			if (state->parity[l].is_excluded_by_filter) {
+				/* open for reading, and ignore error */
+				ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
+				if (ret == -1) {
+					/* continue anyway */
+					parity_ptr[l] = 0;
+				}
+			} else {
+				/* open for writing */
+				ret = parity_create(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					log_fatal("WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			}
 		}
 	} else if (!state->opt.auditonly) {
