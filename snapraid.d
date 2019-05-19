@@ -31,6 +31,8 @@ Description
 	Beside the ability to recover from disk failures, other
 	features of SnapRAID are:
 
+	* You can use disk already filled with files, without the need to
+		reformat them. You will access them like now.
 	* All your data is hashed to ensure data integrity and to avoid
 		silent corruption.
 	* If the failed disks are too many to allow a recovery,
@@ -38,12 +40,11 @@ Description
 		All the data in the other disks is safe.
 	* If you accidentally delete some files in a disk, you can
 		recover them.
-	* You can start with already filled disks.
 	* The disks can have different sizes.
 	* You can add disks at any time.
 	* It doesn't lock-in your data. You can stop using SnapRAID at any
 		time without the need to reformat or move data.
-	* To access a file, a single disk needs to spin, saving power and
+	* To access a file, only a single disk needs to spin, saving power and
 		producing less noise.
 
 	The official site of SnapRAID is:
