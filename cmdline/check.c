@@ -2042,14 +2042,26 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	/* try to close only if opened */
 	for (l = 0; l < state->level; ++l) {
 		if (parity_ptr[l]) {
+			/* if fixing and not excluded, truncate parity not valid */
+			if (fix && !state->parity[l].is_excluded_by_filter) {
+				ret = parity_truncate(parity_ptr[l]);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					log_fatal("DANGER! Unexpected truncate error in %s disk.\n", lev_name(l));
+					++error;
+					/* continue, as we are already exiting */
+					/* LCOV_EXCL_STOP */
+				}
+			}
+
 			ret = parity_close(parity_ptr[l]);
-			/* LCOV_EXCL_START */
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				log_fatal("DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 				++error;
 				/* continue, as we are already exiting */
+				/* LCOV_EXCL_STOP */
 			}
-			/* LCOV_EXCL_STOP */
 		}
 	}
 

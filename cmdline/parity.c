@@ -184,7 +184,6 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 
 	handle->level = level;
 	handle->split_mac = 0;
-	handle->has_write_access = 0;
 
 	for (s = 0; s < parity->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
@@ -667,7 +666,6 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 
 	handle->level = level;
 	handle->split_mac = 0;
-	handle->has_write_access = 0;
 
 	/* mask of bits used by the block size */
 	block_mask = ((data_off_t)block_size) - 1;
@@ -773,7 +771,7 @@ int parity_sync(struct snapraid_parity_handle* handle)
 	return 0;
 }
 
-int parity_close(struct snapraid_parity_handle* handle)
+int parity_truncate(struct snapraid_parity_handle* handle)
 {
 	unsigned s;
 	int f_ret = 0;
@@ -782,18 +780,29 @@ int parity_close(struct snapraid_parity_handle* handle)
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 
-		if (handle->has_write_access) {
-			/* truncate any data that we know it's not valid */
-			ret = ftruncate(split->f, split->valid_size);
-			if (ret != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->valid_size, strerror(errno));
-				f_ret = -1;
-				/* LCOV_EXCL_STOP */
+		/* truncate any data that we know it's not valid */
+		ret = ftruncate(split->f, split->valid_size);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->valid_size, strerror(errno));
+			f_ret = -1;
+			/* LCOV_EXCL_STOP */
 
-				/* continue to close the others */
-			}
+			/* continue to truncate the others */
 		}
+	}
+
+	return f_ret;
+}
+
+int parity_close(struct snapraid_parity_handle* handle)
+{
+	unsigned s;
+	int f_ret = 0;
+
+	for (s = 0; s < handle->split_mac; ++s) {
+		struct snapraid_split_handle* split = &handle->split_map[s];
+		int ret;
 
 		ret = close(split->f);
 		if (ret != 0) {
