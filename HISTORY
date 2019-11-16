@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-11.4 2019/06 (WorkInProgress)
+11.4 2019/12 (WorkInProgress)
 =============================
  * In fixing, if a parity is filtered out, don't attempt to recover its size,
    and proceed without it if missing.
