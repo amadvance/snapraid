@@ -3845,10 +3845,14 @@ struct state_verify_thread_context {
 static void* state_verify_thread(void* arg)
 {
 	struct state_verify_thread_context* context = arg;
+	struct snapraid_content* content = context->content;
 	STREAM* f = context->f;
 	unsigned char buf[4];
 	uint32_t crc_stored;
 	uint32_t crc_computed;
+	uint64_t start;
+
+	start = tick_ms();
 
 	if (sdeplete(f, buf) != 0) {
 		/* LCOV_EXCL_START */
@@ -3879,6 +3883,8 @@ static void* state_verify_thread(void* arg)
 		return context;
 		/* LCOV_EXCL_STOP */
 	}
+
+	msg_progress("Verified %s in %" PRIu64 " seconds\n", content->content, (tick_ms() - start) / 1000);
 
 	return 0;
 }
