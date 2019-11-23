@@ -83,6 +83,7 @@ noinst_HEADERS = \
 	cmdline/murmur3test.c \
 	cmdline/spooky2.c \
 	cmdline/spooky2test.c \
+	cmdline/metro.c \
 	cmdline/fnmatch.h \
 	cmdline/import.h \
 	cmdline/search.h \

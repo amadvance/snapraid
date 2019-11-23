@@ -2406,6 +2406,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			case 'k' :
 				state->hash = HASH_SPOOKY2;
 				break;
+			case 'm' :
+				state->hash = HASH_METRO;
+				break;
 			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2432,6 +2435,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				break;
 			case 'k' :
 				state->prevhash = HASH_SPOOKY2;
+				break;
+			case 'm' :
+				state->prevhash = HASH_METRO;
 				break;
 			default :
 				/* LCOV_EXCL_START */
@@ -2955,6 +2961,8 @@ static void* state_write_thread(void* arg)
 		sputc('u', f);
 	} else if (state->hash == HASH_SPOOKY2) {
 		sputc('k', f);
+	} else if (state->hash == HASH_METRO) {
+		sputc('m', f);
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
@@ -2978,6 +2986,8 @@ static void* state_write_thread(void* arg)
 				sputc('u', f);
 			} else if (state->prevhash == HASH_SPOOKY2) {
 				sputc('k', f);
+			} else if (state->prevhash == HASH_METRO) {
+				sputc('m', f);
 			} else {
 				/* LCOV_EXCL_START */
 				log_fatal("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));

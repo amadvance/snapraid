@@ -470,6 +470,22 @@ static inline uint64_t util_rotl64(uint64_t x, int8_t r)
 	return (x << r) | (x >> (64 - r));
 }
 
+/*
+ * Rotate right.
+ * In x86/x64 they are optimized with a single assembler instruction.
+ */
+#if 0 /* unused */
+static inline uint32_t util_rotr32(uint32_t x, int8_t r)
+{
+	return (x >> r) | (x << (32 - r));
+}
+#endif
+static inline uint64_t util_rotr64(uint64_t x, int8_t r)
+{
+	return (x >> r) | (x << (64 - r));
+}
+
+
 /**
  * Swap endianess.
  * They are needed only if BigEndian.
@@ -501,6 +517,18 @@ static inline uint64_t util_swap64(uint64_t v)
 	       | (util_rotl64(v, 56) & 0xff000000ff000000ULL);
 }
 #endif
+
+static inline uint8_t util_read8(const void* void_ptr)
+{
+	const uint8_t* ptr = void_ptr;
+	return ptr[0];
+}
+
+static inline uint16_t util_read16(const void* void_ptr)
+{
+	const uint8_t* ptr = void_ptr;
+	return ptr[0] + (ptr[1] << 8);
+}
 
 static inline uint32_t util_read32(const void* ptr)
 {
@@ -543,6 +571,7 @@ static inline void util_write64(void* ptr, uint64_t v)
 
 #include "murmur3.c"
 #include "spooky2.c"
+#include "metro.c"
 
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)
 {
@@ -552,6 +581,9 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		break;
 	case HASH_SPOOKY2 :
 		SpookyHash128(src, size, seed, digest);
+		break;
+	case HASH_METRO :
+		MetroHash128(src, size, seed, digest);
 		break;
 	default :
 		/* LCOV_EXCL_START */
@@ -568,6 +600,7 @@ const char* hash_config_name(unsigned kind)
 	case HASH_UNDEFINED : return "undefined";
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
+	case HASH_METRO : return "metro";
 	default :
 		/* LCOV_EXCL_START */
 		return "unknown";
