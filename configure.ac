@@ -17,11 +17,14 @@ AC_CHECK_PROG([SDE],[sde],[sde],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
-dnl Compiler option to improve stacktrace
+dnl Options to improve stacktrace
 AC_CHECK_CC_OPT([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-pointer", [])
 AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
 AC_CHECK_CC_OPT([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
 AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
+
+dnl Options to improve the performance
+AC_CHECK_CC_OPT([-march=native], CFLAGS="$CFLAGS -march=native", [])
 
 dnl Checks for system.
 AC_SYS_LARGEFILE
