@@ -923,7 +923,7 @@ int main(int argc, char* argv[])
 	crc32c_init();
 
 	if (speedtest != 0) {
-		speed(period);
+		speed(period, plan);
 		os_done();
 		exit(EXIT_SUCCESS);
 	}
