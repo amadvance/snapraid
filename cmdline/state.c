@@ -4487,7 +4487,8 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 	) {
 		time_t elapsed;
 		unsigned out_perc = 0;
-		unsigned out_speed = 0;
+		unsigned out_size_speed = 0;
+		unsigned out_block_speed = 0;
 		unsigned out_cpu = 0;
 		unsigned out_eta = 0;
 		int out_computed = 0;
@@ -4560,7 +4561,11 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 
 			/* estimate the speed in MB/s */
 			if (delta_time != 0)
-				out_speed = (unsigned)(delta_size / MEGA / delta_time);
+				out_size_speed = (unsigned)(delta_size / MEGA / delta_time);
+
+			/* estimate the speed in block/s */
+			if (delta_pos != 0)
+				out_block_speed = (unsigned)(delta_pos / delta_time);
 
 			/* estimate the cpu usage percentage */
 			if (delta_tick_total != 0)
@@ -4580,12 +4585,13 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 		}
 
 		if (state->opt.gui) {
-			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
+			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_size_speed, out_cpu, (uint64_t)elapsed);
 			log_flush();
 		} else {
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_computed) {
-				msg_bar(", %u MB/s", out_speed);
+				msg_bar(", %u MB/s", out_size_speed);
+				msg_bar(", %u block/s", out_block_speed);
 				msg_bar(", CPU %u%%", out_cpu);
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			}
