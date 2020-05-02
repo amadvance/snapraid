@@ -1,7 +1,7 @@
 dnl @synopsis AC_CHECK_CC_OPT(flag, ifyes, ifno)
 dnl 
-dnl Shows a message as like "checking wether gcc accepts flag ... no"
-dnl and executess ifyes or ifno.
+dnl Shows a message as like "checking whether gcc accepts flag ... no"
+dnl and executes ifyes or ifno.
 
 AC_DEFUN([AC_CHECK_CC_OPT],
 [

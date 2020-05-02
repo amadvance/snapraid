@@ -52,7 +52,7 @@
  * \param void_key Pointer to the data to hash.
  * \param key_len Size of the data to hash.
  * \note
- * This function is endianess independent.
+ * This function is endianness independent.
  * \return The hash value of 32 bits.
  */
 tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len);
@@ -72,14 +72,14 @@ tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tom
  * \param void_key Pointer to the data to hash.
  * \param key_len Size of the data to hash.
  * \note
- * This function is endianess independent.
+ * This function is endianness independent.
  * \return The hash value of 64 bits.
  */
 tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tommy_size_t key_len);
 
 /**
  * String hash function with a 32 bits result.
- * Implementation is based on the the Robert Jenkins "lookup3" hash 32 bits version,
+ * Implementation is based on Robert Jenkins "lookup3" hash 32 bits version,
  * from http://www.burtleburtle.net/bob/hash/doobs.html, function hashlittle().
  *
  * This hash is designed to handle strings with an unknown length. If you
@@ -90,7 +90,7 @@ tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tom
  * Use 0 if not relevant.
  * \param void_key Pointer to the string to hash. It has to be 0 terminated.
  * \note
- * This function is endianess independent.
+ * This function is endianness independent.
  * \return The hash value of 32 bits.
  */
 tommy_uint32_t tommy_strhash_u32(tommy_uint64_t init_val, const void* void_key);

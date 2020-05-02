@@ -306,7 +306,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max);
 
 /**
- * Deinitialize te InputOutput workers.
+ * Deinitialize the InputOutput workers.
  */
 void io_done(struct snapraid_io* io);
 

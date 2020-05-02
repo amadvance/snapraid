@@ -369,7 +369,7 @@ static void make_link(tommy_hashdyn* poolset, const char* pool_dir, const char* 
 #ifdef _WIN32
 		} else if (errno == EPERM) {
 			/* LCOV_EXCL_START */
-			log_fatal("You must run as Adminstrator to be able to create symlinks.\n");
+			log_fatal("You must run as Administrator to be able to create symlinks.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 #endif

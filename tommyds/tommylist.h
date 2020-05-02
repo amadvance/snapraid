@@ -28,7 +28,7 @@
 /** \file
  * Double linked list for collisions into hashtables.
  *
- * This list is a double linked list mainly targetted for handling collisions
+ * This list is a double linked list mainly targeted for handling collisions
  * into an hashtables, but useable also as a generic list.
  *
  * The main feature of this list is to require only one pointer to represent the
@@ -294,7 +294,7 @@ tommy_inline void tommy_list_concat(tommy_list* first, tommy_list* second)
  * It's a stable merge sort with O(N*log(N)) worst complexity.
  * It's faster on degenerated cases like partially ordered lists.
  * \param cmp Compare function called with two elements.
- * The function should return <0 if the first element is less than the second, ==0 if equal, and >0 if greather.
+ * The function should return <0 if the first element is less than the second, ==0 if equal, and >0 if greater.
  */
 void tommy_list_sort(tommy_list* list, tommy_compare_func* cmp);
 

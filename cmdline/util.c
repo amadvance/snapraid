@@ -487,7 +487,7 @@ static inline uint64_t util_rotr64(uint64_t x, int8_t r)
 
 
 /**
- * Swap endianess.
+ * Swap endianness.
  * They are needed only if BigEndian.
  */
 #if defined(__GNUC__)

@@ -761,7 +761,7 @@ int parity_sync(struct snapraid_parity_handle* handle)
 		ret = fsync(split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error synching parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal("Error syncing parity file '%s'. %s.\n", split->path, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

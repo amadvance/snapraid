@@ -1556,7 +1556,7 @@ int windows_link(const char* existing, const char* file)
 }
 
 /**
- * In Windows 10 allow creationg of symblink by not priviliged user.
+ * In Windows 10 allow creation of symblink by not privileged user.
  *
  * See: Symlinks in Windows 10!
  * https://blogs.windows.com/buildingapps/2016/12/02/symlinks-windows-10/#cQG7cx48oGH86lkI.97
@@ -1724,7 +1724,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	if (has_persistent_inode)
 		*has_persistent_inode = 1;
 
-	/* NTFS doesn't syncronize hardlinks metadata */
+	/* NTFS doesn't synchronize hardlinks metadata */
 	if (has_syncronized_hardlinks)
 		*has_syncronized_hardlinks = 0;
 

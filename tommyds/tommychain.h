@@ -114,7 +114,7 @@ tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tom
 
 /**
  * Merges two chains managing special degenerated cases.
- * It's funtionally equivalent at tommy_chain_merge() but faster with already ordered chains.
+ * It's functionally equivalent at tommy_chain_merge() but faster with already ordered chains.
  */
 tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)
 {
@@ -153,7 +153,7 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 	/*
 	 * Bit buckets of chains.
 	 * Each bucket contains 2^i nodes or it's empty.
-	 * The chain at address TOMMY_BIT_MAX is an independet variable operating as "carry".
+	 * The chain at address TOMMY_BIT_MAX is an independent variable operating as "carry".
 	 * We keep it in the same "bit" vector to avoid reports from the valgrind tool sgcheck.
 	 */
 	tommy_chain bit[TOMMY_SIZE_BIT + 1];

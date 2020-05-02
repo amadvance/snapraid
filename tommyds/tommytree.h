@@ -33,7 +33,7 @@
  *
  * As difference than other tommy containers, duplicate elements cannot be inserted.
  *
- * To initialize a tree you have to call tommy_tree_init() specifing a comparison
+ * To initialize a tree you have to call tommy_tree_init() specifying a comparison
  * function that will define the order in the tree.
  *
  * \code
@@ -123,7 +123,7 @@ typedef struct tommy_tree_struct {
 
 /**
  * Initializes the tree.
- * \param cmp The comparison function that defines the orderin the tree.
+ * \param cmp The comparison function that defines the order in the tree.
  */
 void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp);
 

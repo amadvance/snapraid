@@ -45,7 +45,7 @@
  *    gen2    6814 [MB/s]
  *    genz    3033 [MB/s]
  *
- * These are the results with displacement resulting in improvments
+ * These are the results with displacement resulting in improvements
  * in the order of 20% or more:
  *
  *            sse2

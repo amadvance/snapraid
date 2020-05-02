@@ -349,7 +349,7 @@ struct snapraid_disk {
 	block_off_t first_free_block;
 
 	int has_volatile_inodes; /**< If the underline file-system has not persistent inodes. */
-	int has_volatile_hardlinks; /**< If the underline file-system has not syncronized metadata for hardlink (NTFS). */
+	int has_volatile_hardlinks; /**< If the underline file-system has not synchronized metadata for hardlink (NTFS). */
 	int has_unreliable_physical; /**< If the physical offset of files has duplicates. */
 	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same file-system. */
 	int has_unsupported_uuid; /**< If the disk doesn't report UUID, meaning it's not supported. */
@@ -1000,7 +1000,7 @@ int fs_check(struct snapraid_disk* disk);
  * After this call you can use the par2file/par2block operations
  * to query the relation.
  *
- * \note This function is NOT thread-safe as it uses the the disk cache. +
+ * \note This function is NOT thread-safe as it uses the disk cache. +
  */
 void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
 
@@ -1010,7 +1010,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
  * After this call the par2file/par2block operations
  * won't find anymore the parity association.
  *
- * \note This function is NOT thread-safe as it uses the the disk cache.
+ * \note This function is NOT thread-safe as it uses the disk cache.
  */
 void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
 
@@ -1129,7 +1129,7 @@ static inline snapraid_info info_make(time_t last_access, int error, int rehash,
 /**
  * Extract the time information.
  * This is the last time when the block was know to be correct.
- * The "scrubbed" info tells if the time is referreing at the latest sync or scrub.
+ * The "scrubbed" info tells if the time is referring at the latest sync or scrub.
  */
 static inline time_t info_get_time(snapraid_info info)
 {

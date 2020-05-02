@@ -227,7 +227,7 @@ typedef struct tommy_node_struct {
  * Compare function for elements.
  * \param obj_a Pointer to the first object to compare.
  * \param obj_b Pointer to the second object to compare.
- * \return <0 if the first element is less than the second, ==0 equal, >0 if greather.
+ * \return <0 if the first element is less than the second, ==0 equal, >0 if greater.
  *
  * This function is like the C strcmp().
  *

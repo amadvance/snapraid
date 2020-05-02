@@ -174,7 +174,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 /*
  * Internal naming.
  *
- * These are intented to provide access for testing.
+ * These are intended to provide access for testing.
  */
 const char *raid_gen1_tag(void);
 const char *raid_gen2_tag(void);
@@ -263,7 +263,7 @@ static __always_inline void raid_avx_end(void)
 	raid_sse_end();
 
 	/* reset the upper part of the ymm registers */
-	/* to avoid the 70 clocks penality on the next */
+	/* to avoid the 70 clocks penalty on the next */
 	/* xmm register use */
 	asm volatile ("vzeroupper" : : : "memory");
 }

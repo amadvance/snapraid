@@ -632,7 +632,7 @@ void selftest(void)
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed GEN Cauchy test sigle data disk\n");
+		log_fatal("Failed GEN Cauchy test single data disk\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

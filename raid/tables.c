@@ -13662,8 +13662,8 @@ const uint8_t __aligned(256) raid_gfcauchypshufb[251][4][2][16] =
 /**
  * PSHUFB tables for generic multiplication.
  *
- * Indexes are [MULTIPLER][LH].
- * Where MULTIPLER is from 0 to 255, LH from 0 to 1.
+ * Indexes are [MULTIPLIER][LH].
+ * Where MULTIPLIER is from 0 to 255, LH from 0 to 1.
  */
 const uint8_t __aligned(256) raid_gfmulpshufb[256][2][16] =
 {

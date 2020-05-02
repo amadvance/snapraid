@@ -59,7 +59,7 @@ int dirent_hidden(struct dirent* dd);
 const char* stat_desc(struct stat* st);
 
 /**
- * Return the aligment requirement for direct IO.
+ * Return the alignment requirement for direct IO.
  */
 size_t direct_size(void);
 

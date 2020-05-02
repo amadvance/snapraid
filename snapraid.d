@@ -401,7 +401,7 @@ Commands
 	If bad blocks were detected, their block numbers are listed.
 	To fix them, you can use the "fix -e" command.
 
-	It also shows a graph representing the the last time each block
+	It also shows a graph representing the last time each block
 	was scrubbed or synced. Scrubbed blocks are shown with '*',
 	blocks synced but not yet scrubbed with 'o'.
 
@@ -578,7 +578,7 @@ Commands
 	To only fix the blocks marked bad during "sync" and "scrub",
 	use the -e, --filter-error option.
 	As difference from other filter options, with this one the fixes are
-	applied only to files that are not modified from the the latest "sync".
+	applied only to files that are not modified from the latest "sync".
 
 	All the files that cannot be fixed are renamed adding the
 	".unrecoverable" extension.
