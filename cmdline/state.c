@@ -279,7 +279,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				struct snapraid_disk* other = j->data;
 				if (disk->device == other->device) {
 					if (state->opt.force_device) {
-						/* note tha we just ignore the issue */
+						/* note that we just ignore the issue */
 						/* and we DON'T mark the disk to be skipped */
 						/* because we want to use these disks */
 						if (!state->opt.no_warnings)
@@ -311,7 +311,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					for (s = 0; s < state->parity[l].split_mac; ++s) {
 						if (disk->device == state->parity[l].split_map[s].device) {
 							if (state->opt.force_device) {
-								/* note tha we just ignore the issue */
+								/* note that we just ignore the issue */
 								/* and we DON'T mark the disk to be skipped */
 								/* because we want to use these disks */
 								if (!state->opt.no_warnings)
@@ -372,7 +372,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					for (t = 0; t < state->parity[j].split_mac; ++t) {
 						if (state->parity[l].split_map[s].device == state->parity[j].split_map[t].device) {
 							if (state->opt.force_device) {
-								/* note tha we just ignore the issue */
+								/* note that we just ignore the issue */
 								/* and we DON'T mark the disk to be skipped */
 								/* because we want to use these disks */
 								if (!state->opt.no_warnings)
@@ -631,7 +631,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 			state->block_size *= KIBI;
 		} else if (strcmp(tag, "hashsize") == 0
-			|| strcmp(tag, "hash_size") == 0 /* v11.0 used incorretly this one, kept now for backward compatibility */
+			|| strcmp(tag, "hash_size") == 0 /* v11.0 used incorrectly this one, kept now for backward compatibility */
 		) {
 			uint32_t hash_size;
 
@@ -1626,7 +1626,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 /**
  * Check if the position is REQUIRED, or we can completely clear it from the state.
  *
- * Note that position with only DELETED blocks are discarged.
+ * Note that position with only DELETED blocks are discharged.
  */
 static int fs_position_is_required(struct snapraid_state* state, block_off_t pos)
 {
@@ -1852,7 +1852,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (state->block_size == 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal("Internal incosistency due zero blocksize!\n");
+				log_fatal("Internal inconsistency due zero blocksize!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4179,7 +4179,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		}
 	}
 
-	/* if we are filtering by disk, exclude any parity not explicitely included */
+	/* if we are filtering by disk, exclude any parity not explicitly included */
 	if (!tommy_list_empty(filterlist_disk)) {
 		/* for each parity disk */
 		for (l = 0; l < state->level; ++l) {

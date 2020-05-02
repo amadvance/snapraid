@@ -156,7 +156,7 @@ static void set_cauchy(uint8_t *matrix)
 	}
 
 	/*
-	 * Finally we adjust the matrix multipling each row for
+	 * Finally we adjust the matrix multiplying each row for
 	 * the inverse of the first element in the row.
 	 *
 	 * Also this operation maintains the MDS property of the matrix.
@@ -399,8 +399,8 @@ int main(void)
 	printf("/**\n");
 	printf(" * PSHUFB tables for generic multiplication.\n");
 	printf(" *\n");
-	printf(" * Indexes are [MULTIPLER][LH].\n");
-	printf(" * Where MULTIPLER is from 0 to 255, LH from 0 to 1.\n");
+	printf(" * Indexes are [MULTIPLIER][LH].\n");
+	printf(" * Where MULTIPLIER is from 0 to 255, LH from 0 to 1.\n");
 	printf(" */\n");
 	printf("const uint8_t __aligned(256) raid_gfmulpshufb[256][2][16] =\n");
 	printf("{\n");

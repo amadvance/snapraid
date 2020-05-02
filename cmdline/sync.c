@@ -1016,7 +1016,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 
 		/* if we have only silent errors we can try to fix them on-the-fly */
-		/* note the the fix is not written to disk, but used only to */
+		/* note the fix is not written to disk, but used only to */
 		/* compute the new parity */
 		if (!error_on_this_block && !io_error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
@@ -1536,7 +1536,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 				data_off_t out_size;
 				parity_size(&parity_handle[l], &out_size);
 				parity_overflow(state, out_size);
-				log_fatal("WARNING! Without an usable %s file, it isn't possible to sync.\n", lev_name(l));
+				log_fatal("WARNING! Without a usable %s file, it isn't possible to sync.\n", lev_name(l));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}

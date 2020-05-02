@@ -63,11 +63,11 @@
  * computation of triple parity using power coefficients.
  *
  * Another important property of the Cauchy matrix is that we can setup
- * the first two rows with coeffients equal at the RAID5 and RAID6 approach
- * decribed, resulting in a compatible extension, and requiring SSSE3
+ * the first two rows with coefficients equal at the RAID5 and RAID6 approach
+ * described, resulting in a compatible extension, and requiring SSSE3
  * or AVX2 instructions only if triple parity or beyond is used.
  *
- * The matrix is also adjusted, multipling each row by a constant factor
+ * The matrix is also adjusted, multiplying each row by a constant factor
  * to make the first column of all 1, to optimize the computation for
  * the first disk.
  *
@@ -147,7 +147,7 @@
  * "raid/test/speedtest.c" program.
  *
  * For comparison, the triple parity computation using the power
- * coeffients "1,2,2^-1" is only a little faster than the one based on
+ * coefficients "1,2,2^-1" is only a little faster than the one based on
  * the Cauchy matrix if SSSE3 or AVX2 is present.
  *
  *             int8   int32   int64    sse2   ssse3    avx2
@@ -205,12 +205,12 @@ void raid_zero(void *zero)
  * All these functions give the guarantee that parities are written
  * in order. First parity P, then parity Q, and so on.
  * This allows to specify the same memory buffer for multiple parities
- * knowning that you'll get the latest written one.
+ * knowing that you'll get the latest written one.
  * This characteristic is used by the raid_delta_gen() function to
  * avoid to damage unused parities in recovering.
  *
  * @nd Number of data blocks
- * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + #parities) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
@@ -335,7 +335,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 		} else {
 			/*
 			 * Unused parities are going to be rewritten with
-			 * not significative data, becase we don't have
+			 * not significative data, because we don't have
 			 * functions able to compute only a subset of
 			 * parities.
 			 *
@@ -483,7 +483,7 @@ void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
  *   The indexes start from 0. They must be in order.
  * @nd Number of data blocks.
  * @np Number of parity blocks.
- * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.

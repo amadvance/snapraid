@@ -36,7 +36,7 @@
  * @ip[] Vector of @nv indexes of the valid parity blocks.
  *   The indexes start from 0. They must be in order.
  * @nd Number of data blocks.
- * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nv - 1] + 1) elements. The starting elements are the
  *   blocks for data, following with the parity blocks.

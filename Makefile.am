@@ -159,7 +159,7 @@ maintainer-clean-local:
 CHECKFLAGS_COMMON = --test-skip-device --test-skip-self --test-force-progress --no-warnings --test-parity-limit=3333333
 
 # --test-force-order-alpha
-# Ensures to process files always in the same order despites
+# Ensures to process files always in the same order despite
 # the inode, physical location, and dir order assigned by the OS.
 CHECKFLAGS_ALPHA = $(CHECKFLAGS_COMMON) --test-force-order-alpha
 
@@ -500,7 +500,7 @@ endif
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/RUN-RM" --test-expect-failure sync
 	echo RUN > bench/disk1/RUN-CHMOD
 if HAVE_POSIX
-# Doesn't run this test as root because the root user overrride permissions
+# Doesn't run this test as root because the root user override permissions
 	if [[ $$EUID -ne 0 ]]; then \
 		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync; \
 	fi

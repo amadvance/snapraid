@@ -501,7 +501,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			 * because the metadata in the directory is updated only when the file
 			 * is closed.
 			 *
-			 * The same happens for hardlinks that duplicate metatada.
+			 * The same happens for hardlinks that duplicate metadata.
 			 * The link metadata is updated only when the link is opened.
 			 * This extends also to st_size and st_nlink.
 			 *

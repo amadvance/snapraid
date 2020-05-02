@@ -92,7 +92,7 @@
  *
  * To iterate over all the elements in the hashtable with the same key, you have to
  * use tommy_hashdyn_bucket() and follow the tommy_node::next pointer until NULL.
- * You have also to check explicitely for the key, as the bucket may contains
+ * You have also to check explicitly for the key, as the bucket may contains
  * different keys.
  *
  * \code

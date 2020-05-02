@@ -812,7 +812,7 @@ int mkancestor(const char* file)
 	}
 
 #ifdef _WIN32
-	/* if it's a drive specificaion like "C:" */
+	/* if it's a drive specification like "C:" */
 	if (isalpha(dir[0]) && dir[1] == ':' && dir[2] == 0) {
 		/* nothing more to do */
 		return 0;
@@ -1237,7 +1237,7 @@ int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off
 	 * non-blocking and do this work in a workqueue (or via some kind of
 	 * callback/continuation scheme).  My worry is just doing this if a user
 	 * application does something crazy, like request gigabytes and gigabytes
-	 * of readahead, and then repents of their craziness, there should be a
+	 * of readahead, and then repented of their craziness, there should be a
 	 * way of cancelling the readahead request.  Today, the user can just
 	 * kill the application.  But if we simply shove the work to a kernel
 	 * thread, it becomes a lot harder to cancel the readahead request.  We'd
@@ -1633,16 +1633,16 @@ void thread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex)
 /**
  * Implementation note about conditional variables.
  *
- * The conditional variables can be signaled inside or ouside the mutex,
- * what is better it's debatable but in general doing that ouside the mutex,
+ * The conditional variables can be signaled inside or outside the mutex,
+ * what is better it's debatable but in general doing that outside the mutex,
  * reduces the number of context switches.
  *
- * But when when testing with helgrind and drd, this disallows such tools to
+ * But when testing with helgrind and drd, this disallows such tools to
  * to see the dependency between the signal and the wait.
  *
  * To avoid it we signal everything inside the mutex. And we do this in both
- * test mode (with CHERCKER defined) and release mode (CHECKER not defined),
- * to be on the safe side and avoid any difference in beaviour between test and
+ * test mode (with CHECKER defined) and release mode (CHECKER not defined),
+ * to be on the safe side and avoid any difference in behaviour between test and
  * release.
  *
  * Here some interesting discussion:

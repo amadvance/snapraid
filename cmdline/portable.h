@@ -35,7 +35,7 @@
 #define __USE_MINGW_ANSI_STDIO 1
 
 /**
- * Define the MSVCRT version targetting Windows Vista.
+ * Define the MSVCRT version targeting Windows Vista.
  */
 #define __MSVCRT_VERSION__ 0x0600
 

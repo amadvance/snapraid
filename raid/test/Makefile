@@ -3,7 +3,7 @@
 #
 # selftest - Runs the same selftest and speedtest executed at the module startup.
 # fulltest - Runs a more extensive test that checks all the built-in functions.
-# speetest - Runs a more complete speed test.
+# speedtest - Runs a more complete speed test.
 # invtest - Runs an extensive matrix inversion test of all the 377.342.351.231
 #           possible square submatrices of the Cauchy matrix used.
 # covtest - Runs a coverage test.

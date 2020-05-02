@@ -25,8 +25,8 @@ with a mono thread implementation with 100.0000 files.
 * Support more parity levels
 It can be done with a generic computation function, using
 intrinsic for SSSE3 and AVX instructions.
-It would be intersting to compare performance with the hand-written
-assembler functions. Eventially we can convert them to use intrinsic also.
+It would be interesting to compare performance with the hand-written
+assembler functions. Eventually we can convert them to use intrinsic also.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/9dbd7581/
 
 * Extend haspdeep to support the SnapRAID hash :
@@ -151,7 +151,7 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/cdea773f/
 * Allocate parity minimizing concurrent use of it
 Each parity allocation should check for a parity
 range with less utilization by other disks.
-We need to take care do disable this meachnism when the parity space
+We need to take care do disable this mechanism when the parity space
 is near to fillup the parity partition.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1797bf7d/
 + This increase the possibility of recovering with multiple failures with not
@@ -182,7 +182,7 @@ allowing the user to choose where to put it.
 - It won't work with disks of different size.
 Suppose to have all disks of size N, with only one of size M>N.
 To fully use the M space, you can allocate a full N parity in such disk,
-but the remaning space will also need additional parity in the other disks,
+but the remaining space will also need additional parity in the other disks,
 in fact requiring a total of M parity for the array.
 In the end, we cannot avoid that the first biggest disk added is fully
 dedicated to parity, even if it means to leave some space unused.
@@ -199,7 +199,7 @@ But it should be only few bits for each file. So, it should be manageable.
 A lot of discussions about this feature :)
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/b2cd9385/
 - The only benefit is to distribute better the data. This could help the recovery process,
-in case of multiple failures. But no real usability or funtionality benefit in the normal
+in case of multiple failures. But no real usability or functionality benefit in the normal
 case.
 
 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/2cb97e8a/
@@ -229,7 +229,7 @@ are automatically deleted.
 
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
-because we read the data two times for hash and and parity,
+because we read the data two times for hash and parity,
 and if we manage to keep it in the cache, we should save time.
 - We now hash first the faster disks, and this could
 reduce performance as we'll have to wait for all disks.

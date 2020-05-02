@@ -818,7 +818,7 @@ static void state_smart(unsigned n, tommy_list* low)
 
 	/*      |<##################################################################72>|####80>| */
 	printf("These values are the probabilities that in the next year you'll have a\n");
-	printf("sequence of failures that the parity WONT be able to recover, assuming\n");
+	printf("sequence of failures that the parity WON'T be able to recover, assuming\n");
 	printf("that you regularly scrub, and in case repair, the array in the specified\n");
 	printf("time.\n");
 

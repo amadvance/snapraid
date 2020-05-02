@@ -231,7 +231,7 @@ tommy_uint32_t tommy_strhash_u32(tommy_uint64_t init_val, const void* void_key)
 		key += 12;
 	}
 
-	/* for lengths that are multiplers of 12 we already have called mix */
+	/* for lengths that are multipliers of 12 we already have called mix */
 	/* this is different than the original lookup3 and the result won't match */
 
 	tommy_final(a, b, c);

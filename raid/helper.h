@@ -23,7 +23,7 @@
  *
  * @n Number of integers currently in the vector.
  * @v Vector of integers already sorted.
- *   It must have extra space for the new elemet at the end.
+ *   It must have extra space for the new element at the end.
  * @i Value to insert.
  */
 void raid_insert(int n, int *v, int i);

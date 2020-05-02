@@ -1,5 +1,5 @@
 {
-   printf reports false positves when printing more than one variables at time
+   printf reports false positives when printing more than one variables at time
    exp-sgcheck:SorG
    ...
    fun:printf

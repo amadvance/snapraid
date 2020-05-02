@@ -574,7 +574,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	} else {
 		log_tag("recover_unsync:%u:%u: Skipped for%s%s\n", pos, n,
 			!something_to_recover ? " nothing to recover" : "",
-			!something_unsynced ? " nothing unsynched" : ""
+			!something_unsynced ? " nothing unsynced" : ""
 		);
 	}
 
