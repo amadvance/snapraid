@@ -161,7 +161,7 @@ static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsi
 /**
  * Compute the CRC-32 (Castagnoli)
  */
-uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+extern uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
 
 /**
  * Internal entry points for testing.

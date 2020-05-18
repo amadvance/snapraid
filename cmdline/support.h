@@ -415,7 +415,7 @@ int smartctl_flush(FILE* f, const char* file, const char* name);
  *
  * Ensure to change that before starting any thread.
  */
-int thread_cond_signal_outside;
+extern int thread_cond_signal_outside;
 
 /**
  * Thread wrappers to handle error conditions.

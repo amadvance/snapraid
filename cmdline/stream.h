@@ -28,7 +28,7 @@
  *
  * It's not a constant for testing purpose.
  */
-unsigned STREAM_SIZE;
+extern unsigned STREAM_SIZE;
 
 #define STREAM_STATE_READ 0 /**< The stream is in a normal state of read. */
 #define STREAM_STATE_WRITE 1 /**< The stream is in a normal state of write. */

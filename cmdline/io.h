@@ -313,14 +313,14 @@ void io_done(struct snapraid_io* io);
 /**
  * Start all the worker threads.
  */
-void (*io_start)(struct snapraid_io* io,
+extern void (*io_start)(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
 	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg);
 
 /**
  * Stop all the worker threads.
  */
-void (*io_stop)(struct snapraid_io* io);
+extern void (*io_stop)(struct snapraid_io* io);
 
 /**
  * Next read position.
@@ -332,7 +332,7 @@ void (*io_stop)(struct snapraid_io* io);
  * \param buffer The data buffers to use for this position.
  * \return The parity position.
  */
-block_off_t (*io_read_next)(struct snapraid_io* io, void*** buffer);
+extern block_off_t (*io_read_next)(struct snapraid_io* io, void*** buffer);
 
 /**
  * Read a data block.
@@ -343,7 +343,7 @@ block_off_t (*io_read_next)(struct snapraid_io* io, void*** buffer);
  * \param diskcur The position of the data block in the ::handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* (*io_data_read)(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac);
+extern struct snapraid_task* (*io_data_read)(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Read a parity block.
@@ -354,7 +354,7 @@ struct snapraid_task* (*io_data_read)(struct snapraid_io* io, unsigned* diskcur,
  * \param levcur The position of the parity block in the ::parity_handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* (*io_parity_read)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
+extern struct snapraid_task* (*io_parity_read)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Write of a parity block.
@@ -364,7 +364,7 @@ struct snapraid_task* (*io_parity_read)(struct snapraid_io* io, unsigned* levcur
  * \param io InputOutput context.
  * \param levcur The position of the parity block in the ::parity_handle_map vector.
  */
-void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
+extern void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Preset the write position.
@@ -376,7 +376,7 @@ void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* wait
  * \param blockcur The parity position to write.
  * \param skip Skip the writes, in case parity doesn't need to be updated.
  */
-void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip);
+extern void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip);
 
 /**
  * Next write position.
@@ -389,12 +389,12 @@ void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip);
  * \param skip Skip the writes, in case parity doesn't need to be updated.
  * \param writer_error Return the number of errors. Vector of IO_WRITER_ERROR_MAX elements.
  */
-void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error);
+extern void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error);
 
 /**
  * Refresh the number of cached blocks for all data and parity disks.
  */
-void (*io_refresh)(struct snapraid_io* io);
+extern void (*io_refresh)(struct snapraid_io* io);
 
 #endif
 

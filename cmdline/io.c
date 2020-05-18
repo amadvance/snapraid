@@ -19,6 +19,19 @@
 
 #include "io.h"
 
+void (*io_start)(struct snapraid_io* io,
+	block_off_t blockstart, block_off_t blockmax,
+	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg) = 0;
+void (*io_stop)(struct snapraid_io* io) = 0;
+block_off_t (*io_read_next)(struct snapraid_io* io, void*** buffer) = 0;
+struct snapraid_task* (*io_data_read)(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac) = 0;
+struct snapraid_task* (*io_parity_read)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac) = 0;
+void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac) = 0;
+void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip) = 0;
+void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error) = 0;
+void (*io_refresh)(struct snapraid_io* io) = 0;
+
+
 /**
  * Get the next block position to process.
  */

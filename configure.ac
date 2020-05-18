@@ -22,6 +22,8 @@ AC_CHECK_CC_OPT([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-point
 AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
 AC_CHECK_CC_OPT([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
 AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
+# This the new default for gcc 10
+AC_CHECK_CC_OPT([-fno-common], CFLAGS="$CFLAGS -fno-common", [])
 
 dnl Options to improve the performance
 AC_CHECK_CC_OPT([-march=native], CFLAGS="$CFLAGS -march=native", [])

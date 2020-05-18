@@ -79,6 +79,7 @@ void lock_done(void)
 /* print */
 
 int msg_level = 0;
+FILE* stdlog = 0;
 
 /*
  * Note that in the following functions we always flush both
