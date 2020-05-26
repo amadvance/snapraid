@@ -1,8 +1,12 @@
 SnapRAID HISTORY
 ================
 
+11.5 2020/05
+============
+ * Removed the default -march=native to allow to deploy in any machines.
+
 11.4 2020/05
-=============================
+============
  * Fix build errors due new gcc 10 default for -fno-common.
  * In fixing, if a parity is filtered out, don't attempt to recover its size,
    and proceed without it if missing.
