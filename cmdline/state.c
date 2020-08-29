@@ -4591,7 +4591,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_computed) {
 				msg_bar(", %u MB/s", out_size_speed);
-				msg_bar(", %u block/s", out_block_speed);
+				msg_bar(", %u stripe/s", out_block_speed);
 				msg_bar(", CPU %u%%", out_cpu);
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			}
