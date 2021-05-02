@@ -848,10 +848,10 @@ Options
 		This option can be used only with "sync", "check" and "fix".
 
 	-F, --force-full
-		In "sync" forces a full rebuild of the parity.
+		In "sync" forces a full recomputation of the parity.
 		This option can be used when you add a new parity level, or if
 		you reverted back to an old content file using a more recent parity data.
-		Instead of recomputing the parity from scratch, this allows
+		Instead of recreating the parity from scratch, this allows
 		to reuse the hashes present in the content file to validate data,
 		and to maintain data protection during the "sync" process using
 		the parity data you have.
@@ -862,9 +862,10 @@ Options
 		This option can be used to completely reallocate all the files
 		removing the fragmentation, but reusing the hashes present in the content
 		file to validate data.
-		Compared to -F, --force-full, this option reallocates all the parity
-		not having data protection during the operation.
 		This option can be used only with "sync".
+		WARNING! This option is for experts only, and it's highly
+		recommended to not use it.
+		You DO NOT have data protection during the "sync" operation.
 
 	-l, --log FILE
 		Write a detailed log in the specified file.
