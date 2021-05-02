@@ -82,6 +82,10 @@ Beside the ability to recover from disk failures, other
 features of SnapRAID are:
 <ul>
 <li>
+You can use disk already filled with files, without the need to
+reformat them. You will access them like now.
+</li>
+<li>
 All your data is hashed to ensure data integrity and to avoid
 silent corruption.
 </li>
@@ -95,9 +99,6 @@ If you accidentally delete some files in a disk, you can
 recover them.
 </li>
 <li>
-You can start with already filled disks.
-</li>
-<li>
 The disks can have different sizes.
 </li>
 <li>
@@ -108,7 +109,7 @@ It doesn't lock-in your data. You can stop using SnapRAID at any
 time without the need to reformat or move data.
 </li>
 <li>
-To access a file, a single disk needs to spin, saving power and
+To access a file, only a single disk needs to spin, saving power and
 producing less noise.
 </li>
 </ul>
@@ -566,7 +567,7 @@ you can skip it.
 <h4><a name="4.4.4">4.4.4</a> 
 STEP 4 -&gt; Sync
 </h4>
-Run the "sync" command to resynchronize the array with the new disk.
+Run the "sync" command to re-synchronize the array with the new disk.
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
@@ -613,7 +614,7 @@ run "sync". Later modifications are not taken into account.
 If bad blocks were detected, their block numbers are listed.
 To fix them, you can use the "fix -e" command.
 <p>
-It also shows a graph representing the the last time each block
+It also shows a graph representing the last time each block
 was scrubbed or synced. Scrubbed blocks are shown with '*',
 blocks synced but not yet scrubbed with 'o'.
 <p>
@@ -678,6 +679,9 @@ up
 Spins up all the disks of the array.
 <p>
 You can spin-up only some specific disks using the -d, --filter-disk option.
+<p>
+Take care that spinning-up all the disks at the same time needs a lot of power.
+Ensure that your power-supply can sustain that.
 <p>
 Nothing is modified.
 <h3><a name="5.4">5.4</a> 
@@ -842,7 +846,7 @@ Use the filter options to select a subset of files or disks to operate on.
 To only fix the blocks marked bad during "sync" and "scrub",
 use the -e, --filter-error option.
 As difference from other filter options, with this one the fixes are
-applied only to files that are not modified from the the latest "sync".
+applied only to files that are not modified from the latest "sync".
 <p>
 All the files that cannot be fixed are renamed adding the
 ".unrecoverable" extension.
@@ -867,7 +871,7 @@ Verify all the files and the parity data.
 It works like "fix", but it only simulates a recovery and no change
 is written in the array.
 <p>
-This command is mostly intended for manual verifications,
+This command is mostly intended for manual verification,
 like after a recovery process or in other special conditions.
 For periodic and scheduled checks uses "scrub".
 <p>
@@ -890,7 +894,7 @@ dup
 </h3>
 Lists all the duplicate files. Two files are assumed equal if their
 hashes are matching. The file data is not read, but only the
-precomputed hashes are used.
+pre-computed hashes are used.
 <p>
 Nothing is modified.
 <h3><a name="5.12">5.12</a> 
@@ -903,7 +907,7 @@ The files are not really copied here, but just linked using
 symbolic links.
 <p>
 When updating, all the present symbolic links and empty
-subdirectories are deleted and replaced with the new
+sub-directories are deleted and replaced with the new
 view of the array. Any other regular file is left in place.
 <p>
 Nothing is modified outside the pool directory.
@@ -927,20 +931,20 @@ Nothing is modified.
 <h3><a name="5.14">5.14</a> 
 touch
 </h3>
-Sets arbitrarely the sub-second timestamp of all the files
+Sets arbitrarily the sub-second time-stamp of all the files
 that have it at zero.
 <p>
 This improves the SnapRAID capability to recognize moved
-and copied files as it makes the timestamp almost unique,
+and copied files as it makes the time-stamp almost unique,
 removing possible duplicates.
 <p>
-More specifically, if the sub-second timestamp is not zero,
+More specifically, if the sub-second time-stamp is not zero,
 a moved or copied file is identified as such if it matches
-the name, size and timestamp. If instead the sub-second timestamp
+the name, size and time-stamp. If instead the sub-second time-stamp
 is zero, it's considered a copy only if it matches the full path,
-size and timestamp.
+size and time-stamp.
 <p>
-Note that the second precision timestamp is not modified,
+Note that the second precision time-stamp is not modified,
 and all the dates and times of your files will be maintained.
 <h3><a name="5.15">5.15</a> 
 rehash
@@ -1097,7 +1101,7 @@ Imports from the specified directory any file that you deleted
 from the array after the last "sync".
 If you still have such files, they could be used by "check"
 and "fix" to improve the recover process.
-The files are read also in subdirectories and they are
+The files are read also in sub-directories and they are
 identified regardless of their name.
 This option can be used only with "check" and "fix".
 </td></tr>
@@ -1173,7 +1177,7 @@ This allows to identify copied or moved files from one disk
 to another, and to reuse the already computed hash information
 to detect silent errors or to recover missing files.
 This behavior, in some rare cases, may result in false positives,
-or in a slow process due the many hash verifications, and this
+or in a slow process due the many hash verification, and this
 option allows to resolve them.
 This option can be used only with "sync", "check" and "fix".
 </td></tr>
@@ -1182,10 +1186,10 @@ This option can be used only with "sync", "check" and "fix".
 <tr valign="top" align="left"><td><strong>
 -F, --force-full
 </strong></td></tr><tr><td>
-In "sync" forces a full rebuild of the parity.
+In "sync" forces a full recomputation of the parity.
 This option can be used when you add a new parity level, or if
 you reverted back to an old content file using a more recent parity data.
-Instead of recomputing the parity from scratch, this allows
+Instead of recreating the parity from scratch, this allows
 to reuse the hashes present in the content file to validate data,
 and to maintain data protection during the "sync" process using
 the parity data you have.
@@ -1200,11 +1204,18 @@ In "sync" forces a full reallocation of files and rebuild of the parity.
 This option can be used to completely reallocate all the files
 removing the fragmentation, but reusing the hashes present in the content
 file to validate data.
-Compared to -F, --force-full, this option reallocates all the parity
-not having data protection during the operation.
-This option can be used only with "sync".
 </td></tr>
 </table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+WARNING! This option is for experts only, and it's highly
+recommended to not use it.
+You DO NOT have data protection during the "sync" operation.
+</td></tr></table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+This option can be used only with "sync".
+</td></tr></table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
 -l, --log FILE
@@ -1329,6 +1340,9 @@ When a file cannot grow anymore, the next one is used.
 The total space available must be as big as the biggest data disk in
 the array.
 <p>
+You can add additional parity files at later time, but you
+cannot reorder or remove them.
+<p>
 Leaving the parity disks reserved for parity ensures that
 it doesn't get fragmented, improving the performance.
 <p>
@@ -1361,7 +1375,7 @@ is enabled:
 </li>
 </ul>
 <p>
-Each parity level requires the precence of all the previous parity
+Each parity level requires the presence of all the previous parity
 levels.
 <p>
 The same considerations of the 'parity' option apply.
