@@ -289,6 +289,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	silent_error = 0;
 	io_error = 0;
 
+	msg_progress("Selecting...\n");
+
 	/* first count the number of blocks to process */
 	countmax = 0;
 	plan->countlast = 0;
@@ -311,6 +313,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countsize = 0;
 	countpos = 0;
 	plan->countlast = 0;
+
+	msg_progress("Scrubbing...\n");
 
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, &block_is_enabled, plan);
@@ -873,8 +877,6 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 			/* LCOV_EXCL_STOP */
 		}
 	}
-
-	msg_progress("Scrubbing...\n");
 
 	error = 0;
 

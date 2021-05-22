@@ -4117,7 +4117,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 	if (!filter_missing && !filter_error && tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
 		return;
 
-	msg_progress("Filtering...\n");
+	msg_progress("Selecting...\n");
 
 	for (i = tommy_list_head(filterlist_disk); i != 0; i = i->next) {
 		struct snapraid_filter* filter = i->data;

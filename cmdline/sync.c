@@ -732,6 +732,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	silent_error = 0;
 	io_error = 0;
 
+	msg_progress("Selecting...\n");
+
 	/* first count the number of blocks to process */
 	countmax = 0;
 	plan.handle_max = diskmax;
@@ -755,6 +757,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	countsize = 0;
 	countpos = 0;
+
+	msg_progress("Syncing...\n");
 
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, &block_is_enabled, &plan);
@@ -1574,8 +1578,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		} else {
 			log_fatal("WARNING! Skipped state write for --test-skip-content-write option.\n");
 		}
-
-		msg_progress("Syncing...\n");
 
 		/* skip degenerated cases of empty parity, or skipping all */
 		if (blockstart < blockmax) {

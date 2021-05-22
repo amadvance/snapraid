@@ -889,6 +889,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	unrecoverable_error = 0;
 	recovered_error = 0;
 
+	msg_progress("Selecting...\n");
+
 	/* first count the number of blocks to process */
 	countmax = 0;
 	for (i = blockstart; i < blockmax; ++i) {
@@ -896,6 +898,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			continue;
 		++countmax;
 	}
+
+	if (fix)
+		msg_progress("Fixing...\n");
+	else if (!state->opt.auditonly)
+		msg_progress("Checking...\n");
+	else
+		msg_progress("Hashing...\n");
 
 	/* check all the blocks in files */
 	countsize = 0;
@@ -2018,13 +2027,6 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		for (l = 0; l < state->level; ++l)
 			parity_ptr[l] = 0;
 	}
-
-	if (fix)
-		msg_progress("Fixing...\n");
-	else if (!state->opt.auditonly)
-		msg_progress("Checking...\n");
-	else
-		msg_progress("Hashing...\n");
 
 	error = 0;
 
