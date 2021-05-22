@@ -18,6 +18,7 @@
 #ifndef __UTIL_H
 #define __UTIL_H
 
+
 /****************************************************************************/
 /* memory */
 
@@ -220,6 +221,35 @@ int lock_lock(const char* file);
  * Return -1 on error.
  */
 int lock_unlock(int f);
+
+/****************************************************************************/
+/* bitvect */
+
+typedef unsigned char bit_vect_t;
+#define BIT_VECT_SIZE (sizeof(bit_vect_t) * 8)
+
+static inline size_t bit_vect_size(size_t max)
+{
+	return (max + BIT_VECT_SIZE - 1) / BIT_VECT_SIZE;
+}
+
+static inline void bit_vect_set(bit_vect_t* bit_vect, size_t off)
+{
+	bit_vect_t mask = 1 << (off % BIT_VECT_SIZE);
+	bit_vect[off / BIT_VECT_SIZE] |= mask;
+}
+
+static inline void bit_vect_clear(bit_vect_t* bit_vect, size_t off)
+{
+	bit_vect_t mask = 1 << (off % BIT_VECT_SIZE);
+	bit_vect[off / BIT_VECT_SIZE] &= ~mask;
+}
+
+static inline int bit_vect_test(bit_vect_t* bit_vect, size_t off)
+{
+	bit_vect_t mask = 1 << (off % BIT_VECT_SIZE);
+	return (bit_vect[off / BIT_VECT_SIZE] & mask) != 0;
+}
 
 #endif
 

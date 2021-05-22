@@ -28,17 +28,6 @@
 /****************************************************************************/
 /* dry */
 
-/**
- * Check if we have to process the specified block index ::i.
- */
-static int block_is_enabled(void* void_plan, block_off_t i)
-{
-	(void)void_plan;
-	(void)i;
-
-	return 1;
-}
-
 static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)
 {
 	struct snapraid_io* io = worker->io;
@@ -208,7 +197,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	countpos = 0;
 
 	/* start all the worker threads */
-	io_start(&io, blockstart, blockmax, &block_is_enabled, 0);
+	io_start(&io, blockstart, blockmax, 0);
 
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	while (1) {

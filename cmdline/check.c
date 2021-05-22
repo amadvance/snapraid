@@ -869,6 +869,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	unsigned l;
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
+	bit_vect_t* block_enabled;
 
 	handle = handle_mapping(state, &diskmax);
 
@@ -894,9 +895,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 	/* first count the number of blocks to process */
 	countmax = 0;
+	block_enabled = calloc_nofail(1, bit_vect_size(blockmax)); /* preinitialize to 0 */
 	for (i = blockstart; i < blockmax; ++i) {
 		if (!block_is_enabled(state, i, handle, diskmax))
 			continue;
+		bit_vect_set(block_enabled, i);
 		++countmax;
 	}
 
@@ -918,7 +921,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		snapraid_info info;
 		int rehash;
 
-		if (!block_is_enabled(state, i, handle, diskmax)) {
+		if (!bit_vect_test(block_enabled, i)) {
 			/* post process the files */
 			ret = file_post(state, fix, i, handle, diskmax);
 			if (ret == -1) {
@@ -1916,6 +1919,7 @@ bail:
 
 	free(failed);
 	free(failed_map);
+	free(block_enabled);
 	free(handle);
 	free(buffer_alloc);
 	free(buffer);

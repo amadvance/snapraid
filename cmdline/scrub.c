@@ -50,9 +50,8 @@ struct snapraid_plan {
 /**
  * Check if we have to process the specified block index ::i.
  */
-static int block_is_enabled(void* void_plan, block_off_t i)
+static int block_is_enabled(struct snapraid_plan* plan, block_off_t i)
 {
-	struct snapraid_plan* plan = void_plan;
 	time_t blocktime;
 	snapraid_info info;
 
@@ -268,6 +267,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	unsigned* waiting_map;
 	unsigned waiting_mac;
 	char esc_buffer[ESC_MAX];
+	bit_vect_t* block_enabled;
 
 	/* maps the disks to handles */
 	handle = handle_mapping(state, &diskmax);
@@ -294,9 +294,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* first count the number of blocks to process */
 	countmax = 0;
 	plan->countlast = 0;
+	block_enabled = calloc_nofail(1, bit_vect_size(blockmax)); /* preinitialize to 0 */
 	for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
 		if (!block_is_enabled(plan, blockcur))
 			continue;
+		bit_vect_set(block_enabled, blockcur);
 		++countmax;
 	}
 
@@ -317,7 +319,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	msg_progress("Scrubbing...\n");
 
 	/* start all the worker threads */
-	io_start(&io, blockstart, blockmax, &block_is_enabled, plan);
+	io_start(&io, blockstart, blockmax, block_enabled);
 
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	while (1) {
@@ -704,6 +706,7 @@ bail:
 	free(rehandle_alloc);
 	free(waiting_map);
 	io_done(&io);
+	free(block_enabled);
 
 	if (state->opt.expect_recoverable) {
 		if (error + silent_error + io_error == 0)

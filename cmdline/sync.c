@@ -440,9 +440,8 @@ struct snapraid_rehash {
 /**
  * Check if we have to process the specified block index ::i.
  */
-static int block_is_enabled(void* void_plan, block_off_t i)
+static int block_is_enabled(struct snapraid_plan* plan, block_off_t i)
 {
-	struct snapraid_plan* plan = void_plan;
 	unsigned j;
 	int one_invalid;
 	int one_valid;
@@ -693,6 +692,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned* waiting_map;
 	unsigned waiting_mac;
 	char esc_buffer[ESC_MAX];
+	bit_vect_t* block_enabled;
 
 	/* the sync process assumes that all the hashes are correct */
 	/* including the ones from CHG and DELETED blocks */
@@ -739,9 +739,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	plan.handle_max = diskmax;
 	plan.handle_map = handle;
 	plan.force_full = state->opt.force_full;
+	block_enabled = calloc_nofail(1, bit_vect_size(blockmax)); /* preinitialize to 0 */
 	for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
 		if (!block_is_enabled(&plan, blockcur))
 			continue;
+		bit_vect_set(block_enabled, blockcur);
 		++countmax;
 	}
 
@@ -761,7 +763,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	msg_progress("Syncing...\n");
 
 	/* start all the worker threads */
-	io_start(&io, blockstart, blockmax, &block_is_enabled, &plan);
+	io_start(&io, blockstart, blockmax, block_enabled);
 
 	if (!state_progress_begin(state, blockstart, blockmax, countmax))
 		goto end;
@@ -1417,6 +1419,7 @@ bail:
 	free(failed_map);
 	free(waiting_map);
 	io_done(&io);
+	free(block_enabled);
 
 	if (state->opt.expect_recoverable) {
 		if (error + silent_error + io_error == 0)

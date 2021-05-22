@@ -217,8 +217,7 @@ struct snapraid_io {
 	block_off_t block_start;
 	block_off_t block_max;
 	block_off_t block_next;
-	int (*block_is_enabled)(void* arg, block_off_t);
-	void* block_arg;
+	bit_vect_t* block_enabled;
 
 	/**
 	 * Buffers for data.
@@ -315,7 +314,7 @@ void io_done(struct snapraid_io* io);
  */
 extern void (*io_start)(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
-	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg);
+	bit_vect_t* block_enabled);
 
 /**
  * Stop all the worker threads.

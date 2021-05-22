@@ -21,7 +21,7 @@
 
 void (*io_start)(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
-	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg) = 0;
+	bit_vect_t* block_enabled) = 0;
 void (*io_stop)(struct snapraid_io* io) = 0;
 block_off_t (*io_read_next)(struct snapraid_io* io, void*** buffer) = 0;
 struct snapraid_task* (*io_data_read)(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac) = 0;
@@ -40,8 +40,10 @@ static block_off_t io_position_next(struct snapraid_io* io)
 	block_off_t blockcur;
 
 	/* get the next position */
-	while (io->block_next < io->block_max && !io->block_is_enabled(io->block_arg, io->block_next))
-		++io->block_next;
+	if (io->block_enabled) {
+		while (io->block_next < io->block_max && !bit_vect_test(io->block_enabled, io->block_next))
+			++io->block_next;
+	}
 
 	blockcur = io->block_next;
 
@@ -257,12 +259,11 @@ static void io_parity_write_mono(struct snapraid_io* io, unsigned* pos, unsigned
 
 static void io_start_mono(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
-	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
+	bit_vect_t* block_enabled)
 {
 	io->block_start = blockstart;
 	io->block_max = blockmax;
-	io->block_is_enabled = block_is_enabled;
-	io->block_arg = blockarg;
+	io->block_enabled = block_enabled;
 	io->block_next = blockstart;
 }
 
@@ -767,7 +768,7 @@ static void* io_writer_thread(void* arg)
 
 static void io_start_thread(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
-	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
+	bit_vect_t* block_enabled)
 {
 	unsigned i;
 	tommy_node* j;
@@ -780,8 +781,7 @@ static void io_start_thread(struct snapraid_io* io,
 
 	io->block_start = blockstart;
 	io->block_max = blockmax;
-	io->block_is_enabled = block_is_enabled;
-	io->block_arg = blockarg;
+	io->block_enabled = block_enabled;
 	io->block_next = blockstart;
 
 	io->done = 0;
