@@ -368,6 +368,7 @@ struct snapraid_disk {
 	 * change during multithread processing.
 	 */
 	pthread_mutex_t fs_mutex;
+	int fs_mutex_enabled; /*< If the lock has to be used. */
 #endif
 
 	/**
@@ -968,12 +969,17 @@ static inline tommy_uint32_t dir_name_hash(const char* name)
 /**
  * Allocate a disk.
  */
-struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip);
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip_access);
 
 /**
  * Deallocate a disk.
  */
 void disk_free(struct snapraid_disk* disk);
+
+/**
+ * Enable multithread support for the disk.
+ */
+void disk_start_thread(struct snapraid_disk* disk);
 
 /**
  * Get the size of the disk in blocks.

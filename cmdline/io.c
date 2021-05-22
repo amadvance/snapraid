@@ -770,6 +770,13 @@ static void io_start_thread(struct snapraid_io* io,
 	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
 {
 	unsigned i;
+	tommy_node* j;
+
+	/* enable the filesystem mutex in all disks */
+	for (j = io->state->disklist; j != 0; j = j->next) {
+		struct snapraid_disk* disk = j->data;
+		disk_start_thread(disk);
+	}
 
 	io->block_start = blockstart;
 	io->block_max = blockmax;

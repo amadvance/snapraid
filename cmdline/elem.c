@@ -736,7 +736,7 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, dir->sub);
 }
 
-struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip)
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip_access)
 {
 	struct snapraid_disk* disk;
 
@@ -750,6 +750,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 #if HAVE_PTHREAD
 	thread_mutex_init(&disk->fs_mutex, 0);
+	disk->fs_mutex_enabled = 0; /* lock will be enabled at threads start */
 #endif
 
 	disk->smartctl[0] = 0;
@@ -767,7 +768,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->has_unsupported_uuid = *uuid == 0; /* empty UUID means unsupported */
 	disk->had_empty_uuid = 0;
 	disk->mapping_idx = -1;
-	disk->skip_access = skip;
+	disk->skip_access = skip_access;
 	tommy_list_init(&disk->filelist);
 	tommy_list_init(&disk->deletedlist);
 	tommy_hashdyn_init(&disk->inodeset);
@@ -804,10 +805,20 @@ void disk_free(struct snapraid_disk* disk)
 	free(disk);
 }
 
+void disk_start_thread(struct snapraid_disk* disk)
+{
+#if HAVE_PTHREAD
+	disk->fs_mutex_enabled = 1;
+#else
+	(void)disk;
+#endif
+}
+
 static inline void fs_lock(struct snapraid_disk* disk)
 {
 #if HAVE_PTHREAD
-	thread_mutex_lock(&disk->fs_mutex);
+	if (disk->fs_mutex_enabled)
+		thread_mutex_lock(&disk->fs_mutex);
 #else
 	(void)disk;
 #endif
@@ -816,7 +827,8 @@ static inline void fs_lock(struct snapraid_disk* disk)
 static inline void fs_unlock(struct snapraid_disk* disk)
 {
 #if HAVE_PTHREAD
-	thread_mutex_unlock(&disk->fs_mutex);
+	if (disk->fs_mutex_enabled)
+		thread_mutex_unlock(&disk->fs_mutex);
 #else
 	(void)disk;
 #endif
