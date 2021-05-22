@@ -1041,9 +1041,9 @@ Note that it cannot be used with \[dq]sync\[dq] and \[dq]scrub\[dq], because the
 process the whole array.
 .TP
 .B \-e, \-\-filter\-error
-Filters the blocks to process in \[dq]check\[dq] and \[dq]fix\[dq].
-It processes only the blocks marked with silent or input/output
-errors during \[dq]sync\[dq] and \[dq]scrub\[dq], and listed in \[dq]status\[dq].
+Process the files with errors in \[dq]check\[dq] and \[dq]fix\[dq].
+It processes only files that have blocks marked with silent
+or input/output errors during \[dq]sync\[dq] and \[dq]scrub\[dq], and listed in \[dq]status\[dq].
 This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
 .TP
 .B \-p, \-\-plan PERC|bad|new|full

@@ -591,11 +591,10 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
  * adjust the timestamp, and print the result.
  *
  * This works only if the whole file is processed, including its last block.
- * This doesn't always happen, like when fixing only bad blocks, or with an
- * explicit end block.
+ * This doesn't always happen, like with an explicit end block.
  *
  * In such case, the check/fix command won't report any information of the
- * files affected.
+ * files partially checked.
  */
 static int file_post(struct snapraid_state* state, int fix, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
 {
@@ -603,10 +602,6 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 	int ret;
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
-
-	/* if we are processing only bad blocks, skip all post-processing */
-	if (state->opt.badonly)
-		return 0;
 
 	/* for all the files print the final status, and does the final time fix */
 	/* we also ensure to close files after processing the last block */
@@ -806,28 +801,36 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 	unsigned j;
 	unsigned l;
 
-	/* if we filter for only bad blocks */
+	/* filter for the parity */
 	if (state->opt.badonly) {
 		snapraid_info info;
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, i);
 
-		/* skip if this is not bad */
-		if (!info_get_bad(info))
-			return 0;
-	}
-
-	/* now apply the filters */
-
-	/* if a parity is not excluded, include all blocks, even unused ones */
-	for (l = 0; l < state->level; ++l) {
-		if (!state->parity[l].is_excluded_by_filter) {
+		/*
+		 * If the block is bad, it has to be processed
+		 *
+		 * This is not necessary in normal cases because if a block is bad,
+		 * it necessary needs to have a file related to it, and files with
+		 * bad blocks are fully included.
+		 *
+		 * But some files may be excluded by additional filter options,
+		 * so it's not always true, and this ensures to always check all
+		 * the bad blocks.
+		 */
+		if (info_get_bad(info))
 			return 1;
+	} else {
+		/* if a parity is not excluded, include all blocks, even unused ones */
+		for (l = 0; l < state->level; ++l) {
+			if (!state->parity[l].is_excluded_by_filter) {
+				return 1;
+			}
 		}
 	}
 
-	/* otherwise include only used blocks */
+	/* filter for the files */
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_block* block;
 

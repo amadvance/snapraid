@@ -737,9 +737,9 @@ Options
 		process the whole array.
 
 	-e, --filter-error
-		Filters the blocks to process in "check" and "fix".
-		It processes only the blocks marked with silent or input/output
-		errors during "sync" and "scrub", and listed in "status".
+		Process the files with errors in "check" and "fix".
+		It processes only files that have blocks marked with silent
+		or input/output errors during "sync" and "scrub", and listed in "status".
 		This option can be used only with "check" and "fix".
 
 	-p, --plan PERC|bad|new|full

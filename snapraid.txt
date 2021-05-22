@@ -794,9 +794,9 @@ SnapRAID provides the following options:
         process the whole array.
 
     -e, --filter-error
-        Filters the blocks to process in "check" and "fix".
-        It processes only the blocks marked with silent or input/output
-        errors during "sync" and "scrub", and listed in "status".
+        Process the files with errors in "check" and "fix".
+        It processes only files that have blocks marked with silent
+        or input/output errors during "sync" and "scrub", and listed in "status".
         This option can be used only with "check" and "fix".
 
     -p, --plan PERC|bad|new|full
@@ -919,12 +919,10 @@ SnapRAID provides the following options:
         This option can be used to completely reallocate all the files
         removing the fragmentation, but reusing the hashes present in the content
         file to validate data.
-
-    WARNING! This option is for experts only, and it's highly
-    recommended to not use it.
-    You DO NOT have data protection during the "sync" operation.
-
-    This option can be used only with "sync".
+        This option can be used only with "sync".
+        WARNING! This option is for experts only, and it's highly
+        recommended to not use it.
+        You DO NOT have data protection during the "sync" operation.
 
     -l, --log FILE
         Write a detailed log in the specified file.

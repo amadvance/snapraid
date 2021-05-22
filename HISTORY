@@ -1,8 +1,12 @@
 SnapRAID HISTORY
 ================
 
-11.5 2020/05
+11.5 2021/06
 ============
+ * The fix and check command with the -e option now process the whole files
+   that have bad blocks, and not only the block marked bad.
+   This allow to print the file paths and to process them like standard
+   fix and check.
  * Removed the default -march=native to allow to deploy in any machine.
  * Fixed typos [Andrea Gelmini]
 
