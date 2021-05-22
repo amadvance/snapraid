@@ -590,9 +590,12 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
  * For each file, if we are at the last block, closes it,
  * adjust the timestamp, and print the result.
  *
- * This works with the assumption to always process the whole files to
- * fix. This assumption is not always correct, and in such case we have to
- * skip the whole postprocessing. And example, is when fixing only bad blocks.
+ * This works only if the whole file is processed, including its last block.
+ * This doesn't always happen, like when fixing only bad blocks, or with an
+ * explicit end block.
+ *
+ * In such case, the check/fix command won't report any information of the
+ * files affected.
  */
 static int file_post(struct snapraid_state* state, int fix, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
 {
@@ -601,8 +604,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
 
-	/* if we are processing only bad blocks, we don't have to do any post-processing */
-	/* as we don't have any guarantee to process the last block of the fixed files */
+	/* if we are processing only bad blocks, skip all post-processing */
 	if (state->opt.badonly)
 		return 0;
 
@@ -922,17 +924,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		int rehash;
 
 		if (!bit_vect_test(block_enabled, i)) {
-			/* post process the files */
-			ret = file_post(state, fix, i, handle, diskmax);
-			if (ret == -1) {
-				/* LCOV_EXCL_START */
-				log_fatal("Stopping at block %u\n", i);
-				++unrecoverable_error;
-				goto bail;
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* and now continue with the next block */
+			/* continue with the next block */
 			continue;
 		}
 
