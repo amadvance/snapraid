@@ -801,15 +801,16 @@ close_and_continue:
  */
 static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct snapraid_handle* handle, unsigned diskmax)
 {
-	snapraid_info info;
 	unsigned j;
 	unsigned l;
 
-	/* get block specific info */
-	info = info_get(&state->infoarr, i);
-
 	/* if we filter for only bad blocks */
 	if (state->opt.badonly) {
+		snapraid_info info;
+
+		/* get block specific info */
+		info = info_get(&state->infoarr, i);
+
 		/* skip if this is not bad */
 		if (!info_get_bad(info))
 			return 0;
