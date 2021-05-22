@@ -614,7 +614,6 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 		struct snapraid_file* collide_file;
 		struct snapraid_file* file;
 		block_off_t file_pos;
-		char path[PATH_MAX];
 		uint64_t inode;
 
 		disk = handle[j].disk;
@@ -630,7 +629,6 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 		}
 
 		file = fs_par2file_get(disk, i, &file_pos);
-		pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
 		/* if it isn't the last block in the file */
 		if (!file_block_is_last(file, file_pos)) {
@@ -654,8 +652,10 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			/* if the file is damaged, meaning that a fix failed */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
 				/* rename it to .unrecoverable */
+				char path[PATH_MAX];
 				char path_to[PATH_MAX];
 
+				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
 
 				/* ensure to close the file before renaming */
