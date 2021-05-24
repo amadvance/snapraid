@@ -4564,7 +4564,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				out_size_speed = (unsigned)(delta_size / MEGA / delta_time);
 
 			/* estimate the speed in block/s */
-			if (delta_pos != 0)
+			if (delta_time != 0)
 				out_block_speed = (unsigned)(delta_pos / delta_time);
 
 			/* estimate the cpu usage percentage */
