@@ -501,15 +501,34 @@ int sgetu32(STREAM* f, uint32_t* value)
 	int c;
 
 	c = sgetc(f);
-	if (c >= '0' && c <= '9') {
+	if (c == '0') {
+		*value = 0;
+		return 0;
+	} else if (c >= '1' && c <= '9') {
 		uint32_t v;
 
 		v = c - '0';
 
 		c = sgetc(f);
 		while (c >= '0' && c <= '9') {
+			uint32_t digit;
+			if (v > 0xFFFFFFFFU / 10) {
+				/* LCOV_EXCL_START */
+				/* overflow */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 			v *= 10;
-			v += c - '0';
+
+			digit = c - '0';
+			if (v > 0xFFFFFFFFU - digit) {
+				/* LCOV_EXCL_START */
+				/* overflow */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+			v += digit;
+
 			c = sgetc(f);
 		}
 
