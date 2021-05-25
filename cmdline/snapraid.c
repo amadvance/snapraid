@@ -862,7 +862,7 @@ int main(int argc, char* argv[])
 			opt.force_stats = 1;
 			break;
 		case OPT_TEST_COND_SIGNAL_OUTSIDE :
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 			thread_cond_signal_outside = 1;
 #endif
 			break;

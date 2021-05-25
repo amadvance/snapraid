@@ -357,7 +357,7 @@ struct snapraid_disk {
 	int mapping_idx; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
 	int skip_access; /**< If the disk is inaccessible and it should be skipped. */
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	/**
 	 * Mutex for protecting the filesystem structure.
 	 *
@@ -367,7 +367,7 @@ struct snapraid_disk {
 	 * Files, links and dirs are not protected as they are not expected to
 	 * change during multithread processing.
 	 */
-	pthread_mutex_t fs_mutex;
+	thread_mutex_t fs_mutex;
 	int fs_mutex_enabled; /*< If the lock has to be used. */
 #endif
 

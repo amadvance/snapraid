@@ -44,7 +44,7 @@
  * Multi thread for verify is instead always generally faster,
  * so we enable it if possible.
  */
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 /* #define HAVE_MT_WRITE 1 */
 #define HAVE_MT_VERIFY 1
 #endif
@@ -2881,7 +2881,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 struct state_write_thread_context {
 	struct snapraid_state* state;
 #if HAVE_MT_WRITE
-	pthread_t thread;
+	thread_id_t thread;
 #endif
 	/* input */
 	block_off_t blockmax;
@@ -3498,7 +3498,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		context->info_has_rehash = info_has_rehash;
 		context->f = f;
 
-		thread_create(&context->thread, 0, state_write_thread, context);
+		thread_create(&context->thread, state_write_thread, context);
 
 		i = i->next;
 	}
@@ -3843,7 +3843,7 @@ struct state_verify_thread_context {
 	struct snapraid_state* state;
 	struct snapraid_content* content;
 #if HAVE_MT_VERIFY
-	pthread_t thread;
+	thread_id_t thread;
 #else
 	void* retval;
 #endif
@@ -3934,7 +3934,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		context->f = f;
 
 #if HAVE_MT_VERIFY
-		thread_create(&context->thread, 0, state_verify_thread, context);
+		thread_create(&context->thread, state_verify_thread, context);
 #else
 		context->retval = state_verify_thread(context);
 #endif

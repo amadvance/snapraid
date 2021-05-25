@@ -276,7 +276,7 @@ static void io_stop_mono(struct snapraid_io* io)
 /* multi thread */
 
 /* disable multithread if pthread is not present */
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 
 /**
  * Get the next task to work on for a reader.
@@ -811,7 +811,7 @@ static void io_start_thread(struct snapraid_io* io,
 
 		worker->index = 0;
 
-		thread_create(&worker->thread, 0, io_reader_thread, worker);
+		thread_create(&worker->thread, io_reader_thread, worker);
 	}
 
 	/* start the writer threads */
@@ -820,7 +820,7 @@ static void io_start_thread(struct snapraid_io* io,
 
 		worker->index = io->io_max - 1;
 
-		thread_create(&worker->thread, 0, io_writer_thread, worker);
+		thread_create(&worker->thread, io_writer_thread, worker);
 	}
 }
 
@@ -876,7 +876,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 
 	io->state = state;
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	if (io_cache == 0) {
 		/* default is 8 MiB of cache */
 		/* this seems to be a good tradeoff between speed and memory usage */
@@ -967,7 +967,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		worker->buffer_skew = handle_max;
 	}
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	if (io->io_max > 1) {
 		io_read_next = io_read_next_thread;
 		io_write_preset = io_write_preset_thread;
@@ -979,11 +979,11 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		io_start = io_start_thread;
 		io_stop = io_stop_thread;
 
-		thread_mutex_init(&io->io_mutex, 0);
-		thread_cond_init(&io->read_done, 0);
-		thread_cond_init(&io->read_sched, 0);
-		thread_cond_init(&io->write_done, 0);
-		thread_cond_init(&io->write_sched, 0);
+		thread_mutex_init(&io->io_mutex);
+		thread_cond_init(&io->read_done);
+		thread_cond_init(&io->read_sched);
+		thread_cond_init(&io->write_done);
+		thread_cond_init(&io->write_sched);
 	} else
 #endif
 	{
@@ -1013,7 +1013,7 @@ void io_done(struct snapraid_io* io)
 	free(io->writer_map);
 	free(io->writer_list);
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	if (io->io_max > 1) {
 		thread_mutex_destroy(&io->io_mutex);
 		thread_cond_destroy(&io->read_done);

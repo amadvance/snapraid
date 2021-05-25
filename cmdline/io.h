@@ -87,8 +87,8 @@ struct snapraid_task {
  * from a specific disk.
  */
 struct snapraid_worker {
-#if HAVE_PTHREAD
-	pthread_t thread; /**< Thread context for the worker. */
+#if HAVE_THREAD
+	thread_id_t thread; /**< Thread context for the worker. */
 #endif
 
 	struct snapraid_io* io; /**< Parent pointer. */
@@ -147,12 +147,12 @@ struct snapraid_io {
 	 */
 	unsigned io_max;
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	/**
 	 * Mutex used to protect the synchronization
 	 * between the io and the workers.
 	 */
-	pthread_mutex_t io_mutex;
+	thread_mutex_t io_mutex;
 
 	/**
 	 * Condition for a new read is completed.
@@ -161,7 +161,7 @@ struct snapraid_io {
 	 * The IO waits on this condition when it's waiting for
 	 * a new read to be completed.
 	 */
-	pthread_cond_t read_done;
+	thread_cond_t read_done;
 
 	/**
 	 * Condition for a new read scheduled.
@@ -170,7 +170,7 @@ struct snapraid_io {
 	 * read to process.
 	 * The IO signals this condition when new reads are scheduled.
 	 */
-	pthread_cond_t read_sched;
+	thread_cond_t read_sched;
 
 	/**
 	 * Condition for a new write is completed.
@@ -179,7 +179,7 @@ struct snapraid_io {
 	 * The IO waits on this condition when it's waiting for
 	 * a new write to be completed.
 	 */
-	pthread_cond_t write_done;
+	thread_cond_t write_done;
 
 	/**
 	 * Condition for a new write scheduled.
@@ -188,7 +188,7 @@ struct snapraid_io {
 	 * write to process.
 	 * The IO signals this condition when new writes are scheduled.
 	 */
-	pthread_cond_t write_sched;
+	thread_cond_t write_sched;
 #endif
 
 	/**

@@ -230,10 +230,6 @@
 #include "fnmatch.h"
 #endif
 
-#if HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
-
 #if HAVE_MATH_H
 #include <math.h>
 #endif
@@ -245,8 +241,37 @@
 /**
  * Enable thread use.
  */
+#ifdef _WIN32
+#define HAVE_THREAD 1
+typedef void* windows_thread_t;
+typedef CRITICAL_SECTION windows_mutex_t;
+typedef CONDITION_VARIABLE windows_cond_t;
+typedef void* windows_key_t;
+/* remap to pthread */
+#define thread_id_t windows_thread_t
+#define thread_mutex_t windows_mutex_t
+#define thread_cond_t windows_cond_t
+#define pthread_mutex_init windows_mutex_init
+#define pthread_mutex_destroy windows_mutex_destroy
+#define pthread_mutex_lock windows_mutex_lock
+#define pthread_mutex_unlock windows_mutex_unlock
+#define pthread_cond_init windows_cond_init
+#define pthread_cond_destroy windows_cond_destroy
+#define pthread_cond_signal windows_cond_signal
+#define pthread_cond_broadcast windows_cond_broadcast
+#define pthread_cond_wait windows_cond_wait
+#define pthread_create windows_create
+#define pthread_join windows_join
+#else
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
 #if HAVE_PTHREAD_CREATE
-#define HAVE_PTHREAD 1
+#define HAVE_THREAD 1
+typedef pthread_t thread_id_t;
+typedef pthread_mutex_t thread_mutex_t;
+typedef pthread_cond_t thread_cond_t;
+#endif
 #endif
 
 /**
@@ -470,8 +495,8 @@ struct devinfo_struct {
 	char smart_serial[SMART_MAX]; /**< SMART serial number. */
 	char smart_vendor[SMART_MAX]; /**< SMART vendor. */
 	char smart_model[SMART_MAX]; /**< SMART model. */
-#if HAVE_PTHREAD
-	pthread_t thread;
+#if HAVE_THREAD
+	thread_id_t thread;
 #endif
 	tommy_node node;
 };

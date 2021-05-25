@@ -385,23 +385,8 @@ size_t windows_direct_size(void);
 /****************************************************************************/
 /* thread */
 
-#define pthread_mutex_t windows_mutex_t
-#define pthread_cond_t windows_cond_t
-#define pthread_mutex_init windows_mutex_init
-#define pthread_mutex_destroy windows_mutex_destroy
-#define pthread_mutex_lock windows_mutex_lock
-#define pthread_mutex_unlock windows_mutex_unlock
-#define pthread_cond_init windows_cond_init
-#define pthread_cond_destroy windows_cond_destroy
-#define pthread_cond_signal windows_cond_signal
-#define pthread_cond_broadcast windows_cond_broadcast
-#define pthread_cond_wait windows_cond_wait
-
-typedef void* windows_mutex_t;
-typedef void* windows_cond_t;
-
 /**
- * Like pthread_* equivalent.
+ * Like the pthread_* equivalent.
  */
 int windows_mutex_init(windows_mutex_t* mutex, void* attr);
 int windows_mutex_destroy(windows_mutex_t* mutex);
@@ -412,6 +397,12 @@ int windows_cond_destroy(windows_cond_t* cond);
 int windows_cond_signal(windows_cond_t* cond);
 int windows_cond_broadcast(windows_cond_t* cond);
 int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex);
+int windows_key_create(windows_key_t* key, void(* destructor)(void*));
+int windows_key_delete(windows_key_t key);
+void* windows_getspecific(windows_key_t key);
+int windows_setspecific(windows_key_t key, void* value);
+int windows_create(thread_id_t* thread, void* attr, void* (* func)(void *), void *arg);
+int windows_join(thread_id_t thread, void** retval);
 
 #endif
 #endif

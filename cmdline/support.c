@@ -25,51 +25,51 @@
 /**
  * Locks used externally.
  */
-#if HAVE_PTHREAD
-static pthread_mutex_t msg_lock;
-static pthread_mutex_t memory_lock;
+#if HAVE_THREAD
+static thread_mutex_t msg_lock;
+static thread_mutex_t memory_lock;
 #endif
 
 void lock_msg(void)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	thread_mutex_lock(&msg_lock);
 #endif
 }
 
 void unlock_msg(void)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	thread_mutex_unlock(&msg_lock);
 #endif
 }
 
 void lock_memory(void)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	thread_mutex_lock(&memory_lock);
 #endif
 }
 
 void unlock_memory(void)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	thread_mutex_unlock(&memory_lock);
 #endif
 }
 
 void lock_init(void)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	/* initialize the locks as first operation as log_fatal depends on them */
-	thread_mutex_init(&msg_lock, 0);
-	thread_mutex_init(&memory_lock, 0);
+	thread_mutex_init(&msg_lock);
+	thread_mutex_init(&memory_lock);
 #endif
 }
 
 void lock_done(void)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	thread_mutex_destroy(&msg_lock);
 	thread_mutex_destroy(&memory_lock);
 #endif
@@ -1539,10 +1539,10 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 /****************************************************************************/
 /* thread */
 
-#if HAVE_PTHREAD
-void thread_mutex_init(pthread_mutex_t* mutex, pthread_mutexattr_t* attr)
+#if HAVE_THREAD
+void thread_mutex_init(thread_mutex_t* mutex)
 {
-	if (pthread_mutex_init(mutex, attr) != 0) {
+	if (pthread_mutex_init(mutex, 0) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed call to pthread_mutex_init().\n");
 		os_abort();
@@ -1550,7 +1550,7 @@ void thread_mutex_init(pthread_mutex_t* mutex, pthread_mutexattr_t* attr)
 	}
 }
 
-void thread_mutex_destroy(pthread_mutex_t* mutex)
+void thread_mutex_destroy(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_destroy(mutex) != 0) {
 		/* LCOV_EXCL_START */
@@ -1560,7 +1560,7 @@ void thread_mutex_destroy(pthread_mutex_t* mutex)
 	}
 }
 
-void thread_mutex_lock(pthread_mutex_t* mutex)
+void thread_mutex_lock(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_lock(mutex) != 0) {
 		/* LCOV_EXCL_START */
@@ -1570,7 +1570,7 @@ void thread_mutex_lock(pthread_mutex_t* mutex)
 	}
 }
 
-void thread_mutex_unlock(pthread_mutex_t* mutex)
+void thread_mutex_unlock(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_unlock(mutex) != 0) {
 		/* LCOV_EXCL_START */
@@ -1580,9 +1580,9 @@ void thread_mutex_unlock(pthread_mutex_t* mutex)
 	}
 }
 
-void thread_cond_init(pthread_cond_t* cond, pthread_condattr_t* attr)
+void thread_cond_init(thread_cond_t* cond)
 {
-	if (pthread_cond_init(cond, attr) != 0) {
+	if (pthread_cond_init(cond, 0) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed call to pthread_cond_init().\n");
 		os_abort();
@@ -1590,7 +1590,7 @@ void thread_cond_init(pthread_cond_t* cond, pthread_condattr_t* attr)
 	}
 }
 
-void thread_cond_destroy(pthread_cond_t* cond)
+void thread_cond_destroy(thread_cond_t* cond)
 {
 	if (pthread_cond_destroy(cond) != 0) {
 		/* LCOV_EXCL_START */
@@ -1600,7 +1600,7 @@ void thread_cond_destroy(pthread_cond_t* cond)
 	}
 }
 
-void thread_cond_signal(pthread_cond_t* cond)
+void thread_cond_signal(thread_cond_t* cond)
 {
 	if (pthread_cond_signal(cond) != 0) {
 		/* LCOV_EXCL_START */
@@ -1610,7 +1610,7 @@ void thread_cond_signal(pthread_cond_t* cond)
 	}
 }
 
-void thread_cond_broadcast(pthread_cond_t* cond)
+void thread_cond_broadcast(thread_cond_t* cond)
 {
 	if (pthread_cond_broadcast(cond) != 0) {
 		/* LCOV_EXCL_START */
@@ -1620,7 +1620,7 @@ void thread_cond_broadcast(pthread_cond_t* cond)
 	}
 }
 
-void thread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex)
+void thread_cond_wait(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (pthread_cond_wait(cond, mutex) != 0) {
 		/* LCOV_EXCL_START */
@@ -1659,7 +1659,7 @@ void thread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex)
  */
 int thread_cond_signal_outside = 0;
 
-void thread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
+void thread_cond_signal_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (thread_cond_signal_outside) {
 		/* without the thread checker unlock before signaling, */
@@ -1676,7 +1676,7 @@ void thread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
 	}
 }
 
-void thread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
+void thread_cond_broadcast_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (thread_cond_signal_outside) {
 		/* without the thread checker unlock before signaling, */
@@ -1693,9 +1693,9 @@ void thread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mut
 	}
 }
 
-void thread_create(pthread_t* thread, pthread_attr_t* attr, void *(* func)(void *), void *arg)
+void thread_create(thread_id_t* thread, void* (* func)(void *), void *arg)
 {
-	if (pthread_create(thread, attr, func, arg) != 0) {
+	if (pthread_create(thread, 0, func, arg) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed call to pthread_create().\n");
 		os_abort();
@@ -1703,7 +1703,7 @@ void thread_create(pthread_t* thread, pthread_attr_t* attr, void *(* func)(void 
 	}
 }
 
-void thread_join(pthread_t thread, void** retval)
+void thread_join(thread_id_t thread, void** retval)
 {
 	if (pthread_join(thread, retval) != 0) {
 		/* LCOV_EXCL_START */

@@ -748,8 +748,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	/* ensure that the dir terminate with "/" if it isn't empty */
 	pathslash(disk->dir, sizeof(disk->dir));
 
-#if HAVE_PTHREAD
-	thread_mutex_init(&disk->fs_mutex, 0);
+#if HAVE_THREAD
+	thread_mutex_init(&disk->fs_mutex);
 	disk->fs_mutex_enabled = 0; /* lock will be enabled at threads start */
 #endif
 
@@ -798,7 +798,7 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
 	tommy_hashdyn_done(&disk->dirset);
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	thread_mutex_destroy(&disk->fs_mutex);
 #endif
 
@@ -807,7 +807,7 @@ void disk_free(struct snapraid_disk* disk)
 
 void disk_start_thread(struct snapraid_disk* disk)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	disk->fs_mutex_enabled = 1;
 #else
 	(void)disk;
@@ -816,7 +816,7 @@ void disk_start_thread(struct snapraid_disk* disk)
 
 static inline void fs_lock(struct snapraid_disk* disk)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	if (disk->fs_mutex_enabled)
 		thread_mutex_lock(&disk->fs_mutex);
 #else
@@ -826,7 +826,7 @@ static inline void fs_lock(struct snapraid_disk* disk)
 
 static inline void fs_unlock(struct snapraid_disk* disk)
 {
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	if (disk->fs_mutex_enabled)
 		thread_mutex_unlock(&disk->fs_mutex);
 #else

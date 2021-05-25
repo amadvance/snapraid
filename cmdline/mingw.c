@@ -56,12 +56,12 @@ static ULONGLONG (WINAPI* ptr_GetTickCount64)(void);
  * Description of the last error.
  * It's stored in the thread local storage.
  */
-static pthread_key_t last_error;
+static windows_key_t last_error;
 
 /**
  * Monotone tick counter
  */
-static pthread_mutex_t tick_lock;
+static windows_mutex_t tick_lock;
 static uint64_t tick_last;
 
 /**
@@ -119,14 +119,14 @@ void os_init(int opt)
 	is_scan_winfind = opt != 0;
 
 	/* initialize the thread local storage for strerror(), using free() as destructor */
-	if (pthread_key_create(&last_error, free) != 0) {
-		log_fatal("Error calling pthread_key_create().\n");
+	if (windows_key_create(&last_error, free) != 0) {
+		log_fatal("Error calling windows_key_create().\n");
 		exit(EXIT_FAILURE);
 	}
 
 	tick_last = 0;
-	if (pthread_mutex_init(&tick_lock, 0) != 0) {
-		log_fatal("Error calling pthread_mutex_init().\n");
+	if (windows_mutex_init(&tick_lock, 0) != 0) {
+		log_fatal("Error calling windows_mutex_init().\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -173,9 +173,9 @@ void os_init(int opt)
 void os_done(void)
 {
 	/* delete the thread local storage for strerror() */
-	pthread_key_delete(last_error);
+	windows_key_delete(last_error);
 
-	pthread_mutex_destroy(&tick_lock);
+	windows_mutex_destroy(&tick_lock);
 
 	/* restore the normal execution level */
 	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
@@ -1811,10 +1811,10 @@ const char* windows_strerror(int err)
 	snprintf(error, len, "%s [%d/%u]", str, err, (unsigned)GetLastError());
 
 	/* get previous one, if any */
-	previous = pthread_getspecific(last_error);
+	previous = windows_getspecific(last_error);
 
 	/* store in the thread local storage */
-	if (pthread_setspecific(last_error, error) != 0) {
+	if (windows_setspecific(last_error, error) != 0) {
 		free(error);
 		return str;
 	}
@@ -2024,7 +2024,7 @@ uint64_t tick(void)
 	 * We had reports of invalid stats due faulty High Precision Event Timer.
 	 * See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a2122fd6/
 	 */
-	pthread_mutex_lock(&tick_lock);
+	windows_mutex_lock(&tick_lock);
 
 	/*
 	 * MSDN 'QueryPerformanceCounter'
@@ -2039,7 +2039,7 @@ uint64_t tick(void)
 		r = tick_last;
 	tick_last = r;
 
-	pthread_mutex_unlock(&tick_lock);
+	windows_mutex_unlock(&tick_lock);
 
 	return r;
 }
@@ -2600,7 +2600,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
-		thread_create(&devinfo->thread, 0, func, devinfo);
+		thread_create(&devinfo->thread, func, devinfo);
 	}
 
 	/* joins all threads */
@@ -2690,106 +2690,218 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 }
 
 /****************************************************************************/
-/* thread */
+/* pthread like interface */
 
 int windows_mutex_init(windows_mutex_t* mutex, void* attr)
 {
-	CRITICAL_SECTION* cs;
-
 	(void)attr;
 
-	cs = malloc(sizeof(CRITICAL_SECTION));
-	if (!cs)
-		return -1;
-
-	InitializeCriticalSection(cs);
-
-	*mutex = cs;
+	InitializeCriticalSection(mutex);
 
 	return 0;
 }
 
 int windows_mutex_destroy(windows_mutex_t* mutex)
 {
-	CRITICAL_SECTION* cs = *mutex;
-
-	DeleteCriticalSection(cs);
-
-	free(cs);
+	DeleteCriticalSection(mutex);
 
 	return 0;
 }
 
 int windows_mutex_lock(windows_mutex_t* mutex)
 {
-	CRITICAL_SECTION* cs = *mutex;
-
-	EnterCriticalSection(cs);
+	EnterCriticalSection(mutex);
 
 	return 0;
 }
 
 int windows_mutex_unlock(windows_mutex_t* mutex)
 {
-	CRITICAL_SECTION* cs = *mutex;
-
-	LeaveCriticalSection(cs);
+	LeaveCriticalSection(mutex);
 
 	return 0;
 }
 
 int windows_cond_init(windows_cond_t* cond, void* attr)
 {
-	CONDITION_VARIABLE* cv;
-
 	(void)attr;
 
-	cv = malloc(sizeof(CONDITION_VARIABLE));
-	if (!cv)
-		return -1;
-
-	InitializeConditionVariable(cv);
-
-	*cond = cv;
+	InitializeConditionVariable(cond);
 
 	return 0;
 }
 
 int windows_cond_destroy(windows_cond_t* cond)
 {
-	CONDITION_VARIABLE* cv = *cond;
-
 	/* note that in Windows there is no DeleteConditionVariable() to call */
-	free(cv);
+	(void)cond;
 
 	return 0;
 }
 
 int windows_cond_signal(windows_cond_t* cond)
 {
-	CONDITION_VARIABLE* cv = *cond;
-
-	WakeConditionVariable(cv);
+	WakeConditionVariable(cond);
 
 	return 0;
 }
 
 int windows_cond_broadcast(windows_cond_t* cond)
 {
-	CONDITION_VARIABLE* cv = *cond;
-
-	WakeAllConditionVariable(cv);
+	WakeAllConditionVariable(cond);
 
 	return 0;
 }
 
 int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex)
 {
-	CONDITION_VARIABLE* cv = *cond;
-	CRITICAL_SECTION* cs = *mutex;
-
-	if (!SleepConditionVariableCS(cv, cs, INFINITE))
+	if (!SleepConditionVariableCS(cond, mutex, INFINITE))
 		return -1;
+
+	return 0;
+}
+
+struct windows_key_context {
+	void (* func)(void *);
+	DWORD key;
+	tommy_node node;
+};
+
+/* list of all keys with destructor */
+static tommy_list windows_key_list = { 0 };
+
+int windows_key_create(windows_key_t* key, void(* destructor)(void*))
+{
+	struct windows_key_context* context;
+
+	context = malloc(sizeof(struct windows_key_context));
+	if (!context)
+		return -1;
+
+	context->func = destructor;
+	context->key = TlsAlloc();
+	if (context->key == 0xFFFFFFFF) {
+		windows_errno(GetLastError());
+		free(context);
+		return -1;
+	}
+
+	/* insert in the list of destructors */
+	if (context->func)
+		tommy_list_insert_tail(&windows_key_list, &context->node, context);
+
+	*key = context;
+
+	return 0;
+}
+
+int windows_key_delete(windows_key_t key)
+{
+	struct windows_key_context* context = key;
+
+	/* remove from the list of destructors */
+	if (context->func)
+		tommy_list_remove_existing(&windows_key_list, &context->node);
+
+	TlsFree(context->key);
+
+	free(context);
+
+	return 0;
+}
+
+void* windows_getspecific(windows_key_t key)
+{
+	struct windows_key_context* context = key;
+
+	return TlsGetValue(context->key);
+}
+
+int windows_setspecific(windows_key_t key, void* value)
+{
+	struct windows_key_context* context = key;
+
+	if (!TlsSetValue(context->key, value)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
+struct windows_thread_context {
+	HANDLE h;
+	unsigned id;
+	void* (* func)(void *);
+	void* arg;
+	void* ret;
+};
+
+/* forwarder to change the function declaration */
+static unsigned __stdcall windows_thread_func(void* arg)
+{
+	struct windows_thread_context* context = arg;
+	tommy_node* i;
+
+	context->ret = context->func(context->arg);
+
+	/* call the destructor of all the keys */
+	i = tommy_list_head(&windows_key_list);
+	while (i) {
+		struct windows_key_context* key = i->data;
+		if (key->func) {
+			void* value = windows_getspecific(key);
+			if (value)
+				key->func(value);
+		}
+		i = i->next;
+	}
+
+	return 0;
+}
+
+int windows_create(thread_id_t* thread, void* attr, void* (* func)(void *), void* arg)
+{
+	struct windows_thread_context* context;
+
+	(void)attr;
+
+	context = malloc(sizeof(struct windows_thread_context));
+	if (!context)
+		return -1;
+
+	context->func = func;
+	context->arg = arg;
+	context->ret = 0;
+	context->h = (void*)_beginthreadex(0, 0, windows_thread_func, context, 0, &context->id);
+
+	if (context->h == 0) {
+		free(context);
+		return -1;
+	}
+
+	*thread = context;
+
+	return 0;
+}
+
+int windows_join(thread_id_t thread, void** retval)
+{
+	struct windows_thread_context* context = thread;
+
+	if (WaitForSingleObject(context->h, INFINITE) != WAIT_OBJECT_0) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	if (!CloseHandle(context->h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	*retval = context->ret;
+
+	free(context);
 
 	return 0;
 }

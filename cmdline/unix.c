@@ -1325,12 +1325,12 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	int fail = 0;
 	tommy_node* i;
 
-#if HAVE_PTHREAD
+#if HAVE_THREAD
 	/* start all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
-		thread_create(&devinfo->thread, 0, func, devinfo);
+		thread_create(&devinfo->thread, func, devinfo);
 	}
 
 	/* join all threads */
