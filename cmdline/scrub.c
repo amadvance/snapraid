@@ -314,7 +314,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	countsize = 0;
 	countpos = 0;
-	plan->countlast = 0;
 
 	msg_progress("Scrubbing...\n");
 
