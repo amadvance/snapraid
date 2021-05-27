@@ -1,0 +1,52 @@
+# Build configuration for https://circleci.com/
+
+version: 2.1
+
+orbs:
+  win: circleci/windows@2.2.0
+
+workflows:
+  main:
+    jobs:
+      - build_ubuntu
+      - build_docker
+
+jobs:
+  build_docker:
+    docker:
+      - image: circleci/buildpack-deps:stable
+    steps:
+      - checkout
+      - run: autoreconf -i && ./configure --enable-warning-as-error && make all dist
+  build_ubuntu:
+    machine:
+      image: ubuntu-2004:202101-01
+    steps:
+      - checkout
+      - run: autoreconf -i && ./configure --enable-warning-as-error && make all dist
+  build_win:
+    executor:
+      name: win/default
+    steps:
+      - run:
+          name: Installing MSYS2
+          shell: powershell.exe
+          command: 'choco install msys2'
+      - run:
+          name: Installing tools
+          shell: powershell.exe
+          command: 'C:\tools\msys64\usr\bin\bash.exe -l -c "pacman --needed --noconfirm -S autoreconf automake mingw-w64-x86_64-toolchain"'
+      - checkout
+      - run:
+          name: Autoreconf
+          shell: C:\\tools\\msys64\\usr\\bin\\bash.exe -l
+          command: 'cd /c/Users/circleci/project && autoreconf -i'
+      - run:
+          name: Configure
+          shell: C:\\tools\\msys64\\usr\\bin\\bash.exe -l
+          command: 'cd /c/Users/circleci/project && ./configure --enable-warning-as-error'
+      - run:
+          name: Make
+          shell: C:\\tools\\msys64\\usr\\bin\\bash.exe -l
+          command: 'cd /c/Users/circleci/project && make'
+
