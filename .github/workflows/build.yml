@@ -1,29 +1,29 @@
 name: Build
-on: [push]
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
 jobs:
   build-mac:
     runs-on: macos-latest
     steps:
-      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
       - run: brew install automake
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
       - run: make all
-      - run: make dist
+      - run: make distcheck
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
       - run: make all
-      - run: make dist
+      - run: make distcheck
   build-win:
     runs-on: windows-latest
     defaults:
@@ -39,5 +39,5 @@ jobs:
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
       - run: make all
-      - run: make dist
+      - run: make distcheck
 
