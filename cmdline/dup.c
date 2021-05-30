@@ -41,18 +41,19 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 	struct snapraid_hash* hash;
 	block_off_t i;
 	unsigned char* buf;
+	size_t hash_size = BLOCK_HASH_SIZE;
 
 	hash = malloc_nofail(sizeof(struct snapraid_hash));
 	hash->disk = disk;
 	hash->file = file;
 
-	buf = malloc_nofail(file->blockmax * BLOCK_HASH_SIZE);
+	buf = malloc_nofail(file->blockmax * hash_size);
 
 	/* set the back pointer */
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = fs_file2block_get(file, i);
 
-		memcpy(buf + i * BLOCK_HASH_SIZE, block->hash, BLOCK_HASH_SIZE);
+		memcpy(buf + i * hash_size, block->hash, hash_size);
 
 		if (!block_has_updated_hash(block)) {
 			free(buf);
@@ -61,7 +62,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 		}
 	}
 
-	memhash(state->besthash, state->hashseed, hash->hash, buf, file->blockmax * BLOCK_HASH_SIZE);
+	memhash(state->besthash, state->hashseed, hash->hash, buf, file->blockmax * hash_size);
 
 	free(buf);
 

@@ -872,7 +872,8 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
 {
 	unsigned i;
-	size_t allocated;
+	size_t allocated_size;
+	size_t block_size = state->block_size;
 
 	io->state = state;
 
@@ -898,18 +899,18 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	assert(io->io_max == 1 || (io->io_max >= IO_MIN && io->io_max <= IO_MAX));
 
 	io->buffer_max = buffer_max;
-	allocated = 0;
+	allocated_size = 0;
 	for (i = 0; i < io->io_max; ++i) {
 		if (state->file_mode != ADVISE_DIRECT)
-			io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, state->block_size, &io->buffer_alloc_map[i]);
+			io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, block_size, &io->buffer_alloc_map[i]);
 		else
-			io->buffer_map[i] = malloc_nofail_vector_direct(handle_max, buffer_max, state->block_size, &io->buffer_alloc_map[i]);
+			io->buffer_map[i] = malloc_nofail_vector_direct(handle_max, buffer_max, block_size, &io->buffer_alloc_map[i]);
 		if (!state->opt.skip_self)
 			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
-		allocated += state->block_size * buffer_max;
+		allocated_size += block_size * buffer_max;
 	}
 
-	msg_progress("Using %u MiB of memory for %u cached blocks.\n", (unsigned)(allocated / MEBI), io->io_max);
+	msg_progress("Using %u MiB of memory for %u cached blocks.\n", (unsigned)(allocated_size / MEBI), io->io_max);
 
 	if (parity_writer) {
 		io->reader_max = handle_max;
