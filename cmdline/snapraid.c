@@ -131,13 +131,20 @@ void log_open(const char* file)
 	char text_D[32];
 	time_t t;
 	struct tm* tm;
+#if HAVE_LOCALTIME_R
+	struct tm tm_res;
+#endif
 
 	/* leave stdlog at 0 if not specified */
 	if (file == 0)
 		return;
 
 	t = time(0);
+#if HAVE_LOCALTIME_R
+	tm = localtime_r(&t, &tm_res);
+#else
 	tm = localtime(&t);
+#endif
 	if (tm) {
 		strftime(text_T, sizeof(text_T), "%H%M%S", tm);
 		strftime(text_D, sizeof(text_T), "%Y%m%d", tm);
@@ -552,6 +559,9 @@ int main(int argc, char* argv[])
 	int period;
 	time_t t;
 	struct tm* tm;
+#if HAVE_LOCALTIME_R
+	struct tm tm_res;
+#endif
 	int i;
 
 	test(argc, argv);
@@ -1225,7 +1235,11 @@ int main(int argc, char* argv[])
 
 	/* print generic info into the log */
 	t = time(0);
+#if HAVE_LOCALTIME_R
+	tm = localtime_r(&t, &tm_res);
+#else
 	tm = localtime(&t);
+#endif
 	log_tag("version:%s\n", PACKAGE_VERSION);
 	log_tag("unixtime:%" PRIi64 "\n", (int64_t)t);
 	if (tm) {
