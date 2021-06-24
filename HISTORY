@@ -1,12 +1,16 @@
 SnapRAID HISTORY
 ================
 
-11.5 2021/06
+11.6 2021/06
 ============
- * The fix and check command with the -e option now process the whole files
+ * The 'fix' and 'check' command with the -e option now process the whole files
    that have bad blocks, and not only the block marked bad.
-   This allow to print the file paths and to process them like standard
-   fix and check.
+   This allows to print the file paths of processed file and the final state
+   of the file like 'recovered' or 'unrecovered'.
+ * Improved the speed of the filtering in 'fix' and 'check' [UhClem]
+
+11.5 2020/05
+============
  * Removed the default -march=native to allow to deploy in any machine.
  * Fixed typos [Andrea Gelmini]
 
