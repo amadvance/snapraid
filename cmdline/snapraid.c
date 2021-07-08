@@ -315,6 +315,7 @@ struct option long_options[] = {
 	{ "filter-disk", 1, 0, 'd' },
 	{ "filter-missing", 0, 0, 'm' },
 	{ "filter-error", 0, 0, 'e' },
+	{ "filter-block-error", 0, 0, 'b' },
 	{ "percentage", 1, 0, 'p' }, /* legacy name for --plan */
 	{ "plan", 1, 0, 'p' },
 	{ "older-than", 1, 0, 'o' },
@@ -478,7 +479,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:S:B:L:i:l:ZEUDNFRahTC:vqHVG"
+#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:ZEUDNFRahTC:vqHVG"
 
 volatile int global_interrupt = 0;
 
@@ -627,10 +628,18 @@ int main(int argc, char* argv[])
 			opt.expected_missing = 1;
 			break;
 		case 'e' :
-			/* when processing only error, we filter both files and blocks */
+			/* when processing only error, we filter files */
 			/* and we apply fixes only to synced ones */
 			filter_error = 1;
-			opt.badonly = 1;
+			opt.badfileonly = 1;
+			opt.syncedonly = 1;
+			break;
+		case 'b' :
+			/* when processing only block with error, we filter both files and blocks */
+			/* and we apply fixes only to synced ones */
+			filter_error = 1;
+			opt.badfileonly = 1;
+			opt.badblockonly = 1;
 			opt.syncedonly = 1;
 			break;
 		case 'p' :

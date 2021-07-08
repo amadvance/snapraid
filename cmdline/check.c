@@ -801,8 +801,21 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 	unsigned j;
 	unsigned l;
 
+	/* filter for bad blocks */
+	if (state->opt.badblockonly) {
+		snapraid_info info;
+
+		/* get block specific info */
+		info = info_get(&state->infoarr, i);
+
+		/*
+		 * Filter specifically only for bad blocks
+		 */
+		return info_get_bad(info);
+	}
+
 	/* filter for the parity */
-	if (state->opt.badonly) {
+	if (state->opt.badfileonly) {
 		snapraid_info info;
 
 		/* get block specific info */
