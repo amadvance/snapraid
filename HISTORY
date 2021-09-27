@@ -1,13 +1,16 @@
 SnapRAID HISTORY
 ================
 
-11.6 2021/06
+11.6 2021/10
 ============
- * The 'fix' and 'check' command with the -e option now process the whole files
-   that have bad blocks, and not only the block marked bad.
-   This allows to print the file paths of processed file and the final state
-   of the file like 'recovered' or 'unrecovered'.
- * Improved the speed of the filtering in 'fix' and 'check' [UhClem]
+ * The 'fix' and 'check' command with the -e option now process the whole
+   files that have bad blocks, and not only the block marked bad.
+   This allows to restore the timestamp and to print the paths of
+   processed files and the final state of the files like 'recovered' or
+   'unrecovered'. The previous behaviour is available with the -b,
+   --filter-block-error option.
+ * Improved the speed of the filtering in 'fix' and 'check'. This phase
+   happens after the "Selecting..." message.  [UhClem]
 
 11.5 2020/05
 ============
