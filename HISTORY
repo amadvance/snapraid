@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+12.0 2021/12
+============
+ * Parallel disk scanning. It's always enabled but it doesn't cover the -m option
+   that still process disks sequentially.
+
 11.6 2021/10
 ============
  * The 'fix' and 'check' command with the -e option now process the whole

@@ -25,6 +25,17 @@
 struct snapraid_scan {
 	struct snapraid_state* state; /**< State used. */
 	struct snapraid_disk* disk; /**< Disk used. */
+	thread_id_t thread; /**< Thread used for scanning the disk */
+
+	int is_diff; /**< If it's a diff command or a scanning */
+	int need_write; /**< If a state write is required */
+
+#if HAVE_THREAD
+	/**
+	 * Mutex for protecting the disk stampset table
+	 */
+	thread_mutex_t mutex;
+#endif
 
 	/**
 	 * Counters of changes.
@@ -45,16 +56,65 @@ struct snapraid_scan {
 	tommy_node node;
 };
 
+static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct snapraid_disk* disk, int is_diff)
+{
+	struct snapraid_scan* scan;
+
+	scan = malloc_nofail(sizeof(struct snapraid_scan));
+	scan->state = state;
+	scan->disk = disk;
+	scan->count_equal = 0;
+	scan->count_move = 0;
+	scan->count_copy = 0;
+	scan->count_restore = 0;
+	scan->count_change = 0;
+	scan->count_remove = 0;
+	scan->count_insert = 0;
+	tommy_list_init(&scan->file_insert_list);
+	tommy_list_init(&scan->link_insert_list);
+	tommy_list_init(&scan->dir_insert_list);
+	scan->is_diff = is_diff;
+	scan->need_write = 0;
+
+#if HAVE_THREAD
+	thread_mutex_init(&disk->stamp_mutex);
+#endif
+
+	return scan;
+}
+
+static void scan_free(struct snapraid_scan* scan)
+{
+#if HAVE_THREAD
+	thread_mutex_destroy(&scan->disk->stamp_mutex);
+#endif
+
+	free(scan);
+}
+
+static void stamp_lock(struct snapraid_disk* disk)
+{
+#if HAVE_THREAD
+	thread_mutex_lock(&disk->stamp_mutex);
+#endif
+}
+
+static void stamp_unlock(struct snapraid_disk* disk)
+{
+#if HAVE_THREAD
+	thread_mutex_unlock(&disk->stamp_mutex);
+#endif
+}
+
 /**
  * Remove the specified link from the data set.
  */
 static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* slink)
 {
-	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
 	/* state changed */
-	state->need_write = 1;
+	scan->need_write = 1;
 
 	/* remove the file from the link containers */
 	tommy_hashdyn_remove_existing(&disk->linkset, &slink->nodeset);
@@ -69,11 +129,10 @@ static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* s
  */
 static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* slink)
 {
-	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
 	/* state changed */
-	state->need_write = 1;
+	scan->need_write = 1;
 
 	/* insert the link in the link containers */
 	tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash(slink->sub));
@@ -116,7 +175,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* it's an update */
 
 			/* we have to save the linkto/type */
-			state->need_write = 1;
+			scan->need_write = 1;
 
 			++scan->count_change;
 
@@ -166,7 +225,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 	block_off_t parity_pos;
 
 	/* state changed */
-	state->need_write = 1;
+	scan->need_write = 1;
 
 	/* allocate the blocks of the file */
 	parity_pos = disk->first_free_block;
@@ -267,7 +326,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
 	/* state changed */
-	state->need_write = 1;
+	scan->need_write = 1;
 
 	/* here we are supposed to adjust the ::first_free_block position */
 	/* with the parity position we are deleting */
@@ -563,8 +622,11 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 	/* insert the file in the containers */
 	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
 		tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+
+	stamp_lock(disk);
 	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
+	stamp_unlock(disk);
 
 	/* delayed allocation of the parity */
 	scan_file_delayed_allocate(scan, file);
@@ -583,7 +645,10 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
+
+	stamp_lock(disk);
 	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
+	stamp_unlock(disk);
 
 	/* deallocate the file from the parity */
 	scan_file_deallocate(scan, file);
@@ -706,7 +771,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				file->mtime_nsec = STAT_NSEC(st);
 
 				/* we have to save the new mtime */
-				state->need_write = 1;
+				scan->need_write = 1;
 			}
 
 			if (strcmp(file->sub, sub) != 0) {
@@ -728,7 +793,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 
 				/* we have to save the new name */
-				state->need_write = 1;
+				scan->need_write = 1;
 			} else {
 				/* otherwise it's equal */
 				++scan->count_equal;
@@ -864,7 +929,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				file->mtime_nsec = STAT_NSEC(st);
 
 				/* we have to save the new mtime */
-				state->need_write = 1;
+				scan->need_write = 1;
 			}
 
 			/* if when processing the disk we used the past inodes values */
@@ -891,7 +956,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 
 				/* we have to save the new inode */
-				state->need_write = 1;
+				scan->need_write = 1;
 			} else {
 				/* otherwise it's the case of not persistent inode, where doesn't */
 				/* matter if the inode is different or equal, because they have no */
@@ -963,6 +1028,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
 
+#if 1
 	/* if copy detection is enabled */
 	/* note that the copy detection is tried also for updated files */
 	/* this makes sense because it may happen to have two different copies */
@@ -976,12 +1042,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			struct snapraid_disk* other_disk = i->data;
 			struct snapraid_file* other_file;
 
+			stamp_lock(other_disk);
 			/* if the nanosecond part of the time stamp is valid, search */
 			/* for name and stamp, otherwise for path and stamp */
 			if (file->mtime_nsec != 0 && file->mtime_nsec != STAT_NSEC_INVALID)
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_namestamp_compare, file, hash);
 			else
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_pathstamp_compare, file, hash);
+			stamp_unlock(other_disk);
 
 			/* if found, and it's a fully hashed file */
 			if (other_file && file_is_full_hashed_and_stable(scan->state, other_disk, other_file)) {
@@ -1004,6 +1072,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			}
 		}
 	}
+#endif
 
 	/* if not yet reported, do it now */
 	/* we postpone this to avoid to print two times the copied files */
@@ -1038,11 +1107,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
  */
 static void scan_emptydir_remove(struct snapraid_scan* scan, struct snapraid_dir* dir)
 {
-	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
 	/* state changed */
-	state->need_write = 1;
+	scan->need_write = 1;
 
 	/* remove the file from the dir containers */
 	tommy_hashdyn_remove_existing(&disk->dirset, &dir->nodeset);
@@ -1057,11 +1125,10 @@ static void scan_emptydir_remove(struct snapraid_scan* scan, struct snapraid_dir
  */
 static void scan_emptydir_insert(struct snapraid_scan* scan, struct snapraid_dir* dir)
 {
-	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
 	/* state changed */
-	state->need_write = 1;
+	scan->need_write = 1;
 
 	/* insert the dir in the dir containers */
 	tommy_hashdyn_insert(&disk->dirset, &dir->nodeset, dir, dir_name_hash(dir->sub));
@@ -1467,6 +1534,57 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	return processed;
 }
 
+static void* scan_disk(void* arg)
+{
+	struct snapraid_scan* scan = arg;
+	struct snapraid_disk* disk = scan->disk;
+	int ret;
+	int has_persistent_inodes;
+	int has_syncronized_hardlinks;
+
+	/* check if the disk supports persistent inodes */
+	ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (!has_persistent_inodes) {
+		disk->has_volatile_inodes = 1;
+	}
+	if (!has_syncronized_hardlinks) {
+		disk->has_volatile_hardlinks = 1;
+	}
+
+	/* if inodes or UUID are not persistent/changed/unsupported */
+	if (disk->has_volatile_inodes || disk->has_different_uuid || disk->has_unsupported_uuid) {
+		/* remove all the inodes from the inode collection */
+		/* if they are not persistent, all of them could be changed now */
+		/* and we don't want to find false matching ones */
+		/* see scan_file() for more details */
+		tommy_node* node = disk->filelist;
+		while (node) {
+			struct snapraid_file* file = node->data;
+
+			node = node->next;
+
+			/* remove from the inode set */
+			tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+			/* clear the inode */
+			file->inode = 0;
+
+			/* mark as missing inode */
+			file_flag_set(file, FILE_IS_WITHOUT_INODE);
+		}
+	}
+
+	scan_dir(scan, 0, scan->is_diff, disk->dir, "");
+
+	return 0;
+}
+
 static int state_diffscan(struct snapraid_state* state, int is_diff)
 {
 	tommy_node* i;
@@ -1482,75 +1600,38 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 	if (is_diff)
 		msg_progress("Comparing...\n");
+	else
+		msg_progress("Scanning...\n");
 
-	/* first scan all the directory and find new and deleted files */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_scan* scan;
-		tommy_node* node;
-		int ret;
-		int has_persistent_inodes;
-		int has_syncronized_hardlinks;
 
-		scan = malloc_nofail(sizeof(struct snapraid_scan));
-		scan->state = state;
-		scan->disk = disk;
-		scan->count_equal = 0;
-		scan->count_move = 0;
-		scan->count_copy = 0;
-		scan->count_restore = 0;
-		scan->count_change = 0;
-		scan->count_remove = 0;
-		scan->count_insert = 0;
-		tommy_list_init(&scan->file_insert_list);
-		tommy_list_init(&scan->link_insert_list);
-		tommy_list_init(&scan->dir_insert_list);
+		scan = scan_alloc(state, disk, is_diff);
 
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
-
-		if (!is_diff)
-			msg_progress("Scanning disk %s...\n", disk->name);
-
-		/* check if the disk supports persistent inodes */
-		ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0);
-		if (ret < 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-		if (!has_persistent_inodes) {
-			disk->has_volatile_inodes = 1;
-		}
-		if (!has_syncronized_hardlinks) {
-			disk->has_volatile_hardlinks = 1;
-		}
-
-		/* if inodes or UUID are not persistent/changed/unsupported */
-		if (disk->has_volatile_inodes || disk->has_different_uuid || disk->has_unsupported_uuid) {
-			/* remove all the inodes from the inode collection */
-			/* if they are not persistent, all of them could be changed now */
-			/* and we don't want to find false matching ones */
-			/* see scan_file() for more details */
-			node = disk->filelist;
-			while (node) {
-				struct snapraid_file* file = node->data;
-
-				node = node->next;
-
-				/* remove from the inode set */
-				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
-
-				/* clear the inode */
-				file->inode = 0;
-
-				/* mark as missing inode */
-				file_flag_set(file, FILE_IS_WITHOUT_INODE);
-			}
-		}
-
-		scan_dir(scan, 0, is_diff, disk->dir, "");
 	}
+
+	/* first scan all the directory and find new and deleted files */
+	for (i = scanlist; i != 0; i = i->next) {
+		struct snapraid_scan* scan = i->data;
+#if HAVE_THREAD
+		thread_create(&scan->thread, scan_disk, scan);
+#else
+		scan_disk(scan);
+#endif
+	}
+
+#if HAVE_THREAD
+	/* wait for all threads to terminate */
+	for (i = scanlist; i != 0; i = i->next) {
+		struct snapraid_scan* scan = i->data;
+		void* retval;
+
+		/* wait for thread termination */
+		thread_join(scan->thread, &retval);
+	}
+#endif
 
 	/* we split the search in two phases because to detect files */
 	/* moved from one disk to another we have to start deletion */
@@ -1704,6 +1785,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 			/* insert it */
 			scan_emptydir_insert(scan, dir);
+		}
+	}
+
+	/* propagate the state change (after all the scan operations are called) */
+	for (i = scanlist; i != 0; i = i->next) {
+		struct snapraid_scan* scan = i->data;
+		if (scan->need_write) {
+			state->need_write = 1;
 		}
 	}
 
@@ -1896,7 +1985,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 	log_flush();
 
-	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
+	tommy_list_foreach(&scanlist, (tommy_foreach_func*)scan_free);
 
 	/* check the file-system on all disks */
 	state_fscheck(state, "after scan");

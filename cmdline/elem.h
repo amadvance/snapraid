@@ -369,6 +369,13 @@ struct snapraid_disk {
 	 */
 	thread_mutex_t fs_mutex;
 	int fs_mutex_enabled; /*< If the lock has to be used. */
+
+	/**
+	 * Mutex for protecting the scan process.
+	 *
+	 * It's used during the scan process to protect the stampset to identity copy of files
+	 */
+	thread_mutex_t stamp_mutex;
 #endif
 
 	/**
