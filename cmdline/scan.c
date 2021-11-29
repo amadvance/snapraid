@@ -1541,6 +1541,7 @@ static void* scan_disk(void* arg)
 	int ret;
 	int has_persistent_inodes;
 	int has_syncronized_hardlinks;
+	uint64_t start;
 
 	/* check if the disk supports persistent inodes */
 	ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0);
@@ -1580,7 +1581,12 @@ static void* scan_disk(void* arg)
 		}
 	}
 
+	start = tick_ms();
+
 	scan_dir(scan, 0, scan->is_diff, disk->dir, "");
+
+	if (!scan->is_diff)
+		msg_progress("Scanned %s in %" PRIu64 " seconds\n", disk->name, (tick_ms() - start) / 1000);
 
 	return 0;
 }
