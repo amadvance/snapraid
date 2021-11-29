@@ -37,10 +37,6 @@
  * writing to disk, but you'll need to access multiple times the same data,
  * being potentially slower.
  *
- * For upcoming SnapRAID version it's planned to add a mutex protection
- * at the file-system structure, slowing down multiple data access,
- * so we disable it.
- *
  * Multi thread for verify is instead always generally faster,
  * so we enable it if possible.
  */
