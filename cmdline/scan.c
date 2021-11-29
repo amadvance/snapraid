@@ -96,6 +96,8 @@ static void stamp_lock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD
 	thread_mutex_lock(&disk->stamp_mutex);
+#else
+	(void)disk;
 #endif
 }
 
@@ -103,6 +105,8 @@ static void stamp_unlock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD
 	thread_mutex_unlock(&disk->stamp_mutex);
+#else
+	(void)disk;
 #endif
 }
 
