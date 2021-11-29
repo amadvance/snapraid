@@ -3904,6 +3904,8 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 	tommy_node* i;
 	int fail;
 
+	msg_progress("Verifying...\n");
+
 	/* start all reading threads */
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
@@ -3911,8 +3913,6 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		struct state_verify_thread_context* context;
 		char tmp[PATH_MAX];
 		STREAM* f;
-
-		msg_progress("Verifying %s...\n", content->content);
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 		f = sopen_read(tmp);
