@@ -135,6 +135,9 @@ AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 AC_CHECK_CC_OPT([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
 AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
 
+dnl Disable warning about zero-length-bounds raised by gcc 10 on linux kernel header on the fm_extents field
+AC_CHECK_CC_OPT([-Wno-zero-length-bounds], CFLAGS="$CFLAGS -Wno-zero-length-bounds", [])
+
 dnl Checks for asm
 AC_ARG_ENABLE([asm],
 	AS_HELP_STRING([--disable-asm], [Disable inline assembly]))
