@@ -307,6 +307,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_CONTENT_WRITE 302
 #define OPT_TEST_SKIP_SPACE_HOLDER 303
 #define OPT_TEST_FORMAT 304
+#define OPT_TEST_SKIP_MULTI_SCAN 305
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -474,6 +475,9 @@ struct option long_options[] = {
 
 	/* Set the output format */
 	{ "test-fmt", 1, 0, OPT_TEST_FORMAT },
+
+	/* Skip thread in disk scan */
+	{ "test-skip-multi-scan", 0, 0, OPT_TEST_SKIP_MULTI_SCAN },
 
 	{ 0, 0, 0, 0 }
 };
@@ -928,6 +932,9 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
+			break;
+		case OPT_TEST_SKIP_MULTI_SCAN :
+			opt.skip_multi_scan = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

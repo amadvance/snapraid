@@ -1626,7 +1626,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
 #if HAVE_THREAD
-		thread_create(&scan->thread, scan_disk, scan);
+		if (state->opt.skip_multi_scan)
+			scan_disk(scan);
+		else
+			thread_create(&scan->thread, scan_disk, scan);
 #else
 		scan_disk(scan);
 #endif
@@ -1639,7 +1642,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		void* retval;
 
 		/* wait for thread termination */
-		thread_join(scan->thread, &retval);
+		if (!state->opt.skip_multi_scan)
+			thread_join(scan->thread, &retval);
 	}
 #endif
 
