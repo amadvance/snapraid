@@ -1032,7 +1032,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
 
-#if 1
 	/* if copy detection is enabled */
 	/* note that the copy detection is tried also for updated files */
 	/* this makes sense because it may happen to have two different copies */
@@ -1076,7 +1075,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			}
 		}
 	}
-#endif
 
 	/* if not yet reported, do it now */
 	/* we postpone this to avoid to print two times the copied files */
