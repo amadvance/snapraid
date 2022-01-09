@@ -266,6 +266,12 @@ void pathcpy(char* dst, size_t size, const char* src);
 void pathcat(char* dst, size_t size, const char* src);
 
 /**
+ * Concatenate a path limiting the size knowing the length.
+ * Abort if too long.
+ */
+void pathcatl(char* dst, size_t dst_len, size_t size, const char* src);
+
+/**
  * Concatenate a path limiting the size.
  * Abort if too long.
  */

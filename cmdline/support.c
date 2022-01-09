@@ -663,6 +663,20 @@ void pathcat(char* dst, size_t size, const char* src)
 	memcpy(dst + dst_len, src, src_len + 1);
 }
 
+void pathcatl(char* dst, size_t dst_len, size_t size, const char* src)
+{
+	size_t src_len = strlen(src);
+
+	if (dst_len + src_len + 1 > size) {
+		/* LCOV_EXCL_START */
+		log_fatal("Path too long '%s%s'\n", dst, src);
+		os_abort();
+		/* LCOV_EXCL_STOP */
+	}
+
+	memcpy(dst + dst_len, src, src_len + 1);
+}
+
 void pathcatc(char* dst, size_t size, char c)
 {
 	size_t dst_len = strlen(dst);

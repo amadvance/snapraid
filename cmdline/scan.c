@@ -1241,7 +1241,7 @@ struct stat* dstat(const char* file, struct stat* st)
  * Process a directory.
  * Return != 0 if at least one file or link is processed.
  */
-static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const char* dir, const char* sub)
+static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* path_next, char* sub_next, char* tmp)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -1249,18 +1249,22 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	DIR* d;
 	tommy_list list;
 	tommy_node* node;
-	char path_next[PATH_MAX];
+	size_t path_len;
+	size_t sub_len;
+
+	path_len = strlen(path_next);
+	sub_len = strlen(sub_next);
 
 	tommy_list_init(&list);
 
-	d = opendir(dir);
+	d = opendir(path_next);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal("Error opening directory '%s'. %s.\n", path_next, strerror(errno));
 		if (level == 0)
 			log_fatal("If this is the disk mount point, remember to create it manually\n");
 		else
-			log_fatal("If it's a permission problem, you can exclude it in the config file with:\n\texclude /%s\n", sub);
+			log_fatal("If it's a permission problem, you can exclude it in the config file with:\n\texclude /%s\n", sub_next);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1283,8 +1287,11 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error reading directory '%s'. %s.\n", dir, strerror(errno));
-			log_fatal("You can exclude it in the config file with:\n\texclude /%s\n", sub);
+			/* restore removing additions */
+			path_next[path_len] = 0;
+			sub_next[sub_len] = 0;
+			log_fatal("Error reading directory '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal("You can exclude it in the config file with:\n\texclude /%s\n", sub_next);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1297,7 +1304,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 		if (name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 			continue;
 
-		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
+		pathcatl(path_next, path_len, PATH_MAX, name);
 
 		/* check for not supported file names */
 		if (name[0] == 0) {
@@ -1343,7 +1350,9 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		/* restore removing additions */
+		path_next[path_len] = 0;
+		log_fatal("Error closing directory '%s'. %s.\n", path_next, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1366,8 +1375,6 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	/* process the sorted dir entries */
 	node = list;
 	while (node != 0) {
-		char sub_next[PATH_MAX];
-		char tmp[PATH_MAX];
 		struct snapraid_filter* reason = 0;
 		struct dirent_sorted* dd = node->data;
 		const char* name = dd->d_name;
@@ -1377,8 +1384,8 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 		struct stat st_buf;
 #endif
 
-		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
-		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
+		pathcatl(path_next, path_len, PATH_MAX, name);
+		pathcatl(sub_next, sub_len, PATH_MAX, name);
 
 		/* start with an unknown type */
 		type = -1;
@@ -1449,13 +1456,13 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 				scan_file(scan, is_diff, sub_next, st, FILEPHY_UNREAD_OFFSET);
 				processed = 1;
 			} else {
-				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
+				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else if (type == 1) { /* LNK */
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				int ret;
 
-				ret = readlink(path_next, tmp, sizeof(tmp));
+				ret = readlink(path_next, tmp, PATH_MAX);
 				if (ret >= PATH_MAX) {
 					/* LCOV_EXCL_START */
 					log_fatal("Error in readlink file '%s'. Symlink too long.\n", path_next);
@@ -1478,7 +1485,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 				scan_link(scan, is_diff, sub_next, tmp, FILE_IS_SYMLINK);
 				processed = 1;
 			} else {
-				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
+				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else if (type == 2) { /* DIR */
 			if (filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1495,10 +1502,11 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 #endif
 				{
 					/* recurse */
-					pathslash(path_next, sizeof(path_next));
-					pathcpy(tmp, sizeof(tmp), sub_next);
-					pathslash(tmp, sizeof(tmp));
-					if (scan_dir(scan, level + 1, is_diff, path_next, tmp) == 0) {
+					pathslash(path_next, PATH_MAX);
+					pathslash(sub_next, PATH_MAX);
+					if (scan_sub(scan, level + 1, is_diff, path_next, sub_next, tmp) == 0) {
+						/* restore removing additions */
+						pathcatl(sub_next, sub_len, PATH_MAX, name);
 						/* scan the directory as empty dir */
 						scan_emptydir(scan, sub_next);
 					}
@@ -1506,7 +1514,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 					processed = 1;
 				}
 			} else {
-				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
+				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else {
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1516,7 +1524,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 
 				log_fatal("WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
-				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
+				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		}
 
@@ -1528,6 +1536,23 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	}
 
 	return processed;
+}
+
+/**
+ * Process a directory.
+ * Return != 0 if at least one file or link is processed.
+ */
+static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const char* dir, const char* sub)
+{
+	/* working buffers used by scan_sub() */
+	char path_next[PATH_MAX];
+	char sub_next[PATH_MAX];
+	char tmp[PATH_MAX];
+
+	pathcpy(path_next, sizeof(path_next), dir);
+	pathcpy(sub_next, sizeof(sub_next), sub);
+
+	return scan_sub(scan, level, is_diff, path_next, sub_next, tmp);
 }
 
 static void* scan_disk(void* arg)
