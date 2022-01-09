@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+12.1 2022/01
+============
+ * Reduce stack usage to work in enviromnents with limited stack size, like MUSL.
+
 12.0 2021/12
 ============
  * Parallel disk scanning. It's always enabled but it doesn't cover the -m option

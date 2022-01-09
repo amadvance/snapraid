@@ -1249,6 +1249,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	DIR* d;
 	tommy_list list;
 	tommy_node* node;
+	char path_next[PATH_MAX];
 
 	tommy_list_init(&list);
 
@@ -1266,8 +1267,6 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 
 	/* read the full directory */
 	while (1) {
-		char path_next[PATH_MAX];
-		char sub_next[PATH_MAX];
 		struct dirent_sorted* entry;
 		const char* name;
 		struct dirent* dd;
@@ -1299,7 +1298,6 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 			continue;
 
 		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
-		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
 
 		/* check for not supported file names */
 		if (name[0] == 0) {
@@ -1368,9 +1366,8 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	/* process the sorted dir entries */
 	node = list;
 	while (node != 0) {
-		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
-		char out[PATH_MAX];
+		char tmp[PATH_MAX];
 		struct snapraid_filter* reason = 0;
 		struct dirent_sorted* dd = node->data;
 		const char* name = dd->d_name;
@@ -1452,14 +1449,13 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 				scan_file(scan, is_diff, sub_next, st, FILEPHY_UNREAD_OFFSET);
 				processed = 1;
 			} else {
-				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
 			}
 		} else if (type == 1) { /* LNK */
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
-				char subnew[PATH_MAX];
 				int ret;
 
-				ret = readlink(path_next, subnew, sizeof(subnew));
+				ret = readlink(path_next, tmp, sizeof(tmp));
 				if (ret >= PATH_MAX) {
 					/* LCOV_EXCL_START */
 					log_fatal("Error in readlink file '%s'. Symlink too long.\n", path_next);
@@ -1476,13 +1472,13 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 					log_fatal("WARNING! Empty symbolic link '%s'.\n", path_next);
 
 				/* readlink doesn't put the final 0 */
-				subnew[ret] = 0;
+				tmp[ret] = 0;
 
 				/* process as a symbolic link */
-				scan_link(scan, is_diff, sub_next, subnew, FILE_IS_SYMLINK);
+				scan_link(scan, is_diff, sub_next, tmp, FILE_IS_SYMLINK);
 				processed = 1;
 			} else {
-				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
 			}
 		} else if (type == 2) { /* DIR */
 			if (filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1498,13 +1494,11 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 				} else
 #endif
 				{
-					char sub_dir[PATH_MAX];
-
 					/* recurse */
 					pathslash(path_next, sizeof(path_next));
-					pathcpy(sub_dir, sizeof(sub_dir), sub_next);
-					pathslash(sub_dir, sizeof(sub_dir));
-					if (scan_dir(scan, level + 1, is_diff, path_next, sub_dir) == 0) {
+					pathcpy(tmp, sizeof(tmp), sub_next);
+					pathslash(tmp, sizeof(tmp));
+					if (scan_dir(scan, level + 1, is_diff, path_next, tmp) == 0) {
 						/* scan the directory as empty dir */
 						scan_emptydir(scan, sub_next);
 					}
@@ -1512,7 +1506,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 					processed = 1;
 				}
 			} else {
-				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
 			}
 		} else {
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1522,7 +1516,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 
 				log_fatal("WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
-				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, sizeof(tmp)));
 			}
 		}
 
@@ -1611,6 +1605,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	else
 		msg_progress("Scanning...\n");
 
+	/* allocate all the scan data */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_scan* scan;
