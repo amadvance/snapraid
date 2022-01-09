@@ -35,8 +35,8 @@
  *  4  - 452 MB/s, CPU 54%, speed 118%
  *  8  - 487 MB/s, CPU 60%, speed 128%
  * 16  - 505 MB/s, CPU 63%, speed 132%
- * 32  - 520 MB/s, CPU 64%, speed 136%
- * 64  - 524 MB/s, CPU 65%, speed 137%
+ * 32  - 520 MB/s, CPU 64%, speed 136% [SnapRAID <= 12.0]
+ * 64  - 524 MB/s, CPU 65%, speed 137% [SnapRAID > 12.0]
  * 128 - 525 MB/s, CPU 66%, speed 138%
  */
 #define IO_MIN 3 /* required by writers, readers can work also with 2 */

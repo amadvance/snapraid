@@ -879,9 +879,9 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 
 #if HAVE_THREAD
 	if (io_cache == 0) {
-		/* default is 8 MiB of cache */
+		/* default is 16 MiB of cache */
 		/* this seems to be a good tradeoff between speed and memory usage */
-		io->io_max = 8 * 1024 * 1024 / state->block_size;
+		io->io_max = 16 * 1024 * 1024 / state->block_size;
 		if (io->io_max < IO_MIN)
 			io->io_max = IO_MIN;
 		if (io->io_max > IO_MAX)
