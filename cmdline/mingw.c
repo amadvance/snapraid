@@ -475,7 +475,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
  */
 static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
 {
-	uint64_t mtime;
+	int64_t mtime;
 
 	windows_attr2stat(info->dwFileAttributes, tag->ReparseTag, st);
 
@@ -532,7 +532,7 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
  */
 static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_stat* st)
 {
-	uint64_t mtime;
+	int64_t mtime;
 
 	/* The FILE_ID_BOTH_DIR_INFO doesn't have the ReparseTag information */
 	/* we could use instead FILE_ID_EXTD_DIR_INFO, but it's available only */
@@ -577,7 +577,7 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
  */
 static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
-	uint64_t mtime;
+	int64_t mtime;
 
 	windows_attr2stat(info->dwFileAttributes, info->dwReserved0, st);
 
@@ -1039,7 +1039,7 @@ int windows_futimens(int fd, struct windows_timespec tv[2])
 {
 	HANDLE h;
 	FILETIME ft;
-	uint64_t mtime;
+	int64_t mtime;
 
 	if (fd == -1) {
 		errno = EBADF;
@@ -1061,7 +1061,7 @@ int windows_futimens(int fd, struct windows_timespec tv[2])
 	mtime = tv[0].tv_sec;
 	mtime *= 10000000;
 	mtime += tv[0].tv_nsec / 100;
-	mtime += 116444736000000000;
+	mtime += 116444736000000000LL;
 
 	ft.dwHighDateTime = mtime >> 32;
 	ft.dwLowDateTime = mtime;
@@ -1079,7 +1079,7 @@ int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], i
 	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
 	FILETIME ft;
-	uint64_t mtime;
+	int64_t mtime;
 	DWORD wflags;
 
 	/*
@@ -1119,7 +1119,7 @@ int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], i
 	mtime = tv[0].tv_sec;
 	mtime *= 10000000;
 	mtime += tv[0].tv_nsec / 100;
-	mtime += 116444736000000000;
+	mtime += 116444736000000000LL;
 
 	ft.dwHighDateTime = mtime >> 32;
 	ft.dwLowDateTime = mtime;
