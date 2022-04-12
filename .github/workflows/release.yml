@@ -14,8 +14,7 @@ jobs:
         run: |
           autoreconf -i
           ./configure --enable-warning-as-error
-          make all
-          make distcheck
+          make
       - name: Upload
         uses: actions/upload-release-asset@v1.0.1
         env:
