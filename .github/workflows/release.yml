@@ -1,0 +1,27 @@
+name: Deployment
+
+on:
+  release:
+    types:
+    - created
+
+jobs:
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          autoreconf -i
+          ./configure --enable-warning-as-error
+          make all
+          make distcheck
+      - name: Upload
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./snapraid
+          asset_name: snapraid-${{ github.event.release.tag_name }}-linux-amd64
+          assset_content_type: binary/octet-stream
