@@ -825,6 +825,12 @@ Then you can copy the big parity file to the new disk,
 and configure the new parity location in the configuration file.
 </p>
 <p>
+Then run sync again to make snapraid to recognize the new disk. This command will be almost immediate.
+</p>
+<pre>
+snapraid sync
+</pre>
+<p>
 In Linux a good copy command is <a href="http://www.gnu.org/software/ddrescue/">ddrescue</a>.
 You can use:
 </p>
@@ -839,11 +845,10 @@ command.
 </p>
 <p>
 Having a partial parity file, is still beneficial, as it will still allow to recover
-data as long it uses the valid part. To restore it to full functionality,
-just run a "fix" command.
+data as long it uses the valid part.
 </p>
 <p>
-If instead you completely lost the parity file, you can run the "fix" command to recreate it,
+If you have a partially damaged or totally lost parity file, you can run the "fix" command to recreate it,
 but ensure to use the -d option to fix only the interested parity and not the other disks.
 </p>
 <pre>
