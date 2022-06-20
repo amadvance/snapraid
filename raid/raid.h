@@ -192,7 +192,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  * This function identifies the failed data and parity blocks using the
  * available redundancy.
  *
- * It uses a brute force method, and then the call can be expansive.
+ * It uses a brute force method, and then the call can be expensive.
  * The expected execution time is proportional at the binomial coefficient
  * @np + @nd choose @np - 1, usually written as:
  *

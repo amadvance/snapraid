@@ -789,7 +789,7 @@ static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
 	BOOL ret;
 	DWORD n;
 
-	/* in Wine FSCTL_GET_RETRIVIAL_POINTERS is not supported */
+	/* in Wine FSCTL_GET_RETRIEVAL_POINTERS is not supported */
 	if (is_wine) {
 		*physical = FILEPHY_UNREPORTED_OFFSET;
 		return TRUE;
@@ -1556,7 +1556,7 @@ int windows_link(const char* existing, const char* file)
 }
 
 /**
- * In Windows 10 allow creation of symblink by not privileged user.
+ * In Windows 10 allow creation of symlink by not privileged user.
  *
  * See: Symlinks in Windows 10!
  * https://blogs.windows.com/buildingapps/2016/12/02/symlinks-windows-10/#cQG7cx48oGH86lkI.97
