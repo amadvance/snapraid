@@ -362,7 +362,7 @@ int devuuid(uint64_t device, char* uuid, size_t size);
 #define FILEPHY_REAL_OFFSET 3
 
 /**
- * Get the physcal address of the specified file.
+ * Get the physical address of the specified file.
  * This is expected to be just a hint and not necessarily correct or unique.
  * Return 0 on success.
  */

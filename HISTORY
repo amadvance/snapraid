@@ -3,7 +3,7 @@ SnapRAID HISTORY
 
 12.1 2022/01
 ============
- * Reduce stack usage to work in enviromnents with limited stack size, like MUSL.
+ * Reduce stack usage to work in environments with limited stack size, like MUSL.
  * Increase the default disk cache from 8 MiB to 16 MiB.
 
 12.0 2021/12

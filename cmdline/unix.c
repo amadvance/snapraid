@@ -474,7 +474,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 #endif
 
 /**
- * Get the UUID using liblkid.
+ * Get the UUID using libblkid.
  * It uses a cache to work without root permission, resulting in UUID
  * not necessarily recent.
  * We could call blkid_probe_all() to refresh the UUID, but it would

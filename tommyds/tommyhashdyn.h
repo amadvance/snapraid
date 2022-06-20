@@ -35,7 +35,7 @@
  * All the elements are reallocated in a single resize operation done inside
  * tommy_hashdyn_insert() or tommy_hashdyn_remove().
  *
- * Note that the resize operation takes approximatively 100 [ms] with 1 million of elements,
+ * Note that the resize operation takes approximately 100 [ms] with 1 million of elements,
  * and 1 [second] with 10 millions. This could be a problem in real-time applications.
  *
  * The resize also fragment the heap, as it involves allocating a double-sized table, copy elements,
