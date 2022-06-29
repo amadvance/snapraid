@@ -12,6 +12,8 @@ stream*.bin
 
 # upload
 makepush.sh
+makemount.sh
+makeumount.sh
 
 # autotools
 Makefile
