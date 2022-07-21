@@ -31,14 +31,26 @@ int exit_sync_needed = 2;
 /* Add missing Windows declaration */
 
 /* For SetThreadExecutionState */
+#ifndef WIN32_ES_SYSTEM_REQUIRED
 #define WIN32_ES_SYSTEM_REQUIRED      0x00000001L
+#endif
+#ifndef WIN32_ES_DISPLAY_REQUIRED
 #define WIN32_ES_DISPLAY_REQUIRED     0x00000002L
+#endif
+#ifndef WIN32_ES_USER_PRESENT
 #define WIN32_ES_USER_PRESENT         0x00000004L
+#endif
+#ifndef WIN32_ES_AWAYMODE_REQUIRED
 #define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
+#endif
+#ifndef WIN32_ES_CONTINUOUS
 #define WIN32_ES_CONTINUOUS           0x80000000L
+#endif
 
 /* File Index */
+#ifndef FILE_INVALID_FILE_ID
 #define FILE_INVALID_FILE_ID          ((ULONGLONG)-1LL)
+#endif
 
 /**
  * Direct access to RtlGenRandom().
@@ -518,7 +530,7 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	 * "that includes 128-bit file identifiers.  If GetFileInformationByHandle returns"
 	 * "FILE_INVALID_FILE_ID, the identifier may only be described in 128 bit form."
 	 */
-	if (st->st_ino == FILE_INVALID_FILE_ID) {
+	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
 		log_fatal("Invalid inode number! Is this ReFS?\n");
 		errno = EINVAL;
 		return -1;
@@ -563,7 +575,7 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 	st->st_sync = 0;
 
 	/* in ReFS the IDs are 128 bit, and the 64 bit interface may fail */
-	if (st->st_ino == FILE_INVALID_FILE_ID) {
+	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
 		log_fatal("Invalid inode number! Is this ReFS?\n");
 		errno = EINVAL;
 		return -1;
