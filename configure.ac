@@ -36,7 +36,7 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
 AC_CHECK_HEADERS([pthread.h math.h])
-AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h sys/param.h sys/mount.h sys/sysmacros.h sys/mkdev.h])
+AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/sysmacros.h sys/mkdev.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h mach/mach_time.h execinfo.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -65,6 +65,38 @@ AC_CHECK_MEMBERS([struct stat.st_nlink, struct stat.st_mtim.tv_nsec, struct stat
 #include <unistd.h>
 #endif
 ]])
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
+AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf sigaction])
+AC_CHECK_FUNCS([ftruncate fallocate access])
+AC_CHECK_FUNCS([fsync posix_fadvise sync_file_range])
+AC_CHECK_FUNCS([getc_unlocked ferror_unlocked fnmatch])
+AC_CHECK_FUNCS([futimes futimens futimesat localtime_r lutimes utimensat])
+AC_CHECK_FUNCS([fstatat flock])
+AC_CHECK_FUNCS([mach_absolute_time])
+AC_CHECK_FUNCS([backtrace backtrace_symbols])
+AC_SEARCH_LIBS([clock_gettime], [rt])
+AC_CHECK_FUNCS([clock_gettime])
+AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", CFLAGS="$CFLAGS -D_REENTRANT")
+AC_CHECK_FUNCS([pthread_create])
+AC_SEARCH_LIBS([exp], [m])
+
+dnl Checks for statfs for linux avoiding to include sys/mount.h that is required only in darwin
+dnl In glibc since 7eae6a91e9b1670330c9f15730082c91c0b1d570, milestone 2.36, sys/mount.h defines fsconfig_command which conflicts with linux/mount.h
+AC_CHECK_HEADERS([sys/vfs.h sys/statfs.h])
+AC_CHECK_DECLS([statfs], [], [
+	AC_CHECK_HEADERS([sys/param.h sys/mount.h])
+	], [[
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+]])
+AC_CHECK_FUNCS([statfs])
+
 AC_CHECK_MEMBERS([struct statfs.f_type], [], [], [[
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -79,6 +111,7 @@ AC_CHECK_MEMBERS([struct statfs.f_type], [], [], [[
 #include <sys/statfs.h>
 #endif
 ]])
+
 AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [[
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -93,22 +126,6 @@ AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [[
 #include <sys/statfs.h>
 #endif
 ]])
-
-dnl Checks for library functions.
-AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
-AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf sigaction])
-AC_CHECK_FUNCS([ftruncate fallocate access])
-AC_CHECK_FUNCS([fsync posix_fadvise sync_file_range])
-AC_CHECK_FUNCS([getc_unlocked ferror_unlocked fnmatch])
-AC_CHECK_FUNCS([futimes futimens futimesat localtime_r lutimes utimensat])
-AC_CHECK_FUNCS([fstatat flock statfs])
-AC_CHECK_FUNCS([mach_absolute_time])
-AC_CHECK_FUNCS([backtrace backtrace_symbols])
-AC_SEARCH_LIBS([clock_gettime], [rt])
-AC_CHECK_FUNCS([clock_gettime])
-AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", CFLAGS="$CFLAGS -D_REENTRANT")
-AC_CHECK_FUNCS([pthread_create])
-AC_SEARCH_LIBS([exp], [m])
 
 dnl Checks for libblkid
 AC_ARG_WITH([blkid],
@@ -182,7 +199,7 @@ dnl Checks for AS supporting the SSE4.2 instructions.
 AC_MSG_CHECKING([for sse42])
 asmsse42=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#if defined(__i386__) || defined(__x86_64__) 
+#if defined(__i386__) || defined(__x86_64__)
 	unsigned f(unsigned crc, unsigned char b)
 	{
 		asm volatile("crc32b %1, %0" : "+r" (crc) : "rm" (b));

@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+12.2 2022/08
+============
+ * Fix build issue with GLIBC 2.36
+
 12.1 2022/01
 ============
  * Reduce stack usage to work in environments with limited stack size, like MUSL.
