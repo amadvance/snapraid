@@ -1062,7 +1062,7 @@ Configuration
 	recommended to not change it. To change again this value in
 	future you'll have to recreate the whole parity!
 
-	A reason to use a different hashsize is if you have a lot of small
+	A reason to use a different blocksize is if you have a lot of small
 	files. In the order of many millions.
 
 	For each file, even of few bytes, a whole block of parity is allocated,
