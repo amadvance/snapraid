@@ -671,7 +671,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	if (io_error || silent_error) {
 		log_fatal("Use 'snapraid status' to list the bad blocks.\n");
 		log_fatal("Use 'snapraid -e fix' to recover them.\n");
-		log_fatal("Use 'snapraid -p bad scrub' to recheck after fixing.\n");
+		log_fatal("Use 'snapraid -p bad scrub' to recheck after fixing to clear the bad state.\n");
 	}
 
 	log_tag("summary:error_file:%u\n", error);
