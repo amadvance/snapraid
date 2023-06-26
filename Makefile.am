@@ -286,7 +286,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 #### CONTROLLED ####
 	$(MSG) Filesystem allocation test
-	head -c 8192 /dev/zero > bench/disk1/TEST
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST
 # Copy the file to trigger the copy optimization check
 	cp -a bench/disk1/TEST bench/disk2/TEST
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
@@ -301,24 +301,24 @@ endif
 # Now sync will complete with -E
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
 	$(MSG) Filesystem fragmentation test
-	head -c 8192 /dev/zero > bench/disk1/TEST1
-	head -c 8192 /dev/zero > bench/disk1/TEST2
-	head -c 8192 /dev/zero > bench/disk1/TEST3
-	head -c 8192 /dev/zero > bench/disk1/TEST4
-	head -c 8192 /dev/zero > bench/disk1/TEST5
-	head -c 8192 /dev/zero > bench/disk1/TEST6
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST1
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST2
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST3
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST4
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST5
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/TEST6
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Now delete some files, and create a bigger one to fill the holes
 	rm bench/disk1/TEST1
 	rm bench/disk1/TEST3
 	rm bench/disk1/TEST5
-	head -c 65536 /dev/zero > bench/disk1/TESTX
+	dd bs=1 count=65536 if=/dev/zero of=bench/disk1/TESTX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync -l ">&1"
 	rm -r bench/disk1/TEST*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
 # Now enforce copy detection of a file without parity
 # Create a file in a high number disk
-	head -c 8192 /dev/urandom > bench/disk6/STEP1
+	dd bs=1 count=8192 if=/dev/urandom of=bench/disk6/STEP1
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Create two new copies. The one in disk1 will copy
 # the hash from the one in disk6, and the one in disk2
@@ -328,16 +328,16 @@ endif
 	cp -a bench/disk6/STEP1 bench/disk2/STEP1
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Now create, duplicate, move and partial sync
-	head -c 8192 /dev/zero > bench/disk1/INVA1
-	head -c 8192 /dev/zero > bench/disk1/INVA2
-	head -c 8192 /dev/zero > bench/disk1/INVA3
-	head -c 8192 /dev/zero > bench/disk1/MOVE1
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/INVA1
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/INVA2
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/INVA3
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/MOVE1
 	cp -a bench/disk1/MOVE1 bench/disk1/MOVE2
 	cp -a bench/disk1/MOVE1 bench/disk1/MOVE3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	mv bench/disk1/MOVE2 bench/disk2/MOVE2
 	mv bench/disk1/MOVE3 bench/disk3/MOVE3
-	head -c 8192 /dev/zero > bench/disk4/MOVE4
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk4/MOVE4
 	cp -a bench/disk1/INVA1 bench/disk1/EXTRA1
 	cp -a bench/disk1/INVA2 bench/disk1/EXTRA2
 	cp -a bench/disk1/INVA3 bench/disk1/EXTRA3
@@ -770,7 +770,7 @@ endif
 	$(MSG) This triggers the recovering with q using p to check the validity, but failing for new blocks being filled with zero
 	cp -pR bench/disk1/a bench/disk1/a_copy
 # Ensure that there is at least one zero filled file
-	head -c 8192 /dev/zero > bench/disk1/a_copy/ZERO_FILLED
+	dd bs=1 count=8192 if=/dev/zero of=bench/disk1/a_copy/ZERO_FILLED
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -B 1 --test-kill-after-sync -c $(CONF) sync
 	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test-fail-earlysyncadd.log
