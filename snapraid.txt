@@ -38,8 +38,8 @@ big files that rarely change.
 Beside the ability to recover from disk failures, other
 features of SnapRAID are:
 
-* You can use disk already filled with files, without the need to
-  reformat them. You will access them like now.
+* You can use disks already filled with files, without the need to
+  reformat them. You will continue to access them as usual.
 * All your data is hashed to ensure data integrity and to avoid
   silent corruption.
 * If the failed disks are too many to allow a recovery,
@@ -62,32 +62,31 @@ The official site of SnapRAID is:
 3 LIMITATIONS
 =============
 
-SnapRAID is in between a RAID and a Backup program trying to get the best
-benefits of them. Although it also has some limitations that you should
+SnapRAID is in between a RAID and a Backup program, trying to get the best
+benefits of both. Although it also has some limitations that you should
 consider before using it.
 
-The main one is that if a disk fails, and you haven't recently synced,
+The main limitation is that if a disk fails, and you haven't recently synced,
 you may be unable to do a complete recover.
 More specifically, you may be unable to recover up to the size of the
 amount of the changed or deleted files from the last sync operation.
 This happens even if the files changed or deleted are not in the
-failed disk. This is the reason because SnapRAID is better suited for
-data that rarely change.
+failed disk. This is why SnapRAID is better suited for data that rarely change.
 
-Instead the new added files don't prevent the recovering of the already
-existing files. You may only lose the just added files, if they are on
+On the other hand, newly added files don't prevent recovering of already
+existing files. You may only lose the recently added files, if they are on
 the failed disk.
 
 Other limitations are:
 
-* You have different file-systems for each disk.
-  Using a RAID you have only a big file-system.
-* It doesn't stripe data.
+* With Snapraid, you still have separate file-systems for each disk.
+  With RAID you get a single large file-system.
+* Snapraid doesn't stripe data.
   With RAID you get a speed boost with striping.
-* It doesn't support real-time recovery.
+* Snapraid doesn't support real-time recovery.
   With RAID you do not have to stop working when a disk fails.
-* It's able to recover damages only from a limited number of disks.
-  With a Backup you are able to recover from a complete
+* Snapraid is able to recover damages only from a limited number of disks.
+  With a Backup you can recover from a complete
   failure of the whole disk array.
 * Only file, time-stamps, symlinks and hardlinks are saved.
   Permissions, ownership and extended attributes are not saved.
@@ -348,7 +347,7 @@ Run the fix command, storing the log in an external file with:
     snapraid -d NAME -l fix.log fix
 
 Where NAME is the name of the disk, like "d1" as in our previous example.
-In case the disk to recover is a parity disk, use the "parity", "2-parity"
+If the disk to recover is a parity disk, use the "parity", "2-parity"
 names.
 If you have more broken disks, use multiple -d options to specify all
 of them.
