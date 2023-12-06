@@ -66,8 +66,8 @@ The best known others are:
 - Commercial and OpenSource GPL2 solution. A modified version of the Linux Reiserfs filesystem with real-time redundancy.
 No integrity checksum is supported.
 </li>
-<li><a href="http://www.flexraid.com/">FlexRAID</a>
-- Commercial and proprietary C++/Java application for Windows, with some limited support for Linux.
+<li><s>FlexRAID</s>
+- <b>DEAD</b>Commercial and proprietary C++/Java application for Windows, with some limited support for Linux.
 It supports both snapshot redundancy and real-time redundancy, with integrity checksum.
 </li>
 <li><a href="http://en.wikipedia.org/wiki/ZFS">ZFS</a>
@@ -79,7 +79,7 @@ From Linux 3.9 it supports <a href="http://lwn.net/Articles/536038/">RAID5/6 red
 Recently various issues were found and the official <a href="https://btrfs.wiki.kernel.org/index.php/RAID56">wiki</a> now states:
 <i>The parity RAID code has multiple serious data-loss bugs in it. It should not be used for anything other than testing purposes.</i>
 </li>
-<li><a href="http://blogs.msdn.com/b/b8/archive/2012/01/05/virtualizing-storage-for-scale-resiliency-and-efficiency.aspx">Storage Spaces</a>
+<li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Storage Spaces</a>
 - The last contender from Microsoft, and integrated into Windows 8.
 Proprietary with real-time redundancy. Checksumming is not supported.
 It also has some other <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/">limitations</a>.
