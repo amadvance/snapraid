@@ -229,13 +229,7 @@ The 128 bits <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</
 used by SnapRAID is instead the state-of-the-art in checksumming quality,
 without compromising in speed.
 <br>
-Another cons of ZFS is that it lacks a fast RAID implementation in assembler.
-It only has a C implementation, that is from two to four times slower than SnapRAID/Btrfs.
-<br>
 ZFS also uses a sub-optimal RAID-Z3 algorithm, that requires double computations than the equivalent SnapRAID's z-parity.
-<br>
-Instead, both SnapRAID and Btrfs use top-notch assembler implementations to compute the RAID parity,
-always using the best known RAID algorithm and implementation.
 </p>
 
 <p>
