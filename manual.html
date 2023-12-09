@@ -84,50 +84,47 @@ snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 <h2><a name="2">2</a> 
 Description
 </h2>
-SnapRAID is a backup program for disk arrays. It stores parity
-information of your data and it recovers from up to six disk
-failures.
+SnapRAID is a backup program designed for disk arrays, storing
+parity information for data recovery in the event of up to six
+disk failures.
 <p>
-SnapRAID is mainly targeted for a home media center, with a lot of
-big files that rarely change.
-<p>
-Beside the ability to recover from disk failures, other
-features of SnapRAID are:
+Primarily intended for home media centers with large,
+infrequently changing files, SnapRAID offers several features:
 <ul>
 <li>
-You can use disk already filled with files, without the need to
-reformat them. You will access them like now.
+You can utilize disks already filled with files without the
+need to reformat them, accessing them as usual.
 </li>
 <li>
-All your data is hashed to ensure data integrity and to avoid
+All your data is hashed to ensure data integrity and prevent
 silent corruption.
 </li>
 <li>
-If the failed disks are too many to allow a recovery,
-you lose the data only on the failed disks.
-All the data in the other disks is safe.
+When the number of failed disks exceeds the parity count,
+data loss is confined to the affected disks; data on
+other disks remains accessible.
 </li>
 <li>
-If you accidentally delete some files in a disk, you can
-recover them.
+If you accidentally delete files on a disk, recovery is
+possible.
 </li>
 <li>
-The disks can have different sizes.
+Disks can have different sizes.
 </li>
 <li>
 You can add disks at any time.
 </li>
 <li>
-It doesn't lock-in your data. You can stop using SnapRAID at any
-time without the need to reformat or move data.
+SnapRAID doesn't lock in your data; you can stop using it
+anytime without reformatting or moving data.
 </li>
 <li>
-To access a file, only a single disk needs to spin, saving power and
-producing less noise.
+To access a file, only a single disk needs to spin, saving
+power and reducing noise.
 </li>
 </ul>
 <p>
-The official site of SnapRAID is:
+For more information, please visit the official SnapRAID site:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
@@ -1044,9 +1041,9 @@ process the whole array.
 <tr valign="top" align="left"><td><strong>
 -e, --filter-error
 </strong></td></tr><tr><td>
-Filters the blocks to process in "check" and "fix".
-It processes only the blocks marked with silent or input/output
-errors during "sync" and "scrub", and listed in "status".
+Process the files with errors in "check" and "fix".
+It processes only files that have blocks marked with silent
+or input/output errors during "sync" and "scrub", and listed in "status".
 This option can be used only with "check" and "fix".
 </td></tr>
 </table>
@@ -1475,7 +1472,7 @@ WARNING! This option is for experts only, and it's highly
 recommended to not change it. To change again this value in
 future you'll have to recreate the whole parity!
 <p>
-A reason to use a different hashsize is if you have a lot of small
+A reason to use a different blocksize is if you have a lot of small
 files. In the order of many millions.
 <p>
 For each file, even of few bytes, a whole block of parity is allocated,
