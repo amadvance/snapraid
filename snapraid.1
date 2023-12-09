@@ -68,42 +68,39 @@ snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PP
 .PD
 .SH DESCRIPTION 
-SnapRAID is a backup program for disk arrays. It stores parity
-information of your data and it recovers from up to six disk
-failures.
+SnapRAID is a backup program designed for disk arrays, storing
+parity information for data recovery in the event of up to six
+disk failures.
 .PP
-SnapRAID is mainly targeted for a home media center, with a lot of
-big files that rarely change.
-.PP
-Beside the ability to recover from disk failures, other
-features of SnapRAID are:
+Primarily intended for home media centers with large,
+infrequently changing files, SnapRAID offers several features:
 .PD 0
 .IP \(bu
-You can use disk already filled with files, without the need to
-reformat them. You will access them like now.
+You can utilize disks already filled with files without the
+need to reformat them, accessing them as usual.
 .IP \(bu
-All your data is hashed to ensure data integrity and to avoid
+All your data is hashed to ensure data integrity and prevent
 silent corruption.
 .IP \(bu
-If the failed disks are too many to allow a recovery,
-you lose the data only on the failed disks.
-All the data in the other disks is safe.
+When the number of failed disks exceeds the parity count,
+data loss is confined to the affected disks; data on
+other disks remains accessible.
 .IP \(bu
-If you accidentally delete some files in a disk, you can
-recover them.
+If you accidentally delete files on a disk, recovery is
+possible.
 .IP \(bu
-The disks can have different sizes.
+Disks can have different sizes.
 .IP \(bu
 You can add disks at any time.
 .IP \(bu
-It doesn\'t lock\-in your data. You can stop using SnapRAID at any
-time without the need to reformat or move data.
+SnapRAID doesn\'t lock in your data; you can stop using it
+anytime without reformatting or moving data.
 .IP \(bu
-To access a file, only a single disk needs to spin, saving power and
-producing less noise.
+To access a file, only a single disk needs to spin, saving
+power and reducing noise.
 .PD
 .PP
-The official site of SnapRAID is:
+For more information, please visit the official SnapRAID site:
 .PP
 .RS 4
 http://www.snapraid.it/
