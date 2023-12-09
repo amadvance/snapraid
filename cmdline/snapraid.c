@@ -1083,28 +1083,28 @@ int main(int argc, char* argv[])
 
 	if (opt.force_full && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
+		log_fatal("You cannot use the -F, --force-full and -N, --force-nocopy options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.force_realloc && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -R, --force-realloc and -N, --force-nocopy options at the same time\n");
+		log_fatal("You cannot use the -R, --force-realloc and -N, --force-nocopy options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.force_realloc && opt.force_full) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -R, --force-realloc and -F, --force-full options at the same time\n");
+		log_fatal("You cannot use the -R, --force-realloc and -F, --force-full options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.prehash && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n");
+		log_fatal("You cannot use the -h, --pre-hash and -N, --force-nocopy options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1148,7 +1148,7 @@ int main(int argc, char* argv[])
 	/* because we don't keep the information on what disk is the error */
 	if (filter_error != 0 && !tommy_list_empty(&filterlist_disk)) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use -e, --filter-error and -d, --filter-disk at the same time\n");
+		log_fatal("You cannot use -e, --filter-error and -d, --filter-disk simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1160,7 +1160,7 @@ int main(int argc, char* argv[])
 	default :
 		if (import_timestamp != 0 || import_content != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot import with the '%s' command\n", command);
+			log_fatal("Import not allowed with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1286,9 +1286,9 @@ int main(int argc, char* argv[])
 		if (lock == -1) {
 			/* LCOV_EXCL_START */
 			if (errno != EWOULDBLOCK) {
-				log_fatal("Error creating the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+				log_fatal("Failed to create the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			} else {
-				log_fatal("The lock file '%s' is already locked!\n", state.lockfile);
+				log_fatal("The lock file '%s' is already in use!\n", state.lockfile);
 				log_fatal("SnapRAID is already in use!\n");
 			}
 			exit(EXIT_FAILURE);
@@ -1354,7 +1354,7 @@ int main(int argc, char* argv[])
 			ret = system(run); /* ignore error */
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in running command '%s'.\n", run);
+				log_fatal("Error executing command '%s'.\n", run);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1377,7 +1377,7 @@ int main(int argc, char* argv[])
 			if ((state.need_write || state.opt.force_content_write))
 				state_write(&state);
 		} else {
-			log_fatal("WARNING! Skipped state write for --test-kill-after-sync option.\n");
+			log_fatal("WARNING! Skipped writing state due to --test-kill-after-sync option.\n");
 		}
 
 		/* abort if required */
@@ -1526,7 +1526,7 @@ int main(int argc, char* argv[])
 	if (!opt.skip_lock && state.lockfile[0]) {
 		if (lock_unlock(lock) == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+			log_fatal("Failed to close the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

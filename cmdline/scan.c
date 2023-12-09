@@ -1773,7 +1773,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					/* if verbose, print the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						log_fatal("WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						log_fatal("WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1859,13 +1859,13 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			}
 		}
 		if (done) {
-			log_fatal("\nare now missing or rewritten!\n");
+			log_fatal("\nare now missing or have been rewritten!\n");
 			if (all_rewritten) {
-				log_fatal("This could happen when restoring a disk with a backup\n");
+				log_fatal("This could occur when restoring a disk from a backup\n");
 				log_fatal("program that is not setting correctly the timestamps.\n");
 			}
 			if (all_missing) {
-				log_fatal("This could happen when some disks are not mounted\n");
+				log_fatal("This could occur when some disks are not mounted\n");
 				log_fatal("in the expected directory.\n");
 			}
 			if (!is_diff) {
@@ -1891,7 +1891,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			}
 		}
 		if (done) {
-			log_fatal(". Files order won't be optimal.\n");
+			log_fatal(". The order of files won't be optimal.\n");
 		}
 	}
 
@@ -1910,7 +1910,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 	if (done) {
-		log_fatal(". Not using inodes to detect move operations.\n");
+		log_fatal(". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with changed UUID */
@@ -1932,7 +1932,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 	if (done) {
-		log_fatal(". Not using inodes to detect move operations.\n");
+		log_fatal(". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with unsupported UUID */
