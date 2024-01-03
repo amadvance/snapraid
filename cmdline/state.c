@@ -4245,7 +4245,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
-		msg_bar("%u%% completed, %u MB accessed", countpos * 100 / countmax, countsize_MB);
+		msg_bar("%u%% completed, %u MB accessed", muldiv(countpos, 100, countmax), countsize_MB);
 
 		msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 
@@ -4405,7 +4405,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 		struct snapraid_disk* disk = i->data;
 		v = disk->progress_tick[current] - ref(disk->progress_tick, oldest);
 		printr(disk->name, pad);
-		printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+		printf("%3u%% | ", muldiv(v, 100, tick_total));
 		printc('*', v * bar / tick_total);
 		printf("\n");
 
@@ -4416,32 +4416,32 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	for (l = 0; l < state->level; ++l) {
 		v = state->parity[l].progress_tick[current] - ref(state->parity[l].progress_tick, oldest);
 		printr(lev_config_name(l), pad);
-		printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+		printf("%3u%% | ", muldiv(v, 100, tick_total));
 		printc('*', v * bar / tick_total);
 		printf("\n");
 	}
 
 	v = state->progress_tick_raid[current] - ref(state->progress_tick_raid, oldest);
 	printr("raid", pad);
-	printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	v = state->progress_tick_hash[current] - ref(state->progress_tick_hash, oldest);
 	printr("hash", pad);
-	printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	v = state->progress_tick_sched[current] - ref(state->progress_tick_sched, oldest);
 	printr("sched", pad);
-	printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	v = state->progress_tick_misc[current] - ref(state->progress_tick_misc, oldest);
 	printr("misc", pad);
-	printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
@@ -4499,7 +4499,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 
 		/* completion percentage */
 		if (countmax)
-			out_perc = countpos * 100 / countmax;
+			out_perc = muldiv(countpos, 100, countmax);
 
 		/* if we have at least 5 measures */
 		if (state->progress_tick >= 5
@@ -4565,11 +4565,11 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 
 			/* estimate the cpu usage percentage */
 			if (delta_tick_total != 0)
-				out_cpu = (unsigned)(delta_tick_cpu * 100U / delta_tick_total);
+				out_cpu = muldiv(delta_tick_cpu, 100, delta_tick_total);
 
 			/* estimate the remaining time in minutes */
 			if (delta_pos != 0)
-				out_eta = (countmax - countpos) * delta_time / (60 * delta_pos);
+				out_eta = muldiv(countmax - countpos, delta_time, 60 * delta_pos);
 
 			if (state->opt.force_stats) {
 				os_clear();
