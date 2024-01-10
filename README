@@ -1,33 +1,29 @@
 SnapRAID
 ========
 
-SnapRAID is a backup program for disk arrays. It stores parity
-information of your data and it recovers from up to six disk
-failures.
+SnapRAID is a backup program designed for disk arrays, storing
+parity information for data recovery in the event of up to six
+disk failures.
 
-SnapRAID is mainly targeted for a home media center, where you
-have a lot of big files that rarely change.
+Primarily intended for home media centers with large,
+infrequently changing files, SnapRAID offers several features:
 
-Beside the ability to recover from disk failures, the other
-features of SnapRAID are:
-
-* You can use disk already filled with files, without the need to
-  reformat them. You will access them like now.
-* All your data is hashed to ensure data integrity and to avoid
+* You can utilize disks already filled with files without the
+  need to reformat them, accessing them as usual.
+* All your data is hashed to ensure data integrity and prevent
   silent corruption.
-* If the failed disks are too many to allow a recovery,
-  you lose the data only on the failed disks.
-  All the data in the other disks is safe.
-* If you accidentally delete some files in a disk, you can
-  recover them.
-* The disks can have different sizes.
+* When the number of failed disks exceeds the parity count,
+  data loss is confined to the affected disks; data on
+  other disks remains accessible.
+* If you accidentally delete files on a disk, recovery is
+  possible.
+* Disks can have different sizes.
 * You can add disks at any time.
-* It doesn't lock-in your data. You can stop using SnapRAID at any
-  time without the need to reformat or move data.
-* To access a file, only a single disk needs to spin, saving power and
-  producing less noise.
+* SnapRAID doesn't lock in your data; you can stop using it
+  anytime without reformatting or moving data.
+* To access a file, only a single disk needs to spin, saving
+  power and reducing noise.
 
-The official site of SnapRAID is:
+For more information, please visit the official SnapRAID site:
 
-    http://www.snapraid.it/
-
+		:http://www.snapraid.it/
