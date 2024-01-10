@@ -466,14 +466,14 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (unscrubbed_blocks) {
-		printf("The %u%% of the array is not scrubbed.\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
+		printf("%u%% of the array is not scrubbed.\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
 	} else {
 		printf("The full array was scrubbed at least one time.\n");
 	}
 
 	if (file_zerosubsecond) {
-		printf("You have %u files with zero sub-second timestamp.\n", file_zerosubsecond);
-		printf("Run the 'touch' command to set it to a not zero value.\n");
+		printf("You have %u files with a zero sub-second timestamp.\n", file_zerosubsecond);
+		printf("Run 'snapraid touch' to set their sub-second timestamps to a non-zero value.\n");
 	} else {
 		printf("No file has a zero sub-second timestamp.\n");
 	}

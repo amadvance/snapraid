@@ -7,25 +7,27 @@ code from http://www.snapraid.it and unpack it with:
     tar xf snapraid-*.tar.gz
     cd snapraid-*
 
-To configure and build run:
+To configure and build, run:
 
     ./configure
     make
 
-To check for correctness of the application run:
+To run the correctness tests for the application:
 
     make check
 
-If it terminates with "Success", you can install the application and
-the documentation running as root:
+If this terminates with "Success", you can install the application and
+the documentation by running:
 
     sudo make install
 
-To start using SnapRAID you have to change the example configuration
-file snapraid.conf.example to fit your needs and copy it in /etc/snapraid.conf
+(The snapraid application itself does not require root privileges.)
+
+To start using SnapRAID, change the example configuration
+file snapraid.conf.example to fit your needs and copy it to /etc/snapraid.conf
 
 To get more help, see the "Getting Started" section in the snapraid manpage
-typing:
+by typing:
 
     man snapraid
 

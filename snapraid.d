@@ -55,26 +55,26 @@ Limitations
 
 	The main one is that if a disk fails, and you haven't recently synced,
 	you may be unable to do a complete recover.
-	More specifically, you may be unable to recover up to the size of the
-	amount of the changed or deleted files from the last sync operation.
+	More specifically, you may be unable to recover up to the size of
+	the changed or deleted files from the last sync operation.
 	This happens even if the files changed or deleted are not in the
-	failed disk. This is the reason because SnapRAID is better suited for
+	failed disk. This is why SnapRAID is better suited for
 	data that rarely change.
 
-	Instead the new added files don't prevent the recovering of the already
-	existing files. You may only lose the just added files, if they are on
+	On the other hand, newly added files don't prevent recovering already
+	existing files. You may only lose the recently added files, if they are on
 	the failed disk.
 
-	Other limitations are:
+	Other SnapRAID limitations are:
 
-	* You have different file-systems for each disk.
-		Using a RAID you have only a big file-system.
-	* It doesn't stripe data.
+	* With SnapRAID, you still have separate file-systems for each disk.
+		With RAID you get a single large file-system.
+	* SnapRAID doesn't stripe data.
 		With RAID you get a speed boost with striping.
-	* It doesn't support real-time recovery.
+	* SnapRAID doesn't support real-time recovery.
 		With RAID you do not have to stop working when a disk fails.
-	* It's able to recover damages only from a limited number of disks.
-		With a Backup you are able to recover from a complete
+	* SnapRAID is able to recover damages only from a limited number of disks.
+		With a Backup you can recover from a complete
 		failure of the whole disk array.
 	* Only file, time-stamps, symlinks and hardlinks are saved.
 		Permissions, ownership and extended attributes are not saved.
