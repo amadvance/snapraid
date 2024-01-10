@@ -672,3 +672,22 @@ int lock_unlock(int f)
 }
 #endif
 
+/****************************************************************************/
+/* muldiv */
+
+unsigned muldiv(uint64_t v, uint64_t mul, uint64_t div)
+{
+	if (!div)
+		return 0;
+
+	return (uint32_t)(v * mul / div);
+}
+
+unsigned muldiv_upper(uint64_t v, uint64_t mul, uint64_t div)
+{
+	if (!div)
+		return 0;
+
+	return (uint32_t)((v * mul + div - 1) / div);
+}
+

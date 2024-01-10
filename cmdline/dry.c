@@ -403,7 +403,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal("Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

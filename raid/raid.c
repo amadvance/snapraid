@@ -20,50 +20,50 @@
  * the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), and
  * supporting up to six parity levels.
  *
- * For RAID5 and RAID6 it works as as described in the H. Peter Anvin's
+ * For RAID5 and RAID6, it works as described in H. Peter Anvin's
  * paper "The mathematics of RAID-6" [1]. Please refer to this paper for a
  * complete explanation.
  *
- * To support triple parity, it was first evaluated and then dropped, an
+ * To support triple parity, it was first evaluated and then dropped; an
  * extension of the same approach, with additional parity coefficients set
  * as powers of 2^-1, with equations:
  *
  * P = sum(Di)
  * Q = sum(2^i * Di)
- * R = sum(2^-i * Di) with 0<=i<N
+ * R = sum(2^-i * Di) with 0 <= i < N
  *
- * This approach works well for triple parity and it's very efficient,
+ * This approach works well for triple parity and is very efficient
  * because we can implement very fast parallel multiplications and
  * divisions by 2 in GF(2^8).
  *
- * It's also similar at the approach used by ZFS RAIDZ3, with the
+ * It is also similar to the approach used by ZFS RAIDZ3, with the
  * difference that ZFS uses powers of 4 instead of 2^-1.
  *
- * Unfortunately it doesn't work beyond triple parity, because whatever
+ * Unfortunately, it doesn't work beyond triple parity because whatever
  * value we choose to generate the power coefficients to compute other
  * parities, the resulting equations are not solvable for some
  * combinations of missing disks.
  *
- * This is expected, because the Vandermonde matrix used to compute the
+ * This is expected because the Vandermonde matrix used to compute the
  * parity has no guarantee to have all submatrices not singular
- * [2, Chap 11, Problem 7] and this is a requirement to have
- * a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
+ * [2, Chap 11, Problem 7], and this is a requirement to have
+ * an MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
  *
  * To overcome this limitation, we use a Cauchy matrix [3][4] to compute
- * the parity. A Cauchy matrix has the property to have all the square
- * submatrices not singular, resulting in always solvable equations,
+ * the parity. A Cauchy matrix has the property of having all square
+ * submatrices not singular, resulting in always solvable equations
  * for any combination of missing disks.
  *
- * The problem of this approach is that it requires the use of
+ * The problem with this approach is that it requires the use of
  * generic multiplications, and not only by 2 or 2^-1, potentially
- * affecting badly the performance.
+ * affecting performance negatively.
  *
- * Hopefully there is a method to implement parallel multiplications
- * using SSSE3 or AVX2 instructions [1][5]. Method competitive with the
+ * Hopefully, there is a method to implement parallel multiplications
+ * using SSSE3 or AVX2 instructions [1][5], a method competitive with the
  * computation of triple parity using power coefficients.
  *
- * Another important property of the Cauchy matrix is that we can setup
- * the first two rows with coefficients equal at the RAID5 and RAID6 approach
+ * Another important property of the Cauchy matrix is that we can set up
+ * the first two rows with coefficients equal to the RAID5 and RAID6 approach
  * described, resulting in a compatible extension, and requiring SSSE3
  * or AVX2 instructions only if triple parity or beyond is used.
  *
@@ -71,7 +71,7 @@
  * to make the first column of all 1, to optimize the computation for
  * the first disk.
  *
- * This results in the matrix A[row,col] defined as:
+ * This results in the matrix A[row, col] defined as:
  *
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01...
  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75...
@@ -80,25 +80,25 @@
  * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9...
  * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b...
  *
- * This matrix supports 6 level of parity, one for each row, for up to 251
+ * This matrix supports 6 levels of parity, one for each row, for up to 251
  * data disks, one for each column, with all the 377,342,351,231 square
- * submatrices not singular, verified also with brute-force.
+ * submatrices not singular, verified also with brute force.
  *
  * This matrix can be extended to support any number of parities, just
- * adding additional rows, and removing one column for each new row.
- * (see mktables.c for more details in how the matrix is generated)
+ * adding additional rows and removing one column for each new row.
+ * (see mktables.c for more details on how the matrix is generated)
  *
- * In details, parity is computed as:
+ * In detail, parity is computed as:
  *
  * P = sum(Di)
- * Q = sum(2^i *  Di)
+ * Q = sum(2^i * Di)
  * R = sum(A[2,i] * Di)
  * S = sum(A[3,i] * Di)
  * T = sum(A[4,i] * Di)
- * U = sum(A[5,i] * Di) with 0<=i<N
+ * U = sum(A[5,i] * Di) with 0 <= i < N
  *
- * To recover from a failure of six disks at indexes x,y,z,h,v,w,
- * with 0<=x<y<z<h<v<w<N, we compute the parity of the available N-6
+ * To recover from a failure of six disks at indexes x, y, z, h, v, w,
+ * with 0 <= x < y < z < h < v < w < N, we compute the parity of the available N-6
  * disks as:
  *
  * Pa = sum(Di)
@@ -106,7 +106,7 @@
  * Ra = sum(A[2,i] * Di)
  * Sa = sum(A[3,i] * Di)
  * Ta = sum(A[4,i] * Di)
- * Ua = sum(A[5,i] * Di) with 0<=i<N,i!=x,i!=y,i!=z,i!=h,i!=v,i!=w.
+ * Ua = sum(A[5,i] * Di) with 0 <= i < N, i != x, i != y, i != z, i != h, i != v, i != w.
  *
  * And if we define:
  *
@@ -126,13 +126,13 @@
  * Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
  * Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
  *
- * A linear system always solvable because the coefficients matrix is
- * always not singular due the properties of the matrix A[].
+ * A linear system is always solvable because the coefficients matrix is
+ * always not singular due to the properties of the matrix A[].
  *
- * Resulting speed in x64, with 8 data disks, using a stripe of 256 KiB,
+ * The resulting speed in x64, with 8 data disks, using a stripe of 256 KiB,
  * for a Core i5-4670K Haswell Quad-Core 3.4GHz is:
  *
- *             int8   int32   int64    sse2   ssse3    avx2
+ *             int8   int32   int64   sse2    ssse3   avx2
  *   gen1             13339   25438   45438           50588
  *   gen2              4115    6514   21840           32201
  *   gen3       814                           10154   18613
@@ -143,18 +143,18 @@
  * Values are in MiB/s of data processed by a single thread, not counting
  * generated parity.
  *
- * You can replicate these results in your machine using the
+ * You can replicate these results on your machine using the
  * "raid/test/speedtest.c" program.
  *
  * For comparison, the triple parity computation using the power
  * coefficients "1,2,2^-1" is only a little faster than the one based on
  * the Cauchy matrix if SSSE3 or AVX2 is present.
  *
- *             int8   int32   int64    sse2   ssse3    avx2
+ *             int8   int32   int64   sse2    ssse3   avx2
  *   genz              2337    2874   10920           18944
  *
  * In conclusion, the use of power coefficients, and specifically powers
- * of 1,2,2^-1, is the best option to implement triple parity in CPUs
+ * of 1, 2, 2^-1, is the best option to implement triple parity in CPUs
  * without SSSE3 and AVX2.
  * But if a modern CPU with SSSE3 or AVX2 is available, the Cauchy
  * matrix is the best option because it provides a fast and general

@@ -426,7 +426,7 @@ const char* esc_tag(const char* str, char* buffer)
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Escape for log too long\n");
+	log_fatal("Escape for log is too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -587,7 +587,7 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Escape for shell too long\n");
+	log_fatal("Escape for shell is too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }

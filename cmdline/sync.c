@@ -1456,7 +1456,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal("Error in the starting block %u. It is larger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1485,7 +1485,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 		/* if the file is too small */
 		if (parityblocks < used_paritymax) {
-			log_fatal("WARNING! The %s parity has data only %u blocks instead of %u.\n", lev_name(l), parityblocks, used_paritymax);
+			log_fatal("WARNING! The %s parity has only %u blocks instead of %u.\n", lev_name(l), parityblocks, used_paritymax);
 		}
 
 		/* keep the smallest parity number of blocks */

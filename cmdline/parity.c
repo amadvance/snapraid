@@ -152,8 +152,8 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	}
 
 	if (found) {
-		log_fatal("\nYour data requires more parity than the available space.\n");
-		log_fatal("Please move the files 'outofparity' to another data disk.\n");
+		log_fatal("\nInsufficient parity space. Data requires more parity than available.\n");
+		log_fatal("Move the 'outofparity' files to a larger disk.\n");
 	}
 }
 

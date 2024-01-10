@@ -1896,7 +1896,7 @@ bail:
 	if (error && !fix)
 		log_fatal("WARNING! There are errors!\n");
 	if (unrecoverable_error)
-		log_fatal("DANGER! There are unrecoverable errors!\n");
+		log_fatal("DANGER! Unrecoverable errors detected!\n");
 
 	log_tag("summary:error:%u\n", error);
 	if (fix)
@@ -1974,7 +1974,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal("Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

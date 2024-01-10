@@ -251,5 +251,10 @@ static inline int bit_vect_test(bit_vect_t* bit_vect, size_t off)
 	return (bit_vect[off / BIT_VECT_SIZE] & mask) != 0;
 }
 
-#endif
+/****************************************************************************/
+/* muldiv */
 
+unsigned muldiv(uint64_t v, uint64_t mul, uint64_t div);
+unsigned muldiv_upper(uint64_t v, uint64_t mul, uint64_t div);
+
+#endif

@@ -39,14 +39,6 @@ unsigned day_ago(time_t ref, time_t now)
 #define GRAPH_COLUMN 70
 #define GRAPH_ROW 15
 
-static unsigned perc(uint64_t part, uint64_t total)
-{
-	if (!total)
-		return 0;
-
-	return (unsigned)(part * 100 / total);
-}
-
 /**
  * Bit used to mark unscrubbed time info.
  */
@@ -239,7 +231,7 @@ int state_status(struct snapraid_state* state)
 			printf("   - ");
 		} else {
 			printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
-			printf(" %3u%%", perc(disk_block_count, disk_block_max));
+			printf(" %3u%%", muldiv(disk_block_count, 100, disk_block_max));
 		}
 		printf(" %s\n", disk->name);
 
@@ -266,7 +258,7 @@ int state_status(struct snapraid_state* state)
 	printf("%8.1f", (double)all_wasted / GIGA);
 	printf("%8" PRIu64, file_size / GIGA);
 	printf("%8" PRIu64, file_block_free * state->block_size / GIGA);
-	printf(" %3u%%", perc(file_block_count, file_block_count + file_block_free));
+	printf(" %3u%%", muldiv(file_block_count, 100, file_block_count + file_block_free));
 	printf("\n");
 
 	/* warn about invalid data free info */
@@ -468,13 +460,13 @@ int state_status(struct snapraid_state* state)
 
 	if (unsynced_blocks) {
 		printf("WARNING! The array is NOT fully synced.\n");
-		printf("You have a sync in progress at %u%%.\n", (blockmax - unsynced_blocks) * 100 / blockmax);
+		printf("You have a sync in progress at %u%%.\n", muldiv(blockmax - unsynced_blocks, 100, blockmax));
 	} else {
 		printf("No sync is in progress.\n");
 	}
 
 	if (unscrubbed_blocks) {
-		printf("%u%% of the array is not scrubbed.\n", (unscrubbed_blocks * 100 + blockmax - 1) / blockmax);
+		printf("%u%% of the array is not scrubbed.\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
 	} else {
 		printf("The full array was scrubbed at least one time.\n");
 	}
@@ -487,7 +479,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (rehash) {
-		printf("You have a rehash in progress at %u%%.\n", (count - rehash) * 100 / count);
+		printf("You have a rehash in progress at %u%%.\n", muldiv(count - rehash, 100, count));
 	} else {
 		if (state->besthash != state->hash) {
 			printf("No rehash is in progress, but for optimal performance one is recommended.\n");

@@ -1048,7 +1048,7 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 	ret = fs_par2file_find(disk, parity_pos, file_pos);
 	if (ret == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when deresolving parity to file at position '%u' in disk '%s'\n", parity_pos, disk->name);
+		log_fatal("Internal inconsistency: Deresolving parity to file at position '%u' in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1072,7 +1072,7 @@ static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct sna
 	ret = fs_file2par_find(disk, file, file_pos);
 	if (ret == POS_NULL) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
+		log_fatal("Internal inconsistency: Resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1096,7 +1096,7 @@ static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk
 	ret = fs_par2block_find(disk, parity_pos);
 	if (ret == BLOCK_NULL) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when deresolving parity to block at position '%u' in disk '%s'\n", parity_pos, disk->name);
+		log_fatal("Internal inconsistency: Deresolving parity to block at position '%u' in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
