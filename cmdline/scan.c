@@ -1674,7 +1674,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		struct snapraid_scan* scan = i->data;
 		struct snapraid_disk* disk = scan->disk;
 		tommy_node* node;
-		unsigned phy_count;
 		unsigned phy_dup;
 		uint64_t phy_last;
 		struct snapraid_file* phy_file_last;
@@ -1757,7 +1756,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		/* to reuse the just freed space */
 		/* also check if the physical offset reported are fakes or not */
 		node = scan->file_insert_list;
-		phy_count = 0;
 		phy_dup = 0;
 		phy_last = FILEPHY_UNREAD_OFFSET;
 		phy_file_last = 0;
@@ -1779,7 +1777,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				}
 				phy_file_last = file;
 				phy_last = file->physical;
-				++phy_count;
 			}
 
 			/* next node */
