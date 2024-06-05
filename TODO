@@ -9,6 +9,12 @@ This is the list of TODO items for SnapRAID.
 The value 0 can be used for the root volume, like a normal filesystem.
 See: https://github.com/kdave/btrfs-progs/tree/master/libbtrfsutil
 
+* A "dependents" output option to [--test-fmt file|disk|path|dependents] for LIST. 
+Example, snapraid LIST --test-fmt dependents >FileList_with_dependents.txt
+The goal is a filelist that, for every file, includes full paths to the dependent files 
+on other data disks needed to repair that file (in addition to the parity data).
+
+I created a thread about it here: https://sourceforge.net/p/snapraid/discussion/1677233/thread/6e872fdae0/
 - Minor
 
 * Add a new -u, --filter-updated command that filters files
