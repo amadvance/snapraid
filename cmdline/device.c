@@ -438,13 +438,19 @@ static double SMART_198_R[SMART_MEASURES] = {
  */
 static double smart_afr_value(double* tab, unsigned step, uint64_t value)
 {
+	printf("|value=%ld|", value);
 	value /= step;
+	printf("|value/step=%ld|", value);
 
 	if (value >= SMART_MEASURES)
 		value = SMART_MEASURES - 1;
 
+	printf("|value=%ld|", value);
+
 	/* table rates are for a month, so we scale to a year */
-	return 365.0 / 30.0 * tab[value];
+	double result = 365.0 / 30.0 * tab[value];
+	printf("|result=%f|", result);
+	return result;
 }
 
 /**
@@ -464,6 +470,7 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
  * we use the maximum rate reported, and we do not sum them,
  * because the attributes are not independent.
  */
+static double poisson_prob_n_or_more_failures(double rate, unsigned n);
 static double smart_afr(uint64_t* smart, const char* model)
 {
 	double afr = 0;
@@ -471,7 +478,9 @@ static double smart_afr(uint64_t* smart, const char* model)
 	uint64_t mask16 = 0xffffU;
 
 	if (smart[5] != SMART_UNASSIGNED) {
+		printf("\n");
 		double r = smart_afr_value(SMART_5_R, SMART_5_STEP, smart[5] & mask32);
+		printf(" calculated AFR for SMART value 5: %f (%f%%)\n", r, poisson_prob_n_or_more_failures(r, 1) * 100);
 		if (afr < r)
 			afr = r;
 	}
@@ -480,6 +489,7 @@ static double smart_afr(uint64_t* smart, const char* model)
 		/* with some disks, only the lower 16 bits are significative */
 		/* See: http://web.archive.org/web/20130507072056/http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf */
 		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187] & mask16);
+		printf("calculated AFR for SMART value 187: %f (%f%%)\n", r, poisson_prob_n_or_more_failures(r, 1) * 100);
 		if (afr < r)
 			afr = r;
 	}
@@ -497,24 +507,28 @@ static double smart_afr(uint64_t* smart, const char* model)
 		/* with Seagate disks, there are three different 16 bits value reported */
 		/* the lowest one is the most significant */
 		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188] & mask16);
+		printf("calculated AFR for SMART value 188: %f (%f%%)\n", r, poisson_prob_n_or_more_failures(r, 1) * 100);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[193] != SMART_UNASSIGNED) {
 		double r = smart_afr_value(SMART_193_R, SMART_193_STEP, smart[193] & mask32);
+		printf("calculated AFR for SMART value 193: %f (%f%%)\n", r, poisson_prob_n_or_more_failures(r, 1) * 100);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[197] != SMART_UNASSIGNED) {
 		double r = smart_afr_value(SMART_197_R, SMART_197_STEP, smart[197] & mask32);
+		printf("calculated AFR for SMART value 197: %f (%f%%)\n", r, poisson_prob_n_or_more_failures(r, 1) * 100);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[198] != SMART_UNASSIGNED) {
 		double r = smart_afr_value(SMART_198_R, SMART_198_STEP, smart[198] & mask32);
+		printf("calculated AFR for SMART value 198: %f (%f%%)\n", r, poisson_prob_n_or_more_failures(r, 1) * 100);
 		if (afr < r)
 			afr = r;
 	}
@@ -725,6 +739,7 @@ static void state_smart(unsigned n, tommy_list* low)
 				if (devinfo->parent != 0 || !have_parent)
 					array_failure_rate += afr;
 
+				printf("                      ");
 				printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
 			}
 		}
