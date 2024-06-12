@@ -491,8 +491,12 @@ static double smart_afr(uint64_t* smart, const char* model)
 		 * It's reported by users that for Archive SMR (Shingled Magnetic Recording)
 		 * and IronWolf disks to be a not significative test as
 		 * this value increases too often also on sane disks.
+		 *
+		 * Don't check Command_Timeout (188) for Western Digital HC5x0 drives
+		 *
+		 * It is reported that this attribute leads to 100% FP on these drives.
 		 */
-		strncmp(model, "ST", 2) != 0 && smart[188] != SMART_UNASSIGNED
+		strncmp(model, "ST", 2) != 0 && strncmp(model, "WUH72", 5) != 0 && smart[188] != SMART_UNASSIGNED 
 	) {
 		/* with Seagate disks, there are three different 16 bits value reported */
 		/* the lowest one is the most significant */
