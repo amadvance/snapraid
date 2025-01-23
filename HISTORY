@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+12.4 2025/01
+============
+ * Avoid a warning about function pointer conversion. No functional changes.
+
 12.3 2024/01
 ============
  * Fix potential integer overflow when computing the completion percentage.
