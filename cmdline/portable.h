@@ -238,6 +238,11 @@
 #include <execinfo.h>
 #endif
 
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#include <DiskArbitration/DiskArbitration.h>
+#endif
+
 /**
  * Enable thread use.
  */
@@ -338,7 +343,7 @@ static inline int hardlink(const char* a, const char* b)
  * Get the device UUID.
  * Return 0 on success.
  */
-int devuuid(uint64_t device, char* uuid, size_t size);
+int devuuid(uint64_t device, const char* path, char* uuid, size_t size);
 
 /**
  * Physical offset not yet read.

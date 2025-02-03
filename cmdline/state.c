@@ -948,7 +948,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					dev = st.st_dev;
 
 					/* read the uuid, if unsupported use an empty one */
-					if (devuuid(dev, uuid, sizeof(uuid)) != 0) {
+					if (devuuid(dev, dir, uuid, sizeof(uuid)) != 0) {
 						*uuid = 0;
 					}
 
@@ -1450,7 +1450,8 @@ static void state_map(struct snapraid_state* state)
 				char uuid[UUID_MAX];
 				int ret;
 
-				ret = devuuid(state->parity[l].split_map[s].device, uuid, sizeof(uuid));
+				ret = devuuid(state->parity[l].split_map[s].device, state->parity[l].split_map[s].path, uuid, sizeof(uuid));
+
 				if (ret != 0) {
 					/* uuid not available, just ignore */
 					continue;

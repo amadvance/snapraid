@@ -512,8 +512,54 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 }
 #endif
 
-int devuuid(uint64_t device, char* uuid, size_t uuid_size)
+#ifdef __APPLE__
+static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size) 
 {
+	CFStringRef path_apple = CFStringCreateWithCString(kCFAllocatorDefault, path, kCFStringEncodingUTF8);
+	DASessionRef session = DASessionCreate(kCFAllocatorDefault);
+
+	CFURLRef path_appler = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path_apple, kCFURLPOSIXPathStyle, false);
+	DADiskRef disk;
+	do {
+		disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, path_appler);
+		if (disk) {
+			CFRelease(path_appler);
+			break;
+		} else {
+			CFURLRef parent_path_appler = CFURLCreateCopyDeletingLastPathComponent(kCFAllocatorDefault, path_appler);
+			CFRelease(path_appler);
+			path_appler = parent_path_appler;
+		}
+	} while (true); // This is guaranteed to succeed eventually because it'll hit `/`.
+	
+	CFDictionaryRef description = DADiskCopyDescription(disk);
+	CFUUIDRef uuid_apple = CFDictionaryGetValue(description, kDADiskDescriptionVolumeUUIDKey);
+	CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, uuid_apple);
+	bool success = CFStringGetCString(uuid_string, uuid, uuid_size, kCFStringEncodingUTF8);
+	CFRelease(uuid_string);
+	CFRelease(description);
+	CFRelease(disk);
+	CFRelease(session);
+	CFRelease(path_apple);
+
+	if (success) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+#endif
+
+int devuuid(uint64_t device, const char* path, char* uuid, size_t uuid_size)
+{
+	(void)path;
+	(void)device;
+
+#ifdef __APPLE__
+	if (devuuid_darwin(path, uuid, uuid_size) == 0)
+		return 0;
+#endif
+
 #if HAVE_LINUX_DEVICE
 	/* if the major is the null device */
 	if (major(device) == 0) {

@@ -3,6 +3,12 @@ check_PROGRAMS = mktest mkstream
 
 AM_CPPFLAGS = -DSYSCONFDIR="\"${sysconfdir}\""
 
+if HAVE_DISK_ARBITRATION
+snapraid_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
+mktest_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
+mkstream_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
+endif
+
 snapraid_SOURCES = \
 	raid/raid.c \
 	raid/check.c \
