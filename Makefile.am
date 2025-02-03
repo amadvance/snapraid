@@ -3,6 +3,10 @@ check_PROGRAMS = mktest mkstream
 
 AM_CPPFLAGS = -DSYSCONFDIR="\"${sysconfdir}\""
 
+if HAVE_DISK_ARBITRATION
+snapraid_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
+endif
+
 snapraid_SOURCES = \
 	raid/raid.c \
 	raid/check.c \
@@ -44,7 +48,8 @@ snapraid_SOURCES = \
 	cmdline/import.c \
 	cmdline/search.c \
 	cmdline/mingw.c \
-	cmdline/unix.c
+	cmdline/unix.c \
+	cmdline/mac.c
 
 noinst_HEADERS = \
 	raid/raid.h \
@@ -88,7 +93,8 @@ noinst_HEADERS = \
 	cmdline/import.h \
 	cmdline/search.h \
 	cmdline/mingw.h \
-	cmdline/unix.h
+	cmdline/unix.h \
+	cmdline/mac.h
 
 mktest_SOURCES = \
 	cmdline/mktest.c \

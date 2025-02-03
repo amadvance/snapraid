@@ -334,11 +334,13 @@ static inline int hardlink(const char* a, const char* b)
 	return link(a, b);
 }
 
+#ifndef __APPLE__ // Use devuuid_macos instead (different API).
 /**
  * Get the device UUID.
  * Return 0 on success.
  */
 int devuuid(uint64_t device, char* uuid, size_t size);
+#endif
 
 /**
  * Physical offset not yet read.
