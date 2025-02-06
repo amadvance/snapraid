@@ -28,6 +28,7 @@
 #include "io.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"
+#include "mac.h"
 
 /**
  * Configure the multithread support.
@@ -948,7 +949,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					dev = st.st_dev;
 
 					/* read the uuid, if unsupported use an empty one */
-					if (devuuid(dev, uuid, sizeof(uuid)) != 0) {
+					if (
+#ifdef __APPLE__
+						devuuid_macos(dir, uuid, sizeof(uuid))
+#else
+						devuuid(dev, uuid, sizeof(uuid))
+#endif
+					!= 0) {
 						*uuid = 0;
 					}
 
@@ -1450,7 +1457,11 @@ static void state_map(struct snapraid_state* state)
 				char uuid[UUID_MAX];
 				int ret;
 
+#ifdef __APPLE__
+				ret = devuuid_macos(state->parity[l].split_map[s].path, uuid, sizeof(uuid));
+#else
 				ret = devuuid(state->parity[l].split_map[s].device, uuid, sizeof(uuid));
+#endif
 				if (ret != 0) {
 					/* uuid not available, just ignore */
 					continue;

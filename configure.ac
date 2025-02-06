@@ -241,6 +241,7 @@ AS_CASE([$host],
 	[POSIX=1]
 )
 AM_CONDITIONAL(HAVE_POSIX, [test x"$POSIX" != x])
+AM_CONDITIONAL(HAVE_DISK_ARBITRATION, [test "$(uname)" == Darwin])
 
 AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],
