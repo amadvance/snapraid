@@ -877,6 +877,15 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 
 	io->state = state;
 
+	/* initialize bandwidth limiting */
+	bw_init(&io->bw, state->opt.bwlimit);
+
+	/* set IO context in handles */
+	for (i = 0; i < handle_max; ++i)
+		handle_map[i].bw = &io->bw;
+	for (i = 0; i < parity_handle_max; ++i)
+		parity_handle_map[i].bw = &io->bw;
+
 #if HAVE_THREAD
 	if (io_cache == 0) {
 		/* default is 16 MiB of cache */

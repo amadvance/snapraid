@@ -19,6 +19,7 @@
 #define __PARITY_H
 
 #include "support.h"
+#include "bw.h"
 
 /****************************************************************************/
 /* parity */
@@ -57,6 +58,7 @@ struct snapraid_parity_handle {
 	struct snapraid_split_handle split_map[SPLIT_MAX];
 	unsigned split_mac; /**< Number of parity splits. */
 	unsigned level; /**< Level of the parity. */
+	struct snapraid_bw* bw; /**< Context for bandwidth limiting. */
 };
 
 /**

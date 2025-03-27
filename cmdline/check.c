@@ -888,8 +888,19 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
 	bit_vect_t* block_enabled;
+	struct snapraid_bw bw;
 
 	handle = handle_mapping(state, &diskmax);
+
+	/* initialize the bandwith context */
+	bw_init(&bw, state->opt.bwlimit);
+
+	/* share the bandwidth context with all handles */
+	for (j = 0; j < diskmax; ++j)
+		handle[j].bw = &bw;
+	for (j = 0; j < state->level; ++j)
+		if (parity[j])
+			parity[j]->bw = &bw;
 
 	/* we need 1 * data + 2 * parity + 1 * zero */
 	buffermax = diskmax + 2 * state->level + 1;
@@ -2085,4 +2096,3 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		return -1;
 	return 0;
 }
-

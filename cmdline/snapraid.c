@@ -74,6 +74,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 }
 
@@ -333,6 +334,7 @@ struct option long_options[] = {
 	{ "force-nocopy", 0, 0, 'N' },
 	{ "force-full", 0, 0, 'F' },
 	{ "force-realloc", 0, 0, 'R' },
+	{ "bw-limit", 1, 0, 'w' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
 	{ "speed-test", 0, 0, 'T' }, /* undocumented speed test command */
@@ -484,7 +486,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:ZEUDNFRahTC:vqHVG"
+#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:ZEUDNFRahTC:vqHVGw:"
 
 volatile int global_interrupt = 0;
 
@@ -669,6 +671,37 @@ int main(int argc, char* argv[])
 			if (!e || *e || olderthan > 1000) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid number of days '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			break;
+		case 'w' : /* --bw-limit */
+			if (optarg == 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Missing bandwidth limit\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* Parse the number part */
+			opt.bwlimit = strtoul(optarg, &e, 10);
+			if (!e || e == optarg) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid bandwidth limit '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* Handle suffixes */
+			if ((e[0] == 'k' || e[0] == 'K') && e[1] == 0) {
+				opt.bwlimit *= 1000;
+			} else if ((e[0] == 'm' || e[0] == 'M') && e[1] == 0) {
+				opt.bwlimit *= 1000 * 1000;
+			} else if ((e[0] == 'g' || e[0] == 'G') && e[1] == 0) {
+				opt.bwlimit *= 1000 * 1000 * 1000;
+			} else if (e[0] != '\0') {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid bandwidth limit suffix '%s'\n", e);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1543,4 +1576,3 @@ int main(int argc, char* argv[])
 
 	return EXIT_SUCCESS;
 }
-

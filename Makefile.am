@@ -25,6 +25,7 @@ snapraid_SOURCES = \
 	tommyds/tommy.c \
 	cmdline/snapraid.c \
 	cmdline/io.c \
+	cmdline/bw.c \
 	cmdline/util.c \
 	cmdline/stream.c \
 	cmdline/support.c \
@@ -78,6 +79,7 @@ noinst_HEADERS = \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
 	cmdline/io.h \
+	cmdline/bw.h \
 	cmdline/util.h \
 	cmdline/stream.h \
 	cmdline/support.h \
@@ -237,7 +239,7 @@ if HAVE_THREAD_CHECKER
 	mv bench/disk3/a/9* bench/disk6/a
 	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/disk2/b/* bench/disk3/b/*
 # Sync again
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync --bw-limit 1M
 # Other commands that uses threads
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub -p full
@@ -288,7 +290,7 @@ endif
 if HAVE_POSIX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check --bw-limit 1M
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 #### CONTROLLED ####
 	$(MSG) Filesystem allocation test

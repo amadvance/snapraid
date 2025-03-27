@@ -26,6 +26,10 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
+	[\-w, \-\-bw\-limit RATE]
+.PD 0
+.PP
+.PD
 	[\-Z, \-\-force\-zero] [\-E, \-\-force\-empty]
 .PD 0
 .PP
@@ -1091,6 +1095,11 @@ and \[dq]fix\[dq] to improve the recover process.
 The files are read also in sub\-directories and they are
 identified regardless of their name.
 This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
+.TP
+.B \-w, \-\-bw\-limit RATE
+Applies a global bandwidth limit for all disks. The RATE is
+the number of bytes per second. You can specify a multiplier
+as K, M, or G (e.g., \-\-bw\-limit 1G).
 .TP
 .B \-Z, \-\-force\-zero
 Forces the insecure operation of syncing a file with zero

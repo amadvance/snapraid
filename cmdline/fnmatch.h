@@ -47,6 +47,8 @@ extern "C" {
 #undef	FNM_PATHNAME
 #undef	FNM_NOESCAPE
 #undef	FNM_PERIOD
+#undef	FNM_LEADING_DIR
+#undef	FNM_CASEFOLD
 
 /* Bits set in the FLAGS argument to `fnmatch'.  */
 #define	FNM_PATHNAME	(1 << 0) /* No wildcard can ever match `/'.  */

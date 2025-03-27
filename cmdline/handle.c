@@ -261,6 +261,8 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 
 	count = 0;
 	do {
+		bw_limit(handle->bw, block_size - count);
+
 		/* read the full block to support O_DIRECT */
 		read_ret = pread(handle->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret < 0) {
@@ -372,6 +374,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		handle[j].file = 0;
 		handle[j].f = -1;
 		handle[j].valid_size = 0;
+		handle[j].bw = 0;
 	}
 
 	/* set the vector */

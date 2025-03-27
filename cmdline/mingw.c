@@ -1554,6 +1554,11 @@ void windows_sleep(unsigned seconds)
 	Sleep(seconds * 1000);
 }
 
+void windows_usleep(uint64_t useconds)
+{
+	Sleep(useconds / 1000);
+}
+
 int windows_link(const char* existing, const char* file)
 {
 	wchar_t conv_buf_file[CONV_MAX];

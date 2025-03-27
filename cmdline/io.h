@@ -288,6 +288,11 @@ struct snapraid_io {
 	 * Counts the error happening in the writers.
 	 */
 	int writer_error[IO_WRITER_ERROR_MAX];
+
+	/**
+	 * Bandwidth
+	 */
+	struct snapraid_bw bw;
 };
 
 /**

@@ -99,6 +99,8 @@
 #define stat_desc windows_stat_desc
 #undef sleep
 #define sleep windows_sleep
+#undef usleep
+#define usleep windows_usleep
 /* 4==DIR, 5,6,7=free, 8==REG */
 #define S_IFLNK 0x5000 /* Symbolic link to file */
 #define S_ISLNK(m) (((m) & _S_IFMT) == S_IFLNK)
@@ -330,6 +332,11 @@ const char* windows_stat_desc(struct stat* st);
  * Like sleep().
  */
 void windows_sleep(unsigned seconds);
+
+/**
+ * List usleep().
+ */
+void windows_usleep(uint64_t useconds);
 
 /**
  * Like readlink().

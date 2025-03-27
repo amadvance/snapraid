@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+12.5 2025/XX
+============
+ * Add a bandwidth limit option --bw-limit [Allan Clark]
+
 12.4 2025/01
 ============
  * Avoid a warning about function pointer conversion. No functional changes.

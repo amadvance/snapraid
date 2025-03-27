@@ -8,6 +8,7 @@ Synopsis
 	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
 	:	[-p, --plan PERC|bad|new|full]
 	:	[-o, --older-than DAYS] [-l, --log FILE]
+	:	[-w, --bw-limit RATE]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-N, --force-nocopy] [-F, --force-full]
@@ -787,6 +788,11 @@ Options
 		The files are read also in sub-directories and they are
 		identified regardless of their name.
 		This option can be used only with "check" and "fix".
+
+	-w, --bw-limit RATE
+		Applies a global bandwidth limit for all disks. The RATE is
+		the number of bytes per second. You can specify a multiplier
+		as K, M, or G (e.g., --bw-limit 1G).
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
