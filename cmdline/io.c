@@ -16,7 +16,7 @@
  */
 
 #include "portable.h"
-
+#include <sys/time.h>
 #include "io.h"
 
 void (*io_start)(struct snapraid_io* io,
@@ -863,6 +863,65 @@ static void io_stop_thread(struct snapraid_io* io)
 /*****************************************************************************/
 /* global */
 
+/**
+ * Limit bandwidth usage for an IO operation
+ */
+void io_limit_bandwidth(struct snapraid_io* io, size_t bytes)
+{
+    if (io->bwlimit == 0)
+        return;
+
+    uint64_t now_ms = tick_ms();
+
+    /* Initialize timestamp at first call */
+    if (io->bwlimit_reset == 0) {
+        io->bwlimit_reset = now_ms;
+        io->bwlimit_remaining = io->bwlimit;
+    }
+
+    /* Calculate elapsed milliseconds since last reset */
+    uint64_t elapsed_ms = now_ms - io->bwlimit_reset;
+
+    /* Update available bytes based on elapsed time */
+    uint64_t new_allowance = (io->bwlimit * elapsed_ms) / 1000;
+    io->bwlimit_remaining = io->bwlimit_remaining + new_allowance;
+
+    /* Cap the accumulated allowance at bwlimit (to prevent bursts) */
+    if (io->bwlimit_remaining > io->bwlimit)
+        io->bwlimit_remaining = io->bwlimit;
+
+    /* Reset timer */
+    io->bwlimit_reset = now_ms;
+
+    /* Wait only as long as needed to accumulate enough bytes */
+    while (bytes > io->bwlimit_remaining) {
+        uint64_t deficit = bytes - io->bwlimit_remaining;
+
+        /* Time needed (ms) to accumulate deficit bytes */
+        uint64_t sleep_ms = (deficit * 1000 + io->bwlimit - 1) / io->bwlimit;
+
+        /* Ensure minimal sleep of at least 1ms */
+        if (sleep_ms < 1)
+            sleep_ms = 1;
+#ifdef __WIN32__
+        windows_sleep(sleep_ms);
+#else
+        usleep(sleep_ms * 1000);
+#endif
+        now_ms = tick_ms();
+        elapsed_ms = now_ms - io->bwlimit_reset;
+        new_allowance = (io->bwlimit * elapsed_ms) / 1000;
+        io->bwlimit_remaining += new_allowance;
+
+        if (io->bwlimit_remaining > io->bwlimit)
+            io->bwlimit_remaining = io->bwlimit;
+
+        io->bwlimit_reset = now_ms;
+    }
+
+    io->bwlimit_remaining -= bytes;
+}
+
 void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	unsigned io_cache, unsigned buffer_max,
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
@@ -876,6 +935,19 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	size_t block_size = state->block_size;
 
 	io->state = state;
+
+	/* Initialize bandwidth limiting */
+	io->bwlimit = state->opt.bwlimit;
+	io->bwlimit_remaining = 0;
+	io->bwlimit_reset = 0;
+
+	/* Set IO context in handles */
+	for (i = 0; i < handle_max; ++i) {
+		handle_map[i].io = io;
+	}
+	for (i = 0; i < parity_handle_max; ++i) {
+		parity_handle_map[i].io = io;
+	}
 
 #if HAVE_THREAD
 	if (io_cache == 0) {

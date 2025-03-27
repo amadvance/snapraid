@@ -33,6 +33,7 @@ struct snapraid_handle {
 	struct advise_struct advise; /**< Advise information. */
 	data_off_t valid_size; /**< Size of the valid data. */
 	int created; /**< If the file was created, otherwise it was already existing. */
+	struct snapraid_io* io; /**< IO context for bandwidth limiting. */
 };
 
 /**

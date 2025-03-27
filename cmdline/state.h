@@ -120,6 +120,7 @@ struct snapraid_option {
 	int force_stats; /**< Force stats print during process. */
 	uint64_t parity_limit_size; /**< Test limit for parity files. */
 	int skip_multi_scan; /**< Don't use threads in scan. */
+	uint64_t bwlimit; /**< Bandwidth limit in bytes per second. */
 };
 
 struct snapraid_state {

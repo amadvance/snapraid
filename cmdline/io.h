@@ -192,6 +192,13 @@ struct snapraid_io {
 #endif
 
 	/**
+	 * Bandwidth limiting
+	 */
+	uint64_t bwlimit;           /**< Bandwidth limit in bytes per second */
+	uint64_t bwlimit_remaining; /**< Remaining bytes allowed in current second */
+	time_t bwlimit_reset;       /**< Time when to reset the bandwidth counter */
+
+	/**
 	 * Base position for workers.
 	 *
 	 * It's the index in the ::worker_map[].
@@ -303,6 +310,13 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
 	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max);
+
+/**
+ * Limit IO bandwidth to stay within the configured limit.
+ * If no limit is set, returns immediately.
+ * Otherwise sleeps as needed to maintain the rate limit.
+ */
+void io_limit_bandwidth(struct snapraid_io* io, size_t bytes);
 
 /**
  * Deinitialize the InputOutput workers.

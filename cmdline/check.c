@@ -16,7 +16,6 @@
  */
 
 #include "portable.h"
-
 #include "support.h"
 #include "util.h"
 #include "elem.h"
@@ -27,6 +26,11 @@
 #include "handle.h"
 #include "raid/raid.h"
 #include "raid/combo.h"
+#include "io.h"
+
+/* Forward declarations for reader functions needed by io_init */
+static void check_data_reader(struct snapraid_worker* worker, struct snapraid_task* task);
+static void check_parity_reader(struct snapraid_worker* worker, struct snapraid_task* task);
 
 /****************************************************************************/
 /* check */
@@ -888,8 +892,43 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
 	bit_vect_t* block_enabled;
+	struct snapraid_io io; /* IO context for bandwidth limiting */
+	int io_initialized = 0; /* Flag to track if IO context was initialized */
+	struct snapraid_parity_handle parity_map[LEV_MAX]; /* Local array for io_init */
 
 	handle = handle_mapping(state, &diskmax);
+
+	/* Initialize IO context for bandwidth limiting */
+	if (state->opt.bwlimit) {
+		/* Create a local array of parity handles for io_init */
+		for (j = 0; j < state->level; ++j) {
+			if (parity[j]) {
+				parity_map[j] = *parity[j];
+			} else {
+				memset(&parity_map[j], 0, sizeof(struct snapraid_parity_handle));
+			}
+		}
+
+		/* Initialize IO context with required parameters */
+		io_init(&io, state, state->opt.io_cache, diskmax + state->level,
+			check_data_reader, handle, diskmax,
+			check_parity_reader, 0, parity_map, state->level);
+		io_initialized = 1;
+
+		/* Share the IO context with all handles */
+		for (j = 0; j < diskmax; ++j) {
+			if (handle[j].disk) {
+				handle[j].io = &io;
+			}
+		}
+
+		/* Share the IO context with all parity handles */
+		for (j = 0; j < state->level; ++j) {
+			if (parity[j]) {
+				parity[j]->io = &io;
+			}
+		}
+	}
 
 	/* we need 1 * data + 2 * parity + 1 * zero */
 	buffermax = diskmax + 2 * state->level + 1;
@@ -1823,6 +1862,11 @@ bail:
 		}
 	}
 
+	/* Clean up IO context if it was initialized */
+	if (io_initialized) {
+		io_done(&io);
+	}
+
 	/* remove all the files created from scratch that have not finished the processing */
 	/* it happens only when aborting pressing Ctrl+C or other reason. */
 	if (fix) {
@@ -1984,6 +2028,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		blockmax = blockstart + blockcount;
 	}
 
+
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
@@ -2086,3 +2131,17 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	return 0;
 }
 
+/* Dummy reader functions needed for io_init */
+static void check_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)
+{
+	/* Dummy function - not actually used as we're not using worker threads */
+	(void)worker;
+	(void)task;
+}
+
+static void check_parity_reader(struct snapraid_worker* worker, struct snapraid_task* task)
+{
+	/* Dummy function - not actually used as we're not using worker threads */
+	(void)worker;
+	(void)task;
+}

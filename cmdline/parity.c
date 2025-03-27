@@ -17,11 +17,14 @@
 
 #include "portable.h"
 
-#include "support.h"
-#include "elem.h"
 #include "state.h"
+#include "io.h"
 #include "parity.h"
+#include "util.h"
+#include "support.h"
 #include "handle.h"
+#include "stream.h"
+#include "elem.h"
 
 /**
  * Pseudo random limits for parity
@@ -864,6 +867,9 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	if (split->valid_size < offset + block_size)
 		split->valid_size = offset + block_size;
 
+	/* Apply bandwidth limiting before writing */
+	io_limit_bandwidth(handle->io, block_size);
+
 	write_ret = pwrite(split->f, block_buffer, block_size, offset);
 	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		/* LCOV_EXCL_START */
@@ -915,6 +921,10 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 
 	count = 0;
 	do {
+		/* Apply bandwidth limiting before reading */
+		if (handle->io)
+			io_limit_bandwidth(handle->io, block_size - count);
+
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
