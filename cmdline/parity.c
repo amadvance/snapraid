@@ -867,8 +867,10 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	if (split->valid_size < offset + block_size)
 		split->valid_size = offset + block_size;
 
-	/* Apply bandwidth limiting before writing */
-	io_limit_bandwidth(handle->io, block_size);
+	/* Apply bandwidth limiting before writing ONLY if IO context is valid */
+	if (handle->io && handle->io->bwlimit > 0) {
+		io_limit_bandwidth(handle->io, block_size);
+	}
 
 	write_ret = pwrite(split->f, block_buffer, block_size, offset);
 	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
@@ -901,12 +903,16 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	struct snapraid_split_handle* split;
 	int ret;
 
+	if (!handle) {
+		return -1;
+	}
+
 	offset = pos * (data_off_t)block_size;
 
 	split = parity_split_find(handle, &offset);
 	if (!split) {
 		/* LCOV_EXCL_START */
-		out("Reading parity data outside range at extra offset %" PRIu64 ".\n", offset);
+		(*out)("Reading parity data outside range at extra offset %" PRIu64 ".\n", offset);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -914,27 +920,28 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	/* if read is completely out of the valid range */
 	if (offset >= split->valid_size) {
 		/* LCOV_EXCL_START */
-		out("Missing data reading file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
+		(*out)("Missing data reading file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	count = 0;
 	do {
-		/* Apply bandwidth limiting before reading */
-		if (handle->io)
+		/* Apply bandwidth limiting before reading ONLY if IO context is valid */
+		if (handle->io && handle->io->bwlimit > 0) {
 			io_limit_bandwidth(handle->io, block_size - count);
+		}
 
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
-			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
+			(*out)("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			out("Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
+			(*out)("Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -945,7 +952,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	ret = advise_read(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		out("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+		(*out)("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}

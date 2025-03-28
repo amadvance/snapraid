@@ -892,41 +892,36 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
 	bit_vect_t* block_enabled;
-	struct snapraid_io io; /* IO context for bandwidth limiting */
-	int io_initialized = 0; /* Flag to track if IO context was initialized */
-	struct snapraid_parity_handle parity_map[LEV_MAX]; /* Local array for io_init */
+	struct snapraid_io io;
 
 	handle = handle_mapping(state, &diskmax);
 
-	/* Initialize IO context for bandwidth limiting */
-	if (state->opt.bwlimit) {
-		/* Create a local array of parity handles for io_init */
-		for (j = 0; j < state->level; ++j) {
-			if (parity[j]) {
-				parity_map[j] = *parity[j];
-			} else {
-				memset(&parity_map[j], 0, sizeof(struct snapraid_parity_handle));
-			}
+	/* Create a local array of parity handles for io_init */
+	struct snapraid_parity_handle parity_map[LEV_MAX];
+	for (j = 0; j < state->level; ++j) {
+		if (parity[j]) {
+			parity_map[j] = *parity[j];
+		} else {
+			memset(&parity_map[j], 0, sizeof(struct snapraid_parity_handle));
 		}
+	}
 
-		/* Initialize IO context with required parameters */
-		io_init(&io, state, state->opt.io_cache, diskmax + state->level,
-			check_data_reader, handle, diskmax,
-			check_parity_reader, 0, parity_map, state->level);
-		io_initialized = 1;
+	/* initialize the io threads */
+	io_init(&io, state, state->opt.io_cache, diskmax + state->level, 
+		check_data_reader, handle, diskmax,
+		check_parity_reader, 0, parity_map, state->level);
 
-		/* Share the IO context with all handles */
-		for (j = 0; j < diskmax; ++j) {
-			if (handle[j].disk) {
-				handle[j].io = &io;
-			}
+	/* Share the IO context with all handles */
+	for (j = 0; j < diskmax; ++j) {
+		if (handle[j].disk) {
+			handle[j].io = &io;
 		}
+	}
 
-		/* Share the IO context with all parity handles */
-		for (j = 0; j < state->level; ++j) {
-			if (parity[j]) {
-				parity[j]->io = &io;
-			}
+	/* Share the IO context with all parity handles */
+	for (j = 0; j < state->level; ++j) {
+		if (parity[j]) {
+			parity[j]->io = &io;
 		}
 	}
 
@@ -1862,10 +1857,8 @@ bail:
 		}
 	}
 
-	/* Clean up IO context if it was initialized */
-	if (io_initialized) {
-		io_done(&io);
-	}
+	/* Clean up IO context */
+	io_done(&io);
 
 	/* remove all the files created from scratch that have not finished the processing */
 	/* it happens only when aborting pressing Ctrl+C or other reason. */
