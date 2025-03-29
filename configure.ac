@@ -13,7 +13,7 @@ AC_PROG_CC
 AC_USE_SYSTEM_EXTENSIONS
 AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind],[])
 AC_CHECK_PROG([WINE],[wine64],[wine64],[])
-AC_CHECK_PROG([SDE],[sde],[sde],[])
+AC_CHECK_PROG([SDE],[sde64],[sde64],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
@@ -340,8 +340,8 @@ dnl nhm -> Nehalem with SSE4.2
 dnl hsw -> Haswell with AVX2
 dnl knl -> Knights Landing with AVX512
 	[
-	TESTENV_SSE2="$SDE -p4p --"
-	TESTENV_SSSE3="$SDE -mrm --"
+	TESTENV_SSE2="$SDE -chip-check-exe-only -p4p --"
+	TESTENV_SSSE3="$SDE -chip-check-exe-only -mrm --"
 	TESTENV_SSE42="$SDE -nhm --"
 	TESTENV_AVX2="$SDE -hsw --"
 	EMULATOR=1
