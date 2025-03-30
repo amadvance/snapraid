@@ -35,7 +35,7 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 	uint64_t done;
 	uint64_t eta;
 
-	done = __atomic_add_fetch(&bw->total, bytes, __ATOMIC_SEQ_CST);
+	done = __atomic_fetch_add(&bw->total, bytes, __ATOMIC_SEQ_CST);
 
 	eta = done * 1000 / bw->limit;
 
