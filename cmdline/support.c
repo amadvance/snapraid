@@ -1002,7 +1002,21 @@ int advise_open(struct advise_struct* advise, int f)
 	) {
 		int ret;
 
-		/* advise sequential access */
+		/* advise noreuse access, this avoids to pollute the page cache */
+		/* supported from Linux Kernel 6.3 with this commit: https://github.com/torvalds/linux/commit/17e810229cb3068b692fa078bd9b3a6527e0866a */
+		ret = posix_fadvise(f, 0, 0, POSIX_FADV_NOREUSE);
+		if (ret == ENOSYS) {
+			/* call is not supported */
+			ret = 0;
+		}
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			errno = ret; /* posix_fadvise return the error code */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* advise sequential access, this doubles the read-ahead window size */
 		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret == ENOSYS) {
 			/* call is not supported, like in armhf, see posix_fadvise manpage */
