@@ -164,7 +164,10 @@ maintainer-clean-local:
 #
 # --test-skip-self
 # It just makes the test a little faster
-CHECKFLAGS_COMMON = --test-skip-device --test-skip-self --test-force-progress --no-warnings --test-parity-limit=3333333
+#
+# --test-io-advise-none
+# Keep data in the page cache to speedup the test
+CHECKFLAGS_COMMON = --test-skip-device --test-skip-self --test-force-progress --no-warnings --test-parity-limit=3333333 --test-io-advise-none
 
 # --test-force-order-alpha
 # Ensures to process files always in the same order despite
