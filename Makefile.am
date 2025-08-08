@@ -512,7 +512,7 @@ endif
 	echo RUN > bench/disk1/RUN-CHMOD
 if HAVE_POSIX
 # Doesn't run this test as root because the root user override permissions
-	if [[ $$EUID -ne 0 ]]; then \
+	if test "$$EUID" -ne 0; then \
 		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync; \
 	fi
 endif
@@ -532,7 +532,7 @@ endif
 	echo HASH > bench/disk1/HASH-CHMOD
 if HAVE_POSIX
 # Doesn't run this test as root because the root user override permissions
-	if [[ $$EUID -ne 0 ]]; then \
+	if test "$$EUID" -ne 0; then \
 		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync; \
 	fi
 endif
