@@ -513,7 +513,7 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 #endif
 
 #ifdef __APPLE__
-static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size) 
+static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 {
 	CFStringRef path_apple = CFStringCreateWithCString(kCFAllocatorDefault, path, kCFStringEncodingUTF8);
 	DASessionRef session = DASessionCreate(kCFAllocatorDefault);
@@ -531,7 +531,7 @@ static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 			path_appler = parent_path_appler;
 		}
 	} while (true); // This is guaranteed to succeed eventually because it'll hit `/`.
-	
+
 	CFDictionaryRef description = DADiskCopyDescription(disk);
 	CFUUIDRef uuid_apple = CFDictionaryGetValue(description, kDADiskDescriptionVolumeUUIDKey);
 	CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, uuid_apple);
@@ -948,7 +948,7 @@ static dev_t devread(const char* path)
  * Read a device tree filling the specified list of disk_t entries.
  */
 #if HAVE_LINUX_DEVICE
-static int devtree(const char* name, const char* custom, dev_t device, devinfo_t* parent, tommy_list* list)
+static int devtree(const char* name, const char* smartctl, const int* smartignore, dev_t device, devinfo_t* parent, tommy_list* list)
 {
 	char path[PATH_MAX];
 	DIR* d;
@@ -976,7 +976,7 @@ static int devtree(const char* name, const char* custom, dev_t device, devinfo_t
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(name, custom, subdev, parent, list) != 0) {
+				if (devtree(name, smartctl, smartignore, subdev, parent, list) != 0) {
 					/* LCOV_EXCL_START */
 					closedir(d);
 					return -1;
@@ -1021,7 +1021,8 @@ static int devtree(const char* name, const char* custom, dev_t device, devinfo_t
 
 		devinfo->device = device;
 		pathcpy(devinfo->name, sizeof(devinfo->name), name);
-		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), custom);
+		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), smartctl);
+		memcpy(devinfo->smartignore, smartignore, sizeof(devinfo->smartignore));
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
 		devinfo->parent = parent;
 
@@ -1118,7 +1119,7 @@ static int devscan(tommy_list* list)
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
-static int devsmart(dev_t device, const char* name, const char* custom, uint64_t* smart, char* serial, char* vendor, char* model)
+static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, char* serial, char* vendor, char* model)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1132,10 +1133,10 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if there is a custom command */
-	if (custom[0]) {
+	/* if there is a custom smartctl command */
+	if (smartctl[0]) {
 		char option[PATH_MAX];
-		snprintf(option, sizeof(option), custom, file);
+		snprintf(option, sizeof(option), smartctl, file);
 		snprintf(cmd, sizeof(cmd), "smartctl -a %s", option);
 	} else {
 		snprintf(cmd, sizeof(cmd), "smartctl -a %s", file);
@@ -1186,7 +1187,7 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
  * Spin down a specific device.
  */
 #if HAVE_LINUX_DEVICE
-static int devdown(dev_t device, const char* name, const char* custom)
+static int devdown(dev_t device, const char* name, const char* smartctl)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1200,10 +1201,10 @@ static int devdown(dev_t device, const char* name, const char* custom)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if there is a custom command */
-	if (custom[0]) {
+	/* if there is a custom smartctl command */
+	if (smartctl[0]) {
 		char option[PATH_MAX];
-		snprintf(option, sizeof(option), custom, file);
+		snprintf(option, sizeof(option), smartctl, file);
 		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s", option);
 	} else {
 		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s", file);
@@ -1447,7 +1448,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 			}
 
 			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->smartctl, device, devinfo, low) != 0) {
+			if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, device, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Failed to expand device '%u:%u'.\n", major(device), minor(device));
 				return -1;

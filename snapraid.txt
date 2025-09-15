@@ -1267,7 +1267,26 @@ Refers at the smartmontools documentation about the possible options:
     https://www.smartmontools.org/wiki/Supported_RAID-Controllers
     https://www.smartmontools.org/wiki/Supported_USB-Devices
 
-7.14 Examples
+7.14 smartignore DISK/PARITY ATTR [ATTR...]
+-------------------------------------------
+
+Ignores the specified SMART attribute when computing the probability
+of disk failure. This option is useful if a disk reports unusual or
+misleading values for a particular attribute.
+
+DISK is the same disk name specified in the "disk" option.
+PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
+The special value * can be used to ignore the attribute on all disks.
+
+For example, to ignore the "Load_Cycle_Count" attribute on all disks:
+
+    smartignore * 193
+
+To ignore it only on the first parity disk:
+
+    smartignore parity 193
+
+7.15 Examples
 -------------
 
 An example of a typical configuration for Unix is:

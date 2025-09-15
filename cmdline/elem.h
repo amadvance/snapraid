@@ -330,6 +330,7 @@ struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
+	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. */
 
 	uint64_t device; /**< Device identifier. */
@@ -471,6 +472,7 @@ struct snapraid_parity {
 	struct snapraid_split split_map[SPLIT_MAX]; /**< Parity splits. */
 	unsigned split_mac; /**< Number of parity splits. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
+	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
 	int is_excluded_by_filter; /**< If the parity is excluded by filters. */

@@ -2154,7 +2154,7 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 /**
  * Read a device tree filling the specified list of disk_t entries.
  */
-static int devtree(const char* name, const char* custom, const char* wfile, devinfo_t* parent, tommy_list* list)
+static int devtree(const char* name, const char* smartctl, const int* smartignore, const char* wfile, devinfo_t* parent, tommy_list* list)
 {
 	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
@@ -2203,7 +2203,8 @@ static int devtree(const char* name, const char* custom, const char* wfile, devi
 		devinfo = calloc_nofail(1, sizeof(devinfo_t));
 
 		pathcpy(devinfo->name, sizeof(devinfo->name), name);
-		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), custom);
+		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), smartctl);
+		memcpy(devinfo->smartignore, smartignore, sizeof(devinfo->smartignore));
 		devinfo->device = vde->Extents[i].DiskNumber;
 		pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
 		pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
@@ -2339,7 +2340,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* custom, uint64_t* smart, char* serial, char* vendor, char* model)
+static int devsmart(uint64_t device, const char* name, const char* smartctl, uint64_t* smart, char* serial, char* vendor, char* model)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2350,10 +2351,10 @@ static int devsmart(uint64_t device, const char* name, const char* custom, uint6
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
-	/* if there is a custom command */
-	if (custom[0]) {
+	/* if there is a custom smartctl command */
+	if (smartctl[0]) {
 		char option[128];
-		snprintf(option, sizeof(option), custom, file);
+		snprintf(option, sizeof(option), smartctl, file);
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", exedir, option);
 	} else {
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", exedir, file);
@@ -2390,8 +2391,8 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if first try without custom command */
-	if (count == 0 && custom[0] == 0) {
+	/* if first try without custom smartctl command */
+	if (count == 0 && smartctl[0] == 0) {
 		/*
 		 * Handle some common cases in Windows.
 		 *
@@ -2425,7 +2426,7 @@ retry:
 /**
  * Spin down a specific device.
  */
-static int devdown(uint64_t device, const char* name, const char* custom)
+static int devdown(uint64_t device, const char* name, const char* smartctl)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2436,10 +2437,10 @@ static int devdown(uint64_t device, const char* name, const char* custom)
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
-	/* if there is a custom command */
-	if (custom[0]) {
+	/* if there is a custom smartctl command */
+	if (smartctl[0]) {
 		char option[128];
-		snprintf(option, sizeof(option), custom, file);
+		snprintf(option, sizeof(option), smartctl, file);
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", exedir, option);
 	} else {
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", exedir, file);
@@ -2476,8 +2477,8 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if first try without custom command */
-	if (count == 0 && custom[0] == 0) {
+	/* if first try without custom smartctl command */
+	if (count == 0 && smartctl[0] == 0) {
 		/*
 		 * Handle some common cases in Windows.
 		 *
@@ -2660,7 +2661,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 			}
 
 			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->smartctl, devinfo->wfile, devinfo, low) != 0) {
+			if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, devinfo->wfile, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Failed to expand device '%s'.\n", devinfo->file);
 				return -1;

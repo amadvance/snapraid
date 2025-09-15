@@ -461,6 +461,8 @@ int randomize(void* ptr, size_t size);
  */
 #define SMART_COUNT 260
 
+#define SMART_IGNORE_MAX 4 /**< Max number of ignored smart attributes */
+
 /**
  * Flags returned by smartctl.
  */
@@ -491,6 +493,7 @@ struct devinfo_struct {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
 	char smartctl[PATH_MAX]; /**< Options for smartctl. */
+	int smartignore[SMART_IGNORE_MAX]; /**< Attribues to ignore */
 	char file[PATH_MAX]; /**< File device. */
 #ifdef _WIN32
 	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */

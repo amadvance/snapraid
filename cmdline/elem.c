@@ -739,6 +739,7 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip_access)
 {
 	struct snapraid_disk* disk;
+	unsigned i;
 
 	disk = malloc_nofail(sizeof(struct snapraid_disk));
 	pathcpy(disk->name, sizeof(disk->name), name);
@@ -754,6 +755,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 #endif
 
 	disk->smartctl[0] = 0;
+	for (i = 0; i < SMART_IGNORE_MAX; ++i)
+		disk->smartignore[i] = 0;
 	disk->device = dev;
 	disk->tick = 0;
 	disk->cached_blocks = 0;

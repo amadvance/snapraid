@@ -4,6 +4,8 @@ SnapRAID HISTORY
 12.5 2025/XX
 ============
  * Add a bandwidth limit option --bw-limit [Allan Clark]
+ * Add a new smartignore configuration option to ignore specific SMART
+   attributes.
 
 12.4 2025/01
 ============

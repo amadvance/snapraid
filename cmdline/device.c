@@ -605,7 +605,7 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 	return poisson_prob_n_or_more_failures(raid_failure_rate, 1);
 }
 
-static void state_smart(unsigned n, tommy_list* low)
+static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* low)
 {
 	tommy_node* i;
 	unsigned j;
@@ -664,6 +664,12 @@ static void state_smart(unsigned n, tommy_list* low)
 		devinfo_t* devinfo = i->data;
 		double afr;
 		uint64_t flag;
+
+		/* clear attributes to ignore */
+		for (j = 0; j < SMART_IGNORE_MAX; ++j) {
+			devinfo->smart[state->smartignore[j]] = SMART_UNASSIGNED;
+			devinfo->smart[devinfo->smartignore[j]] = SMART_UNASSIGNED;
+		}
 
 		if (devinfo->smart[SMART_TEMPERATURE_CELSIUS] != SMART_UNASSIGNED)
 			printf("%7" PRIu64, devinfo->smart[SMART_TEMPERATURE_CELSIUS] & mask16);
@@ -932,6 +938,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		pathcpy(entry->name, sizeof(entry->name), disk->name);
 		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
+		memcpy(entry->smartignore, disk->smartignore, sizeof(entry->smartignore));
 
 		tommy_list_insert_tail(&high, &entry->node, entry);
 	}
@@ -951,6 +958,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 			pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
 			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
+			memcpy(entry->smartignore, state->parity[j].smartignore, sizeof(entry->smartignore));
 			pathcut(entry->mount); /* remove the parity file */
 
 			tommy_list_insert_tail(&high, &entry->node, entry);
@@ -992,7 +1000,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		}
 
 		if (operation == DEVICE_SMART)
-			state_smart(state->level + tommy_list_count(&state->disklist), &low);
+			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);
 	}
 
 	tommy_list_foreach(&high, free);

@@ -134,7 +134,7 @@ const char* lev_raid_name(unsigned mode, unsigned n)
 
 void state_init(struct snapraid_state* state)
 {
-	unsigned l, s;
+	unsigned l, s, i;
 
 	memset(&state->opt, 0, sizeof(state->opt));
 	state->filter_hidden = 0;
@@ -153,6 +153,8 @@ void state_init(struct snapraid_state* state)
 			state->parity[l].split_map[s].device = 0;
 		}
 		state->parity[l].smartctl[0] = 0;
+		for (i = 0; i < SMART_IGNORE_MAX; ++i)
+			state->parity[l].smartignore[i] = 0;
 		state->parity[l].total_blocks = 0;
 		state->parity[l].free_blocks = 0;
 		state->parity[l].skip_access = 0;
@@ -173,6 +175,8 @@ void state_init(struct snapraid_state* state)
 	state->level = 1; /* default is the lowest protection */
 	state->clear_past_hash = 0;
 	state->no_conf = 0;
+	for (i = 0; i < SMART_IGNORE_MAX; ++i)
+		state->smartignore[i] = 0;
 
 	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->maplist);
@@ -1062,6 +1066,93 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				}
 
 				pathcpy(disk->smartctl, sizeof(disk->smartctl), custom);
+			}
+		} else if (strcmp(tag, "smartignore") == 0) {
+			int* smart;
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'smartignore' name in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (!*buffer) {
+				/* LCOV_EXCL_START */
+				log_fatal("Empty 'smartignore' name in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			sgetspace(f);
+
+			if (strcmp(buffer, "*") == 0) {
+				smart = state->smartignore;
+			} else  if (lev_config_scan(buffer, &level, 0) == 0) { /* search for parity */
+				smart = state->parity[level].smartignore;
+			} else {
+				struct snapraid_disk* disk;
+
+				/* search the disk */
+				disk = 0;
+				for (i = state->disklist; i != 0; i = i->next) {
+					disk = i->data;
+					if (strcmp(disk->name, buffer) == 0)
+						break;
+				}
+				if (!disk) {
+					/* LCOV_EXCL_START */
+					log_fatal("Missing disk 'smartctl' '%s' at line %u\n", buffer, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				smart = disk->smartignore;
+			}
+
+			int si = 0;
+
+			while (1) {
+				char* e;
+
+				ret = sgettok(f, buffer, sizeof(buffer));
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					log_fatal("Invalid 'smartignore' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				if (!*buffer)
+					break;
+
+				if (si == SMART_IGNORE_MAX) {
+					/* LCOV_EXCL_START */
+					log_fatal("Too many 'smartignore' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				smart[si] = strtoul(buffer, &e, 0);
+
+				if (!e || *e) {
+					/* LCOV_EXCL_START */
+					log_fatal("Invalid 'smartignore' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				++si;
+
+				sgetspace(f);
+			}
+
+			if (si == 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'smartignore' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 		} else if (strcmp(tag, "nohidden") == 0) {
 			state->filter_hidden = 1;
