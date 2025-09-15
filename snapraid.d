@@ -1165,21 +1165,25 @@ Configuration
 	This option is only required for Windows.
 
   smartctl DISK/PARITY OPTIONS...
-	Defines a custom smartctl command to obtain the SMART attributes
-	for each disk. This may be required for RAID controllers and for
-	some USB disk that cannot be auto-detected.
+	Defines a custom smartctl options to obtain the SMART attributes for
+	each disk. This may be required for RAID controllers and for some USB
+	disk that cannot be auto-detected.
 
 	DISK is the same disk name specified in the "disk" option.
 	PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
 
 	In the specified OPTIONS, the "%s" string is replaced by the
-	device name. Note that in case of RAID controllers the device is likely
-	fixed, and you don't have to use "%s".
+	device name. Note that in case of RAID controllers the device is
+	likely fixed, and you don't have to use "%s".
 
 	Refers at the smartmontools documentation about the possible options:
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
 		:https://www.smartmontools.org/wiki/Supported_USB-Devices
+
+	For example:
+
+		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
 	Ignores the specified SMART attribute when computing the probability
@@ -1213,6 +1217,7 @@ Configuration
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
+		:smartignore * 193
 
 	An example of a typical configuration for Windows is:
 
@@ -1229,6 +1234,7 @@ Configuration
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+		:smartignore * 193
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in

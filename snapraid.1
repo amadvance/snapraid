@@ -64,12 +64,10 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD
 	|pool|devices|touch|rehash
 .PD 0
-.PP
 .PD
 .PP
 snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
-.PP
 .PD
 .SH DESCRIPTION 
 SnapRAID is a backup program designed for disk arrays, storing
@@ -109,7 +107,6 @@ For more information, please visit the official SnapRAID site:
 .RS 4
 http://www.snapraid.it/
 .PD 0
-.PP
 .PD
 .RE
 .SH LIMITATIONS 
@@ -196,7 +193,6 @@ of protection, and that your disks are present in:
 .PD
 /mnt/disk3 <\- third disk to protect
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -230,7 +226,6 @@ data d2 /mnt/disk2/
 .PD
 data d3 /mnt/disk3/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -264,7 +259,6 @@ data d2 G:\\array\\
 .PD
 data d3 H:\\array\\
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -274,7 +268,6 @@ disks directly in sub folders. See:
 .RS 4
 https://www.google.com/search?q=Windows+mount+point
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -284,7 +277,6 @@ parity information.
 .RS 4
 snapraid sync
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -306,7 +298,6 @@ run the \[dq]scrub\[dq] command.
 .RS 4
 snapraid scrub
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -322,7 +313,6 @@ For example, to check 5% of the array older than 20 days use:
 .RS 4
 snapraid \-p 5 \-o 20 scrub
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -333,7 +323,6 @@ and listed in the \[dq]status\[dq] command.
 .RS 4
 snapraid status
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -343,7 +332,6 @@ the \-e, \-\-filter\-error options:
 .RS 4
 snapraid \-e fix
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -354,7 +342,6 @@ marked as bad.
 .RS 4
 snapraid \-p bad scrub
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -372,7 +359,6 @@ You can configure the \[dq]pooling\[dq] directory in the configuration file with
 .RS 4
 pool /pool
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -381,7 +367,6 @@ or, if you are in Windows, with:
 .RS 4
 pool C:\\pool
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -390,7 +375,6 @@ and then run the \[dq]pool\[dq] command to create or update the virtual view.
 .RS 4
 snapraid pool
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -405,7 +389,6 @@ to your /etc/samba/smb.conf the following options:
 .PD
 unix extensions = no
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -440,7 +423,6 @@ wide links = yes
 .PD
 follow symlinks = yes
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -476,7 +458,6 @@ pool C:\\pool
 .PD
 share \\\\darkstar
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -497,7 +478,6 @@ and share the following dirs in the network:
 .PD
 \\\\darkstar\\d3 \-> H:\\array
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -509,7 +489,6 @@ symlinks with the command:
 .RS 4
 fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 .PD 0
-.PP
 .PD
 .RE
 .SS Undeleting 
@@ -520,7 +499,6 @@ the \-f, \-\-filter option :
 .RS 4
 snapraid fix \-f FILE
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -529,7 +507,6 @@ or for a directory:
 .RS 4
 snapraid fix \-f DIR/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -540,7 +517,6 @@ only missing files, leaving untouched all the others.
 .RS 4
 snapraid fix \-m \-f DIR/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -549,7 +525,6 @@ Or to recover all the deleted files in all the drives with:
 .RS 4
 snapraid fix \-m
 .PD 0
-.PP
 .PD
 .RE
 .SS Recovering 
@@ -575,7 +550,6 @@ For example, if you have that disk \[dq]d1\[dq] failed, you can change from:
 .RS 4
 data d1 /mnt/disk1/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -584,7 +558,6 @@ to:
 .RS 4
 data d1 /mnt/new_spare_disk/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -597,7 +570,6 @@ Run the fix command, storing the log in an external file with:
 .RS 4
 snapraid \-d NAME \-l fix.log fix
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -637,7 +609,6 @@ everything is OK on the recovered disk.
 .RS 4
 snapraid \-d NAME \-a check
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -654,7 +625,6 @@ Run the \[dq]sync\[dq] command to re\-synchronize the array with the new disk.
 .RS 4
 snapraid sync
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -706,7 +676,6 @@ of the disks, with the Backblaze data available at:
 .RS 4
 https://www.backblaze.com/hard\-drive\-test\-data.html
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -1402,7 +1371,6 @@ with the command:
 .RS 4
 mkfs.ext4 \-m 0 \-T largefile4 DEVICE
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -1433,28 +1401,24 @@ For example with 8 disks of 4 TB and a block size of 256 KiB
 .PP
 RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 .PD 0
-.PP
 .PD
 .PP
 Switching to a hash size of 8, you get:
 .PP
 RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
 .PD 0
-.PP
 .PD
 .PP
 Switching to a block size of 512, you get:
 .PP
 RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 .PD 0
-.PP
 .PD
 .PP
 Switching to both a hash size of 8, and a block size of 512 you get:
 .PP
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 .PD 0
-.PP
 .PD
 .SS autosave SIZE_IN_GIGABYTES 
 Automatically save the state when syncing or scrubbing after the specified amount
@@ -1481,16 +1445,16 @@ file dir and name.
 .PP
 This option is only required for Windows.
 .SS smartctl DISK/PARITY OPTIONS... 
-Defines a custom smartctl command to obtain the SMART attributes
-for each disk. This may be required for RAID controllers and for
-some USB disk that cannot be auto\-detected.
+Defines a custom smartctl options to obtain the SMART attributes for
+each disk. This may be required for RAID controllers and for some USB
+disk that cannot be auto\-detected.
 .PP
 DISK is the same disk name specified in the \[dq]disk\[dq] option.
 PARITY is one of the parity name as \[dq]parity,(1,2,3,4,5,6,z)\-parity\[dq].
 .PP
 In the specified OPTIONS, the \[dq]%s\[dq] string is replaced by the
-device name. Note that in case of RAID controllers the device is likely
-fixed, and you don\'t have to use \[dq]%s\[dq].
+device name. Note that in case of RAID controllers the device is
+likely fixed, and you don\'t have to use \[dq]%s\[dq].
 .PP
 Refers at the smartmontools documentation about the possible options:
 .PP
@@ -1501,7 +1465,14 @@ https://www.smartmontools.org/wiki/Supported_RAID\-Controllers
 .PD
 https://www.smartmontools.org/wiki/Supported_USB\-Devices
 .PD 0
+.PD
+.RE
 .PP
+For example:
+.PP
+.RS 4
+smartctl parity \-d sat %s
+.PD 0
 .PD
 .RE
 .SS smartignore DISK/PARITY ATTR [ATTR...] 
@@ -1518,7 +1489,6 @@ For example, to ignore the \[dq]Load_Cycle_Count\[dq] attribute on all disks:
 .RS 4
 smartignore * 193
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -1527,7 +1497,6 @@ To ignore it only on the first parity disk:
 .RS 4
 smartignore parity 193
 .PD 0
-.PP
 .PD
 .RE
 .SS Examples 
@@ -1581,6 +1550,9 @@ smartctl parity \-d areca,1/1 /dev/sg0
 smartctl 2\-parity \-d areca,2/1 /dev/sg0
 .PD 0
 .PP
+.PD
+smartignore * 193
+.PD 0
 .PD
 .RE
 .PP
@@ -1638,6 +1610,9 @@ smartctl parity \-d areca,1/1 /dev/arcmsr0
 smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD 0
 .PP
+.PD
+smartignore * 193
+.PD 0
 .PD
 .RE
 .SH PATTERN 
@@ -1710,7 +1685,6 @@ exclude /lost+found/
 .PD
 exclude tmp/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -1732,7 +1706,6 @@ include /musics/
 .PD
 include /pictures/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -1773,7 +1746,6 @@ include /musics/
 .PD
 include /pictures/
 .PD 0
-.PP
 .PD
 .RE
 .PP
@@ -1791,7 +1763,6 @@ patterns. For example:
 .PD
 snapraid \-f \[dq]*.mp3\[dq] check
 .PD 0
-.PP
 .PD
 .RE
 .PP
