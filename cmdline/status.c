@@ -489,33 +489,62 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (bad) {
-		block_off_t bad_print;
-
 		printf("DANGER! In the array there are %u errors!\n\n", bad);
 
-		printf("They are from block %u to %u, specifically at blocks:", bad_first, bad_last);
+		if (bad_last - bad_first + 1 == bad) {
+			printf("They are from block %u to %u.\n", bad_first, bad_last);
+		} else {
+			block_off_t bad_range;
+			block_off_t bad_count;
+			block_off_t range_start;
+			block_off_t range_count;
 
-		/* print some of the errors */
-		bad_print = 0;
-		for (i = 0; i < blockmax; ++i) {
-			snapraid_info info = info_get(&state->infoarr, i);
+			printf("They are from block %u to %u, specifically at blocks:", bad_first, bad_last);
 
-			/* skip unused blocks */
-			if (info == 0)
-				continue;
+			/* print some of the errors */
+			bad_range = 0;
+			bad_count = 0;
+			range_start = 0;
+			range_count = 0;
+			for (i = 0; i <= blockmax; ++i) { /* one extra iteration to print the final range */
+				snapraid_info info = 0;
+				int is_bad = 0;
 
-			if (info_get_bad(info)) {
-				printf(" %u", i);
-				++bad_print;
+				if (i < blockmax) {
+					info = info_get(&state->infoarr, i);
+					if (info != 0) /* unused blocks are never bad */
+						is_bad = info_get_bad(info);
+				}
+
+				if (is_bad) {
+					/* create or extend the range */
+					if (!range_count)
+						range_start = i;
+					++range_count;
+				} else {
+					/* break the range */
+					if (range_count) {
+						if (range_count == 1) {
+							printf(" %u", range_start);
+						} else {
+							printf(" %u-%u", range_start, range_start + range_count - 1);
+						}
+						bad_count += range_count;
+						++bad_range;
+						range_count = 0;
+					}
+				}
+
+				if (bad_range > 100) {
+					printf(" and %u more...", bad - bad_count);
+					break;
+				}
 			}
 
-			if (bad_print > 100) {
-				printf(" and %u more...", bad - bad_print);
-				break;
-			}
+			printf("\n");
 		}
 
-		printf("\n\n");
+		printf("\n");
 
 		printf("To fix them use the command 'snapraid -e fix'.\n");
 		printf("The errors will disappear from the 'status' at the next 'scrub' command.\n");
