@@ -69,6 +69,52 @@ const char* stat_desc(struct stat* st)
 }
 
 /**
+ * Read a file from sys
+ * 
+ * Return -1 on error, otherwise the data read
+ */
+#if HAVE_LINUX_DEVICE
+static int sysread(const char* path, char* buf, size_t buf_size)
+{
+	int f;
+	int ret;
+	int len;
+
+	f = open(path, O_RDONLY);
+	if (f == -1) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to open '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	len = read(f, buf, buf_size);
+	if (len < 0) {
+		/* LCOV_EXCL_START */
+		close(f);
+		log_fatal("Failed to read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = close(f);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to close '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (len == (int)buf_size)
+		buf[buf_size - 1] = 0;
+	else
+		buf[len] = 0;
+
+	return len;
+}
+#endif
+
+/**
  * Get the device file from the device number.
  *
  * It uses /proc/self/mountinfo.
@@ -248,47 +294,22 @@ static int devdereference(uint64_t device, uint64_t* new_device)
 #if HAVE_LINUX_DEVICE
 static int tagread(const char* path, const char* tag, char* value, size_t value_size)
 {
-	int f;
 	int ret;
-	int len;
 	char buf[512];
 	size_t tag_len;
 	char* i;
 	char* e;
 
-	f = open(path, O_RDONLY);
-	if (f == -1) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to open '%s'.\n", path);
-		return 0;
-		/* LCOV_EXCL_STOP */
-	}
-
-	len = read(f, buf, sizeof(buf));
-	if (len < 0) {
-		/* LCOV_EXCL_START */
-		close(f);
-		log_fatal("Failed to read '%s'.\n", path);
+	ret = sysread(path, buf, sizeof(buf));
+	if (ret < 0)
 		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (len == sizeof(buf)) {
+	if (ret == sizeof(buf)) {
 		/* LCOV_EXCL_START */
-		close(f);
 		log_fatal("Too long read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = close(f);
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to close '%s'.\n", path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	buf[len] = 0;
 	tag_len = strlen(tag);
 
 	for (i = buf; *i; ++i) {
@@ -1705,6 +1726,142 @@ size_t direct_size(void)
 
 	return size;
 }
+
+#if HAVE_LINUX_DEVICE
+
+/* List of possible ambient temperature labels */
+const char* AMBIENT_LABEL[] = {
+	"systin",
+	"auxtin",
+	"mb",
+	"board",
+	"motherboard",
+	"system",
+	"chassis",
+	"case",
+	"room",
+	"ambient",
+	0
+};
+
+int ambient_temperature(void)
+{
+	DIR* dir;
+	struct dirent* entry;
+	int lowest_temp = 0;
+
+	dir = opendir("/sys/class/hwmon");
+	if (!dir)
+		return 0;
+
+	/* iterate through hwmon devices */
+	while ((entry = readdir(dir)) != NULL) {
+		char path[PATH_MAX];
+		DIR* hwmon_dir;
+		struct dirent* hwmon_entry;
+
+		if (strncmp(entry->d_name, "hwmon", 5) != 0) 
+			continue;
+
+		pathprint(path, sizeof(path), "/sys/class/hwmon/%s", entry->d_name);
+
+		/* iterate through temp*_input files */
+		hwmon_dir = opendir(path);
+		if (!hwmon_dir) 
+			continue;
+
+		while ((hwmon_entry = readdir(hwmon_dir)) != NULL) {
+			char value[128];
+			char name[128];
+			char label[128];
+			char* dash;
+			int ret;
+			char* e;
+			int temp;
+
+			if (strncmp(hwmon_entry->d_name, "temp", 4) != 0)
+				continue;
+
+			dash = strrchr(hwmon_entry->d_name, '_');
+			if (dash == 0)
+				continue;
+
+			if (strcmp(dash, "_input") != 0)
+				continue;
+
+			/* read the temperature */
+			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s", entry->d_name, hwmon_entry->d_name);
+
+			ret = sysread(path, value, sizeof(value));
+			if (ret < 0)
+				continue;
+
+			temp = strtol(value, &e, 10) / 1000;
+			if (*e != 0 && !isspace(*e)) 
+				continue;
+
+			/* cut the file name at "_input" */
+			*dash = 0;
+
+			/* read the corresponding name */
+			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/name", entry->d_name);
+			ret = sysread(path, name, sizeof(name));
+			if (ret < 0) {
+				/* fallback to using the hwmon entry */
+				pathcpy(name, sizeof(name), entry->d_name);
+			}
+
+			/* read the corresponding label file */
+			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s_label", entry->d_name, hwmon_entry->d_name);
+			ret = sysread(path, label, sizeof(label));
+			if (ret < 0) {
+				/* fallback to using the temp* name (e.g., temp1, temp2) */
+				pathcpy(label, sizeof(label), hwmon_entry->d_name);
+			}
+
+			/* trim spaces */
+			strtrim(label);
+
+			log_tag("thermal:ambient:device:%s:%s:%s:%s:%d\n", entry->d_name, name, hwmon_entry->d_name, label, temp);
+
+			/* check if temperature is in reasonable range */
+			if (temp < 15 || temp > 40)
+				continue;
+
+			/* lower case */
+			strlwr(label);
+
+			/* check if label matches possible ambient labels */
+			for (int i = 0; AMBIENT_LABEL[i]; ++i) {
+				if (worddigitstr(label, AMBIENT_LABEL[i]) != 0) {
+					log_tag("thermal:ambient:candidate:%d\n", temp);
+					if (lowest_temp == 0 || lowest_temp > temp)
+						lowest_temp = temp;
+					break;
+				}
+			}
+
+			/* accept also generic "temp1" */
+			if (strcmp(label, "temp1") == 0) {
+				log_tag("thermal:ambient:candidate:%d\n", temp);
+				if (lowest_temp == 0 || lowest_temp > temp)
+					lowest_temp = temp;
+			}
+		}
+
+		closedir(hwmon_dir);
+	}
+
+	closedir(dir);
+
+	return lowest_temp;
+}
+#else
+int ambient_temperature(void)
+{
+	return 0;
+}
+#endif
 
 #endif
 

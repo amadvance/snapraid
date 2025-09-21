@@ -1298,6 +1298,31 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* LCOV_EXCL_STOP */
 		}
 
+		/* thermal control */
+		if (state_thermal_alarm(state)) {
+			/* until now is misc */
+			state_usage_misc(state);
+
+			state_progress_stop(state);
+
+			/* before spinning down flush all the caches */
+			ret = state_flush(state, &io, parity_handle, blockcur);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				log_fatal("Stopping at block %u\n", blockcur);
+				++error;
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+
+			state_thermal_cooldown(state);
+
+			state_progress_restart(state);
+
+			/* drop until now */
+			state_usage_waste(state);
+		}
+
 		/* autosave */
 		if ((state->autosave != 0
 			&& autosavedone >= autosavelimit /* if we have reached the limit */

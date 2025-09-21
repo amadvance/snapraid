@@ -56,11 +56,6 @@ const char* lev_config_name(unsigned level);
 #define GIBI (1024 * 1024 * 1024)
 #define TEBI (1024 * 1024 * 1024 * 1024LL)
 
-/**
- * Global variable to identify if Ctrl+C is pressed.
- */
-extern volatile int global_interrupt;
-
 #define SORT_PHYSICAL 1 /**< Sort by physical order. */
 #define SORT_INODE 2 /**< Sort by inode. */
 #define SORT_ALPHA 3 /**< Sort by alphabetic order. */
@@ -154,6 +149,16 @@ struct snapraid_state {
 	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
 	tommy_hashdyn searchset; /**< Hashtable by timestamp of all the search files. */
 	tommy_arrayblkof infoarr; /**< Block information array. */
+
+	/* Thermal */
+	tommy_list thermallist; /**< List of all thermal state */
+	int thermal_stop_gathering; /**< If thermal data gathering is stopped */
+	int thermal_ambient_temperature; /**< Ambient themperature. 0 if not available */
+	int thermal_highest_temperature; /**< Current highest temperature */
+	time_t thermal_first; /**< Time of the first measure */
+	time_t thermal_latest; /**< Time of latest measure */
+	int thermal_cooldown_time; /**< Cooldown wait time in seconds */
+	int thermal_temperature_limit; /**< Upper limit temperature of the operating range */
 
 	/**
 	 * Cumulative time used for computations.
@@ -376,6 +381,26 @@ void state_usage_print(struct snapraid_state* state);
  * On error it aborts.
  */
 void state_fscheck(struct snapraid_state* state, const char* ope);
+
+/**
+ * Measure the temperature of all disks
+ */
+void state_thermal(struct snapraid_state* state, time_t now);
+
+/**
+ * Check if the temperature is outside the operating range
+ */
+int state_thermal_alarm(struct snapraid_state* state);
+
+/**
+ * Cool down the system
+ */
+void state_thermal_cooldown(struct snapraid_state* state);
+
+/**
+ * Start of thermal processing
+ */
+int state_thermal_begin(struct snapraid_state* state, time_t now);
 
 /****************************************************************************/
 /* misc */

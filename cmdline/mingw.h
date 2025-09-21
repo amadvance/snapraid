@@ -331,7 +331,7 @@ const char* windows_stat_desc(struct stat* st);
 /**
  * Like sleep().
  */
-void windows_sleep(unsigned seconds);
+unsigned windows_sleep(unsigned seconds);
 
 /**
  * List usleep().

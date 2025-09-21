@@ -51,6 +51,7 @@ snapraid_SOURCES = \
 	cmdline/speed.c \
 	cmdline/import.c \
 	cmdline/search.c \
+	cmdline/thermal.c \
 	cmdline/mingw.c \
 	cmdline/unix.c
 
@@ -96,6 +97,7 @@ noinst_HEADERS = \
 	cmdline/fnmatch.h \
 	cmdline/import.h \
 	cmdline/search.h \
+	cmdline/thermal.h \
 	cmdline/mingw.h \
 	cmdline/unix.h
 

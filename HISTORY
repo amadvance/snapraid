@@ -3,6 +3,16 @@ SnapRAID HISTORY
 
 13.0 2025/XX
 ============
+* Add new thermal protection configuration options:
+    - temp_limit TEMPERATURE_CELSIUS
+      Sets the maximum allowed disk temperature. When any disk exceeds this
+      limit, SnapRAID stops all operations and spins down the disks to prevent
+      overheating.
+    - temp_sleep TIME_IN_MINUTES
+      Defines how long the disks remain in standby after a temperature limit
+      event. Defaults to 15 minutes.
+  These options allow SnapRAID to automatically pause activity and cool down
+  disks when a temperature threshold is reached.
  * Add a new "probe" command that shows the spinning status of all disks.
  * Add a new -s, --spin-down-on-error option that spins down all disks
    when a command ends with an error.

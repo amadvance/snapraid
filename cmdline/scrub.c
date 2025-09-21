@@ -627,6 +627,21 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* LCOV_EXCL_STOP */
 		}
 
+		/* thermal control */
+		if (state_thermal_alarm(state)) {
+			/* until now is misc */
+			state_usage_misc(state);
+
+			state_progress_stop(state);
+
+			state_thermal_cooldown(state);
+
+			state_progress_restart(state);
+
+			/* drop until now */
+			state_usage_waste(state);
+		}
+
 		/* autosave */
 		if (state->autosave != 0
 			&& autosavedone >= autosavelimit /* if we have reached the limit */

@@ -26,6 +26,7 @@
 #include "stream.h"
 #include "handle.h"
 #include "io.h"
+#include "thermal.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"
 
@@ -177,12 +178,20 @@ void state_init(struct snapraid_state* state)
 	state->no_conf = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		state->smartignore[i] = 0;
+	state->thermal_stop_gathering = 0;
+	state->thermal_ambient_temperature = 0;
+	state->thermal_highest_temperature = 0;
+	state->thermal_first = 0;
+	state->thermal_latest = 0;
+	state->thermal_temperature_limit = 0;
+	state->thermal_cooldown_time = 0;
 
 	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
 	tommy_list_init(&state->filterlist);
 	tommy_list_init(&state->importlist);
+	tommy_list_init(&state->thermallist);
 	tommy_hashdyn_init(&state->importset);
 	tommy_hashdyn_init(&state->previmportset);
 	tommy_hashdyn_init(&state->searchset);
@@ -196,6 +205,7 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
+	tommy_list_foreach(&state->thermallist, (tommy_foreach_func*)thermal_free);
 	tommy_hashdyn_foreach(&state->searchset, (tommy_foreach_func*)search_file_free);
 	tommy_hashdyn_done(&state->importset);
 	tommy_hashdyn_done(&state->previmportset);
@@ -1154,6 +1164,42 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
+		} else if (strcmp(tag, "temp_limit") == 0) {
+			unsigned temp;
+
+			ret = sgetu32(f, &temp);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'temp_limit' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			if (temp < 40 || temp > 70) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'temp_limit' temperature specification in '%s' at line %u. It must be between 40 and 70\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			state->thermal_temperature_limit = temp;
+		} else if (strcmp(tag, "temp_sleep") == 0) {
+			unsigned time;
+
+			ret = sgetu32(f, &time);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'temp_sleep' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			if (time < 5 || time > 120) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'temp_sleep' temperature specification in '%s' at line %u. It must be between 5 and 120\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			state->thermal_cooldown_time = time * 60;
 		} else if (strcmp(tag, "nohidden") == 0) {
 			state->filter_hidden = 1;
 		} else if (strcmp(tag, "exclude") == 0) {
@@ -4300,10 +4346,13 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	now = time(0);
 
 	state->progress_whole_start = now;
-
 	state->progress_tick = 0;
 	state->progress_ptr = 0;
 	state->progress_wasted = 0;
+
+	/* start of thermal control */
+	if (!state_thermal_begin(state, now))
+		return 0;
 
 	/* stop if requested */
 	if (global_interrupt) {
@@ -4403,12 +4452,36 @@ static void state_progress_latest(struct snapraid_state* state)
 /**
  * Number of columns
  */
-#define GRAPH_COLUMN 68
+#define GRAPH_COLUMN 78
 
 /**
  * Get the reference value, 0 if index is PROGRESS_MAX
  */
 #define ref(map, index) (index < PROGRESS_MAX ? map[index] : 0)
+
+static struct snapraid_thermal* state_thermal_find(struct snapraid_state* state, const char* name)
+{
+	tommy_node* i;
+	struct snapraid_thermal* found = 0;
+
+	for (i = tommy_list_head(&state->thermallist); i != 0; i = i->next) {
+		struct snapraid_thermal* thermal = i->data;
+		if (strcmp(thermal->name, name) == 0) {
+			if (found == 0 
+				// if multiple matches, return the one with highest temperature
+				|| found->latest_temperature < thermal->latest_temperature
+				// or, if the temperature is equal, the one with the higher r_squared
+				|| (found->latest_temperature == thermal->latest_temperature && found->params.r_squared < thermal->params.r_squared)
+			) {
+				found = thermal;
+			}
+		}
+	}
+
+	return found;
+}
+
+#define THERMAL_PAD "        "
 
 static void state_progress_graph(struct snapraid_state* state, struct snapraid_io* io, unsigned current, unsigned oldest)
 {
@@ -4418,6 +4491,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	tommy_node* i;
 	unsigned l;
 	size_t pad;
+	size_t pre;
 
 	tick_total = 0;
 
@@ -4445,10 +4519,11 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	/* extra space */
 	pad += 1;
 
-	if (pad + 30 < GRAPH_COLUMN)
-		bar = GRAPH_COLUMN - pad;
+	pre = 4;
+	if (pad + pre + 30 < GRAPH_COLUMN)
+		bar = GRAPH_COLUMN - pad - pre;
 	else
-		bar = 30;
+		bar = 30; /* at least a bar of 30 */
 
 	if (io) {
 		const char* legend = "cached blocks (instant, more is better)";
@@ -4458,7 +4533,6 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 
 		printf("\n");
 
-		/* search for the slowest */
 		for (i = state->disklist; i != 0; i = i->next) {
 			struct snapraid_disk* disk = i->data;
 			v = disk->cached_blocks;
@@ -4493,10 +4567,33 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 
 	printf("\n");
 
+	pre = 4;
+	if (state->thermal_temperature_limit != 0)
+		pre += strlen(THERMAL_PAD);
+	if (pad + pre + 30 < GRAPH_COLUMN)
+		bar = GRAPH_COLUMN - pad - pre;
+	else
+		bar = 30; /* at least a bar of 30 */
+
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
+		
+
 		v = disk->progress_tick[current] - ref(disk->progress_tick, oldest);
 		printr(disk->name, pad);
+
+		if (state->thermal_temperature_limit != 0) {
+			struct snapraid_thermal* thermal = state_thermal_find(state, disk->name);
+			if (thermal) {
+				if (thermal->params.r_squared >= THERMAL_R_SQUARED_LIMIT)
+					printf(" %2u (%2u)", thermal->latest_temperature, (int)thermal->params.t_steady);
+				else
+					printf(" %2u     ", thermal->latest_temperature);
+			} else {
+				printf(THERMAL_PAD);
+			}
+		}
+
 		printf("%3u%% | ", muldiv(v, 100, tick_total));
 		printc('*', v * bar / tick_total);
 		printf("\n");
@@ -4508,6 +4605,19 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	for (l = 0; l < state->level; ++l) {
 		v = state->parity[l].progress_tick[current] - ref(state->parity[l].progress_tick, oldest);
 		printr(lev_config_name(l), pad);
+
+		if (state->thermal_temperature_limit != 0) {
+			struct snapraid_thermal* thermal = state_thermal_find(state, lev_config_name(l));
+			if (thermal) {
+				if (thermal->params.r_squared >= THERMAL_R_SQUARED_LIMIT)
+					printf(" %2u (%2u)", thermal->latest_temperature, (int)thermal->params.t_steady);
+				else
+					printf(" %2u     ", thermal->latest_temperature);
+			} else {
+				printf(THERMAL_PAD);
+			}
+		}
+
 		printf("%3u%% | ", muldiv(v, 100, tick_total));
 		printc('*', v * bar / tick_total);
 		printf("\n");
@@ -4515,40 +4625,54 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 
 	v = state->progress_tick_raid[current] - ref(state->progress_tick_raid, oldest);
 	printr("raid", pad);
+	if (state->thermal_temperature_limit != 0)
+		printf(THERMAL_PAD);
 	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	v = state->progress_tick_hash[current] - ref(state->progress_tick_hash, oldest);
 	printr("hash", pad);
+	if (state->thermal_temperature_limit != 0)
+		printf(THERMAL_PAD);
 	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	v = state->progress_tick_sched[current] - ref(state->progress_tick_sched, oldest);
 	printr("sched", pad);
+	if (state->thermal_temperature_limit != 0)
+		printf(THERMAL_PAD);
 	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	v = state->progress_tick_misc[current] - ref(state->progress_tick_misc, oldest);
 	printr("misc", pad);
+	if (state->thermal_temperature_limit != 0)
+		printf(THERMAL_PAD);
 	printf("%3u%% | ", muldiv(v, 100, tick_total));
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
 	printc(' ', pad);
+	if (state->thermal_temperature_limit != 0)
+		printf(THERMAL_PAD);
 	printf("     |_");
 	printc('_', bar);
 	printf("\n");
 
 	if (oldest == PROGRESS_MAX) {
 		const char* legend = "wait time (total, less is better)";
+		if (state->thermal_temperature_limit != 0)
+			printf(THERMAL_PAD);
 		printc(' ', 5 + pad + 1 + bar / 2 - strlen(legend) / 2);
 		printf("%s", legend);
 		printf("\n");
 	} else {
 		const char* legend_d = "wait time (last %d secs, less is better)";
+		if (state->thermal_temperature_limit != 0)
+			printf(THERMAL_PAD);
 		printc(' ', 5 + pad + 1 + bar / 2 - strlen(legend_d) / 2);
 		printf(legend_d, PROGRESS_MAX);
 		printf("\n");
@@ -4563,6 +4687,12 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 	int pred;
 
 	now = time(0);
+
+	/* thermal measure */
+	if (now > state->thermal_latest + THERMAL_PERIOD_SECONDS) {
+		state->thermal_latest = now;
+		state_thermal(state, now);
+	}
 
 	/* previous position */
 	pred = state->progress_ptr + PROGRESS_MAX - 1;
@@ -4579,6 +4709,8 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 		unsigned out_block_speed = 0;
 		unsigned out_cpu = 0;
 		unsigned out_eta = 0;
+		int out_temperature = 0;
+		int out_steady = 0;
 		int out_computed = 0;
 
 		/* store the new measure */
@@ -4609,6 +4741,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			uint64_t delta_tick_total;
 			uint64_t oldest_tick_cpu;
 			uint64_t oldest_tick_total;
+			tommy_node* i;
 
 			/* number of past measures */
 			past = state->progress_tick;
@@ -4668,6 +4801,24 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				state_progress_graph(state, io, state->progress_ptr, oldest);
 			}
 
+			if (state->thermal_temperature_limit != 0) {
+				/* get the max temperature */
+				out_temperature = 0;
+				for (i = tommy_list_head(&state->thermallist); i != 0; i = i->next) {
+					struct snapraid_thermal* thermal = i->data;
+					if (out_temperature < thermal->latest_temperature) {
+						out_temperature = thermal->latest_temperature;
+						if (thermal->params.r_squared >= THERMAL_R_SQUARED_LIMIT)
+							out_steady = thermal->params.t_steady;
+						else
+							out_steady = 0;
+					}
+				}
+			} else {
+				out_temperature = 0;
+				out_steady = 0;
+			}
+
 			/* we have the output value */
 			out_computed = 1;
 		}
@@ -4681,6 +4832,12 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				msg_bar(", %u MB/s", out_size_speed);
 				msg_bar(", %u stripe/s", out_block_speed);
 				msg_bar(", CPU %u%%", out_cpu);
+				if (out_temperature != 0) {
+					if (out_steady != 0)
+						msg_bar(", Tmax %u (%u)", out_temperature, out_steady);
+					else
+						msg_bar(", Tmax %u", out_temperature);
+				}
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			}
 			msg_bar("%s\r", PROGRESS_CLEAR);

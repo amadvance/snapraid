@@ -75,6 +75,18 @@ exclude \Windows\
 # Format: "autosave SIZE_IN_GB"
 #autosave 500
 
+# Set the maximum allowed disk temperature (in Celsius).
+# If any disk reaches or exceeds this temperature,
+# SnapRAID stops all operations and spins down all disks
+# to prevent overheating.
+#temp_limit 50
+
+# Set the standby duration (in minutes) after a temperature event.
+# During this period, disks remain spun down to cool down
+# before SnapRAID automatically resumes operations.
+# Default is 15 minutes if not specified.
+#temp_sleep 10
+
 # Defines the pooling directory where the virtual view of the disk
 # array is created using the "pool" command (uncomment to enable).
 # The files are not really copied here, but just linked using

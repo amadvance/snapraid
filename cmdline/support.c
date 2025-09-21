@@ -631,6 +631,57 @@ unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* d
 	return mac;
 }
 
+void strtrim(char* str)
+{
+	char* begin;
+	char* end;
+
+	begin = str;
+	while (begin[0] && isspace((unsigned char)begin[0]))
+		++begin;
+
+	end = begin + strlen(begin);
+	while (end > begin && isspace((unsigned char)end[-1]))
+		--end;
+
+	end[0] = 0;
+
+	if (begin != end)
+		memmove(str, begin, end - begin + 1);
+}
+
+#ifndef __MINGW32__
+void strlwr(char* s)
+{
+	while (*s) {
+		*s = tolower((unsigned char)*s);
+		++s;
+	}
+}
+#endif
+
+char* worddigitstr(const char* haystack, const char* needle) 
+{
+	size_t len = strlen(needle);
+	const char* s;
+
+	if (len == 0)
+		return NULL;
+
+	for (s = haystack; (s = strstr(s, needle)) != NULL; ++s) {
+
+		/* left boundary */
+		if (s == haystack || isspace((unsigned char)s[-1]) || isdigit((unsigned char)s[-1])) {
+			/* right boundary */
+			if (s[len] == '\0' || isspace((unsigned char)s[len]) || isdigit((unsigned char)s[len])) {
+				return (char *)s;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 /****************************************************************************/
 /* path */
 

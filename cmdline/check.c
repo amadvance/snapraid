@@ -1458,6 +1458,21 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			break;
 			/* LCOV_EXCL_STOP */
 		}
+
+		/* thermal control */
+		if (state_thermal_alarm(state)) {
+			/* until now is misc */
+			state_usage_misc(state);
+
+			state_progress_stop(state);
+
+			state_thermal_cooldown(state);
+
+			state_progress_restart(state);
+
+			/* drop until now */
+			state_usage_waste(state);
+		}
 	}
 
 	/* for each disk, recover empty files, symlinks and empty dirs */

@@ -1166,11 +1166,24 @@ Configuration
 	:RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 
   autosave SIZE_IN_GIGABYTES
-	Automatically save the state when syncing or scrubbing after the specified amount
-	of GB processed.
+	Automatically save the state when syncing or scrubbing after the
+	specified amount of GB processed.
 	This option is useful to avoid to restart from scratch long "sync"
 	commands interrupted by a machine crash, or any other event that
 	may interrupt SnapRAID.
+
+  temp_limit TEMPERATURE_CELSIUS
+	Sets the maximum allowed disk temperature in Celsius. When specified,
+	SnapRAID periodically checks the temperature of all disks using the
+	smartctl tool. The current disk temperatures are displayed during
+	processing. If any disk exceeds this limit, all operations stop and
+	the disks are spun down (put into standby) for the duration defined
+	by "temp_sleep".
+
+  temp_sleep TIME_IN_MINUTES
+	Sets the standby time, in minutes, when the temperature limit is
+	reached. During this period, the disks remain spun down. The default
+	is 15 minutes.
 
   pool DIR
 	Defines the pooling directory where the virtual view of the disk

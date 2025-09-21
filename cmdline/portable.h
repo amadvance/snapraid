@@ -533,5 +533,17 @@ typedef struct devinfo_struct devinfo_t;
  */
 int devquery(tommy_list* high, tommy_list* low, int operation, int others);
 
+/**
+ * Get the ambient temperature in degree
+ *
+ * Return 0 if not available.
+ */
+int ambient_temperature(void);
+
+/**
+ * Global variable to identify if Ctrl+C is pressed.
+ */
+extern volatile int global_interrupt;
+
 #endif
 

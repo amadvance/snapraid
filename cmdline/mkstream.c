@@ -20,6 +20,8 @@
 #include "stream.h"
 #include "support.h"
 
+volatile int global_interrupt = 0;
+
 #define STREAM_MAX 8
 #define BUFFER_MAX 64
 #define STR_MAX 128

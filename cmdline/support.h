@@ -250,6 +250,26 @@ char* strpolish(char* s);
  */
 unsigned strsplit(char** split_map, unsigned split_max, char* line, const char* delimiters);
 
+/**
+ * Trim spaces from the start and the end 
+ */
+void strtrim(char* s);
+
+/**
+ * Lower case
+ */
+#ifndef __MINGW32__
+void strlwr(char* s);
+#endif
+
+/*
+ * Find the first occurrence of 'needle' in 'haystack' only if it 
+ * appears as a separate word (space, number or string boundaries).
+ * 
+ * Returns a pointer to the beginning of the match, or NULL if not found.
+ */
+char* worddigitstr(const char* haystack, const char* needle);
+
 /****************************************************************************/
 /* path */
 

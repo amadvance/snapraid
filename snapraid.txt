@@ -12,7 +12,7 @@ snapraid [-c, --conf CONFIG]
 	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
 	[-p, --plan PERC|bad|new|full]
 	[-o, --older-than DAYS] [-l, --log FILE]
-	[-w, --bw-limit RATE]
+	[-s, --spin-down-on-error] [-w, --bw-limit RATE]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-U, --force-uuid] [-D, --force-device]
 	[-N, --force-nocopy] [-F, --force-full]
@@ -20,8 +20,8 @@ snapraid [-c, --conf CONFIG]
 	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	[-L, --error-limit NUMBER]
 	[-v, --verbose] [-q, --quiet]
-	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-	|pool|devices|touch|rehash
+	status|smart|probe|up|down|diff|sync|scrub|fix|check
+	|list|dup|pool|devices|touch|rehash
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -403,7 +403,7 @@ If everything is recovered, this command is immediate.
 SnapRAID provides a few simple commands that allow to:
 
 * Prints the status of the array -> "status"
-* Controls the disks -> "smart", "up", "down"
+* Controls the disks -> "smart", "probe", "up", "down"
 * Makes a backup/snapshot -> "sync"
 * Periodically checks data -> "scrub"
 * Restore the last backup/snapshot -> "fix".
@@ -434,7 +434,7 @@ Nothing is modified.
 5.2 smart
 ---------
 
-Prints a SMART report of all the disks of the array.
+Prints a SMART report of all the disks in the system.
 
 It includes an estimation of the probability of failure in the next
 year allowing to plan maintenance replacements of the disks that show
@@ -459,16 +459,33 @@ If the -v, --verbose option is specified a deeper statistical analysis
 is provided. This analysis can help you to decide if you need more
 or less parity.
 
-This command uses the "smartctl" tool, and it's equivalent to run
-"smartctl -a" on all the devices.
+This command uses the "smartctl" tool and is equivalent to running
+"smartctl -a" on all devices.
 
-If your devices are not auto-detected correctly, you can configure
+If your devices are not auto-detected correctly, you can specify
 a custom command using the "smartctl" option in the configuration
 file.
 
 Nothing is modified.
 
-5.3 up
+5.3 probe
+---------
+
+Prints the POWER state of all disks in the system.
+
+"Standby" means the disk is not spinning. "Active" means
+the disk is spinning.
+
+This command uses the "smartctl" tool and is equivalent to running
+"smartctl -n standby -i" on all devices.
+
+If your devices are not auto-detected correctly, you can specify
+a custom command using the "smartctl" option in the configuration
+file.
+
+Nothing is modified.
+
+5.4 up
 ------
 
 Spins up all the disks of the array.
@@ -480,7 +497,7 @@ Ensure that your power-supply can sustain that.
 
 Nothing is modified.
 
-5.4 down
+5.5 down
 --------
 
 Spins down all the disks of the array.
@@ -488,11 +505,16 @@ Spins down all the disks of the array.
 This command uses the "smartctl" tool, and it's equivalent to run
 "smartctl -s standby,now" on all the devices.
 
-You can spin-down only some specific disks using the -d, --filter-disk option.
+You can spin-down only some specific disks using the -d, --filter-disk
+option.
+
+To automatically spin down on error, you can use the option
+-s, --spin-down-on-error with any other command, which is equivalent
+to running "down" manually when an error occurs.
 
 Nothing is modified.
 
-5.5 diff
+5.6 diff
 --------
 
 Lists all the files modified from the last "sync" that need to have
@@ -525,7 +547,7 @@ default 0. The return code 1 is instead for a generic error condition.
 
 Nothing is modified.
 
-5.6 sync
+5.7 sync
 --------
 
 Updates the parity information. All the modified files
@@ -552,7 +574,7 @@ but the previously computed hash information is kept.
 The "content" and "parity" files are modified if necessary.
 The files in the array are NOT modified.
 
-5.7 scrub
+5.8 scrub
 ---------
 
 Scrubs the array, checking for silent or input/output errors in data
@@ -597,7 +619,7 @@ of each block, and to mark bad blocks.
 The "parity" files are NOT modified.
 The files in the array are NOT modified.
 
-5.8 fix
+5.9 fix
 -------
 
 Fix all the files and the parity data.
@@ -634,8 +656,8 @@ The "content" file is NOT modified.
 The "parity" files are modified if necessary.
 The files in the array are modified if necessary.
 
-5.9 check
----------
+5.10 check
+----------
 
 Verify all the files and the parity data.
 
@@ -654,7 +676,7 @@ Files are identified only by path, and not by inode.
 
 Nothing is modified.
 
-5.10 list
+5.11 list
 ---------
 
 Lists all the files contained in the array at the time of the
@@ -662,7 +684,7 @@ last "sync".
 
 Nothing is modified.
 
-5.11 dup
+5.12 dup
 --------
 
 Lists all the duplicate files. Two files are assumed equal if their
@@ -671,7 +693,7 @@ pre-computed hashes are used.
 
 Nothing is modified.
 
-5.12 pool
+5.13 pool
 ---------
 
 Creates or updates in the "pooling" directory a virtual view of all
@@ -686,7 +708,7 @@ view of the array. Any other regular file is left in place.
 
 Nothing is modified outside the pool directory.
 
-5.13 devices
+5.14 devices
 ------------
 
 Prints the low level devices used by the array.
@@ -704,7 +726,7 @@ low level devices used by a single disk in the array.
 
 Nothing is modified.
 
-5.14 touch
+5.15 touch
 ----------
 
 Sets arbitrarily the sub-second time-stamp of all the files
@@ -723,7 +745,7 @@ size and time-stamp.
 Note that the second precision time-stamp is not modified,
 and all the dates and times of your files will be maintained.
 
-5.15 rehash
+5.16 rehash
 -----------
 
 Schedules a rehash of the whole array.
@@ -845,6 +867,14 @@ SnapRAID provides the following options:
         The files are read also in sub-directories and they are
         identified regardless of their name.
         This option can be used only with "check" and "fix".
+
+    -s, --spin-down-on-error
+        On any error, spin down all managed disks before exiting with
+        a non-zero status code. This prevents the drives from
+        remaining active and spinning after an aborted operation,
+        helping to avoid unnecessary heat build-up and power
+        consumption. Use this option to ensure disks are safely
+        stopped even when a command fails.
 
     -w, --bw-limit RATE
         Applies a global bandwidth limit for all disks. The RATE is
@@ -1218,13 +1248,30 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 7.10 autosave SIZE_IN_GIGABYTES
 -------------------------------
 
-Automatically save the state when syncing or scrubbing after the specified amount
-of GB processed.
+Automatically save the state when syncing or scrubbing after the
+specified amount of GB processed.
 This option is useful to avoid to restart from scratch long "sync"
 commands interrupted by a machine crash, or any other event that
 may interrupt SnapRAID.
 
-7.11 pool DIR
+7.11 temp_limit TEMPERATURE_CELSIUS
+-----------------------------------
+
+Sets the maximum allowed disk temperature in Celsius. When specified,
+SnapRAID periodically checks the temperature of all disks using the
+smartctl tool. The current disk temperatures are displayed during
+processing. If any disk exceeds this limit, all operations stop and
+the disks are spun down (put into standby) for the duration defined
+by "temp_sleep".
+
+7.12 temp_sleep TIME_IN_MINUTES
+-------------------------------
+
+Sets the standby time, in minutes, when the temperature limit is
+reached. During this period, the disks remain spun down. The default
+is 15 minutes.
+
+7.13 pool DIR
 -------------
 
 Defines the pooling directory where the virtual view of the disk
@@ -1232,7 +1279,7 @@ array is created using the "pool" command.
 
 The directory must already exist.
 
-7.12 share UNC_DIR
+7.14 share UNC_DIR
 ------------------
 
 Defines the Windows UNC path required to access the disks remotely.
@@ -1248,26 +1295,30 @@ file dir and name.
 
 This option is only required for Windows.
 
-7.13 smartctl DISK/PARITY OPTIONS...
+7.15 smartctl DISK/PARITY OPTIONS...
 ------------------------------------
 
-Defines a custom smartctl command to obtain the SMART attributes
-for each disk. This may be required for RAID controllers and for
-some USB disk that cannot be auto-detected.
+Defines a custom smartctl options to obtain the SMART attributes for
+each disk. This may be required for RAID controllers and for some USB
+disk that cannot be auto-detected.
 
 DISK is the same disk name specified in the "disk" option.
 PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
 
 In the specified OPTIONS, the "%s" string is replaced by the
-device name. Note that in case of RAID controllers the device is likely
-fixed, and you don't have to use "%s".
+device name. Note that in case of RAID controllers the device is
+likely fixed, and you don't have to use "%s".
 
 Refers at the smartmontools documentation about the possible options:
 
     https://www.smartmontools.org/wiki/Supported_RAID-Controllers
     https://www.smartmontools.org/wiki/Supported_USB-Devices
 
-7.14 smartignore DISK/PARITY ATTR [ATTR...]
+For example:
+
+    smartctl parity -d sat %s
+
+7.16 smartignore DISK/PARITY ATTR [ATTR...]
 -------------------------------------------
 
 Ignores the specified SMART attribute when computing the probability
@@ -1286,7 +1337,7 @@ To ignore it only on the first parity disk:
 
     smartignore parity 193
 
-7.15 Examples
+7.17 Examples
 -------------
 
 An example of a typical configuration for Unix is:
@@ -1303,6 +1354,7 @@ An example of a typical configuration for Unix is:
     smartctl d2 -d usbjmicron %s
     smartctl parity -d areca,1/1 /dev/sg0
     smartctl 2-parity -d areca,2/1 /dev/sg0
+    smartignore * 193
 
 An example of a typical configuration for Windows is:
 
@@ -1319,6 +1371,7 @@ An example of a typical configuration for Windows is:
     smartctl d2 -d usbjmicron %s
     smartctl parity -d areca,1/1 /dev/arcmsr0
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+    smartignore * 193
 
 
 8 PATTERN

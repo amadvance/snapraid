@@ -1549,9 +1549,16 @@ const char* windows_stat_desc(struct stat* st)
 	return st->st_desc;
 }
 
-void windows_sleep(unsigned seconds)
+unsigned windows_sleep(unsigned seconds)
 {
-	Sleep(seconds * 1000);
+	while (seconds) {
+		if (global_interrupt) /* SIGINT should stop the sleep */
+			break;
+		Sleep(1000);
+		--seconds;
+	}
+
+	return seconds;
 }
 
 void windows_usleep(uint64_t useconds)
@@ -3026,6 +3033,11 @@ int windows_join(thread_id_t thread, void** retval)
 
 	free(context);
 
+	return 0;
+}
+
+int ambient_temperature(void)
+{
 	return 0;
 }
 
