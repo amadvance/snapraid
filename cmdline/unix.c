@@ -1255,33 +1255,60 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 #endif
 
 /**
- * Spin up a device.
- *
- * There isn't a defined way to spin up a device,
- * so we just do a generic write.
+ * Spin up a specific device.
  */
-static int devup(const char* mountpoint)
+#if HAVE_LINUX_DEVICE
+static int devup(dev_t device)
 {
+	char file[PATH_MAX];
 	int ret;
-	char path[PATH_MAX];
+	int f;
+	void* buf;
 
-	/* add a temporary name used for writing */
-	pathprint(path, sizeof(path), "%s.snapraid-spinup", mountpoint);
-
-	/* do a generic write, and immediately undo it */
-	ret = mkdir(path, 0);
-	if (ret != 0 && errno != EEXIST) {
+	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to create dir '%s'.\n", path);
+		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* remove the just created dir */
-	rmdir(path);
+	/* O_DIRECT requires memory aligned to the block size */
+	if (posix_memalign(&buf, 512, 512) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to allocate aligned memory for device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
+	f = open(file, O_RDONLY | O_DIRECT);
+	if (f < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to open device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = read(f, buf, 512);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		close(f);
+		log_fatal("Failed to read device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = close(f);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to close device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	free(buf);
 	return 0;
 }
+#endif
 
 /**
  * Thread for spinning up.
@@ -1292,32 +1319,25 @@ static int devup(const char* mountpoint)
  */
 static void* thread_spinup(void* arg)
 {
+#if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
-	struct stat st;
 	uint64_t start;
 
 	start = tick_ms();
 
-	/* first get the device number, this usually doesn't trigger a thread_spinup */
-	if (stat(devinfo->mount, &st) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to stat device '%s'.\n", devinfo->mount);
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* set the device number for printing */
-	devinfo->device = st.st_dev;
-
-	if (devup(devinfo->mount) != 0) {
+	if (devup(devinfo->device) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_status("Spunup device '%u:%u' for disk '%s' in %" PRIu64 " ms.\n", major(devinfo->device), minor(devinfo->device), devinfo->name, tick_ms() - start);
+	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
 	return 0;
+#else
+	(void)arg;
+	return (void*)-1;
+#endif
 }
 
 /**
@@ -1409,73 +1429,53 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 {
-	tommy_node* i;
 	void* (*func)(void* arg) = 0;
 
 #if HAVE_LINUX_DEVICE
-	if (operation != DEVICE_UP) {
-		struct stat st;
-		/* sysfs interface is required */
-		if (stat("/sys/dev/block", &st) != 0) {
+	tommy_node* i;
+	struct stat st;
+
+	/* sysfs interface is required */
+	if (stat("/sys/dev/block", &st) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Missing interface /sys/dev/block.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* for each device */
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
+		uint64_t device = devinfo->device;
+
+		/* if the major is the null device, find the real one */
+		if (major(device) == 0) {
+			/* obtain the real device */
+			if (devdereference(device, &device) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Failed to dereference device '%u:%u'.\n", major(device), minor(device));
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		/* get the device file */
+		if (devresolve(device, devinfo->file, sizeof(devinfo->file)) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Missing interface /sys/dev/block.\n");
+			log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* for each device */
-		for (i = tommy_list_head(high); i != 0; i = i->next) {
-			devinfo_t* devinfo = i->data;
-			uint64_t device = devinfo->device;
-
-			/* if the major is the null device, find the real one */
-			if (major(device) == 0) {
-				/* obtain the real device */
-				if (devdereference(device, &device) != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal("Failed to dereference device '%u:%u'.\n", major(device), minor(device));
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-			}
-
-			/* get the device file */
-			if (devresolve(device, devinfo->file, sizeof(devinfo->file)) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, device, devinfo, low) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Failed to expand device '%u:%u'.\n", major(device), minor(device));
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-		}
-	}
-#endif
-
-	if (operation == DEVICE_UP) {
-		/* duplicate the high */
-		for (i = tommy_list_head(high); i != 0; i = i->next) {
-			devinfo_t* devinfo = i->data;
-			devinfo_t* entry;
-
-			entry = calloc_nofail(1, sizeof(devinfo_t));
-
-			entry->device = devinfo->device;
-			pathcpy(entry->name, sizeof(entry->name), devinfo->name);
-			pathcpy(entry->mount, sizeof(entry->mount), devinfo->mount);
-
-			/* insert in the high */
-			tommy_list_insert_tail(low, &entry->node, entry);
+		/* expand the tree of devices */
+		if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, device, devinfo, low) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to expand device '%u:%u'.\n", major(device), minor(device));
+			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
-#if HAVE_LINUX_DEVICE
 	/* add other devices */
 	if (others) {
 		if (devscan(low) != 0) {
@@ -1486,6 +1486,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		}
 	}
 #else
+	(void)high;
 	(void)others;
 #endif
 

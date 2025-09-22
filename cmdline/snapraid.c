@@ -1207,7 +1207,6 @@ int main(int argc, char* argv[])
 	case OPERATION_REWRITE :
 	case OPERATION_READ :
 	case OPERATION_REHASH :
-	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
 		/* avoid to check and access data disks if not needed */
 		opt.skip_disk_access = 1;
 		break;
@@ -1223,7 +1222,6 @@ int main(int argc, char* argv[])
 	case OPERATION_READ :
 	case OPERATION_REHASH :
 	case OPERATION_TOUCH :
-	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
 		/* avoid to check and access parity disks if not needed */
 		opt.skip_parity_access = 1;
 		break;
