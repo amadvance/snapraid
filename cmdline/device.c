@@ -837,6 +837,65 @@ bail:
 	}
 }
 
+static void state_probe(struct snapraid_state* state, tommy_list* low)
+{
+	tommy_node* i;
+	size_t device_pad;
+	
+	(void)state;
+
+	/* compute lengths for padding */
+	device_pad = 0;
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
+		size_t len;
+		devinfo_t* devinfo = i->data;
+
+		len = strlen(devinfo->file);
+		if (len > device_pad)
+			device_pad = len;
+	}
+
+	printf("SnapRAID PROBE report:\n");
+	printf("\n");
+	printf("   State ");
+	printf("  ");
+	printl("Device", device_pad);
+	printf("  Disk");
+	printf("\n");
+	/*      |<##################################################################72>|####80>| */
+	printf(" -----------------------------------------------------------------------\n");
+
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
+
+		printf("  ");
+
+		switch (devinfo->power) {
+		case POWER_STANDBY : printf("StandBy"); break;
+		case POWER_ACTIVE : printf(" Active"); break;
+		default: printf("Unknown"); break;
+		}
+
+		printf("  ");
+		if (*devinfo->file)
+			printl(devinfo->file, device_pad);
+		else
+			printl("-", device_pad);
+
+		printf("  ");
+		if (*devinfo->name)
+			printf("%s", devinfo->name);
+		else
+			printf("-");
+
+		printf("\n");
+
+		log_tag("probe:%s:%s:%d\n", devinfo->file, devinfo->name, devinfo->power);
+	}
+
+	printf("\n");
+}
+
 /**
  * Fill with fake data the device list.
  */
@@ -844,7 +903,7 @@ static int devtest(tommy_list* low, int operation)
 {
 	unsigned c;
 
-	if (operation != DEVICE_SMART)
+	if (operation != DEVICE_SMART && operation != DEVICE_PROBE)
 		return -1;
 
 	/* add some fake data */
@@ -903,6 +962,8 @@ static int devtest(tommy_list* low, int operation)
 		case 10 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR; break;
 		case 11 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;
 		}
+
+		entry->power = POWER_ACTIVE;
 	}
 
 	return 0;
@@ -968,7 +1029,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	if (state->opt.fake_device) {
 		ret = devtest(&low, operation);
 	} else {
-		int others = operation == DEVICE_SMART;
+		int others = operation == DEVICE_SMART || operation == DEVICE_PROBE;
 
 		ret = devquery(&high, &low, operation, others);
 	}
@@ -984,6 +1045,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		case DEVICE_DOWN : ope = "Spindown"; break;
 		case DEVICE_LIST : ope = "Device listing"; break;
 		case DEVICE_SMART : ope = "Smart"; break;
+		case DEVICE_PROBE : ope = "Probe"; break;
 		}
 		log_fatal("%s is unsupported in this platform.\n", ope);
 	} else {
@@ -1001,6 +1063,9 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 
 		if (operation == DEVICE_SMART)
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);
+		
+		if (operation == DEVICE_PROBE)
+			state_probe(state, &low);
 	}
 
 	tommy_list_foreach(&high, free);

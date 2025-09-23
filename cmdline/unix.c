@@ -1184,6 +1184,81 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 #endif
 
 /**
+ * Get POWER state.
+ */
+#if HAVE_LINUX_DEVICE
+static int devprobe(dev_t device, const char* name, const char* smartctl, int* power)
+{
+	char cmd[PATH_MAX + 64];
+	char file[PATH_MAX];
+	FILE* f;
+	int ret;
+
+	if (devresolve(device, file, sizeof(file)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* if there is a custom smartctl command */
+	if (smartctl[0]) {
+		char option[PATH_MAX];
+		snprintf(option, sizeof(option), smartctl, file);
+		snprintf(cmd, sizeof(cmd), "smartctl -n standby,3 -i %s", option);
+	} else {
+		snprintf(cmd, sizeof(cmd), "smartctl -n standby,3 -i %s", file);
+	}
+
+	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
+
+	f = popen(cmd, "r");
+	if (!f) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to run '%s' (from popen).\n", cmd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (smartctl_flush(f, file, name) != 0) {
+		/* LCOV_EXCL_START */
+		pclose(f);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = pclose(f);
+
+	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
+
+	if (!WIFEXITED(ret)) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to run '%s' (not exited).\n", cmd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (WEXITSTATUS(ret) == 127) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to run '%s' (from sh).\n", cmd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (WEXITSTATUS(ret) == 0) {
+		*power = POWER_ACTIVE;
+	} else if (WEXITSTATUS(ret) == 3) {
+		*power = POWER_STANDBY;
+	} else {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
+/**
  * Spin down a specific device.
  */
 #if HAVE_LINUX_DEVICE
@@ -1387,6 +1462,27 @@ static void* thread_smart(void* arg)
 #endif
 }
 
+/**
+ * Thread for getting power info.
+ */
+static void* thread_probe(void* arg)
+{
+#if HAVE_LINUX_DEVICE
+	devinfo_t* devinfo = arg;
+
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+#else
+	(void)arg;
+	return (void*)-1;
+#endif
+}
+
 static int device_thread(tommy_list* list, void* (*func)(void* arg))
 {
 	int fail = 0;
@@ -1494,6 +1590,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	case DEVICE_UP : func = thread_spinup; break;
 	case DEVICE_DOWN : func = thread_spindown; break;
 	case DEVICE_SMART : func = thread_smart; break;
+	case DEVICE_PROBE : func = thread_probe; break;
 	}
 
 	if (!func)

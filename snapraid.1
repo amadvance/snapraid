@@ -58,11 +58,11 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
+	status|smart|probe|up|down|diff|sync|scrub|fix|check
 .PD 0
 .PP
 .PD
-	|pool|devices|touch|rehash
+	|list|dup|pool|devices|touch|rehash
 .PD 0
 .PD
 .PP
@@ -635,7 +635,7 @@ SnapRAID provides a few simple commands that allow to:
 .IP \(bu
 Prints the status of the array \-> \[dq]status\[dq]
 .IP \(bu
-Controls the disks \-> \[dq]smart\[dq], \[dq]up\[dq], \[dq]down\[dq]
+Controls the disks \-> \[dq]smart\[dq], \[dq]probe\[dq], \[dq]up\[dq], \[dq]down\[dq]
 .IP \(bu
 Makes a backup/snapshot \-> \[dq]sync\[dq]
 .IP \(bu
@@ -664,7 +664,7 @@ blocks synced but not yet scrubbed with \'o\'.
 .PP
 Nothing is modified.
 .SS smart 
-Prints a SMART report of all the disks of the array.
+Prints a SMART report of all the disks in the system.
 .PP
 It includes an estimation of the probability of failure in the next
 year allowing to plan maintenance replacements of the disks that show
@@ -703,10 +703,24 @@ If the \-v, \-\-verbose option is specified a deeper statistical analysis
 is provided. This analysis can help you to decide if you need more
 or less parity.
 .PP
-This command uses the \[dq]smartctl\[dq] tool, and it\'s equivalent to run
-\[dq]smartctl \-a\[dq] on all the devices.
+This command uses the \[dq]smartctl\[dq] tool and is equivalent to running
+\[dq]smartctl \-a\[dq] on all devices.
 .PP
-If your devices are not auto\-detected correctly, you can configure
+If your devices are not auto\-detected correctly, you can specify
+a custom command using the \[dq]smartctl\[dq] option in the configuration
+file.
+.PP
+Nothing is modified.
+.SS probe 
+Prints the POWER state of all disks in the system.
+.PP
+\[dq]Standby\[dq] means the disk is not spinning. \[dq]Active\[dq] means
+the disk is spinning.
+.PP
+This command uses the \[dq]smartctl\[dq] tool and is equivalent to running
+\[dq]smartctl \-n standby \-i\[dq] on all devices.
+.PP
+If your devices are not auto\-detected correctly, you can specify
 a custom command using the \[dq]smartctl\[dq] option in the configuration
 file.
 .PP

@@ -16,8 +16,8 @@ Synopsis
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
-	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-	:	|pool|devices|touch|rehash
+	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
+	:	|list|dup|pool|devices|touch|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -379,7 +379,7 @@ Commands
 	SnapRAID provides a few simple commands that allow to:
 
 	* Prints the status of the array -> "status"
-	* Controls the disks -> "smart", "up", "down"
+	* Controls the disks -> "smart", "probe", "up", "down"
 	* Makes a backup/snapshot -> "sync"
 	* Periodically checks data -> "scrub"
 	* Restore the last backup/snapshot -> "fix".
@@ -406,7 +406,7 @@ Commands
 	Nothing is modified.
 
   smart
-	Prints a SMART report of all the disks of the array.
+	Prints a SMART report of all the disks in the system.
 
 	It includes an estimation of the probability of failure in the next
 	year allowing to plan maintenance replacements of the disks that show
@@ -431,10 +431,25 @@ Commands
 	is provided. This analysis can help you to decide if you need more
 	or less parity.
 
-	This command uses the "smartctl" tool, and it's equivalent to run
-	"smartctl -a" on all the devices.
+	This command uses the "smartctl" tool and is equivalent to running
+	"smartctl -a" on all devices.
 
-	If your devices are not auto-detected correctly, you can configure
+	If your devices are not auto-detected correctly, you can specify
+	a custom command using the "smartctl" option in the configuration
+	file.
+
+	Nothing is modified.
+
+  probe
+	Prints the POWER state of all disks in the system.
+
+	"Standby" means the disk is not spinning. "Active" means
+	the disk is spinning.
+
+	This command uses the "smartctl" tool and is equivalent to running
+	"smartctl -n standby -i" on all devices.
+
+	If your devices are not auto-detected correctly, you can specify
 	a custom command using the "smartctl" option in the configuration
 	file.
 

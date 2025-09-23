@@ -2424,6 +2424,92 @@ retry:
 }
 
 /**
+ * Get POWER state
+ */
+static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power)
+{
+	char conv_buf[CONV_MAX];
+	WCHAR cmd[MAX_PATH + 128];
+	char file[128];
+	FILE* f;
+	int ret;
+	int count;
+
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
+
+	/* if there is a custom smartctl command */
+	if (smartctl[0]) {
+		char option[128];
+		snprintf(option, sizeof(option), smartctl, file);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -i %s", exedir, option);
+	} else {
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -i %s", exedir, file);
+	}
+
+	count = 0;
+
+retry:
+	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
+
+	f = _wpopen(cmd, L"rt");
+	if (!f) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (smartctl_flush(f, file, name) != 0) {
+		/* LCOV_EXCL_START */
+		pclose(f);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = pclose(f);
+
+	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
+
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* if first try without custom smartctl command */
+	if (count == 0 && smartctl[0] == 0) {
+		/*
+		 * Handle some common cases in Windows.
+		 *
+		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
+		 * stage, returning with error 2, or even with error 0, and with no info at all.
+		 * We detect this condition checking the PowerOnHours, Size and RotationRate attributes.
+		 *
+		 * In such conditions we retry using the "sat" type, that often allows to proceed.
+		 *
+		 * Note that getting error 4 is instead very common, even with full info gathering.
+		 */
+		if (ret == 2) {
+			/* retry using the "sat" type */
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a -d sat %s", exedir, file);
+
+			++count;
+			goto retry;
+		}
+	}
+
+	if (ret == 0)
+		*power = POWER_ACTIVE;
+	else if (ret == 3)
+		*power = POWER_STANDBY;
+	else
+		*power = POWER_UNKNOWN;
+
+	return 0;
+}
+
+/**
  * Spin down a specific device.
  */
 static int devdown(uint64_t device, const char* name, const char* smartctl)
@@ -2611,6 +2697,22 @@ static void* thread_smart(void* arg)
 	return 0;
 }
 
+/**
+ * Thread for getting power info.
+ */
+static void* thread_probe(void* arg)
+{
+	devinfo_t* devinfo = arg;
+
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
 static int device_thread(tommy_list* list, void* (*func)(void* arg))
 {
 	int fail = 0;
@@ -2701,6 +2803,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	case DEVICE_UP : func = thread_spinup; break;
 	case DEVICE_DOWN : func = thread_spindown; break;
 	case DEVICE_SMART : func = thread_smart; break;
+	case DEVICE_PROBE : func = thread_probe; break;
 	}
 
 	if (!func)

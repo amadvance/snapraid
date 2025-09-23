@@ -538,6 +538,7 @@ void signal_init(void)
 #define OPERATION_SPINDOWN 15
 #define OPERATION_DEVICES 16
 #define OPERATION_SMART 17
+#define OPERATION_PROBE 18
 
 int main(int argc, char* argv[])
 {
@@ -1038,6 +1039,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_DEVICES;
 	} else if (strcmp(argv[optind], "smart") == 0) {
 		operation = OPERATION_SMART;
+	} else if (strcmp(argv[optind], "probe") == 0) {
+		operation = OPERATION_PROBE;
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unknown command '%s'\n", argv[optind]);
@@ -1062,6 +1065,7 @@ int main(int argc, char* argv[])
 	case OPERATION_FIX :
 	case OPERATION_CHECK :
 	case OPERATION_SMART :
+	case OPERATION_PROBE :
 	case OPERATION_DEVICES :
 	case OPERATION_SPINUP :
 	case OPERATION_SPINDOWN :
@@ -1245,6 +1249,7 @@ int main(int argc, char* argv[])
 	case OPERATION_SPINDOWN :
 	case OPERATION_DEVICES :
 	case OPERATION_SMART :
+	case OPERATION_PROBE :
 		opt.skip_self = 1;
 		break;
 	}
@@ -1266,6 +1271,7 @@ int main(int argc, char* argv[])
 	switch (operation) {
 	case OPERATION_DEVICES :
 	case OPERATION_SMART :
+	case OPERATION_PROBE :
 		/* we may need to use these commands during operations */
 		opt.skip_lock = 1;
 		break;
@@ -1273,6 +1279,7 @@ int main(int argc, char* argv[])
 
 	switch (operation) {
 	case OPERATION_SMART :
+	case OPERATION_PROBE :
 		/* allow to run without configuration file */
 		opt.auto_conf = 1;
 		break;
@@ -1494,6 +1501,8 @@ int main(int argc, char* argv[])
 		state_device(&state, DEVICE_LIST, 0);
 	} else if (operation == OPERATION_SMART) {
 		state_device(&state, DEVICE_SMART, 0);
+	} else if (operation == OPERATION_PROBE) {
+		state_device(&state, DEVICE_PROBE, 0);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 

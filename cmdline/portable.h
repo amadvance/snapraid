@@ -485,6 +485,14 @@ int randomize(void* ptr, size_t size);
  */
 #define SMART_UNASSIGNED 0xFFFFFFFFFFFFFFFFULL
 
+
+/**
+ * Power mode
+ */
+#define POWER_STANDBY 0
+#define POWER_ACTIVE 1
+#define POWER_UNKNOWN -1
+
 /**
  * Device info entry.
  */
@@ -503,6 +511,7 @@ struct devinfo_struct {
 	char smart_serial[SMART_MAX]; /**< SMART serial number. */
 	char smart_vendor[SMART_MAX]; /**< SMART vendor. */
 	char smart_model[SMART_MAX]; /**< SMART model. */
+	int power; /**< POWER mode. */
 #if HAVE_THREAD
 	thread_id_t thread;
 #endif
@@ -514,6 +523,7 @@ typedef struct devinfo_struct devinfo_t;
 #define DEVICE_DOWN 1
 #define DEVICE_UP 2
 #define DEVICE_SMART 3
+#define DEVICE_PROBE 4
 
 /**
  * Query all the "high" level devices with the specified operation,
