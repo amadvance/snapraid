@@ -320,7 +320,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, block_enabled);
 
-	state_progress_begin(state, blockstart, blockmax, countmax);
+	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+		goto end;
+
 	while (1) {
 		unsigned char* buffer_recov[LEV_MAX];
 		snapraid_info info;
@@ -647,6 +649,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		}
 	}
 
+end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	state_usage_print(state);

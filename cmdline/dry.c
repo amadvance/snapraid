@@ -199,7 +199,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, 0);
 
-	state_progress_begin(state, blockstart, blockmax, countmax);
+	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+		goto end;
+
 	while (1) {
 		void** buffer;
 
@@ -345,6 +347,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		}
 	}
 
+end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	state_usage_print(state);
