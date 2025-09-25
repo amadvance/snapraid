@@ -1741,5 +1741,12 @@ void thread_join(thread_id_t thread, void** retval)
 	}
 }
 
+void thread_yield(void)
+{
+#ifdef __MINGW32__
+	Sleep(0);
+#else
+	sched_yield();
 #endif
-
+}
+#endif

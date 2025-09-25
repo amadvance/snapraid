@@ -439,6 +439,7 @@ void thread_cond_signal_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex);
 void thread_cond_broadcast_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex);
 void thread_create(thread_id_t* thread, void* (* func)(void *), void *arg);
 void thread_join(thread_id_t thread, void** retval);
+void thread_yield(void);
 #endif
 
 #endif

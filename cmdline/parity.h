@@ -20,6 +20,8 @@
 
 #include "support.h"
 #include "bw.h"
+#include "state.h"
+#include "io.h"
 
 /****************************************************************************/
 /* parity */
@@ -144,6 +146,12 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
  * Write a block in the parity file.
  */
 int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+
+/**
+ * Flush and sync the parity files.
+ */
+int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur);
+
 
 #endif
 

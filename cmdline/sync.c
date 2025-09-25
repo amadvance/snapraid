@@ -1316,18 +1316,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* before writing the new content file we ensure that */
 			/* the parity is really written flushing the disk cache */
-			for (l = 0; l < state->level; ++l) {
-				ret = parity_sync(&parity_handle[l]);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					log_tag("parity_error:%u:%s: Sync error\n", blockcur, lev_config_name(l));
-					log_fatal("DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
-					log_fatal("Ensure that disk '%s' is sane.\n", lev_config_name(l));
-					log_fatal("Stopping at block %u\n", blockcur);
-					++error;
-					goto bail;
-					/* LCOV_EXCL_STOP */
-				}
+			ret = state_flush(state, &io, parity_handle, blockcur);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				log_fatal("Stopping at block %u\n", blockcur);
+				++error;
+				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* now we can safely write the content file */
@@ -1347,18 +1342,13 @@ end:
 
 	/* before returning we ensure that */
 	/* the parity is really written flushing the disk cache */
-	for (l = 0; l < state->level; ++l) {
-		ret = parity_sync(&parity_handle[l]);
-		if (ret == -1) {
-			/* LCOV_EXCL_START */
-			log_tag("parity_error:%u:%s: Sync error\n", blockcur, lev_config_name(l));
-			log_fatal("DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
-			log_fatal("Ensure that disk '%s' is sane.\n", lev_config_name(l));
-			log_fatal("Stopping at block %u\n", blockcur);
-			++error;
-			goto bail;
-			/* LCOV_EXCL_STOP */
-		}
+	ret = state_flush(state, &io, parity_handle, blockcur);
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		log_fatal("Stopping at block %u\n", blockcur);
+		++error;
+		goto bail;
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (error || silent_error || io_error) {

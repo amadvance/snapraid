@@ -4915,3 +4915,29 @@ void generate_configuration(const char* path)
 	state_done(&state);
 }
 
+
+/**
+ * Flush and sync the parity files.
+ */
+int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur)
+{
+	unsigned l;
+
+	if (io)
+		io_flush(io);
+
+	/* flush all parity handles to ensure data is written to disk */
+	for (l = 0; l < state->level; ++l) {
+		int ret = parity_sync(&parity_handle[l]);
+		if (ret == -1) {
+			/* LCOV_EXCL_START */
+			log_tag("parity_error:%u:%s: Sync error\n", blockcur, lev_config_name(l));
+			log_fatal("DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
+			log_fatal("Ensure that disk '%s' is sane.\n", lev_config_name(l));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+	
+	return 0;
+}

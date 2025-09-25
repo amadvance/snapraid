@@ -83,8 +83,7 @@ struct snapraid_task {
 /**
  * Worker for tasks.
  *
- * This represents a worker thread designated to read data
- * from a specific disk.
+ * This represents a worker thread designated to read/write data for a specific disk.
  */
 struct snapraid_worker {
 #if HAVE_THREAD
@@ -139,7 +138,7 @@ struct snapraid_io {
 	struct snapraid_state* state;
 
 	/**
-	 * Number of read-ahead buffers to use.
+	 * Number of read-ahead and write-cached buffers to use.
 	 *
 	 * Between IO_MIN and IO_MAX for thread use.
 	 *
@@ -257,13 +256,23 @@ struct snapraid_io {
 	int done;
 
 	/**
-	 * The task currently used by the caller.
+	 * The worker task index currently used by the operation in
+	 * progress. It's the position in all the reader task_map[].
+	 *
+	 * Until the operation is in progress, the data buffer cannot be
+	 * discarded, because it's in use.
 	 *
 	 * It's a rolling counter, when reaching ::io_max
 	 * it goes again to 0.
 	 *
-	 * When the caller finish with the current index,
-	 * it's incremented, and a read_sched() signal is sent.
+	 * When the caller finish with this index, it calls read_sched(),
+	 * and this ::reader_index is increamended, meaning that the data of
+	 * the just finished index is not needed anymore and the buffer is
+	 * available to be used for the following read-ahead.
+	 *
+	 * When this happens a read_sched signal is broadcasted, and all the
+	 * workers can proceed using this now available index to have one more
+	 * read-ahead buffer to load.
 	 *
 	 * In monothread mode it isn't the task index,
 	 * but the worker index.
@@ -271,13 +280,22 @@ struct snapraid_io {
 	unsigned reader_index;
 
 	/**
-	 * The task currently used by the caller.
+	 * The worker task index currently used by the operation in
+	 * progress. It's the position in all the writer task_map[].
+	 *
+	 * Until the operation is in progress, the data buffer cannot be
+	 * written, because the data is not yet in the buffer.
 	 *
 	 * It's a rolling counter, when reaching ::io_max
 	 * it goes again to 0.
 	 *
-	 * When the caller finish with the current index,
-	 * it's incremented, and a write_sched() signal is sent.
+	 * When the caller finish writing the data in the buffer for this
+	 * index, it calls write_sched() and ::writer_index is incremented,
+	 * meaning the the just finished index is scheduled to be written
+	 * to disk.
+	 *
+	 * When this happens a write_sched signal is broadcasted, and all the
+	 * workers can proceed writing the data in this index.
 	 *
 	 * In monothread mode it isn't the task index,
 	 * but the worker index.
@@ -399,6 +417,11 @@ extern void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int s
  * Refresh the number of cached blocks for all data and parity disks.
  */
 extern void (*io_refresh)(struct snapraid_io* io);
+
+/**
+ * Flush all the writes.
+ */
+extern void (*io_flush)(struct snapraid_io* io);
 
 #endif
 

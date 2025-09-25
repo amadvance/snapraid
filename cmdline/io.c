@@ -30,7 +30,7 @@ void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* wait
 void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip) = 0;
 void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error) = 0;
 void (*io_refresh)(struct snapraid_io* io) = 0;
-
+void (*io_flush)(struct snapraid_io* io) = 0;
 
 /**
  * Get the next block position to process.
@@ -189,6 +189,11 @@ static void io_write_next_mono(struct snapraid_io* io, block_off_t blockcur, int
 }
 
 static void io_refresh_mono(struct snapraid_io* io)
+{
+	(void)io;
+}
+
+static void io_flush_mono(struct snapraid_io* io)
 {
 	(void)io;
 }
@@ -527,6 +532,39 @@ static void io_refresh_thread(struct snapraid_io* io)
 	}
 
 	thread_mutex_unlock(&io->io_mutex);
+}
+
+static void io_flush_thread(struct snapraid_io* io)
+{
+	unsigned i;
+
+	while (1) {
+		int all_done = 1;
+
+		/* the synchronization is protected by the io mutex */
+		thread_mutex_lock(&io->io_mutex);
+
+		for (i = 0; i < io->writer_max; ++i) {
+			struct snapraid_worker* worker = &io->writer_map[i];
+
+			/* get the next pending task */
+			unsigned next_index = (worker->index + 1) % io->io_max;
+
+			/* if the queue of pending tasks is not empty */
+			if (next_index != io->writer_index) {
+				all_done = 0;
+				break;
+			}
+		}
+
+		thread_mutex_unlock(&io->io_mutex);
+
+		if (all_done)
+			break;
+
+		/* wait for something to complete */
+		thread_yield();
+	}
 }
 
 static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
@@ -983,6 +1021,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		io_write_preset = io_write_preset_thread;
 		io_write_next = io_write_next_thread;
 		io_refresh = io_refresh_thread;
+		io_flush = io_flush_thread;
 		io_data_read = io_data_read_thread;
 		io_parity_read = io_parity_read_thread;
 		io_parity_write = io_parity_write_thread;
@@ -1001,6 +1040,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		io_write_preset = io_write_preset_mono;
 		io_write_next = io_write_next_mono;
 		io_refresh = io_refresh_mono;
+		io_flush = io_flush_mono;
 		io_data_read = io_data_read_mono;
 		io_parity_read = io_parity_read_mono;
 		io_parity_write = io_parity_write_mono;
