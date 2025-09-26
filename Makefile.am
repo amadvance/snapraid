@@ -23,6 +23,7 @@ snapraid_SOURCES = \
 	raid/test.c \
 	raid/tag.c \
 	tommyds/tommy.c \
+	cmdline/main.c \
 	cmdline/snapraid.c \
 	cmdline/io.c \
 	cmdline/bw.c \

@@ -8,7 +8,7 @@ Synopsis
 	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
 	:	[-p, --plan PERC|bad|new|full]
 	:	[-o, --older-than DAYS] [-l, --log FILE]
-	:	[-w, --bw-limit RATE]
+	:	[-s, --spin-down-on-error] [-w, --bw-limit RATE]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-N, --force-nocopy] [-F, --force-full]
@@ -471,7 +471,12 @@ Commands
 	This command uses the "smartctl" tool, and it's equivalent to run
 	"smartctl -s standby,now" on all the devices.
 
-	You can spin-down only some specific disks using the -d, --filter-disk option.
+	You can spin-down only some specific disks using the -d, --filter-disk
+	option.
+
+	To automatically spin down on error, you can use the option
+	-s, --spin-down-on-error with any other command, which is equivalent
+	to running "down" manually when an error occurs.
 
 	Nothing is modified.
 
@@ -803,6 +808,14 @@ Options
 		The files are read also in sub-directories and they are
 		identified regardless of their name.
 		This option can be used only with "check" and "fix".
+
+	-s, --spin-down-on-error
+		On any error, spin down all managed disks before exiting with
+		a non-zero status code. This prevents the drives from
+		remaining active and spinning after an aborted operation,
+		helping to avoid unnecessary heat build-up and power
+		consumption. Use this option to ensure disks are safely
+		stopped even when a command fails.
 
 	-w, --bw-limit RATE
 		Applies a global bandwidth limit for all disks. The RATE is

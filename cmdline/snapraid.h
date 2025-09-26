@@ -23,6 +23,7 @@
 
 void speed(int period);
 void selftest(void);
+int snapraid_main(int argc, char* argv[]);
 
 #endif
 

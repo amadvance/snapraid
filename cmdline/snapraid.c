@@ -340,7 +340,7 @@ struct option long_options[] = {
 	{ "speed-test", 0, 0, 'T' }, /* undocumented speed test command */
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
-	{ "quiet", 0, 0, 'q' }, /* undocumented quiet option */
+	{ "quiet", 0, 0, 'q' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface option */
 	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
@@ -486,6 +486,11 @@ struct option long_options[] = {
 };
 #endif
 
+/*
+ * Free letters: AgIjJkKMnPQrtuxXWz
+ * 
+ * The 's' letter is used in main.c
+ */
 #define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:ZEUDNFRahTC:vqHVGw:"
 
 volatile int global_interrupt = 0;
@@ -540,7 +545,7 @@ void signal_init(void)
 #define OPERATION_SMART 17
 #define OPERATION_PROBE 18
 
-int main(int argc, char* argv[])
+int snapraid_main(int argc, char* argv[])
 {
 	int c;
 	struct snapraid_option opt;

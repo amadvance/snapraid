@@ -26,7 +26,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-w, \-\-bw\-limit RATE]
+	[\-s, \-\-spin\-down\-on\-error] [\-w, \-\-bw\-limit RATE]
 .PD 0
 .PP
 .PD
@@ -740,7 +740,12 @@ Spins down all the disks of the array.
 This command uses the \[dq]smartctl\[dq] tool, and it\'s equivalent to run
 \[dq]smartctl \-s standby,now\[dq] on all the devices.
 .PP
-You can spin\-down only some specific disks using the \-d, \-\-filter\-disk option.
+You can spin\-down only some specific disks using the \-d, \-\-filter\-disk
+option.
+.PP
+To automatically spin down on error, you can use the option
+\-s, \-\-spin\-down\-on\-error with any other command, which is equivalent
+to running \[dq]down\[dq] manually when an error occurs.
 .PP
 Nothing is modified.
 .SS diff 
@@ -1078,6 +1083,14 @@ and \[dq]fix\[dq] to improve the recover process.
 The files are read also in sub\-directories and they are
 identified regardless of their name.
 This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
+.TP
+.B \-s, \-\-spin\-down\-on\-error
+On any error, spin down all managed disks before exiting with
+a non\-zero status code. This prevents the drives from
+remaining active and spinning after an aborted operation,
+helping to avoid unnecessary heat build\-up and power
+consumption. Use this option to ensure disks are safely
+stopped even when a command fails.
 .TP
 .B \-w, \-\-bw\-limit RATE
 Applies a global bandwidth limit for all disks. The RATE is
