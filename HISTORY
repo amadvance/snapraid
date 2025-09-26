@@ -1,11 +1,17 @@
 SnapRAID HISTORY
 ================
 
-12.5 2025/XX
+13.0 2025/XX
 ============
- * Add a bandwidth limit option --bw-limit [Allan Clark]
- * Add a new smartignore configuration option to ignore specific SMART
+ * Add a new "probe" command that shows the spinning status of all disks.
+ * Add a new -s, --spin-down-on-error option that spins down all disks
+   when a command ends with an error.
+ * Fix handling of arguments containing characters outside the Windows
+   code page.
+ * Add a new -w, --bw-limit option to limit the bandwidth. [Allan Clark]
+ * Add a new "smartignore" configuration option to ignore specific SMART
    attributes.
+ * Support UUID in Mac OS X [Nasado]
 
 12.4 2025/01
 ============
