@@ -1548,6 +1548,11 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 {
 	void* (*func)(void* arg) = 0;
 
+	if (operation == DEVICE_DOWN) {
+		/* flush all the disk caches before spinning down */
+		sync();
+	}
+
 #if HAVE_LINUX_DEVICE
 	tommy_node* i;
 	struct stat st;
