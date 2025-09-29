@@ -2490,12 +2490,9 @@ retry:
 		 * Handle some common cases in Windows.
 		 *
 		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
-		 * stage, returning with error 2, or even with error 0, and with no info at all.
-		 * We detect this condition checking the PowerOnHours, Size and RotationRate attributes.
+		 * stage, returning with error 2.
 		 *
 		 * In such conditions we retry using the "sat" type, that often allows to proceed.
-		 *
-		 * Note that getting error 4 is instead very common, even with full info gathering.
 		 */
 		if (ret == 2) {
 			/* retry using the "sat" type */
@@ -2601,62 +2598,71 @@ retry:
 
 /**
  * Spin up a device.
- *
- * There isn't a defined way to spin up a device,
- * so we just do a generic write.
  */
-static int devup(const char* mount)
+static int devup(const char* wfile)
 {
 	wchar_t conv_buf[CONV_MAX];
-	int f;
-	char path[PATH_MAX];
+	HANDLE h;
+	BOOL ret;
+	DISK_GEOMETRY dg;
+	DWORD bytes;
+	void* buffer;
 
-	/* add a temporary name used for writing */
-	pathprint(path, sizeof(path), "%s.snapraid-spinup.tmp", mount);
+	/* open the volume */
+	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
 
-	/* create a temporary file, automatically deleted on close */
-	f = _wopen(convert(conv_buf, path), _O_CREAT | _O_TEMPORARY | _O_RDWR, _S_IREAD | _S_IWRITE);
-	if (f != -1)
-		close(f);
+	bytes = 0;
+	ret = DeviceIoControl(h, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &dg, sizeof(dg), &bytes, NULL);
+	if (!ret) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	buffer = VirtualAlloc(NULL, dg.BytesPerSector, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	if (!buffer) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	bytes = 0;
+	if (!ReadFile(h, buffer, dg.BytesPerSector, &bytes, NULL)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	if (!CloseHandle(h)) {
+		DWORD error = GetLastError();
+		VirtualFree(buffer, 0, MEM_RELEASE);
+		windows_errno(error);
+		return -1;
+	}
+
+	VirtualFree(buffer, 0, MEM_RELEASE);
 
 	return 0;
 }
 
 /**
  * Thread for spinning up.
- *
- * Note that filling up the devinfo object is done inside this thread,
- * to avoid to block the main thread if the device need to be spin up
- * to handle stat/resolve requests.
  */
 static void* thread_spinup(void* arg)
 {
 	devinfo_t* devinfo = arg;
-	struct stat st;
 	uint64_t start;
 
 	start = tick_ms();
 
-	/* uses lstat_sync() that maps to CreateFile */
-	/* we cannot use FindFirstFile because it doesn't allow to open the root dir */
-	if (lstat_sync(devinfo->mount, &st, 0) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to stat path '%s'. %s.\n", devinfo->mount, strerror(errno));
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* set the device number */
-	devinfo->device = st.st_dev;
-
-	if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to resolve path '%s'.\n", devinfo->mount);
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (devup(devinfo->mount) != 0) {
+	if (devup(devinfo->wfile) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -2757,42 +2763,23 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	tommy_node* i;
 	void* (*func)(void* arg) = 0;
 
-	if (operation != DEVICE_UP) {
-		/* for each device */
-		for (i = tommy_list_head(high); i != 0; i = i->next) {
-			devinfo_t* devinfo = i->data;
+	/* for each device */
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
 
-			if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Failed to resolve path '%s'.\n", devinfo->mount);
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, devinfo->wfile, devinfo, low) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Failed to expand device '%s'.\n", devinfo->file);
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
+		if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to resolve path '%s'.\n", devinfo->mount);
+			return -1;
+			/* LCOV_EXCL_STOP */
 		}
-	}
 
-	if (operation == DEVICE_UP) {
-		/* duplicate the high */
-		for (i = tommy_list_head(high); i != 0; i = i->next) {
-			devinfo_t* devinfo = i->data;
-			devinfo_t* entry;
-
-			entry = calloc_nofail(1, sizeof(devinfo_t));
-
-			entry->device = devinfo->device;
-			pathcpy(entry->name, sizeof(entry->name), devinfo->name);
-			pathcpy(entry->mount, sizeof(entry->mount), devinfo->mount);
-
-			/* insert in the high */
-			tommy_list_insert_tail(low, &entry->node, entry);
+		/* expand the tree of devices */
+		if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, devinfo->wfile, devinfo, low) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to expand device '%s'.\n", devinfo->file);
+			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
