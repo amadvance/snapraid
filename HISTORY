@@ -3,7 +3,8 @@ SnapRAID HISTORY
 
 13.0 2025/XX
 ============
-* Add new thermal protection configuration options:
+ * Add a new -A, --stats option for an extensive view of the process.
+ * Add new thermal protection configuration options:
     - temp_limit TEMPERATURE_CELSIUS
       Sets the maximum allowed disk temperature. When any disk exceeds this
       limit, SnapRAID stops all operations and spins down the disks to prevent

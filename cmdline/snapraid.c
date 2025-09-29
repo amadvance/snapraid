@@ -327,6 +327,7 @@ struct option long_options[] = {
 	{ "error-limit", 1, 0, 'L' },
 	{ "import", 1, 0, 'i' },
 	{ "log", 1, 0, 'l' },
+	{ "stats", 0, 0, 'A' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "force-uuid", 0, 0, 'U' },
@@ -441,7 +442,7 @@ struct option long_options[] = {
 	{ "test-io-cache", 1, 0, OPT_TEST_IO_CACHE },
 
 	/* Print IO stats */
-	{ "test-io-stats", 0, 0, OPT_TEST_IO_STATS },
+	{ "test-io-stats", 0, 0, OPT_TEST_IO_STATS }, /* now replaced by -A, --stats */
 
 	/* Signal condition variable outside the mutex */
 	{ "test-cond-signal-outside", 0, 0, OPT_TEST_COND_SIGNAL_OUTSIDE },
@@ -487,11 +488,11 @@ struct option long_options[] = {
 #endif
 
 /*
- * Free letters: AgIjJkKMnPQrtuxXWz
+ * Free letters: gIjJkKMnPQrtuxXWz
  * 
  * The 's' letter is used in main.c
  */
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:ZEUDNFRahTC:vqHVGw:"
+#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVGw:"
 
 volatile int global_interrupt = 0;
 
@@ -765,6 +766,9 @@ int snapraid_main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 			log_file = optarg;
+			break;
+		case 'A' :
+			opt.force_stats = 1;
 			break;
 		case 'Z' :
 			opt.force_zero = 1;

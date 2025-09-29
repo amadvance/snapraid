@@ -15,6 +15,7 @@ Synopsis
 	:	[-R, --force-realloc]
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
+	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
 	:	|list|dup|pool|devices|touch|rehash
@@ -822,6 +823,29 @@ Options
 		the number of bytes per second. You can specify a multiplier
 		as K, M, or G (e.g., --bw-limit 1G).
 
+	-A, --stats
+		Enables an extended status view that shows additional information.
+
+		The screen displays two graphs:
+
+		The first graph shows the number of buffered stripes for each
+		disk, along with the file path of the file currently being
+		accessed on that disk. Typically, the slowest disk will have
+		no buffer available, which determines the maximum achievable
+		bandwidth.
+
+		The second graph shows the percentage of time spent waiting
+		over the past 100 seconds. The slowest disk is expected to
+		cause most of the wait time, while the other disks should have
+		little or no wait because they can use their buffered stripes. 
+		This graph also shows the time spent waiting for hash
+		calculations and RAID computations.
+
+		All computations run in parallel with disk operations.
+		Therefore, as long as there is measurable wait time for at
+		least one disk, it indicates that the CPU is fast enough to
+		keep up with the workload.
+
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
 		size that before was not.
@@ -1175,10 +1199,25 @@ Configuration
   temp_limit TEMPERATURE_CELSIUS
 	Sets the maximum allowed disk temperature in Celsius. When specified,
 	SnapRAID periodically checks the temperature of all disks using the
-	smartctl tool. The current disk temperatures are displayed during
-	processing. If any disk exceeds this limit, all operations stop and
-	the disks are spun down (put into standby) for the duration defined
-	by "temp_sleep".
+	smartctl tool. The current disk temperatures are displayed while
+	SnapRAID is operating. If any disk exceeds this limit, all operations
+	stop and the disks are spun down (put into standby) for the duration
+	defined by "thermal_sleep".
+
+	During operation, SnapRAID also analyzes the heating curve of each
+	disk and estimates the long-term steady temperature they are expected
+	to reach if activity continues. This predicted steady temperature is
+	shown in parentheses next to the current value and helps assess
+	whether the system’s cooling is adequate.
+
+	To perform this analysis, SnapRAID needs a reference for the ambient
+	system temperature. It first attempts to read it from available
+	hardware sensors. If no system sensor can be accessed, it uses the
+	lowest disk temperature measured at the start of the run as a fallback
+	reference.
+
+	Normally, SnapRAID shows only the temperature of the hottest disk.
+	To display the temperature of all disks, use the -A or --stats option. 
 
   temp_sleep TIME_IN_MINUTES
 	Sets the standby time, in minutes, when the temperature limit is
