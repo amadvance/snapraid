@@ -21,6 +21,10 @@ if ! ./configure.windows-x86 $DEBUG; then
 	exit 1
 fi
 
+if ! make -j4; then
+	exit 1
+fi
+
 if ! make distwindows-x86 distclean; then
 	exit 1
 fi
@@ -44,4 +48,3 @@ fi
 if ! make dist; then
 	exit 1
 fi
-
