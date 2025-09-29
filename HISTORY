@@ -3,6 +3,9 @@ SnapRAID HISTORY
 
 13.0 2025/XX
 ============
+ * Remove the SMART attribute 193 "Load Cycle Count" from the failure
+   probability computation, as its effectiveness in predicting failures
+   is too dependent on the hard disk vendor.
  * Add a new -A, --stats option for an extensive view of the process.
  * Add new thermal protection configuration options:
     - temp_limit TEMPERATURE_CELSIUS

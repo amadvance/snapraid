@@ -1274,13 +1274,14 @@ Configuration
 	PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
 	The special value * can be used to ignore the attribute on all disks.
 
-	For example, to ignore the "Load_Cycle_Count" attribute on all disks:
+	For example, to ignore the "Current Pending Sector Count" attribute on
+	all disks:
 
-		:smartignore * 193
+		:smartignore * 197
 
 	To ignore it only on the first parity disk:
 
-		:smartignore parity 193
+		:smartignore parity 197
 
   Examples
 	An example of a typical configuration for Unix is:
@@ -1297,7 +1298,6 @@ Configuration
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
-		:smartignore * 193
 
 	An example of a typical configuration for Windows is:
 
@@ -1314,7 +1314,6 @@ Configuration
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
-		:smartignore * 193
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in

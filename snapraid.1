@@ -1572,10 +1572,11 @@ DISK is the same disk name specified in the \[dq]disk\[dq] option.
 PARITY is one of the parity name as \[dq]parity,(1,2,3,4,5,6,z)\-parity\[dq].
 The special value * can be used to ignore the attribute on all disks.
 .PP
-For example, to ignore the \[dq]Load_Cycle_Count\[dq] attribute on all disks:
+For example, to ignore the \[dq]Current Pending Sector Count\[dq] attribute on
+all disks:
 .PP
 .RS 4
-smartignore * 193
+smartignore * 197
 .PD 0
 .PD
 .RE
@@ -1583,7 +1584,7 @@ smartignore * 193
 To ignore it only on the first parity disk:
 .PP
 .RS 4
-smartignore parity 193
+smartignore parity 197
 .PD 0
 .PD
 .RE
@@ -1636,10 +1637,6 @@ smartctl parity \-d areca,1/1 /dev/sg0
 .PP
 .PD
 smartctl 2\-parity \-d areca,2/1 /dev/sg0
-.PD 0
-.PP
-.PD
-smartignore * 193
 .PD 0
 .PD
 .RE
@@ -1696,10 +1693,6 @@ smartctl parity \-d areca,1/1 /dev/arcmsr0
 .PP
 .PD
 smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
-.PD 0
-.PP
-.PD
-smartignore * 193
 .PD 0
 .PD
 .RE
