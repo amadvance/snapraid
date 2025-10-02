@@ -15,17 +15,14 @@ SnapRAID HISTORY
     - temp_sleep TIME_IN_MINUTES
       Defines how long the disks remain in standby after a temperature limit
       event. Defaults to 15 minutes.
-  These options allow SnapRAID to automatically pause activity and cool down
-  disks when a temperature threshold is reached.
  * Add a new "probe" command that shows the spinning status of all disks.
  * Add a new -s, --spin-down-on-error option that spins down all disks
    when a command ends with an error.
- * Fix handling of arguments containing characters outside the Windows
-   code page.
- * Add a new -w, --bw-limit option to limit the bandwidth. [Allan Clark]
+ * Fix handling of command-line arguments containing UTF-8 characters on
+   Windows, ensuring proper processing outside the Windows code page.
  * Add a new "smartignore" configuration option to ignore specific SMART
    attributes.
- * Support UUID in Mac OS X [Nasado]
+ * Support UUID in macOS [Nasado]
 
 12.4 2025/01
 ============

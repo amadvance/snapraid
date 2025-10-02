@@ -1,5 +1,5 @@
 Name{number}
-	snapraid - SnapRAID Backup For Disk Arrays
+	snapraid - SnapRAID Backup for Disk Arrays
 
 Synopsis
 	:snapraid [-c, --conf CONFIG]
@@ -51,75 +51,75 @@ Description
 		:http://www.snapraid.it/
 
 Limitations
-	SnapRAID is in between a RAID and a Backup program trying to get the best
-	benefits of them. Although it also has some limitations that you should
+	SnapRAID is a hybrid between a RAID and a backup program, aiming to combine
+	the best benefits of both. However, it has some limitations that you should
 	consider before using it.
 
-	The main one is that if a disk fails, and you haven't recently synced,
-	you may be unable to do a complete recover.
+	The main limitation is that if a disk fails and you haven't recently synced,
+	you may be unable to fully recover.
 	More specifically, you may be unable to recover up to the size of
-	the changed or deleted files from the last sync operation.
-	This happens even if the files changed or deleted are not in the
+	the changed or deleted files since the last sync operation.
+	This occurs even if the changed or deleted files are not on the
 	failed disk. This is why SnapRAID is better suited for
-	data that rarely change.
+	data that rarely changes.
 
-	On the other hand, newly added files don't prevent recovering already
-	existing files. You may only lose the recently added files, if they are on
-	the failed disk.
+	On the other hand, newly added files don't prevent recovery of already
+	existing files. You will only lose the recently added files if they
+	are on the failed disk.
 
 	Other SnapRAID limitations are:
 
-	* With SnapRAID, you still have separate file-systems for each disk.
-		With RAID you get a single large file-system.
+	* With SnapRAID, you still have separate file systems for each disk.
+		With RAID, you get a single large file system.
 	* SnapRAID doesn't stripe data.
-		With RAID you get a speed boost with striping.
+		With RAID, you get a speed boost with striping.
 	* SnapRAID doesn't support real-time recovery.
-		With RAID you do not have to stop working when a disk fails.
-	* SnapRAID is able to recover damages only from a limited number of disks.
-		With a Backup you can recover from a complete
-		failure of the whole disk array.
-	* Only file, time-stamps, symlinks and hardlinks are saved.
-		Permissions, ownership and extended attributes are not saved.
+		With RAID, you do not have to stop working when a disk fails.
+	* SnapRAID can recover data only from a limited number of disk failures.
+		With a backup, you can recover from a complete
+		failure of the entire disk array.
+	* Only file names, timestamps, symlinks, and hardlinks are saved.
+		Permissions, ownership, and extended attributes are not saved.
 
 Getting Started
-	To use SnapRAID you need to first select one disk of your disk array
-	to dedicate at the "parity" information. With one disk for parity you
-	will be able to recover from a single disk failure, like RAID5.
+	To use SnapRAID, you need to first select one disk in your disk array
+	to dedicate to "parity" information. With one disk for parity, you
+	will be able to recover from a single disk failure, similar to RAID5.
 
-	If you want to be able to recover from more disk failures, like RAID6,
-	you must reserve additional disks for parity. Any additional parity
-	disk allow to recover from one more disk failure.
+	If you want to recover from more disk failures, similar to RAID6,
+	you must reserve additional disks for parity. Each additional parity
+	disk allows recovery from one more disk failure.
 
-	As parity disks, you have to pick the biggest disks in the array,
-	as the parity information may grow in size as the biggest data
+	As parity disks, you must pick the largest disks in the array,
+	as the parity information may grow to the size of the largest data
 	disk in the array.
 
-	These disks will be dedicated to store the "parity" files.
-	You should not store your data in them.
+	These disks will be dedicated to storing the "parity" files.
+	You should not store your data on them.
 
-	Then you have to define the "data" disks that you want to protect
+	Then, you must define the "data" disks that you want to protect
 	with SnapRAID. The protection is more effective if these disks
-	contain data that rarely change. For this reason it's better to
-	DO NOT include the Windows C:\ disk, or the Unix /home, /var and /tmp
-	disks.
+	contain data that rarely changes. For this reason, it's better to
+	NOT include the Windows C:\ disk or the Unix /home, /var, and /tmp
+	directories.
 
 	The list of files is saved in the "content" files, usually
-	stored in the data, parity or boot disks.
-	These files contain the details of your backup, with all the
-	check-sums to verify its integrity.
-	The "content" file is stored in multiple copies, and each one must
-	be in a different disk, to ensure that in even in case of multiple
-	disk failures at least one copy is available.
+	stored on the data, parity, or boot disks.
+	This file contains the details of your backup, including all the
+	checksums to verify its integrity.
+	The "content" file is stored in multiple copies, and each copy must
+	be on a different disk to ensure that, even in case of multiple
+	disk failures, at least one copy is available.
 
-	For example, suppose that you are interested only at one parity level
-	of protection, and that your disks are present in:
+	For example, suppose you are interested only in one parity level
+	of protection, and your disks are located at:
 
 		:/mnt/diskp <- selected disk for parity
 		:/mnt/disk1 <- first disk to protect
 		:/mnt/disk2 <- second disk to protect
 		:/mnt/disk3 <- third disk to protect
 
-	you have to create the configuration file /etc/snapraid.conf with
+	You must create the configuration file /etc/snapraid.conf with
 	the following options:
 
 		:parity /mnt/diskp/snapraid.parity
@@ -130,7 +130,7 @@ Getting Started
 		:data d2 /mnt/disk2/
 		:data d3 /mnt/disk3/
 
-	If you are in Windows, you should use the Windows path format, with drive
+	If you are on Windows, you should use the Windows path format, with drive
 	letters and backslashes instead of slashes.
 
 		:parity E:\snapraid.parity
@@ -141,27 +141,27 @@ Getting Started
 		:data d2 G:\array\
 		:data d3 H:\array\
 
-	If you have many disks, and you run out of drive letters, you can mount
-	disks directly in sub folders. See:
+	If you have many disks and run out of drive letters, you can mount
+	disks directly in subfolders. See:
 
 		:https://www.google.com/search?q=Windows+mount+point
 
-	At this point you are ready to start the "sync" command to build the
+	At this point, you are ready to run the "sync" command to build the
 	parity information.
 
 		:snapraid sync
 
-	This process may take some hours the first time, depending on the size
-	of the data already present in the disks. If the disks are empty
+	This process may take several hours the first time, depending on the size
+	of the data already present on the disks. If the disks are empty,
 	the process is immediate.
 
-	You can stop it at any time pressing Ctrl+C, and at the next run it
-	will start where interrupted.
+	You can stop it at any time by pressing Ctrl+C, and at the next run, it
+	will resume where it was interrupted.
 
 	When this command completes, your data is SAFE.
 
-	Now you can start using your array as you like, and periodically
-	update the parity information running the "sync" command.
+	Now you can start using your array as you like and periodically
+	update the parity information by running the "sync" command.
 
   Scrubbing
 	To periodically check the data and parity for errors, you can
@@ -169,49 +169,48 @@ Getting Started
 
 		:snapraid scrub
 
-	This command verifies the data in your array comparing it with
-	the hash computed in the "sync" command.
+	This command compares the data in your array with the hash computed
+	during the "sync" command to verify integrity.
 
-	Every run of the command checks about the 8% of the array, but not data
+	Each run of the command checks approximately 8% of the array, excluding data
 	already scrubbed in the previous 10 days.
-	You can use the -p, --plan option to specify a different amount,
+	You can use the -p, --plan option to specify a different amount
 	and the -o, --older-than option to specify a different age in days.
-	For example, to check 5% of the array older than 20 days use:
+	For example, to check 5% of the array older than 20 days, use:
 
 		:snapraid -p 5 -o 20 scrub
 
-	If during the process, silent or input/output errors are found,
-	the corresponding blocks are marked as bad in the "content" file,
+	If silent or input/output errors are found during the process,
+	the corresponding blocks are marked as bad in the "content" file
 	and listed in the "status" command.
 
 		:snapraid status
 
-	To fix them, you can use the "fix" command filtering for bad blocks with
-	the -e, --filter-error options:
+	To fix them, you can use the "fix" command, filtering for bad blocks with
+	the -e, --filter-error option:
 
 		:snapraid -e fix
 
-	At the next "scrub" the errors will disappear from the "status" report
-	if really fixed. To make it fast, you can use -p bad to scrub only blocks
-	marked as bad.
+	At the next "scrub," the errors will disappear from the "status" report
+	if they are truly fixed. To make it faster, you can use -p bad to scrub
+	only blocks marked as bad.
 
 		:snapraid -p bad scrub
 
-	Take care that running "scrub" on a not synced array may result in
-	errors caused by removed or modified files. These errors are reported
-	in the "scrub" result, but related blocks are not marked as bad.
+	Running "scrub" on an unsynced array may report errors caused by
+	removed or modified files. These errors are reported in the "scrub"
+	output, but the related blocks are not marked as bad.
 
   Pooling
 	To have all the files in your array shown in the same directory tree,
-	you can enable the "pooling" feature. It consists in creating a
-	read-only virtual view of all the files in your array using symbolic
-	links.
+	you can enable the "pooling" feature. It creates a read-only virtual
+	view of all the files in your array using symbolic links.
 
 	You can configure the "pooling" directory in the configuration file with:
 
 		:pool /pool
 
-	or, if you are in Windows, with:
+	or, if you are on Windows, with:
 
 		:pool C:\pool
 
@@ -219,9 +218,9 @@ Getting Started
 
 		:snapraid pool
 
-	If you are using a Unix platform and you want to share such directory
-	in the network to either Windows or Unix machines, you should add
-	to your /etc/samba/smb.conf the following options:
+	If you are using a Unix platform and want to share this directory
+	over the network to either Windows or Unix machines, you should add
+	the following options to your /etc/samba/smb.conf:
 
 		:# In the global section of smb.conf
 		:unix extensions = no
@@ -235,15 +234,12 @@ Getting Started
 		:wide links = yes
 		:follow symlinks = yes
 
-	In Windows the same sharing operation is not so straightforward,
-	because Windows shares the symbolic links as they are, and that
-	requires the network clients to resolve them remotely.
-
-	To make it working, besides sharing in the network the pool directory,
-	you must also share all the disks independently, using as share points
-	the disk names as defined in the configuration file. You must also specify in
-	the "share" option of the configure file, the Windows UNC path that remote
-	clients needs to use to access such shared disks.
+	In Windows, sharing symbolic links over a network requires clients to
+	resolve them remotely. To enable this, besides sharing the pool directory,
+	you must also share all the disks independently, using the disk names
+	defined in the configuration file as share points. You must also specify
+	in the "share" option of the configuration file the Windows UNC path that
+	remote clients need to use to access these shared disks.
 
 	For example, operating from a server named "darkstar", you can use
 	the options:
@@ -254,16 +250,16 @@ Getting Started
 		:pool C:\pool
 		:share \\darkstar
 
-	and share the following dirs in the network:
+	and share the following directories over the network:
 
 		:\\darkstar\pool -> C:\pool
 		:\\darkstar\d1 -> F:\array
 		:\\darkstar\d2 -> G:\array
 		:\\darkstar\d3 -> H:\array
 
-	to allow remote clients to access all the files at \\darkstar\\pool.
+	to allow remote clients to access all the files at \\darkstar\pool.
 
-	You may also need to configure remote clients enabling access at remote
+	You may also need to configure remote clients to enable access to remote
 	symlinks with the command:
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
@@ -271,7 +267,7 @@ Getting Started
   Undeleting
 	SnapRAID is more like a backup program than a RAID system, and it
 	can be used to restore or undelete files to their previous state using
-	the -f, --filter option :
+	the -f, --filter option:
 
 		:snapraid fix -f FILE
 
@@ -280,35 +276,35 @@ Getting Started
 		:snapraid fix -f DIR/
 
 	You can also use it to recover only accidentally deleted files inside
-	a directory using the -m, --filter-missing option, that restores
-	only missing files, leaving untouched all the others.
+	a directory using the -m, --filter-missing option, which restores
+	only missing files, leaving all others untouched.
 
 		:snapraid fix -m -f DIR/
 
-	Or to recover all the deleted files in all the drives with:
+	Or to recover all the deleted files on all drives with:
 
 		:snapraid fix -m
 
   Recovering
-	The worst happened, and you lost one or more disks!
+	The worst has happened, and you have lost one or more disks!
 
 	DO NOT PANIC! You will be able to recover them!
 
-	The first thing you have to do is to avoid further changes at your disk array.
-	Disable any remote connection to it, any scheduled process, including any
-	scheduled SnapRAID nightly sync or scrub.
+	The first thing you must do is avoid further changes to your disk array.
+	Disable any remote connections to it and any scheduled processes, including
+	any scheduled SnapRAID nightly sync or scrub.
 
 	Then proceed with the following steps.
 
     STEP 1 -> Reconfigure
-	You need some space to recover, even better if you already have additional
-	spare disks, but in case, also an external USB or remote disk is enough.
+	You need some space to recover, ideally on additional
+	spare disks, but an external USB or remote disk will suffice.
 
-	Change the SnapRAID configuration file to make the "data" or "parity"
-	option of the failed disk to point to the place where you have enough empty
+	Modify the SnapRAID configuration file to make the "data" or "parity"
+	option of the failed disk point to a location with enough empty
 	space to recover the files.
 
-	For example, if you have that disk "d1" failed, you can change from:
+	For example, if disk "d1" has failed, change from:
 
 		:data d1 /mnt/disk1/
 
@@ -316,86 +312,87 @@ Getting Started
 
 		:data d1 /mnt/new_spare_disk/
 
-	If the disk to recover is a parity disk, change the appropriate "parity"
+	If the disk to recover is a parity disk, update the appropriate "parity"
 	option.
-	If you have more broken disks, change all their configuration options.
+	If you have multiple failed disks, update all their configuration options.
 
     STEP 2 -> Fix
 	Run the fix command, storing the log in an external file with:
 
 		:snapraid -d NAME -l fix.log fix
 
-	Where NAME is the name of the disk, like "d1" as in our previous example.
-	In case the disk to recover is a parity disk, use the "parity", "2-parity"
-	names.
-	If you have more broken disks, use multiple -d options to specify all
+	Where NAME is the name of the disk, such as "d1" in our previous example.
+	If the disk to recover is a parity disk, use the names "parity", "2-parity",
+	etc.
+	If you have multiple failed disks, use multiple -d options to specify all
 	of them.
 
 	This command will take a long time.
 
-	Take care that you need also few gigabytes free to store the fix.log file.
-	Run it from a disk with some free space.
+	Ensure you have a few gigabytes free to store the fix.log file.
+	Run it from a disk with sufficient free space.
 
-	Now you have recovered all the recoverable. If some file is partially or totally
-	unrecoverable, it will be renamed adding the ".unrecoverable" extension.
+	Now you have recovered all that is recoverable. If some files are partially
+	or totally unrecoverable, they will be renamed by adding the ".unrecoverable"
+	extension.
 
-	You can get a detailed list of all the unrecoverable blocks in the fix.log file
-	checking all the lines starting with "unrecoverable:"
+	You can find a detailed list of all unrecoverable blocks in the fix.log file
+	by checking all lines starting with "unrecoverable:".
 
-	If you are not satisfied of the recovering, you can retry it as many
-	time you wish.
+	If you are not satisfied with the recovery, you can retry it as many
+	times as you wish.
 
 	For example, if you have removed files from the array after the last
-	"sync", this may result in some other files not recovered.
+	"sync", this may result in some files not being recovered.
 	In this case, you can retry the "fix" using the -i, --import option,
-	specifying where these files are now, to include them again in the
-	recovering process.
+	specifying where these files are now to include them again in the
+	recovery process.
 
-	If you are satisfied of the recovering, you can now proceed further,
-	but take care that after syncing you cannot retry the "fix" command
+	If you are satisfied with the recovery, you can proceed further,
+	but note that after syncing, you cannot retry the "fix" command
 	anymore!
 
     STEP 3 -> Check
-	As paranoid check, you can now run a "check" command to ensure that
-	everything is OK on the recovered disk.
+	As a cautious check, you can now run a "check" command to ensure that
+	everything is correct on the recovered disk.
 
 		:snapraid -d NAME -a check
 
-	Where NAME is the name of the disk, like "d1" as in our previous example.
+	Where NAME is the name of the disk, such as "d1" in our previous example.
 
-	The options -d and -a tell SnapRAID to check only the specified disk,
-	and ignore all the parity data.
+	The -d and -a options tell SnapRAID to check only the specified disk
+	and ignore all parity data.
 
-	This command will take a long time, but if you are not paranoid,
+	This command will take a long time, but if you are not overly cautious,
 	you can skip it.
 
     STEP 4 -> Sync
-	Run the "sync" command to re-synchronize the array with the new disk.
+	Run the "sync" command to resynchronize the array with the new disk.
 
 		:snapraid sync
 
 	If everything is recovered, this command is immediate.
 
 Commands
-	SnapRAID provides a few simple commands that allow to:
+	SnapRAID provides a few simple commands that allow you to:
 
-	* Prints the status of the array -> "status"
-	* Controls the disks -> "smart", "probe", "up", "down"
-	* Makes a backup/snapshot -> "sync"
-	* Periodically checks data -> "scrub"
+	* Print the status of the array -> "status"
+	* Control the disks -> "smart", "probe", "up", "down"
+	* Make a backup/snapshot -> "sync"
+	* Periodically check data -> "scrub"
 	* Restore the last backup/snapshot -> "fix".
 
-	Take care that the commands have to be written in lower case.
+	Commands must be written in lowercase.
 
   status
 	Prints a summary of the state of the disk array.
 
-	It includes information about the parity fragmentation, how old
-	are the blocks without checking, and all the recorded silent
+	It includes information about parity fragmentation, how old
+	the blocks are without checking, and all recorded silent
 	errors encountered while scrubbing.
 
-	Note that the information presented refers at the latest time you
-	run "sync". Later modifications are not taken into account.
+	The information presented refers to the latest time you
+	ran "sync". Later modifications are not taken into account.
 
 	If bad blocks were detected, their block numbers are listed.
 	To fix them, you can use the "fix -e" command.
@@ -410,26 +407,26 @@ Commands
 	Prints a SMART report of all the disks in the system.
 
 	It includes an estimation of the probability of failure in the next
-	year allowing to plan maintenance replacements of the disks that show
+	year, allowing you to plan maintenance replacements of disks that show
 	suspicious attributes.
 
-	This probability estimation obtained correlating the SMART attributes
-	of the disks, with the Backblaze data available at:
+	This probability estimation is obtained by correlating the SMART attributes
+	of the disks with the Backblaze data available at:
 
 		:https://www.backblaze.com/hard-drive-test-data.html
 
 	If SMART reports that a disk is failing, "FAIL" or "PREFAIL" is printed
 	for that disk, and SnapRAID returns with an error.
-	In this case an immediate replacement of the disk is highly recommended.
+	In this case, immediate replacement of the disk is highly recommended.
 
 	Other possible strings are:
-		logfail - In the past some attributes were lower than
+		logfail - In the past, some attributes were lower than
 			the threshold.
 		logerr - The device error log contains errors.
 		selferr - The device self-test log contains errors.
 
-	If the -v, --verbose option is specified a deeper statistical analysis
-	is provided. This analysis can help you to decide if you need more
+	If the -v, --verbose option is specified, a deeper statistical analysis
+	is provided. This analysis can help you decide if you need more
 	or less parity.
 
 	This command uses the "smartctl" tool and is equivalent to running
@@ -459,80 +456,80 @@ Commands
   up
 	Spins up all the disks of the array.
 
-	You can spin-up only some specific disks using the -d, --filter-disk option.
+	You can spin up only specific disks using the -d, --filter-disk option.
 
-	Take care that spinning-up all the disks at the same time needs a lot of power.
-	Ensure that your power-supply can sustain that.
+	Spinning up all the disks at the same time requires a lot of power.
+	Ensure that your power supply can sustain it.
 
 	Nothing is modified.
 
   down
 	Spins down all the disks of the array.
 
-	This command uses the "smartctl" tool, and it's equivalent to run
-	"smartctl -s standby,now" on all the devices.
+	This command uses the "smartctl" tool and is equivalent to running
+	"smartctl -s standby,now" on all devices.
 
-	You can spin-down only some specific disks using the -d, --filter-disk
+	You can spin down only specific disks using the -d, --filter-disk
 	option.
 
-	To automatically spin down on error, you can use the option
-	-s, --spin-down-on-error with any other command, which is equivalent
-	to running "down" manually when an error occurs.
+	To automatically spin down on error, you can use the -s, --spin-down-on-error
+	option with any other command, which is equivalent to running "down" manually
+	when an error occurs.
 
 	Nothing is modified.
 
   diff
-	Lists all the files modified from the last "sync" that need to have
+	Lists all the files modified since the last "sync" that need to have
 	their parity data recomputed.
 
-	This command doesn't check the file data, but only the file time-stamp
-	size and inode.
+	This command doesn't check the file data, but only the file timestamp,
+	size, and inode.
 
-	At the end of the command, you'll get a summary of the file changes
-	grouped by:
-		equal - Files equal at before.
+	After listing all changed files, a summary of the changes is
+	presented, grouped by:
+		equal - Files unchanged from before.
 		added - Files added that were not present before.
 		removed - Files removed.
-		updated - Files with a different size or time-stamp, meaning that
-			they were modified.
-		moved - Files moved to a different directory of the same disk.
-			They are identified by having the same name, size, time-stamp
-			and inode, but different directory.
-		copied - Files copied in the same or different disk. Note that if in
-			true they are moved to a different disk, you'll also have
-			them counted in "removed".
+		updated - Files with a different size or timestamp, meaning they
+			were modified.
+		moved - Files moved to a different directory on the same disk.
+			They are identified by having the same name, size, timestamp,
+			and inode, but a different directory.
+		copied - Files copied on the same or a different disk. Note that if
+			they are truly moved to a different disk, they will also be
+			counted in "removed".
 			They are identified by having the same name, size, and
-			time-stamp. But if the sub-second time-stamp is zero,
-			then the full path should match, and not only the name.
-		restored - Files with a different inode but with name, size and time-stamp
-			matching. These are usually files restored after being deleted.
+			timestamp. If the sub-second timestamp is zero,
+			the full path must match, not just the name.
+		restored - Files with a different inode but matching name, size, and timestamp.
+			These are usually files restored after being deleted.
 
 	If a "sync" is required, the process return code is 2, instead of the
-	default 0. The return code 1 is instead for a generic error condition.
+	default 0. The return code 1 is used for a generic error condition.
 
 	Nothing is modified.
 
   sync
-	Updates the parity information. All the modified files
+	Updates the parity information. All modified files
 	in the disk array are read, and the corresponding parity
 	data is updated.
 
-	You can stop this process at any time pressing Ctrl+C,
+	You can stop this process at any time by pressing Ctrl+C,
 	without losing the work already done.
-	At the next run the "sync" process will start where
-	interrupted.
+	At the next run, the "sync" process will resume where
+	it was interrupted.
 
-	If during the process, silent or input/output errors are found,
+	If silent or input/output errors are found during the process,
 	the corresponding blocks are marked as bad.
 
 	Files are identified by path and/or inode and checked by
-	size and time-stamp.
-	If the file size or time-stamp are different, the parity data
-	is recomputed for the whole file.
-	If the file is moved or renamed in the same disk, keeping the
+	size and timestamp.
+	If the file size or timestamp differs, the parity data
+	is recomputed for the entire file.
+	If the file is moved or renamed on the same disk, keeping the
 	same inode, the parity is not recomputed.
 	If the file is moved to another disk, the parity is recomputed,
-	but the previously computed hash information is kept.
+	but the previously computed hash information is retained.
 
 	The "content" and "parity" files are modified if necessary.
 	The files in the array are NOT modified.
@@ -541,95 +538,93 @@ Commands
 	Scrubs the array, checking for silent or input/output errors in data
 	and parity disks.
 
-	For each command invocation, about the 8% of the array is checked, but
-	nothing that was already scrubbed in the last 10 days.
-	This means that scrubbing once a week, every bit of data is checked
-	at least one time every three months.
+	For each command invocation, approximately 8% of the array is checked, excluding
+	data already scrubbed in the last 10 days.
+	This means that scrubbing once a week ensures every bit of data is checked
+	at least once every three months.
 
 	You can define a different scrub plan or amount using the -p, --plan
-	option that takes as argument:
+	option, which accepts:
 	bad - Scrub blocks marked bad.
-	new - Scrub just synced blocks not yet scrubbed.
+	new - Scrub just-synced blocks not yet scrubbed.
 	full - Scrub everything.
-	0-100 - Scrub the exact percentage of blocks.
+	0-100 - Scrub the specified percentage of blocks.
 
 	If you specify a percentage amount, you can also use the -o, --older-than
 	option to define how old the block should be.
-	The oldest blocks are scrubbed first ensuring an optimal check.
-	If instead you want to scrub the just synced blocks, not yet scrubbed,
-	you should use the "-p new" option.
+	The oldest blocks are scrubbed first, ensuring an optimal check.
+	If you want to scrub only the just-synced blocks not yet scrubbed,
+	use the "-p new" option.
 
-	To get the details of the scrub status use the "status" command.
+	To get details of the scrub status, use the "status" command.
 
-	For any silent or input/output error found the corresponding blocks
+	For any silent or input/output error found, the corresponding blocks
 	are marked as bad in the "content" file.
-	These bad blocks are listed in "status", and can be fixed with "fix -e".
-	After the fix, at the next scrub they will be rechecked, and if found
+	These bad blocks are listed in "status" and can be fixed with "fix -e".
+	After the fix, at the next scrub, they will be rechecked, and if found
 	corrected, the bad mark will be removed.
 	To scrub only the bad blocks, you can use the "scrub -p bad" command.
 
-	It's recommended to run "scrub" only on a synced array, to avoid to
-	have reported error caused by unsynced data. These errors are recognized
+	It's recommended to run "scrub" only on a synced array to avoid
+	reported errors caused by unsynced data. These errors are recognized
 	as not being silent errors, and the blocks are not marked as bad,
 	but such errors are reported in the output of the command.
 
-	Files are identified only by path, and not by inode.
-
 	The "content" file is modified to update the time of the last check
-	of each block, and to mark bad blocks.
+	for each block and to mark bad blocks.
 	The "parity" files are NOT modified.
 	The files in the array are NOT modified.
 
   fix
-	Fix all the files and the parity data.
+	Fixes all the files and the parity data.
 
-	All the files and the parity data are compared with the snapshot
+	All files and parity data are compared with the snapshot
 	state saved in the last "sync".
-	If a difference is found, it's reverted to the stored snapshot.
+	If a difference is found, it is reverted to the stored snapshot.
 
-	The "fix" command doesn't differentiate between errors and
+	WARNING! The "fix" command does not differentiate between errors and
 	intentional modifications. It unconditionally reverts the file state
-	at the last "sync".
+	to the last "sync".
 
-	If no other option is specified the full array is processed.
+	If no other option is specified, the entire array is processed.
 	Use the filter options to select a subset of files or disks to operate on.
 
-	To only fix the blocks marked bad during "sync" and "scrub",
+	To fix only the blocks marked bad during "sync" and "scrub",
 	use the -e, --filter-error option.
-	As difference from other filter options, with this one the fixes are
-	applied only to files that are not modified from the latest "sync".
+	Unlike other filter options, this one applies fixes only to files that are
+	unchanged since the latest "sync".
 
-	All the files that cannot be fixed are renamed adding the
+	All files that cannot be fixed are renamed by adding the
 	".unrecoverable" extension.
 
-	Before fixing, the full array is scanned to find any moved file,
-	after the last "sync" operation.
-	These files are identified by their time-stamp, ignoring their name
-	and directory, and are used in the recovering process if necessary.
+	Before fixing, the entire array is scanned to find any files moved
+	since the last "sync" operation.
+	These files are identified by their timestamp, ignoring their name
+	and directory, and are used in the recovery process if necessary.
 	If you moved some of them outside the array, you can use the -i, --import
 	option to specify additional directories to scan.
 
-	Files are identified only by path, and not by inode.
+	Files are identified only by path, not by inode.
 
 	The "content" file is NOT modified.
 	The "parity" files are modified if necessary.
 	The files in the array are modified if necessary.
 
   check
-	Verify all the files and the parity data.
+	Verifies all the files and the parity data.
 
-	It works like "fix", but it only simulates a recovery and no change
-	is written in the array.
+	It works like "fix", but it only simulates a recovery and no changes
+	are written to the array.
 
-	This command is mostly intended for manual verification,
-	like after a recovery process or in other special conditions.
-	For periodic and scheduled checks uses "scrub".
+	This command is primarily intended for manual verification,
+	such as after a recovery process or in other special conditions.
+	For periodic and scheduled checks, use "scrub".
 
 	If you use the -a, --audit-only option, only the file
 	data is checked, and the parity data is ignored for a
 	faster run.
 
-	Files are identified only by path, and not by inode.
+	Files are identified only by path, not by inode.
 
 	Nothing is modified.
 
@@ -640,188 +635,188 @@ Commands
 	Nothing is modified.
 
   dup
-	Lists all the duplicate files. Two files are assumed equal if their
-	hashes are matching. The file data is not read, but only the
-	pre-computed hashes are used.
+	Lists all duplicate files. Two files are assumed equal if their
+	hashes match. The file data is not read; only the
+	precomputed hashes are used.
 
 	Nothing is modified.
 
   pool
-	Creates or updates in the "pooling" directory a virtual view of all
-	the files of your disk array.
+	Creates or updates a virtual view of all
+	the files in your disk array in the "pooling" directory.
 
-	The files are not really copied here, but just linked using
+	The files are not copied but linked using
 	symbolic links.
 
-	When updating, all the present symbolic links and empty
-	sub-directories are deleted and replaced with the new
-	view of the array. Any other regular file is left in place.
+	When updating, all existing symbolic links and empty
+	subdirectories are deleted and replaced with the new
+	view of the array. Any other regular files are left in place.
 
 	Nothing is modified outside the pool directory.
 
   devices
-	Prints the low level devices used by the array.
+	Prints the low-level devices used by the array.
 
-	This command prints the devices associations in place in the array,
-	and it's mainly intended as a script interface.
+	This command displays the device associations in the array
+	and is mainly intended as a script interface.
 
-	The first two columns are the low level device id and path.
-	The next two columns are the high level device id and path.
-	The latest column if the disk name in the array.
+	The first two columns are the low-level device ID and path.
+	The next two columns are the high-level device ID and path.
+	The last column is the disk name in the array.
 
-	In most cases you have one low level device for each disk in the
+	In most cases, you have one low-level device for each disk in the
 	array, but in some more complex configurations, you may have multiple
-	low level devices used by a single disk in the array.
+	low-level devices used by a single disk in the array.
 
 	Nothing is modified.
 
   touch
-	Sets arbitrarily the sub-second time-stamp of all the files
-	that have it at zero.
+	Sets an arbitrary sub-second timestamp for all files
+	that have it set to zero.
 
-	This improves the SnapRAID capability to recognize moved
-	and copied files as it makes the time-stamp almost unique,
+	This improves SnapRAID's ability to recognize moved
+	and copied files, as it makes the timestamp almost unique,
 	removing possible duplicates.
 
-	More specifically, if the sub-second time-stamp is not zero,
+	More specifically, if the sub-second timestamp is not zero,
 	a moved or copied file is identified as such if it matches
-	the name, size and time-stamp. If instead the sub-second time-stamp
-	is zero, it's considered a copy only if it matches the full path,
-	size and time-stamp.
+	the name, size, and timestamp. If the sub-second timestamp
+	is zero, it is considered a copy only if it matches the full path,
+	size, and timestamp.
 
-	Note that the second precision time-stamp is not modified,
+	The second-precision timestamp is not modified,
 	and all the dates and times of your files will be maintained.
 
   rehash
-	Schedules a rehash of the whole array.
+	Schedules a rehash of the entire array.
 
 	This command changes the hash kind used, typically when upgrading
-	from a 32 bits system to a 64 bits one, to switch from
+	from a 32-bit system to a 64-bit one, to switch from
 	MurmurHash3 to the faster SpookyHash.
 
 	If you are already using the optimal hash, this command
-	does nothing and tells you that nothing has to be done.
+	does nothing and informs you that no action is needed.
 
-	The rehash isn't done immediately, but it takes place
+	The rehash is not performed immediately but takes place
 	progressively during "sync" and "scrub".
 
-	You can get the rehash state using "status".
+	You can check the rehash state using "status".
 
 	During the rehash, SnapRAID maintains full functionality,
-	with the only exception of "dup" not able to detect duplicated
+	with the only exception that "dup" cannot detect duplicated
 	files using a different hash.
 
 Options
 	SnapRAID provides the following options:
 
 	-c, --conf CONFIG
-		Selects the configuration file to use. If not specified in Unix
-		it's used the file "/usr/local/etc/snapraid.conf" if it exists,
-		or "/etc/snapraid.conf" otherwise.
-		In Windows it's used the file "snapraid.conf" in the same
-		directory of "snapraid.exe".
+		Selects the configuration file to use. If not specified, in Unix
+		it uses the file "/usr/local/etc/snapraid.conf" if it exists,
+		otherwise "/etc/snapraid.conf".
+		In Windows, it uses the file "snapraid.conf" in the same
+		directory as "snapraid.exe".
 
 	-f, --filter PATTERN
 		Filters the files to process in "check" and "fix".
-		Only the files matching the entered pattern are processed.
-		This option can be used many times.
-		See the PATTERN section for more details in the
+		Only the files matching the specified pattern are processed.
+		This option can be used multiple times.
+		See the PATTERN section for more details on
 		pattern specifications.
-		In Unix, ensure to quote globbing chars if used.
+		In Unix, ensure globbing characters are quoted if used.
 		This option can be used only with "check" and "fix".
-		Note that it cannot be used with "sync" and "scrub", because they always
-		process the whole array.
+		It cannot be used with "sync" and "scrub", as they always
+		process the entire array.
 
 	-d, --filter-disk NAME
-		Filters the disks to process in "check", "fix", "up" and "down".
-		You must specify a disk name as named in the configuration
+		Filters the disks to process in "check", "fix", "up", and "down".
+		You must specify a disk name as defined in the configuration
 		file.
 		You can also specify parity disks with the names: "parity", "2-parity",
-		"3-parity", ... to limit the operations a specific parity disk.
-		If you combine more --filter, --filter-disk and --filter-missing options,
-		only files matching all the set of filters are selected.
-		This option can be used many times.
-		This option can be used only with "check", "fix", "up" and "down".
-		Note that it cannot be used with "sync" and "scrub", because they always
-		process the whole array.
+		"3-parity", etc., to limit operations to a specific parity disk.
+		If you combine multiple --filter, --filter-disk, and --filter-missing options,
+		only files matching all the filters are selected.
+		This option can be used multiple times.
+		This option can be used only with "check", "fix", "up", and "down".
+		It cannot be used with "sync" and "scrub", as they always
+		process the entire array.
 
 	-m, --filter-missing
 		Filters the files to process in "check" and "fix".
-		Only the files missing/deleted from the array are processed.
-		When used with "fix", this is a kind of "undelete" command.
-		If you combine more --filter, --filter-disk and --filter-missing options,
-		only files matching all the set of filters are selected.
+		Only the files missing or deleted from the array are processed.
+		When used with "fix", this acts as an "undelete" command.
+		If you combine multiple --filter, --filter-disk, and --filter-missing options,
+		only files matching all the filters are selected.
 		This option can be used only with "check" and "fix".
-		Note that it cannot be used with "sync" and "scrub", because they always
-		process the whole array.
+		It cannot be used with "sync" and "scrub", as they always
+		process the entire array.
 
 	-e, --filter-error
-		Process the files with errors in "check" and "fix".
+		Processes the files with errors in "check" and "fix".
 		It processes only files that have blocks marked with silent
-		or input/output errors during "sync" and "scrub", and listed in "status".
+		or input/output errors during "sync" and "scrub", as listed in "status".
 		This option can be used only with "check" and "fix".
 
 	-p, --plan PERC|bad|new|full
 		Selects the scrub plan. If PERC is a numeric value from 0 to 100,
-		it's interpreted as the percentage of blocks to scrub.
-		Instead of a percentage, you can also specify a plan:
-		"bad" scrubs bad blocks, "new" the blocks not yet scrubbed,
-		and "full" for everything.
+		it is interpreted as the percentage of blocks to scrub.
+		Instead of a percentage, you can specify a plan:
+		"bad" scrubs bad blocks, "new" scrubs blocks not yet scrubbed,
+		and "full" scrubs everything.
 		This option can be used only with "scrub".
 
 	-o, --older-than DAYS
-		Selects the older the part of the array to process in "scrub".
-		DAYS is the minimum age in days for a block to be scrubbed,
-		default is 10.
-		Blocks marked as bad are always scrubbed despite this option.
+		Selects the oldest part of the array to process in "scrub".
+		DAYS is the minimum age in days for a block to be scrubbed;
+		the default is 10.
+		Blocks marked as bad are always scrubbed regardless of this option.
 		This option can be used only with "scrub".
 
 	-a, --audit-only
-		In "check" verifies the hash of the files without
-		doing any kind of check on the parity data.
-		If you are interested in checking only the file data this
-		option can speedup a lot the checking process.
+		In "check", verifies the hash of the files without
+		checking the parity data.
+		If you are interested only in checking the file data, this
+		option can significantly speed up the checking process.
 		This option can be used only with "check".
 
 	-h, --pre-hash
-		In "sync" runs a preliminary hashing phase of all the new data
-		to have an additional verification before the parity computation.
-		Usually in "sync" no preliminary hashing is done, and the new
-		data is hashed just before the parity computation when it's read
+		In "sync", runs a preliminary hashing phase of all new data
+		for additional verification before the parity computation.
+		Usually, in "sync", no preliminary hashing is done, and the new
+		data is hashed just before the parity computation when it is read
 		for the first time.
-		Unfortunately, this process happens when the system is under
-		heavy load, with all disks spinning and with a busy CPU.
+		This process occurs when the system is under
+		heavy load, with all disks spinning and a busy CPU.
 		This is an extreme condition for the machine, and if it has a
-		latent hardware problem, it's possible to encounter silent errors
-		what cannot be detected because the data is not yet hashed.
-		To avoid this risk, you can enable the "pre-hash" mode and have
-		all the data read two times to ensure its integrity.
-		This option also verifies the files moved inside the array,
-		to ensure that the move operation went successfully, and in case
-		to block the sync and to allow to run a fix operation.
+		latent hardware problem, silent errors may go undetected
+		because the data is not yet hashed.
+		To avoid this risk, you can enable the "pre-hash" mode to have
+		all the data read twice to ensure its integrity.
+		This option also verifies files moved within the array
+		to ensure the move operation was successful and, if necessary,
+		allows you to run a fix operation before proceeding.
 		This option can be used only with "sync".
 
 	-i, --import DIR
-		Imports from the specified directory any file that you deleted
+		Imports from the specified directory any files deleted
 		from the array after the last "sync".
-		If you still have such files, they could be used by "check"
-		and "fix" to improve the recover process.
-		The files are read also in sub-directories and they are
+		If you still have such files, they can be used by "check"
+		and "fix" to improve the recovery process.
+		The files are read, including in subdirectories, and are
 		identified regardless of their name.
 		This option can be used only with "check" and "fix".
 
 	-s, --spin-down-on-error
-		On any error, spin down all managed disks before exiting with
+		On any error, spins down all managed disks before exiting with
 		a non-zero status code. This prevents the drives from
 		remaining active and spinning after an aborted operation,
-		helping to avoid unnecessary heat build-up and power
+		helping to avoid unnecessary heat buildup and power
 		consumption. Use this option to ensure disks are safely
 		stopped even when a command fails.
 
 	-w, --bw-limit RATE
 		Applies a global bandwidth limit for all disks. The RATE is
 		the number of bytes per second. You can specify a multiplier
-		as K, M, or G (e.g., --bw-limit 1G).
+		such as K, M, or G (e.g., --bw-limit 1G).
 
 	-A, --stats
 		Enables an extended status view that shows additional information.
@@ -836,8 +831,8 @@ Options
 
 		The second graph shows the percentage of time spent waiting
 		over the past 100 seconds. The slowest disk is expected to
-		cause most of the wait time, while the other disks should have
-		little or no wait because they can use their buffered stripes. 
+		cause most of the wait time, while other disks should have
+		little or no wait time because they can use their buffered stripes.
 		This graph also shows the time spent waiting for hash
 		calculations and RAID computations.
 
@@ -848,136 +843,136 @@ Options
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
-		size that before was not.
-		If SnapRAID detects a such condition, it stops proceeding
+		size that was previously non-zero.
+		If SnapRAID detects such a condition, it stops proceeding
 		unless you specify this option.
-		This allows to easily detect when after a system crash,
+		This allows you to easily detect when, after a system crash,
 		some accessed files were truncated.
 		This is a possible condition in Linux with the ext3/ext4
-		file-systems.
+		file systems.
 		This option can be used only with "sync".
 
 	-E, --force-empty
 		Forces the insecure operation of syncing a disk with all
 		the original files missing.
 		If SnapRAID detects that all the files originally present
-		in the disk are missing or rewritten, it stops proceeding
+		on the disk are missing or rewritten, it stops proceeding
 		unless you specify this option.
-		This allows to easily detect when a data file-system is not
+		This allows you to easily detect when a data file system is not
 		mounted.
 		This option can be used only with "sync".
 
 	-U, --force-uuid
-		Forces the insecure operation of syncing, checking and fixing
+		Forces the insecure operation of syncing, checking, and fixing
 		with disks that have changed their UUID.
 		If SnapRAID detects that some disks have changed UUID,
 		it stops proceeding unless you specify this option.
-		This allows to detect when your disks are mounted in the
+		This allows you to detect when your disks are mounted at the
 		wrong mount points.
-		It's anyway allowed to have a single UUID change with
-		single parity, and more with multiple parity, because it's
-		the normal case of replacing disks after a recovery.
-		This option can be used only with "sync", "check" or
+		It is, however, allowed to have a single UUID change with
+		single parity, and more with multiple parity, because this is
+		the normal case when replacing disks after a recovery.
+		This option can be used only with "sync", "check", or
 		"fix".
 
 	-D, --force-device
-		Forces the insecure operation of fixing with inaccessible disks,
+		Forces the insecure operation of fixing with inaccessible disks
 		or with disks on the same physical device.
-		Like if you lost two data disks, and you have a spare disk to recover
-		only the first one, and you want to ignore the second inaccessible disk.
-		Or if you want to recover a disk in the free space left in an
+		For example, if you lost two data disks and have a spare disk to recover
+		only the first one, you can ignore the second inaccessible disk.
+		Or, if you want to recover a disk in the free space left on an
 		already used disk, sharing the same physical device.
 		This option can be used only with "fix".
 
 	-N, --force-nocopy
-		In "sync", "check and "fix", disables the copy detection heuristic.
-		Without this option SnapRAID assumes that files with same
-		attributes, like name, size and time-stamp are copies with the
+		In "sync", "check", and "fix", disables the copy detection heuristic.
+		Without this option, SnapRAID assumes that files with the same
+		attributes, such as name, size, and timestamp, are copies with the
 		same data.
-		This allows to identify copied or moved files from one disk
-		to another, and to reuse the already computed hash information
+		This allows identification of copied or moved files from one disk
+		to another and reuses the already computed hash information
 		to detect silent errors or to recover missing files.
-		This behavior, in some rare cases, may result in false positives,
-		or in a slow process due the many hash verification, and this
-		option allows to resolve them.
-		This option can be used only with "sync", "check" and "fix".
+		In some rare cases, this behavior may result in false positives
+		or a slow process due to many hash verifications, and this
+		option allows you to resolve such issues.
+		This option can be used only with "sync", "check", and "fix".
 
 	-F, --force-full
-		In "sync" forces a full recomputation of the parity.
-		This option can be used when you add a new parity level, or if
-		you reverted back to an old content file using a more recent parity data.
+		In "sync", forces a full recomputation of the parity.
+		This option can be used when you add a new parity level or if
+		you reverted to an old content file using more recent parity data.
 		Instead of recreating the parity from scratch, this allows
-		to reuse the hashes present in the content file to validate data,
-		and to maintain data protection during the "sync" process using
-		the parity data you have.
+		you to reuse the hashes present in the content file to validate data
+		and maintain data protection during the "sync" process using
+		the existing parity data.
 		This option can be used only with "sync".
 
 	-R, --force-realloc
-		In "sync" forces a full reallocation of files and rebuild of the parity.
-		This option can be used to completely reallocate all the files
-		removing the fragmentation, but reusing the hashes present in the content
+		In "sync", forces a full reallocation of files and rebuild of the parity.
+		This option can be used to completely reallocate all files,
+		removing fragmentation, while reusing the hashes present in the content
 		file to validate data.
 		This option can be used only with "sync".
-		WARNING! This option is for experts only, and it's highly
-		recommended to not use it.
+		WARNING! This option is for experts only, and it is highly
+		recommended not to use it.
 		You DO NOT have data protection during the "sync" operation.
 
 	-l, --log FILE
-		Write a detailed log in the specified file.
+		Writes a detailed log to the specified file.
 		If this option is not specified, unexpected errors are printed
-		on the screen, likely resulting in too much output in case of
-		many errors. When -l, --log is specified, on the screen, go only
-		fatal errors that makes SnapRAID to stop progress.
-		If the path starts with '>>' the file is opened
+		to the screen, potentially resulting in excessive output in case of
+		many errors. When -l, --log is specified, only
+		fatal errors that cause SnapRAID to stop are printed
+		to the screen.
+		If the path starts with '>>', the file is opened
 		in append mode. Occurrences of '%D' and '%T' in the name are
 		replaced with the date and time in the format YYYYMMDD and
-		HHMMSS. Note that in Windows batch files, you'll have to double
-		the '%' char, like result-%%D.log. And to use '>>' you'll have
-		to enclose the name in ", like ">>result.log".
+		HHMMSS. In Windows batch files, you must double
+		the '%' character, e.g., result-%%D.log. To use '>>', you must
+		enclose the name in quotes, e.g., ">>result.log".
 		To output the log to standard output or standard error,
-		you can use respectively ">&1" and ">&2".
+		you can use ">&1" and ">&2", respectively.
 
-	-L, --error-limit
+	-L, --error-limit NUMBER
 		Sets a new error limit before stopping execution.
-		By default SnapRAID stops if it encounters more than 100
-		Input/Output errors, meaning that likely a disk is going to
-		die.
-		This options affects "sync" and "scrub", that are allowed
-		to continue after the first bunch of disk errors, to try
-		to complete at most their operations.
-		Instead, "check" and "fix" always stop at the first error.
+		By default, SnapRAID stops if it encounters more than 100
+		input/output errors, indicating that a disk is likely failing.
+		This option affects "sync" and "scrub", which are allowed
+		to continue after the first set of disk errors to try
+		to complete their operations.
+		However, "check" and "fix" always stop at the first error.
 
 	-S, --start BLKSTART
-		Starts the processing from the specified
-		block number. It could be useful to retry to check
-		or fix some specific block, in case of a damaged disk.
-		It's present mainly for advanced manual recovering.
+		Starts processing from the specified
+		block number. This can be useful for retrying to check
+		or fix specific blocks in case of a damaged disk.
+		This option is mainly for advanced manual recovery.
 
 	-B, --count BLKCOUNT
 		Processes only the specified number of blocks.
-		It's present mainly for advanced manual recovering.
+		This option is mainly for advanced manual recovery.
 
-	-C, --gen-conf CONTENT_FILE
+	-C, --gen-conf CONTENT
 		Generates a dummy configuration file from an existing
 		content file.
-		The configuration file is written in the standard output,
-		and it doesn't overwrite an existing one.
+		The configuration file is written to standard output
+		and does not overwrite an existing one.
 		This configuration file also contains the information
-		needed to reconstruct the disk mount points, in case you
+		needed to reconstruct the disk mount points in case you
 		lose the entire system.
 
 	-v, --verbose
-		Prints more information on the screen.
-		If specified one time, it prints excluded files
-		and more stats.
+		Prints more information to the screen.
+		If specified once, it prints excluded files
+		and additional statistics.
 		This option has no effect on the log files.
 
 	-q, --quiet
-		Prints less information on the screen.
-		If specified one time, removes the progress bar, if two
-		times, the running operations, three times, the info
-		messages, four times the status messages.
-		Fatal errors are always printed on the screen.
+		Prints less information to the screen.
+		If specified once, it removes the progress bar; twice,
+		the running operations; three times, the info
+		messages; four times, the status messages.
+		Fatal errors are always printed to the screen.
 		This option has no effect on the log files.
 
 	-H, --help
@@ -988,192 +983,192 @@ Options
 
 Configuration
 	SnapRAID requires a configuration file to know where your disk array
-	is located, and where storing the parity information.
+	is located and where to store the parity information.
 
-	In Unix it's used the file "/usr/local/etc/snapraid.conf" if it exists,
-	or "/etc/snapraid.conf" otherwise.
-	In Windows it's used the file "snapraid.conf" in the same
-	directory of "snapraid.exe".
+	In Unix, it uses the file "/usr/local/etc/snapraid.conf" if it exists,
+	otherwise "/etc/snapraid.conf".
+	In Windows, it uses the file "snapraid.conf" in the same
+	directory as "snapraid.exe".
 
-	It should contain the following options (case sensitive):
+	It must contain the following options (case-sensitive):
 
   parity FILE [,FILE] ...
 	Defines the files to use to store the parity information.
-	The parity enables the protection from a single disk
-	failure, like RAID5.
+	The parity enables protection from a single disk
+	failure, similar to RAID5.
 
-	You can specify multiples files that should be in different disks.
+	You can specify multiple files, which must be on different disks.
 	When a file cannot grow anymore, the next one is used.
-	The total space available must be as big as the biggest data disk in
+	The total space available must be at least as large as the largest data disk in
 	the array.
 
-	You can add additional parity files at later time, but you
+	You can add additional parity files later, but you
 	cannot reorder or remove them.
 
-	Leaving the parity disks reserved for parity ensures that
-	it doesn't get fragmented, improving the performance.
+	Keeping the parity disks reserved for parity ensures that
+	they do not become fragmented, improving performance.
 
-	In Windows 256 MB are left unused in each disk to avoid the
+	In Windows, 256 MB is left unused on each disk to avoid the
 	warning about full disks.
 
-	This option is mandatory and it can be used only one time.
+	This option is mandatory and can be used only once.
 
   (2,3,4,5,6)-parity FILE [,FILE] ...
 	Defines the files to use to store extra parity information.
 
-	For each parity specified, one additional level of protection
+	For each parity level specified, one additional level of protection
 	is enabled:
 
 	* 2-parity enables RAID6 dual parity.
-	* 3-parity enables triple parity
-	* 4-parity enables quad (four) parity
-	* 5-parity enables penta (five) parity
-	* 6-parity enables hexa (six) parity
+	* 3-parity enables triple parity.
+	* 4-parity enables quad (four) parity.
+	* 5-parity enables penta (five) parity.
+	* 6-parity enables hexa (six) parity.
 
-	Each parity level requires the presence of all the previous parity
+	Each parity level requires the presence of all previous parity
 	levels.
 
-	The same considerations of the 'parity' option apply.
+	The same considerations as for the 'parity' option apply.
 
-	These options are optional and they can be used only one time.
+	These options are optional and can be used only once.
 
   z-parity FILE [,FILE] ...
-	Defines an alternate file and format to store the triple parity.
+	Defines an alternate file and format to store triple parity.
 
-	This option is an alternative at '3-parity' mainly intended for
-	low-end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
-	support the SSSE3 instructions set. In such cases it provides
-	a better performance.
+	This option is an alternative to '3-parity', primarily intended for
+	low-end CPUs like ARM or AMD Phenom, Athlon, and Opteron that do not
+	support the SSSE3 instruction set. In such cases, it provides
+	better performance.
 
-	This format is similar, but faster, at the one used by the ZFS RAIDZ3.
-	Like ZFS, it doesn't work beyond triple parity.
+	This format is similar to but faster than the one used by ZFS RAIDZ3.
+	Like ZFS, it does not work beyond triple parity.
 
-	When using '3-parity' you will be warned if it's recommended to use
-	the 'z-parity' format for a performance improvement.
+	When using '3-parity', you will be warned if it is recommended to use
+	the 'z-parity' format for performance improvement.
 
-	It's possible to convert from one format to another, adjusting
-	the configuration file with the wanted z-parity or 3-parity file,
+	It is possible to convert from one format to another by adjusting
+	the configuration file with the desired z-parity or 3-parity file
 	and using 'fix' to recreate it.
 
   content FILE
-	Defines the file to use to store the list and check-sums of all the
+	Defines the file to use to store the list and checksums of all the
 	files present in your disk array.
 
-	It can be placed in the disk used to store data, parity, or
+	It can be placed on a disk used for data, parity, or
 	any other disk available.
 	If you use a data disk, this file is automatically excluded
 	from the "sync" process.
 
-	This option is mandatory and it can be used more times to save
-	more copies of the same files.
+	This option is mandatory and can be used multiple times to save
+	multiple copies of the same file.
 
-	You have to store at least one copy for each parity disk used
-	plus one. Using some more doesn't hurt.
+	You must store at least one copy for each parity disk used
+	plus one. Using additional copies does not hurt.
 
   data NAME DIR
-	Defines the name and the mount point of the data disks of
-	the array. NAME is used to identify the disk, and it must
+	Defines the name and mount point of the data disks in
+	the array. NAME is used to identify the disk and must
 	be unique. DIR is the mount point of the disk in the
-	file-system.
+	file system.
 
-	You can change the mount point as you like, as long you
-	keep the NAME fixed.
+	You can change the mount point as needed, as long as
+	you keep the NAME fixed.
 
-	You should use one option for each data disk of the array.
+	You should use one option for each data disk in the array.
 
-	You can rename later a disk, changing the NAME directly
-	in the configuration file, and then run a 'sync' command.
-	In the rename case, the association is done using the stored
+	You can rename a disk later by changing the NAME directly
+	in the configuration file and then running a 'sync' command.
+	In the case of renaming, the association is done using the stored
 	UUID of the disks.
 
   nohidden
-	Excludes all the hidden files and directory.
-	In Unix hidden files are the ones starting with ".".
-	In Windows they are the ones with the hidden attribute.
+	Excludes all hidden files and directories.
+	In Unix, hidden files are those starting with ".".
+	In Windows, they are those with the hidden attribute.
 
   exclude/include PATTERN
-	Defines the file or directory patterns to exclude and include
+	Defines the file or directory patterns to exclude or include
 	in the sync process.
-	All the patterns are processed in the specified order.
+	All patterns are processed in the specified order.
 
 	If the first pattern that matches is an "exclude" one, the file
-	is excluded. If it's an "include" one, the file is included.
+	is excluded. If it is an "include" one, the file is included.
 	If no pattern matches, the file is excluded if the last pattern
 	specified is an "include", or included if the last pattern
 	specified is an "exclude".
 
-	See the PATTERN section for more details in the pattern
+	See the PATTERN section for more details on pattern
 	specifications.
 
-	This option can be used many times.
+	This option can be used multiple times.
 
   blocksize SIZE_IN_KIBIBYTES
-	Defines the basic block size in kibi bytes of the parity.
-	One kibi bytes is 1024 bytes.
+	Defines the basic block size in kibibytes for the parity.
+	One kibibyte is 1024 bytes.
 
-	The default blocksize is 256 and it should work for most cases.
+	The default blocksize is 256, which should work for most cases.
 
-	WARNING! This option is for experts only, and it's highly
-	recommended to not change it. To change again this value in
-	future you'll have to recreate the whole parity!
+	WARNING! This option is for experts only, and it is highly
+	recommended not to change it. To change this value in the
+	future, you will need to recreate the entire parity!
 
-	A reason to use a different blocksize is if you have a lot of small
-	files. In the order of many millions.
+	A reason to use a different blocksize is if you have many small
+	files, on the order of millions.
 
-	For each file, even of few bytes, a whole block of parity is allocated,
-	and with many files this may result in a lot of unused parity space.
-	And when you completely fill the parity disk, you are not
-	allowed to add more files in the data disks.
-	Anyway, the wasted parity doesn't sum between data disks. Wasted space
-	resulting from a high number of files in a data disk, limits only
-	the amount of data in such data disk and not in others.
+	For each file, even if only a few bytes, an entire block of parity is allocated,
+	and with many files, this may result in significant unused parity space.
+	When you completely fill the parity disk, you are not
+	allowed to add more files to the data disks.
+	However, the wasted parity does not accumulate across data disks. Wasted space
+	resulting from a high number of files on a data disk limits only
+	the amount of data on that data disk, not others.
 
-	As approximation, you can assume that half of the block size is
-	wasted for each file. For example, with 100000 files and a 256 KiB
-	block size, you are going to waste 13 GB of parity, that may result
-	in 13 GB less space available in the data disk.
+	As an approximation, you can assume that half of the block size is
+	wasted for each file. For example, with 100,000 files and a 256 KiB
+	block size, you will waste 12.8 GB of parity, which may result
+	in 12.8 GB less space available on the data disk.
 
-	You can get the amount of wasted space in each disk using "status".
-	This is the amount of space that you must leave free in the data
-	disks, or use for files not included in the array.
-	If this value is negative, it means that your are near to fill
+	You can check the amount of wasted space on each disk using "status".
+	This is the amount of space you must leave free on the data
+	disks or use for files not included in the array.
+	If this value is negative, it means you are close to filling
 	the parity, and it represents the space you can still waste.
 
-	To avoid the problem, you can use a bigger partition for parity.
-	For example, if you have the parity partition bigger than 13 GB
-	than data disks, you have enough extra space to handle up to 100000
-	files in each data disk.
+	To avoid this issue, you can use a larger partition for parity.
+	For example, if the parity partition is 12.8 GB larger than the data disks,
+	you have enough extra space to handle up to 100,000
+	files on each data disk without any wasted space.
 
-	A trick to get a bigger parity partition in Linux, is to format it
+	A trick to get a larger parity partition in Linux is to format it
 	with the command:
 
 		:mkfs.ext4 -m 0 -T largefile4 DEVICE
 
-	This results in about 1.5% of extra space. Meaning about 60 GB for
-	a 4 TB disk, that allows about 460000 files in each data disk without
+	This results in about 1.5% extra space, approximately 60 GB for
+	a 4 TB disk, which allows about 460,000 files on each data disk without
 	any wasted space.
 
   hashsize SIZE_IN_BYTES
-	Defines the hash size in bytes of the saved blocks.
+	Defines the hash size in bytes for the saved blocks.
 
-	The default hashsize is 16 bytes (128 bits), and it should work
+	The default hashsize is 16 bytes (128 bits), which should work
 	for most cases.
 
-	WARNING! This option is for experts only, and it's highly
-	recommended to not change it. To change again this value in
-	future you'll have to recreate the whole parity!
+	WARNING! This option is for experts only, and it is highly
+	recommended not to change it. To change this value in the
+	future, you will need to recreate the entire parity!
 
 	A reason to use a different hashsize is if your system has
-	small memory. As a rule of thumb SnapRAID usually requires
-	1 GiB of RAM memory for each 16 TB of data in the array.
+	limited memory. As a rule of thumb, SnapRAID typically requires
+	1 GiB of RAM for each 16 TB of data in the array.
 
 	Specifically, to store the hashes of the data, SnapRAID requires
-	about TS*(1+HS)/BS bytes of RAM memory.
-	Where TS is the total size in bytes of your disk array, BS is the
+	approximately TS*(1+HS)/BS bytes of RAM,
+	where TS is the total size in bytes of your disk array, BS is the
 	block size in bytes, and HS is the hash size in bytes.
 
-	For example with 8 disks of 4 TB and a block size of 256 KiB
-	(1 KiB = 1024 bytes), and an hash size of 16, you get:
+	For example, with 8 disks of 4 TB, a block size of 256 KiB
+	(1 KiB = 1024 bytes), and a hash size of 16, you get:
 
 	:RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 
@@ -1185,30 +1180,29 @@ Configuration
 
 	:RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 
-	Switching to both a hash size of 8, and a block size of 512 you get:
+	Switching to both a hash size of 8 and a block size of 512, you get:
 
 	:RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 
   autosave SIZE_IN_GIGABYTES
-	Automatically save the state when syncing or scrubbing after the
+	Automatically saves the state when syncing or scrubbing after the
 	specified amount of GB processed.
-	This option is useful to avoid to restart from scratch long "sync"
-	commands interrupted by a machine crash, or any other event that
-	may interrupt SnapRAID.
+	This option is useful to avoid restarting long "sync"
+	commands from scratch if interrupted by a machine crash or any other event.
 
   temp_limit TEMPERATURE_CELSIUS
 	Sets the maximum allowed disk temperature in Celsius. When specified,
 	SnapRAID periodically checks the temperature of all disks using the
 	smartctl tool. The current disk temperatures are displayed while
 	SnapRAID is operating. If any disk exceeds this limit, all operations
-	stop and the disks are spun down (put into standby) for the duration
-	defined by "thermal_sleep".
+	stop, and the disks are spun down (put into standby) for the duration
+	defined by "temp_sleep".
 
 	During operation, SnapRAID also analyzes the heating curve of each
 	disk and estimates the long-term steady temperature they are expected
 	to reach if activity continues. This predicted steady temperature is
 	shown in parentheses next to the current value and helps assess
-	whether the system’s cooling is adequate.
+	whether the system's cooling is adequate.
 
 	To perform this analysis, SnapRAID needs a reference for the ambient
 	system temperature. It first attempts to read it from available
@@ -1217,7 +1211,7 @@ Configuration
 	reference.
 
 	Normally, SnapRAID shows only the temperature of the hottest disk.
-	To display the temperature of all disks, use the -A or --stats option. 
+	To display the temperature of all disks, use the -A or --stats option.
 
   temp_sleep TIME_IN_MINUTES
 	Sets the standby time, in minutes, when the temperature limit is
@@ -1235,28 +1229,30 @@ Configuration
 
 	If this option is specified, the symbolic links created in the pool
 	directory use this UNC path to access the disks.
-	Without this option the symbolic links generated use only local paths,
-	not allowing to share the pool directory in the network.
+	Without this option, the symbolic links generated use only local paths,
+	which does not allow sharing the pool directory over the network.
 
 	The symbolic links are formed using the specified UNC path, adding the
-	disk name as specified in the "disk" option, and finally adding the
-	file dir and name.
+	disk name as specified in the "data" option, and finally adding the
+	file directory and name.
 
-	This option is only required for Windows.
+	This option is required only for Windows.
 
   smartctl DISK/PARITY OPTIONS...
-	Defines a custom smartctl options to obtain the SMART attributes for
-	each disk. This may be required for RAID controllers and for some USB
-	disk that cannot be auto-detected.
+	Defines custom smartctl options to obtain the SMART attributes for
+	each disk. This may be required for RAID controllers and some USB
+	disks that cannot be auto-detected. The %s placeholder is replaced by
+	the device name, but it is optional for fixed devices like RAID controllers.
 
-	DISK is the same disk name specified in the "disk" option.
-	PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
+	DISK is the same disk name specified in the "data" option.
+	PARITY is one of the parity names: "parity", "2-parity", "3-parity",
+	"4-parity", "5-parity", "6-parity", or "z-parity".
 
 	In the specified OPTIONS, the "%s" string is replaced by the
-	device name. Note that in case of RAID controllers the device is
-	likely fixed, and you don't have to use "%s".
+	device name. For RAID controllers, the device is
+	likely fixed, and you may not need to use "%s".
 
-	Refers at the smartmontools documentation about the possible options:
+	Refer to the smartmontools documentation for possible options:
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
 		:https://www.smartmontools.org/wiki/Supported_USB-Devices
@@ -1270,8 +1266,9 @@ Configuration
 	of disk failure. This option is useful if a disk reports unusual or
 	misleading values for a particular attribute.
 
-	DISK is the same disk name specified in the "disk" option.
-	PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
+	DISK is the same disk name specified in the "data" option.
+	PARITY is one of the parity names: "parity", "2-parity", "3-parity",
+	"4-parity", "5-parity", "6-parity", or "z-parity".
 	The special value * can be used to ignore the attribute on all disks.
 
 	For example, to ignore the "Current Pending Sector Count" attribute on
@@ -1322,54 +1319,54 @@ Pattern
 	There are four different types of patterns:
 
 	=FILE
-		Selects any file named as FILE. You can use any globbing
-		character like * and ?, and char classes like [a-z].
-		This pattern is applied only to files and not to directories.
+		Selects any file named FILE. You can use any globbing
+		characters like * and ?, and character classes like [a-z].
+		This pattern applies only to files, not directories.
 
 	=DIR/
 		Selects any directory named DIR and everything inside.
-		You can use any globbing character like * and ?.
-		This pattern is applied only to directories and not to files.
+		You can use any globbing characters like * and ?.
+		This pattern applies only to directories, not files.
 
 	=/PATH/FILE
 		Selects the exact specified file path. You can use any
-		globbing character like * and ? but they never match a
+		globbing characters like * and ?, but they never match a
 		directory slash.
-		This pattern is applied only to files and not to directories.
+		This pattern applies only to files, not directories.
 
 	=/PATH/DIR/
 		Selects the exact specified directory path and everything
-		inside. You can use any globbing character like * and ? but
+		inside. You can use any globbing characters like * and ?, but
 		they never match a directory slash.
-		This pattern is applied only to directories and not to files.
+		This pattern applies only to directories, not files.
 
-	Note that when you specify an absolute path starting with /, it's
-	applied at the array root dir and not at the local file-system root dir.
+	When you specify an absolute path starting with /, it is applied at
+	the array root directory, not the local file system root directory.
 
-	In Windows you can use the backslash \ instead of the forward slash /.
-	Note that Windows system directories, junctions, mount points, and any
-	other Windows special directory are treated just as files, meaning that
-	to exclude them you must use a file rule, and not a directory one.
+	In Windows, you can use the backslash \ instead of the forward slash /.
+	Windows system directories, junctions, mount points, and other Windows
+	special directories are treated as files, meaning that to exclude
+	them, you must use a file rule, not a directory one.
 
-	If the file name you want to use really contains a '*', '?', '[',
-	or ']' char, you have to escape it to avoid to have interpreted as a
-	globbing character. In Unix the escape char is '\', in Windows it's '^'.
-	Note that when the pattern is on the command line, you have to double the
-	escape character to avoid to have it interpreted by the command shell.
+	If the file name contains a '*', '?', '[',
+	or ']' character, you must escape it to avoid having it interpreted as a
+	globbing character. In Unix, the escape character is '\'; in Windows, it is '^'.
+	When the pattern is on the command line, you must double the escape
+	character to avoid having it interpreted by the command shell.
 
 	In the configuration file, you can use different strategies to filter
 	the files to process.
-	The simplest one is to use only "exclude" rules to remove all the
+	The simplest approach is to use only "exclude" rules to remove all the
 	files and directories you do not want to process. For example:
 
 		:# Excludes any file named "*.unrecoverable"
 		:exclude *.unrecoverable
 		:# Excludes the root directory "/lost+found"
 		:exclude /lost+found/
-		:# Excludes any sub-directory named "tmp"
+		:# Excludes any subdirectory named "tmp"
 		:exclude tmp/
 
-	The opposite way is to define only the file you want to process, using
+	The opposite approach is to define only the files you want to process, using
 	only "include" rules. For example:
 
 		:# Includes only some directories
@@ -1377,15 +1374,15 @@ Pattern
 		:include /musics/
 		:include /pictures/
 
-	The final way, is to mix "exclude" and "include" rules. In this case take
-	care that the order of rules is important. Previous rules have the
-	precedence over the later ones.
-	To get things simpler you can first have all the "exclude" rules and then
-	all the "include" ones. For example:
+	The final approach is to mix "exclude" and "include" rules. In this case,
+	the order of rules is important. Earlier rules take
+	precedence over later ones.
+	To simplify, you can list all the "exclude" rules first and then
+	all the "include" rules. For example:
 
 		:# Excludes any file named "*.unrecoverable"
 		:exclude *.unrecoverable
-		:# Excludes any sub-directory named "tmp"
+		:# Excludes any subdirectory named "tmp"
 		:exclude tmp/
 		:# Includes only some directories
 		:include /movies/
@@ -1396,48 +1393,47 @@ Pattern
 	patterns. For example:
 
 		:# Checks only the .mp3 files.
-		:# Note the "" use to avoid globbing expansion by the shell in Unix.
+		:# In Unix, use quotes to avoid globbing expansion by the shell.
 		:snapraid -f "*.mp3" check
 
-	In Unix, when using globbing chars in the command line, you have to
-	quote them. Otherwise the shell will try to expand them.
+	In Unix, when using globbing characters on the command line, you must
+	quote them to prevent the shell from expanding them.
 
 Content
-	SnapRAID stores the list and check-sums of your files in the content file.
+	SnapRAID stores the list and checksums of your files in the content file.
 
-	It's a binary file, listing all the files present in your disk array,
-	with all the check-sums to verify their integrity.
+	It is a binary file listing all the files present in your disk array,
+	along with all the checksums to verify their integrity.
 
-	This file is read and written by the "sync" and "scrub" commands, and
-	read by "fix", "check" and "status".
+	This file is read and written by the "sync" and "scrub" commands and
+	read by the "fix", "check", and "status" commands.
 
 Parity
 	SnapRAID stores the parity information of your array in the parity
 	files.
 
-	They are binary files, containing the computed parity of all the
+	These are binary files containing the computed parity of all the
 	blocks defined in the "content" file.
 
-	These files are read and written by the "sync" and "fix" commands, and
-	only read by "scrub" and "check".
+	These files are read and written by the "sync" and "fix" commands and
+	only read by the "scrub" and "check" commands.
 
 Encoding
 	SnapRAID in Unix ignores any encoding. It reads and stores the
-	file names with the same encoding used by the file-system.
+	file names with the same encoding used by the file system.
 
-	In Windows all the names read from the file-system are converted and
-	processed in the UTF-8 format.
+	In Windows, all names read from the file system are converted and
+	processed in UTF-8 format.
 
-	To have the file names printed correctly you have to set the Windows
-	console in the UTF-8 mode, with the command "chcp 65001", and use
-	a TrueType font like "Lucida Console" as console font.
-	Note that it has effect only on the printed file names, if you
+	To have file names printed correctly, you must set the Windows
+	console to UTF-8 mode with the command "chcp 65001" and use
+	a TrueType font like "Lucida Console" as the console font.
+	This affects only the printed file names; if you
 	redirect the console output to a file, the resulting file is always
-	in the UTF-8 format.
+	in UTF-8 format.
 
 Copyright
-	This file is Copyright (C) 2011 Andrea Mazzoleni
+	This file is Copyright (C) 2025 Andrea Mazzoleni
 
 See Also
 	rsync(1)
-
