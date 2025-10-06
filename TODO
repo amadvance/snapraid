@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Integration with MergeFS ?
+
 * Support BTRFS subvolumes. Keep track of the subvolumeid, along with the inode, and use it when searching/comparing inodes.
 The value 0 can be used for the root volume, like a normal filesystem.
 See: https://github.com/kdave/btrfs-progs/tree/master/libbtrfsutil
@@ -15,6 +17,7 @@ The goal is a filelist that, for every file, includes full paths to the dependen
 on other data disks needed to repair that file (in addition to the parity data).
 
 I created a thread about it here: https://sourceforge.net/p/snapraid/discussion/1677233/thread/6e872fdae0/
+
 - Minor
 
 * Add a new -u, --filter-updated command that filters files
@@ -26,11 +29,6 @@ Not checked disks should be allowed to be missing.
 
 * Add an option to ignore subsecond timestamp.
 Like when you copy data to a filesystem with less timestamp precision.
-
-* Use threads to scan all the disks at the same time.
-- After 7.0 Windows changes it seems fast enough even
-with a mono thread implementation with 100.0000 files.
-+ But if you have millions of files, it could take minutes.
 
 * Support more parity levels
 It can be done with a generic computation function, using
