@@ -56,7 +56,7 @@ Limitations
 	consider before using it.
 
 	The main limitation is that if a disk fails and you haven't recently synced,
-	you may be unable to fully recover.
+	you may not be able to fully recover.
 	More specifically, you may be unable to recover up to the size of
 	the changed or deleted files since the last sync operation.
 	This occurs even if the changed or deleted files are not on the
@@ -111,7 +111,7 @@ Getting Started
 	be on a different disk to ensure that, even in case of multiple
 	disk failures, at least one copy is available.
 
-	For example, suppose you are interested only in one parity level
+	For example, suppose you are interested in only one parity level
 	of protection, and your disks are located at:
 
 		:/mnt/diskp <- selected disk for parity
@@ -176,9 +176,9 @@ Getting Started
 	already scrubbed in the previous 10 days.
 	You can use the -p, --plan option to specify a different amount
 	and the -o, --older-than option to specify a different age in days.
-	For example, to check 5% of the array older than 20 days, use:
+	For example, to check 5% of the array for blocks older than 20 days, use:
 
-		:snapraid -p 5 -o 20 scrub
+		:snapraid -p 5 -o 20 scrub  
 
 	If silent or input/output errors are found during the process,
 	the corresponding blocks are marked as bad in the "content" file
@@ -265,7 +265,7 @@ Getting Started
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
   Undeleting
-	SnapRAID is more like a backup program than a RAID system, and it
+	SnapRAID functions more like a backup program than a RAID system, and it
 	can be used to restore or undelete files to their previous state using
 	the -f, --filter option:
 
@@ -298,7 +298,7 @@ Getting Started
 
     STEP 1 -> Reconfigure
 	You need some space to recover, ideally on additional
-	spare disks, but an external USB or remote disk will suffice.
+	spare disks, but an external USB disk or remote disk will suffice.
 
 	Modify the SnapRAID configuration file to make the "data" or "parity"
 	option of the failed disk point to a location with enough empty
@@ -419,7 +419,7 @@ Commands
 	for that disk, and SnapRAID returns with an error.
 	In this case, immediate replacement of the disk is highly recommended.
 
-	Other possible strings are:
+	Other possible status strings are:
 		logfail - In the past, some attributes were lower than
 			the threshold.
 		logerr - The device error log contains errors.
@@ -538,7 +538,7 @@ Commands
 	Scrubs the array, checking for silent or input/output errors in data
 	and parity disks.
 
-	For each command invocation, approximately 8% of the array is checked, excluding
+	Each invocation checks approximately 8% of the array, excluding
 	data already scrubbed in the last 10 days.
 	This means that scrubbing once a week ensures every bit of data is checked
 	at least once every three months.
@@ -594,7 +594,7 @@ Commands
 	Unlike other filter options, this one applies fixes only to files that are
 	unchanged since the latest "sync".
 
-	All files that cannot be fixed are renamed by adding the
+	SnapRAID renames all files that cannot be fixed by adding the
 	".unrecoverable" extension.
 
 	Before fixing, the entire array is scanned to find any files moved
@@ -676,16 +676,16 @@ Commands
 
 	This improves SnapRAID's ability to recognize moved
 	and copied files, as it makes the timestamp almost unique,
-	removing possible duplicates.
+	reducing possible duplicates.
 
 	More specifically, if the sub-second timestamp is not zero,
 	a moved or copied file is identified as such if it matches
 	the name, size, and timestamp. If the sub-second timestamp
-	is zero, it is considered a copy only if it matches the full path,
-	size, and timestamp.
+	is zero, it is considered a copy only if the full path,
+	size, and timestamp all match.
 
 	The second-precision timestamp is not modified,
-	and all the dates and times of your files will be maintained.
+	so all the dates and times of your files will be preserved.
 
   rehash
 	Schedules a rehash of the entire array.
@@ -1109,7 +1109,7 @@ Configuration
 	The default blocksize is 256, which should work for most cases.
 
 	WARNING! This option is for experts only, and it is highly
-	recommended not to change it. To change this value in the
+	recommended not to change this value. To change this value in the
 	future, you will need to recreate the entire parity!
 
 	A reason to use a different blocksize is if you have many small
@@ -1155,7 +1155,7 @@ Configuration
 	for most cases.
 
 	WARNING! This option is for experts only, and it is highly
-	recommended not to change it. To change this value in the
+	recommended not to change this value. To change this value in the
 	future, you will need to recreate the entire parity!
 
 	A reason to use a different hashsize is if your system has
@@ -1196,7 +1196,7 @@ Configuration
 	smartctl tool. The current disk temperatures are displayed while
 	SnapRAID is operating. If any disk exceeds this limit, all operations
 	stop, and the disks are spun down (put into standby) for the duration
-	defined by "temp_sleep".
+	defined by the "temp_sleep" option.
 
 	During operation, SnapRAID also analyzes the heating curve of each
 	disk and estimates the long-term steady temperature they are expected
@@ -1402,7 +1402,7 @@ Pattern
 Content
 	SnapRAID stores the list and checksums of your files in the content file.
 
-	It is a binary file listing all the files present in your disk array,
+	It is a binary file that lists all the files present in your disk array,
 	along with all the checksums to verify their integrity.
 
 	This file is read and written by the "sync" and "scrub" commands and
