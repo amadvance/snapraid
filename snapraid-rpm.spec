@@ -1,6 +1,6 @@
 Name:           snapraid
 Summary:        Disk array backup for many large rarely-changed files
-Version:        12.4
+Version:        13.0
 Release:        3%{?dist}
 License:        GPLv3+
 Group:          Applications/System
