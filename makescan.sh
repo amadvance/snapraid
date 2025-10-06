@@ -14,7 +14,7 @@ if ! ./configure ; then
 	exit 1
 fi
 
-export PATH=$PATH:contrib/cov-analysis-linux64-2020.09/bin
+export PATH=$PATH:contrib/cov-analysis-linux64-2024.12.1/bin
 
 if ! cov-build --dir cov-int make; then
 	exit 1
@@ -27,4 +27,3 @@ tar czf snapraid-$REVISION.tgz cov-int
 rm -r cov-int
 
 echo snapraid-$REVISION.tgz ready to upload to https://scan.coverity.com/projects/1986/builds/new
-
