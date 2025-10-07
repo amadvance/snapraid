@@ -1379,6 +1379,7 @@ static int devup(dev_t device)
 	f = open(file, O_RDONLY | O_DIRECT);
 	if (f < 0) {
 		/* LCOV_EXCL_START */
+		free(buf);
 		log_fatal("Failed to open device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1388,6 +1389,7 @@ static int devup(dev_t device)
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		close(f);
+		free(buf);
 		log_fatal("Failed to read device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1396,6 +1398,7 @@ static int devup(dev_t device)
 	ret = close(f);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
+		free(buf);
 		log_fatal("Failed to close device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
