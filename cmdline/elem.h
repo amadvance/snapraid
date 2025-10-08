@@ -485,7 +485,7 @@ struct snapraid_parity {
 /**
  * Info.
  */
-typedef uint32_t snapraid_info;
+typedef uint64_t snapraid_info;
 
 /**
  * Allocate a content.
@@ -1122,7 +1122,7 @@ void map_free(struct snapraid_map* map);
  *
  * These bits reduce the granularity of the time in the memory representation.
  */
-#define INFO_MASK 0x7
+#define INFO_MASK ((snapraid_info)0x7)
 
 /**
  * Make an info.

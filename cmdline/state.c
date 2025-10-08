@@ -2184,9 +2184,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			/* "inf" command */
 			snapraid_info info;
 			uint32_t v_pos;
-			uint32_t v_oldest;
+			uint64_t v_oldest;
 
-			ret = sgetb32(f, &v_oldest);
+			ret = sgetb64(f, &v_oldest);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2199,7 +2199,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				int bad;
 				int rehash;
 				int justsynced;
-				uint32_t t;
+				uint64_t t64;
 				uint32_t flag;
 				uint32_t v_count;
 
@@ -2230,7 +2230,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* if there is an info */
 				if ((flag & 1) != 0) {
 					/* read the time */
-					ret = sgetb32(f, &t);
+					ret = sgetb64(f, &t64);
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
@@ -2251,7 +2251,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* LCOV_EXCL_STOP */
 					}
 
-					info = info_make(t + v_oldest, bad, rehash, justsynced);
+					info = info_make(t64 + v_oldest, bad, rehash, justsynced);
 				} else {
 					info = 0;
 				}
@@ -3041,6 +3041,7 @@ static void* state_write_thread(void* arg)
 	int info_has_rehash = context->info_has_rehash;
 	STREAM* f = context->f;
 	uint32_t crc;
+	uint64_t t64;
 	unsigned count_file;
 	unsigned count_hardlink;
 	unsigned count_symlink;
@@ -3400,7 +3401,9 @@ static void* state_write_thread(void* arg)
 
 	/* write the info for each block */
 	sputc('i', f);
-	sputb32(info_oldest, f);
+	/* ensure to write a 64 bit time */
+	t64 = info_oldest;
+	sputb64(t64, f);
 	begin = 0;
 	while (begin < blockmax) {
 		snapraid_info info;
@@ -3444,7 +3447,9 @@ static void* state_write_thread(void* arg)
 			else
 				t -= info_oldest;
 
-			sputb32(t, f);
+			/* ensure to write a 64 bit time */
+			t64 = t;
+			sputb64(t64, f);
 		} else {
 			/* write a special 0 flag to mark missing info */
 			sputb32(0, f);
