@@ -4395,9 +4395,6 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 
 		msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 
-		/* some extra spaces to ensure to overwrite the latest status line */
-		msg_bar("    ");
-
 		msg_bar("\n");
 		msg_flush();
 	}
@@ -4430,8 +4427,6 @@ void state_progress_restart(struct snapraid_state* state)
 	if (now >= state->progress_interruption) /* avoid degenerated cases when the clock is manually adjusted */
 		state->progress_wasted += now - state->progress_interruption;
 }
-
-#define PROGRESS_CLEAR "          "
 
 /**
  * Set the latest tick data in the progress vector.
@@ -4845,7 +4840,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				}
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			}
-			msg_bar("%s\r", PROGRESS_CLEAR);
+			msg_bar("\r");
 			msg_flush();
 		}
 

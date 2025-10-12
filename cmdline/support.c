@@ -80,6 +80,8 @@ void lock_done(void)
 
 int msg_level = 0;
 FILE* stdlog = 0;
+int msg_line_prev = 0; /**< Previous line width on stdout */
+int msg_line_curr = 0; /**< Current line width on stdout */
 
 /*
  * Note that in the following functions we always flush both
@@ -93,6 +95,57 @@ FILE* stdlog = 0;
  * caller should use log_flush().
  */
 
+static void vmsg(FILE* out, const char* format, va_list ap)
+{
+	char* dup = strdup_nofail(format);
+	int len = strlen(dup);
+	int written = 0;
+	char control = 0;
+
+	if (len > 0) {
+		if (dup[len - 1] == '\n') {
+			dup[len - 1] = 0;
+			control = '\n';
+		} else if (dup[len - 1] == '\r') {
+			dup[len - 1] = 0;
+			control = '\r';
+		}
+	}
+
+	if (dup[0]) {
+		written = vfprintf(out, dup, ap);
+	}
+
+	switch (control) {
+	case 0 :
+		msg_line_curr += written;
+		break;
+	case '\n' :
+		msg_line_curr += written;
+		/* writes spaces to overwrite any previous char */
+		while (msg_line_curr < msg_line_prev) {
+			fprintf(out, " ");
+			--msg_line_prev;
+		}
+		msg_line_prev = 0;
+		msg_line_curr = 0;
+		fprintf(out, "\n");
+		break;
+	case '\r' :
+		msg_line_curr += written;
+		/* writes spaces to overwrite any previous char */
+		while (msg_line_curr < msg_line_prev) {
+			fprintf(out, " ");
+			--msg_line_prev;
+		}
+		msg_line_prev = msg_line_curr;
+		msg_line_curr = 0;
+		fprintf(out, "\r");
+	}
+
+	free(dup);
+}
+
 void log_fatal(const char* format, ...)
 {
 	va_list ap;
@@ -100,17 +153,20 @@ void log_fatal(const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		va_start(ap, format);
 		fprintf(stdlog, "msg:fatal: ");
+
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		fflush(stdlog);
 		va_end(ap);
+
+		fflush(stdlog);
 	}
 
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	fflush(stderr);
+	vmsg(stderr, format, ap);
 	va_end(ap);
+
+	fflush(stderr);
 
 	unlock_msg();
 }
@@ -122,16 +178,19 @@ void log_error(const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		va_start(ap, format);
 		fprintf(stdlog, "msg:error: ");
+
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		fflush(stdlog);
 		va_end(ap);
+
+		fflush(stdlog);
 	} else {
 		va_start(ap, format);
-		vfprintf(stderr, format, ap);
-		fflush(stderr);
+		vmsg(stderr, format, ap);
 		va_end(ap);
+
+		fflush(stderr);
 	}
 
 	unlock_msg();
@@ -144,11 +203,13 @@ void log_expected(const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		va_start(ap, format);
 		fprintf(stdlog, "msg:expected: ");
+
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		fflush(stdlog);
 		va_end(ap);
+
+		fflush(stdlog);
 	}
 
 	unlock_msg();
@@ -163,9 +224,9 @@ void log_tag(const char* format, ...)
 	if (stdlog) {
 		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		/* here we intentionally don't flush */
-		/* to make the output faster */
 		va_end(ap);
+
+		/* here we intentionally don't flush to make the output faster */
 	}
 
 	unlock_msg();
@@ -190,17 +251,18 @@ void msg_status(const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		va_start(ap, format);
 		fprintf(stdlog, "msg:status: ");
+
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		fflush(stdlog);
 		va_end(ap);
+
+		fflush(stdlog);
 	}
 
 	if (msg_level >= MSG_STATUS) {
 		va_start(ap, format);
-		vfprintf(stdout, format, ap);
-		fflush(stdout);
+		vmsg(stdout, format, ap);
 		va_end(ap);
 	}
 
@@ -218,9 +280,10 @@ void msg_info(const char* format, ...)
 
 	if (msg_level >= MSG_INFO) {
 		va_start(ap, format);
-		vfprintf(stdout, format, ap);
-		fflush(stdout);
+		vmsg(stdout, format, ap);
 		va_end(ap);
+
+		fflush(stdout);
 	}
 
 	unlock_msg();
@@ -233,18 +296,21 @@ void msg_progress(const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		va_start(ap, format);
 		fprintf(stdlog, "msg:progress: ");
+
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		fflush(stdlog);
 		va_end(ap);
+
+		fflush(stdlog);
 	}
 
 	if (msg_level >= MSG_PROGRESS) {
 		va_start(ap, format);
-		vfprintf(stdout, format, ap);
-		fflush(stdout);
+		vmsg(stdout, format, ap);
 		va_end(ap);
+
+		fflush(stdout);	
 	}
 
 	unlock_msg();
@@ -262,7 +328,7 @@ void msg_bar(const char* format, ...)
 
 	if (msg_level >= MSG_BAR) {
 		va_start(ap, format);
-		vfprintf(stdout, format, ap);
+		vmsg(stdout, format, ap);
 		va_end(ap);
 	}
 
@@ -276,18 +342,21 @@ void msg_verbose(const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		va_start(ap, format);
 		fprintf(stdlog, "msg:verbose: ");
+
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-		fflush(stdlog);
 		va_end(ap);
+
+		fflush(stdlog);
 	}
 
 	if (msg_level >= MSG_VERBOSE) {
 		va_start(ap, format);
-		vfprintf(stdout, format, ap);
-		fflush(stdout);
+		vmsg(stdout, format, ap);
 		va_end(ap);
+
+		fflush(stdout);
 	}
 
 	unlock_msg();
