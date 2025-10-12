@@ -217,3 +217,24 @@ body {
 	color:#0c5da5;
 }
 
+/* table community */
+
+.community
+{
+	border-collapse:collapse;
+}
+.community td
+{
+	border:2px solid black;
+	text-align:left;
+	padding:5px;
+}
+.community th
+{
+	border:2px solid black;
+	font-size:1.1em;
+	padding:5px;
+	background-color:#bacad9;
+	color:#0c5da5;
+}
+
