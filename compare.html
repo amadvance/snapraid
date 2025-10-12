@@ -208,17 +208,6 @@ the parity is automatically recomputed, making impossible to recover the silent 
 </p>
 
 <p>
-<a id="note2">[2]</a> - Flexraid uses checksums to validate files, but such checksums
-<a href="http://forum.flexraid.com/index.php/topic,3233.0.html">are not verified when data is read to update the parity</a>.
-This means that any silent error present will propagate into the parity,
-making impossible to fix it later, even if it can be still detected comparing the file checksum.
-<br>
-You can get in a state where the "Validate" operation
-reports errors, but the "Verify" one reports no problem in the parity,
-making impossible to fix the errors.
-</p>
-
-<p>
 <a id="note3">[3]</a> - ZFS and Btrfs provide a bit-rot protection at the same level of SnapRAID,
 always checking data before using it.
 In this regards all the three solutions represent the state-of-the-art.
