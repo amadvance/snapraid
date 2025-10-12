@@ -202,6 +202,15 @@ Getting Started
 	output, but the related blocks are not marked as bad.
 
   Pooling
+	Note: The pooling feature described below has been superseded by the
+	mergefs tool, which is now the recommended option for Linux users in
+	the SnapRAID community. Mergefs provides a more flexible and efficient
+	way to pool multiple drives into a single unified mount point,
+	allowing seamless access to files across your array without relying
+	on symbolic links. It integrates well with SnapRAID for parity
+	protection and is commonly used in setups like OpenMediaVault (OMV)
+	or custom NAS configurations.
+  
 	To have all the files in your array shown in the same directory tree,
 	you can enable the "pooling" feature. It creates a read-only virtual
 	view of all the files in your array using symbolic links.
