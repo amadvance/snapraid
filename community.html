@@ -1,0 +1,378 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+<meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">
+<meta name="author" content="Andrea Mazzoleni">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="style.css">
+<title>SnapRAID</title>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+<body>
+<div id="header">
+<img src="index.jpg" width="1200" height="150" alt="Title">
+</div>
+<div id="menu">
+<a href="/">About</a>
+<a href="download">Download</a>
+<a href="design">Design</a>
+<a href="compare">Compare</a>
+<a href="faq">FAQ</a>
+<a href="manual">Manual</a>
+<a href="support">Support</a>
+<a href="community">Community</a>
+<a href="authors">Authors</a>
+</div>
+<div id="main">
+
+
+
+<p>
+<span class="bold">SnapRAID</span>
+has inspired a wide range of tutorials, videos, and technical articles 
+created by users, system administrators, and storage enthusiasts around the world. 
+</p>
+
+<p>
+This page collects some of the best resources from the community and the media 
+to help new and experienced users learn, configure, and explore <span class="bold">SnapRAID</span>.
+</p>
+
+<h1>Community Guides, Articles and Tools</h1>
+
+<table class="community">
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Title</th>
+      <th>Published</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://zackreed.me/encrypted-snapraid/" target="_blank">Encrypted SnapRAID</a></td>
+      <td>May 11, 2024</td>
+      <td>Tutorial for setting up encrypted SnapRAID storage with dm-crypt and LUKS.</td>
+    </tr>
+    
+  <tr>
+      <td>Linux</td>
+      <td><a href="https://zackreed.me/updated-snapraid-sync-script/" target="_blank">Script for Nightly SnapRAID Syncs and Scrubs</a></td>
+      <td>May 11, 2024</td>
+      <td>Updated SnapRAID sync script with improved error handling and email notifications for automated backup management.</td>
+    </tr>    
+    
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://github.com/Chronial/snapraid-runner/" target="_blank">Snapraid Runner Script</a></td>
+      <td>26 Feb 2021</td>
+      <td>Script that runs snapraid and sends its output to the console, a log file and via email.</td>
+    </tr>
+
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://github.com/auanasgheps/snapraid-aio-script" target="_blank">Snapraid AIO Script</a></td>
+      <td>May 21, 2024</td>
+      <td>The definitive all-in-one SnapRAID script on Linux.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://thenomadcode.tech/mergerfs-snapraid-is-the-new-raid-5" target="_blank">(MergerFS + SnapRAID) is the new RAID 5</a></td>
+      <td>Feb 3, 2023</td>
+      <td>Explains why MergerFS + SnapRAID offers RAID 5/6-like protection with more flexibility.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://zackreed.me/snapraid-split-parity-sync-script/" target="_blank">SnapRAID Split Parity Sync Script</a></td>
+      <td>Nov 17, 2016</td>
+      <td>Script for dual parity syncing across multiple disks in SnapRAID setups.</td>
+    </tr>
+    <tr>
+      <td>Linux</td> 
+      <td><a href="https://perfectmediaserver.com/02-tech-stack/snapraid/" target="_blank">SnapRAID - Perfect Media Server</a></td>
+      <td>Dec 27, 2023</td>
+      <td>Describes SnapRAID's parity features for up to 6-drive failure protection in media servers.</td>
+    </tr>
+    <tr>
+      <td>OpenMediaVault</td>
+      <td><a href="https://wiki.omv-extras.org/doku.php?id=omv7:omv7_plugins:snapraid" target="_blank">SnapRAID Plugin For OMV7</a></td>
+      <td>Jan 18, 2025</td>
+      <td>Guide for installing and configuring the SnapRAID plugin on OpenMediaVault 7 for data protection and recovery.</td>
+    </tr>
+    <tr>
+      <td>OpenMediaVault</td>
+      <td><a href="https://www.gravee.dev/en/snapraid-upgrade-drive/" target="_blank">SnapRAID Upgrade Drive</a></td>
+      <td>Jul 18, 2024</td>
+      <td>Step-by-step guide to upgrading drives in a SnapRAID array while maintaining data integrity.</td>
+    </tr>
+    <tr>
+      <td>MANS</td>
+      <td><a href="https://blog.muffn.io/posts/muffins-awesome-nas-stack/" target="_blank">A Hybrid NAS Approach with SnapRAID and MergerFS</a></td>
+      <td>Feb 7, 2024</td>
+      <td>Details a 100TB NAS build using SnapRAID for parity, with Ansible automation.</td>
+    </tr>
+    <tr>
+      <td>Windows</td>
+      <td><a href="https://github.com/Smurf-IV/Elucidate" target="_blank">Elucidate</a></td>
+      <td>Sep 9, 2025</td>
+      <td>Elucidate is a Windows GUI front-end for the command-line SnapRAID application.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!---
+
+COMPARISON
+
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://markhenrick.site/2020/11/04/unraid-snapraid.html" target="_blank">Unraid vs Snapraid</a></td>
+      <td>Nov 4, 2020</td>
+      <td>Side-by-side comparison of Unraid and SnapRAID, including pros/cons and summaries.</td>
+    </tr>
+
+OBSOLETE
+
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://blog.karaolidis.com/ultimate-home-server-part-1/" target="_blank">Building the Ultimate Linux Home Server - Part 1: Intro, MergerFS & SnapRAID</a></td>
+      <td>Jul 24, 2021</td>
+      <td>Introduces MergerFS for pooling drives and SnapRAID for redundancy in a home server build.</td>
+    </tr>
+
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://joshmlwood.com/post/home-file-server-snapraid/" target="_blank">Home File Server - SnapRAID</a></td>
+      <td>Jan 6, 2019</td>
+      <td>Personal guide to using SnapRAID for disk array backups and multi-drive failure recovery.</td>
+    </tr>
+
+POCO INFORMATIVO
+    <tr>
+      <td><a href="https://noted.lol/an-intro-to-mergerfs-and-snapraid/" target="_blank">An Intro to MergerFS and SnapRAID</a></td>
+      <td>Sep 5, 2023</td>
+      <td>Beginner-friendly overview of benefits for data protection in storage setups.</td>
+    </tr>
+
+    <tr>
+      <td>Linux</td> 
+      <td><a href="https://noted.lol/mergerfs-and-snapraid-setup-1/" target="_blank">Setup and Install MergerFS and SnapRAID (Part 1)</a></td>
+      <td>Aug 9, 2024</td>
+      <td>Part 1 of a guide focusing on installing and configuring MergerFS for pooling before SnapRAID protection.</td>
+    </tr>
+    
+    https://noted.lol/mergerfs-and-snapraid-setup-part-2/
+
+    <tr>
+      <td><a href="https://mohammedalqadi.sa/snapraid/" target="_blank">SnapRAID</a></td>
+      <td>Mar 11, 2025</td>
+      <td>Overview of SnapRAID's features for static datasets like media, with sample configuration examples.</td>
+    </tr>
+
+RIMPIAZZATO DA perfectmediaserver.com
+
+    <tr>
+      <td><a href="https://www.linuxserver.io/blog/2019-07-16-perfect-media-server-2019" target="_blank">The Perfect Media Server - 2019 Edition</a></td>
+      <td>Jul 16, 2019</td>
+      <td>Recommends MergerFS + SnapRAID combo for reliable media storage since 2016.</td>
+    </tr>
+
+AUFS OBSOLETE
+
+    <tr>
+      <td><a href="https://wdullaer.com/blog/2016/03/19/create-a-nas-with-redundancy-using-snapraid/" target="_blank">Create a NAS with Redundancy Using Snapraid</a></td>
+      <td>Mar 19, 2016</td>
+      <td>Details configuring AUFS for pooling and SnapRAID for redundancy and bitrot protection on Ubuntu.</td>
+    </tr>
+
+2019 e AUFS OBSOLETE
+    <tr>
+      <td><a href="https://www.addictivetips.com/ubuntu-linux-tips/set-up-snapraid-on-ubuntu-server/" target="_blank">How to set up SnapRAID on Ubuntu server</a></td>
+      <td>Feb 26, 2019</td>
+      <td>Comprehensive tutorial for installing and configuring SnapRAID on Ubuntu, including directory setup and conf file editing.</td>
+    </tr>
+
+--->
+
+<h1>Video Tutorials</h1>
+
+<table class="community">
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Title</th>
+      <th>Published</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=QFGEKh1A90I" target="_blank">How to install and setup Snapraid</a></td>
+      <td>Jun 26, 2023</td>
+      <td>Step-by-step guide to compiling, installing, and automating SnapRAID parity protection.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=fmuiRLPcuJE" target="_blank">How to recover a failed drive using Snapraid</a></td>
+      <td>Jul 31, 2023</td>
+      <td>Demonstrates recovering data from a failed drive in a MergerFS + SnapRAID setup.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=n7piuhTXeG4" target="_blank">How to install and setup MergerFS</a></td>
+      <td>Jun 26, 2023</td>
+      <td>How to install and setup MergerFS for SnapRAID.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=tX5MA-c6Qq4" target="_blank">MergerFS + SnapRAID : Forget about RAID 5 in your Home Server !</a></td>
+      <td>Feb 21, 2023</td>
+      <td>Explains setting up MergerFS and SnapRAID for home server safety equivalent to RAID 5, with Slack notifications.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=fR0XhaWvR1E" target="_blank">DIY Unraid-like functionality</a></td>
+      <td>Jun 12, 2025</td>
+      <td>Builds Unraid-style setup with SnapRAID overview, install, and use starting at 11:26.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=Yt67zz9p0FU" target="_blank">How to build the Perfect Media Server | Part 1 - The Tech Stack</a></td>
+      <td>Apr 22, 2025</td>
+      <td>Overview of building a media server stack, including SnapRAID integration at 19:28.</td>
+    </tr>
+    <tr>
+      <td>Linux</td>
+      <td><a href="https://www.youtube.com/watch?v=D2Klx-X7pFo" target="_blank">How to setup a Linux Fileserver with Snapraid and Mergerfs Re-Export</a></td>
+      <td>Apr 23, 2018</td>
+      <td>Guides through setting up SnapRAID with MergerFS on Linux for a simple fileserver, including add/remove drives.</td>
+    </tr>
+    <tr>
+      <td>Linux (Italian)</td>
+      <td><a href="https://www.youtube.com/watch?v=5QSkDZi9OzY&" target="_blank">Il RAID è OBSOLETO: la migliore ALTERNATIVA in ambito domestico</a></td>
+      <td>Jun 18, 2023</td>
+      <td>Review di SnapRAID da parte di Morro Linux</td>
+    </tr>
+    <tr>
+      <td>OpenMediaVault</td>
+      <td><a href="https://www.youtube.com/watch?v=_LLB6x5WOR4" target="_blank">Setting up SnapRAID + mergerfs on OpenMediaVault</a></td>
+      <td>Nov 19, 2023</td>
+      <td>Tutorial for configuring SnapRAID and MergerFS on OpenMediaVault, including drive additions.</td>
+    </tr>
+    <tr>
+      <td>OpenMediaVault</td>
+      <td><a href="https://www.youtube.com/watch?v=9XvY6usHSIA" target="_blank">Setting up MergerFS SnapRaid and file server on OpenMediaVault</a></td>
+      <td>Sep 10, 2023</td>
+      <td>Guides through creating a protected storage pool and file server with MergerFS and SnapRAID.</td>
+    </tr>
+    <tr>
+      <td>Windows</td>
+      <td><a href="https://www.youtube.com/watch?v=5IXMM4hfIek">Setting up SnapRAID for Windows (and DrivePool) PART 1</a></td>
+      <td>Apr 28, 2023</td>
+      <td>A detailed guide on installing and configuring SnapRAID on Windows, including integration with DrivePool for disk pooling.</td>
+    </tr>
+    <tr>
+      <td>Windows</td>
+      <td><a href="https://www.youtube.com/watch?v=Mw_7x_MCwi0">SnapRAID for Windows (and DrivePool) Part 2 - Recovery</a></td>
+      <td>May 12, 2023</td>
+      <td>The second part of the series, focusing on array modification, data recovery from deletions or corruption, and disk replacement.</td>
+    </tr>
+    <tr>
+      <td>Windows</td>
+      <td><a href="https://www.youtube.com/watch?v=kDCMpVgZb4g" target="_blank">How to setup Snapraid and DrivePool in Windows</a></td>
+      <td>Sep 29, 2017</td>
+      <td>Shows how to set up SnapRAID and DrivePool to create a large volume with parity backup for files.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!--
+
+COMPARISON
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=NQJkTiLXfgs" target="_blank">Best RAID for mixed drive sizes. Unraid vs BTRFS vs...</a></td>
+      <td>Dec 7, 2022</td>
+      <td>Compares SnapRAID + MergerFS with other RAID alternatives, including testing results.</td>
+    </tr>
+    
+UNION FS OBSOLETE
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=FYkdPyCt5FU" target="_blank">Snapraid and Unionfs: Advanced Array Options on Openmediavault</a></td>
+      <td>Mar 1, 2019</td>
+      <td>Explains installing SnapRAID and UnionFS for array backup and efficient disk space use.</td>
+    </tr>
+    
+ SPAGNOLO
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=0UI2qQC6CRs" target="_blank">OpenMediaVault SnapRAID Tutorial</a></td>
+      <td>Jan 2, 2024</td>
+      <td>Step-by-step tutorial for installing and configuring SnapRAID on OpenMediaVault NAS.</td>
+    </tr>
+-->   
+
+<p>
+<span class="bold">Disclaimer</span>
+The resources listed below are shared for information only and are not endorsed by SnapRAID.
+They are created by third parties, and we’re not responsible for their accuracy or opinions.
+Please check them out yourself and refer to SnapRAID’s official documentation for trusted guidance.
+</p>
+
+
+</div>
+
+<div id="footer">
+
+<div class="column">
+<span class="bold">Donate with</span>
+<br>
+<!--
+<a href="http://sourceforge.net/p/snapraid/donate/"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
+-->
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
+<!--
+<a href="https://coinkite.com/u/amadvance/"><img src="bitcoin.png" width="160" height="60" alt="BitCoin"></a>
+-->
+</div>
+
+<div class="column">
+<span class="bold">Find other resources at</span>
+<br>
+<a href="https://github.com/amadvance/snapraid/"><img src="github.png" width="160" height="60" alt="GitHub"></a>
+<a href="http://sourceforge.net/projects/snapraid/"><img src="sourceforge.png" width="115" height="60" alt="SourceForge"></a>
+</div>
+
+</div>
+</body>
+</html>
+
+
