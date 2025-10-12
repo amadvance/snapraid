@@ -141,6 +141,7 @@ void state_init(struct snapraid_state* state)
 	state->filter_hidden = 0;
 	state->autosave = 0;
 	state->need_write = 0;
+	state->written = 0;
 	state->checked_read = 0;
 	state->block_size = 256 * KIBI; /* default 256 KiB */
 	state->raid_mode = RAID_MODE_CAUCHY;
@@ -4213,6 +4214,7 @@ void state_write(struct snapraid_state* state)
 
 	state->need_write = 0; /* no write needed anymore */
 	state->checked_read = 0; /* what we wrote is not checked in read */
+	state->written = 1;
 }
 
 void state_skip(struct snapraid_state* state)
@@ -4380,7 +4382,11 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		log_tag("run:end\n");
 		log_flush();
 	} else if (countmax == 0) {
-		msg_status("Nothing to do\n");
+		if (state->need_write || state->written) {
+			msg_status("100%% completed\n");
+		} else {
+			msg_status("Nothing to do\n");
+		}
 	} else {
 		time_t now;
 		time_t elapsed;

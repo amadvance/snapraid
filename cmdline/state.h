@@ -123,6 +123,7 @@ struct snapraid_state {
 	int filter_hidden; /**< Filter out hidden files. */
 	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int need_write; /**< If the state is changed. */
+	int written; /**< If the state was written at least one time */
 	int checked_read; /**< If the state was read and checked. */
 	uint32_t block_size; /**< Block size in bytes. */
 	unsigned raid_mode; /**< Raid mode to use. RAID_MODE_DEFAULT or RAID_MODE_ALTERNATE. */
