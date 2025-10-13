@@ -16,62 +16,95 @@
 #include "gf.h"
 
 /*
- * This is a RAID implementation working in the Galois Field GF(2^8) with
- * the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), and
- * supporting up to six parity levels.
+ * Cauchy Matrix Construction for MDS RAID with Arbitrary Parity Levels in GF(2^8)
  *
- * For RAID5 and RAID6, it works as described in H. Peter Anvin's
+ * This is a RAID implementation operating in the Galois Field GF(2^8) with
+ * the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), supporting
+ * up to six parity levels.
+ *
+ * For RAID5 and RAID6, it follows the method described in H. Peter Anvin's
  * paper "The mathematics of RAID-6" [1]. Please refer to this paper for a
  * complete explanation.
  *
- * To support triple parity, it was first evaluated and then dropped; an
- * extension of the same approach, with additional parity coefficients set
- * as powers of 2^-1, with equations:
+ * Triple parity was first evaluated using an extension of the same approach,
+ * with additional parity coefficients set as powers of 2^-1, defined as:
  *
- * P = sum(Di)
- * Q = sum(2^i * Di)
- * R = sum(2^-i * Di) with 0 <= i < N
+ *   P = sum(Di)
+ *   Q = sum(2^i * Di)
+ *   R = sum(2^-i * Di) for 0 <= i < N
  *
- * This approach works well for triple parity and is very efficient
- * because we can implement very fast parallel multiplications and
- * divisions by 2 in GF(2^8).
+ * This approach works efficiently for triple parity because multiplications
+ * and divisions by 2 in GF(2^8) are very fast. It is similar to ZFS RAIDZ3,
+ * which uses powers of 4 instead of 2^-1.
  *
- * It is also similar to the approach used by ZFS RAIDZ3, with the
- * difference that ZFS uses powers of 4 instead of 2^-1.
+ * Unfortunately, this method does not extend beyond triple parity because
+ * no choice of power coefficients guarantees solvable equations for all
+ * combinations of missing disks. This is expected: a Vandermonde matrix,
+ * used in this method, does not ensure that all submatrices are nonsingular
+ * [2, Chap. 11, Problem 7], which is required for an MDS (Maximum Distance
+ * Separable) code [2, Chap. 11, Theorem 8].
  *
- * Unfortunately, it doesn't work beyond triple parity because whatever
- * value we choose to generate the power coefficients to compute other
- * parities, the resulting equations are not solvable for some
- * combinations of missing disks.
+ * To overcome this limitation, a Cauchy matrix [3][4] is used for parity
+ * computation. A Cauchy matrix ensures that all square submatrices are
+ * nonsingular, so the linear system is always solvable for any combination
+ * of missing disks. This guarantees an MDS code.
  *
- * This is expected because the Vandermonde matrix used to compute the
- * parity has no guarantee to have all submatrices not singular
- * [2, Chap 11, Problem 7], and this is a requirement to have
- * an MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
+ * How the matrix is obtained:
  *
- * To overcome this limitation, we use a Cauchy matrix [3][4] to compute
- * the parity. A Cauchy matrix has the property of having all square
- * submatrices not singular, resulting in always solvable equations
- * for any combination of missing disks.
+ *   The matrix is constructed to match Linux RAID coefficients for the
+ *   first two rows, while ensuring that all square submatrices are nonsingular.
  *
- * The problem with this approach is that it requires the use of
- * generic multiplications, and not only by 2 or 2^-1, potentially
- * affecting performance negatively.
+ *   1. Start by forming a Cauchy matrix with elements defined as 1/(x_i + y_j),
+ *      where all x_i and y_j are distinct elements (the textbook definition
+ *      of a Cauchy matrix).
  *
- * Hopefully, there is a method to implement parallel multiplications
- * using SSSE3 or AVX2 instructions [1][5], a method competitive with the
- * computation of triple parity using power coefficients.
+ *   2. For the first row (j=0), set x_i = 2^-i and y_0 = 0, resulting in:
  *
- * Another important property of the Cauchy matrix is that we can set up
- * the first two rows with coefficients equal to the RAID5 and RAID6 approach
- * described, resulting in a compatible extension, and requiring SSSE3
- * or AVX2 instructions only if triple parity or beyond is used.
+ *        row j=0 -> 1/(x_i + y_0) = 1/(2^-i + 0) = 2^i
  *
- * The matrix is also adjusted, multiplying each row by a constant factor
- * to make the first column of all 1, to optimize the computation for
- * the first disk.
+ *      which reproduces the RAID-6 coefficients.
  *
- * This results in the matrix A[row, col] defined as:
+ *   3. For subsequent rows (j>0), set y_j = 2^j, yielding:
+ *
+ *        rows j>0 -> 1/(x_i + y_j) = 1/(2^-i + 2^j)
+ *
+ *      ensuring x_i != y_j for any i >= 0, j >= 1, and i + j < 255.
+ *
+ *   4. Place a row filled with 1 at the top of the matrix, transforming it
+ *      into an Extended Cauchy Matrix. This preserves the nonsingularity
+ *      of all square submatrices.
+ *
+ *      This first row reproduces the RAID-5 coefficients.
+ *
+ *   5. Adjust each row with a factor so that the first column contains all 1s.
+ *      This transformation also preserves the nonsingularity property,
+ *      maintaining the MDS code property.
+ *
+ * Concrete example in GF(256) for k=6, m=4:
+ *
+ *   First, create a 3x6 Cauchy matrix using x_i = 2^-i and y_0 = 0, y_j = 2^j for j>0:
+ *
+ *     x = { 1, 142, 71, 173, 216, 108 }
+ *     y = { 0, 2, 4 }
+ *
+ *   The Cauchy matrix is:
+ *
+ *     1    2    4    8   16   32
+ *   244   83   78  183  118   47
+ *   167   39  213   59  153   82
+ *
+ *   Divide row 2 by 244 and row 3 by 167. Then extend it with a row of ones
+ *   on top, and it remains MDS. This forms the code for m=4, with RAID-6 as
+ *   a subset:
+ *
+ *     1    1    1    1    1    1 
+ *     1    2    4    8   16   32
+ *     1  245  210  196  154  113
+ *     1  187  166  215  199    7
+ *
+ * Extending the same computation to k=251 and m=6 gives:
+ *
+ *   This results in the matrix A[row, col] defined as:
  *
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01...
  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75...
@@ -80,57 +113,66 @@
  * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9...
  * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b...
  *
- * This matrix supports 6 levels of parity, one for each row, for up to 251
- * data disks, one for each column, with all the 377,342,351,231 square
- * submatrices not singular, verified also with brute force.
+ * This matrix supports six levels of parity, one for each row, for up to 251
+ * data disks, one for each column. All the 377,342,351,231 square submatrices
+ * are nonsingular, verified also by brute-force testing.
  *
- * This matrix can be extended to support any number of parities, just
- * adding additional rows and removing one column for each new row.
- * (see mktables.c for more details on how the matrix is generated)
+ * This matrix can be extended to support any number of parities by simply
+ * adding additional rows and removing one column for each new row to maintain
+ * the condition i + j < 255.
+ * (See mktables.c for more details on how the matrix is generated.)
  *
- * In detail, parity is computed as:
+ * The downside is that generic multiplications are required to compute the
+ * parity, not only fast multiplications by 2^n or 2^-n, which negatively
+ * affect performance. However, optimized parallel multiplications using SSSE3
+ * or AVX2 instructions [1][5] make this approach competitive with the triple
+ * parity computation using power coefficients.
  *
- * P = sum(Di)
- * Q = sum(2^i * Di)
- * R = sum(A[2,i] * Di)
- * S = sum(A[3,i] * Di)
- * T = sum(A[4,i] * Di)
- * U = sum(A[5,i] * Di) with 0 <= i < N
+ * Another advantage of the Cauchy matrix is that the first two rows can
+ * replicate the RAID5 and RAID6 approach, resulting in a compatible extension.
+ * SSSE3 or AVX2 instructions are only needed for triple parity or beyond.
  *
- * To recover from a failure of six disks at indexes x, y, z, h, v, w,
- * with 0 <= x < y < z < h < v < w < N, we compute the parity of the available N-6
- * disks as:
+ * Parity computation is as follows:
  *
- * Pa = sum(Di)
- * Qa = sum(2^i * Di)
- * Ra = sum(A[2,i] * Di)
- * Sa = sum(A[3,i] * Di)
- * Ta = sum(A[4,i] * Di)
- * Ua = sum(A[5,i] * Di) with 0 <= i < N, i != x, i != y, i != z, i != h, i != v, i != w.
+ *   P = sum(Di)
+ *   Q = sum(2^i * Di)
+ *   R = sum(A[2,i] * Di)
+ *   S = sum(A[3,i] * Di)
+ *   T = sum(A[4,i] * Di)
+ *   U = sum(A[5,i] * Di) for 0 <= i < N
  *
- * And if we define:
+ * Recovery from six disk failures at indices x, y, z, h, v, w (0 <= x < y < z < h < v < w < N)
+ * involves computing parity of the remaining N-6 disks:
  *
- * Pd = Pa + P
- * Qd = Qa + Q
- * Rd = Ra + R
- * Sd = Sa + S
- * Td = Ta + T
- * Ud = Ua + U
+ *   Pa = sum(Di)
+ *   Qa = sum(2^i * Di)
+ *   Ra = sum(A[2,i] * Di)
+ *   Sa = sum(A[3,i] * Di)
+ *   Ta = sum(A[4,i] * Di)
+ *   Ua = sum(A[5,i] * Di) for i != x,y,z,h,v,w
  *
- * we can sum these two sets of equations, obtaining:
+ * Defining:
  *
- * Pd =          Dx +          Dy +          Dz +          Dh +          Dv +          Dw
- * Qd =    2^x * Dx +    2^y * Dy +    2^z * Dz +    2^h * Dh +    2^v * Dv +    2^w * Dw
- * Rd = A[2,x] * Dx + A[2,y] * Dy + A[2,z] * Dz + A[2,h] * Dh + A[2,v] * Dv + A[2,w] * Dw
- * Sd = A[3,x] * Dx + A[3,y] * Dy + A[3,z] * Dz + A[3,h] * Dh + A[3,v] * Dv + A[3,w] * Dw
- * Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
- * Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
+ *   Pd = Pa + P
+ *   Qd = Qa + Q
+ *   Rd = Ra + R
+ *   Sd = Sa + S
+ *   Td = Ta + T
+ *   Ud = Ua + U
  *
- * A linear system is always solvable because the coefficients matrix is
- * always not singular due to the properties of the matrix A[].
+ * yields:
  *
- * The resulting speed in x64, with 8 data disks, using a stripe of 256 KiB,
- * for a Core i5-4670K Haswell Quad-Core 3.4GHz is:
+ *   Pd =          Dx +          Dy +          Dz +          Dh +          Dv +          Dw
+ *   Qd =    2^x * Dx +    2^y * Dy +    2^z * Dz +    2^h * Dh +    2^v * Dv +    2^w * Dw
+ *   Rd = A[2,x] * Dx + A[2,y] * Dy + A[2,z] * Dz + A[2,h] * Dh + A[2,v] * Dv + A[2,w] * Dw
+ *   Sd = A[3,x] * Dx + A[3,y] * Dy + A[3,z] * Dz + A[3,h] * Dh + A[3,v] * Dv + A[3,w] * Dw
+ *   Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
+ *   Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
+ *
+ * This linear system is always solvable since the coefficient matrix is
+ * nonsingular due to the properties of A[].
+ *
+ * Example performance on a Core i5-4670K Haswell Quad-Core 3.4GHz, stripe 256 KiB, 8 data disks:
  *
  *             int8   int32   int64   sse2    ssse3   avx2
  *   gen1             13339   25438   45438           50588
@@ -140,25 +182,21 @@
  *   gen5       496                            5149   10051
  *   gen6       413                            4239    8190
  *
- * Values are in MiB/s of data processed by a single thread, not counting
- * generated parity.
+ * Values are in MiB/s of data processed by a single thread.
+ * Results can be reproduced using "raid/test/speedtest.c".
  *
- * You can replicate these results on your machine using the
- * "raid/test/speedtest.c" program.
- *
- * For comparison, the triple parity computation using the power
- * coefficients "1,2,2^-1" is only a little faster than the one based on
- * the Cauchy matrix if SSSE3 or AVX2 is present.
+ * Triple parity with power coefficients "1, 2, 2^-1" is slightly faster than
+ * the Cauchy matrix computation if SSSE3 or AVX2 are available:
  *
  *             int8   int32   int64   sse2    ssse3   avx2
  *   genz              2337    2874   10920           18944
  *
- * In conclusion, the use of power coefficients, and specifically powers
- * of 1, 2, 2^-1, is the best option to implement triple parity in CPUs
+ * In conclusion, the use of power coefficients, specifically powers
+ * of 1, 2, and 2^-1, is the best option to implement triple parity on CPUs
  * without SSSE3 and AVX2.
- * But if a modern CPU with SSSE3 or AVX2 is available, the Cauchy
- * matrix is the best option because it provides a fast and general
- * approach working for any number of parities.
+ * On modern CPUs with SSSE3 or AVX2, the Cauchy matrix is the best
+ * option because it provides a fast and general approach that works for any
+ * number of parities.
  *
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
