@@ -421,11 +421,11 @@ is a <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/eca5e
 
 <p>
 Some interesting articles about number of parity levels and failure rate of disks are:
-<a href="http://www.zdnet.com/blog/storage/why-raid-5-stops-working-in-2009/162">Why RAID 5 stops working in 2009</a>,
-<a href="http://www.zdnet.com/blog/storage/why-raid-6-stops-working-in-2019/805">Why RAID 6 stops working in 2019</a>,
-<a href="http://storagemojo.com/2010/02/27/does-raid-6-stops-working-in-2019/">Does RAID 6 stop working in 2019?</a>,
-<a href="http://queue.acm.org/detail.cfm?id=1670144">Triple-Parity RAID and Beyond</a>,
-<a href="http://blog.backblaze.com/2013/11/12/how-long-do-disk-drives-last/">How long do disk drives last?</a>.
+<a href="https://www.zdnet.com/article/why-raid-5-stops-working-in-2009/">Why RAID 5 stops working in 2009</a>,
+<a href="https://www.zdnet.com/article/why-raid-6-stops-working-in-2019/">Why RAID 6 stops working in 2019</a>,
+<a href="https://storagemojo.com/2010/02/27/does-raid-6-stops-working-in-2019/">Does RAID 6 stop working in 2019?</a>,
+<a href="https://queue.acm.org/detail.cfm?id=1670144">Triple-Parity RAID and Beyond</a>,
+<a href="https://www.backblaze.com/blog/how-long-do-disk-drives-last/">How long do disk drives last?</a>.
 </p>
 
 <h3 id="fs">Which file-system is recommended for SnapRAID ?</h3>
@@ -470,12 +470,6 @@ For the parity disks, follow these suggestions:
 
 <table class="download">
 <tr><th>Parity</th><th>Result</th></tr>
-<tr>
-<td>ext3</td>
-<td>No. It doesn't support the <a href="http://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html">fallocate()</a> command needed to allocated the parity files.
-You can anyway use it if you limit the use of the parity disk to contain only the parity file.
-</td>
-</tr>
 <tr>
 <td>ext4</td>
 <td>OK if the disks are NOT bigger than 16 TB. The parity is stored in a single big file, and ext4 has a upper limit of 16 TB for file size.</td>
