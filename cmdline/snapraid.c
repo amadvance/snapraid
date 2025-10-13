@@ -1420,14 +1420,6 @@ int snapraid_main(int argc, char* argv[])
 
 		ret = state_sync(&state, blockstart, blockcount);
 
-		/* save the new state if required */
-		if (!opt.kill_after_sync) {
-			if ((state.need_write || state.opt.force_content_write))
-				state_write(&state);
-		} else {
-			log_fatal("WARNING! Skipped writing state due to --test-kill-after-sync option.\n");
-		}
-
 		/* abort if required */
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -1468,10 +1460,6 @@ int snapraid_main(int argc, char* argv[])
 
 		ret = state_scrub(&state, plan, olderthan);
 
-		/* save the new state if required */
-		if (state.need_write || state.opt.force_content_write)
-			state_write(&state);
-
 		/* abort if required */
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -1494,14 +1482,14 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_TOUCH) {
 		state_read(&state);
 
+		memory();
+
 		state_touch(&state);
 
 		/* intercept signals while operating */
 		signal_init();
 
 		state_write(&state);
-
-		memory();
 	} else if (operation == OPERATION_SPINUP) {
 		state_device(&state, DEVICE_UP, &filterlist_disk);
 	} else if (operation == OPERATION_SPINDOWN) {

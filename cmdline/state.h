@@ -327,7 +327,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 /**
  * End the progress visualization.
  */
-void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize, const char* msg);
 
 /**
  * Write the progress.

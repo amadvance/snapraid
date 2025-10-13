@@ -363,7 +363,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	}
 
 end:
-	state_progress_end(state, countpos, countmax, countsize);
+	state_progress_end(state, countpos, countmax, countsize, "Nothing to dry.\n");
 
 	state_usage_print(state);
 

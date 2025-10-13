@@ -1834,7 +1834,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	}
 
 end:
-	state_progress_end(state, countpos, countmax, countsize);
+	state_progress_end(state, countpos, countmax, countsize, "Nothing to check.\n");
 
 bail:
 	/* close all the files left open */

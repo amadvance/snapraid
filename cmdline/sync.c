@@ -341,7 +341,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	}
 
 end:
-	state_progress_end(state, countpos, countmax, countsize);
+	state_progress_end(state, countpos, countmax, countsize, "Nothing to hash.\n");
 
 	/* note that at this point no io_error is possible */
 	/* because at the first one we bail out */
@@ -1361,9 +1361,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	}
 
 end:
-	state_progress_end(state, countpos, countmax, countsize);
-
-	state_usage_print(state);
+	state_progress_end(state, countpos, countmax, countsize, "Nothing to sync.\n");
 
 	/* before returning we ensure that */
 	/* the parity is really written flushing the disk cache */
@@ -1375,6 +1373,16 @@ end:
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* save the new state if required */
+	if (!state->opt.kill_after_sync) {
+		if ((state->need_write || state->opt.force_content_write))
+			state_write(state);
+	} else {
+		log_fatal("WARNING! Skipped writing state due to --test-kill-after-sync option.\n");
+	}
+
+	state_usage_print(state);
 
 	if (error || silent_error || io_error) {
 		msg_status("\n");
@@ -1607,7 +1615,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
-			msg_status("Nothing to do\n");
+			msg_status("Nothing to sync.\n");
 		}
 	}
 

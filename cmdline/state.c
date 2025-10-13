@@ -4376,7 +4376,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	return 1;
 }
 
-void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize)
+void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize, const char* msg)
 {
 	if (state->opt.gui) {
 		log_tag("run:end\n");
@@ -4385,7 +4385,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		if (state->need_write || state->written) {
 			msg_status("100%% completed\n");
 		} else {
-			msg_status("Nothing to do\n");
+			msg_status("%s", msg);
 		}
 	} else {
 		time_t now;
