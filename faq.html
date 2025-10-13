@@ -469,12 +469,6 @@ Note that multiple ZFS snapshots are not supported.
 </td>
 </tr>
 <tr>
-<td>ReiserFS</td>
-<td>Unsure. Where are <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/194dee16">reports</a>
-of speed increase when switching from ReiserFS to other file-system.
-ext4 and XFS are anyway better. Use them instead.</td>
-</tr>
-<tr>
 <td>FAT</td>
 <td>Unsure. There are <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/455e8d63">reports</a>
 of duplicate inodes cases. NTFS is anyway a lot faster. Use it instead.</td>
@@ -517,12 +511,6 @@ You will be warned at every run if this doesn't happen.</td>
 <td>No. It doesn't support the <a href="http://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html">fallocate()</a> command needed to allocated the parity files.
 <br>
 It also doesn't seem to implement at the best the <a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/posix_fadvise.html">posix_fadvise()</a> command.</td>
-</tr>
-<tr>
-<td>ReiserFS</td>
-<td>Unsure. Where are <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/194dee16">reports</a>
-of speed increase when switching from ReiserFS to other file-system.
-ext4 and XFS are anyway better. Use them instead.</td>
 </tr>
 <tr>
 <td>NTFS</td>
