@@ -146,11 +146,12 @@ https://blogs.technet.microsoft.com/tip_of_the_day/2014/07/23/tip-of-the-day-dua
 <td>Yes</td><td>Partial <a href="#note4">[4]</a></td><td>No</td><td>No</td><td>No</td></tr>
 
 <tr><td><span class="bold">Add disks</span><br>Can disks be added later?</td>
-<td>Yes</td><td>Yes</td><td>No <a href="#note5">[5]</a></td><td>Yes</td><td>Yes</td></tr>
+<td>Yes</td><td>Yes</td><td>Yes</a></td><td>Yes</td><td>Yes</td></tr>
 
 <!--
 ZFS does't allow to add new disks to a raidz pool
 http://serverfault.com/questions/190207/how-can-i-add-one-disk-to-an-existing-raidz-zpool
+Implemented in OpenZFS Release 2.3.0 (2025)
 -->
 
 <tr><td><span class="bold">Operating system</span><br>Which operating systems are supported?</td>
@@ -196,10 +197,6 @@ ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the 
 
 <p>
 <a id="note4">[4]</a> - unRAID supports filled disks only if they are formatted with XFS or Btrfs filesystems, but not ext4 or NTFS, the two most common filesystems for Linux and Windows.
-</p>
-
-<p>
-<a id="note5">[5]</a> - ZFS allows adding a new vdev to a pool, but not a disk to an existing vdev. See <a href="http://louwrentius.com/the-hidden-cost-of-using-zfs-for-your-home-nas.html">The 'Hidden' Cost of Using ZFS for Your Home NAS</a>.
 </p>
 
 <p>
