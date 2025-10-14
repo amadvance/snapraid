@@ -179,8 +179,11 @@ http://www.eecs.berkeley.edu/Pubs/TechRpts/1987/5853.html
 <h3>Notes</h3>
 
 <p>
-<a id="note1">[1]</a> - unRAID lacks native checksums and ignores silent errors. If a parity error results from a silent data error, the parity is automatically recomputed, making it impossible to recover the silent error, even manually.
-To get a similar functionality of SnapRAID, you have to use the Btrfs filesystems for all your data disks.
+<a id="note1">[1]</a> - unRAID lacks native checksums and ignores silent errors. 
+Even worse, if a parity mismatch is detected due to a silent error in the data, 
+the parity is automatically recomputed, making it impossible to recover the silent error, even manually.  
+Integrity checksum plugins do not help in this case, as they are not integrated into the parity-checking process.  
+To achieve functionality similar to SnapRAID, you would need to use the Btrfs filesystem for all your data disks.
 </p>
 
 <p>
@@ -211,7 +214,7 @@ ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the 
 <a id="note8">[8]</a> - unRAID can use integrity checksums via plugins like <a href="https://forums.lime-technology.com/topic/43290-dynamix-file-integrity-plugin/">Dynamix File Integrity</a>, or <a href="https://forums.lime-technology.com/topic/35615-bunker-yet-another-utility-for-file-integrity-checks/">bunker</a>.
 However, these are independent of parity processing and not used to aid recovery.
 For example, when recovering a single failed disk with dual parity, checksums can identify additional silent errors to facilitate recovery.
-To get a similar functionality of SnapRAID, you have to use the Btrfs filesystems for all your data disks.
+To achieve functionality similar to SnapRAID, you would need to use the Btrfs filesystem for all your data disks.
 </p>
 
 <p>
