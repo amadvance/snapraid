@@ -54,35 +54,30 @@
 
 
 <p>
-<span class="bold">SnapRAID</span> is only one of the available <span class="bold">not standard RAID</span> solutions for disk arrays.
+<span class="bold">SnapRAID</span> is just one of many <span class="bold">RAID-like</span> solutions available for disk arrays.
 </p>
 
 <p>
-The best known others are:
+Some of the best-known alternatives include:
 </p>
 
 <ul>
-<li><a href="http://www.lime-technology.com/">unRAID</a>
-- Commercial and OpenSource GPL2 solution. A modified version of the Linux Reiserfs filesystem with real-time redundancy.
-No integrity checksum is supported.
+<li><a href="http://www.lime-technology.com/">unRAID</a>  
+- A commercial and open-source (GPL2) solution. It uses a modified Linux ReiserFS filesystem with real-time redundancy. Integrity checksums are not supported.
 </li>
-<li><s>FlexRAID</s>
-- <b>DISCONTINUED</b> Commercial and proprietary C++/Java application for Windows, with some limited support for Linux.
-It supports both snapshot redundancy and real-time redundancy, with integrity checksum.
+<li><s>FlexRAID</s>  
+- <b>DISCONTINUED</b>. A commercial, proprietary C++/Java application for Windows, with limited Linux support. It offered both snapshot and real-time redundancy, including integrity checksums.
 </li>
-<li><a href="http://en.wikipedia.org/wiki/ZFS">ZFS</a>
-- OpenSource filesystem (but GPL incompatible) with real-time redundancy and integrity checksum.
+<li><a href="http://en.wikipedia.org/wiki/ZFS">ZFS</a>  
+- An open-source (GPL-incompatible) filesystem with real-time redundancy and integrity checksums.
 </li>
-<li><a href="http://en.wikipedia.org/wiki/btrfs">Btrfs</a>
-- OpenSource filesystem GPL2 with real-time redundancy.
-From Linux 3.9 it supports <a href="http://lwn.net/Articles/536038/">RAID5/6 redundancy</a> and integrity checksums.
-Recently various issues were found and the official <a href="https://btrfs.wiki.kernel.org/index.php/RAID56">wiki</a> now states:
-<i>The parity RAID code has multiple serious data-loss bugs in it. It should not be used for anything other than testing purposes.</i>
+<li><a href="http://en.wikipedia.org/wiki/btrfs">Btrfs</a>  
+- An open-source (GPL2) Linux filesystem with real-time redundancy. Since Linux 3.9, it supports <a href="http://lwn.net/Articles/536038/">RAID5/6 redundancy</a> and integrity checksums.  
+Recent issues have been discovered, and the official <a href="https://btrfs.wiki.kernel.org/index.php/RAID56">wiki</a> now warns:  
+<i>"The parity RAID code has multiple serious data-loss bugs in it. It should not be used for anything other than testing purposes."</i>
 </li>
-<li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Storage Spaces</a>
-- The last contender from Microsoft, and integrated into Windows 8.
-Proprietary with real-time redundancy. Checksumming is not supported.
-It also has some other <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/">limitations</a>.
+<li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Storage Spaces</a>  
+- Microsoft’s solution, integrated into Windows 8 and later. Proprietary, with real-time redundancy but without checksumming support. It also has several <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/">limitations</a>.
 </li>
 </ul>
 
@@ -153,7 +148,7 @@ New Storage Spaces adds Dual Parity if you have at least 7 disks
 https://blogs.technet.microsoft.com/tip_of_the_day/2014/07/23/tip-of-the-day-dual-parity-storage-spaces/
 -->
 
-<tr><td><span class="bold">Other failures</span><br>If more disks fail than the supported redundancy model,
+<tr><td><span class="bold">More disk failures</span><br>If more disks fail than the supported redundancy model,
 is it possible to recover the data in the not failed disks?</td>
 <td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
 
@@ -207,18 +202,16 @@ the parity is automatically recomputed, making impossible to recover the silent 
 </p>
 
 <p>
-<a id="note3">[3]</a> - ZFS and Btrfs provide a bit-rot protection at the same level of SnapRAID,
-always checking data before using it.
-In this regards all the three solutions represent the state-of-the-art.
+<a id="note3">[3]</a> - ZFS and Btrfs provide bit-rot protection comparable to SnapRAID, always verifying data before use. 
+In this regard, all three solutions represent the state of the art.  
 <br>
-A cons of ZFS is that the default <a href="http://en.wikipedia.org/wiki/Fletcher%27s_checksum">Fletcher</a>
-checksum is a choice that favorites speed over quality.
-The same for the default CRC32C used by Btrfs.
-The 128 bits <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</a>
-used by SnapRAID is instead the state-of-the-art in checksumming quality,
-without compromising in speed.
+One drawback of ZFS is that the default <a href="http://en.wikipedia.org/wiki/Fletcher%27s_checksum">Fletcher</a> checksum prioritizes speed over reliability.
+Even though it is a 256-bit checksum, Fletcher is generally considered weak. Similarly, Btrfs uses CRC32C by default, which is strong, but ony 32 bits.
+A better alternative is "edonr" for ZFS and "xxhash" for Btrfs.
+In contrast, SnapRAID uses the 128-bit <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</a>,
+which provides state-of-the-art checksum quality without compromising speed.  
 <br>
-ZFS also uses a sub-optimal RAID-Z3 algorithm, that requires double computations than the equivalent SnapRAID's z-parity.
+ZFS also employs a sub-optimal RAID-Z3 algorithm that requires roughly twice the computation compared to SnapRAID’s z-parity.
 </p>
 
 <p>
