@@ -54,16 +54,16 @@
 
 
 <p>
-<span class="bold">SnapRAID</span> is just one of many <span class="bold">RAID-like</span> solutions available for disk arrays.
+<span class="bold">SnapRAID</span> is one of many <span class="bold">RAID-like</span> solutions available for disk arrays.
 </p>
 
 <p>
-Some of the best-known alternatives include:
+Some well-known alternatives include:
 </p>
 
 <ul>
 <li><a href="http://www.lime-technology.com/">unRAID</a>  
-- A commercial and open-source (GPL2) solution. It uses a modified Linux ReiserFS filesystem with real-time redundancy. Integrity checksums are not supported.
+- A commercial and open-source (GPL2) solution. It uses a modified Linux XFS filesystem with real-time redundancy. Integrity checksums are not natively supported.
 </li>
 <li><s>FlexRAID</s>  
 - <b>DISCONTINUED</b>. A commercial, proprietary C++/Java application for Windows, with limited Linux support. It offered both snapshot and real-time redundancy, including integrity checksums.
@@ -73,46 +73,36 @@ Some of the best-known alternatives include:
 </li>
 <li><a href="http://en.wikipedia.org/wiki/btrfs">Btrfs</a>  
 - An open-source (GPL2) Linux filesystem with real-time redundancy. Since Linux 3.9, it supports <a href="http://lwn.net/Articles/536038/">RAID5/6 redundancy</a> and integrity checksums.  
-Recent issues have been discovered, and the official <a href="https://btrfs.wiki.kernel.org/index.php/RAID56">wiki</a> now warns:  
-<i>"The parity RAID code has multiple serious data-loss bugs in it. It should not be used for anything other than testing purposes."</i>
+Recent issues have been identified, and the official <a href="https://btrfs.wiki.kernel.org/index.php/RAID56">wiki</a> warns:  
+<i>"The parity RAID code has multiple serious data-loss bugs. It should not be used for anything other than testing purposes."</i>
 </li>
 <li><a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview">Storage Spaces</a>  
-- Microsoft’s solution, integrated into Windows 8 and later. Proprietary, with real-time redundancy but without checksumming support. It also has several <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/">limitations</a>.
+- Microsoft’s solution, integrated into Windows 8 and later. Proprietary, with real-time redundancy but no checksum support. It also has several <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/">limitations</a>.
 </li>
 </ul>
 
 <p>
-The main factor to categorize them is when the redundancy information is updated.
-In <span class="bold">real-time</span> solutions the parity data is updated in real-time,
-without an explicit action from the user. Like in standard RAID.
-In <span class="bold">snapshot</span> solutions the parity data is updated only upon
-an explicit request from the user. Like in backups.
+The primary factor for categorizing these solutions is when redundancy information is updated.
+In <span class="bold">real-time</span> solutions, parity data is updated in real-time
+without explicit user action, similar to standard RAID.
+In <span class="bold">snapshot</span> solutions, parity data is updated only upon explicit user request, similar to backups.
 </p>
 
 <p>
-Other important factors are the support of an <span class="bold">integrity</span> checksum
-to identify <a href="http://www.zdnet.com/blog/storage/data-corruption-is-worse-than-you-know/191">silent data corruption</a>
-and the possibility to <span class="bold">fix it</span>,
-if you can <span class="bold">use already filled disk</span>,
-if you can <span class="bold">recover your data from not broken disks</span> when you get too many failures to have a full recover,
-and if <span class="bold">all your disks are spinning when reading one file</span>.
+Other key factors include support for <span class="bold">integrity</span> checksums to detect <a href="http://www.zdnet.com/blog/storage/data-corruption-is-worse-than-you-know/191">silent data corruption</a> and the ability to <span class="bold">fix it</span>, whether you can <span class="bold">use already filled disks</span>, whether you can <span class="bold">recover data from non-failed disks</span> when there are too many failures for full recovery, and whether <span class="bold">all disks spin when reading one file</span>.
 </p>
 
 <table class="compare">
 <tr><th width="30%"></th><th><span class="bold">SnapRAID</span></th><th>unRAID</th><th>ZFS</th><th>Btrfs</th><th>Storage Spaces</th></tr>
 
-<tr><td><span class="bold">Redundancy model</span><br>Real-time computes parity at real-time like RAID,
-snapshot at request time, like Backup.</td>
+<tr><td><span class="bold">Redundancy model</span><br>Real-time computes parity in real-time like RAID; snapshot computes parity on request, like backups.</td>
 <td>Snapshot</td><td>Real-time</td><td>Real-time<br>Snapshot</td><td>Real-time<br>Snapshot</td><td>Real-time</td></tr>
 
-<tr><td><span class="bold">Integrity</span><br>
-If data is validated with some kind of checksum,
-and which one is the default.</td>
-<td>Yes<br>SpookyHash<br>128 bit</td><td>No <a href="#note8">[8]</a></td><td>Yes<br>fletcher4<br>256 bit</td><td>Yes<br>CRC32C<br>32 bit</td><td>No <a href="#note9">[9]</a></td></tr>
+<tr><td><span class="bold">Integrity</span><br>Whether data is validated with a checksum, and the default checksum type.</td>
+<td>Yes<br>SpookyHash<br>128-bit</td><td>No <a href="#note8">[8]</a></td><td>Yes<br>Fletcher4<br>256-bit</td><td>Yes<br>CRC32C<br>32-bit</td><td>No <a href="#note9">[9]</a></td></tr>
 
-<tr><td><span class="bold">Fix silent errors</span><br>
-If silent errors are detected and fixed before they can propagate into the parity.</td>
-<td>Yes</td><td>No <a href="#note1">[1]</a></td></td><td>Yes <a href="#note3">[3]</a></td><td>Yes <a href="#note3">[3]</a></td><td>No</td></tr>
+<tr><td><span class="bold">Fix silent errors</span><br>Whether silent errors are detected and fixed before propagating to parity.</td>
+<td>Yes</td><td>No <a href="#note1">[1]</a></td><td>Yes <a href="#note3">[3]</a></td><td>Yes <a href="#note3">[3]</a></td><td>No</td></tr>
 
 <!---
 Silent error discussion in UnRAID Forum:
@@ -136,10 +126,8 @@ http://forum.flexraid.com/index.php/topic,1753.msg12512.html#msg12512
 http://www.openegg.org/forums/posts/list/727.page
 -->
 
-<tr><td><span class="bold">Number of failures</span><br>
-How many disk failures are supported? 1 is for RAID5, 2 for RAID6.
-</td>
-<td>1 2 3 4 5 6</td><td>1 2</td><td>1 2 3</td><td>1 2</td><td>1 2</td></tr>
+<tr><td><span class="bold">Number of failures</span><br>How many disk failures are supported? 1 for RAID5, 2 for RAID6.</td>
+<td>1, 2, 3, 4, 5, 6</td><td>1, 2</td><td>1, 2, 3</td><td>1, 2</td><td>1, 2</td></tr>
 
 <!---
 unRAID 6.2 adds Dual parityvs ZFS
@@ -148,29 +136,28 @@ New Storage Spaces adds Dual Parity if you have at least 7 disks
 https://blogs.technet.microsoft.com/tip_of_the_day/2014/07/23/tip-of-the-day-dual-parity-storage-spaces/
 -->
 
-<tr><td><span class="bold">More disk failures</span><br>If more disks fail than the supported redundancy model,
-is it possible to recover the data in the not failed disks?</td>
+<tr><td><span class="bold">More disk failures</span><br>If more disks fail than the supported redundancy model, can data on non-failed disks be recovered?</td>
 <td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
 
-<tr><td><span class="bold">Power/Noise</span><br>How many disks are spinning when reading a single file?</td>
+<tr><td><span class="bold">Power/Noise</span><br>How many disks spin when reading a single file?</td>
 <td>One</td><td>One</td><td>All</td><td>All</td><td>All</td></tr>
 
 <tr><td><span class="bold">Filled disks</span><br>Can you start with already filled disks?</td>
-<td>Yes</td><td>Partial<a href="#note4">[4]</a></td><td>No</td><td>No</td><td>No</td></tr>
+<td>Yes</td><td>Partial <a href="#note4">[4]</a></td><td>No</td><td>No</td><td>No</td></tr>
 
-<tr><td><span class="bold">Add disks</span><br>Can you add disks at later time?</td>
-<td>Yes</td><td>Yes</td><td>No<a href="#note5">[5]</a></td><td>Yes</td><td>Yes</td></tr>
+<tr><td><span class="bold">Add disks</span><br>Can disks be added later?</td>
+<td>Yes</td><td>Yes</td><td>No <a href="#note5">[5]</a></td><td>Yes</td><td>Yes</td></tr>
 
 <!--
 ZFS does't allow to add new disks to a raidz pool
 http://serverfault.com/questions/190207/how-can-i-add-one-disk-to-an-existing-raidz-zpool
 -->
 
-<tr><td><span class="bold">Operating system</span><br>Which OS is supported?</td>
-<td>Linux<br>Windows<br>Mac&nbsp;OS&nbsp;X<br>OpenIndiana<br>Solaris<br>BSD</td><td>Linux</td><td>Linux <a href="#note6">[6]</a><br>Mac&nbsp;OS&nbsp;X<br>OpenIndiana<br>Solaris<br>BSD</td><td>Linux</td><td>Windows</td></tr>
+<tr><td><span class="bold">Operating system</span><br>Which operating systems are supported?</td>
+<td>Linux<br>Windows<br>macOS<br>OpenIndiana<br>Solaris<br>BSD</td><td>Linux</td><td>Linux <a href="#note6">[6]</a><br>macOS<br>OpenIndiana<br>Solaris<br>BSD</td><td>Linux</td><td>Windows</td></tr>
 
-<tr><td><span class="bold">Age</span><br>The year of the first official release supporting at least RAID5 redundancy.</td>
-<td>2011</td><td>2005</td><td>2005</td><td>not yet stable <a href="#note11">[11]</a></td><td>2012</td></tr>
+<tr><td><span class="bold">Age</span><br>Year of the first official release supporting at least RAID5 redundancy.</td>
+<td>2011</td><td>2005</td><td>2005</td><td>Not yet stable <a href="#note11">[11]</a></td><td>2012</td></tr>
 
 <!---
 ZFS 2009 is the data of the "Triple-Parity RAID-Z" article by Adam Leventhal
@@ -180,89 +167,63 @@ RAID 1987 is the date of the paper:
 http://www.eecs.berkeley.edu/Pubs/TechRpts/1987/5853.html
 -->
 
-<tr><td><span class="bold">License/Price</span><br>
-Software license and price.
-</td>
-<td>Open Source GPL3<br>Free</td><td>Open Source GPL2<br>59$/129$</td><td>Open Source CDDL<br>Free</td><td>Open Source GPL2<br>Free</td><td>Proprietary<br>Windows 8/10</td></tr>
+<tr><td><span class="bold">License/Price</span><br>Software license and cost.</td>
+<td>Open Source GPL3<br>Free</td><td>Open Source GPL2<br>$59/$129</td><td>Open Source CDDL<br>Free</td><td>Open Source GPL2<br>Free</td><td>Proprietary<br>Included with Windows 8/10</td></tr>
 
 <tr><td><span class="bold">Interface</span><br>Which interface is provided? GUI or command line?</td>
-<td>
-command line<br>or <a href="https://github.com/Smurf-IV/Elucidate">Elucidate</a> GUI,
-or plugin for for <a href="https://www.openmediavault.org/">OpenMediaVault</a>
-</td><td>command line<br>GUI</td><td>command line<br>GUI/Plugins <a href="#note7">[7]</a></td><td>command line<br>GUI<a href="#note10">[10]</a></td><td>GUI</td></tr>
+<td>Command line<br><a href="https://github.com/Smurf-IV/Elucidate">Elucidate</a> GUI,<br>or plugin for <a href="https://www.openmediavault.org/">OpenMediaVault</a></td>
+<td>Command line<br>GUI</td><td>Command line<br>GUI/Plugins <a href="#note7">[7]</a></td><td>Command line<br>GUI <a href="#note10">[10]</a></td><td>GUI</td></tr>
 
 </table>
 
 <h3>Notes</h3>
 
 <p>
-<a id="note1">[1]</a> - unRAID doesn't have any kind of checksum, and it just ignores silent errors.
-Even worse, if a parity error is detected as result of a silent error in the data,
-the parity is automatically recomputed, making impossible to recover the silent error, even manually.
+<a id="note1">[1]</a> - unRAID lacks native checksums and ignores silent errors. If a parity error results from a silent data error, the parity is automatically recomputed, making it impossible to recover the silent error, even manually.
 </p>
 
 <p>
-<a id="note3">[3]</a> - ZFS and Btrfs provide bit-rot protection comparable to SnapRAID, always verifying data before use. 
-In this regard, all three solutions represent the state of the art.  
+<a id="note3">[3]</a> - ZFS and Btrfs provide bit-rot protection comparable to SnapRAID, always verifying data before use. These three solutions represent the state of the art.  
 <br>
-One drawback of ZFS is that the default <a href="http://en.wikipedia.org/wiki/Fletcher%27s_checksum">Fletcher</a> checksum prioritizes speed over reliability.
-Even though it is a 256-bit checksum, Fletcher is generally considered weak. Similarly, Btrfs uses CRC32C by default, which is strong, but ony 32 bits.
-A better alternative is "edonr" for ZFS and "xxhash" for Btrfs.
-In contrast, SnapRAID uses the 128-bit <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</a>,
-which provides state-of-the-art checksum quality without compromising speed.  
+One drawback of ZFS is that its default <a href="http://en.wikipedia.org/wiki/Fletcher%27s_checksum">Fletcher</a> checksum prioritizes speed over reliability. Although it is a 256-bit checksum, Fletcher is considered weaker than alternatives. Similarly, Btrfs uses CRC32C by default, which is strong but only 32-bit. Better alternatives are "edonr" for ZFS and "xxhash" for Btrfs. In contrast, SnapRAID uses the 128-bit <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</a>, which offers state-of-the-art checksum quality without sacrificing speed.  
 <br>
-ZFS also employs a sub-optimal RAID-Z3 algorithm that requires roughly twice the computation compared to SnapRAID’s z-parity.
+ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the computation compared to SnapRAID’s z-parity.
 </p>
 
 <p>
-<a id="note4">[4]</a> - unRAID allows to use filled disks but only if they are already
-formatted with the XFS or Btrfs filesystems.
-But not ext4 or NTFS, the two most common filesystems used in Linux and Windows.
+<a id="note4">[4]</a> - unRAID supports filled disks only if they are formatted with XFS or Btrfs filesystems, but not ext4 or NTFS, the two most common filesystems for Linux and Windows.
 </p>
 
 <p>
-<a id="note5">[5]</a> - ZFS allows to add a new vdev at the pool, but not a disk to a vdev.
-See <a href="http://louwrentius.com/the-hidden-cost-of-using-zfs-for-your-home-nas.html">The 'Hidden' Cost of Using ZFS for Your Home NAS</a>.
+<a id="note5">[5]</a> - ZFS allows adding a new vdev to a pool, but not a disk to an existing vdev. See <a href="http://louwrentius.com/the-hidden-cost-of-using-zfs-for-your-home-nas.html">The 'Hidden' Cost of Using ZFS for Your Home NAS</a>.
 </p>
 
 <p>
-<a id="note6">[6]</a> - ZFS is also available in Linux at kernel level using <a href="http://zfsonlinux.org/">ZFS on Linux</a>.
+<a id="note6">[6]</a> - ZFS is available on Linux at the kernel level via <a href="http://zfsonlinux.org/">ZFS on Linux</a>.
 </p>
 
 <p>
-<a id="note7">[7]</a> - ZFS has external GUIs, like <a href="http://www.napp-it.org/">Napp-it</a>
-and plugins for <a href="http://www.freenas.org/">FreeNAS</a> and <a href="http://www.nas4free.org/">NAS4Free</a>.
+<a id="note7">[7]</a> - ZFS supports external GUIs, such as <a href="http://www.napp-it.org/">Napp-it</a>, and plugins for <a href="http://www.freenas.org/">FreeNAS</a> and <a href="http://www.nas4free.org/">NAS4Free</a>.
 </p>
 
 <p>
-<a id="note8">[8]</a> - unRAID can have integrity checksum using a plugin lik
-<a href="https://forums.lime-technology.com/topic/43290-dynamix-file-integrity-plugin/">Dynamix File Integrity</a>,
-<a href="https://forums.lime-technology.com/topic/41708-checksum-suite/">Checksum Suite</a> or
-<a href="https://forums.lime-technology.com/topic/35615-bunker-yet-another-utility-for-file-integrity-checks/">bunker</a>
-but they are all independent at the parity processing and not used to help the recovering process.
-For example, when recovering a single failed disk with double parity,
-the checksum can be used to identify additional silent errors, and still be able to recover.
+<a id="note8">[8]</a> - unRAID can use integrity checksums via plugins like <a href="https://forums.lime-technology.com/topic/43290-dynamix-file-integrity-plugin/">Dynamix File Integrity</a>, <a href="https://forums.lime-technology.com/topic/41708-checksum-suite/">Checksum Suite</a>, or <a href="https://forums.lime-technology.com/topic/35615-bunker-yet-another-utility-for-file-integrity-checks/">bunker</a>. However, these are independent of parity processing and not used to aid recovery. For example, when recovering a single failed disk with dual parity, checksums can identify additional silent errors to facilitate recovery.
 </p>
 
 <p>
-<a id="note9">[9]</a> - Storage Spaces can be used with ReFS that support integrity checksum, but not in the Parity mode:
-<a href="http://www.windowscentral.com/how-use-resilient-file-system-refs-windows-10"><i>"Although, you may be able to select Simple (no resiliency) or Parity, both of these options will fail the process"</i></a>.
+<a id="note9">[9]</a> - Storage Spaces can be used with ReFS, which supports integrity checksums, but not in Parity mode: <a href="http://www.windowscentral.com/how-use-resilient-file-system-refs-windows-10"><i>"Although you may select Simple (no resiliency) or Parity, both options will fail the process."</i></a>
 </p>
 
 <p>
-<a id="note10">[10]</a> - Btrfs has external GUIs, like <a href="http://rockstor.com/">Rockstor</a>.
+<a id="note10">[10]</a> - Btrfs supports external GUIs, such as <a href="http://rockstor.com/">Rockstor</a>.
 </p>
 
 <p>
-<a id="note11">[11]</a> - Btrfs supports RAID5 from 2013, but recently some serious issues in the
-RAID5/6 support were <a href="https://www.phoronix.com/scan.php?page=news_item&px=Btrfs-RAID-56-Is-Bad">found</a>.
-At present they <a href="https://www.phoronix.com/scan.php?page=news_item&px=Btrfs-RAID56-Not-All-Clear">aren't fixed yet</a>.
-The official wiki says (2025):
-<a href="https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices"><i>"There are some implementation and design deficiencies that make it unreliable for some corner cases and the feature should not be used in production, only for evaluation or testing"</i></a>.
+<a id="note11">[11]</a> - Btrfs has supported RAID5 since 2013, but serious issues in RAID5/6 support were <a href="https://www.phoronix.com/scan.php?page=news_item&px=Btrfs-RAID-56-Is-Bad">identified</a>. As of 2025, these <a href="https://www.phoronix.com/scan.php?page=news_item&px=Btrfs-RAID56-Not-All-Clear">remain unresolved</a>. The official wiki states: <a href="https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices"><i>"There are implementation and design deficiencies that make it unreliable for some corner cases. The feature should not be used in production, only for evaluation or testing."</i></a>
 </p>
 
 <p>
-If you think that some information reported is incorrect or simply unfair, please report it in the <a href="https://sourceforge.net/p/snapraid/discussion/1677233/">Forum</a>.
+If you believe any information is incorrect or unfair, please report it in the <a href="https://sourceforge.net/p/snapraid/discussion/1677233/">Forum</a>.
 </p>
 
 
@@ -292,6 +253,5 @@ If you think that some information reported is incorrect or simply unfair, pleas
 </div>
 </body>
 </html>
-
 
 
