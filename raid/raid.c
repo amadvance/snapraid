@@ -172,15 +172,16 @@
  * This linear system is always solvable since the coefficient matrix is
  * nonsingular due to the properties of A[].
  *
- * Example performance on a Core i5-4670K Haswell Quad-Core 3.4GHz, stripe 256 KiB, 8 data disks:
+ * Example performance on a Intel Core i7-10700 CPU @ 2.90GHz, stripe 256 KiB, 8 data disks:
  *
- *             int8   int32   int64   sse2    ssse3   avx2
- *   gen1             13339   25438   45438           50588
- *   gen2              4115    6514   21840           32201
- *   gen3       814                           10154   18613
- *   gen4       620                            7569   14229
- *   gen5       496                            5149   10051
- *   gen6       413                            4239    8190
+ *        int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
+ *  gen1         24995   46562   62683                           77069
+ *  gen2          8243   15879   25788   27292                   44907
+ *  genz          5509   10588   14485   13920                           25175
+ *  gen3  1190                                   13201   14307           27268
+ *  gen4   914                                   10061   11006           21328
+ *  gen5   746                                    7970    8828           17040
+ *  gen6   630                                    6627    7516           14584
  *
  * Values are in MiB/s of data processed by a single thread.
  * Results can be reproduced using "raid/test/speedtest.c".
