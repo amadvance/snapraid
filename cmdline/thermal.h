@@ -56,7 +56,7 @@ struct snapraid_thermal {
 	uint64_t device; /**< Device ID. */
 	char name[PATH_MAX]; /**< Name of the disk. Note that it's not unique as more physical disks may map to the same logical disk */
 	int latest_temperature; /**< Latest temperature */
-	struct snapraid_thermal_point data[THERMAL_MAX];
+	struct snapraid_thermal_point data[THERMAL_MAX]; /**< Measures. Stopped after the first sleep. */
 	unsigned count; /**< Number of measures */
 	struct snapraid_thermal_params params; /**< Estimated thermal parameters */
 	tommy_node node; /**< Next node in the list. */

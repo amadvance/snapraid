@@ -220,6 +220,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		struct snapraid_thermal* found;
 		devinfo_t* devinfo = i->data;
 		unsigned k;
+		unsigned count;
 
 		int temperature = smart_temp(devinfo);
 		if (temperature < 0)
@@ -254,22 +255,27 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		if (found->count + 1 >= THERMAL_MAX) /* keep one extra space at the end */
 			continue;
 
-		/* only monotone increasing temperature */
-		if (found->count > 0 && found->data[found->count - 1].temperature >= temperature)
+		/* only monotone temperature */
+		if (found->count > 0 && found->data[found->count - 1].temperature > temperature)
 			continue;
 
 		/* insert the new data point */
 		found->data[found->count].temperature = temperature;
 		found->data[found->count].time = now - state->thermal_first;
-		++found->count;
 
-		log_tag("thermal:heat:%s:%" PRIu64 ":%u:", devinfo->name, devinfo->device, found->count);
-		for (k = 0; k < found->count; ++k)
+		/* if it's a new temperature, store it, otherwise have it ovewritten the next time */
+		count = found->count + 1;
+		if (found->count == 0 || found->data[found->count - 1].temperature < temperature)
+			found->count = count;
+
+		/* log the new data */
+		log_tag("thermal:heat:%s:%" PRIu64 ":%u:", devinfo->name, devinfo->device, count);
+		for (k = 0; k < count; ++k)
 			log_tag("%s%d/%d", k > 0 ? "," : "", (int)found->data[k].temperature, (int)found->data[k].time);
 		log_tag("\n");
 
 		/* estimate parameters */
-		found->params = fit_thermal_model(found->data, found->count, state->thermal_ambient_temperature);
+		found->params = fit_thermal_model(found->data, count, state->thermal_ambient_temperature);
 
 		log_tag("thermal:params:%s:%" PRIu64 ":%g:%g:%g:%g:%g:%g\n", devinfo->name, devinfo->device,
 			found->params.k_heat, found->params.t_ambient, found->params.t_steady,
