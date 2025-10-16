@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2025 Andrea Mazzoleni
  *
@@ -213,6 +212,25 @@ int main(int argc, char* argv[])
 	return ret;
 }
 #else
+
+char full_argv0[PATH_MAX];
+
+const char* get_argv0(const char* argv0) 
+{
+	ssize_t len = readlink("/proc/self/exe", full_argv0, sizeof(full_argv0) - 1);
+	if (len != -1) {
+		full_argv0[len] = '\0';
+		return full_argv0;
+	} else {
+#ifdef __APPLE__
+		uint32_t size = sizeof(full_argv0);
+		if (_NSGetExecutablePath(full_argv0, &size) == 0)
+			return full_argv0;
+#endif
+	}
+	return argv0;
+}
+
 int main(int argc, char* argv[]) 
 {
 	int mode;
@@ -237,11 +255,16 @@ int main(int argc, char* argv[])
 	} else {
 		pid_t pid = fork();
 		if (pid == -1) {
+			perror("Failed to fork the SnapRAID child process");
 			exit(EXIT_FAILURE);
 		}
 
 		if (pid == 0) {
-			execv(argv[0], argv);
+			const char* argv0 = get_argv0(argv[0]);
+
+			execvp(argv0, argv);
+
+			perror("Failed to exec SnapRAID");
 
 			/* here it's an error */
 			exit(EXIT_FAILURE);
@@ -252,7 +275,7 @@ int main(int argc, char* argv[])
 			if (waitpid(pid, &status, 0) == -1) {
 				exit(EXIT_FAILURE);
 			}
-		
+
 			if (WIFEXITED(status)) {
 				ret = WEXITSTATUS(status);
 			} else if (WIFSIGNALED(status)) {
