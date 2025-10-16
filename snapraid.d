@@ -1205,13 +1205,18 @@ Configuration
 	smartctl tool. The current disk temperatures are displayed while
 	SnapRAID is operating. If any disk exceeds this limit, all operations
 	stop, and the disks are spun down (put into standby) for the duration
-	defined by the "temp_sleep" option.
+	defined by the "temp_sleep" option. After the sleep period, operations
+	resume, potentially pausing again if the temperature limit is reached
+	once more.
 
 	During operation, SnapRAID also analyzes the heating curve of each
 	disk and estimates the long-term steady temperature they are expected
 	to reach if activity continues. This predicted steady temperature is
 	shown in parentheses next to the current value and helps assess
-	whether the system's cooling is adequate.
+	whether the system's cooling is adequate. This estimated temperature
+	is for informational purposes only and has no effect on the behavior
+	of SnapRAID. The program's actions are based solely on the actual
+	measured disk temperatures.
 
 	To perform this analysis, SnapRAID needs a reference for the ambient
 	system temperature. It first attempts to read it from available
