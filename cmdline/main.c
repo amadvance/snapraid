@@ -108,6 +108,33 @@ static char* argutf8(const WCHAR* arg)
 	return utf8_arg;
 }
 
+/* Global variable to store child process handle */
+static HANDLE child_process = NULL;
+
+/* Console control handler - forwards Ctrl+C, Ctrl+Break to child */
+static BOOL WINAPI console_handler(DWORD ctrl_type) 
+{
+	/* if no child, default behavior */
+	if (child_process == NULL) 
+		return FALSE;
+
+	switch (ctrl_type) {
+	case CTRL_C_EVENT :
+	case CTRL_BREAK_EVENT :
+		/* forward the event to child process */
+		GenerateConsoleCtrlEvent(ctrl_type, GetProcessId(child_process));
+		return TRUE; /* signal handled, don't terminate parent */
+	case CTRL_CLOSE_EVENT :
+	case CTRL_LOGOFF_EVENT :
+	case CTRL_SHUTDOWN_EVENT :
+		/* these can't be easily forwarded, but we can terminate child */
+		TerminateProcess(child_process, 1);
+		return TRUE; /* signal handled, proceed with termination */
+	default:
+		return FALSE;
+	}
+}
+
 int main(int argc, char* argv[]) 
 {
 	int wide_argc;
@@ -178,21 +205,47 @@ int main(int argc, char* argv[])
 	} else {
 		STARTUPINFOW si;
 		PROCESS_INFORMATION pi;
+		DWORD wait;
+
+		/* install console control handler */
+		if (!SetConsoleCtrlHandler(console_handler, TRUE)) {
+			fprintf(stderr, "Failed to set console handler\n");
+			exit(EXIT_FAILURE);
+		}
 
 		ZeroMemory(&si, sizeof(si));
 		si.cb = sizeof(si);
 		ZeroMemory(&pi, sizeof(pi));
 
 		if (!CreateProcessW(app_buffer, cmd_buffer, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+			fprintf(stderr, "Failed to exec SnapRAID\n");
 			exit(EXIT_FAILURE);
 		}
 
-		WaitForSingleObject(pi.hProcess, INFINITE);
+		/* store child process handle for signal handler */
+		child_process = pi.hProcess;
 
-		GetExitCodeProcess(pi.hProcess, &res);
+		wait = WaitForSingleObject(pi.hProcess, INFINITE);
+		if (wait != WAIT_OBJECT_0) {
+			fprintf(stderr, "WaitForSingleObject failed: %lu\n", (unsigned long)GetLastError());
+			TerminateProcess(pi.hProcess, 1);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			return 1;
+		}
 
-		CloseHandle(pi.hProcess);
+		/* clear child process handle */
+		child_process = NULL;
+
+		if (!GetExitCodeProcess(pi.hProcess, &res)) {
+			fprintf(stderr, "GetExitCodeProcess failed: %lu\n", (unsigned long)GetLastError());
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			return 1;
+		}
+
 		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
 
 		ret = res;
 
@@ -201,6 +254,7 @@ int main(int argc, char* argv[])
 			spindown_argv[0] = utf8_argv[0];
 			spindown_argv[1] = "down";
 			spindown_argv[2] = 0;
+
 			snapraid_main(2, spindown_argv);
 		}
 	}
@@ -231,6 +285,17 @@ const char* get_argv0(const char* argv0)
 	return argv0;
 }
 
+/* global variable to store child PID for signal handler */
+static volatile pid_t child_pid = 0;
+
+/* signal handler that forwards signals to child */
+static void forward_signal(int sig) 
+{
+	if (child_pid > 0) {
+		kill(child_pid, sig);
+	}
+}
+
 int main(int argc, char* argv[]) 
 {
 	int mode;
@@ -253,28 +318,78 @@ int main(int argc, char* argv[])
 	if (mode == MODE_DEFAULT) {
 		ret = snapraid_main(argc, argv);
 	} else {
+		struct sigaction sa;
+
+		/* set up signal handler to ignore signals */
+		sa.sa_handler = forward_signal;
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = SA_RESTART; /* restart interrupted system calls */
+
+		/* install forwarding handler for signals */
+		sigaction(SIGINT, &sa, NULL);   /* Ctrl+C */
+		sigaction(SIGQUIT, &sa, NULL);  /* Ctrl+\ */
+		sigaction(SIGTERM, &sa, NULL);  /* termination */
+		sigaction(SIGHUP, &sa, NULL);   /* hangup */
+		sigaction(SIGPIPE, &sa, NULL);  /* broken pipe */
+		sigaction(SIGALRM, &sa, NULL);  /* alarm/timer */
+		sigaction(SIGUSR1, &sa, NULL);  /* user-defined 1 */
+		sigaction(SIGUSR2, &sa, NULL);  /* user-defined 2 */
+		sigaction(SIGTSTP, &sa, NULL);  /* Ctrl+Z */
+		
 		pid_t pid = fork();
 		if (pid == -1) {
-			perror("Failed to fork the SnapRAID child process");
+			perror("Failed to fork SnapRAID");
 			exit(EXIT_FAILURE);
 		}
 
 		if (pid == 0) {
-			const char* argv0 = get_argv0(argv[0]);
+			/* child process */
 
-			execvp(argv0, argv);
+			/* restore default signal handlers */
+			signal(SIGINT, SIG_DFL);
+			signal(SIGQUIT, SIG_DFL);
+			signal(SIGTERM, SIG_DFL);
+			signal(SIGHUP, SIG_DFL);
+			signal(SIGPIPE, SIG_DFL);
+			signal(SIGALRM, SIG_DFL);
+			signal(SIGUSR1, SIG_DFL);
+			signal(SIGUSR2, SIG_DFL);
+			signal(SIGTSTP, SIG_DFL);
 
-			perror("Failed to exec SnapRAID");
+			execvp(get_argv0(argv[0]), argv);
 
 			/* here it's an error */
+			perror("Failed to exec SnapRAID");
 			exit(EXIT_FAILURE);
 		} else {
+			/* parent process */
 			int status;
 
-			/* parent process - wait for child */
-			if (waitpid(pid, &status, 0) == -1) {
+			/* store child PID so signal handler can forward signals */
+			child_pid = pid;
+
+			do {
+				ret = waitpid(pid, &status, 0);
+			} while (ret == -1 && errno == EINTR); /* retry if interrupted by signal */
+
+			if (ret == -1) {
+				perror("Failed to wait for SnapRAID");
 				exit(EXIT_FAILURE);
 			}
+
+			/* clear child PID */
+			child_pid = 0;
+
+			/* restore default signal handlers */
+			signal(SIGINT, SIG_DFL);
+			signal(SIGQUIT, SIG_DFL);
+			signal(SIGTERM, SIG_DFL);
+			signal(SIGHUP, SIG_DFL);
+			signal(SIGPIPE, SIG_DFL);
+			signal(SIGALRM, SIG_DFL);
+			signal(SIGUSR1, SIG_DFL);
+			signal(SIGUSR2, SIG_DFL);
+			signal(SIGTSTP, SIG_DFL);
 
 			if (WIFEXITED(status)) {
 				ret = WEXITSTATUS(status);
@@ -290,6 +405,7 @@ int main(int argc, char* argv[])
 				spindown_argv[0] = argv[0];
 				spindown_argv[1] = "down";
 				spindown_argv[2] = 0;
+
 				snapraid_main(2, spindown_argv);
 			}
 		}
