@@ -1347,6 +1347,7 @@ int snapraid_main(int argc, char* argv[])
 	(void)lock;
 #endif
 
+	ret = 0;
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
 
@@ -1419,13 +1420,6 @@ int snapraid_main(int argc, char* argv[])
 			sleep(2);
 
 		ret = state_sync(&state, blockstart, blockcount);
-
-		/* abort if required */
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
@@ -1438,7 +1432,7 @@ int snapraid_main(int argc, char* argv[])
 		/* intercept signals while operating */
 		signal_init();
 
-		state_dry(&state, blockstart, blockcount);
+		ret = state_dry(&state, blockstart, blockcount);
 	} else if (operation == OPERATION_REHASH) {
 		state_read(&state);
 
@@ -1459,13 +1453,6 @@ int snapraid_main(int argc, char* argv[])
 		signal_init();
 
 		ret = state_scrub(&state, plan, olderthan);
-
-		/* abort if required */
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
 
@@ -1548,13 +1535,6 @@ int snapraid_main(int argc, char* argv[])
 		} else { /* it's fix */
 			ret = state_check(&state, 1, blockstart, blockcount);
 		}
-
-		/* abort if required */
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
 	}
 
 	/* close log file */
@@ -1577,6 +1557,22 @@ int snapraid_main(int argc, char* argv[])
 
 	os_done();
 	lock_done();
+
+	/* abort if required */
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (global_interrupt) {
+		/* LCOV_EXCL_START */
+#ifdef _WIN32
+		exit(STATUS_CONTROL_C_EXIT);
+#else
+		exit(128 + SIGINT);
+#endif
+		/* LCOV_EXCL_STOP */
+	}
 
 	return EXIT_SUCCESS;
 }

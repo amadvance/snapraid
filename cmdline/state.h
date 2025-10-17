@@ -259,7 +259,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 /**
  * Dry the files.
  */
-void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
+int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
 
 /**
  * Rehash the files.

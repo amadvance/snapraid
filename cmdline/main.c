@@ -326,16 +326,13 @@ int main(int argc, char* argv[])
 		sa.sa_flags = SA_RESTART; /* restart interrupted system calls */
 
 		/* install forwarding handler for signals */
-		sigaction(SIGINT, &sa, NULL);   /* Ctrl+C */
-		sigaction(SIGQUIT, &sa, NULL);  /* Ctrl+\ */
-		sigaction(SIGTERM, &sa, NULL);  /* termination */
-		sigaction(SIGHUP, &sa, NULL);   /* hangup */
-		sigaction(SIGPIPE, &sa, NULL);  /* broken pipe */
-		sigaction(SIGALRM, &sa, NULL);  /* alarm/timer */
-		sigaction(SIGUSR1, &sa, NULL);  /* user-defined 1 */
-		sigaction(SIGUSR2, &sa, NULL);  /* user-defined 2 */
-		sigaction(SIGTSTP, &sa, NULL);  /* Ctrl+Z */
-		
+		sigaction(SIGINT, &sa, NULL); /* Ctrl+C */
+		sigaction(SIGQUIT, &sa, NULL); /* Ctrl+\ */
+		sigaction(SIGTERM, &sa, NULL); /* termination */
+		sigaction(SIGHUP, &sa, NULL); /* hangup */
+		sigaction(SIGUSR1, &sa, NULL); /* user-defined 1 */
+		sigaction(SIGUSR2, &sa, NULL); /* user-defined 2 */
+
 		pid_t pid = fork();
 		if (pid == -1) {
 			perror("Failed to fork SnapRAID");
@@ -350,11 +347,8 @@ int main(int argc, char* argv[])
 			signal(SIGQUIT, SIG_DFL);
 			signal(SIGTERM, SIG_DFL);
 			signal(SIGHUP, SIG_DFL);
-			signal(SIGPIPE, SIG_DFL);
-			signal(SIGALRM, SIG_DFL);
 			signal(SIGUSR1, SIG_DFL);
 			signal(SIGUSR2, SIG_DFL);
-			signal(SIGTSTP, SIG_DFL);
 
 			execvp(get_argv0(argv[0]), argv);
 
@@ -385,11 +379,8 @@ int main(int argc, char* argv[])
 			signal(SIGQUIT, SIG_DFL);
 			signal(SIGTERM, SIG_DFL);
 			signal(SIGHUP, SIG_DFL);
-			signal(SIGPIPE, SIG_DFL);
-			signal(SIGALRM, SIG_DFL);
 			signal(SIGUSR1, SIG_DFL);
 			signal(SIGUSR2, SIG_DFL);
-			signal(SIGTSTP, SIG_DFL);
 
 			if (WIFEXITED(status)) {
 				ret = WEXITSTATUS(status);

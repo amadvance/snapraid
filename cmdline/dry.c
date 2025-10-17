@@ -407,7 +407,7 @@ bail:
 	return 0;
 }
 
-void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
+int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
 	int ret;
@@ -467,11 +467,8 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
-	/* abort if required */
-	if (error != 0) {
-		/* LCOV_EXCL_START */
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	if (error != 0)
+		return -1;
+	return 0;
 }
 
