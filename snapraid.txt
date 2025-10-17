@@ -1316,7 +1316,7 @@ To display the temperature of all disks, use the -A or --stats option.
 
 Sets the standby time, in minutes, when the temperature limit is
 reached. During this period, the disks remain spun down. The default
-is 15 minutes.
+is 5 minutes.
 
 7.13 pool DIR
 -------------

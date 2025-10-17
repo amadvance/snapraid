@@ -26,7 +26,7 @@
 /**
  * Period of temperature measures
  */
-#define THERMAL_PERIOD_SECONDS 60
+#define THERMAL_PERIOD_SECONDS 30
 
 /**
  * Max number of temperature measures

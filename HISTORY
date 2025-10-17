@@ -10,7 +10,7 @@ SnapRAID HISTORY
       overheating.
     - temp_sleep TIME_IN_MINUTES
       Defines how long the disks remain in standby after a temperature limit
-      event. After this time, operations are resumed. Defaults to 15 minutes.
+      event. After this time, operations are resumed. Defaults to 5 minutes.
  * Add a new "probe" command that shows the spinning status of all disks.
  * Add a new -s, --spin-down-on-error option that spins down all disks
    when a command ends with an error.

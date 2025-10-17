@@ -1230,7 +1230,7 @@ Configuration
   temp_sleep TIME_IN_MINUTES
 	Sets the standby time, in minutes, when the temperature limit is
 	reached. During this period, the disks remain spun down. The default
-	is 15 minutes.
+	is 5 minutes.
 
   pool DIR
 	Defines the pooling directory where the virtual view of the disk

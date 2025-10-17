@@ -1193,9 +1193,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			if (time < 5 || time > 120) {
+			if (time < 3 || time > 120) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid 'temp_sleep' temperature specification in '%s' at line %u. It must be between 5 and 120\n", path, line);
+				log_fatal("Invalid 'temp_sleep' temperature specification in '%s' at line %u. It must be between 3 and 120\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
