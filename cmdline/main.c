@@ -397,6 +397,9 @@ int main(int argc, char* argv[])
 				spindown_argv[1] = "down";
 				spindown_argv[2] = 0;
 
+				/* ignore sigpipe to allow spindown even if the terminal is closed */
+				signal(SIGPIPE, SIG_IGN);
+
 				snapraid_main(2, spindown_argv);
 			}
 		}
