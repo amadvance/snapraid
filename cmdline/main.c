@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
 		if (wcscmp(wide_argv[i], L"-s") == 0 || wcscmp(wide_argv[i], L"--spin-down-on-error") == 0) {
 			mode = MODE_SPINDOWN;
 		} else {
-			pos = argcat(cmd_buffer, sizeof(cmd_buffer), 0, wide_argv[i]);
+			pos = argcat(cmd_buffer, sizeof(cmd_buffer), pos, wide_argv[i]);
 			if (pos < 0) {
 				exit(EXIT_FAILURE);
 			}
