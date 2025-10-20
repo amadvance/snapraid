@@ -641,6 +641,8 @@ Commands
 	Lists all the files contained in the array at the time of the
 	last "sync".
 
+	With -v or --verbose, the subsecond time is also shown.
+
 	Nothing is modified.
 
   dup

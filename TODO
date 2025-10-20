@@ -37,10 +37,6 @@ It would be interesting to compare performance with the hand-written
 assembler functions. Eventually we can convert them to use intrinsic also.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/9dbd7581/
 
-* Extend haspdeep to support the SnapRAID hash :
-https://github.com/jessek/hashdeep/
-https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
-
 * Add a "noaccessdenied" config option to exclude not readable files/dirs.
 Like the "nohidden".
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
@@ -141,25 +137,10 @@ File with the same name will get an extra extension like ".1", ".2".
 
 - Major
 
-* Uses a separated file for storing hashes, to allow to use a memory
-mapped file to decrease memory utilization.
-The file can contains hashes stored in the same order they are accessed
-in sync/check/scrub.
-+ A lot less memory utilization
-- It will be slow in --pre-hash as the files are accessed in another order,
-but no much slow.
-- How to handle multiple .content file copy ? When working we can have
-only a single file. When storing the .content we'll have to copy it
-in all the places.
-* Can we mix the existing and new approach ? We can create this
-hash file at startup in a memory mapped "temporary" file.
-It may takes some time to create it, but then it will be fast.
-See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/cdea773f/
-
 * Allocate parity minimizing concurrent use of it
 Each parity allocation should check for a parity
 range with less utilization by other disks.
-We need to take care do disable this mechanism when the parity space
+We need to take care to disable this mechanism when the parity space
 is near to fillup the parity partition.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1797bf7d/
 + This increase the possibility of recovering with multiple failures with not
@@ -373,4 +354,24 @@ The risk would be instead to miss some recovery opportunity.
 So, makes sense to have it a little slower but trying any
 possible recovery strategy.
 
+* Extend haspdeep to support the SnapRAID hash.
+- Not possible, because now SnapRAID uses a hash see that makes the hash unique
+for each array
+https://github.com/jessek/hashdeep/
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
 
+* Uses a separated file for storing hashes, to allow to use a memory
+mapped file to decrease memory utilization.
+- Now it's expected to have machines with big memory.
+The file can contains hashes stored in the same order they are accessed
+in sync/check/scrub.
++ A lot less memory utilization
+- It will be slow in --pre-hash as the files are accessed in another order,
+but no much slow.
+- How to handle multiple .content file copy ? When working we can have
+only a single file. When storing the .content we'll have to copy it
+in all the places.
+* Can we mix the existing and new approach ? We can create this
+hash file at startup in a memory mapped "temporary" file.
+It may takes some time to create it, but then it will be fast.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/cdea773f/
