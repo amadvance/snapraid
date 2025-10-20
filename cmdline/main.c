@@ -121,15 +121,23 @@ static BOOL WINAPI console_handler(DWORD ctrl_type)
 	switch (ctrl_type) {
 	case CTRL_C_EVENT :
 	case CTRL_BREAK_EVENT :
-		/* forward the event to child process */
-		GenerateConsoleCtrlEvent(ctrl_type, GetProcessId(child_process));
+		/* 
+		 * Return TRUE to prevent parent termination. The child process 
+		 * will receive these events automatically because it's attached 
+		 * to the same console, so we don't need to forward them. 
+		 */
 		return TRUE; /* signal handled, don't terminate parent */
 	case CTRL_CLOSE_EVENT :
 	case CTRL_LOGOFF_EVENT :
 	case CTRL_SHUTDOWN_EVENT :
-		/* these can't be easily forwarded, but we can terminate child */
-		TerminateProcess(child_process, 1);
-		return TRUE; /* signal handled, proceed with termination */
+		/* 
+		 * Return TRUE to prevent our termination while child handles shutdown.
+		 * The child receives these events automatically (same console).
+		 * Note: Windows will forcibly kill us after a timeout regardless
+		 * of returning TRUE: ~5 seconds for CLOSE_EVENT and LOGOFF_EVENT,
+		 * ~5-20 seconds for SHUTDOWN_EVENT (configurable in registry). 
+		 */
+		return TRUE; /* signal handled, but Windows will kill us after timeout */
 	default:
 		return FALSE;
 	}
