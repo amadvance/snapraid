@@ -23,6 +23,9 @@ SnapRAID HISTORY
  * Add a new "smartignore" configuration option to ignore specific SMART
    attributes.
  * Support UUID in macOS [Nasado]
+ * Windows binaries built with gcc 11.5.0 using the MXE cross compiler at
+   commit 8c4378fa2b55bc28515b23e96e05d03e671d9b90 with targets
+   i686-w64-mingw32.static and x86_64-w64-mingw32.static and optimization -O2.
 
 12.4 2025/01
 ============
