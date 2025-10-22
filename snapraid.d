@@ -1213,12 +1213,14 @@ Configuration
 
 	During operation, SnapRAID also analyzes the heating curve of each
 	disk and estimates the long-term steady temperature they are expected
-	to reach if activity continues. This predicted steady temperature is
-	shown in parentheses next to the current value and helps assess
-	whether the system's cooling is adequate. This estimated temperature
-	is for informational purposes only and has no effect on the behavior
-	of SnapRAID. The program's actions are based solely on the actual
-	measured disk temperatures.
+	to reach if activity continues. The estimation is performed only after
+	the disk temperature has increased four times, ensuring that enough
+	data points are available to establish a reliable trend. 
+	This predicted steady temperature is shown in parentheses next to the
+	current value and helps assess whether the system's cooling is
+	adequate. This estimated temperature is for informational purposes
+	only and has no effect on the behavior of SnapRAID. The program's
+	actions are based solely on the actual measured disk temperatures.
 
 	To perform this analysis, SnapRAID needs a reference for the ambient
 	system temperature. It first attempts to read it from available
