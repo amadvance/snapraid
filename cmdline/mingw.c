@@ -1162,7 +1162,7 @@ int windows_rename(const char* from, const char* to)
 	 * Is an atomic file rename (with overwrite) possible on Windows?
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
-	if (!MoveFileExW(convert(conv_buf_from, from), convert(conv_buf_to, to), MOVEFILE_REPLACE_EXISTING)) {
+	if (!MoveFileExW(convert(conv_buf_from, from), convert(conv_buf_to, to), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
