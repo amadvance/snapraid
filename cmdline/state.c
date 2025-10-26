@@ -4412,11 +4412,6 @@ void state_progress_stop(struct snapraid_state* state)
 
 	now = time(0);
 
-	if (!state->opt.gui) {
-		msg_bar("\n");
-		msg_flush();
-	}
-
 	state->progress_interruption = now;
 }
 
