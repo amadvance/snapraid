@@ -64,6 +64,7 @@
 #define HAVE_FSYNC 1
 #undef fsync
 #define fsync windows_fsync
+#define sync windows_sync
 #undef rename
 #define rename windows_rename
 #undef remove
@@ -231,6 +232,11 @@ int windows_fallocate(int fd, int mode, off64_t off, off64_t len);
  * Like the C fsync().
  */
 int windows_fsync(int fd);
+
+/**
+ * Like the C sync().
+ */
+int windows_sync(void);
 
 /**
  * Like the C futimes().

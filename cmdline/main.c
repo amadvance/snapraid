@@ -263,6 +263,11 @@ int main(int argc, char* argv[])
 			spindown_argv[1] = "down";
 			spindown_argv[2] = 0;
 
+			/* sync all disks */
+			printf("Flush...\n");
+			if (sync() != 0)
+				printf("WARNING! Failed to flush disks!\n");
+
 			snapraid_main(2, spindown_argv);
 		}
 	}
@@ -407,6 +412,10 @@ int main(int argc, char* argv[])
 
 				/* ignore sigpipe to allow spindown even if the terminal is closed */
 				signal(SIGPIPE, SIG_IGN);
+
+				/* sync all disks */
+				printf("Flush...\n");
+				sync();
 
 				snapraid_main(2, spindown_argv);
 			}

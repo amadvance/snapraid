@@ -1047,6 +1047,157 @@ int windows_fsync(int fd)
 	return 0;
 }
 
+static int windows_vsync(const wchar_t* volume) 
+{
+	HANDLE h;
+	DWORD bytes;
+   
+	/* open the volume (volumeName already in \\?\Volume{GUID} format) */
+	h = CreateFileW(volume, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+    
+	/*
+	 * "The FlushFileBuffers API can be used to flush all the outstanding data
+	 * and metadata on a single file or a whole volume. However, frequent use
+	 * of this API can cause reduced throughput. Internally, Windows uses the
+	 * SCSI Synchronize Cache or the IDE/ATAPI Flush cache commands."
+	 *
+	 * From:
+	 * "Windows Write Caching - Part 2 An overview for Application Developers"
+	 * http://winntfs.com/2012/11/29/windows-write-caching-part-2-an-overview-for-application-developers/
+	 */
+	if (!FlushFileBuffers(h)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+
+		switch (error) {
+		case ERROR_INVALID_HANDLE :
+			/*
+			 * FlushFileBuffers returns this error if the handle
+			 * doesn't support buffering, like the console output.
+			 *
+			 * We had a report that also ATA-over-Ethernet returns
+			 * this error, but not enough sure to ignore it.
+			 * So, we use now an extended error reporting.
+			 */
+			log_fatal("Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
+			log_fatal("Are you using ATA-over-Ethernet ? Please report it.\n");
+
+			/* normal error processing */
+			windows_errno(error);
+			return -1;
+
+		case ERROR_ACCESS_DENIED :
+			/*
+			 * FlushFileBuffers returns this error for read-only
+			 * data, that cannot have to be flushed.
+			 */
+			return 0;
+
+		default :
+			windows_errno(error);
+			return -1;
+		}
+	}
+
+	/* lock the volume (may fail if volume is in use, which is fine) */
+	if (!DeviceIoControl(h, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+
+		switch (error) {
+		case ERROR_ACCESS_DENIED :
+			/*
+			 * ERROR_ACCESS_DENIED (5) means volume is in use - this is expected and OK
+			 */
+			return 0;
+
+		default :
+			windows_errno(error);
+			return -1;
+		}
+	}
+
+	/* unlock immediately - the lock/unlock cycle helps ensure consistency */
+	if (!DeviceIoControl(h, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+  
+	if (!CloseHandle(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+	
+	return 0;
+}
+
+static int windows_async(void)
+{
+	HANDLE h;
+	wchar_t volume[MAX_PATH];
+	DWORD error = 0;
+	DWORD count = 0;
+	DWORD success = 0;
+     
+	h = FindFirstVolumeW(volume, sizeof(volume) / sizeof(wchar_t));
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+    
+	do {
+		/* remove trailing backslash */
+		size_t len = wcslen(volume);
+		if (len > 0 && volume[len - 1] == L'\\')
+			volume[len - 1] = L'\0';
+
+		++count;
+
+		if (windows_vsync(volume) == 0) {
+			++success;
+		} else {
+			/* save the first error */
+			if (error == 0)
+				error = GetLastError();
+		}
+	} while (FindNextVolumeW(h, volume, sizeof(volume) / sizeof(wchar_t)));
+
+	/* if at least one failed */
+	if (count != success) {
+		FindVolumeClose(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	error = GetLastError();
+	if (error != ERROR_NO_MORE_FILES) {
+		FindVolumeClose(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	if (!FindVolumeClose(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
+int windows_sync(void)
+{
+	if (windows_async() != 0) 
+		return -1;
+
+	return 0;
+}
+
 int windows_futimens(int fd, struct windows_timespec tv[2])
 {
 	HANDLE h;
