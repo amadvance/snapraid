@@ -1,32 +1,30 @@
 SnapRAID CHECK
 ==============
 
-The regression test of SnapRAID is run using the command:
+The regression test for SnapRAID is run using the command:
 
-	make check
+    make check
 
-You can also run the regression test in valgrind with:
+You can also run the regression test with Valgrind using:
 
-	./configure --enable-valgrind
-	make check
+    ./configure --enable-valgrind
+    make check
 
-To run a coverage test you should use:
+To perform a coverage test, use the following commands:
 
-	./configure --enable-coverage
-	make lcov_reset
-	make check
-	make lcov_capture
-	make lcov_html
+    ./configure --enable-coverage
+    make lcov_reset
+    make check
+    make lcov_capture
+    make lcov_html
 
-and open the file ./cov/index.html in your browser to see the results.
+Then, open the file `./cov/index.html` in your browser to view the results.
 
-Please note that in the coverage analysis we exclude the handling of all
-the error conditions that result in an immediate termination of the program.
-You can recognize this excluded code because it's enclosed between
-the LCOV_EXCL_START and LCOV_EXCL_STOP keywords.
+Note that the coverage analysis excludes error-handling code that causes
+immediate program termination. This excluded code is enclosed between the
+LCOV_EXCL_START and LCOV_EXCL_STOP keywords.
 
-To test with the clang static analyzer use:
+To test with the Clang static analyzer, use:
 
-	scan-build ./configure
-	scan-build make
-
+    scan-build ./configure
+    scan-build make
