@@ -212,7 +212,7 @@ void printp(double v, size_t pad);
 /****************************************************************************/
 /* string */
 
-#define ESC_MAX (PATH_MAX*2 + 1)
+#define ESC_MAX (PATH_MAX * 2 + 1)
 
 /**
  * Escape a string for the log.
@@ -251,7 +251,7 @@ char* strpolish(char* s);
 unsigned strsplit(char** split_map, unsigned split_max, char* line, const char* delimiters);
 
 /**
- * Trim spaces from the start and the end 
+ * Trim spaces from the start and the end
  */
 void strtrim(char* s);
 
@@ -263,9 +263,9 @@ void strlwr(char* s);
 #endif
 
 /*
- * Find the first occurrence of 'needle' in 'haystack' only if it 
+ * Find the first occurrence of 'needle' in 'haystack' only if it
  * appears as a separate word (space, number or string boundaries).
- * 
+ *
  * Returns a pointer to the beginning of the match, or NULL if not found.
  */
 char* worddigitstr(const char* haystack, const char* needle);

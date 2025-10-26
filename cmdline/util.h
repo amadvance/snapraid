@@ -258,3 +258,4 @@ unsigned muldiv(uint64_t v, uint64_t mul, uint64_t div);
 unsigned muldiv_upper(uint64_t v, uint64_t mul, uint64_t div);
 
 #endif
+

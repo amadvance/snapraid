@@ -73,3 +73,4 @@ struct snapraid_thermal* thermal_alloc(uint64_t dev, const char* name);
 void thermal_free(struct snapraid_thermal* thermal);
 
 #endif
+

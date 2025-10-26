@@ -771,7 +771,7 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 {
 	tommy_node* i;
 	size_t device_pad;
-	
+
 	(void)state;
 
 	/* compute lengths for padding */
@@ -803,7 +803,7 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 		switch (devinfo->power) {
 		case POWER_STANDBY : printf("StandBy"); break;
 		case POWER_ACTIVE : printf(" Active"); break;
-		default: printf("Unknown"); break;
+		default : printf("Unknown"); break;
 		}
 
 		printf("  ");
@@ -991,7 +991,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 
 		if (operation == DEVICE_SMART)
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);
-		
+
 		if (operation == DEVICE_PROBE)
 			state_probe(state, &low);
 	}

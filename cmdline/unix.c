@@ -70,7 +70,7 @@ const char* stat_desc(struct stat* st)
 
 /**
  * Read a file from sys
- * 
+ *
  * Return -1 on error, otherwise the data read
  */
 #if HAVE_LINUX_DEVICE
@@ -1815,14 +1815,14 @@ int ambient_temperature(void)
 		DIR* hwmon_dir;
 		struct dirent* hwmon_entry;
 
-		if (strncmp(entry->d_name, "hwmon", 5) != 0) 
+		if (strncmp(entry->d_name, "hwmon", 5) != 0)
 			continue;
 
 		pathprint(path, sizeof(path), "/sys/class/hwmon/%s", entry->d_name);
 
 		/* iterate through temp*_input files */
 		hwmon_dir = opendir(path);
-		if (!hwmon_dir) 
+		if (!hwmon_dir)
 			continue;
 
 		while ((hwmon_entry = readdir(hwmon_dir)) != NULL) {
@@ -1852,7 +1852,7 @@ int ambient_temperature(void)
 				continue;
 
 			temp = strtol(value, &e, 10) / 1000;
-			if (*e != 0 && !isspace(*e)) 
+			if (*e != 0 && !isspace(*e))
 				continue;
 
 			/* cut the file name at "_input" */

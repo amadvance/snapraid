@@ -32,7 +32,7 @@ static int needs_quote(const WCHAR* arg)
 			return 1;
 		++arg;
 	}
-	
+
 	return 0;
 }
 
@@ -80,7 +80,7 @@ static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 			charcat(*arg);
 			++arg;
 		}
-        }
+	}
 
 	/* ending quote */
 	charcat(L'"');
@@ -112,38 +112,38 @@ static char* argutf8(const WCHAR* arg)
 static HANDLE child_process = NULL;
 
 /* Console control handler - forwards Ctrl+C, Ctrl+Break to child */
-static BOOL WINAPI console_handler(DWORD ctrl_type) 
+static BOOL WINAPI console_handler(DWORD ctrl_type)
 {
 	/* if no child, default behavior */
-	if (child_process == NULL) 
+	if (child_process == NULL)
 		return FALSE;
 
 	switch (ctrl_type) {
 	case CTRL_C_EVENT :
 	case CTRL_BREAK_EVENT :
-		/* 
-		 * Return TRUE to prevent parent termination. The child process 
-		 * will receive these events automatically because it's attached 
-		 * to the same console, so we don't need to forward them. 
+		/*
+		 * Return TRUE to prevent parent termination. The child process
+		 * will receive these events automatically because it's attached
+		 * to the same console, so we don't need to forward them.
 		 */
 		return TRUE; /* signal handled, don't terminate parent */
 	case CTRL_CLOSE_EVENT :
 	case CTRL_LOGOFF_EVENT :
 	case CTRL_SHUTDOWN_EVENT :
-		/* 
+		/*
 		 * Return TRUE to prevent our termination while child handles shutdown.
 		 * The child receives these events automatically (same console).
 		 * Note: Windows will forcibly kill us after a timeout regardless
 		 * of returning TRUE: ~5 seconds for CLOSE_EVENT and LOGOFF_EVENT,
-		 * ~5-20 seconds for SHUTDOWN_EVENT (configurable in registry). 
+		 * ~5-20 seconds for SHUTDOWN_EVENT (configurable in registry).
 		 */
 		return TRUE; /* signal handled, but Windows will kill us after timeout */
-	default:
+	default :
 		return FALSE;
 	}
 }
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 	int wide_argc;
 	WCHAR** wide_argv;
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 	int pos;
 	int mode;
 	int ret;
-	
+
 	(void)argc;
 	(void)argv;
 
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	for(i = 0;i < utf8_argc; ++i) 
+	for (i = 0; i < utf8_argc; ++i)
 		free(utf8_argv[i]);
 	free(utf8_argv);
 
@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
 
 char full_argv0[PATH_MAX];
 
-const char* get_argv0(const char* argv0) 
+const char* get_argv0(const char* argv0)
 {
 	ssize_t len = readlink("/proc/self/exe", full_argv0, sizeof(full_argv0) - 1);
 	if (len != -1) {
@@ -302,14 +302,14 @@ const char* get_argv0(const char* argv0)
 static volatile pid_t child_pid = 0;
 
 /* signal handler that forwards signals to child */
-static void forward_signal(int sig) 
+static void forward_signal(int sig)
 {
 	if (child_pid > 0) {
 		kill(child_pid, sig);
 	}
 }
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 	int mode;
 	int i, j;
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 	mode = MODE_DEFAULT;
 	j = 1;
 	for (i = 1; i < argc; ++i) {
-		if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--spin-down-on-error") == 0 ) {
+		if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--spin-down-on-error") == 0) {
 			mode = MODE_SPINDOWN;
 		} else {
 			argv[j] = argv[i];
@@ -425,3 +425,4 @@ int main(int argc, char* argv[])
 	return ret;
 }
 #endif
+

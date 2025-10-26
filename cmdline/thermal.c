@@ -40,8 +40,10 @@ void thermal_free(struct snapraid_thermal* thermal)
 	free(thermal);
 }
 
-// Fit exponential heating model to data using least squares
-struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_point* points, int n_points, double t_ambient) 
+/*
+ * Fit exponential heating model to data using least squares
+ */
+struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_point* points, int n_points, double t_ambient)
 {
 	struct snapraid_thermal_params model;
 	double t_steady_try;
@@ -75,7 +77,7 @@ struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_p
 				double diff = points[i].temperature - t_predicted;
 				error += diff * diff;
 			}
-			
+
 			if (error < best_error) {
 				best_error = error;
 				best_k = k_try;
@@ -104,10 +106,10 @@ struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_p
 		double t = points[i].time;
 		double t_predicted = model.t_steady - (model.t_steady - points[0].temperature) * exp(-model.k_heat * t);
 		double residual = points[i].temperature - t_predicted;
-		
+
 		sum_squared_residuals += residual * residual;
 		sum_total += (points[i].temperature - mean_temp) * (points[i].temperature - mean_temp);
-		
+
 		double abs_error = fabs(residual);
 		if (abs_error > model.max_error) {
 			model.max_error = abs_error;
@@ -242,7 +244,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		}
 
 		found->latest_temperature = temperature;
-		
+
 		if (highest_temperature < temperature)
 			highest_temperature = temperature;
 
@@ -302,7 +304,7 @@ int state_thermal_alarm(struct snapraid_state* state)
 void state_thermal_cooldown(struct snapraid_state* state)
 {
 	int sleep_time = state->thermal_cooldown_time;
-	
+
 	if (sleep_time == 0)
 		sleep_time = 5 * 60; /* default sleep time */
 	if (sleep_time < 5 * 60)
@@ -369,6 +371,7 @@ int state_thermal_begin(struct snapraid_state* state, time_t now)
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
-	
+
 	return 1;
 }
+

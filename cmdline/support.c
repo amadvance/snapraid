@@ -310,7 +310,7 @@ void msg_progress(const char* format, ...)
 		vmsg(stdout, format, ap);
 		va_end(ap);
 
-		fflush(stdout);	
+		fflush(stdout);
 	}
 
 	unlock_msg();
@@ -476,7 +476,7 @@ const char* esc_tag(const char* str, char* buffer)
 		ESCAPE(':', '\\', 'd');
 		ESCAPE('\\', '\\', '\\');
 
-		default:
+		default :
 			if (p == end)
 				goto bail;
 			*p++ = c;
@@ -608,14 +608,14 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 		case '*' : /* wildcard */
 		case '(' : /* shell */
 		case ')' : /* shell */
-		case '\\': /* quote */
+		case '\\' : /* quote */
 		case '|' : /* pipe */
 		case '[' : /* wildcard */
 		case ']' : /* wildcard */
 		case '{' : /* code */
 		case '}' : /* code */
 		case ';' : /* separator */
-		case '\'': /* quote */
+		case '\'' : /* quote */
 		case '"' : /* quote */
 		case '<' : /* redirect */
 		case '>' : /* redirect */
@@ -729,7 +729,7 @@ void strlwr(char* s)
 }
 #endif
 
-char* worddigitstr(const char* haystack, const char* needle) 
+char* worddigitstr(const char* haystack, const char* needle)
 {
 	size_t len = strlen(needle);
 	const char* s;
@@ -1840,7 +1840,7 @@ void thread_cond_broadcast_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex
 	}
 }
 
-void thread_create(thread_id_t* thread, void* (* func)(void *), void *arg)
+void thread_create(thread_id_t* thread, void* (*func)(void*), void *arg)
 {
 	if (pthread_create(thread, 0, func, arg) != 0) {
 		/* LCOV_EXCL_START */
@@ -1869,3 +1869,4 @@ void thread_yield(void)
 #endif
 }
 #endif
+

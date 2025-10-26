@@ -1100,7 +1100,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			if (strcmp(buffer, "*") == 0) {
 				smart = state->smartignore;
-			} else  if (lev_config_scan(buffer, &level, 0) == 0) { /* search for parity */
+			} else if (lev_config_scan(buffer, &level, 0) == 0) { /* search for parity */
 				smart = state->parity[level].smartignore;
 			} else {
 				struct snapraid_disk* disk;
@@ -4469,9 +4469,9 @@ static struct snapraid_thermal* state_thermal_find(struct snapraid_state* state,
 		struct snapraid_thermal* thermal = i->data;
 		if (strcmp(thermal->name, name) == 0) {
 			if (found == 0 
-				// if multiple matches, return the one with highest temperature
+				/* if multiple matches, return the one with highest temperature */
 				|| found->latest_temperature < thermal->latest_temperature
-				// or, if the temperature is equal, the one with the higher r_squared
+				/* or, if the temperature is equal, the one with the higher r_squared */
 				|| (found->latest_temperature == thermal->latest_temperature && found->params.r_squared < thermal->params.r_squared)
 			) {
 				found = thermal;
@@ -4578,7 +4578,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		
+
 
 		v = disk->progress_tick[current] - ref(disk->progress_tick, oldest);
 		printr(disk->name, pad);
@@ -5096,6 +5096,7 @@ int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct sna
 			/* LCOV_EXCL_STOP */
 		}
 	}
-	
+
 	return 0;
 }
+

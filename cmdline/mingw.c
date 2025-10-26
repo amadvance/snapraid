@@ -206,7 +206,7 @@ void os_abort(void)
 #ifdef __GNUC__
 	printf(", gcc " __VERSION__);
 #endif
-	printf(", %d-bit", (int)sizeof(void *) * 8);
+	printf(", %d-bit", (int)sizeof(void*) * 8);
 	printf(", PATH_MAX=%d", PATH_MAX);
 	printf("\n");
 
@@ -1047,18 +1047,18 @@ int windows_fsync(int fd)
 	return 0;
 }
 
-static int windows_vsync(const wchar_t* volume) 
+static int windows_vsync(const wchar_t* volume)
 {
 	HANDLE h;
 	DWORD bytes;
-   
+
 	/* open the volume (volumeName already in \\?\Volume{GUID} format) */
 	h = CreateFileW(volume, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
 	}
-    
+
 	/*
 	 * "The FlushFileBuffers API can be used to flush all the outstanding data
 	 * and metadata on a single file or a whole volume. However, frequent use
@@ -1128,12 +1128,12 @@ static int windows_vsync(const wchar_t* volume)
 		windows_errno(error);
 		return -1;
 	}
-  
+
 	if (!CloseHandle(h)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
-	
+
 	return 0;
 }
 
@@ -1144,13 +1144,13 @@ static int windows_async(void)
 	DWORD error = 0;
 	DWORD count = 0;
 	DWORD success = 0;
-     
+
 	h = FindFirstVolumeW(volume, sizeof(volume) / sizeof(wchar_t));
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
 	}
-    
+
 	do {
 		/* remove trailing backslash */
 		size_t len = wcslen(volume);
@@ -1192,7 +1192,7 @@ static int windows_async(void)
 
 int windows_sync(void)
 {
-	if (windows_async() != 0) 
+	if (windows_async() != 0)
 		return -1;
 
 	return 0;
@@ -1361,7 +1361,7 @@ int windows_open(const char* file, int flags, ...)
 	case O_RDWR :
 		access = GENERIC_READ | GENERIC_WRITE;
 		break;
-	default:
+	default :
 		errno = EINVAL;
 		return -1;
 	}
@@ -1385,7 +1385,7 @@ int windows_open(const char* file, int flags, ...)
 	case O_TRUNC :
 		create = TRUNCATE_EXISTING;
 		break;
-	default:
+	default :
 		errno = EINVAL;
 		return -1;
 	}
@@ -3070,7 +3070,7 @@ int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex)
 }
 
 struct windows_key_context {
-	void (* func)(void *);
+	void (*func)(void*);
 	DWORD key;
 	tommy_node node;
 };
@@ -3078,7 +3078,7 @@ struct windows_key_context {
 /* list of all keys with destructor */
 static tommy_list windows_key_list = { 0 };
 
-int windows_key_create(windows_key_t* key, void(* destructor)(void*))
+int windows_key_create(windows_key_t* key, void (*destructor)(void*))
 {
 	struct windows_key_context* context;
 
@@ -3140,7 +3140,7 @@ int windows_setspecific(windows_key_t key, void* value)
 struct windows_thread_context {
 	HANDLE h;
 	unsigned id;
-	void* (* func)(void *);
+	void* (*func)(void*);
 	void* arg;
 	void* ret;
 };
@@ -3168,7 +3168,7 @@ static unsigned __stdcall windows_thread_func(void* arg)
 	return 0;
 }
 
-int windows_create(thread_id_t* thread, void* attr, void* (* func)(void *), void* arg)
+int windows_create(thread_id_t* thread, void* attr, void* (*func)(void*), void* arg)
 {
 	struct windows_thread_context* context;
 

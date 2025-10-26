@@ -410,11 +410,11 @@ int windows_cond_destroy(windows_cond_t* cond);
 int windows_cond_signal(windows_cond_t* cond);
 int windows_cond_broadcast(windows_cond_t* cond);
 int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex);
-int windows_key_create(windows_key_t* key, void(* destructor)(void*));
+int windows_key_create(windows_key_t* key, void (*destructor)(void*));
 int windows_key_delete(windows_key_t key);
 void* windows_getspecific(windows_key_t key);
 int windows_setspecific(windows_key_t key, void* value);
-int windows_create(thread_id_t* thread, void* attr, void* (* func)(void *), void *arg);
+int windows_create(thread_id_t* thread, void* attr, void* (*func)(void*), void *arg);
 int windows_join(thread_id_t thread, void** retval);
 
 #endif

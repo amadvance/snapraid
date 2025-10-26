@@ -2114,3 +2114,4 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		return -1;
 	return 0;
 }
+

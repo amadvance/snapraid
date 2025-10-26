@@ -489,7 +489,7 @@ struct option long_options[] = {
 
 /*
  * Free letters: gIjJkKMnPQrtuxXWz
- * 
+ *
  * The 's' letter is used in main.c
  */
 #define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVGw:"
@@ -1270,7 +1270,7 @@ int snapraid_main(int argc, char* argv[])
 	case OPERATION_DRY :
 		break;
 #endif
-	default:
+	default :
 		/* we allow direct IO only on some commands */
 		if (opt.file_mode == ADVISE_DIRECT)
 			opt.file_mode = ADVISE_SEQUENTIAL;
@@ -1576,3 +1576,4 @@ int snapraid_main(int argc, char* argv[])
 
 	return EXIT_SUCCESS;
 }
+
