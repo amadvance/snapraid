@@ -45,45 +45,52 @@ static int needs_quote(const WCHAR* arg)
 
 static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 {
+	int has_quote;
+
 	/* space separator */
 	if (pos != 0)
 		charcat(L' ');
 
-	if (!needs_quote(arg)) {
+	has_quote = needs_quote(arg);
+
+	if (!has_quote) {
 		while (*arg)
 			charcat(*arg++);
-		return pos;
-	}
+	} else {
+		/* starting quote */
+		charcat(L'"');
 
-	charcat(L'"');
+		while (*arg) {
+			int bl = 0;
+			while (*arg == L'\\') {
+				++arg;
+				++bl;
+			}
 
-	while (*arg) {
-		int bl = 0;
-		while (*arg == L'\\') {
-			++arg;
-			++bl;
+			if (*arg == 0) {
+				/* double backslashes before closing quote */
+				bl = bl * 2;
+				while (bl--)
+					charcat(L'\\');
+			} else if (*arg == '"') {
+				/* double backslashes + escape the quote */
+				bl = bl * 2 + 1;
+				while (bl--)
+					charcat(L'\\');
+				charcat(L'"');
+				++arg;
+			} else {
+				/* normal backslashes */
+				while (bl--)
+					charcat(L'\\');
+				charcat(*arg);
+				++arg;
+			}
 		}
 
-		if (*arg == 0) {
-			bl = bl * 2;
-			while (bl--)
-				charcat(L'\\');
-		} else if (*arg == '"') {
-			bl = bl * 2 + 1;
-			while (bl--)
-				charcat(L'\\');
-			charcat(L'"');
-			++arg;
-		} else {
-			while (bl--)
-				charcat(L'\\');
-			charcat(*arg);
-			++arg;
-		}
+		/* ending quote */
+		charcat(L'"');
 	}
-
-	/* ending quote */
-	charcat(L'"');
 
 	return pos;
 }

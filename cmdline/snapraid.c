@@ -108,13 +108,355 @@ void test(int argc, char* argv[])
 	}
 
 #ifdef _WIN32
+	/* basic cases - no special characters, no quotes needed */
+	assert(strcmp(esc_shell("simple", buffer), "simple") == 0);
+	assert(strcmp(esc_shell("file.txt", buffer), "file.txt") == 0);
+	assert(strcmp(esc_shell("file123", buffer), "file123") == 0);
+	assert(strcmp(esc_shell("file_name-test.doc", buffer), "file_name-test.doc") == 0);
+	assert(strcmp(esc_shell(",._+:@/-", buffer), ",._+:@/-") == 0);
+	assert(strcmp(esc_shell("C:\\Users\\test", buffer), "C:\\Users\\test") == 0);
+
+	/* space - requires quoting */
 	assert(strcmp(esc_shell(" ", buffer), "\" \"") == 0);
-	assert(strcmp(esc_shell(" \" ", buffer), "\" \"\\\"\" \"") == 0);
-	assert(strcmp(esc_shell("&|()<>^", buffer), "^&^|^(^)^<^>^^") == 0);
-	assert(strcmp(esc_shell("&|()<>^ ", buffer), "\"&|()<>^ \"") == 0);
+	assert(strcmp(esc_shell("file name.txt", buffer), "\"file name.txt\"") == 0);
+	assert(strcmp(esc_shell("my document.doc", buffer), "\"my document.doc\"") == 0);
+	assert(strcmp(esc_shell("  multiple  spaces  ", buffer), "\"  multiple  spaces  \"") == 0);
+
+	/* tab - requires quoting */
+	assert(strcmp(esc_shell("\t", buffer), "\"\t\"") == 0);
+	assert(strcmp(esc_shell("file\tname", buffer), "\"file\tname\"") == 0);
+
+	/* newline - requires quoting */
+	assert(strcmp(esc_shell("\n", buffer), "\"\n\"") == 0);
+	assert(strcmp(esc_shell("line1\nline2", buffer), "\"line1\nline2\"") == 0);
+
+	/* carriage return - requires quoting */
+	assert(strcmp(esc_shell("\r", buffer), "\"\r\"") == 0);
+	assert(strcmp(esc_shell("text\r\n", buffer), "\"text\r\n\"") == 0);
+
+	/* double quote - requires quoting and escaping with backslash */
+	assert(strcmp(esc_shell("\"", buffer), "\"\\\"\"") == 0);
+	assert(strcmp(esc_shell("file\"name", buffer), "\"file\\\"name\"") == 0);
+	assert(strcmp(esc_shell("\"quoted\"", buffer), "\"\\\"quoted\\\"\"") == 0);
+	assert(strcmp(esc_shell("say \"hello\"", buffer), "\"say \\\"hello\\\"\"") == 0);
+
+	/* ampersand - requires quoting */
+	assert(strcmp(esc_shell("&", buffer), "\"&\"") == 0);
+	assert(strcmp(esc_shell("file&name", buffer), "\"file&name\"") == 0);
+	assert(strcmp(esc_shell("a&b&c", buffer), "\"a&b&c\"") == 0);
+	assert(strcmp(esc_shell("file & name", buffer), "\"file & name\"") == 0);
+
+	/* pipe - requires quoting */
+	assert(strcmp(esc_shell("|", buffer), "\"|\"") == 0);
+	assert(strcmp(esc_shell("file|name", buffer), "\"file|name\"") == 0);
+	assert(strcmp(esc_shell("a | b", buffer), "\"a | b\"") == 0);
+
+	/* parentheses - requires quoting */
+	assert(strcmp(esc_shell("(", buffer), "\"(\"") == 0);
+	assert(strcmp(esc_shell(")", buffer), "\")\"") == 0);
+	assert(strcmp(esc_shell("(test)", buffer), "\"(test)\"") == 0);
+	assert(strcmp(esc_shell("file (1)", buffer), "\"file (1)\"") == 0);
+	assert(strcmp(esc_shell("file(copy)", buffer), "\"file(copy)\"") == 0);
+
+	/* angle brackets - requires quoting */
+	assert(strcmp(esc_shell("<", buffer), "\"<\"") == 0);
+	assert(strcmp(esc_shell(">", buffer), "\">\"") == 0);
+	assert(strcmp(esc_shell("a<b>c", buffer), "\"a<b>c\"") == 0);
+	assert(strcmp(esc_shell("file > output", buffer), "\"file > output\"") == 0);
+
+	/* caret - requires quoting */
+	assert(strcmp(esc_shell("^", buffer), "\"^\"") == 0);
+	assert(strcmp(esc_shell("test^test", buffer), "\"test^test\"") == 0);
+	assert(strcmp(esc_shell("a ^ b", buffer), "\"a ^ b\"") == 0);
+
+	/* multiple special chars - requires quoting */
+	assert(strcmp(esc_shell("&|()<>^", buffer), "\"&|()<>^\"") == 0);
+	assert(strcmp(esc_shell("test&|test", buffer), "\"test&|test\"") == 0);
+	assert(strcmp(esc_shell("a & b | c", buffer), "\"a & b | c\"") == 0);
+
+	/* percent sign - requires quoting */
+	assert(strcmp(esc_shell("%", buffer), "\"%\"") == 0);
+	assert(strcmp(esc_shell("%%", buffer), "\"%%\"") == 0);
+	assert(strcmp(esc_shell("%PATH%", buffer), "\"%PATH%\"") == 0);
+	assert(strcmp(esc_shell("test%var%test", buffer), "\"test%var%test\"") == 0);
+	assert(strcmp(esc_shell("%PATH% file", buffer), "\"%PATH% file\"") == 0);
+
+	/* exclamation mark - requires quoting */
+	assert(strcmp(esc_shell("!", buffer), "\"!\"") == 0);
+	assert(strcmp(esc_shell("!VAR!", buffer), "\"!VAR!\"") == 0);
+	assert(strcmp(esc_shell("test!test", buffer), "\"test!test\"") == 0);
+	assert(strcmp(esc_shell("hello !world!", buffer), "\"hello !world!\"") == 0);
+
+	/* equals sign - requires quoting */
+	assert(strcmp(esc_shell("=", buffer), "\"=\"") == 0);
+	assert(strcmp(esc_shell("VAR=value", buffer), "\"VAR=value\"") == 0);
+	assert(strcmp(esc_shell("a=b", buffer), "\"a=b\"") == 0);
+
+	/* semicolon - requires quoting */
+	assert(strcmp(esc_shell(";", buffer), "\";\"") == 0);
+	assert(strcmp(esc_shell("cmd1;cmd2", buffer), "\"cmd1;cmd2\"") == 0);
+
+	/* backslash - no quotes needed when alone or in path */
+	assert(strcmp(esc_shell("\\", buffer), "\\") == 0);
+	assert(strcmp(esc_shell("C:\\", buffer), "C:\\") == 0);
+	assert(strcmp(esc_shell("C:\\Users", buffer), "C:\\Users") == 0);
+	assert(strcmp(esc_shell("path\\to\\file", buffer), "path\\to\\file") == 0);
+	assert(strcmp(esc_shell("C:\\folder\\", buffer), "C:\\folder\\") == 0);
+
+	/* backslash with space - requires quoting, normal backslash inside */
+	assert(strcmp(esc_shell("\\ ", buffer), "\"\\ \"") == 0);
+	assert(strcmp(esc_shell("C:\\ ", buffer), "\"C:\\ \"") == 0);
+	assert(strcmp(esc_shell("C:\\Program Files", buffer), "\"C:\\Program Files\"") == 0);
+
+	/* trailing backslash with quotes - backslashes before closing quote must be doubled */
+	assert(strcmp(esc_shell("C:\\folder\\ ", buffer), "\"C:\\folder\\ \"") == 0);
+	assert(strcmp(esc_shell("path\\ ", buffer), "\"path\\ \"") == 0);
+	assert(strcmp(esc_shell("C:\\My Documents\\", buffer), "\"C:\\My Documents\\\\\"") == 0);
+
+	/* backslash before embedded quote - backslash before quote must be doubled */
+	assert(strcmp(esc_shell("C:\\\"test\"", buffer), "\"C:\\\\\\\"test\\\"\"") == 0);
+	assert(strcmp(esc_shell("path\\\"file\"", buffer), "\"path\\\\\\\"file\\\"\"") == 0);
+
+	/* multiple trailing backslashes before end with quotes */
+	assert(strcmp(esc_shell("test\\\\ ", buffer), "\"test\\\\ \"") == 0);
+	assert(strcmp(esc_shell("path\\\\\\\\ ", buffer), "\"path\\\\\\\\ \"") == 0);
+
+	/* backslash NOT before quote - normal backslash */
+	assert(strcmp(esc_shell("test\\file ", buffer), "\"test\\file \"") == 0);
+	assert(strcmp(esc_shell("a\\b c", buffer), "\"a\\b c\"") == 0);
+
+	/* control characters - require quoting */
+	assert(strcmp(esc_shell("\x01", buffer), "\"\x01\"") == 0);
+	assert(strcmp(esc_shell("\x1F", buffer), "\"\x1F\"") == 0);
+	assert(strcmp(esc_shell("\x7F", buffer), "\"\x7F\"") == 0); /* DEL character */
+	assert(strcmp(esc_shell("test\x01test", buffer), "\"test\x01test\"") == 0);
+
+	/* complex real-world examples */
+	assert(strcmp(esc_shell("C:\\Program Files\\App", buffer), "\"C:\\Program Files\\App\"") == 0);
+	assert(strcmp(esc_shell("C:\\Program Files (x86)\\", buffer), "\"C:\\Program Files (x86)\\\\\"") == 0);
+	assert(strcmp(esc_shell("file (copy).txt", buffer), "\"file (copy).txt\"") == 0);
+	assert(strcmp(esc_shell("setup-v1.0.exe", buffer), "setup-v1.0.exe") == 0);
+	assert(strcmp(esc_shell("setup v1.0.exe", buffer), "\"setup v1.0.exe\"") == 0);
+
+	/* mixed quotes and special chars */
+	assert(strcmp(esc_shell("say \"hi\" & exit", buffer), "\"say \\\"hi\\\" & exit\"") == 0);
+	assert(strcmp(esc_shell("test \"a|b\"", buffer), "\"test \\\"a|b\\\"\"") == 0);
+
+	/* empty string */
+	assert(strcmp(esc_shell("", buffer), "") == 0);
+
+	/* all safe characters that don't need escaping */
+	assert(strcmp(esc_shell("abcdefghijklmnopqrstuvwxyz", buffer), "abcdefghijklmnopqrstuvwxyz") == 0);
+	assert(strcmp(esc_shell("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buffer), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0);
+	assert(strcmp(esc_shell("0123456789", buffer), "0123456789") == 0);
+	assert(strcmp(esc_shell("._-+,@:", buffer), "._-+,@:") == 0);
 #else
-	assert(strcmp(esc_shell(",._+:@%%/-", buffer), ",._+:@%%/-") == 0);
+	/* basic cases - no special characters */
+	assert(strcmp(esc_shell("simple", buffer), "simple") == 0);
+	assert(strcmp(esc_shell("file.txt", buffer), "file.txt") == 0);
+	assert(strcmp(esc_shell("file123", buffer), "file123") == 0);
+	assert(strcmp(esc_shell("file_name-test.doc", buffer), "file_name-test.doc") == 0);
+	assert(strcmp(esc_shell(",._+:@/-", buffer), ",._+:@/-") == 0);
+	assert(strcmp(esc_shell("/usr/local/bin", buffer), "/usr/local/bin") == 0);
+
+	/* empty string */
+	assert(strcmp(esc_shell("", buffer), "") == 0);
+
+	/* space - escape with backslash */
 	assert(strcmp(esc_shell(" ", buffer), "\\ ") == 0);
+	assert(strcmp(esc_shell("file name.txt", buffer), "file\\ name.txt") == 0);
+	assert(strcmp(esc_shell("my document.doc", buffer), "my\\ document.doc") == 0);
+	assert(strcmp(esc_shell("  spaces  ", buffer), "\\ \\ spaces\\ \\ ") == 0);
+	assert(strcmp(esc_shell("a b c", buffer), "a\\ b\\ c") == 0);
+
+	/* tab - escape with backslash */
+	assert(strcmp(esc_shell("\t", buffer), "\\\t") == 0);
+	assert(strcmp(esc_shell("file\tname", buffer), "file\\\tname") == 0);
+	assert(strcmp(esc_shell("\t\t", buffer), "\\\t\\\t") == 0);
+
+	/* newline - escape with backslash */
+	assert(strcmp(esc_shell("\n", buffer), "\\\n") == 0);
+	assert(strcmp(esc_shell("line1\nline2", buffer), "line1\\\nline2") == 0);
+	assert(strcmp(esc_shell("\n\n", buffer), "\\\n\\\n") == 0);
+
+	/* carriage return - escape with backslash */
+	assert(strcmp(esc_shell("\r", buffer), "\\\r") == 0);
+	assert(strcmp(esc_shell("text\r\n", buffer), "text\\\r\\\n") == 0);
+
+	/* tilde (home directory expansion) */
+	assert(strcmp(esc_shell("~", buffer), "\\~") == 0);
+	assert(strcmp(esc_shell("~/file", buffer), "\\~/file") == 0);
+	assert(strcmp(esc_shell("file~name", buffer), "file\\~name") == 0);
+	assert(strcmp(esc_shell("~user", buffer), "\\~user") == 0);
+
+	/* backtick (command substitution) */
+	assert(strcmp(esc_shell("`", buffer), "\\`") == 0);
+	assert(strcmp(esc_shell("`command`", buffer), "\\`command\\`") == 0);
+	assert(strcmp(esc_shell("test`test", buffer), "test\\`test") == 0);
+	assert(strcmp(esc_shell("``", buffer), "\\`\\`") == 0);
+
+	/* hash (comment) */
+	assert(strcmp(esc_shell("#", buffer), "\\#") == 0);
+	assert(strcmp(esc_shell("#comment", buffer), "\\#comment") == 0);
+	assert(strcmp(esc_shell("file#name", buffer), "file\\#name") == 0);
+	assert(strcmp(esc_shell("test#123", buffer), "test\\#123") == 0);
+
+	/* dollar sign (variable expansion) */
+	assert(strcmp(esc_shell("$", buffer), "\\$") == 0);
+	assert(strcmp(esc_shell("$$", buffer), "\\$\\$") == 0);
+	assert(strcmp(esc_shell("$VAR", buffer), "\\$VAR") == 0);
+	assert(strcmp(esc_shell("${VAR}", buffer), "\\$\\{VAR\\}") == 0);
+	assert(strcmp(esc_shell("test$test", buffer), "test\\$test") == 0);
+	assert(strcmp(esc_shell("$1", buffer), "\\$1") == 0);
+	assert(strcmp(esc_shell("$PATH", buffer), "\\$PATH") == 0);
+
+	/* ampersand (background job) */
+	assert(strcmp(esc_shell("&", buffer), "\\&") == 0);
+	assert(strcmp(esc_shell("&&", buffer), "\\&\\&") == 0);
+	assert(strcmp(esc_shell("file&name", buffer), "file\\&name") == 0);
+	assert(strcmp(esc_shell("a&b&c", buffer), "a\\&b\\&c") == 0);
+	assert(strcmp(esc_shell("cmd1 & cmd2", buffer), "cmd1\\ \\&\\ cmd2") == 0);
+
+	/* asterisk (wildcard) */
+	assert(strcmp(esc_shell("*", buffer), "\\*") == 0);
+	assert(strcmp(esc_shell("**", buffer), "\\*\\*") == 0);
+	assert(strcmp(esc_shell("*.txt", buffer), "\\*.txt") == 0);
+	assert(strcmp(esc_shell("file*name", buffer), "file\\*name") == 0);
+	assert(strcmp(esc_shell("test*", buffer), "test\\*") == 0);
+
+	/* parentheses (subshell) */
+	assert(strcmp(esc_shell("(", buffer), "\\(") == 0);
+	assert(strcmp(esc_shell(")", buffer), "\\)") == 0);
+	assert(strcmp(esc_shell("()", buffer), "\\(\\)") == 0);
+	assert(strcmp(esc_shell("(test)", buffer), "\\(test\\)") == 0);
+	assert(strcmp(esc_shell("file(1)", buffer), "file\\(1\\)") == 0);
+	assert(strcmp(esc_shell("(a)(b)", buffer), "\\(a\\)\\(b\\)") == 0);
+
+	/* backslash (escape character) */
+	assert(strcmp(esc_shell("\\", buffer), "\\\\") == 0);
+	assert(strcmp(esc_shell("\\\\", buffer), "\\\\\\\\") == 0);
+	assert(strcmp(esc_shell("path\\to\\file", buffer), "path\\\\to\\\\file") == 0);
+	assert(strcmp(esc_shell("test\\test", buffer), "test\\\\test") == 0);
+	assert(strcmp(esc_shell("a\\b\\c", buffer), "a\\\\b\\\\c") == 0);
+
+	/* pipe (pipeline) */
+	assert(strcmp(esc_shell("|", buffer), "\\|") == 0);
+	assert(strcmp(esc_shell("||", buffer), "\\|\\|") == 0);
+	assert(strcmp(esc_shell("file|name", buffer), "file\\|name") == 0);
+	assert(strcmp(esc_shell("a|b|c", buffer), "a\\|b\\|c") == 0);
+	assert(strcmp(esc_shell("cmd1 | cmd2", buffer), "cmd1\\ \\|\\ cmd2") == 0);
+
+	/* square brackets (wildcard) */
+	assert(strcmp(esc_shell("[", buffer), "\\[") == 0);
+	assert(strcmp(esc_shell("]", buffer), "\\]") == 0);
+	assert(strcmp(esc_shell("[]", buffer), "\\[\\]") == 0);
+	assert(strcmp(esc_shell("[abc]", buffer), "\\[abc\\]") == 0);
+	assert(strcmp(esc_shell("file[1]", buffer), "file\\[1\\]") == 0);
+	assert(strcmp(esc_shell("[0-9]", buffer), "\\[0-9\\]") == 0);
+
+	/* curly braces (brace expansion) */
+	assert(strcmp(esc_shell("{", buffer), "\\{") == 0);
+	assert(strcmp(esc_shell("}", buffer), "\\}") == 0);
+	assert(strcmp(esc_shell("{}", buffer), "\\{\\}") == 0);
+	assert(strcmp(esc_shell("{a,b,c}", buffer), "\\{a,b,c\\}") == 0);
+	assert(strcmp(esc_shell("file{1,2}", buffer), "file\\{1,2\\}") == 0);
+	assert(strcmp(esc_shell("{1..10}", buffer), "\\{1..10\\}") == 0);
+
+	/* semicolon (command separator) */
+	assert(strcmp(esc_shell(";", buffer), "\\;") == 0);
+	assert(strcmp(esc_shell(";;", buffer), "\\;\\;") == 0);
+	assert(strcmp(esc_shell("cmd1;cmd2", buffer), "cmd1\\;cmd2") == 0);
+	assert(strcmp(esc_shell("test;test", buffer), "test\\;test") == 0);
+	assert(strcmp(esc_shell("a; b", buffer), "a\\;\\ b") == 0);
+
+	/* single quote */
+	assert(strcmp(esc_shell("'", buffer), "\\'") == 0);
+	assert(strcmp(esc_shell("''", buffer), "\\'\\'") == 0);
+	assert(strcmp(esc_shell("'test'", buffer), "\\'test\\'") == 0);
+	assert(strcmp(esc_shell("file'name", buffer), "file\\'name") == 0);
+	assert(strcmp(esc_shell("it's", buffer), "it\\'s") == 0);
+
+	/* double quote */
+	assert(strcmp(esc_shell("\"", buffer), "\\\"") == 0);
+	assert(strcmp(esc_shell("\"\"", buffer), "\\\"\\\"") == 0);
+	assert(strcmp(esc_shell("\"test\"", buffer), "\\\"test\\\"") == 0);
+	assert(strcmp(esc_shell("file\"name", buffer), "file\\\"name") == 0);
+	assert(strcmp(esc_shell("say \"hi\"", buffer), "say\\ \\\"hi\\\"") == 0);
+
+	/* angle brackets (redirection) */
+	assert(strcmp(esc_shell("<", buffer), "\\<") == 0);
+	assert(strcmp(esc_shell(">", buffer), "\\>") == 0);
+	assert(strcmp(esc_shell("<<", buffer), "\\<\\<") == 0);
+	assert(strcmp(esc_shell(">>", buffer), "\\>\\>") == 0);
+	assert(strcmp(esc_shell("a<b>c", buffer), "a\\<b\\>c") == 0);
+	assert(strcmp(esc_shell("file>output", buffer), "file\\>output") == 0);
+	assert(strcmp(esc_shell("cmd < in > out", buffer), "cmd\\ \\<\\ in\\ \\>\\ out") == 0);
+
+	/* question mark (wildcard) */
+	assert(strcmp(esc_shell("?", buffer), "\\?") == 0);
+	assert(strcmp(esc_shell("??", buffer), "\\?\\?") == 0);
+	assert(strcmp(esc_shell("file?.txt", buffer), "file\\?.txt") == 0);
+	assert(strcmp(esc_shell("test?test", buffer), "test\\?test") == 0);
+	assert(strcmp(esc_shell("file??", buffer), "file\\?\\?") == 0);
+
+	/* equals sign (assignment in some contexts) */
+	assert(strcmp(esc_shell("=", buffer), "\\=") == 0);
+	assert(strcmp(esc_shell("==", buffer), "\\=\\=") == 0);
+	assert(strcmp(esc_shell("VAR=value", buffer), "VAR\\=value") == 0);
+	assert(strcmp(esc_shell("a=b", buffer), "a\\=b") == 0);
+	assert(strcmp(esc_shell("PATH=/usr/bin", buffer), "PATH\\=/usr/bin") == 0);
+
+	/* exclamation mark (history expansion) */
+	assert(strcmp(esc_shell("!", buffer), "\\!") == 0);
+	assert(strcmp(esc_shell("!!", buffer), "\\!\\!") == 0);
+	assert(strcmp(esc_shell("test!test", buffer), "test\\!test") == 0);
+	assert(strcmp(esc_shell("!$", buffer), "\\!\\$") == 0);
+	assert(strcmp(esc_shell("!123", buffer), "\\!123") == 0);
+
+	/* control characters (0x01-0x1F) - escape with backslash */
+	assert(strcmp(esc_shell("\x01", buffer), "\\\x01") == 0);
+	assert(strcmp(esc_shell("\x02", buffer), "\\\x02") == 0);
+	assert(strcmp(esc_shell("\x1F", buffer), "\\\x1F") == 0);
+	assert(strcmp(esc_shell("test\x01test", buffer), "test\\\x01test") == 0);
+
+	/* DEL character (0x7F) */
+	assert(strcmp(esc_shell("\x7F", buffer), "\\\x7F") == 0);
+	assert(strcmp(esc_shell("test\x7Ftest", buffer), "test\\\x7Ftest") == 0);
+
+	/* multiple special characters combined */
+	assert(strcmp(esc_shell("$VAR & $OTHER", buffer), "\\$VAR\\ \\&\\ \\$OTHER") == 0);
+	assert(strcmp(esc_shell("*.txt | grep test", buffer), "\\*.txt\\ \\|\\ grep\\ test") == 0);
+	assert(strcmp(esc_shell("file (1) [copy].txt", buffer), "file\\ \\(1\\)\\ \\[copy\\].txt") == 0);
+	assert(strcmp(esc_shell("a & b | c", buffer), "a\\ \\&\\ b\\ \\|\\ c") == 0);
+	assert(strcmp(esc_shell("cmd1; cmd2 && cmd3", buffer), "cmd1\\;\\ cmd2\\ \\&\\&\\ cmd3") == 0);
+
+	/* complex real-world examples */
+	assert(strcmp(esc_shell("/home/user/My Documents", buffer), "/home/user/My\\ Documents") == 0);
+	assert(strcmp(esc_shell("/path/to/file (copy).txt", buffer), "/path/to/file\\ \\(copy\\).txt") == 0);
+	assert(strcmp(esc_shell("~/project/file-v1.0.tar.gz", buffer), "\\~/project/file-v1.0.tar.gz") == 0);
+	assert(strcmp(esc_shell("$(whoami)@$(hostname)", buffer), "\\$\\(whoami\\)@\\$\\(hostname\\)") == 0);
+	assert(strcmp(esc_shell("test && echo 'done'", buffer), "test\\ \\&\\&\\ echo\\ \\'done\\'") == 0);
+	assert(strcmp(esc_shell("file #1 [important].txt", buffer), "file\\ \\#1\\ \\[important\\].txt") == 0);
+	assert(strcmp(esc_shell("/tmp/test (1).txt", buffer), "/tmp/test\\ \\(1\\).txt") == 0);
+	assert(strcmp(esc_shell("var=$HOME/bin:$PATH", buffer), "var\\=\\$HOME/bin:\\$PATH") == 0);
+
+	/* edge cases with multiple escapes */
+	assert(strcmp(esc_shell("a\\ b", buffer), "a\\\\\\ b") == 0);
+	assert(strcmp(esc_shell("'\"test\"'", buffer), "\\'\\\"test\\\"\\'") == 0);
+	assert(strcmp(esc_shell("$(echo \"test\")", buffer), "\\$\\(echo\\ \\\"test\\\"\\)") == 0);
+
+	/* all safe characters that don't need escaping */
+	assert(strcmp(esc_shell("abcdefghijklmnopqrstuvwxyz", buffer), "abcdefghijklmnopqrstuvwxyz") == 0);
+	assert(strcmp(esc_shell("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buffer), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0);
+	assert(strcmp(esc_shell("0123456789", buffer), "0123456789") == 0);
+	assert(strcmp(esc_shell("._-+,@:", buffer), "._-+,@:") == 0);
+	assert(strcmp(esc_shell("/path/to/file", buffer), "/path/to/file") == 0);
+	assert(strcmp(esc_shell("simple_file-name.txt", buffer), "simple_file-name.txt") == 0);
+
+	/* file extensions and versions */
+	assert(strcmp(esc_shell("file.tar.gz", buffer), "file.tar.gz") == 0);
+	assert(strcmp(esc_shell("app-v1.2.3.deb", buffer), "app-v1.2.3.deb") == 0);
+	assert(strcmp(esc_shell("test_2024-01-01.log", buffer), "test_2024-01-01.log") == 0);
 #endif
 
 	printf("Everything OK\n");

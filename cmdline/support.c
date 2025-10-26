@@ -449,15 +449,12 @@ void printp(double v, size_t pad)
 	printl(buf, pad);
 }
 
-#define ESCAPE(from,escape,to) \
-	case from : \
+#define charcat(c) \
+	do { \
 		if (p == end) \
 			goto bail; \
-		*p++ = escape; \
-		if (p == end) \
-			goto bail; \
-		*p++ = to; \
-		break
+		*p++ = (c); \
+	} while (0)
 
 const char* esc_tag(const char* str, char* buffer)
 {
@@ -467,23 +464,29 @@ const char* esc_tag(const char* str, char* buffer)
 
 	/* copy string with escaping */
 	while (*str) {
-		char c = *str;
+		char c = *str++;
 
 		switch (c) {
-
-		ESCAPE('\n', '\\', 'n');
-		ESCAPE('\r', '\\', 'r');
-		ESCAPE(':', '\\', 'd');
-		ESCAPE('\\', '\\', '\\');
-
+		case '\n' :
+			charcat('\\');
+			charcat('n');
+			break;
+		case '\r' :
+			charcat('\\');
+			charcat('r');
+			break;
+		case ':' :
+			charcat('\\');
+			charcat('d');
+			break;
+		case '\\' :
+			charcat('\\');
+			charcat('\\');
+			break;
 		default :
-			if (p == end)
-				goto bail;
-			*p++ = c;
+			charcat(c);
 			break;
 		}
-
-		++str;
 	}
 
 	/* put final 0 */
@@ -500,106 +503,144 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
+#ifdef _WIN32
+static int needs_quote(const char* arg)
+{
+	while (*arg) {
+		char c = *arg;
+		if (c == ' ' || c == '\t' || c == '\n' || c == '\r' ||
+			c == '&' || c == '|' || c == '(' || c == ')' ||
+			c == '<' || c == '>' || c == '^' || c == '"' ||
+			c == '%' || c == '!' || c == '=' || c == ';' ||
+			(unsigned char)c < 32 || c == 127)
+			return 1;
+		++arg;
+	}
+
+	return 0;
+}
+#endif
+
+struct stream {
+	const char* str;
+	unsigned idx;
+	const char** map;
+	unsigned max;
+};
+
+static inline char ssget(struct stream* ss)
+{
+	/* get the next char */
+	char c = *ss->str++;
+
+	/* if one string is finished, go to the next */
+	while (c == 0 && ss->idx + 1 < ss->max) {
+		ss->str = ss->map[++ss->idx];
+		c = *ss->str++;
+	}
+
+	return c;
+}
+
+#ifdef _WIN32
 const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer)
 {
 	char* begin = buffer;
 	char* end = begin + ESC_MAX;
 	char* p = begin;
-	unsigned str_mac;
-	const char* str;
+	struct stream ss;
+	char c;
+	unsigned i;
+	int has_quote;
 
-#ifdef _WIN32
-	int has_quote = 0;
-
-	for (str_mac = 0; str_mac < str_max; ++str_mac) {
-		str = str_map[str_mac];
-		if (strchr(str, ' ') != 0)
+	has_quote = 0;
+	for (i = 0; i < str_max; ++i) {
+		if (needs_quote(str_map[i]))
 			has_quote = 1;
 	}
 
-	if (has_quote) {
-		if (p == end)
-			goto bail;
-		*p++ = '"';
-	}
-#endif
+	ss.idx = 0;
+	ss.str = str_map[0];
+	ss.map = str_map;
+	ss.max = str_max;
 
-	/* copy string with escaping */
-	str_mac = 0;
-	str = str_map[str_mac];
-	while (1) {
-		/* get the next char */
-		char c = *str;
+	if (!has_quote) {
+		c = ssget(&ss);
+		while (c) {
+			charcat(c);
+			c = ssget(&ss);
+		}
+	} else {
+		/* starting quote */
+		charcat('"');
 
-		/* if one string is finished, go to the next */
-		while (c == 0 && str_mac + 1 < str_max) {
-			++str_mac;
-			str = str_map[str_mac];
-			c = *str;
+		c = ssget(&ss);
+		while (c) {
+			int bl = 0;
+			while (c == '\\') {
+				++bl;
+				c = ssget(&ss);
+			}
+
+			if (c == 0) {
+				/* double backslashes before closing quote */
+				bl = bl * 2;
+				while (bl--)
+					charcat('\\');
+				break;
+			} else if (c == '"') {
+				/* double backslashes + escape the quote */
+				bl = bl * 2 + 1;
+				while (bl--)
+					charcat('\\');
+				charcat('"');
+			} else {
+				/* normal backslashes */
+				while (bl--)
+					charcat('\\');
+				charcat(c);
+			}
+
+			c = ssget(&ss);
 		}
 
-		/* if we read all the strings, stop */
-		if (!c)
-			break;
+		/* ending quote */
+		charcat('"');
+	}
 
-		switch (c) {
-#ifdef _WIN32
-		/*
-		 * Windows shell escape
-		 *
-		 * The Windows NT Command Shell
-		 * https://technet.microsoft.com/en-us/library/cc723564.aspx
-		 */
-		case '"' :
-			/* double quote, it needs to be quoted with \ */
-			if (has_quote) {
-				/* " -> "\"" -> (close quote)(quoted with \ ")(reopen quote) */
-				if (p == end)
-					goto bail;
-				*p++ = '"';
-				if (p == end)
-					goto bail;
-				*p++ = '\\';
-				if (p == end)
-					goto bail;
-				*p++ = '"';
-				if (p == end)
-					goto bail;
-				*p++ = '"';
-			} else {
-				/* " -> \" */
-				if (p == end)
-					goto bail;
-				*p++ = '\\';
-				if (p == end)
-					goto bail;
-				*p++ = '"';
-			}
-			break;
-		case '&' :
-		case '|' :
-		case '(' :
-		case ')' :
-		case '<' :
-		case '>' :
-		case '^' :
-			/* reserved chars, they need to be quoted with ^ */
-			if (has_quote) {
-				if (p == end)
-					goto bail;
-				*p++ = c;
-			} else {
-				if (p == end)
-					goto bail;
-				*p++ = '^';
-				if (p == end)
-					goto bail;
-				*p++ = c;
-			}
-			break;
+	/* put final 0 */
+	charcat(0);
+
+	return begin;
+
+bail:
+	/* LCOV_EXCL_START */
+	log_fatal("Escape for shell is too long\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
 #else
+const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer)
+{
+	char* begin = buffer;
+	char* end = begin + ESC_MAX;
+	char* p = begin;
+	struct stream ss;
+	char c;
+
+	ss.idx = 0;
+	ss.str = str_map[0];
+	ss.map = str_map;
+	ss.max = str_max;
+	
+	c = ssget(&ss);
+	while (c) {
+		switch (c) {
 		/* special chars that need to be quoted */
 		case ' ' : /* space */
+		case '\t' : /* tab */
+		case '\n' : /* newline */
+		case '\r' : /* carriage return */
 		case '~' : /* home */
 		case '`' : /* command */
 		case '#' : /* comment */
@@ -620,37 +661,27 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 		case '<' : /* redirect */
 		case '>' : /* redirect */
 		case '?' : /* wildcard */
-			if (p == end)
-				goto bail;
-			*p++ = '\\';
-			if (p == end)
-				goto bail;
-			*p++ = c;
+		case '=' : /* assignment */
+		case '!' : /* history expansion */
+			charcat('\\');
+			charcat(c);
 			break;
-#endif
 		default :
-			/* unquoted */
-			if (p == end)
-				goto bail;
-			*p++ = c;
+			/* check for control characters */
+			if ((unsigned char)c < 32 || c == 127) {
+				charcat('\\');
+				charcat(c);
+			} else {
+				charcat(c);
+			}
 			break;
 		}
 
-		++str;
+		c = ssget(&ss);
 	}
-
-#ifdef _WIN32
-	if (has_quote) {
-		if (p == end)
-			goto bail;
-		*p++ = '"';
-	}
-#endif
 
 	/* put final 0 */
-	if (p == end)
-		goto bail;
-	*p = 0;
+	charcat(0);
 
 	return begin;
 
@@ -660,6 +691,7 @@ bail:
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
+#endif
 
 char* strpolish(char* s)
 {
