@@ -301,7 +301,7 @@ int state_thermal_alarm(struct snapraid_state* state)
 
 void state_thermal_cooldown(struct snapraid_state* state)
 {
-	unsigned sleep_time = state->thermal_cooldown_time;
+	int sleep_time = state->thermal_cooldown_time;
 	
 	if (sleep_time == 0)
 		sleep_time = 5 * 60; /* default sleep time */
@@ -321,7 +321,13 @@ void state_thermal_cooldown(struct snapraid_state* state)
 
 	log_flush();
 
-	sleep(sleep_time);
+	/* every 30 seconds spin down any disk that was spunup */
+	while (sleep_time > 0) {
+		state_device(state, DEVICE_DOWNIFUP, 0);
+
+		sleep(30);
+		sleep_time -= 30;
+	}
 
 	if (!global_interrupt) { /* don't wake-up if we are interrupting */
 		log_tag("thermal:spinup\n");

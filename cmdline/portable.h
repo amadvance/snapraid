@@ -523,6 +523,7 @@ typedef struct devinfo_struct devinfo_t;
 #define DEVICE_UP 2
 #define DEVICE_SMART 3
 #define DEVICE_PROBE 4
+#define DEVICE_DOWNIFUP 5
 
 /**
  * Query all the "high" level devices with the specified operation,

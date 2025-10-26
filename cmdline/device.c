@@ -973,6 +973,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		case DEVICE_LIST : ope = "Device listing"; break;
 		case DEVICE_SMART : ope = "Smart"; break;
 		case DEVICE_PROBE : ope = "Probe"; break;
+		case DEVICE_DOWNIFUP : ope = "Spindown"; break;
 		}
 		log_fatal("%s is unsupported in this platform.\n", ope);
 	} else {

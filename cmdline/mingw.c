@@ -2748,6 +2748,22 @@ retry:
 }
 
 /**
+ * Spin down a specific device if it's up
+ */
+static int devdownifup(uint64_t device, const char* name, const char* smartctl, int* power)
+{
+	*power = POWER_UNKNOWN;
+
+	if (devprobe(device, name, smartctl, power) != 0)
+		return -1;
+
+	if (*power == POWER_ACTIVE)
+		return devdown(device, name, smartctl);
+
+	return 0;
+}
+
+/**
  * Spin up a device.
  */
 static int devup(const char* wfile)
@@ -2841,6 +2857,29 @@ static void* thread_spindown(void* arg)
 	}
 
 	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+
+	return 0;
+}
+
+/**
+ * Thread for spinning down.
+ */
+static void* thread_spindownifup(void* arg)
+{
+	devinfo_t* devinfo = arg;
+	uint64_t start;
+	int power;
+
+	start = tick_ms();
+
+	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, &power) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (power == POWER_ACTIVE)
+		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
 	return 0;
 }
@@ -2949,6 +2988,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	case DEVICE_DOWN : func = thread_spindown; break;
 	case DEVICE_SMART : func = thread_smart; break;
 	case DEVICE_PROBE : func = thread_probe; break;
+	case DEVICE_DOWNIFUP : func = thread_spindownifup; break;
 	}
 
 	if (!func)
