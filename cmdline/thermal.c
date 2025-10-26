@@ -205,13 +205,13 @@ void state_thermal(struct snapraid_state* state, time_t now)
 			if (temp < 0)
 				continue;
 
-			log_tag("thermal:ambient:candidate:%d\n", temp);
+			log_tag("thermal:system:candidate:%d\n", temp);
 
 			if (state->thermal_ambient_temperature == 0 || state->thermal_ambient_temperature > temp)
 				state->thermal_ambient_temperature = temp;
 		}
 
-		log_tag("thermal:ambient:final:%d\n", state->thermal_ambient_temperature);
+		log_tag("thermal:system:final:%d\n", state->thermal_ambient_temperature);
 	}
 
 	int highest_temperature = 0;
@@ -351,11 +351,11 @@ int state_thermal_begin(struct snapraid_state* state, time_t now)
 	state_thermal(state, now);
 
 	if (state->thermal_ambient_temperature != 0) {
-		printf("Ambient temperature %u\n", state->thermal_ambient_temperature);
+		printf("System temperature is %u degrees\n", state->thermal_ambient_temperature);
 
 		if (state->thermal_temperature_limit != 0 && state->thermal_temperature_limit <= state->thermal_ambient_temperature) {
 			/* LCOV_EXCL_START */
-			log_fatal("DANGER! Ambient temperature %d higher than the temperature limit %d. Impossible to proceeed!\n", state->thermal_ambient_temperature, state->thermal_temperature_limit);
+			log_fatal("DANGER! System temperature of %d degrees is higher than the temperature limit of %d degrees. Unable to proceeed!\n", state->thermal_ambient_temperature, state->thermal_temperature_limit);
 			log_flush();
 			return 0;
 			/* LCOV_EXCL_STOP */
@@ -364,7 +364,7 @@ int state_thermal_begin(struct snapraid_state* state, time_t now)
 
 	if (state_thermal_alarm(state)) {
 		/* LCOV_EXCL_START */
-		log_fatal("DANGER! Hard disk temperature %d is already outside the operating range. Impossible to proceeed!\n", state->thermal_highest_temperature);
+		log_fatal("DANGER! Hard disk temperature of %d degrees is already outside the operating range. Unable to proceeed!\n", state->thermal_highest_temperature);
 		log_flush();
 		return 0;
 		/* LCOV_EXCL_STOP */

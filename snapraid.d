@@ -1222,11 +1222,10 @@ Configuration
 	only and has no effect on the behavior of SnapRAID. The program's
 	actions are based solely on the actual measured disk temperatures.
 
-	To perform this analysis, SnapRAID needs a reference for the ambient
-	system temperature. It first attempts to read it from available
-	hardware sensors. If no system sensor can be accessed, it uses the
-	lowest disk temperature measured at the start of the run as a fallback
-	reference.
+	To perform this analysis, SnapRAID needs a reference for the system
+	temperature. It first attempts to read it from available hardware
+	sensors. If no system sensor can be accessed, it uses the lowest disk
+	temperature measured at the start of the run as a fallback reference.
 
 	Normally, SnapRAID shows only the temperature of the hottest disk.
 	To display the temperature of all disks, use the -A or --stats option.
