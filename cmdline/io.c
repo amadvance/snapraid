@@ -75,6 +75,9 @@ static void io_reader_sched(struct snapraid_io* io, int task_index, block_off_t 
 			task->disk = worker->handle->disk;
 		else
 			task->disk = 0;
+
+		assert(worker->buffer_skew + i < io->buffer_max);
+
 		task->buffer = io->buffer_map[task_index][worker->buffer_skew + i];
 		task->position = blockcur;
 		task->block = 0;
@@ -914,6 +917,8 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	size_t block_size = state->block_size;
 
 	io->state = state;
+
+	assert(buffer_max >= handle_max + parity_handle_max);
 
 	/* initialize bandwidth limiting */
 	bw_init(&io->bw, state->opt.bwlimit);
