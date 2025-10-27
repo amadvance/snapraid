@@ -5,3 +5,64 @@
    fun:printf
 }
 
+###############################################################################
+# Ignore races in pthread functions implemented in /lib64/libc-2.42.so
+# Keeps helgrind and drd quiet for internal GLIBC synchronization,
+# but still reports races in user code.
+###############################################################################
+
+{
+   glibc_pthread_mutex_lock
+   Helgrind:Race
+   fun:pthread_mutex_lock*
+}
+
+{
+   glibc_pthread_mutex_unlock
+   Helgrind:Race
+   fun:pthread_mutex_unlock*
+}
+
+{
+   glibc_pthread_cond_wait
+   Helgrind:Race
+   ...
+   fun:pthread_cond_wait*
+}
+
+{
+   glibc_pthread_cond_signal
+   Helgrind:Race
+   fun:pthread_cond_signal*
+}
+
+{
+   glibc_pthread_cond_broadcast
+   Helgrind:Race
+   fun:pthread_cond_broadcast*
+}
+
+{
+   glibc_pthread_join
+   Helgrind:Race
+   ...
+   fun:pthread_join*
+}
+
+{
+   glibc_thread_start
+   Helgrind:Race
+   fun:start_thread
+}
+
+{
+   glibc_set_vma_name
+   Helgrind:Race
+   fun:__set_vma_name
+}
+
+{
+   glibc_name_stack_maps
+   drd:ConflictingAccess
+   fun:name_stack_maps
+}

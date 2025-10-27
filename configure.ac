@@ -259,7 +259,7 @@ AC_ARG_ENABLE([coverage],
 AC_ARG_ENABLE([valgrind],
 	[AS_HELP_STRING([--enable-valgrind],[enable the use of valgrind in testing])],
 	[
-	TESTENV="$VALGRIND --leak-check=full --error-exitcode=1"
+	TESTENV="$VALGRIND --leak-check=full --suppressions=valgrind.supp --error-exitcode=1"
 	FAILENV="$VALGRIND --error-exitcode=1"
 	CFLAGS="$CFLAGS -DCHECKER"
 	MEMORY_CHECKER=1
@@ -279,7 +279,7 @@ AC_ARG_ENABLE([sgcheck],
 AC_ARG_ENABLE([helgrind],
 	[AS_HELP_STRING([--enable-helgrind],[enable the use of helgrind in testing])],
 	[
-	TESTENV="$VALGRIND --tool=helgrind --fair-sched=try --error-exitcode=1"
+	TESTENV="$VALGRIND --tool=helgrind --suppressions=valgrind.supp --fair-sched=try --error-exitcode=1"
 	FAILENV="$TESTENV"
 	CFLAGS="$CFLAGS -DCHECKER"
 	THREAD_CHECKER=1
@@ -289,7 +289,7 @@ AC_ARG_ENABLE([helgrind],
 AC_ARG_ENABLE([drd],
 	[AS_HELP_STRING([--enable-drd],[enable the use of drd in testing])],
 	[
-	TESTENV="$VALGRIND --tool=drd --fair-sched=try --error-exitcode=1"
+	TESTENV="$VALGRIND --tool=drd --suppressions=valgrind.supp --fair-sched=try --error-exitcode=1"
 	FAILENV="$TESTENV"
 	CFLAGS="$CFLAGS -DCHECKER"
 	THREAD_CHECKER=1
@@ -315,7 +315,7 @@ AC_ARG_ENABLE([msan],
 AC_ARG_ENABLE([ubsan],
 	[AS_HELP_STRING([--enable-ubsan],[enable the use of UndefinedBehaviourSanitizer in testing])],
 	[
-	CFLAGS="$CFLAGS -DCHECKER -fsanitize=undefined"
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=undefined -fno-sanitize=function"
 	MEMORY_CHECKER=1
 	],
 	[])

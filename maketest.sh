@@ -13,6 +13,8 @@ make distclean
 
 cd $DEST
 
+cp $SOURCE/valgrind.supp $DEST
+
 # Coverage
 if ! $SOURCE/configure --enable-coverage --enable-sde; then
 	exit 1
