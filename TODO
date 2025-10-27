@@ -32,16 +32,16 @@ Like when you copy data to a filesystem with less timestamp precision.
 
 * Support more parity levels
 It can be done with a generic computation function, using
-intrinsic for SSSE3 and AVX instructions.
+intrinsics for SSSE3 and AVX instructions.
 It would be interesting to compare performance with the hand-written
-assembler functions. Eventually we can convert them to use intrinsic also.
+assembler functions. Eventually we can convert them to use intrinsics also.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/9dbd7581/
 
 * Add a "noaccessdenied" config option to exclude not readable files/dirs.
 Like the "nohidden".
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
 
-* Don't insert new files if they are new opened by other applications.
+* Don't insert new files if they are now opened by other applications.
 Not yet sure how to check if a file is open in a fast way.
 In case we can exclude files created too recently, like with a --min-age option.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a1683dd9/?limit=25#1e16
@@ -52,12 +52,12 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/661cce8b/
 * Add ZFS support for SMART and UUID.
 See latest messages at: https://sourceforge.net/p/snapraid/discussion/1677233/thread/42defa3b/
 
-* Change all the path printed in the terminal as relative and not absolute.
+* Change all the paths printed in the terminal as relative and not absolute.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/648955ec/ (Leifi in diff)
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/5b6ef1b9/ (Miles in check + filter)
 Partially done. Now you can control it with --test-fmt
 
-* Add ReFS support with 128 bits inode
+* Add ReFS support with 128 bit inode
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/2be14f63/
 https://github.com/Microsoft/Windows-driver-samples/blob/master/filesys/miniFilter/avscan/filter/utility.h
 https://github.com/Microsoft/Windows-driver-samples/blob/master/filesys/miniFilter/avscan/filter/utility.c
@@ -65,19 +65,19 @@ https://github.com/Microsoft/Windows-driver-samples/blob/master/filesys/miniFilt
 Partially done. Until the inodes are less than 64 bit, everything works.
 If a 128 bit inode is found, it aborts with "Invalid inode number! Is this ReFS?"
 
-* When a disk is replaced, and SnapRAID detect this by a UUID change, we could clear the
+* When a disk is replaced, and SnapRAID detects this by a UUID change, we could clear the
 scrub information for that disk.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/ee87901b/
 
-* In fix, automatic --import excluded directory in the config file.
+* In fix, automatically --import excluded directory in the config file.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/c80c42e5/?limit=25
 
 * Allow to have "partial" parity disks, smaller than required ?
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/e924c663/
 
-* How to handle corrupt copied/moved files ? At now pre-hash checks them,
+* How to handle corrupt copied/moved files ? Now pre-hash checks them,
 but if a corruption is found, it stops the sync process.
-This is not optimal, because the 'sync' command is stopped instead to continue.
+This is not optimal, because the 'sync' command is stopped instead of continuing.
 A possible solution could be:
 If a copied block is corrupt, we can recover the original one from parity (if moved),
 or read it directly from disk (if copied), and we can use this one to build the parity,
@@ -94,10 +94,10 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/57d40108/
 
 * Restore directory timestamps.
 
-* Add an option for dup to list only duplicates with different name.
+* Add an option for dup to list only duplicates with different names.
 This supposing that if a file has the same name, it's intentionally duplicated.
 
-* In fix an existing symlink with the same name of a file to be recovered may stop
+* In fix, an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
 The same for directories, when recreating the directory tree.
 
@@ -143,11 +143,10 @@ range with less utilization by other disks.
 We need to take care to disable this mechanism when the parity space
 is near to fillup the parity partition.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1797bf7d/
-+ This increase the possibility of recovering with multiple failures with not
++ This increases the possibility of recovering with multiple failures with not
 enough parity, as the benefit of existing parity is maximized.
 - Possible increase of fragmentation of parity allocation
 - No real benefit when the array is filled
-
 
 Rejected TODO
 =============
@@ -163,7 +162,7 @@ and then it will need less parity, resolving the problem of the parity disk bein
 + We can also think at an automated parity files naming and creation, removing
 the need of the user to specify that. We can also completely remove the
 concept of parity drive, automatically allocating parity in the most free data drives.
-- It won't be not nice to have the program to automatically
+- It won't be nice to have the program to automatically
 choose where to create the parity, because the choice cannot be optimal.
 With a dedicated disk manually chosen, it's instead optimal.
 + We can limit this coexist possibility only to latest parity file,
@@ -213,7 +212,7 @@ This feature can be enabled with a specific option, and available
 in Windows using Shadow Copy, and in Linux using Btrfs, and in a generic
 Unix using ZFS.
 See Jens's Windows script at: http://sourceforge.net/p/snapraid/discussion/1677233/thread/a1707211/
-Note that a different between Windows and Unix is that in Windows old snapshots
+Note that a difference between Windows and Unix is that in Windows old snapshots
 are automatically deleted.
 
 * Checks if splitting hash/parity computation in 4K pages
@@ -232,7 +231,7 @@ coreutils stat has an example, but it doesn't work in Linux (see lib/stat-time.h
 If they do not match, stop the processing.
 This can be done to avoid to use not synchronized parity and content files,
 resulting in wrong data.
-But if the sync process is killed we need a way to resyncronize them.
+But if the sync process is killed we need a way to resynchronize them.
 Or maybe we should allow parity newer than content, but not viceversa.
 - The corner cases are too many. A fixed parity may be never.
 A someway modified content may be never. So, the time is not really significant.
@@ -287,7 +286,7 @@ containing the last blocks of many files.
 * In "pool" for Windows, and for unique directories a junction to the
 directory could be used, avoiding to use symlinks to files.
 This allows to overcome the problem of sharing symlinks.
-- It would work, in fact it would work to well. The problem is that
+- It would work, in fact it would work too well. The problem is that
 Windows will treat the junction as the real directory, like *really*
 deleting its content from Explorer pressing "del" and also from the
 command line with "rd". Too dangerous.
@@ -304,7 +303,7 @@ Anyway, considering the typical use, it's not really relevant.
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the
 hash after reading, and in case, skip it, and retry with another copy.
-- It will work only for duplicate files. Not really worth do to it.
+- It will work only for duplicate files. Not really worth to do it.
 
 * Save the content file in compressed .gz format to save space.
 - Compression is too slow. Even using the very fast lzo.
@@ -340,7 +339,7 @@ to different CPUs.
 - At now it's questionable if it will result in a performance improvement.
 The murmur3 hash, and the RAID5/6 computations are so fast that even a single
 thread should be able to do them.
-Use the "snapraid -T" comment to see the speed.
+Use the "snapraid -T" command to see the speed.
 
 * In the repair() function the heuristic to detect if we recovered after the sync,
 can be extended to all the previous blocks, because we always proceed in block
@@ -355,7 +354,7 @@ So, makes sense to have it a little slower but trying any
 possible recovery strategy.
 
 * Extend haspdeep to support the SnapRAID hash.
-- Not possible, because now SnapRAID uses a hash see that makes the hash unique
+- Not possible, because now SnapRAID uses a hash seed that makes the hash unique
 for each array
 https://github.com/jessek/hashdeep/
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/90b0e9b2/?limit=25
@@ -367,11 +366,11 @@ The file can contains hashes stored in the same order they are accessed
 in sync/check/scrub.
 + A lot less memory utilization
 - It will be slow in --pre-hash as the files are accessed in another order,
-but no much slow.
+but not much slow.
 - How to handle multiple .content file copy ? When working we can have
 only a single file. When storing the .content we'll have to copy it
 in all the places.
 * Can we mix the existing and new approach ? We can create this
 hash file at startup in a memory mapped "temporary" file.
-It may takes some time to create it, but then it will be fast.
+It may take some time to create it, but then it will be fast.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/cdea773f/
