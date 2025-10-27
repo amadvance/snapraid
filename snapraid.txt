@@ -55,7 +55,7 @@ infrequently changing files, SnapRAID offers several features:
 
 For more information, please visit the official SnapRAID site:
 
-    http://www.snapraid.it/
+    https://www.snapraid.it/
 
 
 3 LIMITATIONS

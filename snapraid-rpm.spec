@@ -4,7 +4,7 @@ Version:        13.0
 Release:        3%{?dist}
 License:        GPLv3+
 Group:          Applications/System
-URL:            http://www.snapraid.it/
+URL:            https://www.snapraid.it/
 Source:         https://github.com/amadvance/snapraid/releases/download/v%{version}/snapraid-%{version}.tar.gz
 BuildRequires:  gcc
 

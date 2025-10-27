@@ -48,7 +48,7 @@ Description
 
 	For more information, please visit the official SnapRAID site:
 
-		:http://www.snapraid.it/
+		:https://www.snapraid.it/
 
 Limitations
 	SnapRAID is a hybrid between a RAID and a backup program, aiming to combine
