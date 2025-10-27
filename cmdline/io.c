@@ -823,7 +823,7 @@ static void io_start_thread(struct snapraid_io* io,
 	io->block_next = blockstart;
 
 	io->done = 0;
-	io->reader_index = io->io_max - 1;
+	io->reader_index = io->io_max - 1; /* the first io_read_next() is going to set it to 0 */
 	io->writer_index = 0;
 
 	/* clear writer errors */

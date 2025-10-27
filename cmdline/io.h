@@ -129,10 +129,71 @@ struct snapraid_worker {
 #define IO_WRITER_ERROR_MAX (-IO_WRITER_ERROR_BASE)
 
 /**
- * Reader.
+ * IO system that handle all parallel reads and writes.
  *
- * This represents the pool of worker threads dedicated to read
+ * This represents the pool of worker threads dedicated to read and write
  * data from the disks.
+ *
+ * Typycal scenario is:
+ *
+ * # Initialize the process
+ * io_start(&io, blockstart, blockmax, block_enabled);
+ * 
+ * for_each_block {
+ *         # Now read starts
+ *         # Get the current block to process and the vector of data buffers to use
+ *         #   buffer[0..diskmax-1] are data disks
+ *         #   buffer[diskmax..diskmax+levelmax-1] are parity disks
+ *         #
+ *         # INTERNAL: Broadcast a read_sched signal, to signal worker threads
+ *         # that the previous "blockcur" position is now available and the
+ *         # buffers can be used to read a new look-ahead position.
+ *         unsigned blockcur = io_read_next(&io, &buffer);
+ * 
+ *         for_each_disk {
+ *                 # Read a disk into buffer[diskcur]
+ *                 # diskcur is the disk processed, and it may came in random order
+ *                 # depending on which disk is faster
+ *                 #
+ *                 # INTERNAL: It may wait for the read_done condition in case
+ *                 # the read is not yet done.
+ *                 # The reader thread will set the condition when ready.
+ *                 struct snapraid_task* task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
+ * 
+ *                 # compute the hash
+ *                 ...
+ *         }
+ *
+ *         # compute the parity
+ *         ...
+ *
+ *         # Now write starts
+ *         # At this point the parity data should ALREADY be in the buffer[diskmax+levcur]
+ *         # Note that the only reason that the process is separated for each parity
+ *         # is to allow to identify which is the latest and slowest disk
+ *         io_write_preset(&io, blockcur, !parity_going_to_be_updated);
+ *
+ *         for_each_parity {
+ *                 unsigned levcur;
+ *
+ *                 # Write a parity from buffer[diskmax+levcur]
+ *                 # levcur is the disk processed, and it may came in random order
+ *                 # depending on which disk is faster
+ *                 #
+ *                 # INTERNAL: It may wait for the write_done condition in case
+ *                 # there isn't a free position in the parity write queue.
+ *                 # The writer thread will set the condition when ready.
+ *                 io_parity_write(&io, &levcur, waiting_map, &waiting_mac);
+ *         }
+ *
+ *         # End of the write
+ *         # INTERNAL: Broadcast a write_sched signal, to signal worker threads
+ *         # that a new position is ready to be written
+ *         io_write_next(&io, blockcur, !parity_going_to_be_updated, writer_error);
+ * }
+ *
+ * # Stop all thread after writing all queued data
+ * io_stop(&io);
  */
 struct snapraid_io {
 	struct snapraid_state* state;
