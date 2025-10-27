@@ -826,29 +826,32 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 	printf("\n");
 }
 
-/**
- * Fill with fake data the device list.
- */
-static int devtest(tommy_list* low, int operation)
+int devtest(tommy_list* high, tommy_list* low, int operation)
 {
-	unsigned c;
+	tommy_node* i;
+	unsigned count;
 
 	if (operation != DEVICE_SMART && operation != DEVICE_PROBE)
 		return -1;
 
-	/* add some fake data */
-	for (c = 0; c < 16; ++c) {
+	/* for each device add some fake data */
+	count = 0;
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
 		devinfo_t* entry;
 		int j;
 
+		++count;
+
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
-		entry->device = c;
+		/* fake device number */
+		entry->device = tommy_strhash_u32(0, devinfo->name);
 
 		tommy_list_insert_tail(low, &entry->node, entry);
 
 		for (j = 0; j < 256; ++j) {
-			switch (c) {
+			switch (count) {
 			case 0 : entry->smart[j] = 0; break;
 			case 1 : entry->smart[j] = SMART_UNASSIGNED; break;
 			default :
@@ -857,28 +860,18 @@ static int devtest(tommy_list* low, int operation)
 			}
 		}
 
-		if (c == 0) {
-			entry->smart_serial[0] = 0;
-			entry->smart_vendor[0] = 0;
-			entry->smart_model[0] = 0;
-			entry->file[0] = 0;
-			entry->name[0] = 0;
-			entry->smart[SMART_SIZE] = SMART_UNASSIGNED;
-			entry->smart[SMART_ROTATION_RATE] = 0;
-		} else {
-			snprintf(entry->smart_serial, sizeof(entry->smart_serial), "S%u", c);
-			snprintf(entry->smart_vendor, sizeof(entry->smart_vendor), "V%u", c);
-			snprintf(entry->smart_model, sizeof(entry->smart_model), "M%u", c);
-			pathcpy(entry->file, sizeof(entry->name), "file");
-			pathcpy(entry->name, sizeof(entry->name), "name");
-			entry->smart[SMART_SIZE] = c * TERA;
-			entry->smart[SMART_ROTATION_RATE] = 7200;
-		}
-
+		pathprint(entry->smart_serial, sizeof(entry->smart_serial), "FAKE_%s", devinfo->smart_serial);
+		pathprint(entry->smart_vendor, sizeof(entry->smart_vendor), "FAKE_%s", devinfo->smart_vendor);
+		pathprint(entry->smart_model, sizeof(entry->smart_model), "FAKE_%s", devinfo->smart_model);
+		pathprint(entry->file, sizeof(entry->name), "FAKE_%s", devinfo->file);
+		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
+		entry->smart[SMART_SIZE] = count * TERA;
+		entry->smart[SMART_ROTATION_RATE] = 7200;
+		entry->smart[SMART_TEMPERATURE_CELSIUS] = 27;
 		entry->smart[SMART_ERROR] = 0;
 		entry->smart[SMART_FLAGS] = SMART_UNASSIGNED;
 
-		switch (c) {
+		switch (count) {
 		case 3 : entry->smart[SMART_ERROR] = 1; break;
 		case 4 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_UNSUPPORTED; break;
 		case 5 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_COMMAND; break;
@@ -954,7 +947,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	}
 
 	if (state->opt.fake_device) {
-		ret = devtest(&low, operation);
+		ret = devtest(&high, &low, operation);
 	} else {
 		int others = operation == DEVICE_SMART || operation == DEVICE_PROBE;
 

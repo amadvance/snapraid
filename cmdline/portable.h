@@ -534,6 +534,11 @@ typedef struct devinfo_struct devinfo_t;
 int devquery(tommy_list* high, tommy_list* low, int operation, int others);
 
 /**
+ * Fill with fake data the device list.
+ */
+int devtest(tommy_list* high, tommy_list* low, int operation);
+
+/**
  * Get the ambient temperature in degree
  *
  * Return 0 if not available.

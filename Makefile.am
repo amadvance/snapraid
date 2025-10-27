@@ -94,6 +94,7 @@ noinst_HEADERS = \
 	cmdline/spooky2.c \
 	cmdline/spooky2test.c \
 	cmdline/metro.c \
+	cmdline/metrotest.c \
 	cmdline/fnmatch.h \
 	cmdline/import.h \
 	cmdline/search.h \
@@ -133,6 +134,7 @@ EXTRA_DIST = \
 	test/test-par6-hole.conf \
 	test/test-par6-noaccess.conf \
 	test/test-par6-rename.conf \
+	test/test-par6-thermal.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
@@ -205,6 +207,7 @@ CHECKSIZE = 100
 endif
 
 CONF = $(srcdir)/test/test-par6.conf
+THERMAL = $(srcdir)/test/test-par6-thermal.conf
 HOLE = $(srcdir)/test/test-par6-hole.conf
 NOACCESS = $(srcdir)/test/test-par6-noaccess.conf
 RENAME = $(srcdir)/test/test-par6-rename.conf
@@ -245,7 +248,7 @@ if HAVE_THREAD_CHECKER
 	mv bench/disk3/a/9* bench/disk6/a
 	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/disk2/b/* bench/disk3/b/*
 # Sync again
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync --bw-limit 1M
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Other commands that uses threads
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub -p full
@@ -292,11 +295,12 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) down -d parity -d disk1
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) devices
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) probe --test-fake-device
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) probe --test-fake-device -s
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --test-fake-device --test-expect-failure
 if HAVE_POSIX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check --bw-limit 1M
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 #### CONTROLLED ####
 	$(MSG) Filesystem allocation test
@@ -333,7 +337,7 @@ endif
 # Now enforce copy detection of a file without parity
 # Create a file in a high number disk
 	dd bs=1 count=8192 if=/dev/urandom of=bench/disk6/STEP1
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync --bw-limit 1M
 # Create two new copies. The one in disk1 will copy
 # the hash from the one in disk6, and the one in disk2
 # will copy the hash from the one in disk1, that
@@ -399,6 +403,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	$(MSG) Dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-dry
+# Thermal test
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(THERMAL) --test-fake-device test-dry
 	$(MSG) Copy detection
 # Create a file and sync with it
 	echo 123 > bench/disk1/COPY

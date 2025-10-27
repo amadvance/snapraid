@@ -101,6 +101,29 @@ void test(int argc, char* argv[])
 	if (argc < 2 || strcmp(argv[1], "test") != 0)
 		return;
 
+	assert(strcmp(strpolish(strcpy(buffer, "\r \n\xFF")), "    ") == 0);
+	assert(strcmp(strtrim(strcpy(buffer, " trim trim \n\r")), "trim trim") == 0);
+	assert(strcmp(strlwr(strcpy(buffer, " LoWer\n\r")), " lower\n\r") == 0);
+
+	assert(worddigitstr("longneedlestring","needle") == 0);
+	assert(worddigitstr("longneedlestring","") == 0);
+	assert(worddigitstr("long needle string","needle") != 0);
+	assert(worddigitstr("long1needle2string","needle") != 0);
+	assert(worddigitstr("long\rneedle3string","needle") != 0);
+	assert(worddigitstr("long1needle","needle") != 0);
+	assert(worddigitstr("needle2string","needle") != 0);
+	assert(worddigitstr("needle","needle") != 0);
+
+	assert(strcmp(esc_tag("simple", buffer), "simple") == 0);
+	assert(strcmp(esc_tag("line1\nline2", buffer), "line1\\nline2") == 0);
+	assert(strcmp(esc_tag("line1\rline2", buffer), "line1\\rline2") == 0);
+	assert(strcmp(esc_tag("key:value", buffer), "key\\dvalue") == 0);
+	assert(strcmp(esc_tag("C:\\path\\file", buffer), "C\\d\\\\path\\\\file") == 0);
+	assert(strcmp(esc_tag("A\nB\rC:D\\E", buffer), "A\\nB\\rC\\dD\\\\E") == 0);
+	assert(strcmp(esc_tag("endwith\\", buffer), "endwith\\\\") == 0);
+	assert(strcmp(esc_tag("", buffer), "") == 0);
+	assert(strcmp(esc_tag("\n\r:\\\\", buffer), "\\n\\r\\d\\\\\\\\") == 0);
+
 	for (i = 2; i < argc; ++i) {
 		printf("argv[%d]\n", i);
 		printf("\t#%s#\n", argv[i]);

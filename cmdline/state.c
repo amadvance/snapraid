@@ -4579,7 +4579,6 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
-
 		v = disk->progress_tick[current] - ref(disk->progress_tick, oldest);
 		printr(disk->name, pad);
 
@@ -4690,7 +4689,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 	now = time(0);
 
 	/* thermal measure */
-	if (now > state->thermal_latest + THERMAL_PERIOD_SECONDS) {
+	if (now > state->thermal_latest + THERMAL_PERIOD_SECONDS || state->opt.fake_device) {
 		state->thermal_latest = now;
 		state_thermal(state, now);
 	}

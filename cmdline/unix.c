@@ -1875,6 +1875,7 @@ int ambient_temperature(void)
 			}
 
 			/* trim spaces */
+			strtrim(name);
 			strtrim(label);
 
 			log_tag("thermal:ambient:device:%s:%s:%s:%s:%d\n", entry->d_name, name, hwmon_entry->d_name, label, temp);

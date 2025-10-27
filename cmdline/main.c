@@ -309,12 +309,14 @@ const char* get_argv0(const char* argv0)
 static volatile pid_t child_pid = 0;
 
 /* signal handler that forwards signals to child */
+/* LCOV_EXCL_START */
 static void forward_signal(int sig)
 {
 	if (child_pid > 0) {
 		kill(child_pid, sig);
 	}
 }
+/* LCOV_EXCL_STOP */
 
 int main(int argc, char* argv[])
 {
@@ -355,8 +357,10 @@ int main(int argc, char* argv[])
 
 		pid_t pid = fork();
 		if (pid == -1) {
+			/* LCOV_EXCL_START */
 			perror("Failed to fork SnapRAID");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		if (pid == 0) {
@@ -373,8 +377,10 @@ int main(int argc, char* argv[])
 			execvp(get_argv0(argv[0]), argv);
 
 			/* here it's an error */
+			/* LCOV_EXCL_START */
 			perror("Failed to exec SnapRAID");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		} else {
 			/* parent process */
 			int status;
@@ -387,8 +393,10 @@ int main(int argc, char* argv[])
 			} while (ret == -1 && errno == EINTR); /* retry if interrupted by signal */
 
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				perror("Failed to wait for SnapRAID");
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* clear child PID */
@@ -432,4 +440,3 @@ int main(int argc, char* argv[])
 	return ret;
 }
 #endif
-

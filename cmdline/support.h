@@ -253,14 +253,12 @@ unsigned strsplit(char** split_map, unsigned split_max, char* line, const char* 
 /**
  * Trim spaces from the start and the end
  */
-void strtrim(char* s);
+char* strtrim(char* s);
 
 /**
  * Lower case
  */
-#ifndef __MINGW32__
-void strlwr(char* s);
-#endif
+char* strlwr(char* s);
 
 /*
  * Find the first occurrence of 'needle' in 'haystack' only if it

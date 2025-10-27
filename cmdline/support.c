@@ -732,7 +732,7 @@ unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* d
 	return mac;
 }
 
-void strtrim(char* str)
+char* strtrim(char* str)
 {
 	char* begin;
 	char* end;
@@ -749,17 +749,21 @@ void strtrim(char* str)
 
 	if (begin != end)
 		memmove(str, begin, end - begin + 1);
+
+	return str;
 }
 
-#ifndef __MINGW32__
-void strlwr(char* s)
+char* strlwr(char* str)
 {
+	char* s = str;
+
 	while (*s) {
 		*s = tolower((unsigned char)*s);
 		++s;
 	}
+	
+	return str;
 }
-#endif
 
 char* worddigitstr(const char* haystack, const char* needle)
 {

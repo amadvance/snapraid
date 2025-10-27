@@ -186,7 +186,11 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		}
 	}
 
-	ret = devquery(&high, &low, DEVICE_SMART, 0 /* only disks in the array */);
+	if (state->opt.fake_device) {
+		ret = devtest(&high, &low, DEVICE_SMART);
+	} else {
+		ret = devquery(&high, &low, DEVICE_SMART, 0 /* only disks in the array */);
+	}
 
 	/* on error, just disable thermal gathering */
 	if (ret != 0)
@@ -264,6 +268,21 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		found->data[found->count].temperature = temperature;
 		found->data[found->count].time = now - state->thermal_first;
 		++found->count;
+
+		if (state->opt.fake_device) {
+			/* fill with fake data */
+			found->data[0].time = 0;
+			found->data[0].temperature = 27;
+			found->data[1].time = 100;
+			found->data[1].temperature = 28;
+			found->data[2].time = 300;
+			found->data[2].temperature = 29;
+			found->data[3].time = 700;
+			found->data[3].temperature = 30;
+			found->data[4].time = 1500;
+			found->data[4].temperature = 31;
+			found->count = 5;
+		}
 
 		/* log the new data */
 		log_tag("thermal:heat:%s:%" PRIu64 ":%u:", devinfo->name, devinfo->device, found->count);

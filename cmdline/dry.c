@@ -91,24 +91,25 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 
 	ret = handle_open(handle, task->file, state->file_mode, log_error, 0);
 	if (ret == -1) {
+		/* LCOV_EXCL_START */
 		if (errno == EIO) {
-			/* LCOV_EXCL_START */
 			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to dry.\n");
 			log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
 			task->state = TASK_STATE_IOERROR;
 			return;
-			/* LCOV_EXCL_STOP */
 		}
 
 		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
+		/* LCOV_EXCL_STOP */
 	}
 
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
 	if (task->read_size == -1) {
+		/* LCOV_EXCL_START */
 		if (errno == EIO) {
 			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
@@ -119,6 +120,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* store the path of the opened file */
@@ -140,6 +142,7 @@ static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_ta
 	/* read the parity */
 	ret = parity_read(parity_handle, blockcur, buffer, state->block_size, log_error);
 	if (ret == -1) {
+		/* LCOV_EXCL_START */
 		if (errno == EIO) {
 			log_tag("parity_error:%u:%s: Read EIO error. %s\n", blockcur, lev_config_name(level), strerror(errno));
 			log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(level), blockcur);
@@ -150,6 +153,7 @@ static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_ta
 		log_tag("parity_error:%u:%s: Read error. %s\n", blockcur, lev_config_name(level), strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
+		/* LCOV_EXCL_STOP */
 	}
 
 	task->state = TASK_STATE_DONE;

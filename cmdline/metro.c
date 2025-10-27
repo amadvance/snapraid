@@ -18,7 +18,7 @@
 /*
  * Derivative work from metrohash128.cpp
  *
- * metrohash128.cpp
+ * https://github.com/jandrewrogers/MetroHash/blob/master/src/metrohash128.cpp
  *
  * Copyright 2015-2018 J. Andrew Rogers
  *
@@ -103,6 +103,6 @@ void MetroHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* d
 	v[1] += util_rotr64((v[1] * k3) + v[0], 37);
 
 	util_write64(digest, v[0]);
-	util_write64(digest + 8, v[0]);
+	util_write64(digest + 8, v[1]);
 }
 
