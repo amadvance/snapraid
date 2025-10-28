@@ -2,27 +2,27 @@
 body
 {
   color: #000000;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 }
 
 /* All views: standard link format*/
 a:link
 {
-  color: #284FA8;
+  color: #284fa8;
   text-decoration: underline;
 }
 
 /* All views: standard link - visited format */
 a:visited
 {
-  color: #00CB40;
+  color: #00cb40;
   text-decoration: underline;
 }
 
 /* All views: standard link - activated format */
 a:active
 {
-  color: #FF0040;
+  color: #ff0040;
   text-decoration: underline;
 }
 
@@ -52,7 +52,7 @@ td.headerItem
 td.headerValue
 {
   text-align: left;
-  color: #284FA8;
+  color: #284fa8;
   font-family: sans-serif;
   font-weight: bold;
   white-space: nowrap;
@@ -74,13 +74,13 @@ td.headerCovTableHead
 td.headerCovTableEntry
 {
   text-align: right;
-  color: #284FA8;
+  color: #284fa8;
   font-family: sans-serif;
   font-weight: bold;
   white-space: nowrap;
   padding-left: 12px;
   padding-right: 4px;
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
 }
 
 /* All views: header item coverage table entry for high coverage rate */
@@ -93,7 +93,7 @@ td.headerCovTableEntryHi
   white-space: nowrap;
   padding-left: 12px;
   padding-right: 4px;
-  background-color: #A7FC9D;
+  background-color: #a7fc9d;
 }
 
 /* All views: header item coverage table entry for medium coverage rate */
@@ -106,7 +106,7 @@ td.headerCovTableEntryMed
   white-space: nowrap;
   padding-left: 12px;
   padding-right: 4px;
-  background-color: #FFEA20;
+  background-color: #ffea20;
 }
 
 /* All views: header item coverage table entry for ow coverage rate */
@@ -119,7 +119,7 @@ td.headerCovTableEntryLo
   white-space: nowrap;
   padding-left: 12px;
   padding-right: 4px;
-  background-color: #FF0000;
+  background-color: #ff0000;
 }
 
 /* All views: header legend value for legend entry */
@@ -136,7 +136,7 @@ td.headerValueLeg
 /* All views: color of horizontal ruler */
 td.ruler
 {
-  background-color: #6688D4;
+  background-color: #6688d4;
 }
 
 /* All views: version string format */
@@ -153,8 +153,8 @@ td.versionInfo
 td.tableHead
 {
   text-align: center;
-  color: #FFFFFF;
-  background-color: #6688D4;
+  color: #ffffff;
+  background-color: #6688d4;
   font-family: sans-serif;
   font-size: 120%;
   font-weight: bold;
@@ -174,8 +174,8 @@ td.coverFile
   text-align: left;
   padding-left: 10px;
   padding-right: 20px; 
-  color: #284FA8;
-  background-color: #DAE7FE;
+  color: #284fa8;
+  background-color: #dae7fe;
   font-family: monospace;
 }
 
@@ -184,7 +184,7 @@ td.coverBar
 {
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
 }
 
 /* Directory view/File view (all): bar-graph outline color */
@@ -200,7 +200,7 @@ td.coverPerHi
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #A7FC9D;
+  background-color: #a7fc9d;
   font-weight: bold;
   font-family: sans-serif;
 }
@@ -212,7 +212,7 @@ td.coverNumHi
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #A7FC9D;
+  background-color: #a7fc9d;
   white-space: nowrap;
   font-family: sans-serif;
 }
@@ -224,7 +224,7 @@ td.coverPerMed
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #FFEA20;
+  background-color: #ffea20;
   font-weight: bold;
   font-family: sans-serif;
 }
@@ -236,7 +236,7 @@ td.coverNumMed
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #FFEA20;
+  background-color: #ffea20;
   white-space: nowrap;
   font-family: sans-serif;
 }
@@ -248,7 +248,7 @@ td.coverPerLo
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #FF0000;
+  background-color: #ff0000;
   font-weight: bold;
   font-family: sans-serif;
 }
@@ -260,7 +260,7 @@ td.coverNumLo
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #FF0000;
+  background-color: #ff0000;
   white-space: nowrap;
   font-family: sans-serif;
 }
@@ -282,7 +282,7 @@ a.detail:visited
 /* File view (all): "show/hide details" link - activated format */
 a.detail:active
 {
-  color: #FFFFFF;
+  color: #ffffff;
   font-size:80%;
 }
 
@@ -291,7 +291,7 @@ td.testName
 {
   text-align: right;
   padding-right: 10px;
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
   font-family: sans-serif;
 }
 
@@ -301,7 +301,7 @@ td.testPer
   text-align: right;
   padding-left: 10px;
   padding-right: 10px; 
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
   font-family: sans-serif;
 }
 
@@ -311,7 +311,7 @@ td.testNum
   text-align: right;
   padding-left: 10px;
   padding-right: 10px; 
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
   font-family: sans-serif;
 }
 
@@ -329,7 +329,7 @@ td.testDescription
   padding-left: 30px;
   padding-bottom: 10px;
   padding-right: 30px;
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
 }
 
 /* Source code view: function entry */
@@ -338,8 +338,8 @@ td.coverFn
   text-align: left;
   padding-left: 10px;
   padding-right: 20px; 
-  color: #284FA8;
-  background-color: #DAE7FE;
+  color: #284fa8;
+  background-color: #dae7fe;
   font-family: monospace;
 }
 
@@ -349,7 +349,7 @@ td.coverFnLo
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #FF0000;
+  background-color: #ff0000;
   font-weight: bold;
   font-family: sans-serif;
 }
@@ -360,7 +360,7 @@ td.coverFnHi
   text-align: right;
   padding-left: 10px;
   padding-right: 10px;
-  background-color: #DAE7FE;
+  background-color: #dae7fe;
   font-weight: bold;
   font-family: sans-serif;
 }
@@ -376,14 +376,14 @@ pre.source
 /* Source code view: line number format */
 span.lineNum
 {
-  background-color: #EFE383;
+  background-color: #efe383;
 }
 
 /* Source code view: format for lines which were executed */
 td.lineCov,
 span.lineCov
 {
-  background-color: #CAD7FE;
+  background-color: #cad7fe;
 }
 
 /* Source code view: format for Cov legend */
@@ -392,14 +392,14 @@ span.coverLegendCov
   padding-left: 10px;
   padding-right: 10px;
   padding-bottom: 2px;
-  background-color: #CAD7FE;
+  background-color: #cad7fe;
 }
 
 /* Source code view: format for lines which were not executed */
 td.lineNoCov,
 span.lineNoCov
 {
-  background-color: #FF6230;
+  background-color: #ff6230;
 }
 
 /* Source code view: format for NoCov legend */
@@ -408,14 +408,14 @@ span.coverLegendNoCov
   padding-left: 10px;
   padding-right: 10px;
   padding-bottom: 2px;
-  background-color: #FF6230;
+  background-color: #ff6230;
 }
 
 /* Source code view (function table): standard link - visited format */
 td.lineNoCov > a:visited,
 td.lineCov > a:visited
 {  
-  color: black;
+  color: #000000;
   text-decoration: underline;
 }  
 
@@ -423,27 +423,27 @@ td.lineCov > a:visited
    previous version */
 span.lineDiffCov
 {
-  background-color: #B5F7AF;
+  background-color: #b5f7af;
 }
 
 /* Source code view: format for branches which were executed
  * and taken */
 span.branchCov
 {
-  background-color: #CAD7FE;
+  background-color: #cad7fe;
 }
 
 /* Source code view: format for branches which were executed
  * but not taken */
 span.branchNoCov
 {
-  background-color: #FF6230;
+  background-color: #ff6230;
 }
 
 /* Source code view: format for branches which were not executed */
 span.branchNoExec
 {
-  background-color: #FF6230;
+  background-color: #ff6230;
 }
 
 /* Source code view: format for the source code heading line */
@@ -463,7 +463,7 @@ td.headerValueLegL
   white-space: nowrap;
   padding-left: 4px;
   padding-right: 2px;
-  background-color: #FF0000;
+  background-color: #ff0000;
   font-size: 80%;
 }
 
@@ -475,7 +475,7 @@ td.headerValueLegM
   white-space: nowrap;
   padding-left: 2px;
   padding-right: 2px;
-  background-color: #FFEA20;
+  background-color: #ffea20;
   font-size: 80%;
 }
 
@@ -487,7 +487,7 @@ td.headerValueLegH
   white-space: nowrap;
   padding-left: 2px;
   padding-right: 4px;
-  background-color: #A7FC9D;
+  background-color: #a7fc9d;
   font-size: 80%;
 }
 
@@ -497,7 +497,7 @@ span.coverLegendCovLo
   padding-left: 10px;
   padding-right: 10px;
   padding-top: 2px;
-  background-color: #FF0000;
+  background-color: #ff0000;
 }
 
 /* All views except source code view: legend format for med coverage */
@@ -506,7 +506,7 @@ span.coverLegendCovMed
   padding-left: 10px;
   padding-right: 10px;
   padding-top: 2px;
-  background-color: #FFEA20;
+  background-color: #ffea20;
 }
 
 /* All views except source code view: legend format for hi coverage */
@@ -515,5 +515,5 @@ span.coverLegendCovHi
   padding-left: 10px;
   padding-right: 10px;
   padding-top: 2px;
-  background-color: #A7FC9D;
+  background-color: #a7fc9d;
 }

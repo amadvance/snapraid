@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2017-11-06 22:14:04</td>
+            <td class="headerValue">2025-10-28 11:59:11</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -61,151 +61,151 @@
 <pre class="sourceHeading">          Line data    Source code</pre>
 <pre class="source">
 <a name="1"><span class="lineNum">       1 </span>            : /*</a>
-<span class="lineNum">       2 </span>            :  * Copyright (C) 2014 Andrea Mazzoleni
-<span class="lineNum">       3 </span>            :  *
-<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
-<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
-<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
-<span class="lineNum">       7 </span>            :  * (at your option) any later version.
-<span class="lineNum">       8 </span>            :  *
-<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
-<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
-<span class="lineNum">      13 </span>            :  *
-<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
-<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
-<span class="lineNum">      16 </span>            :  */
-<span class="lineNum">      17 </span>            : 
-<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
-<span class="lineNum">      19 </span>            : 
-<span class="lineNum">      20 </span>            : #include &quot;support.h&quot;
-<span class="lineNum">      21 </span>            : #include &quot;elem.h&quot;
-<span class="lineNum">      22 </span>            : #include &quot;state.h&quot;
+<a name="2"><span class="lineNum">       2 </span>            :  * Copyright (C) 2014 Andrea Mazzoleni</a>
+<a name="3"><span class="lineNum">       3 </span>            :  *</a>
+<a name="4"><span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify</a>
+<a name="5"><span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by</a>
+<a name="6"><span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or</a>
+<a name="7"><span class="lineNum">       7 </span>            :  * (at your option) any later version.</a>
+<a name="8"><span class="lineNum">       8 </span>            :  *</a>
+<a name="9"><span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,</a>
+<a name="10"><span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of</a>
+<a name="11"><span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</a>
+<a name="12"><span class="lineNum">      12 </span>            :  * GNU General Public License for more details.</a>
+<a name="13"><span class="lineNum">      13 </span>            :  *</a>
+<a name="14"><span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License</a>
+<a name="15"><span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</a>
+<a name="16"><span class="lineNum">      16 </span>            :  */</a>
+<a name="17"><span class="lineNum">      17 </span>            : </a>
+<a name="18"><span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;</a>
+<a name="19"><span class="lineNum">      19 </span>            : </a>
+<a name="20"><span class="lineNum">      20 </span>            : #include &quot;support.h&quot;</a>
+<a name="21"><span class="lineNum">      21 </span>            : #include &quot;elem.h&quot;</a>
+<a name="22"><span class="lineNum">      22 </span>            : #include &quot;state.h&quot;</a>
 <a name="23"><span class="lineNum">      23 </span>            : #include &quot;handle.h&quot;</a>
-<span class="lineNum">      24 </span>            : 
-<span class="lineNum">      25 </span><span class="lineCov">          1 : void state_touch(struct snapraid_state* state)</span>
-<span class="lineNum">      26 </span>            : {
-<span class="lineNum">      27 </span>            :         tommy_node* i;
-<span class="lineNum">      28 </span>            :         char esc_buffer[ESC_MAX];
-<span class="lineNum">      29 </span>            : 
-<span class="lineNum">      30 </span><span class="lineCov">          1 :         msg_progress(&quot;Setting sub-second timestamps...\n&quot;);</span>
-<span class="lineNum">      31 </span>            : 
-<span class="lineNum">      32 </span>            :         /* for all disks */
-<span class="lineNum">      33 </span><span class="lineCov">          7 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">      34 </span><span class="lineCov">          6 :                 struct snapraid_disk* disk = i-&gt;data;</span>
-<span class="lineNum">      35 </span>            :                 tommy_node* j;
-<span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span>            :                 /* for all files */
-<span class="lineNum">      38 </span><span class="lineCov">       5734 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">      39 </span><span class="lineCov">       5728 :                         struct snapraid_file* file = j-&gt;data;</span>
-<span class="lineNum">      40 </span>            : 
-<span class="lineNum">      41 </span>            :                         /* if the file has a zero nanosecond timestamp */
-<span class="lineNum">      42 </span>            :                         /* note that symbolic links are not in the file list */
-<span class="lineNum">      43 </span>            :                         /* and then are not processed */
-<span class="lineNum">      44 </span><span class="lineCov">       5728 :                         if (file-&gt;mtime_nsec == 0) {</span>
-<span class="lineNum">      45 </span>            :                                 char path[PATH_MAX];
-<span class="lineNum">      46 </span>            :                                 struct stat st;
-<span class="lineNum">      47 </span>            :                                 int f;
-<span class="lineNum">      48 </span>            :                                 int ret;
-<span class="lineNum">      49 </span>            :                                 int nsec;
-<span class="lineNum">      50 </span>            :                                 int flags;
-<span class="lineNum">      51 </span>            : 
-<span class="lineNum">      52 </span><span class="lineCov">         16 :                                 pathprint(path, sizeof(path), &quot;%s%s&quot;, disk-&gt;dir, file-&gt;sub);</span>
-<span class="lineNum">      53 </span>            : 
-<span class="lineNum">      54 </span>            :                                 /* set a new nanosecond timestamp different than 0 */
-<span class="lineNum">      55 </span>            :                                 do {
-<span class="lineNum">      56 </span>            :                                         uint32_t nano;
-<span class="lineNum">      57 </span>            : 
-<span class="lineNum">      58 </span>            :                                         /* get a random nanosecond value */
-<span class="lineNum">      59 </span><span class="lineCov">         16 :                                         if (randomize(&amp;nano, sizeof(nano)) != 0) {</span>
-<span class="lineNum">      60 </span>            :                                                 /* LCOV_EXCL_START */
-<span class="lineNum">      61 </span>            :                                                 log_fatal(&quot;Failed to get random values.\n&quot;);
-<span class="lineNum">      62 </span>            :                                                 exit(EXIT_FAILURE);
-<span class="lineNum">      63 </span>            :                                                 /* LCOV_EXCL_STOP */
-<span class="lineNum">      64 </span>            :                                         }
-<span class="lineNum">      65 </span>            : 
-<span class="lineNum">      66 </span><span class="lineCov">         16 :                                         nsec = nano % 1000000000;</span>
-<span class="lineNum">      67 </span><span class="lineCov">         16 :                                 } while (nsec == 0);</span>
-<span class="lineNum">      68 </span>            : 
-<span class="lineNum">      69 </span>            :                                 /* O_BINARY: open as binary file (Windows only) */
-<span class="lineNum">      70 </span>            :                                 /* O_NOFOLLOW: do not follow links to ensure to open the real file */
-<span class="lineNum">      71 </span><span class="lineCov">         16 :                                 flags = O_BINARY | O_NOFOLLOW;</span>
-<span class="lineNum">      72 </span>            : #ifdef _WIN32
-<span class="lineNum">      73 </span>            :                                 /* in Windows we must have write access at the file */
-<span class="lineNum">      74 </span>            :                                 flags |= O_RDWR;
-<span class="lineNum">      75 </span>            : #else
-<span class="lineNum">      76 </span>            :                                 /* in all others platforms, read access is enough */
-<span class="lineNum">      77 </span><span class="lineCov">         16 :                                 flags |= O_RDONLY;</span>
-<span class="lineNum">      78 </span>            : #endif
-<span class="lineNum">      79 </span>            : 
-<span class="lineNum">      80 </span>            :                                 /* open it */
-<span class="lineNum">      81 </span><span class="lineCov">         16 :                                 f = open(path, flags);</span>
-<span class="lineNum">      82 </span><span class="lineCov">         16 :                                 if (f == -1) {</span>
-<span class="lineNum">      83 </span>            :                                         /* LCOV_EXCL_START */
-<span class="lineNum">      84 </span>            :                                         log_fatal(&quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));
-<span class="lineNum">      85 </span>            :                                         continue;
-<span class="lineNum">      86 </span>            :                                         /* LCOV_EXCL_STOP */
-<span class="lineNum">      87 </span>            :                                 }
-<span class="lineNum">      88 </span>            : 
-<span class="lineNum">      89 </span>            :                                 /* get the present timestamp, that may be different than the one */
-<span class="lineNum">      90 </span>            :                                 /* in the content file */
-<span class="lineNum">      91 </span><span class="lineCov">         16 :                                 ret = fstat(f, &amp;st);</span>
-<span class="lineNum">      92 </span><span class="lineCov">         16 :                                 if (ret == -1) {</span>
-<span class="lineNum">      93 </span>            :                                         /* LCOV_EXCL_START */
-<span class="lineNum">      94 </span>            :                                         close(f);
-<span class="lineNum">      95 </span>            :                                         log_fatal(&quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));
-<span class="lineNum">      96 </span>            :                                         continue;
-<span class="lineNum">      97 </span>            :                                         /* LCOV_EXCL_STOP */
-<span class="lineNum">      98 </span>            :                                 }
-<span class="lineNum">      99 </span>            : 
-<span class="lineNum">     100 </span>            :                                 /* set the tweaked modification time, with new nano seconds */
-<span class="lineNum">     101 </span><span class="lineCov">         16 :                                 ret = fmtime(f, st.st_mtime, nsec);</span>
-<span class="lineNum">     102 </span><span class="lineCov">         16 :                                 if (ret != 0) {</span>
-<span class="lineNum">     103 </span>            :                                         /* LCOV_EXCL_START */
-<span class="lineNum">     104 </span>            :                                         close(f);
-<span class="lineNum">     105 </span>            :                                         log_fatal(&quot;Error timing file '%s'. %s.\n&quot;, path, strerror(errno));
-<span class="lineNum">     106 </span>            :                                         continue;
-<span class="lineNum">     107 </span>            :                                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     108 </span>            :                                 }
-<span class="lineNum">     109 </span>            : 
-<span class="lineNum">     110 </span>            :                                 /* uses fstat again to get the present timestamp */
-<span class="lineNum">     111 </span>            :                                 /* this is needed because the value read */
-<span class="lineNum">     112 </span>            :                                 /* may be different than the written one */
-<span class="lineNum">     113 </span><span class="lineCov">         16 :                                 ret = fstat(f, &amp;st);</span>
-<span class="lineNum">     114 </span><span class="lineCov">         16 :                                 if (ret == -1) {</span>
-<span class="lineNum">     115 </span>            :                                         /* LCOV_EXCL_START */
-<span class="lineNum">     116 </span>            :                                         close(f);
-<span class="lineNum">     117 </span>            :                                         log_fatal(&quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));
-<span class="lineNum">     118 </span>            :                                         continue;
-<span class="lineNum">     119 </span>            :                                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     120 </span>            :                                 }
-<span class="lineNum">     121 </span>            : 
-<span class="lineNum">     122 </span>            :                                 /* close it */
-<span class="lineNum">     123 </span><span class="lineCov">         16 :                                 ret = close(f);</span>
-<span class="lineNum">     124 </span><span class="lineCov">         16 :                                 if (ret != 0) {</span>
-<span class="lineNum">     125 </span>            :                                         /* LCOV_EXCL_START */
-<span class="lineNum">     126 </span>            :                                         log_fatal(&quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));
-<span class="lineNum">     127 </span>            :                                         continue;
-<span class="lineNum">     128 </span>            :                                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     129 </span>            :                                 }
-<span class="lineNum">     130 </span>            : 
-<span class="lineNum">     131 </span>            :                                 /* set the same nanosecond value in the content file */
-<span class="lineNum">     132 </span>            :                                 /* note that if the seconds value is already matching */
-<span class="lineNum">     133 </span>            :                                 /* the file won't be synced because the content file will */
-<span class="lineNum">     134 </span>            :                                 /* contain the new updated timestamp */
-<span class="lineNum">     135 </span><span class="lineCov">         16 :                                 file-&gt;mtime_nsec = STAT_NSEC(&amp;st);</span>
-<span class="lineNum">     136 </span>            : 
-<span class="lineNum">     137 </span>            :                                 /* state changed, we need to update it */
-<span class="lineNum">     138 </span><span class="lineCov">         16 :                                 state-&gt;need_write = 1;</span>
-<span class="lineNum">     139 </span>            : 
-<span class="lineNum">     140 </span><span class="lineCov">         16 :                                 log_tag(&quot;touch:%s:%s: %&quot; PRIu64 &quot;.%d\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), (uint64_t)st.st_mtime, STAT_NSEC(&amp;st));</span>
-<span class="lineNum">     141 </span><span class="lineCov">         16 :                                 msg_info(&quot;touch %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span>
-<span class="lineNum">     142 </span>            :                         }
-<span class="lineNum">     143 </span>            :                 }
-<span class="lineNum">     144 </span>            :         }
-<span class="lineNum">     145 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     146 </span>            : 
+<a name="24"><span class="lineNum">      24 </span>            : </a>
+<a name="25"><span class="lineNum">      25 </span><span class="lineCov">          1 : void state_touch(struct snapraid_state* state)</span></a>
+<a name="26"><span class="lineNum">      26 </span>            : {</a>
+<a name="27"><span class="lineNum">      27 </span>            :         tommy_node* i;</a>
+<a name="28"><span class="lineNum">      28 </span>            :         char esc_buffer[ESC_MAX];</a>
+<a name="29"><span class="lineNum">      29 </span>            : </a>
+<a name="30"><span class="lineNum">      30 </span><span class="lineCov">          1 :         msg_progress(&quot;Setting sub-second timestamps...\n&quot;);</span></a>
+<a name="31"><span class="lineNum">      31 </span>            : </a>
+<a name="32"><span class="lineNum">      32 </span>            :         /* for all disks */</a>
+<a name="33"><span class="lineNum">      33 </span><span class="lineCov">          7 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span></a>
+<a name="34"><span class="lineNum">      34 </span><span class="lineCov">          6 :                 struct snapraid_disk* disk = i-&gt;data;</span></a>
+<a name="35"><span class="lineNum">      35 </span>            :                 tommy_node* j;</a>
+<a name="36"><span class="lineNum">      36 </span>            : </a>
+<a name="37"><span class="lineNum">      37 </span>            :                 /* for all files */</a>
+<a name="38"><span class="lineNum">      38 </span><span class="lineCov">       5734 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span></a>
+<a name="39"><span class="lineNum">      39 </span><span class="lineCov">       5728 :                         struct snapraid_file* file = j-&gt;data;</span></a>
+<a name="40"><span class="lineNum">      40 </span>            : </a>
+<a name="41"><span class="lineNum">      41 </span>            :                         /* if the file has a zero nanosecond timestamp */</a>
+<a name="42"><span class="lineNum">      42 </span>            :                         /* note that symbolic links are not in the file list */</a>
+<a name="43"><span class="lineNum">      43 </span>            :                         /* and then are not processed */</a>
+<a name="44"><span class="lineNum">      44 </span><span class="lineCov">       5728 :                         if (file-&gt;mtime_nsec == 0) {</span></a>
+<a name="45"><span class="lineNum">      45 </span>            :                                 char path[PATH_MAX];</a>
+<a name="46"><span class="lineNum">      46 </span>            :                                 struct stat st;</a>
+<a name="47"><span class="lineNum">      47 </span>            :                                 int f;</a>
+<a name="48"><span class="lineNum">      48 </span>            :                                 int ret;</a>
+<a name="49"><span class="lineNum">      49 </span>            :                                 int nsec;</a>
+<a name="50"><span class="lineNum">      50 </span>            :                                 int flags;</a>
+<a name="51"><span class="lineNum">      51 </span>            : </a>
+<a name="52"><span class="lineNum">      52 </span><span class="lineCov">         16 :                                 pathprint(path, sizeof(path), &quot;%s%s&quot;, disk-&gt;dir, file-&gt;sub);</span></a>
+<a name="53"><span class="lineNum">      53 </span>            : </a>
+<a name="54"><span class="lineNum">      54 </span>            :                                 /* set a new nanosecond timestamp different than 0 */</a>
+<a name="55"><span class="lineNum">      55 </span>            :                                 do {</a>
+<a name="56"><span class="lineNum">      56 </span>            :                                         uint32_t nano;</a>
+<a name="57"><span class="lineNum">      57 </span>            : </a>
+<a name="58"><span class="lineNum">      58 </span>            :                                         /* get a random nanosecond value */</a>
+<a name="59"><span class="lineNum">      59 </span><span class="lineCov">         16 :                                         if (randomize(&amp;nano, sizeof(nano)) != 0) {</span></a>
+<a name="60"><span class="lineNum">      60 </span>            :                                                 /* LCOV_EXCL_START */</a>
+<a name="61"><span class="lineNum">      61 </span>            :                                                 log_fatal(&quot;Failed to retrieve random values.\n&quot;);</a>
+<a name="62"><span class="lineNum">      62 </span>            :                                                 exit(EXIT_FAILURE);</a>
+<a name="63"><span class="lineNum">      63 </span>            :                                                 /* LCOV_EXCL_STOP */</a>
+<a name="64"><span class="lineNum">      64 </span>            :                                         }</a>
+<a name="65"><span class="lineNum">      65 </span>            : </a>
+<a name="66"><span class="lineNum">      66 </span><span class="lineCov">         16 :                                         nsec = nano % 1000000000;</span></a>
+<a name="67"><span class="lineNum">      67 </span><span class="lineCov">         16 :                                 } while (nsec == 0);</span></a>
+<a name="68"><span class="lineNum">      68 </span>            : </a>
+<a name="69"><span class="lineNum">      69 </span>            :                                 /* O_BINARY: open as binary file (Windows only) */</a>
+<a name="70"><span class="lineNum">      70 </span>            :                                 /* O_NOFOLLOW: do not follow links to ensure to open the real file */</a>
+<a name="71"><span class="lineNum">      71 </span><span class="lineCov">         16 :                                 flags = O_BINARY | O_NOFOLLOW;</span></a>
+<a name="72"><span class="lineNum">      72 </span>            : #ifdef _WIN32</a>
+<a name="73"><span class="lineNum">      73 </span>            :                                 /* in Windows we must have write access at the file */</a>
+<a name="74"><span class="lineNum">      74 </span>            :                                 flags |= O_RDWR;</a>
+<a name="75"><span class="lineNum">      75 </span>            : #else</a>
+<a name="76"><span class="lineNum">      76 </span>            :                                 /* in all others platforms, read access is enough */</a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">         16 :                                 flags |= O_RDONLY;</span></a>
+<a name="78"><span class="lineNum">      78 </span>            : #endif</a>
+<a name="79"><span class="lineNum">      79 </span>            : </a>
+<a name="80"><span class="lineNum">      80 </span>            :                                 /* open it */</a>
+<a name="81"><span class="lineNum">      81 </span><span class="lineCov">         16 :                                 f = open(path, flags);</span></a>
+<a name="82"><span class="lineNum">      82 </span><span class="lineCov">         16 :                                 if (f == -1) {</span></a>
+<a name="83"><span class="lineNum">      83 </span>            :                                         /* LCOV_EXCL_START */</a>
+<a name="84"><span class="lineNum">      84 </span>            :                                         log_fatal(&quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="85"><span class="lineNum">      85 </span>            :                                         continue;</a>
+<a name="86"><span class="lineNum">      86 </span>            :                                         /* LCOV_EXCL_STOP */</a>
+<a name="87"><span class="lineNum">      87 </span>            :                                 }</a>
+<a name="88"><span class="lineNum">      88 </span>            : </a>
+<a name="89"><span class="lineNum">      89 </span>            :                                 /* get the present timestamp, that may be different than the one */</a>
+<a name="90"><span class="lineNum">      90 </span>            :                                 /* in the content file */</a>
+<a name="91"><span class="lineNum">      91 </span><span class="lineCov">         16 :                                 ret = fstat(f, &amp;st);</span></a>
+<a name="92"><span class="lineNum">      92 </span><span class="lineCov">         16 :                                 if (ret == -1) {</span></a>
+<a name="93"><span class="lineNum">      93 </span>            :                                         /* LCOV_EXCL_START */</a>
+<a name="94"><span class="lineNum">      94 </span>            :                                         close(f);</a>
+<a name="95"><span class="lineNum">      95 </span>            :                                         log_fatal(&quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="96"><span class="lineNum">      96 </span>            :                                         continue;</a>
+<a name="97"><span class="lineNum">      97 </span>            :                                         /* LCOV_EXCL_STOP */</a>
+<a name="98"><span class="lineNum">      98 </span>            :                                 }</a>
+<a name="99"><span class="lineNum">      99 </span>            : </a>
+<a name="100"><span class="lineNum">     100 </span>            :                                 /* set the tweaked modification time, with new nano seconds */</a>
+<a name="101"><span class="lineNum">     101 </span><span class="lineCov">         16 :                                 ret = fmtime(f, st.st_mtime, nsec);</span></a>
+<a name="102"><span class="lineNum">     102 </span><span class="lineCov">         16 :                                 if (ret != 0) {</span></a>
+<a name="103"><span class="lineNum">     103 </span>            :                                         /* LCOV_EXCL_START */</a>
+<a name="104"><span class="lineNum">     104 </span>            :                                         close(f);</a>
+<a name="105"><span class="lineNum">     105 </span>            :                                         log_fatal(&quot;Error timing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="106"><span class="lineNum">     106 </span>            :                                         continue;</a>
+<a name="107"><span class="lineNum">     107 </span>            :                                         /* LCOV_EXCL_STOP */</a>
+<a name="108"><span class="lineNum">     108 </span>            :                                 }</a>
+<a name="109"><span class="lineNum">     109 </span>            : </a>
+<a name="110"><span class="lineNum">     110 </span>            :                                 /* uses fstat again to get the present timestamp */</a>
+<a name="111"><span class="lineNum">     111 </span>            :                                 /* this is needed because the value read */</a>
+<a name="112"><span class="lineNum">     112 </span>            :                                 /* may be different than the written one */</a>
+<a name="113"><span class="lineNum">     113 </span><span class="lineCov">         16 :                                 ret = fstat(f, &amp;st);</span></a>
+<a name="114"><span class="lineNum">     114 </span><span class="lineCov">         16 :                                 if (ret == -1) {</span></a>
+<a name="115"><span class="lineNum">     115 </span>            :                                         /* LCOV_EXCL_START */</a>
+<a name="116"><span class="lineNum">     116 </span>            :                                         close(f);</a>
+<a name="117"><span class="lineNum">     117 </span>            :                                         log_fatal(&quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="118"><span class="lineNum">     118 </span>            :                                         continue;</a>
+<a name="119"><span class="lineNum">     119 </span>            :                                         /* LCOV_EXCL_STOP */</a>
+<a name="120"><span class="lineNum">     120 </span>            :                                 }</a>
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<a name="122"><span class="lineNum">     122 </span>            :                                 /* close it */</a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">         16 :                                 ret = close(f);</span></a>
+<a name="124"><span class="lineNum">     124 </span><span class="lineCov">         16 :                                 if (ret != 0) {</span></a>
+<a name="125"><span class="lineNum">     125 </span>            :                                         /* LCOV_EXCL_START */</a>
+<a name="126"><span class="lineNum">     126 </span>            :                                         log_fatal(&quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="127"><span class="lineNum">     127 </span>            :                                         continue;</a>
+<a name="128"><span class="lineNum">     128 </span>            :                                         /* LCOV_EXCL_STOP */</a>
+<a name="129"><span class="lineNum">     129 </span>            :                                 }</a>
+<a name="130"><span class="lineNum">     130 </span>            : </a>
+<a name="131"><span class="lineNum">     131 </span>            :                                 /* set the same nanosecond value in the content file */</a>
+<a name="132"><span class="lineNum">     132 </span>            :                                 /* note that if the seconds value is already matching */</a>
+<a name="133"><span class="lineNum">     133 </span>            :                                 /* the file won't be synced because the content file will */</a>
+<a name="134"><span class="lineNum">     134 </span>            :                                 /* contain the new updated timestamp */</a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">         16 :                                 file-&gt;mtime_nsec = STAT_NSEC(&amp;st);</span></a>
+<a name="136"><span class="lineNum">     136 </span>            : </a>
+<a name="137"><span class="lineNum">     137 </span>            :                                 /* state changed, we need to update it */</a>
+<a name="138"><span class="lineNum">     138 </span><span class="lineCov">         16 :                                 state-&gt;need_write = 1;</span></a>
+<a name="139"><span class="lineNum">     139 </span>            : </a>
+<a name="140"><span class="lineNum">     140 </span><span class="lineCov">         16 :                                 log_tag(&quot;touch:%s:%s: %&quot; PRIu64 &quot;.%d\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), (uint64_t)st.st_mtime, STAT_NSEC(&amp;st));</span></a>
+<a name="141"><span class="lineNum">     141 </span><span class="lineCov">         16 :                                 msg_info(&quot;touch %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="142"><span class="lineNum">     142 </span>            :                         }</a>
+<a name="143"><span class="lineNum">     143 </span>            :                 }</a>
+<a name="144"><span class="lineNum">     144 </span>            :         }</a>
+<a name="145"><span class="lineNum">     145 </span><span class="lineCov">          1 : }</span></a>
+<a name="146"><span class="lineNum">     146 </span>            : </a>
 </pre>
       </td>
     </tr>
@@ -214,7 +214,7 @@
 
   <table width="100%" border=0 cellspacing=0 cellpadding=0>
     <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
-    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="https://github.com/linux-test-project/lcov" target="_parent">LCOV version 1.0</a></td></tr>
   </table>
   <br>
 
