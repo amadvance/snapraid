@@ -831,22 +831,18 @@ Options
 
 	-A, --stats
 		Enables an extended status view that shows additional information.
-
 		The screen displays two graphs:
-
 		The first graph shows the number of buffered stripes for each
 		disk, along with the file path of the file currently being
 		accessed on that disk. Typically, the slowest disk will have
 		no buffer available, which determines the maximum achievable
 		bandwidth.
-
 		The second graph shows the percentage of time spent waiting
 		over the past 100 seconds. The slowest disk is expected to
 		cause most of the wait time, while other disks should have
 		little or no wait time because they can use their buffered stripes.
 		This graph also shows the time spent waiting for hash
 		calculations and RAID computations.
-
 		All computations run in parallel with disk operations.
 		Therefore, as long as there is measurable wait time for at
 		least one disk, it indicates that the CPU is fast enough to
