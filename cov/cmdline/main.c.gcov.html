@@ -1,0 +1,518 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/main.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - main.c<span style="font-size: 80%;"> (source / <a href="main.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">51</td>
+            <td class="headerCovTableEntry">62</td>
+            <td class="headerCovTableEntryMed">82.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2025-10-28 11:59:11</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<a name="2"><span class="lineNum">       2 </span>            :  * Copyright (C) 2025 Andrea Mazzoleni</a>
+<a name="3"><span class="lineNum">       3 </span>            :  *</a>
+<a name="4"><span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify</a>
+<a name="5"><span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by</a>
+<a name="6"><span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or</a>
+<a name="7"><span class="lineNum">       7 </span>            :  * (at your option) any later version.</a>
+<a name="8"><span class="lineNum">       8 </span>            :  *</a>
+<a name="9"><span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,</a>
+<a name="10"><span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of</a>
+<a name="11"><span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</a>
+<a name="12"><span class="lineNum">      12 </span>            :  * GNU General Public License for more details.</a>
+<a name="13"><span class="lineNum">      13 </span>            :  *</a>
+<a name="14"><span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License</a>
+<a name="15"><span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</a>
+<a name="16"><span class="lineNum">      16 </span>            :  */</a>
+<a name="17"><span class="lineNum">      17 </span>            : </a>
+<a name="18"><span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;</a>
+<a name="19"><span class="lineNum">      19 </span>            : </a>
+<a name="20"><span class="lineNum">      20 </span>            : #include &quot;snapraid.h&quot;</a>
+<a name="21"><span class="lineNum">      21 </span>            : </a>
+<a name="22"><span class="lineNum">      22 </span>            : #define MODE_DEFAULT 0</a>
+<a name="23"><span class="lineNum">      23 </span>            : #define MODE_SPINDOWN 1</a>
+<a name="24"><span class="lineNum">      24 </span>            : </a>
+<a name="25"><span class="lineNum">      25 </span>            : #ifdef _WIN32</a>
+<a name="26"><span class="lineNum">      26 </span>            : #define COMMAND_LINE_MAX 32767</a>
+<a name="27"><span class="lineNum">      27 </span>            : </a>
+<a name="28"><span class="lineNum">      28 </span>            : static int needs_quote(const WCHAR* arg)</a>
+<a name="29"><span class="lineNum">      29 </span>            : {</a>
+<a name="30"><span class="lineNum">      30 </span>            :         while (*arg) {</a>
+<a name="31"><span class="lineNum">      31 </span>            :                 if (*arg == L' ' || *arg == L'\t' || *arg == L'&quot;')</a>
+<a name="32"><span class="lineNum">      32 </span>            :                         return 1;</a>
+<a name="33"><span class="lineNum">      33 </span>            :                 ++arg;</a>
+<a name="34"><span class="lineNum">      34 </span>            :         }</a>
+<a name="35"><span class="lineNum">      35 </span>            : </a>
+<a name="36"><span class="lineNum">      36 </span>            :         return 0;</a>
+<a name="37"><span class="lineNum">      37 </span>            : }</a>
+<a name="38"><span class="lineNum">      38 </span>            : </a>
+<a name="39"><span class="lineNum">      39 </span>            : #define charcat(c) \</a>
+<a name="40"><span class="lineNum">      40 </span>            :         do { \</a>
+<a name="41"><span class="lineNum">      41 </span>            :                 if (pos + 1 &gt;= size) \</a>
+<a name="42"><span class="lineNum">      42 </span>            :                         return -1; \</a>
+<a name="43"><span class="lineNum">      43 </span>            :                 cmd[pos++] = (c); \</a>
+<a name="44"><span class="lineNum">      44 </span>            :         } while (0)</a>
+<a name="45"><span class="lineNum">      45 </span>            : </a>
+<a name="46"><span class="lineNum">      46 </span>            : static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)</a>
+<a name="47"><span class="lineNum">      47 </span>            : {</a>
+<a name="48"><span class="lineNum">      48 </span>            :         int has_quote;</a>
+<a name="49"><span class="lineNum">      49 </span>            : </a>
+<a name="50"><span class="lineNum">      50 </span>            :         /* space separator */</a>
+<a name="51"><span class="lineNum">      51 </span>            :         if (pos != 0)</a>
+<a name="52"><span class="lineNum">      52 </span>            :                 charcat(L' ');</a>
+<a name="53"><span class="lineNum">      53 </span>            : </a>
+<a name="54"><span class="lineNum">      54 </span>            :         has_quote = needs_quote(arg);</a>
+<a name="55"><span class="lineNum">      55 </span>            : </a>
+<a name="56"><span class="lineNum">      56 </span>            :         if (!has_quote) {</a>
+<a name="57"><span class="lineNum">      57 </span>            :                 while (*arg)</a>
+<a name="58"><span class="lineNum">      58 </span>            :                         charcat(*arg++);</a>
+<a name="59"><span class="lineNum">      59 </span>            :         } else {</a>
+<a name="60"><span class="lineNum">      60 </span>            :                 /* starting quote */</a>
+<a name="61"><span class="lineNum">      61 </span>            :                 charcat(L'&quot;');</a>
+<a name="62"><span class="lineNum">      62 </span>            : </a>
+<a name="63"><span class="lineNum">      63 </span>            :                 while (*arg) {</a>
+<a name="64"><span class="lineNum">      64 </span>            :                         int bl = 0;</a>
+<a name="65"><span class="lineNum">      65 </span>            :                         while (*arg == L'\\') {</a>
+<a name="66"><span class="lineNum">      66 </span>            :                                 ++arg;</a>
+<a name="67"><span class="lineNum">      67 </span>            :                                 ++bl;</a>
+<a name="68"><span class="lineNum">      68 </span>            :                         }</a>
+<a name="69"><span class="lineNum">      69 </span>            : </a>
+<a name="70"><span class="lineNum">      70 </span>            :                         if (*arg == 0) {</a>
+<a name="71"><span class="lineNum">      71 </span>            :                                 /* double backslashes before closing quote */</a>
+<a name="72"><span class="lineNum">      72 </span>            :                                 bl = bl * 2;</a>
+<a name="73"><span class="lineNum">      73 </span>            :                                 while (bl--)</a>
+<a name="74"><span class="lineNum">      74 </span>            :                                         charcat(L'\\');</a>
+<a name="75"><span class="lineNum">      75 </span>            :                         } else if (*arg == '&quot;') {</a>
+<a name="76"><span class="lineNum">      76 </span>            :                                 /* double backslashes + escape the quote */</a>
+<a name="77"><span class="lineNum">      77 </span>            :                                 bl = bl * 2 + 1;</a>
+<a name="78"><span class="lineNum">      78 </span>            :                                 while (bl--)</a>
+<a name="79"><span class="lineNum">      79 </span>            :                                         charcat(L'\\');</a>
+<a name="80"><span class="lineNum">      80 </span>            :                                 charcat(L'&quot;');</a>
+<a name="81"><span class="lineNum">      81 </span>            :                                 ++arg;</a>
+<a name="82"><span class="lineNum">      82 </span>            :                         } else {</a>
+<a name="83"><span class="lineNum">      83 </span>            :                                 /* normal backslashes */</a>
+<a name="84"><span class="lineNum">      84 </span>            :                                 while (bl--)</a>
+<a name="85"><span class="lineNum">      85 </span>            :                                         charcat(L'\\');</a>
+<a name="86"><span class="lineNum">      86 </span>            :                                 charcat(*arg);</a>
+<a name="87"><span class="lineNum">      87 </span>            :                                 ++arg;</a>
+<a name="88"><span class="lineNum">      88 </span>            :                         }</a>
+<a name="89"><span class="lineNum">      89 </span>            :                 }</a>
+<a name="90"><span class="lineNum">      90 </span>            : </a>
+<a name="91"><span class="lineNum">      91 </span>            :                 /* ending quote */</a>
+<a name="92"><span class="lineNum">      92 </span>            :                 charcat(L'&quot;');</a>
+<a name="93"><span class="lineNum">      93 </span>            :         }</a>
+<a name="94"><span class="lineNum">      94 </span>            : </a>
+<a name="95"><span class="lineNum">      95 </span>            :         return pos;</a>
+<a name="96"><span class="lineNum">      96 </span>            : }</a>
+<a name="97"><span class="lineNum">      97 </span>            : </a>
+<a name="98"><span class="lineNum">      98 </span>            : static char* argutf8(const WCHAR* arg)</a>
+<a name="99"><span class="lineNum">      99 </span>            : {</a>
+<a name="100"><span class="lineNum">     100 </span>            :         size_t len = wcslen(arg);</a>
+<a name="101"><span class="lineNum">     101 </span>            :         char* utf8_arg;</a>
+<a name="102"><span class="lineNum">     102 </span>            :         DWORD utf8_len;</a>
+<a name="103"><span class="lineNum">     103 </span>            :         DWORD res;</a>
+<a name="104"><span class="lineNum">     104 </span>            : </a>
+<a name="105"><span class="lineNum">     105 </span>            :         utf8_len = WideCharToMultiByte(CP_UTF8, 0, arg, len + 1 /* include final null */, 0, 0, 0, 0);</a>
+<a name="106"><span class="lineNum">     106 </span>            : </a>
+<a name="107"><span class="lineNum">     107 </span>            :         utf8_arg = malloc(utf8_len);</a>
+<a name="108"><span class="lineNum">     108 </span>            :         if (!utf8_arg)</a>
+<a name="109"><span class="lineNum">     109 </span>            :                 return 0;</a>
+<a name="110"><span class="lineNum">     110 </span>            : </a>
+<a name="111"><span class="lineNum">     111 </span>            :         res = WideCharToMultiByte(CP_UTF8, 0, arg, len + 1 /* include final null */, utf8_arg, utf8_len, 0, 0);</a>
+<a name="112"><span class="lineNum">     112 </span>            :         if (res != utf8_len)</a>
+<a name="113"><span class="lineNum">     113 </span>            :                 return 0;</a>
+<a name="114"><span class="lineNum">     114 </span>            : </a>
+<a name="115"><span class="lineNum">     115 </span>            :         return utf8_arg;</a>
+<a name="116"><span class="lineNum">     116 </span>            : }</a>
+<a name="117"><span class="lineNum">     117 </span>            : </a>
+<a name="118"><span class="lineNum">     118 </span>            : /* Global variable to store child process handle */</a>
+<a name="119"><span class="lineNum">     119 </span>            : static HANDLE child_process = NULL;</a>
+<a name="120"><span class="lineNum">     120 </span>            : </a>
+<a name="121"><span class="lineNum">     121 </span>            : /* Console control handler - forwards Ctrl+C, Ctrl+Break to child */</a>
+<a name="122"><span class="lineNum">     122 </span>            : static BOOL WINAPI console_handler(DWORD ctrl_type)</a>
+<a name="123"><span class="lineNum">     123 </span>            : {</a>
+<a name="124"><span class="lineNum">     124 </span>            :         /* if no child, default behavior */</a>
+<a name="125"><span class="lineNum">     125 </span>            :         if (child_process == NULL)</a>
+<a name="126"><span class="lineNum">     126 </span>            :                 return FALSE;</a>
+<a name="127"><span class="lineNum">     127 </span>            : </a>
+<a name="128"><span class="lineNum">     128 </span>            :         switch (ctrl_type) {</a>
+<a name="129"><span class="lineNum">     129 </span>            :         case CTRL_C_EVENT :</a>
+<a name="130"><span class="lineNum">     130 </span>            :         case CTRL_BREAK_EVENT :</a>
+<a name="131"><span class="lineNum">     131 </span>            :                 /*</a>
+<a name="132"><span class="lineNum">     132 </span>            :                  * Return TRUE to prevent parent termination. The child process</a>
+<a name="133"><span class="lineNum">     133 </span>            :                  * will receive these events automatically because it's attached</a>
+<a name="134"><span class="lineNum">     134 </span>            :                  * to the same console, so we don't need to forward them.</a>
+<a name="135"><span class="lineNum">     135 </span>            :                  */</a>
+<a name="136"><span class="lineNum">     136 </span>            :                 return TRUE; /* signal handled, don't terminate parent */</a>
+<a name="137"><span class="lineNum">     137 </span>            :         case CTRL_CLOSE_EVENT :</a>
+<a name="138"><span class="lineNum">     138 </span>            :         case CTRL_LOGOFF_EVENT :</a>
+<a name="139"><span class="lineNum">     139 </span>            :         case CTRL_SHUTDOWN_EVENT :</a>
+<a name="140"><span class="lineNum">     140 </span>            :                 /*</a>
+<a name="141"><span class="lineNum">     141 </span>            :                  * Return TRUE to prevent our termination while child handles shutdown.</a>
+<a name="142"><span class="lineNum">     142 </span>            :                  * The child receives these events automatically (same console).</a>
+<a name="143"><span class="lineNum">     143 </span>            :                  * Note: Windows will forcibly kill us after a timeout regardless</a>
+<a name="144"><span class="lineNum">     144 </span>            :                  * of returning TRUE: ~5 seconds for CLOSE_EVENT and LOGOFF_EVENT,</a>
+<a name="145"><span class="lineNum">     145 </span>            :                  * ~5-20 seconds for SHUTDOWN_EVENT (configurable in registry).</a>
+<a name="146"><span class="lineNum">     146 </span>            :                  */</a>
+<a name="147"><span class="lineNum">     147 </span>            :                 return TRUE; /* signal handled, but Windows will kill us after timeout */</a>
+<a name="148"><span class="lineNum">     148 </span>            :         default :</a>
+<a name="149"><span class="lineNum">     149 </span>            :                 return FALSE;</a>
+<a name="150"><span class="lineNum">     150 </span>            :         }</a>
+<a name="151"><span class="lineNum">     151 </span>            : }</a>
+<a name="152"><span class="lineNum">     152 </span>            : </a>
+<a name="153"><span class="lineNum">     153 </span>            : int main(int argc, char* argv[])</a>
+<a name="154"><span class="lineNum">     154 </span>            : {</a>
+<a name="155"><span class="lineNum">     155 </span>            :         int wide_argc;</a>
+<a name="156"><span class="lineNum">     156 </span>            :         WCHAR** wide_argv;</a>
+<a name="157"><span class="lineNum">     157 </span>            :         int utf8_argc;</a>
+<a name="158"><span class="lineNum">     158 </span>            :         char** utf8_argv;</a>
+<a name="159"><span class="lineNum">     159 </span>            :         WCHAR app_buffer[COMMAND_LINE_MAX];</a>
+<a name="160"><span class="lineNum">     160 </span>            :         WCHAR cmd_buffer[COMMAND_LINE_MAX];</a>
+<a name="161"><span class="lineNum">     161 </span>            :         DWORD res;</a>
+<a name="162"><span class="lineNum">     162 </span>            :         int i;</a>
+<a name="163"><span class="lineNum">     163 </span>            :         int pos;</a>
+<a name="164"><span class="lineNum">     164 </span>            :         int mode;</a>
+<a name="165"><span class="lineNum">     165 </span>            :         int ret;</a>
+<a name="166"><span class="lineNum">     166 </span>            : </a>
+<a name="167"><span class="lineNum">     167 </span>            :         (void)argc;</a>
+<a name="168"><span class="lineNum">     168 </span>            :         (void)argv;</a>
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<a name="170"><span class="lineNum">     170 </span>            :         res = GetModuleFileNameW(NULL, app_buffer, sizeof(app_buffer));</a>
+<a name="171"><span class="lineNum">     171 </span>            :         if (res == 0 || res &gt;= sizeof(app_buffer)) {</a>
+<a name="172"><span class="lineNum">     172 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="173"><span class="lineNum">     173 </span>            :         }</a>
+<a name="174"><span class="lineNum">     174 </span>            : </a>
+<a name="175"><span class="lineNum">     175 </span>            :         wide_argv = CommandLineToArgvW(GetCommandLineW(), &amp;wide_argc);</a>
+<a name="176"><span class="lineNum">     176 </span>            :         if (!wide_argv) {</a>
+<a name="177"><span class="lineNum">     177 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="178"><span class="lineNum">     178 </span>            :         }</a>
+<a name="179"><span class="lineNum">     179 </span>            : </a>
+<a name="180"><span class="lineNum">     180 </span>            :         utf8_argc = 0;</a>
+<a name="181"><span class="lineNum">     181 </span>            :         utf8_argv = malloc((wide_argc + 1) * sizeof(void*));</a>
+<a name="182"><span class="lineNum">     182 </span>            :         if (!utf8_argv) {</a>
+<a name="183"><span class="lineNum">     183 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="184"><span class="lineNum">     184 </span>            :         }</a>
+<a name="185"><span class="lineNum">     185 </span>            : </a>
+<a name="186"><span class="lineNum">     186 </span>            :         pos = argcat(cmd_buffer, sizeof(cmd_buffer), 0, app_buffer);</a>
+<a name="187"><span class="lineNum">     187 </span>            :         if (pos &lt; 0) {</a>
+<a name="188"><span class="lineNum">     188 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="189"><span class="lineNum">     189 </span>            :         }</a>
+<a name="190"><span class="lineNum">     190 </span>            : </a>
+<a name="191"><span class="lineNum">     191 </span>            :         utf8_argv[0] = argutf8(app_buffer);</a>
+<a name="192"><span class="lineNum">     192 </span>            :         if (!utf8_argv[0]) {</a>
+<a name="193"><span class="lineNum">     193 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="194"><span class="lineNum">     194 </span>            :         }</a>
+<a name="195"><span class="lineNum">     195 </span>            :         utf8_argc = 1;</a>
+<a name="196"><span class="lineNum">     196 </span>            : </a>
+<a name="197"><span class="lineNum">     197 </span>            :         mode = MODE_DEFAULT;</a>
+<a name="198"><span class="lineNum">     198 </span>            :         for (i = 1; i &lt; wide_argc; i++) {</a>
+<a name="199"><span class="lineNum">     199 </span>            :                 if (wcscmp(wide_argv[i], L&quot;-s&quot;) == 0 || wcscmp(wide_argv[i], L&quot;--spin-down-on-error&quot;) == 0) {</a>
+<a name="200"><span class="lineNum">     200 </span>            :                         mode = MODE_SPINDOWN;</a>
+<a name="201"><span class="lineNum">     201 </span>            :                 } else {</a>
+<a name="202"><span class="lineNum">     202 </span>            :                         pos = argcat(cmd_buffer, sizeof(cmd_buffer), pos, wide_argv[i]);</a>
+<a name="203"><span class="lineNum">     203 </span>            :                         if (pos &lt; 0) {</a>
+<a name="204"><span class="lineNum">     204 </span>            :                                 exit(EXIT_FAILURE);</a>
+<a name="205"><span class="lineNum">     205 </span>            :                         }</a>
+<a name="206"><span class="lineNum">     206 </span>            :                         utf8_argv[utf8_argc] = argutf8(wide_argv[i]);</a>
+<a name="207"><span class="lineNum">     207 </span>            :                         if (!utf8_argv[utf8_argc]) {</a>
+<a name="208"><span class="lineNum">     208 </span>            :                                 exit(EXIT_FAILURE);</a>
+<a name="209"><span class="lineNum">     209 </span>            :                         }</a>
+<a name="210"><span class="lineNum">     210 </span>            :                         ++utf8_argc;</a>
+<a name="211"><span class="lineNum">     211 </span>            :                 }</a>
+<a name="212"><span class="lineNum">     212 </span>            :         }</a>
+<a name="213"><span class="lineNum">     213 </span>            :         utf8_argv[utf8_argc] = 0;</a>
+<a name="214"><span class="lineNum">     214 </span>            :         cmd_buffer[pos] = 0;</a>
+<a name="215"><span class="lineNum">     215 </span>            : </a>
+<a name="216"><span class="lineNum">     216 </span>            :         LocalFree(wide_argv);</a>
+<a name="217"><span class="lineNum">     217 </span>            : </a>
+<a name="218"><span class="lineNum">     218 </span>            :         if (mode == MODE_DEFAULT) {</a>
+<a name="219"><span class="lineNum">     219 </span>            :                 ret = snapraid_main(utf8_argc, utf8_argv);</a>
+<a name="220"><span class="lineNum">     220 </span>            :         } else {</a>
+<a name="221"><span class="lineNum">     221 </span>            :                 STARTUPINFOW si;</a>
+<a name="222"><span class="lineNum">     222 </span>            :                 PROCESS_INFORMATION pi;</a>
+<a name="223"><span class="lineNum">     223 </span>            :                 DWORD wait;</a>
+<a name="224"><span class="lineNum">     224 </span>            : </a>
+<a name="225"><span class="lineNum">     225 </span>            :                 /* install console control handler */</a>
+<a name="226"><span class="lineNum">     226 </span>            :                 if (!SetConsoleCtrlHandler(console_handler, TRUE)) {</a>
+<a name="227"><span class="lineNum">     227 </span>            :                         fprintf(stderr, &quot;Failed to set console handler\n&quot;);</a>
+<a name="228"><span class="lineNum">     228 </span>            :                         exit(EXIT_FAILURE);</a>
+<a name="229"><span class="lineNum">     229 </span>            :                 }</a>
+<a name="230"><span class="lineNum">     230 </span>            : </a>
+<a name="231"><span class="lineNum">     231 </span>            :                 ZeroMemory(&amp;si, sizeof(si));</a>
+<a name="232"><span class="lineNum">     232 </span>            :                 si.cb = sizeof(si);</a>
+<a name="233"><span class="lineNum">     233 </span>            :                 ZeroMemory(&amp;pi, sizeof(pi));</a>
+<a name="234"><span class="lineNum">     234 </span>            : </a>
+<a name="235"><span class="lineNum">     235 </span>            :                 if (!CreateProcessW(app_buffer, cmd_buffer, NULL, NULL, FALSE, 0, NULL, NULL, &amp;si, &amp;pi)) {</a>
+<a name="236"><span class="lineNum">     236 </span>            :                         fprintf(stderr, &quot;Failed to exec SnapRAID\n&quot;);</a>
+<a name="237"><span class="lineNum">     237 </span>            :                         exit(EXIT_FAILURE);</a>
+<a name="238"><span class="lineNum">     238 </span>            :                 }</a>
+<a name="239"><span class="lineNum">     239 </span>            : </a>
+<a name="240"><span class="lineNum">     240 </span>            :                 /* store child process handle for signal handler */</a>
+<a name="241"><span class="lineNum">     241 </span>            :                 child_process = pi.hProcess;</a>
+<a name="242"><span class="lineNum">     242 </span>            : </a>
+<a name="243"><span class="lineNum">     243 </span>            :                 wait = WaitForSingleObject(pi.hProcess, INFINITE);</a>
+<a name="244"><span class="lineNum">     244 </span>            :                 if (wait != WAIT_OBJECT_0) {</a>
+<a name="245"><span class="lineNum">     245 </span>            :                         fprintf(stderr, &quot;WaitForSingleObject failed: %lu\n&quot;, (unsigned long)GetLastError());</a>
+<a name="246"><span class="lineNum">     246 </span>            :                         TerminateProcess(pi.hProcess, 1);</a>
+<a name="247"><span class="lineNum">     247 </span>            :                         CloseHandle(pi.hThread);</a>
+<a name="248"><span class="lineNum">     248 </span>            :                         CloseHandle(pi.hProcess);</a>
+<a name="249"><span class="lineNum">     249 </span>            :                         return 1;</a>
+<a name="250"><span class="lineNum">     250 </span>            :                 }</a>
+<a name="251"><span class="lineNum">     251 </span>            : </a>
+<a name="252"><span class="lineNum">     252 </span>            :                 /* clear child process handle */</a>
+<a name="253"><span class="lineNum">     253 </span>            :                 child_process = NULL;</a>
+<a name="254"><span class="lineNum">     254 </span>            : </a>
+<a name="255"><span class="lineNum">     255 </span>            :                 if (!GetExitCodeProcess(pi.hProcess, &amp;res)) {</a>
+<a name="256"><span class="lineNum">     256 </span>            :                         fprintf(stderr, &quot;GetExitCodeProcess failed: %lu\n&quot;, (unsigned long)GetLastError());</a>
+<a name="257"><span class="lineNum">     257 </span>            :                         CloseHandle(pi.hThread);</a>
+<a name="258"><span class="lineNum">     258 </span>            :                         CloseHandle(pi.hProcess);</a>
+<a name="259"><span class="lineNum">     259 </span>            :                         return 1;</a>
+<a name="260"><span class="lineNum">     260 </span>            :                 }</a>
+<a name="261"><span class="lineNum">     261 </span>            : </a>
+<a name="262"><span class="lineNum">     262 </span>            :                 CloseHandle(pi.hThread);</a>
+<a name="263"><span class="lineNum">     263 </span>            :                 CloseHandle(pi.hProcess);</a>
+<a name="264"><span class="lineNum">     264 </span>            : </a>
+<a name="265"><span class="lineNum">     265 </span>            :                 ret = res;</a>
+<a name="266"><span class="lineNum">     266 </span>            : </a>
+<a name="267"><span class="lineNum">     267 </span>            :                 if (ret != 0) {</a>
+<a name="268"><span class="lineNum">     268 </span>            :                         char* spindown_argv[3];</a>
+<a name="269"><span class="lineNum">     269 </span>            :                         spindown_argv[0] = utf8_argv[0];</a>
+<a name="270"><span class="lineNum">     270 </span>            :                         spindown_argv[1] = &quot;down&quot;;</a>
+<a name="271"><span class="lineNum">     271 </span>            :                         spindown_argv[2] = 0;</a>
+<a name="272"><span class="lineNum">     272 </span>            : </a>
+<a name="273"><span class="lineNum">     273 </span>            :                         /* sync all disks */</a>
+<a name="274"><span class="lineNum">     274 </span>            :                         printf(&quot;Flush...\n&quot;);</a>
+<a name="275"><span class="lineNum">     275 </span>            :                         if (sync() != 0)</a>
+<a name="276"><span class="lineNum">     276 </span>            :                                 printf(&quot;WARNING! Failed to flush disks!\n&quot;);</a>
+<a name="277"><span class="lineNum">     277 </span>            : </a>
+<a name="278"><span class="lineNum">     278 </span>            :                         snapraid_main(2, spindown_argv);</a>
+<a name="279"><span class="lineNum">     279 </span>            :                 }</a>
+<a name="280"><span class="lineNum">     280 </span>            :         }</a>
+<a name="281"><span class="lineNum">     281 </span>            : </a>
+<a name="282"><span class="lineNum">     282 </span>            :         for (i = 0; i &lt; utf8_argc; ++i)</a>
+<a name="283"><span class="lineNum">     283 </span>            :                 free(utf8_argv[i]);</a>
+<a name="284"><span class="lineNum">     284 </span>            :         free(utf8_argv);</a>
+<a name="285"><span class="lineNum">     285 </span>            : </a>
+<a name="286"><span class="lineNum">     286 </span>            :         return ret;</a>
+<a name="287"><span class="lineNum">     287 </span>            : }</a>
+<a name="288"><span class="lineNum">     288 </span>            : #else</a>
+<a name="289"><span class="lineNum">     289 </span>            : </a>
+<a name="290"><span class="lineNum">     290 </span>            : char full_argv0[PATH_MAX];</a>
+<a name="291"><span class="lineNum">     291 </span>            : </a>
+<a name="292"><span class="lineNum">     292 </span><span class="lineCov">          1 : const char* get_argv0(const char* argv0)</span></a>
+<a name="293"><span class="lineNum">     293 </span>            : {</a>
+<a name="294"><span class="lineNum">     294 </span><span class="lineCov">          1 :         ssize_t len = readlink(&quot;/proc/self/exe&quot;, full_argv0, sizeof(full_argv0) - 1);</span></a>
+<a name="295"><span class="lineNum">     295 </span><span class="lineCov">          1 :         if (len != -1) {</span></a>
+<a name="296"><span class="lineNum">     296 </span><span class="lineCov">          1 :                 full_argv0[len] = '\0';</span></a>
+<a name="297"><span class="lineNum">     297 </span><span class="lineCov">          1 :                 return full_argv0;</span></a>
+<a name="298"><span class="lineNum">     298 </span>            :         } else {</a>
+<a name="299"><span class="lineNum">     299 </span>            : #ifdef __APPLE__</a>
+<a name="300"><span class="lineNum">     300 </span>            :                 uint32_t size = sizeof(full_argv0);</a>
+<a name="301"><span class="lineNum">     301 </span>            :                 if (_NSGetExecutablePath(full_argv0, &amp;size) == 0)</a>
+<a name="302"><span class="lineNum">     302 </span>            :                         return full_argv0;</a>
+<a name="303"><span class="lineNum">     303 </span>            : #endif</a>
+<a name="304"><span class="lineNum">     304 </span>            :         }</a>
+<a name="305"><span class="lineNum">     305 </span><span class="lineNoCov">          0 :         return argv0;</span></a>
+<a name="306"><span class="lineNum">     306 </span>            : }</a>
+<a name="307"><span class="lineNum">     307 </span>            : </a>
+<a name="308"><span class="lineNum">     308 </span>            : /* global variable to store child PID for signal handler */</a>
+<a name="309"><span class="lineNum">     309 </span>            : static volatile pid_t child_pid = 0;</a>
+<a name="310"><span class="lineNum">     310 </span>            : </a>
+<a name="311"><span class="lineNum">     311 </span>            : /* signal handler that forwards signals to child */</a>
+<a name="312"><span class="lineNum">     312 </span>            : /* LCOV_EXCL_START */</a>
+<a name="313"><span class="lineNum">     313 </span>            : static void forward_signal(int sig)</a>
+<a name="314"><span class="lineNum">     314 </span>            : {</a>
+<a name="315"><span class="lineNum">     315 </span>            :         if (child_pid &gt; 0) {</a>
+<a name="316"><span class="lineNum">     316 </span>            :                 kill(child_pid, sig);</a>
+<a name="317"><span class="lineNum">     317 </span>            :         }</a>
+<a name="318"><span class="lineNum">     318 </span>            : }</a>
+<a name="319"><span class="lineNum">     319 </span>            : /* LCOV_EXCL_STOP */</a>
+<a name="320"><span class="lineNum">     320 </span>            : </a>
+<a name="321"><span class="lineNum">     321 </span><span class="lineCov">        280 : int main(int argc, char* argv[])</span></a>
+<a name="322"><span class="lineNum">     322 </span>            : {</a>
+<a name="323"><span class="lineNum">     323 </span>            :         int mode;</a>
+<a name="324"><span class="lineNum">     324 </span>            :         int i, j;</a>
+<a name="325"><span class="lineNum">     325 </span>            :         int ret;</a>
+<a name="326"><span class="lineNum">     326 </span>            : </a>
+<a name="327"><span class="lineNum">     327 </span><span class="lineCov">        280 :         mode = MODE_DEFAULT;</span></a>
+<a name="328"><span class="lineNum">     328 </span><span class="lineCov">        280 :         j = 1;</span></a>
+<a name="329"><span class="lineNum">     329 </span><span class="lineCov">       4192 :         for (i = 1; i &lt; argc; ++i) {</span></a>
+<a name="330"><span class="lineNum">     330 </span><span class="lineCov">       3912 :                 if (strcmp(argv[i], &quot;-s&quot;) == 0 || strcmp(argv[i], &quot;--spin-down-on-error&quot;) == 0) {</span></a>
+<a name="331"><span class="lineNum">     331 </span><span class="lineCov">          1 :                         mode = MODE_SPINDOWN;</span></a>
+<a name="332"><span class="lineNum">     332 </span>            :                 } else {</a>
+<a name="333"><span class="lineNum">     333 </span><span class="lineCov">       3911 :                         argv[j] = argv[i];</span></a>
+<a name="334"><span class="lineNum">     334 </span><span class="lineCov">       3911 :                         ++j;</span></a>
+<a name="335"><span class="lineNum">     335 </span>            :                 }</a>
+<a name="336"><span class="lineNum">     336 </span>            :         }</a>
+<a name="337"><span class="lineNum">     337 </span><span class="lineCov">        280 :         argc = j;</span></a>
+<a name="338"><span class="lineNum">     338 </span><span class="lineCov">        280 :         argv[argc] = 0;</span></a>
+<a name="339"><span class="lineNum">     339 </span>            : </a>
+<a name="340"><span class="lineNum">     340 </span><span class="lineCov">        280 :         if (mode == MODE_DEFAULT) {</span></a>
+<a name="341"><span class="lineNum">     341 </span><span class="lineCov">        279 :                 ret = snapraid_main(argc, argv);</span></a>
+<a name="342"><span class="lineNum">     342 </span>            :         } else {</a>
+<a name="343"><span class="lineNum">     343 </span>            :                 struct sigaction sa;</a>
+<a name="344"><span class="lineNum">     344 </span>            : </a>
+<a name="345"><span class="lineNum">     345 </span>            :                 /* set up signal handler to ignore signals */</a>
+<a name="346"><span class="lineNum">     346 </span><span class="lineCov">          1 :                 sa.sa_handler = forward_signal;</span></a>
+<a name="347"><span class="lineNum">     347 </span><span class="lineCov">          1 :                 sigemptyset(&amp;sa.sa_mask);</span></a>
+<a name="348"><span class="lineNum">     348 </span><span class="lineCov">          1 :                 sa.sa_flags = SA_RESTART; /* restart interrupted system calls */</span></a>
+<a name="349"><span class="lineNum">     349 </span>            : </a>
+<a name="350"><span class="lineNum">     350 </span>            :                 /* install forwarding handler for signals */</a>
+<a name="351"><span class="lineNum">     351 </span><span class="lineCov">          1 :                 sigaction(SIGINT, &amp;sa, NULL); /* Ctrl+C */</span></a>
+<a name="352"><span class="lineNum">     352 </span><span class="lineCov">          1 :                 sigaction(SIGQUIT, &amp;sa, NULL); /* Ctrl+\ */</span></a>
+<a name="353"><span class="lineNum">     353 </span><span class="lineCov">          1 :                 sigaction(SIGTERM, &amp;sa, NULL); /* termination */</span></a>
+<a name="354"><span class="lineNum">     354 </span><span class="lineCov">          1 :                 sigaction(SIGHUP, &amp;sa, NULL); /* hangup */</span></a>
+<a name="355"><span class="lineNum">     355 </span><span class="lineCov">          1 :                 sigaction(SIGUSR1, &amp;sa, NULL); /* user-defined 1 */</span></a>
+<a name="356"><span class="lineNum">     356 </span><span class="lineCov">          1 :                 sigaction(SIGUSR2, &amp;sa, NULL); /* user-defined 2 */</span></a>
+<a name="357"><span class="lineNum">     357 </span>            : </a>
+<a name="358"><span class="lineNum">     358 </span><span class="lineCov">          1 :                 pid_t pid = fork();</span></a>
+<a name="359"><span class="lineNum">     359 </span><span class="lineCov">          2 :                 if (pid == -1) {</span></a>
+<a name="360"><span class="lineNum">     360 </span>            :                         /* LCOV_EXCL_START */</a>
+<a name="361"><span class="lineNum">     361 </span>            :                         perror(&quot;Failed to fork SnapRAID&quot;);</a>
+<a name="362"><span class="lineNum">     362 </span>            :                         exit(EXIT_FAILURE);</a>
+<a name="363"><span class="lineNum">     363 </span>            :                         /* LCOV_EXCL_STOP */</a>
+<a name="364"><span class="lineNum">     364 </span>            :                 }</a>
+<a name="365"><span class="lineNum">     365 </span>            : </a>
+<a name="366"><span class="lineNum">     366 </span><span class="lineCov">          2 :                 if (pid == 0) {</span></a>
+<a name="367"><span class="lineNum">     367 </span>            :                         /* child process */</a>
+<a name="368"><span class="lineNum">     368 </span>            : </a>
+<a name="369"><span class="lineNum">     369 </span>            :                         /* restore default signal handlers */</a>
+<a name="370"><span class="lineNum">     370 </span><span class="lineCov">          1 :                         signal(SIGINT, SIG_DFL);</span></a>
+<a name="371"><span class="lineNum">     371 </span><span class="lineCov">          1 :                         signal(SIGQUIT, SIG_DFL);</span></a>
+<a name="372"><span class="lineNum">     372 </span><span class="lineCov">          1 :                         signal(SIGTERM, SIG_DFL);</span></a>
+<a name="373"><span class="lineNum">     373 </span><span class="lineCov">          1 :                         signal(SIGHUP, SIG_DFL);</span></a>
+<a name="374"><span class="lineNum">     374 </span><span class="lineCov">          1 :                         signal(SIGUSR1, SIG_DFL);</span></a>
+<a name="375"><span class="lineNum">     375 </span><span class="lineCov">          1 :                         signal(SIGUSR2, SIG_DFL);</span></a>
+<a name="376"><span class="lineNum">     376 </span>            : </a>
+<a name="377"><span class="lineNum">     377 </span><span class="lineCov">          1 :                         execvp(get_argv0(argv[0]), argv);</span></a>
+<a name="378"><span class="lineNum">     378 </span>            : </a>
+<a name="379"><span class="lineNum">     379 </span>            :                         /* here it's an error */</a>
+<a name="380"><span class="lineNum">     380 </span>            :                         /* LCOV_EXCL_START */</a>
+<a name="381"><span class="lineNum">     381 </span>            :                         perror(&quot;Failed to exec SnapRAID&quot;);</a>
+<a name="382"><span class="lineNum">     382 </span>            :                         exit(EXIT_FAILURE);</a>
+<a name="383"><span class="lineNum">     383 </span>            :                         /* LCOV_EXCL_STOP */</a>
+<a name="384"><span class="lineNum">     384 </span>            :                 } else {</a>
+<a name="385"><span class="lineNum">     385 </span>            :                         /* parent process */</a>
+<a name="386"><span class="lineNum">     386 </span>            :                         int status;</a>
+<a name="387"><span class="lineNum">     387 </span>            : </a>
+<a name="388"><span class="lineNum">     388 </span>            :                         /* store child PID so signal handler can forward signals */</a>
+<a name="389"><span class="lineNum">     389 </span><span class="lineCov">          1 :                         child_pid = pid;</span></a>
+<a name="390"><span class="lineNum">     390 </span>            : </a>
+<a name="391"><span class="lineNum">     391 </span>            :                         do {</a>
+<a name="392"><span class="lineNum">     392 </span><span class="lineCov">          1 :                                 ret = waitpid(pid, &amp;status, 0);</span></a>
+<a name="393"><span class="lineNum">     393 </span><span class="lineCov">          1 :                         } while (ret == -1 &amp;&amp; errno == EINTR); /* retry if interrupted by signal */</span></a>
+<a name="394"><span class="lineNum">     394 </span>            : </a>
+<a name="395"><span class="lineNum">     395 </span><span class="lineCov">          1 :                         if (ret == -1) {</span></a>
+<a name="396"><span class="lineNum">     396 </span>            :                                 /* LCOV_EXCL_START */</a>
+<a name="397"><span class="lineNum">     397 </span>            :                                 perror(&quot;Failed to wait for SnapRAID&quot;);</a>
+<a name="398"><span class="lineNum">     398 </span>            :                                 exit(EXIT_FAILURE);</a>
+<a name="399"><span class="lineNum">     399 </span>            :                                 /* LCOV_EXCL_STOP */</a>
+<a name="400"><span class="lineNum">     400 </span>            :                         }</a>
+<a name="401"><span class="lineNum">     401 </span>            : </a>
+<a name="402"><span class="lineNum">     402 </span>            :                         /* clear child PID */</a>
+<a name="403"><span class="lineNum">     403 </span><span class="lineCov">          1 :                         child_pid = 0;</span></a>
+<a name="404"><span class="lineNum">     404 </span>            : </a>
+<a name="405"><span class="lineNum">     405 </span>            :                         /* restore default signal handlers */</a>
+<a name="406"><span class="lineNum">     406 </span><span class="lineCov">          1 :                         signal(SIGINT, SIG_DFL);</span></a>
+<a name="407"><span class="lineNum">     407 </span><span class="lineCov">          1 :                         signal(SIGQUIT, SIG_DFL);</span></a>
+<a name="408"><span class="lineNum">     408 </span><span class="lineCov">          1 :                         signal(SIGTERM, SIG_DFL);</span></a>
+<a name="409"><span class="lineNum">     409 </span><span class="lineCov">          1 :                         signal(SIGHUP, SIG_DFL);</span></a>
+<a name="410"><span class="lineNum">     410 </span><span class="lineCov">          1 :                         signal(SIGUSR1, SIG_DFL);</span></a>
+<a name="411"><span class="lineNum">     411 </span><span class="lineCov">          1 :                         signal(SIGUSR2, SIG_DFL);</span></a>
+<a name="412"><span class="lineNum">     412 </span>            : </a>
+<a name="413"><span class="lineNum">     413 </span><span class="lineCov">          1 :                         if (WIFEXITED(status)) {</span></a>
+<a name="414"><span class="lineNum">     414 </span><span class="lineCov">          1 :                                 ret = WEXITSTATUS(status);</span></a>
+<a name="415"><span class="lineNum">     415 </span><span class="lineNoCov">          0 :                         } else if (WIFSIGNALED(status)) {</span></a>
+<a name="416"><span class="lineNum">     416 </span>            :                                 /* terminated by signal */</a>
+<a name="417"><span class="lineNum">     417 </span><span class="lineNoCov">          0 :                                 ret = 128 + WTERMSIG(status);</span></a>
+<a name="418"><span class="lineNum">     418 </span>            :                         } else {</a>
+<a name="419"><span class="lineNum">     419 </span><span class="lineNoCov">          0 :                                 ret = -1;</span></a>
+<a name="420"><span class="lineNum">     420 </span>            :                         }</a>
+<a name="421"><span class="lineNum">     421 </span>            : </a>
+<a name="422"><span class="lineNum">     422 </span><span class="lineCov">          1 :                         if (ret != 0) {</span></a>
+<a name="423"><span class="lineNum">     423 </span>            :                                 char* spindown_argv[3];</a>
+<a name="424"><span class="lineNum">     424 </span><span class="lineNoCov">          0 :                                 spindown_argv[0] = argv[0];</span></a>
+<a name="425"><span class="lineNum">     425 </span><span class="lineNoCov">          0 :                                 spindown_argv[1] = &quot;down&quot;;</span></a>
+<a name="426"><span class="lineNum">     426 </span><span class="lineNoCov">          0 :                                 spindown_argv[2] = 0;</span></a>
+<a name="427"><span class="lineNum">     427 </span>            : </a>
+<a name="428"><span class="lineNum">     428 </span>            :                                 /* ignore sigpipe to allow spindown even if the terminal is closed */</a>
+<a name="429"><span class="lineNum">     429 </span><span class="lineNoCov">          0 :                                 signal(SIGPIPE, SIG_IGN);</span></a>
+<a name="430"><span class="lineNum">     430 </span>            : </a>
+<a name="431"><span class="lineNum">     431 </span>            :                                 /* sync all disks */</a>
+<a name="432"><span class="lineNum">     432 </span><span class="lineNoCov">          0 :                                 printf(&quot;Flush...\n&quot;);</span></a>
+<a name="433"><span class="lineNum">     433 </span><span class="lineNoCov">          0 :                                 sync();</span></a>
+<a name="434"><span class="lineNum">     434 </span>            : </a>
+<a name="435"><span class="lineNum">     435 </span><span class="lineNoCov">          0 :                                 snapraid_main(2, spindown_argv);</span></a>
+<a name="436"><span class="lineNum">     436 </span>            :                         }</a>
+<a name="437"><span class="lineNum">     437 </span>            :                 }</a>
+<a name="438"><span class="lineNum">     438 </span>            :         }</a>
+<a name="439"><span class="lineNum">     439 </span>            : </a>
+<a name="440"><span class="lineNum">     440 </span><span class="lineCov">        246 :         return ret;</span></a>
+<a name="441"><span class="lineNum">     441 </span>            : }</a>
+<a name="442"><span class="lineNum">     442 </span>            : #endif</a>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="https://github.com/linux-test-project/lcov" target="_parent">LCOV version 1.0</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
