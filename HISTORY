@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-13.0 2025/XX
+13.0 2025/10
 ============
  * Added new thermal protection configuration options:
     - temp_limit TEMPERATURE_CELSIUS
