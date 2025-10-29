@@ -38,7 +38,7 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|touch|smart|pool|check|fix [options]\n");
+	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|probe|touch|smart|pool|check|fix [options]\n");
 	printf("\n");
 	printf("Commands:\n");
 	printf("  status Print the status of the array\n");
@@ -49,6 +49,7 @@ void usage(void)
 	printf("  dup    Find duplicate files\n");
 	printf("  up     Spin-up the array\n");
 	printf("  down   Spin-down the array\n");
+	printf("  probe  Show the spinning status of all disks\n");
 	printf("  touch  Add non-zero ns timestamps to files\n");
 	printf("  smart  SMART attributes of the array\n");
 	printf("  pool   Create or update the virtual view of the array\n");
