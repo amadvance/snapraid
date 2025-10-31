@@ -145,7 +145,7 @@ https://blogs.technet.microsoft.com/tip_of_the_day/2014/07/23/tip-of-the-day-dua
 <tr><td><span class="bold">Filled disks</span><br>Can you start with already filled disks?</td>
 <td>Yes</td><td>Yes</a></td><td>No</td><td>No</td><td>No</td></tr>
 
-<tr><td><span class="bold">Add disks</span><br>Can disks be added later?</td>
+<tr><td><span class="bold">Add disks</span><br>Can filled data disks be added later?</td>
 <td>Yes</td><td>Yes</td><td>Yes</a></td><td>Yes</td><td>Yes</td></tr>
 
 <tr><td><span class="bold">Always protected</span><br>Is existing data protected while adding new disk with data?</td>
@@ -202,6 +202,7 @@ ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the 
 <p>
 <a id="note4">[4]</a> - unRAID completely rebuilds parity when adding a new disk that already contains data, and during this process the existing data in the array is not protected.
 This is a serious flaw, as a full parity rebuild puts considerable stress on all drives. If any disk is near failure, there’s a high risk it could fail during this operation.
+The only safe way to add a new data disk is to pre-clear it first.
 </p>
 
 <p>
