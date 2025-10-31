@@ -143,10 +143,13 @@ https://blogs.technet.microsoft.com/tip_of_the_day/2014/07/23/tip-of-the-day-dua
 <td>One</td><td>One</td><td>All</td><td>All</td><td>All</td></tr>
 
 <tr><td><span class="bold">Filled disks</span><br>Can you start with already filled disks?</td>
-<td>Yes</td><td>Partial <a href="#note4">[4]</a></td><td>No</td><td>No</td><td>No</td></tr>
+<td>Yes</td><td>Yes</a></td><td>No</td><td>No</td><td>No</td></tr>
 
 <tr><td><span class="bold">Add disks</span><br>Can disks be added later?</td>
 <td>Yes</td><td>Yes</td><td>Yes</a></td><td>Yes</td><td>Yes</td></tr>
+
+<tr><td><span class="bold">Is it safe</span><br>to add disks?</td>
+<td>Yes</td><td>No <a href="#note4">[4]</a></td><td>Yes</a></td><td>Yes</td><td>Yes</td></tr>
 
 <!--
 Until 2024 it was "ZFS does't allow to add new disks to a raidz pool"
@@ -197,7 +200,8 @@ ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the 
 </p>
 
 <p>
-<a id="note4">[4]</a> - unRAID supports filled disks only if they are formatted with XFS or Btrfs filesystems, but not ext4 or NTFS, the two most common filesystems for Linux and Windows.
+<a id="note4">[4]</a> - unRAID completely rebuilds parity when adding a new disk that already contains data, and during this process the existing data in the array is not protected.
+This is a serious flaw, as a full parity rebuild puts considerable stress on all drives. If any disk is near failure, there’s a high risk it could fail during this operation.
 </p>
 
 <p>
