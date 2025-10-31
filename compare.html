@@ -200,7 +200,7 @@ ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the 
 <a id="note4">[4]</a> - unRAID 7.2 claims that it can add data disks to an existing array, but in reality, what it actually does is create a new array and rebuild the parity from scratch.
 The key difference is that during this process, the data disks already in the array <a href="https://youtu.be/frtauLMO3-c?t=803">are not protected</a>.
 This is a serious flaw, as a full parity rebuild puts considerable stress on all drives. If any disk is near failure, there’s a high risk it could fail during this operation.
-The only safe way to add a new data disk to an existing array is to pre-clear it first.
+With unRAID, the only safe way to add a new data disk to an existing array is to pre-clear it first.
 </p>
 
 <p>
