@@ -200,7 +200,7 @@ ZFS also employs a suboptimal RAID-Z3 algorithm that requires roughly twice the 
 </p>
 
 <p>
-<a id="note4">[4]</a> - unRAID completely rebuilds parity when adding a new disk that already contains data, and during this process the existing data in the array is not protected.
+<a id="note4">[4]</a> - unRAID completely rebuilds parity when adding a new disk that already contains data, and during this process <a href="https://youtu.be/frtauLMO3-c?t=803">the existing data in the array is not protected</a>.
 This is a serious flaw, as a full parity rebuild puts considerable stress on all drives. If any disk is near failure, there’s a high risk it could fail during this operation.
 The only safe way to add a new data disk is to pre-clear it first.
 </p>
