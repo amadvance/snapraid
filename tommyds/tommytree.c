@@ -32,7 +32,7 @@
 /******************************************************************************/
 /* tree */
 
-void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp)
+TOMMY_API void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp)
 {
 	tree->root = 0;
 	tree->count = 0;
@@ -138,7 +138,7 @@ static tommy_tree_node* tommy_tree_insert_node(tommy_compare_func* cmp, tommy_tr
 	return root;
 }
 
-void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)
+TOMMY_API void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)
 {
 	tommy_tree_node* insert = node;
 
@@ -180,7 +180,7 @@ static tommy_tree_node* tommy_tree_remove_node(tommy_compare_func* cmp, tommy_tr
 	return tommy_tree_move_right(root->prev, root->next);
 }
 
-void* tommy_tree_remove(tommy_tree* tree, void* data)
+TOMMY_API void* tommy_tree_remove(tommy_tree* tree, void* data)
 {
 	tommy_tree_node* node = 0;
 
@@ -212,7 +212,7 @@ static tommy_tree_node* tommy_tree_search_node(tommy_compare_func* cmp, tommy_tr
 	return root;
 }
 
-void* tommy_tree_search(tommy_tree* tree, void* data)
+TOMMY_API void* tommy_tree_search(tommy_tree* tree, void* data)
 {
 	tommy_tree_node* node = tommy_tree_search_node(tree->cmp, tree->root, data);
 
@@ -222,7 +222,7 @@ void* tommy_tree_search(tommy_tree* tree, void* data)
 	return node->data;
 }
 
-void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg)
+TOMMY_API void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg)
 {
 	tommy_tree_node* node = tommy_tree_search_node(cmp, tree->root, cmp_arg);
 
@@ -232,7 +232,7 @@ void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void*
 	return node->data;
 }
 
-void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node)
+TOMMY_API void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node)
 {
 	void* data = tommy_tree_remove(tree, node->data);
 
@@ -258,7 +258,7 @@ static void tommy_tree_foreach_node(tommy_tree_node* root, tommy_foreach_func* f
 	tommy_tree_foreach_node(next, func);
 }
 
-void tommy_tree_foreach(tommy_tree* tree, tommy_foreach_func* func)
+TOMMY_API void tommy_tree_foreach(tommy_tree* tree, tommy_foreach_func* func)
 {
 	tommy_tree_foreach_node(tree->root, func);
 }
@@ -280,12 +280,12 @@ static void tommy_tree_foreach_arg_node(tommy_tree_node* root, tommy_foreach_arg
 	tommy_tree_foreach_arg_node(next, func, arg);
 }
 
-void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void* arg)
+TOMMY_API void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void* arg)
 {
 	tommy_tree_foreach_arg_node(tree->root, func, arg);
 }
 
-tommy_size_t tommy_tree_memory_usage(tommy_tree* tree)
+TOMMY_API tommy_size_t tommy_tree_memory_usage(tommy_tree* tree)
 {
 	return tommy_tree_count(tree) * sizeof(tommy_tree_node);
 }

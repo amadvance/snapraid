@@ -30,7 +30,7 @@
 /******************************************************************************/
 /* array */
 
-void tommy_arrayblkof_init(tommy_arrayblkof* array, tommy_size_t element_size)
+TOMMY_API void tommy_arrayblkof_init(tommy_arrayblkof* array, tommy_size_t element_size)
 {
 	tommy_array_init(&array->block);
 
@@ -38,7 +38,7 @@ void tommy_arrayblkof_init(tommy_arrayblkof* array, tommy_size_t element_size)
 	array->count = 0;
 }
 
-void tommy_arrayblkof_done(tommy_arrayblkof* array)
+TOMMY_API void tommy_arrayblkof_done(tommy_arrayblkof* array)
 {
 	tommy_size_t i;
 
@@ -48,7 +48,7 @@ void tommy_arrayblkof_done(tommy_arrayblkof* array)
 	tommy_array_done(&array->block);
 }
 
-void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_size_t count)
+TOMMY_API void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_size_t count)
 {
 	tommy_size_t block_max;
 	tommy_size_t block_mac;
@@ -76,7 +76,7 @@ void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_size_t count)
 	}
 }
 
-tommy_size_t tommy_arrayblkof_memory_usage(tommy_arrayblkof* array)
+TOMMY_API tommy_size_t tommy_arrayblkof_memory_usage(tommy_arrayblkof* array)
 {
 	return tommy_array_memory_usage(&array->block) + tommy_array_size(&array->block) * TOMMY_ARRAYBLKOF_SIZE * array->element_size;
 }

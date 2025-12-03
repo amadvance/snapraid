@@ -30,7 +30,7 @@
 /******************************************************************************/
 /* array */
 
-void tommy_array_init(tommy_array* array)
+TOMMY_API void tommy_array_init(tommy_array* array)
 {
 	tommy_uint_t i;
 
@@ -44,7 +44,7 @@ void tommy_array_init(tommy_array* array)
 	array->count = 0;
 }
 
-void tommy_array_done(tommy_array* array)
+TOMMY_API void tommy_array_done(tommy_array* array)
 {
 	tommy_uint_t i;
 
@@ -55,7 +55,7 @@ void tommy_array_done(tommy_array* array)
 	}
 }
 
-void tommy_array_grow(tommy_array* array, tommy_size_t count)
+TOMMY_API void tommy_array_grow(tommy_array* array, tommy_size_t count)
 {
 	if (array->count >= count)
 		return;
@@ -76,7 +76,7 @@ void tommy_array_grow(tommy_array* array, tommy_size_t count)
 	}
 }
 
-tommy_size_t tommy_array_memory_usage(tommy_array* array)
+TOMMY_API tommy_size_t tommy_array_memory_usage(tommy_array* array)
 {
 	return array->bucket_max * (tommy_size_t)sizeof(void*);
 }

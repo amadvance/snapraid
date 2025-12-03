@@ -28,14 +28,14 @@
 /** \file
  * Double linked list for collisions into hashtables.
  *
- * This list is a double linked list mainly targeted for handling collisions
- * into an hashtables, but useable also as a generic list.
+ * This list is a **doubly** linked list mainly targeted for handling collisions
+ * into an hashtable, but **usable** also as a generic list.
  *
  * The main feature of this list is to require only one pointer to represent the
- * list, compared to a classic implementation requiring a head an a tail pointers.
+ * list, compared to a classic implementation requiring a head **and** a tail pointers.
  * This reduces the memory usage in hashtables.
  *
- * Another feature is to support the insertion at the end of the list. This allow to store
+ * Another feature is to support the insertion at the end of the list. This **allows** to store
  * collisions in a stable order. Where for stable order we mean that equal elements keep
  * their insertion order.
  *
@@ -103,7 +103,7 @@
 /* list */
 
 /**
- * Double linked list type.
+ * Doubly linked list type.
  */
 typedef tommy_node* tommy_list;
 
@@ -156,7 +156,7 @@ tommy_inline void tommy_list_insert_first(tommy_list* list, tommy_node* node)
 }
 
 /** \internal
- * Inserts an element at the head of a not empty list.
+ * Inserts an element at the head of a non-empty list.
  * The element is inserted at the head of the list. The list cannot be empty.
  * \param list The list. The list cannot be empty.
  * \param node The node to insert.
@@ -176,7 +176,7 @@ tommy_inline void tommy_list_insert_head_not_empty(tommy_list* list, tommy_node*
 }
 
 /** \internal
- * Inserts an element at the tail of a not empty list.
+ * Inserts an element at the tail of a non-empty list.
  * The element is inserted at the tail of the list. The list cannot be empty.
  * \param head The node at the list head. It cannot be 0.
  * \param node The node to insert.
@@ -194,6 +194,7 @@ tommy_inline void tommy_list_insert_tail_not_empty(tommy_node* head, tommy_node*
 
 /**
  * Inserts an element at the head of a list.
+ * \param list The list.
  * \param node The node to insert.
  * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
  */
@@ -211,6 +212,7 @@ tommy_inline void tommy_list_insert_head(tommy_list* list, tommy_node* node, voi
 
 /**
  * Inserts an element at the tail of a list.
+ * \param list The list.
  * \param node The node to insert.
  * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
  */
@@ -230,7 +232,8 @@ tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, voi
  * Removes an element from the list.
  * You must already have the address of the element to remove.
  * \note The node content is left unchanged, including the tommy_node::next
- * and tommy_node::prev fields that still contain pointers at the list.
+ * and tommy_node::prev fields that still contain pointers **in** the list.
+ * \param list The list.
  * \param node The node to remove. The node must be in the list.
  * \return The tommy_node::data field of the node removed.
  */
@@ -296,7 +299,7 @@ tommy_inline void tommy_list_concat(tommy_list* first, tommy_list* second)
  * \param cmp Compare function called with two elements.
  * The function should return <0 if the first element is less than the second, ==0 if equal, and >0 if greater.
  */
-void tommy_list_sort(tommy_list* list, tommy_compare_func* cmp);
+TOMMY_API void tommy_list_sort(tommy_list* list, tommy_compare_func* cmp);
 
 /**
  * Checks if empty.
@@ -378,4 +381,3 @@ tommy_inline void tommy_list_foreach_arg(tommy_list* list, tommy_foreach_arg_fun
 }
 
 #endif
-

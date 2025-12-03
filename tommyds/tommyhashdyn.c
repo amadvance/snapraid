@@ -31,7 +31,7 @@
 /******************************************************************************/
 /* hashdyn */
 
-void tommy_hashdyn_init(tommy_hashdyn* hashdyn)
+TOMMY_API void tommy_hashdyn_init(tommy_hashdyn* hashdyn)
 {
 	/* fixed initial size */
 	hashdyn->bucket_bit = TOMMY_HASHDYN_BIT;
@@ -42,7 +42,7 @@ void tommy_hashdyn_init(tommy_hashdyn* hashdyn)
 	hashdyn->count = 0;
 }
 
-void tommy_hashdyn_done(tommy_hashdyn* hashdyn)
+TOMMY_API void tommy_hashdyn_done(tommy_hashdyn* hashdyn)
 {
 	tommy_free(hashdyn->bucket);
 }
@@ -50,7 +50,7 @@ void tommy_hashdyn_done(tommy_hashdyn* hashdyn)
 /**
  * Resize the bucket vector.
  */
-static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_size_t new_bucket_bit)
+static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_uint_t new_bucket_bit)
 {
 	tommy_size_t bucket_bit;
 	tommy_size_t bucket_max;
@@ -134,7 +134,7 @@ tommy_inline void hashdyn_shrink_step(tommy_hashdyn* hashdyn)
 		tommy_hashdyn_resize(hashdyn, hashdyn->bucket_bit - 1);
 }
 
-void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)
+TOMMY_API void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)
 {
 	tommy_size_t pos = hash & hashdyn->bucket_mask;
 
@@ -147,7 +147,7 @@ void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void
 	hashdyn_grow_step(hashdyn);
 }
 
-void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node)
+TOMMY_API void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node)
 {
 	tommy_size_t pos = node->index & hashdyn->bucket_mask;
 
@@ -160,7 +160,7 @@ void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* 
 	return node->data;
 }
 
-void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)
+TOMMY_API void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)
 {
 	tommy_size_t pos = hash & hashdyn->bucket_mask;
 	tommy_hashdyn_node* node = hashdyn->bucket[pos];
@@ -182,7 +182,7 @@ void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const
 	return 0;
 }
 
-void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func)
+TOMMY_API void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func)
 {
 	tommy_size_t bucket_max = hashdyn->bucket_max;
 	tommy_hashdyn_node** bucket = hashdyn->bucket;
@@ -199,7 +199,7 @@ void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func)
 	}
 }
 
-void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* func, void* arg)
+TOMMY_API void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* func, void* arg)
 {
 	tommy_size_t bucket_max = hashdyn->bucket_max;
 	tommy_hashdyn_node** bucket = hashdyn->bucket;
@@ -216,7 +216,7 @@ void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* f
 	}
 }
 
-tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn)
+TOMMY_API tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn)
 {
 	return hashdyn->bucket_max * (tommy_size_t)sizeof(hashdyn->bucket[0])
 	       + tommy_hashdyn_count(hashdyn) * (tommy_size_t)sizeof(tommy_hashdyn_node);

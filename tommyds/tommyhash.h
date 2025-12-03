@@ -42,7 +42,7 @@
  * Implementation of the Robert Jenkins "lookup3" hash 32 bits version,
  * from http://www.burtleburtle.net/bob/hash/doobs.html, function hashlittle().
  *
- * This hash is designed to provide a good overall performance in all platforms,
+ * This hash is designed to provide a good overall performance on all platforms,
  * including 32 bits. If you target only 64 bits, you can use faster hashes,
  * like SpookyHash or FarmHash.
  *
@@ -55,14 +55,14 @@
  * This function is endianness independent.
  * \return The hash value of 32 bits.
  */
-tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len);
+TOMMY_API tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len);
 
 /**
  * Hash function with a 64 bits result.
- * Implementation of the Robert Jenkins "lookup3" hash 64 bits versions,
+ * Implementation of the Robert Jenkins "lookup3" hash 64 bits version,
  * from http://www.burtleburtle.net/bob/hash/doobs.html, function hashlittle2().
  *
- * This hash is designed to provide a good overall performance in all platforms,
+ * This hash is designed to provide a good overall performance on all platforms,
  * including 32 bits. If you target only 64 bits, you can use faster hashes,
  * like SpookyHash or FarmHash.
  *
@@ -75,7 +75,7 @@ tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tom
  * This function is endianness independent.
  * \return The hash value of 64 bits.
  */
-tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tommy_size_t key_len);
+TOMMY_API tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tommy_size_t key_len);
 
 /**
  * String hash function with a 32 bits result.
@@ -93,7 +93,7 @@ tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tom
  * This function is endianness independent.
  * \return The hash value of 32 bits.
  */
-tommy_uint32_t tommy_strhash_u32(tommy_uint32_t init_val, const void* void_key);
+TOMMY_API tommy_uint32_t tommy_strhash_u32(tommy_uint32_t init_val, const void* void_key);
 
 /**
  * Integer reversible hash function for 32 bits.
@@ -132,4 +132,3 @@ tommy_inline tommy_uint64_t tommy_inthash_u64(tommy_uint64_t key)
 }
 
 #endif
-

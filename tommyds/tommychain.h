@@ -27,7 +27,7 @@
 
 /** \file
  * Chain of nodes.
- * A chain of nodes is an abstraction used to implements complex list operations
+ * A chain of nodes is an abstraction used to implement complex list operations
  * like sorting.
  *
  * Do not use this directly. Use lists instead.
@@ -44,7 +44,7 @@
 /**
  * Chain of nodes.
  * A chain of nodes is a sequence of nodes with the following properties:
- * - It contains at least one node. A chains of zero nodes cannot exist.
+ * - It contains at least one node. A chain of zero nodes cannot exist.
  * - The next field of the tail is of *undefined* value.
  * - The prev field of the head is of *undefined* value.
  * - All the other inner prev and next fields are correctly set.
@@ -56,6 +56,10 @@ typedef struct tommy_chain_struct {
 
 /**
  * Splices a chain in the middle of another chain.
+ * \param first_before Node before the splice point.
+ * \param first_after Node after the splice point.
+ * \param second_head Head of the chain to splice in.
+ * \param second_tail Tail of the chain to splice in.
  */
 tommy_inline void tommy_chain_splice(tommy_node* first_before, tommy_node* first_after, tommy_node* second_head, tommy_node* second_tail)
 {
@@ -69,7 +73,9 @@ tommy_inline void tommy_chain_splice(tommy_node* first_before, tommy_node* first
 }
 
 /**
- * Concats two chains.
+ * Concatenates two chains.
+ * \param first_tail Tail of the first chain.
+ * \param second_head Head of the second chain.
  */
 tommy_inline void tommy_chain_concat(tommy_node* first_tail, tommy_node* second_head)
 {
@@ -82,6 +88,9 @@ tommy_inline void tommy_chain_concat(tommy_node* first_tail, tommy_node* second_
 
 /**
  * Merges two chains.
+ * \param first First chain (will contain the result).
+ * \param second Second chain (will be empty after the merge).
+ * \param cmp Comparison function.
  */
 tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)
 {
@@ -114,7 +123,10 @@ tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tom
 
 /**
  * Merges two chains managing special degenerated cases.
- * It's functionally equivalent at tommy_chain_merge() but faster with already ordered chains.
+ * It's functionally equivalent to tommy_chain_merge() but faster with already ordered chains.
+ * \param first First chain (will contain the result).
+ * \param second Second chain (will be empty after the merge).
+ * \param cmp Comparison function.
  */
 tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)
 {
@@ -139,7 +151,7 @@ tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain*
 /**
  * Sorts a chain.
  * It's a stable merge sort using power of 2 buckets, with O(N*log(N)) complexity,
- * similar at the one used in the SGI STL libraries and in the Linux Kernel,
+ * similar to the one used in the SGI STL libraries and in the Linux Kernel,
  * but faster on degenerated cases like already ordered lists.
  *
  * SGI STL stl_list.h
@@ -147,6 +159,9 @@ tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain*
  *
  * Linux Kernel lib/list_sort.c
  * http://lxr.linux.no/#linux+v2.6.36/lib/list_sort.c
+ *
+ * \param chain Chain to sort.
+ * \param cmp Comparison function.
  */
 tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* cmp)
 {
@@ -160,7 +175,7 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 
 	/**
 	 * Value stored inside the bit bucket.
-	 * It's used to know which bucket is empty of full.
+	 * It's used to know which bucket is empty or full.
 	 */
 	tommy_size_t counter;
 	tommy_node* node = chain->head;
@@ -216,4 +231,3 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 }
 
 #endif
-

@@ -24,6 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 /** \file
  * Generic types.
  */
@@ -42,8 +43,8 @@ typedef unsigned _int64 tommy_uint64_t; /**< Generic uint64_t type. */
 typedef size_t tommy_uintptr_t; /**< Generic uintptr_t type. */
 #ifdef _WIN64
 #define TOMMY_SIZE_BIT 64
-typedef unsigned _int64_t tommy_size_t; /**< Generic size_t type. */
-typedef _int64_t tommy_ssize_t; /**< Generic ssize_t type. */
+typedef unsigned _int64 tommy_size_t; /**< Generic size_t type. */
+typedef _int64 tommy_ssize_t; /**< Generic ssize_t type. */
 #else
 #define TOMMY_SIZE_BIT 32
 typedef unsigned tommy_size_t; /**< Generic size_t type. */
@@ -73,15 +74,22 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
 /**
  * Generic unsigned integer type.
  *
- * It has no specific size, as is used to store only small values.
+ * It has no specific size, as it is used to store only small values.
  * To make the code more efficient, a full 32 bit integer is used.
  */
 typedef tommy_uint32_t tommy_uint_t;
 
 /** \internal
- * Type cast required for the C++ compilation.
- * When compiling in C++ we cannot convert a void* pointer to another pointer.
- * In such case we need an explicit cast.
+ * Explicit cast helper used to smooth out the difference between C and C++.
+ *
+ * In C, a void* can be assigned to any pointer type without an explicit cast.
+ * This is not allowed in C++, where converting a void* to another pointer type
+ * always requires an explicit cast.
+ *
+ * tommy_cast should be used only for this specific purpose, so it should be
+ * applied when converting a void* to a more specific pointer type in code that
+ * must compile as both C and C++. It is not intended for arbitrary pointer
+ * conversions or for casts that are unrelated to the C to C++ difference.
  */
 #ifdef __cplusplus
 #define tommy_cast(type, value) static_cast<type>(value)
@@ -116,6 +124,14 @@ typedef tommy_uint32_t tommy_uint_t;
 
 /******************************************************************************/
 /* modificators */
+
+/** \internal
+ * Definition of TOMMY_API.
+ * Provide the ability to override linkage features of the interface.
+ */
+#if !defined(TOMMY_API)
+#define TOMMY_API
+#endif
 
 /** \internal
  * Definition of the inline keyword if available.
@@ -167,12 +183,12 @@ typedef tommy_uint32_t tommy_uint_t;
 /* key/hash */
 
 /**
- * Type used in indexed data structures to store the key of a object.
+ * Type used in indexed data structures to store the key of an object.
  */
 typedef tommy_size_t tommy_key_t;
 
 /**
- * Type used in hashtables to store the hash of a object.
+ * Type used in hashtables to store the hash of an object.
  */
 typedef tommy_size_t tommy_hash_t;
 
@@ -227,7 +243,7 @@ typedef struct tommy_node_struct {
  * Compare function for elements.
  * \param obj_a Pointer to the first object to compare.
  * \param obj_b Pointer to the second object to compare.
- * \return <0 if the first element is less than the second, ==0 equal, >0 if greater.
+ * \return <0 if the first element is less than the second, ==0 if equal, >0 if greater.
  *
  * This function is like the C strcmp().
  *
@@ -393,8 +409,8 @@ tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)
 #elif defined(__GNUC__)
 	return __builtin_clzll(value) ^ 63;
 #else
-	uint32_t l = value & 0xFFFFFFFFU;
-	uint32_t h = value >> 32;
+	tommy_uint32_t l = value & 0xFFFFFFFFU;
+	tommy_uint32_t h = value >> 32;
 	if (h)
 		return tommy_ilog2_u32(h) + 32;
 	else
@@ -444,8 +460,8 @@ tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)
 #elif defined(__GNUC__)
 	return __builtin_ctzll(value);
 #else
-	uint32_t l = value & 0xFFFFFFFFU;
-	uint32_t h = value >> 32;
+	tommy_uint32_t l = value & 0xFFFFFFFFU;
+	tommy_uint32_t h = value >> 32;
 	if (l)
 		return tommy_ctz_u32(l);
 	else
@@ -515,4 +531,3 @@ tommy_inline int tommy_haszero_u32(tommy_uint32_t value)
 #endif
 
 #endif
-
