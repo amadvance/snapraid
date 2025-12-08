@@ -48,6 +48,16 @@ struct snapraid_scan {
 	unsigned count_insert; /**< Files new. */
 	unsigned count_remove; /**< Files removed. */
 
+	/**
+	 * Lists of changed files for diff output.
+	 */
+	tommy_list added_list; /**< Added files. */
+	tommy_list removed_list; /**< Removed files. */
+	tommy_list updated_list; /**< Updated files. */
+	tommy_list moved_list; /**< Moved files. */
+	tommy_list copied_list; /**< Copied files. */
+	tommy_list restored_list; /**< Restored files. */
+
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
 	tommy_list dir_insert_list; /**< Dirs to insert. */
@@ -55,6 +65,57 @@ struct snapraid_scan {
 	/* nodes for data structures */
 	tommy_node node;
 };
+
+/**
+ * Entry for diff lists.
+ */
+struct diff_entry {
+	char* path; /**< Path of the file. */
+	tommy_node node;
+};
+
+/**
+ * Add a path to a diff list.
+ */
+static void diff_add(tommy_list* list, const char* path)
+{
+	struct diff_entry* entry;
+
+	if (!path || !*path)
+		return;
+
+	entry = malloc_nofail(sizeof(struct diff_entry));
+	entry->path = strdup_nofail(path);
+	tommy_list_insert_tail(list, &entry->node, entry);
+}
+
+/**
+ * Free a diff entry.
+ */
+static void diff_free(struct diff_entry* entry)
+{
+	free(entry->path);
+	free(entry);
+}
+
+/**
+ * Print a diff list as JSON array.
+ */
+static void json_print_list(const char* name, tommy_list* list)
+{
+	tommy_node* i;
+	int first = 1;
+	char buffer[8192];
+
+	printf("\"%s\": [", name);
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
+		struct diff_entry* entry = i->data;
+		if (!first) printf(",");
+		printf("\"%s\"", json_escape(entry->path, buffer, sizeof(buffer)));
+		first = 0;
+	}
+	printf("]");
+}
 
 static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct snapraid_disk* disk, int is_diff)
 {
@@ -70,6 +131,12 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	scan->count_change = 0;
 	scan->count_remove = 0;
 	scan->count_insert = 0;
+	tommy_list_init(&scan->added_list);
+	tommy_list_init(&scan->removed_list);
+	tommy_list_init(&scan->updated_list);
+	tommy_list_init(&scan->moved_list);
+	tommy_list_init(&scan->copied_list);
+	tommy_list_init(&scan->restored_list);
 	tommy_list_init(&scan->file_insert_list);
 	tommy_list_init(&scan->link_insert_list);
 	tommy_list_init(&scan->dir_insert_list);
@@ -88,6 +155,14 @@ static void scan_free(struct snapraid_scan* scan)
 #if HAVE_THREAD
 	thread_mutex_destroy(&scan->disk->stamp_mutex);
 #endif
+
+	/* free diff lists */
+	tommy_list_foreach(&scan->added_list, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&scan->removed_list, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&scan->updated_list, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&scan->moved_list, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&scan->copied_list, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&scan->restored_list, (tommy_foreach_func*)diff_free);
 
 	free(scan);
 }
@@ -184,7 +259,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			++scan->count_change;
 
 			log_tag("scan:update:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
-			if (is_diff) {
+			if (is_diff && !json_mode) {
 				msg_info("update %s\n", fmt_term(disk, slink->sub, esc_buffer));
 			}
 
@@ -201,7 +276,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		++scan->count_insert;
 
 		log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
-		if (is_diff) {
+		if (is_diff && !json_mode) {
 			msg_info("add %s\n", fmt_term(disk, sub, esc_buffer));
 		}
 
@@ -782,8 +857,12 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* if the path is different, it means a moved file with the same inode */
 				++scan->count_move;
 
-				log_tag("scan:move:%s:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer), esc_tag(sub, esc_buffer_alt));
 				if (is_diff) {
+					diff_add(&scan->moved_list, sub);
+				}
+
+				log_tag("scan:move:%s:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer), esc_tag(sub, esc_buffer_alt));
+				if (is_diff && !json_mode) {
 					msg_info("move %s -> %s\n", fmt_term(disk, file->sub, esc_buffer), fmt_term(disk, sub, esc_buffer_alt));
 				}
 
@@ -945,8 +1024,12 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* like when restoring a backup that restores also the timestamp */
 				++scan->count_restore;
 
-				log_tag("scan:restore:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
 				if (is_diff) {
+					diff_add(&scan->restored_list, sub);
+				}
+
+				log_tag("scan:restore:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
+				if (is_diff && !json_mode) {
 					msg_info("restore %s\n", fmt_term(disk, sub, esc_buffer));
 				}
 
@@ -1062,8 +1145,12 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* revert old counter and use the copy one */
 				++scan->count_copy;
 
-				log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
 				if (is_diff) {
+					diff_add(&scan->copied_list, sub);
+				}
+
+				log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
+				if (is_diff && !json_mode) {
 					msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub, esc_buffer), fmt_term(disk, file->sub, esc_buffer_alt));
 				}
 
@@ -1082,19 +1169,27 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (is_file_already_present) {
 			++scan->count_change;
 
+			if (is_diff) {
+				diff_add(&scan->updated_list, sub);
+			}
+
 			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc_tag(sub, esc_buffer),
 				file_already_present_size, file_already_present_mtime_sec, file_already_present_mtime_nsec,
 				file->size, file->mtime_sec, file->mtime_nsec
 			);
 
-			if (is_diff) {
+			if (is_diff && !json_mode) {
 				msg_info("update %s\n", fmt_term(disk, sub, esc_buffer));
 			}
 		} else {
 			++scan->count_insert;
 
-			log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
 			if (is_diff) {
+				diff_add(&scan->added_list, sub);
+			}
+
+			log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
+			if (is_diff && !json_mode) {
 				msg_info("add %s\n", fmt_term(disk, sub, esc_buffer));
 			}
 		}
@@ -1618,12 +1713,30 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	tommy_node* j;
 	tommy_list scanlist;
 	int done;
-	fptr* msg;
 	struct snapraid_scan total;
 	int no_difference;
 	char esc_buffer[ESC_MAX];
 
+	/**
+	 * Total diff lists.
+	 */
+	struct {
+		tommy_list added;
+		tommy_list removed;
+		tommy_list updated;
+		tommy_list moved;
+		tommy_list copied;
+		tommy_list restored;
+	} total_diff;
+
 	tommy_list_init(&scanlist);
+
+	tommy_list_init(&total_diff.added);
+	tommy_list_init(&total_diff.removed);
+	tommy_list_init(&total_diff.updated);
+	tommy_list_init(&total_diff.moved);
+	tommy_list_init(&total_diff.copied);
+	tommy_list_init(&total_diff.restored);
 
 	if (is_diff)
 		msg_progress("Comparing...\n");
@@ -1690,8 +1803,12 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				if (is_diff) {
+					diff_add(&scan->removed_list, file->sub);
+				}
+
+				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+				if (is_diff && !json_mode) {
 					msg_info("remove %s\n", fmt_term(disk, file->sub, esc_buffer));
 				}
 
@@ -1712,7 +1829,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				++scan->count_remove;
 
 				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
-				if (is_diff) {
+				if (is_diff && !json_mode) {
 					msg_info("remove %s\n", fmt_term(disk, slink->sub, esc_buffer));
 				}
 
@@ -1973,10 +2090,40 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		total.count_insert += scan->count_insert;
 	}
 
+	/* collect the diff lists */
+	for (i = scanlist; i != 0; i = i->next) {
+		struct snapraid_scan* scan = i->data;
+		tommy_list_concat(&total_diff.added, &scan->added_list);
+		tommy_list_init(&scan->added_list);
+		tommy_list_concat(&total_diff.removed, &scan->removed_list);
+		tommy_list_init(&scan->removed_list);
+		tommy_list_concat(&total_diff.updated, &scan->updated_list);
+		tommy_list_init(&scan->updated_list);
+		tommy_list_concat(&total_diff.moved, &scan->moved_list);
+		tommy_list_init(&scan->moved_list);
+		tommy_list_concat(&total_diff.copied, &scan->copied_list);
+		tommy_list_init(&scan->copied_list);
+		tommy_list_concat(&total_diff.restored, &scan->restored_list);
+		tommy_list_init(&scan->restored_list);
+	}
+
 	if (is_diff) {
 		if (json_mode) {
-			printf("{\"diff\": {\"equal\":%u,\"added\":%u,\"removed\":%u,\"updated\":%u,\"moved\":%u,\"copied\":%u,\"restored\":%u}}\n",
-				total.count_equal, total.count_insert, total.count_remove, total.count_change, total.count_move, total.count_copy, total.count_restore);
+			printf("{\"diff_summary\": {");
+			printf("\"equal\":%u,", total.count_equal);
+			printf("\"added\":%u,", total.count_insert);
+			printf("\"removed\":%u,", total.count_remove);
+			printf("\"updated\":%u,", total.count_change);
+			printf("\"moved\":%u,", total.count_move);
+			printf("\"copied\":%u,", total.count_copy);
+			printf("\"restored\":%u", total.count_restore);
+			if (!tommy_list_empty(&total_diff.added)) { printf(","); json_print_list("added_files", &total_diff.added); }
+			if (!tommy_list_empty(&total_diff.removed)) { printf(","); json_print_list("removed_files", &total_diff.removed); }
+			if (!tommy_list_empty(&total_diff.updated)) { printf(","); json_print_list("updated_files", &total_diff.updated); }
+			if (!tommy_list_empty(&total_diff.moved)) { printf(","); json_print_list("moved_files", &total_diff.moved); }
+			if (!tommy_list_empty(&total_diff.copied)) { printf(","); json_print_list("copied_files", &total_diff.copied); }
+			if (!tommy_list_empty(&total_diff.restored)) { printf(","); json_print_list("restored_files", &total_diff.restored); }
+			printf("}}\n");
 		} else {
 			msg_status("\n");
 			msg_status("%8u equal\n", total.count_equal);
@@ -2009,13 +2156,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		&& !total.count_change && !total.count_remove && !total.count_insert;
 
 	if (is_diff) {
-		if (json_mode) {
-			if (no_difference) {
-				printf("{\"diff_summary\": \"no_differences\"}\n");
-			} else {
-				printf("{\"diff_summary\": \"differences\"}\n");
-			}
-		} else {
+		if (!json_mode) {
 			if (no_difference) {
 				msg_status("No differences\n");
 			} else {
@@ -2030,6 +2171,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		log_tag("summary:exit:diff\n");
 	}
 	log_flush();
+
+	/* free total diff lists */
+	tommy_list_foreach(&total_diff.added, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&total_diff.removed, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&total_diff.updated, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&total_diff.moved, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&total_diff.copied, (tommy_foreach_func*)diff_free);
+	tommy_list_foreach(&total_diff.restored, (tommy_foreach_func*)diff_free);
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)scan_free);
 
