@@ -34,12 +34,18 @@ void state_list(struct snapraid_state* state)
 	unsigned link_count;
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
+	int first_item;
 
 	file_count = 0;
 	file_size = 0;
 	link_count = 0;
+	first_item = 1;
 
 	msg_progress("Listing...\n");
+
+	if (json_mode) {
+		printf("{\"files\":[");
+	}
 
 	/* for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -81,9 +87,11 @@ void state_list(struct snapraid_state* state)
 							tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
 					}
 				}
+				if (!first_item) printf(",");
+				first_item = 0;
 				char* esc_path = malloc(strlen(fmt_term(disk, file->sub, esc_buffer)) * 2 + 1);
 				json_escape(fmt_term(disk, file->sub, esc_buffer), esc_path, strlen(fmt_term(disk, file->sub, esc_buffer)) * 2 + 1);
-				printf("{\"type\":\"file\",\"path\":\"%s\",\"size\":%" PRIu64 ",\"mtime\":\"%s\"}\n", esc_path, file->size, time_str);
+				printf("{\"type\":\"file\",\"path\":\"%s\",\"size\":%" PRIu64 ",\"mtime\":\"%s\"}", esc_path, file->size, time_str);
 				free(esc_path);
 			} else {
 				printf("%12" PRIu64 " ", file->size);
@@ -120,11 +128,13 @@ void state_list(struct snapraid_state* state)
 			log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
 
 			if (json_mode) {
+				if (!first_item) printf(",");
+				first_item = 0;
 				char* esc_sub = malloc(strlen(fmt_term(disk, slink->sub, esc_buffer)) * 2 + 1);
 				char* esc_linkto = malloc(strlen(fmt_term(disk, slink->linkto, esc_buffer_alt)) * 2 + 1);
 				json_escape(fmt_term(disk, slink->sub, esc_buffer), esc_sub, strlen(fmt_term(disk, slink->sub, esc_buffer)) * 2 + 1);
 				json_escape(fmt_term(disk, slink->linkto, esc_buffer_alt), esc_linkto, strlen(fmt_term(disk, slink->linkto, esc_buffer_alt)) * 2 + 1);
-				printf("{\"type\":\"%s\",\"path\":\"%s\",\"target\":\"%s\"}\n", type, esc_sub, esc_linkto);
+				printf("{\"type\":\"%s\",\"path\":\"%s\",\"target\":\"%s\"}", type, esc_sub, esc_linkto);
 				free(esc_sub);
 				free(esc_linkto);
 			} else {
@@ -138,7 +148,7 @@ void state_list(struct snapraid_state* state)
 	}
 
 	if (json_mode) {
-		printf("{\"list_summary\": {\"files\":%u,\"size_gb\":%" PRIu64 ",\"links\":%u}}\n", file_count, file_size / GIGA, link_count);
+		printf("],\"list_summary\":{\"files\":%u,\"size_gb\":%" PRIu64 ",\"links\":%u}}\n", file_count, file_size / GIGA, link_count);
 	} else {
 		msg_status("\n");
 		msg_status("%8u files, for %" PRIu64 " GB\n", file_count, file_size / GIGA);
