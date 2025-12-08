@@ -153,6 +153,11 @@ void log_fatal(const char* format, ...)
 
 	lock_msg();
 
+	if (json_mode) {
+		unlock_msg();
+		exit(EXIT_FAILURE);
+	}
+
 	if (stdlog) {
 		fprintf(stdlog, "msg:fatal: ");
 
@@ -175,6 +180,8 @@ void log_fatal(const char* format, ...)
 void log_error(const char* format, ...)
 {
 	va_list ap;
+
+	if (json_mode) return;
 
 	lock_msg();
 
@@ -200,6 +207,8 @@ void log_error(const char* format, ...)
 void log_expected(const char* format, ...)
 {
 	va_list ap;
+
+	if (json_mode) return;
 
 	lock_msg();
 
@@ -249,6 +258,8 @@ void msg_status(const char* format, ...)
 {
 	va_list ap;
 
+	if (json_mode) return;
+
 	lock_msg();
 
 	if (stdlog) {
@@ -279,7 +290,7 @@ void msg_info(const char* format, ...)
 	/* don't output in stdlog as these messages */
 	/* are always paired with a msg_tag() call */
 
-	if (msg_level >= MSG_INFO) {
+	if (msg_level >= MSG_INFO && !json_mode) {
 		va_start(ap, format);
 		vmsg(stdout, format, ap);
 		va_end(ap);
@@ -352,7 +363,7 @@ void msg_verbose(const char* format, ...)
 		fflush(stdlog);
 	}
 
-	if (msg_level >= MSG_VERBOSE) {
+	if (msg_level >= MSG_VERBOSE && !json_mode) {
 		va_start(ap, format);
 		vmsg(stdout, format, ap);
 		va_end(ap);

@@ -17,6 +17,9 @@
 
 #include "portable.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "support.h"
 #include "util.h"
 #include "elem.h"
@@ -27,6 +30,42 @@
 #include "handle.h"
 #include "raid/raid.h"
 #include "raid/combo.h"
+
+static char* missing_files = 0;
+static char* recoverable_files = 0;
+
+static void my_out_missing(const char* format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	if (json_mode) {
+		char buf[1024];
+		vsnprintf(buf, sizeof(buf), format, ap);
+		char path[PATH_MAX];
+		if (sscanf(buf, "Missing file '%[^']", path) == 1) {
+			if (!missing_files) {
+				missing_files = calloc(1, 1);
+			}
+			size_t len = strlen(missing_files);
+			size_t plen = strlen(path);
+			char* new = realloc(missing_files, len + plen + 4);
+			if (new) {
+				if (len > 0) {
+					strcpy(new + len, ",");
+					len++;
+				}
+				strcpy(new + len, "\"");
+				strcat(new + len, path);
+				strcat(new + len, "\"");
+				missing_files = new;
+			}
+		}
+	}
+	va_end(ap);
+	va_start(ap, format);
+	log_expected(format, ap);
+	va_end(ap);
+}
 
 /****************************************************************************/
 /* check */
@@ -763,6 +802,25 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
 				log_tag("status:recoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				msg_info("recoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
+				if (json_mode) {
+					const char* name = fmt_term(disk, file->sub, esc_buffer);
+					if (!recoverable_files) {
+						recoverable_files = calloc(1, 1);
+					}
+					size_t len = strlen(recoverable_files);
+					size_t nlen = strlen(name);
+					char* new = realloc(recoverable_files, len + nlen + 4);
+					if (new) {
+						if (len > 0) {
+							strcpy(new + len, ",");
+							len++;
+						}
+						strcpy(new + len, "\"");
+						strcat(new + len, name);
+						strcat(new + len, "\"");
+						recoverable_files = new;
+					}
+				}
 			} else {
 				/* we don't use msg_verbose() because it also goes into the log */
 				if (msg_level >= MSG_VERBOSE) {
@@ -891,6 +949,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	struct snapraid_bw bw;
 
 	handle = handle_mapping(state, &diskmax);
+
+	missing_files = 0;
+	recoverable_files = 0;
 
 	/* initialize the bandwith context */
 	bw_init(&bw, state->opt.bwlimit);
@@ -1088,7 +1149,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* open the file only for reading */
 					if (!file_flag_has(file, FILE_IS_MISSING))
 						ret = handle_open(&handle[j], file, state->file_mode,
-							log_error, state->opt.expected_missing ? log_expected : 0);
+							log_error, state->opt.expected_missing ? my_out_missing : 0);
 					else
 						ret = -1; /* if the file is missing, we cannot open it */
 					if (ret == -1) {
@@ -1110,6 +1171,24 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* note that this can be done only if we are not fixing it */
 						/* otherwise, it could be recreated */
 						file_flag_set(file, FILE_IS_MISSING);
+						if (json_mode) {
+							if (!missing_files) {
+								missing_files = calloc(1, 1);
+							}
+							size_t len = strlen(missing_files);
+							size_t plen = strlen(handle[j].path);
+							char* new = realloc(missing_files, len + plen + 4);
+							if (new) {
+								if (len > 0) {
+									strcpy(new + len, ",");
+									len++;
+								}
+								strcpy(new + len, "\"");
+								strcat(new + len, handle[j].path);
+								strcat(new + len, "\"");
+								missing_files = new;
+							}
+						}
 						continue;
 					}
 				}
@@ -1905,7 +1984,14 @@ bail:
 
 	if (error || recovered_error || unrecoverable_error) {
 		if (json_mode) {
-			printf("{\"check_summary\": {\"errors\":%u,\"recovered_errors\":%u,\"unrecoverable_errors\":%u}}\n", error, recovered_error, unrecoverable_error);
+			printf("{\"check_summary\": {\"errors\":%u,\"recovered_errors\":%u,\"unrecoverable_errors\":%u}", error, recovered_error, unrecoverable_error);
+			if (missing_files && *missing_files) {
+				printf(",\"missing\":[%s]", missing_files);
+			}
+			if (recoverable_files && *recoverable_files) {
+				printf(",\"recoverable\":[%s]", recoverable_files);
+			}
+			printf("}\n");
 		} else {
 			msg_status("\n");
 			msg_status("%8u errors\n", error);
@@ -1934,6 +2020,11 @@ bail:
 		log_fatal("WARNING! There are errors!\n");
 	if (unrecoverable_error)
 		log_fatal("DANGER! Unrecoverable errors detected!\n");
+
+	free(missing_files);
+	free(recoverable_files);
+	missing_files = 0;
+	recoverable_files = 0;
 
 	log_tag("summary:error:%u\n", error);
 	if (fix)

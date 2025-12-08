@@ -47,6 +47,11 @@ void lock_msg(void);
 void unlock_msg(void);
 
 /**
+ * Global flag to suppress non-JSON output in JSON mode.
+ */
+extern int json_mode;
+
+/**
  * Lock used for memory counter.
  */
 void lock_memory(void);

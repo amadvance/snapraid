@@ -4364,7 +4364,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	/* stop if requested */
 	if (global_interrupt) {
 		/* LCOV_EXCL_START */
-		if (!state->opt.gui) {
+		if (!state->opt.gui && !json_mode) {
 			msg_status("Not starting for interruption\n");
 		}
 		log_tag("sigint:0: SIGINT received\n");
@@ -4381,28 +4381,30 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 	if (state->opt.gui) {
 		log_tag("run:end\n");
 		log_flush();
-	} else if (countmax == 0) {
-		if (state->need_write || state->written) {
-			msg_status("100%% completed\n");
+	} else if (!json_mode) {
+		if (countmax == 0) {
+			if (state->need_write || state->written) {
+				msg_status("100%% completed\n");
+			} else {
+				msg_status("%s", msg);
+			}
 		} else {
-			msg_status("%s", msg);
+			time_t now;
+			time_t elapsed;
+
+			unsigned countsize_MB = (countsize + MEGA - 1) / MEGA;
+
+			now = time(0);
+
+			elapsed = now - state->progress_whole_start - state->progress_wasted;
+
+			msg_bar("%u%% completed, %u MB accessed", muldiv(countpos, 100, countmax), countsize_MB);
+
+			msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
+
+			msg_bar("\n");
+			msg_flush();
 		}
-	} else {
-		time_t now;
-		time_t elapsed;
-
-		unsigned countsize_MB = (countsize + MEGA - 1) / MEGA;
-
-		now = time(0);
-
-		elapsed = now - state->progress_whole_start - state->progress_wasted;
-
-		msg_bar("%u%% completed, %u MB accessed", muldiv(countpos, 100, countmax), countsize_MB);
-
-		msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
-
-		msg_bar("\n");
-		msg_flush();
 	}
 }
 
@@ -4826,7 +4828,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 		if (state->opt.gui) {
 			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_size_speed, out_cpu, (uint64_t)elapsed);
 			log_flush();
-		} else {
+		} else if (!json_mode) {
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_computed) {
 				msg_bar(", %u MB/s", out_size_speed);
