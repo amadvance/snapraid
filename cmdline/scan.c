@@ -1738,10 +1738,19 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	tommy_list_init(&total_diff.copied);
 	tommy_list_init(&total_diff.restored);
 
-	if (is_diff)
-		msg_progress("Comparing...\n");
-	else
-		msg_progress("Scanning...\n");
+	if (is_diff) {
+		if (json_mode) {
+			printf("{\"sync_event\": {\"type\": \"comparing\"}}\n");
+		} else {
+			msg_progress("Comparing...\n");
+		}
+	} else {
+		if (json_mode) {
+			printf("{\"sync_event\": {\"type\": \"scanning\"}}\n");
+		} else {
+			msg_progress("Scanning...\n");
+		}
+	}
 
 	/* allocate all the scan data */
 	for (i = state->disklist; i != 0; i = i->next) {

@@ -741,7 +741,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	silent_error = 0;
 	io_error = 0;
 
-	msg_progress("Selecting...\n");
+	if (json_mode) {
+		printf("{\"sync_event\": {\"type\": \"selecting\"}}\n");
+	} else {
+		msg_progress("Selecting...\n");
+	}
 
 	/* first count the number of blocks to process */
 	countmax = 0;
@@ -769,7 +773,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	countsize = 0;
 	countpos = 0;
 
-	msg_progress("Syncing...\n");
+	if (json_mode) {
+		printf("{\"sync_event\": {\"type\": \"syncing\"}}\n");
+	} else {
+		msg_progress("Syncing...\n");
+	}
 
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, block_enabled);
@@ -1484,7 +1492,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unsigned l;
 	int skip_sync = 0;
 
-	msg_progress("Initializing...\n");
+	if (json_mode) {
+		printf("{\"sync_event\": {\"type\": \"initializing\"}}\n");
+	} else {
+		msg_progress("Initializing...\n");
+	}
 
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -1569,7 +1581,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (!skip_sync) {
-		msg_progress("Resizing...\n");
+		if (json_mode) {
+			printf("{\"sync_event\": {\"type\": \"resizing\"}}\n");
+		} else {
+			msg_progress("Resizing...\n");
+		}
 
 		/* now change the size of all parities */
 		for (l = 0; l < state->level; ++l) {

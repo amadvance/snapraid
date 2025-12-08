@@ -3604,7 +3604,11 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		char tmp[PATH_MAX];
 		STREAM* f;
 
-		msg_progress("Saving state to %s...\n", content->content);
+		if (json_mode) {
+			printf("{\"sync_event\": {\"type\": \"saving_state\", \"file\": \"%s\"}}\n", content->content);
+		} else {
+			msg_progress("Saving state to %s...\n", content->content);
+		}
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 
@@ -3727,7 +3731,11 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
-		msg_progress("Saving state to %s...\n", content->content);
+		if (json_mode) {
+			printf("{\"sync_event\": {\"type\": \"saving_state\", \"file\": \"%s\"}}\n", content->content);
+		} else {
+			msg_progress("Saving state to %s...\n", content->content);
+		}
 		++count_content;
 		i = i->next;
 	}
@@ -3851,7 +3859,11 @@ void state_read(struct snapraid_state* state)
 			log_tag("content:%s\n", path);
 			log_flush();
 		}
-		msg_progress("Loading state from %s...\n", path);
+		if (json_mode) {
+			printf("{\"sync_event\": {\"type\": \"loading_state\", \"file\": \"%s\"}}\n", path);
+		} else {
+			msg_progress("Loading state from %s...\n", path);
+		}
 
 		f = sopen_read(path);
 		if (f != 0) {
@@ -4044,7 +4056,11 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 	tommy_node* i;
 	int fail;
 
-	msg_progress("Verifying...\n");
+	if (json_mode) {
+		printf("{\"sync_event\": {\"type\": \"verifying\"}}\n");
+	} else {
+		msg_progress("Verifying...\n");
+	}
 
 	/* start all reading threads */
 	i = tommy_list_head(&state->contentlist);
@@ -4348,6 +4364,8 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	if (state->opt.gui) {
 		log_tag("run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
 		log_flush();
+	} else if (json_mode) {
+		printf("{\"sync_progress\": {\"event\": \"begin\", \"blockstart\": %u, \"blockmax\": %u, \"countmax\": %u}}\n", blockstart, blockmax, countmax);
 	}
 
 	now = time(0);
@@ -4366,6 +4384,8 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui && !json_mode) {
 			msg_status("Not starting for interruption\n");
+		} else if (json_mode) {
+			printf("{\"sync_progress\": {\"event\": \"interrupted\", \"message\": \"Not starting for interruption\"}}\n");
 		}
 		log_tag("sigint:0: SIGINT received\n");
 		log_flush();
@@ -4381,6 +4401,25 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 	if (state->opt.gui) {
 		log_tag("run:end\n");
 		log_flush();
+	} else if (json_mode) {
+		if (countmax == 0) {
+			if (state->need_write || state->written) {
+				printf("{\"sync_progress\": {\"event\": \"end\", \"percentage\": 100}}\n");
+			} else {
+				printf("{\"sync_progress\": {\"event\": \"end\", \"message\": \"%s\"}}\n", msg);
+			}
+		} else {
+			time_t now;
+			time_t elapsed;
+
+			unsigned countsize_MB = (countsize + MEGA - 1) / MEGA;
+
+			now = time(0);
+
+			elapsed = now - state->progress_whole_start - state->progress_wasted;
+
+			printf("{\"sync_progress\": {\"event\": \"end\", \"percentage\": %u, \"size_MB\": %u, \"elapsed_seconds\": %u}}\n", muldiv(countpos, 100, countmax), countsize_MB, (unsigned)elapsed);
+		}
 	} else if (!json_mode) {
 		if (countmax == 0) {
 			if (state->need_write || state->written) {
@@ -4828,7 +4867,13 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 		if (state->opt.gui) {
 			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_size_speed, out_cpu, (uint64_t)elapsed);
 			log_flush();
-		} else if (!json_mode) {
+		} else if (json_mode) {
+			if (out_computed) {
+				printf("{\"sync_progress\": {\"event\": \"progress\", \"blockpos\": %u, \"countpos\": %u, \"countsize\": %" PRIu64 ", \"percentage\": %u, \"eta_minutes\": %u, \"size_speed_MB_s\": %u, \"block_speed\": %u, \"cpu_percent\": %u, \"temperature\": %d, \"steady\": %d, \"elapsed_seconds\": %" PRIu64 "}}\n", blockpos, countpos, countsize, out_perc, out_eta, out_size_speed, out_block_speed, out_cpu, out_temperature, out_steady, (uint64_t)elapsed);
+			} else {
+				printf("{\"sync_progress\": {\"event\": \"progress\", \"blockpos\": %u, \"countpos\": %u, \"countsize\": %" PRIu64 ", \"percentage\": %u, \"elapsed_seconds\": %" PRIu64 "}}\n", blockpos, countpos, countsize, out_perc, (uint64_t)elapsed);
+			}
+		} else {
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_computed) {
 				msg_bar(", %u MB/s", out_size_speed);
@@ -4971,8 +5016,39 @@ void state_usage_print(struct snapraid_state* state)
 	if (msg_level < MSG_PROGRESS)
 		return;
 
-	/* print a graph for it */
-	state_progress_graph(state, 0, state->progress_ptr, PROGRESS_MAX);
+	if (json_mode) {
+		/* Output CPU usage stats as JSON */
+		uint64_t tick_total = 0;
+		tommy_node* i;
+		unsigned l;
+		unsigned current = state->progress_ptr;
+		unsigned oldest = PROGRESS_MAX;
+
+		tick_total += state->progress_tick_misc[current] - ref(state->progress_tick_misc, oldest);
+		tick_total += state->progress_tick_sched[current] - ref(state->progress_tick_sched, oldest);
+		tick_total += state->progress_tick_raid[current] - ref(state->progress_tick_raid, oldest);
+		tick_total += state->progress_tick_hash[current] - ref(state->progress_tick_hash, oldest);
+		tick_total += state->progress_tick_io[current] - ref(state->progress_tick_io, oldest);
+
+		if (tick_total) {
+			printf("{\"sync_usage\": {");
+			for (i = state->disklist; i != 0; i = i->next) {
+				struct snapraid_disk* disk = i->data;
+				uint64_t v = disk->progress_tick[current] - ref(disk->progress_tick, oldest);
+				printf("\"%s\": %u", disk->name, muldiv(v, 100, tick_total));
+				if (i->next || state->level > 0) printf(", ");
+			}
+			for (l = 0; l < state->level; ++l) {
+				uint64_t v = state->parity[l].progress_tick[current] - ref(state->parity[l].progress_tick, oldest);
+				printf("\"%s\": %u", lev_config_name(l), muldiv(v, 100, tick_total));
+				if (l < state->level - 1) printf(", ");
+			}
+			printf("}}}\n");
+		}
+	} else {
+		/* print a graph for it */
+		state_progress_graph(state, 0, state->progress_ptr, PROGRESS_MAX);
+	}
 }
 
 void state_fscheck(struct snapraid_state* state, const char* ope)
