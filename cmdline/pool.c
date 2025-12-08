@@ -458,10 +458,14 @@ void state_pool(struct snapraid_state* state)
 	tommy_hashdyn_foreach(&poolset, (tommy_foreach_func*)pool_free);
 	tommy_hashdyn_done(&poolset);
 
-	if (count)
-		msg_status("%u links\n", count);
-	else
-		msg_status("No link\n");
+	if (json_mode) {
+		printf("{\"pool_summary\": {\"links\":%u}}\n", count);
+	} else {
+		if (count)
+			msg_status("%u links\n", count);
+		else
+			msg_status("No link\n");
+	}
 
 	log_tag("summary:link_count::%u\n", count);
 	log_tag("summary:exit:ok\n");

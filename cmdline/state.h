@@ -106,6 +106,7 @@ struct snapraid_option {
 	unsigned force_autosave_at; /**< Force autosave at the specified block. */
 	int fake_device; /**< Fake device data. */
 	int no_warnings; /**< Remove some warning messages. */
+	int json; /**< JSON output mode. */
 	int expected_missing; /**< If missing files are expected and should not be reported. */
 	int fake_uuid; /**< Set fakes UUID for testing. */
 	int match_first_uuid; /**< Force the matching of the first UUID. */

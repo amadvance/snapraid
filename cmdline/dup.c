@@ -131,7 +131,15 @@ void state_dup(struct snapraid_state* state)
 				++count;
 				size += found->file->size;
 				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc_tag(file->sub, esc_buffer), found->disk->name, esc_tag(found->file->sub, esc_buffer_alt), found->file->size);
-				printf("%12" PRIu64 " %s = %s\n", file->size, fmt_term(disk, file->sub, esc_buffer), fmt_term(found->disk, found->file->sub, esc_buffer_alt));
+				if (json_mode) {
+					char esc_file1[PATH_MAX*2];
+					char esc_file2[PATH_MAX*2];
+					fmt_term(disk, file->sub, esc_file1);
+					fmt_term(found->disk, found->file->sub, esc_file2);
+					printf("{\"type\":\"duplicate\",\"size\":%" PRIu64 ",\"file1\":\"%s\",\"file2\":\"%s\"}\n", file->size, json_escape(esc_file1, esc_buffer, sizeof(esc_buffer)), json_escape(esc_file2, esc_buffer_alt, sizeof(esc_buffer_alt)));
+				} else {
+					printf("%12" PRIu64 " %s = %s\n", file->size, fmt_term(disk, file->sub, esc_buffer), fmt_term(found->disk, found->file->sub, esc_buffer_alt));
+				}
 				hash_free(hash);
 			} else {
 				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash32);
@@ -142,12 +150,16 @@ void state_dup(struct snapraid_state* state)
 	tommy_hashdyn_foreach(&hashset, (tommy_foreach_func*)hash_free);
 	tommy_hashdyn_done(&hashset);
 
-	msg_status("\n");
-	msg_status("%8u duplicates, for %" PRIu64 " GB\n", count, size / GIGA);
-	if (count)
-		msg_status("There are duplicates!\n");
-	else
-		msg_status("No duplicates\n");
+	if (json_mode) {
+		printf("{\"dup_summary\": {\"duplicates\":%u,\"size_gb\":%" PRIu64 "}}\n", count, size / GIGA);
+	} else {
+		msg_status("\n");
+		msg_status("%8u duplicates, for %" PRIu64 " GB\n", count, size / GIGA);
+		if (count)
+			msg_status("There are duplicates!\n");
+		else
+			msg_status("No duplicates\n");
+	}
 
 	log_tag("summary:dup_count:%u\n", count);
 	log_tag("summary:dup_size:%" PRIu64 "\n", size);

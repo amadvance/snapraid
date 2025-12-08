@@ -1904,22 +1904,30 @@ bail:
 	}
 
 	if (error || recovered_error || unrecoverable_error) {
-		msg_status("\n");
-		msg_status("%8u errors\n", error);
-		if (fix) {
-			msg_status("%8u recovered errors\n", recovered_error);
-		}
-		if (unrecoverable_error) {
-			msg_status("%8u UNRECOVERABLE errors\n", unrecoverable_error);
+		if (json_mode) {
+			printf("{\"check_summary\": {\"errors\":%u,\"recovered_errors\":%u,\"unrecoverable_errors\":%u}}\n", error, recovered_error, unrecoverable_error);
 		} else {
-			/* without checking, we don't know if they are really recoverable or not */
-			if (!state->opt.auditonly)
-				msg_status("%8u unrecoverable errors\n", unrecoverable_error);
-			if (fix)
-				msg_status("Everything OK\n");
+			msg_status("\n");
+			msg_status("%8u errors\n", error);
+			if (fix) {
+				msg_status("%8u recovered errors\n", recovered_error);
+			}
+			if (unrecoverable_error) {
+				msg_status("%8u UNRECOVERABLE errors\n", unrecoverable_error);
+			} else {
+				/* without checking, we don't know if they are really recoverable or not */
+				if (!state->opt.auditonly)
+					msg_status("%8u unrecoverable errors\n", unrecoverable_error);
+				if (fix)
+					msg_status("Everything OK\n");
+			}
 		}
 	} else {
-		msg_status("Everything OK\n");
+		if (json_mode) {
+			printf("{\"check_summary\": \"ok\"}\n");
+		} else {
+			msg_status("Everything OK\n");
+		}
 	}
 
 	if (error && !fix)

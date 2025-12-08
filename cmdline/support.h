@@ -134,6 +134,11 @@ typedef void fptr(const char* format, ...) __attribute__((format(attribute_print
 extern int msg_level;
 
 /**
+ * JSON output mode.
+ */
+extern int json_mode;
+
+/**
  * State messages.
  *
  * Messages that tell what the program is doing or did, but limited to few lines.
@@ -233,6 +238,16 @@ static inline const char* esc_shell(const char* str, char* buffer)
 {
 	return esc_shell_multi(&str, 1, buffer);
 }
+
+/**
+ * Escape a string for JSON.
+ *
+ * \param str The string to escape.
+ * \param buffer Preallocated buffer.
+ * \param size Size of the buffer.
+ * \return The escaped string in buffer.
+ */
+const char* json_escape(const char* str, char* buffer, size_t size);
 
 /**
  * Polish a string.

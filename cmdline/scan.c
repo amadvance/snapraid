@@ -1974,19 +1974,28 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 
 	if (is_diff) {
-		msg_status("\n");
-		msg = msg_status;
+		if (json_mode) {
+			printf("{\"diff\": {\"equal\":%u,\"added\":%u,\"removed\":%u,\"updated\":%u,\"moved\":%u,\"copied\":%u,\"restored\":%u}}\n",
+				total.count_equal, total.count_insert, total.count_remove, total.count_change, total.count_move, total.count_copy, total.count_restore);
+		} else {
+			msg_status("\n");
+			msg_status("%8u equal\n", total.count_equal);
+			msg_status("%8u added\n", total.count_insert);
+			msg_status("%8u removed\n", total.count_remove);
+			msg_status("%8u updated\n", total.count_change);
+			msg_status("%8u moved\n", total.count_move);
+			msg_status("%8u copied\n", total.count_copy);
+			msg_status("%8u restored\n", total.count_restore);
+		}
 	} else {
-		msg = msg_verbose;
+		msg_verbose("%8u equal\n", total.count_equal);
+		msg_verbose("%8u added\n", total.count_insert);
+		msg_verbose("%8u removed\n", total.count_remove);
+		msg_verbose("%8u updated\n", total.count_change);
+		msg_verbose("%8u moved\n", total.count_move);
+		msg_verbose("%8u copied\n", total.count_copy);
+		msg_verbose("%8u restored\n", total.count_restore);
 	}
-
-	msg("%8u equal\n", total.count_equal);
-	msg("%8u added\n", total.count_insert);
-	msg("%8u removed\n", total.count_remove);
-	msg("%8u updated\n", total.count_change);
-	msg("%8u moved\n", total.count_move);
-	msg("%8u copied\n", total.count_copy);
-	msg("%8u restored\n", total.count_restore);
 
 	log_tag("summary:equal:%u\n", total.count_equal);
 	log_tag("summary:added:%u\n", total.count_insert);
@@ -2000,10 +2009,18 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		&& !total.count_change && !total.count_remove && !total.count_insert;
 
 	if (is_diff) {
-		if (no_difference) {
-			msg_status("No differences\n");
+		if (json_mode) {
+			if (no_difference) {
+				printf("{\"diff_summary\": \"no_differences\"}\n");
+			} else {
+				printf("{\"diff_summary\": \"differences\"}\n");
+			}
 		} else {
-			msg_status("There are differences!\n");
+			if (no_difference) {
+				msg_status("No differences\n");
+			} else {
+				msg_status("There are differences!\n");
+			}
 		}
 	}
 

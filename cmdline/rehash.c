@@ -91,8 +91,12 @@ void state_rehash(struct snapraid_state* state)
 	/* save the new content file */
 	state->need_write = 1;
 
-	msg_status("A rehash is now scheduled. It will take place progressively in the next\n");
-	msg_status("'sync' and 'scrub' commands. You can check the rehash progress using the\n");
-	msg_status("'status' command.\n");
+	if (json_mode) {
+		printf("{\"rehash_summary\": \"scheduled\"}\n");
+	} else {
+		msg_status("A rehash is now scheduled. It will take place progressively in the next\n");
+		msg_status("'sync' and 'scrub' commands. You can check the rehash progress using the\n");
+		msg_status("'status' command.\n");
+	}
 }
 

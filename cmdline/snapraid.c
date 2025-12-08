@@ -76,6 +76,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
+	printf("  " SWITCH_GETOPT_LONG("-j, --json            ", "-j") "  JSON output mode\n");
 }
 
 void memory(void)
@@ -707,6 +708,7 @@ struct option long_options[] = {
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
 	{ "quiet", 0, 0, 'q' },
+	{ "json", 0, 0, 'j' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface option */
 	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
@@ -857,7 +859,7 @@ struct option long_options[] = {
  *
  * The 's' letter is used in main.c
  */
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVGw:"
+#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqjHVGw:"
 
 volatile int global_interrupt = 0;
 
@@ -1168,6 +1170,9 @@ int snapraid_main(int argc, char* argv[])
 		case 'q' :
 			--msg_level;
 			break;
+		case 'j' :
+			opt.json = 1;
+			break;
 		case 'G' :
 			opt.gui = 1;
 			break;
@@ -1352,6 +1357,8 @@ int snapraid_main(int argc, char* argv[])
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	json_mode = opt.json;
 
 	os_init(opt.force_scan_winfind);
 	raid_init();

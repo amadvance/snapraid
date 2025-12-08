@@ -674,14 +674,23 @@ end:
 	state_usage_print(state);
 
 	if (error || silent_error || io_error) {
-		msg_status("\n");
-		msg_status("%8u file errors\n", error);
-		msg_status("%8u io errors\n", io_error);
-		msg_status("%8u data errors\n", silent_error);
+		if (json_mode) {
+			printf("{\"scrub_summary\": {\"file_errors\":%u,\"io_errors\":%u,\"data_errors\":%u}}\n", error, io_error, silent_error);
+		} else {
+			msg_status("\n");
+			msg_status("%8u file errors\n", error);
+			msg_status("%8u io errors\n", io_error);
+			msg_status("%8u data errors\n", silent_error);
+		}
 	} else {
 		/* print the result only if processed something */
-		if (countpos != 0)
-			msg_status("Everything OK\n");
+		if (countpos != 0) {
+			if (json_mode) {
+				printf("{\"scrub_summary\": \"ok\"}\n");
+			} else {
+				msg_status("Everything OK\n");
+			}
+		}
 	}
 
 	if (error)

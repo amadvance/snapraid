@@ -569,25 +569,29 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			have_parent = 1;
 	}
 
-	printf("SnapRAID SMART report:\n");
-	printf("\n");
-	printf("   Temp");
-	printf("  Power");
-	printf("   Error");
-	printf("   FP");
-	printf(" Size");
-	printf("\n");
-	printf("      C");
-	printf(" OnDays");
-	printf("   Count");
-	printf("     ");
-	printf("   TB");
-	printf("  "); printl("Serial", serial_pad);
-	printf("  "); printl("Device", device_pad);
-	printf("  Disk");
-	printf("\n");
-	/*      |<##################################################################72>|####80>| */
-	printf(" -----------------------------------------------------------------------\n");
+	if (json_mode) {
+		printf("{\"smart\": [\n");
+	} else {
+		printf("SnapRAID SMART report:\n");
+		printf("\n");
+		printf("   Temp");
+		printf("  Power");
+		printf("   Error");
+		printf("   FP");
+		printf(" Size");
+		printf("\n");
+		printf("      C");
+		printf(" OnDays");
+		printf("   Count");
+		printf("     ");
+		printf("   TB");
+		printf("  "); printl("Serial", serial_pad);
+		printf("  "); printl("Device", device_pad);
+		printf("  Disk");
+		printf("\n");
+		/*      |<##################################################################72>|####80>| */
+		printf(" -----------------------------------------------------------------------\n");
+	}
 
 	array_failure_rate = 0;
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
@@ -971,14 +975,56 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		log_fatal("%s is unsupported in this platform.\n", ope);
 	} else {
 		if (operation == DEVICE_LIST) {
-			for (i = tommy_list_head(&low); i != 0; i = i->next) {
-				devinfo_t* devinfo = i->data;
-				devinfo_t* parent = devinfo->parent;
+			if (json_mode) {
+				char esc_low[ESC_MAX];
+				char esc_low_path[ESC_MAX];
+				char esc_high[ESC_MAX];
+				char esc_high_path[ESC_MAX];
+				char esc_name[ESC_MAX];
+				printf("{\"devices\": [\n");
+				int first = 1;
+				for (i = tommy_list_head(&low); i != 0; i = i->next) {
+					devinfo_t* devinfo = i->data;
+					devinfo_t* parent = devinfo->parent;
+					if (!first) printf(",");
+					first = 0;
 #ifdef _WIN32
-				printf("%" PRIu64 "\t%s\t%08" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->wfile, parent->device, parent->wfile, parent->name);
+					char low_device[32];
+					char high_device[32];
+					snprintf(low_device, sizeof(low_device), "%" PRIu64, devinfo->device);
+					snprintf(high_device, sizeof(high_device), "%08" PRIx64, parent->device);
+					json_escape(low_device, esc_low, sizeof(esc_low));
+					json_escape(devinfo->wfile, esc_low_path, sizeof(esc_low_path));
+					json_escape(high_device, esc_high, sizeof(esc_high));
+					json_escape(parent->wfile, esc_high_path, sizeof(esc_high_path));
+					json_escape(parent->name, esc_name, sizeof(esc_name));
+					printf("{\"low_device\":\"%s\",\"low_path\":\"%s\",\"high_device\":\"%s\",\"high_path\":\"%s\",\"name\":\"%s\"}\n",
+						esc_low, esc_low_path, esc_high, esc_high_path, esc_name);
 #else
-				printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
+					char low_device[32];
+					char high_device[32];
+					snprintf(low_device, sizeof(low_device), "%u:%u", major(devinfo->device), minor(devinfo->device));
+					snprintf(high_device, sizeof(high_device), "%u:%u", major(parent->device), minor(parent->device));
+					json_escape(low_device, esc_low, sizeof(esc_low));
+					json_escape(devinfo->file, esc_low_path, sizeof(esc_low_path));
+					json_escape(high_device, esc_high, sizeof(esc_high));
+					json_escape(parent->file, esc_high_path, sizeof(esc_high_path));
+					json_escape(parent->name, esc_name, sizeof(esc_name));
+					printf("{\"low_device\":\"%s\",\"low_path\":\"%s\",\"high_device\":\"%s\",\"high_path\":\"%s\",\"name\":\"%s\"}\n",
+						esc_low, esc_low_path, esc_high, esc_high_path, esc_name);
 #endif
+				}
+				printf("]}\n");
+			} else {
+				for (i = tommy_list_head(&low); i != 0; i = i->next) {
+					devinfo_t* devinfo = i->data;
+					devinfo_t* parent = devinfo->parent;
+#ifdef _WIN32
+					printf("%" PRIu64 "\t%s\t%08" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->wfile, parent->device, parent->wfile, parent->name);
+#else
+					printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
+#endif
+				}
 			}
 		}
 

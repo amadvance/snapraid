@@ -100,10 +100,17 @@ int state_status(struct snapraid_state* state)
 	}
 	log_tag("summary:parity_block_free_min:%u\n", parity_block_free);
 
-	printf("SnapRAID status report:\n");
-	printf("\n");
-	printf("   Files Fragmented Excess  Wasted  Used    Free  Use Name\n");
-	printf("            Files  Fragments  GB      GB      GB\n");
+	if (json_mode) {
+		printf("{\"status\": {\n");
+		printf("  \"header\": \"SnapRAID status report\",\n");
+		printf("  \"columns\": [\"Files\", \"Fragmented\", \"Excess\", \"Wasted\", \"Used\", \"Free\", \"Use\", \"Name\"],\n");
+		printf("  \"disks\": [\n");
+	} else {
+		printf("SnapRAID status report:\n");
+		printf("\n");
+		printf("   Files Fragmented Excess  Wasted  Used    Free  Use Name\n");
+		printf("            Files  Fragments  GB      GB      GB\n");
+	}
 
 	/* count fragments */
 	file_count = 0;
@@ -215,25 +222,34 @@ int state_status(struct snapraid_state* state)
 			all_wasted += wasted;
 		file_block_free += disk_block_max - disk_block_count;
 
-		printf("%8u", disk_file_count);
-		printf("%8u", disk_file_fragmented);
-		printf("%8u", disk_extra_fragment);
-		if (wasted < -100LL * GIGA) {
-			printf("       -");
+		if (json_mode) {
+			printf("    {\"name\":\"%s\", \"files\":%u, \"fragmented\":%u, \"excess\":%u, \"wasted\":%.1f, \"used\":%" PRIu64 ", \"free\":%" PRIu64 ", \"use\":%u}%s\n",
+				disk->name, disk_file_count, disk_file_fragmented, disk_extra_fragment,
+				(double)wasted / GIGA, disk_file_size / GIGA,
+				(disk_block_max == 0 && disk_block_count == 0) ? 0 : (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA,
+				(disk_block_max == 0) ? 0 : muldiv(disk_block_count, 100, disk_block_max),
+				(node_disk->next ? "," : ""));
 		} else {
-			printf("%8.1f", (double)wasted / GIGA);
-		}
-		printf("%8" PRIu64, disk_file_size / GIGA);
+			printf("%8u", disk_file_count);
+			printf("%8u", disk_file_fragmented);
+			printf("%8u", disk_extra_fragment);
+			if (wasted < -100LL * GIGA) {
+				printf("       -");
+			} else {
+				printf("%8.1f", (double)wasted / GIGA);
+			}
+			printf("%8" PRIu64, disk_file_size / GIGA);
 
-		if (disk_block_max == 0 && disk_block_count == 0) {
-			/* if the disk is empty and we don't have the free space info */
-			printf("       -");
-			printf("   - ");
-		} else {
-			printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
-			printf(" %3u%%", muldiv(disk_block_count, 100, disk_block_max));
+			if (disk_block_max == 0 && disk_block_count == 0) {
+				/* if the disk is empty and we don't have the free space info */
+				printf("       -");
+				printf("   - ");
+			} else {
+				printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
+				printf(" %3u%%", muldiv(disk_block_count, 100, disk_block_max));
+			}
+			printf(" %s\n", disk->name);
 		}
-		printf(" %s\n", disk->name);
 
 		log_tag("summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
 		log_tag("summary:disk_block_count:%s:%u\n", disk->name, disk_block_count);
@@ -249,34 +265,6 @@ int state_status(struct snapraid_state* state)
 		log_tag("summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
 		log_tag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
 	}
-
-	/* totals */
-	printf(" --------------------------------------------------------------------------\n");
-	printf("%8u", file_count);
-	printf("%8u", file_fragmented);
-	printf("%8u", extra_fragment);
-	printf("%8.1f", (double)all_wasted / GIGA);
-	printf("%8" PRIu64, file_size / GIGA);
-	printf("%8" PRIu64, file_block_free * state->block_size / GIGA);
-	printf(" %3u%%", muldiv(file_block_count, 100, file_block_count + file_block_free));
-	printf("\n");
-
-	/* warn about invalid data free info */
-	if (!free_not_zero)
-		printf("\nWARNING! Free space info will be valid after the first sync.\n");
-
-	log_tag("summary:file_count:%u\n", file_count);
-	log_tag("summary:file_block_count:%" PRIu64 "\n", file_block_count);
-	log_tag("summary:fragmented_file_count:%u\n", file_fragmented);
-	log_tag("summary:excess_fragment_count:%u\n", extra_fragment);
-	log_tag("summary:zerosubsecond_file_count:%u\n", file_zerosubsecond);
-	log_tag("summary:file_size:%" PRIu64 "\n", file_size);
-	log_tag("summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
-	log_tag("summary:parity_size_max:%" PRIu64 "\n", (blockmax + parity_block_free) * (uint64_t)state->block_size);
-	log_tag("summary:hash:%s\n", hash_config_name(state->hash));
-	log_tag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
-	log_tag("summary:best_hash:%s\n", hash_config_name(state->besthash));
-	log_flush();
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
 	timemap = malloc_nofail(blockmax * sizeof(time_t));
@@ -409,86 +397,191 @@ int state_status(struct snapraid_state* state)
 		bar_new[i] = step_new;
 	}
 
-	printf("\n\n");
-
-	/* print the graph */
-	for (y = 0; y < GRAPH_ROW; ++y) {
-		if (y == 0)
-			printf("%3u%%|", barmax * 100 / count);
-		else if (y == GRAPH_ROW - 1)
-			printf("  0%%|");
-		else if (y == GRAPH_ROW / 2)
-			printf("%3u%%|", barmax * 50 / count);
-		else
-			printf("    |");
-		for (x = 0; x < GRAPH_COLUMN; ++x) {
-			unsigned pivot_upper = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
-			unsigned pivot_lower = barmax * (GRAPH_ROW - 1 - y) / GRAPH_ROW;
-			unsigned both = bar_scrubbed[x] + bar_new[x];
-			unsigned scrubbed = bar_scrubbed[x];
-
-			if (both > pivot_upper) {
-				if (scrubbed > pivot_lower)
-					printf("*");
-				else
-					printf("o");
-			} else if (both > pivot_lower) {
-				if (scrubbed == both)
-					printf("*");
-				else
-					printf("o");
+	/* totals */
+	if (json_mode) {
+		printf("  ],\n");
+		printf("  \"summary\": {\"files\":%u, \"fragmented\":%u, \"excess\":%u, \"wasted\":%.1f, \"used\":%" PRIu64 ", \"free\":%" PRIu64 ", \"use\":%u},\n",
+			file_count, file_fragmented, extra_fragment, (double)all_wasted / GIGA, file_size / GIGA,
+			file_block_free * state->block_size / GIGA, muldiv(file_block_count, 100, file_block_count + file_block_free));
+		if (!free_not_zero) {
+			printf("  \"warning\": \"Free space info will be valid after the first sync.\",\n");
+		}
+		printf("  \"scrub\": {\"oldest_days\": %u, \"median_days\": %u, \"newest_days\": %u},\n", dayoldest, daymedian, daynewest);
+		printf("  \"graph\": {\"max\": %u, \"scrubbed\": [", barmax);
+		for (i = 0; i < GRAPH_COLUMN; ++i) {
+			printf("%u%s", bar_scrubbed[i], i < GRAPH_COLUMN - 1 ? "," : "");
+		}
+		printf("], \"new\": [");
+		for (i = 0; i < GRAPH_COLUMN; ++i) {
+			printf("%u%s", bar_new[i], i < GRAPH_COLUMN - 1 ? "," : "");
+		}
+		printf("]},\n");
+		printf("  \"sync_in_progress\": %s,\n", unsynced_blocks ? "true" : "false");
+		if (unsynced_blocks) {
+			printf("  \"sync_progress\": %u,\n", muldiv(blockmax - unsynced_blocks, 100, blockmax));
+		}
+		printf("  \"scrubbed_percentage\": %u,\n", muldiv(count - unscrubbed_blocks, 100, count));
+		printf("  \"zero_subsecond_files\": %u,\n", file_zerosubsecond);
+		printf("  \"rehash_in_progress\": %s,\n", rehash ? "true" : "false");
+		if (rehash) {
+			printf("  \"rehash_progress\": %u,\n", muldiv(count - rehash, 100, count));
+		}
+		if (bad) {
+			printf("  \"errors\": %u,\n", bad);
+			printf("  \"error_blocks\": [%u, %u],\n", bad_first, bad_last);
+		} else {
+			printf("  \"errors\": 0,\n");
+		}
+		printf("  \"messages\": [\n");
+		if (unsynced_blocks) {
+			printf("    \"WARNING! The array is NOT fully synced.\",\n");
+		} else {
+			printf("    \"No sync is in progress.\",\n");
+		}
+		if (unscrubbed_blocks) {
+			printf("    \"%u%% of the array is not scrubbed.\",\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
+		} else {
+			printf("    \"The full array was scrubbed at least one time.\",\n");
+		}
+		if (file_zerosubsecond) {
+			printf("    \"You have %u files with a zero sub-second timestamp.\",\n", file_zerosubsecond);
+		} else {
+			printf("    \"No file has a zero sub-second timestamp.\",\n");
+		}
+		if (rehash) {
+			printf("    \"You have a rehash in progress at %u%%.\",\n", muldiv(count - rehash, 100, count));
+		} else {
+			if (state->besthash != state->hash) {
+				printf("    \"No rehash is in progress, but for optimal performance one is recommended.\",\n");
 			} else {
-				if (y == GRAPH_ROW - 1)
-					printf("_");
-				else
-					printf(" ");
+				printf("    \"No rehash is in progress or needed.\",\n");
 			}
 		}
+		if (bad) {
+			printf("    \"DANGER! In the array there are %u errors!\",\n", bad);
+		} else {
+			printf("    \"No error detected.\"\n");
+		}
+		printf("  ]\n");
+		printf("}}\n");
+	} else {
+		printf(" --------------------------------------------------------------------------\n");
+		printf("%8u", file_count);
+		printf("%8u", file_fragmented);
+		printf("%8u", extra_fragment);
+		printf("%8.1f", (double)all_wasted / GIGA);
+		printf("%8" PRIu64, file_size / GIGA);
+		printf("%8" PRIu64, file_block_free * state->block_size / GIGA);
+		printf(" %3u%%", muldiv(file_block_count, 100, file_block_count + file_block_free));
 		printf("\n");
+
+		/* warn about invalid data free info */
+		if (!free_not_zero)
+			printf("\nWARNING! Free space info will be valid after the first sync.\n");
 	}
-	printf("   %3u                    days ago of the last scrub/sync               %3u\n", dayoldest, daynewest);
 
-	printf("\n");
+	log_tag("summary:file_count:%u\n", file_count);
+	log_tag("summary:file_block_count:%" PRIu64 "\n", file_block_count);
+	log_tag("summary:fragmented_file_count:%u\n", file_fragmented);
+	log_tag("summary:excess_fragment_count:%u\n", extra_fragment);
+	log_tag("summary:zerosubsecond_file_count:%u\n", file_zerosubsecond);
+	log_tag("summary:file_size:%" PRIu64 "\n", file_size);
+	log_tag("summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
+	log_tag("summary:parity_size_max:%" PRIu64 "\n", (blockmax + parity_block_free) * (uint64_t)state->block_size);
+	log_tag("summary:hash:%s\n", hash_config_name(state->hash));
+	log_tag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
+	log_tag("summary:best_hash:%s\n", hash_config_name(state->besthash));
+	log_flush();
 
-	printf("The oldest block was scrubbed %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
+	if (!json_mode) {
+		printf("\n\n");
 
-	printf("\n");
+		/* print the graph */
+		for (y = 0; y < GRAPH_ROW; ++y) {
+			if (y == 0)
+				printf("%3u%%|", barmax * 100 / count);
+			else if (y == GRAPH_ROW - 1)
+				printf("  0%%|");
+			else if (y == GRAPH_ROW / 2)
+				printf("%3u%%|", barmax * 50 / count);
+			else
+				printf("    |");
+			for (x = 0; x < GRAPH_COLUMN; ++x) {
+				unsigned pivot_upper = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
+				unsigned pivot_lower = barmax * (GRAPH_ROW - 1 - y) / GRAPH_ROW;
+				unsigned both = bar_scrubbed[x] + bar_new[x];
+				unsigned scrubbed = bar_scrubbed[x];
+
+				if (both > pivot_upper) {
+					if (scrubbed > pivot_lower)
+						printf("*");
+					else
+						printf("o");
+				} else if (both > pivot_lower) {
+					if (scrubbed == both)
+						printf("*");
+					else
+						printf("o");
+				} else {
+					if (y == GRAPH_ROW - 1)
+						printf("_");
+					else
+						printf(" ");
+				}
+			}
+			printf("\n");
+		}
+	}
+	if (!json_mode)
+		printf("   %3u                    days ago of the last scrub/sync               %3u\n", dayoldest, daynewest);
+	if (!json_mode)
+		printf("\n");
+	if (!json_mode)
+		printf("The oldest block was scrubbed %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
+	if (!json_mode)
+		printf("\n");
 
 	if (newest > now) {
-		printf("WARNING! You have scrub dates in the future! The next sync/scrub will truncate them!\n");
+		if (!json_mode) printf("WARNING! You have scrub dates in the future! The next sync/scrub will truncate them!\n");
 	}
 
 	if (unsynced_blocks) {
-		printf("WARNING! The array is NOT fully synced.\n");
-		printf("You have a sync in progress at %u%%.\n", muldiv(blockmax - unsynced_blocks, 100, blockmax));
+		if (!json_mode) {
+			printf("WARNING! The array is NOT fully synced.\n");
+			printf("You have a sync in progress at %u%%.\n", muldiv(blockmax - unsynced_blocks, 100, blockmax));
+		}
 	} else {
-		printf("No sync is in progress.\n");
+		if (!json_mode) printf("No sync is in progress.\n");
 	}
 
 	if (unscrubbed_blocks) {
-		printf("%u%% of the array is not scrubbed.\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
+		if (!json_mode) printf("%u%% of the array is not scrubbed.\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
 	} else {
-		printf("The full array was scrubbed at least one time.\n");
+		if (!json_mode) printf("The full array was scrubbed at least one time.\n");
 	}
 
 	if (file_zerosubsecond) {
-		printf("You have %u files with a zero sub-second timestamp.\n", file_zerosubsecond);
-		printf("Run 'snapraid touch' to set their sub-second timestamps to a non-zero value.\n");
+		if (!json_mode) {
+			printf("You have %u files with a zero sub-second timestamp.\n", file_zerosubsecond);
+			printf("Run 'snapraid touch' to set their sub-second timestamps to a non-zero value.\n");
+		}
 	} else {
-		printf("No file has a zero sub-second timestamp.\n");
+		if (!json_mode) printf("No file has a zero sub-second timestamp.\n");
 	}
 
 	if (rehash) {
-		printf("You have a rehash in progress at %u%%.\n", muldiv(count - rehash, 100, count));
+		if (!json_mode) printf("You have a rehash in progress at %u%%.\n", muldiv(count - rehash, 100, count));
 	} else {
-		if (state->besthash != state->hash) {
-			printf("No rehash is in progress, but for optimal performance one is recommended.\n");
-		} else {
-			printf("No rehash is in progress or needed.\n");
+		if (!json_mode) {
+			if (state->besthash != state->hash) {
+				printf("No rehash is in progress, but for optimal performance one is recommended.\n");
+			} else {
+				printf("No rehash is in progress or needed.\n");
+			}
 		}
 	}
 
-	if (bad) {
+	if (bad && !json_mode) {
 		printf("DANGER! In the array there are %u errors!\n\n", bad);
 
 		if (bad_last - bad_first + 1 == bad) {
@@ -549,7 +642,7 @@ int state_status(struct snapraid_state* state)
 		printf("To fix them use the command 'snapraid -e fix'.\n");
 		printf("The errors will disappear from the 'status' at the next 'scrub' command.\n");
 	} else {
-		printf("No error detected.\n");
+		if (!json_mode) printf("No error detected.\n");
 	}
 
 	/* free the temp vector */

@@ -79,6 +79,7 @@ void lock_done(void)
 /* print */
 
 int msg_level = 0;
+int json_mode = 0;
 FILE* stdlog = 0;
 int msg_line_prev = 0; /**< Previous line width on stdout */
 int msg_line_curr = 0; /**< Current line width on stdout */
@@ -305,7 +306,7 @@ void msg_progress(const char* format, ...)
 		fflush(stdlog);
 	}
 
-	if (msg_level >= MSG_PROGRESS) {
+	if (msg_level >= MSG_PROGRESS && !json_mode) {
 		va_start(ap, format);
 		vmsg(stdout, format, ap);
 		va_end(ap);
@@ -499,6 +500,65 @@ const char* esc_tag(const char* str, char* buffer)
 bail:
 	/* LCOV_EXCL_START */
 	log_fatal("Escape for log is too long\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
+
+const char* json_escape(const char* str, char* buffer, size_t size)
+{
+	char* p = buffer;
+	char* end = buffer + size - 1; /* leave space for \0 */
+
+	while (*str && p < end) {
+		char c = *str++;
+		switch (c) {
+		case '"' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = '"';
+			break;
+		case '\\' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = '\\';
+			break;
+		case '\b' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = 'b';
+			break;
+		case '\f' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = 'f';
+			break;
+		case '\n' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = 'n';
+			break;
+		case '\r' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = 'r';
+			break;
+		case '\t' :
+			if (p + 1 >= end) goto bail;
+			*p++ = '\\';
+			*p++ = 't';
+			break;
+		default :
+			*p++ = c;
+			break;
+		}
+	}
+
+	*p = 0;
+	return buffer;
+
+bail:
+	/* LCOV_EXCL_START */
+	log_fatal("JSON escape buffer too small\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
