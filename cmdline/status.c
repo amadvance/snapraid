@@ -431,7 +431,7 @@ int state_status(struct snapraid_state* state)
 		unsigned both = bar_scrubbed[i] + bar_new[i];
 		unsigned percentage = muldiv(both, 100, count);
 		unsigned range = dayoldest - daynewest;
-		unsigned days_ago = i * range / (GRAPH_COLUMN - 1);
+		unsigned days_ago = dayoldest - i * range / (GRAPH_COLUMN - 1);
 		log_tag("scrub_history:%u:%u\n", days_ago, percentage);
 	}
 
