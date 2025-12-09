@@ -250,11 +250,11 @@ int state_status(struct snapraid_state* state)
 		log_tag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
 
 		{
-			uint64_t used_gb = (uint64_t)disk_block_count * state->block_size / GIGA;
-			uint64_t free_gb = (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA;
+			uint64_t used_bytes = (uint64_t)disk_block_count * state->block_size;
+			uint64_t free_bytes = (disk_block_max - disk_block_count) * (uint64_t)state->block_size;
 			unsigned use_percent = muldiv(disk_block_count, 100, disk_block_max);
-			log_tag("summary:disk_used_gb:%s:%" PRIu64 "\n", disk->name, used_gb);
-			log_tag("summary:disk_free_gb:%s:%" PRIu64 "\n", disk->name, free_gb);
+			log_tag("summary:disk_used:%s:%" PRIu64 "\n", disk->name, used_bytes);
+			log_tag("summary:disk_free:%s:%" PRIu64 "\n", disk->name, free_bytes);
 			log_tag("summary:disk_use_percent:%s:%u\n", disk->name, use_percent);
 		}
 	}
@@ -285,9 +285,10 @@ int state_status(struct snapraid_state* state)
 	log_tag("summary:hash:%s\n", hash_config_name(state->hash));
 	log_tag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
 	log_tag("summary:best_hash:%s\n", hash_config_name(state->besthash));
-	log_tag("summary:total_wasted_gb:%" PRIu64 "\n", all_wasted / GIGA);
-	log_tag("summary:total_used_gb:%" PRIu64 "\n", file_size / GIGA);
-	log_tag("summary:total_free_gb:%" PRIu64 "\n", file_block_free * state->block_size / GIGA);
+	log_tag("summary:total_wasted:%" PRIu64 "\n", all_wasted);
+	log_tag("summary:total_used:%" PRIu64 "\n", file_size);
+	log_tag("summary:total_free:%" PRIu64 "\n", file_block_free * state->block_size);
+	log_tag("summary:total_use_percent:%u\n", muldiv(file_block_count, 100, file_block_count + file_block_free));
 	log_flush();
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
