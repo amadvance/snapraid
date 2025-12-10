@@ -248,6 +248,15 @@ int state_status(struct snapraid_state* state)
 		log_tag("summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
 		log_tag("summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
 		log_tag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
+
+		{
+			uint64_t used_bytes = (uint64_t)disk_block_count * state->block_size;
+			uint64_t free_bytes = (disk_block_max - disk_block_count) * (uint64_t)state->block_size;
+			unsigned use_percent = muldiv(disk_block_count, 100, disk_block_max);
+			log_tag("summary:disk_used:%s:%" PRIu64 "\n", disk->name, used_bytes);
+			log_tag("summary:disk_free:%s:%" PRIu64 "\n", disk->name, free_bytes);
+			log_tag("summary:disk_use_percent:%s:%u\n", disk->name, use_percent);
+		}
 	}
 
 	/* totals */
@@ -276,6 +285,10 @@ int state_status(struct snapraid_state* state)
 	log_tag("summary:hash:%s\n", hash_config_name(state->hash));
 	log_tag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
 	log_tag("summary:best_hash:%s\n", hash_config_name(state->besthash));
+	log_tag("summary:total_wasted:%" PRIu64 "\n", all_wasted);
+	log_tag("summary:total_used:%" PRIu64 "\n", file_size);
+	log_tag("summary:total_free:%" PRIu64 "\n", file_block_free * state->block_size);
+	log_tag("summary:total_use_percent:%u\n", muldiv(file_block_count, 100, file_block_count + file_block_free));
 	log_flush();
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
@@ -383,6 +396,10 @@ int state_status(struct snapraid_state* state)
 	daymedian = day_ago(median, now);
 	daynewest = day_ago(newest, now);
 
+	log_tag("summary:scrub_oldest_days:%u\n", dayoldest);
+	log_tag("summary:scrub_median_days:%u\n", daymedian);
+	log_tag("summary:scrub_newest_days:%u\n", daynewest);
+
 	/* compute graph limits */
 	barpos = 0;
 	barmax = 0;
@@ -407,6 +424,15 @@ int state_status(struct snapraid_state* state)
 
 		bar_scrubbed[i] = step_scrubbed;
 		bar_new[i] = step_new;
+	}
+
+	/* output scrub history as structured data */
+	for (i = 0; i < GRAPH_COLUMN; ++i) {
+		unsigned both = bar_scrubbed[i] + bar_new[i];
+		unsigned percentage = muldiv(both, 100, count);
+		unsigned range = dayoldest - daynewest;
+		unsigned days_ago = dayoldest - i * range / (GRAPH_COLUMN - 1);
+		log_tag("scrub_history:%u:%u\n", days_ago, percentage);
 	}
 
 	printf("\n\n");
