@@ -427,12 +427,10 @@ int state_status(struct snapraid_state* state)
 	}
 
 	/* output scrub history as structured data */
+	log_tag("scrub_history_summary:%u:%u\n", GRAPH_COLUMN, barmax);
 	for (i = 0; i < GRAPH_COLUMN; ++i) {
-		unsigned both = bar_scrubbed[i] + bar_new[i];
-		unsigned percentage = muldiv(both, 100, count);
-		unsigned range = dayoldest - daynewest;
-		unsigned days_ago = dayoldest - i * range / (GRAPH_COLUMN - 1);
-		log_tag("scrub_history:%u:%u\n", days_ago, percentage);
+		unsigned days_ago = dayoldest - (dayoldest - daynewest) * i / (GRAPH_COLUMN - 1);
+		log_tag("scrub_history_graph:%u:%u:%u:%u\n", i, days_ago, bar_scrubbed[i], bar_new[i]);
 	}
 
 	printf("\n\n");
