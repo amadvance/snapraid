@@ -939,6 +939,7 @@ Options
 		enclose the name in quotes, e.g., ">>result.log".
 		To output the log to standard output or standard error,
 		you can use ">&1" and ">&2", respectively.
+		See the snapraid_log.txt file or man page for log tag descriptions.
 
 	-L, --error-limit NUMBER
 		Sets a new error limit before stopping execution.
@@ -1449,4 +1450,4 @@ Copyright
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
 See Also
-	rsync(1)
+	snapraid_log(1), rsync(1)

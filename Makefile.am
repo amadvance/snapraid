@@ -125,6 +125,7 @@ EXTRA_DIST = \
 	autogen.sh autover.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO CHECK INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
+	snapraid_log.d snapraid_log.1 snapraid_log.txt \
 	test/test-par1.conf \
 	test/test-par2.conf \
 	test/test-par3.conf \
@@ -146,7 +147,7 @@ EXTRA_DIST = \
 	raid/test/speedtest.c \
 	raid/test/invtest.c
 
-man_MANS = snapraid.1
+man_MANS = snapraid.1 snapraid_log.1
 
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
@@ -160,6 +161,7 @@ clean-local:
 
 maintainer-clean-local:
 	rm -f snapraid.1 snapraid.txt
+	rm -f snapraid_log.1 snapraid_log.txt
 
 # Automatic testing
 
@@ -1020,6 +1022,18 @@ snapraid.html : snapraid.d
 
 snapraid.hh : snapraid.d
 	advd2 frame < $(srcdir)/$< > $@
+	
+snapraid_log.1 : snapraid_log.d
+	advd2 man < $(srcdir)/$< > $@
+
+snapraid_log.txt : snapraid_log.d
+	advd2 txt < $(srcdir)/$< | todos > $@
+
+snapraid_log.html : snapraid_log.d
+	advd2 html < $(srcdir)/$< > $@
+
+snapraid_log.hh : snapraid_log.d
+	advd2 frame < $(srcdir)/$< > $@	
 endif
 
 # Windows distribution
