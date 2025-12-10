@@ -128,6 +128,8 @@ int state_status(struct snapraid_state* state)
 		block_off_t disk_block_max_by_space;
 		block_off_t disk_block_max_by_parity;
 		block_off_t disk_block_max;
+		uint64_t disk_used_bytes;
+		uint64_t disk_free_bytes;
 		int64_t wasted;
 
 		/* for each file in the disk */
@@ -249,14 +251,11 @@ int state_status(struct snapraid_state* state)
 		log_tag("summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
 		log_tag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
 
-		{
-			uint64_t used_bytes = (uint64_t)disk_block_count * state->block_size;
-			uint64_t free_bytes = (disk_block_max - disk_block_count) * (uint64_t)state->block_size;
-			unsigned use_percent = muldiv(disk_block_count, 100, disk_block_max);
-			log_tag("summary:disk_used:%s:%" PRIu64 "\n", disk->name, used_bytes);
-			log_tag("summary:disk_free:%s:%" PRIu64 "\n", disk->name, free_bytes);
-			log_tag("summary:disk_use_percent:%s:%u\n", disk->name, use_percent);
-		}
+		disk_used_bytes = disk_block_count * (uint64_t)state->block_size;
+		disk_free_bytes = (disk_block_max - disk_block_count) * (uint64_t)state->block_size;
+		log_tag("summary:disk_used:%s:%" PRIu64 "\n", disk->name, disk_used_bytes);
+		log_tag("summary:disk_free:%s:%" PRIu64 "\n", disk->name, disk_free_bytes);
+		log_tag("summary:disk_use_percent:%s:%u\n", disk->name, muldiv(disk_block_count, 100, disk_block_max));
 	}
 
 	/* totals */
@@ -427,12 +426,10 @@ int state_status(struct snapraid_state* state)
 	}
 
 	/* output scrub history as structured data */
+	log_tag("scrub_graph_range:%u:%u\n", GRAPH_COLUMN, barmax);
 	for (i = 0; i < GRAPH_COLUMN; ++i) {
-		unsigned both = bar_scrubbed[i] + bar_new[i];
-		unsigned percentage = muldiv(both, 100, count);
-		unsigned range = dayoldest - daynewest;
-		unsigned days_ago = dayoldest - i * range / (GRAPH_COLUMN - 1);
-		log_tag("scrub_history:%u:%u\n", days_ago, percentage);
+		unsigned days_ago = dayoldest - (dayoldest - daynewest) * i / (GRAPH_COLUMN - 1);
+		log_tag("scrub_graph_bar:%u:%u:%u:%u\n", i, days_ago, bar_scrubbed[i], bar_new[i]);
 	}
 
 	printf("\n\n");
