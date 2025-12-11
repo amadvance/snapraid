@@ -38,8 +38,357 @@ Description
 	and context of the values, it is recommended to check the source
 	code's `log_tag()` statements.
 
-Status
-	This section describe the tags output with the `status` command.
+	When a path is output, it is always escaped using a backslash (\) as
+	the escape character.
+
+	The following characters are escaped into sequences:
+		The colon - is escaped to \d.
+		The newline - is escaped to \n.
+		The carriage return - is escaped to \r.
+		The backslash - is escaped to \\.
+
+	Some tags are output only when the `--gui` option is used. They provide
+	extra verbose state and runtime progress only useful for a GUI
+	interface.
+
+
+Configuration Tags
+	These tags report the memory usage and global configuration after
+	scanning the disk and reading the list of files.
+
+	=conf:file:<path>
+		Configuration file loaded (escaped string).
+
+	=conf:missing:
+		Operating without a configuration file.
+
+	=blocksize:<bytes>
+		The configured block size in bytes (uint).
+
+	=data:<disk_name>:<dir>
+		The data disks as defined in the configuration file.
+
+		<disk_name> - The assigned name of the disk.
+		<dir> - The directory entry point of the disk.
+
+	=mode:<raidname>
+		The RAID mode used. One of `par1`, `par2`, `par3`, `par4`,
+		`par5`, `par6` or `parz`. The number indicates the maximum
+		number of simultaneous disk failures the array can withstand.
+
+	=<parity_level>:<split_index>:<path>
+		The parity files as defined in the configuration file.
+
+		<parity_level> - One of `parity`, `2-parity`, ..., `6-parity`.
+			This corresponds to the level of redundancy.
+		<split_index> - The split index (uint). If no
+			multiple split parity is configured, there is only the
+			index 0. A split parity configuration distributes parity
+			blocks across multiple files.
+		<path> - The escaped path.
+
+	=pool:<dir>
+		The configured dir to the pool mount point (escaped string).
+		This is the optional mount point for the 'pool' feature.
+
+	=share:<dir>
+		The configured dir to the pool mount point (escaped string).
+		This is the optional mount point for the 'share' feature.
+
+	=autosave:<bytes>
+		If the autosave feature is enabled, and after how many bytes
+		(uint64). This specifies the interval for content file saving.
+
+	=filter:<pattern>
+		All the active filters with their patterns. These patterns
+		exclude specific files or directories from the SnapRAID array.
+
+	=filter:nohidden:
+		If the no-hidden filter is enabled, meaning hidden files/directories
+		(starting with '.') are excluded from the array.
+
+	=content:<path>
+		The absolute path to a content file being used (escaped string).
+		Content files store the metadata (like file hashes and timestamps)
+		for the array.
+
+	=content:<parity_level>:<split_index>:<path>:<uuid>:<size>
+		The parity files as stored in the content file.
+	
+		<parity_level> - One of `parity`, `2-parity`, ..., `6-parity`.
+		<split_index> - The split index (uint). If no
+			multiple split parity is configured, there is only the
+			index 0.
+		<path> - The escaped path.
+		<uuid> - The UUID of the partition containing the path.
+		<size> - The size of the parity file. Size is -1 if not yet
+			fixed, meaning it can grow. This happens for the
+			latest split.
+
+Diagnostics Tags
+	=version:<version>
+		The version of SnapRAID run.
+
+	=unixtime:<time>
+		The current time in the unix format (uint64), representing
+		seconds since the epoch.
+
+	=time:<YYYY-MM-DD HH:MM:SS>
+		The current time in human format.
+
+	=command:<command>
+		The command run. One of `sync`, `scrub`, `check`, `fix`, `status`, ...
+
+	=argv:<number>:<argument>
+		All the arguments of the executable command. The 0 one is the
+		executable run.
+
+	=memory:used:<bytes>
+		The total memory currently used by the application in bytes (uint64).
+
+	=memory:block:<bytes>
+		Size of the internal `snapraid_block` structure in bytes (uint64).
+
+	=memory:extent:<bytes>
+		Size of the internal `snapraid_extent` structure in bytes (uint64).
+
+	=memory:file:<bytes>
+		Size of the internal `snapraid_file` structure in bytes (uint64).
+
+	=memory:link:<bytes>
+		Size of the internal `snapraid_link` structure in bytes (uint64).
+
+	=memory:dir:<bytes>
+		Size of the internal `snapraid_dir` structure in bytes (uint64).
+
+Scan Tags
+	These tags report detected differences between the filesystem and the
+	content file. They are output for every discovered change, and
+	`scan:equal` is only output when the `--gui` option is used.
+
+	=scan:equal:<disk_name>:<path>
+		A file, link, or directory is equal (unchanged) (GUI only).
+		No action is required for this item.
+
+		<disk_name> - Name of the data disk.
+		<path> -  Path to the file/link/dir relative to the disk mount
+			(escaped string).
+
+	=scan:add:<disk_name>:<path>
+		A new file, link, or directory was found that is not in the
+		content file. This item will be added to the array in a `sync`.
+
+	=scan:remove:<disk_name>:<path>
+		A file, link, or directory has been removed from the filesystem
+		since the last sync. This item will be removed from the
+		content file in a `sync`.
+
+	=scan:update:<disk_name>:<path>
+		A file or link has been updated (size, timestamp, or link target changed).
+		This item will have its content data blocks re-hashed in a `sync`.
+
+	=scan:move:<disk_name>:<old_path>:<new_path>
+		A file was moved on the same disk. This is an efficient operation
+		that only updates the path metadata without re-hashing blocks.
+
+		<old_path> - The old path to the file (escaped string).
+		<new_path> - The new path to the file (escaped string).
+
+	=scan:copy:<disk_name>:<path>:<source_disk>:<source_path>
+		A new file was found to be a copy of a file from another disk.
+		This is detected by matching file size and timestamp, and is an
+		efficient operation that avoids re-hashing all blocks.
+
+		<source_disk> - The original file's disk.
+		<source_path> - The original file's location (escaped string).
+
+	=scan:restore:<disk_name>:<path>
+		A file's inode has changed but not its date-time and size,
+		which suggests the file may be restored from backup.
+		The file won't be re-hashed in `sync` as its precomputed hash
+		is assumed to be correct.
+
+	These tags provide a final count of all detected changes.
+
+	=summary:equal:<count>
+		Total number of equal (unchanged) files/links/firs found (uint).
+
+	=summary:added:<count>
+		Total number of new files/links/dirs found (uint).
+
+	=summary:removed:<count>
+		Total number of removed files/links/dirs found (uint).
+
+	=summary:updated:<count>
+		Total number of updated files/links found (uint).
+
+	=summary:moved:<count>
+		Total number of moved files found (uint).
+
+	=summary:copied:<count>
+		Total number of copied files found (uint).
+
+	=summary:restored:<count>
+		Total number of restored files found (uint).
+
+	=summary:exit:equal
+		A zero-argument tag indicating that no differences were found.
+		The array is already synchronized.
+
+	=summary:exit:diff
+		A zero-argument tag indicating that differences were found.
+		The array needs a `sync` operation.
+
+General Progress and Execution Tags
+	These tags are used to report the runtime processing of the commands.
+	Only produced when `--gui` option is used.
+
+	=run:begin:<blockstart>:<blockend>:<countmax>
+		A tag indicating the start of the command execution.
+		
+		<blockstart> - Starting block index (uint).
+		<blockend> - Ending block index + 1 (uint).
+		<countmax> - Number of blocks to process. It may be less
+			than <blockend> - <blockstart> + 1 if some blocks
+			are going to be skipped (uint).
+
+	=run:end
+		A zero-argument tag indicating the end of the command execution.
+
+	=run:pos:<blockpos>:<countpos>:<countsize>:<perc>:<eta>:<size_speed>:<cpu>:<elapsed>
+		Detailed progress information during command execution.
+
+		<blockpos> - Current block index position (uint).
+		<countpos> - Current item count position (uint).
+		<countsize> - Current size processed (uint64).
+		<perc> - Percentage complete (uint).
+		<eta> - Estimated time of arrival in minutes (uint).
+		<size_speed> - Data processing speed in MiB/s (uint).
+		<cpu> - CPU usage percentage (uint).
+		<elapsed> - Elapsed time in seconds (uint64).
+
+	=sigint:<blockpos>:<msg>
+		A user interruption (e.g., Ctrl+C) was signaled. The process
+		is gracefully aborting.
+
+		<blockpos> - Current block index position (uint).
+		<msg> - Text message exactly as it's printed on screen.
+
+	=msg:<level>:<msg>
+		Messages printed to the screen.
+
+		<level> - One of `fatal`, `error`, `expected`, `status`,
+			`progress` or `verbose`.
+		fatal - A fatal error occurred. Program will abort after this
+			message.
+		error - A generic error condition that doesn't prevent the
+			program to continue.
+		expected - An expected error condition. At present it
+			happens only when using the `-m` option with files
+			expected missing.
+		status - A status message, usually providing context or a summary.
+		progress - A progress message, often part of an ongoing operation.
+		verbose - A verbose informative message, only shown in verbose mode.
+		<msg> - Text message exactly as it's printed on screen.
+
+Thermal Tags
+	The following tags are produced by the thermal monitoring functions
+	when SnapRAID is processing, typically during operations that involve
+	disk access.
+
+	=thermal:ambient:device:<hwmon_dir>:<name>:<temp_file>:<label>:<temp>
+		Logs a temperature reading found in the system using the Linux
+		/sys/class/hwmon interface. Only present in Linux.
+
+		<hwmon_dir> - The hwmon directory name (e.g., hwmon0).
+		<name> -  The name of the hwmon device (e.g., k10temp).
+		<temp_file> - The temperature file name (e.g., temp1_input).
+		<label> - The label associated with the temperature sensor (e.g., Tdie).
+		<temp> - The temperature reading in degrees Celsius.
+
+	=thermal:ambient:candidate:<temp>
+		Reports a temperature reading that is a candidate for the
+		ambient temperature, used in the heating model calculation.
+
+		<temp> -  The candidate temperature in degrees Celsius.
+
+	=thermal:system:candidate:<temp>
+		Logs a temperature reading from a connected disk that is being
+		considered as a candidate for determining the ambient system
+		temperature.
+    
+		<temp> - The current temperature read from the disk
+			(uint, degrees Celsius).
+
+	=thermal:system:final:<temp>
+		Logs the final ambient system temperature calculated. This
+		value is the lowest valid temperature observed among all
+		candidates, representing the room temperature.
+
+		<temp> - The calculated ambient temperature in degrees Celsius.
+
+	=thermal:current:<disk_name>:<device>:<temp>
+		Logs the most recent temperature reading for a specific disk
+		device.
+
+		<disk_name> - The configured name of the disk.
+		<device> - The unique device ID (uint64).
+		<temp> - The current temperature read from the disk in degrees Celsius.
+
+	=thermal:highest:<temp>
+		Logs the highest temperature observed among all monitored disks
+		in the current measurement cycle. This is used for thermal throttling.
+    
+		<temp> - The highest temperature observed in degrees Celsius.
+
+	=thermal:heat:<disk_name>:<device>:<count>:<data_points>
+		Logs the entire history of temperature data points collected
+		so far for a specific disk, used for fitting the heating model.
+		Only monotone increasing temperatures are included in the history.
+
+		<disk_name> - The configured name of the disk.
+		<device> - The unique device ID (uint64).
+		<count> - The total number of collected data points (uint).
+		<data_points> - A comma-separated list of temperature/time pairs.
+			Each pair is formatted as <temp>/<time_offset>.
+		<temp> - Temperature reading in degrees Celsius.
+		<time_offset> - Time offset from the start of the thermal
+			monitoring (uint, seconds).
+
+	=thermal:params:<disk_name>:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
+		Logs the estimated parameters for the exponential heating model
+		(fit using least squares) and associated quality metrics for a
+		specific disk. 
+		The model is: T(t) = T_steady - (T_steady - T_0) e^(-kt),
+		where T_0 is the initial temperature.
+
+		<disk_name> - The configured name of the disk.
+		<device> - The unique device ID (uint64).
+		<k_heat> - The heating rate constant, $k$ (double).
+		<t_ambient> - The ambient temperature, $T_{\text{ambient}}$ (double).
+		<t_steady> - The estimated steady-state temperature, $T_{\text{steady}}$ (double), which is the maximum expected temperature of the disk.
+		<rmse> - Root Mean Square Error of the fit (double).
+		<r_squared> - Coefficient of determination ($R^2$) of the fit (double).
+		<max_error> - Maximum absolute error of the fit (double).
+
+	=thermal:spindown
+		Indicates that the thermal alarm limit has been reached, and
+		the process is initiating a disk spindown to begin the
+		cooldown procedure, preventing overheating.
+
+	=thermal:cooldown:<sleep_time>
+		Indicates the duration of the cooldown waiting period after
+		spindown.
+
+		<sleep_time> - The total time the system will wait for
+			cooldown (uint, seconds).
+
+	=thermal:spinup
+		Indicates that the cooldown period is complete, and the disks
+		are being spun back up to resume the operation.
+
+Command Status Tags
+	This section describes the tags output with the `status` command.
 
 	All tags start with a prefix indicating the context, typically `summary:`
 	for overall statistics or a disk/block context.
@@ -48,53 +397,62 @@ Status
 	These tags provide general information about the array configuration and overall state.
 
 	=summary:block_size:<uint>
-		The size of a block in bytes.
+		The size of a block in bytes. This is the unit of parity protection.
 	=summary:parity_block_count:<uint>
-		The total number of blocks allocated for all parity levels.
+		The total number of blocks allocated for all parity levels combined.
 	=summary:parity_block_total:<name>:<uint>
-		Total blocks available for a specific parity level.
+		Total blocks available for a specific parity level (e.g., `parity`, `2-parity`).
 	=summary:parity_block_free:<name>:<uint>
 		Free blocks available for a specific parity level.
 	=summary:parity_block_free_min:<uint>
 		The minimum number of free blocks across all parity levels.
+		This determines the maximum size of data that can be added.
 	=summary:file_count:<uint>
 		Total number of files in the array.
 	=summary:file_block_count:<uint64>
 		Total number of data blocks used by files.
 	=summary:fragmented_file_count:<uint>
-		Total number of fragmented files.
+		Total number of fragmented files, meaning files whose blocks
+		are not contiguous.
 	=summary:excess_fragment_count:<uint>
 		Total number of excess fragments (one less than the total fragments).
+		This is a measure of data fragmentation overhead.
 	=summary:zerosubsecond_file_count:<uint>
-		Total number of files with a zero sub-second timestamp.
+		Total number of files with a zero sub-second timestamp. This
+		can occur on certain filesystems and may affect change detection.
 	=summary:file_size:<uint64>
 		Total size of all files in bytes.
 	=summary:parity_size:<uint64>
 		Total size of allocated parity blocks in bytes.
 	=summary:parity_size_max:<uint64>
 		Maximum possible parity size (allocated + min free) in bytes.
+		This is the effective maximum protection size.
 	=summary:hash:<name>
-		The current hash algorithm in use.
+		The current hash algorithm in use (e.g., `sha256`).
 	=summary:prev_hash:<name>
-		The previous hash algorithm used.
+		The previous hash algorithm used, if a rehash is in progress.
 	=summary:best_hash:<name>
-		The best hash algorithm for optimal performance.
+		The best hash algorithm for optimal performance based on system capabilities.
 	=summary:total_wasted:<uint64>
 		Total wasted space (space on data disks exceeding parity capacity) in bytes.
 	=summary:total_used:<uint64>
 		Total used space by data files in bytes.
 	=summary:total_free:<uint64>
-		Total free space (usable by data) in bytes.
+		Total free space (usable by data) in bytes, limited by parity capacity.
 	=summary:total_use_percent:<uint>
 		Overall array use percentage.
 	=summary:has_unsynced:<uint>
-		Count of blocks that are unsynced (need a sync).
+		Count of blocks that are unsynced (need a sync), meaning their
+		parity data is out of date.
 	=summary:has_unscrubbed:<uint>
-		Count of blocks that are unscrubbed (just synced).
+		Count of blocks that are unscrubbed (just synced), meaning they
+		have never been verified since the last sync.
 	=summary:has_rehash:<uint>
-		Count of blocks needing a rehash.
+		Count of blocks needing a rehash, usually due to a content file
+		update or hash algorithm change.
 	=summary:has_bad:<count>:<first>:<last>
 		Count of bad blocks, along with the first and last bad block index.
+		Bad blocks indicate data or parity corruption.
 	=summary:scrub_oldest_days:<uint>
 		Days ago the oldest block was last scrubbed.
 	=summary:scrub_median_days:<uint>
@@ -103,7 +461,7 @@ Status
 		Days ago the newest block was last scrubbed.
 
     Per-Disk Tags
-	These tags provide statistics for individual data disks. `<name>`
+	These tags provide statistics for individual data disks. <name>
 	is the disk name.
 
 	=summary:disk_file_count:<name>:<uint>
@@ -125,9 +483,11 @@ Status
 	=summary:disk_block_free:<name>:<uint>
 		Free blocks on the disk.
 	=summary:disk_block_max_by_space:<name>:<uint>
-		Total blocks by disk space (used + free blocks).
+		Total blocks by disk space (used + free blocks), representing the
+		physical limit of the disk.
 	=summary:disk_block_max_by_parity:<name>:<uint>
 		Total blocks limited by parity space (parity size + min parity free blocks).
+		This is the logical limit imposed by the parity files.
 	=summary:disk_block_max:<name>:<uint>
 		Maximum usable blocks (minimum of `..._by_space` and `..._by_parity`).
 	=summary:disk_space_wasted:<name>:<int64>
@@ -135,7 +495,7 @@ Status
 	=summary:disk_used:<name>:<uint64>
 		Used space on the disk in bytes.
 	=summary:disk_free:<name>:<uint64>
-		Free usable space on the disk in bytes.
+		Free usable space on the disk in bytes, limited by `disk_block_max`.
 	=summary:disk_use_percent:<name>:<uint>
 		Disk use percentage relative to `disk_block_max`.
 
@@ -151,32 +511,39 @@ Status
 
 	=block_count:<uint>
 		The total number of blocks in the array.
+
 	=block:<index>:<time>:<used>:<unsynced>:<bad>:<rehash>
 		Status of a specific block.
 
 		<index> - Block index.
-		<time> - Last scrub time (Unix timestamp).
-		<used> - "used" if the block contains data.
-		<unsynced> - "unsynced" if the block needs a sync.
-		<bad> - "bad" if the block has errors.
-		<rehash> - "rehash" if the block needs a rehash.
+		<time> - Last scrub time (Unix timestamp). A value of 0 means
+			the block has never been scrubbed.
+		<used> - `used` if the block contains data, otherwise empty.
+		<unsynced> - `unsynced` if the block needs a sync, otherwise empty.
+		<bad> - `bad` if the block has errors, otherwise empty.
+		<rehash> - `rehash` if the block needs a rehash, otherwise empty.
 
 	=block_noinfo:<index>:<used>:<unsynced>
-		Status of an unused block (no info recorded).
+		Status of an unused block (no info recorded) in the content file.
+
+		<index> - Block index.
+		<used> - `used` if the block contains data, otherwise empty.
+		<unsynced> - `unsynced` if the block needs a sync, otherwise empty.
 
     Scrub History Tags
 	These tags provide details on the scrub/sync time distribution.
 
 	=info_count:<uint>
-		Total number of info recorded about past scrub and sync
-		operations.
+		Total number of info records about past scrub and sync
+		operations stored in the content file.
 
 	=info_time:<time>:<count>:<status>
 		All the info records.
 
 		<time> - Unix timestamp of the scrub/sync.
 		<count> - Number of blocks processed at this timestamp.
-		<status> - "scrubbed" or "new" (for synced blocks).
+		<status> - "scrubbed" (for blocks verified to be correct) or
+			"new" (for synced blocks that haven't been scrubbed yet).
 
 	=scrub_graph_range:<max_columns>:<max_height>
 		Dimensions of the scrub history graph obtained from the
@@ -189,9 +556,254 @@ Status
 			in any column (the highest sum of scrubbed and new blocks).
 
 	=scrub_graph_bar:<index>:<days_ago>:<scrubbed>:<new>
-		Data for a column of the scrub history graph.
+		Data for a column of the scrub history graph. Each column
+		represents a time period.
 
 		<index> - Column index. From 0 to max_columns - 1.
 		<days_ago> - Days ago for this column's time range.
-		<scrubbed> - Count of scrubbed blocks in that day.
-		<new> - Count of newly synced (unscrubbed) blocks in that day.
+		<scrubbed> - Count of scrubbed blocks in that day range.
+		<new> - Count of newly synced (unscrubbed) blocks in that day range.
+
+Command Sync/Scrub Tags
+	Tags specific for the `sync` and `scrub` commands. 
+	Also the error tags are possible.
+	
+    Summary Tags
+	These tags provide summary statistics at the end of the command.
+
+	=hash_summary:error_file:<count>
+		Logs the total count of file-related errors that caused a
+		block to be skipped during the hashing phase. These are often
+		due to file changes (missing, size/time change) during the
+		sync operation. This happens only in `sync`.
+
+		<count> - Total number of file errors (uint).
+
+	=summary:error_file:<count>
+		Logs the total count of file-related errors encountered during
+		the process (e.g., missing files, file attribute changes).
+    
+		<count> - The total number of file errors encountered (uint).
+
+	=summary:error_io:<count>
+		Logs the total count of input/output errors encountered on
+		data or parity disks.
+    
+		<count> - The total number of I/O errors encountered (uint).
+
+	=summary:error_data:<count>
+	        Logs the total count of "silent data errors" (data blocks
+		not matching their expected hash) encountered during the sync
+		process.
+    
+		<count> - The total number of silent data errors encountered (uint).
+
+	=summary:exit:<status>
+		Logs the overall exit status of the command. The `status` is
+		one of the following:
+    
+		ok - No errors were found.
+		error - If any errors were found (file, I/O, or data errors).
+
+Command Check/Fix Tags
+	Tags specific for the `check` and `fix` commands.
+	Also the error tags are possible.
+
+    Fixed/Recovered Tags
+	These tags log successful repairs during fix operations.
+	
+	=fixed:<block_pos>:<disk_name>:<file_path>:<msg>
+		Indicates that a file was successfully fixed using parity data.
+
+		<block_pos> - The block position being processed (uint).
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the fix
+			(e.g., `Fixed size`, `Fixed data error at position...`).
+
+	=parity_fixed:<block_pos>:<parity>:<msg>
+		Indicates that corrupted parity data was successfully
+		recomputed and written.
+
+		<block_pos> - The block position being processed (uint).
+		<parity> - The name of the parity level (e.g., "parity", "2-parity").
+		<msg> - A descriptive message indicating the nature of the fix
+			(e.g., `Fixed data error`).
+
+	=empty_fixed:<disk_name>:<file_path>:<msg>
+		Logs successful recreation of a missing or corrupted empty file.
+
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the fix
+			(e.g., `Fixed empty file`).
+
+	=hardlink_fixed:<disk_name>:<link_path>:<msg>
+		Logs successful recreation of a hard link during fix operation.
+
+		<disk_name> - The name of the disk.
+		<link_path> - The hard link path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the fix
+			(e.g., `Fixed hardlink error`).
+
+	=symlink_fixed:<disk_name>:<link_path>:<msg>
+		Logs successful recreation of a symbolic link during fix operation.
+		
+		<disk_name> - The name of the disk.
+		<link_path> - The symlink path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the fix
+			(e.g., `Fixed symlink error`).
+
+	=dir_fixed:<disk_name>:<dir_path>:<msg>
+		Logs successful recreation of a missing directory during fix
+		operation.
+
+		<disk_name> - The name of the disk.
+		<dir_path> - The directory path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the fix
+			(e.g., `Fixed dir error`).
+
+    Unrecoverable Error Tags
+	These tags log errors that could not be recovered.
+	
+	=unrecoverable:<block_pos>:<disk_name>:<file_path>:<msg>
+		Indicates that a block error could not be fixed due to
+		insufficient parity or other recovery limitations.
+
+		<block_pos> - The block position being processed (uint).
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the problem
+			(e.g., `Unrecoverable error at position <file_pos>`, `Unrecoverable unsynced error at position <file_pos>`).
+
+	=collision:<disk_name>:<file_path>:<collision_path>:<msg>
+		Logs that the modification time was not set on a recovered file to
+		avoid inode collision with another file.
+
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+		<collision_path> - The path of the colliding file (escaped).
+		<msg> - A descriptive message indicating the nature of the problem
+			(e.g., `Not setting modification time to avoid inode collision`).
+
+    File Status Tags
+	These tags log the final status of files after processing.
+
+	=status:unrecoverable:<disk_name>:<file_path>
+		Indicates that a file has unrecoverable errors and was renamed to
+		.unrecoverable (in fix mode) or cannot be recovered (in check mode).
+
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+	
+	=status:recovered:<disk_name>:<file_path>
+		Logs that a file was successfully recovered during fix operation.
+		
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+
+	=status:damaged:<disk_name>:<file_path>
+		Indicates that a file is damaged (in audit-only mode, e.g., using `check`).
+		
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+
+	=status:recoverable:<disk_name>:<file_path>
+		Logs that a file has errors but could be recovered in fix mode.
+
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+
+	=status:correct:<disk_name>:<file_path>
+		Indicates that a file passed all checks successfully (verbose mode only).
+
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+
+    Summary Tags
+	These tags provide summary statistics at the end of the command.
+    
+	=summary:error:<error_count>
+		Logs the total number of errors encountered.
+
+		<error_count> - Total number of errors (uint).
+
+	=summary:error_recovered:<recovered_count>
+		Logs the total number of errors successfully recovered (fix mode only).
+
+		<recovered_count> - Number of recovered errors (uint).
+
+	=summary:error_unrecoverable:<unrecoverable_count>
+		Logs the total number of unrecoverable errors (not in audit-only mode).
+	
+		<unrecoverable_count> - Number of unrecoverable errors (uint).
+
+	=summary:exit:<status>
+		Logs the overall exit status of the command. The `status` is one of
+		the following:
+	
+		`ok` - Indicates that the operation completed with no errors.
+		`recovered` - Indicates that the operation completed with all
+			errors successfully recovered (fix mode only).
+		`recoverable` - Indicates that errors were found but are all
+			recoverable (check mode only).
+		`unrecoverable` - Indicates that unrecoverable errors were
+			found.
+		`error` - Indicates that errors were found (audit-only mode).
+
+Error Tags
+	These tags report specific errors that occur on data disks during the
+	commands that access files and parities.
+
+	=error:<block>:<disk_name>:<file>:<msg>
+		Logs file access errors (open, read, file changed) during the
+		data disk read operation for parity calculation or verification.
+    
+		<block> - The zero-based index of the block where the error occurred (uint).
+		<disk_name> - The name of the data disk.
+		<file> - The path (relative to the disk mount point) of the
+			file containing the block (escaped).
+		<msg> - A descriptive message indicating the nature of the
+			error (e.g., `Open/Read/Write EIO error`, `Open/Read/Write error`, `Data error at position <pos>, diff bits <diff>/<bits>`).
+
+	=parity_error:<block>:<level>:<msg>
+		Logs errors during parity disk read or write operations.
+    
+		<block> - The zero-based index of the block where the error occurred (uint).
+		<level> - The configuration name of the parity level (e.g., `parity`, `2-parity`).
+		<msg> - A descriptive message indicating the nature of the
+			error (e.g., `Read/Write EIO error`, `Read/Write error`, `Data error, diff bits <diff>/<bits>`).
+
+	=hardlink_error:<disk_name>:<link_path>:<target_path>:<msg>
+		Indicates an error when attempting to access a hard link.
+	
+		<disk_name> - The name of the disk.
+		<link_path> - The hard link path relative to disk root (escaped).
+		<target_path> - The target path of the hard link (escaped).
+		<msg> - A descriptive message indicating the nature of the
+			error (e.g., `Hardlink stat error`, `Hardlink error for not regular file`, `Hardlink to stat error`, `Hardlink-to error for not regular file`, `Hardlink mismatch for different inode`).
+
+	=symlink_error:<disk_name>:<link_path>:<msg>
+		Indicates an error when attempting to access a symbolic link.
+
+		<disk_name> - The name of the disk.
+		<link_path> - The symlink path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the
+			error (e.g., `Symlink read error`, `Symlink data error '<actual>' instead of '<expected>'`).
+
+	=dir_error:<disk_name>:<dir_path>:<msg>
+		Indicates an error when attempting to access a directory.
+		
+		<disk_name> - The name of the disk.
+		<dir_path> - The directory path relative to disk root (escaped).
+		<msg> - A descriptive message indicating the nature of the
+			error (e.g., `Dir stat error`, `Dir error for not directory`).
+
+	=outofparity:<disk_name>:<file_path>
+		Logs that a file's blocks extend beyond the available parity space,
+		indicating that the parity files are too small to protect all data.
+		This occurs when data requires more parity than is available on the
+		parity disk(s) and is a critical warning.
+
+		<disk_name> - The name of the disk containing the file.
+		<file_path> - The file path relative to the disk root (escaped).
