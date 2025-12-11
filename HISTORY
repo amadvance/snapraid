@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+13.1 WIP
+========
+ * More log tags for the `status` command [Tristan Teufel]
+ * Added documentation of the tags used in the log file in the new
+   snapraid_log manpage.
+
 13.0 2025/10
 ============
  * Added new thermal protection configuration options:
