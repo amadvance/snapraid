@@ -2812,6 +2812,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				pathcpy(state->parity[v_level].split_map[0].uuid, sizeof(state->parity[v_level].split_map[0].uuid), v_uuid);
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
+
+				/* log the info read from the content file */
+				log_tag("content:%s:0:%s:%s:%" PRIi64 "\n", lev_config_name(v_level),
+					state->parity[v_level].split_map[0].path,
+					state->parity[v_level].split_map[0].uuid,
+					state->parity[v_level].split_map[0].size);
 			}
 		} else if (c == 'Q') {
 			/* from SnapRAID 11.0 the 'Q' command include size info and multi file support  */

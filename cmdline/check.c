@@ -1512,17 +1512,17 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				unsuccessful = 1;
 
 				log_error("Error stating empty file '%s'. %s.\n", path, strerror(errno));
-				log_tag("error:%s:%s: Empty file stat error\n", disk->name, esc_tag(file->sub, esc_buffer));
+				log_tag("empty_error:%s:%s: Empty file stat error\n", disk->name, esc_tag(file->sub, esc_buffer));
 				++error;
 			} else if (!S_ISREG(st.st_mode)) {
 				unsuccessful = 1;
 
-				log_tag("error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub, esc_buffer));
+				log_tag("empty_error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub, esc_buffer));
 				++error;
 			} else if (st.st_size != 0) {
 				unsuccessful = 1;
 
-				log_tag("error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), (uint64_t)st.st_size);
+				log_tag("empty_error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), (uint64_t)st.st_size);
 				++error;
 			}
 
@@ -1583,7 +1583,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				log_tag("fixed:%s:%s: Fixed empty file\n", disk->name, esc_tag(file->sub, esc_buffer));
+				log_tag("empty_fixed:%s:%s: Fixed empty file\n", disk->name, esc_tag(file->sub, esc_buffer));
 				++recovered_error;
 
 				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
