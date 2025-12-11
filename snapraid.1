@@ -151,7 +151,7 @@ Permissions, ownership, and extended attributes are not saved.
 .PD
 .SH GETTING STARTED 
 To use SnapRAID, you need to first select one disk in your disk array
-to dedicate to \[dq]parity\[dq] information. With one disk for parity, you
+to dedicate to \`parity\` information. With one disk for parity, you
 will be able to recover from a single disk failure, similar to RAID5.
 .PP
 If you want to recover from more disk failures, similar to RAID6,
@@ -162,20 +162,20 @@ As parity disks, you must pick the largest disks in the array,
 as the parity information may grow to the size of the largest data
 disk in the array.
 .PP
-These disks will be dedicated to storing the \[dq]parity\[dq] files.
+These disks will be dedicated to storing the \`parity\` files.
 You should not store your data on them.
 .PP
-Then, you must define the \[dq]data\[dq] disks that you want to protect
+Then, you must define the \`data\` disks that you want to protect
 with SnapRAID. The protection is more effective if these disks
 contain data that rarely changes. For this reason, it\'s better to
 NOT include the Windows C:\\ disk or the Unix /home, /var, and /tmp
 directories.
 .PP
-The list of files is saved in the \[dq]content\[dq] files, usually
+The list of files is saved in the \`content\` files, usually
 stored on the data, parity, or boot disks.
 This file contains the details of your backup, including all the
 checksums to verify its integrity.
-The \[dq]content\[dq] file is stored in multiple copies, and each copy must
+The \`content\` file is stored in multiple copies, and each copy must
 be on a different disk to ensure that, even in case of multiple
 disk failures, at least one copy is available.
 .PP
@@ -275,7 +275,7 @@ https://www.google.com/search?q=Windows+mount+point
 .PD
 .RE
 .PP
-At this point, you are ready to run the \[dq]sync\[dq] command to build the
+At this point, you are ready to run the \`sync\` command to build the
 parity information.
 .PP
 .RS 4
@@ -294,10 +294,10 @@ will resume where it was interrupted.
 When this command completes, your data is SAFE.
 .PP
 Now you can start using your array as you like and periodically
-update the parity information by running the \[dq]sync\[dq] command.
+update the parity information by running the \`sync\` command.
 .SS Scrubbing 
 To periodically check the data and parity for errors, you can
-run the \[dq]scrub\[dq] command.
+run the \`scrub\` command.
 .PP
 .RS 4
 snapraid scrub
@@ -306,7 +306,7 @@ snapraid scrub
 .RE
 .PP
 This command compares the data in your array with the hash computed
-during the \[dq]sync\[dq] command to verify integrity.
+during the \`sync\` command to verify integrity.
 .PP
 Each run of the command checks approximately 8% of the array, excluding data
 already scrubbed in the previous 10 days.
@@ -321,8 +321,8 @@ snapraid \-p 5 \-o 20 scrub
 .RE
 .PP
 If silent or input/output errors are found during the process,
-the corresponding blocks are marked as bad in the \[dq]content\[dq] file
-and listed in the \[dq]status\[dq] command.
+the corresponding blocks are marked as bad in the \`content\` file
+and listed in the \`status\` command.
 .PP
 .RS 4
 snapraid status
@@ -330,7 +330,7 @@ snapraid status
 .PD
 .RE
 .PP
-To fix them, you can use the \[dq]fix\[dq] command, filtering for bad blocks with
+To fix them, you can use the \`fix\` command, filtering for bad blocks with
 the \-e, \-\-filter\-error option:
 .PP
 .RS 4
@@ -339,7 +339,7 @@ snapraid \-e fix
 .PD
 .RE
 .PP
-At the next \[dq]scrub,\[dq] the errors will disappear from the \[dq]status\[dq] report
+At the next \`scrub\`, the errors will disappear from the \`status\` report
 if they are truly fixed. To make it faster, you can use \-p bad to scrub
 only blocks marked as bad.
 .PP
@@ -349,8 +349,8 @@ snapraid \-p bad scrub
 .PD
 .RE
 .PP
-Running \[dq]scrub\[dq] on an unsynced array may report errors caused by
-removed or modified files. These errors are reported in the \[dq]scrub\[dq]
+Running \`scrub\` on an unsynced array may report errors caused by
+removed or modified files. These errors are reported in the \`scrub\`
 output, but the related blocks are not marked as bad.
 .SS Pooling 
 Note: The pooling feature described below has been superseded by the
@@ -363,10 +363,10 @@ protection and is commonly used in setups like OpenMediaVault (OMV)
 or custom NAS configurations.
 .PP
 To have all the files in your array shown in the same directory tree,
-you can enable the \[dq]pooling\[dq] feature. It creates a read\-only virtual
+you can enable the \`pooling\` feature. It creates a read\-only virtual
 view of all the files in your array using symbolic links.
 .PP
-You can configure the \[dq]pooling\[dq] directory in the configuration file with:
+You can configure the \`pooling\` directory in the configuration file with:
 .PP
 .RS 4
 pool /pool
@@ -382,7 +382,7 @@ pool C:\\pool
 .PD
 .RE
 .PP
-and then run the \[dq]pool\[dq] command to create or update the virtual view.
+and then run the \`pool\` command to create or update the virtual view.
 .PP
 .RS 4
 snapraid pool
@@ -442,10 +442,10 @@ In Windows, sharing symbolic links over a network requires clients to
 resolve them remotely. To enable this, besides sharing the pool directory,
 you must also share all the disks independently, using the disk names
 defined in the configuration file as share points. You must also specify
-in the \[dq]share\[dq] option of the configuration file the Windows UNC path that
+in the \`share\` option of the configuration file the Windows UNC path that
 remote clients need to use to access these shared disks.
 .PP
-For example, operating from a server named \[dq]darkstar\[dq], you can use
+For example, operating from a server named \`darkstar\`, you can use
 the options:
 .PP
 .RS 4
@@ -550,11 +550,11 @@ Then proceed with the following steps.
 You need some space to recover, ideally on additional
 spare disks, but an external USB disk or remote disk will suffice.
 .PP
-Modify the SnapRAID configuration file to make the \[dq]data\[dq] or \[dq]parity\[dq]
+Modify the SnapRAID configuration file to make the \`data\` or \`parity\`
 option of the failed disk point to a location with enough empty
 space to recover the files.
 .PP
-For example, if disk \[dq]d1\[dq] has failed, change from:
+For example, if disk \`d1\` has failed, change from:
 .PP
 .RS 4
 data d1 /mnt/disk1/
@@ -570,7 +570,7 @@ data d1 /mnt/new_spare_disk/
 .PD
 .RE
 .PP
-If the disk to recover is a parity disk, update the appropriate \[dq]parity\[dq]
+If the disk to recover is a parity disk, update the appropriate \`parity\`
 option.
 If you have multiple failed disks, update all their configuration options.
 .SS STEP 2 \-> Fix 
@@ -582,8 +582,8 @@ snapraid \-d NAME \-l fix.log fix
 .PD
 .RE
 .PP
-Where NAME is the name of the disk, such as \[dq]d1\[dq] in our previous example.
-If the disk to recover is a parity disk, use the names \[dq]parity\[dq], \[dq]2\-parity\[dq],
+Where NAME is the name of the disk, such as \`d1\` in our previous example.
+If the disk to recover is a parity disk, use the names \`parity\`, \`2\-parity\`,
 etc.
 If you have multiple failed disks, use multiple \-d options to specify all
 of them.
@@ -594,26 +594,26 @@ Ensure you have a few gigabytes free to store the fix.log file.
 Run it from a disk with sufficient free space.
 .PP
 Now you have recovered all that is recoverable. If some files are partially
-or totally unrecoverable, they will be renamed by adding the \[dq].unrecoverable\[dq]
+or totally unrecoverable, they will be renamed by adding the \`.unrecoverable\`
 extension.
 .PP
 You can find a detailed list of all unrecoverable blocks in the fix.log file
-by checking all lines starting with \[dq]unrecoverable:\[dq].
+by checking all lines starting with \`unrecoverable:\`.
 .PP
 If you are not satisfied with the recovery, you can retry it as many
 times as you wish.
 .PP
 For example, if you have removed files from the array after the last
-\[dq]sync\[dq], this may result in some files not being recovered.
-In this case, you can retry the \[dq]fix\[dq] using the \-i, \-\-import option,
+\`sync\`, this may result in some files not being recovered.
+In this case, you can retry the \`fix\` using the \-i, \-\-import option,
 specifying where these files are now to include them again in the
 recovery process.
 .PP
 If you are satisfied with the recovery, you can proceed further,
-but note that after syncing, you cannot retry the \[dq]fix\[dq] command
+but note that after syncing, you cannot retry the \`fix\` command
 anymore!
 .SS STEP 3 \-> Check 
-As a cautious check, you can now run a \[dq]check\[dq] command to ensure that
+As a cautious check, you can now run a \`check\` command to ensure that
 everything is correct on the recovered disk.
 .PP
 .RS 4
@@ -622,7 +622,7 @@ snapraid \-d NAME \-a check
 .PD
 .RE
 .PP
-Where NAME is the name of the disk, such as \[dq]d1\[dq] in our previous example.
+Where NAME is the name of the disk, such as \`d1\` in our previous example.
 .PP
 The \-d and \-a options tell SnapRAID to check only the specified disk
 and ignore all parity data.
@@ -630,7 +630,7 @@ and ignore all parity data.
 This command will take a long time, but if you are not overly cautious,
 you can skip it.
 .SS STEP 4 \-> Sync 
-Run the \[dq]sync\[dq] command to resynchronize the array with the new disk.
+Run the \`sync\` command to resynchronize the array with the new disk.
 .PP
 .RS 4
 snapraid sync
@@ -643,15 +643,15 @@ If everything is recovered, this command is immediate.
 SnapRAID provides a few simple commands that allow you to:
 .PD 0
 .IP \(bu
-Print the status of the array \-> \[dq]status\[dq]
+Print the status of the array \-> \`status\`
 .IP \(bu
-Control the disks \-> \[dq]smart\[dq], \[dq]probe\[dq], \[dq]up\[dq], \[dq]down\[dq]
+Control the disks \-> \`smart\`, \`probe\`, \`up\`, \`down\`
 .IP \(bu
-Make a backup/snapshot \-> \[dq]sync\[dq]
+Make a backup/snapshot \-> \`sync\`
 .IP \(bu
-Periodically check data \-> \[dq]scrub\[dq]
+Periodically check data \-> \`scrub\`
 .IP \(bu
-Restore the last backup/snapshot \-> \[dq]fix\[dq].
+Restore the last backup/snapshot \-> \`fix\`.
 .PD
 .PP
 Commands must be written in lowercase.
@@ -663,10 +663,10 @@ the blocks are without checking, and all recorded silent
 errors encountered while scrubbing.
 .PP
 The information presented refers to the latest time you
-ran \[dq]sync\[dq]. Later modifications are not taken into account.
+ran \`sync\`. Later modifications are not taken into account.
 .PP
 If bad blocks were detected, their block numbers are listed.
-To fix them, you can use the \[dq]fix \-e\[dq] command.
+To fix them, you can use the \`fix \-e\` command.
 .PP
 It also shows a graph representing the last time each block
 was scrubbed or synced. Scrubbed blocks are shown with \'*\',
@@ -689,7 +689,7 @@ https://www.backblaze.com/hard\-drive\-test\-data.html
 .PD
 .RE
 .PP
-If SMART reports that a disk is failing, \[dq]FAIL\[dq] or \[dq]PREFAIL\[dq] is printed
+If SMART reports that a disk is failing, \`FAIL\` or \`PREFAIL\` is printed
 for that disk, and SnapRAID returns with an error.
 In this case, immediate replacement of the disk is highly recommended.
 .PP
@@ -713,25 +713,25 @@ If the \-v, \-\-verbose option is specified, a deeper statistical analysis
 is provided. This analysis can help you decide if you need more
 or less parity.
 .PP
-This command uses the \[dq]smartctl\[dq] tool and is equivalent to running
-\[dq]smartctl \-a\[dq] on all devices.
+This command uses the \`smartctl\` tool and is equivalent to running
+\`smartctl \-a\` on all devices.
 .PP
 If your devices are not auto\-detected correctly, you can specify
-a custom command using the \[dq]smartctl\[dq] option in the configuration
+a custom command using the \`smartctl\` option in the configuration
 file.
 .PP
 Nothing is modified.
 .SS probe 
 Prints the POWER state of all disks in the system.
 .PP
-\[dq]Standby\[dq] means the disk is not spinning. \[dq]Active\[dq] means
+\`Standby\` means the disk is not spinning. \`Active\` means
 the disk is spinning.
 .PP
-This command uses the \[dq]smartctl\[dq] tool and is equivalent to running
-\[dq]smartctl \-n standby \-i\[dq] on all devices.
+This command uses the \`smartctl\` tool and is equivalent to running
+\`smartctl \-n standby \-i\` on all devices.
 .PP
 If your devices are not auto\-detected correctly, you can specify
-a custom command using the \[dq]smartctl\[dq] option in the configuration
+a custom command using the \`smartctl\` option in the configuration
 file.
 .PP
 Nothing is modified.
@@ -747,19 +747,19 @@ Nothing is modified.
 .SS down 
 Spins down all the disks of the array.
 .PP
-This command uses the \[dq]smartctl\[dq] tool and is equivalent to running
-\[dq]smartctl \-s standby,now\[dq] on all devices.
+This command uses the \`smartctl\` tool and is equivalent to running
+\`smartctl \-s standby,now\` on all devices.
 .PP
 You can spin down only specific disks using the \-d, \-\-filter\-disk
 option.
 .PP
 To automatically spin down on error, you can use the \-s, \-\-spin\-down\-on\-error
-option with any other command, which is equivalent to running \[dq]down\[dq] manually
+option with any other command, which is equivalent to running \`down\` manually
 when an error occurs.
 .PP
 Nothing is modified.
 .SS diff 
-Lists all the files modified since the last \[dq]sync\[dq] that need to have
+Lists all the files modified since the last \`sync\` that need to have
 their parity data recomputed.
 .PP
 This command doesn\'t check the file data, but only the file timestamp,
@@ -791,7 +791,7 @@ and inode, but a different directory.
 .I copied
 Files copied on the same or a different disk. Note that if
 they are truly moved to a different disk, they will also be
-counted in \[dq]removed\[dq].
+counted in \`removed\`.
 They are identified by having the same name, size, and
 timestamp. If the sub\-second timestamp is zero,
 the full path must match, not just the name.
@@ -802,7 +802,7 @@ These are usually files restored after being deleted.
 .PD
 .RE
 .PP
-If a \[dq]sync\[dq] is required, the process return code is 2, instead of the
+If a \`sync\` is required, the process return code is 2, instead of the
 default 0. The return code 1 is used for a generic error condition.
 .PP
 Nothing is modified.
@@ -813,7 +813,7 @@ data is updated.
 .PP
 You can stop this process at any time by pressing Ctrl+C,
 without losing the work already done.
-At the next run, the \[dq]sync\[dq] process will resume where
+At the next run, the \`sync\` process will resume where
 it was interrupted.
 .PP
 If silent or input/output errors are found during the process,
@@ -828,7 +828,7 @@ same inode, the parity is not recomputed.
 If the file is moved to another disk, the parity is recomputed,
 but the previously computed hash information is retained.
 .PP
-The \[dq]content\[dq] and \[dq]parity\[dq] files are modified if necessary.
+The \`content\` and \`parity\` files are modified if necessary.
 The files in the array are NOT modified.
 .SS scrub 
 Scrubs the array, checking for silent or input/output errors in data
@@ -850,50 +850,50 @@ If you specify a percentage amount, you can also use the \-o, \-\-older\-than
 option to define how old the block should be.
 The oldest blocks are scrubbed first, ensuring an optimal check.
 If you want to scrub only the just\-synced blocks not yet scrubbed,
-use the \[dq]\-p new\[dq] option.
+use the \`\-p new\` option.
 .PP
-To get details of the scrub status, use the \[dq]status\[dq] command.
+To get details of the scrub status, use the \`status\` command.
 .PP
 For any silent or input/output error found, the corresponding blocks
-are marked as bad in the \[dq]content\[dq] file.
-These bad blocks are listed in \[dq]status\[dq] and can be fixed with \[dq]fix \-e\[dq].
+are marked as bad in the \`content\` file.
+These bad blocks are listed in \`status\` and can be fixed with \`fix \-e\`.
 After the fix, at the next scrub, they will be rechecked, and if found
 corrected, the bad mark will be removed.
-To scrub only the bad blocks, you can use the \[dq]scrub \-p bad\[dq] command.
+To scrub only the bad blocks, you can use the \`scrub \-p bad\` command.
 .PP
-It\'s recommended to run \[dq]scrub\[dq] only on a synced array to avoid
+It\'s recommended to run \`scrub\` only on a synced array to avoid
 reported errors caused by unsynced data. These errors are recognized
 as not being silent errors, and the blocks are not marked as bad,
 but such errors are reported in the output of the command.
 .PP
-The \[dq]content\[dq] file is modified to update the time of the last check
+The \`content\` file is modified to update the time of the last check
 for each block and to mark bad blocks.
-The \[dq]parity\[dq] files are NOT modified.
+The \`parity\` files are NOT modified.
 The files in the array are NOT modified.
 .SS fix 
 Fixes all the files and the parity data.
 .PP
 All files and parity data are compared with the snapshot
-state saved in the last \[dq]sync\[dq].
+state saved in the last \`sync\`.
 If a difference is found, it is reverted to the stored snapshot.
 .PP
-WARNING! The \[dq]fix\[dq] command does not differentiate between errors and
+WARNING! The \`fix\` command does not differentiate between errors and
 intentional modifications. It unconditionally reverts the file state
-to the last \[dq]sync\[dq].
+to the last \`sync\`.
 .PP
 If no other option is specified, the entire array is processed.
 Use the filter options to select a subset of files or disks to operate on.
 .PP
-To fix only the blocks marked bad during \[dq]sync\[dq] and \[dq]scrub\[dq],
+To fix only the blocks marked bad during \`sync\` and \`scrub\`,
 use the \-e, \-\-filter\-error option.
 Unlike other filter options, this one applies fixes only to files that are
-unchanged since the latest \[dq]sync\[dq].
+unchanged since the latest \`sync\`.
 .PP
 SnapRAID renames all files that cannot be fixed by adding the
-\[dq].unrecoverable\[dq] extension.
+\`.unrecoverable\` extension.
 .PP
 Before fixing, the entire array is scanned to find any files moved
-since the last \[dq]sync\[dq] operation.
+since the last \`sync\` operation.
 These files are identified by their timestamp, ignoring their name
 and directory, and are used in the recovery process if necessary.
 If you moved some of them outside the array, you can use the \-i, \-\-import
@@ -901,18 +901,18 @@ option to specify additional directories to scan.
 .PP
 Files are identified only by path, not by inode.
 .PP
-The \[dq]content\[dq] file is NOT modified.
-The \[dq]parity\[dq] files are modified if necessary.
+The \`content\` file is NOT modified.
+The \`parity\` files are modified if necessary.
 The files in the array are modified if necessary.
 .SS check 
 Verifies all the files and the parity data.
 .PP
-It works like \[dq]fix\[dq], but it only simulates a recovery and no changes
+It works like \`fix\`, but it only simulates a recovery and no changes
 are written to the array.
 .PP
 This command is primarily intended for manual verification,
 such as after a recovery process or in other special conditions.
-For periodic and scheduled checks, use \[dq]scrub\[dq].
+For periodic and scheduled checks, use \`scrub\`.
 .PP
 If you use the \-a, \-\-audit\-only option, only the file
 data is checked, and the parity data is ignored for a
@@ -923,7 +923,7 @@ Files are identified only by path, not by inode.
 Nothing is modified.
 .SS list 
 Lists all the files contained in the array at the time of the
-last \[dq]sync\[dq].
+last \`sync\`.
 .PP
 With \-v or \-\-verbose, the subsecond time is also shown.
 .PP
@@ -936,7 +936,7 @@ precomputed hashes are used.
 Nothing is modified.
 .SS pool 
 Creates or updates a virtual view of all
-the files in your disk array in the \[dq]pooling\[dq] directory.
+the files in your disk array in the \`pooling\` directory.
 .PP
 The files are not copied but linked using
 symbolic links.
@@ -988,89 +988,89 @@ If you are already using the optimal hash, this command
 does nothing and informs you that no action is needed.
 .PP
 The rehash is not performed immediately but takes place
-progressively during \[dq]sync\[dq] and \[dq]scrub\[dq].
+progressively during \`sync\` and \`scrub\`.
 .PP
-You can check the rehash state using \[dq]status\[dq].
+You can check the rehash state using \`status\`.
 .PP
 During the rehash, SnapRAID maintains full functionality,
-with the only exception that \[dq]dup\[dq] cannot detect duplicated
+with the only exception that \`dup\` cannot detect duplicated
 files using a different hash.
 .SH OPTIONS 
 SnapRAID provides the following options:
 .TP
 .B \-c, \-\-conf CONFIG
 Selects the configuration file to use. If not specified, in Unix
-it uses the file \[dq]/usr/local/etc/snapraid.conf\[dq] if it exists,
-otherwise \[dq]/etc/snapraid.conf\[dq].
-In Windows, it uses the file \[dq]snapraid.conf\[dq] in the same
-directory as \[dq]snapraid.exe\[dq].
+it uses the file \`/usr/local/etc/snapraid.conf\` if it exists,
+otherwise \`/etc/snapraid.conf\`.
+In Windows, it uses the file \`snapraid.conf\` in the same
+directory as \`snapraid.exe\`.
 .TP
 .B \-f, \-\-filter PATTERN
-Filters the files to process in \[dq]check\[dq] and \[dq]fix\[dq].
+Filters the files to process in \`check\` and \`fix\`.
 Only the files matching the specified pattern are processed.
 This option can be used multiple times.
 See the PATTERN section for more details on
 pattern specifications.
 In Unix, ensure globbing characters are quoted if used.
-This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
-It cannot be used with \[dq]sync\[dq] and \[dq]scrub\[dq], as they always
+This option can be used only with \`check\` and \`fix\`.
+It cannot be used with \`sync\` and \`scrub\`, as they always
 process the entire array.
 .TP
 .B \-d, \-\-filter\-disk NAME
-Filters the disks to process in \[dq]check\[dq], \[dq]fix\[dq], \[dq]up\[dq], and \[dq]down\[dq].
+Filters the disks to process in \`check\`, \`fix\`, \`up\`, and \`down\`.
 You must specify a disk name as defined in the configuration
 file.
-You can also specify parity disks with the names: \[dq]parity\[dq], \[dq]2\-parity\[dq],
-\[dq]3\-parity\[dq], etc., to limit operations to a specific parity disk.
+You can also specify parity disks with the names: \`parity\`, \`2\-parity\`,
+\`3\-parity\`, etc., to limit operations to a specific parity disk.
 If you combine multiple \-\-filter, \-\-filter\-disk, and \-\-filter\-missing options,
 only files matching all the filters are selected.
 This option can be used multiple times.
-This option can be used only with \[dq]check\[dq], \[dq]fix\[dq], \[dq]up\[dq], and \[dq]down\[dq].
-It cannot be used with \[dq]sync\[dq] and \[dq]scrub\[dq], as they always
+This option can be used only with \`check\`, \`fix\`, \`up\`, and \`down\`.
+It cannot be used with \`sync\` and \`scrub\`, as they always
 process the entire array.
 .TP
 .B \-m, \-\-filter\-missing
-Filters the files to process in \[dq]check\[dq] and \[dq]fix\[dq].
+Filters the files to process in \`check\` and \`fix\`.
 Only the files missing or deleted from the array are processed.
-When used with \[dq]fix\[dq], this acts as an \[dq]undelete\[dq] command.
+When used with \`fix\`, this acts as an \`undelete\` command.
 If you combine multiple \-\-filter, \-\-filter\-disk, and \-\-filter\-missing options,
 only files matching all the filters are selected.
-This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
-It cannot be used with \[dq]sync\[dq] and \[dq]scrub\[dq], as they always
+This option can be used only with \`check\` and \`fix\`.
+It cannot be used with \`sync\` and \`scrub\`, as they always
 process the entire array.
 .TP
 .B \-e, \-\-filter\-error
-Processes the files with errors in \[dq]check\[dq] and \[dq]fix\[dq].
+Processes the files with errors in \`check\` and \`fix\`.
 It processes only files that have blocks marked with silent
-or input/output errors during \[dq]sync\[dq] and \[dq]scrub\[dq], as listed in \[dq]status\[dq].
-This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
+or input/output errors during \`sync\` and \`scrub\`, as listed in \`status\`.
+This option can be used only with \`check\` and \`fix\`.
 .TP
 .B \-p, \-\-plan PERC|bad|new|full
 Selects the scrub plan. If PERC is a numeric value from 0 to 100,
 it is interpreted as the percentage of blocks to scrub.
 Instead of a percentage, you can specify a plan:
-\[dq]bad\[dq] scrubs bad blocks, \[dq]new\[dq] scrubs blocks not yet scrubbed,
-and \[dq]full\[dq] scrubs everything.
-This option can be used only with \[dq]scrub\[dq].
+\`bad\` scrubs bad blocks, \`new\` scrubs blocks not yet scrubbed,
+and \`full\` scrubs everything.
+This option can be used only with \`scrub\`.
 .TP
 .B \-o, \-\-older\-than DAYS
-Selects the oldest part of the array to process in \[dq]scrub\[dq].
+Selects the oldest part of the array to process in \`scrub\`.
 DAYS is the minimum age in days for a block to be scrubbed;
 the default is 10.
 Blocks marked as bad are always scrubbed regardless of this option.
-This option can be used only with \[dq]scrub\[dq].
+This option can be used only with \`scrub\`.
 .TP
 .B \-a, \-\-audit\-only
-In \[dq]check\[dq], verifies the hash of the files without
+In \`check\`, verifies the hash of the files without
 checking the parity data.
 If you are interested only in checking the file data, this
 option can significantly speed up the checking process.
-This option can be used only with \[dq]check\[dq].
+This option can be used only with \`check\`.
 .TP
 .B \-h, \-\-pre\-hash
-In \[dq]sync\[dq], runs a preliminary hashing phase of all new data
+In \`sync\`, runs a preliminary hashing phase of all new data
 for additional verification before the parity computation.
-Usually, in \[dq]sync\[dq], no preliminary hashing is done, and the new
+Usually, in \`sync\`, no preliminary hashing is done, and the new
 data is hashed just before the parity computation when it is read
 for the first time.
 This process occurs when the system is under
@@ -1078,21 +1078,21 @@ heavy load, with all disks spinning and a busy CPU.
 This is an extreme condition for the machine, and if it has a
 latent hardware problem, silent errors may go undetected
 because the data is not yet hashed.
-To avoid this risk, you can enable the \[dq]pre\-hash\[dq] mode to have
+To avoid this risk, you can enable the \`pre\-hash\` mode to have
 all the data read twice to ensure its integrity.
 This option also verifies files moved within the array
 to ensure the move operation was successful and, if necessary,
 allows you to run a fix operation before proceeding.
-This option can be used only with \[dq]sync\[dq].
+This option can be used only with \`sync\`.
 .TP
 .B \-i, \-\-import DIR
 Imports from the specified directory any files deleted
-from the array after the last \[dq]sync\[dq].
-If you still have such files, they can be used by \[dq]check\[dq]
-and \[dq]fix\[dq] to improve the recovery process.
+from the array after the last \`sync\`.
+If you still have such files, they can be used by \`check\`
+and \`fix\` to improve the recovery process.
 The files are read, including in subdirectories, and are
 identified regardless of their name.
-This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
+This option can be used only with \`check\` and \`fix\`.
 .TP
 .B \-s, \-\-spin\-down\-on\-error
 On any error, spins down all managed disks before exiting with
@@ -1135,7 +1135,7 @@ This allows you to easily detect when, after a system crash,
 some accessed files were truncated.
 This is a possible condition in Linux with the ext3/ext4
 file systems.
-This option can be used only with \[dq]sync\[dq].
+This option can be used only with \`sync\`.
 .TP
 .B \-E, \-\-force\-empty
 Forces the insecure operation of syncing a disk with all
@@ -1145,7 +1145,7 @@ on the disk are missing or rewritten, it stops proceeding
 unless you specify this option.
 This allows you to easily detect when a data file system is not
 mounted.
-This option can be used only with \[dq]sync\[dq].
+This option can be used only with \`sync\`.
 .TP
 .B \-U, \-\-force\-uuid
 Forces the insecure operation of syncing, checking, and fixing
@@ -1157,8 +1157,8 @@ wrong mount points.
 It is, however, allowed to have a single UUID change with
 single parity, and more with multiple parity, because this is
 the normal case when replacing disks after a recovery.
-This option can be used only with \[dq]sync\[dq], \[dq]check\[dq], or
-\[dq]fix\[dq].
+This option can be used only with \`sync\`, \`check\`, or
+\`fix\`.
 .TP
 .B \-D, \-\-force\-device
 Forces the insecure operation of fixing with inaccessible disks
@@ -1167,10 +1167,10 @@ For example, if you lost two data disks and have a spare disk to recover
 only the first one, you can ignore the second inaccessible disk.
 Or, if you want to recover a disk in the free space left on an
 already used disk, sharing the same physical device.
-This option can be used only with \[dq]fix\[dq].
+This option can be used only with \`fix\`.
 .TP
 .B \-N, \-\-force\-nocopy
-In \[dq]sync\[dq], \[dq]check\[dq], and \[dq]fix\[dq], disables the copy detection heuristic.
+In \`sync\`, \`check\`, and \`fix\`, disables the copy detection heuristic.
 Without this option, SnapRAID assumes that files with the same
 attributes, such as name, size, and timestamp, are copies with the
 same data.
@@ -1180,27 +1180,27 @@ to detect silent errors or to recover missing files.
 In some rare cases, this behavior may result in false positives
 or a slow process due to many hash verifications, and this
 option allows you to resolve such issues.
-This option can be used only with \[dq]sync\[dq], \[dq]check\[dq], and \[dq]fix\[dq].
+This option can be used only with \`sync\`, \`check\`, and \`fix\`.
 .TP
 .B \-F, \-\-force\-full
-In \[dq]sync\[dq], forces a full recomputation of the parity.
+In \`sync\`, forces a full recomputation of the parity.
 This option can be used when you add a new parity level or if
 you reverted to an old content file using more recent parity data.
 Instead of recreating the parity from scratch, this allows
 you to reuse the hashes present in the content file to validate data
-and maintain data protection during the \[dq]sync\[dq] process using
+and maintain data protection during the \`sync\` process using
 the existing parity data.
-This option can be used only with \[dq]sync\[dq].
+This option can be used only with \`sync\`.
 .TP
 .B \-R, \-\-force\-realloc
-In \[dq]sync\[dq], forces a full reallocation of files and rebuild of the parity.
+In \`sync\`, forces a full reallocation of files and rebuild of the parity.
 This option can be used to completely reallocate all files,
 removing fragmentation, while reusing the hashes present in the content
 file to validate data.
-This option can be used only with \[dq]sync\[dq].
+This option can be used only with \`sync\`.
 WARNING! This option is for experts only, and it is highly
 recommended not to use it.
-You DO NOT have data protection during the \[dq]sync\[dq] operation.
+You DO NOT have data protection during the \`sync\` operation.
 .TP
 .B \-l, \-\-log FILE
 Writes a detailed log to the specified file.
@@ -1214,19 +1214,19 @@ in append mode. Occurrences of \'%D\' and \'%T\' in the name are
 replaced with the date and time in the format YYYYMMDD and
 HHMMSS. In Windows batch files, you must double
 the \'%\' character, e.g., result\-%%D.log. To use \'>>\', you must
-enclose the name in quotes, e.g., \[dq]>>result.log\[dq].
+enclose the name in quotes, e.g., \`\[dq]>>result.log\[dq]\`.
 To output the log to standard output or standard error,
-you can use \[dq]>&1\[dq] and \[dq]>&2\[dq], respectively.
+you can use \`\[dq]>&1\[dq]\` and \`\[dq]>&2\[dq]\`, respectively.
 See the snapraid_log.txt file or man page for log tag descriptions.
 .TP
 .B \-L, \-\-error\-limit NUMBER
 Sets a new error limit before stopping execution.
 By default, SnapRAID stops if it encounters more than 100
 input/output errors, indicating that a disk is likely failing.
-This option affects \[dq]sync\[dq] and \[dq]scrub\[dq], which are allowed
+This option affects \`sync\` and \`scrub\`, which are allowed
 to continue after the first set of disk errors to try
 to complete their operations.
-However, \[dq]check\[dq] and \[dq]fix\[dq] always stop at the first error.
+However, \`check\` and \`fix\` always stop at the first error.
 .TP
 .B \-S, \-\-start BLKSTART
 Starts processing from the specified
@@ -1270,10 +1270,10 @@ Prints the program version.
 SnapRAID requires a configuration file to know where your disk array
 is located and where to store the parity information.
 .PP
-In Unix, it uses the file \[dq]/usr/local/etc/snapraid.conf\[dq] if it exists,
-otherwise \[dq]/etc/snapraid.conf\[dq].
-In Windows, it uses the file \[dq]snapraid.conf\[dq] in the same
-directory as \[dq]snapraid.exe\[dq].
+In Unix, it uses the file \`/usr/local/etc/snapraid.conf\` if it exists,
+otherwise \`/etc/snapraid.conf\`.
+In Windows, it uses the file \`snapraid.conf\` in the same
+directory as \`snapraid.exe\`.
 .PP
 It must contain the following options (case\-sensitive):
 .SS parity FILE [,FILE] ... 
@@ -1344,7 +1344,7 @@ files present in your disk array.
 It can be placed on a disk used for data, parity, or
 any other disk available.
 If you use a data disk, this file is automatically excluded
-from the \[dq]sync\[dq] process.
+from the \`sync\` process.
 .PP
 This option is mandatory and can be used multiple times to save
 multiple copies of the same file.
@@ -1368,18 +1368,18 @@ In the case of renaming, the association is done using the stored
 UUID of the disks.
 .SS nohidden 
 Excludes all hidden files and directories.
-In Unix, hidden files are those starting with \[dq].\[dq].
+In Unix, hidden files are those starting with \`.\`.
 In Windows, they are those with the hidden attribute.
 .SS exclude/include PATTERN 
 Defines the file or directory patterns to exclude or include
 in the sync process.
 All patterns are processed in the specified order.
 .PP
-If the first pattern that matches is an \[dq]exclude\[dq] one, the file
-is excluded. If it is an \[dq]include\[dq] one, the file is included.
+If the first pattern that matches is an \`exclude\` one, the file
+is excluded. If it is an \`include\` one, the file is included.
 If no pattern matches, the file is excluded if the last pattern
-specified is an \[dq]include\[dq], or included if the last pattern
-specified is an \[dq]exclude\[dq].
+specified is an \`include\`, or included if the last pattern
+specified is an \`exclude\`.
 .PP
 See the PATTERN section for more details on pattern
 specifications.
@@ -1411,7 +1411,7 @@ wasted for each file. For example, with 100,000 files and a 256 KiB
 block size, you will waste 12.8 GB of parity, which may result
 in 12.8 GB less space available on the data disk.
 .PP
-You can check the amount of wasted space on each disk using \[dq]status\[dq].
+You can check the amount of wasted space on each disk using \`status\`.
 This is the amount of space you must leave free on the data
 disks or use for files not included in the array.
 If this value is negative, it means you are close to filling
@@ -1480,7 +1480,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 .SS autosave SIZE_IN_GIGABYTES 
 Automatically saves the state when syncing or scrubbing after the
 specified amount of GB processed.
-This option is useful to avoid restarting long \[dq]sync\[dq]
+This option is useful to avoid restarting long \`sync\`
 commands from scratch if interrupted by a machine crash or any other event.
 .SS temp_limit TEMPERATURE_CELSIUS 
 Sets the maximum allowed disk temperature in Celsius. When specified,
@@ -1488,7 +1488,7 @@ SnapRAID periodically checks the temperature of all disks using the
 smartctl tool. The current disk temperatures are displayed while
 SnapRAID is operating. If any disk exceeds this limit, all operations
 stop, and the disks are spun down (put into standby) for the duration
-defined by the \[dq]temp_sleep\[dq] option. After the sleep period, operations
+defined by the \`temp_sleep\` option. After the sleep period, operations
 resume, potentially pausing again if the temperature limit is reached
 once more.
 .PP
@@ -1516,7 +1516,7 @@ reached. During this period, the disks remain spun down. The default
 is 5 minutes.
 .SS pool DIR 
 Defines the pooling directory where the virtual view of the disk
-array is created using the \[dq]pool\[dq] command.
+array is created using the \`pool\` command.
 .PP
 The directory must already exist.
 .SS share UNC_DIR 
@@ -1528,7 +1528,7 @@ Without this option, the symbolic links generated use only local paths,
 which does not allow sharing the pool directory over the network.
 .PP
 The symbolic links are formed using the specified UNC path, adding the
-disk name as specified in the \[dq]data\[dq] option, and finally adding the
+disk name as specified in the \`data\` option, and finally adding the
 file directory and name.
 .PP
 This option is required only for Windows.
@@ -1538,13 +1538,13 @@ each disk. This may be required for RAID controllers and some USB
 disks that cannot be auto\-detected. The %s placeholder is replaced by
 the device name, but it is optional for fixed devices like RAID controllers.
 .PP
-DISK is the same disk name specified in the \[dq]data\[dq] option.
-PARITY is one of the parity names: \[dq]parity\[dq], \[dq]2\-parity\[dq], \[dq]3\-parity\[dq],
-\[dq]4\-parity\[dq], \[dq]5\-parity\[dq], \[dq]6\-parity\[dq], or \[dq]z\-parity\[dq].
+DISK is the same disk name specified in the \`data\` option.
+PARITY is one of the parity names: \`parity\`, \`2\-parity\`, \`3\-parity\`,
+\`4\-parity\`, \`5\-parity\`, \`6\-parity\`, or \`z\-parity\`.
 .PP
-In the specified OPTIONS, the \[dq]%s\[dq] string is replaced by the
+In the specified OPTIONS, the \`%s\` string is replaced by the
 device name. For RAID controllers, the device is
-likely fixed, and you may not need to use \[dq]%s\[dq].
+likely fixed, and you may not need to use \`%s\`.
 .PP
 Refer to the smartmontools documentation for possible options:
 .PP
@@ -1570,12 +1570,12 @@ Ignores the specified SMART attribute when computing the probability
 of disk failure. This option is useful if a disk reports unusual or
 misleading values for a particular attribute.
 .PP
-DISK is the same disk name specified in the \[dq]data\[dq] option.
-PARITY is one of the parity names: \[dq]parity\[dq], \[dq]2\-parity\[dq], \[dq]3\-parity\[dq],
-\[dq]4\-parity\[dq], \[dq]5\-parity\[dq], \[dq]6\-parity\[dq], or \[dq]z\-parity\[dq].
+DISK is the same disk name specified in the \`data\` option.
+PARITY is one of the parity names: \`parity\`, \`2\-parity\`, \`3\-parity\`,
+\`4\-parity\`, \`5\-parity\`, \`6\-parity\`, or \`z\-parity\`.
 The special value * can be used to ignore the attribute on all disks.
 .PP
-For example, to ignore the \[dq]Current Pending Sector Count\[dq] attribute on
+For example, to ignore the \`Current Pending Sector Count\` attribute on
 all disks:
 .PP
 .RS 4
@@ -1743,11 +1743,11 @@ character to avoid having it interpreted by the command shell.
 .PP
 In the configuration file, you can use different strategies to filter
 the files to process.
-The simplest approach is to use only \[dq]exclude\[dq] rules to remove all the
+The simplest approach is to use only \`exclude\` rules to remove all the
 files and directories you do not want to process. For example:
 .PP
 .RS 4
-# Excludes any file named \[dq]*.unrecoverable\[dq]
+# Excludes any file named \`*.unrecoverable\`
 .PD 0
 .PP
 .PD
@@ -1755,7 +1755,7 @@ exclude *.unrecoverable
 .PD 0
 .PP
 .PD
-# Excludes the root directory \[dq]/lost+found\[dq]
+# Excludes the root directory \`/lost+found\`
 .PD 0
 .PP
 .PD
@@ -1763,7 +1763,7 @@ exclude /lost+found/
 .PD 0
 .PP
 .PD
-# Excludes any subdirectory named \[dq]tmp\[dq]
+# Excludes any subdirectory named \`tmp\`
 .PD 0
 .PP
 .PD
@@ -1773,7 +1773,7 @@ exclude tmp/
 .RE
 .PP
 The opposite approach is to define only the files you want to process, using
-only \[dq]include\[dq] rules. For example:
+only \`include\` rules. For example:
 .PP
 .RS 4
 # Includes only some directories
@@ -1793,14 +1793,14 @@ include /pictures/
 .PD
 .RE
 .PP
-The final approach is to mix \[dq]exclude\[dq] and \[dq]include\[dq] rules. In this case,
+The final approach is to mix \`exclude\` and \`include\` rules. In this case,
 the order of rules is important. Earlier rules take
 precedence over later ones.
-To simplify, you can list all the \[dq]exclude\[dq] rules first and then
-all the \[dq]include\[dq] rules. For example:
+To simplify, you can list all the \`exclude\` rules first and then
+all the \`include\` rules. For example:
 .PP
 .RS 4
-# Excludes any file named \[dq]*.unrecoverable\[dq]
+# Excludes any file named \`*.unrecoverable\`
 .PD 0
 .PP
 .PD
@@ -1808,7 +1808,7 @@ exclude *.unrecoverable
 .PD 0
 .PP
 .PD
-# Excludes any subdirectory named \[dq]tmp\[dq]
+# Excludes any subdirectory named \`tmp\`
 .PD 0
 .PP
 .PD
@@ -1833,7 +1833,7 @@ include /pictures/
 .PD
 .RE
 .PP
-On the command line, using the \-f option, you can only use \[dq]include\[dq]
+On the command line, using the \-f option, you can only use \`include\`
 patterns. For example:
 .PP
 .RS 4
@@ -1858,17 +1858,17 @@ SnapRAID stores the list and checksums of your files in the content file.
 It is a binary file that lists all the files present in your disk array,
 along with all the checksums to verify their integrity.
 .PP
-This file is read and written by the \[dq]sync\[dq] and \[dq]scrub\[dq] commands and
-read by the \[dq]fix\[dq], \[dq]check\[dq], and \[dq]status\[dq] commands.
+This file is read and written by the \`sync\` and \`scrub\` commands and
+read by the \`fix\`, \`check\`, and \`status\` commands.
 .SH PARITY 
 SnapRAID stores the parity information of your array in the parity
 files.
 .PP
 These are binary files containing the computed parity of all the
-blocks defined in the \[dq]content\[dq] file.
+blocks defined in the \`content\` file.
 .PP
-These files are read and written by the \[dq]sync\[dq] and \[dq]fix\[dq] commands and
-only read by the \[dq]scrub\[dq] and \[dq]check\[dq] commands.
+These files are read and written by the \`sync\` and \`fix\` commands and
+only read by the \`scrub\` and \`check\` commands.
 .SH ENCODING 
 SnapRAID in Unix ignores any encoding. It reads and stores the
 file names with the same encoding used by the file system.
@@ -1877,8 +1877,8 @@ In Windows, all names read from the file system are converted and
 processed in UTF\-8 format.
 .PP
 To have file names printed correctly, you must set the Windows
-console to UTF\-8 mode with the command \[dq]chcp 65001\[dq] and use
-a TrueType font like \[dq]Lucida Console\[dq] as the console font.
+console to UTF\-8 mode with the command \`chcp 65001\` and use
+a TrueType font like \`Lucida Console\` as the console font.
 This affects only the printed file names; if you
 redirect the console output to a file, the resulting file is always
 in UTF\-8 format.
