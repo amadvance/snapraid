@@ -38,6 +38,7 @@ void state_rehash(struct snapraid_state* state)
 	/* check if a rehash is already in progress */
 	if (state->prevhash != HASH_UNDEFINED) {
 		/* LCOV_EXCL_START */
+		log_tag("summary:exit:already_in_progress\n");
 		log_fatal("You already have a rehash in progress.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -45,6 +46,7 @@ void state_rehash(struct snapraid_state* state)
 
 	if (state->hash == state->besthash) {
 		/* LCOV_EXCL_START */
+		log_tag("summary:exit:not_required\n");
 		log_fatal("You are already using the best hash for your platform.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -94,5 +96,6 @@ void state_rehash(struct snapraid_state* state)
 	msg_status("A rehash is now scheduled. It will take place progressively in the next\n");
 	msg_status("'sync' and 'scrub' commands. You can check the rehash progress using the\n");
 	msg_status("'status' command.\n");
+	log_tag("summary:exit:scheduled\n");
 }
 

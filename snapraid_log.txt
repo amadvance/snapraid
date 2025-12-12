@@ -63,7 +63,7 @@ These tags report the memory usage and global configuration after
 scanning the disk and reading the list of files.
 
     conf:file:<path>
-        Configuration file loaded (escaped string).
+        Configuration file loaded (escaped).
 
     conf:missing:
         Operating without a configuration file.
@@ -91,14 +91,14 @@ scanning the disk and reading the list of files.
         multiple split parity is configured, there is only the
         index 0. A split parity configuration distributes parity
         blocks across multiple files.
-    <path> - The escaped path.
+    <path> - The path (escaped).
 
     pool:<dir>
-        The configured dir to the pool mount point (escaped string).
+        The configured dir to the pool mount point (escaped).
         This is the optional mount point for the 'pool' feature.
 
     share:<dir>
-        The configured dir to the pool mount point (escaped string).
+        The configured dir to the pool mount point (escaped).
         This is the optional mount point for the 'share' feature.
 
     autosave:<bytes>
@@ -114,7 +114,7 @@ scanning the disk and reading the list of files.
         (starting with '.') are excluded from the array.
 
     content:<path>
-        The absolute path to a content file being used (escaped string).
+        The absolute path to a content file being used (escaped).
         Content files store the metadata (like file hashes and timestamps)
         for the array.
 
@@ -125,7 +125,7 @@ scanning the disk and reading the list of files.
     <split_index> - The split index (uint). If no
         multiple split parity is configured, there is only the
         index 0.
-    <path> - The escaped path.
+    <path> - The path (escaped).
     <uuid> - The UUID of the partition containing the path.
     <size> - The size of the parity file. Size is -1 if not yet
         fixed, meaning it can grow. This happens for the
@@ -184,7 +184,7 @@ content file. They are output for every discovered change, and
 
     <disk_name> - Name of the data disk.
     <path> - Path to the file/link/dir relative to the disk mount
-        (escaped string).
+        (escaped).
 
     scan:add:<disk_name>:<path>
         A new file, link, or directory was found that is not in the
@@ -203,8 +203,8 @@ content file. They are output for every discovered change, and
         A file was moved on the same disk. This is an efficient operation
         that only updates the path metadata without re-hashing blocks.
 
-    <old_path> - The old path to the file (escaped string).
-    <new_path> - The new path to the file (escaped string).
+    <old_path> - The old path to the file (escaped).
+    <new_path> - The new path to the file (escaped).
 
     scan:copy:<disk_name>:<path>:<source_disk>:<source_path>
         A new file was found to be a copy of a file from another disk.
@@ -212,7 +212,7 @@ content file. They are output for every discovered change, and
         efficient operation that avoids re-hashing all blocks.
 
     <source_disk> - The original file's disk.
-    <source_path> - The original file's location (escaped string).
+    <source_path> - The original file's location (escaped).
 
     scan:restore:<disk_name>:<path>
         A file's inode has changed but not its date-time and size,
@@ -351,11 +351,13 @@ disk access.
 
     <disk_name> - The configured name of the disk.
     <device> - The unique device ID (uint64).
-    <temp> - The current temperature read from the disk in degrees Celsius.
+    <temp> - The current temperature read from the disk in degrees
+        Celsius.
 
     thermal:highest:<temp>
         Logs the highest temperature observed among all monitored disks
-        in the current measurement cycle. This is used for thermal throttling.
+        in the current measurement cycle. This is used for thermal
+        throttling.
 
     <temp> - The highest temperature observed in degrees Celsius.
 
@@ -382,11 +384,12 @@ disk access.
 
     <disk_name> - The configured name of the disk.
     <device> - The unique device ID (uint64).
-    <k_heat> - The heating rate constant, $k$ (double).
-    <t_ambient> - The ambient temperature, $T_{\text{ambient}}$ (double).
-    <t_steady> - The estimated steady-state temperature, $T_{\text{steady}}$ (double), which is the maximum expected temperature of the disk.
+    <k_heat> - The heating rate constant, k (double).
+    <t_ambient> - The ambient temperature, T_ambient (double).
+    <t_steady> - The estimated steady-state temperature, T_steady (double),
+        which is the maximum expected temperature of the disk.
     <rmse> - Root Mean Square Error of the fit (double).
-    <r_squared> - Coefficient of determination ($R^2$) of the fit (double).
+    <r_squared> - Coefficient of determination (R^2) of the fit (double).
     <max_error> - Maximum absolute error of the fit (double).
 
     thermal:spindown
@@ -411,18 +414,19 @@ disk access.
 
 This section describes the tags output with the `status` command.
 
-All tags start with a prefix indicating the context, typically `summary:`
-for overall statistics or a disk/block context.
-
----- 7.0.1 General Summary Tags ----
-These tags provide general information about the array configuration and overall state.
+---- 7.0.1 Summary Tags ----
+These tags provide general information about the array configuration
+and overall state.
 
     summary:block_size:<uint>
-        The size of a block in bytes. This is the unit of parity protection.
+        The size of a block in bytes. This is the unit of parity
+        protection.
     summary:parity_block_count:<uint>
-        The total number of blocks allocated for all parity levels combined.
+        The total number of blocks allocated for all parity levels
+        combined.
     summary:parity_block_total:<name>:<uint>
-        Total blocks available for a specific parity level (e.g., `parity`, `2-parity`).
+        Total blocks available for a specific parity level (e.g.,
+        `parity`, `2-parity`).
     summary:parity_block_free:<name>:<uint>
         Free blocks available for a specific parity level.
     summary:parity_block_free_min:<uint>
@@ -453,13 +457,16 @@ These tags provide general information about the array configuration and overall
     summary:prev_hash:<name>
         The previous hash algorithm used, if a rehash is in progress.
     summary:best_hash:<name>
-        The best hash algorithm for optimal performance based on system capabilities.
+        The best hash algorithm for optimal performance based on
+        system capabilities.
     summary:total_wasted:<uint64>
-        Total wasted space (space on data disks exceeding parity capacity) in bytes.
+        Total wasted space (space on data disks exceeding parity
+        capacity) in bytes.
     summary:total_used:<uint64>
         Total used space by data files in bytes.
     summary:total_free:<uint64>
-        Total free space (usable by data) in bytes, limited by parity capacity.
+        Total free space (usable by data) in bytes, limited by parity
+        capacity.
     summary:total_use_percent:<uint>
         Overall array use percentage.
     summary:has_unsynced:<uint>
@@ -504,15 +511,17 @@ is the disk name.
     summary:disk_block_free:<name>:<uint>
         Free blocks on the disk.
     summary:disk_block_max_by_space:<name>:<uint>
-        Total blocks by disk space (used + free blocks), representing the
-        physical limit of the disk.
+        Total blocks by disk space (used + free blocks), representing
+        the physical limit of the disk.
     summary:disk_block_max_by_parity:<name>:<uint>
-        Total blocks limited by parity space (parity size + min parity free blocks).
+        Total blocks limited by parity space (parity size + min parity
+        free blocks).
         This is the logical limit imposed by the parity files.
     summary:disk_block_max:<name>:<uint>
         Maximum usable blocks (minimum of `..._by_space` and `..._by_parity`).
     summary:disk_space_wasted:<name>:<int64>
-        Wasted space on the disk in bytes (positive if disk is larger than usable parity space).
+        Wasted space on the disk in bytes (positive if disk is larger
+        than usable parity space).
     summary:disk_used:<name>:<uint64>
         Used space on the disk in bytes.
     summary:disk_free:<name>:<uint64>
@@ -701,7 +710,8 @@ These tags log errors that could not be recovered.
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
     <msg> - A descriptive message indicating the nature of the problem
-        (e.g., `Unrecoverable error at position <file_pos>`, `Unrecoverable unsynced error at position <file_pos>`).
+        (e.g., `Unrecoverable error at position <file_pos>`,
+        `Unrecoverable unsynced error at position <file_pos>`).
 
     collision:<disk_name>:<file_path>:<collision_path>:<msg>
         Logs that the modification time was not set on a recovered file to
@@ -718,7 +728,7 @@ These tags log the final status of files after processing.
 
     status:unrecoverable:<disk_name>:<file_path>
         Indicates that a file has unrecoverable errors and was renamed to
-        .unrecoverable (in fix mode) or cannot be recovered (in check mode).
+        `.unrecoverable` (in fix mode) or cannot be recovered (in check mode).
 
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
@@ -779,7 +789,268 @@ These tags provide summary statistics at the end of the command.
     `error` - Indicates that errors were found (audit-only mode).
 
 
-10 ERROR TAGS
+10 COMMAND LIST TAGS
+====================
+
+This section describes the tags output with the `list` command.
+
+---- 10.0.1 List Tags ----
+These tags log details about individual files and links processed during
+the listing operation.
+
+    file:<disk_name>:<subpath>:<size>:<mtime_sec>:<mtime_nsec>:<inode>
+        Logs details for a regular file found on a disk.
+
+    <disk_name> - The configured name of the disk.
+    <subpath> - The path of the file relative to the disk's root
+        (escaped).
+    <size> - The size of the file in bytes (uint64).
+    <mtime_sec> - The file's modification time in seconds since the
+        Epoch (int64).
+    <mtime_nsec> - The file's modification time nanosecond component
+        (uint).
+    <inode> - The file's inode number (int64).
+
+    link_<type>:<disk_name>:<subpath>:<linkto>
+        Logs details for a link found on a disk. The `<type>` component
+        varies based on the kind of link.
+
+    <type> - The type of link, one of: `hardlink`, `symlink`,
+        `symdir` (symlink to a directory), `junction`
+        (Windows-specific reparse point).
+    <disk_name> - The configured name of the disk (string).
+    <subpath> - The path of the link relative to the disk's root
+        (escaped).
+    <linkto> - The target path of the link (escaped).
+
+---- 10.0.2 Summary Tags ----
+These tags log final statistics about the entire listing operation.
+
+    summary:file_count:<count>
+        Logs the total number of regular files processed.
+
+    <count> - The total number of files (uint).
+
+    summary:file_size:<size>
+        Logs the total size of all regular files processed.
+
+    <size> - The cumulative size of all files (uint64, bytes).
+
+    summary:link_count:<count>
+        Logs the total number of links processed (hardlinks, symlinks,
+        symdirs, junctions).
+
+    <count> - The total number of links (uint).
+
+    summary:exit:ok
+        Indicates a successful completion of the listing operation.
+        Note that if a fatal error happens, the program will abort,
+        and you won't get this tag.
+
+
+11 COMMAND DUP TAGS
+===================
+
+This section describes the tags output with the `dup` command.
+
+---- 11.0.1 Duplicate Tags ----
+These tags log information about detected duplicate files and provide
+a summary of the duplicate finding process. The content hash of the
+whole file is used to determine duplicates.
+
+    dup:<diskname1>:<file_path1>:<diskname2>:<file_path2>:<size>: dup
+        Logs the information about a pair of duplicate files found.
+        The first file listed is the one just processed, and the second
+        file is the previously processed file that has the same content hash.
+
+    <diskname1> - The configured name of the disk containing the
+        newly processed duplicate file.
+    <file_path1> - The path of the newly processed duplicate file
+        relative to its disk's mount point (escaped).
+    <diskname2> - The configured name of the disk containing the
+        previously processed file that is the duplicate
+        of `<file_path1>`.
+    <file_path2> - The path of the previously processed duplicate file
+        relative to its disk's mount point (escaped).
+    <size> - The size of the duplicate file in bytes (uint64). This
+        size corresponds to the file `<file_path2>`.
+
+---- 11.0.2 Summary Tags ----
+These tags provide a final summary of the duplicate finding process.
+
+    summary:dup_count:<count>
+        Logs the total number of duplicate files found. A file is counted
+        as a duplicate if its hash matches a hash already seen.
+
+    <count> - The total count of duplicate files (uint).
+
+    summary:dup_size:<size>
+        Logs the total size of all duplicate files found. This size is
+        the sum of the sizes of all files considered duplicates.
+
+    <size> - The total size of duplicate files in gigabytes (uint64).
+
+    summary:exit:unique
+        Logs the final exit status indicating that no duplicate files were
+        found. This tag is logged if `<count>` is zero.
+
+    summary:exit:dup
+        Logs the final exit status indicating that at least one duplicate
+        file was found. This tag is logged if `<count>` is greater than
+        zero.
+
+
+12 COMMAND POOL TAGS
+====================
+
+This section describes the tags output with the `pool` command.
+
+    summary:link_count:<count>
+        Logs the total number of links created (symlinks, junctions).
+
+    <count> - The total number of links (uint).
+
+    summary:exit:ok
+        Indicates a successful completion of the pool operation.
+        Note that if a fatal error happens, the program will abort,
+        and you won't get this tag.
+
+
+13 COMMAND REHASH TAGS
+======================
+
+This section describes the tags output with the `rehash` command.
+
+---- 13.0.1 Summary Tags ----
+These tags provide a final summary of the rehash scheduling process.
+
+    summary:exit:scheduled
+        Logs the final exit status indicating that a rehash operation has
+        been successfully scheduled. The rehash will be performed
+        incrementally in future `sync` or `scrub` commands.
+
+    summary:exit:already_in_progress
+        Logs the final exit status indicating that a rehash is already
+        in progress and cannot be scheduled again. This causes the
+        program to exit with a fatal error.
+
+    summary:exit:not_required
+        Logs the final exit status indicating that the current hash
+        algorithm is already the `best hash` for the platform, and thus
+        a rehash is not required. This causes the program to exit with
+        a fatal error.
+
+
+14 COMMAND SMART TAGS
+=====================
+
+This section describes the tags output with the `smart` command.
+
+Note that a `<disk_name>` may be associated with more `<device_file>`,
+in case the logical disk uses more physical disks. In such a case,
+you'll see multiple tags for the same `<disk_name>` but with different
+`<device_file>`.
+
+---- 14.0.1 SMART Attributes ----
+Tags logging specific disk identification and raw SMART attribute
+values.
+
+    smart:<device_file>:<disk_name>
+        Logs the start of the SMART report for a device.
+
+    <device_file> - The file path of the device (e.g., /dev/sdb).
+    <disk_name> - The configured name of the disk.
+
+    attr:<device_file>:<disk_name>:serial:<serial_number>
+        Logs the disk's serial number.
+
+    <serial_number> - The disk's serial number (escaped).
+
+    attr:<device_file>:<disk_name>:vendor:<vendor>
+        Logs the disk's vendor string.
+
+    <vendor> - The disk's vendor identifier (escaped).
+
+    attr:<device_file>:<disk_name>:model:<model>
+        Logs the disk's model string.
+
+    <model> - The disk's model identifier (escaped).
+
+    attr:<device_file>:<disk_name>:afr:<afr_value>:<afr_prob>
+        Logs the estimated Annual Failure Rate (AFR) and the
+        probability of one failure in the next year based on SMART
+        attributes. The AFR is calculated using the maximum rate
+        reported by specific SMART attributes (5, 187, 188, 197, 198).
+
+    <afr_value> - The computed Annual Failure Rate (double).
+    <afr_prob> - The probability of one or more failures in the
+        next year (double).
+
+    attr:<device_file>:<disk_name>:size:<size_bytes>
+        Logs the size of the disk.
+
+    <size_bytes> - The disk size in bytes (uint64).
+
+    attr:<device_file>:<disk_name>:error:<error_count>
+        Logs the raw value of the total error count (e.g., from SMART
+        attribute 199, if used for the report).
+
+    <error_count> - The total error count (uint64).
+
+    attr:<device_file>:<disk_name>:rotationrate:<rate>
+        Logs the disk's rotation rate. A value of 0 indicates an SSD.
+
+    <rate> - The rotation rate (uint64, RPM).
+
+    attr:<device_file>:<disk_name>:flags:<flags_decimal>:<flags_hex>
+        Logs the SMART status flags from the utility (e.g., smartctl).
+
+    <flags_decimal> - The raw flags value (uint64, decimal).
+    <flags_hex> - The raw flags value (uint64, hexadecimal).
+
+    attr:<device_file>:<disk_name>:<id>:<value_decimal>:<value_hex>
+        Logs the raw value of any assigned SMART attribute.
+
+    <id> - The SMART attribute ID (uint).
+    <value_decimal> - The raw attribute value (uint64, decimal).
+    <value_hex> - The raw attribute value (uint64, hexadecimal).
+
+---- 14.0.2 Summary ----
+Tags logging the overall failure probabilities for the array.
+
+    summary:array_failure:<array_afr>:<array_prob>
+        Logs the total estimated failure rate for the entire array
+        (sum of individual disk AFRs) and the probability of at least
+        one disk failure in the next year.
+
+    <array_afr> - The sum of AFRs of all disks in the array (double).
+    <array_prob> - The probability of at least one disk failure in
+    the next year (double).
+
+
+15 COMMAND PROBE TAGS
+=====================
+
+This section describes the tags output with the `probe` command.
+
+Note that a `<disk_name>` may be associated with more `<device_file>`,
+in case the logical disk uses more physical disks. In such a case,
+you'll see multiple tags for the same `<disk_name>` but with different
+`<device_file>`.
+
+---- 15.0.1 Device Power State ----
+Tags used to report the power state of each device.
+
+    probe:<device_file>:<disk_name>:<power_state>
+        Logs the detected power state of a device.
+
+    <device_file> - The file path of the device (e.g., /dev/sdb).
+    <disk_name> - The configured name of the disk.
+    <power_state> - The numerical power state: 0: Unknown,
+        1: StandBy, 2: Active.
+
+
+16 ERROR TAGS
 =============
 
 These tags report specific errors that occur on data disks during the
@@ -794,15 +1065,18 @@ commands that access files and parities.
     <file> - The path (relative to the disk mount point) of the
         file containing the block (escaped).
     <msg> - A descriptive message indicating the nature of the
-        error (e.g., `Open/Read/Write EIO error`, `Open/Read/Write error`, `Data error at position <pos>, diff bits <diff>/<bits>`).
+        error (e.g., `Open/Read/Write EIO error`, `Open/Read/Write error`,
+        `Data error at position <pos>, diff bits <diff>/<bits>`).
 
     parity_error:<block>:<level>:<msg>
         Logs errors during parity disk read or write operations.
 
     <block> - The zero-based index of the block where the error occurred (uint).
-    <level> - The configuration name of the parity level (e.g., `parity`, `2-parity`).
+    <level> - The configuration name of the parity level (e.g.,
+        `parity`, `2-parity`).
     <msg> - A descriptive message indicating the nature of the
-        error (e.g., `Read/Write EIO error`, `Read/Write error`, `Data error, diff bits <diff>/<bits>`).
+        error (e.g., `Read/Write EIO error`, `Read/Write error`,
+        `Data error, diff bits <diff>/<bits>`).
 
     hardlink_error:<disk_name>:<link_path>:<target_path>:<msg>
         Indicates an error when attempting to access a hard link.
@@ -811,7 +1085,10 @@ commands that access files and parities.
     <link_path> - The hard link path relative to disk root (escaped).
     <target_path> - The target path of the hard link (escaped).
     <msg> - A descriptive message indicating the nature of the
-        error (e.g., `Hardlink stat error`, `Hardlink error for not regular file`, `Hardlink to stat error`, `Hardlink-to error for not regular file`, `Hardlink mismatch for different inode`).
+        error (e.g., `Hardlink stat error`,
+        `Hardlink error for not regular file`, `Hardlink to stat error`,
+        `Hardlink-to error for not regular file`,
+        `Hardlink mismatch for different inode`).
 
     symlink_error:<disk_name>:<link_path>:<msg>
         Indicates an error when attempting to access a symbolic link.
@@ -819,7 +1096,8 @@ commands that access files and parities.
     <disk_name> - The name of the disk.
     <link_path> - The symlink path relative to disk root (escaped).
     <msg> - A descriptive message indicating the nature of the
-        error (e.g., `Symlink read error`, `Symlink data error '<actual>' instead of '<expected>'`).
+        error (e.g., `Symlink read error`,
+        `Symlink data error '<actual>' instead of '<expected>'`).
 
     dir_error:<disk_name>:<dir_path>:<msg>
         Indicates an error when attempting to access a directory.
@@ -830,10 +1108,11 @@ commands that access files and parities.
         error (e.g., `Dir stat error`, `Dir error for not directory`).
 
     outofparity:<disk_name>:<file_path>
-        Logs that a file's blocks extend beyond the available parity space,
-        indicating that the parity files are too small to protect all data.
-        This occurs when data requires more parity than is available on the
-        parity disk(s) and is a critical warning.
+        Logs that a file's blocks extend beyond the available parity
+        space, indicating that the parity files are too small to
+        protect all data. This occurs when data requires more parity
+        than is available on the parity disk(s) and is a critical
+        warning.
 
     <disk_name> - The name of the disk containing the file.
     <file_path> - The file path relative to the disk root (escaped).

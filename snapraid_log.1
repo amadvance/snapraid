@@ -75,7 +75,7 @@ These tags report the memory usage and global configuration after
 scanning the disk and reading the list of files.
 .TP
 .B conf:file:<path>
-Configuration file loaded (escaped string).
+Configuration file loaded (escaped).
 .TP
 .B conf:missing:
 Operating without a configuration file.
@@ -117,16 +117,16 @@ index 0. A split parity configuration distributes parity
 blocks across multiple files.
 .HP 4
 .I <path>
-The escaped path.
+The path (escaped).
 .PD
 .RE
 .TP
 .B pool:<dir>
-The configured dir to the pool mount point (escaped string).
+The configured dir to the pool mount point (escaped).
 This is the optional mount point for the \'pool\' feature.
 .TP
 .B share:<dir>
-The configured dir to the pool mount point (escaped string).
+The configured dir to the pool mount point (escaped).
 This is the optional mount point for the \'share\' feature.
 .TP
 .B autosave:<bytes>
@@ -142,7 +142,7 @@ If the no\-hidden filter is enabled, meaning hidden files/directories
 (starting with \'.\') are excluded from the array.
 .TP
 .B content:<path>
-The absolute path to a content file being used (escaped string).
+The absolute path to a content file being used (escaped).
 Content files store the metadata (like file hashes and timestamps)
 for the array.
 .TP
@@ -160,7 +160,7 @@ multiple split parity is configured, there is only the
 index 0.
 .HP 4
 .I <path>
-The escaped path.
+The path (escaped).
 .HP 4
 .I <uuid>
 The UUID of the partition containing the path.
@@ -223,7 +223,7 @@ Name of the data disk.
 .HP 4
 .I <path>
 Path to the file/link/dir relative to the disk mount
-(escaped string).
+(escaped).
 .PD
 .RE
 .TP
@@ -247,10 +247,10 @@ that only updates the path metadata without re\-hashing blocks.
 .PD 0
 .HP 4
 .I <old_path>
-The old path to the file (escaped string).
+The old path to the file (escaped).
 .HP 4
 .I <new_path>
-The new path to the file (escaped string).
+The new path to the file (escaped).
 .PD
 .RE
 .TP
@@ -265,7 +265,7 @@ efficient operation that avoids re\-hashing all blocks.
 The original file\'s disk.
 .HP 4
 .I <source_path>
-The original file\'s location (escaped string).
+The original file\'s location (escaped).
 .PD
 .RE
 .TP
@@ -487,13 +487,15 @@ The configured name of the disk.
 The unique device ID (uint64).
 .HP 4
 .I <temp>
-The current temperature read from the disk in degrees Celsius.
+The current temperature read from the disk in degrees
+Celsius.
 .PD
 .RE
 .TP
 .B thermal:highest:<temp>
 Logs the highest temperature observed among all monitored disks
-in the current measurement cycle. This is used for thermal throttling.
+in the current measurement cycle. This is used for thermal
+throttling.
 .RS 4
 .PD 0
 .HP 4
@@ -547,19 +549,20 @@ The configured name of the disk.
 The unique device ID (uint64).
 .HP 4
 .I <k_heat>
-The heating rate constant, $k$ (double).
+The heating rate constant, k (double).
 .HP 4
 .I <t_ambient>
-The ambient temperature, $T_{\\text{ambient}}$ (double).
+The ambient temperature, T_ambient (double).
 .HP 4
 .I <t_steady>
-The estimated steady\-state temperature, $T_{\\text{steady}}$ (double), which is the maximum expected temperature of the disk.
+The estimated steady\-state temperature, T_steady (double),
+which is the maximum expected temperature of the disk.
 .HP 4
 .I <rmse>
 Root Mean Square Error of the fit (double).
 .HP 4
 .I <r_squared>
-Coefficient of determination ($R^2$) of the fit (double).
+Coefficient of determination (R^2) of the fit (double).
 .HP 4
 .I <max_error>
 Maximum absolute error of the fit (double).
@@ -588,20 +591,21 @@ Indicates that the cooldown period is complete, and the disks
 are being spun back up to resume the operation.
 .SH COMMAND STATUS TAGS 
 This section describes the tags output with the \`status\` command.
-.PP
-All tags start with a prefix indicating the context, typically \`summary:\`
-for overall statistics or a disk/block context.
-.SS General Summary Tags 
-These tags provide general information about the array configuration and overall state.
+.SS Summary Tags 
+These tags provide general information about the array configuration
+and overall state.
 .TP
 .B summary:block_size:<uint>
-The size of a block in bytes. This is the unit of parity protection.
+The size of a block in bytes. This is the unit of parity
+protection.
 .TP
 .B summary:parity_block_count:<uint>
-The total number of blocks allocated for all parity levels combined.
+The total number of blocks allocated for all parity levels
+combined.
 .TP
 .B summary:parity_block_total:<name>:<uint>
-Total blocks available for a specific parity level (e.g., \`parity\`, \`2\-parity\`).
+Total blocks available for a specific parity level (e.g.,
+\`parity\`, \`2\-parity\`).
 .TP
 .B summary:parity_block_free:<name>:<uint>
 Free blocks available for a specific parity level.
@@ -645,16 +649,19 @@ The current hash algorithm in use (e.g., \`sha256\`).
 The previous hash algorithm used, if a rehash is in progress.
 .TP
 .B summary:best_hash:<name>
-The best hash algorithm for optimal performance based on system capabilities.
+The best hash algorithm for optimal performance based on
+system capabilities.
 .TP
 .B summary:total_wasted:<uint64>
-Total wasted space (space on data disks exceeding parity capacity) in bytes.
+Total wasted space (space on data disks exceeding parity
+capacity) in bytes.
 .TP
 .B summary:total_used:<uint64>
 Total used space by data files in bytes.
 .TP
 .B summary:total_free:<uint64>
-Total free space (usable by data) in bytes, limited by parity capacity.
+Total free space (usable by data) in bytes, limited by parity
+capacity.
 .TP
 .B summary:total_use_percent:<uint>
 Overall array use percentage.
@@ -715,18 +722,20 @@ Total blocks on the disk (physical size).
 Free blocks on the disk.
 .TP
 .B summary:disk_block_max_by_space:<name>:<uint>
-Total blocks by disk space (used + free blocks), representing the
-physical limit of the disk.
+Total blocks by disk space (used + free blocks), representing
+the physical limit of the disk.
 .TP
 .B summary:disk_block_max_by_parity:<name>:<uint>
-Total blocks limited by parity space (parity size + min parity free blocks).
+Total blocks limited by parity space (parity size + min parity
+free blocks).
 This is the logical limit imposed by the parity files.
 .TP
 .B summary:disk_block_max:<name>:<uint>
 Maximum usable blocks (minimum of \`..._by_space\` and \`..._by_parity\`).
 .TP
 .B summary:disk_space_wasted:<name>:<int64>
-Wasted space on the disk in bytes (positive if disk is larger than usable parity space).
+Wasted space on the disk in bytes (positive if disk is larger
+than usable parity space).
 .TP
 .B summary:disk_used:<name>:<uint64>
 Used space on the disk in bytes.
@@ -1047,7 +1056,8 @@ The file path relative to disk root (escaped).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the problem
-(e.g., \`Unrecoverable error at position <file_pos>\`, \`Unrecoverable unsynced error at position <file_pos>\`).
+(e.g., \`Unrecoverable error at position <file_pos>\`,
+\`Unrecoverable unsynced error at position <file_pos>\`).
 .PD
 .RE
 .TP
@@ -1076,7 +1086,7 @@ These tags log the final status of files after processing.
 .TP
 .B status:unrecoverable:<disk_name>:<file_path>
 Indicates that a file has unrecoverable errors and was renamed to
-.unrecoverable (in fix mode) or cannot be recovered (in check mode).
+\`.unrecoverable\` (in fix mode) or cannot be recovered (in check mode).
 .RS 4
 .PD 0
 .HP 4
@@ -1197,6 +1207,382 @@ found.
 Indicates that errors were found (audit\-only mode).
 .PD
 .RE
+.SH COMMAND LIST TAGS 
+This section describes the tags output with the \`list\` command.
+.SS List Tags 
+These tags log details about individual files and links processed during
+the listing operation.
+.TP
+.B file:<disk_name>:<subpath>:<size>:<mtime_sec>:<mtime_nsec>:<inode>
+Logs details for a regular file found on a disk.
+.RS 4
+.PD 0
+.HP 4
+.I <disk_name>
+The configured name of the disk.
+.HP 4
+.I <subpath>
+The path of the file relative to the disk\'s root
+(escaped).
+.HP 4
+.I <size>
+The size of the file in bytes (uint64).
+.HP 4
+.I <mtime_sec>
+The file\'s modification time in seconds since the
+Epoch (int64).
+.HP 4
+.I <mtime_nsec>
+The file\'s modification time nanosecond component
+(uint).
+.HP 4
+.I <inode>
+The file\'s inode number (int64).
+.PD
+.RE
+.TP
+.B link_<type>:<disk_name>:<subpath>:<linkto>
+Logs details for a link found on a disk. The \`<type>\` component
+varies based on the kind of link.
+.RS 4
+.PD 0
+.HP 4
+.I <type>
+The type of link, one of: \`hardlink\`, \`symlink\`,
+\`symdir\` (symlink to a directory), \`junction\`
+(Windows\-specific reparse point).
+.HP 4
+.I <disk_name>
+The configured name of the disk (string).
+.HP 4
+.I <subpath>
+The path of the link relative to the disk\'s root
+(escaped).
+.HP 4
+.I <linkto>
+The target path of the link (escaped).
+.PD
+.RE
+.SS Summary Tags 
+These tags log final statistics about the entire listing operation.
+.TP
+.B summary:file_count:<count>
+Logs the total number of regular files processed.
+.RS 4
+.PD 0
+.HP 4
+.I <count>
+The total number of files (uint).
+.PD
+.RE
+.TP
+.B summary:file_size:<size>
+Logs the total size of all regular files processed.
+.RS 4
+.PD 0
+.HP 4
+.I <size>
+The cumulative size of all files (uint64, bytes).
+.PD
+.RE
+.TP
+.B summary:link_count:<count>
+Logs the total number of links processed (hardlinks, symlinks,
+symdirs, junctions).
+.RS 4
+.PD 0
+.HP 4
+.I <count>
+The total number of links (uint).
+.PD
+.RE
+.TP
+.B summary:exit:ok
+Indicates a successful completion of the listing operation.
+Note that if a fatal error happens, the program will abort,
+and you won\'t get this tag.
+.SH COMMAND DUP TAGS 
+This section describes the tags output with the \`dup\` command.
+.SS Duplicate Tags 
+These tags log information about detected duplicate files and provide
+a summary of the duplicate finding process. The content hash of the
+whole file is used to determine duplicates.
+.TP
+.B dup:<diskname1>:<file_path1>:<diskname2>:<file_path2>:<size>: dup
+Logs the information about a pair of duplicate files found.
+The first file listed is the one just processed, and the second
+file is the previously processed file that has the same content hash.
+.RS 4
+.PD 0
+.HP 4
+.I <diskname1>
+The configured name of the disk containing the
+newly processed duplicate file.
+.HP 4
+.I <file_path1>
+The path of the newly processed duplicate file
+relative to its disk\'s mount point (escaped).
+.HP 4
+.I <diskname2>
+The configured name of the disk containing the
+previously processed file that is the duplicate
+of \`<file_path1>\`.
+.HP 4
+.I <file_path2>
+The path of the previously processed duplicate file
+relative to its disk\'s mount point (escaped).
+.HP 4
+.I <size>
+The size of the duplicate file in bytes (uint64). This
+size corresponds to the file \`<file_path2>\`.
+.PD
+.RE
+.SS Summary Tags 
+These tags provide a final summary of the duplicate finding process.
+.TP
+.B summary:dup_count:<count>
+Logs the total number of duplicate files found. A file is counted
+as a duplicate if its hash matches a hash already seen.
+.RS 4
+.PD 0
+.HP 4
+.I <count>
+The total count of duplicate files (uint).
+.PD
+.RE
+.TP
+.B summary:dup_size:<size>
+Logs the total size of all duplicate files found. This size is
+the sum of the sizes of all files considered duplicates.
+.RS 4
+.PD 0
+.HP 4
+.I <size>
+The total size of duplicate files in gigabytes (uint64).
+.PD
+.RE
+.TP
+.B summary:exit:unique
+Logs the final exit status indicating that no duplicate files were
+found. This tag is logged if \`<count>\` is zero.
+.TP
+.B summary:exit:dup
+Logs the final exit status indicating that at least one duplicate
+file was found. This tag is logged if \`<count>\` is greater than
+zero.
+.SH COMMAND POOL TAGS 
+This section describes the tags output with the \`pool\` command.
+.TP
+.B summary:link_count:<count>
+Logs the total number of links created (symlinks, junctions).
+.RS 4
+.PD 0
+.HP 4
+.I <count>
+The total number of links (uint).
+.PD
+.RE
+.TP
+.B summary:exit:ok
+Indicates a successful completion of the pool operation.
+Note that if a fatal error happens, the program will abort,
+and you won\'t get this tag.
+.SH COMMAND REHASH TAGS 
+This section describes the tags output with the \`rehash\` command.
+.SS Summary Tags 
+These tags provide a final summary of the rehash scheduling process.
+.TP
+.B summary:exit:scheduled
+Logs the final exit status indicating that a rehash operation has
+been successfully scheduled. The rehash will be performed
+incrementally in future \`sync\` or \`scrub\` commands.
+.TP
+.B summary:exit:already_in_progress
+Logs the final exit status indicating that a rehash is already
+in progress and cannot be scheduled again. This causes the
+program to exit with a fatal error.
+.TP
+.B summary:exit:not_required
+Logs the final exit status indicating that the current hash
+algorithm is already the \`best hash\` for the platform, and thus
+a rehash is not required. This causes the program to exit with
+a fatal error.
+.SH COMMAND SMART TAGS 
+This section describes the tags output with the \`smart\` command.
+.PP
+Note that a \`<disk_name>\` may be associated with more \`<device_file>\`,
+in case the logical disk uses more physical disks. In such a case,
+you\'ll see multiple tags for the same \`<disk_name>\` but with different
+\`<device_file>\`.
+.SS SMART Attributes 
+Tags logging specific disk identification and raw SMART attribute
+values.
+.TP
+.B smart:<device_file>:<disk_name>
+Logs the start of the SMART report for a device.
+.RS 4
+.PD 0
+.HP 4
+.I <device_file>
+The file path of the device (e.g., /dev/sdb).
+.HP 4
+.I <disk_name>
+The configured name of the disk.
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:serial:<serial_number>
+Logs the disk\'s serial number.
+.RS 4
+.PD 0
+.HP 4
+.I <serial_number>
+The disk\'s serial number (escaped).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:vendor:<vendor>
+Logs the disk\'s vendor string.
+.RS 4
+.PD 0
+.HP 4
+.I <vendor>
+The disk\'s vendor identifier (escaped).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:model:<model>
+Logs the disk\'s model string.
+.RS 4
+.PD 0
+.HP 4
+.I <model>
+The disk\'s model identifier (escaped).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:afr:<afr_value>:<afr_prob>
+Logs the estimated Annual Failure Rate (AFR) and the
+probability of one failure in the next year based on SMART
+attributes. The AFR is calculated using the maximum rate
+reported by specific SMART attributes (5, 187, 188, 197, 198).
+.RS 4
+.PD 0
+.HP 4
+.I <afr_value>
+The computed Annual Failure Rate (double).
+.HP 4
+.I <afr_prob>
+The probability of one or more failures in the
+next year (double).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:size:<size_bytes>
+Logs the size of the disk.
+.RS 4
+.PD 0
+.HP 4
+.I <size_bytes>
+The disk size in bytes (uint64).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:error:<error_count>
+Logs the raw value of the total error count (e.g., from SMART
+attribute 199, if used for the report).
+.RS 4
+.PD 0
+.HP 4
+.I <error_count>
+The total error count (uint64).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:rotationrate:<rate>
+Logs the disk\'s rotation rate. A value of 0 indicates an SSD.
+.RS 4
+.PD 0
+.HP 4
+.I <rate>
+The rotation rate (uint64, RPM).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:flags:<flags_decimal>:<flags_hex>
+Logs the SMART status flags from the utility (e.g., smartctl).
+.RS 4
+.PD 0
+.HP 4
+.I <flags_decimal>
+The raw flags value (uint64, decimal).
+.HP 4
+.I <flags_hex>
+The raw flags value (uint64, hexadecimal).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>:<id>:<value_decimal>:<value_hex>
+Logs the raw value of any assigned SMART attribute.
+.RS 4
+.PD 0
+.HP 4
+.I <id>
+The SMART attribute ID (uint).
+.HP 4
+.I <value_decimal>
+The raw attribute value (uint64, decimal).
+.HP 4
+.I <value_hex>
+The raw attribute value (uint64, hexadecimal).
+.PD
+.RE
+.SS Summary 
+Tags logging the overall failure probabilities for the array.
+.TP
+.B summary:array_failure:<array_afr>:<array_prob>
+Logs the total estimated failure rate for the entire array
+(sum of individual disk AFRs) and the probability of at least
+one disk failure in the next year.
+.RS 4
+.PD 0
+.HP 4
+.I <array_afr>
+The sum of AFRs of all disks in the array (double).
+.HP 4
+.I <array_prob>
+The probability of at least one disk failure in
+.PD
+.RE
+.RS 4
+the next year (double).
+.RE
+.SH COMMAND PROBE TAGS 
+This section describes the tags output with the \`probe\` command.
+.PP
+Note that a \`<disk_name>\` may be associated with more \`<device_file>\`,
+in case the logical disk uses more physical disks. In such a case,
+you\'ll see multiple tags for the same \`<disk_name>\` but with different
+\`<device_file>\`.
+.SS Device Power State 
+Tags used to report the power state of each device.
+.TP
+.B probe:<device_file>:<disk_name>:<power_state>
+Logs the detected power state of a device.
+.RS 4
+.PD 0
+.HP 4
+.I <device_file>
+The file path of the device (e.g., /dev/sdb).
+.HP 4
+.I <disk_name>
+The configured name of the disk.
+.HP 4
+.I <power_state>
+The numerical power state: 0: Unknown,
+1: StandBy, 2: Active.
+.PD
+.RE
 .SH ERROR TAGS 
 These tags report specific errors that occur on data disks during the
 commands that access files and parities.
@@ -1219,7 +1605,8 @@ file containing the block (escaped).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the
-error (e.g., \`Open/Read/Write EIO error\`, \`Open/Read/Write error\`, \`Data error at position <pos>, diff bits <diff>/<bits>\`).
+error (e.g., \`Open/Read/Write EIO error\`, \`Open/Read/Write error\`,
+\`Data error at position <pos>, diff bits <diff>/<bits>\`).
 .PD
 .RE
 .TP
@@ -1232,11 +1619,13 @@ Logs errors during parity disk read or write operations.
 The zero\-based index of the block where the error occurred (uint).
 .HP 4
 .I <level>
-The configuration name of the parity level (e.g., \`parity\`, \`2\-parity\`).
+The configuration name of the parity level (e.g.,
+\`parity\`, \`2\-parity\`).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the
-error (e.g., \`Read/Write EIO error\`, \`Read/Write error\`, \`Data error, diff bits <diff>/<bits>\`).
+error (e.g., \`Read/Write EIO error\`, \`Read/Write error\`,
+\`Data error, diff bits <diff>/<bits>\`).
 .PD
 .RE
 .TP
@@ -1256,7 +1645,10 @@ The target path of the hard link (escaped).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the
-error (e.g., \`Hardlink stat error\`, \`Hardlink error for not regular file\`, \`Hardlink to stat error\`, \`Hardlink\-to error for not regular file\`, \`Hardlink mismatch for different inode\`).
+error (e.g., \`Hardlink stat error\`,
+\`Hardlink error for not regular file\`, \`Hardlink to stat error\`,
+\`Hardlink\-to error for not regular file\`,
+\`Hardlink mismatch for different inode\`).
 .PD
 .RE
 .TP
@@ -1273,7 +1665,8 @@ The symlink path relative to disk root (escaped).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the
-error (e.g., \`Symlink read error\`, \`Symlink data error \'<actual>\' instead of \'<expected>\'\`).
+error (e.g., \`Symlink read error\`,
+\`Symlink data error \'<actual>\' instead of \'<expected>\'\`).
 .PD
 .RE
 .TP
@@ -1295,10 +1688,11 @@ error (e.g., \`Dir stat error\`, \`Dir error for not directory\`).
 .RE
 .TP
 .B outofparity:<disk_name>:<file_path>
-Logs that a file\'s blocks extend beyond the available parity space,
-indicating that the parity files are too small to protect all data.
-This occurs when data requires more parity than is available on the
-parity disk(s) and is a critical warning.
+Logs that a file\'s blocks extend beyond the available parity
+space, indicating that the parity files are too small to
+protect all data. This occurs when data requires more parity
+than is available on the parity disk(s) and is a critical
+warning.
 .RS 4
 .PD 0
 .HP 4
