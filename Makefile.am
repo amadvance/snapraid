@@ -121,11 +121,27 @@ mkstream_SOURCES = \
 dist-hook:
 	$(srcdir)/autover.sh > $(distdir)/.version
 
+LIST_D = snapraid.d \
+	snapraid-de.d \
+	snapraid-es.d \
+	snapraid-fr.d \
+	snapraid-it.d \
+	snapraid-pl.d \
+	snapraid-ro.d \
+	snapraid_log.d
+
+LIST_MAN = $(LIST_D:.d=.1)
+
+LIST_TXT = $(LIST_D:.d=.txt)
+
+LIST_HH = $(LIST_D:.d=.hh)
+
 EXTRA_DIST = \
 	autogen.sh autover.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO CHECK INSTALL.windows \
-	snapraid.d snapraid.1 snapraid.txt \
-	snapraid_log.d snapraid_log.1 snapraid_log.txt \
+	$(LIST_D) \
+	$(LIST_MAN) \
+	$(LIST_TXT) \
 	test/test-par1.conf \
 	test/test-par2.conf \
 	test/test-par3.conf \
@@ -1011,35 +1027,27 @@ lcov_html:
 # Rules for documentation
 
 if HAVE_ADVD2
-snapraid.1 : snapraid.d
+%.1 : %.d
 	advd2 man < $(srcdir)/$< > $@
 
-snapraid.txt : snapraid.d
+%.txt : %.d
 	advd2 txt < $(srcdir)/$< | todos > $@
 
-snapraid.html : snapraid.d
+%.html : %.d
 	advd2 html < $(srcdir)/$< > $@
 
-snapraid.hh : snapraid.d
+%.hh : %.d
 	advd2 frame < $(srcdir)/$< > $@
-	
-snapraid_log.1 : snapraid_log.d
-	advd2 man < $(srcdir)/$< > $@
-
-snapraid_log.txt : snapraid_log.d
-	advd2 txt < $(srcdir)/$< | todos > $@
-
-snapraid_log.html : snapraid_log.d
-	advd2 html < $(srcdir)/$< > $@
-
-snapraid_log.hh : snapraid_log.d
-	advd2 frame < $(srcdir)/$< > $@	
 endif
+
+# Web distribution
+
+web: $(LIST_HH)
 
 # Windows distribution
 
 DISTWIN = \
-	snapraid.txt \
+	$(LIST_TXT) \
 	snapraid.exe
 
 distwindows-x86: $(DISTWIN)
@@ -1071,4 +1079,3 @@ distwindows-x64: $(DISTWIN)
 	todos < TODO > tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp
-
