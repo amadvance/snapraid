@@ -1,0 +1,2120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+<meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">
+<meta name="author" content="Andrea Mazzoleni">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" type="text/css" href="style.css">
+<title>SnapRAID</title>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+<body>
+<div id="header">
+<img src="index.jpg" width="1200" height="150" alt="Title">
+</div>
+<div id="menu">
+<a href="/">About</a>
+<a href="download">Download</a>
+<a href="design">Design</a>
+<a href="compare">Compare</a>
+<a href="faq">FAQ</a>
+<a href="manual">Manual</a>
+<a href="support">Support</a>
+<a href="authors">Authors</a>
+</div>
+<div id="main">
+
+
+
+<p>
+German manual for <span class="bold">SnapRAID</span>.
+</p>
+
+<h2><a name="1">1</a> 
+Synopsis
+</h2>
+<pre>
+snapraid [-c, --conf CONFIG]
+&nbsp;&nbsp;&nbsp;&nbsp;[-f, --filter PATTERN] [-d, --filter-disk NAME]
+&nbsp;&nbsp;&nbsp;&nbsp;[-m, --filter-missing] [-e, --filter-error]
+&nbsp;&nbsp;&nbsp;&nbsp;[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
+&nbsp;&nbsp;&nbsp;&nbsp;[-p, --plan PERC|bad|new|full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-o, --older-than DAYS] [-l, --log FILE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-s, --spin-down-on-error] [-w, --bw-limit RATE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
+&nbsp;&nbsp;&nbsp;&nbsp;[-U, --force-uuid] [-D, --force-device]
+&nbsp;&nbsp;&nbsp;&nbsp;[-N, --force-nocopy] [-F, --force-full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-R, --force-realloc]
+&nbsp;&nbsp;&nbsp;&nbsp;[-S, --start BLKSTART] [-B, --count BLKCOUNT]
+&nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NUMBER]
+&nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
+&nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
+&nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+</pre>
+<p>
+<pre>
+snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
+</pre>
+<h2><a name="2">2</a> 
+Description
+</h2>
+SnapRAID ist ein Sicherungsprogramm, das für Festplatten-Arrays
+entwickelt wurde und Paritätsinformationen zur Datenwiederherstellung
+bei Ausfall von bis zu sechs Festplatten speichert.
+<p>
+SnapRAID ist hauptsächlich für Home-Media-Center mit großen,
+selten geänderten Dateien konzipiert und bietet folgende Funktionen:
+<ul>
+<li>
+Sie können bereits mit Dateien gefüllte Festplatten verwenden,
+ohne sie neu formatieren zu müssen, und wie gewohnt darauf zugreifen.
+</li>
+<li>
+Alle Ihre Daten werden gehasht, um die Datenintegrität zu
+gewährleisten und stille Beschädigung (silent corruption) zu verhindern.
+</li>
+<li>
+Wenn die Anzahl der ausgefallenen Festplatten die Paritätsanzahl
+überschreitet, beschränkt sich der Datenverlust auf die betroffenen
+Festplatten; Daten auf anderen Festplatten bleiben zugänglich.
+</li>
+<li>
+Wenn Sie versehentlich Dateien auf einer Festplatte löschen,
+ist eine Wiederherstellung möglich.
+</li>
+<li>
+Festplatten können unterschiedliche Größen haben.
+</li>
+<li>
+Sie können jederzeit Festplatten hinzufügen.
+</li>
+<li>
+SnapRAID sperrt Ihre Daten nicht ein; Sie können die Verwendung
+jederzeit beenden, ohne neu formatieren oder Daten verschieben zu müssen.
+</li>
+<li>
+Um auf eine Datei zuzugreifen, muss nur eine einzige Festplatte
+drehen (spinnen), was Strom spart und Geräusche reduziert.
+</li>
+</ul>
+<p>
+Für weitere Informationen besuchen Sie bitte die offizielle SnapRAID-Website:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+https://www.snapraid.it/
+</pre>
+</td></tr></table>
+<h2><a name="3">3</a> 
+Limitations
+</h2>
+SnapRAID ist ein Hybrid aus einem RAID- und einem Sicherungsprogramm,
+das darauf abzielt, die besten Vorteile beider zu kombinieren.
+Es hat jedoch einige Einschränkungen, die Sie vor der Verwendung
+berücksichtigen sollten.
+<p>
+Die Haupteinschränkung besteht darin, dass wenn eine Festplatte
+ausfällt und Sie in letzter Zeit keine Synchronisierung durchgeführt haben,
+Sie möglicherweise nicht vollständig wiederherstellen können.
+Genauer gesagt können Sie möglicherweise nicht bis zur Größe der
+geänderten oder gelöschten Dateien seit der letzten `sync`-Operation
+wiederherstellen. Dies tritt auch dann auf, wenn die geänderten oder
+gelöschten Dateien sich nicht auf der ausgefallenen Festplatte befinden.
+Aus diesem Grund ist SnapRAID besser für Daten geeignet, die sich
+selten ändern.
+<p>
+Andererseits verhindern neu hinzugefügte Dateien die Wiederherstellung
+von bereits vorhandenen Dateien nicht. Sie verlieren nur die
+kürzlich hinzugefügten Dateien, wenn diese sich auf der ausgefallenen
+Festplatte befinden.
+<p>
+Weitere Einschränkungen von SnapRAID sind:
+<ul>
+<li>
+Mit SnapRAID haben Sie immer noch separate Dateisysteme für jede
+Festplatte. Mit RAID erhalten Sie ein einziges großes Dateisystem.
+</li>
+<li>
+SnapRAID streift (stripes) keine Daten.
+Mit RAID erhalten Sie einen Geschwindigkeitsvorteil durch Striping.
+</li>
+<li>
+SnapRAID unterstützt keine Echtzeit-Wiederherstellung.
+Mit RAID müssen Sie die Arbeit nicht unterbrechen, wenn eine
+Festplatte ausfällt.
+</li>
+<li>
+SnapRAID kann Daten nur von einer begrenzten Anzahl von Festplattenausfällen
+wiederherstellen. Mit einer Sicherung können Sie von einem
+vollständigen Ausfall des gesamten Festplatten-Arrays wiederherstellen.
+</li>
+<li>
+Nur Dateinamen, Zeitstempel, symbolische Links (symlinks) und
+Hardlinks werden gespeichert. Berechtigungen, Eigentümerschaft
+und erweiterte Attribute werden nicht gespeichert.
+</li>
+</ul>
+<h2><a name="4">4</a> 
+Getting Started
+</h2>
+Um SnapRAID zu verwenden, müssen Sie zuerst eine Festplatte in Ihrem
+Festplatten-Array auswählen, die für `parity`-Informationen
+reserviert wird. Mit einer Festplatte für Parität können Sie von
+einem einzelnen Festplattenausfall wiederherstellen, ähnlich wie bei RAID5.
+<p>
+Wenn Sie von mehr Festplattenausfällen wiederherstellen möchten,
+ähnlich wie bei RAID6, müssen Sie zusätzliche Festplatten für Parität
+reservieren. Jede zusätzliche Paritätsfestplatte ermöglicht die
+Wiederherstellung von einem weiteren Festplattenausfall.
+<p>
+Als Paritätsfestplatten müssen Sie die größten Festplatten im Array
+auswählen, da die Paritätsinformationen auf die Größe der größten
+Datenfestplatte im Array anwachsen können.
+<p>
+Diese Festplatten werden zum Speichern der `parity`-Dateien
+reserviert. Sie sollten Ihre Daten nicht darauf speichern.
+<p>
+Anschließend müssen Sie die `data`-Festplatten definieren, die Sie
+mit SnapRAID schützen möchten. Der Schutz ist effektiver, wenn diese
+Festplatten Daten enthalten, die sich selten ändern. Aus diesem Grund
+ist es besser, die Windows C:\-Festplatte oder die Unix-Verzeichnisse
+/home, /var und /tmp NICHT einzuschließen.
+<p>
+Die Liste der Dateien wird in den `content`-Dateien gespeichert,
+die normalerweise auf den Daten-, Paritäts- oder Boot-Festplatten
+gespeichert werden. Diese Datei enthält die Details Ihrer Sicherung,
+einschließlich aller Prüfsummen zur Überprüfung ihrer Integrität.
+Die `content`-Datei wird in mehreren Kopien gespeichert, und jede Kopie
+muss sich auf einer anderen Festplatte befinden, um sicherzustellen,
+dass selbst bei mehreren Festplattenausfällen mindestens eine Kopie
+verfügbar ist.
+<p>
+Angenommen, Sie sind nur an einer Paritätsstufe des Schutzes interessiert
+und Ihre Festplatten befinden sich unter:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+/mnt/diskp &lt;- ausgewählte Festplatte für Parität
+/mnt/disk1 &lt;- erste zu schützende Festplatte
+/mnt/disk2 &lt;- zweite zu schützende Festplatte
+/mnt/disk3 &lt;- dritte zu schützende Festplatte
+</pre>
+</td></tr></table>
+<p>
+Sie müssen die Konfigurationsdatei /etc/snapraid.conf mit den
+folgenden Optionen erstellen:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity /mnt/diskp/snapraid.parity
+content /var/snapraid/snapraid.content
+content /mnt/disk1/snapraid.content
+content /mnt/disk2/snapraid.content
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
+</pre>
+</td></tr></table>
+<p>
+Wenn Sie Windows verwenden, sollten Sie das Windows-Pfadformat mit
+Laufwerksbuchstaben und Backslashes anstelle von Slashes verwenden.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity E:\snapraid.parity
+content C:\snapraid\snapraid.content
+content F:\array\snapraid.content
+content G:\array\snapraid.content
+data d1 F:\array\
+data d2 G:\array\
+data d3 H:\array\
+</pre>
+</td></tr></table>
+<p>
+Wenn Sie viele Festplatten haben und keine Laufwerksbuchstaben mehr
+verfügbar sind, können Sie Festplatten direkt in Unterordnern
+einhängen (mounten). Siehe:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+https://www.google.com/search?q=Windows+mount+point
+</pre>
+</td></tr></table>
+<p>
+Zu diesem Zeitpunkt sind Sie bereit, den Befehl `sync` auszuführen,
+um die Paritätsinformationen zu erstellen.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid sync
+</pre>
+</td></tr></table>
+<p>
+Dieser Vorgang kann beim ersten Mal mehrere Stunden dauern, abhängig
+von der Größe der bereits auf den Festplatten vorhandenen Daten.
+Wenn die Festplatten leer sind, ist der Vorgang sofort abgeschlossen.
+<p>
+Sie können ihn jederzeit durch Drücken von Strg+C anhalten, und beim
+nächsten Lauf wird er dort fortgesetzt, wo er unterbrochen wurde.
+<p>
+Wenn dieser Befehl abgeschlossen ist, sind Ihre Daten SICHER.
+<p>
+Jetzt können Sie Ihr Array nach Belieben verwenden und die Paritätsinformationen
+regelmäßig durch Ausführen des `sync`-Befehls aktualisieren.
+<h3><a name="4.1">4.1</a> 
+Scrubbing
+</h3>
+Um die Daten und die Parität regelmäßig auf Fehler zu überprüfen,
+können Sie den Befehl `scrub` ausführen.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid scrub
+</pre>
+</td></tr></table>
+<p>
+Dieser Befehl vergleicht die Daten in Ihrem Array mit dem Hash,
+der während des `sync`-Befehls berechnet wurde, um die Integrität
+zu überprüfen.
+<p>
+Jeder Lauf des Befehls überprüft ungefähr 8% des Arrays,
+ausgenommen Daten, die bereits in den letzten 10 Tagen gescrubbed wurden.
+Sie können die Option -p, --plan verwenden, um eine andere Menge
+anzugeben, und die Option -o, --older-than, um ein anderes Alter
+in Tagen anzugeben. Zum Beispiel, um 5% des Arrays auf Blöcke zu
+überprüfen, die älter als 20 Tage sind, verwenden Sie:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid -p 5 -o 20 scrub
+</pre>
+</td></tr></table>
+<p>
+Wenn während des Vorgangs stille oder Eingabe-/Ausgabefehler
+gefunden werden, werden die entsprechenden Blöcke in der
+`content`-Datei als fehlerhaft (bad) markiert und im Befehl
+`status` aufgelistet.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid status
+</pre>
+</td></tr></table>
+<p>
+Um sie zu beheben, können Sie den Befehl `fix` verwenden und dabei
+nach fehlerhaften Blöcken mit der Option -e, --filter-error
+filtern:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid -e fix
+</pre>
+</td></tr></table>
+<p>
+Beim nächsten `scrub` verschwinden die Fehler aus dem `status`-Bericht,
+wenn sie tatsächlich behoben sind. Um es schneller zu machen,
+können Sie -p bad verwenden, um nur als fehlerhaft markierte Blöcke
+zu scrubben.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid -p bad scrub
+</pre>
+</td></tr></table>
+<p>
+Das Ausführen von `scrub` auf einem nicht synchronisierten Array
+kann Fehler melden, die durch entfernte oder geänderte Dateien
+verursacht wurden. Diese Fehler werden in der `scrub`-Ausgabe
+gemeldet, aber die zugehörigen Blöcke werden nicht als fehlerhaft
+markiert.
+<h3><a name="4.2">4.2</a> 
+Pooling
+</h3>
+Hinweis: Die unten beschriebene Pooling-Funktion wurde durch das
+Tool mergefs ersetzt, das jetzt die empfohlene Option für Linux-Benutzer
+in der SnapRAID-Community ist. Mergefs bietet eine flexiblere
+und effizientere Möglichkeit, mehrere Laufwerke zu einem einzigen,
+vereinheitlichten Einhängepunkt (Mount Point) zusammenzufassen,
+was einen nahtlosen Zugriff auf Dateien über Ihr gesamtes Array
+hinweg ermöglicht, ohne auf symbolische Links angewiesen zu sein.
+Es lässt sich gut mit SnapRAID zum Paritätsschutz integrieren und
+wird häufig in Setups wie OpenMediaVault (OMV) oder benutzerdefinierten
+NAS-Konfigurationen verwendet.
+<p>
+Um alle Dateien in Ihrem Array im selben Verzeichnisbaum anzuzeigen,
+können Sie die `pooling`-Funktion aktivieren. Sie erstellt eine
+schreibgeschützte virtuelle Ansicht aller Dateien in Ihrem Array
+mithilfe symbolischer Links.
+<p>
+Sie können das `pooling`-Verzeichnis in der Konfigurationsdatei
+mit folgender Option konfigurieren:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+pool /pool
+</pre>
+</td></tr></table>
+<p>
+oder, wenn Sie Windows verwenden, mit:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+pool C:\pool
+</pre>
+</td></tr></table>
+<p>
+und anschließend den Befehl `pool` ausführen, um die virtuelle
+Ansicht zu erstellen oder zu aktualisieren.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid pool
+</pre>
+</td></tr></table>
+<p>
+Wenn Sie eine Unix-Plattform verwenden und dieses Verzeichnis über
+das Netzwerk für Windows- oder Unix-Maschinen freigeben möchten,
+sollten Sie die folgenden Optionen zu Ihrer /etc/samba/smb.conf
+hinzufügen:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Im globalen Abschnitt von smb.conf
+unix extensions = no
+</pre>
+</td></tr></table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Im Freigabe-Abschnitt von smb.conf
+[pool]
+comment = Pool
+path = /pool
+read only = yes
+guest ok = yes
+wide links = yes
+follow symlinks = yes
+</pre>
+</td></tr></table>
+<p>
+In Windows erfordert die Freigabe symbolischer Links über ein Netzwerk,
+dass Clients diese remote auflösen. Um dies zu ermöglichen,
+müssen Sie neben der Freigabe des Pool-Verzeichnisses auch alle
+Festplatten unabhängig freigeben, indem Sie die in der Konfigurationsdatei
+definierten Festplattennamen als Freigabepunkte verwenden.
+Sie müssen auch in der Option `share` der Konfigurationsdatei
+den Windows UNC-Pfad angeben, den Remote-Clients benötigen, um
+auf diese freigegebenen Festplatten zuzugreifen.
+<p>
+Zum Beispiel, wenn Sie von einem Server namens `darkstar` aus
+arbeiten, können Sie die Optionen verwenden:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+data d1 F:\array\
+data d2 G:\array\
+data d3 H:\array\
+pool C:\pool
+share \\darkstar
+</pre>
+</td></tr></table>
+<p>
+und die folgenden Verzeichnisse über das Netzwerk freigeben:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+\\darkstar\pool -&gt; C:\pool
+\\darkstar\d1 -&gt; F:\array
+\\darkstar\d2 -&gt; G:\array
+\\darkstar\d3 -&gt; H:\array
+</pre>
+</td></tr></table>
+<p>
+um Remote-Clients den Zugriff auf alle Dateien unter \\darkstar\pool
+zu ermöglichen.
+<p>
+Möglicherweise müssen Sie auch Remote-Clients konfigurieren, um
+den Zugriff auf Remote-Symlinks mit dem Befehl zu aktivieren:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
+</pre>
+</td></tr></table>
+<h3><a name="4.3">4.3</a> 
+Undeleting
+</h3>
+SnapRAID funktioniert eher wie ein Sicherungsprogramm als ein RAID-System
+und kann verwendet werden, um Dateien in ihren vorherigen Zustand
+wiederherzustellen oder das Löschen rückgängig zu machen, indem die
+Option -f, --filter verwendet wird:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid fix -f DATEI
+</pre>
+</td></tr></table>
+<p>
+oder für ein Verzeichnis:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid fix -f VERZEICHNIS/
+</pre>
+</td></tr></table>
+<p>
+Sie können es auch verwenden, um nur versehentlich gelöschte Dateien
+innerhalb eines Verzeichnisses wiederherzustellen, indem Sie die
+Option -m, --filter-missing verwenden, die nur fehlende Dateien
+wiederherstellt und alle anderen unberührt lässt.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid fix -m -f VERZEICHNIS/
+</pre>
+</td></tr></table>
+<p>
+Oder um alle gelöschten Dateien auf allen Laufwerken wiederherzustellen mit:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid fix -m
+</pre>
+</td></tr></table>
+<h3><a name="4.4">4.4</a> 
+Recovering
+</h3>
+Das Schlimmste ist passiert, und Sie haben eine oder mehrere Festplatten
+verloren!
+<p>
+KEINE PANIK! Sie werden in der Lage sein, sie wiederherzustellen!
+<p>
+Das erste, was Sie tun müssen, ist, weitere Änderungen an Ihrem
+Festplatten-Array zu vermeiden. Deaktivieren Sie alle Remote-Verbindungen
+dazu und alle geplanten Prozesse, einschließlich geplanter SnapRAID-nächtlicher
+`sync`- oder `scrub`-Läufe.
+<p>
+Fahren Sie dann mit den folgenden Schritten fort.
+<h4><a name="4.4.1">4.4.1</a> 
+STEP 1 -&gt; Reconfigure
+</h4>
+Sie benötigen etwas Platz zur Wiederherstellung, idealerweise auf
+zusätzlichen Ersatzfestplatten, aber eine externe USB-Festplatte oder
+eine Remote-Festplatte ist ausreichend.
+<p>
+Ändern Sie die SnapRAID-Konfigurationsdatei so, dass die `data`-
+oder `parity`-Option der ausgefallenen Festplatte auf einen Ort mit
+genügend leerem Speicherplatz zur Wiederherstellung der Dateien zeigt.
+<p>
+Wenn zum Beispiel die Festplatte `d1` ausgefallen ist, ändern Sie von:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+data d1 /mnt/disk1/
+</pre>
+</td></tr></table>
+<p>
+zu:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+data d1 /mnt/new_spare_disk/
+</pre>
+</td></tr></table>
+<p>
+Wenn die wiederherzustellende Festplatte eine Paritätsfestplatte ist,
+aktualisieren Sie die entsprechende `parity`-Option.
+Wenn Sie mehrere ausgefallene Festplatten haben, aktualisieren Sie
+alle ihre Konfigurationsoptionen.
+<h4><a name="4.4.2">4.4.2</a> 
+STEP 2 -&gt; Fix
+</h4>
+Führen Sie den `fix`-Befehl aus und speichern Sie das Protokoll
+in einer externen Datei mit:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid -d NAME -l fix.log fix
+</pre>
+</td></tr></table>
+<p>
+Wobei NAME der Name der Festplatte ist, wie z.B. `d1` in unserem
+vorherigen Beispiel. Wenn die wiederherzustellende Festplatte eine
+Paritätsfestplatte ist, verwenden Sie die Namen `parity`, `2-parity`,
+usw. Wenn Sie mehrere ausgefallene Festplatten haben, verwenden Sie
+mehrere -d-Optionen, um alle anzugeben.
+<p>
+Dieser Befehl wird lange dauern.
+<p>
+Stellen Sie sicher, dass Sie einige Gigabyte frei haben, um die
+Datei fix.log zu speichern. Führen Sie ihn von einer Festplatte
+mit ausreichend freiem Speicherplatz aus.
+<p>
+Jetzt haben Sie alles wiederhergestellt, was wiederherstellbar ist.
+Wenn einige Dateien teilweise oder vollständig nicht wiederherstellbar
+sind, werden sie umbenannt, indem die Erweiterung `.unrecoverable`
+hinzugefügt wird.
+<p>
+Sie finden eine detaillierte Liste aller nicht wiederherstellbaren
+Blöcke in der Datei fix.log, indem Sie alle Zeilen überprüfen,
+die mit `unrecoverable:` beginnen.
+<p>
+Wenn Sie mit der Wiederherstellung nicht zufrieden sind, können Sie
+sie so oft wie gewünscht wiederholen.
+<p>
+Wenn Sie zum Beispiel Dateien nach dem letzten `sync` aus dem Array
+entfernt haben, kann dies dazu führen, dass einige Dateien nicht
+wiederhergestellt werden. In diesem Fall können Sie den `fix`
+mithilfe der Option -i, --import wiederholen, wobei Sie angeben,
+wo sich diese Dateien jetzt befinden, um sie erneut in den
+Wiederherstellungsprozess einzubeziehen.
+<p>
+Wenn Sie mit der Wiederherstellung zufrieden sind, können Sie
+fortfahren, aber beachten Sie, dass Sie nach der Synchronisierung
+den `fix`-Befehl nicht mehr wiederholen können!
+<h4><a name="4.4.3">4.4.3</a> 
+STEP 3 -&gt; Check
+</h4>
+Als vorsichtige Überprüfung können Sie jetzt einen `check`-Befehl
+ausführen, um sicherzustellen, dass auf der wiederhergestellten
+Festplatte alles korrekt ist.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid -d NAME -a check
+</pre>
+</td></tr></table>
+<p>
+Wobei NAME der Name der Festplatte ist, wie z.B. `d1` in unserem
+vorherigen Beispiel.
+<p>
+Die Optionen -d und -a weisen SnapRAID an, nur die angegebene
+Festplatte zu überprüfen und alle Paritätsdaten zu ignorieren.
+<p>
+Dieser Befehl wird lange dauern, aber wenn Sie nicht übermäßig
+vorsichtig sind, können Sie ihn überspringen.
+<h4><a name="4.4.4">4.4.4</a> 
+STEP 4 -&gt; Sync
+</h4>
+Führen Sie den `sync`-Befehl aus, um das Array mit der neuen
+Festplatte zu resynchronisieren.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid sync
+</pre>
+</td></tr></table>
+<p>
+Wenn alles wiederhergestellt ist, ist dieser Befehl sofort.
+<h2><a name="5">5</a> 
+Commands
+</h2>
+SnapRAID bietet einige einfache Befehle, mit denen Sie:
+<ul>
+<li>
+Den Status des Arrays ausgeben -&gt; `status`
+</li>
+<li>
+Die Festplatten steuern -&gt; `smart`, `probe`, `up`, `down`
+</li>
+<li>
+Eine Sicherung/einen Snapshot erstellen -&gt; `sync`
+</li>
+<li>
+Daten regelmäßig überprüfen -&gt; `scrub`
+</li>
+<li>
+Die letzte Sicherung/den letzten Snapshot wiederherstellen -&gt; `fix`.
+</li>
+</ul>
+<p>
+Befehle müssen in Kleinbuchstaben geschrieben werden.
+<h3><a name="5.1">5.1</a> 
+status
+</h3>
+Gibt eine Zusammenfassung des Zustands des Festplatten-Arrays aus.
+<p>
+Es enthält Informationen zur Paritätsfragmentierung, wie alt
+die Blöcke sind, ohne Überprüfung, und alle aufgezeichneten
+stillen Fehler, die beim Scrubbing aufgetreten sind.
+<p>
+Die präsentierten Informationen beziehen sich auf den letzten Zeitpunkt,
+zu dem Sie `sync` ausgeführt haben. Spätere Änderungen werden
+nicht berücksichtigt.
+<p>
+Wenn fehlerhafte Blöcke erkannt wurden, werden deren Blocknummern
+aufgelistet. Um sie zu beheben, können Sie den Befehl `fix -e`
+verwenden.
+<p>
+Es zeigt auch ein Diagramm an, das den letzten Zeitpunkt darstellt,
+zu dem jeder Block gescrubbed oder synchronisiert wurde. Gescrubbed
+Blöcke werden mit '*', Blöcke, die synchronisiert, aber noch nicht
+gescrubbed wurden, mit 'o' angezeigt.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.2">5.2</a> 
+smart
+</h3>
+Gibt einen SMART-Bericht aller Festplatten im System aus.
+<p>
+Es enthält eine Schätzung der Ausfallwahrscheinlichkeit im nächsten
+Jahr, sodass Sie die Wartungsersetzung von Festplatten planen können,
+die verdächtige Attribute aufweisen.
+<p>
+Diese Wahrscheinlichkeitsschätzung wird durch Korrelation der SMART-Attribute
+der Festplatten mit den Backblaze-Daten erhalten, die unter
+folgender Adresse verfügbar sind:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+https://www.backblaze.com/hard-drive-test-data.html
+</pre>
+</td></tr></table>
+<p>
+Wenn SMART meldet, dass eine Festplatte ausfällt, wird `FAIL`
+oder `PREFAIL` für diese Festplatte gedruckt, und SnapRAID
+endet mit einem Fehler. In diesem Fall wird ein sofortiger
+Austausch der Festplatte dringend empfohlen.
+<p>
+Weitere mögliche Statuszeichenfolgen sind:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+logfail
+</em></td><td width="90%">
+In der Vergangenheit lagen einige Attribute unter
+dem Schwellenwert.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+logerr
+</em></td><td width="90%">
+Das Gerätefehlerprotokoll enthält Fehler.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+selferr
+</em></td><td width="90%">
+Das Geräte-Selbsttestprotokoll enthält Fehler.
+</td></tr>
+</table>
+<p>
+Wenn die Option -v, --verbose angegeben ist, wird eine tiefere
+statistische Analyse bereitgestellt. Diese Analyse kann Ihnen bei
+der Entscheidung helfen, ob Sie mehr oder weniger Parität benötigen.
+<p>
+Dieser Befehl verwendet das `smartctl`-Tool und entspricht dem
+Ausführen von `smartctl -a` auf allen Geräten.
+<p>
+Wenn Ihre Geräte nicht korrekt automatisch erkannt werden, können Sie
+einen benutzerdefinierten Befehl mithilfe der `smartctl`-Option
+in der Konfigurationsdatei angeben.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.3">5.3</a> 
+probe
+</h3>
+Gibt den POWER-Zustand aller Festplatten im System aus.
+<p>
+`Standby` bedeutet, dass die Festplatte nicht dreht. `Active`
+bedeutet, dass die Festplatte dreht.
+<p>
+Dieser Befehl verwendet das `smartctl`-Tool und entspricht dem
+Ausführen von `smartctl -n standby -i` auf allen Geräten.
+<p>
+Wenn Ihre Geräte nicht korrekt automatisch erkannt werden, können Sie
+einen benutzerdefinierten Befehl mithilfe der `smartctl`-Option
+in der Konfigurationsdatei angeben.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.4">5.4</a> 
+up
+</h3>
+Dreht alle Festplatten des Arrays hoch (spins up).
+<p>
+Sie können nur bestimmte Festplatten mithilfe der Option -d, --filter-disk
+hochdrehen.
+<p>
+Das gleichzeitige Hochdrehen aller Festplatten erfordert viel Strom.
+Stellen Sie sicher, dass Ihr Netzteil dies aushalten kann.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.5">5.5</a> 
+down
+</h3>
+Dreht alle Festplatten des Arrays herunter (spins down).
+<p>
+Dieser Befehl verwendet das `smartctl`-Tool und entspricht dem
+Ausführen von `smartctl -s standby,now` auf allen Geräten.
+<p>
+Sie können nur bestimmte Festplatten mithilfe der Option -d, --filter-disk
+herunterdrehen.
+<p>
+Um automatisch bei einem Fehler herunterzufahren, können Sie die Option
+-s, --spin-down-on-error mit jedem anderen Befehl verwenden, was dem
+manuellen Ausführen von `down` bei Auftreten eines Fehlers
+entspricht.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.6">5.6</a> 
+diff
+</h3>
+Listet alle Dateien auf, die seit dem letzten `sync` geändert wurden
+und deren Paritätsdaten neu berechnet werden müssen.
+<p>
+Dieser Befehl überprüft nicht die Dateidaten, sondern nur den
+Dateizeitstempel, die Größe und die Inode.
+<p>
+Nach dem Auflisten aller geänderten Dateien wird eine Zusammenfassung
+der Änderungen präsentiert, gruppiert nach:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+equal
+</em></td><td width="90%">
+Dateien, die sich seitdem nicht geändert haben.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+added
+</em></td><td width="90%">
+Neu hinzugefügte Dateien, die vorher nicht vorhanden waren.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+removed
+</em></td><td width="90%">
+Entfernte Dateien.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+updated
+</em></td><td width="90%">
+Dateien mit einer anderen Größe oder einem anderen
+Zeitstempel, was bedeutet, dass sie geändert wurden.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+moved
+</em></td><td width="90%">
+Auf derselben Festplatte in ein anderes Verzeichnis
+verschobene Dateien. Sie werden durch denselben Namen,
+dieselbe Größe, denselben Zeitstempel und dieselbe Inode,
+aber ein anderes Verzeichnis identifiziert.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+copied
+</em></td><td width="90%">
+Auf dieselbe oder eine andere Festplatte kopierte
+Dateien. Beachten Sie, dass wenn sie tatsächlich auf eine
+andere Festplatte verschoben werden, sie auch unter `removed`
+gezählt werden. Sie werden durch denselben Namen, dieselbe
+Größe und denselben Zeitstempel identifiziert. Wenn der
+Untersekunden-Zeitstempel Null ist, muss der vollständige
+Pfad übereinstimmen, nicht nur der Name.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+restored
+</em></td><td width="90%">
+Dateien mit einer anderen Inode, aber übereinstimmendem
+Namen, Größe und Zeitstempel. Dies sind normalerweise
+Dateien, die nach dem Löschen wiederhergestellt wurden.
+</td></tr>
+</table>
+<p>
+Wenn ein `sync` erforderlich ist, ist der Rückgabecode des Prozesses 2
+anstelle des Standardwerts 0. Der Rückgabecode 1 wird für eine
+allgemeine Fehlerbedingung verwendet.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.7">5.7</a> 
+sync
+</h3>
+Aktualisiert die Paritätsinformationen. Alle geänderten Dateien
+im Festplatten-Array werden gelesen, und die entsprechenden
+Paritätsdaten werden aktualisiert.
+<p>
+Sie können diesen Vorgang jederzeit durch Drücken von Strg+C
+anhalten, ohne die bereits geleistete Arbeit zu verlieren.
+Beim nächsten Lauf wird der `sync`-Vorgang dort fortgesetzt,
+wo er unterbrochen wurde.
+<p>
+Wenn während des Vorgangs stille oder Eingabe-/Ausgabefehler
+gefunden werden, werden die entsprechenden Blöcke als fehlerhaft
+markiert.
+<p>
+Dateien werden durch Pfad und/oder Inode identifiziert und anhand
+von Größe und Zeitstempel überprüft.
+Wenn die Dateigröße oder der Zeitstempel abweicht, werden die Paritätsdaten
+für die gesamte Datei neu berechnet.
+Wenn die Datei auf derselben Festplatte verschoben oder umbenannt
+wird und dieselbe Inode beibehält, wird die Parität nicht neu
+berechnet.
+Wenn die Datei auf eine andere Festplatte verschoben wird, wird die
+Parität neu berechnet, aber die zuvor berechneten Hash-Informationen
+werden beibehalten.
+<p>
+Die `content`- und `parity`-Dateien werden bei Bedarf geändert.
+Die Dateien im Array werden NICHT geändert.
+<h3><a name="5.8">5.8</a> 
+scrub
+</h3>
+Scrubbt das Array und überprüft auf stille oder Eingabe-/Ausgabefehler
+auf Daten- und Paritätsfestplatten.
+<p>
+Jede Ausführung überprüft ungefähr 8% des Arrays, ausgenommen Daten,
+die bereits in den letzten 10 Tagen gescrubbed wurden.
+Dies bedeutet, dass Scrubbing einmal pro Woche sicherstellt, dass
+jedes Bit an Daten mindestens einmal alle drei Monate überprüft wird.
+<p>
+Sie können einen anderen Scrub-Plan oder eine andere Menge mithilfe
+der Option -p, --plan definieren, die Folgendes akzeptiert:
+bad - Scrubbt als fehlerhaft markierte Blöcke.
+new - Scrubbt gerade synchronisierte Blöcke, die noch nicht gescrubbed
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+wurden.
+</td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+full
+</em></td><td width="90%">
+Scrubbt alles.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+0-100
+</em></td><td width="90%">
+Scrubbt den angegebenen Prozentsatz der Blöcke.
+</td></tr>
+</table>
+<p>
+Wenn Sie einen Prozentsatz angeben, können Sie auch die Option
+-o, --older-than verwenden, um festzulegen, wie alt der Block sein
+soll. Die ältesten Blöcke werden zuerst gescrubbed, um eine optimale
+Überprüfung zu gewährleisten. Wenn Sie nur die gerade synchronisierten
+Blöcke scrubben möchten, die noch nicht gescrubbed wurden,
+verwenden Sie die Option `-p new`.
+<p>
+Um Details zum Scrub-Status zu erhalten, verwenden Sie den Befehl
+`status`.
+<p>
+Für jeden gefundenen stillen oder Eingabe-/Ausgabefehler werden die
+entsprechenden Blöcke in der `content`-Datei als fehlerhaft (bad)
+markiert. Diese fehlerhaften Blöcke werden in `status` aufgelistet
+und können mit `fix -e` behoben werden. Nach der Behebung werden
+sie beim nächsten Scrub erneut überprüft, und wenn sie als korrigiert
+befunden werden, wird die fehlerhafte Markierung entfernt.
+Um nur die fehlerhaften Blöcke zu scrubben, können Sie den Befehl
+`scrub -p bad` verwenden.
+<p>
+Es wird empfohlen, `scrub` nur auf einem synchronisierten Array
+auszuführen, um gemeldete Fehler zu vermeiden, die durch nicht
+synchronisierte Daten verursacht werden. Diese Fehler werden als
+keine stillen Fehler erkannt, und die Blöcke werden nicht als fehlerhaft
+markiert, aber solche Fehler werden in der Ausgabe des Befehls
+gemeldet.
+<p>
+Die `content`-Datei wird geändert, um die Zeit der letzten
+Überprüfung für jeden Block zu aktualisieren und fehlerhafte
+Blöcke zu markieren.
+Die `parity`-Dateien werden NICHT geändert.
+Die Dateien im Array werden NICHT geändert.
+<h3><a name="5.9">5.9</a> 
+fix
+</h3>
+Behebt alle Dateien und die Paritätsdaten.
+<p>
+Alle Dateien und Paritätsdaten werden mit dem Snapshot-Zustand
+verglichen, der beim letzten `sync` gespeichert wurde.
+Wenn eine Abweichung gefunden wird, wird sie auf den gespeicherten
+Snapshot zurückgesetzt.
+<p>
+WARNUNG! Der Befehl `fix` unterscheidet nicht zwischen Fehlern und
+beabsichtigten Änderungen. Er setzt den Dateizustand bedingungslos
+auf den letzten `sync` zurück.
+<p>
+Wenn keine andere Option angegeben ist, wird das gesamte Array verarbeitet.
+Verwenden Sie die Filteroptionen, um eine Teilmenge von Dateien
+oder Festplatten für die Operation auszuwählen.
+<p>
+Um nur die Blöcke zu beheben, die während `sync` und `scrub` als
+fehlerhaft markiert wurden, verwenden Sie die Option -e, --filter-error.
+Im Gegensatz zu anderen Filteroptionen wendet diese Behebungen nur
+auf Dateien an, die seit dem letzten `sync` unverändert sind.
+<p>
+SnapRAID benennt alle Dateien, die nicht behoben werden können,
+durch Hinzufügen der Erweiterung `.unrecoverable` um.
+<p>
+Vor dem Beheben wird das gesamte Array gescannt, um alle Dateien
+zu finden, die seit der letzten `sync`-Operation verschoben wurden.
+Diese Dateien werden anhand ihres Zeitstempels identifiziert, wobei
+Name und Verzeichnis ignoriert werden, und werden bei Bedarf im
+Wiederherstellungsprozess verwendet. Wenn Sie einige davon außerhalb
+des Arrays verschoben haben, können Sie die Option -i, --import
+verwenden, um zusätzliche Verzeichnisse zum Scannen anzugeben.
+<p>
+Dateien werden nur anhand des Pfads identifiziert, nicht anhand
+der Inode.
+<p>
+Die `content`-Datei wird NICHT geändert.
+Die `parity`-Dateien werden bei Bedarf geändert.
+Die Dateien im Array werden bei Bedarf geändert.
+<h3><a name="5.10">5.10</a> 
+check
+</h3>
+Überprüft alle Dateien und die Paritätsdaten.
+<p>
+Es funktioniert wie `fix`, simuliert jedoch nur eine Wiederherstellung,
+und es werden keine Änderungen in das Array geschrieben.
+<p>
+Dieser Befehl ist primär für manuelle Überprüfung gedacht, wie z.B.
+nach einem Wiederherstellungsprozess oder unter anderen speziellen
+Bedingungen. Für regelmäßige und geplante Überprüfungen verwenden
+Sie `scrub`.
+<p>
+Wenn Sie die Option -a, --audit-only verwenden, wird nur der Hash
+der Dateien überprüft, und die Paritätsdaten werden für einen
+schnelleren Lauf ignoriert.
+<p>
+Dateien werden nur anhand des Pfads identifiziert, nicht anhand
+der Inode.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.11">5.11</a> 
+list
+</h3>
+Listet alle Dateien auf, die sich zum Zeitpunkt des letzten `sync`
+im Array befanden.
+<p>
+Mit -v oder --verbose wird auch die Untersekundenzeit angezeigt.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.12">5.12</a> 
+dup
+</h3>
+Listet alle doppelten Dateien auf. Zwei Dateien gelten als gleich,
+wenn ihre Hashes übereinstimmen. Die Dateidaten werden nicht gelesen;
+es werden nur die vorab berechneten Hashes verwendet.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.13">5.13</a> 
+pool
+</h3>
+Erstellt oder aktualisiert eine virtuelle Ansicht aller
+Dateien in Ihrem Festplatten-Array im `pooling`-Verzeichnis.
+<p>
+Die Dateien werden nicht kopiert, sondern mithilfe symbolischer
+Links verknüpft.
+<p>
+Beim Aktualisieren werden alle vorhandenen symbolischen Links und
+leeren Unterverzeichnisse gelöscht und durch die neue Ansicht des
+Arrays ersetzt. Alle anderen regulären Dateien bleiben erhalten.
+<p>
+Außerhalb des Pool-Verzeichnisses wird nichts geändert.
+<h3><a name="5.14">5.14</a> 
+devices
+</h3>
+Gibt die Low-Level-Geräte aus, die vom Array verwendet werden.
+<p>
+Dieser Befehl zeigt die Gerätezuordnungen im Array an und ist
+hauptsächlich als Skriptschnittstelle gedacht.
+<p>
+Die ersten beiden Spalten sind die Low-Level-Geräte-ID und der Pfad.
+Die nächsten beiden Spalten sind die High-Level-Geräte-ID und der Pfad.
+Die letzte Spalte ist der Festplattenname im Array.
+<p>
+In den meisten Fällen haben Sie ein Low-Level-Gerät für jede
+Festplatte im Array, aber in einigen komplexeren Konfigurationen
+können mehrere Low-Level-Geräte von einer einzigen Festplatte
+im Array verwendet werden.
+<p>
+Es wird nichts geändert.
+<h3><a name="5.15">5.15</a> 
+touch
+</h3>
+Setzt einen beliebigen Untersekunden-Zeitstempel für alle Dateien,
+deren Untersekunden-Zeitstempel auf Null gesetzt ist.
+<p>
+Dies verbessert die Fähigkeit von SnapRAID, verschobene und
+kopierte Dateien zu erkennen, da es den Zeitstempel fast
+eindeutig macht und mögliche Duplikate reduziert.
+<p>
+Genauer gesagt, wenn der Untersekunden-Zeitstempel nicht Null ist,
+wird eine verschobene oder kopierte Datei als solche identifiziert,
+wenn sie mit Name, Größe und Zeitstempel übereinstimmt. Wenn der
+Untersekunden-Zeitstempel Null ist, wird sie nur als Kopie betrachtet,
+wenn der vollständige Pfad, die Größe und der Zeitstempel alle
+übereinstimmen.
+<p>
+Der Zeitstempel mit Sekundenpräzision wird nicht geändert,
+sodass alle Daten und Zeiten Ihrer Dateien erhalten bleiben.
+<h3><a name="5.16">5.16</a> 
+rehash
+</h3>
+Plant eine Neu-Hash-Berechnung (rehash) des gesamten Arrays.
+<p>
+Dieser Befehl ändert die verwendete Hash-Art, typischerweise beim
+Upgrade von einem 32-Bit-System auf ein 64-Bit-System, um von
+MurmurHash3 auf den schnelleren SpookyHash umzuschalten.
+<p>
+Wenn Sie bereits den optimalen Hash verwenden, tut dieser Befehl
+nichts und informiert Sie darüber, dass keine Aktion erforderlich ist.
+<p>
+Die Neu-Hash-Berechnung wird nicht sofort durchgeführt, sondern
+findet schrittweise während `sync` und `scrub` statt.
+<p>
+Sie können den Neu-Hash-Zustand mithilfe von `status` überprüfen.
+<p>
+Während der Neu-Hash-Berechnung behält SnapRAID die volle
+Funktionalität bei, mit der einzigen Ausnahme, dass `dup` keine
+doppelten Dateien mit einem anderen Hash erkennen kann.
+<h2><a name="6">6</a> 
+Options
+</h2>
+SnapRAID bietet die folgenden Optionen:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-c, --conf CONFIG
+</strong></td></tr><tr><td>
+Wählt die zu verwendende Konfigurationsdatei aus. Wenn nicht
+angegeben, wird unter Unix die Datei `/usr/local/etc/snapraid.conf`
+verwendet, falls sie existiert, andernfalls `/etc/snapraid.conf`.
+Unter Windows wird die Datei `snapraid.conf` im selben
+Verzeichnis wie `snapraid.exe` verwendet.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-f, --filter PATTERN
+</strong></td></tr><tr><td>
+Filtert die zu verarbeitenden Dateien in `check` und `fix`.
+Nur die Dateien, die dem angegebenen Muster entsprechen, werden
+verarbeitet. Diese Option kann mehrmals verwendet werden.
+Weitere Details zu Musterspezifikationen finden Sie im
+Abschnitt PATTERN. Unter Unix stellen Sie sicher, dass Globbing-Zeichen
+in Anführungszeichen gesetzt werden, wenn sie verwendet werden.
+Diese Option kann nur mit `check` und `fix` verwendet werden.
+Sie kann nicht mit `sync` und `scrub` verwendet werden, da
+diese immer das gesamte Array verarbeiten.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-d, --filter-disk NAME
+</strong></td></tr><tr><td>
+Filtert die zu verarbeitenden Festplatten in `check`, `fix`, `up`
+und `down`. Sie müssen einen Festplattennamen angeben, wie
+in der Konfigurationsdatei definiert. Sie können auch Paritätsfestplatten
+mit den Namen `parity`, `2-parity`, `3-parity`, usw. angeben,
+um Vorgänge auf eine bestimmte Paritätsfestplatte zu beschränken.
+Wenn Sie mehrere --filter, --filter-disk und --filter-missing
+Optionen kombinieren, werden nur Dateien ausgewählt, die allen
+Filtern entsprechen. Diese Option kann mehrmals verwendet werden.
+Diese Option kann nur mit `check`, `fix`, `up` und `down` verwendet
+werden. Sie kann nicht mit `sync` und `scrub` verwendet werden,
+da diese immer das gesamte Array verarbeiten.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-m, --filter-missing
+</strong></td></tr><tr><td>
+Filtert die zu verarbeitenden Dateien in `check` und `fix`.
+Nur die Dateien, die im Array fehlen oder gelöscht wurden, werden
+verarbeitet. Bei Verwendung mit `fix` fungiert dies als
+`undelete`-Befehl (Wiederherstellung von Gelöschtem).
+Wenn Sie mehrere --filter, --filter-disk und --filter-missing
+Optionen kombinieren, werden nur Dateien ausgewählt, die allen
+Filtern entsprechen. Diese Option kann nur mit `check` und `fix`
+verwendet werden. Sie kann nicht mit `sync` und `scrub`
+verwendet werden, da diese immer das gesamte Array verarbeiten.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-e, --filter-error
+</strong></td></tr><tr><td>
+Verarbeitet die Dateien mit Fehlern in `check` und `fix`.
+Es verarbeitet nur Dateien, deren Blöcke während `sync`
+und `scrub` als mit stillen oder Eingabe-/Ausgabefehlern
+markiert wurden, wie in `status` aufgelistet.
+Diese Option kann nur mit `check` und `fix` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-p, --plan PERC|bad|new|full
+</strong></td></tr><tr><td>
+Wählt den Scrub-Plan aus. Wenn PERC ein numerischer Wert
+von 0 bis 100 ist, wird er als Prozentsatz der zu scrubbenden
+Blöcke interpretiert. Anstelle eines Prozentsatzes können Sie
+einen Plan angeben: `bad` scrubbt fehlerhafte Blöcke,
+`new` scrubbt Blöcke, die noch nicht gescrubbed wurden,
+und `full` scrubbt alles.
+Diese Option kann nur mit `scrub` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-o, --older-than DAYS
+</strong></td></tr><tr><td>
+Wählt den ältesten Teil des Arrays aus, der in `scrub`
+verarbeitet werden soll. DAYS ist das Mindestalter in Tagen,
+damit ein Block gescrubbed werden kann; der Standardwert
+ist 10. Blöcke, die als fehlerhaft markiert sind, werden
+immer gescrubbed, unabhängig von dieser Option.
+Diese Option kann nur mit `scrub` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-a, --audit-only
+</strong></td></tr><tr><td>
+Überprüft in `check` den Hash der Dateien, ohne die Paritätsdaten
+zu überprüfen. Wenn Sie nur an der Überprüfung der Dateidaten
+interessiert sind, kann diese Option den Überprüfungsprozess
+erheblich beschleunigen.
+Diese Option kann nur mit `check` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-h, --pre-hash
+</strong></td></tr><tr><td>
+Führt in `sync` eine vorläufige Hash-Phase aller neuen Daten
+zur zusätzlichen Überprüfung vor der Paritätsberechnung durch.
+Normalerweise wird in `sync` keine vorläufige Hash-Berechnung
+durchgeführt, und die neuen Daten werden unmittelbar vor der
+Paritätsberechnung gehasht, wenn sie zum ersten Mal gelesen werden.
+Dieser Vorgang tritt auf, wenn das System unter starker Last
+steht, wobei alle Festplatten drehen und eine ausgelastete CPU
+vorliegt. Dies ist ein Extremzustand für die Maschine, und wenn
+sie ein latentes Hardwareproblem hat, können stille Fehler
+unentdeckt bleiben, da die Daten noch nicht gehasht sind.
+Um dieses Risiko zu vermeiden, können Sie den `pre-hash`-Modus
+aktivieren, um alle Daten zweimal lesen zu lassen und so ihre
+Integrität sicherzustellen. Diese Option überprüft auch im Array
+verschobene Dateien, um sicherzustellen, dass die Verschiebeoperation
+erfolgreich war, und ermöglicht es Ihnen, bei Bedarf eine
+`fix`-Operation durchzuführen, bevor Sie fortfahren.
+Diese Option kann nur mit `sync` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-i, --import DIR
+</strong></td></tr><tr><td>
+Importiert aus dem angegebenen Verzeichnis alle Dateien, die
+nach dem letzten `sync` aus dem Array gelöscht wurden.
+Wenn Sie solche Dateien noch haben, können sie von `check` und
+`fix` verwendet werden, um den Wiederherstellungsprozess zu
+verbessern. Die Dateien werden gelesen, auch in Unterverzeichnissen,
+und unabhängig von ihrem Namen identifiziert.
+Diese Option kann nur mit `check` und `fix` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-s, --spin-down-on-error
+</strong></td></tr><tr><td>
+Dreht bei jedem Fehler alle verwalteten Festplatten herunter,
+bevor mit einem von Null verschiedenen Statuscode beendet wird.
+Dies verhindert, dass die Laufwerke nach einem abgebrochenen
+Vorgang aktiv bleiben und drehen, was unnötige Hitzeentwicklung
+und Stromverbrauch vermeiden hilft. Verwenden Sie diese Option,
+um sicherzustellen, dass die Festplatten auch bei einem
+Befehlsfehler sicher gestoppt werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-w, --bw-limit RATE
+</strong></td></tr><tr><td>
+Wendet eine globale Bandbreitenbegrenzung für alle Festplatten
+an. RATE ist die Anzahl der Bytes pro Sekunde. Sie können
+einen Multiplikator wie K, M oder G angeben (z.B. --bw-limit 1G).
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-A, --stats
+</strong></td></tr><tr><td>
+Aktiviert eine erweiterte Statusansicht, die zusätzliche
+Informationen anzeigt. Der Bildschirm zeigt zwei Diagramme an:
+Das erste Diagramm zeigt die Anzahl der gepufferten Stripes für jede
+Festplatte sowie den Dateipfad der Datei, auf die derzeit auf dieser
+Festplatte zugegriffen wird. Typischerweise hat die langsamste Festplatte
+keinen verfügbaren Puffer, was die maximal erreichbare Bandbreite bestimmt.
+Das zweite Diagramm zeigt den Prozentsatz der Wartezeit über die
+letzten 100 Sekunden. Es wird erwartet, dass die langsamste Festplatte
+die meiste Wartezeit verursacht, während andere Festplatten wenig
+oder keine Wartezeit haben sollten, da sie ihre gepufferten Stripes
+verwenden können. Dieses Diagramm zeigt auch die Zeit an, die
+mit Warten auf Hash-Berechnungen und RAID-Berechnungen verbracht
+wurde. Alle Berechnungen laufen parallel zu den Festplattenoperationen.
+Solange für mindestens eine Festplatte eine messbare Wartezeit
+vorhanden ist, deutet dies daher darauf hin, dass die CPU schnell
+genug ist, um mit der Arbeitslast Schritt zu halten.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-Z, --force-zero
+</strong></td></tr><tr><td>
+Erzwingt den unsicheren Vorgang der Synchronisierung einer Datei
+mit Nullgröße, die zuvor nicht Null war. Wenn SnapRAID eine
+solche Bedingung erkennt, stoppt es den Vorgang, es sei denn,
+Sie geben diese Option an. Dies ermöglicht es Ihnen, leicht zu
+erkennen, wann nach einem Systemabsturz einige zugegriffene Dateien
+abgeschnitten (truncated) wurden. Dies ist eine mögliche Bedingung
+unter Linux mit den ext3/ext4-Dateisystemen.
+Diese Option kann nur mit `sync` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-E, --force-empty
+</strong></td></tr><tr><td>
+Erzwingt den unsicheren Vorgang der Synchronisierung einer
+Festplatte, bei der alle ursprünglichen Dateien fehlen.
+Wenn SnapRAID erkennt, dass alle ursprünglich auf der Festplatte
+vorhandenen Dateien fehlen oder überschrieben wurden, stoppt es
+den Vorgang, es sei denn, Sie geben diese Option an.
+Dies ermöglicht es Ihnen, leicht zu erkennen, wann ein Daten-Dateisystem
+nicht gemountet (eingehängt) ist.
+Diese Option kann nur mit `sync` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-U, --force-uuid
+</strong></td></tr><tr><td>
+Erzwingt den unsicheren Vorgang der Synchronisierung, Überprüfung
+und Behebung mit Festplatten, deren UUID geändert wurde.
+Wenn SnapRAID erkennt, dass einige Festplatten ihre UUID
+geändert haben, stoppt es den Vorgang, es sei denn, Sie geben
+diese Option an. Dies ermöglicht es Ihnen, zu erkennen, wann
+Ihre Festplatten an den falschen Einhängepunkten gemountet sind.
+Es ist jedoch erlaubt, eine einzelne UUID-Änderung mit einfacher
+Parität zu haben und mehr mit mehrfacher Parität, da dies
+der normale Fall beim Austausch von Festplatten nach einer
+Wiederherstellung ist.
+Diese Option kann nur mit `sync`, `check` oder `fix` verwendet
+werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-D, --force-device
+</strong></td></tr><tr><td>
+Erzwingt den unsicheren Vorgang der Behebung mit unzugänglichen
+Festplatten oder mit Festplatten auf demselben physischen Gerät.
+Wenn Sie beispielsweise zwei Datenfestplatten verloren haben und
+eine Ersatzfestplatte haben, um nur die erste wiederherzustellen,
+können Sie die zweite unzugängliche Festplatte ignorieren.
+Oder wenn Sie eine Festplatte in dem auf einer bereits
+verwendeten Festplatte verbleibenden freien Speicherplatz
+wiederherstellen möchten, wobei sie dasselbe physische Gerät
+gemeinsam nutzen.
+Diese Option kann nur mit `fix` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-N, --force-nocopy
+</strong></td></tr><tr><td>
+Deaktiviert in `sync`, `check` und `fix` die Kopiererkennungsheuristik.
+Ohne diese Option geht SnapRAID davon aus, dass Dateien mit den
+gleichen Attributen, wie Name, Größe und Zeitstempel, Kopien mit
+denselben Daten sind. Dies ermöglicht die Identifizierung von
+kopierten oder von einer Festplatte auf eine andere verschobenen
+Dateien und die Wiederverwendung der bereits berechneten Hash-Informationen,
+um stille Fehler zu erkennen oder fehlende Dateien wiederherzustellen.
+In einigen seltenen Fällen kann dieses Verhalten zu falsch positiven
+Ergebnissen oder einem langsamen Vorgang aufgrund vieler Hash-Überprüfungen
+führen, und diese Option ermöglicht es Ihnen, solche Probleme
+zu beheben.
+Diese Option kann nur mit `sync`, `check` und `fix` verwendet
+werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-F, --force-full
+</strong></td></tr><tr><td>
+Erzwingt in `sync` eine vollständige Neuberechnung der Parität.
+Diese Option kann verwendet werden, wenn Sie eine neue Paritätsstufe
+hinzufügen oder wenn Sie zu einer alten Content-Datei mit
+neueren Paritätsdaten zurückgekehrt sind. Anstatt die Parität
+von Grund auf neu zu erstellen, ermöglicht dies die Wiederverwendung
+der in der Content-Datei vorhandenen Hashes zur Validierung
+von Daten und zur Aufrechterhaltung des Datenschutzes während
+des `sync`-Vorgangs unter Verwendung der vorhandenen Paritätsdaten.
+Diese Option kann nur mit `sync` verwendet werden.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-R, --force-realloc
+</strong></td></tr><tr><td>
+Erzwingt in `sync` eine vollständige Neuallokation von Dateien
+und eine Wiederherstellung der Parität.
+Diese Option kann verwendet werden, um alle Dateien vollständig
+neu zuzuweisen und die Fragmentierung zu entfernen, während
+die in der Content-Datei vorhandenen Hashes zur Validierung
+von Daten wiederverwendet werden.
+Diese Option kann nur mit `sync` verwendet werden.
+WARNUNG! Diese Option ist nur für Experten gedacht, und es wird
+dringend empfohlen, sie nicht zu verwenden.
+Sie haben während der `sync`-Operation KEINEN Datenschutz.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-l, --log FILE
+</strong></td></tr><tr><td>
+Schreibt ein detailliertes Protokoll in die angegebene Datei.
+Wenn diese Option nicht angegeben ist, werden unerwartete Fehler
+auf dem Bildschirm ausgegeben, was bei vielen Fehlern möglicherweise
+zu einer übermäßigen Ausgabe führt. Wenn -l, --log angegeben
+ist, werden nur schwerwiegende Fehler, die SnapRAID zum Stoppen
+bringen, auf dem Bildschirm ausgegeben.
+Wenn der Pfad mit '&gt;&gt;' beginnt, wird die Datei im Anhängemodus
+(append mode) geöffnet. Vorkommen von '%D' und '%T' im Namen
+werden durch Datum und Uhrzeit im Format YYYYMMDD bzw. HHMMSS
+ersetzt. In Windows-Batch-Dateien müssen Sie das '%'-Zeichen
+verdoppeln, z.B. result-%%D.log. Um '&gt;&gt;' zu verwenden, müssen
+Sie den Namen in Anführungszeichen setzen, z.B. `"&gt;&gt;result.log"`.
+Um das Protokoll an die Standardausgabe oder den Standardfehler
+auszugeben, können Sie `"&gt;&amp;1"` bzw. `"&gt;&amp;2"` verwenden.
+Beschreibungen der Protokoll-Tags finden Sie in der Datei
+snapraid_log.txt oder in der Manpage.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-L, --error-limit NUMBER
+</strong></td></tr><tr><td>
+Legt ein neues Fehlerlimit fest, bevor die Ausführung gestoppt
+wird. Standardmäßig stoppt SnapRAID, wenn es mehr als 100
+Eingabe-/Ausgabefehler feststellt, was darauf hindeutet, dass
+eine Festplatte wahrscheinlich ausfällt. Diese Option wirkt sich
+auf `sync` und `scrub` aus, denen es gestattet ist, nach dem
+ersten Satz von Festplattenfehlern fortzufahren, um ihre Vorgänge
+abzuschließen. `check` und `fix` stoppen jedoch immer beim
+ersten Fehler.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-S, --start BLKSTART
+</strong></td></tr><tr><td>
+Startet die Verarbeitung ab der angegebenen Blocknummer.
+Dies kann nützlich sein, um die Überprüfung oder Behebung
+spezifischer Blöcke im Falle einer beschädigten Festplatte
+zu wiederholen. Diese Option ist hauptsächlich für die erweiterte
+manuelle Wiederherstellung gedacht.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-B, --count BLKCOUNT
+</strong></td></tr><tr><td>
+Verarbeitet nur die angegebene Anzahl von Blöcken.
+Diese Option ist hauptsächlich für die erweiterte manuelle
+Wiederherstellung gedacht.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-C, --gen-conf CONTENT
+</strong></td></tr><tr><td>
+Generiert eine Dummy-Konfigurationsdatei aus einer vorhandenen
+Content-Datei. Die Konfigurationsdatei wird in die Standardausgabe
+geschrieben und überschreibt keine vorhandene.
+Diese Konfigurationsdatei enthält auch die Informationen,
+die zur Rekonstruktion der Festplatten-Einhängepunkte erforderlich
+sind, falls Sie das gesamte System verlieren.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-v, --verbose
+</strong></td></tr><tr><td>
+Gibt mehr Informationen auf dem Bildschirm aus.
+Wenn einmal angegeben, werden ausgeschlossene Dateien
+und zusätzliche Statistiken gedruckt.
+Diese Option hat keine Auswirkung auf die Protokolldateien.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-q, --quiet
+</strong></td></tr><tr><td>
+Gibt weniger Informationen auf dem Bildschirm aus.
+Wenn einmal angegeben, wird die Fortschrittsleiste entfernt;
+zweimal, die laufenden Operationen; dreimal, die Info-Meldungen;
+viermal, die Statusmeldungen.
+Schwerwiegende Fehler werden immer auf dem Bildschirm ausgegeben.
+Diese Option hat keine Auswirkung auf die Protokolldateien.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-H, --help
+</strong></td></tr><tr><td>
+Gibt eine kurze Hilfeanzeige aus.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-V, --version
+</strong></td></tr><tr><td>
+Gibt die Programmversion aus.
+</td></tr>
+</table>
+<h2><a name="7">7</a> 
+Configuration
+</h2>
+SnapRAID benötigt eine Konfigurationsdatei, um zu wissen, wo sich
+Ihr Festplatten-Array befindet und wo die Paritätsinformationen
+gespeichert werden sollen.
+<p>
+Unter Unix wird die Datei `/usr/local/etc/snapraid.conf` verwendet,
+falls sie existiert, andernfalls `/etc/snapraid.conf`.
+Unter Windows wird die Datei `snapraid.conf` im selben
+Verzeichnis wie `snapraid.exe` verwendet.
+<p>
+Sie muss die folgenden Optionen (Groß- und Kleinschreibung beachten)
+enthalten:
+<h3><a name="7.1">7.1</a> 
+parity FILE [,FILE] ...
+</h3>
+Definiert die Dateien, die zum Speichern der Paritätsinformationen
+verwendet werden sollen. Die Parität ermöglicht den Schutz
+vor einem einzelnen Festplattenausfall, ähnlich wie bei RAID5.
+<p>
+Sie können mehrere Dateien angeben, die sich auf unterschiedlichen
+Festplatten befinden müssen. Wenn eine Datei nicht mehr wachsen
+kann, wird die nächste verwendet. Der gesamte verfügbare Platz
+muss mindestens so groß sein wie die größte Datenfestplatte im
+Array.
+<p>
+Sie können später zusätzliche Paritätsdateien hinzufügen, aber Sie
+können sie nicht neu anordnen oder entfernen.
+<p>
+Das Reservieren der Paritätsfestplatten für Parität stellt sicher,
+dass sie nicht fragmentiert werden, was die Leistung verbessert.
+<p>
+Unter Windows werden 256 MB auf jeder Festplatte ungenutzt gelassen,
+um die Warnung vor vollen Festplatten zu vermeiden.
+<p>
+Diese Option ist obligatorisch und kann nur einmal verwendet werden.
+<h3><a name="7.2">7.2</a> 
+(2,3,4,5,6)-parity FILE [,FILE] ...
+</h3>
+Definiert die Dateien, die zum Speichern zusätzlicher Paritätsinformationen
+verwendet werden sollen.
+<p>
+Für jede angegebene Paritätsstufe wird eine zusätzliche Schutzstufe
+aktiviert:
+<ul>
+<li>
+2-parity aktiviert RAID6 Dual-Parität.
+</li>
+<li>
+3-parity aktiviert Triple-Parität.
+</li>
+<li>
+4-parity aktiviert Quad- (vierfache) Parität.
+</li>
+<li>
+5-parity aktiviert Penta- (fünffache) Parität.
+</li>
+<li>
+6-parity aktiviert Hexa- (sechsfache) Parität.
+</li>
+</ul>
+<p>
+Jede Paritätsstufe erfordert die Anwesenheit aller vorherigen
+Paritätsstufen.
+<p>
+Die gleichen Überlegungen wie bei der Option 'parity' gelten.
+<p>
+Diese Optionen sind optional und können nur einmal verwendet werden.
+<h3><a name="7.3">7.3</a> 
+z-parity FILE [,FILE] ...
+</h3>
+Definiert eine alternative Datei und ein alternatives Format zum
+Speichern von Triple-Parität.
+<p>
+Diese Option ist eine Alternative zu '3-parity', die primär für
+Low-End-CPUs wie ARM oder AMD Phenom, Athlon und Opteron gedacht
+ist, die den SSSE3-Befehlssatz nicht unterstützen. In solchen Fällen
+bietet sie eine bessere Leistung.
+<p>
+Dieses Format ähnelt dem von ZFS RAIDZ3, ist aber schneller.
+Wie ZFS funktioniert es nicht jenseits der Triple-Parität.
+<p>
+Bei Verwendung von '3-parity' werden Sie gewarnt, wenn das
+'z-parity'-Format zur Leistungsverbesserung empfohlen wird.
+<p>
+Es ist möglich, von einem Format in ein anderes zu konvertieren,
+indem die Konfigurationsdatei mit der gewünschten z-parity- oder
+3-parity-Datei angepasst und `fix` zur Neuerstellung verwendet wird.
+<h3><a name="7.4">7.4</a> 
+content FILE
+</h3>
+Definiert die Datei, die zum Speichern der Liste und Prüfsummen
+aller im Festplatten-Array vorhandenen Dateien verwendet werden soll.
+<p>
+Sie kann auf einer für Daten, Parität oder einer anderen
+verfügbaren Festplatte platziert werden.
+Wenn Sie eine Datenfestplatte verwenden, wird diese Datei automatisch
+vom `sync`-Vorgang ausgeschlossen.
+<p>
+Diese Option ist obligatorisch und kann mehrmals verwendet werden,
+um mehrere Kopien derselben Datei zu speichern.
+<p>
+Sie müssen mindestens eine Kopie für jede verwendete Paritätsfestplatte
+plus eine speichern. Die Verwendung zusätzlicher Kopien schadet nicht.
+<h3><a name="7.5">7.5</a> 
+data NAME DIR
+</h3>
+Definiert den Namen und den Einhängepunkt (Mount Point) der
+Datenfestplatten im Array. NAME wird zur Identifizierung der
+Festplatte verwendet und muss eindeutig sein. DIR ist der
+Einhängepunkt der Festplatte im Dateisystem.
+<p>
+Sie können den Einhängepunkt nach Bedarf ändern, solange Sie
+den NAME unverändert lassen.
+<p>
+Sie sollten eine Option für jede Datenfestplatte im Array verwenden.
+<p>
+Sie können eine Festplatte später umbenennen, indem Sie den NAME
+direkt in der Konfigurationsdatei ändern und dann einen `sync`-Befehl
+ausführen. Im Falle einer Umbenennung erfolgt die Zuordnung
+mithilfe der gespeicherten UUID der Festplatten.
+<h3><a name="7.6">7.6</a> 
+nohidden
+</h3>
+Schließt alle versteckten Dateien und Verzeichnisse aus.
+Unter Unix sind versteckte Dateien solche, die mit `.` beginnen.
+Unter Windows sind es solche mit dem versteckten Attribut.
+<h3><a name="7.7">7.7</a> 
+exclude/include PATTERN
+</h3>
+Definiert die Datei- oder Verzeichnismuster, die im `sync`-Vorgang
+ausgeschlossen oder eingeschlossen werden sollen.
+Alle Muster werden in der angegebenen Reihenfolge verarbeitet.
+<p>
+Wenn das erste übereinstimmende Muster ein `exclude`-Muster ist,
+wird die Datei ausgeschlossen. Wenn es ein `include`-Muster ist,
+wird die Datei eingeschlossen. Wenn kein Muster übereinstimmt,
+wird die Datei ausgeschlossen, wenn das zuletzt angegebene Muster
+ein `include` ist, oder eingeschlossen, wenn das zuletzt angegebene
+Muster ein `exclude` ist.
+<p>
+Weitere Details zu Musterspezifikationen finden Sie im Abschnitt
+PATTERN.
+<p>
+Diese Option kann mehrmals verwendet werden.
+<h3><a name="7.8">7.8</a> 
+blocksize SIZE_IN_KIBIBYTES
+</h3>
+Definiert die grundlegende Blockgröße in Kibibytes für die Parität.
+Ein Kibibyte entspricht 1024 Bytes.
+<p>
+Die Standard-Blockgröße ist 256, was für die meisten Fälle
+ausreichen sollte.
+<p>
+WARNUNG! Diese Option ist nur für Experten gedacht, und es wird
+dringend empfohlen, diesen Wert nicht zu ändern. Um diesen Wert
+zukünftig zu ändern, müssen Sie die gesamte Parität neu erstellen!
+<p>
+Ein Grund für die Verwendung einer anderen Blockgröße ist, wenn Sie
+viele kleine Dateien in der Größenordnung von Millionen haben.
+<p>
+Für jede Datei, auch wenn sie nur wenige Bytes groß ist, wird ein
+ganzer Block Parität zugewiesen, und bei vielen Dateien kann dies
+zu erheblichem ungenutztem Paritätsplatz führen. Wenn Sie die
+Paritätsfestplatte vollständig füllen, dürfen Sie keine weiteren
+Dateien zu den Datenfestplatten hinzufügen.
+Der verschwendete Paritätsplatz akkumuliert sich jedoch nicht über
+die Datenfestplatten hinweg. Verschwendeter Platz, der durch eine
+hohe Anzahl von Dateien auf einer Datenfestplatte entsteht, begrenzt
+nur die Datenmenge auf dieser Datenfestplatte, nicht auf anderen.
+<p>
+Als Annäherung können Sie davon ausgehen, dass die Hälfte der
+Blockgröße für jede Datei verschwendet wird. Mit beispielsweise
+100.000 Dateien und einer Blockgröße von 256 KiB verschwenden
+Sie 12,8 GB Parität, was zu 12,8 GB weniger verfügbarem Speicherplatz
+auf der Datenfestplatte führen kann.
+<p>
+Sie können die Menge des verschwendeten Platzes auf jeder Festplatte
+mithilfe von `status` überprüfen. Dies ist die Menge an Platz, die Sie
+auf den Datenfestplatten freilassen oder für Dateien verwenden müssen,
+die nicht im Array enthalten sind. Wenn dieser Wert negativ ist,
+bedeutet dies, dass Sie kurz davor sind, die Parität zu füllen,
+und er stellt den Platz dar, den Sie noch verschwenden können.
+<p>
+Um dieses Problem zu vermeiden, können Sie eine größere Partition
+für die Parität verwenden. Wenn die Paritätspartition beispielsweise
+12,8 GB größer ist als die Datenfestplatten, haben Sie genügend
+zusätzlichen Platz, um bis zu 100.000 Dateien auf jeder Datenfestplatte
+ohne verschwendeten Platz zu verarbeiten.
+<p>
+Ein Trick, um eine größere Paritätspartition unter Linux zu erhalten,
+ist die Formatierung mit dem Befehl:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+mkfs.ext4 -m 0 -T largefile4 DEVICE
+</pre>
+</td></tr></table>
+<p>
+Dies führt zu etwa 1,5% zusätzlichem Speicherplatz, ungefähr 60 GB
+für eine 4 TB Festplatte, was etwa 460.000 Dateien auf jeder
+Datenfestplatte ohne verschwendeten Platz ermöglicht.
+<h3><a name="7.9">7.9</a> 
+hashsize SIZE_IN_BYTES
+</h3>
+Definiert die Hash-Größe in Bytes für die gespeicherten Blöcke.
+<p>
+Die Standard-Hash-Größe beträgt 16 Bytes (128 Bit), was für die
+meisten Fälle ausreichen sollte.
+<p>
+WARNUNG! Diese Option ist nur für Experten gedacht, und es wird
+dringend empfohlen, diesen Wert nicht zu ändern. Um diesen Wert
+zukünftig zu ändern, müssen Sie die gesamte Parität neu erstellen!
+<p>
+Ein Grund für die Verwendung einer anderen Hash-Größe ist, wenn Ihr
+System über begrenzten Speicher verfügt. Als Faustregel benötigt
+SnapRAID typischerweise 1 GiB RAM für jede 16 TB Daten im Array.
+<p>
+Genauer gesagt benötigt SnapRAID zum Speichern der Hashes der Daten
+ungefähr TS*(1+HS)/BS Bytes RAM,
+wobei TS die Gesamtgröße in Bytes Ihres Festplatten-Arrays ist,
+BS die Blockgröße in Bytes und HS die Hash-Größe in Bytes.
+<p>
+Mit beispielsweise 8 Festplatten à 4 TB, einer Blockgröße von 256 KiB
+(1 KiB = 1024 Bytes) und einer Hash-Größe von 16 erhalten Sie:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
+</pre>
+<p>
+Bei einem Wechsel zu einer Hash-Größe von 8 erhalten Sie:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
+</pre>
+<p>
+Bei einem Wechsel zu einer Blockgröße von 512 erhalten Sie:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
+</pre>
+<p>
+Bei einem Wechsel zu einer Hash-Größe von 8 und einer Blockgröße
+von 512 erhalten Sie:
+<p>
+<pre>
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
+</pre>
+<h3><a name="7.10">7.10</a> 
+autosave SIZE_IN_GIGABYTES
+</h3>
+Speichert den Zustand beim Synchronisieren oder Scrubben automatisch
+nach der angegebenen Menge an verarbeiteten GB.
+Diese Option ist nützlich, um zu vermeiden, dass lange `sync`-Befehle
+von vorne gestartet werden müssen, wenn sie durch einen Maschinenabsturz
+oder ein anderes Ereignis unterbrochen werden.
+<h3><a name="7.11">7.11</a> 
+temp_limit TEMPERATURE_CELSIUS
+</h3>
+Legt die maximal zulässige Festplattentemperatur in Celsius fest.
+Wenn angegeben, überprüft SnapRAID regelmäßig die Temperatur aller
+Festplatten mithilfe des smartctl-Tools. Die aktuellen Festplattentemperaturen
+werden während des Betriebs von SnapRAID angezeigt. Wenn eine Festplatte
+diesen Grenzwert überschreitet, werden alle Vorgänge gestoppt, und
+die Festplatten werden für die durch die Option `temp_sleep` definierte
+Dauer heruntergefahren (in den Standby-Modus versetzt). Nach der
+Schlafperiode werden die Vorgänge fortgesetzt und möglicherweise
+erneut pausiert, wenn der Temperaturgrenzwert erneut erreicht wird.
+<p>
+Während des Betriebs analysiert SnapRAID auch die Heizkurve jeder
+Festplatte und schätzt die langfristige stationäre Temperatur, die
+erwartet wird, wenn die Aktivität fortgesetzt wird. Die Schätzung
+wird nur durchgeführt, nachdem die Festplattentemperatur viermal
+angestiegen ist, um sicherzustellen, dass genügend Datenpunkte
+zur Verfügung stehen, um einen zuverlässigen Trend festzustellen.
+Diese vorhergesagte stationäre Temperatur wird in Klammern neben
+dem aktuellen Wert angezeigt und hilft bei der Beurteilung, ob die
+Kühlung des Systems ausreichend ist. Diese geschätzte Temperatur
+dient nur zu Informationszwecken und hat keine Auswirkung auf das
+Verhalten von SnapRAID. Die Aktionen des Programms basieren
+ausschließlich auf den tatsächlich gemessenen Festplattentemperaturen.
+<p>
+Um diese Analyse durchzuführen, benötigt SnapRAID eine Referenz für
+die Systemtemperatur. Es versucht zunächst, diese von verfügbaren
+Hardwaresensoren zu lesen. Wenn kein Systemsensor zugänglich ist,
+wird die niedrigste zu Beginn des Laufs gemessene Festplattentemperatur
+als Fallback-Referenz verwendet.
+<p>
+Normalerweise zeigt SnapRAID nur die Temperatur der heißesten
+Festplatte an. Um die Temperatur aller Festplatten anzuzeigen,
+verwenden Sie die Option -A oder --stats.
+<h3><a name="7.12">7.12</a> 
+temp_sleep TIME_IN_MINUTES
+</h3>
+Legt die Standby-Zeit in Minuten fest, wenn der Temperaturgrenzwert
+erreicht wird. Während dieser Zeit bleiben die Festplatten heruntergefahren.
+Der Standardwert ist 5 Minuten.
+<h3><a name="7.13">7.13</a> 
+pool DIR
+</h3>
+Definiert das Pooling-Verzeichnis, in dem die virtuelle Ansicht des
+Festplatten-Arrays mithilfe des Befehls `pool` erstellt wird.
+<p>
+Das Verzeichnis muss bereits existieren.
+<h3><a name="7.14">7.14</a> 
+share UNC_DIR
+</h3>
+Definiert den Windows UNC-Pfad, der für den Remote-Zugriff auf die
+Festplatten erforderlich ist.
+<p>
+Wenn diese Option angegeben ist, verwenden die im Pool-Verzeichnis
+erstellten symbolischen Links diesen UNC-Pfad, um auf die Festplatten
+zuzugreifen. Ohne diese Option verwenden die generierten symbolischen
+Links nur lokale Pfade, was die Freigabe des Pool-Verzeichnisses
+über das Netzwerk nicht ermöglicht.
+<p>
+Die symbolischen Links werden unter Verwendung des angegebenen UNC-Pfads
+gebildet, wobei der in der `data`-Option angegebene Festplattenname
+und schließlich das Dateiverzeichnis und der Name hinzugefügt werden.
+<p>
+Diese Option ist nur für Windows erforderlich.
+<h3><a name="7.15">7.15</a> 
+smartctl DISK/PARITY OPTIONS...
+</h3>
+Definiert benutzerdefinierte smartctl-Optionen, um die SMART-Attribute
+für jede Festplatte abzurufen. Dies kann für RAID-Controller und einige
+USB-Festplatten erforderlich sein, die nicht automatisch erkannt
+werden können. Der Platzhalter %s wird durch den Gerätenamen ersetzt,
+ist aber für feste Geräte wie RAID-Controller optional.
+<p>
+DISK ist derselbe Festplattenname, der in der `data`-Option angegeben
+ist. PARITY ist einer der Paritätsnamen: `parity`, `2-parity`,
+`3-parity`, `4-parity`, `5-parity`, `6-parity` oder `z-parity`.
+<p>
+In den angegebenen OPTIONS wird die Zeichenfolge `%s` durch den
+Gerätenamen ersetzt. Bei RAID-Controllern ist das Gerät
+wahrscheinlich fest, und Sie müssen `%s` möglicherweise nicht verwenden.
+<p>
+Weitere mögliche Optionen finden Sie in der smartmontools-Dokumentation:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+https://www.smartmontools.org/wiki/Supported_RAID-Controllers
+https://www.smartmontools.org/wiki/Supported_USB-Devices
+</pre>
+</td></tr></table>
+<p>
+Zum Beispiel:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+smartctl parity -d sat %s
+</pre>
+</td></tr></table>
+<h3><a name="7.16">7.16</a> 
+smartignore DISK/PARITY ATTR [ATTR...]
+</h3>
+Ignoriert das angegebene SMART-Attribut bei der Berechnung der
+Wahrscheinlichkeit eines Festplattenausfalls. Diese Option ist
+nützlich, wenn eine Festplatte ungewöhnliche oder irreführende
+Werte für ein bestimmtes Attribut meldet.
+<p>
+DISK ist derselbe Festplattenname, der in der `data`-Option angegeben
+ist. PARITY ist einer der Paritätsnamen: `parity`, `2-parity`,
+`3-parity`, `4-parity`, `5-parity`, `6-parity` oder `z-parity`.
+Der Sonderwert * kann verwendet werden, um das Attribut auf allen
+Festplatten zu ignorieren.
+<p>
+Um beispielsweise das Attribut `Current Pending Sector Count` auf allen
+Festplatten zu ignorieren:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+smartignore * 197
+</pre>
+</td></tr></table>
+<p>
+Um es nur auf der ersten Paritätsfestplatte zu ignorieren:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+smartignore parity 197
+</pre>
+</td></tr></table>
+<h3><a name="7.17">7.17</a> 
+Examples
+</h3>
+Ein Beispiel für eine typische Konfiguration für Unix ist:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity /mnt/diskp/snapraid.parity
+content /mnt/diskp/snapraid.content
+content /var/snapraid/snapraid.content
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
+exclude /lost+found/
+exclude /tmp/
+smartctl d1 -d sat %s
+smartctl d2 -d usbjmicron %s
+smartctl parity -d areca,1/1 /dev/sg0
+smartctl 2-parity -d areca,2/1 /dev/sg0
+</pre>
+</td></tr></table>
+<p>
+Ein Beispiel für eine typische Konfiguration für Windows ist:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity E:\snapraid.parity
+content E:\snapraid.content
+content C:\snapraid\snapraid.content
+data d1 G:\array\
+data d2 H:\array\
+data d3 I:\array\
+exclude Thumbs.db
+exclude \$RECYCLE.BIN
+exclude \System Volume Information
+smartctl d1 -d sat %s
+smartctl d2 -d usbjmicron %s
+smartctl parity -d areca,1/1 /dev/arcmsr0
+smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+</pre>
+</td></tr></table>
+<h2><a name="8">8</a> 
+Pattern
+</h2>
+Muster werden verwendet, um eine Teilmenge von Dateien zum
+Ausschließen oder Einschließen in den Prozess auszuwählen.
+<p>
+Es gibt vier verschiedene Arten von Mustern:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+FILE
+</strong></td></tr><tr><td>
+Wählt jede Datei namens DATEI aus. Sie können beliebige
+Globbing-Zeichen wie * und ? sowie Zeichenklassen wie [a-z]
+verwenden. Dieses Muster gilt nur für Dateien, nicht für
+Verzeichnisse.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+DIR/
+</strong></td></tr><tr><td>
+Wählt jedes Verzeichnis namens VERZ und alles darin aus.
+Sie können beliebige Globbing-Zeichen wie * und ? verwenden.
+Dieses Muster gilt nur für Verzeichnisse, nicht für Dateien.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+/PATH/FILE
+</strong></td></tr><tr><td>
+Wählt den exakt angegebenen Dateipfad aus. Sie können beliebige
+Globbing-Zeichen wie * und ? verwenden, aber sie stimmen niemals
+mit einem Verzeichnis-Slash überein.
+Dieses Muster gilt nur für Dateien, nicht für Verzeichnisse.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+/PATH/DIR/
+</strong></td></tr><tr><td>
+Wählt den exakt angegebenen Verzeichnispfad und alles darin
+aus. Sie können beliebige Globbing-Zeichen wie * und ? verwenden,
+aber sie stimmen niemals mit einem Verzeichnis-Slash überein.
+Dieses Muster gilt nur für Verzeichnisse, nicht für Dateien.
+</td></tr>
+</table>
+<p>
+Wenn Sie einen absoluten Pfad angeben, der mit / beginnt, wird er
+auf das Array-Stammverzeichnis angewendet, nicht auf das lokale
+Dateisystem-Stammverzeichnis.
+<p>
+Unter Windows können Sie den Backslash \ anstelle des Forward-Slash /
+verwenden. Windows-Systemverzeichnisse, Junctions, Einhängepunkte
+(Mount Points) und andere spezielle Windows-Verzeichnisse werden
+als Dateien behandelt, was bedeutet, dass Sie zum Ausschließen
+eine Dateiregel verwenden müssen, nicht eine Verzeichnisregel.
+<p>
+Wenn der Dateiname ein Zeichen '*', '?', '[', oder ']' enthält,
+müssen Sie es escapen, um zu vermeiden, dass es als Globbing-Zeichen
+interpretiert wird. Unter Unix ist das Escape-Zeichen '\'; unter
+Windows ist es '^'. Wenn sich das Muster in der Befehlszeile befindet,
+müssen Sie das Escape-Zeichen verdoppeln, um zu vermeiden, dass es
+von der Befehlsshell interpretiert wird.
+<p>
+In der Konfigurationsdatei können Sie verschiedene Strategien zum
+Filtern der zu verarbeitenden Dateien verwenden.
+Der einfachste Ansatz besteht darin, nur `exclude`-Regeln zu verwenden,
+um alle Dateien und Verzeichnisse zu entfernen, die Sie nicht
+verarbeiten möchten. Zum Beispiel:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Schließt jede Datei namens `*.unrecoverable` aus
+exclude *.unrecoverable
+# Schließt das Stammverzeichnis `/lost+found` aus
+exclude /lost+found/
+# Schließt jedes Unterverzeichnis namens `tmp` aus
+exclude tmp/
+</pre>
+</td></tr></table>
+<p>
+Der gegenteilige Ansatz besteht darin, nur die Dateien zu definieren,
+die Sie verarbeiten möchten, indem Sie nur `include`-Regeln verwenden.
+Zum Beispiel:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Schließt nur einige Verzeichnisse ein
+include /movies/
+include /musics/
+include /pictures/
+</pre>
+</td></tr></table>
+<p>
+Der letzte Ansatz besteht darin, `exclude`- und `include`-Regeln
+zu mischen. In diesem Fall ist die Reihenfolge der Regeln wichtig.
+Frühere Regeln haben Vorrang vor späteren.
+Zur Vereinfachung können Sie zuerst alle `exclude`-Regeln und
+dann alle `include`-Regeln auflisten. Zum Beispiel:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Schließt jede Datei namens `*.unrecoverable` aus
+exclude *.unrecoverable
+# Schließt jedes Unterverzeichnis namens `tmp` aus
+exclude tmp/
+# Schließt nur einige Verzeichnisse ein
+include /movies/
+include /musics/
+include /pictures/
+</pre>
+</td></tr></table>
+<p>
+In der Befehlszeile können Sie mit der Option -f nur `include`-Muster
+verwenden. Zum Beispiel:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Überprüft nur die .mp3-Dateien.
+# Unter Unix Anführungszeichen verwenden, um die Globbing-Erweiterung durch die Shell zu vermeiden.
+snapraid -f "*.mp3" check
+</pre>
+</td></tr></table>
+<p>
+Unter Unix müssen Sie Globbing-Zeichen in der Befehlszeile in
+Anführungszeichen setzen, um zu verhindern, dass die Shell sie erweitert.
+<h2><a name="9">9</a> 
+Content
+</h2>
+SnapRAID speichert die Liste und Prüfsummen Ihrer Dateien in der
+Content-Datei.
+<p>
+Es ist eine Binärdatei, die alle im Festplatten-Array vorhandenen
+Dateien auflistet, zusammen mit allen Prüfsummen zur Überprüfung
+ihrer Integrität.
+<p>
+Diese Datei wird von den Befehlen `sync` und `scrub` gelesen und
+geschrieben und von den Befehlen `fix`, `check` und `status` gelesen.
+<h2><a name="10">10</a> 
+Parity
+</h2>
+SnapRAID speichert die Paritätsinformationen Ihres Arrays in den
+Paritätsdateien.
+<p>
+Dies sind Binärdateien, die die berechnete Parität aller in der
+`content`-Datei definierten Blöcke enthalten.
+<p>
+Diese Dateien werden von den Befehlen `sync` und `fix` gelesen
+und geschrieben und nur von den Befehlen `scrub` und `check` gelesen.
+<h2><a name="11">11</a> 
+Encoding
+</h2>
+SnapRAID ignoriert unter Unix jede Kodierung. Es liest und speichert
+die Dateinamen mit derselben Kodierung, die vom Dateisystem
+verwendet wird.
+<p>
+Unter Windows werden alle vom Dateisystem gelesenen Namen konvertiert
+und im UTF-8-Format verarbeitet.
+<p>
+Um Dateinamen korrekt auszugeben, müssen Sie die Windows-Konsole
+mit dem Befehl `chcp 65001` auf den UTF-8-Modus einstellen und
+eine TrueType-Schriftart wie `Lucida Console` als Konsolenschriftart
+verwenden. Dies betrifft nur die gedruckten Dateinamen; wenn Sie
+die Konsolenausgabe in eine Datei umleiten, ist die resultierende
+Datei immer im UTF-8-Format.
+
+
+
+</div>
+
+<div id="footer">
+
+<div class="column">
+<span class="bold">Donate with</span>
+<br>
+<!--
+<a href="http://sourceforge.net/p/snapraid/donate/"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
+-->
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
+<!--
+<a href="https://coinkite.com/u/amadvance/"><img src="bitcoin.png" width="160" height="60" alt="BitCoin"></a>
+-->
+</div>
+
+<div class="column">
+<span class="bold">Find other resources at</span>
+<br>
+<a href="https://github.com/amadvance/snapraid/"><img src="github.png" width="160" height="60" alt="GitHub"></a>
+<a href="http://sourceforge.net/projects/snapraid/"><img src="sourceforge.png" width="115" height="60" alt="SourceForge"></a>
+</div>
+
+</div>
+</body>
+</html>
+
+
