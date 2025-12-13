@@ -4,7 +4,7 @@
 
 
 1 SINTAXă
-==========
+=========
 
 snapraid [-c, --conf CONFIG]
 	[-f, --filter PATTERN] [-d, --filter-disk NAME]
@@ -59,7 +59,7 @@ Pentru mai multe informații, vă rugăm să vizitați site-ul oficial SnapRAID:
 
 
 3 LIMITăRI
-===========
+==========
 
 SnapRAID este un hibrid între un program RAID și unul de backup, care urmărește să combine
 cele mai bune beneficii ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
@@ -93,7 +93,7 @@ Alte limitări ale SnapRAID sunt:
 
 
 4 NOțIUNI DE BAZă
-===================
+=================
 
 Pentru a utiliza SnapRAID, trebuie mai întâi să selectați un disc în matricea dvs. de discuri
 pentru a-l dedica informațiilor de `paritate`. Cu un singur disc pentru paritate, veți
@@ -289,7 +289,7 @@ De asemenea, ar putea fi necesar să configurați clienții la distanță pentru
     fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
 4.3 Undeleting (Anulare Ștergere)
-----------------------------------
+---------------------------------
 
 SnapRAID funcționează mai mult ca un program de backup decât un sistem RAID și poate
 fi folosit pentru a restaura sau anula ștergerea fișierelor la starea lor anterioară utilizând
@@ -768,7 +768,7 @@ folosind un hash diferit.
 
 
 6 OPțIUNI
-==========
+=========
 
 SnapRAID oferă următoarele opțiuni:
 
@@ -1507,7 +1507,7 @@ să le citați pentru a împiedica shell-ul să le extindă.
 
 
 9 CONțINUT (CONTENT)
-=====================
+====================
 
 SnapRAID stochează lista și sumele de control (checksums) ale fișierelor dvs. în fișierul de conținut.
 
@@ -1554,6 +1554,6 @@ Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
 
 
 13 VEZI șI (SEE ALSO)
-======================
+=====================
 
 snapraid_log(1), rsync(1)

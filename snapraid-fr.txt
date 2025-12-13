@@ -98,7 +98,7 @@ Les autres limitations de SnapRAID sont :
 
 
 4 DéMARRER
-===========
+==========
 
 Pour utiliser SnapRAID, vous devez d'abord sélectionner un disque
 dans votre baie de disques pour le dédier aux informations de `parité`.
@@ -340,7 +340,7 @@ lecteurs avec :
     snapraid fix -m
 
 4.4 Récupération
-------------------
+----------------
 
 Le pire est arrivé, et vous avez perdu un ou plusieurs disques !
 
@@ -1379,7 +1379,7 @@ Cette option est utile pour éviter de redémarrer de longues commandes
 de la machine ou tout autre événement.
 
 7.11 temp_limit TEMPÉRATURE_CELSIUS
-------------------------------------
+-----------------------------------
 
 Définit la température maximale autorisée du disque en Celsius.
 Lorsqu'elle est spécifiée, SnapRAID vérifie périodiquement la
@@ -1447,7 +1447,7 @@ et en ajoutant enfin le répertoire et le nom du fichier.
 Cette option est requise uniquement pour Windows.
 
 7.15 smartctl DISQUE/PARITÉ OPTIONS...
----------------------------------------
+--------------------------------------
 
 Définit les options smartctl personnalisées pour obtenir les attributs
 SMART de chaque disque. Cela peut être nécessaire pour les contrôleurs
@@ -1474,7 +1474,7 @@ Par exemple :
     smartctl parity -d sat %s
 
 7.16 smartignore DISQUE/PARITÉ ATTR [ATTR...]
-----------------------------------------------
+---------------------------------------------
 
 Ignore l'attribut SMART spécifié lors du calcul de la probabilité
 de défaillance du disque. Cette option est utile si un disque signale
@@ -1646,7 +1646,7 @@ lu par les commandes `fix`, `check` et `status`.
 
 
 10 PARITé (PARITY)
-===================
+==================
 
 SnapRAID stocke les informations de parité de votre baie dans
 les fichiers de parité.
