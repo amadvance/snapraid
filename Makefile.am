@@ -179,12 +179,12 @@ maintainer-clean-local:
 install-data-hook:
 	for lang in $(LANG_CODES); do \
 		mkdir -p $(DESTDIR)$(mandir)/$$lang/man1; \
-		$(INSTALL_DATA) man/$$lang/snapraid.1 $(DESTDIR)$(mandir)/$$lang/man1; \
+		$(INSTALL_DATA) $(srcdir)/man/$$lang/snapraid.1 $(DESTDIR)$(mandir)/$$lang/man1; \
 	done
 
 # Uninstall localized manpages
 uninstall-hook:
-	for lang in fr pl it ru es de ro pt; do \
+	for lang in $(LANG_CODES); do \
 		rm -f $(DESTDIR)$(mandir)/$$lang/man1/snapraid.1; \
 		rmdir --ignore-fail-on-non-empty $(DESTDIR)$(mandir)/$$lang/man1 2>/dev/null || true; \
 		rmdir --ignore-fail-on-non-empty $(DESTDIR)$(mandir)/$$lang 2>/dev/null || true; \
