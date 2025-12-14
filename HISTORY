@@ -6,6 +6,7 @@ SnapRAID HISTORY
  * More log tags for the `status` command [Tristan Teufel]
  * Added documentation of the tags used in the log file in the new
    snapraid_log manpage.
+ * Added manual translations in multiple languages.
 
 13.0 2025/10
 ============
