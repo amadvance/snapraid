@@ -83,21 +83,19 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
 &nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
 </pre>
-<p>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </pre>
 <h2><a name="2">2</a> 
 Description
 </h2>
-SnapRAID es un programa de copia de seguridad diseñado para arrays
+<p>SnapRAID es un programa de copia de seguridad diseñado para arrays
 de discos, que almacena información de paridad para la recuperación
 de datos en caso de hasta seis fallos de disco.
-<p>
-Destinado principalmente a centros de medios domésticos con archivos
+</p><p>Destinado principalmente a centros de medios domésticos con archivos
 grandes y que cambian con poca frecuencia, SnapRAID ofrece varias
 características:
-<ul>
+</p><ul>
 <li>
 Puede utilizar discos ya llenos de archivos sin la necesidad de
 reformatearlos, accediendo a ellos como de costumbre.
@@ -130,10 +128,8 @@ Para acceder a un archivo, solo un único disco necesita girar,
 ahorrando energía y reduciendo el ruido.
 </li>
 </ul>
-<p>
-Para más información, visite el sitio oficial de SnapRAID:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Para más información, visite el sitio oficial de SnapRAID:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 https://www.snapraid.it/
 </pre>
@@ -141,25 +137,22 @@ https://www.snapraid.it/
 <h2><a name="3">3</a> 
 Limitations
 </h2>
-SnapRAID es un híbrido entre un programa RAID y un programa de copia
+<p>SnapRAID es un híbrido entre un programa RAID y un programa de copia
 de seguridad, con el objetivo de combinar los mejores beneficios de
 ambos. Sin embargo, tiene algunas limitaciones que debe considerar
 antes de usarlo.
-<p>
-La principal limitación es que si un disco falla y no ha sincronizado
+</p><p>La principal limitación es que si un disco falla y no ha sincronizado
 recientemente, es posible que no pueda recuperarse por completo.
 Más específicamente, es posible que no pueda recuperar hasta el tamaño
 de los archivos cambiados o eliminados desde la última operación de
 sincronización. Esto ocurre incluso si los archivos cambiados o
 eliminados no están en el disco fallido. Esta es la razón por la que
 SnapRAID es más adecuado para datos que rara vez cambian.
-<p>
-Por otro lado, los archivos recién agregados no impiden la recuperación
+</p><p>Por otro lado, los archivos recién agregados no impiden la recuperación
 de los archivos ya existentes. Solo perderá los archivos recién
 agregados si están en el disco fallido.
-<p>
-Otras limitaciones de SnapRAID son:
-<ul>
+</p><p>Otras limitaciones de SnapRAID son:
+</p><ul>
 <li>
 Con SnapRAID, aún tiene sistemas de archivos separados para cada disco.
 Con RAID, obtiene un único sistema de archivos grande.
@@ -186,40 +179,33 @@ extendidos no se guardan.
 <h2><a name="4">4</a> 
 Getting Started
 </h2>
-Para usar SnapRAID, primero debe seleccionar un disco en su array de
+<p>Para usar SnapRAID, primero debe seleccionar un disco en su array de
 discos para dedicarlo a la información de `parity` (paridad). Con un
 disco para paridad, podrá recuperarse de un solo fallo de disco,
 similar a RAID5.
-<p>
-Si desea recuperarse de más fallos de disco, similar a RAID6,
+</p><p>Si desea recuperarse de más fallos de disco, similar a RAID6,
 debe reservar discos adicionales para la paridad. Cada disco de
 paridad adicional permite la recuperación de un fallo de disco más.
-<p>
-Como discos de paridad, debe elegir los discos más grandes del array,
+</p><p>Como discos de paridad, debe elegir los discos más grandes del array,
 ya que la información de paridad puede crecer hasta el tamaño del
 disco de datos más grande del array.
-<p>
-Estos discos estarán dedicados a almacenar los archivos de `parity`.
+</p><p>Estos discos estarán dedicados a almacenar los archivos de `parity`.
 No debe almacenar sus datos en ellos.
-<p>
-Luego, debe definir los discos de `data` (datos) que desea proteger
+</p><p>Luego, debe definir los discos de `data` (datos) que desea proteger
 con SnapRAID. La protección es más efectiva si estos discos
 contienen datos que rara vez cambian. Por esta razón, es mejor
 NO incluir el disco C:\ de Windows o los directorios /home, /var y
 /tmp de Unix.
-<p>
-La lista de archivos se guarda en los archivos de `content` (contenido),
+</p><p>La lista de archivos se guarda en los archivos de `content` (contenido),
 generalmente almacenados en los discos de datos, paridad o de arranque.
 Este archivo contiene los detalles de su copia de seguridad,
 incluyendo todas las sumas de comprobación para verificar su integridad.
 El archivo de `content` se almacena en múltiples copias, y cada copia
 debe estar en un disco diferente para asegurar que, incluso en caso
 de múltiples fallos de disco, al menos una copia esté disponible.
-<p>
-Por ejemplo, suponga que solo está interesado en un nivel de paridad
+</p><p>Por ejemplo, suponga que solo está interesado en un nivel de paridad
 de protección, y sus discos están ubicados en:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 /mnt/diskp &lt;- disco seleccionado para paridad
 /mnt/disk1 &lt;- primer disco a proteger
@@ -227,11 +213,9 @@ de protección, y sus discos están ubicados en:
 /mnt/disk3 &lt;- tercer disco a proteger
 </pre>
 </td></tr></table>
-<p>
-Debe crear el archivo de configuración /etc/snapraid.conf con
+<p>Debe crear el archivo de configuración /etc/snapraid.conf con
 las siguientes opciones:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 parity /mnt/diskp/snapraid.parity
 content /var/snapraid/snapraid.content
@@ -242,11 +226,9 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 </pre>
 </td></tr></table>
-<p>
-Si está en Windows, debe usar el formato de ruta de Windows, con
+<p>Si está en Windows, debe usar el formato de ruta de Windows, con
 letras de unidad y barras invertidas en lugar de barras.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 parity E:\snapraid.parity
 content C:\snapraid\snapraid.content
@@ -257,101 +239,82 @@ data d2 G:\array\
 data d3 H:\array\
 </pre>
 </td></tr></table>
-<p>
-Si tiene muchos discos y se queda sin letras de unidad, puede montar
+<p>Si tiene muchos discos y se queda sin letras de unidad, puede montar
 discos directamente en subcarpetas. Consulte:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 https://www.google.com/search?q=Windows+mount+point
 </pre>
 </td></tr></table>
-<p>
-En este punto, está listo para ejecutar el comando `sync` (sincronizar)
+<p>En este punto, está listo para ejecutar el comando `sync` (sincronizar)
 para construir la información de paridad.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid sync
 </pre>
 </td></tr></table>
-<p>
-Este proceso puede llevar varias horas la primera vez, dependiendo
+<p>Este proceso puede llevar varias horas la primera vez, dependiendo
 del tamaño de los datos ya presentes en los discos. Si los discos
 están vacíos, el proceso es inmediato.
-<p>
-Puede detenerlo en cualquier momento presionando Ctrl+C, y en la
+</p><p>Puede detenerlo en cualquier momento presionando Ctrl+C, y en la
 siguiente ejecución, se reanudará donde se interrumpió.
-<p>
-Cuando este comando se complete, sus datos estarán SEGUROS.
-<p>
-Ahora puede comenzar a usar su array como desee y periódicamente
+</p><p>Cuando este comando se complete, sus datos estarán SEGUROS.
+</p><p>Ahora puede comenzar a usar su array como desee y periódicamente
 actualizar la información de paridad ejecutando el comando `sync`.
-<h3><a name="4.1">4.1</a> 
+</p><h3><a name="4.1">4.1</a> 
 Scrubbing
 </h3>
-Para verificar periódicamente los datos y la paridad en busca de
+<p>Para verificar periódicamente los datos y la paridad en busca de
 errores, puede ejecutar el comando `scrub` (fregar/limpiar).
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid scrub
 </pre>
 </td></tr></table>
-<p>
-Este comando compara los datos de su array con el hash calculado
+<p>Este comando compara los datos de su array con el hash calculado
 durante el comando `sync` para verificar la integridad.
-<p>
-Cada ejecución del comando verifica aproximadamente el 8% del array,
+</p><p>Cada ejecución del comando verifica aproximadamente el 8% del array,
 excluyendo los datos ya fregados en los 10 días anteriores.
 Puede usar la opción -p, --plan para especificar una cantidad
 diferente y la opción -o, --older-than para especificar una edad
 diferente en días. Por ejemplo, para verificar el 5% del array en
 busca de bloques con más de 20 días, use:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid -p 5 -o 20 scrub
 </pre>
 </td></tr></table>
-<p>
-Si se encuentran errores silenciosos o de entrada/salida durante el
+<p>Si se encuentran errores silenciosos o de entrada/salida durante el
 proceso, los bloques correspondientes se marcan como defectuosos en
 el archivo de `content` y se listan en el comando `status`.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid status
 </pre>
 </td></tr></table>
-<p>
-Para corregirlos, puede usar el comando `fix` (arreglar), filtrando
+<p>Para corregirlos, puede usar el comando `fix` (arreglar), filtrando
 por bloques defectuosos con la opción -e, --filter-error:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid -e fix
 </pre>
 </td></tr></table>
-<p>
-En el siguiente `scrub`, los errores desaparecerán del informe de
+<p>En el siguiente `scrub`, los errores desaparecerán del informe de
 `status` si realmente se han corregido. Para hacerlo más rápido,
 puede usar -p bad para fregar solo los bloques marcados como defectuosos.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid -p bad scrub
 </pre>
 </td></tr></table>
-<p>
-Ejecutar `scrub` en un array no sincronizado puede reportar errores
+<p>Ejecutar `scrub` en un array no sincronizado puede reportar errores
 causados por archivos eliminados o modificados. Estos errores se
 informan en la salida de `scrub`, pero los bloques relacionados no
 se marcan como defectuosos.
-<h3><a name="4.2">4.2</a> 
+</p><h3><a name="4.2">4.2</a> 
 Pooling
 </h3>
-Nota: La función de pooling descrita a continuación ha sido
+<p>Nota: La función de pooling descrita a continuación ha sido
 sustituida por la herramienta mergefs, que ahora es la opción
 recomendada para los usuarios de Linux en la comunidad SnapRAID.
 Mergefs proporciona una forma más flexible y eficiente de agrupar
@@ -360,48 +323,38 @@ permitiendo un acceso sin problemas a los archivos en todo su array
 sin depender de enlaces simbólicos. Se integra bien con SnapRAID
 para la protección de paridad y se usa comúnmente en configuraciones
 como OpenMediaVault (OMV) o configuraciones NAS personalizadas.
-<p>
-Para que todos los archivos de su array se muestren en el mismo árbol
+</p><p>Para que todos los archivos de su array se muestren en el mismo árbol
 de directorios, puede habilitar la función de `pooling` (agrupación).
 Crea una vista virtual de solo lectura de todos los archivos de su
 array utilizando enlaces simbólicos.
-<p>
-Puede configurar el directorio de `pooling` en el archivo de
+</p><p>Puede configurar el directorio de `pooling` en el archivo de
 configuración con:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 pool /pool
 </pre>
 </td></tr></table>
-<p>
-o, si está en Windows, con:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>o, si está en Windows, con:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 pool C:\pool
 </pre>
 </td></tr></table>
-<p>
-y luego ejecute el comando `pool` para crear o actualizar la vista virtual.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>y luego ejecute el comando `pool` para crear o actualizar la vista virtual.
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid pool
 </pre>
 </td></tr></table>
-<p>
-Si está utilizando una plataforma Unix y desea compartir este
+<p>Si está utilizando una plataforma Unix y desea compartir este
 directorio a través de la red con máquinas Windows o Unix, debe
 agregar las siguientes opciones a su /etc/samba/smb.conf:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # En la sección global de smb.conf
 unix extensions = no
 </pre>
 </td></tr></table>
-<p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # En la sección de compartir de smb.conf
@@ -414,8 +367,7 @@ wide links = yes
 follow symlinks = yes
 </pre>
 </td></tr></table>
-<p>
-En Windows, compartir enlaces simbólicos a través de una red requiere
+<p>En Windows, compartir enlaces simbólicos a través de una red requiere
 que los clientes los resuelvan de forma remota. Para habilitar esto,
 además de compartir el directorio pool, también debe compartir todos
 los discos de forma independiente, utilizando los nombres de disco
@@ -423,11 +375,9 @@ definidos en el archivo de configuración como puntos de recurso
 compartido. También debe especificar en la opción `share` del archivo
 de configuración la ruta UNC de Windows que los clientes remotos
 necesitan usar para acceder a estos discos compartidos.
-<p>
-Por ejemplo, operando desde un servidor llamado `darkstar`, puede usar
+</p><p>Por ejemplo, operando desde un servidor llamado `darkstar`, puede usar
 las opciones:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 data d1 F:\array\
 data d2 G:\array\
@@ -436,10 +386,8 @@ pool C:\pool
 share \\darkstar
 </pre>
 </td></tr></table>
-<p>
-y compartir los siguientes directorios a través de la red:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>y compartir los siguientes directorios a través de la red:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 \\darkstar\pool -&gt; C:\pool
 \\darkstar\d1 -&gt; F:\array
@@ -447,14 +395,11 @@ y compartir los siguientes directorios a través de la red:
 \\darkstar\d3 -&gt; H:\array
 </pre>
 </td></tr></table>
-<p>
-para permitir que los clientes remotos accedan a todos los archivos
+<p>para permitir que los clientes remotos accedan a todos los archivos
 en \\darkstar\pool.
-<p>
-También puede que deba configurar los clientes remotos para habilitar
+</p><p>También puede que deba configurar los clientes remotos para habilitar
 el acceso a enlaces simbólicos remotos con el comando:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 </pre>
@@ -462,38 +407,31 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 <h3><a name="4.3">4.3</a> 
 Undeleting
 </h3>
-SnapRAID funciona más como un programa de copia de seguridad que como
+<p>SnapRAID funciona más como un programa de copia de seguridad que como
 un sistema RAID, y se puede usar para restaurar o recuperar archivos
 a su estado anterior usando la opción -f, --filter:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid fix -f FILE
 </pre>
 </td></tr></table>
-<p>
-o para un directorio:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>o para un directorio:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid fix -f DIR/
 </pre>
 </td></tr></table>
-<p>
-También puede usarlo para recuperar solo archivos eliminados
+<p>También puede usarlo para recuperar solo archivos eliminados
 accidentalmente dentro de un directorio usando la opción -m,
 --filter-missing, que restaura solo archivos faltantes, dejando
 todos los demás intactos.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid fix -m -f DIR/
 </pre>
 </td></tr></table>
-<p>
-O para recuperar todos los archivos eliminados en todas las unidades con:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>O para recuperar todos los archivos eliminados en todas las unidades con:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid fix -m
 </pre>
@@ -501,125 +439,101 @@ snapraid fix -m
 <h3><a name="4.4">4.4</a> 
 Recovering
 </h3>
-Ha sucedido lo peor, ¡y ha perdido uno o más discos!
-<p>
-¡NO ENTRE EN PÁNICO! ¡Podrá recuperarlos!
-<p>
-Lo primero que debe hacer es evitar más cambios en su array de discos.
+<p>Ha sucedido lo peor, ¡y ha perdido uno o más discos!
+</p><p>¡NO ENTRE EN PÁNICO! ¡Podrá recuperarlos!
+</p><p>Lo primero que debe hacer es evitar más cambios en su array de discos.
 Deshabilite cualquier conexión remota a él y cualquier proceso
 programado, incluida cualquier sincronización o fregado nocturno
 programado de SnapRAID.
-<p>
-Luego, proceda con los siguientes pasos.
-<h4><a name="4.4.1">4.4.1</a> 
+</p><p>Luego, proceda con los siguientes pasos.
+</p><h4><a name="4.4.1">4.4.1</a> 
 STEP 1 -&gt; Reconfigure
 </h4>
-Necesita algo de espacio para recuperarse, idealmente en discos de
+<p>Necesita algo de espacio para recuperarse, idealmente en discos de
 repuesto adicionales, pero un disco USB externo o un disco remoto
 serán suficientes.
-<p>
-Modifique el archivo de configuración de SnapRAID para hacer que la
+</p><p>Modifique el archivo de configuración de SnapRAID para hacer que la
 opción `data` o `parity` del disco fallido apunte a una ubicación
 con suficiente espacio vacío para recuperar los archivos.
-<p>
-Por ejemplo, si el disco `d1` ha fallado, cambie de:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><p>Por ejemplo, si el disco `d1` ha fallado, cambie de:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 data d1 /mnt/disk1/
 </pre>
 </td></tr></table>
-<p>
-a:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>a:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 data d1 /mnt/new_spare_disk/
 </pre>
 </td></tr></table>
-<p>
-Si el disco a recuperar es un disco de paridad, actualice la opción
+<p>Si el disco a recuperar es un disco de paridad, actualice la opción
 `parity` apropiada.
 Si tiene varios discos fallidos, actualice todas sus opciones de
 configuración.
-<h4><a name="4.4.2">4.4.2</a> 
+</p><h4><a name="4.4.2">4.4.2</a> 
 STEP 2 -&gt; Fix
 </h4>
-Ejecute el comando fix, almacenando el registro en un archivo externo con:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Ejecute el comando fix, almacenando el registro en un archivo externo con:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid -d NAME -l fix.log fix
 </pre>
 </td></tr></table>
-<p>
-Donde NAME es el nombre del disco, como `d1` en nuestro ejemplo anterior.
+<p>Donde NAME es el nombre del disco, como `d1` en nuestro ejemplo anterior.
 Si el disco a recuperar es un disco de paridad, use los nombres `parity`,
 `2-parity`, etc.
 Si tiene varios discos fallidos, use varias opciones -d para
 especificarlos todos.
-<p>
-Este comando tardará mucho tiempo.
-<p>
-Asegúrese de tener unos pocos gigabytes libres para almacenar el archivo
+</p><p>Este comando tardará mucho tiempo.
+</p><p>Asegúrese de tener unos pocos gigabytes libres para almacenar el archivo
 fix.log. Ejecútelo desde un disco con suficiente espacio libre.
-<p>
-Ahora ha recuperado todo lo que es recuperable. Si algunos archivos son
+</p><p>Ahora ha recuperado todo lo que es recuperable. Si algunos archivos son
 parcial o totalmente irrecuperables, se les cambiará el nombre agregando
 la extensión `.unrecoverable`.
-<p>
-Puede encontrar una lista detallada de todos los bloques irrecuperables
+</p><p>Puede encontrar una lista detallada de todos los bloques irrecuperables
 en el archivo fix.log buscando todas las líneas que comienzan con `unrecoverable:`.
-<p>
-Si no está satisfecho con la recuperación, puede volver a intentarlo
+</p><p>Si no está satisfecho con la recuperación, puede volver a intentarlo
 tantas veces como desee.
-<p>
-Por ejemplo, si ha eliminado archivos del array después de la última
+</p><p>Por ejemplo, si ha eliminado archivos del array después de la última
 `sync`, esto puede resultar en que algunos archivos no se recuperen.
 En este caso, puede volver a intentar el `fix` usando la opción -i,
 --import, especificando dónde están esos archivos ahora para incluirlos
 nuevamente en el proceso de recuperación.
-<p>
-Si está satisfecho con la recuperación, puede continuar,
+</p><p>Si está satisfecho con la recuperación, puede continuar,
 ¡pero tenga en cuenta que después de sincronizar, no puede volver
 a intentar el comando `fix`!
-<h4><a name="4.4.3">4.4.3</a> 
+</p><h4><a name="4.4.3">4.4.3</a> 
 STEP 3 -&gt; Check
 </h4>
-Como verificación cautelosa, ahora puede ejecutar un comando `check`
+<p>Como verificación cautelosa, ahora puede ejecutar un comando `check`
 (comprobar) para asegurarse de que todo esté correcto en el disco
 recuperado.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid -d NAME -a check
 </pre>
 </td></tr></table>
-<p>
-Donde NAME es el nombre del disco, como `d1` en nuestro ejemplo anterior.
-<p>
-Las opciones -d y -a le dicen a SnapRAID que compruebe solo el disco
+<p>Donde NAME es el nombre del disco, como `d1` en nuestro ejemplo anterior.
+</p><p>Las opciones -d y -a le dicen a SnapRAID que compruebe solo el disco
 especificado e ignore todos los datos de paridad.
-<p>
-Este comando tardará mucho tiempo, pero si no es demasiado cauteloso,
+</p><p>Este comando tardará mucho tiempo, pero si no es demasiado cauteloso,
 puede omitirlo.
-<h4><a name="4.4.4">4.4.4</a> 
+</p><h4><a name="4.4.4">4.4.4</a> 
 STEP 4 -&gt; Sync
 </h4>
-Ejecute el comando `sync` para resincronizar el array con el nuevo disco.
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Ejecute el comando `sync` para resincronizar el array con el nuevo disco.
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 snapraid sync
 </pre>
 </td></tr></table>
-<p>
-Si todo se recupera, este comando es inmediato.
-<h2><a name="5">5</a> 
+<p>Si todo se recupera, este comando es inmediato.
+</p><h2><a name="5">5</a> 
 Commands
 </h2>
-SnapRAID proporciona algunos comandos simples que le permiten:
-<ul>
+<p>SnapRAID proporciona algunos comandos simples que le permiten:
+</p><ul>
 <li>
 Imprimir el estado del array -&gt; `status`
 </li>
@@ -636,53 +550,42 @@ Comprobar periódicamente los datos -&gt; `scrub`
 Restaurar la última copia de seguridad/instantánea -&gt; `fix`.
 </li>
 </ul>
-<p>
-Los comandos deben escribirse en minúsculas.
-<h3><a name="5.1">5.1</a> 
+<p>Los comandos deben escribirse en minúsculas.
+</p><h3><a name="5.1">5.1</a> 
 status
 </h3>
-Imprime un resumen del estado del array de discos.
-<p>
-Incluye información sobre la fragmentación de la paridad, la antigüedad
+<p>Imprime un resumen del estado del array de discos.
+</p><p>Incluye información sobre la fragmentación de la paridad, la antigüedad
 de los bloques sin verificar y todos los errores silenciosos
 registrados encontrados durante el fregado.
-<p>
-La información presentada se refiere a la última vez que ejecutó
+</p><p>La información presentada se refiere a la última vez que ejecutó
 `sync`. Las modificaciones posteriores no se tienen en cuenta.
-<p>
-Si se detectaron bloques defectuosos, se enumeran sus números de bloque.
+</p><p>Si se detectaron bloques defectuosos, se enumeran sus números de bloque.
 Para corregirlos, puede usar el comando `fix -e`.
-<p>
-También muestra un gráfico que representa la última vez que cada
+</p><p>También muestra un gráfico que representa la última vez que cada
 bloque fue fregado o sincronizado. Los bloques fregados se muestran
 con '*', los bloques sincronizados pero aún no fregados con 'o'.
-<p>
-Nada se modifica.
-<h3><a name="5.2">5.2</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.2">5.2</a> 
 smart
 </h3>
-Imprime un informe SMART de todos los discos del sistema.
-<p>
-Incluye una estimación de la probabilidad de fallo en el próximo
+<p>Imprime un informe SMART de todos los discos del sistema.
+</p><p>Incluye una estimación de la probabilidad de fallo en el próximo
 año, lo que le permite planificar reemplazos de mantenimiento de
 discos que muestren atributos sospechosos.
-<p>
-Esta estimación de probabilidad se obtiene correlacionando los
+</p><p>Esta estimación de probabilidad se obtiene correlacionando los
 atributos SMART de los discos con los datos de Backblaze disponibles en:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 https://www.backblaze.com/hard-drive-test-data.html
 </pre>
 </td></tr></table>
-<p>
-Si SMART informa que un disco está fallando, se imprime `FAIL` o
+<p>Si SMART informa que un disco está fallando, se imprime `FAIL` o
 `PREFAIL` para ese disco, y SnapRAID regresa con un error.
 En este caso, se recomienda encarecidamente el reemplazo inmediato
 del disco.
-<p>
-Otras posibles cadenas de estado son:
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
+</p><p>Otras posibles cadenas de estado son:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
 logfail
 </em></td><td width="90%">
@@ -700,75 +603,58 @@ selferr
 El registro de autoprueba del dispositivo contiene errores.
 </td></tr>
 </table>
-<p>
-Si se especifica la opción -v, --verbose, se proporciona un análisis
+<p>Si se especifica la opción -v, --verbose, se proporciona un análisis
 estadístico más profundo. Este análisis puede ayudarle a decidir si
 necesita más o menos paridad.
-<p>
-Este comando utiliza la herramienta `smartctl` y es equivalente a
+</p><p>Este comando utiliza la herramienta `smartctl` y es equivalente a
 ejecutar `smartctl -a` en todos los dispositivos.
-<p>
-Si sus dispositivos no se detectan automáticamente correctamente, puede
+</p><p>Si sus dispositivos no se detectan automáticamente correctamente, puede
 especificar un comando personalizado utilizando la opción `smartctl`
 en el archivo de configuración.
-<p>
-Nada se modifica.
-<h3><a name="5.3">5.3</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.3">5.3</a> 
 probe
 </h3>
-Imprime el estado de ENERGÍA de todos los discos del sistema.
-<p>
-`Standby` significa que el disco no está girando. `Active` significa
+<p>Imprime el estado de ENERGÍA de todos los discos del sistema.
+</p><p>`Standby` significa que el disco no está girando. `Active` significa
 que el disco está girando.
-<p>
-Este comando utiliza la herramienta `smartctl` y es equivalente a
+</p><p>Este comando utiliza la herramienta `smartctl` y es equivalente a
 ejecutar `smartctl -n standby -i` en todos los dispositivos.
-<p>
-Si sus dispositivos no se detectan automáticamente correctamente, puede
+</p><p>Si sus dispositivos no se detectan automáticamente correctamente, puede
 especificar un comando personalizado utilizando la opción `smartctl`
 en el archivo de configuración.
-<p>
-Nada se modifica.
-<h3><a name="5.4">5.4</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.4">5.4</a> 
 up
 </h3>
-Pone en marcha (gira) todos los discos del array.
-<p>
-Puede poner en marcha solo discos específicos usando la opción -d,
+<p>Pone en marcha (gira) todos los discos del array.
+</p><p>Puede poner en marcha solo discos específicos usando la opción -d,
 --filter-disk.
-<p>
-Poner en marcha todos los discos al mismo tiempo requiere mucha energía.
+</p><p>Poner en marcha todos los discos al mismo tiempo requiere mucha energía.
 Asegúrese de que su fuente de alimentación pueda soportarlo.
-<p>
-Nada se modifica.
-<h3><a name="5.5">5.5</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.5">5.5</a> 
 down
 </h3>
-Detiene (deja de girar) todos los discos del array.
-<p>
-Este comando utiliza la herramienta `smartctl` y es equivalente a
+<p>Detiene (deja de girar) todos los discos del array.
+</p><p>Este comando utiliza la herramienta `smartctl` y es equivalente a
 ejecutar `smartctl -s standby,now` en todos los dispositivos.
-<p>
-Puede detener solo discos específicos usando la opción -d,
+</p><p>Puede detener solo discos específicos usando la opción -d,
 --filter-disk.
-<p>
-Para detener automáticamente en caso de error, puede usar la opción -s,
+</p><p>Para detener automáticamente en caso de error, puede usar la opción -s,
 --spin-down-on-error con cualquier otro comando, lo cual es
 equivalente a ejecutar `down` manualmente cuando ocurre un error.
-<p>
-Nada se modifica.
-<h3><a name="5.6">5.6</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.6">5.6</a> 
 diff
 </h3>
-Enumera todos los archivos modificados desde el último `sync` que
+<p>Enumera todos los archivos modificados desde el último `sync` que
 necesitan que se vuelva a calcular su información de paridad.
-<p>
-Este comando no verifica los datos del archivo, sino solo la marca
+</p><p>Este comando no verifica los datos del archivo, sino solo la marca
 de tiempo, el tamaño y el inodo del archivo.
-<p>
-Después de enumerar todos los archivos cambiados, se presenta un
+</p><p>Después de enumerar todos los archivos cambiados, se presenta un
 resumen de los cambios, agrupados por:
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
 equal
 </em></td><td width="90%">
@@ -816,28 +702,23 @@ Estos suelen ser archivos restaurados después de ser
 eliminados.
 </td></tr>
 </table>
-<p>
-Si se requiere un `sync`, el código de retorno del proceso es 2, en
+<p>Si se requiere un `sync`, el código de retorno del proceso es 2, en
 lugar del valor predeterminado 0. El código de retorno 1 se utiliza
 para una condición de error genérico.
-<p>
-Nada se modifica.
-<h3><a name="5.7">5.7</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.7">5.7</a> 
 sync
 </h3>
-Actualiza la información de paridad. Todos los archivos modificados
+<p>Actualiza la información de paridad. Todos los archivos modificados
 en el array de discos se leen y la información de paridad
 correspondiente se actualiza.
-<p>
-Puede detener este proceso en cualquier momento presionando Ctrl+C,
+</p><p>Puede detener este proceso en cualquier momento presionando Ctrl+C,
 sin perder el trabajo ya realizado.
 En la siguiente ejecución, el proceso `sync` se reanudará donde
 se interrumpió.
-<p>
-Si se encuentran errores silenciosos o de entrada/salida durante el
+</p><p>Si se encuentran errores silenciosos o de entrada/salida durante el
 proceso, los bloques correspondientes se marcan como defectuosos.
-<p>
-Los archivos se identifican por ruta y/o inodo y se verifican por
+</p><p>Los archivos se identifican por ruta y/o inodo y se verifican por
 tamaño y marca de tiempo.
 Si el tamaño o la marca de tiempo del archivo difieren, la información
 de paridad se vuelve a calcular para todo el archivo.
@@ -845,37 +726,31 @@ Si el archivo se mueve o se renombra en el mismo disco, manteniendo el
 mismo inodo, la paridad no se vuelve a calcular.
 Si el archivo se mueve a otro disco, la paridad se vuelve a calcular,
 pero la información de hash calculada previamente se mantiene.
-<p>
-Los archivos `content` y `parity` se modifican si es necesario.
+</p><p>Los archivos `content` y `parity` se modifican si es necesario.
 Los archivos en el array NO se modifican.
-<h3><a name="5.8">5.8</a> 
+</p><h3><a name="5.8">5.8</a> 
 scrub
 </h3>
-Frota (scrubs) el array, buscando errores silenciosos o de
+<p>Frota (scrubs) el array, buscando errores silenciosos o de
 entrada/salida en los discos de datos y paridad.
-<p>
-Cada invocación verifica aproximadamente el 8% del array, excluyendo
+</p><p>Cada invocación verifica aproximadamente el 8% del array, excluyendo
 los datos ya fregados en los últimos 10 días.
 Esto significa que fregar una vez a la semana asegura que cada bit de
 datos se verifique al menos una vez cada tres meses.
-<p>
-Puede definir un plan de fregado o una cantidad diferente utilizando
+</p><p>Puede definir un plan de fregado o una cantidad diferente utilizando
 la opción -p, --plan, que acepta:
 bad - Fregar bloques marcados como defectuosos.
 new - Fregar bloques recién sincronizados que aún no han sido fregados.
 full - Fregar todo.
 0-100 - Fregar el porcentaje especificado de bloques.
-<p>
-Si especifica un valor de porcentaje, también puede usar la opción -o,
+</p><p>Si especifica un valor de porcentaje, también puede usar la opción -o,
 --older-than para definir la antigüedad del bloque.
 Los bloques más antiguos se friegan primero, asegurando una verificación
 óptima.
 Si desea fregar solo los bloques recién sincronizados que aún no han
 sido fregados, use la opción `-p new`.
-<p>
-Para obtener detalles del estado del fregado, use el comando `status`.
-<p>
-Para cualquier error silencioso o de entrada/salida encontrado, los
+</p><p>Para obtener detalles del estado del fregado, use el comando `status`.
+</p><p>Para cualquier error silencioso o de entrada/salida encontrado, los
 bloques correspondientes se marcan como defectuosos en el archivo
 `content`.
 Estos bloques defectuosos se enumeran en `status` y se pueden
@@ -884,166 +759,133 @@ Después de la corrección, en el siguiente fregado, se volverán a
 verificar y, si se encuentran corregidos, se eliminará la marca de defectuoso.
 Para fregar solo los bloques defectuosos, puede usar el comando
 `scrub -p bad`.
-<p>
-Se recomienda ejecutar `scrub` solo en un array sincronizado para evitar
+</p><p>Se recomienda ejecutar `scrub` solo en un array sincronizado para evitar
 errores reportados causados por datos no sincronizados. Estos errores
 se reconocen como no siendo errores silenciosos y los bloques no se
 marcan como defectuosos, pero tales errores se informan en la salida
 del comando.
-<p>
-El archivo `content` se modifica para actualizar el tiempo de la última
+</p><p>El archivo `content` se modifica para actualizar el tiempo de la última
 verificación de cada bloque y para marcar bloques defectuosos.
 Los archivos `parity` NO se modifican.
 Los archivos en el array NO se modifican.
-<h3><a name="5.9">5.9</a> 
+</p><h3><a name="5.9">5.9</a> 
 fix
 </h3>
-Corrige todos los archivos y la información de paridad.
-<p>
-Todos los archivos y la información de paridad se comparan con el
+<p>Corrige todos los archivos y la información de paridad.
+</p><p>Todos los archivos y la información de paridad se comparan con el
 estado de instantánea guardado en el último `sync`.
 Si se encuentra una diferencia, se revierte a la instantánea almacenada.
-<p>
-¡ADVERTENCIA! El comando `fix` no diferencia entre errores y
+</p><p>¡ADVERTENCIA! El comando `fix` no diferencia entre errores y
 modificaciones intencionales. Revierte incondicionalmente el estado
 del archivo al último `sync`.
-<p>
-Si no se especifica otra opción, se procesa todo el array.
+</p><p>Si no se especifica otra opción, se procesa todo el array.
 Utilice las opciones de filtro para seleccionar un subconjunto de
 archivos o discos para operar.
-<p>
-Para corregir solo los bloques marcados como defectuosos durante `sync`
+</p><p>Para corregir solo los bloques marcados como defectuosos durante `sync`
 y `scrub`, use la opción -e, --filter-error.
 A diferencia de otras opciones de filtro, esta aplica correcciones solo
 a archivos que no han cambiado desde el último `sync`.
-<p>
-SnapRAID cambia el nombre de todos los archivos que no se pueden corregir
+</p><p>SnapRAID cambia el nombre de todos los archivos que no se pueden corregir
 agregando la extensión `.unrecoverable`.
-<p>
-Antes de corregir, se escanea todo el array para encontrar cualquier
+</p><p>Antes de corregir, se escanea todo el array para encontrar cualquier
 archivo movido desde la última operación de `sync`.
 Estos archivos se identifican por su marca de tiempo, ignorando su
 nombre y directorio, y se utilizan en el proceso de recuperación si
 es necesario.
 Si movió algunos de ellos fuera del array, puede usar la opción -i,
 --import para especificar directorios adicionales para escanear.
-<p>
-Los archivos se identifican solo por ruta, no por inodo.
-<p>
-El archivo `content` NO se modifica.
+</p><p>Los archivos se identifican solo por ruta, no por inodo.
+</p><p>El archivo `content` NO se modifica.
 Los archivos `parity` se modifican si es necesario.
 Los archivos en el array se modifican si es necesario.
-<h3><a name="5.10">5.10</a> 
+</p><h3><a name="5.10">5.10</a> 
 check
 </h3>
-Verifica todos los archivos y la información de paridad.
-<p>
-Funciona como `fix`, pero solo simula una recuperación y no se
+<p>Verifica todos los archivos y la información de paridad.
+</p><p>Funciona como `fix`, pero solo simula una recuperación y no se
 escriben cambios en el array.
-<p>
-Este comando está destinado principalmente a la verificación manual,
+</p><p>Este comando está destinado principalmente a la verificación manual,
 como después de un proceso de recuperación o en otras condiciones
 especiales. Para comprobaciones periódicas y programadas, use `scrub`.
-<p>
-Si usa la opción -a, --audit-only, solo se verifican los datos del
+</p><p>Si usa la opción -a, --audit-only, solo se verifican los datos del
 archivo y se ignora la información de paridad para una ejecución más
 rápida.
-<p>
-Los archivos se identifican solo por ruta, no por inodo.
-<p>
-Nada se modifica.
-<h3><a name="5.11">5.11</a> 
+</p><p>Los archivos se identifican solo por ruta, no por inodo.
+</p><p>Nada se modifica.
+</p><h3><a name="5.11">5.11</a> 
 list
 </h3>
-Enumera todos los archivos contenidos en el array en el momento del
+<p>Enumera todos los archivos contenidos en el array en el momento del
 último `sync`.
-<p>
-Con -v o --verbose, también se muestra el tiempo de subsegundo.
-<p>
-Nada se modifica.
-<h3><a name="5.12">5.12</a> 
+</p><p>Con -v o --verbose, también se muestra el tiempo de subsegundo.
+</p><p>Nada se modifica.
+</p><h3><a name="5.12">5.12</a> 
 dup
 </h3>
-Enumera todos los archivos duplicados. Se supone que dos archivos son
+<p>Enumera todos los archivos duplicados. Se supone que dos archivos son
 iguales si sus hashes coinciden. Los datos del archivo no se leen;
 solo se utilizan los hashes precalculados.
-<p>
-Nada se modifica.
-<h3><a name="5.13">5.13</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.13">5.13</a> 
 pool
 </h3>
-Crea o actualiza una vista virtual de todos
+<p>Crea o actualiza una vista virtual de todos
 los archivos de su array de discos en el directorio de `pooling`.
-<p>
-Los archivos no se copian sino que se enlazan usando
+</p><p>Los archivos no se copian sino que se enlazan usando
 enlaces simbólicos.
-<p>
-Al actualizar, todos los enlaces simbólicos existentes y los
+</p><p>Al actualizar, todos los enlaces simbólicos existentes y los
 subdirectorios vacíos se eliminan y se reemplazan con la nueva
 vista del array. Cualquier otro archivo regular se deja en su lugar.
-<p>
-Nada se modifica fuera del directorio pool.
-<h3><a name="5.14">5.14</a> 
+</p><p>Nada se modifica fuera del directorio pool.
+</p><h3><a name="5.14">5.14</a> 
 devices
 </h3>
-Imprime los dispositivos de bajo nivel utilizados por el array.
-<p>
-Este comando muestra las asociaciones de dispositivos en el array
+<p>Imprime los dispositivos de bajo nivel utilizados por el array.
+</p><p>Este comando muestra las asociaciones de dispositivos en el array
 y está destinado principalmente como una interfaz de script.
-<p>
-Las primeras dos columnas son el ID y la ruta del dispositivo de bajo
+</p><p>Las primeras dos columnas son el ID y la ruta del dispositivo de bajo
 nivel. Las siguientes dos columnas son el ID y la ruta del dispositivo
 de alto nivel. La última columna es el nombre del disco en el array.
-<p>
-En la mayoría de los casos, tiene un dispositivo de bajo nivel para
+</p><p>En la mayoría de los casos, tiene un dispositivo de bajo nivel para
 cada disco en el array, pero en algunas configuraciones más complejas,
 puede tener múltiples dispositivos de bajo nivel utilizados por un
 solo disco en el array.
-<p>
-Nada se modifica.
-<h3><a name="5.15">5.15</a> 
+</p><p>Nada se modifica.
+</p><h3><a name="5.15">5.15</a> 
 touch
 </h3>
-Establece una marca de tiempo de subsegundo arbitraria para todos los
+<p>Establece una marca de tiempo de subsegundo arbitraria para todos los
 archivos que la tienen establecida en cero.
-<p>
-Esto mejora la capacidad de SnapRAID para reconocer archivos movidos
+</p><p>Esto mejora la capacidad de SnapRAID para reconocer archivos movidos
 y copiados, ya que hace que la marca de tiempo sea casi única,
 reduciendo posibles duplicados.
-<p>
-Más específicamente, si la marca de tiempo de subsegundo no es cero,
+</p><p>Más específicamente, si la marca de tiempo de subsegundo no es cero,
 un archivo movido o copiado se identifica como tal si coincide con
 el nombre, el tamaño y la marca de tiempo. Si la marca de tiempo de
 subsegundo es cero, se considera una copia solo si la ruta completa,
 el tamaño y la marca de tiempo coinciden.
-<p>
-La marca de tiempo de precisión de segundo no se modifica,
+</p><p>La marca de tiempo de precisión de segundo no se modifica,
 por lo que se conservarán todas las fechas y horas de sus archivos.
-<h3><a name="5.16">5.16</a> 
+</p><h3><a name="5.16">5.16</a> 
 rehash
 </h3>
-Programa un nuevo cálculo de hash (rehash) de todo el array.
-<p>
-Este comando cambia el tipo de hash utilizado, típicamente al
+<p>Programa un nuevo cálculo de hash (rehash) de todo el array.
+</p><p>Este comando cambia el tipo de hash utilizado, típicamente al
 actualizar de un sistema de 32 bits a uno de 64 bits, para cambiar
 de MurmurHash3 al más rápido SpookyHash.
-<p>
-Si ya está utilizando el hash óptimo, este comando
+</p><p>Si ya está utilizando el hash óptimo, este comando
 no hace nada y le informa que no se necesita ninguna acción.
-<p>
-El nuevo cálculo de hash no se realiza inmediatamente, sino que
+</p><p>El nuevo cálculo de hash no se realiza inmediatamente, sino que
 tiene lugar progresivamente durante `sync` y `scrub`.
-<p>
-Puede verificar el estado del nuevo cálculo de hash usando `status`.
-<p>
-Durante el nuevo cálculo de hash, SnapRAID mantiene la funcionalidad
+</p><p>Puede verificar el estado del nuevo cálculo de hash usando `status`.
+</p><p>Durante el nuevo cálculo de hash, SnapRAID mantiene la funcionalidad
 completa, con la única excepción de que `dup` no puede detectar
 archivos duplicados utilizando un hash diferente.
-<h2><a name="6">6</a> 
+</p><h2><a name="6">6</a> 
 Options
 </h2>
-SnapRAID proporciona las siguientes opciones:
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<p>SnapRAID proporciona las siguientes opciones:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
 -c, --conf CONFIG
 </strong></td></tr><tr><td>
@@ -1452,46 +1294,38 @@ Imprime la versión del programa.
 <h2><a name="7">7</a> 
 Configuration
 </h2>
-SnapRAID requiere un archivo de configuración para saber dónde se
+<p>SnapRAID requiere un archivo de configuración para saber dónde se
 encuentra su array de discos y dónde almacenar la información de paridad.
-<p>
-En Unix, utiliza el archivo `/usr/local/etc/snapraid.conf` si existe,
+</p><p>En Unix, utiliza el archivo `/usr/local/etc/snapraid.conf` si existe,
 de lo contrario `/etc/snapraid.conf`.
 En Windows, utiliza el archivo `snapraid.conf` en el mismo
 directorio que `snapraid.exe`.
-<p>
-Debe contener las siguientes opciones (distingue entre mayúsculas y minúsculas):
-<h3><a name="7.1">7.1</a> 
+</p><p>Debe contener las siguientes opciones (distingue entre mayúsculas y minúsculas):
+</p><h3><a name="7.1">7.1</a> 
 parity FILE [,FILE] ...
 </h3>
-Define los archivos a usar para almacenar la información de paridad.
+<p>Define los archivos a usar para almacenar la información de paridad.
 La paridad permite la protección contra un solo fallo de disco,
 similar a RAID5.
-<p>
-Puede especificar varios archivos, que deben estar en discos diferentes.
+</p><p>Puede especificar varios archivos, que deben estar en discos diferentes.
 Cuando un archivo no puede crecer más, se utiliza el siguiente.
 El espacio total disponible debe ser al menos tan grande como el
 disco de datos más grande del array.
-<p>
-Puede agregar archivos de paridad adicionales más tarde, pero no
+</p><p>Puede agregar archivos de paridad adicionales más tarde, pero no
 puede reordenarlos ni eliminarlos.
-<p>
-Mantener los discos de paridad reservados para la paridad asegura
+</p><p>Mantener los discos de paridad reservados para la paridad asegura
 que no se fragmenten, mejorando el rendimiento.
-<p>
-En Windows, se dejan 256 MB sin usar en cada disco para evitar la
+</p><p>En Windows, se dejan 256 MB sin usar en cada disco para evitar la
 advertencia sobre discos llenos.
-<p>
-Esta opción es obligatoria y solo se puede usar una vez.
-<h3><a name="7.2">7.2</a> 
+</p><p>Esta opción es obligatoria y solo se puede usar una vez.
+</p><h3><a name="7.2">7.2</a> 
 (2,3,4,5,6)-parity FILE [,FILE] ...
 </h3>
-Define los archivos a usar para almacenar información de paridad
+<p>Define los archivos a usar para almacenar información de paridad
 adicional.
-<p>
-Para cada nivel de paridad especificado, se habilita un nivel
+</p><p>Para cada nivel de paridad especificado, se habilita un nivel
 adicional de protección:
-<ul>
+</p><ul>
 <li>
 2-parity habilita la paridad dual RAID6.
 </li>
@@ -1508,105 +1342,85 @@ adicional de protección:
 6-parity habilita la paridad séxtuple.
 </li>
 </ul>
-<p>
-Cada nivel de paridad requiere la presencia de todos los niveles
+<p>Cada nivel de paridad requiere la presencia de todos los niveles
 de paridad anteriores.
-<p>
-Se aplican las mismas consideraciones que para la opción 'parity'.
-<p>
-Estas opciones son opcionales y solo se pueden usar una vez.
-<h3><a name="7.3">7.3</a> 
+</p><p>Se aplican las mismas consideraciones que para la opción 'parity'.
+</p><p>Estas opciones son opcionales y solo se pueden usar una vez.
+</p><h3><a name="7.3">7.3</a> 
 z-parity FILE [,FILE] ...
 </h3>
-Define un archivo y un formato alternativos para almacenar paridad triple.
-<p>
-Esta opción es una alternativa a '3-parity', destinada principalmente
+<p>Define un archivo y un formato alternativos para almacenar paridad triple.
+</p><p>Esta opción es una alternativa a '3-parity', destinada principalmente
 a CPU de gama baja como ARM o AMD Phenom, Athlon y Opteron que no
 admiten el conjunto de instrucciones SSSE3. En tales casos,
 proporciona un mejor rendimiento.
-<p>
-Este formato es similar pero más rápido que el utilizado por ZFS RAIDZ3.
+</p><p>Este formato es similar pero más rápido que el utilizado por ZFS RAIDZ3.
 Al igual que ZFS, no funciona más allá de la paridad triple.
-<p>
-Al usar '3-parity', se le advertirá si se recomienda usar
+</p><p>Al usar '3-parity', se le advertirá si se recomienda usar
 el formato 'z-parity' para mejorar el rendimiento.
-<p>
-Es posible convertir de un formato a otro ajustando
+</p><p>Es posible convertir de un formato a otro ajustando
 el archivo de configuración con el archivo z-parity o 3-parity
 deseado y usando 'fix' para recrearlo.
-<h3><a name="7.4">7.4</a> 
+</p><h3><a name="7.4">7.4</a> 
 content FILE
 </h3>
-Define el archivo a usar para almacenar la lista y las sumas de
+<p>Define el archivo a usar para almacenar la lista y las sumas de
 comprobación de todos los archivos presentes en su array de discos.
-<p>
-Se puede colocar en un disco utilizado para datos, paridad o
+</p><p>Se puede colocar en un disco utilizado para datos, paridad o
 cualquier otro disco disponible.
 Si usa un disco de datos, este archivo se excluye automáticamente
 del proceso `sync`.
-<p>
-Esta opción es obligatoria y se puede usar varias veces para guardar
+</p><p>Esta opción es obligatoria y se puede usar varias veces para guardar
 múltiples copias del mismo archivo.
-<p>
-Debe almacenar al menos una copia por cada disco de paridad utilizado
+</p><p>Debe almacenar al menos una copia por cada disco de paridad utilizado
 más uno. Usar copias adicionales no perjudica.
-<h3><a name="7.5">7.5</a> 
+</p><h3><a name="7.5">7.5</a> 
 data NAME DIR
 </h3>
-Define el nombre y el punto de montaje de los discos de datos en
+<p>Define el nombre y el punto de montaje de los discos de datos en
 el array. NAME se usa para identificar el disco y debe
 ser único. DIR es el punto de montaje del disco en el
 sistema de archivos.
-<p>
-Puede cambiar el punto de montaje según sea necesario, siempre que
+</p><p>Puede cambiar el punto de montaje según sea necesario, siempre que
 mantenga el NAME fijo.
-<p>
-Debe usar una opción para cada disco de datos en el array.
-<p>
-Puede cambiar el nombre de un disco más tarde cambiando el NAME
+</p><p>Debe usar una opción para cada disco de datos en el array.
+</p><p>Puede cambiar el nombre de un disco más tarde cambiando el NAME
 directamente en el archivo de configuración y luego ejecutando un
 comando 'sync'. En el caso de cambiar el nombre, la asociación se
 realiza utilizando el UUID almacenado de los discos.
-<h3><a name="7.6">7.6</a> 
+</p><h3><a name="7.6">7.6</a> 
 nohidden
 </h3>
-Excluye todos los archivos y directorios ocultos.
+<p>Excluye todos los archivos y directorios ocultos.
 En Unix, los archivos ocultos son los que comienzan con `.`.
 En Windows, son los que tienen el atributo oculto.
-<h3><a name="7.7">7.7</a> 
+</p><h3><a name="7.7">7.7</a> 
 exclude/include PATTERN
 </h3>
-Define los patrones de archivo o directorio a excluir o incluir
+<p>Define los patrones de archivo o directorio a excluir o incluir
 en el proceso de sincronización.
 Todos los patrones se procesan en el orden especificado.
-<p>
-Si el primer patrón que coincide es un `exclude`, el archivo
+</p><p>Si el primer patrón que coincide es un `exclude`, el archivo
 se excluye. Si es un `include`, el archivo se incluye.
 Si ningún patrón coincide, el archivo se excluye si el último
 patrón especificado es un `include`, o se incluye si el último
 patrón especificado es un `exclude`.
-<p>
-Consulte la sección PATTERN para obtener más detalles sobre
+</p><p>Consulte la sección PATTERN para obtener más detalles sobre
 las especificaciones de patrones.
-<p>
-Esta opción se puede usar varias veces.
-<h3><a name="7.8">7.8</a> 
+</p><p>Esta opción se puede usar varias veces.
+</p><h3><a name="7.8">7.8</a> 
 blocksize SIZE_IN_KIBIBYTES
 </h3>
-Define el tamaño de bloque básico en kibibytes para la paridad.
+<p>Define el tamaño de bloque básico en kibibytes para la paridad.
 Un kibibyte es 1024 bytes.
-<p>
-El tamaño de bloque predeterminado es 256, que debería funcionar
+</p><p>El tamaño de bloque predeterminado es 256, que debería funcionar
 para la mayoría de los casos.
-<p>
-¡ADVERTENCIA! Esta opción es solo para expertos y se
+</p><p>¡ADVERTENCIA! Esta opción es solo para expertos y se
 recomienda encarecidamente no cambiar este valor. Para cambiar
 este valor en el futuro, ¡tendrá que recrear toda la paridad!
-<p>
-Una razón para usar un tamaño de bloque diferente es si tiene
+</p><p>Una razón para usar un tamaño de bloque diferente es si tiene
 muchos archivos pequeños, del orden de millones.
-<p>
-Para cada archivo, incluso si solo son unos pocos bytes, se asigna
+</p><p>Para cada archivo, incluso si solo son unos pocos bytes, se asigna
 un bloque completo de paridad, y con muchos archivos, esto puede
 resultar en un espacio de paridad no utilizado significativo.
 Cuando llena completamente el disco de paridad, no se le permite
@@ -1615,96 +1429,78 @@ Sin embargo, la paridad desperdiciada no se acumula en los discos
 de datos. El espacio desperdiciado resultante de un alto número de
 archivos en un disco de datos limita solo la cantidad de datos en
 ese disco de datos, no en otros.
-<p>
-Como aproximación, puede suponer que se desperdicia la mitad del
+</p><p>Como aproximación, puede suponer que se desperdicia la mitad del
 tamaño del bloque para cada archivo. Por ejemplo, con 100,000 archivos
 y un tamaño de bloque de 256 KiB, desperdiciará 12.8 GB de paridad,
 lo que puede resultar en 12.8 GB menos de espacio disponible en el
 disco de datos.
-<p>
-Puede verificar la cantidad de espacio desperdiciado en cada disco
+</p><p>Puede verificar la cantidad de espacio desperdiciado en cada disco
 usando `status`. Este es el espacio que debe dejar libre en los
 discos de datos o usar para archivos no incluidos en el array.
 Si este valor es negativo, significa que está cerca de llenar
 la paridad, y representa el espacio que aún puede desperdiciar.
-<p>
-Para evitar este problema, puede usar una partición más grande para
+</p><p>Para evitar este problema, puede usar una partición más grande para
 la paridad. Por ejemplo, si la partición de paridad es 12.8 GB
 más grande que los discos de datos, tiene suficiente espacio extra
 para manejar hasta 100,000 archivos en cada disco de datos sin
 ningún espacio desperdiciado.
-<p>
-Un truco para obtener una partición de paridad más grande en Linux
+</p><p>Un truco para obtener una partición de paridad más grande en Linux
 es formatearla con el comando:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 mkfs.ext4 -m 0 -T largefile4 DEVICE
 </pre>
 </td></tr></table>
-<p>
-Esto resulta en aproximadamente un 1.5% de espacio extra,
+<p>Esto resulta en aproximadamente un 1.5% de espacio extra,
 aproximadamente 60 GB para un disco de 4 TB, lo que permite
 alrededor de 460,000 archivos en cada disco de datos sin ningún
 espacio desperdiciado.
-<h3><a name="7.9">7.9</a> 
+</p><h3><a name="7.9">7.9</a> 
 hashsize SIZE_IN_BYTES
 </h3>
-Define el tamaño del hash en bytes para los bloques guardados.
-<p>
-El tamaño de hash predeterminado es de 16 bytes (128 bits),
+<p>Define el tamaño del hash en bytes para los bloques guardados.
+</p><p>El tamaño de hash predeterminado es de 16 bytes (128 bits),
 que debería funcionar para la mayoría de los casos.
-<p>
-¡ADVERTENCIA! Esta opción es solo para expertos y se
+</p><p>¡ADVERTENCIA! Esta opción es solo para expertos y se
 recomienda encarecidamente no cambiar este valor. Para cambiar
 este valor en el futuro, ¡tendrá que recrear toda la paridad!
-<p>
-Una razón para usar un tamaño de hash diferente es si su sistema
+</p><p>Una razón para usar un tamaño de hash diferente es si su sistema
 tiene memoria limitada. Como regla general, SnapRAID
 típicamente requiere 1 GiB de RAM por cada 16 TB de datos en el array.
-<p>
-Específicamente, para almacenar los hashes de los datos, SnapRAID
+</p><p>Específicamente, para almacenar los hashes de los datos, SnapRAID
 requiere aproximadamente TS*(1+HS)/BS bytes de RAM,
 donde TS es el tamaño total en bytes de su array de discos, BS es el
 tamaño de bloque en bytes, y HS es el tamaño de hash en bytes.
-<p>
-Por ejemplo, con 8 discos de 4 TB, un tamaño de bloque de 256 KiB
+</p><p>Por ejemplo, con 8 discos de 4 TB, un tamaño de bloque de 256 KiB
 (1 KiB = 1024 bytes) y un tamaño de hash de 16, obtiene:
-<p>
-<pre>
+</p><pre>
 RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 </pre>
-<p>
-Cambiando a un tamaño de hash de 8, obtiene:
-<p>
-<pre>
+<p>Cambiando a un tamaño de hash de 8, obtiene:
+</p><pre>
 RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
 </pre>
-<p>
-Cambiando a un tamaño de bloque de 512, obtiene:
-<p>
-<pre>
+<p>Cambiando a un tamaño de bloque de 512, obtiene:
+</p><pre>
 RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 </pre>
-<p>
-Cambiando tanto a un tamaño de hash de 8 como a un tamaño de bloque de 512,
+<p>Cambiando tanto a un tamaño de hash de 8 como a un tamaño de bloque de 512,
 obtiene:
-<p>
-<pre>
+</p><pre>
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 <h3><a name="7.10">7.10</a> 
 autosave SIZE_IN_GIGABYTES
 </h3>
-Guarda automáticamente el estado al sincronizar o fregar después de
+<p>Guarda automáticamente el estado al sincronizar o fregar después de
 la cantidad especificada de GB procesados.
 Esta opción es útil para evitar reiniciar comandos `sync` largos
 desde cero si son interrumpidos por un fallo de la máquina o
 cualquier otro evento.
-<h3><a name="7.11">7.11</a> 
+</p><h3><a name="7.11">7.11</a> 
 temp_limit TEMPERATURE_CELSIUS
 </h3>
-Establece la temperatura máxima permitida del disco en Celsius.
+<p>Establece la temperatura máxima permitida del disco en Celsius.
 Cuando se especifica, SnapRAID verifica periódicamente la temperatura
 de todos los discos utilizando la herramienta smartctl. Las
 temperaturas actuales del disco se muestran mientras SnapRAID está
@@ -1714,8 +1510,7 @@ la duración definida por la opción `temp_sleep`. Después del
 período de espera, las operaciones se reanudan, pausándose
 potencialmente de nuevo si se alcanza el límite de temperatura
 una vez más.
-<p>
-Durante la operación, SnapRAID también analiza la curva de
+</p><p>Durante la operación, SnapRAID también analiza la curva de
 calentamiento de cada disco y estima la temperatura constante a
 largo plazo que se espera que alcancen si la actividad continúa.
 La estimación se realiza solo después de que la temperatura del
@@ -1727,76 +1522,64 @@ adecuada. Esta temperatura estimada es solo para fines informativos
 y no tiene ningún efecto en el comportamiento de SnapRAID. Las
 acciones del programa se basan únicamente en las temperaturas reales
 medidas del disco.
-<p>
-Para realizar este análisis, SnapRAID necesita una referencia para la
+</p><p>Para realizar este análisis, SnapRAID necesita una referencia para la
 temperatura del sistema. Primero intenta leerla de los sensores de
 hardware disponibles. Si no se puede acceder a ningún sensor del
 sistema, utiliza la temperatura del disco más baja medida al
 comienzo de la ejecución como referencia de respaldo.
-<p>
-Normalmente, SnapRAID solo muestra la temperatura del disco más
+</p><p>Normalmente, SnapRAID solo muestra la temperatura del disco más
 caliente. Para mostrar la temperatura de todos los discos, use
 la opción -A o --stats.
-<h3><a name="7.12">7.12</a> 
+</p><h3><a name="7.12">7.12</a> 
 temp_sleep TIME_IN_MINUTES
 </h3>
-Establece el tiempo de espera, en minutos, cuando se alcanza el
+<p>Establece el tiempo de espera, en minutos, cuando se alcanza el
 límite de temperatura. Durante este período, los discos permanecen
 detenidos. El valor predeterminado es de 5 minutos.
-<h3><a name="7.13">7.13</a> 
+</p><h3><a name="7.13">7.13</a> 
 pool DIR
 </h3>
-Define el directorio de agrupación (pooling) donde se crea la vista
+<p>Define el directorio de agrupación (pooling) donde se crea la vista
 virtual del array de discos utilizando el comando `pool`.
-<p>
-El directorio ya debe existir.
-<h3><a name="7.14">7.14</a> 
+</p><p>El directorio ya debe existir.
+</p><h3><a name="7.14">7.14</a> 
 share UNC_DIR
 </h3>
-Define la ruta UNC de Windows requerida para acceder a los discos
+<p>Define la ruta UNC de Windows requerida para acceder a los discos
 de forma remota.
-<p>
-Si se especifica esta opción, los enlaces simbólicos creados en el
+</p><p>Si se especifica esta opción, los enlaces simbólicos creados en el
 directorio pool utilizan esta ruta UNC para acceder a los discos.
 Sin esta opción, los enlaces simbólicos generados utilizan solo
 rutas locales, lo que no permite compartir el directorio pool a
 través de la red.
-<p>
-Los enlaces simbólicos se forman utilizando la ruta UNC especificada,
+</p><p>Los enlaces simbólicos se forman utilizando la ruta UNC especificada,
 agregando el nombre del disco como se especifica en la opción `data`,
 y finalmente agregando el directorio y el nombre del archivo.
-<p>
-Esta opción solo es necesaria para Windows.
-<h3><a name="7.15">7.15</a> 
+</p><p>Esta opción solo es necesaria para Windows.
+</p><h3><a name="7.15">7.15</a> 
 smartctl DISK/PARITY OPTIONS...
 </h3>
-Define opciones personalizadas de smartctl para obtener los atributos
+<p>Define opciones personalizadas de smartctl para obtener los atributos
 SMART de cada disco. Esto puede ser necesario para controladores
 RAID y algunos discos USB que no se pueden detectar automáticamente.
 El marcador de posición %s se reemplaza por el nombre del dispositivo,
 pero es opcional para dispositivos fijos como controladores RAID.
-<p>
-DISK es el mismo nombre de disco especificado en la opción `data`.
+</p><p>DISK es el mismo nombre de disco especificado en la opción `data`.
 PARITY es uno de los nombres de paridad: `parity`, `2-parity`,
 `3-parity`, `4-parity`, `5-parity`, `6-parity` o `z-parity`.
-<p>
-En las OPCIONES especificadas, la cadena `%s` se reemplaza por
+</p><p>En las OPCIONES especificadas, la cadena `%s` se reemplaza por
 el nombre del dispositivo. Para los controladores RAID, el dispositivo
 es probable que sea fijo y es posible que no necesite usar `%s`.
-<p>
-Consulte la documentación de smartmontools para conocer las posibles
+</p><p>Consulte la documentación de smartmontools para conocer las posibles
 opciones:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 https://www.smartmontools.org/wiki/Supported_RAID-Controllers
 https://www.smartmontools.org/wiki/Supported_USB-Devices
 </pre>
 </td></tr></table>
-<p>
-Por ejemplo:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Por ejemplo:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 smartctl parity -d sat %s
 </pre>
@@ -1804,28 +1587,23 @@ smartctl parity -d sat %s
 <h3><a name="7.16">7.16</a> 
 smartignore DISK/PARITY ATTR [ATTR...]
 </h3>
-Ignora el atributo SMART especificado al calcular la probabilidad
+<p>Ignora el atributo SMART especificado al calcular la probabilidad
 de fallo del disco. Esta opción es útil si un disco informa valores
 inusuales o engañosos para un atributo en particular.
-<p>
-DISK es el mismo nombre de disco especificado en la opción `data`.
+</p><p>DISK es el mismo nombre de disco especificado en la opción `data`.
 PARITY es uno de los nombres de paridad: `parity`, `2-parity`,
 `3-parity`, `4-parity`, `5-parity`, `6-parity` o `z-parity`.
 El valor especial * se puede usar para ignorar el atributo en todos
 los discos.
-<p>
-Por ejemplo, para ignorar el atributo `Current Pending Sector Count`
+</p><p>Por ejemplo, para ignorar el atributo `Current Pending Sector Count`
 en todos los discos:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 smartignore * 197
 </pre>
 </td></tr></table>
-<p>
-Para ignorarlo solo en el primer disco de paridad:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Para ignorarlo solo en el primer disco de paridad:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 smartignore parity 197
 </pre>
@@ -1833,9 +1611,8 @@ smartignore parity 197
 <h3><a name="7.17">7.17</a> 
 Examples
 </h3>
-Un ejemplo de una configuración típica para Unix es:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Un ejemplo de una configuración típica para Unix es:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 parity /mnt/diskp/snapraid.parity
 content /mnt/diskp/snapraid.content
@@ -1851,10 +1628,8 @@ smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
 </pre>
 </td></tr></table>
-<p>
-Un ejemplo de una configuración típica para Windows es:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<p>Un ejemplo de una configuración típica para Windows es:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 parity E:\snapraid.parity
 content E:\snapraid.content
@@ -1874,11 +1649,10 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 <h2><a name="8">8</a> 
 Pattern
 </h2>
-Los patrones se utilizan para seleccionar un subconjunto de archivos
+<p>Los patrones se utilizan para seleccionar un subconjunto de archivos
 para excluir o incluir en el proceso.
-<p>
-Hay cuatro tipos diferentes de patrones:
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
+</p><p>Hay cuatro tipos diferentes de patrones:
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
 FILE
 </strong></td></tr><tr><td>
@@ -1916,31 +1690,26 @@ pero nunca coinciden con una barra de directorio.
 Este patrón se aplica solo a directorios, no a archivos.
 </td></tr>
 </table>
-<p>
-Cuando especifica una ruta absoluta que comienza con /, se aplica
+<p>Cuando especifica una ruta absoluta que comienza con /, se aplica
 en el directorio raíz del array, no en el directorio raíz del
 sistema de archivos local.
-<p>
-En Windows, puede usar la barra invertida \ en lugar de la barra /.
+</p><p>En Windows, puede usar la barra invertida \ en lugar de la barra /.
 Los directorios del sistema de Windows, las uniones, los puntos de
 montaje y otros directorios especiales de Windows se tratan como
 archivos, lo que significa que para excluirlos, debe usar una regla
 de archivo, no una de directorio.
-<p>
-Si el nombre del archivo contiene un carácter '*', '?', '[',
+</p><p>Si el nombre del archivo contiene un carácter '*', '?', '[',
 o ']', debe escaparlo para evitar que se interprete como un
 carácter globbing. En Unix, el carácter de escape es '\';
 en Windows, es '^'. Cuando el patrón está en la línea de comandos,
 debe duplicar el carácter de escape para evitar que sea
 interpretado por el shell de comandos.
-<p>
-En el archivo de configuración, puede usar diferentes estrategias
+</p><p>En el archivo de configuración, puede usar diferentes estrategias
 para filtrar los archivos a procesar.
 El enfoque más simple es usar solo reglas `exclude` para
 eliminar todos los archivos y directorios que no desea procesar.
 Por ejemplo:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # Excluye cualquier archivo llamado `*.unrecoverable`
 exclude *.unrecoverable
@@ -1950,11 +1719,9 @@ exclude /lost+found/
 exclude tmp/
 </pre>
 </td></tr></table>
-<p>
-El enfoque opuesto es definir solo los archivos que desea procesar,
+<p>El enfoque opuesto es definir solo los archivos que desea procesar,
 utilizando solo reglas `include`. Por ejemplo:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # Incluye solo algunos directorios
 include /movies/
@@ -1962,14 +1729,12 @@ include /musics/
 include /pictures/
 </pre>
 </td></tr></table>
-<p>
-El enfoque final es mezclar reglas `exclude` e `include`. En este
+<p>El enfoque final es mezclar reglas `exclude` e `include`. En este
 caso, el orden de las reglas es importante. Las reglas anteriores
 tienen precedencia sobre las posteriores.
 Para simplificar, puede enumerar todas las reglas `exclude` primero
 y luego todas las reglas `include`. Por ejemplo:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # Excluye cualquier archivo llamado `*.unrecoverable`
 exclude *.unrecoverable
@@ -1981,60 +1746,51 @@ include /musics/
 include /pictures/
 </pre>
 </td></tr></table>
-<p>
-En la línea de comandos, usando la opción -f, solo puede usar
+<p>En la línea de comandos, usando la opción -f, solo puede usar
 patrones `include`. Por ejemplo:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # Verifica solo los archivos .mp3.
 # En Unix, use comillas para evitar la expansión globbing por el shell.
 snapraid -f "*.mp3" check
 </pre>
 </td></tr></table>
-<p>
-En Unix, al usar caracteres globbing en la línea de comandos, debe
+<p>En Unix, al usar caracteres globbing en la línea de comandos, debe
 ponerlos entre comillas para evitar que el shell los expanda.
-<h2><a name="9">9</a> 
+</p><h2><a name="9">9</a> 
 Content
 </h2>
-SnapRAID almacena la lista y las sumas de comprobación de sus
+<p>SnapRAID almacena la lista y las sumas de comprobación de sus
 archivos en el archivo de contenido.
-<p>
-Es un archivo binario que enumera todos los archivos presentes en
+</p><p>Es un archivo binario que enumera todos los archivos presentes en
 su array de discos, junto con todas las sumas de comprobación para
 verificar su integridad.
-<p>
-Este archivo es leído y escrito por los comandos `sync` y `scrub`
+</p><p>Este archivo es leído y escrito por los comandos `sync` y `scrub`
 y leído por los comandos `fix`, `check` y `status`.
-<h2><a name="10">10</a> 
+</p><h2><a name="10">10</a> 
 Parity
 </h2>
-SnapRAID almacena la información de paridad de su array en los
+<p>SnapRAID almacena la información de paridad de su array en los
 archivos de paridad.
-<p>
-Estos son archivos binarios que contienen la paridad calculada
+</p><p>Estos son archivos binarios que contienen la paridad calculada
 de todos los bloques definidos en el archivo `content`.
-<p>
-Estos archivos son leídos y escritos por los comandos `sync` y `fix`
+</p><p>Estos archivos son leídos y escritos por los comandos `sync` y `fix`
 y solo leídos por los comandos `scrub` y `check`.
-<h2><a name="11">11</a> 
+</p><h2><a name="11">11</a> 
 Encoding
 </h2>
-SnapRAID en Unix ignora cualquier codificación. Lee y almacena los
+<p>SnapRAID en Unix ignora cualquier codificación. Lee y almacena los
 nombres de archivo con la misma codificación utilizada por el sistema
 de archivos.
-<p>
-En Windows, todos los nombres leídos del sistema de archivos se
+</p><p>En Windows, todos los nombres leídos del sistema de archivos se
 convierten y procesan en formato UTF-8.
-<p>
-Para que los nombres de archivo se impriman correctamente, debe
+</p><p>Para que los nombres de archivo se impriman correctamente, debe
 configurar la consola de Windows en modo UTF-8 con el comando
 `chcp 65001` y usar una fuente TrueType como `Lucida Console`
 como fuente de la consola. Esto afecta solo a los nombres de
 archivo impresos; si redirige la salida de la consola a un archivo,
 el archivo resultante siempre está en formato UTF-8.
-
+</p>
 
 <p>
 </p>
