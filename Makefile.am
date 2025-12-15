@@ -123,13 +123,13 @@ dist-hook:
 
 LANG_CODES = de es fr it ja ko pl pt ro ru sv uk zh
 
-LIST_D = snapraid.d snapraid_log.d $(patsubst %, snapraid-%.d, $(LANG_CODES))
+LIST_D = doc/snapraid.d doc/snapraid_log.d $(patsubst %, doc/snapraid-%.d, $(LANG_CODES))
 
-LIST_MAN = man/snapraid.1 man/snapraid_log.1 $(patsubst %, man/%/snapraid.1, $(LANG_CODES))
+LIST_MAN = doc/snapraid.1 doc/snapraid_log.1 $(patsubst %, doc/snapraid-%.1, $(LANG_CODES))
 
-LIST_TXT = snapraid.txt snapraid_log.txt $(patsubst %, snapraid-%.txt, $(LANG_CODES))
+LIST_TXT = doc/snapraid.txt doc/snapraid_log.txt $(patsubst %, doc/snapraid-%.txt, $(LANG_CODES))
 
-LIST_HH = snapraid.hh snapraid_log.hh $(patsubst %, snapraid-%.hh, $(LANG_CODES))
+LIST_HH = doc/snapraid.hh doc/snapraid_log.hh $(patsubst %, doc/snapraid-%.hh, $(LANG_CODES))
 
 EXTRA_DIST = \
 	autogen.sh autover.sh \
@@ -158,7 +158,7 @@ EXTRA_DIST = \
 	raid/test/speedtest.c \
 	raid/test/invtest.c
 
-man1_MANS = man/snapraid.1 man/snapraid_log.1
+man1_MANS = doc/snapraid.1 doc/snapraid_log.1
 
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
@@ -179,7 +179,7 @@ maintainer-clean-local:
 install-data-hook:
 	for lang in $(LANG_CODES); do \
 		mkdir -p $(DESTDIR)$(mandir)/$$lang/man1; \
-		$(INSTALL_DATA) $(srcdir)/man/$$lang/snapraid.1 $(DESTDIR)$(mandir)/$$lang/man1; \
+		$(INSTALL_DATA) $(srcdir)/doc/snapraid-$$lang.1 $(DESTDIR)$(mandir)/$$lang/man1/snapraid.1; \
 	done
 
 # Uninstall localized manpages
@@ -1037,47 +1037,8 @@ lcov_html:
 
 # Rules for documentation
 if HAVE_ADVD2
-man/%.1 : %.d
+%.1 : %.d
 	advd2 man < $(srcdir)/$< > $@
-
-man/de/snapraid.1: $(srcdir)/snapraid-de.d
-	advd2 man < $< > $@
-
-man/es/snapraid.1: $(srcdir)/snapraid-es.d
-	advd2 man < $< > $@
-
-man/fr/snapraid.1: $(srcdir)/snapraid-fr.d
-	advd2 man < $< > $@
-
-man/it/snapraid.1: $(srcdir)/snapraid-it.d
-	advd2 man < $< > $@
-
-man/ja/snapraid.1: $(srcdir)/snapraid-ja.d
-	advd2 man < $< > $@
-
-man/ko/snapraid.1: $(srcdir)/snapraid-ko.d
-	advd2 man < $< > $@
-
-man/pl/snapraid.1: $(srcdir)/snapraid-pl.d
-	advd2 man < $< > $@
-
-man/pt/snapraid.1: $(srcdir)/snapraid-pt.d
-	advd2 man < $< > $@
-
-man/ro/snapraid.1: $(srcdir)/snapraid-ro.d
-	advd2 man < $< > $@
-
-man/ru/snapraid.1: $(srcdir)/snapraid-ru.d
-	advd2 man < $< > $@
-
-man/sv/snapraid.1: $(srcdir)/snapraid-sv.d
-	advd2 man < $< > $@
-
-man/uk/snapraid.1: $(srcdir)/snapraid-uk.d
-	advd2 man < $< > $@
-
-man/zh/snapraid.1: $(srcdir)/snapraid-zh.d
-	advd2 man < $< > $@
 
 %.txt : %.d
 	advd2 txt < $(srcdir)/$< | todos > $@
