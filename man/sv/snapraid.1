@@ -1,0 +1,1886 @@
+.TH "SnapRAID Säkerhetskopiering för Disk\-arrayer" 1
+.SH NAME
+snapraid \- SnapRAID Säkerhetskopiering för Disk\-arrayer
+.SH SYNOPSIS 
+snapraid [\-c, \-\-conf CONFIG]
+.PD 0
+.PP
+.PD
+	[\-f, \-\-filter PATTERN] [\-d, \-\-filter\-disk NAME]
+.PD 0
+.PP
+.PD
+	[\-m, \-\-filter\-missing] [\-e, \-\-filter\-error]
+.PD 0
+.PP
+.PD
+	[\-a, \-\-audit\-only] [\-h, \-\-pre\-hash] [\-i, \-\-import DIR]
+.PD 0
+.PP
+.PD
+	[\-p, \-\-plan PERC|bad|new|full]
+.PD 0
+.PP
+.PD
+	[\-o, \-\-older\-than DAYS] [\-l, \-\-log FILE]
+.PD 0
+.PP
+.PD
+	[\-s, \-\-spin\-down\-on\-error] [\-w, \-\-bw\-limit RATE]
+.PD 0
+.PP
+.PD
+	[\-Z, \-\-force\-zero] [\-E, \-\-force\-empty]
+.PD 0
+.PP
+.PD
+	[\-U, \-\-force\-uuid] [\-D, \-\-force\-device]
+.PD 0
+.PP
+.PD
+	[\-N, \-\-force\-nocopy] [\-F, \-\-force\-full]
+.PD 0
+.PP
+.PD
+	[\-R, \-\-force\-realloc]
+.PD 0
+.PP
+.PD
+	[\-S, \-\-start BLKSTART] [\-B, \-\-count BLKCOUNT]
+.PD 0
+.PP
+.PD
+	[\-L, \-\-error\-limit NUMBER]
+.PD 0
+.PP
+.PD
+	[\-A, \-\-stats]
+.PD 0
+.PP
+.PD
+	[\-v, \-\-verbose] [\-q, \-\-quiet]
+.PD 0
+.PP
+.PD
+	status|smart|probe|up|down|diff|sync|scrub|fix|check
+.PD 0
+.PP
+.PD
+	|list|dup|pool|devices|touch|rehash
+.PD 0
+.PD
+.PP
+snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
+.PD 0
+.PD
+.SH BESKRIVNING 
+SnapRAID är ett säkerhetskopieringsprogram designat för disk\-arrayer,
+som lagrar paritetsinformation för dataåterställning vid upp till sex
+diskfel.
+.PP
+SnapRAID är i första hand avsett för hemmamediabibliotek med stora,
+sällan ändrade filer, och erbjuder flera funktioner:
+.PD 0
+.IP \(bu
+Du kan använda diskar som redan är fyllda med filer utan
+att behöva formatera om dem, och du får åtkomst till dem som vanligt.
+.IP \(bu
+All din data hashberäknas för att säkerställa dataintegritet och
+förhindra tyst korruption.
+.IP \(bu
+När antalet felaktiga diskar överskrider paritetsantalet,
+begränsas dataförlusten till de drabbade diskarna; data på
+andra diskar förblir åtkomlig.
+.IP \(bu
+Om du oavsiktligt raderar filer på en disk är återställning
+möjlig.
+.IP \(bu
+Diskar kan ha olika storlekar.
+.IP \(bu
+Du kan lägga till diskar när som helst.
+.IP \(bu
+SnapRAID låser inte in din data; du kan sluta använda det
+när som helst utan omformatering eller dataflytt.
+.IP \(bu
+För att få åtkomst till en fil behöver endast en enda disk snurra,
+vilket sparar ström och minskar buller.
+.PD
+.PP
+För mer information, besök den officiella SnapRAID\-webbplatsen:
+.PP
+.RS 4
+https://www.snapraid.it/
+.PD 0
+.PD
+.RE
+.SH BEGRäNSNINGAR 
+SnapRAID är en hybrid mellan ett RAID\- och ett säkerhetskopieringsprogram,
+som syftar till att kombinera de bästa fördelarna med båda. Den har dock
+vissa begränsningar som du bör överväga innan du använder den.
+.PP
+Huvudbegränsningen är att om en disk misslyckas och du inte nyligen har
+synkat, kanske du inte kan återställa fullständigt.
+Mer specifikt, kanske du inte kan återställa upp till storleken på
+de ändrade eller raderade filerna sedan den senaste synkroniseringsoperationen.
+Detta inträffar även om de ändrade eller raderade filerna inte finns på
+den felaktiga disken. Det är därför SnapRAID passar bättre för
+data som sällan ändras.
+.PP
+Å andra sidan förhindrar nyligen tillagda filer inte återställning av redan
+befintliga filer. Du kommer bara att förlora de nyligen tillagda filerna om de
+finns på den felaktiga disken.
+.PP
+Andra SnapRAID\-begränsningar är:
+.PD 0
+.IP \(bu
+Med SnapRAID har du fortfarande separata filsystem för varje disk.
+Med RAID får du ett enda stort filsystem.
+.IP \(bu
+SnapRAID stripas inte data.
+Med RAID får du en hastighetsökning med striping.
+.IP \(bu
+SnapRAID stöder inte återställning i realtid.
+Med RAID behöver du inte sluta arbeta när en disk misslyckas.
+.IP \(bu
+SnapRAID kan bara återställa data från ett begränsat antal diskfel.
+Med en säkerhetskopia kan du återställa från ett fullständigt
+fel på hela disk\-arrayen.
+.IP \(bu
+Endast filnamn, tidsstämplar, symboliska länkar och hårda länkar sparas.
+Behörigheter, ägarskap och utökade attribut sparas inte.
+.PD
+.SH KOM IGåNG 
+För att använda SnapRAID måste du först välja en disk i din disk\-array
+som ska dediceras till \`parity\`\-information. Med en disk för paritet,
+kommer du att kunna återställa från ett enda diskfel, liknande RAID5.
+.PP
+Om du vill återställa från fler diskfel, liknande RAID6,
+måste du reservera ytterligare diskar för paritet. Varje ytterligare
+paritetsdisk möjliggör återställning från ett diskfel till.
+.PP
+Som paritetsdiskar måste du välja de största diskarna i arrayen,
+eftersom paritetsinformationen kan växa till storleken av den största
+datadisken i arrayen.
+.PP
+Dessa diskar kommer att dediceras till att lagra \`parity\`\-filerna.
+Du bör inte lagra din data på dem.
+.PP
+Sedan måste du definiera de \`data\`\-diskar som du vill skydda
+med SnapRAID. Skyddet är mer effektivt om dessa diskar
+innehåller data som sällan ändras. Av denna anledning är det bäst att
+INTE inkludera Windows C:\\\-disken eller Unix /home, /var och /tmp
+katalogerna.
+.PP
+Listan över filer sparas i \`content\`\-filerna, som vanligtvis
+lagras på data\-, paritets\- eller startdiskarna.
+Denna fil innehåller detaljerna för din säkerhetskopia, inklusive alla
+checksummor för att verifiera dess integritet.
+\`content\`\-filen lagras i flera kopior, och varje kopia måste
+finnas på en annan disk för att säkerställa att, även vid flera
+diskfel, minst en kopia är tillgänglig.
+.PP
+Anta till exempel att du bara är intresserad av en paritetsnivå
+av skydd, och dina diskar finns på:
+.PP
+.RS 4
+/mnt/diskp <\- vald disk för paritet
+.PD 0
+.PP
+.PD
+/mnt/disk1 <\- första disken att skydda
+.PD 0
+.PP
+.PD
+/mnt/disk2 <\- andra disken att skydda
+.PD 0
+.PP
+.PD
+/mnt/disk3 <\- tredje disken att skydda
+.PD 0
+.PD
+.RE
+.PP
+Du måste skapa konfigurationsfilen /etc/snapraid.conf med
+följande alternativ:
+.PP
+.RS 4
+parity /mnt/diskp/snapraid.parity
+.PD 0
+.PP
+.PD
+content /var/snapraid/snapraid.content
+.PD 0
+.PP
+.PD
+content /mnt/disk1/snapraid.content
+.PD 0
+.PP
+.PD
+content /mnt/disk2/snapraid.content
+.PD 0
+.PP
+.PD
+data d1 /mnt/disk1/
+.PD 0
+.PP
+.PD
+data d2 /mnt/disk2/
+.PD 0
+.PP
+.PD
+data d3 /mnt/disk3/
+.PD 0
+.PD
+.RE
+.PP
+Om du använder Windows bör du använda Windows sökvägsformat, med
+enhetsbeteckningar och omvända snedstreck istället för snedstreck.
+.PP
+.RS 4
+parity E:\\snapraid.parity
+.PD 0
+.PP
+.PD
+content C:\\snapraid\\snapraid.content
+.PD 0
+.PP
+.PD
+content F:\\array\\snapraid.content
+.PD 0
+.PP
+.PD
+content G:\\array\\snapraid.content
+.PD 0
+.PP
+.PD
+data d1 F:\\array\\
+.PD 0
+.PP
+.PD
+data d2 G:\\array\\
+.PD 0
+.PP
+.PD
+data d3 H:\\array\\
+.PD 0
+.PD
+.RE
+.PP
+Om du har många diskar och får slut på enhetsbeteckningar kan du montera
+diskar direkt i undermappar. Se:
+.PP
+.RS 4
+https://www.google.com/search?q=Windows+mount+point
+.PD 0
+.PD
+.RE
+.PP
+Vid denna punkt är du redo att köra kommandot \`sync\` för att bygga
+paritetsinformationen.
+.PP
+.RS 4
+snapraid sync
+.PD 0
+.PD
+.RE
+.PP
+Denna process kan ta flera timmar första gången, beroende på storleken
+på datan som redan finns på diskarna. Om diskarna är tomma är
+processen omedelbar.
+.PP
+Du kan stoppa det när som helst genom att trycka Ctrl+C, och vid nästa körning
+återupptas det där det avbröts.
+.PP
+När detta kommando är klart är din data SÄKER.
+.PP
+Nu kan du börja använda din array som du vill och periodiskt
+uppdatera paritetsinformationen genom att köra kommandot \`sync\`.
+.SS Skrubbning (Scrubbing) 
+För att periodiskt kontrollera data och paritet för fel kan du
+köra kommandot \`scrub\`.
+.PP
+.RS 4
+snapraid scrub
+.PD 0
+.PD
+.RE
+.PP
+Detta kommando jämför data i din array med den hash som beräknades
+under kommandot \`sync\` för att verifiera integriteten.
+.PP
+Varje körning av kommandot kontrollerar ungefär 8% av arrayen, exklusive data
+som redan skrubbats under de föregående 10 dagarna.
+Du kan använda alternativet \-p, \-\-plan för att specificera en annan mängd
+och alternativet \-o, \-\-older\-than för att specificera en annan ålder i dagar.
+Till exempel, för att kontrollera 5% av arrayen för block äldre än 20 dagar, använd:
+.PP
+.RS 4
+snapraid \-p 5 \-o 20 scrub
+.PD 0
+.PD
+.RE
+.PP
+Om tysta eller input/output\-fel hittas under processen,
+markeras de motsvarande blocken som dåliga i \`content\`\-filen
+och listas i kommandot \`status\`.
+.PP
+.RS 4
+snapraid status
+.PD 0
+.PD
+.RE
+.PP
+För att fixa dem kan du använda kommandot \`fix\`, filtrera efter dåliga block med
+alternativet \-e, \-\-filter\-error:
+.PP
+.RS 4
+snapraid \-e fix
+.PD 0
+.PD
+.RE
+.PP
+Vid nästa \`scrub\` kommer felen att försvinna från \`status\`\-rapporten
+om de verkligen är fixade. För att göra det snabbare kan du använda \-p bad för att skrubba
+endast block markerade som dåliga.
+.PP
+.RS 4
+snapraid \-p bad scrub
+.PD 0
+.PD
+.RE
+.PP
+Att köra \`scrub\` på en osynkad array kan rapportera fel orsakade av
+borttagna eller modifierade filer. Dessa fel rapporteras i \`scrub\`\-
+utdata, men de relaterade blocken markeras inte som dåliga.
+.SS Poolning 
+Obs: Poolningsfunktionen som beskrivs nedan har ersatts av verktyget
+mergefs, som nu är det rekommenderade alternativet för Linux\-användare i
+SnapRAID\-communityt. Mergefs ger ett mer flexibelt och effektivt
+sätt att poola flera enheter till en enda enhetlig monteringspunkt,
+vilket möjliggör sömlös åtkomst till filer över din array utan att förlita sig
+på symboliska länkar. Det integreras väl med SnapRAID för paritetsskydd
+och används ofta i installationer som OpenMediaVault (OMV)
+eller anpassade NAS\-konfigurationer.
+.PP
+För att visa alla filer i din array i samma katalogträd,
+kan du aktivera funktionen \`pooling\`. Den skapar en skrivskyddad virtuell
+vy av alla filer i din array med hjälp av symboliska länkar.
+.PP
+Du kan konfigurera \`pooling\`\-katalogen i konfigurationsfilen med:
+.PP
+.RS 4
+pool /pool
+.PD 0
+.PD
+.RE
+.PP
+eller, om du använder Windows, med:
+.PP
+.RS 4
+pool C:\\pool
+.PD 0
+.PD
+.RE
+.PP
+och kör sedan kommandot \`pool\` för att skapa eller uppdatera den virtuella vyn.
+.PP
+.RS 4
+snapraid pool
+.PD 0
+.PD
+.RE
+.PP
+Om du använder en Unix\-plattform och vill dela denna katalog
+över nätverket till antingen Windows\- eller Unix\-maskiner, bör du lägga till
+följande alternativ till din /etc/samba/smb.conf:
+.PP
+.RS 4
+# I den globala sektionen av smb.conf
+.PD 0
+.PP
+.PD
+unix extensions = no
+.PD 0
+.PD
+.RE
+.PP
+.RS 4
+# I delningssektionen av smb.conf
+.PD 0
+.PP
+.PD
+[pool]
+.PD 0
+.PP
+.PD
+comment = Pool
+.PD 0
+.PP
+.PD
+path = /pool
+.PD 0
+.PP
+.PD
+read only = yes
+.PD 0
+.PP
+.PD
+guest ok = yes
+.PD 0
+.PP
+.PD
+wide links = yes
+.PD 0
+.PP
+.PD
+follow symlinks = yes
+.PD 0
+.PD
+.RE
+.PP
+I Windows kräver delning av symboliska länkar över ett nätverk att klienter
+löser dem på distans. För att aktivera detta måste du, förutom att dela pool\-katalogen,
+även dela alla diskar oberoende, med hjälp av de disk\-namn
+som definieras i konfigurationsfilen som delningspunkter. Du måste också specificera
+i alternativet \`share\` i konfigurationsfilen den Windows UNC\-sökväg som
+fjärrklienter behöver använda för att få åtkomst till dessa delade diskar.
+.PP
+Till exempel, om du arbetar från en server som heter \`darkstar\`, kan du använda
+alternativen:
+.PP
+.RS 4
+data d1 F:\\array\\
+.PD 0
+.PP
+.PD
+data d2 G:\\array\\
+.PD 0
+.PP
+.PD
+data d3 H:\\array\\
+.PD 0
+.PP
+.PD
+pool C:\\pool
+.PD 0
+.PP
+.PD
+share \\\\darkstar
+.PD 0
+.PD
+.RE
+.PP
+och dela följande kataloger över nätverket:
+.PP
+.RS 4
+\\\\darkstar\\pool \-> C:\\pool
+.PD 0
+.PP
+.PD
+\\\\darkstar\\d1 \-> F:\\array
+.PD 0
+.PP
+.PD
+\\\\darkstar\\d2 \-> G:\\array
+.PD 0
+.PP
+.PD
+\\\\darkstar\\d3 \-> H:\\array
+.PD 0
+.PD
+.RE
+.PP
+för att tillåta fjärrklienter att få åtkomst till alla filer på \\\\darkstar\\pool.
+.PP
+Du kan också behöva konfigurera fjärrklienter för att möjliggöra åtkomst till
+fjärrsymboliska länkar med kommandot:
+.PP
+.RS 4
+fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
+.PD 0
+.PD
+.RE
+.SS Ångra radering (Undeleting) 
+SnapRAID fungerar mer som ett säkerhetskopieringsprogram än ett RAID\-system, och det
+kan användas för att återställa eller ångra radering av filer till deras tidigare tillstånd
+med hjälp av alternativet \-f, \-\-filter:
+.PP
+.RS 4
+snapraid fix \-f FIL
+.PD 0
+.PD
+.RE
+.PP
+eller för en katalog:
+.PP
+.RS 4
+snapraid fix \-f KATALOG/
+.PD 0
+.PD
+.RE
+.PP
+Du kan också använda det för att återställa endast oavsiktligt raderade filer inuti
+en katalog med hjälp av alternativet \-m, \-\-filter\-missing, som återställer
+endast saknade filer, och lämnar alla andra orörda.
+.PP
+.RS 4
+snapraid fix \-m \-f KATALOG/
+.PD 0
+.PD
+.RE
+.PP
+Eller för att återställa alla raderade filer på alla enheter med:
+.PP
+.RS 4
+snapraid fix \-m
+.PD 0
+.PD
+.RE
+.SS Återställning 
+Det värsta har hänt, och du har förlorat en eller flera diskar!
+.PP
+FÅ INTE PANIK! Du kommer att kunna återställa dem!
+.PP
+Det första du måste göra är att undvika ytterligare ändringar i din disk\-array.
+Inaktivera alla fjärranslutningar till den och alla schemalagda processer, inklusive
+alla schemalagda SnapRAID nattliga sync\- eller scrub\-körningar.
+.PP
+Fortsätt sedan med följande steg.
+.SS STEG 1 \-> Omkonfigurera 
+Du behöver lite utrymme för att återställa, helst på ytterligare
+reservdiskar, men en extern USB\-disk eller fjärrdisk räcker.
+.PP
+Ändra SnapRAID\-konfigurationsfilen för att få alternativet \`data\` eller \`parity\`
+för den felaktiga disken att peka på en plats med tillräckligt tomt
+utrymme för att återställa filerna.
+.PP
+Om till exempel disk \`d1\` har misslyckats, ändra från:
+.PP
+.RS 4
+data d1 /mnt/disk1/
+.PD 0
+.PD
+.RE
+.PP
+till:
+.PP
+.RS 4
+data d1 /mnt/new_spare_disk/
+.PD 0
+.PD
+.RE
+.PP
+Om disken som ska återställas är en paritetsdisk, uppdatera det lämpliga \`parity\`\-
+alternativet.
+Om du har flera felaktiga diskar, uppdatera alla deras konfigurationsalternativ.
+.SS STEG 2 \-> Fixa 
+Kör kommandot fix och lagra loggen i en extern fil med:
+.PP
+.RS 4
+snapraid \-d NAMN \-l fix.log fix
+.PD 0
+.PD
+.RE
+.PP
+Där NAMN är namnet på disken, till exempel \`d1\` i vårt tidigare exempel.
+Om disken som ska återställas är en paritetsdisk, använd namnen \`parity\`, \`2\-parity\`,
+etc.
+Om du har flera felaktiga diskar, använd flera \-d\-alternativ för att specificera alla
+av dem.
+.PP
+Detta kommando kommer att ta lång tid.
+.PP
+Se till att du har några gigabyte ledigt för att lagra fix.log\-filen.
+Kör den från en disk med tillräckligt med ledigt utrymme.
+.PP
+Nu har du återställt allt som är återställningsbart. Om vissa filer är delvis
+eller helt icke\-återställningsbara, kommer de att döpas om genom att lägga till tillägget
+\`.unrecoverable\`.
+.PP
+Du kan hitta en detaljerad lista över alla icke\-återställningsbara block i fix.log\-filen
+genom att kontrollera alla rader som börjar med \`unrecoverable:\`.
+.PP
+Om du inte är nöjd med återställningen kan du försöka igen hur många
+gånger du vill.
+.PP
+Om du till exempel har tagit bort filer från arrayen efter den senaste
+\`sync\`, kan detta leda till att vissa filer inte återställs.
+I detta fall kan du försöka igen \`fix\` med alternativet \-i, \-\-import,
+specificera var dessa filer nu finns för att inkludera dem igen i
+återställningsprocessen.
+.PP
+Om du är nöjd med återställningen kan du fortsätta,
+men notera att efter synkronisering kan du inte försöka igen kommandot \`fix\`
+längre!
+.SS STEG 3 \-> Kontrollera 
+Som en försiktighetsåtgärd kan du nu köra ett \`check\`\-kommando för att säkerställa att
+allt är korrekt på den återställda disken.
+.PP
+.RS 4
+snapraid \-d NAMN \-a check
+.PD 0
+.PD
+.RE
+.PP
+Där NAMN är namnet på disken, till exempel \`d1\` i vårt tidigare exempel.
+.PP
+Alternativen \-d och \-a talar om för SnapRAID att endast kontrollera den specificerade disken
+och ignorera all paritetsdata.
+.PP
+Detta kommando kommer att ta lång tid, men om du inte är alltför försiktig,
+kan du hoppa över det.
+.SS STEG 4 \-> Synkronisera 
+Kör kommandot \`sync\` för att synkronisera arrayen igen med den nya disken.
+.PP
+.RS 4
+snapraid sync
+.PD 0
+.PD
+.RE
+.PP
+Om allt är återställt är detta kommando omedelbart.
+.SH KOMMANDON 
+SnapRAID tillhandahåller några enkla kommandon som låter dig:
+.PD 0
+.IP \(bu
+Skriva ut statusen för arrayen \-> \`status\`
+.IP \(bu
+Kontrollera diskarna \-> \`smart\`, \`probe\`, \`up\`, \`down\`
+.IP \(bu
+Göra en säkerhetskopia/ögonblicksbild \-> \`sync\`
+.IP \(bu
+Periodiskt kontrollera data \-> \`scrub\`
+.IP \(bu
+Återställa den senaste säkerhetskopian/ögonblicksbilden \-> \`fix\`.
+.PD
+.PP
+Kommandon måste skrivas med gemener.
+.SS status 
+Skriver ut en sammanfattning av tillståndet för disk\-arrayen.
+.PP
+Det inkluderar information om paritetsfragmentering, hur gamla
+blocken är utan kontroll, och alla registrerade tysta
+fel som påträffats under skrubbning.
+.PP
+Informationen som presenteras hänvisar till den senaste tidpunkten du
+körde \`sync\`. Senare modifieringar beaktas inte.
+.PP
+Om dåliga block upptäcktes, listas deras blocknummer.
+För att fixa dem kan du använda kommandot \`fix \-e\`.
+.PP
+Det visar också ett diagram som representerar den senaste tidpunkten då varje block
+skrubbades eller synkroniserades. Skrubbade block visas med \'*\',
+block synkroniserade men ännu inte skrubbade med \'o\'.
+.PP
+Inget ändras.
+.SS smart 
+Skriver ut en SMART\-rapport över alla diskar i systemet.
+.PP
+Det inkluderar en uppskattning av sannolikheten för fel under det kommande
+året, vilket gör att du kan planera underhållsersättningar av diskar som visar
+misstänkta attribut.
+.PP
+Denna sannolikhetsuppskattning erhålls genom att korrelera SMART\-attributen
+för diskarna med Backblaze\-data som finns tillgänglig på:
+.PP
+.RS 4
+https://www.backblaze.com/hard\-drive\-test\-data.html
+.PD 0
+.PD
+.RE
+.PP
+Om SMART rapporterar att en disk håller på att misslyckas, skrivs \`FAIL\` eller \`PREFAIL\` ut
+för den disken, och SnapRAID returnerar med ett fel.
+I detta fall rekommenderas omedelbar ersättning av disken starkt.
+.PP
+Andra möjliga statussträngar är:
+.RS 4
+.PD 0
+.HP 4
+.I logfail
+Tidigare var vissa attribut lägre än
+tröskelvärdet.
+.HP 4
+.I logerr
+Enhetens fellogg innehåller fel.
+.HP 4
+.I selferr
+Enhetens självtestlogg innehåller fel.
+.PD
+.RE
+.PP
+Om alternativet \-v, \-\-verbose specificeras, tillhandahålls en djupare statistisk analys.
+Denna analys kan hjälpa dig att bestämma om du behöver mer
+eller mindre paritet.
+.PP
+Detta kommando använder verktyget \`smartctl\` och är ekvivalent med att köra
+\`smartctl \-a\` på alla enheter.
+.PP
+Om dina enheter inte upptäcks automatiskt korrekt kan du specificera
+ett anpassat kommando med hjälp av alternativet \`smartctl\` i konfigurations\-
+filen.
+.PP
+Inget ändras.
+.SS probe 
+Skriver ut STRÖM\-tillståndet för alla diskar i systemet.
+.PP
+\`Standby\` betyder att disken inte snurrar. \`Active\` betyder
+att disken snurrar.
+.PP
+Detta kommando använder verktyget \`smartctl\` och är ekvivalent med att köra
+\`smartctl \-n standby \-i\` på alla enheter.
+.PP
+Om dina enheter inte upptäcks automatiskt korrekt kan du specificera
+ett anpassat kommando med hjälp av alternativet \`smartctl\` i konfigurations\-
+filen.
+.PP
+Inget ändras.
+.SS up 
+Snurrar upp alla diskar i arrayen.
+.PP
+Du kan snurra upp endast specifika diskar med hjälp av alternativet \-d, \-\-filter\-disk.
+.PP
+Att snurra upp alla diskar samtidigt kräver mycket ström.
+Se till att din strömförsörjning kan klara det.
+.PP
+Inget ändras.
+.SS down 
+Snurrar ner alla diskar i arrayen.
+.PP
+Detta kommando använder verktyget \`smartctl\` och är ekvivalent med att köra
+\`smartctl \-s standby,now\` på alla enheter.
+.PP
+Du kan snurra ner endast specifika diskar med hjälp av alternativet \-d, \-\-filter\-disk
+alternativet.
+.PP
+För att automatiskt snurra ner vid fel kan du använda alternativet \-s, \-\-spin\-down\-on\-error
+med alla andra kommandon, vilket är ekvivalent med att köra \`down\` manuellt
+när ett fel inträffar.
+.PP
+Inget ändras.
+.SS diff 
+Listar alla filer som modifierats sedan den senaste \`sync\` och som behöver få
+sin paritetsdata omberäknad.
+.PP
+Detta kommando kontrollerar inte filens data, utan endast filens tidsstämpel,
+storlek och inode.
+.PP
+Efter att ha listat alla ändrade filer presenteras en sammanfattning av ändringarna,
+grupperade efter:
+.RS 4
+.PD 0
+.HP 4
+.I equal
+Filer oförändrade från tidigare.
+.HP 4
+.I added
+Filer tillagda som inte fanns tidigare.
+.HP 4
+.I removed
+Filer borttagna.
+.HP 4
+.I updated
+Filer med en annan storlek eller tidsstämpel, vilket innebär att de
+modifierades.
+.HP 4
+.I moved
+Filer flyttade till en annan katalog på samma disk.
+De identifieras genom att ha samma namn, storlek, tidsstämpel
+och inode, men en annan katalog.
+.HP 4
+.I copied
+Filer kopierade på samma eller en annan disk. Observera att om
+de verkligen flyttas till en annan disk, kommer de också att
+räknas i \`removed\`.
+De identifieras genom att ha samma namn, storlek och
+tidsstämpel. Om undertidsstämpeln är noll,
+måste hela sökvägen matcha, inte bara namnet.
+.HP 4
+.I restored
+Filer med en annan inode men matchande namn, storlek och tidsstämpel.
+Dessa är vanligtvis filer som återställts efter att ha raderats.
+.PD
+.RE
+.PP
+Om en \`sync\` krävs är processens returkod 2, istället för standard 0.
+Returkoden 1 används för ett generiskt feltillstånd.
+.PP
+Inget ändras.
+.SS sync 
+Uppdaterar paritetsinformationen. Alla modifierade filer
+i disk\-arrayen läses, och motsvarande paritets\-
+data uppdateras.
+.PP
+Du kan stoppa denna process när som helst genom att trycka Ctrl+C,
+utan att förlora det arbete som redan utförts.
+Vid nästa körning kommer \`sync\`\-processen att återupptas där
+den avbröts.
+.PP
+Om tysta eller input/output\-fel hittas under processen,
+markeras de motsvarande blocken som dåliga.
+.PP
+Filer identifieras med sökväg och/eller inode och kontrolleras med
+storlek och tidsstämpel.
+Om filstorleken eller tidsstämpeln skiljer sig åt, beräknas paritetsdata
+om för hela filen.
+Om filen flyttas eller döps om på samma disk, samtidigt som
+samma inode behålls, beräknas inte pariteten om.
+Om filen flyttas till en annan disk, beräknas pariteten om,
+men den tidigare beräknade hash\-informationen behålls.
+.PP
+\`content\`\- och \`parity\`\-filerna modifieras vid behov.
+Filerna i arrayen modifieras INTE.
+.SS scrub 
+Skrubbar arrayen och söker efter tysta eller input/output\-fel i data\-
+och paritetsdiskar.
+.PP
+Varje anrop kontrollerar ungefär 8% av arrayen, exklusive
+data som redan skrubbats under de senaste 10 dagarna.
+Detta innebär att skrubbning en gång i veckan säkerställer att varje bit data kontrolleras
+minst en gång var tredje månad.
+.PP
+Du kan definiera en annan skrubbplan eller mängd med hjälp av alternativet \-p, \-\-plan
+som accepterar:
+bad \- Skrubbar block markerade som dåliga.
+new \- Skrubbar nyligen synkroniserade block som ännu inte skrubbats.
+full \- Skrubbar allt.
+0\-100 \- Skrubbar den specificerade procentandelen av block.
+.PP
+Om du specificerar en procentsats kan du också använda alternativet \-o, \-\-older\-than
+för att definiera hur gammalt blocket ska vara.
+De äldsta blocken skrubbas först, vilket säkerställer en optimal kontroll.
+Om du bara vill skrubba de nyligen synkroniserade blocken som ännu inte skrubbats,
+använd alternativet \`\-p new\`.
+.PP
+För att få detaljer om skrubbstatusen, använd kommandot \`status\`.
+.PP
+För alla tysta eller input/output\-fel som hittas, markeras de motsvarande blocken
+som dåliga i \`content\`\-filen.
+Dessa dåliga block listas i \`status\` och kan fixas med \`fix \-e\`.
+Efter fixningen, vid nästa skrubb, kommer de att kontrolleras igen, och om de befinns
+korrigerade, tas det dåliga märket bort.
+För att skrubba endast de dåliga blocken kan du använda kommandot \`scrub \-p bad\`.
+.PP
+Det rekommenderas att köra \`scrub\` endast på en synkroniserad array för att undvika
+rapporterade fel orsakade av osynkad data. Dessa fel känns igen
+som att de inte är tysta fel, och blocken markeras inte som dåliga,
+men sådana fel rapporteras i kommandots utdata.
+.PP
+\`content\`\-filen modifieras för att uppdatera tiden för den senaste kontrollen
+för varje block och för att markera dåliga block.
+\`parity\`\-filerna modifieras INTE.
+Filerna i arrayen modifieras INTE.
+.SS fix 
+Fixar alla filer och paritetsdata.
+.PP
+Alla filer och paritetsdata jämförs med ögonblicksbilds\-
+tillståndet som sparades i den senaste \`sync\`.
+Om en skillnad hittas, återställs den till det lagrade ögonblicksbildstillståndet.
+.PP
+VARNING! Kommandot \`fix\` skiljer inte mellan fel och
+avsiktliga modifieringar. Det återställer ovillkorligen filtillståndet
+till den senaste \`sync\`.
+.PP
+Om inget annat alternativ specificeras, behandlas hela arrayen.
+Använd filteralternativen för att välja en delmängd av filer eller diskar att arbeta med.
+.PP
+För att fixa endast blocken markerade som dåliga under \`sync\` och \`scrub\`,
+använd alternativet \-e, \-\-filter\-error.
+Till skillnad från andra filteralternativ tillämpar detta fixar endast på filer som är
+oförändrade sedan den senaste \`sync\`.
+.PP
+SnapRAID döper om alla filer som inte kan fixas genom att lägga till tillägget
+\`.unrecoverable\`.
+.PP
+Innan fixningen skannas hela arrayen för att hitta alla filer som flyttats
+sedan den senaste \`sync\`\-operationen.
+Dessa filer identifieras av deras tidsstämpel, ignorera deras namn
+och katalog, och används i återställningsprocessen vid behov.
+Om du flyttade några av dem utanför arrayen kan du använda alternativet \-i, \-\-import
+för att specificera ytterligare kataloger att skanna.
+.PP
+Filer identifieras endast med sökväg, inte med inode.
+.PP
+\`content\`\-filen modifieras INTE.
+\`parity\`\-filerna modifieras vid behov.
+Filerna i arrayen modifieras vid behov.
+.SS check 
+Verifierar alla filer och paritetsdata.
+.PP
+Det fungerar som \`fix\`, men det simulerar endast en återställning och inga ändringar
+skrivs till arrayen.
+.PP
+Detta kommando är i första hand avsett för manuell verifiering,
+som efter en återställningsprocess eller under andra speciella förhållanden.
+För periodiska och schemalagda kontroller, använd \`scrub\`.
+.PP
+Om du använder alternativet \-a, \-\-audit\-only, kontrolleras endast fil\-
+datan, och paritetsdatan ignoreras för en
+snabbare körning.
+.PP
+Filer identifieras endast med sökväg, inte med inode.
+.PP
+Inget ändras.
+.SS list 
+Listar alla filer som finns i arrayen vid tidpunkten för den
+senaste \`sync\`.
+.PP
+Med \-v eller \-\-verbose visas även undertiden.
+.PP
+Inget ändras.
+.SS dup 
+Listar alla dubblettfiler. Två filer antas vara lika om deras
+hashar matchar. Filens data läses inte; endast de
+förberäknade hasharna används.
+.PP
+Inget ändras.
+.SS pool 
+Skapar eller uppdaterar en virtuell vy av alla
+filer i din disk\-array i \`pooling\`\-katalogen.
+.PP
+Filerna kopieras inte utan länkas med hjälp av
+symboliska länkar.
+.PP
+Vid uppdatering raderas alla befintliga symboliska länkar och tomma
+underkataloger och ersätts med den nya
+vyn av arrayen. Alla andra vanliga filer lämnas kvar.
+.PP
+Inget ändras utanför pool\-katalogen.
+.SS devices 
+Skriver ut de lågnivåenheter som används av arrayen.
+.PP
+Detta kommando visar enhetsassociationerna i arrayen
+och är främst avsett som ett skriptgränssnitt.
+.PP
+De två första kolumnerna är lågnivåenhetens ID och sökväg.
+De nästa två kolumnerna är högnivåenhetens ID och sökväg.
+Den sista kolumnen är diskens namn i arrayen.
+.PP
+I de flesta fall har du en lågnivåenhet för varje disk i
+arrayen, men i vissa mer komplexa konfigurationer kan du ha flera
+lågnivåenheter som används av en enda disk i arrayen.
+.PP
+Inget ändras.
+.SS touch 
+Anger en godtycklig undertidsstämpel för alla filer
+som har den satt till noll.
+.PP
+Detta förbättrar SnapRAIDs förmåga att känna igen flyttade
+och kopierade filer, eftersom det gör tidsstämpeln nästan unik,
+vilket minskar möjliga dubbletter.
+.PP
+Mer specifikt, om undertidsstämpeln inte är noll,
+identifieras en flyttad eller kopierad fil som sådan om den matchar
+namn, storlek och tidsstämpel. Om undertidsstämpeln
+är noll, betraktas den som en kopia endast om hela sökvägen,
+storlek och tidsstämpel alla matchar.
+.PP
+Tidsstämpeln med sekundprecision modifieras inte,
+så alla datum och tider för dina filer bevaras.
+.SS rehash 
+Schemalägger en omhashning av hela arrayen.
+.PP
+Detta kommando ändrar den hash\-typ som används, vanligtvis vid uppgradering
+från ett 32\-bitars system till ett 64\-bitars system, för att byta från
+MurmurHash3 till den snabbare SpookyHash.
+.PP
+Om du redan använder den optimala hashen, gör detta kommando
+ingenting och informerar dig om att ingen åtgärd behövs.
+.PP
+Omhashningen utförs inte omedelbart utan sker
+progressivt under \`sync\` och \`scrub\`.
+.PP
+Du kan kontrollera omhashningstillståndet med hjälp av \`status\`.
+.PP
+Under omhashningen bibehåller SnapRAID full funktionalitet,
+med det enda undantaget att \`dup\` inte kan upptäcka dubbletter
+med hjälp av en annan hash.
+.SH ALTERNATIV 
+SnapRAID tillhandahåller följande alternativ:
+.TP
+.B \-c, \-\-conf CONFIG
+Väljer den konfigurationsfil som ska användas. Om den inte specificeras, i Unix
+används filen \`/usr/local/etc/snapraid.conf\` om den finns,
+annars \`/etc/snapraid.conf\`.
+I Windows används filen \`snapraid.conf\` i samma
+katalog som \`snapraid.exe\`.
+.TP
+.B \-f, \-\-filter PATTERN
+Filtrerar filerna att behandla i \`check\` och \`fix\`.
+Endast filerna som matchar det specificerade mönstret behandlas.
+Detta alternativ kan användas flera gånger.
+Se avsnittet MÖNSTER för mer information om
+mönsterspecifikationer.
+I Unix, se till att globbing\-tecken citeras om de används.
+Detta alternativ kan endast användas med \`check\` och \`fix\`.
+Det kan inte användas med \`sync\` och \`scrub\`, eftersom de alltid
+behandlar hela arrayen.
+.TP
+.B \-d, \-\-filter\-disk NAME
+Filtrerar diskarna att behandla i \`check\`, \`fix\`, \`up\` och \`down\`.
+Du måste specificera ett disk\-namn som definieras i konfigurations\-
+filen.
+Du kan också specificera paritetsdiskar med namnen: \`parity\`, \`2\-parity\`,
+\`3\-parity\`, etc., för att begränsa operationer till en specifik paritetsdisk.
+Om du kombinerar flera \-\-filter, \-\-filter\-disk och \-\-filter\-missing alternativ,
+väljs endast filer som matchar alla filter.
+Detta alternativ kan användas flera gånger.
+Detta alternativ kan endast användas med \`check\`, \`fix\`, \`up\` och \`down\`.
+Det kan inte användas med \`sync\` och \`scrub\`, eftersom de alltid
+behandlar hela arrayen.
+.TP
+.B \-m, \-\-filter\-missing
+Filtrerar filerna att behandla i \`check\` och \`fix\`.
+Endast filerna som saknas eller har raderats från arrayen behandlas.
+När det används med \`fix\`, fungerar detta som ett \`undelete\`\-kommando.
+Om du kombinerar flera \-\-filter, \-\-filter\-disk och \-\-filter\-missing alternativ,
+väljs endast filer som matchar alla filter.
+Detta alternativ kan endast användas med \`check\` och \`fix\`.
+Det kan inte användas med \`sync\` och \`scrub\`, eftersom de alltid
+behandlar hela arrayen.
+.TP
+.B \-e, \-\-filter\-error
+Behandlar filerna med fel i \`check\` och \`fix\`.
+Det behandlar endast filer som har block markerade med tysta
+eller input/output\-fel under \`sync\` och \`scrub\`, som listas i \`status\`.
+Detta alternativ kan endast användas med \`check\` och \`fix\`.
+.TP
+.B \-p, \-\-plan PERC|bad|new|full
+Väljer skrubbplanen. Om PERC är ett numeriskt värde från 0 till 100,
+tolkas det som procentandelen av block som ska skrubbas.
+Istället för en procentsats kan du specificera en plan:
+\`bad\` skrubbar dåliga block, \`new\` skrubbar block som ännu inte skrubbats,
+och \`full\` skrubbar allt.
+Detta alternativ kan endast användas med \`scrub\`.
+.TP
+.B \-o, \-\-older\-than DAYS
+Väljer den äldsta delen av arrayen att behandla i \`scrub\`.
+DAYS är den minsta åldern i dagar för ett block att skrubbas;
+standard är 10.
+Block markerade som dåliga skrubbas alltid oavsett detta alternativ.
+Detta alternativ kan endast användas med \`scrub\`.
+.TP
+.B \-a, \-\-audit\-only
+I \`check\`, verifierar hashen av filerna utan
+att kontrollera paritetsdata.
+Om du bara är intresserad av att kontrollera filens data, kan detta
+alternativ avsevärt påskynda kontrollprocessen.
+Detta alternativ kan endast användas med \`check\`.
+.TP
+.B \-h, \-\-pre\-hash
+I \`sync\`, kör en preliminär hash\-fas av all ny data
+för ytterligare verifiering innan paritetsberäkningen.
+Vanligtvis görs ingen preliminär hashning i \`sync\`, och den nya
+datan hashberäknas precis innan paritetsberäkningen när den läses
+för första gången.
+Denna process sker när systemet är under
+tung belastning, med alla diskar snurrande och en upptagen CPU.
+Detta är ett extremt tillstånd för maskinen, och om den har ett
+latent hårdvaruproblem, kan tysta fel gå obemärkt förbi
+eftersom datan ännu inte har hashberäknats.
+För att undvika denna risk kan du aktivera \`pre\-hash\`\-läget för att få
+all data läst två gånger för att säkerställa dess integritet.
+Detta alternativ verifierar också filer som flyttats inom arrayen
+för att säkerställa att flyttoperationen lyckades och, om nödvändigt,
+låter dig köra en fix\-operation innan du fortsätter.
+Detta alternativ kan endast användas med \`sync\`.
+.TP
+.B \-i, \-\-import DIR
+Importerar från den specificerade katalogen alla filer som raderats
+från arrayen efter den senaste \`sync\`.
+Om du fortfarande har sådana filer, kan de användas av \`check\`
+och \`fix\` för att förbättra återställningsprocessen.
+Filerna läses, inklusive i underkataloger, och identifieras
+oavsett deras namn.
+Detta alternativ kan endast användas med \`check\` och \`fix\`.
+.TP
+.B \-s, \-\-spin\-down\-on\-error
+Vid något fel, snurrar ner alla hanterade diskar innan den avslutas med
+en statuskod som inte är noll. Detta förhindrar att enheterna
+förblir aktiva och snurrar efter en avbruten operation,
+vilket hjälper till att undvika onödig värmeuppbyggnad och ström\-
+förbrukning. Använd detta alternativ för att säkerställa att diskar stoppas säkert
+även när ett kommando misslyckas.
+.TP
+.B \-w, \-\-bw\-limit RATE
+Tillämpar en global bandbreddsbegränsning för alla diskar. RATE är
+antalet byte per sekund. Du kan specificera en multiplikator
+som K, M eller G (t.ex. \-\-bw\-limit 1G).
+.TP
+.B \-A, \-\-stats
+Aktiverar en utökad statusvy som visar ytterligare information.
+Skärmen visar två diagram:
+Det första diagrammet visar antalet buffrade strippar för varje
+disk, tillsammans med filsökvägen för filen som för närvarande används
+på den disken. Vanligtvis kommer den långsammaste disken att ha
+ingen buffert tillgänglig, vilket bestämmer den maximalt uppnåeliga
+bandbredden.
+Det andra diagrammet visar procentandelen tid som spenderats i väntan
+under de senaste 100 sekunderna. Den långsammaste disken förväntas
+orsaka större delen av väntetiden, medan andra diskar bör ha
+liten eller ingen väntetid eftersom de kan använda sina buffrade strippar.
+Detta diagram visar också den tid som spenderats i väntan på hash\-
+beräkningar och RAID\-beräkningar.
+Alla beräkningar körs parallellt med diskoperationer.
+Därför, så länge det finns mätbar väntetid för minst en disk,
+indikerar det att CPU:n är snabb nog att
+hålla jämna steg med arbetsbelastningen.
+.TP
+.B \-Z, \-\-force\-zero
+Tvingar den osäkra operationen att synkronisera en fil med noll
+storlek som tidigare var icke\-noll.
+Om SnapRAID upptäcker ett sådant tillstånd, stoppar det att fortsätta
+om du inte specificerar detta alternativ.
+Detta gör att du enkelt kan upptäcka när, efter en systemkrasch,
+vissa filer som användes trunkerades.
+Detta är ett möjligt tillstånd i Linux med filsystemen ext3/ext4.
+Detta alternativ kan endast användas med \`sync\`.
+.TP
+.B \-E, \-\-force\-empty
+Tvingar den osäkra operationen att synkronisera en disk där alla
+ursprungliga filer saknas.
+Om SnapRAID upptäcker att alla filer som ursprungligen fanns
+på disken saknas eller har skrivits om, stoppar det att fortsätta
+om du inte specificerar detta alternativ.
+Detta gör att du enkelt kan upptäcka när ett datafilsystem inte är
+monterat.
+Detta alternativ kan endast användas med \`sync\`.
+.TP
+.B \-U, \-\-force\-uuid
+Tvingar den osäkra operationen att synkronisera, kontrollera och fixa
+med diskar som har ändrat sin UUID.
+Om SnapRAID upptäcker att vissa diskar har ändrat UUID,
+stoppar det att fortsätta om du inte specificerar detta alternativ.
+Detta gör att du kan upptäcka när dina diskar är monterade på fel
+monteringspunkter.
+Det är dock tillåtet att ha en enda UUID\-ändring med
+enkel paritet, och fler med multipel paritet, eftersom detta är
+det normala fallet när man byter ut diskar efter en återställning.
+Detta alternativ kan endast användas med \`sync\`, \`check\` eller
+\`fix\`.
+.TP
+.B \-D, \-\-force\-device
+Tvingar den osäkra operationen att fixa med otillgängliga diskar
+eller med diskar på samma fysiska enhet.
+Till exempel, om du förlorade två datadisker och har en reservdisk för att återställa
+endast den första, kan du ignorera den andra otillgängliga disken.
+Eller, om du vill återställa en disk i det lediga utrymme som finns kvar på en
+redan använd disk, dela samma fysiska enhet.
+Detta alternativ kan endast användas med \`fix\`.
+.TP
+.B \-N, \-\-force\-nocopy
+I \`sync\`, \`check\` och \`fix\`, inaktiverar heuristiken för kopieringsdetektering.
+Utan detta alternativ antar SnapRAID att filer med samma
+attribut, såsom namn, storlek och tidsstämpel, är kopior med
+samma data.
+Detta möjliggör identifiering av kopierade eller flyttade filer från en disk
+till en annan och återanvänder den redan beräknade hash\-informationen
+för att upptäcka tysta fel eller för att återställa saknade filer.
+I vissa sällsynta fall kan detta beteende leda till falska positiva
+eller en långsam process på grund av många hash\-verifieringar, och detta
+alternativ låter dig lösa sådana problem.
+Detta alternativ kan endast användas med \`sync\`, \`check\` och \`fix\`.
+.TP
+.B \-F, \-\-force\-full
+I \`sync\`, tvingar en fullständig omberäkning av pariteten.
+Detta alternativ kan användas när du lägger till en ny paritetsnivå eller om
+du återgick till en gammal content\-fil med mer aktuell paritetsdata.
+Istället för att återskapa pariteten från grunden låter detta dig
+återanvända hasharna som finns i content\-filen för att validera data
+och bibehålla dataskyddet under \`sync\`\-processen med hjälp av
+den befintliga paritetsdatan.
+Detta alternativ kan endast användas med \`sync\`.
+.TP
+.B \-R, \-\-force\-realloc
+I \`sync\`, tvingar en fullständig omallokering av filer och ombyggnad av pariteten.
+Detta alternativ kan användas för att helt omallokera alla filer,
+ta bort fragmentering, samtidigt som hasharna som finns i content\-
+filen återanvänds för att validera data.
+Detta alternativ kan endast användas med \`sync\`.
+VARNING! Detta alternativ är endast för experter, och det rekommenderas
+starkt att inte använda det.
+Du HAR INGET dataskydd under \`sync\`\-operationen.
+.TP
+.B \-l, \-\-log FILE
+Skriver en detaljerad logg till den specificerade filen.
+Om detta alternativ inte specificeras, skrivs oväntade fel ut
+på skärmen, vilket potentiellt kan leda till överdriven utdata i händelse av
+många fel. När \-l, \-\-log specificeras, skrivs endast
+fatala fel som får SnapRAID att stoppa ut
+på skärmen.
+Om sökvägen börjar med \'>>\', öppnas filen
+i tilläggsläge. Förekomster av \'%D\' och \'%T\' i namnet ersätts
+med datum och tid i formatet YYYYMMDD respektive
+HHMMSS. I Windows batch\-filer måste du dubblera
+\'%\'\-tecknet, t.ex. result\-%%D.log. För att använda \'>>\' måste du
+omsluta namnet i citattecken, t.ex. \`\[dq]>>result.log\[dq]\`.
+För att skicka ut loggen till standardutdata eller standardfel,
+kan du använda \`\[dq]>&1\[dq]\` respektive \`\[dq]>&2\[dq]\`.
+Se filen snapraid_log.txt eller man\-sidan för beskrivningar av logg\-taggar.
+.TP
+.B \-L, \-\-error\-limit NUMBER
+Anger en ny felgräns innan körningen stoppas.
+Som standard stoppar SnapRAID om det stöter på mer än 100
+input/output\-fel, vilket indikerar att en disk troligen håller på att misslyckas.
+Detta alternativ påverkar \`sync\` och \`scrub\`, som tillåts
+att fortsätta efter den första uppsättningen diskfel för att försöka
+slutföra sina operationer.
+Däremot stoppar \`check\` och \`fix\` alltid vid det första felet.
+.TP
+.B \-S, \-\-start BLKSTART
+Börjar behandlingen från det specificerade
+blocknumret. Detta kan vara användbart för att försöka igen att kontrollera
+eller fixa specifika block i händelse av en skadad disk.
+Detta alternativ är främst för avancerad manuell återställning.
+.TP
+.B \-B, \-\-count BLKCOUNT
+Behandlar endast det specificerade antalet block.
+Detta alternativ är främst för avancerad manuell återställning.
+.TP
+.B \-C, \-\-gen\-conf CONTENT
+Genererar en dummy\-konfigurationsfil från en befintlig
+content\-fil.
+Konfigurationsfilen skrivs till standardutdata
+och skriver inte över en befintlig fil.
+Denna konfigurationsfil innehåller också den information
+som behövs för att rekonstruera diskmonteringspunkterna om du
+förlorar hela systemet.
+.TP
+.B \-v, \-\-verbose
+Skriver ut mer information på skärmen.
+Om det specificeras en gång, skrivs exkluderade filer
+och ytterligare statistik ut.
+Detta alternativ har ingen effekt på loggfilerna.
+.TP
+.B \-q, \-\-quiet
+Skriver ut mindre information på skärmen.
+Om det specificeras en gång, tas förloppsindikatorn bort; två gånger,
+de pågående operationerna; tre gånger, informations\-
+meddelandena; fyra gånger, statusmeddelandena.
+Fatala fel skrivs alltid ut på skärmen.
+Detta alternativ har ingen effekt på loggfilerna.
+.TP
+.B \-H, \-\-help
+Skriver ut en kort hjälpskärm.
+.TP
+.B \-V, \-\-version
+Skriver ut programversionen.
+.SH KONFIGURATION 
+SnapRAID kräver en konfigurationsfil för att veta var din disk\-array
+finns och var paritetsinformationen ska lagras.
+.PP
+I Unix används filen \`/usr/local/etc/snapraid.conf\` om den finns,
+annars \`/etc/snapraid.conf\`.
+I Windows används filen \`snapraid.conf\` i samma
+katalog som \`snapraid.exe\`.
+.PP
+Den måste innehålla följande alternativ (skiftlägeskänsligt):
+.SS parity FIL [,FIL] ... 
+Definierar de filer som ska användas för att lagra paritetsinformationen.
+Pariteten möjliggör skydd från ett enda disk\-
+fel, liknande RAID5.
+.PP
+Du kan specificera flera filer, som måste finnas på olika diskar.
+När en fil inte kan växa mer, används nästa fil.
+Det totala tillgängliga utrymmet måste vara minst lika stort som den största datadisken i
+arrayen.
+.PP
+Du kan lägga till ytterligare paritetsfiler senare, men du
+kan inte ändra ordning på eller ta bort dem.
+.PP
+Att hålla paritetsdiskarna reserverade för paritet säkerställer att
+de inte blir fragmenterade, vilket förbättrar prestandan.
+.PP
+I Windows lämnas 256 MB oanvänt på varje disk för att undvika
+varningen om fulla diskar.
+.PP
+Detta alternativ är obligatoriskt och kan endast användas en gång.
+.SS (2,3,4,5,6)\-parity FIL [,FIL] ... 
+Definierar de filer som ska användas för att lagra extra paritetsinformation.
+.PP
+För varje paritetsnivå som specificeras aktiveras en ytterligare skyddsnivå:
+.PD 0
+.IP \(bu
+2\-parity möjliggör RAID6 dubbel paritet.
+.IP \(bu
+3\-parity möjliggör trippel paritet.
+.IP \(bu
+4\-parity möjliggör fyrdubbel (fyra) paritet.
+.IP \(bu
+5\-parity möjliggör penta (fem) paritet.
+.IP \(bu
+6\-parity möjliggör hexa (sex) paritet.
+.PD
+.PP
+Varje paritetsnivå kräver närvaro av alla föregående paritets\-
+nivåer.
+.PP
+Samma överväganden som för alternativet \'parity\' gäller.
+.PP
+Dessa alternativ är valfria och kan endast användas en gång.
+.SS z\-parity FIL [,FIL] ... 
+Definierar en alternativ fil och ett format för att lagra trippel paritet.
+.PP
+Detta alternativ är ett alternativ till \'3\-parity\', främst avsett för
+lågpresterande processorer som ARM eller AMD Phenom, Athlon och Opteron som inte
+stöder SSSE3\-instruktionsuppsättningen. I sådana fall ger det
+bättre prestanda.
+.PP
+Detta format liknar, men är snabbare än, det som används av ZFS RAIDZ3.
+Liksom ZFS fungerar det inte utöver trippel paritet.
+.PP
+När du använder \'3\-parity\' kommer du att varnas om det rekommenderas att använda
+formatet \'z\-parity\' för prestandaförbättring.
+.PP
+Det är möjligt att konvertera från ett format till ett annat genom att justera
+konfigurationsfilen med önskad z\-parity eller 3\-parity fil
+och använda \'fix\' för att återskapa den.
+.SS content FIL 
+Definierar den fil som ska användas för att lagra listan och checksummorna för alla
+filer som finns i din disk\-array.
+.PP
+Den kan placeras på en disk som används för data, paritet eller
+någon annan tillgänglig disk.
+Om du använder en datadisk exkluderas denna fil automatiskt
+från \`sync\`\-processen.
+.PP
+Detta alternativ är obligatoriskt och kan användas flera gånger för att spara
+flera kopior av samma fil.
+.PP
+Du måste lagra minst en kopia för varje paritetsdisk som används
+plus en. Att använda ytterligare kopior skadar inte.
+.SS data NAMN KATALOG 
+Definierar namnet och monteringspunkten för datadiskarna i
+arrayen. NAMN används för att identifiera disken och måste
+vara unikt. KATALOG är monteringspunkten för disken i
+filsystemet.
+.PP
+Du kan ändra monteringspunkten vid behov, så länge
+du behåller NAMN fixerat.
+.PP
+Du bör använda ett alternativ för varje datadisk i arrayen.
+.PP
+Du kan byta namn på en disk senare genom att ändra NAMN direkt
+i konfigurationsfilen och sedan köra ett \'sync\'\-kommando.
+I händelse av namnbyte görs associationen med hjälp av den lagrade
+UUID:n för diskarna.
+.SS nohidden 
+Exkluderar alla dolda filer och kataloger.
+I Unix är dolda filer de som börjar med \`.\`.
+I Windows är de de med det dolda attributet.
+.SS exclude/include MÖNSTER 
+Definierar fil\- eller katalogmönstren att exkludera eller inkludera
+i sync\-processen.
+Alla mönster behandlas i den specificerade ordningen.
+.PP
+Om det första mönstret som matchar är ett \`exclude\`\-mönster,
+exkluderas filen. Om det är ett \`include\`\-mönster, inkluderas filen.
+Om inget mönster matchar, exkluderas filen om det sista mönstret
+som specificerats är ett \`include\`\-mönster, eller inkluderas om det sista mönstret
+som specificerats är ett \`exclude\`\-mönster.
+.PP
+Se avsnittet MÖNSTER för mer information om mönster\-
+specifikationer.
+.PP
+Detta alternativ kan användas flera gånger.
+.SS blocksize STORLEK_I_KIBIBYTES 
+Definierar den grundläggande blockstorleken i kibibytes för pariteten.
+En kibibyte är 1024 byte.
+.PP
+Standard blockstorlek är 256, vilket bör fungera för de flesta fall.
+.PP
+VARNING! Detta alternativ är endast för experter, och det rekommenderas
+starkt att inte ändra detta värde. För att ändra detta värde i framtiden,
+kommer du att behöva återskapa hela pariteten!
+.PP
+En anledning att använda en annan blockstorlek är om du har många små
+filer, i storleksordningen miljoner.
+.PP
+För varje fil, även om den bara är några byte, allokeras ett helt block paritet,
+och med många filer kan detta leda till betydande oanvänt paritetsutrymme.
+När du helt fyller paritetsdisken, är du inte
+tillåten att lägga till fler filer på datadiskarna.
+Det bortkastade paritetsutrymmet ackumuleras dock inte över datadiskar.
+Bortkastat utrymme som härrör från ett högt antal filer på en datadisk begränsar endast
+mängden data på den datadisken, inte andra.
+.PP
+Som en approximation kan du anta att hälften av blockstorleken är
+bortkastad för varje fil. Till exempel, med 100 000 filer och en 256 KiB
+blockstorlek, kommer du att slösa 12,8 GB paritet, vilket kan resultera
+i 12,8 GB mindre utrymme tillgängligt på datadisken.
+.PP
+Du kan kontrollera mängden bortkastat utrymme på varje disk med hjälp av \`status\`.
+Detta är mängden utrymme du måste lämna ledigt på data\-
+diskarna eller använda för filer som inte ingår i arrayen.
+Om detta värde är negativt betyder det att du är nära att fylla
+pariteten, och det representerar det utrymme du fortfarande kan slösa.
+.PP
+För att undvika detta problem kan du använda en större partition för paritet.
+Om till exempel paritetspartitionen är 12,8 GB större än datadiskarna,
+har du tillräckligt med extra utrymme för att hantera upp till 100 000
+filer på varje datadisk utan något bortkastat utrymme.
+.PP
+Ett trick för att få en större paritetspartition i Linux är att formatera den
+med kommandot:
+.PP
+.RS 4
+mkfs.ext4 \-m 0 \-T largefile4 DEVICE
+.PD 0
+.PD
+.RE
+.PP
+Detta resulterar i cirka 1,5% extra utrymme, ungefär 60 GB för
+en 4 TB\-disk, vilket möjliggör cirka 460 000 filer på varje datadisk utan
+något bortkastat utrymme.
+.SS hashsize STORLEK_I_BYTE 
+Definierar hash\-storleken i byte för de sparade blocken.
+.PP
+Standard hash\-storlek är 16 byte (128 bitar), vilket bör fungera
+för de flesta fall.
+.PP
+VARNING! Detta alternativ är endast för experter, och det rekommenderas
+starkt att inte ändra detta värde. För att ändra detta värde i framtiden,
+kommer du att behöva återskapa hela pariteten!
+.PP
+En anledning att använda en annan hash\-storlek är om ditt system har
+begränsat minne. Som en tumregel kräver SnapRAID vanligtvis
+1 GiB RAM för varje 16 TB data i arrayen.
+.PP
+Specifikt, för att lagra hasharna av datan, kräver SnapRAID
+ungefär TS*(1+HS)/BS byte RAM,
+där TS är den totala storleken i byte av din disk\-array, BS är
+blockstorleken i byte och HS är hash\-storleken i byte.
+.PP
+Till exempel, med 8 diskar på 4 TB, en blockstorlek på 256 KiB
+(1 KiB = 1024 byte) och en hash\-storlek på 16, får du:
+.PP
+RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1,93 GiB
+.PD 0
+.PD
+.PP
+Om du byter till en hash\-storlek på 8 får du:
+.PP
+RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1,02 GiB
+.PD 0
+.PD
+.PP
+Om du byter till en blockstorlek på 512 får du:
+.PP
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0,96 GiB
+.PD 0
+.PD
+.PP
+Om du byter till både en hash\-storlek på 8 och en blockstorlek på 512 får du:
+.PP
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
+.PD 0
+.PD
+.SS autosave STORLEK_I_GIGABYTES 
+Sparar automatiskt tillståndet vid synkronisering eller skrubbning efter att den
+specificerade mängden GB har behandlats.
+Detta alternativ är användbart för att undvika att starta om långa \`sync\`\-
+kommandon från början om de avbryts av en maskinkrasch eller någon annan händelse.
+.SS temp_limit TEMPERATUR_CELSIUS 
+Anger den maximalt tillåtna disk\-temperaturen i Celsius. När den specificeras,
+kontrollerar SnapRAID periodiskt temperaturen på alla diskar med hjälp av
+verktyget smartctl. De aktuella disk\-temperaturerna visas medan
+SnapRAID är igång. Om någon disk överskrider denna gräns, stoppas alla operationer
+och diskarna snurras ner (sätts i standby) under den tid
+som definieras av alternativet \`temp_sleep\`. Efter viloperioden återupptas operationerna,
+och kan potentiellt pausas igen om temperaturgränsen nås
+ännu en gång.
+.PP
+Under drift analyserar SnapRAID också värmekurvan för varje
+disk och uppskattar den långsiktiga stabila temperaturen de förväntas
+nå om aktiviteten fortsätter. Uppskattningen utförs först efter att
+disk\-temperaturen har ökat fyra gånger, vilket säkerställer att tillräckligt med
+datapoäng finns tillgängliga för att fastställa en pålitlig trend.
+Denna förutsagda stabila temperatur visas inom parentes bredvid den
+aktuella värdet och hjälper till att bedöma om systemets kylning är
+tillräcklig. Denna uppskattade temperatur är endast för informationssyfte
+och har ingen effekt på SnapRAIDs beteende. Programmens
+åtgärder baseras enbart på de faktiska uppmätta disk\-temperaturerna.
+.PP
+För att utföra denna analys behöver SnapRAID en referens för system\-
+temperaturen. Det försöker först läsa den från tillgängliga hårdvaru\-
+sensorer. Om ingen system\-sensor kan nås, används den lägsta disk\-
+temperaturen som mättes vid start av körningen som en reservreferens.
+.PP
+Normalt visar SnapRAID endast temperaturen på den hetaste disken.
+För att visa temperaturen på alla diskar, använd alternativet \-A eller \-\-stats.
+.SS temp_sleep TID_I_MINUTER 
+Anger standby\-tiden, i minuter, när temperaturgränsen har
+nåtts. Under denna period förblir diskarna nedsnurrade. Standard
+är 5 minuter.
+.SS pool KATALOG 
+Definierar poolningskatalogen där den virtuella vyn av disk\-
+arrayen skapas med hjälp av kommandot \`pool\`.
+.PP
+Katalogen måste redan existera.
+.SS share UNC_KATALOG 
+Definierar Windows UNC\-sökvägen som krävs för att få åtkomst till diskarna på distans.
+.PP
+Om detta alternativ specificeras, använder de symboliska länkarna som skapats i pool\-
+katalogen denna UNC\-sökväg för att få åtkomst till diskarna.
+Utan detta alternativ använder de genererade symboliska länkarna endast lokala sökvägar,
+vilket inte tillåter delning av pool\-katalogen över nätverket.
+.PP
+De symboliska länkarna bildas med hjälp av den specificerade UNC\-sökvägen, lägger till
+disk\-namnet som specificeras i \`data\`\-alternativet, och lägger slutligen till filens
+katalog och namn.
+.PP
+Detta alternativ krävs endast för Windows.
+.SS smartctl DISK/PARITY ALTERNATIV... 
+Definierar anpassade smartctl\-alternativ för att få SMART\-attributen för
+varje disk. Detta kan krävas för RAID\-kontroller och vissa USB\-
+diskar som inte kan upptäckas automatiskt. Platsinnehavaren %s ersätts av
+enhetens namn, men är valfri för fixerade enheter som RAID\-kontroller.
+.PP
+DISK är samma disk\-namn som specificeras i \`data\`\-alternativet.
+PARITY är ett av paritetsnamnen: \`parity\`, \`2\-parity\`, \`3\-parity\`,
+\`4\-parity\`, \`5\-parity\`, \`6\-parity\` eller \`z\-parity\`.
+.PP
+I de specificerade ALTERNATIVEN ersätts strängen \`%s\` med
+enhetens namn. För RAID\-kontroller är enheten
+sannolikt fixerad, och du kanske inte behöver använda \`%s\`.
+.PP
+Se smartmontools dokumentation för möjliga alternativ:
+.PP
+.RS 4
+https://www.smartmontools.org/wiki/Supported_RAID\-Controllers
+.PD 0
+.PP
+.PD
+https://www.smartmontools.org/wiki/Supported_USB\-Devices
+.PD 0
+.PD
+.RE
+.PP
+Till exempel:
+.PP
+.RS 4
+smartctl parity \-d sat %s
+.PD 0
+.PD
+.RE
+.SS smartignore DISK/PARITY ATTR [ATTR...] 
+Ignorerar det specificerade SMART\-attributet vid beräkning av sannolikheten
+för diskfel. Detta alternativ är användbart om en disk rapporterar ovanliga eller
+vilseledande värden för ett visst attribut.
+.PP
+DISK är samma disk\-namn som specificeras i \`data\`\-alternativet.
+PARITY är ett av paritetsnamnen: \`parity\`, \`2\-parity\`, \`3\-parity\`,
+\`4\-parity\`, \`5\-parity\`, \`6\-parity\` eller \`z\-parity\`.
+Det speciella värdet * kan användas för att ignorera attributet på alla diskar.
+.PP
+Till exempel, för att ignorera attributet \`Current Pending Sector Count\` på
+alla diskar:
+.PP
+.RS 4
+smartignore * 197
+.PD 0
+.PD
+.RE
+.PP
+För att ignorera det endast på den första paritetsdisken:
+.PP
+.RS 4
+smartignore parity 197
+.PD 0
+.PD
+.RE
+.SS Exempel 
+Ett exempel på en typisk konfiguration för Unix är:
+.PP
+.RS 4
+parity /mnt/diskp/snapraid.parity
+.PD 0
+.PP
+.PD
+content /mnt/diskp/snapraid.content
+.PD 0
+.PP
+.PD
+content /var/snapraid/snapraid.content
+.PD 0
+.PP
+.PD
+data d1 /mnt/disk1/
+.PD 0
+.PP
+.PD
+data d2 /mnt/disk2/
+.PD 0
+.PP
+.PD
+data d3 /mnt/disk3/
+.PD 0
+.PP
+.PD
+exclude /lost+found/
+.PD 0
+.PP
+.PD
+exclude /tmp/
+.PD 0
+.PP
+.PD
+smartctl d1 \-d sat %s
+.PD 0
+.PP
+.PD
+smartctl d2 \-d usbjmicron %s
+.PD 0
+.PP
+.PD
+smartctl parity \-d areca,1/1 /dev/sg0
+.PD 0
+.PP
+.PD
+smartctl 2\-parity \-d areca,2/1 /dev/sg0
+.PD 0
+.PD
+.RE
+.PP
+Ett exempel på en typisk konfiguration för Windows är:
+.PP
+.RS 4
+parity E:\\snapraid.parity
+.PD 0
+.PP
+.PD
+content E:\\snapraid.content
+.PD 0
+.PP
+.PD
+content C:\\snapraid\\snapraid.content
+.PD 0
+.PP
+.PD
+data d1 G:\\array\\
+.PD 0
+.PP
+.PD
+data d2 H:\\array\\
+.PD 0
+.PP
+.PD
+data d3 I:\\array\\
+.PD 0
+.PP
+.PD
+exclude Thumbs.db
+.PD 0
+.PP
+.PD
+exclude \\$RECYCLE.BIN
+.PD 0
+.PP
+.PD
+exclude \\System Volume Information
+.PD 0
+.PP
+.PD
+smartctl d1 \-d sat %s
+.PD 0
+.PP
+.PD
+smartctl d2 \-d usbjmicron %s
+.PD 0
+.PP
+.PD
+smartctl parity \-d areca,1/1 /dev/arcmsr0
+.PD 0
+.PP
+.PD
+smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
+.PD 0
+.PD
+.RE
+.SH MöNSTER 
+Mönster används för att välja en delmängd av filer att exkludera eller inkludera i
+processen.
+.PP
+Det finns fyra olika typer av mönster:
+.TP
+.B FIL
+Väljer alla filer som heter FIL. Du kan använda alla globbing\-
+tecken som * och ?, och teckenklasser som [a\-z].
+Detta mönster gäller endast för filer, inte kataloger.
+.TP
+.B KATALOG/
+Väljer alla kataloger som heter KATALOG och allt inuti.
+Du kan använda alla globbing\-tecken som * och ?.
+Detta mönster gäller endast för kataloger, inte filer.
+.TP
+.B /SÖKVÄG/FIL
+Väljer den exakt specificerade filsökvägen. Du kan använda alla
+globbing\-tecken som * och ?, men de matchar aldrig ett
+katalog\-snedstreck.
+Detta mönster gäller endast för filer, inte kataloger.
+.TP
+.B /SÖKVÄG/KATALOG/
+Väljer den exakt specificerade katalogsökvägen och allt
+inuti. Du kan använda alla globbing\-tecken som * och ?, men
+de matchar aldrig ett katalog\-snedstreck.
+Detta mönster gäller endast för kataloger, inte filer.
+.PP
+När du specificerar en absolut sökväg som börjar med /, tillämpas den vid
+array\-rotkatalogen, inte den lokala filsystemets rotkatalog.
+.PP
+I Windows kan du använda bakåtsnedstrecket \\ istället för framåtsnedstrecket /.
+Windows systemkataloger, junction points, monteringspunkter och andra Windows
+speciella kataloger behandlas som filer, vilket innebär att för att exkludera
+dem måste du använda en fil\-regel, inte en katalog\-regel.
+.PP
+Om filnamnet innehåller tecknet \'*\', \'?\', \'[\',
+eller \']\', måste du undvika det för att förhindra att det tolkas som ett
+globbing\-tecken. I Unix är undvikande\-tecknet \'\\\'; i Windows är det \'^\'.
+När mönstret är på kommandoraden måste du dubbla undvikande\-
+tecknet för att förhindra att det tolkas av kommandoskalet.
+.PP
+I konfigurationsfilen kan du använda olika strategier för att filtrera
+filerna som ska behandlas.
+Det enklaste tillvägagångssättet är att endast använda \`exclude\`\-regler för att ta bort alla
+filer och kataloger du inte vill behandla. Till exempel:
+.PP
+.RS 4
+# Exkluderar alla filer som heter \`*.unrecoverable\`
+.PD 0
+.PP
+.PD
+exclude *.unrecoverable
+.PD 0
+.PP
+.PD
+# Exkluderar rotkatalogen \`/lost+found\`
+.PD 0
+.PP
+.PD
+exclude /lost+found/
+.PD 0
+.PP
+.PD
+# Exkluderar alla underkataloger som heter \`tmp\`
+.PD 0
+.PP
+.PD
+exclude tmp/
+.PD 0
+.PD
+.RE
+.PP
+Det motsatta tillvägagångssättet är att definiera endast de filer du vill behandla, med
+endast \`include\`\-regler. Till exempel:
+.PP
+.RS 4
+# Inkluderar endast vissa kataloger
+.PD 0
+.PP
+.PD
+include /movies/
+.PD 0
+.PP
+.PD
+include /musics/
+.PD 0
+.PP
+.PD
+include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+Det sista tillvägagångssättet är att blanda \`exclude\`\- och \`include\`\-regler. I detta fall
+är ordningen på reglerna viktig. Tidigare regler har
+företräde framför senare.
+För att förenkla kan du lista alla \`exclude\`\-regler först och sedan
+alla \`include\`\-regler. Till exempel:
+.PP
+.RS 4
+# Exkluderar alla filer som heter \`*.unrecoverable\`
+.PD 0
+.PP
+.PD
+exclude *.unrecoverable
+.PD 0
+.PP
+.PD
+# Exkluderar alla underkataloger som heter \`tmp\`
+.PD 0
+.PP
+.PD
+exclude tmp/
+.PD 0
+.PP
+.PD
+# Inkluderar endast vissa kataloger
+.PD 0
+.PP
+.PD
+include /movies/
+.PD 0
+.PP
+.PD
+include /musics/
+.PD 0
+.PP
+.PD
+include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+På kommandoraden, med hjälp av alternativet \-f, kan du bara använda \`include\`\-
+mönster. Till exempel:
+.PP
+.RS 4
+# Kontrollerar endast .mp3\-filerna.
+.PD 0
+.PP
+.PD
+# I Unix, använd citattecken för att undvika globbing\-expansion av skalet.
+.PD 0
+.PP
+.PD
+snapraid \-f \[dq]*.mp3\[dq] check
+.PD 0
+.PD
+.RE
+.PP
+I Unix, när du använder globbing\-tecken på kommandoraden, måste du
+citattecken dem för att förhindra att skalet expanderar dem.
+.SH INNEHåLL (CONTENT) 
+SnapRAID lagrar listan och checksummorna för dina filer i content\-filen.
+.PP
+Det är en binär fil som listar alla filer som finns i din disk\-array,
+tillsammans med alla checksummor för att verifiera deras integritet.
+.PP
+Denna fil läses och skrivs av kommandona \`sync\` och \`scrub\` och
+läses av kommandona \`fix\`, \`check\` och \`status\`.
+.SH PARITET (PARITY) 
+SnapRAID lagrar paritetsinformationen för din array i parity\-
+filerna.
+.PP
+Dessa är binära filer som innehåller den beräknade pariteten för alla
+block definierade i \`content\`\-filen.
+.PP
+Dessa filer läses och skrivs av kommandona \`sync\` och \`fix\` och
+läses endast av kommandona \`scrub\` och \`check\`.
+.SH KODNING 
+SnapRAID i Unix ignorerar all kodning. Det läser och lagrar
+filnamnen med samma kodning som används av filsystemet.
+.PP
+I Windows konverteras alla namn som läses från filsystemet och
+behandlas i UTF\-8\-format.
+.PP
+För att få filnamn utskrivna korrekt måste du ställa in Windows\-
+konsolen till UTF\-8\-läge med kommandot \`chcp 65001\` och använda
+ett TrueType\-typsnitt som \`Lucida Console\` som konsoltypsnitt.
+Detta påverkar endast de utskrivna filnamnen; om du
+omdirigerar konsolutdata till en fil, är den resulterande filen alltid
+i UTF\-8\-format.
+.SH UPPHOVSRäTT (COPYRIGHT) 
+Denna fil är Copyright (C) 2025 Andrea Mazzoleni
+.SH SE ÄVEN (SEE ALSO) 
+snapraid_log(1), rsync(1)

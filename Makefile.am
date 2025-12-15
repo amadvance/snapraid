@@ -121,7 +121,7 @@ mkstream_SOURCES = \
 dist-hook:
 	$(srcdir)/autover.sh > $(distdir)/.version
 
-LANG_CODES = de es fr it pl pt ro ru uk
+LANG_CODES = de es fr it ja ko pl pt ro ru sv uk zh
 
 LIST_D = snapraid.d snapraid_log.d $(patsubst %, snapraid-%.d, $(LANG_CODES))
 
@@ -1052,6 +1052,12 @@ man/fr/snapraid.1: $(srcdir)/snapraid-fr.d
 man/it/snapraid.1: $(srcdir)/snapraid-it.d
 	advd2 man < $< > $@
 
+man/ja/snapraid.1: $(srcdir)/snapraid-ja.d
+	advd2 man < $< > $@
+
+man/ko/snapraid.1: $(srcdir)/snapraid-ko.d
+	advd2 man < $< > $@
+
 man/pl/snapraid.1: $(srcdir)/snapraid-pl.d
 	advd2 man < $< > $@
 
@@ -1064,7 +1070,13 @@ man/ro/snapraid.1: $(srcdir)/snapraid-ro.d
 man/ru/snapraid.1: $(srcdir)/snapraid-ru.d
 	advd2 man < $< > $@
 
+man/sv/snapraid.1: $(srcdir)/snapraid-sv.d
+	advd2 man < $< > $@
+
 man/uk/snapraid.1: $(srcdir)/snapraid-uk.d
+	advd2 man < $< > $@
+
+man/zh/snapraid.1: $(srcdir)/snapraid-zh.d
 	advd2 man < $< > $@
 
 %.txt : %.d
