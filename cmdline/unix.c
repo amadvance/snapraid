@@ -1789,6 +1789,7 @@ const char* AMBIENT_LABEL[] = {
 	"systin",
 	"auxtin",
 	"mb",
+	"m/b",
 	"board",
 	"motherboard",
 	"system",
