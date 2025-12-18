@@ -112,18 +112,31 @@ Configuration Tags
 		Content files store the metadata (like file hashes and timestamps)
 		for the array.
 
-	=content:<parity_level>:<split_index>:<path>:<uuid>:<size>
+	=content_parity:<parity_level>:<size>:<free_size>:<split_index>:<uuid>:<path>:<file_size>
 		The parity files as stored in the content file.
-	
+
 		<parity_level> - One of `parity`, `2-parity`, ..., `6-parity`.
+		<size> - The size of the data in the disk.
+		<free_size> - The free size in the disk at the time of the
+			latest `sync`.
 		<split_index> - The split index (uint). If no
 			multiple split parity is configured, there is only the
 			index 0.
+		<uuid> - The UUID of the disk containing the path.
 		<path> - The path (escaped).
-		<uuid> - The UUID of the partition containing the path.
-		<size> - The size of the parity file. Size is -1 if not yet
+		<file_size> - The size of the parity file. Size is -1 if not yet
 			fixed, meaning it can grow. This happens for the
 			latest split.
+
+	=content_disk:<disk_name>:<size>:<free_size>:<parity_index>:<uuid>
+		The data disk as stored in the content file.
+
+		<disk_name> - Name of the data disk.
+		<size> - The size of the data in the disk.
+		<free_size> - The free size in the disk at the time of the
+			latest `sync`.
+		<parity_index> - The disk position in the parity computation.
+		<uuid> - The UUID of the disk filesystem.
 
 Diagnostics Tags
 	=version:<version>
@@ -961,7 +974,11 @@ Command Smart Tags
 		<rate> - The rotation rate (uint64, RPM).
 
 	=attr:<device_file>:<disk_name>:flags:<flags_decimal>:<flags_hex>
-		Logs the SMART status flags from the utility (e.g., smartctl).
+		Logs the SMART status flags from the `smartctl` utility.
+		Per the smartctl manpage, these flags are bit-mapped 
+		to indicate specific issues like "Command line did not parse", 
+		"Device could not be opened", or "SMART status check 
+		returned 'DISK FAILING'".
 
 		<flags_decimal> - The raw flags value (uint64, decimal).
 		<flags_hex> - The raw flags value (uint64, hexadecimal).
@@ -985,24 +1002,53 @@ Command Smart Tags
 		<array_prob> - The probability of at least one disk failure in
 		the next year (double).
 
-Command Probe Tags
-	This section describes the tags output with the `probe` command.
+Device Status Tags
+	These tags log the lifecycle of hardware interactions and external
+	command execution. They are primarily output during the `up`
+	(spin-up), `down` (spin-down), and `probe` (power state check)
+	commands.
 
-	Note that a `<disk_name>` may be associated with more `<device_file>`,
-	in case the logical disk uses more physical disks. In such a case,
-	you'll see multiple tags for the same `<disk_name>` but with different
-	`<device_file>`.
+	=device:<device_file>:<disk_name>:active
+		Logs that the device was confirmed to be in an active power 
+		state after a status probe.
 
-    Device Power State
-	Tags used to report the power state of each device.
+		<device_file> - The system path to the device node.
+		<disk_name> - The SnapRAID internal disk disk_name.
 
-	=probe:<device_file>:<disk_name>:<power_state>
-		Logs the detected power state of a device.
+	=device:<device_file>:<disk_name>:standby
+		Logs that the device was confirmed to be in a standby/spun-down
+		state.
 
-		<device_file> - The file path of the device (e.g., /dev/sdb).
-		<disk_name> - The configured name of the disk.
-		<power_state> - The numerical power state: 0: Unknown, 
-			1: StandBy, 2: Active.
+	=device:<device_file>:<disk_name>:up
+		Logs a successful spin-up operation via direct O_DIRECT 
+		read.
+
+	=device:<device_file>:<disk_name>:down
+		Logs a successful spin-down operation initiated via the 
+		smartctl command.
+
+	=device:<device_file>:<disk_name>:shell
+		Logs a failure in the command shell execution environment.
+
+	=device:<device_file>:<disk_name>:error:<errno>
+		Logs a low-level system error during direct file operations.
+		This is triggered when open(), read(), or close() 
+		calls fail during a spin-up attempt.
+
+		<errno> - The standard integer error number provided by 
+			the OS.
+
+	=device:<device_file>:<disk_name>:error:abort
+		Logs that an external process (smartctl) failed to complete 
+		normally, such as being terminated by a signal rather than 
+		exiting.
+
+	=device:<device_file>:<disk_name>:exit:<exit_code>
+		Logs that the external command (smartctl) returned a non-zero 
+		exit code that was not explicitly recognized as a valid state. 
+
+		<exit_code> - The integer exit status returned by the 
+			process.
 
 Error Tags
 	These tags report specific errors that occur on data disks during the

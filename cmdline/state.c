@@ -2717,6 +2717,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* log the info read from the content file */
+			log_tag("content_disk:%s:%" PRIu64 ":%" PRIu64 ":%u:%s\n",
+				buffer,
+				v_total_blocks * (uint64_t)state->block_size,
+				v_free_blocks * (uint64_t)state->block_size,
+				v_pos,
+				uuid);
+
 			/* find the disk */
 			disk = find_disk_by_name(state, buffer);
 			if (!disk) {
@@ -2814,9 +2822,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				state->parity[v_level].free_blocks = v_free_blocks;
 
 				/* log the info read from the content file */
-				log_tag("content:%s:0:%s:%s:%" PRIi64 "\n", lev_config_name(v_level),
-					state->parity[v_level].split_map[0].path,
+				log_tag("content_parity:%s:%" PRIu64 ":%" PRIu64 ":%u:%s:%s:%" PRIi64 "\n",
+					lev_config_name(v_level),
+					v_total_blocks * (uint64_t)state->block_size,
+					v_free_blocks * (uint64_t)state->block_size,
+					0,
 					state->parity[v_level].split_map[0].uuid,
+					state->parity[v_level].split_map[0].path,
 					state->parity[v_level].split_map[0].size);
 			}
 		} else if (c == 'Q') {
@@ -2937,9 +2949,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						state->parity[v_level].split_map[s].size = v_size;
 
 						/* log the info read from the content file */
-						log_tag("content:%s:%u:%s:%s:%" PRIi64 "\n", lev_config_name(v_level), s,
-							state->parity[v_level].split_map[s].path,
+						log_tag("content_parity:%s:%" PRIu64 ":%" PRIu64 ":%u:%s:%s:%" PRIi64 "\n",
+							lev_config_name(v_level), 
+							v_total_blocks * (uint64_t)state->block_size,
+							v_free_blocks * (uint64_t)state->block_size,
+							s,
 							state->parity[v_level].split_map[s].uuid,
+							state->parity[v_level].split_map[s].path,
 							state->parity[v_level].split_map[s].size);
 					}
 				}

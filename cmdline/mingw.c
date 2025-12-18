@@ -710,7 +710,7 @@ static void windows_errno(DWORD error)
 		errno = EIO;
 		break;
 	default :
-		log_fatal("Unexpected Windows error %d.\n", (int)error);
+		log_fatal("Unexpected Windows error %lu.\n", error);
 		errno = EIO;
 		break;
 	}
@@ -2526,6 +2526,7 @@ retry:
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2534,6 +2535,7 @@ retry:
 	if (smartctl_attribute(f, file, name, smart, serial, vendor, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
+		log_tag("device:%s:%s:shell\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2544,6 +2546,7 @@ retry:
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2612,6 +2615,7 @@ retry:
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2620,6 +2624,7 @@ retry:
 	if (smartctl_flush(f, file, name) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
+		log_tag("device:%s:%s:shell\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2630,6 +2635,7 @@ retry:
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2654,12 +2660,16 @@ retry:
 		}
 	}
 
-	if (ret == 0)
+	if (ret == 0) {
+		log_tag("device:%s:%s:active\n", file, name);
 		*power = POWER_ACTIVE;
-	else if (ret == 3)
+	} else if (ret == 3) {
+		log_tag("device:%s:%s:standby\n", file, name);
 		*power = POWER_STANDBY;
-	else
+	} else {
+		log_tag("device:%s:%s:unknown\n", file, name);
 		*power = POWER_UNKNOWN;
+	}
 
 	return 0;
 }
@@ -2695,6 +2705,7 @@ retry:
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2703,6 +2714,7 @@ retry:
 	if (smartctl_flush(f, file, name) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
+		log_tag("device:%s:%s:shell\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2713,6 +2725,7 @@ retry:
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2739,10 +2752,13 @@ retry:
 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:exit:%d\n", file, name, ret);
 		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	log_tag("device:%s:%s:down\n", file, name);
 
 	return 0;
 }
@@ -2766,7 +2782,7 @@ static int devdownifup(uint64_t device, const char* name, const char* smartctl, 
 /**
  * Spin up a device.
  */
-static int devup(const char* wfile)
+static int devup(uint64_t device, const char* name, const char* wfile)
 {
 	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
@@ -2774,11 +2790,16 @@ static int devup(const char* wfile)
 	DISK_GEOMETRY dg;
 	DWORD bytes;
 	void* buffer;
+	char file[128];
+
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	/* open the volume */
 	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
 	if (h == INVALID_HANDLE_VALUE) {
-		windows_errno(GetLastError());
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
@@ -2788,6 +2809,7 @@ static int devup(const char* wfile)
 		DWORD error = GetLastError();
 		CloseHandle(h);
 		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
@@ -2796,6 +2818,7 @@ static int devup(const char* wfile)
 		DWORD error = GetLastError();
 		CloseHandle(h);
 		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
@@ -2804,6 +2827,7 @@ static int devup(const char* wfile)
 		DWORD error = GetLastError();
 		CloseHandle(h);
 		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
@@ -2811,10 +2835,13 @@ static int devup(const char* wfile)
 		DWORD error = GetLastError();
 		VirtualFree(buffer, 0, MEM_RELEASE);
 		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
 	VirtualFree(buffer, 0, MEM_RELEASE);
+
+	log_tag("device:%s:%s:up\n", file, name);
 
 	return 0;
 }
@@ -2829,7 +2856,7 @@ static void* thread_spinup(void* arg)
 
 	start = tick_ms();
 
-	if (devup(devinfo->wfile) != 0) {
+	if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

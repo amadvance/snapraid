@@ -1168,6 +1168,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1176,6 +1177,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	if (smartctl_attribute(f, file, name, smart, serial, vendor, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
+		log_tag("device:%s:%s:shell\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1186,12 +1188,14 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:error:abort\n", file, name);
 		log_fatal("Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1236,6 +1240,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1244,6 +1249,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	if (smartctl_flush(f, file, name) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
+		log_tag("device:%s:%s:shell\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1254,22 +1260,27 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:abort\n", file, name);
 		log_fatal("Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 0) {
+		log_tag("device:%s:%s:active\n", file, name);
 		*power = POWER_ACTIVE;
 	} else if (WEXITSTATUS(ret) == 3) {
+		log_tag("device:%s:%s:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
 		log_fatal("Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1311,6 +1322,7 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1319,6 +1331,7 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	if (smartctl_flush(f, file, name) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
+		log_tag("device:%s:%s:shell\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1329,22 +1342,27 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:abort\n", file, name);
 		log_fatal("Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:shell\n", file, name);
 		log_fatal("Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
 		log_fatal("Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	log_tag("device:%s:%s:down\n", file, name);
 
 	return 0;
 }
@@ -1372,7 +1390,7 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, int
  * Spin up a specific device.
  */
 #if HAVE_LINUX_DEVICE
-static int devup(dev_t device)
+static int devup(dev_t device, const char* name)
 {
 	char file[PATH_MAX];
 	int ret;
@@ -1398,6 +1416,7 @@ static int devup(dev_t device)
 	if (f < 0) {
 		/* LCOV_EXCL_START */
 		free(buf);
+		log_tag("device:%s:%s:error:%d\n", file, name, errno);
 		log_fatal("Failed to open device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1408,6 +1427,7 @@ static int devup(dev_t device)
 		/* LCOV_EXCL_START */
 		close(f);
 		free(buf);
+		log_tag("device:%s:%s:error:%d\n", file, name, errno);
 		log_fatal("Failed to read device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1417,10 +1437,13 @@ static int devup(dev_t device)
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		free(buf);
+		log_tag("device:%s:%s:error:%d\n", file, name, errno);
 		log_fatal("Failed to close device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	log_tag("device:%s:%s:up\n", file, name);
 
 	free(buf);
 	return 0;
@@ -1442,7 +1465,7 @@ static void* thread_spinup(void* arg)
 
 	start = tick_ms();
 
-	if (devup(devinfo->device) != 0) {
+	if (devup(devinfo->device, devinfo->name) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

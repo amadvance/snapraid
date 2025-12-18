@@ -146,7 +146,7 @@ The absolute path to a content file being used (escaped).
 Content files store the metadata (like file hashes and timestamps)
 for the array.
 .TP
-.B content:<parity_level>:<split_index>:<path>:<uuid>:<size>
+.B content_parity:<parity_level>:<size>:<free_size>:<split_index>:<uuid>:<path>:<file_size>
 The parity files as stored in the content file.
 .RS 4
 .PD 0
@@ -154,21 +154,51 @@ The parity files as stored in the content file.
 .I <parity_level>
 One of \`parity\`, \`2\-parity\`, ..., \`6\-parity\`.
 .HP 4
+.I <size>
+The size of the data in the disk.
+.HP 4
+.I <free_size>
+The free size in the disk at the time of the
+latest \`sync\`.
+.HP 4
 .I <split_index>
 The split index (uint). If no
 multiple split parity is configured, there is only the
 index 0.
 .HP 4
+.I <uuid>
+The UUID of the disk containing the path.
+.HP 4
 .I <path>
 The path (escaped).
 .HP 4
-.I <uuid>
-The UUID of the partition containing the path.
-.HP 4
-.I <size>
+.I <file_size>
 The size of the parity file. Size is \-1 if not yet
 fixed, meaning it can grow. This happens for the
 latest split.
+.PD
+.RE
+.TP
+.B content_disk:<disk_name>:<size>:<free_size>:<parity_index>:<uuid>
+The data disk as stored in the content file.
+.RS 4
+.PD 0
+.HP 4
+.I <disk_name>
+Name of the data disk.
+.HP 4
+.I <size>
+The size of the data in the disk.
+.HP 4
+.I <free_size>
+The free size in the disk at the time of the
+latest \`sync\`.
+.HP 4
+.I <parity_index>
+The disk position in the parity computation.
+.HP 4
+.I <uuid>
+The UUID of the disk filesystem.
 .PD
 .RE
 .SH DIAGNOSTICS TAGS 
@@ -1510,7 +1540,11 @@ The rotation rate (uint64, RPM).
 .RE
 .TP
 .B attr:<device_file>:<disk_name>:flags:<flags_decimal>:<flags_hex>
-Logs the SMART status flags from the utility (e.g., smartctl).
+Logs the SMART status flags from the \`smartctl\` utility.
+Per the smartctl manpage, these flags are bit\-mapped
+to indicate specific issues like \[dq]Command line did not parse\[dq],
+\[dq]Device could not be opened\[dq], or \[dq]SMART status check
+returned \'DISK FAILING\'\[dq].
 .RS 4
 .PD 0
 .HP 4
@@ -1557,30 +1591,68 @@ The probability of at least one disk failure in
 .RS 4
 the next year (double).
 .RE
-.SH COMMAND PROBE TAGS 
-This section describes the tags output with the \`probe\` command.
-.PP
-Note that a \`<disk_name>\` may be associated with more \`<device_file>\`,
-in case the logical disk uses more physical disks. In such a case,
-you\'ll see multiple tags for the same \`<disk_name>\` but with different
-\`<device_file>\`.
-.SS Device Power State 
-Tags used to report the power state of each device.
+.SH DEVICE STATUS TAGS 
+These tags log the lifecycle of hardware interactions and external
+command execution. They are primarily output during the \`up\`
+(spin\-up), \`down\` (spin\-down), and \`probe\` (power state check)
+commands.
 .TP
-.B probe:<device_file>:<disk_name>:<power_state>
-Logs the detected power state of a device.
+.B device:<device_file>:<disk_name>:active
+Logs that the device was confirmed to be in an active power
+state after a status probe.
 .RS 4
 .PD 0
 .HP 4
 .I <device_file>
-The file path of the device (e.g., /dev/sdb).
+The system path to the device node.
 .HP 4
 .I <disk_name>
-The configured name of the disk.
+The SnapRAID internal disk disk_name.
+.PD
+.RE
+.TP
+.B device:<device_file>:<disk_name>:standby
+Logs that the device was confirmed to be in a standby/spun\-down
+state.
+.TP
+.B device:<device_file>:<disk_name>:up
+Logs a successful spin\-up operation via direct O_DIRECT
+read.
+.TP
+.B device:<device_file>:<disk_name>:down
+Logs a successful spin\-down operation initiated via the
+smartctl command.
+.TP
+.B device:<device_file>:<disk_name>:shell
+Logs a failure in the command shell execution environment.
+.TP
+.B device:<device_file>:<disk_name>:error:<errno>
+Logs a low\-level system error during direct file operations.
+This is triggered when open(), read(), or close()
+calls fail during a spin\-up attempt.
+.RS 4
+.PD 0
 .HP 4
-.I <power_state>
-The numerical power state: 0: Unknown,
-1: StandBy, 2: Active.
+.I <errno>
+The standard integer error number provided by
+the OS.
+.PD
+.RE
+.TP
+.B device:<device_file>:<disk_name>:error:abort
+Logs that an external process (smartctl) failed to complete
+normally, such as being terminated by a signal rather than
+exiting.
+.TP
+.B device:<device_file>:<disk_name>:exit:<exit_code>
+Logs that the external command (smartctl) returned a non\-zero
+exit code that was not explicitly recognized as a valid state.
+.RS 4
+.PD 0
+.HP 4
+.I <exit_code>
+The integer exit status returned by the
+process.
 .PD
 .RE
 .SH ERROR TAGS 
