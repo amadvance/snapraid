@@ -447,18 +447,25 @@ int randomize(void* ptr, size_t size);
 #define SMART_AIRFLOW_TEMPERATURE_CELSIUS 190
 #define SMART_TEMPERATURE_CELSIUS 194
 
-/**
- * Additional SMART attributes.
- */
-#define SMART_ERROR 256 /**< ATA Error count. */
-#define SMART_SIZE 257 /**< Size in bytes. */
-#define SMART_ROTATION_RATE 258 /**< Rotation speed. 0 for SSD. */
-#define SMART_FLAGS 259 /**< Flags returned by smartctl. */
+#define SMART_FLAGS 256 /**< Flags returned by smartctl. */
+#define SMART_ERROR 257 /**< ATA Error count. */
 
 /**
  * SMART attributes count.
  */
-#define SMART_COUNT 260
+#define SMART_COUNT 258
+
+/**
+ * Info attributes.
+ */
+#define INFO_SIZE 0 /**< Size in bytes. */
+#define INFO_ROTATION_RATE 1 /**< Rotation speed. 0 for SSD. */
+
+/**
+ * Info attributes count.
+ */
+#define INFO_COUNT 2
+
 
 #define SMART_IGNORE_MAX 4 /**< Max number of ignored smart attributes */
 
@@ -506,10 +513,11 @@ struct devinfo_struct {
 	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */
 #endif
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
-	uint64_t smart[SMART_COUNT]; /**< SMART raw attributes. */
-	char smart_serial[SMART_MAX]; /**< SMART serial number. */
-	char smart_vendor[SMART_MAX]; /**< SMART vendor. */
-	char smart_model[SMART_MAX]; /**< SMART model. */
+	uint64_t smart[SMART_COUNT]; /**< SMART attributes. */
+	uint64_t info[INFO_COUNT]; /**< Info attributes. */
+	char serial[SMART_MAX]; /**< Serial number. */
+	char vendor[SMART_MAX]; /**< Vendor. */
+	char model[SMART_MAX]; /**< Model. */
 	int power; /**< POWER mode. */
 #if HAVE_THREAD
 	thread_id_t thread;

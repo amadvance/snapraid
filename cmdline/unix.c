@@ -1140,7 +1140,7 @@ static int devscan(tommy_list* list)
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
-static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, char* serial, char* vendor, char* model)
+static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1174,7 +1174,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, serial, vendor, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, vendor, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -1212,7 +1212,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
-static int devprobe(dev_t device, const char* name, const char* smartctl, int* power)
+static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* vendor, char* model)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1246,7 +1246,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_flush(f, file, name) != 0) {
+	if (smartctl_attribute(f, file, name, 0, info, serial, vendor, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -1376,7 +1376,7 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, int
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power) != 0)
+	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -1542,7 +1542,7 @@ static void* thread_smart(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->smart_serial, devinfo->smart_vendor, devinfo->smart_model) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1563,7 +1563,7 @@ static void* thread_probe(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

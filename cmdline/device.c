@@ -535,6 +535,41 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 	return poisson_prob_n_or_more_failures(raid_failure_rate, 1);
 }
 
+static void state_info_log(devinfo_t* devinfo)
+{
+	char esc_buffer[ESC_MAX];
+
+	log_tag("info:%s:%s\n", devinfo->file, devinfo->name);
+	if (devinfo->serial[0])
+		log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->serial, esc_buffer));
+	if (devinfo->vendor[0])
+		log_tag("attr:%s:%s:vendor:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->vendor, esc_buffer));
+	if (devinfo->model[0])
+		log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->model, esc_buffer));
+	if (devinfo->info[INFO_SIZE] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_SIZE]);
+	if (devinfo->info[INFO_ROTATION_RATE] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_ROTATION_RATE]);
+}
+
+static void state_smart_log(devinfo_t* devinfo, double afr)
+{
+	unsigned j;
+
+	log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
+	if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR]);
+	if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
+
+	if (afr != 0)
+		log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_n_or_more_failures(afr, 1));
+
+	for (j = 0; j < 256; ++j)
+		if (devinfo->smart[j] != SMART_UNASSIGNED)
+			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
+}
+
 static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* low)
 {
 	tommy_node* i;
@@ -547,7 +582,6 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 	int make_it_fail = 0;
 	uint64_t mask32 = 0xffffffffU;
 	uint64_t mask16 = 0xffffU;
-	char esc_buffer[ESC_MAX];
 
 	/* compute lengths for padding */
 	device_pad = 0;
@@ -561,7 +595,7 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 		if (len > device_pad)
 			device_pad = len;
 
-		len = strlen(devinfo->smart_serial);
+		len = strlen(devinfo->serial);
 		if (len > serial_pad)
 			serial_pad = len;
 
@@ -646,12 +680,12 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			/* if error running smartctl, skip AFR estimation */
 			afr = 0;
 			printf("  n/a");
-		} else if (devinfo->smart[SMART_ROTATION_RATE] == 0) {
+		} else if (devinfo->info[INFO_ROTATION_RATE] == 0) {
 			/* if SSD, skip AFR estimation as data is from not SSD disks */
 			afr = 0;
 			printf("  SSD");
 		} else {
-			afr = smart_afr(devinfo->smart, devinfo->smart_model);
+			afr = smart_afr(devinfo->smart, devinfo->model);
 
 			if (afr == 0) {
 				/* this happens only if no data */
@@ -665,14 +699,14 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			}
 		}
 
-		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			printf(" %4.1f", devinfo->smart[SMART_SIZE] / 1E12);
+		if (devinfo->info[INFO_SIZE] != SMART_UNASSIGNED)
+			printf(" %4.1f", devinfo->info[INFO_SIZE] / 1E12);
 		else
 			printf("    -");
 
 		printf("  ");
-		if (*devinfo->smart_serial)
-			printl(devinfo->smart_serial, serial_pad);
+		if (*devinfo->serial)
+			printl(devinfo->serial, serial_pad);
 		else
 			printl("-", serial_pad);
 
@@ -690,26 +724,8 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 
 		printf("\n");
 
-		log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
-		if (devinfo->smart_serial[0])
-			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_serial, esc_buffer));
-		if (devinfo->smart_vendor[0])
-			log_tag("attr:%s:%s:vendor:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_vendor, esc_buffer));
-		if (devinfo->smart_model[0])
-			log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_model, esc_buffer));
-		if (afr != 0)
-			log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_n_or_more_failures(afr, 1));
-		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_SIZE]);
-		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-			log_tag("attr:%s:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR]);
-		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
-			log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ROTATION_RATE]);
-		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
-			log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
-		for (j = 0; j < 256; ++j)
-			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
+		state_info_log(devinfo);
+		state_smart_log(devinfo, afr);
 	}
 
 	printf("\n");
@@ -783,6 +799,8 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 		len = strlen(devinfo->file);
 		if (len > device_pad)
 			device_pad = len;
+
+		state_info_log(devinfo);
 	}
 
 	printf("SnapRAID PROBE report:\n");
@@ -860,16 +878,16 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 			}
 		}
 
-		pathprint(entry->smart_serial, sizeof(entry->smart_serial), "FAKE_%s", devinfo->smart_serial);
-		pathprint(entry->smart_vendor, sizeof(entry->smart_vendor), "FAKE_%s", devinfo->smart_vendor);
-		pathprint(entry->smart_model, sizeof(entry->smart_model), "FAKE_%s", devinfo->smart_model);
+		pathprint(entry->serial, sizeof(entry->serial), "FAKE_%s", devinfo->serial);
+		pathprint(entry->vendor, sizeof(entry->vendor), "FAKE_%s", devinfo->vendor);
+		pathprint(entry->model, sizeof(entry->model), "FAKE_%s", devinfo->model);
 		pathprint(entry->file, sizeof(entry->name), "FAKE_%s", devinfo->file);
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
-		entry->smart[SMART_SIZE] = count * TERA;
-		entry->smart[SMART_ROTATION_RATE] = 7200;
-		entry->smart[SMART_TEMPERATURE_CELSIUS] = 27;
+		entry->info[INFO_SIZE] = count * TERA;
+		entry->info[INFO_ROTATION_RATE] = 7200;
 		entry->smart[SMART_ERROR] = 0;
 		entry->smart[SMART_FLAGS] = SMART_UNASSIGNED;
+		entry->smart[SMART_TEMPERATURE_CELSIUS] = 27;
 
 		switch (count) {
 		case 3 : entry->smart[SMART_ERROR] = 1; break;

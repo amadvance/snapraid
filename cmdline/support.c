@@ -1610,15 +1610,36 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial, char* vendor, char* model)
+int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
 {
 	unsigned i;
 	int inside;
+	uint64_t dummy_smart[SMART_COUNT];
+	uint64_t dummy_info[INFO_COUNT];
+	char dummy_serial[SMART_MAX];
+	char dummy_vendor[SMART_MAX];
+	char dummy_model[SMART_MAX];
 
-	/* preclear attribute */
+	/* dummy attributes */
+	if (!smart)
+		smart = dummy_smart;
+	if (!info)
+		info = dummy_info;
+	if (!serial)
+		serial = dummy_serial;
+	if (!vendor)
+		vendor = dummy_vendor;
+	if (!model)
+		model = dummy_model;
+
+	/* preclear attributes */
 	*serial = 0;
+	*vendor = 0;
+	*model = 0;
 	for (i = 0; i < SMART_COUNT; ++i)
 		smart[i] = SMART_UNASSIGNED;
+	for (i = 0; i < INFO_COUNT; ++i)
+		info[i] = SMART_UNASSIGNED;		
 
 	/* read the file */
 	inside = 0;
@@ -1645,18 +1666,18 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 			inside = 0;
 		/* common */
 		} else if (smatch(s, "Rotation Rate: Solid State") == 0) {
-			smart[SMART_ROTATION_RATE] = 0;
-		} else if (sscanf(s, "Rotation Rate: %" SCNu64, &smart[SMART_ROTATION_RATE]) == 1) {
+			info[INFO_ROTATION_RATE] = 0;
+		} else if (sscanf(s, "Rotation Rate: %" SCNu64, &info[INFO_ROTATION_RATE]) == 1) {
 		} else if (smatch(s, "User Capacity:") == 0) {
 			char* begin = strchr(s, ':');
 			char* end = strstr(s, "bytes");
 			if (begin != 0 && end != 0 && begin < end) {
 				char* p;
-				smart[SMART_SIZE] = 0;
+				info[INFO_SIZE] = 0;
 				for (p = begin; p != end; ++p) {
 					if (isdigit(*p)) {
-						smart[SMART_SIZE] *= 10;
-						smart[SMART_SIZE] += *p - '0';
+						info[INFO_SIZE] *= 10;
+						info[INFO_SIZE] += *p - '0';
 					}
 				}
 			}
