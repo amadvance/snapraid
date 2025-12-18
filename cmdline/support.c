@@ -1660,8 +1660,8 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 					}
 				}
 			}
-		} else if (sscanf(s, "Device Model: %63s %63s", vendor, model) == 2) {
-		} else if (sscanf(s, "Device Model: %63s", model) == 1) {
+		} else if (sscanf(s, "Model Family: %63[^\n]", vendor) == 1) {
+		} else if (sscanf(s, "Device Model: %63[^\n]", model) == 1) {
 		/* SCSI */
 		} else if (sscanf(s, "Serial number: %63s", serial) == 1) { /* note "n" of "number" lower case */
 		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT]) == 1) {
