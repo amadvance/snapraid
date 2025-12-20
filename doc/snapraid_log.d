@@ -963,8 +963,7 @@ Command Smart Tags
 		<size_bytes> - The disk size in bytes (uint64).
 
 	=attr:<device_file>:<disk_name>:error:<error_count>
-		Logs the raw value of the total error count (e.g., from SMART
-		attribute 199, if used for the report).
+		Logs the total error count.
 
 		<error_count> - The total error count (uint64).
 
