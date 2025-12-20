@@ -68,6 +68,31 @@ const char* stat_desc(struct stat* st)
 	return "unknown";
 }
 
+static const char* smartctl_paths[] = {
+    /* Linux & BSD */
+    "/usr/sbin/smartctl",
+    "/sbin/smartctl",
+    "/usr/local/sbin/smartctl",
+    "/usr/bin/smartctl",
+    "/usr/local/bin/smartctl",
+    /* macOS (Intel & Apple Silicon) */
+    "/opt/homebrew/sbin/smartctl",
+    0
+};
+
+const char* find_smartctl(void)
+{
+	const char* paths[] = { "/usr/sbin/smartctl", "/sbin/smartctl", "/usr/bin/smartctl", 0 };
+	int i;
+
+	for (i = 0; smartctl_paths[i]; ++i) {
+		if (access(smartctl_paths[i], X_OK) == 0)
+			return paths[i];
+	}
+
+	return 0;
+}
+
 /**
  * Read a file from sys
  *
@@ -1146,6 +1171,15 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	char file[PATH_MAX];
 	FILE* f;
 	int ret;
+	const char* x;
+	
+	x = find_smartctl();
+	if (!x) {
+		/* LCOV_EXCL_START */
+		log_fatal("Cannot find smartctl.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
@@ -1158,9 +1192,9 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	if (smartctl[0]) {
 		char option[PATH_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "smartctl -a %s", option);
+		snprintf(cmd, sizeof(cmd), "%s -a %s", x, option);
 	} else {
-		snprintf(cmd, sizeof(cmd), "smartctl -a %s", file);
+		snprintf(cmd, sizeof(cmd), "%s -a %s", x, file);
 	}
 
 	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
@@ -1218,6 +1252,15 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	char file[PATH_MAX];
 	FILE* f;
 	int ret;
+	const char* x;
+	
+	x = find_smartctl();
+	if (!x) {
+		/* LCOV_EXCL_START */
+		log_fatal("Cannot find smartctl.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
@@ -1230,9 +1273,9 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	if (smartctl[0]) {
 		char option[PATH_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "smartctl -n standby,3 -i %s", option);
+		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -i %s", x, option);
 	} else {
-		snprintf(cmd, sizeof(cmd), "smartctl -n standby,3 -i %s", file);
+		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -i %s", x, file);
 	}
 
 	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
@@ -1300,6 +1343,15 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	char file[PATH_MAX];
 	FILE* f;
 	int ret;
+	const char* x;
+	
+	x = find_smartctl();
+	if (!x) {
+		/* LCOV_EXCL_START */
+		log_fatal("Cannot find smartctl.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
@@ -1312,9 +1364,9 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	if (smartctl[0]) {
 		char option[PATH_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s", option);
+		snprintf(cmd, sizeof(cmd), "%s -s standby,now %s", x, option);
 	} else {
-		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s", file);
+		snprintf(cmd, sizeof(cmd), "%s -s standby,now %s", x, file);
 	}
 
 	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
