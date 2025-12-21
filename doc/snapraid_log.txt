@@ -358,11 +358,13 @@ disk access.
 
     <temp> - The calculated ambient temperature in degrees Celsius.
 
-    thermal:current:<disk_name>:<device>:<temp>
+    thermal:current:<disk_name>[/<split_number>]:<device>:<temp>
         Logs the most recent temperature reading for a specific disk
         device.
 
-    <disk_name> - The configured name of the disk.
+    <disk_name>[/<split_number>] - The configured name of the disk.
+        In case of multiple splits, the splits after the first
+        one have an extension `/N`, where N starts from 1.
     <device> - The unique device ID (uint64).
     <temp> - The current temperature read from the disk in degrees
         Celsius.
@@ -374,12 +376,11 @@ disk access.
 
     <temp> - The highest temperature observed in degrees Celsius.
 
-    thermal:heat:<disk_name>:<device>:<count>:<data_points>
+    thermal:heat:<disk_name>[/<split_number>]:<device>:<count>:<data_points>
         Logs the entire history of temperature data points collected
         so far for a specific disk, used for fitting the heating model.
         Only monotone increasing temperatures are included in the history.
 
-    <disk_name> - The configured name of the disk.
     <device> - The unique device ID (uint64).
     <count> - The total number of collected data points (uint).
     <data_points> - A comma-separated list of temperature/time pairs.
@@ -388,14 +389,13 @@ disk access.
     <time_offset> - Time offset from the start of the thermal
         monitoring (uint, seconds).
 
-    thermal:params:<disk_name>:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
+    thermal:params:<disk_name>[/<split_number>]:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
         Logs the estimated parameters for the exponential heating model
         (fit using least squares) and associated quality metrics for a
         specific disk.
         The model is: T(t) = T_steady - (T_steady - T_0) e^(-kt),
         where T_0 is the initial temperature.
 
-    <disk_name> - The configured name of the disk.
     <device> - The unique device ID (uint64).
     <k_heat> - The heating rate constant, k (double).
     <t_ambient> - The ambient temperature, T_ambient (double).
@@ -968,28 +968,30 @@ you'll see multiple tags for the same `<disk_name>` but with different
 Tags logging specific disk identification and raw SMART attribute
 values.
 
-    smart:<device_file>:<disk_name>
+    smart:<device_file>:<disk_name>[/<split_number>]
         Logs the start of the SMART report for a device.
 
     <device_file> - The file path of the device (e.g., /dev/sdb).
-    <disk_name> - The configured name of the disk.
+    <disk_name>[/<split_number>] - The configured name of the disk.
+        In case of multiple splits, the splits after the first
+        one have an extension `/N`, where N starts from 1.
 
-    attr:<device_file>:<disk_name>:serial:<serial_number>
+    attr:<device_file>:<disk_name>[/<split_number>]:serial:<serial_number>
         Logs the disk's serial number.
 
     <serial_number> - The disk's serial number (escaped).
 
-    attr:<device_file>:<disk_name>:vendor:<vendor>
+    attr:<device_file>:<disk_name>[/<split_number>]:vendor:<vendor>
         Logs the disk's vendor string.
 
     <vendor> - The disk's vendor identifier (escaped).
 
-    attr:<device_file>:<disk_name>:model:<model>
+    attr:<device_file>:<disk_name>[/<split_number>]:model:<model>
         Logs the disk's model string.
 
     <model> - The disk's model identifier (escaped).
 
-    attr:<device_file>:<disk_name>:afr:<afr_value>:<afr_prob>
+    attr:<device_file>:<disk_name>[/<split_number>]:afr:<afr_value>:<afr_prob>
         Logs the estimated Annual Failure Rate (AFR) and the
         probability of one failure in the next year based on SMART
         attributes. The AFR is calculated using the maximum rate
@@ -999,22 +1001,22 @@ values.
     <afr_prob> - The probability of one or more failures in the
         next year (double).
 
-    attr:<device_file>:<disk_name>:size:<size_bytes>
+    attr:<device_file>:<disk_name>[/<split_number>]:size:<size_bytes>
         Logs the size of the disk.
 
     <size_bytes> - The disk size in bytes (uint64).
 
-    attr:<device_file>:<disk_name>:error:<error_count>
+    attr:<device_file>:<disk_name>[/<split_number>]:error:<error_count>
         Logs the total error count.
 
     <error_count> - The total error count (uint64).
 
-    attr:<device_file>:<disk_name>:rotationrate:<rate>
+    attr:<device_file>:<disk_name>[/<split_number>]:rotationrate:<rate>
         Logs the disk's rotation rate. A value of 0 indicates an SSD.
 
     <rate> - The rotation rate (uint64, RPM).
 
-    attr:<device_file>:<disk_name>:flags:<flags_decimal>:<flags_hex>
+    attr:<device_file>:<disk_name>[/<split_number>]:flags:<flags_decimal>:<flags_hex>
         Logs the SMART status flags from the `smartctl` utility.
         Per the smartctl manpage, these flags are bit-mapped
         to indicate specific issues like "Command line did not parse",
@@ -1024,7 +1026,7 @@ values.
     <flags_decimal> - The raw flags value (uint64, decimal).
     <flags_hex> - The raw flags value (uint64, hexadecimal).
 
-    attr:<device_file>:<disk_name>:<id>:<value_decimal>:<value_hex>
+    attr:<device_file>:<disk_name>[/<split_number>]:<id>:<value_decimal>:<value_hex>
         Logs the raw value of any assigned SMART attribute.
 
     <id> - The SMART attribute ID (uint).
@@ -1052,29 +1054,31 @@ command execution. They are primarily output during the `up`
 (spin-up), `down` (spin-down), and `probe` (power state check)
 commands.
 
-    device:<device_file>:<disk_name>:active
+    device:<device_file>:<disk_name>[/<split_number>]:active
         Logs that the device was confirmed to be in an active power
         state after a status probe.
 
     <device_file> - The system path to the device node.
-    <disk_name> - The SnapRAID internal disk disk_name.
+    <disk_name>[/<split_number>] - The configured name of the disk.
+        In case of multiple splits, the splits after the first
+        one have an extension `/N`, where N starts from 1.
 
-    device:<device_file>:<disk_name>:standby
+    device:<device_file>:<disk_name>[/<split_number>]:standby
         Logs that the device was confirmed to be in a standby/spun-down
         state.
 
-    device:<device_file>:<disk_name>:up
+    device:<device_file>:<disk_name>[/<split_number>]:up
         Logs a successful spin-up operation via direct O_DIRECT
         read.
 
-    device:<device_file>:<disk_name>:down
+    device:<device_file>:<disk_name>[/<split_number>]:down
         Logs a successful spin-down operation initiated via the
         smartctl command.
 
-    device:<device_file>:<disk_name>:shell
+    device:<device_file>:<disk_name>[/<split_number>]:shell
         Logs a failure in the command shell execution environment.
 
-    device:<device_file>:<disk_name>:error:<errno>
+    device:<device_file>:<disk_name>[/<split_number>]:error:<errno>
         Logs a low-level system error during direct file operations.
         This is triggered when open(), read(), or close()
         calls fail during a spin-up attempt.
@@ -1082,12 +1086,12 @@ commands.
     <errno> - The standard integer error number provided by
         the OS.
 
-    device:<device_file>:<disk_name>:error:abort
+    device:<device_file>:<disk_name>[/<split_number>]:error:abort
         Logs that an external process (smartctl) failed to complete
         normally, such as being terminated by a signal rather than
         exiting.
 
-    device:<device_file>:<disk_name>:exit:<exit_code>
+    device:<device_file>:<disk_name>[/<split_number>]:exit:<exit_code>
         Logs that the external command (smartctl) returned a non-zero
         exit code that was not explicitly recognized as a valid state.
 

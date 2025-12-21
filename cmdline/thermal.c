@@ -159,7 +159,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
 		entry->device = disk->device;
-		pathcpy(entry->name, sizeof(entry->name), disk->name);
+		device_name_set(entry, disk->name, 0);
 		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
 		memcpy(entry->smartignore, disk->smartignore, sizeof(entry->smartignore));
@@ -176,7 +176,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 			entry = calloc_nofail(1, sizeof(devinfo_t));
 
 			entry->device = state->parity[j].split_map[s].device;
-			pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
+			device_name_set(entry, lev_config_name(j), s);
 			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
 			memcpy(entry->smartignore, state->parity[j].smartignore, sizeof(entry->smartignore));

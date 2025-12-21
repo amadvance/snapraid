@@ -993,7 +993,7 @@ static dev_t devread(const char* path)
  * Read a device tree filling the specified list of disk_t entries.
  */
 #if HAVE_LINUX_DEVICE
-static int devtree(const char* name, const char* smartctl, const int* smartignore, dev_t device, devinfo_t* parent, tommy_list* list)
+static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
 {
 	char path[PATH_MAX];
 	DIR* d;
@@ -1021,7 +1021,7 @@ static int devtree(const char* name, const char* smartctl, const int* smartignor
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(name, smartctl, smartignore, subdev, parent, list) != 0) {
+				if (devtree(parent, subdev, list) != 0) {
 					/* LCOV_EXCL_START */
 					closedir(d);
 					return -1;
@@ -1065,9 +1065,9 @@ static int devtree(const char* name, const char* smartctl, const int* smartignor
 		devinfo = calloc_nofail(1, sizeof(devinfo_t));
 
 		devinfo->device = device;
-		pathcpy(devinfo->name, sizeof(devinfo->name), name);
-		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), smartctl);
-		memcpy(devinfo->smartignore, smartignore, sizeof(devinfo->smartignore));
+		pathcpy(devinfo->name, sizeof(devinfo->name), parent->name);
+		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), parent->smartctl);
+		memcpy(devinfo->smartignore, parent->smartignore, sizeof(devinfo->smartignore));
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
 		devinfo->parent = parent;
 
@@ -1713,7 +1713,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		}
 
 		/* expand the tree of devices */
-		if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, device, devinfo, low) != 0) {
+		if (devtree(devinfo, device, low) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to expand device '%u:%u'.\n", major(device), minor(device));
 			return -1;
