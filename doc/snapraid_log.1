@@ -1472,13 +1472,13 @@ The disk\'s serial number (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:vendor:<vendor>
-Logs the disk\'s vendor string.
+.B attr:<device_file>:<disk_name>[/<split_number>]:family:<family>
+Logs the disk\'s model family string.
 .RS 4
 .PD 0
 .HP 4
-.I <vendor>
-The disk\'s vendor identifier (escaped).
+.I <family>
+The disk\'s vendor and model family identifier (escaped).
 .PD
 .RE
 .TP
@@ -1530,12 +1530,16 @@ The total error count (uint64).
 .RE
 .TP
 .B attr:<device_file>:<disk_name>[/<split_number>]:rotationrate:<rate>
-Logs the disk\'s rotation rate. A value of 0 indicates an SSD.
+Logs the disk\'s rotation rate.
 .RS 4
 .PD 0
 .HP 4
 .I <rate>
-The rotation rate (uint64, RPM).
+The rotation rate. A value of 0 indicates a
+solid\-state drive (SSD) or other non\-rotating medium.
+A value of 1 indicates a rotational disk of unknown
+precise speed. Values greater than 1 indicate the
+rotational speed in RPM.
 .PD
 .RE
 .TP

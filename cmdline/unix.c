@@ -1697,7 +1697,7 @@ static void* thread_smart(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1718,7 +1718,7 @@ static void* thread_probe(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1730,7 +1730,7 @@ static void* thread_probe(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model);
+	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
 
 	return 0;
 #else

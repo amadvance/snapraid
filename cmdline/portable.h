@@ -441,10 +441,15 @@ int randomize(void* ptr, size_t size);
 /**
  * Standard SMART attributes.
  */
-#define SMART_START_STOP_COUNT 4
 #define SMART_REALLOCATED_SECTOR_COUNT 5
+#define SMART_UNCORRECTABLE_ERROR_CNT 187
+#define SMART_COMMAND_TIMEOUT 188
+#define SMART_CURRENT_PENDING_SECTOR 197
+#define SMART_OFFLINE_UNCORRECTABLE 198
+#define SMART_START_STOP_COUNT 4
 #define SMART_POWER_ON_HOURS 9
 #define SMART_AIRFLOW_TEMPERATURE_CELSIUS 190
+#define SMART_LOAD_CYCLE_COUNT 193
 #define SMART_TEMPERATURE_CELSIUS 194
 
 #define SMART_FLAGS 256 /**< Flags returned by smartctl. */
@@ -516,7 +521,7 @@ struct devinfo_struct {
 	uint64_t smart[SMART_COUNT]; /**< SMART attributes. */
 	uint64_t info[INFO_COUNT]; /**< Info attributes. */
 	char serial[SMART_MAX]; /**< Serial number. */
-	char vendor[SMART_MAX]; /**< Vendor. */
+	char family[SMART_MAX]; /**< Family. */
 	char model[SMART_MAX]; /**< Model. */
 	int power; /**< POWER mode. */
 #if HAVE_THREAD

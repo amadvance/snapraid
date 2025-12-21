@@ -984,10 +984,10 @@ Tags logging specific disk identification and attribute values.
 
     <serial_number> - The disk's serial number (escaped).
 
-    attr:<device_file>:<disk_name>[/<split_number>]:vendor:<vendor>
-        Logs the disk's vendor string.
+    attr:<device_file>:<disk_name>[/<split_number>]:family:<family>
+        Logs the disk's model family string.
 
-    <vendor> - The disk's vendor identifier (escaped).
+    <family> - The disk's vendor and model family identifier (escaped).
 
     attr:<device_file>:<disk_name>[/<split_number>]:model:<model>
         Logs the disk's model string.
@@ -1015,9 +1015,13 @@ Tags logging specific disk identification and attribute values.
     <error_count> - The total error count (uint64).
 
     attr:<device_file>:<disk_name>[/<split_number>]:rotationrate:<rate>
-        Logs the disk's rotation rate. A value of 0 indicates an SSD.
+        Logs the disk's rotation rate.
 
-    <rate> - The rotation rate (uint64, RPM).
+    <rate> - The rotation rate. A value of 0 indicates a
+        solid-state drive (SSD) or other non-rotating medium.
+        A value of 1 indicates a rotational disk of unknown
+        precise speed. Values greater than 1 indicate the
+        rotational speed in RPM.
 
     attr:<device_file>:<disk_name>[/<split_number>]:flags:<flags_decimal>:<flags_hex>
         Logs the SMART status flags from the `smartctl` utility.

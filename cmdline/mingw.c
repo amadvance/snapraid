@@ -2921,7 +2921,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -2937,7 +2937,7 @@ static void* thread_probe(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
