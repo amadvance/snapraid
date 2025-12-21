@@ -550,8 +550,8 @@ static void state_info_log(devinfo_t* devinfo)
 	log_tag("info:%s:%s\n", devinfo->file, devinfo->name);
 	if (devinfo->serial[0])
 		log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->serial, esc_buffer));
-	if (devinfo->vendor[0])
-		log_tag("attr:%s:%s:vendor:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->vendor, esc_buffer));
+	if (devinfo->family[0])
+		log_tag("attr:%s:%s:family:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->family, esc_buffer));
 	if (devinfo->model[0])
 		log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->model, esc_buffer));
 	if (devinfo->info[INFO_SIZE] != SMART_UNASSIGNED)
@@ -887,7 +887,7 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		}
 
 		pathprint(entry->serial, sizeof(entry->serial), "FAKE_%s", devinfo->serial);
-		pathprint(entry->vendor, sizeof(entry->vendor), "FAKE_%s", devinfo->vendor);
+		pathprint(entry->family, sizeof(entry->family), "FAKE_%s", devinfo->family);
 		pathprint(entry->model, sizeof(entry->model), "FAKE_%s", devinfo->model);
 		pathprint(entry->file, sizeof(entry->file), "FAKE_%s", devinfo->file);
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
