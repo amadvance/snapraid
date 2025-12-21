@@ -716,6 +716,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			skip_access = 0;
 			state->parity[level].split_mac = split_mac;
 			for (s = 0; s < split_mac; ++s) {
+				char uuid[UUID_MAX];
 				pathimport(state->parity[level].split_map[s].path, sizeof(state->parity[level].split_map[s].path), split_map[s]);
 
 				if (!state->opt.skip_parity_access) {
@@ -731,11 +732,17 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 					if (stat(device, &st) == 0) {
 						dev = st.st_dev;
+						
+						/* read the uuid, if unsupported use an empty one */
+						if (devuuid(dev, split_map[s], uuid, sizeof(uuid)) != 0) {
+							*uuid = 0;
+						}
 					} else {
 						/* if the disk can be skipped */
 						if (state->opt.force_device) {
 							/* use a fake device, and mark the disk to be skipped */
 							dev = 0;
+							*uuid = 0;
 							skip_access = 1;
 							log_fatal("DANGER! Skipping inaccessible parity disk '%s'...\n", tag);
 						} else {
@@ -753,9 +760,11 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				} else {
 					/* use a fake device */
 					dev = 0;
+					*uuid = 0;
 				}
 
 				state->parity[level].split_map[s].device = dev;
+				pathcpy(state->parity[level].split_map[s].uuid, sizeof(state->parity[level].split_map[s].uuid), uuid);
 			}
 
 			/* store the global parity skip_access */
@@ -1369,13 +1378,16 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	log_tag("blocksize:%u\n", state->block_size);
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		log_tag("data:%s:%s\n", disk->name, disk->dir);
+		log_tag("data:%s:%s:%s\n", disk->name, disk->dir, disk->uuid);
 	}
 
 	log_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
-	for (l = 0; l < state->level; ++l)
-		for (s = 0; s < state->parity[l].split_mac; ++s)
-			log_tag("%s:%u:%s\n", lev_config_name(l), s, state->parity[l].split_map[s].path);
+	for (l = 0; l < state->level; ++l) {
+		log_tag("%s:%s:%s\n", lev_config_name(l), state->parity[l].split_map[0].path, state->parity[l].split_map[0].uuid);
+		for (s = 1; s < state->parity[l].split_mac; ++s) {
+			log_tag("%s/%u:%s:%s\n", lev_config_name(l), s, state->parity[l].split_map[s].path, state->parity[l].split_map[s].uuid);
+		}
+	}
 	if (state->pool[0] != 0)
 		log_tag("pool:%s\n", state->pool);
 	if (state->share[0] != 0)
@@ -1601,7 +1613,7 @@ static void state_map(struct snapraid_state* state)
 					if (state->parity[l].split_map[s].uuid[0] != 0) {
 						/* count the number of uuid change */
 						++uuid_mismatch;
-						log_fatal("UUID change for parity '%s[%u]' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].uuid, uuid);
+						log_fatal("UUID change for parity '%s/%u' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].uuid, uuid);
 					}
 
 					/* update the uuid */
@@ -2703,6 +2715,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
+
+				log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+					buffer,
+					v_total_blocks * (uint64_t)state->block_size,
+					v_free_blocks * (uint64_t)state->block_size);
 			} else {
 				v_total_blocks = 0;
 				v_free_blocks = 0;
@@ -2718,11 +2735,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* log the info read from the content file */
-			log_tag("content_disk:%s:%" PRIu64 ":%" PRIu64 ":%u:%s\n",
+			log_tag("content_data:%s:%s\n",
 				buffer,
-				v_total_blocks * (uint64_t)state->block_size,
-				v_free_blocks * (uint64_t)state->block_size,
-				v_pos,
 				uuid);
 
 			/* find the disk */
@@ -2805,6 +2819,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+				lev_config_name(v_level),
+				v_total_blocks * (uint64_t)state->block_size,
+				v_free_blocks * (uint64_t)state->block_size);
+
 			/* auto configure if configuration is missing */
 			if (state->no_conf) {
 				if (v_level >= state->level)
@@ -2822,11 +2841,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				state->parity[v_level].free_blocks = v_free_blocks;
 
 				/* log the info read from the content file */
-				log_tag("content_parity:%s:%" PRIu64 ":%" PRIu64 ":%u:%s:%s:%" PRIi64 "\n",
+				log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
 					lev_config_name(v_level),
-					v_total_blocks * (uint64_t)state->block_size,
-					v_free_blocks * (uint64_t)state->block_size,
-					0,
 					state->parity[v_level].split_map[0].uuid,
 					state->parity[v_level].split_map[0].path,
 					state->parity[v_level].split_map[0].size);
@@ -2894,6 +2910,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				state->parity[v_level].free_blocks = v_free_blocks;
 			}
 
+			log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+				lev_config_name(v_level),
+				v_total_blocks * (uint64_t)state->block_size,
+				v_free_blocks * (uint64_t)state->block_size);
+
 			for (s = 0; s < v_split_mac; ++s) {
 				char v_path[PATH_MAX];
 				char v_uuid[UUID_MAX];
@@ -2940,6 +2961,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* otherwise we can drop it */
 						log_fatal("WARNING! Dropping from '%s' unused split '%u'\n", lev_config_name(v_level), s);
 					} else {
+						char parity_name[64];
+
 						/* we copy the path only if without configuration file */
 						if (state->no_conf)
 							pathcpy(state->parity[v_level].split_map[s].path, sizeof(state->parity[v_level].split_map[s].path), v_path);
@@ -2949,11 +2972,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						state->parity[v_level].split_map[s].size = v_size;
 
 						/* log the info read from the content file */
-						log_tag("content_parity:%s:%" PRIu64 ":%" PRIu64 ":%u:%s:%s:%" PRIi64 "\n",
-							lev_config_name(v_level), 
-							v_total_blocks * (uint64_t)state->block_size,
-							v_free_blocks * (uint64_t)state->block_size,
-							s,
+						if (s == 0) 
+							pathcpy(parity_name, sizeof(parity_name), lev_config_name(v_level));
+						else
+							pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(v_level), s);
+						log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
+							parity_name,
 							state->parity[v_level].split_map[s].uuid,
 							state->parity[v_level].split_map[s].path,
 							state->parity[v_level].split_map[s].size);

@@ -331,7 +331,7 @@ struct snapraid_disk {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
-	char uuid[UUID_MAX]; /**< UUID of the disk. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
 
 	uint64_t device; /**< Device identifier. */
 	block_off_t total_blocks; /**< Number of total blocks. */
@@ -422,7 +422,7 @@ struct snapraid_disk {
  */
 struct snapraid_map {
 	char name[PATH_MAX]; /**< Name of the disk. */
-	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. They are read from the content file. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at last 'sync'. */
 	unsigned position; /**< Position of the disk in the parity. */
@@ -453,7 +453,7 @@ struct snapraid_map {
  */
 struct snapraid_split {
 	char path[PATH_MAX]; /**< Path of the parity file. */
-	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. They are probed during the config reading, and later read from the content file. */
 
 	/**
 	 * Size of the parity split.
