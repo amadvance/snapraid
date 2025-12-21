@@ -96,7 +96,7 @@ const char* find_smartctl(void)
 /**
  * Read a file from sys
  *
- * Return -1 on error, otherwise the data read
+ * Return -1 on error, otherwise the size of data read
  */
 #if HAVE_LINUX_DEVICE
 static int sysread(const char* path, char* buf, size_t buf_size)
@@ -108,7 +108,6 @@ static int sysread(const char* path, char* buf, size_t buf_size)
 	f = open(path, O_RDONLY);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to open '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -117,7 +116,6 @@ static int sysread(const char* path, char* buf, size_t buf_size)
 	if (len < 0) {
 		/* LCOV_EXCL_START */
 		close(f);
-		log_fatal("Failed to read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -125,17 +123,45 @@ static int sysread(const char* path, char* buf, size_t buf_size)
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to close '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (len == (int)buf_size)
-		buf[buf_size - 1] = 0;
-	else
-		buf[len] = 0;
-
 	return len;
+}
+#endif
+
+/**
+ * Read a file from sys. 
+ * Trim spaces.
+ * Always put an ending 0.
+ * Do not report error on reading.
+ *
+ * Return 0 on error, otherwise a pointer to buf
+ */
+#if HAVE_LINUX_DEVICE
+static char* sysattr(const char* path, char* buf, size_t buf_size)
+{
+	int len;
+
+	len = sysread(path, buf, buf_size);
+	if (len < 0) {
+		/* LCOV_EXCL_START */
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if ((size_t)len + 1 > buf_size) {
+		/* LCOV_EXCL_START */
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	buf[len] = 0;
+
+	strtrim(buf);
+
+	return buf;
 }
 #endif
 
@@ -326,14 +352,21 @@ static int tagread(const char* path, const char* tag, char* value, size_t value_
 	char* e;
 
 	ret = sysread(path, buf, sizeof(buf));
-	if (ret < 0)
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to read '%s'.\n", path);
 		return -1;
-	if (ret == sizeof(buf)) {
+		/* LCOV_EXCL_STOP */
+	}
+	if ((size_t)ret + 1 > sizeof(buf)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Too long read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* ending 0 */
+	buf[ret] = 0;
 
 	tag_len = strlen(tag);
 
@@ -1243,6 +1276,75 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 #endif
 
 /**
+ * Get device attributes.
+ */
+#if HAVE_LINUX_DEVICE
+static void devattr(dev_t device, uint64_t* info, char* serial, char* vendor, char* model)
+{
+	char path[PATH_MAX];
+	char buf[512];
+	int ret;
+	char* attr;
+	
+	(void)vendor; /* the vendor file typically contains "ATA" */
+
+	if (info[INFO_SIZE] == SMART_UNASSIGNED) {
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/size", major(device), minor(device));
+		attr = sysattr(path, buf, sizeof(buf));
+		if (attr) {
+			char* e;
+			uint64_t v;
+			v = strtoul(attr, &e, 10);
+			if (*e == 0)
+				info[INFO_SIZE] = v * 512;
+		}
+	}
+
+	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED) {
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/queue/rotational", major(device), minor(device));
+		attr = sysattr(path, buf, sizeof(buf));
+		if (attr) {
+			char* e;
+			uint64_t v;
+			v = strtoul(attr, &e, 10);
+			if (*e == 0)
+				info[INFO_ROTATION_RATE] = v;
+		}
+	}
+
+	if (*model == 0) {
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/model", major(device), minor(device));
+		attr = sysattr(path, buf, sizeof(buf));
+		if (attr && *attr)
+			pathcpy(model, SMART_MAX, attr);
+	}
+
+	if (*serial == 0) {
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/serial", major(device), minor(device));
+		attr = sysattr(path, buf, sizeof(buf));
+		if (attr && *attr)
+			pathcpy(serial, SMART_MAX, attr);
+	}
+
+	if (*serial == 0) {
+		// --- Page 0x80: Unit Serial Number ---
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/vpd_pg80", major(device), minor(device));
+		ret = sysread(path, buf, sizeof(buf));
+		if (ret > 4) {
+			unsigned len = (unsigned char)buf[3];
+			if (4 + len <= (size_t)ret && 4 + len + 1 <= sizeof(buf)) {
+				attr = buf + 4;
+				attr[len] = 0;
+				strtrim(attr);
+				if (*attr)
+					pathcpy(serial, SMART_MAX, attr);
+			}
+		}
+	}
+}
+#endif
+
+/**
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
@@ -1622,6 +1724,14 @@ static void* thread_probe(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
+	/*
+	 * Retrieve some attributes directly from the system.
+	 *
+	 * smartctl intentionally skips queries on devices in standby mode
+	 * to prevent accidentally spinning them up.
+	 */
+	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->vendor, devinfo->model);
+
 	return 0;
 #else
 	(void)arg;
@@ -1907,7 +2017,6 @@ int ambient_temperature(void)
 			char name[128];
 			char label[128];
 			char* dash;
-			int ret;
 			char* e;
 			int temp;
 
@@ -1924,8 +2033,7 @@ int ambient_temperature(void)
 			/* read the temperature */
 			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s", entry->d_name, hwmon_entry->d_name);
 
-			ret = sysread(path, value, sizeof(value));
-			if (ret < 0)
+			if (!sysattr(path, value, sizeof(value)))
 				continue;
 
 			temp = strtol(value, &e, 10) / 1000;
@@ -1937,23 +2045,17 @@ int ambient_temperature(void)
 
 			/* read the corresponding name */
 			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/name", entry->d_name);
-			ret = sysread(path, name, sizeof(name));
-			if (ret < 0) {
+			if (!sysattr(path, name, sizeof(name))) {
 				/* fallback to using the hwmon entry */
 				pathcpy(name, sizeof(name), entry->d_name);
 			}
 
 			/* read the corresponding label file */
 			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s_label", entry->d_name, hwmon_entry->d_name);
-			ret = sysread(path, label, sizeof(label));
-			if (ret < 0) {
+			if (!sysattr(path, label, sizeof(label))) {
 				/* fallback to using the temp* name (e.g., temp1, temp2) */
 				pathcpy(label, sizeof(label), hwmon_entry->d_name);
 			}
-
-			/* trim spaces */
-			strtrim(name);
-			strtrim(label);
 
 			log_tag("thermal:ambient:device:%s:%s:%s:%s:%d\n", entry->d_name, name, hwmon_entry->d_name, label, temp);
 
