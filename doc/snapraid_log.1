@@ -83,7 +83,7 @@ Operating without a configuration file.
 .B blocksize:<bytes>
 The configured block size in bytes (uint).
 .TP
-.B data:<disk_name>:<dir>
+.B data:<disk_name>:<dir>:<uuid>
 The data disks as defined in the configuration file.
 .RS 4
 .PD 0
@@ -93,6 +93,9 @@ The assigned name of the disk.
 .HP 4
 .I <dir>
 The directory entry point of the disk.
+.HP 4
+.I <uuid>
+The UUID of the filesystem containing the dir.
 .PD
 .RE
 .TP
@@ -101,23 +104,23 @@ The RAID mode used. One of \`par1\`, \`par2\`, \`par3\`, \`par4\`,
 \`par5\`, \`par6\` or \`parz\`. The number indicates the maximum
 number of simultaneous disk failures the array can withstand.
 .TP
-.B <parity_level>:<split_index>:<path>
+.B <parity_level>[/<split_index>]:<path>:<uuid>
 The parity files as defined in the configuration file.
 .RS 4
 .PD 0
 .HP 4
-.I <parity_level>
-One of \`parity\`, \`2\-parity\`, ..., \`6\-parity\`.
-This corresponds to the level of redundancy.
-.HP 4
-.I <split_index>
-The split index (uint). If no
-multiple split parity is configured, there is only the
-index 0. A split parity configuration distributes parity
-blocks across multiple files.
+.I <parity_level>[/<split_index>]
+One of \`parity\`, \`2\-parity\`,
+..., \`6\-parity\`. This corresponds to the level of redundancy.
+In case of split parity, the parity name is followed
+by \`/N\` to indicate the split index, where N starts
+from 0. The \`/0\` is always omitted.
 .HP 4
 .I <path>
 The path (escaped).
+.HP 4
+.I <uuid>
+The UUID of the filesystem containing the path.
 .PD
 .RE
 .TP
@@ -146,40 +149,31 @@ The absolute path to a content file being used (escaped).
 Content files store the metadata (like file hashes and timestamps)
 for the array.
 .TP
-.B content_parity:<parity_level>:<size>:<free_size>:<split_index>:<uuid>:<path>:<file_size>
+.B content_parity:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
 The parity files as stored in the content file.
 .RS 4
 .PD 0
 .HP 4
-.I <parity_level>
-One of \`parity\`, \`2\-parity\`, ..., \`6\-parity\`.
-.HP 4
-.I <size>
-The size of the data in the disk.
-.HP 4
-.I <free_size>
-The free size in the disk at the time of the
-latest \`sync\`.
-.HP 4
-.I <split_index>
-The split index (uint). If no
-multiple split parity is configured, there is only the
-index 0.
+.I <parity_level>[/<split_index>]
+One of \`parity\`, \`2\-parity\`,
+..., \`6\-parity\`. This corresponds to the level of redundancy.
+In case of split parity, the parity name is followed
+by \`/N\` to indicate the split index, where N starts
+from 0. The \`/0\` is always omitted.
 .HP 4
 .I <uuid>
-The UUID of the disk containing the path.
+The UUID of the disk containing the path as stored
+in the content file.
 .HP 4
 .I <path>
 The path (escaped).
 .HP 4
-.I <file_size>
-The size of the parity file. Size is \-1 if not yet
-fixed, meaning it can grow. This happens for the
-latest split.
+.I <size>
+The size of the parity file (uint64).
 .PD
 .RE
 .TP
-.B content_disk:<disk_name>:<size>:<free_size>:<parity_index>:<uuid>
+.B content_data:<disk_name>:<uuid>
 The data disk as stored in the content file.
 .RS 4
 .PD 0
@@ -187,18 +181,25 @@ The data disk as stored in the content file.
 .I <disk_name>
 Name of the data disk.
 .HP 4
+.I <uuid>
+The UUID of the disk filesystem as stored in the
+content file.
+.PD
+.RE
+.TP
+.B content_allocation:<disk_name>:<size>:<free_size>
+The size of disk and parity as stored in the content file.
+.RS 4
+.PD 0
+.HP 4
+.I <disk_name>
+Name of the data or parity disk.
+.HP 4
 .I <size>
-The size of the data in the disk.
+The size of the data in the disk or parity (uint64).
 .HP 4
 .I <free_size>
-The free size in the disk at the time of the
-latest \`sync\`.
-.HP 4
-.I <parity_index>
-The disk position in the parity computation.
-.HP 4
-.I <uuid>
-The UUID of the disk filesystem.
+The free size in the disk or parity (uint64).
 .PD
 .RE
 .SH DIAGNOSTICS TAGS 
@@ -504,16 +505,16 @@ The calculated ambient temperature in degrees Celsius.
 .PD
 .RE
 .TP
-.B thermal:current:<disk_name>[/<split_number>]:<device>:<temp>
+.B thermal:current:<disk_name>[/<split_index>]:<device>:<temp>
 Logs the most recent temperature reading for a specific disk
 device.
 .RS 4
 .PD 0
 .HP 4
-.I <disk_name>[/<split_number>]
+.I <disk_name>[/<split_index>]
 The configured name of the disk.
 In case of split parity, the parity name is followed
-by \`/N\` to indicate the split number, where N starts
+by \`/N\` to indicate the split index, where N starts
 from 0. The \`/0\` is always omitted.
 .HP 4
 .I <device>
@@ -537,7 +538,7 @@ The highest temperature observed in degrees Celsius.
 .PD
 .RE
 .TP
-.B thermal:heat:<disk_name>[/<split_number>]:<device>:<count>:<data_points>
+.B thermal:heat:<disk_name>[/<split_index>]:<device>:<count>:<data_points>
 Logs the entire history of temperature data points collected
 so far for a specific disk, used for fitting the heating model.
 Only monotone increasing temperatures are included in the history.
@@ -563,7 +564,7 @@ monitoring (uint, seconds).
 .PD
 .RE
 .TP
-.B thermal:params:<disk_name>[/<split_number>]:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
+.B thermal:params:<disk_name>[/<split_index>]:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
 Logs the estimated parameters for the exponential heating model
 (fit using least squares) and associated quality metrics for a
 specific disk.
@@ -1442,11 +1443,11 @@ in case the logical disk uses more physical disks. In such a case,
 you\'ll see multiple tags for the same \`<disk_name>\` but with different
 \`<device_file>\`.
 In case of split parity, the parity name is followed by \`/N\` to indicate
-the split number, where N starts from 0. The \`/0\` is always omitted.
+the split index, where N starts from 0. The \`/0\` is always omitted.
 .SS Attributes 
 Tags logging specific disk identification and attribute values.
 .TP
-.B smart:<device_file>:<disk_name>[/<split_number>]
+.B smart:<device_file>:<disk_name>[/<split_index>]
 Logs the start of the SMART report for a device.
 .RS 4
 .PD 0
@@ -1454,15 +1455,15 @@ Logs the start of the SMART report for a device.
 .I <device_file>
 The file path of the device (e.g., /dev/sdb).
 .HP 4
-.I <disk_name>[/<split_number>]
+.I <disk_name>[/<split_index>]
 The configured name of the disk.
 In case of split parity, the parity name is followed
-by \`/N\` to indicate the split number, where N starts
+by \`/N\` to indicate the split index, where N starts
 from 0. The \`/0\` is always omitted.
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:serial:<serial_number>
+.B attr:<device_file>:<disk_name>[/<split_index>]:serial:<serial_number>
 Logs the disk\'s serial number.
 .RS 4
 .PD 0
@@ -1472,7 +1473,7 @@ The disk\'s serial number (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:family:<family>
+.B attr:<device_file>:<disk_name>[/<split_index>]:family:<family>
 Logs the disk\'s model family string.
 .RS 4
 .PD 0
@@ -1482,7 +1483,7 @@ The disk\'s vendor and model family identifier (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:model:<model>
+.B attr:<device_file>:<disk_name>[/<split_index>]:model:<model>
 Logs the disk\'s model string.
 .RS 4
 .PD 0
@@ -1492,7 +1493,7 @@ The disk\'s model identifier (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:afr:<afr_value>:<afr_prob>
+.B attr:<device_file>:<disk_name>[/<split_index>]:afr:<afr_value>:<afr_prob>
 Logs the estimated Annual Failure Rate (AFR) and the
 probability of one failure in the next year based on SMART
 attributes. The AFR is calculated using the maximum rate
@@ -1509,7 +1510,7 @@ next year (double).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:size:<size_bytes>
+.B attr:<device_file>:<disk_name>[/<split_index>]:size:<size_bytes>
 Logs the size of the disk.
 .RS 4
 .PD 0
@@ -1519,7 +1520,7 @@ The disk size in bytes (uint64).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:error:<error_count>
+.B attr:<device_file>:<disk_name>[/<split_index>]:error:<error_count>
 Logs the total error count.
 .RS 4
 .PD 0
@@ -1529,7 +1530,7 @@ The total error count (uint64).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:rotationrate:<rate>
+.B attr:<device_file>:<disk_name>[/<split_index>]:rotationrate:<rate>
 Logs the disk\'s rotation rate.
 .RS 4
 .PD 0
@@ -1543,7 +1544,7 @@ rotational speed in RPM.
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:flags:<flags_decimal>:<flags_hex>
+.B attr:<device_file>:<disk_name>[/<split_index>]:flags:<flags_decimal>:<flags_hex>
 Logs the SMART status flags from the \`smartctl\` utility.
 Per the smartctl manpage, these flags are bit\-mapped
 to indicate specific issues like \[dq]Command line did not parse\[dq],
@@ -1560,7 +1561,7 @@ The raw flags value (uint64, hexadecimal).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:<id>:<value_decimal>:<value_hex>
+.B attr:<device_file>:<disk_name>[/<split_index>]:<id>:<value_decimal>:<value_hex>
 Logs the raw value of any assigned SMART attribute.
 .RS 4
 .PD 0
@@ -1576,19 +1577,19 @@ The raw attribute value (uint64, hexadecimal).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:power:active
+.B attr:<device_file>:<disk_name>[/<split_index>]:power:active
 Logs that the device was confirmed to be in an active power
 state after a status probe.
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:power:standby
+.B attr:<device_file>:<disk_name>[/<split_index>]:power:standby
 Logs that the device was confirmed to be in a standby/spun\-down
 state.
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:power:up
+.B attr:<device_file>:<disk_name>[/<split_index>]:power:up
 Logs a successful spin\-up operation via direct O_DIRECT
 read.
 .TP
-.B attr:<device_file>:<disk_name>[/<split_number>]:power:down
+.B attr:<device_file>:<disk_name>[/<split_index>]:power:down
 Logs a successful spin\-down operation initiated via the
 smartctl command.
 .SS Summary 
@@ -1615,7 +1616,7 @@ the next year (double).
 These tags log the lifecycle of hardware interactions and external
 command execution with the \`smartctl\` command.
 .TP
-.B device:<device_file>:<disk_name>[/<split_number>]:shell
+.B device:<device_file>:<disk_name>[/<split_index>]:shell
 Logs a failure in the command shell execution environment.
 .RS 4
 .PD 0
@@ -1623,15 +1624,15 @@ Logs a failure in the command shell execution environment.
 .I <device_file>
 The system path to the device node.
 .HP 4
-.I <disk_name>[/<split_number>]
+.I <disk_name>[/<split_index>]
 The configured name of the disk.
 In case of split parity, the parity name is followed
-by \`/N\` to indicate the split number, where N starts
+by \`/N\` to indicate the split index, where N starts
 from 0. The \`/0\` is always omitted.
 .PD
 .RE
 .TP
-.B device:<device_file>:<disk_name>[/<split_number>]:error:<errno>
+.B device:<device_file>:<disk_name>[/<split_index>]:error:<errno>
 Logs a low\-level system error during direct file operations.
 This is triggered when open(), read(), or close()
 calls fail during a spin\-up attempt.
@@ -1644,12 +1645,12 @@ the OS.
 .PD
 .RE
 .TP
-.B device:<device_file>:<disk_name>[/<split_number>]:error:abort
+.B device:<device_file>:<disk_name>[/<split_index>]:error:abort
 Logs that an external process (smartctl) failed to complete
 normally, such as being terminated by a signal rather than
 exiting.
 .TP
-.B device:<device_file>:<disk_name>[/<split_number>]:exit:<exit_code>
+.B device:<device_file>:<disk_name>[/<split_index>]:exit:<exit_code>
 Logs that the external command (smartctl) returned a non\-zero
 exit code that was not explicitly recognized as a valid state.
 .RS 4
