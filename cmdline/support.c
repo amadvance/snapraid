@@ -1639,7 +1639,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 	for (i = 0; i < SMART_COUNT; ++i)
 		smart[i] = SMART_UNASSIGNED;
 	for (i = 0; i < INFO_COUNT; ++i)
-		info[i] = SMART_UNASSIGNED;		
+		info[i] = SMART_UNASSIGNED;
 
 	/* read the file */
 	inside = 0;
