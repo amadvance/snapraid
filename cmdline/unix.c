@@ -1221,7 +1221,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:error:abort\n", file, name);
+		log_tag("device:%s:%s:abort\n", file, name);
 		log_fatal("Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -1314,11 +1314,12 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
 	if (WEXITSTATUS(ret) == 0) {
-		log_tag("device:%s:%s:active\n", file, name);
+		log_tag("attr:%s:%s:power:active\n", file, name);
 		*power = POWER_ACTIVE;
 	} else if (WEXITSTATUS(ret) == 3) {
-		log_tag("device:%s:%s:standby\n", file, name);
+		log_tag("attr:%s:%s:power:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
 		/* LCOV_EXCL_START */
@@ -1413,7 +1414,7 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 		/* LCOV_EXCL_STOP */
 	}
 
-	log_tag("device:%s:%s:down\n", file, name);
+	log_tag("attr:%s:%s:power:down\n", file, name);
 
 	return 0;
 }
@@ -1494,7 +1495,7 @@ static int devup(dev_t device, const char* name)
 		/* LCOV_EXCL_STOP */
 	}
 
-	log_tag("device:%s:%s:up\n", file, name);
+	log_tag("attr:%s:%s:power:up\n", file, name);
 
 	free(buf);
 	return 0;
