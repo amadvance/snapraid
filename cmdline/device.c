@@ -21,6 +21,14 @@
 #include "state.h"
 #include "raid/raid.h"
 
+void device_name_set(devinfo_t* dev, const char* name, int index)
+{
+	if (index == 0)
+		pathcpy(dev->name, sizeof(dev->name), name);
+	else
+		pathprint(dev->name, sizeof(dev->name), "%s/%d", name, index);
+}
+
 /**
  * The following are Failure Rate tables computed from the data that
  * BackBlaze made available at:
@@ -881,7 +889,7 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		pathprint(entry->serial, sizeof(entry->serial), "FAKE_%s", devinfo->serial);
 		pathprint(entry->vendor, sizeof(entry->vendor), "FAKE_%s", devinfo->vendor);
 		pathprint(entry->model, sizeof(entry->model), "FAKE_%s", devinfo->model);
-		pathprint(entry->file, sizeof(entry->name), "FAKE_%s", devinfo->file);
+		pathprint(entry->file, sizeof(entry->file), "FAKE_%s", devinfo->file);
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
 		entry->info[INFO_SIZE] = count * TERA;
 		entry->info[INFO_ROTATION_RATE] = 7200;
@@ -934,7 +942,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
 		entry->device = disk->device;
-		pathcpy(entry->name, sizeof(entry->name), disk->name);
+		device_name_set(entry, disk->name, 0);
 		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
 		memcpy(entry->smartignore, disk->smartignore, sizeof(entry->smartignore));
@@ -954,7 +962,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 			entry = calloc_nofail(1, sizeof(devinfo_t));
 
 			entry->device = state->parity[j].split_map[s].device;
-			pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
+			device_name_set(entry, lev_config_name(j), s);
 			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
 			memcpy(entry->smartignore, state->parity[j].smartignore, sizeof(entry->smartignore));

@@ -2312,7 +2312,7 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 /**
  * Read a device tree filling the specified list of disk_t entries.
  */
-static int devtree(const char* name, const char* smartctl, const int* smartignore, const char* wfile, devinfo_t* parent, tommy_list* list)
+static int devtree(devinfo_t* parent, tommy_list* list)
 {
 	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
@@ -2325,7 +2325,7 @@ static int devtree(const char* name, const char* smartctl, const int* smartignor
 	DWORD i;
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	h = CreateFileW(convert(conv_buf, parent->wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -2360,9 +2360,9 @@ static int devtree(const char* name, const char* smartctl, const int* smartignor
 
 		devinfo = calloc_nofail(1, sizeof(devinfo_t));
 
-		pathcpy(devinfo->name, sizeof(devinfo->name), name);
-		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), smartctl);
-		memcpy(devinfo->smartignore, smartignore, sizeof(devinfo->smartignore));
+		pathcpy(devinfo->name, sizeof(devinfo->name), parent->name);
+		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), parent->smartctl);
+		memcpy(devinfo->smartignore, parent->smartignore, sizeof(devinfo->smartignore));
 		devinfo->device = vde->Extents[i].DiskNumber;
 		pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
 		pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
@@ -2992,7 +2992,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		}
 
 		/* expand the tree of devices */
-		if (devtree(devinfo->name, devinfo->smartctl, devinfo->smartignore, devinfo->wfile, devinfo, low) != 0) {
+		if (devtree(devinfo, low) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to expand device '%s'.\n", devinfo->file);
 			return -1;

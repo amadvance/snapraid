@@ -504,7 +504,7 @@ int randomize(void* ptr, size_t size);
  */
 struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
-	char name[PATH_MAX]; /**< Name of the disk. */
+	char name[PATH_MAX]; /**< Name of the disk combined with the split index if any */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
 	char smartctl[PATH_MAX]; /**< Options for smartctl. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Attribues to ignore */
@@ -525,6 +525,8 @@ struct devinfo_struct {
 	tommy_node node;
 };
 typedef struct devinfo_struct devinfo_t;
+
+void device_name_set(devinfo_t* dev, const char* name, int index);
 
 #define DEVICE_LIST 0
 #define DEVICE_DOWN 1

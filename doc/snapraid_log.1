@@ -504,14 +504,16 @@ The calculated ambient temperature in degrees Celsius.
 .PD
 .RE
 .TP
-.B thermal:current:<disk_name>:<device>:<temp>
+.B thermal:current:<disk_name>[/<split_number>]:<device>:<temp>
 Logs the most recent temperature reading for a specific disk
 device.
 .RS 4
 .PD 0
 .HP 4
-.I <disk_name>
+.I <disk_name>[/<split_number>]
 The configured name of the disk.
+In case of multiple splits, the splits after the first
+one have an extension \`/N\`, where N starts from 1.
 .HP 4
 .I <device>
 The unique device ID (uint64).
@@ -534,15 +536,12 @@ The highest temperature observed in degrees Celsius.
 .PD
 .RE
 .TP
-.B thermal:heat:<disk_name>:<device>:<count>:<data_points>
+.B thermal:heat:<disk_name>[/<split_number>]:<device>:<count>:<data_points>
 Logs the entire history of temperature data points collected
 so far for a specific disk, used for fitting the heating model.
 Only monotone increasing temperatures are included in the history.
 .RS 4
 .PD 0
-.HP 4
-.I <disk_name>
-The configured name of the disk.
 .HP 4
 .I <device>
 The unique device ID (uint64).
@@ -563,7 +562,7 @@ monitoring (uint, seconds).
 .PD
 .RE
 .TP
-.B thermal:params:<disk_name>:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
+.B thermal:params:<disk_name>[/<split_number>]:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
 Logs the estimated parameters for the exponential heating model
 (fit using least squares) and associated quality metrics for a
 specific disk.
@@ -571,9 +570,6 @@ The model is: T(t) = T_steady \- (T_steady \- T_0) e^(\-kt),
 where T_0 is the initial temperature.
 .RS 4
 .PD 0
-.HP 4
-.I <disk_name>
-The configured name of the disk.
 .HP 4
 .I <device>
 The unique device ID (uint64).
@@ -1448,7 +1444,7 @@ you\'ll see multiple tags for the same \`<disk_name>\` but with different
 Tags logging specific disk identification and raw SMART attribute
 values.
 .TP
-.B smart:<device_file>:<disk_name>
+.B smart:<device_file>:<disk_name>[/<split_number>]
 Logs the start of the SMART report for a device.
 .RS 4
 .PD 0
@@ -1456,12 +1452,14 @@ Logs the start of the SMART report for a device.
 .I <device_file>
 The file path of the device (e.g., /dev/sdb).
 .HP 4
-.I <disk_name>
+.I <disk_name>[/<split_number>]
 The configured name of the disk.
+In case of multiple splits, the splits after the first
+one have an extension \`/N\`, where N starts from 1.
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:serial:<serial_number>
+.B attr:<device_file>:<disk_name>[/<split_number>]:serial:<serial_number>
 Logs the disk\'s serial number.
 .RS 4
 .PD 0
@@ -1471,7 +1469,7 @@ The disk\'s serial number (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:vendor:<vendor>
+.B attr:<device_file>:<disk_name>[/<split_number>]:vendor:<vendor>
 Logs the disk\'s vendor string.
 .RS 4
 .PD 0
@@ -1481,7 +1479,7 @@ The disk\'s vendor identifier (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:model:<model>
+.B attr:<device_file>:<disk_name>[/<split_number>]:model:<model>
 Logs the disk\'s model string.
 .RS 4
 .PD 0
@@ -1491,7 +1489,7 @@ The disk\'s model identifier (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:afr:<afr_value>:<afr_prob>
+.B attr:<device_file>:<disk_name>[/<split_number>]:afr:<afr_value>:<afr_prob>
 Logs the estimated Annual Failure Rate (AFR) and the
 probability of one failure in the next year based on SMART
 attributes. The AFR is calculated using the maximum rate
@@ -1508,7 +1506,7 @@ next year (double).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:size:<size_bytes>
+.B attr:<device_file>:<disk_name>[/<split_number>]:size:<size_bytes>
 Logs the size of the disk.
 .RS 4
 .PD 0
@@ -1518,7 +1516,7 @@ The disk size in bytes (uint64).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:error:<error_count>
+.B attr:<device_file>:<disk_name>[/<split_number>]:error:<error_count>
 Logs the total error count.
 .RS 4
 .PD 0
@@ -1528,7 +1526,7 @@ The total error count (uint64).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:rotationrate:<rate>
+.B attr:<device_file>:<disk_name>[/<split_number>]:rotationrate:<rate>
 Logs the disk\'s rotation rate. A value of 0 indicates an SSD.
 .RS 4
 .PD 0
@@ -1538,7 +1536,7 @@ The rotation rate (uint64, RPM).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:flags:<flags_decimal>:<flags_hex>
+.B attr:<device_file>:<disk_name>[/<split_number>]:flags:<flags_decimal>:<flags_hex>
 Logs the SMART status flags from the \`smartctl\` utility.
 Per the smartctl manpage, these flags are bit\-mapped
 to indicate specific issues like \[dq]Command line did not parse\[dq],
@@ -1555,7 +1553,7 @@ The raw flags value (uint64, hexadecimal).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>:<id>:<value_decimal>:<value_hex>
+.B attr:<device_file>:<disk_name>[/<split_number>]:<id>:<value_decimal>:<value_hex>
 Logs the raw value of any assigned SMART attribute.
 .RS 4
 .PD 0
@@ -1596,7 +1594,7 @@ command execution. They are primarily output during the \`up\`
 (spin\-up), \`down\` (spin\-down), and \`probe\` (power state check)
 commands.
 .TP
-.B device:<device_file>:<disk_name>:active
+.B device:<device_file>:<disk_name>[/<split_number>]:active
 Logs that the device was confirmed to be in an active power
 state after a status probe.
 .RS 4
@@ -1605,27 +1603,29 @@ state after a status probe.
 .I <device_file>
 The system path to the device node.
 .HP 4
-.I <disk_name>
-The SnapRAID internal disk disk_name.
+.I <disk_name>[/<split_number>]
+The configured name of the disk.
+In case of multiple splits, the splits after the first
+one have an extension \`/N\`, where N starts from 1.
 .PD
 .RE
 .TP
-.B device:<device_file>:<disk_name>:standby
+.B device:<device_file>:<disk_name>[/<split_number>]:standby
 Logs that the device was confirmed to be in a standby/spun\-down
 state.
 .TP
-.B device:<device_file>:<disk_name>:up
+.B device:<device_file>:<disk_name>[/<split_number>]:up
 Logs a successful spin\-up operation via direct O_DIRECT
 read.
 .TP
-.B device:<device_file>:<disk_name>:down
+.B device:<device_file>:<disk_name>[/<split_number>]:down
 Logs a successful spin\-down operation initiated via the
 smartctl command.
 .TP
-.B device:<device_file>:<disk_name>:shell
+.B device:<device_file>:<disk_name>[/<split_number>]:shell
 Logs a failure in the command shell execution environment.
 .TP
-.B device:<device_file>:<disk_name>:error:<errno>
+.B device:<device_file>:<disk_name>[/<split_number>]:error:<errno>
 Logs a low\-level system error during direct file operations.
 This is triggered when open(), read(), or close()
 calls fail during a spin\-up attempt.
@@ -1638,12 +1638,12 @@ the OS.
 .PD
 .RE
 .TP
-.B device:<device_file>:<disk_name>:error:abort
+.B device:<device_file>:<disk_name>[/<split_number>]:error:abort
 Logs that an external process (smartctl) failed to complete
 normally, such as being terminated by a signal rather than
 exiting.
 .TP
-.B device:<device_file>:<disk_name>:exit:<exit_code>
+.B device:<device_file>:<disk_name>[/<split_number>]:exit:<exit_code>
 Logs that the external command (smartctl) returned a non\-zero
 exit code that was not explicitly recognized as a valid state.
 .RS 4
