@@ -2661,14 +2661,17 @@ retry:
 	}
 
 	if (ret == 0) {
-		log_tag("device:%s:%s:active\n", file, name);
+		log_tag("attr:%s:%s:power:active\n", file, name);
 		*power = POWER_ACTIVE;
 	} else if (ret == 3) {
-		log_tag("device:%s:%s:standby\n", file, name);
+		log_tag("attr:%s:%s:power:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
-		log_tag("device:%s:%s:unknown\n", file, name);
-		*power = POWER_UNKNOWN;
+		/* LCOV_EXCL_START */
+		log_tag("device:%s:%s:exit:%d\n", file, name, ret);
+		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
+		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
@@ -2758,7 +2761,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	log_tag("device:%s:%s:down\n", file, name);
+	log_tag("attr:%s:%s:power:down\n", file, name);
 
 	return 0;
 }
@@ -2841,7 +2844,7 @@ static int devup(uint64_t device, const char* name, const char* wfile)
 
 	VirtualFree(buffer, 0, MEM_RELEASE);
 
-	log_tag("device:%s:%s:up\n", file, name);
+	log_tag("attr:%s:%s:power:up\n", file, name);
 
 	return 0;
 }

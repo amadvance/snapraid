@@ -345,8 +345,9 @@ Thermal Tags
 		device.
 
 		<disk_name>[/<split_number>] - The configured name of the disk.
-			In case of multiple splits, the splits after the first
-			one have an extension `/N`, where N starts from 1.
+			In case of split parity, the parity name is followed
+			by `/N` to indicate the split number, where N starts
+			from 0. The `/0` is always omitted.
 		<device> - The unique device ID (uint64).
 		<temp> - The current temperature read from the disk in degrees
 			Celsius.
@@ -921,18 +922,20 @@ Command Smart Tags
 	in case the logical disk uses more physical disks. In such a case,
 	you'll see multiple tags for the same `<disk_name>` but with different
 	`<device_file>`.
+	In case of split parity, the parity name is followed by `/N` to indicate
+	the split number, where N starts from 0. The `/0` is always omitted.
 
-    SMART Attributes
-        Tags logging specific disk identification and raw SMART attribute
-	values.
+    Attributes
+        Tags logging specific disk identification and attribute values.
 
 	=smart:<device_file>:<disk_name>[/<split_number>]
 		Logs the start of the SMART report for a device.
 
 		<device_file> - The file path of the device (e.g., /dev/sdb).
 		<disk_name>[/<split_number>] - The configured name of the disk.
-			In case of multiple splits, the splits after the first
-			one have an extension `/N`, where N starts from 1.
+			In case of split parity, the parity name is followed
+			by `/N` to indicate the split number, where N starts
+			from 0. The `/0` is always omitted.
 
 	=attr:<device_file>:<disk_name>[/<split_number>]:serial:<serial_number>
 		Logs the disk's serial number.
@@ -991,6 +994,22 @@ Command Smart Tags
 		<value_decimal> - The raw attribute value (uint64, decimal).
 		<value_hex> - The raw attribute value (uint64, hexadecimal).
 
+	=attr:<device_file>:<disk_name>[/<split_number>]:power:active
+		Logs that the device was confirmed to be in an active power 
+		state after a status probe.
+
+	=attr:<device_file>:<disk_name>[/<split_number>]:power:standby
+		Logs that the device was confirmed to be in a standby/spun-down
+		state.
+
+	=attr:<device_file>:<disk_name>[/<split_number>]:power:up
+		Logs a successful spin-up operation via direct O_DIRECT 
+		read.
+
+	=attr:<device_file>:<disk_name>[/<split_number>]:power:down
+		Logs a successful spin-down operation initiated via the 
+		smartctl command.
+
     Summary
 	Tags logging the overall failure probabilities for the array.
 
@@ -1005,33 +1024,16 @@ Command Smart Tags
 
 Device Status Tags
 	These tags log the lifecycle of hardware interactions and external
-	command execution. They are primarily output during the `up`
-	(spin-up), `down` (spin-down), and `probe` (power state check)
-	commands.
-
-	=device:<device_file>:<disk_name>[/<split_number>]:active
-		Logs that the device was confirmed to be in an active power 
-		state after a status probe.
-
-		<device_file> - The system path to the device node.
-		<disk_name>[/<split_number>] - The configured name of the disk.
-			In case of multiple splits, the splits after the first
-			one have an extension `/N`, where N starts from 1.
-
-	=device:<device_file>:<disk_name>[/<split_number>]:standby
-		Logs that the device was confirmed to be in a standby/spun-down
-		state.
-
-	=device:<device_file>:<disk_name>[/<split_number>]:up
-		Logs a successful spin-up operation via direct O_DIRECT 
-		read.
-
-	=device:<device_file>:<disk_name>[/<split_number>]:down
-		Logs a successful spin-down operation initiated via the 
-		smartctl command.
+	command execution with the `smartctl` command.
 
 	=device:<device_file>:<disk_name>[/<split_number>]:shell
 		Logs a failure in the command shell execution environment.
+
+		<device_file> - The system path to the device node.
+		<disk_name>[/<split_number>] - The configured name of the disk.
+			In case of split parity, the parity name is followed
+			by `/N` to indicate the split number, where N starts
+			from 0. The `/0` is always omitted.
 
 	=device:<device_file>:<disk_name>[/<split_number>]:error:<errno>
 		Logs a low-level system error during direct file operations.
