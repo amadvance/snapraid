@@ -2825,6 +2825,7 @@ mg_set_thread_name(const char *name)
 static void
 mg_set_thread_name(const char *threadName)
 {
+	(void)threadName;
 }
 #endif
 
@@ -10050,6 +10051,7 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 #endif /* NO_FILESYSTEMS */
 
 
+#if !defined(NO_FILESYSTEMS)
 /* Send len bytes from the opened file to the client. */
 static void
 send_file_data(struct mg_connection *conn,
@@ -10163,7 +10165,7 @@ send_file_data(struct mg_connection *conn,
 		}
 	}
 }
-
+#endif
 
 static int
 parse_range_header(const char *header, int64_t *a, int64_t *b)
@@ -14759,6 +14761,10 @@ handle_request(struct mg_connection *conn)
 		return;
 	}
 	uri_len = (int)strlen(ri->local_uri);
+
+#if defined(NO_FILES)
+	(void)uri_len;
+#endif
 
 	/* 1.3. decode url (if config says so) */
 	if (should_decode_url(conn)) {
