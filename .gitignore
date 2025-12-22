@@ -35,6 +35,7 @@ stamp-h1
 
 # objects
 snapraid
+snapraidd
 mktest
 mkstream
 *.exe

@@ -110,7 +110,18 @@ noinst_HEADERS = \
 	cmdline/search.h \
 	cmdline/thermal.h \
 	cmdline/mingw.h \
-	cmdline/unix.h
+	cmdline/unix.h \
+	civetweb/civetweb.h \
+	civetweb/external_log_access.inl \
+	civetweb/external_mg_cry_internal_impl.inl \
+	civetweb/handle_form.inl \
+	civetweb/match.inl \
+	civetweb/md5.inl \
+	civetweb/response.inl \
+	civetweb/sort.inl \
+	daemon/portable.h \
+	daemon/state.h \
+	daemon/support.h
 
 mktest_SOURCES = \
 	cmdline/mktest.c \

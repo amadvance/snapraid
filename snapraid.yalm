@@ -1,0 +1,316 @@
+openapi: 3.0.0
+info:
+  title: SnapRAID API
+  description: Backend API for SnapRAID monitoring and control.
+  version: 1.0.0
+
+paths:
+  /api/v1/probe:
+    post:
+      summary: Probe the spin status of all disks
+      description: >
+        Triggers a probe command for all data and parity disks in the array. 
+        The server returns immediately with a 200 status, while the probe
+        process continues in the background.
+        Updated spinning state will be available via the /array/disks endpoint
+        once the task is complete.
+      responses:
+        '200':
+          description: Probe request accepted and scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '409':
+          description: Conflict - A SnapRAID task is already running.
+
+  /api/v1/up:
+    post:
+      summary: Spin up all disks
+      description: >
+        Triggers a spin-up command for all data and parity disks in the array. 
+        The server returns immediately with a 200 status, while the physical 
+        spin-up process continues in the background.
+        Updated spinning state will be available via the /array/disks endpoint
+        once the task is complete.
+      responses:
+        '200':
+          description: Spin-up request accepted and scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '409':
+          description: Conflict - A SnapRAID task is already running.
+
+  /api/v1/down:
+    post:
+      summary: Spin down all disks
+      description: >
+        Triggers a spin-down command for all data and parity disks in the array. 
+        The server returns immediately with a 200 status.
+        Updated spinning state will be available via the /array/disks endpoint
+        once the task is complete.
+      responses:
+        '200':
+          description: Spin-down request accepted and scheduled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '409':
+          description: Conflict - A SnapRAID task is already running.
+
+  /api/v1/smart:
+    post:
+      summary: Refresh SMART data for all disks
+      description: >
+        Triggers a background refresh of SMART attributes for all disks.
+        The server returns 200 immediately. 
+        Updated data will be available via the /array/disks endpoint once the
+        task is complete.
+      responses:
+        '202':
+          description: SMART refresh task accepted and scheduled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '409':
+          description: Conflict - A SnapRAID task is already running.
+
+  /api/v1/disks:
+    get:
+      summary: Get detailed status of all disks
+      description: >
+        Returns lists for data disks and parity disks with all the
+        information available.
+        Disks are not probed, but only information obtained from previous
+        commands is returned.
+      responses:
+        '200':
+          description: Disk lists retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data_disks:
+                    type: array
+                    description: "Ordered list of data disks (d1, d2, ...)"
+                    items:
+                      $ref: '#/components/schemas/DataDisk'
+                  parity_disks:
+                    type: array
+                    description: "Ordered list of parity disks (parity, 2-parity, ...)"
+                    items:
+                      $ref: '#/components/schemas/ParityDisk'
+
+  /api/v1/progress:
+    get:
+      summary: Poll current task progress
+      description: Used by the frontend to update progress bars and status indicators.
+      responses:
+        '200':
+          description: Progress data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskProgress'
+
+components:
+  schemas:
+    TaskResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: "True if the request was scheduled, false if an error occurred."
+        message:
+          type: string
+          description: "Optional detail about the status or error."
+
+    TaskProgress:
+      type: object
+      required:
+        - command
+        - status
+        - errors
+      properties:
+        command:
+          type: string
+          enum: [idle, sync, scrub, fix, check, status, up, down, smart]
+        status:
+          type: string
+          enum: [running, done]
+          description: "If the command is running or it has finished."
+        percent:
+          type: integer
+        errors:
+          type: array
+          description: "List of errors found. Persists until a new task begins."
+          items:
+            $ref: '#/components/schemas/TaskError'
+        speed_bs:
+          type: integer
+          format: int64
+          description: "Realtime speed in bytes/s"
+        eta_seconds:
+          type: integer
+          description: "Estimated time remaning in seconds"
+
+    TaskError:
+      type: object
+      required:
+        - reference_type
+        - message
+        - disk_name
+      properties:
+        reference_type:
+          type: string
+          enum: [file, parity, directory, symlink, hardlink, outofparity]
+        message:
+          type: string
+          description: "Nature of the error (e.g., checksum, read error, size mismatch)."
+        disk_name:
+          type: string
+          description: "The SnapRAID name of the disk (e.g., d1, p1)."
+          example: "d1"
+        path:
+          type: string
+          description: "Primary path of the object. Used for files, directories, and links."
+          example: "/mnt/d1/data/link_to_file"
+        target_path:
+          type: string
+          description: "The destination of the link. Used only for symlink and hardlink types."
+          example: "/mnt/d1/archive/original_file"
+        block_number:
+          type: integer
+          format: int64
+          description: "Block number where the error occurred (relevant for file and parity)."
+
+    Device:
+      type: object
+      required:
+        - device_node
+      properties:
+        device_node:
+          type: string
+          description: "System device path (e.g., /dev/sdb1)"
+        family:
+          type: string
+          example: "Vendor and Model Family, like: Western Digital Red"
+        model:
+          type: string
+          example: "WDC WD40EFRX-68N32N0"
+        serial:
+          type: string
+          example: "WD-WCC7K1XN2L3P"          
+        power:
+          type: string
+          enum: [active, standby]
+          description: "Current power state of the physical drive"
+        health:
+          type: string
+          enum: [passed, failing]
+          description: "Current health state"
+        size:
+          type: integer
+          format: int64
+          description: "Size in bytes of the raw device"
+        rotational:
+          type: integer
+          description: "If it's a rotational device, and the rotational speed"
+        error:
+          type: integer
+          description: "Number of SMART errors"
+        smart_reallocated_sector_count:
+          type: integer
+        smart_uncorrectable_error_cnt:
+          type: integer
+        smart_command_timeout:
+          type: integer
+        smart_current_pending_sector:
+          type: integer
+        smart_offline_uncorrectable:
+          type: integer
+        smart_start_stop_count:
+          type: integer
+        smart_power_on_hours:
+          type: integer
+        smart_load_cycle_count:
+          type: integer
+        smart_temperature_celsius:
+          type: integer
+
+    DataDisk:
+      type: object
+      required:
+        - name
+        - mount_dir
+        - devices
+      properties:
+        name:
+          type: string
+          description: "Logical name (e.g., d1, d2)"
+        mount_dir:
+          type: string
+          description: "Filesystem mount point path"
+        uuid:
+          type: string
+          description: "Actual UUID of the filesystem containing the mount dir"
+        stored_uuid:
+          type: string
+          description: "Stored UUID of the filesystem containing the mount dir"
+        allocated_space_bytes:
+          type: integer
+          format: int64
+        free_space_bytes:
+          type: integer
+          format: int64
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+
+    ParitySplit:
+      type: object
+      required:
+        - parity_path
+        - devices
+      properties:
+        parity_path:
+          type: string
+          description: "Path of the file of the parity"
+        uuid:
+          type: string
+          description: "Actual UUID of the filesystem containing the parity file"
+        stored_uuid:
+          type: string
+          description: "Stored UUID of the filesystem containing the parity file"
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+
+    ParityDisk:
+      type: object
+      required:
+        - name
+        - splits
+      properties:
+        name:
+          type: string
+          description: "Logical name (e.g., parity, 2-parity)"
+        allocated_space_bytes:
+          type: integer
+          format: int64
+        free_space_bytes:
+          type: integer
+          format: int64
+        splits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParitySplit'
