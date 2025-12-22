@@ -1,7 +1,11 @@
-bin_PROGRAMS = snapraid
+bin_PROGRAMS = snapraid snapraidd
 check_PROGRAMS = mktest mkstream
 
 AM_CPPFLAGS = -DSYSCONFDIR="\"${sysconfdir}\""
+snapraidd_CPPFLAGS = -DSYSCONFDIR="\"${sysconfdir}\"" \
+	-DNO_SSL -DNO_SSL_DL -DNO_CGI -DNO_FILES -DNO_FILESYSTEMS -DNO_THREAD_NAME \
+	-DMG_EXTERNAL_FUNCTION_mg_cry_internal_impl \
+	-DMG_EXTERNAL_FUNCTION_log_access
 
 if HAVE_DISK_ARBITRATION
 snapraid_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
@@ -54,6 +58,12 @@ snapraid_SOURCES = \
 	cmdline/thermal.c \
 	cmdline/mingw.c \
 	cmdline/unix.c
+
+snapraidd_SOURCES = \
+	daemon/daemon.c \
+	daemon/runner.c \
+	daemon/support.c \
+	civetweb/civetweb.c
 
 noinst_HEADERS = \
 	raid/raid.h \
