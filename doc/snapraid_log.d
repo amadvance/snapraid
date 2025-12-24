@@ -1016,6 +1016,13 @@ Command Smart Tags
 		Logs a successful spin-down operation initiated via the 
 		smartctl command.
 
+	=attr:<device_file>:<disk_name>[/<split_index>]:stat:<access_number>
+		Logs the total number of read and write accesses done on the disk.
+		Comparing this number at different times, you can detect if the
+		disk was used during that time.
+
+		<access_number> - Total number of accesses (int64).
+
     Summary
 	Tags logging the overall failure probabilities for the array.
 

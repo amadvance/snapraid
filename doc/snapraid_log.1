@@ -1592,6 +1592,18 @@ read.
 .B attr:<device_file>:<disk_name>[/<split_index>]:power:down
 Logs a successful spin\-down operation initiated via the
 smartctl command.
+.TP
+.B attr:<device_file>:<disk_name>[/<split_index>]:stat:<access_number>
+Logs the total number of read and write accesses done on the disk.
+Comparing this number at different times, you can detect if the
+disk was used during that time.
+.RS 4
+.PD 0
+.HP 4
+.I <access_number>
+Total number of accesses (int64).
+.PD
+.RE
 .SS Summary 
 Tags logging the overall failure probabilities for the array.
 .TP

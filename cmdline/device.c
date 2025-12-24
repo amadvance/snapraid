@@ -558,6 +558,8 @@ static void state_info_log(devinfo_t* devinfo)
 		log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_SIZE]);
 	if (devinfo->info[INFO_ROTATION_RATE] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_ROTATION_RATE]);
+	if (devinfo->access_stat != 0)
+		log_tag("attr:%s:%s:stat:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->access_stat);
 }
 
 static void state_smart_log(devinfo_t* devinfo, double afr)
