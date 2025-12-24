@@ -1275,6 +1275,192 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 #endif
 
 /**
+ * Compute disk usage by aggregating access statistics.
+ *
+ * This function determines whether a disk has been used by summing read
+ * and write access counters from all related partitions and device holders.
+ * Disk-level statistics are not used directly, as they may include
+ * kernel-generated fake accesses that do not reflect real I/O activity.
+ *
+ * By walking the device hierarchy and accumulating per-device statistics,
+ * the function provides a reliable measure of actual disk usage between
+ * sampling points.
+ */
+#if HAVE_LINUX_DEVICE
+static int devstat_recurse(dev_t device, uint64_t* count)
+{
+	char device_path[PATH_MAX];
+	char path[PATH_MAX];
+	char buf[512];
+	char* device_file;
+	int device_len;
+	DIR* d;
+	struct dirent* dd;
+	int holders = 0;
+	int partitions = 0;
+	int token;
+	int ret;
+	char* i;
+
+	/* get the device name */
+	if (devresolve(device, device_path, sizeof(device_path)) != 0)
+		return -1;
+
+	device_len = strlen(device_path);
+	if (device_len <= 5)
+		return -1;
+	device_file = device_path + 5; /* skip /dev/ */
+	device_len -= 5;
+
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u", major(device), minor(device));
+
+	/* check if there are partitions */
+	d = opendir(path);
+	if (d == 0) 
+		return -1;
+
+	while ((dd = readdir(d)) != 0) {
+		dev_t subdev;
+
+		if (dd->d_name[0] == '.') 
+			continue;
+
+		if (strncmp(device_file, dd->d_name, device_len) != 0)
+			continue;
+
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/%s/dev", major(device), minor(device), dd->d_name);
+
+		subdev = devread(path);
+		if (!subdev) {
+			/* LCOV_EXCL_START */
+			closedir(d);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (devstat_recurse(subdev, count) != 0) {
+			/* LCOV_EXCL_START */
+			closedir(d);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		
+		++partitions;
+	}
+
+	closedir(d);
+
+	/* stop if processed partitions */
+	if (partitions != 0)
+		return 0;
+
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/holders", major(device), minor(device));
+
+	/* check if there are holders */
+	d = opendir(path);
+	if (d == 0) 
+		return -1;
+
+	while ((dd = readdir(d)) != 0) {
+		dev_t subdev;
+
+		if (dd->d_name[0] == '.') 
+			continue;
+				
+
+		/* for each slave, expand the full potential tree */
+		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/holders/%s/dev", major(device), minor(device), dd->d_name);
+
+		subdev = devread(path);
+		if (!subdev) {
+			/* LCOV_EXCL_START */
+			closedir(d);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (devstat_recurse(subdev, count) != 0) {
+			/* LCOV_EXCL_START */
+			closedir(d);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		++holders;
+	}
+
+	closedir(d);
+
+	/* stop if processed holders */
+	if (holders != 0)
+		return 0;
+
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/stat", major(device), minor(device));
+
+	ret = sysread(path, buf, sizeof(buf));
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if ((size_t)ret + 1 > sizeof(buf)) {
+		/* LCOV_EXCL_START */
+		log_fatal("Too long read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* ending 0 */
+	buf[ret] = 0;
+
+	i = buf;
+	token = 1; /* token number */
+	while (*i) {
+		char* n;
+		char* e;
+		unsigned long long v;
+
+		/* skip spaces */
+		while (*i && isspace(*i))
+			++i;
+
+		/* read digits */
+		n = i;
+		while (*i && isdigit(*i))
+			++i;
+
+		if (i == n) /* if no digit, abort */
+			break;
+		if (*i == 0 || !isspace(*i)) /* if no space, abort */
+			break;
+		*i++ = 0; /* put a terminator */
+
+		v = strtoull(n, &e, 10);
+		if (*e != 0)
+			break;
+
+		/* sum reads and writes completed */
+		if (token == 1 || token == 5) {
+			*count += v;
+			if (token == 5)
+				break; /* stop here */
+		}
+
+		++token;
+	}
+
+	return 0;
+}
+
+static int devstat(dev_t device, uint64_t* count)
+{
+	*count = 0;
+	return devstat_recurse(device, count);
+}
+#endif
+
+/**
  * Get device attributes.
  */
 #if HAVE_LINUX_DEVICE
@@ -1730,6 +1916,11 @@ static void* thread_probe(void* arg)
 	 * to prevent accidentally spinning them up.
 	 */
 	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+
+	/*
+	 * Retrieve access stat for the device
+	 */
+	devstat(devinfo->device, &devinfo->access_stat);
 
 	return 0;
 #else

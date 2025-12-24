@@ -520,6 +520,7 @@ struct devinfo_struct {
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	uint64_t smart[SMART_COUNT]; /**< SMART attributes. */
 	uint64_t info[INFO_COUNT]; /**< Info attributes. */
+	uint64_t access_stat; /**< Access stat. */
 	char serial[SMART_MAX]; /**< Serial number. */
 	char family[SMART_MAX]; /**< Family. */
 	char model[SMART_MAX]; /**< Model. */
