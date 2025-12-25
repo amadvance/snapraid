@@ -1,0 +1,10 @@
+PRGNAM="snapraid"
+VERSION="13.0"
+HOMEPAGE="https://www.snapraid.it/"
+DOWNLOAD="https://github.com/amadvance/snapraid/releases/download/v${VERSION}/snapraid-${VERSION}.tar.gz"
+MD5SUM="UNSUPPORTED"  # Optional; compute manually if needed
+DOWNLOAD_x86_64="$DOWNLOAD"
+MD5SUM_x86_64=""
+REQUIRES=""
+MAINTAINER="Andrea Mazzoleni"
+EMAIL="amadnvace@gmail.com"
