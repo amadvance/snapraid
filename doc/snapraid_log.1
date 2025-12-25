@@ -1435,8 +1435,12 @@ Logs the final exit status indicating that the current hash
 algorithm is already the \`best hash\` for the platform, and thus
 a rehash is not required. This causes the program to exit with
 a fatal error.
-.SH COMMAND SMART TAGS 
-This section describes the tags output with the \`smart\` command.
+.SH COMMAND SMART AND PROBE TAGS 
+This section describes the tags output by the \`smart\` and \`probe\`
+commands. The main difference between the two is that \`probe\` doesn\'t
+spin up the disk, so it won\'t be able to get all attributes if the
+disk is spun down. The \`smart\` command, instead, will always get all
+attributes, but with the risk of spinning up all disks.
 .PP
 Note that a \`<disk_name>\` may be associated with more \`<device_file>\`,
 in case the logical disk uses more physical disks. In such a case,

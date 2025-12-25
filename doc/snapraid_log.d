@@ -917,8 +917,12 @@ Command Rehash Tags
 		a rehash is not required. This causes the program to exit with
 		a fatal error.
 
-Command Smart Tags
-	This section describes the tags output with the `smart` command.
+Command Smart And Probe Tags
+	This section describes the tags output by the `smart` and `probe`
+	commands. The main difference between the two is that `probe` doesn't
+	spin up the disk, so it won't be able to get all attributes if the
+	disk is spun down. The `smart` command, instead, will always get all
+	attributes, but with the risk of spinning up all disks.
 
 	Note that a `<disk_name>` may be associated with more `<device_file>`,
 	in case the logical disk uses more physical disks. In such a case,

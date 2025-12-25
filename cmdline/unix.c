@@ -1533,7 +1533,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* vendor, ch
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
-static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* vendor, char* model)
+static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1560,9 +1560,9 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	if (smartctl[0]) {
 		char option[PATH_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -i %s", x, option);
+		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -a %s", x, option);
 	} else {
-		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -i %s", x, file);
+		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -a %s", x, file);
 	}
 
 	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
@@ -1576,7 +1576,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, 0, info, serial, vendor, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, vendor, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -1603,18 +1603,15 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (WEXITSTATUS(ret) == 0) {
-		log_tag("attr:%s:%s:power:active\n", file, name);
-		*power = POWER_ACTIVE;
-	} else if (WEXITSTATUS(ret) == 3) {
+	if (WEXITSTATUS(ret) == 3) {
 		log_tag("attr:%s:%s:power:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
-		log_fatal("Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
-		return -1;
-		/* LCOV_EXCL_STOP */
+		log_tag("attr:%s:%s:power:active\n", file, name);
+		*power = POWER_ACTIVE;
+		
+		/* store the return smartctl return value */
+		smart[SMART_FLAGS] = WEXITSTATUS(ret);
 	}
 
 	return 0;
@@ -1716,7 +1713,7 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, int
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0) != 0)
+	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -1888,6 +1885,19 @@ static void* thread_smart(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
+	/*
+	 * Retrieve some attributes directly from the system.
+	 *
+	 * smartctl intentionally skips queries on devices in standby mode
+	 * to prevent accidentally spinning them up.
+	 */
+	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+
+	/*
+	 * Retrieve access stat for the device
+	 */
+	devstat(devinfo->device, &devinfo->access_stat);
+
 	return 0;
 #else
 	(void)arg;
@@ -1903,7 +1913,7 @@ static void* thread_probe(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
