@@ -1,0 +1,11 @@
+snapraid: snapraid (Disk array backup for many large rarely-changed files)
+snapraid:
+snapraid: SnapRAID is a backup program for disk arrays. It stores parity
+snapraid: information of your data and it's able to recover from up to six disk
+snapraid: failures. SnapRAID is mainly targeted for a home media center, with a
+snapraid: lot of big files that rarely change.
+snapraid:
+snapraid:
+snapraid:
+snapraid:
+snapraid:
