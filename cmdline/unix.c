@@ -1276,124 +1276,17 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 
 /**
  * Compute disk usage by aggregating access statistics.
- *
- * This function determines whether a disk has been used by summing read
- * and write access counters from all related partitions and device holders.
- * Disk-level statistics are not used directly, as they may include
- * kernel-generated fake accesses that do not reflect real I/O activity.
- *
- * By walking the device hierarchy and accumulating per-device statistics,
- * the function provides a reliable measure of actual disk usage between
- * sampling points.
  */
 #if HAVE_LINUX_DEVICE
-static int devstat_recurse(dev_t device, uint64_t* count)
+static int devstat(dev_t device, uint64_t* count)
 {
-	char device_path[PATH_MAX];
 	char path[PATH_MAX];
 	char buf[512];
-	char* device_file;
-	int device_len;
-	DIR* d;
-	struct dirent* dd;
-	int holders = 0;
-	int partitions = 0;
 	int token;
 	int ret;
 	char* i;
 
-	/* get the device name */
-	if (devresolve(device, device_path, sizeof(device_path)) != 0)
-		return -1;
-
-	device_len = strlen(device_path);
-	if (device_len <= 5)
-		return -1;
-	device_file = device_path + 5; /* skip /dev/ */
-	device_len -= 5;
-
-	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u", major(device), minor(device));
-
-	/* check if there are partitions */
-	d = opendir(path);
-	if (d == 0) 
-		return -1;
-
-	while ((dd = readdir(d)) != 0) {
-		dev_t subdev;
-
-		if (dd->d_name[0] == '.') 
-			continue;
-
-		if (strncmp(device_file, dd->d_name, device_len) != 0)
-			continue;
-
-		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/%s/dev", major(device), minor(device), dd->d_name);
-
-		subdev = devread(path);
-		if (!subdev) {
-			/* LCOV_EXCL_START */
-			closedir(d);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (devstat_recurse(subdev, count) != 0) {
-			/* LCOV_EXCL_START */
-			closedir(d);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-		
-		++partitions;
-	}
-
-	closedir(d);
-
-	/* stop if processed partitions */
-	if (partitions != 0)
-		return 0;
-
-	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/holders", major(device), minor(device));
-
-	/* check if there are holders */
-	d = opendir(path);
-	if (d == 0) 
-		return -1;
-
-	while ((dd = readdir(d)) != 0) {
-		dev_t subdev;
-
-		if (dd->d_name[0] == '.') 
-			continue;
-				
-
-		/* for each slave, expand the full potential tree */
-		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/holders/%s/dev", major(device), minor(device), dd->d_name);
-
-		subdev = devread(path);
-		if (!subdev) {
-			/* LCOV_EXCL_START */
-			closedir(d);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (devstat_recurse(subdev, count) != 0) {
-			/* LCOV_EXCL_START */
-			closedir(d);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		++holders;
-	}
-
-	closedir(d);
-
-	/* stop if processed holders */
-	if (holders != 0)
-		return 0;
+	*count = 0;
 
 	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/stat", major(device), minor(device));
 
@@ -1451,12 +1344,6 @@ static int devstat_recurse(dev_t device, uint64_t* count)
 	}
 
 	return 0;
-}
-
-static int devstat(dev_t device, uint64_t* count)
-{
-	*count = 0;
-	return devstat_recurse(device, count);
 }
 #endif
 
@@ -1893,11 +1780,6 @@ static void* thread_smart(void* arg)
 	 */
 	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
 
-	/*
-	 * Retrieve access stat for the device
-	 */
-	devstat(devinfo->device, &devinfo->access_stat);
-
 	return 0;
 #else
 	(void)arg;
@@ -1926,11 +1808,6 @@ static void* thread_probe(void* arg)
 	 * to prevent accidentally spinning them up.
 	 */
 	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
-
-	/*
-	 * Retrieve access stat for the device
-	 */
-	devstat(devinfo->device, &devinfo->access_stat);
 
 	return 0;
 #else
@@ -2004,6 +1881,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		uint64_t device = devinfo->device;
+		uint64_t access_stat;
 
 		/* if the major is the null device, find the real one */
 		if (major(device) == 0) {
@@ -2014,6 +1892,15 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
+		}
+
+		/* retrieve access stat for the high level device */
+		if (devstat(device, &access_stat) == 0) {
+			/* cumulate access stat in the first split */
+			if (devinfo->split)
+				devinfo->split->access_stat += access_stat;
+			else
+				devinfo->access_stat += access_stat;
 		}
 
 		/* get the device file */

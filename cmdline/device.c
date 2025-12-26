@@ -558,8 +558,6 @@ static void state_info_log(devinfo_t* devinfo)
 		log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_SIZE]);
 	if (devinfo->info[INFO_ROTATION_RATE] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_ROTATION_RATE]);
-	if (devinfo->access_stat != 0)
-		log_tag("attr:%s:%s:stat:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->access_stat);
 }
 
 static void state_smart_log(devinfo_t* devinfo, double afr)
@@ -854,6 +852,23 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 	printf("\n");
 }
 
+static void state_stat(struct snapraid_state* state, tommy_list* high)
+{
+	tommy_node* i;
+
+	(void)state;
+
+	/* compute lengths for padding */
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
+
+		/* print disk access_stat (not splitted) */
+		if (devinfo->split == 0 && devinfo->access_stat != 0) {
+			log_tag("stat:%s:%" PRIu64 "\n", devinfo->name, devinfo->access_stat);
+		}
+	}
+}
+
 int devtest(tommy_list* high, tommy_list* low, int operation)
 {
 	tommy_node* i;
@@ -955,6 +970,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	/* for all parities */
 	for (j = 0; j < state->level; ++j) {
 		devinfo_t* entry;
+		devinfo_t* split;
 		unsigned s;
 
 		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, lev_config_name(j), 0) != 0)
@@ -962,6 +978,12 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 
 		for (s = 0; s < state->parity[j].split_mac; ++s) {
 			entry = calloc_nofail(1, sizeof(devinfo_t));
+
+			/* keep track of the first split */
+			if (s == 0)
+				split = entry;
+			else
+				entry->split = split;
 
 			entry->device = state->parity[j].split_map[s].device;
 			device_name_set(entry, lev_config_name(j), s);
@@ -1009,6 +1031,8 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 #endif
 			}
 		}
+
+		state_stat(state, &high);
 
 		if (operation == DEVICE_SMART)
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);

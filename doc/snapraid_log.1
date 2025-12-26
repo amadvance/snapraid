@@ -1444,8 +1444,11 @@ attributes, but with the risk of spinning up all disks.
 .PP
 Note that a \`<disk_name>\` may be associated with more \`<device_file>\`,
 in case the logical disk uses more physical disks. In such a case,
-you\'ll see multiple tags for the same \`<disk_name>\` but with different
-\`<device_file>\`.
+you\'ll see multiple \`<attr>\` and \`<smart>\` tags for the same
+\`<disk_name>\` but with different \`<device_file>\`. The exception is the
+\`stat\` attrbute that is cumulative for all the devices part of the
+disk.
+.PP
 In case of split parity, the parity name is followed by \`/N\` to indicate
 the split index, where N starts from 0. The \`/0\` is always omitted.
 .SS Attributes 
@@ -1597,8 +1600,10 @@ read.
 Logs a successful spin\-down operation initiated via the
 smartctl command.
 .TP
-.B attr:<device_file>:<disk_name>[/<split_index>]:stat:<access_number>
-Logs the total number of read and write accesses done on the disk.
+.B stat:<disk_name>:<access_number>
+Logs the total number of read and write accesses done on the
+disk. This is a cumulative value that include all the devices
+and split of the disk.
 Comparing this number at different times, you can detect if the
 disk was used during that time.
 .RS 4
