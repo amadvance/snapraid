@@ -1860,11 +1860,6 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 {
 	void* (*func)(void* arg) = 0;
 
-	if (operation == DEVICE_DOWN) {
-		/* flush all the disk caches before spinning down */
-		sync();
-	}
-
 #if HAVE_LINUX_DEVICE
 	tommy_node* i;
 	struct stat st;
@@ -1882,6 +1877,17 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		devinfo_t* devinfo = i->data;
 		uint64_t device = devinfo->device;
 		uint64_t access_stat;
+
+#if HAVE_SYNCFS
+		if (operation == DEVICE_DOWN) {
+			/* flush the high level filesystem before spinning down */
+			int f = open(devinfo->mount, O_RDONLY);
+			if (f >= 0) {
+				syncfs(f);
+				close(f);
+			}
+		}
+#endif
 
 		/* if the major is the null device, find the real one */
 		if (major(device) == 0) {
