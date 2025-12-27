@@ -21,7 +21,7 @@
 /****************************************************************************/
 /* snapraid */
 
-void speed(int period);
+void speed(int period, int cnt);
 void selftest(void);
 int snapraid_main(int argc, char* argv[]);
 
