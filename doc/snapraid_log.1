@@ -337,23 +337,24 @@ The array is already synchronized.
 A zero\-argument tag indicating that differences were found.
 The array needs a \`sync\` operation.
 .SH GENERAL PROGRESS AND EXECUTION TAGS 
-These tags are used to report the runtime processing of the commands.
+These tags are used to report the runtime processing of the commands
+\`sync\`, \`scrub\`, \`check\` and \`fix\`.
 Only produced when \`\-\-gui\` option is used.
 .TP
-.B run:begin:<blockstart>:<blockend>:<countmax>
+.B run:begin:<blockbegin>:<blockend>:<count>
 A tag indicating the start of the command execution.
 .RS 4
 .PD 0
 .HP 4
-.I <blockstart>
+.I <blockbegin>
 Starting block index (uint).
 .HP 4
 .I <blockend>
 Ending block index + 1 (uint).
 .HP 4
-.I <countmax>
+.I <count>
 Number of blocks to process. It may be less
-than <blockend> \- <blockstart> + 1 if some blocks
+than <blockend> \- <blockbegin> + 1 if some blocks
 are going to be skipped (uint).
 .PD
 .RE
@@ -361,44 +362,44 @@ are going to be skipped (uint).
 .B run:end
 A zero\-argument tag indicating the end of the command execution.
 .TP
-.B run:pos:<blockpos>:<countpos>:<countsize>:<perc>:<eta>:<size_speed>:<cpu>:<elapsed>
+.B run:pos:<blockidx>:<blockdone>:<sizedone>:<perc>:<eta>:<speed_mbs>:<cpu>:<elapsed>
 Detailed progress information during command execution.
 .RS 4
 .PD 0
 .HP 4
-.I <blockpos>
-Current block index position (uint).
+.I <blockidx>
+Current block index position processed (uint).
 .HP 4
-.I <countpos>
-Current item count position (uint).
+.I <blockdone>
+Number of blocks processed (uint).
 .HP 4
-.I <countsize>
+.I <sizedone>
 Current size processed (uint64).
 .HP 4
 .I <perc>
-Percentage complete (uint).
+Completion percentage (uint).
 .HP 4
 .I <eta>
-Estimated time of arrival in minutes (uint).
+Estimated time to completion in seconds (uint).
 .HP 4
-.I <size_speed>
-Data processing speed in MiB/s (uint).
+.I <speed_mbs>
+Data processing speed in MB/s (uint).
 .HP 4
 .I <cpu>
 CPU usage percentage (uint).
 .HP 4
 .I <elapsed>
-Elapsed time in seconds (uint64).
+Elapsed time in seconds (uint).
 .PD
 .RE
 .TP
-.B sigint:<blockpos>:<msg>
+.B sigint:<blockidx>:<msg>
 A user interruption (e.g., Ctrl+C) was signaled. The process
 is gracefully aborting.
 .RS 4
 .PD 0
 .HP 4
-.I <blockpos>
+.I <blockidx>
 Current block index position (uint).
 .HP 4
 .I <msg>
