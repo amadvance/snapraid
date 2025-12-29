@@ -27,14 +27,14 @@
 #include "raid/raid.h"
 
 /****************************************************************************/
-/* main */
+/* misc */
 
 void version(void)
 {
 	msg_status(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 }
 
-void usage(void)
+void usage(const char* conf)
 {
 	version();
 
@@ -77,6 +77,9 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
+	printf("\n");
+	printf("Configuration file: %s\n", conf);
+	printf("\n");
 }
 
 void memory(void)
@@ -678,7 +681,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_MULTI_SCAN 305
 
 #if HAVE_GETOPT_LONG
-struct option long_options[] = {
+static struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
 	{ "filter-disk", 1, 0, 'd' },
@@ -1173,7 +1176,7 @@ int snapraid_main(int argc, char* argv[])
 			opt.gui = 1;
 			break;
 		case 'H' :
-			usage();
+			usage(conf);
 			exit(EXIT_SUCCESS);
 		case 'V' :
 			version();
@@ -1372,7 +1375,7 @@ int snapraid_main(int argc, char* argv[])
 
 	if (optind + 1 != argc) {
 		/* LCOV_EXCL_START */
-		usage();
+		usage(conf);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
