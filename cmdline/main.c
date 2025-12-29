@@ -430,7 +430,6 @@ int main(int argc, char* argv[])
 
 				/* sync all disks */
 				printf("Flush...\n");
-				sync();
 
 				snapraid_main(2, spindown_argv);
 			}
