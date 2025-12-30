@@ -75,7 +75,7 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
  */
 static unsigned side_effect;
 
-void speed(int period)
+void speed(int period, int cnt)
 {
 	struct timeval start;
 	struct timeval stop;
@@ -89,7 +89,7 @@ void speed(int period)
 	int count;
 	int delta = period >= 1000 ? 10 : 1;
 	int size = TEST_SIZE;
-	int nd = TEST_COUNT;
+	int nd = cnt>0 ? cnt : TEST_COUNT;
 	int nv;
 	void *v_alloc;
 	void **v;
