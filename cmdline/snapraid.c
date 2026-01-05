@@ -109,14 +109,14 @@ void test(int argc, char* argv[])
 	assert(strcmp(strtrim(strcpy(buffer, " trim trim \n\r")), "trim trim") == 0);
 	assert(strcmp(strlwr(strcpy(buffer, " LoWer\n\r")), " lower\n\r") == 0);
 
-	assert(worddigitstr("longneedlestring","needle") == 0);
-	assert(worddigitstr("longneedlestring","") == 0);
-	assert(worddigitstr("long needle string","needle") != 0);
-	assert(worddigitstr("long1needle2string","needle") != 0);
-	assert(worddigitstr("long\rneedle3string","needle") != 0);
-	assert(worddigitstr("long1needle","needle") != 0);
-	assert(worddigitstr("needle2string","needle") != 0);
-	assert(worddigitstr("needle","needle") != 0);
+	assert(worddigitstr("longneedlestring", "needle") == 0);
+	assert(worddigitstr("longneedlestring", "") == 0);
+	assert(worddigitstr("long needle string", "needle") != 0);
+	assert(worddigitstr("long1needle2string", "needle") != 0);
+	assert(worddigitstr("long\rneedle3string", "needle") != 0);
+	assert(worddigitstr("long1needle", "needle") != 0);
+	assert(worddigitstr("needle2string", "needle") != 0);
+	assert(worddigitstr("needle", "needle") != 0);
 
 	assert(strcmp(esc_tag("simple", buffer), "simple") == 0);
 	assert(strcmp(esc_tag("line1\nline2", buffer), "line1\\nline2") == 0);
@@ -1537,7 +1537,7 @@ int snapraid_main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-		/* fallthrough */
+	/* fallthrough */
 	case OPERATION_SPINUP :
 	case OPERATION_SPINDOWN :
 		if (!tommy_list_empty(&filterlist_file)) {

@@ -1087,8 +1087,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				} else {
 					/* open the file only for reading */
 					if (!file_flag_has(file, FILE_IS_MISSING))
-						ret = handle_open(&handle[j], file, state->file_mode,
-							log_error, state->opt.expected_missing ? log_expected : 0);
+						ret = handle_open(&handle[j], file, state->file_mode, log_error, state->opt.expected_missing ? log_expected : 0);
 					else
 						ret = -1; /* if the file is missing, we cannot open it */
 					if (ret == -1) {
@@ -1162,8 +1161,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size,
-				log_error, state->opt.expected_missing ? log_expected : 0);
+			read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size, log_error, state->opt.expected_missing ? log_expected : 0);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */

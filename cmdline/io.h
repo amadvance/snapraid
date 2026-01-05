@@ -138,7 +138,7 @@ struct snapraid_worker {
  *
  * # Initialize the process
  * io_start(&io, blockstart, blockmax, block_enabled);
- * 
+ *
  * for_each_block {
  *         # Now read starts
  *         # Get the current block to process and the vector of data buffers to use
@@ -149,7 +149,7 @@ struct snapraid_worker {
  *         # that the previous "blockcur" position is now available and the
  *         # buffers can be used to read a new look-ahead position.
  *         unsigned blockcur = io_read_next(&io, &buffer);
- * 
+ *
  *         for_each_disk {
  *                 # Read a disk into buffer[diskcur]
  *                 # diskcur is the disk processed, and it may came in random order
@@ -159,7 +159,7 @@ struct snapraid_worker {
  *                 # the read is not yet done.
  *                 # The reader thread will set the condition when ready.
  *                 struct snapraid_task* task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
- * 
+ *
  *                 # compute the hash
  *                 ...
  *         }

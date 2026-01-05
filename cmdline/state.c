@@ -732,7 +732,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 					if (stat(device, &st) == 0) {
 						dev = st.st_dev;
-						
+
 						/* read the uuid, if unsupported use an empty one */
 						if (devuuid(dev, split_map[s], uuid, sizeof(uuid)) != 0) {
 							*uuid = 0;
@@ -2972,7 +2972,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						state->parity[v_level].split_map[s].size = v_size;
 
 						/* log the info read from the content file */
-						if (s == 0) 
+						if (s == 0)
 							pathcpy(parity_name, sizeof(parity_name), lev_config_name(v_level));
 						else
 							pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(v_level), s);
@@ -4492,10 +4492,10 @@ static struct snapraid_thermal* state_thermal_find(struct snapraid_state* state,
 	for (i = tommy_list_head(&state->thermallist); i != 0; i = i->next) {
 		struct snapraid_thermal* thermal = i->data;
 		if (strcmp(thermal->name, name) == 0) {
-			if (found == 0 
-				/* if multiple matches, return the one with highest temperature */
+			if (found == 0
+			        /* if multiple matches, return the one with highest temperature */
 				|| found->latest_temperature < thermal->latest_temperature
-				/* or, if the temperature is equal, the one with the higher r_squared */
+			        /* or, if the temperature is equal, the one with the higher r_squared */
 				|| (found->latest_temperature == thermal->latest_temperature && found->params.r_squared < thermal->params.r_squared)
 			) {
 				found = thermal;

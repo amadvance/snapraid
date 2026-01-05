@@ -140,19 +140,19 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 		case 14 : k4 ^= (uint32_t)tail[13] << 8; /* fallthrough */
 		case 13 : k4 ^= (uint32_t)tail[12] << 0; /* fallthrough */
 			k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;
-			/* fallthrough */
+		/* fallthrough */
 		case 12 : k3 ^= (uint32_t)tail[11] << 24; /* fallthrough */
 		case 11 : k3 ^= (uint32_t)tail[10] << 16; /* fallthrough */
 		case 10 : k3 ^= (uint32_t)tail[ 9] << 8; /* fallthrough */
 		case 9 : k3 ^= (uint32_t)tail[ 8] << 0; /* fallthrough */
 			k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;
-			/* fallthrough */
+		/* fallthrough */
 		case 8 : k2 ^= (uint32_t)tail[ 7] << 24; /* fallthrough */
 		case 7 : k2 ^= (uint32_t)tail[ 6] << 16; /* fallthrough */
 		case 6 : k2 ^= (uint32_t)tail[ 5] << 8; /* fallthrough */
 		case 5 : k2 ^= (uint32_t)tail[ 4] << 0; /* fallthrough */
 			k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;
-			/* fallthrough */
+		/* fallthrough */
 		case 4 : k1 ^= (uint32_t)tail[ 3] << 24; /* fallthrough */
 		case 3 : k1 ^= (uint32_t)tail[ 2] << 16; /* fallthrough */
 		case 2 : k1 ^= (uint32_t)tail[ 1] << 8; /* fallthrough */

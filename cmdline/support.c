@@ -632,7 +632,7 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 	ss.str = str_map[0];
 	ss.map = str_map;
 	ss.max = str_max;
-	
+
 	c = ssget(&ss);
 	while (c) {
 		switch (c) {
@@ -761,7 +761,7 @@ char* strlwr(char* str)
 		*s = tolower((unsigned char)*s);
 		++s;
 	}
-	
+
 	return str;
 }
 

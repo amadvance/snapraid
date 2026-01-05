@@ -131,7 +131,7 @@ static int sysread(const char* path, char* buf, size_t buf_size)
 #endif
 
 /**
- * Read a file from sys. 
+ * Read a file from sys.
  * Trim spaces.
  * Always put an ending 0.
  * Do not report error on reading.
@@ -1204,7 +1204,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	FILE* f;
 	int ret;
 	const char* x;
-	
+
 	x = find_smartctl();
 	if (!x) {
 		/* LCOV_EXCL_START */
@@ -1357,7 +1357,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* vendor, ch
 	char buf[512];
 	int ret;
 	char* attr;
-	
+
 	(void)vendor; /* the vendor file typically contains "ATA" */
 
 	if (info[INFO_SIZE] == SMART_UNASSIGNED) {
@@ -1427,7 +1427,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	FILE* f;
 	int ret;
 	const char* x;
-	
+
 	x = find_smartctl();
 	if (!x) {
 		/* LCOV_EXCL_START */
@@ -1496,7 +1496,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	} else {
 		log_tag("attr:%s:%s:power:active\n", file, name);
 		*power = POWER_ACTIVE;
-		
+
 		/* store the return smartctl return value */
 		smart[SMART_FLAGS] = WEXITSTATUS(ret);
 	}
@@ -1516,7 +1516,7 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	FILE* f;
 	int ret;
 	const char* x;
-	
+
 	x = find_smartctl();
 	if (!x) {
 		/* LCOV_EXCL_START */
