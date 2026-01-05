@@ -1620,6 +1620,18 @@ static int devup(dev_t device, const char* name)
 	int ret;
 	int f;
 	void* buf;
+	uint64_t size;
+	uint64_t offset;
+	uint64_t pseudo_random;
+
+	/* get a pseudo random number */
+	ret = randomize(&pseudo_random, sizeof(pseudo_random));
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to retrieve random values.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
@@ -1629,7 +1641,7 @@ static int devup(dev_t device, const char* name)
 	}
 
 	/* O_DIRECT requires memory aligned to the block size */
-	if (posix_memalign(&buf, 512, 512) != 0) {
+	if (posix_memalign(&buf, 4096, 4096) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed to allocate aligned memory for device '%u:%u'.\n", major(device), minor(device));
 		return -1;
@@ -1646,7 +1658,34 @@ static int devup(dev_t device, const char* name)
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = read(f, buf, 512);
+	if (ioctl(f, BLKGETSIZE64, &size) < 0) {
+		/* LCOV_EXCL_START */
+		close(f);
+		free(buf);
+		log_tag("device:%s:%s:error:%d\n", file, name, errno);
+		log_fatal("Failed to get device size '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* select a random offset */
+	offset = (pseudo_random % (size / 4096)) * 4096;
+
+#if HAVE_POSIX_FADVISE
+	/* clear cache */
+	ret = posix_fadvise(f, offset, 4096, POSIX_FADV_DONTNEED);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		close(f);
+		free(buf);
+		log_tag("device:%s:%s:error:%d\n", file, name, errno);
+		log_fatal("Failed to advise device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+#endif
+
+	ret = pread(f, buf, 4096, offset);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		close(f);
