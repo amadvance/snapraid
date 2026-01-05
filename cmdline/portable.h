@@ -46,11 +46,6 @@
  */
 #define _WIN32_WINNT 0x600
 
-/**
- * Enable the rand_s() function.l
- */
-#define _CRT_RAND_S
-
 #include <windows.h>
 #endif
 

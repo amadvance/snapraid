@@ -53,6 +53,24 @@ void lock_memory(void);
 void unlock_memory(void);
 
 /****************************************************************************/
+/* random */
+
+/**
+ * Reseed the random pseudo random number generator
+ */ 
+void random_reseed(void);
+
+/**
+ * Return a pseudo random number of 8 bits
+ */
+unsigned char random_u8(void);
+
+/**
+ * Return a pseudo random number of 64 bits
+ */
+uint64_t random_u64(void);
+
+/****************************************************************************/
 /* log */
 
 /**

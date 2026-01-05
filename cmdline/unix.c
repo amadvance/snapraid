@@ -1622,16 +1622,6 @@ static int devup(dev_t device, const char* name)
 	void* buf;
 	uint64_t size;
 	uint64_t offset;
-	uint64_t pseudo_random;
-
-	/* get a pseudo random number */
-	ret = randomize(&pseudo_random, sizeof(pseudo_random));
-	if (ret < 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to retrieve random values.\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
@@ -1669,7 +1659,7 @@ static int devup(dev_t device, const char* name)
 	}
 
 	/* select a random offset */
-	offset = (pseudo_random % (size / 4096)) * 4096;
+	offset = (random_u64() % (size / 4096)) * 4096;
 
 #if HAVE_POSIX_FADVISE
 	/* clear cache */

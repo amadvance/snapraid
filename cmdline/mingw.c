@@ -163,13 +163,10 @@ void os_init(int opt)
 	/* check for Wine presence */
 	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
-	/* setup the standard random generator used as fallback */
-	srand(GetTickCount());
-
 	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 
-	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
+	/* get pointer to ptr_GetTickCount64 */
 	ptr_GetTickCount64 = (void*)GetProcAddress(kernel32, "GetTickCount64");
 
 	/* set the thread execution level to avoid sleep */
@@ -2239,21 +2236,9 @@ int randomize(void* void_ptr, size_t size)
 	if (ptr_RtlGenRandom != 0 && ptr_RtlGenRandom(ptr, size) != 0)
 		return 0;
 
-	/* try rand_s */
-	for (i = 0; i < size; ++i) {
-		unsigned v = 0;
-
-		if (rand_s(&v) != 0)
-			break;
-
-		ptr[i] = v;
-	}
-	if (i == size)
-		return 0;
-
 	/* fallback to standard rand */
 	for (i = 0; i < size; ++i)
-		ptr[i] = rand();
+		ptr[i] = random_u8();
 
 	return 0;
 }

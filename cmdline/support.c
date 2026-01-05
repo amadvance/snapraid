@@ -28,6 +28,7 @@
 #if HAVE_THREAD
 static thread_mutex_t msg_lock;
 static thread_mutex_t memory_lock;
+static thread_mutex_t random_lock;
 #endif
 
 void lock_msg(void)
@@ -58,12 +59,28 @@ void unlock_memory(void)
 #endif
 }
 
+void lock_random(void)
+{
+#if HAVE_THREAD
+	thread_mutex_lock(&random_lock);
+#endif
+}
+
+void unlock_random(void)
+{
+#if HAVE_THREAD
+	thread_mutex_unlock(&random_lock);
+#endif
+}
+
+
 void lock_init(void)
 {
 #if HAVE_THREAD
 	/* initialize the locks as first operation as log_fatal depends on them */
 	thread_mutex_init(&msg_lock);
 	thread_mutex_init(&memory_lock);
+	thread_mutex_init(&random_lock);
 #endif
 }
 
@@ -72,7 +89,48 @@ void lock_done(void)
 #if HAVE_THREAD
 	thread_mutex_destroy(&msg_lock);
 	thread_mutex_destroy(&memory_lock);
+	thread_mutex_destroy(&random_lock);
 #endif
+}
+
+/****************************************************************************/
+/* random */
+
+static uint64_t random_state = 1;
+
+void random_reseed(void)
+{
+	random_state = tick();
+}
+
+unsigned char random_u8(void)
+{
+	return random_u64() & 0xFF;
+}
+
+/*
+ * SplitMix64
+ *
+ * - Zero-safe: Any 64-bit seed is valid (even 0).
+ * - Full period: Guaranteed to visit every 2^64 value.
+ * - Logic: Uses a Weyl sequence + MurmurHash3-style finalizer.
+ *
+ * See: https://rosettacode.org/wiki/Pseudo-random_numbers/Splitmix64
+ */
+uint64_t random_u64(void)
+{
+	uint64_t z;
+
+	lock_random();
+
+	z = random_state += 0x9E3779B97F4A7C15ULL;
+
+	unlock_random();
+
+	z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+	z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+    
+	return z ^ (z >> 31);
 }
 
 /****************************************************************************/

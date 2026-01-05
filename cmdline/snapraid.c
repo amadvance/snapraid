@@ -1360,6 +1360,7 @@ int snapraid_main(int argc, char* argv[])
 	os_init(opt.force_scan_winfind);
 	raid_init();
 	crc32c_init();
+	random_reseed();
 
 	if (speedtest != 0) {
 		speed(period);
