@@ -1197,7 +1197,7 @@ static int devscan(tommy_list* list)
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
-static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
+static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1240,7 +1240,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, info, serial, vendor, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -1351,14 +1351,14 @@ static int devstat(dev_t device, uint64_t* count)
  * Get device attributes.
  */
 #if HAVE_LINUX_DEVICE
-static void devattr(dev_t device, uint64_t* info, char* serial, char* vendor, char* model)
+static void devattr(dev_t device, uint64_t* info, char* serial, char* family, char* model)
 {
 	char path[PATH_MAX];
 	char buf[512];
 	int ret;
 	char* attr;
 
-	(void)vendor; /* not available */
+	(void)family; /* not available, smartctl uses an internal database to get it */
 
 	if (info[INFO_SIZE] == SMART_UNASSIGNED) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/size", major(device), minor(device));
@@ -1420,7 +1420,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* vendor, ch
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
-static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
+static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1463,7 +1463,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, info, serial, vendor, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);

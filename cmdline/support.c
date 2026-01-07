@@ -1668,14 +1668,14 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
+int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
 {
 	unsigned i;
 	int inside;
 	uint64_t dummy_smart[SMART_COUNT];
 	uint64_t dummy_info[INFO_COUNT];
 	char dummy_serial[SMART_MAX];
-	char dummy_vendor[SMART_MAX];
+	char dummy_family[SMART_MAX];
 	char dummy_model[SMART_MAX];
 
 	/* dummy attributes */
@@ -1685,14 +1685,14 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		info = dummy_info;
 	if (!serial)
 		serial = dummy_serial;
-	if (!vendor)
-		vendor = dummy_vendor;
+	if (!family)
+		family = dummy_family;
 	if (!model)
 		model = dummy_model;
 
 	/* preclear attributes */
 	*serial = 0;
-	*vendor = 0;
+	*family = 0;
 	*model = 0;
 	for (i = 0; i < SMART_COUNT; ++i)
 		smart[i] = SMART_UNASSIGNED;
@@ -1739,7 +1739,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 					}
 				}
 			}
-		} else if (sscanf(s, "Model Family: %63[^\n]", vendor) == 1) {
+		} else if (sscanf(s, "Model Family: %63[^\n]", family) == 1) {
 		} else if (sscanf(s, "Device Model: %63[^\n]", model) == 1) {
 		/* SCSI */
 		} else if (sscanf(s, "Serial number: %63s", serial) == 1) { /* note "n" of "number" lower case */

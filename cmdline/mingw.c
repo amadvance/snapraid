@@ -2483,7 +2483,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* vendor, char* model)
+static int devsmart(uint64_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2517,7 +2517,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, info, serial, vendor, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -2640,7 +2640,7 @@ static void devattr_rotational(HANDLE h, uint64_t* rotational)
 /**
  * Get device attributes.
  */
-static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* vendor, char* model)
+static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* family, char* model)
 {
 	HANDLE h;
 	wchar_t conv_buf[CONV_MAX];
@@ -2648,7 +2648,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
-	(void)vendor; /* not available */
+	(void)family; /* not available, smartctl uses an internal database to get it */
 
 	/* open the volume */
 	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
@@ -2679,7 +2679,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 /**
  * Get POWER state
  */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* vendor, char* model)
+static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* family, char* model)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2713,7 +2713,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, 0, info, serial, vendor, model) != 0) {
+	if (smartctl_attribute(f, file, name, 0, info, serial, family, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);

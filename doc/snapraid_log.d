@@ -955,7 +955,7 @@ Command Smart And Probe Tags
 	=attr:<device_file>:<disk_name>[/<split_index>]:family:<family>
 		Logs the disk's model family string.
 
-		<family> - The disk's vendor and model family identifier (escaped).
+		<family> - The disk's model family identifier (escaped).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:model:<model>
 		Logs the disk's model string.
