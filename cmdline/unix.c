@@ -1358,7 +1358,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* vendor, ch
 	int ret;
 	char* attr;
 
-	(void)vendor; /* the vendor file typically contains "ATA" */
+	(void)vendor; /* not available */
 
 	if (info[INFO_SIZE] == SMART_UNASSIGNED) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/size", major(device), minor(device));

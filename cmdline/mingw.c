@@ -2569,6 +2569,113 @@ retry:
 	return 0;
 }
 
+
+static void devattr_property(HANDLE h, char* serial, char* model)
+{
+	STORAGE_PROPERTY_QUERY query = { 0 };
+	STORAGE_DESCRIPTOR_HEADER header = { 0 };
+	DWORD bytes;
+
+	query.PropertyId = StorageDeviceProperty;
+	query.QueryType = PropertyStandardQuery;
+	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &header, sizeof(header), &bytes, 0))
+		return;
+	if (header.Size == 0)
+		return;
+
+	/* allocate buffer and query full descriptor */
+	BYTE* buffer = malloc(header.Size);
+	if (!buffer)
+		return;
+
+	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), buffer, header.Size, &bytes, 0)) {
+		free(buffer);
+		return;
+	}
+
+	STORAGE_DEVICE_DESCRIPTOR* desc = (STORAGE_DEVICE_DESCRIPTOR*)buffer;
+
+	/* extract strings (offsets are from start of descriptor) */
+	if (*model == 0 && desc->ProductIdOffset) {
+		snprintf(model, SMART_MAX, "%s", (char*)(buffer + desc->ProductIdOffset));
+		strtrim(model);
+	}
+
+	if (*serial == 0 && desc->SerialNumberOffset) {
+		snprintf(serial, SMART_MAX, "%s", (char*)(buffer + desc->SerialNumberOffset));
+		strtrim(serial);
+	}
+
+	free(buffer);
+}
+
+static void devattr_size(HANDLE h, uint64_t* size)
+{
+	DISK_GEOMETRY_EX geom = { 0 };
+	DWORD bytes;
+	if (!DeviceIoControl(h, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, &geom, sizeof(geom), &bytes, 0))
+		return;
+
+	*size = geom.DiskSize.QuadPart;
+}
+
+static void devattr_rotational(HANDLE h, uint64_t* rotational)
+{
+	STORAGE_PROPERTY_QUERY query = { 0 };
+	DEVICE_SEEK_PENALTY_DESCRIPTOR desc = { 0 };
+	DWORD bytes;
+
+	query.PropertyId = StorageDeviceSeekPenaltyProperty;
+	query.QueryType = PropertyStandardQuery;
+	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &desc, sizeof(desc), &bytes, 0))
+		return;
+	if (bytes < sizeof(desc))
+		return;
+	if (desc.Version != sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR) || desc.Size != sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR))
+		return;
+
+	*rotational = desc.IncursSeekPenalty ? 1 : 0;
+}
+
+/**
+ * Get device attributes.
+ */
+static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* vendor, char* model)
+{
+	HANDLE h;
+	wchar_t conv_buf[CONV_MAX];
+	char file[128];
+
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
+
+	(void)vendor; /* not available */
+
+	/* open the volume */
+	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return;
+	}
+
+	if (info[INFO_SIZE] == SMART_UNASSIGNED)
+		devattr_size(h, &info[INFO_SIZE]);
+
+	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED)
+		devattr_rotational(h, &info[INFO_ROTATION_RATE]);
+
+	if (*model == 0 || *serial == 0)
+		devattr_property(h, serial, model);
+
+	if (!CloseHandle(h)) {
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return;
+	}
+}
+
 /**
  * Get POWER state
  */
@@ -2912,6 +3019,14 @@ static void* thread_smart(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
+	/*
+	 * Retrieve some attributes directly from the system.
+	 *
+	 * smartctl intentionally skips queries on devices in standby mode
+	 * to prevent accidentally spinning them up.
+	 */
+	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+
 	return 0;
 }
 
@@ -2927,6 +3042,14 @@ static void* thread_probe(void* arg)
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	/*
+	 * Retrieve some attributes directly from the system.
+	 *
+	 * smartctl intentionally skips queries on devices in standby mode
+	 * to prevent accidentally spinning them up.
+	 */
+	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
 
 	return 0;
 }
