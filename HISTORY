@@ -10,6 +10,13 @@ SnapRAID HISTORY
  * Added documentation of the tags used in the log file in the new
    snapraid_log manpage.
  * Added manual translations in multiple languages.
+ * Added new undocumented options that affect the -T, --speed-test:
+   --speed-test-period MS, specifies how many milliseconds to test each single
+     feature in the speed test. Default 1000.
+   --speed-test-disks-number DISKS, specifies how many disks to use in the
+     speed test. Default 8.
+   --speed-test-blocks-size KB, specifies the block size in kibibytes (1024)
+     for the speed test. Default 256.
 
 13.0 2025/10
 ============

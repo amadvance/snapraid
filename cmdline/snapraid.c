@@ -679,6 +679,9 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_SPACE_HOLDER 303
 #define OPT_TEST_FORMAT 304
 #define OPT_TEST_SKIP_MULTI_SCAN 305
+#define OPT_TEST_SPEED_PERIOD 307
+#define OPT_TEST_SPEED_DISKS_NUMBER 308
+#define OPT_TEST_SPEED_BLOCKS_SIZE 309
 
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
@@ -708,6 +711,9 @@ static struct option long_options[] = {
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
 	{ "speed-test", 0, 0, 'T' }, /* undocumented speed test command */
+	{ "speed-test-period", 1, 0, OPT_TEST_SPEED_PERIOD }, /* for how many milliseconds test each feature. Default 1000. */
+	{ "speed-test-disks-number", 1, 0, OPT_TEST_SPEED_DISKS_NUMBER }, /* how many disk number uses in the speed test. Default 8. */
+	{ "speed-test-blocks-size", 1, 0, OPT_TEST_SPEED_BLOCKS_SIZE }, /* how big in kBytes should be the blocks in the speed test. Default 256. */
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
 	{ "quiet", 0, 0, 'q' },
@@ -940,7 +946,9 @@ int snapraid_main(int argc, char* argv[])
 	const char* gen_conf;
 	const char* run;
 	int speedtest;
-	int period;
+	int speed_test_period;
+	int speed_test_disks_number;
+	int speed_test_blocks_size;
 	time_t t;
 	struct tm* tm;
 #if HAVE_LOCALTIME_R
@@ -960,7 +968,9 @@ int snapraid_main(int argc, char* argv[])
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
 	tommy_list_init(&filterlist_disk);
-	period = 1000;
+	speed_test_period = -1;
+	speed_test_blocks_size = -1;
+	speed_test_disks_number = -1;
 	filter_missing = 0;
 	filter_error = 0;
 	plan = SCRUB_AUTO;
@@ -1184,6 +1194,15 @@ int snapraid_main(int argc, char* argv[])
 		case 'T' :
 			speedtest = 1;
 			break;
+		case OPT_TEST_SPEED_PERIOD :
+			speed_test_period = atoi(optarg);
+			break;
+		case OPT_TEST_SPEED_DISKS_NUMBER :
+			speed_test_disks_number = atoi(optarg);
+			break;
+		case OPT_TEST_SPEED_BLOCKS_SIZE :
+			speed_test_blocks_size = atoi(optarg);
+			break;
 		case 'C' :
 			gen_conf = optarg;
 			break;
@@ -1207,7 +1226,7 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_DEVICE :
 			opt.skip_device = 1;
-			period = 50; /* reduce period of the speed test */
+			speed_test_period = 50; /* reduce period of the speed test for running the make check */
 			break;
 		case OPT_TEST_SKIP_CONTENT_CHECK :
 			opt.skip_content_check = 1;
@@ -1363,7 +1382,7 @@ int snapraid_main(int argc, char* argv[])
 	random_reseed();
 
 	if (speedtest != 0) {
-		speed(period);
+		speed(speed_test_period, speed_test_disks_number, speed_test_blocks_size);
 		os_done();
 		exit(EXIT_SUCCESS);
 	}

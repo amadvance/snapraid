@@ -25,16 +25,6 @@
 #include "raid/memory.h"
 #include "state.h"
 
-/*
- * Size of the blocks to test.
- */
-#define TEST_SIZE (256 * KIBI)
-
-/*
- * Number of data blocks to test.
- */
-#define TEST_COUNT (8)
-
 /**
  * Differential us of two timeval.
  */
@@ -75,7 +65,7 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
  */
 static unsigned side_effect;
 
-void speed(int period)
+void speed(int period, int nd, int size)
 {
 	struct timeval start;
 	struct timeval stop;
@@ -87,12 +77,21 @@ void speed(int period)
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int count;
-	int delta = period >= 1000 ? 10 : 1;
-	int size = TEST_SIZE;
-	int nd = TEST_COUNT;
+	int delta;
 	int nv;
-	void *v_alloc;
-	void **v;
+	void* v_alloc;
+	void** v;
+
+	if (nd < 0)
+		nd = 8;
+	if (size < 0)
+		size = 256 * KIBI;
+	else
+		size *= KIBI;
+	if (period < 0)
+		period = 1000;
+
+	delta = period >= 1000 ? 10 : 1;
 
 	nv = nd + RAID_PARITY_MAX + 1;
 
