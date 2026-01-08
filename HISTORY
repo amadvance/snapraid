@@ -3,11 +3,10 @@ SnapRAID HISTORY
 
 13.1 WIP
 ========
- * Added detection of `smartctl` executable. Improves reliability when running
-   under `sudo` or environments where `/sbin` and `/usr/sbin` are not in PATH.
+ * Added detection of the smartctl executable. Improves reliability when running
+   under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.
- * More log tags for the `status` command [Tristan Teufel].
- * More log tags for the `probe` command.
+ * More log tags for the status and probe commands [Tristan Teufel].
  * Added documentation of the tags used in the log file in the new
    snapraid_log manpage.
  * Added manual translations in multiple languages.
