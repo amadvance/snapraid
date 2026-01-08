@@ -474,17 +474,15 @@ static inline uint64_t util_rotl64(uint64_t x, int8_t r)
  * Rotate right.
  * In x86/x64 they are optimized with a single assembler instruction.
  */
-#if 0 /* unused */
 static inline uint32_t util_rotr32(uint32_t x, int8_t r)
 {
 	return (x >> r) | (x << (32 - r));
 }
-#endif
+
 static inline uint64_t util_rotr64(uint64_t x, int8_t r)
 {
 	return (x >> r) | (x << (64 - r));
 }
-
 
 /**
  * Swap endianness.
@@ -566,8 +564,168 @@ static inline void util_write64(void* ptr, uint64_t v)
 	memcpy(ptr, &v, sizeof(v));
 }
 
+/*
+ *  64*64 -> 128bit multiply function.
+ *
+ *  @param A  Address of 64-bit number.
+ *  @param B  Address of 64-bit number.
+ *
+ *  Calculates 128-bit C = *A * *B.
+ *
+ *  Overwrites A contents with C's low 64 bits.
+ *  Overwrites B contents with C's high 64 bits.
+ */
+#if defined(__x86_64__) || defined(_M_X64)
+static inline void util_mum(uint64_t *A, uint64_t *B)
+{
+	uint64_t a = *A;
+	uint64_t b = *B;
+	uint64_t low, high;
+
+	__asm__ (
+		"mulq %3"
+		: "=a" (low), "=d" (high)
+		: "a" (a), "rm" (b)
+		: "cc"
+	);
+
+	*A = low;
+	*B = high;
+}
+#elif defined(__aarch64__) || defined(_M_ARM64)
+static inline void util_mum(uint64_t *A, uint64_t *B)
+{
+	uint64_t a = *A;
+	uint64_t b = *B;
+	uint64_t low = a * b;
+	uint64_t high;
+	__asm__ (
+		"umulh %0, %1, %2"
+		: "=r" (high)
+		: "r" (a), "r" (b)
+	);
+	*A = low;
+	*B = high;
+}
+#elif defined(__SIZEOF_INT128__)
+static inline void util_mum(uint64_t *A, uint64_t *B)
+{
+	__uint128_t product = ((__uint128_t)*A) * ((__uint128_t)*B);
+	*A = (uint64_t)product;
+	*B = (uint64_t)(product >> 64);
+}
+#else
+static inline void util_mum(uint64_t *A, uint64_t *B)
+{
+	uint64_t a = *A;
+	uint64_t b = *B;
+
+	uint64_t a_lo = (uint32_t)a;
+	uint64_t a_hi = a >> 32;
+	uint64_t b_lo = (uint32_t)b;
+	uint64_t b_hi = b >> 32;
+
+	uint64_t p0 = a_lo * b_lo;
+	uint64_t p1 = a_lo * b_hi;
+	uint64_t p2 = a_hi * b_lo;
+	uint64_t p3 = a_hi * b_hi;
+
+	uint64_t middle = p1 + (p0 >> 32) + (uint32_t)p2;
+	uint64_t low = (middle << 32) | (uint32_t)p0;
+	uint64_t high = p3 + (middle >> 32) + (p2 >> 32);
+
+	*A = low;
+	*B = high;
+}
+#endif
+
+int util_selftest(void)
+{
+	/* rotate left 32-bit */
+	if (util_rotl32(0x00000001U, 1) != 0x00000002U) return -1;
+	if (util_rotl32(0x80000000U, 1) != 0x00000001U) return -1;
+	if (util_rotl32(0x00000001U, 31) != 0x80000000U) return -1;
+	if (util_rotl32(0x12345678U, 4) != 0x23456781U) return -1;
+	if (util_rotl32(0x12345678U, 0) != 0x12345678U) return -1;
+	if (util_rotl32(0x12345678U, 32) != 0x12345678U) return -1;  /* r % 32 == 0 */
+
+	/* rotate right 32-bit */
+	if (util_rotr32(0x00000001U, 1) != 0x80000000U) return -1;
+	if (util_rotr32(0x80000000U, 1) != 0x40000000U) return -1;
+	if (util_rotr32(0x00000002U, 1) != 0x00000001U) return -1;
+	if (util_rotr32(0x12345678U, 4) != 0x81234567U) return -1;
+
+	/* rotate left 64-bit */
+	if (util_rotl64(1ULL, 1) != 2ULL) return -1;
+	if (util_rotl64(1ULL << 63, 1) != 1ULL) return -1;
+	if (util_rotl64(0x123456789ABCDEF0ULL, 8) != 0x3456789ABCDEF012ULL) return -1;
+	if (util_rotl64(0x123456789ABCDEF0ULL, 0) != 0x123456789ABCDEF0ULL) return -1;
+
+	/* rotate right 64-bit */
+	if (util_rotr64(1ULL, 1) != (1ULL << 63)) return -1;
+	if (util_rotr64(2ULL, 1) != 1ULL) return -1;
+	if (util_rotr64(0x123456789ABCDEF0ULL, 8) != 0xF0123456789ABCDEULL) return -1;
+
+	/* util_mum tests */
+	uint64_t a, b;
+
+	/* small values */
+	a = 3; b = 4;
+	util_mum(&a, &b);
+	if (a != 12 || b != 0) return -1;
+
+	/* 1 * anything */
+	a = 0xFFFFFFFFFFFFFFFFULL; b = 1;
+	util_mum(&a, &b);
+	if (a != 0xFFFFFFFFFFFFFFFFULL || b != 0) return -1;
+
+	/* (2^32) * (2^32) = 2^64 */
+	a = 1ULL << 32; b = 1ULL << 32;
+	util_mum(&a, &b);
+	if (a != 0 || b != 1) return -1;
+
+	/* max uint64 * max uint64 */
+	a = 0xFFFFFFFFFFFFFFFFULL; b = 0xFFFFFFFFFFFFFFFFULL;
+	util_mum(&a, &b);
+	if (a != 1 || b != 0xFFFFFFFFFFFFFFFEULL) return -1;
+
+	/* larger random-ish test */
+	a = 0x0123456789ABCDEFULL;
+	b = 0xFEDCBA9876543210ULL;
+	util_mum(&a, &b);
+	if (a != 0x2236D88FE5618CF0ULL || b != 0x121FA00AD77D742ULL) return -1;
+
+	return 0;
+}
+
 /****************************************************************************/
 /* hash */
+
+const char* memhashname(unsigned kind)
+{
+	switch (kind) {
+	case HASH_MURMUR3 : return "murmur3";
+	case HASH_SPOOKY2 : return "spooky2";
+	case HASH_METRO : return "metro";
+	}
+	
+	return 0;
+}
+
+unsigned membesthash(void)
+{
+#ifdef CONFIG_X86
+	if (sizeof(void*) == 4 && !raid_cpu_has_slowmult())
+		return HASH_MURMUR3;
+	else
+		return HASH_SPOOKY2;
+#else
+	if (sizeof(void*) == 4)
+		return HASH_MURMUR3;
+	else
+		return HASH_SPOOKY2;
+#endif
+}
 
 #include "murmur3.c"
 #include "spooky2.c"

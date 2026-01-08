@@ -192,6 +192,16 @@ void crc32c_init(void);
 #define HASH_METRO 3
 
 /**
+ * Return the hash that is expected to be the fastest in this architecture
+ */
+unsigned membesthash(void);
+
+/**
+ * Return the name of the hash
+ */
+const char* memhashname(unsigned kind);
+
+/**
  * Compute the HASH of a memory block.
  * Seed is a 128 bit vector.
  */
@@ -206,6 +216,11 @@ const char* hash_config_name(unsigned kind);
  * Count the number of different bits in the two buffers.
  */
 unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t size);
+
+/**
+ * Unit test
+ */
+int util_selftest(void);
 
 /****************************************************************************/
 /* lock */

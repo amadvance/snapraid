@@ -1346,17 +1346,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	} else if (state->opt.force_spooky2) {
 		state->besthash = HASH_SPOOKY2;
 	} else {
-#ifdef CONFIG_X86
-		if (sizeof(void*) == 4 && !raid_cpu_has_slowmult())
-			state->besthash = HASH_MURMUR3;
-		else
-			state->besthash = HASH_SPOOKY2;
-#else
-		if (sizeof(void*) == 4)
-			state->besthash = HASH_MURMUR3;
-		else
-			state->besthash = HASH_SPOOKY2;
-#endif
+		state->besthash = membesthash();
 	}
 
 	/* by default use the best hash */

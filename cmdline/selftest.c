@@ -584,6 +584,12 @@ void selftest(void)
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (util_selftest() != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed UTIL test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 	test_hash();
 	test_crc32c();
 	test_tommy();

@@ -219,17 +219,7 @@ void speed(int period, int nd, int size)
 	printf("\n");
 
 	printf("%8s", "hash");
-#ifdef CONFIG_X86
-	if (sizeof(void *) == 4 && !raid_cpu_has_slowmult())
-		printf("%8s", "murmur3");
-	else
-		printf("%8s", "spooky2");
-#else
-	if (sizeof(void *) == 4)
-		printf("%8s", "murmur3");
-	else
-		printf("%8s", "spooky2");
-#endif
+	printf("%8s", memhashname(membesthash()));
 	fflush(stdout);
 
 	SPEED_START {
