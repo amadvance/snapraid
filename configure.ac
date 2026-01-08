@@ -17,10 +17,11 @@ AC_CHECK_PROG([SDE],[sde64],[sde64],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
-dnl Options to improve stacktrace
+dnl Options to improve stacktrace (some disabled as no crash reported by years)
 AC_CHECK_CC_OPT([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-pointer", [])
-AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
-AC_CHECK_CC_OPT([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
+# AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
+# AC_CHECK_CC_OPT([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
+# AC_CHECK_CC_OPT([-fno-optimize-sibling-calls], CFLAGS="$CFLAGS -fno-optimize-sibling-calls", [])
 AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
 # This the new default for gcc 10
 AC_CHECK_CC_OPT([-fno-common], CFLAGS="$CFLAGS -fno-common", [])
