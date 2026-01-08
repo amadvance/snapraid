@@ -16,7 +16,12 @@
  */
 
 /*
- * Derivative work from metrohash128.cpp
+ * Derivative work from MetroHash128::Hash
+ *
+ * This version extends the original MetroHash128::Hash to accept a full 128-bit seed.
+ *
+ * Note: The original algorithm's behavior can be perfectly replicated by
+ * setting the low and high part of the seed to the same 64-bit value.
  *
  * https://github.com/jandrewrogers/MetroHash/blob/master/src/metrohash128.cpp
  *
@@ -45,10 +50,25 @@ void MetroHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* d
 	const uint8_t* ptr = data;
 	uint64_t v[4];
 
+	/*
+	 * EXTENSION: Initialize primary state with 128-bit seed (seedL and seedH)
+	 * Ensures both halves influence the hash even for short messages (< 32 bytes)
+	 *
+	 * Original code was:
+	 * v[0] = (static_cast<uint64_t>(seed) - k0) * k3;
+	 * v[1] = (static_cast<uint64_t>(seed) + k1) * k2;
+	 */
 	v[0] = (util_read64(seed) - k0) * k3;
 	v[1] = (util_read64(seed + 8) + k1) * k2;
 
 	if (size >= 32) {
+		/*
+		 * EXTENSION: Initialize secondary state using both halves of the 128-bit seed
+		 *
+		 * Original code was:
+		 * v[2] = (static_cast<uint64_t>(seed) + k0) * k2;
+		 * v[3] = (static_cast<uint64_t>(seed) - k1) * k3;
+		 */
 		v[2] = (util_read64(seed) + k0) * k2;
 		v[3] = (util_read64(seed + 8) - k1) * k3;
 
