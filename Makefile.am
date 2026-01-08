@@ -95,6 +95,8 @@ noinst_HEADERS = \
 	cmdline/spooky2test.c \
 	cmdline/metro.c \
 	cmdline/metrotest.c \
+	cmdline/museair.c \
+	cmdline/museairtest.c \
 	cmdline/fnmatch.h \
 	cmdline/import.h \
 	cmdline/search.h \

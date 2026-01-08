@@ -707,6 +707,7 @@ const char* memhashname(unsigned kind)
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
 	case HASH_METRO : return "metro";
+	case HASH_MUSEAIR : return "museair";
 	}
 	
 	return 0;
@@ -730,6 +731,7 @@ unsigned membesthash(void)
 #include "murmur3.c"
 #include "spooky2.c"
 #include "metro.c"
+#include "museair.c"
 
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)
 {
@@ -742,6 +744,9 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		break;
 	case HASH_METRO :
 		MetroHash128(src, size, seed, digest);
+		break;
+	case HASH_MUSEAIR :
+		MuseAirLoong(src, size, seed, digest);
 		break;
 	default :
 		/* LCOV_EXCL_START */

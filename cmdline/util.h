@@ -190,6 +190,7 @@ void crc32c_init(void);
 #define HASH_MURMUR3 1
 #define HASH_SPOOKY2 2
 #define HASH_METRO 3
+#define HASH_MUSEAIR 4
 
 /**
  * Return the hash that is expected to be the fastest in this architecture

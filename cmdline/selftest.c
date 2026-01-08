@@ -165,6 +165,14 @@ static struct hash_test_vector TEST_METRO[] = {
 	{ 0, 0, { 0 }, { 0 } }
 };
 
+/**
+ * Test vectors for MuseAirLoong
+ */
+static struct hash_test_vector TEST_MUSEAIR[] = {
+#include "museairtest.c"
+	{ 0, 0, { 0 }, { 0 } }
+};
+
 #define HASH_TEST_MAX 512 /* tests are never longer than 512 bytes */
 
 static void test_hash(void)
@@ -249,6 +257,19 @@ static void test_hash(void)
 		if (memcmp(digest, TEST_METRO[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed Metro test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	for (i = 0; TEST_MUSEAIR[i].data; ++i) {
+		unsigned char digest[HASH_MAX];
+		memcpy(buffer_aligned, TEST_MUSEAIR[i].data, TEST_MUSEAIR[i].len);
+		memcpy(seed_aligned, TEST_MUSEAIR[i].seed, HASH_MAX);
+		memhash(HASH_MUSEAIR, seed_aligned, digest, buffer_aligned, TEST_MUSEAIR[i].len);
+		if (memcmp(digest, TEST_MUSEAIR[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed MuseAir test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
