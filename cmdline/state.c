@@ -57,7 +57,7 @@ const char* lev_name(unsigned l)
 	case 5 : return "6-Parity";
 	}
 
-	return 0;
+	return "invalid";
 }
 
 const char* lev_config_name(unsigned l)
@@ -71,7 +71,7 @@ const char* lev_config_name(unsigned l)
 	case 5 : return "6-parity";
 	}
 
-	return 0;
+	return "invalid";
 }
 
 static int lev_config_scan(const char* s, unsigned* level, unsigned* mode)

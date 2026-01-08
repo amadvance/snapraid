@@ -43,14 +43,13 @@ struct snapraid_plan {
 	struct snapraid_state* state;
 	int plan; /**< One of the SCRUB_*. */
 	time_t timelimit; /**< Time limit. Valid only with SCRUB_AUTO. */
-	block_off_t lastlimit; /**< Number of blocks allowed with time exactly at ::timelimit. */
-	block_off_t countlast; /**< Counter of blocks with time exactly at ::timelimit. */
+	block_off_t lastlimit; /**< Number of blocks allowed with time exactly at ::timelimit. Valid only with SCRUB_AUTO. */
 };
 
 /**
  * Check if we have to process the specified block index ::i.
  */
-static int block_is_enabled(struct snapraid_plan* plan, block_off_t i)
+static int block_is_enabled(struct snapraid_plan* plan, block_off_t* countlast, block_off_t i)
 {
 	time_t blocktime;
 	snapraid_info info;
@@ -90,12 +89,12 @@ static int block_is_enabled(struct snapraid_plan* plan, block_off_t i)
 	/* otherwise, check if we reached the last limit count */
 	if (blocktime == plan->timelimit) {
 		/* if we reached the count limit */
-		if (plan->countlast >= plan->lastlimit) {
+		if (*countlast >= plan->lastlimit) {
 			/* skip it */
 			return 0;
 		}
 
-		++plan->countlast;
+		++*countlast;
 	}
 
 	return 1;
@@ -256,6 +255,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
+	block_off_t countlast;
 	block_off_t autosavedone;
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
@@ -293,10 +293,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	/* first count the number of blocks to process */
 	countmax = 0;
-	plan->countlast = 0;
+	countlast = 0;
 	block_enabled = calloc_nofail(1, bit_vect_size(blockmax)); /* preinitialize to 0 */
 	for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
-		if (!block_is_enabled(plan, blockcur))
+		if (!block_is_enabled(plan, &countlast, blockcur))
 			continue;
 		bit_vect_set(block_enabled, blockcur);
 		++countmax;
@@ -901,6 +901,10 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		log_tag("count_limit:%u\n", countlimit);
 		log_tag("time_limit:%" PRIu64 "\n", (uint64_t)ps.timelimit);
 		log_tag("last_limit:%u\n", ps.lastlimit);
+	} else {
+		/* avoid compiler warnings */
+		ps.timelimit = 0;
+		ps.lastlimit = 0;
 	}
 
 	/* free the temp vector */
