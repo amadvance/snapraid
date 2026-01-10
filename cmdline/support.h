@@ -487,5 +487,19 @@ void thread_join(thread_id_t thread, void** retval);
 void thread_yield(void);
 #endif
 
-#endif
+/****************************************************************************/
+/* match */
 
+/* 
+ * Wild match function.
+ * 
+ * - ? matches any single character except /
+ * - * matches any sequence of characters except /
+ * - ** (nearby a /) matches everything including /
+ * - ** (not near a /) like *
+ * - ##/ reduces to nothing in addition to the normal matching of ** (using # instead of * to mess the C comment)
+ * - [...] matches character classes with support for ranges and negation lile [!...] or [^...], except /
+ */
+int wnmatch(const char* p, const char* t);
+
+#endif

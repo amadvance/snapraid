@@ -1536,32 +1536,60 @@ Ein Beispiel für eine typische Konfiguration für Windows ist:
 8 PATTERN
 =========
 
-Muster werden verwendet, um eine Teilmenge von Dateien zum
-Ausschließen oder Einschließen in den Prozess auszuwählen.
+Muster bieten eine flexible Möglichkeit, Dateien für die Einbeziehung oder
+den Ausschluss zu filtern. Durch die Verwendung von Globbing-Zeichen können Sie Regeln definieren,
+die mit bestimmten Dateinamen oder ganzen Verzeichnisstrukturen übereinstimmen, ohne
+jeden Pfad manuell auflisten zu müssen.
+
+Das Fragezeichen `?` entspricht einem beliebigen einzelnen Zeichen außer dem
+Verzeichnistrennzeichen. Dies macht es nützlich für den Abgleich von Dateinamen mit variablen
+Zeichen, während das Muster auf eine einzelne Verzeichnisebene beschränkt bleibt.
+
+Der einfache Stern `*` entspricht einer beliebigen Folge von Zeichen, aber wie das
+Fragezeichen überschreitet er niemals Verzeichnisgrenzen. Er stoppt beim
+Schrägstrich, was ihn für den Abgleich innerhalb einer einzelnen Pfadkomponente
+geeignet macht. Dies ist das Standardverhalten von Wildcards, das vom Shell-
+Globbing bekannt ist.
+
+Der Doppelstern `**` ist mächtiger; er entspricht jeder Folge von
+Zeichen einschließlich Verzeichnistrennzeichen. Dies ermöglicht es Mustern, über
+mehrere Verzeichnisebenen hinweg übereinzustimmen. Wenn `**` direkt in
+ein Muster eingebettet ist, kann es null oder mehr Zeichen einschließlich Schrägstrichen zwischen
+dem umgebenden wörtlichen Text entsprechen.
+
+Die wichtigste Verwendung von `**` ist in der speziellen Form `/**/`. Dies entspricht
+null oder mehr vollständigen Verzeichnisebenen, was es möglich macht, Dateien
+in jeder Tiefe eines Verzeichnisbaums abzugleichen, ohne die genaue Pfadstruktur zu kennen.
+Zum Beispiel entspricht das Muster `src/**/main.js` dem Pfad `src/main.js` (Überspringen
+von null Verzeichnissen), `src/ui/main.js` (Überspringen eines Verzeichnisses) und
+`src/ui/components/main.js` (Überspringen von zwei Verzeichnissen).
+
+Zeichenklassen mit eckigen Klammern `[]` entsprechen einem einzelnen Zeichen aus einer
+bestimmten Menge oder einem Bereich. Wie die anderen Einzelzeichenmuster
+entsprechen sie nicht den Verzeichnistrennzeichen. Klassen unterstützen Bereiche und Negierung durch
+ein Ausrufezeichen.
+
+Der grundlegende Unterschied, den man sich merken sollte, ist, dass `*`, `?` und Zeichenklassen
+alle Verzeichnisgrenzen respektieren und nur innerhalb einer einzelnen Pfadkomponente
+übereinstimmen, während `**` das einzige Muster ist, das über Verzeichnistrennzeichen
+hinweg übereinstimmen kann.
 
 Es gibt vier verschiedene Arten von Mustern:
 
     FILE
-        Wählt jede Datei namens DATEI aus. Sie können beliebige
-        Globbing-Zeichen wie * und ? sowie Zeichenklassen wie [a-z]
-        verwenden. Dieses Muster gilt nur für Dateien, nicht für
-        Verzeichnisse.
+        Wählt jede Datei mit dem Namen FILE aus.
+        Dieses Muster gilt nur für Dateien, nicht für Verzeichnisse.
 
     DIR/
-        Wählt jedes Verzeichnis namens VERZ und alles darin aus.
-        Sie können beliebige Globbing-Zeichen wie * und ? verwenden.
+        Wählt jedes Verzeichnis mit dem Namen DIR und alles darin aus.
         Dieses Muster gilt nur für Verzeichnisse, nicht für Dateien.
 
     /PATH/FILE
-        Wählt den exakt angegebenen Dateipfad aus. Sie können beliebige
-        Globbing-Zeichen wie * und ? verwenden, aber sie stimmen niemals
-        mit einem Verzeichnis-Slash überein.
-        Dieses Muster gilt nur für Dateien, nicht für Verzeichnisse.
+        Wählt den exakt angegebenen Dateipfad aus. Dieses Muster gilt
+        nur für Dateien, nicht für Verzeichnisse.
 
     /PATH/DIR/
-        Wählt den exakt angegebenen Verzeichnispfad und alles darin
-        aus. Sie können beliebige Globbing-Zeichen wie * und ? verwenden,
-        aber sie stimmen niemals mit einem Verzeichnis-Slash überein.
+        Wählt den exakt angegebenen Verzeichnispfad und alles darin aus.
         Dieses Muster gilt nur für Verzeichnisse, nicht für Dateien.
 
 Wenn Sie einen absoluten Pfad angeben, der mit / beginnt, wird er

@@ -1807,34 +1807,60 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD
 .RE
 .SH MOTIF (PATTERN) 
-Les motifs sont utilisés pour sélectionner un sous\-ensemble de fichiers
-à exclure ou à inclure dans le processus.
+Les motifs offrent un moyen flexible de filtrer les fichiers à inclure ou
+à exclure. En utilisant des caractères de \[dq]globbing\[dq], vous pouvez définir des règles qui
+correspondent à des noms de fichiers spécifiques ou à des structures de répertoires entières sans
+lister chaque chemin manuellement.
+.PP
+Le point d\'interrogation \`?\` correspond à n\'importe quel caractère unique, sauf le
+séparateur de répertoire. Cela le rend utile pour faire correspondre des noms de fichiers avec des
+caractères variables tout en limitant le motif à un seul niveau de répertoire.
+.PP
+L\'étoile simple \`*\` correspond à n\'importe quelle séquence de caractères, mais comme le
+point d\'interrogation, elle ne traverse jamais les frontières des répertoires. Elle s\'arrête à la
+barre oblique, ce qui la rend adaptée à la recherche de correspondances au sein d\'un seul
+composant de chemin. Il s\'agit du comportement standard des jokers familier du
+\[dq]globbing\[dq] shell.
+.PP
+La double étoile \`**\` est plus puissante, elle correspond à n\'importe quelle séquence de
+caractères, y compris les séparateurs de répertoires. Cela permet aux motifs de correspondre
+sur plusieurs niveaux de répertoires. Lorsque \`**\` apparaît directement intégré dans
+un motif, il peut correspondre à zéro ou plusieurs caractères, y compris les barres obliques entre
+le texte littéral environnant.
+.PP
+L\'utilisation la plus importante de \`**\` est sous la forme spéciale \`/**/\`. Celle\-ci correspond à
+zéro ou plusieurs niveaux de répertoires complets, ce qui permet de faire correspondre des fichiers
+à n\'importe quelle profondeur dans une arborescence de répertoires sans connaître la structure exacte du chemin.
+Par exemple, le motif \`src/**/main.js\` correspond à \`src/main.js\` (saut de
+zéro répertoire), \`src/ui/main.js\` (saut d\'un répertoire), et
+\`src/ui/components/main.js\` (saut de deux répertoires).
+.PP
+Les classes de caractères utilisant des crochets \`[]\` correspondent à un seul caractère d\'un
+ensemble ou d\'une plage spécifiés. Comme les autres motifs à caractère unique, elles
+ne correspondent pas aux séparateurs de répertoires. Les classes supportent les plages et la négation à l\'aide
+d\'un point d\'exclamation.
+.PP
+La distinction fondamentale à retenir est que \`*\`, \`?\` et les classes de caractères
+respectent tous les limites des répertoires et ne correspondent qu\'au sein d\'un seul
+composant de chemin, alors que \`**\` est le seul motif qui peut correspondre à travers
+les séparateurs de répertoires.
 .PP
 Il existe quatre types de motifs différents :
 .TP
-.B FICHIER
-Sélectionne tout fichier nommé FICHIER. Vous pouvez utiliser
-tous les caractères de globbing comme * et ?, et les classes de
-caractères comme [a\-z].
+.B FILE
+Sélectionne n\'importe quel fichier nommé FILE.
 Ce motif s\'applique uniquement aux fichiers, pas aux répertoires.
 .TP
-.B DOSSIER/
-Sélectionne tout répertoire nommé DOSSIER et tout ce qu\'il
-contient. Vous pouvez utiliser tous les caractères de globbing
-comme * et ?.
+.B DIR/
+Sélectionne n\'importe quel répertoire nommé DIR et tout son contenu.
 Ce motif s\'applique uniquement aux répertoires, pas aux fichiers.
 .TP
-.B /CHEMIN/FICHIER
-Sélectionne le chemin de fichier exact spécifié. Vous pouvez
-utiliser tous les caractères de globbing comme * et ?, mais
-ils ne correspondent jamais à une barre oblique de répertoire.
-Ce motif s\'applique uniquement aux fichiers, pas aux répertoires.
+.B /PATH/FILE
+Sélectionne le chemin exact du fichier spécifié. Ce motif s\'applique
+uniquement aux fichiers, pas aux répertoires.
 .TP
-.B /CHEMIN/DOSSIER/
-Sélectionne le chemin de répertoire exact spécifié et tout ce qu\'il
-contient. Vous pouvez utiliser tous les caractères de globbing
-comme * et ?, mais ils ne correspondent jamais à une barre
-oblique de répertoire.
+.B /PATH/DIR/
+Sélectionne le chemin exact du répertoire spécifié et tout son contenu.
 Ce motif s\'applique uniquement aux répertoires, pas aux fichiers.
 .PP
 Lorsque vous spécifiez un chemin absolu commençant par /, il est

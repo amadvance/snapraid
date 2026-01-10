@@ -1691,32 +1691,61 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD
 .RE
 .SH PATTERN 
-Wzorce są używane do wybierania podzbioru plików do wykluczenia lub włączenia
-do procesu.
+Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub
+wykluczenia. Używając znaków globbingowych, można zdefiniować reguły, które
+pasują do określonych nazw plików lub całych struktur katalogów bez
+ręcznego wymieniania każdej ścieżki.
+.PP
+Znak zapytania \`?\` dopasowuje dowolny pojedynczy znak z wyjątkiem
+separatora katalogów. Dzięki temu jest przydatny do dopasowywania nazw plików ze
+zmiennymi znakami, przy jednoczesnym ograniczeniu wzorca do jednego poziomu katalogu.
+.PP
+Pojedyncza gwiazdka \`*\` dopasowuje dowolną sekwencję znaków, ale podobnie jak
+znak zapytania, nigdy nie przekracza granic katalogów. Zatrzymuje się na
+ukośniku, co czyni ją odpowiednią do dopasowywania w obrębie jednego
+składnika ścieżki. Jest to standardowe zachowanie symboli wieloznacznych znane
+z globbingu powłoki (shell).
+.PP
+Podwójna gwiazdka \`**\` jest potężniejsza, dopasowuje dowolną sekwencję
+znaków, w tym separatory katalogów. Pozwala to wzorcom dopasowywać się
+na wielu poziomach katalogów. Gdy \`**\` pojawia się bezpośrednio wewnątrz
+wzorca, może dopasować zero lub więcej znaków, w tym ukośniki między
+otaczającym tekstem dosłownym.
+.PP
+Najważniejszym zastosowaniem \`**\` jest specjalna forma \`/**/\`. Dopasowuje ona
+zero lub więcej pełnych poziomów katalogów, umożliwiając dopasowanie plików
+na dowolnej głębokości w drzewie katalogów bez znajomości dokładnej struktury ścieżki.
+Na przykład wzorzec \`src/**/main.js\` pasuje do \`src/main.js\` (pomijając
+zero katalogów), \`src/ui/main.js\` (pomijając jeden katalog) oraz
+\`src/ui/components/main.js\` (pomijając dwa katalogi).
+.PP
+Klasy znaków używające nawiasów kwadratowych \`[]\` dopasowują pojedynczy znak z
+określonego zestawu lub zakresu. Podobnie jak inne wzorce pojedynczych znaków,
+nie pasują one do separatorów katalogów. Klasy obsługują zakresy i negację za pomocą
+wykrzyknika.
+.PP
+Podstawową różnicą, o której należy pamiętać, jest to, że \`*\`, \`?\` i klasy znaków
+wszystkie respektują granice katalogów i dopasowują się tylko w obrębie jednego
+składnika ścieżki, podczas gdy \`**\` jest jedynym wzorcem, który może dopasowywać się poprzez
+separatory katalogów.
 .PP
 Istnieją cztery różne typy wzorców:
 .TP
 .B FILE
-Wybiera dowolny plik o nazwie FILE. Możesz użyć dowolnych
-znaków globbing, takich jak * i ?, oraz klas znaków, takich jak [a\-z].
+Wybiera dowolny plik o nazwie FILE.
 Ten wzorzec dotyczy tylko plików, a nie katalogów.
 .TP
 .B DIR/
-Wybiera dowolny katalog o nazwie DIR i wszystko w środku.
-Możesz użyć dowolnych znaków globbing, takich jak * i ?.
+Wybiera dowolny katalog o nazwie DIR i wszystko, co się w nim znajduje.
 Ten wzorzec dotyczy tylko katalogów, a nie plików.
 .TP
 .B /PATH/FILE
-Wybiera dokładnie określoną ścieżkę pliku. Możesz użyć dowolnych
-znaków globbing, takich jak * i ?, ale nigdy nie pasują one do
-ukośnika katalogu.
-Ten wzorzec dotyczy tylko plików, a nie katalogów.
+Wybiera dokładnie określoną ścieżkę pliku. Ten wzorzec dotyczy
+tylko plików, a nie katalogów.
 .TP
 .B /PATH/DIR/
-Wybiera dokładnie określoną ścieżkę katalogu i wszystko
-w środku. Możesz użyć dowolnych znaków globbing, takich jak * i ?, ale
-nigdy nie pasują one do ukośnika katalogu.
-Ten wzorzec dotyczy tylko katalogów, a nie plików.
+Wybiera dokładnie określoną ścieżkę katalogu i wszystko, co się w nim
+znajduje. Ten wzorzec dotyczy tylko katalogów, a nie plików.
 .PP
 Gdy określisz ścieżkę bezwzględną zaczynającą się od /, jest ona stosowana w
 katalogu głównym macierzy, a nie w katalogu głównym lokalnego systemu plików.

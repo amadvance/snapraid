@@ -2010,3 +2010,166 @@ void thread_yield(void)
 }
 #endif
 
+/****************************************************************************/
+/* wnmatch */
+
+/**
+ * Helper function for case-insensitive character comparison 
+ */
+static inline int char_match(char p, char t)
+{
+#ifdef WIN32
+	return tolower((unsigned char)p) == tolower((unsigned char)t);
+#else
+	return p == t;
+#endif
+}
+
+/**
+ * Match character class [...]
+ * Return 0 if NOT matched
+ */
+static const char* match_class(const char* p, char t)
+{
+	int negate = 0;
+	int matched = 0;
+
+	if (*p == '!' || *p == '^') {
+		negate = 1;
+		++p;
+	}
+
+	while (*p && *p != ']') {
+		if (p[1] == '-' && p[2] != ']' && p[2] != 0) {
+			/* range [a-z] */
+			char start = *p;
+			char end = p[2];
+#ifdef WIN32
+			start = tolower((unsigned char)start);
+			end = tolower((unsigned char)end);
+			t = tolower((unsigned char)t);
+#endif
+			if (t >= start && t <= end)
+				matched = 1;
+			p += 3;
+		} else {
+			/* single character */
+			if (char_match(*p, t))
+				matched = 1;
+			++p;
+		}
+	}
+
+	if (*p == ']')
+		++p;
+
+	if (negate)
+		matched = !matched;
+	if (!matched)
+		return 0;
+
+	return p;
+}
+
+int wnmatch(const char* p, const char* t)
+{
+	char p1 = 0; /* previous char */
+	while (*p) {
+		char p0 = *p;
+		switch (p0) {
+		case '?' :
+			/* ? matches any single character except / */
+			if (*t == 0 || *t == '/')
+				return 1;
+			++p;
+			++t;
+			break;
+		case '*' :
+			/* check for ** */
+			if (p[1] == '*') {
+				/* skip the ** */
+				p += 2;
+
+				/* munge all * */
+				while (*p == '*')
+					++p;
+
+				/* if its not near a slash, it's like a single * */
+				if (p1 == '/' || *p == '/') {
+					/* a ** at end matches everything */
+					if (*p == 0)
+						return 0;
+
+					/*
+					 * In between slashes matches to nothing
+					 * 
+					 * Check for /##/ or ^##/ (^ start of string)
+					 *
+					 * This is required for:
+					 * "/##/file.txt" matching "/file.txt"
+					 * "##/file.txt" matching "file.txt"
+					 * "x##/file.txt" NOT matching "xfile.txt"
+					 */
+					 if (*p == '/' && (p1 == 0 || p1 == '/')) {
+						/* try reducing to nothing */
+						if (wnmatch(p + 1, t) == 0)
+							return 0;
+						/* otherwise / should match in the text */
+					}
+
+					/* try matching with 0 or more characters */
+					while (*t) {
+						if (wnmatch(p, t) == 0)
+							return 0;
+						++t;
+					}
+
+					/* try matching at the end */
+					return wnmatch(p, t);
+				}
+			} else {
+				/* skip the * */
+				++p;
+			}
+
+			/* a * at end matches rest of segment */
+			if (*p == 0) {
+				while (*t && *t != '/')
+					++t;
+				return *t != 0;
+			}
+
+			/* try matching with 0 or more characters */
+			while (*t && *t != '/') {
+				if (wnmatch(p, t) == 0)
+					return 0;
+				++t;
+			}
+
+			/* try matching at the end */
+			return wnmatch(p, t);
+		case '[' :
+			/* character class */
+			if (*t == 0 || *t == '/')
+				return 1;
+
+			p = match_class(p + 1, *t);
+			if (!p)
+				return 1;
+
+			++t;
+			break;
+		default:
+			/* literal character */
+			if (*t == 0 || !char_match(*p, *t))
+				return 1;
+			++p;
+			++t;
+			break;
+		}
+		p1 = p0;
+	}
+
+	/* match successful if we've consumed all text */
+	return *t != 0;
+}

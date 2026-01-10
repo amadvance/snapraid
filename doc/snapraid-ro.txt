@@ -1419,32 +1419,61 @@ Un exemplu de configurare tipică pentru Windows este:
 8 MODEL (PATTERN)
 =================
 
-Modelele sunt utilizate pentru a selecta un subset de fișiere de exclus sau inclus în
-proces.
+Modelele oferă o modalitate flexibilă de a filtra fișierele pentru includere sau
+excludere. Folosind caractere de tip globbing, puteți defini reguli care să
+se potrivească cu nume de fișiere specifice sau cu structuri întregi de directoare fără
+a lista manual fiecare cale.
+
+Semnul întrebării `?` se potrivește cu orice caracter unic, cu excepția
+separatorului de directoare. Acest lucru îl face util pentru potrivirea numelor de fișiere cu
+caractere variabile, păstrând în același timp modelul limitat la un singur nivel de director.
+
+Asteriscul simplu `*` se potrivește cu orice secvență de caractere, dar, la fel ca
+semnul întrebării, nu trece niciodată de limitele directoarelor. Se oprește la
+slash-ul înainte, ceea ce îl face potrivit pentru potrivirea în cadrul unei singure
+componente a căii. Acesta este comportamentul standard al metacaracterelor, familiar
+din shell globbing.
+
+Asteriscul dublu `**` este mai puternic, se potrivește cu orice secvență de
+caractere, inclusiv separatori de directoare. Acest lucru permite modelelor să se potrivească
+pe mai multe niveluri de directoare. Când `**` apare inserat direct într-un
+model, se poate potrivi cu zero sau mai multe caractere, inclusiv slash-uri între
+textul literal înconjurător.
+
+Cea mai importantă utilizare a lui `**` este în forma specială `/**/`. Aceasta se potrivește cu
+zero sau mai multe niveluri complete de directoare, făcând posibilă potrivirea fișierelor
+la orice adâncime într-un arbore de directoare fără a cunoaște structura exactă a căii.
+De exemplu, modelul `src/**/main.js` se potrivește cu `src/main.js` (sărind
+peste zero directoare), `src/ui/main.js` (sărind peste un director) și
+`src/ui/components/main.js` (sărind peste două directoare).
+
+Clasele de caractere care utilizează paranteze pătrate `[]` se potrivesc cu un singur caracter dintr-un
+set sau interval specificat. La fel ca și celelalte modele de un singur caracter, acestea
+nu se potrivesc cu separatorii de directoare. Clasele suportă intervale și negarea folosind
+un semn de exclamare.
+
+Distincția fundamentală de reținut este că `*`, `?` și clasele de caractere
+respectă toate limitele directoarelor și se potrivesc doar în cadrul unei singure
+componente a căii, în timp ce `**` este singurul model care se poate potrivi peste
+separatorii de directoare.
 
 Există patru tipuri diferite de modele:
 
     FILE
-        Selectează orice fișier numit FILE. Puteți utiliza orice caracter de globbing
-        precum * și ?, și clase de caractere precum [a-z].
-        Acest model se aplică numai fișierelor, nu directoarelor.
+        Selectează orice fișier cu numele FILE.
+        Acest model se aplică numai fișierelor, nu și directoarelor.
 
     DIR/
-        Selectează orice director numit DIR și tot ce se află în interior.
-        Puteți utiliza orice caracter de globbing precum * și ?.
-        Acest model se aplică numai directoarelor, nu fișierelor.
+        Selectează orice director cu numele DIR și tot ce se află în interior.
+        Acest model se aplică numai directoarelor, nu și fișierelor.
 
     /PATH/FILE
-        Selectează calea exactă a fișierului specificat. Puteți utiliza orice
-        caractere de globbing precum * și ?, dar acestea nu se potrivesc niciodată cu o
-        bară oblică de director (directory slash).
-        Acest model se aplică numai fișierelor, nu directoarelor.
+        Selectează calea exactă a fișierului specificat. Acest model se aplică
+        numai fișierelor, nu și directoarelor.
 
     /PATH/DIR/
         Selectează calea exactă a directorului specificat și tot ce se află
-        în interior. Puteți utiliza orice caractere de globbing precum * și ?, dar
-        acestea nu se potrivesc niciodată cu o bară oblică de director.
-        Acest model se aplică numai directoarelor, nu fișierelor.
+        în interior. Acest model se aplică numai directoarelor, nu și fișierelor.
 
 Când specificați o cale absolută care începe cu /, aceasta este aplicată la
 directorul rădăcină al matricei, nu la directorul rădăcină al sistemului de fișiere local.

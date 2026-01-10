@@ -219,12 +219,6 @@
 #include <getopt.h>
 #endif
 
-#if HAVE_FNMATCH_H
-#include <fnmatch.h>
-#else
-#include "fnmatch.h"
-#endif
-
 #if HAVE_MATH_H
 #include <math.h>
 #endif
@@ -272,15 +266,6 @@ typedef pthread_t thread_id_t;
 typedef pthread_mutex_t thread_mutex_t;
 typedef pthread_cond_t thread_cond_t;
 #endif
-#endif
-
-/**
- * Disable case check in Windows.
- */
-#ifdef _WIN32
-#define FNM_CASEINSENSITIVE_FOR_WIN FNM_CASEFOLD
-#else
-#define FNM_CASEINSENSITIVE_FOR_WIN 0
 #endif
 
 #if HAVE_IO_H

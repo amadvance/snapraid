@@ -590,6 +590,271 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
+struct {
+	const char* pattern;
+	const char* text;
+	int result;
+} WNMATCH_TEST[] = {
+	/* basic literal matching */
+	{ "hello", "hello", 0 },
+	{ "hello", "world", 1 },
+	{ "", "", 0 },
+	{ "hello", "", 1 },
+	{ "", "hello", 1 },
+
+	/* single asterisk (*) */
+	{ "*", "anything", 0 },
+	{ "*", "", 0 },
+	{ "*.txt", "file.txt", 0 },
+	{ "*.txt", "file.doc", 1 },
+	{ "*file*", "myfile.txt", 0 },
+	{ "f*le", "file", 0 },
+	{ "f*le", "fiiiile", 0 },
+	{ "f*le", "folder", 1 },
+	{ "a*b*c", "abc", 0 },
+	{ "a*b*c", "aXbYc", 0 },
+	{ "a*b*c", "aXXbYYc", 0 },
+	{ "a*b*c", "ac", 1 },
+	{ "***", "anything", 0 },
+	{ "*.txt", "notes.txt", 0 },
+	{ "*.txt", "folder/notes.txt", 1 },
+	{ "*.js", "main.jsx", 1 },
+
+	/* single asterisk with / */
+	{ "*", "a/b", 1 },
+	{ "*.txt", "dir/file.txt", 1 },
+	{ "dir/*.txt", "dir/file.txt", 0 },
+	{ "*/*.txt", "dir/file.txt", 0 },
+	{ "*/*.txt", "a/b/file.txt", 1 },
+
+	/* question mark (?) */
+	{ "?", "a", 0 },
+	{ "?", "ab", 1 },
+	{ "?", "", 1 },
+	{ "file?.txt", "file1.txt", 0 },
+	{ "file?.txt", "fileA.txt", 0 },
+	{ "file?.txt", "file10.txt", 1 },
+	{ "???", "abc", 0 },
+	{ "???", "ab", 1 },
+	{ "a?c", "abc", 0 },
+	{ "a?c", "ac", 1 },
+	{ "file?.txt", "file1.txt", 0 },
+	{ "file?.txt", "file12.txt", 1 },
+
+	/* question mark with / */
+	{ "?", "/", 1 },
+	{ "dir?file", "dir/file", 1 },
+	{ "dir?file", "dirAfile", 0 },
+
+	/* character classes [...] */
+	{ "[abc]", "a", 0 },
+	{ "[abc]", "b", 0 },
+	{ "[abc]", "c", 0 },
+	{ "[abc]", "d", 1 },
+	{ "[abc]", "", 1 },
+	{ "file[0-9].txt", "file5.txt", 0 },
+	{ "file[0-9].txt", "fileA.txt", 1 },
+	{ "[a-z]", "m", 0 },
+	{ "[A-Z]", "M", 0 },
+	{ "[0-9a-f]", "a", 0 },
+	{ "[0-9a-f]", "5", 0 },
+	{ "[0-9a-f]", "g", 1 },
+	{ "[a-z].js", "p.js", 0 },
+	{ "[a-z].js", "1.js", 1 },
+	{ "[0-9].txt", "a.txt", 1 },
+	{ "[!a-z].js", "b.js", 1 },
+
+	/* negated character classes [!...] */
+	{ "[!abc]", "d", 0 },
+	{ "[!abc]", "a", 1 },
+	{ "[!0-9]", "a", 0 },
+	{ "[!0-9]", "5", 1 },
+	{ "file[!0-9].txt", "filea.txt", 0 },
+	{ "file[!0-9].txt", "file5.txt", 1 },
+	{ "[^abc]", "d", 0 },
+	{ "[^abc]", "a", 1 },
+
+	/* character classes with / */
+	{ "[a-z]", "/", 1 },
+	{ "dir[/]file", "dir/file", 1 },
+
+#ifdef WIN32
+	/* case */
+	{ "hello", "HELLO", 0 },
+	{ "Hello", "hello", 0 },
+	{ "*.TXT", "file.txt", 0 },
+	{ "FILE.txt", "file.TXT", 0 },
+	{ "[a-z]", "A", 0 },
+	{ "[ABC]", "b", 0 },
+	{ "[a-z].js", "A.js", 0 },
+	{ "[a-z]", "M", 0 },
+#else
+	{ "hello", "HELLO", 1 },
+	{ "Hello", "hello", 1 },
+	{ "*.TXT", "file.txt", 1 },
+	{ "FILE.txt", "file.TXT", 1 },
+	{ "[a-z]", "A", 1 },
+	{ "[ABC]", "b", 1 },
+	{ "[a-z].js", "A.js", 1 },
+	{ "[a-z]", "M", 1 },
+#endif
+
+	/* the /xx/ collapse case */
+	{ "a/**/b", "a/b", 0 },
+	{ "a/**/b", "a/x/b", 0 },
+
+	/* double asterisk (xx/) at start */
+	{ "**/*.txt", "file.txt", 0 },
+	{ "**/*.txt", "dir/file.txt", 0 },
+	{ "**/*.txt", "a/b/c/file.txt", 0 },
+	{ "**/*.txt", "file.doc", 1 },
+	{ "**/test.txt", "test.txt", 0 },
+	{ "**/test.txt", "a/b/test.txt", 0 },
+	{ "**/test.txt", "a/b/other.txt", 1 },
+	{ "**/*file*", "myfile.txt", 0 },
+	{ "**/*file*", "dir/myfile.txt", 0 },
+
+	/* double asterisk (/xx) at end */
+	{ "src/**", "src/", 0 },
+	{ "src/**", "src/file.c", 0 },
+	{ "src/**", "src/a/b/c/file.c", 0 },
+	{ "src/**", "other/file.c", 1 },
+	{ "src/**", "src", 1 },
+	{ "dir/**", "dir/subdir/", 0 },
+
+	/* double asterisk (/xx/) in middle */
+	{ "src/**/*.c", "src/file.c", 0 },
+	{ "src/**/*.c", "src/lib/file.c", 0 },
+	{ "src/**/*.c", "src/lib/util/file.c", 0 },
+	{ "src/**/*.c", "src/file.h", 1 },
+	{ "src/**/*.c", "other/file.c", 1 },
+	{ "a/**/b/**/c", "a/b/c", 0 },
+	{ "a/**/b/**/c", "a/x/b/y/c", 0 },
+	{ "a/**/b/**/c", "a/x/y/b/z/w/c", 0 },
+	{ "a/**/b", "a/x/y/z/b", 0 },
+	{ "/docs/**/api.md", "/docs/api.md", 0 },
+	{ "a/**/b", "a/xb", 1 },
+	{ "a/**/b", "ax/b", 1 },
+	{ "a/**/b", "a/c/xb", 1 },
+	{ "a/**/b", "ax/c/b", 1 },
+	{ "a/**/b", "a/x/y/c", 1 },
+	{ "a/**/b", "axb", 1 },
+
+	/* multiple recursion segments */
+	{ "**/**/file", "file", 0 },
+	{ "**/**/file", "a/b/c/file", 0 },
+	{ "a/**/b/**/c", "a/b/c", 0 },
+	{ "a/**/b/**/c", "a/1/b/2/c", 0 },
+
+	/* combined patterns */
+	{ "*.{txt,doc}", "file.txt", 1 },
+	{ "file[0-9]*.txt", "file5abc.txt", 0 },
+	{ "dir/*/file?.txt", "dir/sub/file1.txt", 0 },
+	{ "**/src/**/*.c", "project/src/lib/file.c", 0 },
+
+	/* edge cases */
+	{ "**", "anything", 0 },
+	{ "a/**", "a/b", 0 },
+	{ "a**", "aaa", 0 },
+	{ "**a", "xxa", 0 },
+	{ "a/**/", "a/b/", 0 },
+	{ "a/**/b", "a/b", 0 },
+	{ "a/**/b", "a//b", 0 },
+	{ "*/**/file.txt", "a/file.txt", 0 },
+	{ "*/**/file.txt", "a/b/c/file.txt", 0 },
+	{ "a**/file.txt", "afile.txt", 1 },
+	{ "/*/**/file.txt", "/file.txt", 1 },
+	{ "*/**/file.txt", "/file.txt", 0 },
+	{ "src/**/**/file.txt", "src/file.txt", 0 },
+	{ "src/**/**/file.txt", "src/sub/file.txt", 0 },
+	{ "src/***/file.txt", "src/file.txt", 0 },
+	{ "src/***/file.txt", "src/sub/file.txt", 0 },
+	{ "src/***/file.txt", "src/sub/sub/file.txt", 0 },
+	{ "src/****/file.txt", "src/file.txt", 0 },
+	{ "src/****/file.txt", "src/sub/file.txt", 0 },
+	{ "src/****/file.txt", "src/sub/sub/file.txt", 0 },
+	{ "**/build", "a/b/build", 0 },
+	{ "src/**/test.js", "src/ui/test.js", 0 },
+	{ "dist/**", "dist/bin/app.exe", 0 },
+	{ "src-**", "src-folder/file.js", 1 },
+	{ "**pkg/init.py", "libs/core/pkg/init.py", 1 },
+	{ "**.log", "error.log", 0 },
+	{ "**.log", "var/log/sys.log", 1 },
+	{ "src/**.js", "src/app.js", 0 },
+	{ "src/**.js", "src/components/ui/button.js", 0 }, /* <<<<< .GITIGNORE DIFFERS */
+	{ "a**b.txt", "ab.txt", 0 },
+	{ "a**b.txt", "axxb.txt", 0 },
+	{ "a**b.txt", "a/b.txt", 1 },
+	{ "a**b.txt", "a/subdir/b.txt", 1 },
+	{ "a**b.txt", "a_folder/sub/b.txt", 1 },
+	{ "a**b.txt", "a_folder/sub/folter_b.txt", 1 },
+	{ "**/build", "build", 0 },
+	{ "**/build", "project/out/build", 0 },
+
+	/* negative tests */
+	{ "/docs/**/api.md", "docs/api.txt", 1 },
+	{ "a/**/b", "a/b/c", 1 },
+	{ "static/**", "static", 1 },
+	{ "src/*.js", "src/ui/app.js", 1 },
+	{ "/config.*", "etc/config.json", 1 },
+	{ "*/*/*.c", "main.c", 1 },
+	{ "a/*/b", "a/b", 1 },
+	{ "a/**/b", "axb", 1 },
+	{ "a/**/b", "ab", 1 },
+	{ "/**/logs", "logs", 1 },
+	{ "/src/**/logs", "src/web/log", 1 },
+	{ "foo//bar", "foo/bar", 1 },
+	{ "a/**/b", "a/b/", 1 },
+	{ "a**b**c", "acb", 1 },
+	{ "src-**-pkg", "src-pkg", 1 },
+	{ "**/test/*.js", "test/ui/app.js", 1 },
+
+	/* complex real-world patterns */
+	{ "**/.git/**", ".git/config", 0 },
+	{ "**/.git/**", "project/.git/hooks/pre-commit", 0 },
+	{ "**/node_modules/**", "node_modules/pkg/index.js", 0 },
+	{ "**/node_modules/**", "app/node_modules/pkg/file.js", 0 },
+	{ "src/**/*.{c,h}", "src/main.c", 1 },
+	{ "**/test_*.py", "test_example.py", 0 },
+	{ "**/test_*.py", "tests/test_feature.py", 0 },
+
+	/* performance/stress patterns */
+	{ "a*b*c*d*e*f*g*h*i*j*k", "abcdefghijk", 0 },
+	{ "a*b*c*d*e*f*g*h*i*j*k", "aXbXcXdXeXfXgXhXiXjXk", 0 },
+	{ "**/**/**/*.txt", "a/b/c/d/e/f.txt", 0 },
+
+	/* trailing/leading slashes */
+	{ "dir/", "dir/", 0 },
+	{ "/root/*", "/root/file", 0 },
+
+	/* complex embedded patterns */
+	{ "src-**-pkg/*.js", "src-web-pkg/main.js", 0 },
+	{ "src-**-pkg/*.js", "src-lazy-load-ui-pkg/main.js", 0 },
+	{ "src-**-pkg/*.js", "src-web-pkg/subdir/main.js", 1 },
+
+	/* anchoring and slashes */
+	{ "/root.txt", "root.txt", 1 },
+	{ "/root.txt", "subdir/root.txt", 1 },
+	{ "docs/", "docs", 1 },
+	{ "docs/", "docs/", 0 },
+	{ "**/temp/", "src/temp/", 0 },
+	{ "**/temp/", "src/temp", 1 },
+
+	{ 0 }
+};
+
+static void test_wnmatch(void)
+{
+	for (int i = 0; WNMATCH_TEST[i].pattern; ++i) {
+		if (wnmatch(WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text) != WNMATCH_TEST[i].result) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed wnmatch test %s %s, expected %d\n", WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text, WNMATCH_TEST[i].result);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+}
+
 void selftest(void)
 {
 	log_tag("selftest:\n");
@@ -614,6 +879,7 @@ void selftest(void)
 	test_hash();
 	test_crc32c();
 	test_tommy();
+	test_wnmatch();
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed SELF test\n");

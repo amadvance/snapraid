@@ -1421,35 +1421,64 @@ Ett exempel på en typisk konfiguration för Windows är:
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 
-8 MöNSTER
-=========
+8 MöNSTER (PATTERN)
+===================
 
-Mönster används för att välja en delmängd av filer att exkludera eller inkludera i
-processen.
+Mönster ger ett flexibelt sätt att filtrera filer för inkludering eller
+exkludering. Genom att använda jokertecken kan du definiera regler som
+matchar specifika filnamn eller hela katalogstrukturer utan att
+lista varje sökväg manuellt.
+
+Frågetecknet `?` matchar valfritt enskilt tecken utom katalogavgränsaren.
+Detta gör det användbart för att matcha filnamn med variabla tecken
+samtidigt som mönstret hålls begränsat till en enda katalognivå.
+
+Den enkla stjärnan `*` matchar valfri teckensekvens, men precis som
+frågetecknet korsar den aldrig kataloggränser. Den stannar vid
+snedstrecket, vilket gör den lämplig för matchning inom en enskild
+sökvägskomponent. Detta är det standardbeteende för jokertecken som är
+bekant från skal-globbing.
+
+Den dubbla stjärnan `**` är mer kraftfull; den matchar valfri teckensekvens
+inklusive katalogavgränsare. Detta gör att mönster kan matcha över
+flera katalognivåer. När `**` förekommer direkt i ett mönster kan det
+matcha noll eller fler tecken inklusive snedstreck mellan den
+omkringliggande bokstavliga texten.
+
+Den viktigaste användningen av `**` är i den speciella formen `/**/`. Detta matchar
+noll eller flera kompletta katalognivåer, vilket gör det möjligt att matcha filer
+på valfritt djup i ett katalogträd utan att känna till den exakta sökvägsstrukturen.
+Till exempel matchar mönstret `src/**/main.js` filerna `src/main.js` (hoppar över
+noll kataloger), `src/ui/main.js` (hoppar över en katalog) och
+`src/ui/components/main.js` (hoppar över två kataloger).
+
+Teckenklasser som använder hakparenteser `[]` matchar ett enskilt tecken från en
+angiven uppsättning eller ett intervall. Precis som de andra mönstren för enskilda
+tecken matchar de inte katalogavgränsare. Klasser stöder intervall och
+negering med ett utropstecken.
+
+Den grundläggande skillnaden att komma ihåg är att `*`, `?` och teckenklasser
+alla respekterar kataloggränser och endast matchar inom en enskild
+sökvägskomponent, medan `**` är det enda mönstret som kan matcha över
+katalogavgränsare.
 
 Det finns fyra olika typer av mönster:
 
-    FIL
-        Väljer alla filer som heter FIL. Du kan använda alla globbing-
-        tecken som * och ?, och teckenklasser som [a-z].
-        Detta mönster gäller endast för filer, inte kataloger.
+    FILE
+        Väljer valfri fil med namnet FILE.
+        Detta mönster gäller endast filer, inte kataloger.
 
-    KATALOG/
-        Väljer alla kataloger som heter KATALOG och allt inuti.
-        Du kan använda alla globbing-tecken som * och ?.
-        Detta mönster gäller endast för kataloger, inte filer.
+    DIR/
+        Väljer valfri katalog med namnet DIR och allt innehåll.
+        Detta mönster gäller endast kataloger, inte filer.
 
-    /SÖKVÄG/FIL
-        Väljer den exakt specificerade filsökvägen. Du kan använda alla
-        globbing-tecken som * och ?, men de matchar aldrig ett
-        katalog-snedstreck.
-        Detta mönster gäller endast för filer, inte kataloger.
+    /PATH/FILE
+        Väljer den exakt angivna filsökvägen. Detta mönster gäller
+        endast filer, inte kataloger.
 
-    /SÖKVÄG/KATALOG/
-        Väljer den exakt specificerade katalogsökvägen och allt
-        inuti. Du kan använda alla globbing-tecken som * och ?, men
-        de matchar aldrig ett katalog-snedstreck.
-        Detta mönster gäller endast för kataloger, inte filer.
+    /PATH/DIR/
+        Väljer den exakt angivna katalogsökvägen och allt innehåll.
+        Detta mönster gäller endast kataloger, inte filer.
 
 När du specificerar en absolut sökväg som börjar med /, tillämpas den vid
 array-rotkatalogen, inte den lokala filsystemets rotkatalog.

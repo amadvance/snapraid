@@ -1508,35 +1508,61 @@ Un esempio di configurazione tipica per Windows è:
 8 PATTERN
 =========
 
-I pattern vengono utilizzati per selezionare un sottoinsieme di file da
-escludere o includere nel processo.
+I pattern offrono un modo flessibile per filtrare i file da includere o
+escludere. Usando i caratteri globbing, è possibile definire regole che
+corrispondano a nomi di file specifici o a intere strutture di directory senza
+elencare manualmente ogni percorso.
+
+Il punto interrogativo `?` corrisponde a qualsiasi carattere singolo eccetto il
+separatore di directory. Questo lo rende utile per far corrispondere nomi di file
+con caratteri variabili mantenendo il pattern confinato a un singolo livello di directory.
+
+L'asterisco singolo `*` corrisponde a qualsiasi sequenza di caratteri, ma come il
+punto interrogativo, non attraversa mai i confini delle directory. Si ferma allo
+slash in avanti, rendendolo adatto per la corrispondenza all'interno di un singolo
+componente del percorso. Questo è il comportamento standard dei wildcard familiare
+dal globbing della shell.
+
+Il doppio asterisco `**` è più potente, corrisponde a qualsiasi sequenza di
+caratteri inclusi i separatori di directory. Ciò consente ai pattern di corrispondere
+attraverso più livelli di directory. Quando `**` appare inserito direttamente in
+un pattern, può corrispondere a zero o più caratteri inclusi gli slash tra
+il testo letterale circostante.
+
+L'uso più importante di `**` è nella forma speciale `/**/`. Questa corrisponde a
+zero o più livelli di directory completi, rendendo possibile la corrispondenza di file
+a qualsiasi profondità in un albero di directory senza conoscere l'esatta struttura del percorso.
+Per esempio, il pattern `src/**/main.js` corrisponde a `src/main.js` (saltando
+zero directory), `src/ui/main.js` (saltando una directory), e
+`src/ui/components/main.js` (saltando due directory).
+
+Le classi di caratteri che usano le parentesi quadre `[]` corrispondono a un singolo carattere da un
+set o intervallo specificato. Come gli altri pattern a carattere singolo, esse
+non corrispondono ai separatori di directory. Le classi supportano intervalli e la negazione usando
+un punto esclamativo.
+
+La distinzione fondamentale da ricordare è che `*`, `?` e le classi di caratteri
+rispettano tutti i confini delle directory e corrispondono solo all'interno di un singolo
+componente del percorso, mentre `**` è l'unico pattern che può corrispondere attraverso
+i separatori di directory.
 
 Esistono quattro diversi tipi di pattern:
 
     FILE
-        Seleziona qualsiasi file denominato FILE. È possibile utilizzare
-        qualsiasi carattere di globbing come * e ?, e classi di caratteri
-        come [a-z].
+        Seleziona qualsiasi file chiamato FILE.
         Questo pattern si applica solo ai file, non alle directory.
 
     DIR/
-        Seleziona qualsiasi directory denominata DIR e tutto ciò che è
-        al suo interno. È possibile utilizzare qualsiasi carattere di
-        globbing come * e ?.
+        Seleziona qualsiasi directory chiamata DIR e tutto ciò che contiene.
         Questo pattern si applica solo alle directory, non ai file.
 
     /PATH/FILE
-        Seleziona l'esatto percorso del file specificato. È possibile
-        utilizzare qualsiasi carattere di globbing come * e ?, ma non
-        corrispondono mai a uno slash di directory.
-        Questo pattern si applica solo ai file, non alle directory.
+        Seleziona l'esatto percorso del file specificato. Questo pattern si applica
+        solo ai file, non alle directory.
 
     /PATH/DIR/
-        Seleziona l'esatto percorso della directory specificata e tutto
-        ciò che è al suo interno. È possibile utilizzare qualsiasi
-        carattere di globbing come * e ?, ma non corrispondono mai a
-        uno slash di directory.
-        Questo pattern si aplica solo alle directory, non ai file.
+        Seleziona l'esatto percorso della directory specificata e tutto ciò che
+        contiene. Questo pattern si applica solo alle directory, non ai file.
 
 Quando si specifica un percorso assoluto che inizia con /, viene
 applicato alla directory radice dell'array, non alla directory radice

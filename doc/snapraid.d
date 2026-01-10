@@ -1328,31 +1328,59 @@ Configuration
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in
-	the process.
+	the process. Globbing characters can be used to match files and paths
+	in a flexible way.
+
+	The question mark `?` matches any single character except the directory
+	separator. This makes it useful for matching filenames with variable
+	characters while keeping the pattern confined to a single directory level.
+
+	The single star `*` matches any sequence of characters, but like the
+	question mark, it never crosses directory boundaries. It stops at the
+	forward slash, making it suitable for matching within a single path
+	component. This is the standard wildcard behavior familiar from shell 
+	globbing.
+
+	The double star `**` is more powerful, it matches any sequence of
+	characters including directory separators. This allows patterns to match
+	across multiple directory levels. When `**` appears embedded directly in
+	a pattern, it can match zero or more characters including slashes between
+	the surrounding literal text.
+
+	The most important use of `**` is in the special form `/**/`. This matches
+	zero or more complete directory levels, making it possible to match files
+	at any depth in a directory tree without knowing the exact path structure.
+	For example, the pattern `src/**/main.js` matches `src/main.js` (skipping
+	zero directories), `src/ui/main.js` (skipping one directory), and
+	`src/ui/components/main.js` (skipping two directories).
+
+	Character classes using square brackets match a single character from a
+	specified set or range. Like the other single character patterns, they do
+	not match directory separators. Classes support ranges and negation using
+	an exclamation mark.
+
+	The fundamental distinction to remember is that `*`, `?`, and character
+	classes  all respect directory boundaries and only match within a single path
+	component, while `**` is the only pattern that can match across directory
+	separators.
 
 	There are four different types of patterns:
 
 	=FILE
-		Selects any file named FILE. You can use any globbing
-		characters like * and ?, and character classes like [a-z].
+		Selects any file named FILE.
 		This pattern applies only to files, not directories.
 
 	=DIR/
 		Selects any directory named DIR and everything inside.
-		You can use any globbing characters like * and ?.
 		This pattern applies only to directories, not files.
 
 	=/PATH/FILE
-		Selects the exact specified file path. You can use any
-		globbing characters like * and ?, but they never match a
-		directory slash.
-		This pattern applies only to files, not directories.
+		Selects the exact specified file path. This pattern applies
+		only to files, not directories.
 
 	=/PATH/DIR/
 		Selects the exact specified directory path and everything
-		inside. You can use any globbing characters like * and ?, but
-		they never match a directory slash.
-		This pattern applies only to directories, not files.
+		inside.	This pattern applies only to directories, not files.
 
 	When you specify an absolute path starting with /, it is applied at
 	the array root directory, not the local file system root directory.

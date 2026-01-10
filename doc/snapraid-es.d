@@ -1398,32 +1398,61 @@ Configuration
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 Pattern
-	Los patrones se utilizan para seleccionar un subconjunto de archivos
-	para excluir o incluir en el proceso.
+	Los patrones proporcionan una forma flexible de filtrar archivos para su inclusión o
+	exclusión. Al usar caracteres de globbing, puede definir reglas que coincidan con
+	nombres de archivos específicos o estructuras de directorios completas sin
+	enumerar cada ruta manualmente.
+
+	El signo de interrogación `?` coincide con cualquier carácter individual excepto el
+	separador de directorios. Esto lo hace útil para hacer coincidir nombres de archivos con
+	caracteres variables manteniendo el patrón limitado a un solo nivel de directorio.
+
+	El asterisco simple `*` coincide con cualquier secuencia de caracteres, pero al igual que el
+	signo de interrogación, nunca cruza los límites de los directorios. Se detiene en la
+	barra diagonal, lo que lo hace adecuado para buscar coincidencias dentro de un solo
+	componente de ruta. Este es el comportamiento estándar de los comodines familiar
+	del globbing de la shell.
+
+	el doble asterisco `**` es más potente, coincide con cualquier secuencia de
+	caracteres, incluidos los separadores de directorios. Esto permite que los patrones coincidan
+	a través de múltiples niveles de directorio. Cuando `**` aparece incrustado directamente en
+	un patrón, puede coincidir con cero o más caracteres, incluidas las barras diagonales entre
+	el texto literal circundante.
+
+	El uso más importante de `**` es en la forma especial `/**/`. Esta coincide con
+	cero o más niveles de directorio completos, lo que permite que los archivos coincidan
+	a cualquier profundidad en un árbol de directorios sin conocer la estructura exacta de la ruta.
+	Por ejemplo, el patrón `src/**/main.js` coincide con `src/main.js` (saltando
+	cero directorios), `src/ui/main.js` (saltando un directorio) y
+	`src/ui/components/main.js` (saltando dos directorios).
+
+	Las clases de caracteres que utilizan corchetes `[]` coinciden con un solo carácter de un
+	conjunto o rango especificado. Al igual que los otros patrones de un solo carácter,
+	no coinciden con los separadores de directorios. Las clases admiten rangos y negación mediante
+	un signo de exclamación.
+
+	La distinción fundamental que debe recordar es que `*`, `?` y las clases de caracteres
+	respetan los límites de los directorios y solo coinciden dentro de un único
+	componente de ruta, mientras que `**` es el único patrón que puede coincidir a través de
+	los separadores de directorios.
 
 	Hay cuatro tipos diferentes de patrones:
 
 	=FILE
-		Selecciona cualquier archivo llamado FILE. Puede usar
-		cualquier carácter globbing como * y ?, y clases de caracteres
-		como [a-z]. Este patrón se aplica solo a archivos, no a directorios.
+		Selecciona cualquier archivo llamado FILE.
+		Este patrón se aplica solo a archivos, no a directorios.
 
 	=DIR/
-		Selecciona cualquier directorio llamado DIR y todo lo que
-		contiene. Puede usar cualquier carácter globbing como * y ?.
+		Selecciona cualquier directorio llamado DIR y todo lo que hay dentro.
 		Este patrón se aplica solo a directorios, no a archivos.
 
 	=/PATH/FILE
-		Selecciona la ruta de archivo exacta especificada. Puede usar
-		cualquier carácter globbing como * y ?, pero nunca coinciden
-		con una barra de directorio.
-		Este patrón se aplica solo a archivos, no a directorios.
+		Selecciona la ruta exacta del archivo especificado. Este patrón se aplica
+		solo a archivos, no a directorios.
 
 	=/PATH/DIR/
-		Selecciona la ruta de directorio exacta especificada y todo
-		lo que contiene. Puede usar cualquier carácter globbing como * y ?,
-		pero nunca coinciden con una barra de directorio.
-		Este patrón se aplica solo a directorios, no a archivos.
+		Selecciona la ruta exacta del directorio especificado y todo lo que hay
+		dentro. Este patrón se aplica solo a directorios, no a archivos.
 
 	Cuando especifica una ruta absoluta que comienza con /, se aplica
 	en el directorio raíz del array, no en el directorio raíz del

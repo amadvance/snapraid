@@ -34,7 +34,7 @@ AC_HEADER_ASSERT
 AC_HEADER_DIRENT
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h time.h sys/time.h])
-AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
+AC_CHECK_HEADERS([unistd.h getopt.h io.h inttypes.h byteswap.h])
 AC_CHECK_HEADERS([pthread.h math.h])
 AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/sysmacros.h sys/mkdev.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h mach/mach_time.h execinfo.h])
@@ -71,7 +71,7 @@ AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf sigaction])
 AC_CHECK_FUNCS([ftruncate fallocate access])
 AC_CHECK_FUNCS([fsync posix_fadvise sync_file_range syncfs])
-AC_CHECK_FUNCS([getc_unlocked ferror_unlocked fnmatch])
+AC_CHECK_FUNCS([getc_unlocked ferror_unlocked])
 AC_CHECK_FUNCS([futimes futimens futimesat localtime_r lutimes utimensat])
 AC_CHECK_FUNCS([fstatat flock])
 AC_CHECK_FUNCS([mach_absolute_time])

@@ -46,7 +46,6 @@ snapraid_SOURCES = \
 	cmdline/handle.c \
 	cmdline/touch.c \
 	cmdline/device.c \
-	cmdline/fnmatch.c \
 	cmdline/selftest.c \
 	cmdline/speed.c \
 	cmdline/import.c \
@@ -97,7 +96,6 @@ noinst_HEADERS = \
 	cmdline/metrotest.c \
 	cmdline/museair.c \
 	cmdline/museairtest.c \
-	cmdline/fnmatch.h \
 	cmdline/import.h \
 	cmdline/search.h \
 	cmdline/thermal.h \
@@ -458,12 +456,11 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -d disk1 check > output.log
 if HAVE_POSIX
 # Only in real unix, as with MingW the * trigger path replacement
-# Like /b/a* -> B:/a* and SnapRAID then complain about relative paths
+# Like /b/a* -> B:/a* and SnapRAID then complain
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -f \\*a -f a/ -f /b/a\\* check > output.log
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f . check > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f ./ check > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f a/a check > output.log
 	$(MSG) Delete some files and sync
 	rm bench/disk4/a/9*
 	rm bench/disk5/a/9*

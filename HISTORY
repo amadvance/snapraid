@@ -7,6 +7,8 @@ SnapRAID HISTORY
    directly within the array directory tree. This allows for granular,
    directory-level control over which files and folders are excluded from
    parity, mirroring the workflow of .gitignore.
+ * Added support for the ** globbing character to allow recursive pattern
+   matching across multiple directory levels.
  * Added detection of the smartctl executable. Improves reliability when running
    under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.

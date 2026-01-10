@@ -1730,32 +1730,61 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD
 .RE
 .SH PADRãO (PATTERN) 
-Padrões são usados para selecionar um subconjunto de arquivos a serem
-excluídos ou incluídos no processo.
+Os padrões fornecem uma maneira flexível de filtrar arquivos para inclusão ou
+exclusão. Ao usar caracteres de globbing, você pode definir regras que
+correspondam a nomes de arquivos específicos ou estruturas de diretórios inteiras sem
+listar cada caminho manualmente.
+.PP
+O ponto de interrogação \`?\` corresponde a qualquer caractere único, exceto o
+separador de diretórios. Isso o torna útil para corresponder nomes de arquivos com
+caracteres variáveis, mantendo o padrão confinado a um único nível de diretório.
+.PP
+O asterisco simples \`*\` corresponde a qualquer sequência de caracteres, mas, como o
+ponto de interrogação, nunca cruza as fronteiras do diretório. Ele para na
+barra invertida, tornando\-o adequado para correspondência dentro de um único
+componente de caminho. Este é o comportamento padrão de curinga familiar do
+globbing de shell.
+.PP
+O asterisco duplo \`**\` é mais poderoso, ele corresponde a qualquer sequência de
+caracteres, incluindo separadores de diretórios. Isso permite que os padrões correspondam
+em vários níveis de diretório. Quando o \`**\` aparece incorporado diretamente em
+um padrão, ele pode corresponder a zero ou mais caracteres, incluindo barras entre
+o texto literal circundante.
+.PP
+O uso mais importante do \`**\` é na forma especial \`/**/\`. Isso corresponde a
+zero ou mais níveis de diretório completos, tornando possível corresponder arquivos
+em qualquer profundidade em uma árvore de diretórios sem conhecer a estrutura exata do caminho.
+Por exemplo, o padrão \`src/**/main.js\` corresponde a \`src/main.js\` (pulando
+zero diretórios), \`src/ui/main.js\` (pulando um diretório) e
+\`src/ui/components/main.js\` (pulando dois diretórios).
+.PP
+Classes de caracteres usando colchetes \`[]\` correspondem a um único caractere de um
+conjunto ou intervalo especificado. Como os outros padrões de caractere único, elas
+não correspondem a separadores de diretório. As classes suportam intervalos e negação usando
+um ponto de exclamação.
+.PP
+A distinção fundamental a ser lembrada é que \`*\`, \`?\` e classes de caracteres
+respeitam os limites do diretório e correspondem apenas dentro de um único
+componente de caminho, enquanto \`**\` é o único padrão que pode corresponder através de
+separadores de diretório.
 .PP
 Existem quatro tipos diferentes de padrões:
 .TP
 .B FILE
-Seleciona qualquer arquivo chamado FILE. Você pode usar quaisquer
-caracteres globbing como * e ?, e classes de caracteres como [a\-z].
+Seleciona qualquer arquivo chamado FILE.
 Este padrão se aplica apenas a arquivos, não a diretórios.
 .TP
 .B DIR/
-Seleciona qualquer diretório chamado DIR e tudo dentro.
-Você pode usar quaisquer caracteres globbing como * e ?.
+Seleciona qualquer diretório chamado DIR e tudo o que estiver dentro dele.
 Este padrão se aplica apenas a diretórios, não a arquivos.
 .TP
 .B /PATH/FILE
-Seleciona o caminho exato do arquivo especificado. Você pode usar
-quaisquer caracteres globbing como * e ?, mas eles nunca correspondem
-a uma barra de diretório.
-Este padrão se aplica apenas a arquivos, não a diretórios.
+Seleciona o caminho exato do arquivo especificado. Este padrão se aplica
+apenas a arquivos, não a diretórios.
 .TP
 .B /PATH/DIR/
-Seleciona o caminho exato do diretório especificado e tudo
-dentro. Você pode usar quaisquer caracteres globbing como * e ?, mas
-eles nunca correspondem a uma barra de diretório.
-Este padrão se aplica apenas a diretórios, não a arquivos.
+Seleciona o caminho exato do diretório especificado e tudo o que estiver
+dentro dele. Este padrão se aplica apenas a diretórios, não a arquivos.
 .PP
 Quando você especifica um caminho absoluto começando com /, ele é aplicado
 no diretório raiz do array, não no diretório raiz do sistema de arquivos local.

@@ -96,27 +96,23 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 
 	if (first == 0) {
 		/* no slash */
-		filter->is_path = 0;
+		filter->is_abs = 0;
 		filter->is_dir = 0;
-	} else if (first == last && last[1] == 0) {
-		/* one slash at the end */
-		filter->is_path = 0;
-		filter->is_dir = 1;
-		last[0] = 0;
 	} else {
-		/* at least a slash not at the end */
-		filter->is_path = 1;
-		if (last[1] == 0) {
-			filter->is_dir = 1;
-			last[0] = 0;
+		if (first == filter->pattern) {
+			/* slash at the start */
+			filter->is_abs = 1;
 		} else {
-			filter->is_dir = 0;
+			/* no slash at the start */
+			filter->is_abs = 0;
 		}
-
-		/* a slash must be the first char, as we don't support PATH/FILE and PATH/DIR/ */
-		if (filter->pattern[0] != '/') {
-			free(filter);
-			return 0;
+		if (last[1] == 0) {
+			/* slash at the end */
+			filter->is_dir = 1;
+			last[0] = 0; /* clear the slash */
+		} else {
+			/* no slash at the end */
+			filter->is_dir = 0;
 		}
 	}
 
@@ -133,7 +129,7 @@ struct snapraid_filter* filter_alloc_disk(int direction, const char* pattern)
 
 	/* it's a disk filter */
 	filter->is_disk = 1;
-	filter->is_path = 0;
+	filter->is_abs = 0;
 	filter->is_dir = 0;
 
 	/* no slash allowed in disk names */
@@ -171,9 +167,14 @@ const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_si
 	return out;
 }
 
-static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* path, const char* name, int is_dir)
+static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* path, int is_dir)
 {
-	int ret = 0;
+	if (filter->root[0] != 0) { /* if it's a local filter */
+		if (!path_is_root_of(filter->root, path)) /* applies it only if it matches the root */
+			return 0;
+		/* advance the path to compare to make it local */
+		path += strlen(filter->root);
+	}
 
 	/* match dirs with dirs and files with files */
 	if (filter->is_dir && !is_dir)
@@ -181,60 +182,34 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 	if (!filter->is_dir && is_dir)
 		return 0;
 
-	if (filter->is_path) {
-		/* skip initial slash, as always missing from the path */
-		if (fnmatch(filter->pattern + 1, path, FNM_PATHNAME | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+	int ret = 0;
+
+	if (filter->is_abs) {
+		/* skip initial slash, as always missing in the path */
+		if (wnmatch(filter->pattern + 1, path) == 0)
 			ret = filter->direction;
 	} else {
-		if (fnmatch(filter->pattern, name, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+		/* the patch is relative, first try to match from the root */
+		if (wnmatch(filter->pattern, path) == 0) {
 			ret = filter->direction;
+		} else {
+			/* then try to match after all the / presents */
+			char* slash = strchr(path, '/');
+			while (slash) {
+				if (wnmatch(filter->pattern, slash + 1) == 0) {
+					ret = filter->direction;
+					break;
+				}
+
+				slash = strchr(slash + 1, '/');
+			}
+		}
 	}
 
 	if (reason != 0 && ret < 0)
 		*reason = filter;
 
 	return ret;
-}
-
-static int filter_recurse(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* const_path, int is_dir)
-{
-	char path[PATH_MAX];
-	char* name;
-	unsigned i;
-
-	if (filter->root[0] != 0) { /* if it's a local filter */
-		if (!path_is_root_of(filter->root, const_path)) /* applies it only if it matches the root */
-			return 0;
-		/* advance the path to compare to make it local */
-		const_path += strlen(filter->root);
-	}
-
-	pathcpy(path, sizeof(path), const_path);
-
-	/* filter all the dir/subdir until we reach the final file/dir */
-	name = path;
-	for (i = 0; path[i] != 0; ++i) {
-		if (path[i] == '/') {
-			/* set a terminator */
-			path[i] = 0;
-
-			/* filter the directory */
-			if (filter_apply(filter, reason, path, name, 1) != 0)
-				return filter->direction;
-
-			/* restore the slash */
-			path[i] = '/';
-
-			/* next name */
-			name = path + i + 1;
-		}
-	}
-
-	/* filter the final file/dir */
-	if (filter_apply(filter, reason, path, name, is_dir) != 0)
-		return filter->direction;
-
-	return 0;
 }
 
 static int filter_element(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub, int is_dir, int is_def_include)
@@ -249,14 +224,14 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 		struct snapraid_filter* filter = i->data;
 
 		if (filter->is_disk) {
-			if (fnmatch(filter->pattern, disk, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+			if (wnmatch(filter->pattern, disk) == 0)
 				ret = filter->direction;
 			else
 				ret = 0;
 			if (reason != 0 && ret < 0)
 				*reason = filter;
 		} else {
-			ret = filter_recurse(filter, reason, sub, is_dir);
+			ret = filter_apply(filter, reason, sub, is_dir);
 		}
 
 		if (ret > 0) {

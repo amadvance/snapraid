@@ -62,7 +62,7 @@ struct snapraid_filter {
 	char pattern[PATH_MAX]; /**< Filter pattern. */
 	char root[PATH_MAX]; /**< If empty, it's a global pattern. If not empty, it's a local pattern that applies only to that dir. */
 	int is_disk; /**< If the pattern is a disk one, otherwise it's a file pattern */
-	int is_path; /**< If the pattern is a complete path, otherwise it's just a file name */
+	int is_abs; /**< If the pattern is an absolute path (start with /), otherwise it's a relative one */
 	int is_dir; /**< If the pattern is only for dir, otherwise it's only for file. */
 	int direction; /**< If it's an inclusion (=1) or an exclusion (=-1). */
 	tommy_node node; /**< Next node in the list. */

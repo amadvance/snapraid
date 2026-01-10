@@ -490,13 +490,13 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		struct snapraid_filter* filter = i->data;
 		for (j = state->disklist; j != 0; j = j->next) {
 			struct snapraid_disk* disk = j->data;
-			if (fnmatch(filter->pattern, disk->name, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+			if (wnmatch(filter->pattern, disk->name) == 0)
 				break;
 		}
 		if (j == 0) {
 			/* check matching with parity disks */
 			for (l = 0; l < state->level; ++l)
-				if (fnmatch(filter->pattern, lev_config_name(l), FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+				if (wnmatch(filter->pattern, lev_config_name(l)) == 0)
 					break;
 			if (l == state->level) {
 				/* LCOV_EXCL_START */
@@ -1234,7 +1234,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
-				log_fatal("Filters with relative paths are not supported. Ensure to add an initial slash\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1261,7 +1260,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
-				log_fatal("Filters with relative paths are not supported. Ensure to add an initial slash\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
