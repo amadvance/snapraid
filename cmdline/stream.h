@@ -23,6 +23,9 @@
 /****************************************************************************/
 /* stream */
 
+#define STREAM_FLAGS_SEQUENTIAL 1 /**< Advise a squential read. */
+#define STREAM_FLAGS_CRC 2 /**< Enable the CRC computation. */
+
 /**
  * Size of the buffer of the stream.
  *
@@ -42,14 +45,18 @@ struct stream_handle {
 
 struct stream {
 	unsigned char* buffer; /**< Buffer of the stream. */
+	off_t buffer_size; /**< Size of the buffer */
 	unsigned char* pos; /**< Current position in the buffer. */
 	unsigned char* end; /**< End position of the buffer. */
-	int state; /**< State of the stream. One of STREAM_STATE. */
-	int state_index; /**< Index of the handle causing a state change. */
-	unsigned handle_size; /**< Number of handles. */
 	struct stream_handle* handle; /**< Set of handles. */
 	off_t offset; /**< Offset into the file. */
 	off_t offset_uncached; /**< Offset into the file excluding the cached data. */
+	off_t size; /**< File size, only in read */
+
+	int flags; /**< Flags passed on open */
+	int state; /**< State of the stream. One of STREAM_STATE. */
+	int state_index; /**< Index of the handle causing a state change. */
+	unsigned handle_size; /**< Number of handles. */
 
 	/**
 	 * CRC of the data read or written in the file.
@@ -100,17 +107,17 @@ typedef struct stream STREAM;
 /**
  * Open a stream for reading. Like fopen("r").
  */
-STREAM* sopen_read(const char* file);
+STREAM* sopen_read(const char* file, int flags);
 
 /**
  * Open a stream for writing. Like fopen("w").
  */
-STREAM* sopen_write(const char* file);
+STREAM* sopen_write(const char* file, int flags);
 
 /**
  * Open a set of streams for writing. Like fopen("w").
  */
-STREAM* sopen_multi_write(unsigned count);
+STREAM* sopen_multi_write(unsigned count, int flags);
 
 /**
  * Specify the file to open.
@@ -359,7 +366,8 @@ static inline int sputc(int c, STREAM* s)
 	 * to be able to detect memory errors on the buffer,
 	 * happening before we write it on the file.
 	 */
-	s->crc_stream = crc32c_plain_char(s->crc_stream, c);
+	if (s->flags & STREAM_FLAGS_CRC)
+		s->crc_stream = crc32c_plain_char(s->crc_stream, c);
 
 	*s->pos++ = c;
 

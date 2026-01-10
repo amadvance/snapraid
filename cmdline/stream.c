@@ -26,44 +26,65 @@
 
 unsigned STREAM_SIZE = 64 * 1024;
 
-STREAM* sopen_read(const char* file)
+STREAM* sopen_read(const char* file, int flags)
 {
 #if HAVE_POSIX_FADVISE
 	int ret;
 #endif
 	STREAM* s = malloc_nofail(sizeof(STREAM));
+	struct stat st;
 
 	s->handle_size = 1;
 	s->handle = malloc_nofail(sizeof(struct stream_handle));
+	s->flags = flags;
+
+	int open_flags = O_RDONLY | O_BINARY;
+	if (s->flags & STREAM_FLAGS_SEQUENTIAL)
+		open_flags |= O_SEQUENTIAL;
 
 	pathcpy(s->handle[0].path, sizeof(s->handle[0].path), file);
-	s->handle[0].f = open(file, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	s->handle[0].f = open(file, open_flags);
 	if (s->handle[0].f == -1) {
 		free(s->handle);
 		free(s);
 		return 0;
 	}
 
-#if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret == ENOSYS) {
-		log_fatal("WARNING! fadvise() is not supported in this platform. Performance may not be optimal!\n");
-		/* call is not supported, like in armhf, see posix_fadvise manpage */
-		ret = 0;
-	}
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
+	/* get file info */
+	if (fstat(s->handle[0].f, &st) != 0) {
 		close(s->handle[0].f);
 		free(s->handle);
 		free(s);
-		errno = ret; /* posix_fadvise return the error code */
 		return 0;
-		/* LCOV_EXCL_STOP */
+	}
+
+	s->size = st.st_size;
+
+#if HAVE_POSIX_FADVISE
+	if (s->flags & STREAM_FLAGS_SEQUENTIAL) {
+		/* advise sequential access */
+		ret = posix_fadvise(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret == ENOSYS) {
+			log_fatal("WARNING! fadvise() is not supported in this platform. Performance may not be optimal!\n");
+			/* call is not supported, like in armhf, see posix_fadvise manpage */
+			ret = 0;
+		}
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			close(s->handle[0].f);
+			free(s->handle);
+			free(s);
+			errno = ret; /* posix_fadvise return the error code */
+			return 0;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 #endif
 
-	s->buffer = malloc_nofail_test(STREAM_SIZE);
+	s->buffer_size = STREAM_SIZE;
+	if (s->buffer_size > s->size)
+		s->buffer_size = s->size; /* allocate only what is necessary */
+	s->buffer = malloc_nofail_test(s->buffer_size);
 	s->pos = s->buffer;
 	s->end = s->buffer;
 	s->state = STREAM_STATE_READ;
@@ -77,7 +98,7 @@ STREAM* sopen_read(const char* file)
 	return s;
 }
 
-STREAM* sopen_multi_write(unsigned count)
+STREAM* sopen_multi_write(unsigned count, int flags)
 {
 	unsigned i;
 
@@ -85,15 +106,18 @@ STREAM* sopen_multi_write(unsigned count)
 
 	s->handle_size = count;
 	s->handle = malloc_nofail(count * sizeof(struct stream_handle));
+	s->flags = flags;
 
 	for (i = 0; i < count; ++i)
 		s->handle[i].f = -1;
 
-	s->buffer = malloc_nofail_test(STREAM_SIZE);
+	s->buffer_size = STREAM_SIZE;
+	s->buffer = malloc_nofail_test(s->buffer_size);
 	s->pos = s->buffer;
-	s->end = s->buffer + STREAM_SIZE;
+	s->end = s->buffer + s->buffer_size;
 	s->state = STREAM_STATE_WRITE;
 	s->state_index = 0;
+	s->size = 0;
 	s->offset = 0;
 	s->offset_uncached = 0;
 	s->crc = 0;
@@ -112,8 +136,12 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 
 	pathcpy(s->handle[i].path, sizeof(s->handle[i].path), file);
 
+	int open_flags = O_WRONLY | O_CREAT | O_EXCL | O_BINARY;
+	if (s->flags & STREAM_FLAGS_SEQUENTIAL)
+		open_flags |= O_SEQUENTIAL; ;
+
 	/* O_EXCL to be resilient ensure to always create a new file and not use a stale link to the original file */
-	f = open(file, O_WRONLY | O_CREAT | O_EXCL | O_BINARY | O_SEQUENTIAL, 0600);
+	f = open(file, open_flags, 0600);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -121,18 +149,20 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 	}
 
 #if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret == ENOSYS) {
-		/* call is not supported, like in armhf, see posix_fadvise manpage */
-		ret = 0;
-	}
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		close(f);
-		errno = ret; /* posix_fadvise return the error code */
-		return -1;
-		/* LCOV_EXCL_STOP */
+	if (s->flags & STREAM_FLAGS_SEQUENTIAL) {
+		/* advise sequential access */
+		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret == ENOSYS) {
+			/* call is not supported, like in armhf, see posix_fadvise manpage */
+			ret = 0;
+		}
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			close(f);
+			errno = ret; /* posix_fadvise return the error code */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 #endif
 
@@ -141,9 +171,9 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 	return 0;
 }
 
-STREAM* sopen_write(const char* file)
+STREAM* sopen_write(const char* file, int flags)
 {
-	STREAM* s = sopen_multi_write(1);
+	STREAM* s = sopen_multi_write(1, flags);
 
 	if (sopen_multi_file(s, 0, file) != 0) {
 		sclose(s);
@@ -212,7 +242,12 @@ static int sfill(STREAM* s)
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = read(s->handle[0].f, s->buffer, STREAM_SIZE);
+	/* if we reached the end, doesn't try to read */
+	if (s->offset >= s->size) {
+		return EOF;
+	}
+
+	ret = read(s->handle[0].f, s->buffer, s->buffer_size);
 
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
@@ -221,13 +256,17 @@ static int sfill(STREAM* s)
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret == 0) {
+		/* nothing mode to read */
 		s->state = STREAM_STATE_EOF;
 		return EOF;
 	}
+	/* assume that it can be a shorter read, so ret < s->buffer_size doesn't mean that we reached EOF */
 
 	/* update the crc */
-	s->crc_uncached = s->crc;
-	s->crc = crc32c(s->crc, s->buffer, ret);
+	if (s->flags & STREAM_FLAGS_CRC) {
+		s->crc_uncached = s->crc;
+		s->crc = crc32c(s->crc, s->buffer, ret);
+	}
 
 	/* update the offset */
 	s->offset_uncached = s->offset;
@@ -312,8 +351,10 @@ int sflush(STREAM* s)
 	 * to be able to detect memory errors on the buffer,
 	 * happening during the write.
 	 */
-	s->crc = crc32c(s->crc, s->buffer, size);
-	s->crc_uncached = s->crc;
+	if (s->flags & STREAM_FLAGS_CRC) {
+		s->crc = crc32c(s->crc, s->buffer, size);
+		s->crc_uncached = s->crc;
+	}
 
 	/* update the offset */
 	s->offset += size;
@@ -329,13 +370,15 @@ int64_t stell(STREAM* s)
 	return s->offset_uncached + (s->pos - s->buffer);
 }
 
-uint32_t scrc(STREAM*s)
+uint32_t scrc(STREAM* s)
 {
+	assert(s->flags & STREAM_FLAGS_CRC);
 	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer);
 }
 
-uint32_t scrc_stream(STREAM*s)
+uint32_t scrc_stream(STREAM* s)
 {
+	assert(s->flags & STREAM_FLAGS_CRC);
 	return s->crc_stream ^ CRC_IV;
 }
 
@@ -436,13 +479,16 @@ int sgetline(STREAM* f, char* str, int size)
 				break;
 			}
 
-			*i++ = c;
-
-			if (i == send) {
+			if (i + 1 >= send) {
 				/* LCOV_EXCL_START */
+				*i = 0;
+				--pos;
+				sptrset(f, pos);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
+
+			*i++ = c;
 		}
 
 		sptrset(f, pos);
@@ -454,6 +500,7 @@ int sgetline(STREAM* f, char* str, int size)
 				break;
 				/* LCOV_EXCL_STOP */
 			}
+
 			if (c == '\n') {
 				/* remove ending carriage return to support the Windows CR+LF format */
 				if (i != str && i[-1] == '\r')
@@ -462,13 +509,15 @@ int sgetline(STREAM* f, char* str, int size)
 				break;
 			}
 
-			*i++ = c;
-
-			if (i == send) {
+			if (i + 1 >= send) {
 				/* LCOV_EXCL_START */
+				*i = 0;
+				sungetc(c, f);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
+
+			*i++ = c;
 		}
 	}
 
@@ -668,7 +717,9 @@ int swrite(const void* void_data, unsigned size, STREAM* f)
 		 * to be able to detect memory errors on the buffer,
 		 * happening before we write it on the file.
 		 */
-		f->crc_stream = crc32c_plain(f->crc_stream, data, size);
+		if (f->flags & STREAM_FLAGS_CRC) {
+			f->crc_stream = crc32c_plain(f->crc_stream, data, size);
+		}
 
 		/* copy it */
 		while (size--)

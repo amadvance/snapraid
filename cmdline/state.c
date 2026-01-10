@@ -565,7 +565,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	log_tag("conf:file:%s\n", path);
 
-	f = sopen_read(path);
+	f = sopen_read(path, 0);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		if (errno == ENOENT) {
@@ -3747,7 +3747,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	}
 
 	/* open all the content files */
-	f = sopen_multi_write(count_content);
+	f = sopen_multi_write(count_content, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error opening the content files.\n");
@@ -3867,7 +3867,7 @@ void state_read(struct snapraid_state* state)
 		}
 		msg_progress("Loading state from %s...\n", path);
 
-		f = sopen_read(path);
+		f = sopen_read(path, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
 		if (f != 0) {
 			/* if opened stop the search */
 			break;
@@ -4069,7 +4069,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		STREAM* f;
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		f = sopen_read(tmp);
+		f = sopen_read(tmp, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
 		if (f == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error reopening the temporary content file '%s'. %s.\n", tmp, strerror(errno));

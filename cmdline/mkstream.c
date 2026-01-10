@@ -40,7 +40,7 @@ void test(void)
 
 	crc32c_init();
 
-	s = sopen_multi_write(STREAM_MAX);
+	s = sopen_multi_write(STREAM_MAX, STREAM_FLAGS_CRC);
 	for (i = 0; i < STREAM_MAX; ++i) {
 		snprintf(file, sizeof(file), "stream%u.bin", i);
 		remove(file);
@@ -120,7 +120,7 @@ void test(void)
 		uint32_t get_crc_computed;
 		snprintf(file, sizeof(file), "stream%u.bin", i);
 
-		s = sopen_read(file);
+		s = sopen_read(file, STREAM_FLAGS_CRC);
 		if (s == 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -209,7 +209,7 @@ void test(void)
 		unsigned char buf[4];
 		snprintf(file, sizeof(file), "stream%u.bin", i);
 
-		s = sopen_read(file);
+		s = sopen_read(file, STREAM_FLAGS_CRC);
 		if (s == 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
