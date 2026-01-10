@@ -1513,8 +1513,53 @@ In Unix, when using globbing characters on the command line, you must
 quote them to prevent the shell from expanding them.
 
 
-9 CONTENT
-=========
+9 IGNORE FILE
+=============
+
+In addition to the global rules in the configuration file, you can
+place `.snapraidignore` files in any directory within the array to
+define decentralized exclusion rules.
+
+Rules defined in `.snapraidignore` are applied after the rules in the
+configuration file. This means they have a higher priority and can be
+used to exclude files that were previously included by the global
+configuration. Effectively, if a local rule matches, the file is
+excluded regardless of the global include settings.
+
+The pattern logic in `.snapraidignore` mirrors the global configuration
+but anchors patterns to the directory where the file is located:
+
+    FILE
+        Selects any file named FILE in this directory or below.
+        This follows the same globbing rules as the global pattern.
+
+    DIR/
+        Selects any directory named DIR and everything inside,
+        residing in this directory or below.
+
+    /PATH/FILE
+        Selects the exact specified file relative to the location
+        of the `.snapraidignore` file.
+
+    /PATH/DIR/
+        Selects the exact specified directory and everything inside,
+        relative to the location of the `.snapraidignore` file.
+
+Unlike the global configuration, `.snapraidignore` files only support
+exclusion rules; you cannot use `include` patterns or negation (!).
+
+For example, if you have a `.snapraidignore` in `/mnt/disk1/projects/`:
+
+    # Excludes ONLY /mnt/disk1/projects/output.bin
+    /output.bin
+    # Excludes any directory named 'build' inside projects/
+    build/
+    # Excludes any .tmp file inside projects/ or its subfolders
+    *.tmp
+
+
+10 CONTENT
+==========
 
 SnapRAID stores the list and checksums of your files in the content file.
 
@@ -1525,7 +1570,7 @@ This file is read and written by the `sync` and `scrub` commands and
 read by the `fix`, `check`, and `status` commands.
 
 
-10 PARITY
+11 PARITY
 =========
 
 SnapRAID stores the parity information of your array in the parity
@@ -1538,7 +1583,7 @@ These files are read and written by the `sync` and `fix` commands and
 only read by the `scrub` and `check` commands.
 
 
-11 ENCODING
+12 ENCODING
 ===========
 
 SnapRAID in Unix ignores any encoding. It reads and stores the
@@ -1555,13 +1600,13 @@ redirect the console output to a file, the resulting file is always
 in UTF-8 format.
 
 
-12 COPYRIGHT
+13 COPYRIGHT
 ============
 
 This file is Copyright (C) 2025 Andrea Mazzoleni
 
 
-13 SEE ALSO
+14 SEE ALSO
 ===========
 
 snapraid_log(1), rsync(1)

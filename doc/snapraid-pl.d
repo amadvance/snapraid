@@ -1404,6 +1404,48 @@ Pattern
 	W systemie Unix, używając znaków globbing w wierszu poleceń, musisz
 	je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
 
+Ignore File
+	Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
+	`.snapraidignore` w dowolnym katalogu w macierzy, aby zdefiniować
+	zdecentralizowane reguły wykluczania.
+
+	Reguły zdefiniowane w `.snapraidignore` są stosowane po regułach w pliku
+	konfiguracyjnym. Oznacza to, że mają one wyższy priorytet i mogą być używane
+	do wykluczania plików, które zostały wcześniej uwzględnione przez konfigurację
+	globalną. Skutecznie, jeśli reguła lokalna pasuje, plik jest wykluczany bez
+	względu na globalne ustawienia uwzględniania.
+
+	Logika wzorców w `.snapraidignore` odzwierciedla konfigurację globalną, ale
+	zakotwicza wzorce w katalogu, w którym znajduje się plik:
+
+	=FILE
+		Wybiera dowolny plik o nazwie FILE w tym katalogu lub poniżej.
+		Podlega to tym samym zasadom dopasowywania (globbing) co wzorzec globalny.
+
+	=DIR/
+		Wybiera dowolny katalog o nazwie DIR i wszystko w jego wnętrzu,
+		znajdujący się w tym katalogu lub poniżej.
+
+	=/PATH/FILE
+		Wybiera dokładnie określony plik względem lokalizacji
+		pliku `.snapraidignore`.
+
+	=/PATH/DIR/
+		Wybiera dokładnie określony katalog i wszystko w jego wnętrzu,
+		względem lokalizacji pliku `.snapraidignore`.
+
+	W przeciwieństwie do konfiguracji globalnej, pliki `.snapraidignore` obsługują
+	tylko reguły wykluczania; nie można używać wzorców `include` ani negacji (!).
+
+	Na przykład, jeśli masz `.snapraidignore` w `/mnt/disk1/projects/`:
+
+		:# Wyklucza TYLKO /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Wyklucza każdy katalog o nazwie 'build' wewnątrz projects/
+		:build/
+		:# Wyklucza każdy plik .tmp wewnątrz projects/ lub jego podfolderach
+		:*.tmp
+
 Content
 	SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 

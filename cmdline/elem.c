@@ -42,7 +42,7 @@ void content_free(struct snapraid_content* content)
 	free(content);
 }
 
-struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
+struct snapraid_filter* filter_alloc_file(int direction, const char* root, const char* pattern)
 {
 	struct snapraid_filter* filter;
 	char* i;
@@ -53,11 +53,13 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 
 	filter = malloc_nofail(sizeof(struct snapraid_filter));
 	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
+	pathimport(filter->root, sizeof(filter->root), root);
 	filter->direction = direction;
 
 	/* find first and last slash */
 	first = 0;
 	last = 0;
+
 	/* reject invalid tokens, like "<empty>", ".", ".." and more dots */
 	token_is_valid = 0;
 	token_is_filled = 0;
@@ -145,7 +147,7 @@ struct snapraid_filter* filter_alloc_disk(int direction, const char* pattern)
 	return filter;
 }
 
-void filter_free(struct snapraid_filter* filter)
+void filter_free(void* filter)
 {
 	free(filter);
 }
@@ -200,9 +202,16 @@ static int filter_recurse(struct snapraid_filter* filter, struct snapraid_filter
 	char* name;
 	unsigned i;
 
+	if (filter->root[0] != 0) { /* if it's a local filter */
+		if (!path_is_root_of(filter->root, const_path)) /* applies it only if it matches the root */
+			return 0;
+		/* advance the path to compare to make it local */
+		const_path += strlen(filter->root);
+	}
+
 	pathcpy(path, sizeof(path), const_path);
 
-	/* filter for all the directories */
+	/* filter all the dir/subdir until we reach the final file/dir */
 	name = path;
 	for (i = 0; path[i] != 0; ++i) {
 		if (path[i] == '/') {
@@ -221,7 +230,7 @@ static int filter_recurse(struct snapraid_filter* filter, struct snapraid_filter
 		}
 	}
 
-	/* filter the final file */
+	/* filter the final file/dir */
 	if (filter_apply(filter, reason, path, name, is_dir) != 0)
 		return filter->direction;
 
@@ -232,7 +241,7 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 {
 	tommy_node* i;
 
-	int direction = 1; /* by default include all */
+	int default_direction = 1; /* by default include all */
 
 	/* for each filter */
 	for (i = tommy_list_head(filterlist); i != 0; i = i->next) {
@@ -256,10 +265,10 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 		} else if (ret < 0) {
 			/* exclude the file */
 			return -1;
-		} else {
-			/* default is opposite of the last filter */
-			direction = -filter->direction;
-			if (reason != 0 && direction < 0)
+		} else if (filter->root[0] == 0) {
+			/* default is opposite of the last global rule (not counting local rules) */
+			default_direction = -filter->direction;
+			if (reason != 0 && default_direction < 0)
 				*reason = filter;
 			/* continue with the next one */
 		}
@@ -270,8 +279,8 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 	if (is_def_include)
 		return 0;
 
-	/* files are excluded/included depending of the last rule processed */
-	if (direction < 0)
+	/* files are excluded/included depending of the last rule processed (not counting local filters) */
+	if (default_direction < 0)
 		return -1;
 
 	return 0;

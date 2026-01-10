@@ -1511,8 +1511,53 @@ I Unix, när du använder globbing-tecken på kommandoraden, måste du
 citattecken dem för att förhindra att skalet expanderar dem.
 
 
-9 INNEHåLL (CONTENT)
-====================
+9 IGNORERA FILER (IGNORE FILE)
+==============================
+
+Utöver de globala reglerna i konfigurationsfilen kan du placera
+`.snapraidignore`-filer i vilken katalog som helst i arrayen för att definiera
+decentraliserade exkluderingsregler.
+
+Regler som definieras i `.snapraidignore` tillämpas efter reglerna i
+konfigurationsfilen. Detta innebär att de har högre prioritet och kan
+användas för att exkludera filer som tidigare inkluderats av den globala
+konfigurationen. I praktiken innebär det att om en lokal regel matchar, så
+exkluderas filen oavsett de globala inkluderingsinställningarna.
+
+Mönsterlogiken i `.snapraidignore` speglar den globala konfigurationen men
+förankrar mönstren till den katalog där filen finns:
+
+    FILE
+        Väljer alla filer med namnet FILE i denna katalog eller under.
+        Detta följer samma globbing-regler som det globala mönstret.
+
+    DIR/
+        Väljer alla kataloger med namnet DIR och allt innehåll, som finns
+        i denna katalog eller under.
+
+    /PATH/FILE
+        Väljer den exakt angivna filen relativt platsen för
+        `.snapraidignore`-filen.
+
+    /PATH/DIR/
+        Väljer den exakt angivna katalogen och allt innehåll, relativt
+        platsen för `.snapraidignore`-filen.
+
+Till skillnad från den globala konfigurationen stöder `.snapraidignore`-filer
+endast exkluderingsregler; du kan inte använda `include`-mönster eller negation (!).
+
+Till exempel, om du har en `.snapraidignore` i `/mnt/disk1/projects/`:
+
+    # Exkluderar ENDAST /mnt/disk1/projects/output.bin
+    /output.bin
+    # Exkluderar alla kataloger med namnet 'build' inuti projects/
+    build/
+    # Exkluderar alla .tmp-filer inuti projects/ eller dess undermappar
+    *.tmp
+
+
+10 INNEHåLL (CONTENT)
+=====================
 
 SnapRAID lagrar listan och checksummorna för dina filer i content-filen.
 
@@ -1523,7 +1568,7 @@ Denna fil läses och skrivs av kommandona `sync` och `scrub` och
 läses av kommandona `fix`, `check` och `status`.
 
 
-10 PARITET (PARITY)
+11 PARITET (PARITY)
 ===================
 
 SnapRAID lagrar paritetsinformationen för din array i parity-
@@ -1536,7 +1581,7 @@ Dessa filer läses och skrivs av kommandona `sync` och `fix` och
 läses endast av kommandona `scrub` och `check`.
 
 
-11 KODNING
+12 KODNING
 ==========
 
 SnapRAID i Unix ignorerar all kodning. Det läser och lagrar
@@ -1553,13 +1598,13 @@ omdirigerar konsolutdata till en fil, är den resulterande filen alltid
 i UTF-8-format.
 
 
-12 UPPHOVSRäTT (COPYRIGHT)
+13 UPPHOVSRäTT (COPYRIGHT)
 ==========================
 
 Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
 
-13 SE ÄVEN (SEE ALSO)
+14 SE ÄVEN (SEE ALSO)
 =====================
 
 snapraid_log(1), rsync(1)

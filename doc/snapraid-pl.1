@@ -1843,6 +1843,66 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 W systemie Unix, używając znaków globbing w wierszu poleceń, musisz
 je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
+.SH IGNORE FILE 
+Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
+\`.snapraidignore\` w dowolnym katalogu w macierzy, aby zdefiniować
+zdecentralizowane reguły wykluczania.
+.PP
+Reguły zdefiniowane w \`.snapraidignore\` są stosowane po regułach w pliku
+konfiguracyjnym. Oznacza to, że mają one wyższy priorytet i mogą być używane
+do wykluczania plików, które zostały wcześniej uwzględnione przez konfigurację
+globalną. Skutecznie, jeśli reguła lokalna pasuje, plik jest wykluczany bez
+względu na globalne ustawienia uwzględniania.
+.PP
+Logika wzorców w \`.snapraidignore\` odzwierciedla konfigurację globalną, ale
+zakotwicza wzorce w katalogu, w którym znajduje się plik:
+.TP
+.B FILE
+Wybiera dowolny plik o nazwie FILE w tym katalogu lub poniżej.
+Podlega to tym samym zasadom dopasowywania (globbing) co wzorzec globalny.
+.TP
+.B DIR/
+Wybiera dowolny katalog o nazwie DIR i wszystko w jego wnętrzu,
+znajdujący się w tym katalogu lub poniżej.
+.TP
+.B /PATH/FILE
+Wybiera dokładnie określony plik względem lokalizacji
+pliku \`.snapraidignore\`.
+.TP
+.B /PATH/DIR/
+Wybiera dokładnie określony katalog i wszystko w jego wnętrzu,
+względem lokalizacji pliku \`.snapraidignore\`.
+.PP
+W przeciwieństwie do konfiguracji globalnej, pliki \`.snapraidignore\` obsługują
+tylko reguły wykluczania; nie można używać wzorców \`include\` ani negacji (!).
+.PP
+Na przykład, jeśli masz \`.snapraidignore\` w \`/mnt/disk1/projects/\`:
+.PP
+.RS 4
+# Wyklucza TYLKO /mnt/disk1/projects/output.bin
+.PD 0
+.PP
+.PD
+/output.bin
+.PD 0
+.PP
+.PD
+# Wyklucza każdy katalog o nazwie \'build\' wewnątrz projects/
+.PD 0
+.PP
+.PD
+build/
+.PD 0
+.PP
+.PD
+# Wyklucza każdy plik .tmp wewnątrz projects/ lub jego podfolderach
+.PD 0
+.PP
+.PD
+*.tmp
+.PD 0
+.PD
+.RE
 .SH CONTENT 
 SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 .PP

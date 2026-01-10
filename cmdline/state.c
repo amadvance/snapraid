@@ -1230,7 +1230,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			filter = filter_alloc_file(-1, buffer);
+			filter = filter_alloc_file(-1, "", buffer);
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
@@ -1257,7 +1257,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			filter = filter_alloc_file(1, buffer);
+			filter = filter_alloc_file(1, "", buffer);
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
@@ -5111,5 +5111,73 @@ int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct sna
 	}
 
 	return 0;
+}
+
+void state_load_ignore_file(tommy_list* filter_list, const char* path, const char* sub)
+{
+	STREAM* f;
+	int line;
+
+	f = sopen_read(path, 0);
+	if (!f) {
+		/* LCOV_EXCL_START */
+		log_error("Error opening the ignore file '%s'. %s.\n", path, strerror(errno));
+		/* LCOV_EXCL_STOP */
+	}
+
+	line = 1;
+	while (1) {
+		char buffer[PATH_MAX];
+		int ret;
+		int c;
+
+		/* skip initial spaces */
+		sgetspace(f);
+
+		/* get the whole line */
+		ret = sgetline(f, buffer, sizeof(buffer));
+		if (ret < 0) {
+			/* LCOV_EXCL_START */
+			log_error("Too long line in '%s' at line %u\n", path, line);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (buffer[0] == 0) {
+			/* allow empty lines */
+		} else if (buffer[0] == '#') {
+			/* ignore comment lines */
+		} else {
+			struct snapraid_filter* filter;
+
+			filter = filter_alloc_file(-1, sub, buffer);
+			if (!filter) {
+				/* LCOV_EXCL_START */
+				log_error("Invalid ignore specification '%s' in '%s' at line %u\n", buffer, path, line);
+				/* LCOV_EXCL_STOP */
+			}
+
+			tommy_list_insert_tail(filter_list, &filter->node, filter);
+		}
+
+		/* next line */
+		c = sgeteol(f);
+		if (c == EOF) {
+			break;
+		}
+		if (c != '\n') {
+			/* LCOV_EXCL_START */
+			log_error("Extra data in '%s' at line %u\n", path, line);
+			/* LCOV_EXCL_STOP */
+		}
+		++line;
+	}
+
+	if (serror(f)) {
+		/* LCOV_EXCL_START */
+		log_error("Error reading the ignore file '%s' at line %u\n", path, line);
+		/* LCOV_EXCL_STOP */
+	}
+
+	sclose(f);
 }
 

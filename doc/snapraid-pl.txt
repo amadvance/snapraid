@@ -1504,8 +1504,53 @@ W systemie Unix, używając znaków globbing w wierszu poleceń, musisz
 je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
 
 
-9 CONTENT
-=========
+9 IGNORE FILE
+=============
+
+Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
+`.snapraidignore` w dowolnym katalogu w macierzy, aby zdefiniować
+zdecentralizowane reguły wykluczania.
+
+Reguły zdefiniowane w `.snapraidignore` są stosowane po regułach w pliku
+konfiguracyjnym. Oznacza to, że mają one wyższy priorytet i mogą być używane
+do wykluczania plików, które zostały wcześniej uwzględnione przez konfigurację
+globalną. Skutecznie, jeśli reguła lokalna pasuje, plik jest wykluczany bez
+względu na globalne ustawienia uwzględniania.
+
+Logika wzorców w `.snapraidignore` odzwierciedla konfigurację globalną, ale
+zakotwicza wzorce w katalogu, w którym znajduje się plik:
+
+    FILE
+        Wybiera dowolny plik o nazwie FILE w tym katalogu lub poniżej.
+        Podlega to tym samym zasadom dopasowywania (globbing) co wzorzec globalny.
+
+    DIR/
+        Wybiera dowolny katalog o nazwie DIR i wszystko w jego wnętrzu,
+        znajdujący się w tym katalogu lub poniżej.
+
+    /PATH/FILE
+        Wybiera dokładnie określony plik względem lokalizacji
+        pliku `.snapraidignore`.
+
+    /PATH/DIR/
+        Wybiera dokładnie określony katalog i wszystko w jego wnętrzu,
+        względem lokalizacji pliku `.snapraidignore`.
+
+W przeciwieństwie do konfiguracji globalnej, pliki `.snapraidignore` obsługują
+tylko reguły wykluczania; nie można używać wzorców `include` ani negacji (!).
+
+Na przykład, jeśli masz `.snapraidignore` w `/mnt/disk1/projects/`:
+
+    # Wyklucza TYLKO /mnt/disk1/projects/output.bin
+    /output.bin
+    # Wyklucza każdy katalog o nazwie 'build' wewnątrz projects/
+    build/
+    # Wyklucza każdy plik .tmp wewnątrz projects/ lub jego podfolderach
+    *.tmp
+
+
+10 CONTENT
+==========
 
 SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 
@@ -1516,7 +1561,7 @@ Ten plik jest odczytywany i zapisywany przez polecenia `sync` i `scrub`
 oraz odczytywany przez polecenia `fix`, `check` i `status`.
 
 
-10 PARITY
+11 PARITY
 =========
 
 SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
@@ -1529,7 +1574,7 @@ Pliki te są odczytywane i zapisywane przez polecenia `sync` i `fix`
 oraz tylko odczytywane przez polecenia `scrub` i `check`.
 
 
-11 ENCODING
+12 ENCODING
 ===========
 
 SnapRAID w systemie Unix ignoruje wszelkie kodowanie. Odczytuje i przechowuje
@@ -1546,13 +1591,13 @@ przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 w formacie UTF-8.
 
 
-12 COPYRIGHT
+13 COPYRIGHT
 ============
 
 Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 
 
-13 SEE ALSO
+14 SEE ALSO
 ===========
 
 snapraid_log(1), rsync(1)

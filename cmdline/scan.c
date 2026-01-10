@@ -51,6 +51,7 @@ struct snapraid_scan {
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
 	tommy_list dir_insert_list; /**< Dirs to insert. */
+	tommy_list local_filter_list; /**< Filter list specific for the disk. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -73,6 +74,7 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	tommy_list_init(&scan->file_insert_list);
 	tommy_list_init(&scan->link_insert_list);
 	tommy_list_init(&scan->dir_insert_list);
+	tommy_list_init(&scan->local_filter_list);
 	scan->is_diff = is_diff;
 	scan->need_write = 0;
 
@@ -88,7 +90,7 @@ static void scan_free(struct snapraid_scan* scan)
 #if HAVE_THREAD
 	thread_mutex_destroy(&scan->disk->stamp_mutex);
 #endif
-
+	tommy_list_foreach(&scan->local_filter_list, filter_free);
 	free(scan);
 }
 
@@ -1346,6 +1348,10 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 
 		/* insert in the list */
 		tommy_list_insert_tail(&list, &entry->node, entry);
+
+		/* process ignore files */
+		if (strcmp(".snapraidignore", dd->d_name) == 0)
+			state_load_ignore_file(&scan->local_filter_list, path_next, sub_next);
 	}
 
 	if (closedir(d) != 0) {
@@ -1434,7 +1440,8 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		}
 
 		if (type == 0) { /* REG */
-			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
+				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
 
 				/* late stat, if not yet called */
 				if (!st)
@@ -1459,7 +1466,8 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else if (type == 1) { /* LNK */
-			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
+				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
 				int ret;
 
 				ret = readlink(path_next, tmp, PATH_MAX);
@@ -1488,7 +1496,8 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else if (type == 2) { /* DIR */
-			if (filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0
+				&& filter_subdir(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
 #ifndef _WIN32
 				/* late stat, if not yet called */
 				if (!st)
@@ -1517,7 +1526,8 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else {
-			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
+				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
 				/* late stat, if not yet called */
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);

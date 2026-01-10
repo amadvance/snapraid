@@ -1462,8 +1462,51 @@ Unix에서는 명령줄에서 글로빙 문자를 사용할 때 셸이 확장하
 방지하기 위해 따옴표로 묶어야 합니다.
 
 
-9 CONTENT
-=========
+9 IGNORE FILE
+=============
+
+설정 파일의 전역 규칙 외에도, 배열 내의 모든 디렉토리에 `.snapraidignore`
+파일을 배치하여 분산된 제외 규칙을 정의할 수 있습니다.
+
+`.snapraidignore`에 정의된 규칙은 설정 파일의 규칙 다음에 적용됩니다.
+이는 해당 규칙들이 더 높은 우선순위를 가지며, 전역 설정에 의해 이전에
+포함되었던 파일들을 제외하는 데 사용될 수 있음을 의미합니다. 사실상
+로컬 규칙이 일치하면, 전역 포함 설정과 관계없이 해당 파일은 제외됩니다.
+
+`.snapraidignore`의 패턴 로직은 전역 설정을 따르지만, 패턴은 해당 파일이
+위치한 디렉토리를 기준으로 고정됩니다:
+
+    FILE
+        이 디렉토리 또는 그 하위에서 FILE이라는 이름의 모든 파일을 선택합니다.
+        이는 전역 패턴과 동일한 글로빙(globbing) 규칙을 따릅니다.
+
+    DIR/
+        이 디렉토리 또는 그 하위에서 DIR이라는 이름의 모든 디렉토리와
+        그 안의 모든 항목을 선택합니다.
+
+    /PATH/FILE
+        `.snapraidignore` 파일의 위치를 기준으로 지정된 정확한 파일을
+        선택합니다.
+
+    /PATH/DIR/
+        `.snapraidignore` 파일의 위치를 기준으로 지정된 정확한 디렉토리와
+        그 안의 모든 항목을 선택합니다.
+
+전역 설정과 달리, `.snapraidignore` 파일은 제외 규칙만 지원합니다.
+`include` 패턴이나 부정(!)은 사용할 수 없습니다.
+
+예를 들어, `/mnt/disk1/projects/`에 `.snapraidignore`가 있는 경우:
+
+    # /mnt/disk1/projects/output.bin만 제외
+    /output.bin
+    # projects/ 내부의 'build'라는 이름의 모든 디렉토리 제외
+    build/
+    # projects/ 또는 그 하위 폴더의 모든 .tmp 파일 제외
+    *.tmp
+
+
+10 CONTENT
+==========
 
 SnapRAID는 content 파일에 파일 목록과 체크섬을 저장합니다.
 
@@ -1474,7 +1517,7 @@ SnapRAID는 content 파일에 파일 목록과 체크섬을 저장합니다.
 `fix`, `check`, 및 `status` 명령에 의해 읽혀집니다.
 
 
-10 PARITY
+11 PARITY
 =========
 
 SnapRAID는 패리티 파일에 어레이의 패리티 정보를 저장합니다.
@@ -1486,7 +1529,7 @@ SnapRAID는 패리티 파일에 어레이의 패리티 정보를 저장합니다
 `scrub` 및 `check` 명령에 의해서만 읽혀집니다.
 
 
-11 ENCODING
+12 ENCODING
 ===========
 
 Unix의 SnapRAID는 인코딩을 무시합니다. 파일 시스템에서 사용되는
@@ -1502,13 +1545,13 @@ Windows 콘솔을 UTF-8 모드로 설정하고 콘솔 글꼴로 `Lucida Console`
 리디렉션하는 경우 결과 파일은 항상 UTF-8 형식입니다.
 
 
-12 COPYRIGHT
+13 COPYRIGHT
 ============
 
 This file is Copyright (C) 2025 Andrea Mazzoleni
 
 
-13 SEE ALSO
+14 SEE ALSO
 ===========
 
 snapraid_log(1), rsync(1)

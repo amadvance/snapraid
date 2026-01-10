@@ -352,6 +352,15 @@ void pathcut(char* dst);
  */
 int pathcmp(const char* a, const char* b);
 
+/**
+ * Check if the root is matching the start of the specified path.
+ *
+ * The root MUST end with a /.
+ *
+ * In Windows it's case insensitive and assumes \ equal at /.
+ */
+int path_is_root_of(const char* root, const char* path);
+
 /****************************************************************************/
 /* file-system */
 

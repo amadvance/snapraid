@@ -1531,6 +1531,48 @@ Motif (Pattern)
 	ligne de commande, vous devez les mettre entre guillemets pour empêcher
 	le shell de les développer.
 
+Ignorer des Fichiers (Ignore Files)
+	En plus des règles globales du fichier de configuration, vous pouvez
+	placer des fichiers `.snapraidignore` dans n'importe quel répertoire de la grappe
+	pour définir des règles d'exclusion décentralisées.
+
+	Les règles définies dans `.snapraidignore` sont appliquées après les règles du
+	fichier de configuration. Cela signifie qu'elles ont une priorité plus élevée et peuvent
+	être utilisées pour exclure des fichiers qui étaient précédemment inclus par la
+	configuration globale. En pratique, si une règle locale correspond, le fichier est
+	exclu quels que soient les paramètres d'inclusion globaux.
+
+	La logique des motifs dans `.snapraidignore` reflète la configuration globale
+	mais ancre les motifs au répertoire où se trouve le fichier :
+
+	=FILE
+		Sélectionne n'importe quel fichier nommé FILE dans ce répertoire ou en dessous.
+		Cela suit les mêmes règles de globbing que le motif global.
+
+	=DIR/
+		Sélectionne n'importe quel répertoire nommé DIR et tout son contenu,
+		résidant dans ce répertoire ou en dessous.
+
+	=/PATH/FILE
+		Sélectionne le fichier exact spécifié par rapport à l'emplacement
+		du fichier `.snapraidignore`.
+
+	=/PATH/DIR/
+		Sélectionne le répertoire exact spécifié et tout son contenu,
+		par rapport à l'emplacement du fichier `.snapraidignore`.
+
+	Contrairement à la configuration globale, les fichiers `.snapraidignore` ne prennent
+	en charge que les règles d'exclusion ; vous ne pouvez pas utiliser de motifs `include` ou de négation (!).
+
+	Par exemple, si vous avez un `.snapraidignore` dans `/mnt/disk1/projects/` :
+
+		:# Exclut UNIQUEMENT /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Exclut tout répertoire nommé 'build' dans projects/
+		:build/
+		:# Exclut tout fichier .tmp dans projects/ ou ses sous-dossiers
+		:*.tmp
+
 Contenu (Content)
 	SnapRAID stocke la liste et les sommes de contrôle de vos fichiers
 	dans le fichier de contenu.

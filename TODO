@@ -5,53 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Distributed Exclusion Support (.snapraidignore)
-See https://sourceforge.net/p/snapraid/discussion/1677233/thread/09ed63eca7/?limit=25#d058
-
-Support decentralized exclusion rules by allowing users to place ignore files 
-deeper in the directory tree. This mirrors the behavior of .gitignore but 
-maintains the strict pathing logic of SnapRAID.
-
-1. FILE NAME & PLACEMENT
-* FILENAME: .snapraidignore
-* WHY: Avoids naming conflict with Ubuntu's "snap" application ecosystem.
-* PLACEMENT: Any directory within the array.
-
-2. COMPARISON WITH .GITIGNORE
-* Anchor (/): Both anchor to the local directory where the file resides.
-* Folder Logic: SnapRAID is STRICT (must end in /). Git is AMBIGUOUS.
-* File Logic: SnapRAID is STRICT (no / targets files). Git matches both.
-* Recursive Search: Both match in current folder and all subfolders.
-* Negation (!): SnapRAID does NOT SUPPORT. Git supports.
-* Globbing: Both support *, ?, [a-z]. Git adds **.
-
-3. PATTERN RULES (INTEGRATION WITH EXISTING SYNTAX)
-Patterns inside .snapraidignore are treated as relative to the file location:
-
-  FILE          Selects any file named FILE in this directory or below.
-  DIR/          Selects any directory named DIR and its contents in this 
-                directory or below.
-  /PATH/FILE    Selects the exact specified file relative to the 
-                .snapraidignore location.
-  /PATH/DIR/    Selects the exact specified directory relative to the 
-                .snapraidignore location.
-
-4. EXAMPLES
-If .snapraidignore is placed in: /mnt/disk1/projects/
-
-  /output.bin   -> Ignores ONLY /mnt/disk1/projects/output.bin
-  build/        -> Ignores any folder named 'build' inside projects/
-  *.tmp         -> Ignores any .tmp file inside projects/ or its subfolders
-
-5. IMPLEMENTATION NOTES
-* PERFORMANCE: No significant overhead. SnapRAID already performs a full 
-  directory traversal during sync/diff; it just needs to check for the presence 
-  of .snapraidignore in the current DIR handle.
-* PRECEDENCE: Exclusions are additive. If a file is excluded by EITHER the 
-  global snapraid.conf OR any local .snapraidignore in its path, it is excluded.
-* SCOPE: A .snapraidignore file affects its parent directory and all 
-  subdirectories beneath it.
-
 * Integration with MergeFS ?
 
 * Support BTRFS subvolumes. Keep track of the subvolumeid, along with the inode, and use it when searching/comparing inodes.

@@ -1413,6 +1413,48 @@ Pattern
 	In Unix, when using globbing characters on the command line, you must
 	quote them to prevent the shell from expanding them.
 
+Ignore File
+	In addition to the global rules in the configuration file, you can
+	place `.snapraidignore` files in any directory within the array to
+	define decentralized exclusion rules.
+
+	Rules defined in `.snapraidignore` are applied after the rules in the
+	configuration file. This means they have a higher priority and can be
+	used to exclude files that were previously included by the global
+	configuration. Effectively, if a local rule matches, the file is
+	excluded regardless of the global include settings.
+
+	The pattern logic in `.snapraidignore` mirrors the global configuration
+	but anchors patterns to the directory where the file is located:
+
+	=FILE
+		Selects any file named FILE in this directory or below.
+		This follows the same globbing rules as the global pattern.
+
+	=DIR/
+		Selects any directory named DIR and everything inside,
+		residing in this directory or below.
+
+	=/PATH/FILE
+		Selects the exact specified file relative to the location
+		of the `.snapraidignore` file.
+
+	=/PATH/DIR/
+		Selects the exact specified directory and everything inside,
+		relative to the location of the `.snapraidignore` file.
+
+	Unlike the global configuration, `.snapraidignore` files only support
+	exclusion rules; you cannot use `include` patterns or negation (!).
+
+	For example, if you have a `.snapraidignore` in `/mnt/disk1/projects/`:
+
+		:# Excludes ONLY /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Excludes any directory named 'build' inside projects/
+		:build/
+		:# Excludes any .tmp file inside projects/ or its subfolders
+		:*.tmp
+
 Content
 	SnapRAID stores the list and checksums of your files in the content file.
 

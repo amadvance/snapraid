@@ -1443,6 +1443,48 @@ Padrão (Pattern)
 	No Unix, ao usar caracteres globbing na linha de comando, você deve
 	citá-los para evitar que o shell os expanda.
 
+Ignorar Arquivos (Ignore File)
+	Além das regras globais no arquivo de configuração, você pode colocar
+	arquivos `.snapraidignore` em qualquer diretório dentro do array para definir
+	regras de exclusão descentralizadas.
+
+	As regras definidas em `.snapraidignore` são aplicadas após as regras no
+	arquivo de configuração. Isso significa que elas têm uma prioridade maior e
+	podem ser usadas para excluir arquivos que foram anteriormente incluídos pela
+	configuração global. Efetivamente, se uma regra local corresponder, o arquivo
+	é excluído independentemente das configurações globais de inclusão.
+
+	A lógica de padrões no `.snapraidignore` espelha a configuração global, mas
+	ancora os padrões ao diretório onde o arquivo está localizado:
+
+	=FILE
+		Seleciona qualquer arquivo chamado FILE neste diretório ou abaixo.
+		Isso segue as mesmas regras de globbing do padrão global.
+
+	=DIR/
+		Seleciona qualquer diretório chamado DIR e tudo dentro dele,
+		residente neste diretório ou abaixo.
+
+	=/PATH/FILE
+		Seleciona o arquivo exato especificado relativo à localização
+		do arquivo `.snapraidignore`.
+
+	=/PATH/DIR/
+		Seleciona o diretório exato especificado e tudo dentro dele,
+		relativo à localização do arquivo `.snapraidignore`.
+
+	Ao contrário da configuração global, os arquivos `.snapraidignore` suportam
+	apenas regras de exclusão; você não pode usar padrões `include` ou negação (!).
+
+	Por exemplo, se você tiver um `.snapraidignore` em `/mnt/disk1/projects/`:
+
+		:# Exclui APENAS /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Exclui qualquer diretório chamado 'build' dentro de projects/
+		:build/
+		:# Exclui qualquer arquivo .tmp dentro de projects/ ou suas subpastas
+		:*.tmp
+
 Conteúdo (Content)
 	SnapRAID armazena a lista e os checksums de seus arquivos no arquivo content.
 

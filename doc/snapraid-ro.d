@@ -1406,6 +1406,48 @@ Model (Pattern)
 	În Unix, când utilizați caractere globbing pe linia de comandă, trebuie
 	să le citați pentru a împiedica shell-ul să le extindă.
 
+Fișiere de Ignorat (Ignore File)
+	Pe lângă regulile globale din fișierul de configurare, puteți plasa fișiere
+	`.snapraidignore` în orice director din array pentru a defini reguli de excludere
+	descentralizate.
+
+	Regulile definite în `.snapraidignore` sunt aplicate după regulile din fișierul
+	de configurare. Acest lucru înseamnă că au o prioritate mai mare și pot fi
+	utilizate pentru a exclude fișiere care au fost incluse anterior de configurația
+	globală. Efectiv, dacă o regulă locală se potrivește, fișierul este exclus
+	indiferent de setările globale de includere.
+
+	Logica modelelor în `.snapraidignore` oglindește configurația globală, dar
+	ancorează modelele de directorul în care se află fișierul:
+
+	=FILE
+		Selectează orice fișier numit FILE în acest director sau mai jos.
+		Acesta urmează aceleași reguli de globbing ca modelul global.
+
+	=DIR/
+		Selectează orice director numit DIR și tot ce se află în interior,
+		aflat în acest director sau mai jos.
+
+	=/PATH/FILE
+		Selectează fișierul exact specificat raportat la locația
+		fișierului `.snapraidignore`.
+
+	=/PATH/DIR/
+		Selectează directorul exact specificat și tot ce se află în interior,
+		raportat la locația fișierului `.snapraidignore`.
+
+	Spre deosebire de configurația globală, fișierele `.snapraidignore` suportă
+	doar reguli de excludere; nu puteți utiliza modele de `include` sau negația (!).
+
+	De exemplu, dacă aveți un `.snapraidignore` în `/mnt/disk1/projects/`:
+
+		:# Exclude DOAR /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Exclude orice director numit 'build' în interiorul projects/
+		:build/
+		:# Exclude orice fișier .tmp în interiorul projects/ sau subfolderele sale
+		:*.tmp
+
 Conținut (Content)
 	SnapRAID stochează lista și sumele de control (checksums) ale fișierelor dvs. în fișierul de conținut.
 

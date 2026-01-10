@@ -1529,6 +1529,48 @@ Pattern
 	Unter Unix müssen Sie Globbing-Zeichen in der Befehlszeile in
 	Anführungszeichen setzen, um zu verhindern, dass die Shell sie erweitert.
 
+Dateien Ignorieren
+	Zusätzlich zu den globalen Regeln in der Konfigurationsdatei können Sie
+	`.snapraidignore`-Dateien in jedem Verzeichnis innerhalb des Arrays platzieren,
+	um dezentrale Ausschlussregeln zu definieren.
+
+	Regeln, die in `.snapraidignore` definiert sind, werden nach den Regeln in der
+	Konfigurationsdatei angewendet. Dies bedeutet, dass sie eine höhere Priorität haben
+	und verwendet werden können, um Dateien auszuschließen, die zuvor durch die globale
+	Konfiguration eingeschlossen wurden. Effektiv wird eine Datei ausgeschlossen, wenn
+	eine lokale Regel zutrifft, unabhängig von den globalen Include-Einstellungen.
+
+	Die Musterlogik in `.snapraidignore` spiegelt die globale Konfiguration wider,
+	verankert die Muster jedoch an dem Verzeichnis, in dem sich die Datei befindet:
+
+	=FILE
+		Wählt jede Datei namens FILE in diesem Verzeichnis oder darunter aus.
+		Dies folgt denselben Globbing-Regeln wie das globale Muster.
+
+	=DIR/
+		Wählt jedes Verzeichnis namens DIR und alles darin aus, das sich
+		in diesem Verzeichnis oder darunter befindet.
+
+	=/PATH/FILE
+		Wählt die exakt angegebene Datei relativ zum Speicherort
+		der `.snapraidignore`-Datei aus.
+
+	=/PATH/DIR/
+		Wählt das exakt angegebene Verzeichnis und alles darin aus,
+		relativ zum Speicherort der `.snapraidignore`-Datei.
+
+	Im Gegensatz zur globalen Konfiguration unterstützen `.snapraidignore`-Dateien nur
+	Ausschlussregeln; Sie können keine `include`-Muster oder Negationen (!) verwenden.
+
+	Wenn Sie beispielsweise eine `.snapraidignore` in `/mnt/disk1/projects/` haben:
+
+		:# Schließt NUR /mnt/disk1/projects/output.bin aus
+		:/output.bin
+		:# Schließt jedes Verzeichnis namens 'build' innerhalb von projects/ aus
+		:build/
+		:# Schließt jede .tmp-Datei innerhalb von projects/ oder deren Unterordnern aus
+		:*.tmp
+
 Content
 	SnapRAID speichert die Liste und Prüfsummen Ihrer Dateien in der
 	Content-Datei.

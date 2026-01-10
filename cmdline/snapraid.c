@@ -996,7 +996,7 @@ int snapraid_main(int argc, char* argv[])
 			pathimport(conf, sizeof(conf), optarg);
 			break;
 		case 'f' : {
-			struct snapraid_filter* filter = filter_alloc_file(1, optarg);
+			struct snapraid_filter* filter = filter_alloc_file(1, "", optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid filter specification '%s'\n", optarg);

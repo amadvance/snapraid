@@ -1973,6 +1973,66 @@ snapraid \-f \[dq]*.mp3\[dq] check
 Sous Unix, lorsque vous utilisez des caractères de globbing sur la
 ligne de commande, vous devez les mettre entre guillemets pour empêcher
 le shell de les développer.
+.SH IGNORER DES FICHIERS (IGNORE FILES) 
+En plus des règles globales du fichier de configuration, vous pouvez
+placer des fichiers \`.snapraidignore\` dans n\'importe quel répertoire de la grappe
+pour définir des règles d\'exclusion décentralisées.
+.PP
+Les règles définies dans \`.snapraidignore\` sont appliquées après les règles du
+fichier de configuration. Cela signifie qu\'elles ont une priorité plus élevée et peuvent
+être utilisées pour exclure des fichiers qui étaient précédemment inclus par la
+configuration globale. En pratique, si une règle locale correspond, le fichier est
+exclu quels que soient les paramètres d\'inclusion globaux.
+.PP
+La logique des motifs dans \`.snapraidignore\` reflète la configuration globale
+mais ancre les motifs au répertoire où se trouve le fichier :
+.TP
+.B FILE
+Sélectionne n\'importe quel fichier nommé FILE dans ce répertoire ou en dessous.
+Cela suit les mêmes règles de globbing que le motif global.
+.TP
+.B DIR/
+Sélectionne n\'importe quel répertoire nommé DIR et tout son contenu,
+résidant dans ce répertoire ou en dessous.
+.TP
+.B /PATH/FILE
+Sélectionne le fichier exact spécifié par rapport à l\'emplacement
+du fichier \`.snapraidignore\`.
+.TP
+.B /PATH/DIR/
+Sélectionne le répertoire exact spécifié et tout son contenu,
+par rapport à l\'emplacement du fichier \`.snapraidignore\`.
+.PP
+Contrairement à la configuration globale, les fichiers \`.snapraidignore\` ne prennent
+en charge que les règles d\'exclusion ; vous ne pouvez pas utiliser de motifs \`include\` ou de négation (!).
+.PP
+Par exemple, si vous avez un \`.snapraidignore\` dans \`/mnt/disk1/projects/\` :
+.PP
+.RS 4
+# Exclut UNIQUEMENT /mnt/disk1/projects/output.bin
+.PD 0
+.PP
+.PD
+/output.bin
+.PD 0
+.PP
+.PD
+# Exclut tout répertoire nommé \'build\' dans projects/
+.PD 0
+.PP
+.PD
+build/
+.PD 0
+.PP
+.PD
+# Exclut tout fichier .tmp dans projects/ ou ses sous\-dossiers
+.PD 0
+.PP
+.PD
+*.tmp
+.PD 0
+.PD
+.RE
 .SH CONTENU (CONTENT) 
 SnapRAID stocke la liste et les sommes de contrôle de vos fichiers
 dans le fichier de contenu.

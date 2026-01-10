@@ -911,8 +911,8 @@ void pathimport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/* convert the  Windows dir separator '\' to C '/', */
-	/* and the Windows escaping  char '^' to the fnmatch '\' */
+	/* convert the Windows dir separator '\' to C '/', */
+	/* and the Windows escaping char '^' to the fnmatch '\' */
 	while (*dst) {
 		switch (*dst) {
 		case '\\' :
@@ -1011,6 +1011,30 @@ int pathcmp(const char* a, const char* b)
 #else
 	return strcmp(a, b);
 #endif
+}
+
+int path_is_root_of(const char* root, const char* path)
+{
+	while (*root && *path) {
+#ifdef _WIN32
+		/* case insensitive compare in Windows */
+		char r = tolower((unsigned char)*root);
+		char p = tolower((unsigned char)*path);
+		if (r == '\\')
+			r = '/';
+		if (p == '\\')
+			p = '/';
+		if (r != p)
+			return 0;
+#else
+		if (*root != *path)
+			return 0;
+#endif
+		++root;
+		++path;
+	}
+
+	return *root == 0 && *path != 0;
 }
 
 /****************************************************************************/

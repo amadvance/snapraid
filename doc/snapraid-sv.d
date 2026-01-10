@@ -1411,6 +1411,48 @@ Mönster
 	I Unix, när du använder globbing-tecken på kommandoraden, måste du
 	citattecken dem för att förhindra att skalet expanderar dem.
 
+Ignorera filer (Ignore File)
+	Utöver de globala reglerna i konfigurationsfilen kan du placera
+	`.snapraidignore`-filer i vilken katalog som helst i arrayen för att definiera
+	decentraliserade exkluderingsregler.
+
+	Regler som definieras i `.snapraidignore` tillämpas efter reglerna i
+	konfigurationsfilen. Detta innebär att de har högre prioritet och kan
+	användas för att exkludera filer som tidigare inkluderats av den globala
+	konfigurationen. I praktiken innebär det att om en lokal regel matchar, så
+	exkluderas filen oavsett de globala inkluderingsinställningarna.
+
+	Mönsterlogiken i `.snapraidignore` speglar den globala konfigurationen men
+	förankrar mönstren till den katalog där filen finns:
+
+	=FILE
+		Väljer alla filer med namnet FILE i denna katalog eller under.
+		Detta följer samma globbing-regler som det globala mönstret.
+
+	=DIR/
+		Väljer alla kataloger med namnet DIR och allt innehåll, som finns
+		i denna katalog eller under.
+
+	=/PATH/FILE
+		Väljer den exakt angivna filen relativt platsen för
+		`.snapraidignore`-filen.
+
+	=/PATH/DIR/
+		Väljer den exakt angivna katalogen och allt innehåll, relativt
+		platsen för `.snapraidignore`-filen.
+
+	Till skillnad från den globala konfigurationen stöder `.snapraidignore`-filer
+	endast exkluderingsregler; du kan inte använda `include`-mönster eller negation (!).
+
+	Till exempel, om du har en `.snapraidignore` i `/mnt/disk1/projects/`:
+
+		:# Exkluderar ENDAST /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Exkluderar alla kataloger med namnet 'build' inuti projects/
+		:build/
+		:# Exkluderar alla .tmp-filer inuti projects/ eller dess undermappar
+		:*.tmp
+
 Innehåll (Content)
 	SnapRAID lagrar listan och checksummorna för dina filer i content-filen.
 

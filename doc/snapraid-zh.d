@@ -1261,6 +1261,44 @@ Pattern
 	在 Unix 中，在命令行上使用 globbing 字符时，必须
 	引用它们以防止 shell 扩展它们。
 
+Ignore File
+	除了配置文件中的全局规则外，您还可以在阵列内的任何目录中放置
+	`.snapraidignore` 文件，以定义分散的排除规则。
+
+	在 `.snapraidignore` 中定义的规则会在配置文件中的规则之后应用。
+	这意味着它们具有更高的优先级，可用于排除先前由全局配置包含的文件。
+	实际上，如果本地规则匹配，则无论全局包含设置如何，该文件都会被排除。
+
+	`.snapraidignore` 中的模式逻辑与全局配置相同，但模式锚定在
+	该文件所在的目录：
+
+	=FILE
+		选择此目录或其下方任何名为 FILE 的文件。
+		这遵循与全局模式相同的通配符规则。
+
+	=DIR/
+		选择任何名为 DIR 的目录及其内部的所有内容，
+		位于此目录或其下方。
+
+	=/PATH/FILE
+		选择相对于 `.snapraidignore` 文件位置指定的精确文件。
+
+	=/PATH/DIR/
+		选择相对于 `.snapraidignore` 文件位置指定的精确目录
+		及其内部的所有内容。
+
+	与全局配置不同，`.snapraidignore` 文件仅支持排除规则；
+	您不能使用 `include` 模式或否定符号 (!)。
+
+	例如，如果您在 `/mnt/disk1/projects/` 中有一个 `.snapraidignore`：
+
+		:# 仅排除 /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# 排除 projects/ 中任何名为 'build' 的目录
+		:build/
+		:# 排除 projects/ 或其子文件夹中任何 .tmp 文件
+		:*.tmp
+
 Content
 	SnapRAID 将文件列表和校验和存储在 content 文件中。
 

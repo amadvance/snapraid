@@ -1504,6 +1504,48 @@ Pattern
 	In Unix, quando si utilizzano caratteri di globbing sulla riga di
 	comando, è necessario citarli per impedire alla shell di espanderli.
 
+Ignore File
+	In aggiunta alle regole globali nel file di configurazione, è possibile
+	inserire file `.snapraidignore` in qualsiasi directory all'interno dell'array
+	per definire regole di esclusione decentralizzate.
+
+	Le regole definite in `.snapraidignore` vengono applicate dopo le regole nel
+	file di configurazione. Ciò significa che hanno una priorità più alta e possono
+	essere utilizzate per escludere file che erano stati precedentemente inclusi dalla
+	configurazione globale. In pratica, se una regola locale corrisponde, il file viene
+	escluso indipendentemente dalle impostazioni di inclusione globali.
+
+	La logica dei pattern in `.snapraidignore` rispecchia la configurazione globale
+	ma ancora i pattern alla directory in cui si trova il file:
+
+	=FILE
+		Seleziona qualsiasi file chiamato FILE in questa directory o sotto di essa.
+		Segue le stesse regole di globbing del pattern globale.
+
+	=DIR/
+		Seleziona qualsiasi directory chiamata DIR e tutto ciò che contiene,
+		che risieda in questa directory o sotto di essa.
+
+	=/PATH/FILE
+		Seleziona l'esatto file specificato relativo alla posizione
+		del file `.snapraidignore`.
+
+	=/PATH/DIR/
+		Seleziona l'esatta directory specificata e tutto ciò che contiene,
+		relativa alla posizione del file `.snapraidignore`.
+
+	A differenza della configurazione globale, i file `.snapraidignore` supportano
+	solo regole di esclusione; non è possibile utilizzare pattern `include` o negazioni (!).
+
+	Ad esempio, se hai un `.snapraidignore` in `/mnt/disk1/projects/`:
+
+		:# Esclude SOLO /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Esclude qualsiasi directory chiamata 'build' all'interno di projects/
+		:build/
+		:# Esclude qualsiasi file .tmp all'interno di projects/ o delle sue sottocartelle
+		:*.tmp
+
 Content
 	SnapRAID memorizza l'elenco e i checksum dei file nel file di contenuto.
 

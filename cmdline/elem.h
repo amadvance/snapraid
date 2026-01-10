@@ -60,9 +60,10 @@ struct snapraid_content {
  */
 struct snapraid_filter {
 	char pattern[PATH_MAX]; /**< Filter pattern. */
-	int is_disk; /**< If the pattern is a disk one. */
-	int is_path; /**< If the pattern is only for the complete path. */
-	int is_dir; /**< If the pattern is only for dir. */
+	char root[PATH_MAX]; /**< If empty, it's a global pattern. If not empty, it's a local pattern that applies only to that dir. */
+	int is_disk; /**< If the pattern is a disk one, otherwise it's a file pattern */
+	int is_path; /**< If the pattern is a complete path, otherwise it's just a file name */
+	int is_dir; /**< If the pattern is only for dir, otherwise it's only for file. */
 	int direction; /**< If it's an inclusion (=1) or an exclusion (=-1). */
 	tommy_node node; /**< Next node in the list. */
 };
@@ -374,7 +375,7 @@ struct snapraid_disk {
 	/**
 	 * Mutex for protecting the scan process.
 	 *
-	 * It's used during the scan process to protect the stampset to identity copy of files
+	 * It's used during the scan process to protect the stampset to identify copy of files
 	 */
 	thread_mutex_t stamp_mutex;
 #endif
@@ -500,7 +501,7 @@ void content_free(struct snapraid_content* content);
 /**
  * Allocate a filter pattern for files and directories.
  */
-struct snapraid_filter* filter_alloc_file(int is_include, const char* pattern);
+struct snapraid_filter* filter_alloc_file(int is_include, const char* root, const char* pattern);
 
 /**
  * Allocate a filter pattern for disks.
@@ -510,7 +511,7 @@ struct snapraid_filter* filter_alloc_disk(int is_include, const char* pattern);
 /**
  * Deallocate an exclusion.
  */
-void filter_free(struct snapraid_filter* filter);
+void filter_free(void* filter);
 
 /**
  * Filter type description.

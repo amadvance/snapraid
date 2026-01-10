@@ -1882,6 +1882,66 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 No Unix, ao usar caracteres globbing na linha de comando, você deve
 citá\-los para evitar que o shell os expanda.
+.SH IGNORAR ARQUIVOS (IGNORE FILE) 
+Além das regras globais no arquivo de configuração, você pode colocar
+arquivos \`.snapraidignore\` em qualquer diretório dentro do array para definir
+regras de exclusão descentralizadas.
+.PP
+As regras definidas em \`.snapraidignore\` são aplicadas após as regras no
+arquivo de configuração. Isso significa que elas têm uma prioridade maior e
+podem ser usadas para excluir arquivos que foram anteriormente incluídos pela
+configuração global. Efetivamente, se uma regra local corresponder, o arquivo
+é excluído independentemente das configurações globais de inclusão.
+.PP
+A lógica de padrões no \`.snapraidignore\` espelha a configuração global, mas
+ancora os padrões ao diretório onde o arquivo está localizado:
+.TP
+.B FILE
+Seleciona qualquer arquivo chamado FILE neste diretório ou abaixo.
+Isso segue as mesmas regras de globbing do padrão global.
+.TP
+.B DIR/
+Seleciona qualquer diretório chamado DIR e tudo dentro dele,
+residente neste diretório ou abaixo.
+.TP
+.B /PATH/FILE
+Seleciona o arquivo exato especificado relativo à localização
+do arquivo \`.snapraidignore\`.
+.TP
+.B /PATH/DIR/
+Seleciona o diretório exato especificado e tudo dentro dele,
+relativo à localização do arquivo \`.snapraidignore\`.
+.PP
+Ao contrário da configuração global, os arquivos \`.snapraidignore\` suportam
+apenas regras de exclusão; você não pode usar padrões \`include\` ou negação (!).
+.PP
+Por exemplo, se você tiver um \`.snapraidignore\` em \`/mnt/disk1/projects/\`:
+.PP
+.RS 4
+# Exclui APENAS /mnt/disk1/projects/output.bin
+.PD 0
+.PP
+.PD
+/output.bin
+.PD 0
+.PP
+.PD
+# Exclui qualquer diretório chamado \'build\' dentro de projects/
+.PD 0
+.PP
+.PD
+build/
+.PD 0
+.PP
+.PD
+# Exclui qualquer arquivo .tmp dentro de projects/ ou suas subpastas
+.PD 0
+.PP
+.PD
+*.tmp
+.PD 0
+.PD
+.RE
 .SH CONTEúDO (CONTENT) 
 SnapRAID armazena a lista e os checksums de seus arquivos no arquivo content.
 .PP

@@ -1852,6 +1852,66 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 In Unix, when using globbing characters on the command line, you must
 quote them to prevent the shell from expanding them.
+.SH IGNORE FILE 
+In addition to the global rules in the configuration file, you can
+place \`.snapraidignore\` files in any directory within the array to
+define decentralized exclusion rules.
+.PP
+Rules defined in \`.snapraidignore\` are applied after the rules in the
+configuration file. This means they have a higher priority and can be
+used to exclude files that were previously included by the global
+configuration. Effectively, if a local rule matches, the file is
+excluded regardless of the global include settings.
+.PP
+The pattern logic in \`.snapraidignore\` mirrors the global configuration
+but anchors patterns to the directory where the file is located:
+.TP
+.B FILE
+Selects any file named FILE in this directory or below.
+This follows the same globbing rules as the global pattern.
+.TP
+.B DIR/
+Selects any directory named DIR and everything inside,
+residing in this directory or below.
+.TP
+.B /PATH/FILE
+Selects the exact specified file relative to the location
+of the \`.snapraidignore\` file.
+.TP
+.B /PATH/DIR/
+Selects the exact specified directory and everything inside,
+relative to the location of the \`.snapraidignore\` file.
+.PP
+Unlike the global configuration, \`.snapraidignore\` files only support
+exclusion rules; you cannot use \`include\` patterns or negation (!).
+.PP
+For example, if you have a \`.snapraidignore\` in \`/mnt/disk1/projects/\`:
+.PP
+.RS 4
+# Excludes ONLY /mnt/disk1/projects/output.bin
+.PD 0
+.PP
+.PD
+/output.bin
+.PD 0
+.PP
+.PD
+# Excludes any directory named \'build\' inside projects/
+.PD 0
+.PP
+.PD
+build/
+.PD 0
+.PP
+.PD
+# Excludes any .tmp file inside projects/ or its subfolders
+.PD 0
+.PP
+.PD
+*.tmp
+.PD 0
+.PD
+.RE
 .SH CONTENT 
 SnapRAID stores the list and checksums of your files in the content file.
 .PP

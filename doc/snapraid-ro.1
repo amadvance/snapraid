@@ -1845,6 +1845,66 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 În Unix, când utilizați caractere globbing pe linia de comandă, trebuie
 să le citați pentru a împiedica shell\-ul să le extindă.
+.SH FIșIERE DE IGNORAT (IGNORE FILE) 
+Pe lângă regulile globale din fișierul de configurare, puteți plasa fișiere
+\`.snapraidignore\` în orice director din array pentru a defini reguli de excludere
+descentralizate.
+.PP
+Regulile definite în \`.snapraidignore\` sunt aplicate după regulile din fișierul
+de configurare. Acest lucru înseamnă că au o prioritate mai mare și pot fi
+utilizate pentru a exclude fișiere care au fost incluse anterior de configurația
+globală. Efectiv, dacă o regulă locală se potrivește, fișierul este exclus
+indiferent de setările globale de includere.
+.PP
+Logica modelelor în \`.snapraidignore\` oglindește configurația globală, dar
+ancorează modelele de directorul în care se află fișierul:
+.TP
+.B FILE
+Selectează orice fișier numit FILE în acest director sau mai jos.
+Acesta urmează aceleași reguli de globbing ca modelul global.
+.TP
+.B DIR/
+Selectează orice director numit DIR și tot ce se află în interior,
+aflat în acest director sau mai jos.
+.TP
+.B /PATH/FILE
+Selectează fișierul exact specificat raportat la locația
+fișierului \`.snapraidignore\`.
+.TP
+.B /PATH/DIR/
+Selectează directorul exact specificat și tot ce se află în interior,
+raportat la locația fișierului \`.snapraidignore\`.
+.PP
+Spre deosebire de configurația globală, fișierele \`.snapraidignore\` suportă
+doar reguli de excludere; nu puteți utiliza modele de \`include\` sau negația (!).
+.PP
+De exemplu, dacă aveți un \`.snapraidignore\` în \`/mnt/disk1/projects/\`:
+.PP
+.RS 4
+# Exclude DOAR /mnt/disk1/projects/output.bin
+.PD 0
+.PP
+.PD
+/output.bin
+.PD 0
+.PP
+.PD
+# Exclude orice director numit \'build\' în interiorul projects/
+.PD 0
+.PP
+.PD
+build/
+.PD 0
+.PP
+.PD
+# Exclude orice fișier .tmp în interiorul projects/ sau subfolderele sale
+.PD 0
+.PP
+.PD
+*.tmp
+.PD 0
+.PD
+.RE
 .SH CONțINUT (CONTENT) 
 SnapRAID stochează lista și sumele de control (checksums) ale fișierelor dvs. în fișierul de conținut.
 .PP

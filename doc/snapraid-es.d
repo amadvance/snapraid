@@ -1488,6 +1488,48 @@ Pattern
 	En Unix, al usar caracteres globbing en la línea de comandos, debe
 	ponerlos entre comillas para evitar que el shell los expanda.
 
+Ignorar Archivos
+	Además de las reglas globales en el archivo de configuración, puedes
+	colocar archivos `.snapraidignore` en cualquier directorio dentro del array
+	para definir reglas de exclusión descentralizadas.
+
+	Las reglas definidas en `.snapraidignore` se aplican después de las reglas del
+	archivo de configuración. Esto significa que tienen una prioridad más alta y pueden
+	usarse para excluir archivos que fueron incluidos previamente por la configuración
+	global. Efectivamente, si una regla local coincide, el archivo se excluye
+	independientemente de los ajustes de inclusión globales.
+
+	La lógica de patrones en `.snapraidignore` refleja la configuración global
+	pero ancla los patrones al directorio donde se encuentra el archivo:
+
+	=FILE
+		Selecciona cualquier archivo llamado FILE en este directorio o por debajo.
+		Esto sigue las mismas reglas de globbing que el patrón global.
+
+	=DIR/
+		Selecciona cualquier directorio llamado DIR y todo su contenido,
+		ubicado en este directorio o por debajo.
+
+	=/PATH/FILE
+		Selecciona el archivo exacto especificado relativo a la ubicación
+		del archivo `.snapraidignore`.
+
+	=/PATH/DIR/
+		Selecciona el directorio exacto especificado y todo su contenido,
+		relativo a la ubicación del archivo `.snapraidignore`.
+
+	A diferencia de la configuración global, los archivos `.snapraidignore` solo admiten
+	reglas de exclusión; no se pueden usar patrones `include` o negación (!).
+
+	Por ejemplo, si tienes un `.snapraidignore` en `/mnt/disk1/projects/`:
+
+		:# Excluye SOLO /mnt/disk1/projects/output.bin
+		:/output.bin
+		:# Excluye cualquier directorio llamado 'build' dentro de projects/
+		:build/
+		:# Excluye cualquier archivo .tmp dentro de projects/ o sus subcarpetas
+		:*.tmp
+
 Content
 	SnapRAID almacena la lista y las sumas de comprobación de sus
 	archivos en el archivo de contenido.

@@ -1850,6 +1850,66 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 I Unix, när du använder globbing\-tecken på kommandoraden, måste du
 citattecken dem för att förhindra att skalet expanderar dem.
+.SH IGNORERA FILER (IGNORE FILE) 
+Utöver de globala reglerna i konfigurationsfilen kan du placera
+\`.snapraidignore\`\-filer i vilken katalog som helst i arrayen för att definiera
+decentraliserade exkluderingsregler.
+.PP
+Regler som definieras i \`.snapraidignore\` tillämpas efter reglerna i
+konfigurationsfilen. Detta innebär att de har högre prioritet och kan
+användas för att exkludera filer som tidigare inkluderats av den globala
+konfigurationen. I praktiken innebär det att om en lokal regel matchar, så
+exkluderas filen oavsett de globala inkluderingsinställningarna.
+.PP
+Mönsterlogiken i \`.snapraidignore\` speglar den globala konfigurationen men
+förankrar mönstren till den katalog där filen finns:
+.TP
+.B FILE
+Väljer alla filer med namnet FILE i denna katalog eller under.
+Detta följer samma globbing\-regler som det globala mönstret.
+.TP
+.B DIR/
+Väljer alla kataloger med namnet DIR och allt innehåll, som finns
+i denna katalog eller under.
+.TP
+.B /PATH/FILE
+Väljer den exakt angivna filen relativt platsen för
+\`.snapraidignore\`\-filen.
+.TP
+.B /PATH/DIR/
+Väljer den exakt angivna katalogen och allt innehåll, relativt
+platsen för \`.snapraidignore\`\-filen.
+.PP
+Till skillnad från den globala konfigurationen stöder \`.snapraidignore\`\-filer
+endast exkluderingsregler; du kan inte använda \`include\`\-mönster eller negation (!).
+.PP
+Till exempel, om du har en \`.snapraidignore\` i \`/mnt/disk1/projects/\`:
+.PP
+.RS 4
+# Exkluderar ENDAST /mnt/disk1/projects/output.bin
+.PD 0
+.PP
+.PD
+/output.bin
+.PD 0
+.PP
+.PD
+# Exkluderar alla kataloger med namnet \'build\' inuti projects/
+.PD 0
+.PP
+.PD
+build/
+.PD 0
+.PP
+.PD
+# Exkluderar alla .tmp\-filer inuti projects/ eller dess undermappar
+.PD 0
+.PP
+.PD
+*.tmp
+.PD 0
+.PD
+.RE
 .SH INNEHåLL (CONTENT) 
 SnapRAID lagrar listan och checksummorna för dina filer i content\-filen.
 .PP
