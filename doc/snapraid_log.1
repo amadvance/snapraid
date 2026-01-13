@@ -309,25 +309,32 @@ is assumed to be correct.
 These tags provide a final count of all detected changes.
 .TP
 .B summary:equal:<count>
-Total number of equal (unchanged) files/links/firs found (uint).
+Total number of files/dirs/links whose metadata and data match
+the current parity (uint).
 .TP
 .B summary:added:<count>
-Total number of new files/links/dirs found (uint).
+Total number of new brand new files/dirs/links that have no
+relationship to existing parity (uint).
 .TP
 .B summary:removed:<count>
-Total number of removed files/links/dirs found (uint).
+Total number of files/dirs/links that existed in the last sync
+but are now missing (uint).
 .TP
 .B summary:updated:<count>
-Total number of updated files/links found (uint).
+Total number of existing files where the timestamp or size has
+changed (uint).
 .TP
 .B summary:moved:<count>
-Total number of moved files found (uint).
+Total number of files relocated to a new path but retaining
+the same inode (uint).
 .TP
 .B summary:copied:<count>
-Total number of copied files found (uint).
+Total number of new files created by copying an existing
+protected file to a new path (uint).
 .TP
 .B summary:restored:<count>
-Total number of restored files found (uint).
+Total number of new files matching a parity entry by
+name/time/size but with a new inode (uint).
 .TP
 .B summary:exit:equal
 A zero\-argument tag indicating that no differences were found.
@@ -846,8 +853,8 @@ Unix timestamp of the scrub/sync.
 Number of blocks processed at this timestamp.
 .HP 4
 .I <status>
-\[dq]scrubbed\[dq] (for blocks verified to be correct) or
-\[dq]new\[dq] (for synced blocks that haven\'t been scrubbed yet).
+\`scrubbed\` (for blocks verified to be correct) or
+\`new\` (for synced blocks that haven\'t been scrubbed yet).
 .PD
 .RE
 .TP
@@ -929,7 +936,7 @@ The total number of I/O errors encountered (uint).
 .RE
 .TP
 .B summary:error_data:<count>
-Logs the total count of \[dq]silent data errors\[dq] (data blocks
+Logs the total count of \`silent data errors\` (data blocks
 not matching their expected hash) encountered during the sync
 process.
 .RS 4
@@ -947,10 +954,16 @@ one of the following:
 .PD 0
 .HP 4
 .I ok
-No errors were found.
+No issues. The array is fully synchronized and healthy.
+.HP 4
+.I alert
+Incomplete. Some files were skipped due to modifications
+during execution or permission issues. No hardware risk.
 .HP 4
 .I error
-If any errors were found (file, I/O, or data errors).
+Critical failure. Indicates serious issues like I/O failures
+or silent data corruption. Requires immediate hardware
+or filesystem inspection.
 .PD
 .RE
 .SH COMMAND CHECK/FIX TAGS 
@@ -989,7 +1002,7 @@ recomputed and written.
 The block position being processed (uint).
 .HP 4
 .I <parity>
-The name of the parity level (e.g., \[dq]parity\[dq], \[dq]2\-parity\[dq]).
+The name of the parity level (e.g., \`parity\`, \`2\-parity\`).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the fix
@@ -1217,22 +1230,22 @@ the following:
 .RS 4
 .PD 0
 .HP 4
-.I \`ok\`
+.I ok
 Indicates that the operation completed with no errors.
 .HP 4
-.I \`recovered\`
+.I recovered
 Indicates that the operation completed with all
 errors successfully recovered (fix mode only).
 .HP 4
-.I \`recoverable\`
+.I recoverable
 Indicates that errors were found but are all
 recoverable (check mode only).
 .HP 4
-.I \`unrecoverable\`
+.I unrecoverable
 Indicates that unrecoverable errors were
 found.
 .HP 4
-.I \`error\`
+.I error
 Indicates that errors were found (audit\-only mode).
 .PD
 .RE
@@ -1555,9 +1568,9 @@ rotational speed in RPM.
 .B attr:<device_file>:<disk_name>[/<split_index>]:flags:<flags_decimal>:<flags_hex>
 Logs the SMART status flags from the \`smartctl\` utility.
 Per the smartctl manpage, these flags are bit\-mapped
-to indicate specific issues like \[dq]Command line did not parse\[dq],
-\[dq]Device could not be opened\[dq], or \[dq]SMART status check
-returned \'DISK FAILING\'\[dq].
+to indicate specific issues like \`Command line did not parse\`,
+\`Device could not be opened\`, or \`SMART status check
+returned \'DISK FAILING\'\`.
 .RS 4
 .PD 0
 .HP 4
@@ -1687,11 +1700,21 @@ process.
 These tags report specific errors that occur on data disks during the
 commands that access files and parities.
 .TP
-.B error:<block>:<disk_name>:<file>:<msg>
+.B error[_io|_data]:<block>:<disk_name>:<file>:<msg>
 Logs file access errors (open, read, file changed) during the
 data disk read operation for parity calculation or verification.
 .RS 4
 .PD 0
+.HP 4
+.I _io
+Indicates a physical Input/Output error.
+The disk was unable to read or write a specific block,
+typically signaling a failing sector or cable issue.
+.HP 4
+.I _data
+Indicates the data was read successfully but failed
+the checksum/hash verification. This signals \`silent\`
+corruption or an unsuccessful parity match.
 .HP 4
 .I <block>
 The zero\-based index of the block where the error occurred (uint).
@@ -1710,10 +1733,20 @@ error (e.g., \`Open/Read/Write EIO error\`, \`Open/Read/Write error\`,
 .PD
 .RE
 .TP
-.B parity_error:<block>:<level>:<msg>
+.B parity_error[_io|_data]:<block>:<level>:<msg>
 Logs errors during parity disk read or write operations.
 .RS 4
 .PD 0
+.HP 4
+.I _io
+Indicates a physical Input/Output error.
+The disk was unable to read or write a specific block,
+typically signaling a failing sector or cable issue.
+.HP 4
+.I _data
+Indicates the data was read successfully but failed
+the checksum/hash verification. This signals \`silent\`
+corruption or an unsuccessful parity match.
 .HP 4
 .I <block>
 The zero\-based index of the block where the error occurred (uint).

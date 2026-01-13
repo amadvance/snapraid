@@ -226,25 +226,32 @@ Scan Tags
 	These tags provide a final count of all detected changes.
 
 	=summary:equal:<count>
-		Total number of equal (unchanged) files/links/firs found (uint).
+		Total number of files/dirs/links whose metadata and data match
+		the current parity (uint).
 
 	=summary:added:<count>
-		Total number of new files/links/dirs found (uint).
+		Total number of new brand new files/dirs/links that have no
+		relationship to existing parity (uint).
 
 	=summary:removed:<count>
-		Total number of removed files/links/dirs found (uint).
+		Total number of files/dirs/links that existed in the last sync
+		but are now missing (uint).
 
 	=summary:updated:<count>
-		Total number of updated files/links found (uint).
+		Total number of existing files where the timestamp or size has
+		changed (uint).
 
 	=summary:moved:<count>
-		Total number of moved files found (uint).
+		Total number of files relocated to a new path but retaining
+		the same inode (uint).
 
 	=summary:copied:<count>
-		Total number of copied files found (uint).
+		Total number of new files created by copying an existing
+		protected file to a new path (uint).
 
 	=summary:restored:<count>
-		Total number of restored files found (uint).
+		Total number of new files matching a parity entry by
+		name/time/size but with a new inode (uint).
 
 	=summary:exit:equal
 		A zero-argument tag indicating that no differences were found.
@@ -568,8 +575,8 @@ Command Status Tags
 
 		<time> - Unix timestamp of the scrub/sync.
 		<count> - Number of blocks processed at this timestamp.
-		<status> - "scrubbed" (for blocks verified to be correct) or
-			"new" (for synced blocks that haven't been scrubbed yet).
+		<status> - `scrubbed` (for blocks verified to be correct) or
+			`new` (for synced blocks that haven't been scrubbed yet).
 
 	=scrub_graph_range:<max_columns>:<max_height>
 		Dimensions of the scrub history graph obtained from the
@@ -618,7 +625,7 @@ Command Sync/Scrub Tags
 		<count> - The total number of I/O errors encountered (uint).
 
 	=summary:error_data:<count>
-	        Logs the total count of "silent data errors" (data blocks
+	        Logs the total count of `silent data errors` (data blocks
 		not matching their expected hash) encountered during the sync
 		process.
     
@@ -628,8 +635,12 @@ Command Sync/Scrub Tags
 		Logs the overall exit status of the command. The `status` is
 		one of the following:
     
-		ok - No errors were found.
-		error - If any errors were found (file, I/O, or data errors).
+		ok - No issues. The array is fully synchronized and healthy.
+		alert - Incomplete. Some files were skipped due to modifications 
+			during execution or permission issues. No hardware risk.
+		error - Critical failure. Indicates serious issues like I/O failures
+			or silent data corruption. Requires immediate hardware
+			or filesystem inspection.
 
 Command Check/Fix Tags
 	Tags specific for the `check` and `fix` commands.
@@ -652,7 +663,7 @@ Command Check/Fix Tags
 		recomputed and written.
 
 		<block_pos> - The block position being processed (uint).
-		<parity> - The name of the parity level (e.g., "parity", "2-parity").
+		<parity> - The name of the parity level (e.g., `parity`, `2-parity`).
 		<msg> - A descriptive message indicating the nature of the fix
 			(e.g., `Fixed data error`).
 
@@ -769,14 +780,14 @@ Command Check/Fix Tags
 		Logs the overall exit status of the command. The `status` is one of
 		the following:
 	
-		`ok` - Indicates that the operation completed with no errors.
-		`recovered` - Indicates that the operation completed with all
+		ok - Indicates that the operation completed with no errors.
+		recovered - Indicates that the operation completed with all
 			errors successfully recovered (fix mode only).
-		`recoverable` - Indicates that errors were found but are all
+		recoverable - Indicates that errors were found but are all
 			recoverable (check mode only).
-		`unrecoverable` - Indicates that unrecoverable errors were
+		unrecoverable - Indicates that unrecoverable errors were
 			found.
-		`error` - Indicates that errors were found (audit-only mode).
+		error - Indicates that errors were found (audit-only mode).
 
 Command List Tags
 	This section describes the tags output with the `list` command.
@@ -994,9 +1005,9 @@ Command Smart And Probe Tags
 	=attr:<device_file>:<disk_name>[/<split_index>]:flags:<flags_decimal>:<flags_hex>
 		Logs the SMART status flags from the `smartctl` utility.
 		Per the smartctl manpage, these flags are bit-mapped 
-		to indicate specific issues like "Command line did not parse", 
-		"Device could not be opened", or "SMART status check 
-		returned 'DISK FAILING'".
+		to indicate specific issues like `Command line did not parse`, 
+		`Device could not be opened`, or `SMART status check 
+		returned 'DISK FAILING'`.
 
 		<flags_decimal> - The raw flags value (uint64, decimal).
 		<flags_hex> - The raw flags value (uint64, hexadecimal).
@@ -1082,10 +1093,16 @@ Error Tags
 	These tags report specific errors that occur on data disks during the
 	commands that access files and parities.
 
-	=error:<block>:<disk_name>:<file>:<msg>
+	=error[_io|_data]:<block>:<disk_name>:<file>:<msg>
 		Logs file access errors (open, read, file changed) during the
 		data disk read operation for parity calculation or verification.
     
+		_io - Indicates a physical Input/Output error.
+			The disk was unable to read or write a specific block, 
+			typically signaling a failing sector or cable issue.
+		_data - Indicates the data was read successfully but failed
+			the checksum/hash verification. This signals `silent`
+			corruption or an unsuccessful parity match.
 		<block> - The zero-based index of the block where the error occurred (uint).
 		<disk_name> - The name of the data disk.
 		<file> - The path (relative to the disk mount point) of the
@@ -1094,9 +1111,15 @@ Error Tags
 			error (e.g., `Open/Read/Write EIO error`, `Open/Read/Write error`,
 			`Data error at position <pos>, diff bits <diff>/<bits>`).
 
-	=parity_error:<block>:<level>:<msg>
+	=parity_error[_io|_data]:<block>:<level>:<msg>
 		Logs errors during parity disk read or write operations.
     
+		_io - Indicates a physical Input/Output error. 
+			The disk was unable to read or write a specific block, 
+			typically signaling a failing sector or cable issue.
+		_data - Indicates the data was read successfully but failed
+			the checksum/hash verification. This signals `silent`
+			corruption or an unsuccessful parity match.
 		<block> - The zero-based index of the block where the error occurred (uint).
 		<level> - The configuration name of the parity level (e.g.,
 			`parity`, `2-parity`).
@@ -1106,7 +1129,7 @@ Error Tags
 
 	=hardlink_error:<disk_name>:<link_path>:<target_path>:<msg>
 		Indicates an error when attempting to access a hard link.
-	
+
 		<disk_name> - The name of the disk.
 		<link_path> - The hard link path relative to disk root (escaped).
 		<target_path> - The target path of the hard link (escaped).
