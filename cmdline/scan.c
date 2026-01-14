@@ -174,7 +174,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* it's equal */
 			++scan->count_equal;
 
-			if (state->opt.gui) {
+			if (state->opt.gui_verbose) {
 				log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
 			}
 		} else {
@@ -804,7 +804,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* otherwise it's equal */
 				++scan->count_equal;
 
-				if (state->opt.gui) {
+				if (state->opt.gui_verbose) {
 					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				}
 			}
@@ -969,7 +969,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* meaning, and then we don't even save them */
 				++scan->count_equal;
 
-				if (state->opt.gui) {
+				if (state->opt.gui_verbose) {
 					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				}
 			}

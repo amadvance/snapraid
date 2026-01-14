@@ -350,7 +350,7 @@ int state_status(struct snapraid_state* state)
 			timemap[count++] = scrub_time;
 		}
 
-		if (state->opt.gui) {
+		if (state->opt.gui_verbose) {
 			if (info != 0)
 				log_tag("block:%u:%" PRIu64 ":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used" : "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
 			else

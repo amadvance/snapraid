@@ -682,6 +682,8 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SPEED_PERIOD 307
 #define OPT_TEST_SPEED_DISKS_NUMBER 308
 #define OPT_TEST_SPEED_BLOCKS_SIZE 309
+#define OPT_TEST_GUI 310
+#define OPT_TEST_GUI_VERBOSE 311
 
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
@@ -717,9 +719,10 @@ static struct option long_options[] = {
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
 	{ "quiet", 0, 0, 'q' },
-	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface option */
 	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
+	{ "gui", 0, 0, OPT_TEST_GUI }, /* undocumented GUI interface option (it was also 'G' in the past) */
+	{ "gui-verbose", 0, 0, OPT_TEST_GUI_VERBOSE }, /* undocumented GUI interface option */
 
 	/* The following are test specific options, DO NOT USE! */
 
@@ -866,8 +869,9 @@ static struct option long_options[] = {
  * Free letters: gIjJkKMnPQrtuxXWz
  *
  * The 's' letter is used in main.c
+ * The 'G' letter is free but only from 13.1
  */
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVGw:"
+#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
 
 volatile int global_interrupt = 0;
 
@@ -1181,8 +1185,12 @@ int snapraid_main(int argc, char* argv[])
 		case 'q' :
 			--msg_level;
 			break;
-		case 'G' :
+		case OPT_TEST_GUI :
 			opt.gui = 1;
+			break;
+		case OPT_TEST_GUI_VERBOSE :
+			opt.gui = 1;
+			opt.gui_verbose = 1;
 			break;
 		case 'H' :
 			usage(conf);

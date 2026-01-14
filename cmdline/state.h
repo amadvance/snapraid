@@ -66,7 +66,8 @@ const char* lev_config_name(unsigned level);
  * For all these options a value of 0 means nothing set, and to use the default.
  */
 struct snapraid_option {
-	int gui; /**< Gui output. */
+	int gui; /**< GUI output. */
+	int gui_verbose; /**< GUI verbose output. */
 	int auditonly; /**< In check, checks only the hash and not the parity. */
 	int badfileonly; /**< In fix, fixes only files marked as bad. */
 	int badblockonly; /**< In fix, fixes only the blocks marked as bad. */

@@ -212,7 +212,7 @@ CHECKFLAGS_ALPHA = $(CHECKFLAGS_COMMON) --test-force-order-alpha
 CHECKFLAGS_PHYSICAL = $(CHECKFLAGS_COMMON) --test-force-order-physical -q -q -q
 
 # Verbose options
-CHECKFLAGS_VERBOSE = $(CHECKFLAGS_ALPHA) -v -G
+CHECKFLAGS_VERBOSE = $(CHECKFLAGS_ALPHA) -v --gui
 
 # Quiet options
 CHECKFLAGS = $(CHECKFLAGS_ALPHA) -q -q -q
