@@ -253,13 +253,14 @@ Scan Tags
 		Total number of new files matching a parity entry by
 		name/time/size but with a new inode (uint).
 
-	=summary:exit:equal
-		A zero-argument tag indicating that no differences were found.
-		The array is already synchronized.
-
-	=summary:exit:diff
-		A zero-argument tag indicating that differences were found.
-		The array needs a `sync` operation.
+	=summary:exit:<status>
+		Logs the overall exit status of the command. The `status` is
+		one of the following:
+    
+		equal - Indicates that no differences were found.
+			The array is already synchronized.
+		diff - Indicates that differences were found.
+			The array needs a `sync` operation.
 
 General Progress and Execution Tags
 	These tags are used to report the runtime processing of the commands
@@ -490,6 +491,16 @@ Command Status Tags
 		Days ago the median block was last scrubbed.
 	=summary:scrub_newest_days:<uint>
 		Days ago the newest block was last scrubbed.
+	=summary:exit:<status>
+		Logs the overall exit status of the command. The `status` is
+		one of the following:
+
+		ok - No issues. The array is fully synchronized and healthy.
+		bad - The array has some blocks marked as bad.
+			The array needs a `-e fix` and and a `-p bad scrub`
+			operation.
+		unsynced - The array has an interrupted sync.
+			The array needs another `sync` operation.
 
     Per-Disk Tags
 	These tags provide statistics for individual data disks. <name>
@@ -885,14 +896,12 @@ Command Dup Tags
 
 		<size> - The total size of duplicate files in gigabytes (uint64).
 
-	=summary:exit:unique
-		Logs the final exit status indicating that no duplicate files were
-		found. This tag is logged if `<count>` is zero.
+	=summary:exit:<status>
+		Logs the overall exit status of the command. The `status` is one of
+		the following:
 
-	=summary:exit:dup
-		Logs the final exit status indicating that at least one duplicate
-		file was found. This tag is logged if `<count>` is greater than
-		zero.
+		unique - Indicates that no duplicate files were found.
+		dup - Indicates that at least one duplicate file was found.
 
 Command Pool Tags
 	This section describes the tags output with the `pool` command.
@@ -913,21 +922,20 @@ Command Rehash Tags
     Summary Tags
 	These tags provide a final summary of the rehash scheduling process.
 
-	=summary:exit:scheduled
-		Logs the final exit status indicating that a rehash operation has
-		been successfully scheduled. The rehash will be performed
-		incrementally in future `sync` or `scrub` commands.
-
-	=summary:exit:already_in_progress
-		Logs the final exit status indicating that a rehash is already
-		in progress and cannot be scheduled again. This causes the
-		program to exit with a fatal error.
-
-	=summary:exit:not_required
-		Logs the final exit status indicating that the current hash
-		algorithm is already the `best hash` for the platform, and thus
-		a rehash is not required. This causes the program to exit with
-		a fatal error.
+	=summary:exit:<status>
+		Logs the overall exit status of the command. The `status` is one of
+		the following:
+	
+		scheduled - Indicates that a rehash operation has
+			been successfully scheduled. The rehash will be performed
+			incrementally in future `sync` or `scrub` commands.
+		already_in_progress - Indicates that that a rehash is already
+			in progress and cannot be scheduled again. This causes the
+			program to exit with a fatal error.
+		not_required - Indicates that the current hash algorithm is
+			already the `best hash` for the platform, and thus
+			a rehash is not required. This causes the program to
+			exit with a fatal error.
 
 Command Smart And Probe Tags
 	This section describes the tags output by the `smart` and `probe`

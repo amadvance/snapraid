@@ -575,6 +575,13 @@ int state_status(struct snapraid_state* state)
 		printf("No error detected.\n");
 	}
 
+	if (bad)
+		log_tag("summary:exit:bad\n");
+	else if (unsynced_blocks)
+		log_tag("summary:exit:unsynced\n");
+	else
+		log_tag("summary:exit:ok\n");
+
 	/* free the temp vector */
 	free(timemap);
 
