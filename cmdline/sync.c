@@ -1323,7 +1323,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("Stopping at block %u\n", blockcur);
-				++error;
+				++io_error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
@@ -1358,7 +1358,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("Stopping at block %u\n", blockcur);
-				++error;
+				++io_error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
@@ -1382,7 +1382,7 @@ end:
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_fatal("Stopping at block %u\n", blockcur);
-		++error;
+		++io_error;
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
