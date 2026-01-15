@@ -71,8 +71,7 @@ Some tags are output only when the \`\-\-gui\` option is used. They provide
 extra verbose state and runtime progress only useful for a GUI
 interface.
 .SH CONFIGURATION TAGS 
-These tags report the memory usage and global configuration after
-scanning the disk and reading the list of files.
+These tags report the memory usage and global configuration.
 .TP
 .B conf:file:<path>
 Configuration file loaded (escaped).
@@ -143,11 +142,18 @@ exclude specific files or directories from the SnapRAID array.
 .B filter:nohidden:
 If the no\-hidden filter is enabled, meaning hidden files/directories
 (starting with \'.\') are excluded from the array.
+.SH CONTENT TAGS 
+These tags report the information stored in the content file.
 .TP
 .B content:<path>
 The absolute path to a content file being used (escaped).
 Content files store the metadata (like file hashes and timestamps)
 for the array.
+.TP
+.B content_write:<path>
+The absolute path to a content file being written (escaped).
+You will see multiple writes as the content file is saved in
+multiple copies.
 .TP
 .B content_parity:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
 The parity files as stored in the content file.
@@ -200,6 +206,20 @@ The size of the data in the disk or parity (uint64).
 .HP 4
 .I <free_size>
 The free size in the disk or parity (uint64).
+.PD
+.RE
+.TP
+.B content_info:<kind>:<counter>
+The counters in the content file.
+.RS 4
+.PD 0
+.HP 4
+.I <kind>
+One of file, hardlink, symlink, dir_empty,
+block_bad, block_rehash, block.
+.HP 4
+.I <counter>
+The number of elements (uint)
 .PD
 .RE
 .SH DIAGNOSTICS TAGS 

@@ -59,8 +59,7 @@ interface.
 2 CONFIGURATION TAGS
 ====================
 
-These tags report the memory usage and global configuration after
-scanning the disk and reading the list of files.
+These tags report the memory usage and global configuration.
 
     conf:file:<path>
         Configuration file loaded (escaped).
@@ -114,10 +113,21 @@ scanning the disk and reading the list of files.
         If the no-hidden filter is enabled, meaning hidden files/directories
         (starting with '.') are excluded from the array.
 
+
+3 CONTENT TAGS
+==============
+
+These tags report the information stored in the content file.
+
     content:<path>
         The absolute path to a content file being used (escaped).
         Content files store the metadata (like file hashes and timestamps)
         for the array.
+
+    content_write:<path>
+        The absolute path to a content file being written (escaped).
+        You will see multiple writes as the content file is saved in
+        multiple copies.
 
     content_parity:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
         The parity files as stored in the content file.
@@ -146,8 +156,15 @@ scanning the disk and reading the list of files.
     <size> - The size of the data in the disk or parity (uint64).
     <free_size> - The free size in the disk or parity (uint64).
 
+    content_info:<kind>:<counter>
+        The counters in the content file.
 
-3 DIAGNOSTICS TAGS
+    <kind> - One of file, hardlink, symlink, dir_empty,
+        block_bad, block_rehash, block.
+    <counter> - The number of elements (uint)
+
+
+4 DIAGNOSTICS TAGS
 ==================
 
     version:<version>
@@ -186,7 +203,7 @@ scanning the disk and reading the list of files.
         Size of the internal `snapraid_dir` structure in bytes (uint64).
 
 
-4 SCAN TAGS
+5 SCAN TAGS
 ===========
 
 These tags report detected differences between the filesystem and the
@@ -275,7 +292,7 @@ These tags provide a final count of all detected changes.
         The array needs a `sync` operation.
 
 
-5 GENERAL PROGRESS AND EXECUTION TAGS
+6 GENERAL PROGRESS AND EXECUTION TAGS
 =====================================
 
 These tags are used to report the runtime processing of the commands
@@ -331,7 +348,7 @@ Only produced when `--gui` option is used.
     <msg> - Text message exactly as it's printed on screen.
 
 
-6 THERMAL TAGS
+7 THERMAL TAGS
 ==============
 
 The following tags are produced by the thermal monitoring functions
@@ -434,12 +451,12 @@ disk access.
         are being spun back up to resume the operation.
 
 
-7 COMMAND STATUS TAGS
+8 COMMAND STATUS TAGS
 =====================
 
 This section describes the tags output with the `status` command.
 
----- 7.0.1 Summary Tags ----
+---- 8.0.1 Summary Tags ----
 These tags provide general information about the array configuration
 and overall state.
 
@@ -523,7 +540,7 @@ and overall state.
     unsynced - The array has an interrupted sync.
         The array needs another `sync` operation.
 
----- 7.0.2 Per-Disk Tags ----
+---- 8.0.2 Per-Disk Tags ----
 These tags provide statistics for individual data disks. <name>
 is the disk name.
 
@@ -564,14 +581,14 @@ is the disk name.
     summary:disk_use_percent:<name>:<uint>
         Disk use percentage relative to `disk_block_max`.
 
----- 7.0.3 File Timestamp Tags ----
+---- 8.0.3 File Timestamp Tags ----
 These tags list files with zero sub-second timestamps.
 
     zerosubsecond:<disk_name>:<file_path>
         Lists files that have a zero sub-second timestamp.
         Up to 50 are logged per disk.
 
----- 7.0.4 Block Information Tags ----
+---- 8.0.4 Block Information Tags ----
 These tags are generated when the GUI option is enabled (`state->opt.gui`).
 
     block_count:<uint>
@@ -595,7 +612,7 @@ These tags are generated when the GUI option is enabled (`state->opt.gui`).
     <used> - `used` if the block contains data, otherwise empty.
     <unsynced> - `unsynced` if the block needs a sync, otherwise empty.
 
----- 7.0.5 Scrub History Tags ----
+---- 8.0.5 Scrub History Tags ----
 These tags provide details on the scrub/sync time distribution.
 
     info_count:<uint>
@@ -630,13 +647,13 @@ These tags provide details on the scrub/sync time distribution.
     <new> - Count of newly synced (unscrubbed) blocks in that day range.
 
 
-8 COMMAND SYNC/SCRUB TAGS
+9 COMMAND SYNC/SCRUB TAGS
 =========================
 
 Tags specific for the `sync` and `scrub` commands.
 Also the error tags are possible.
 
----- 8.0.1 Summary Tags ----
+---- 9.0.1 Summary Tags ----
 These tags provide summary statistics at the end of the command.
 
     hash_summary:error_file:<count>
@@ -678,13 +695,13 @@ These tags provide summary statistics at the end of the command.
         or filesystem inspection.
 
 
-9 COMMAND CHECK/FIX TAGS
-========================
+10 COMMAND CHECK/FIX TAGS
+=========================
 
 Tags specific for the `check` and `fix` commands.
 Also the error tags are possible.
 
----- 9.0.1 Fixed/Recovered Tags ----
+---- 10.0.1 Fixed/Recovered Tags ----
 These tags log successful repairs during fix operations.
 
     fixed:<block_pos>:<disk_name>:<file_path>:<msg>
@@ -738,7 +755,7 @@ These tags log successful repairs during fix operations.
     <msg> - A descriptive message indicating the nature of the fix
         (e.g., `Fixed dir error`).
 
----- 9.0.2 Unrecoverable Error Tags ----
+---- 10.0.2 Unrecoverable Error Tags ----
 These tags log errors that could not be recovered.
 
     unrecoverable:<block_pos>:<disk_name>:<file_path>:<msg>
@@ -762,7 +779,7 @@ These tags log errors that could not be recovered.
     <msg> - A descriptive message indicating the nature of the problem
         (e.g., `Not setting modification time to avoid inode collision`).
 
----- 9.0.3 File Status Tags ----
+---- 10.0.3 File Status Tags ----
 These tags log the final status of files after processing.
 
     status:unrecoverable:<disk_name>:<file_path>
@@ -796,7 +813,7 @@ These tags log the final status of files after processing.
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
 
----- 9.0.4 Summary Tags ----
+---- 10.0.4 Summary Tags ----
 These tags provide summary statistics at the end of the command.
 
     summary:error:<error_count>
@@ -828,12 +845,12 @@ These tags provide summary statistics at the end of the command.
     error - Indicates that errors were found (audit-only mode).
 
 
-10 COMMAND LIST TAGS
+11 COMMAND LIST TAGS
 ====================
 
 This section describes the tags output with the `list` command.
 
----- 10.0.1 List Tags ----
+---- 11.0.1 List Tags ----
 These tags log details about individual files and links processed during
 the listing operation.
 
@@ -862,7 +879,7 @@ the listing operation.
         (escaped).
     <linkto> - The target path of the link (escaped).
 
----- 10.0.2 Summary Tags ----
+---- 11.0.2 Summary Tags ----
 These tags log final statistics about the entire listing operation.
 
     summary:file_count:<count>
@@ -887,12 +904,12 @@ These tags log final statistics about the entire listing operation.
         and you won't get this tag.
 
 
-11 COMMAND DUP TAGS
+12 COMMAND DUP TAGS
 ===================
 
 This section describes the tags output with the `dup` command.
 
----- 11.0.1 Duplicate Tags ----
+---- 12.0.1 Duplicate Tags ----
 These tags log information about detected duplicate files and provide
 a summary of the duplicate finding process. The content hash of the
 whole file is used to determine duplicates.
@@ -914,7 +931,7 @@ whole file is used to determine duplicates.
     <size> - The size of the duplicate file in bytes (uint64). This
         size corresponds to the file `<file_path2>`.
 
----- 11.0.2 Summary Tags ----
+---- 12.0.2 Summary Tags ----
 These tags provide a final summary of the duplicate finding process.
 
     summary:dup_count:<count>
@@ -937,7 +954,7 @@ These tags provide a final summary of the duplicate finding process.
     dup - Indicates that at least one duplicate file was found.
 
 
-12 COMMAND POOL TAGS
+13 COMMAND POOL TAGS
 ====================
 
 This section describes the tags output with the `pool` command.
@@ -953,12 +970,12 @@ This section describes the tags output with the `pool` command.
         and you won't get this tag.
 
 
-13 COMMAND REHASH TAGS
+14 COMMAND REHASH TAGS
 ======================
 
 This section describes the tags output with the `rehash` command.
 
----- 13.0.1 Summary Tags ----
+---- 14.0.1 Summary Tags ----
 These tags provide a final summary of the rehash scheduling process.
 
     summary:exit:<status>
@@ -977,7 +994,7 @@ These tags provide a final summary of the rehash scheduling process.
         exit with a fatal error.
 
 
-14 COMMAND SMART AND PROBE TAGS
+15 COMMAND SMART AND PROBE TAGS
 ===============================
 
 This section describes the tags output by the `smart` and `probe`
@@ -996,7 +1013,7 @@ disk.
 In case of split parity, the parity name is followed by `/N` to indicate
 the split index, where N starts from 0. The `/0` is always omitted.
 
----- 14.0.1 Attributes ----
+---- 15.0.1 Attributes ----
 Tags logging specific disk identification and attribute values.
 
     smart:<device_file>:<disk_name>[/<split_index>]
@@ -1094,7 +1111,7 @@ Tags logging specific disk identification and attribute values.
 
     <access_number> - Total number of accesses (int64).
 
----- 14.0.2 Summary ----
+---- 15.0.2 Summary ----
 Tags logging the overall failure probabilities for the array.
 
     summary:array_failure:<array_afr>:<array_prob>
@@ -1107,7 +1124,7 @@ Tags logging the overall failure probabilities for the array.
     the next year (double).
 
 
-15 DEVICE STATUS TAGS
+16 DEVICE STATUS TAGS
 =====================
 
 These tags log the lifecycle of hardware interactions and external
@@ -1143,7 +1160,7 @@ command execution with the `smartctl` command.
         process.
 
 
-16 ERROR TAGS
+17 ERROR TAGS
 =============
 
 These tags report specific errors that occur on data disks during the

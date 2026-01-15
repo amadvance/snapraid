@@ -53,8 +53,7 @@ Description
 
 
 Configuration Tags
-	These tags report the memory usage and global configuration after
-	scanning the disk and reading the list of files.
+	These tags report the memory usage and global configuration.
 
 	=conf:file:<path>
 		Configuration file loaded (escaped).
@@ -108,10 +107,18 @@ Configuration Tags
 		If the no-hidden filter is enabled, meaning hidden files/directories
 		(starting with '.') are excluded from the array.
 
+Content Tags
+	These tags report the information stored in the content file.
+
 	=content:<path>
 		The absolute path to a content file being used (escaped).
 		Content files store the metadata (like file hashes and timestamps)
 		for the array.
+		
+	=content_write:<path>
+		The absolute path to a content file being written (escaped).
+		You will see multiple writes as the content file is saved in
+		multiple copies.
 
 	=content_parity:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
 		The parity files as stored in the content file.
@@ -139,6 +146,13 @@ Configuration Tags
 		<disk_name> - Name of the data or parity disk.
 		<size> - The size of the data in the disk or parity (uint64).
 		<free_size> - The free size in the disk or parity (uint64).
+
+	=content_info:<kind>:<counter>
+		The counters in the content file.
+
+		<kind> - One of file, hardlink, symlink, dir_empty,
+			block_bad, block_rehash, block.
+		<counter> - The number of elements (uint)
 
 Diagnostics Tags
 	=version:<version>

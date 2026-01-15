@@ -1895,6 +1895,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
+	unsigned count_bad;
+	unsigned count_rehash;
 	int crc_checked;
 	char buffer[PATH_MAX];
 	int ret;
@@ -1906,6 +1908,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
+	count_bad = 0;
+	count_rehash = 0;
 	crc_checked = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
@@ -2243,6 +2247,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					bad = (flag & 2) != 0;
 					rehash = (flag & 4) != 0;
 					justsynced = (flag & 8) != 0;
+
+					if (bad)
+						++count_bad;
+					if (rehash)
+						++count_rehash;
 
 					if (rehash && state->prevhash == HASH_UNDEFINED) {
 						/* LCOV_EXCL_START */
@@ -2722,7 +2731,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* log the info read from the content file */
 			log_tag("content_data:%s:%s\n",
 				buffer,
 				uuid);
@@ -2828,7 +2836,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
 
-				/* log the info read from the content file */
 				log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
 					lev_config_name(v_level),
 					state->parity[v_level].split_map[0].uuid,
@@ -2959,7 +2966,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						pathcpy(state->parity[v_level].split_map[s].uuid, sizeof(state->parity[v_level].split_map[s].uuid), v_uuid);
 						state->parity[v_level].split_map[s].size = v_size;
 
-						/* log the info read from the content file */
 						if (s == 0)
 							pathcpy(parity_name, sizeof(parity_name), lev_config_name(v_level));
 						else
@@ -3045,6 +3051,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	msg_verbose("%8u hardlinks\n", count_hardlink);
 	msg_verbose("%8u symlinks\n", count_symlink);
 	msg_verbose("%8u empty dirs\n", count_dir);
+
+	log_tag("content_info:file:%u\n", count_file);
+	log_tag("content_info:hardlink:%u\n", count_hardlink);
+	log_tag("content_info:symlink:%u\n", count_symlink);
+	log_tag("content_info:dir_empty:%u\n", count_dir);
+	log_tag("content_info:block_bad:%u\n", count_bad);
+	log_tag("content_info:block_rehash:%u\n", count_rehash);
+	log_tag("content_info:block:%u\n", blockmax);
 }
 
 struct state_write_thread_context {
@@ -3058,12 +3072,15 @@ struct state_write_thread_context {
 	time_t info_now;
 	int info_has_rehash;
 	STREAM* f;
+	int first;
 	/* output */
 	uint32_t crc;
 	unsigned count_file;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
+	unsigned count_bad;
+	unsigned count_rehash;
 };
 
 static void* state_write_thread(void* arg)
@@ -3081,6 +3098,8 @@ static void* state_write_thread(void* arg)
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
+	unsigned count_bad;
+	unsigned count_rehash;
 	tommy_node* i;
 	block_off_t idx;
 	block_off_t begin;
@@ -3090,6 +3109,8 @@ static void* state_write_thread(void* arg)
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
+	count_bad = 0;
+	count_rehash = 0;
 
 	/* force version 3 a we want to always store the parity size */
 	/* write header */
@@ -3182,6 +3203,15 @@ static void* state_write_thread(void* arg)
 			sputb32(map->total_blocks, f);
 			sputb32(map->free_blocks, f);
 			sputbs(map->uuid, f);
+			if (context->first) {
+				log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+					map->name,
+					map->total_blocks * (uint64_t)state->block_size,
+					map->free_blocks * (uint64_t)state->block_size);
+				log_tag("content_data:%s:%s\n",
+					map->name,
+					map->uuid);
+			}
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -3197,11 +3227,29 @@ static void* state_write_thread(void* arg)
 		sputb32(l, f);
 		sputb32(state->parity[l].total_blocks, f);
 		sputb32(state->parity[l].free_blocks, f);
+		if (context->first) {
+			log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+				lev_config_name(l),
+				state->parity[l].total_blocks * (uint64_t)state->block_size,
+				state->parity[l].free_blocks * (uint64_t)state->block_size);
+		}
 		sputb32(state->parity[l].split_mac, f);
 		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			char parity_name[64];
 			sputbs(state->parity[l].split_map[s].path, f);
 			sputbs(state->parity[l].split_map[s].uuid, f);
 			sputb64(state->parity[l].split_map[s].size, f);
+			if (s == 0)
+				pathcpy(parity_name, sizeof(parity_name), lev_config_name(l));
+			else
+				pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(l), s);
+			if (context->first) {
+				log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
+					parity_name,
+					state->parity[l].split_map[s].uuid,
+					state->parity[l].split_map[s].path,
+					state->parity[l].split_map[s].size);
+			}
 		}
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
@@ -3440,10 +3488,14 @@ static void* state_write_thread(void* arg)
 		if (info) {
 			/* other flags */
 			flag = 1; /* info is present */
-			if (info_get_bad(info))
+			if (info_get_bad(info)) {
 				flag |= 2;
-			if (info_get_rehash(info))
+				++count_bad;
+			}
+			if (info_get_rehash(info)) {
 				flag |= 4;
+				++count_rehash;
+			}
 			if (info_get_justsynced(info))
 				flag |= 8;
 			sputb32(flag, f);
@@ -3517,6 +3569,8 @@ static void* state_write_thread(void* arg)
 	context->count_hardlink = count_hardlink;
 	context->count_symlink = count_symlink;
 	context->count_dir = count_dir;
+	context->count_bad = count_bad;
+	context->count_rehash = count_rehash;
 
 	return 0;
 }
@@ -3545,6 +3599,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
+	unsigned count_bad;
+	unsigned count_rehash;
 
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
@@ -3609,14 +3665,17 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 
 #if HAVE_MT_WRITE
 	/* start all writing threads */
+	first = 1;
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
 		struct state_write_thread_context* context;
 		char tmp[PATH_MAX];
+		char esc_buffer[ESC_MAX];
 		STREAM* f;
 
 		msg_progress("Saving state to %s...\n", content->content);
+		log_tag("content_write:%s\n", esc_tag(content->content, esc_buffer));
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 
@@ -3649,6 +3708,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		context->info_now = info_now;
 		context->info_has_rehash = info_has_rehash;
 		context->f = f;
+		context->first = first;
+		first = 0;
 
 		thread_create(&context->thread, state_write_thread, context);
 
@@ -3663,6 +3724,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
+	count_bad = 0;
+	count_rehash = 0;
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
@@ -3710,6 +3773,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 				count_hardlink = context->count_hardlink;
 				count_symlink = context->count_symlink;
 				count_dir = context->count_dir;
+				cound_bad = context->count_bad;
+				count_rehash = context->count_rehash;
 			} else {
 				if (crc != context->crc) {
 					/* LCOV_EXCL_START */
@@ -3791,6 +3856,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	context->info_now = info_now;
 	context->info_has_rehash = info_has_rehash;
 	context->f = f;
+	context->first = 1;
 
 	retval = state_write_thread(context);
 
@@ -3831,6 +3897,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	count_hardlink = context->count_hardlink;
 	count_symlink = context->count_symlink;
 	count_dir = context->count_dir;
+	count_bad = context->count_bad;
+	count_rehash = context->count_rehash;
 
 	free(context);
 #endif
@@ -3839,6 +3907,14 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	msg_verbose("%8u hardlinks\n", count_hardlink);
 	msg_verbose("%8u symlinks\n", count_symlink);
 	msg_verbose("%8u empty dirs\n", count_dir);
+
+	log_tag("content_info:file:%u\n", count_file);
+	log_tag("content_info:hardlink:%u\n", count_hardlink);
+	log_tag("content_info:symlink:%u\n", count_symlink);
+	log_tag("content_info:dir_empty:%u\n", count_dir);
+	log_tag("content_info:block_bad:%u\n", count_bad);
+	log_tag("content_info:block_rehash:%u\n", count_rehash);
+	log_tag("content_info:block:%u\n", blockmax);
 
 	*out_crc = crc;
 }
@@ -3860,7 +3936,8 @@ void state_read(struct snapraid_state* state)
 		pathcpy(path, sizeof(path), content->content);
 
 		if (!state->no_conf) {
-			log_tag("content:%s\n", path);
+			char esc_buffer[ESC_MAX];
+			log_tag("content:%s\n", esc_tag(path, esc_buffer));
 			log_flush();
 		}
 		msg_progress("Loading state from %s...\n", path);
