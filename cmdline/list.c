@@ -62,7 +62,7 @@ void state_list(struct snapraid_state* state)
 			file_size += file->size;
 
 			if (state->opt.gui_verbose)
-				log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc_tag(file->sub, esc_buffer), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
+				log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIu64 "\n", disk->name, esc_tag(file->sub, esc_buffer), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
 #if HAVE_LOCALTIME_R

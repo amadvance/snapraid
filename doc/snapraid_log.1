@@ -67,9 +67,16 @@ is escaped to \\\\.
 .PD
 .RE
 .PP
-Some tags are output only when the \`\-\-gui\` option is used. They provide
-extra verbose state and runtime progress only useful for a GUI
-interface.
+Some tags are output only when the \`\-\-gui\` or \`\-\-gui\-verbose\` option
+is used. They provide extra verbose state and runtime progress only
+useful for a GUI interface.
+.PP
+Integer values are marked as \`uint\` when they are unsigned and as \`int\`
+when they are signed. However, for practical purposes you can treat
+all of them as signed integers.
+All integer values should be assumed to be 64 bits wide, regardless
+of the signed/unsigned marker.
+Floating point values are marked as \`float\`.
 .SH CONFIGURATION TAGS 
 These tags report the memory usage and global configuration.
 .TP
@@ -133,7 +140,7 @@ This is the optional mount point for the \'share\' feature.
 .TP
 .B autosave:<bytes>
 If the autosave feature is enabled, and after how many bytes
-(uint64). This specifies the interval for content file saving.
+(uint). This specifies the interval for content file saving.
 .TP
 .B filter:<pattern>
 All the active filters with their patterns. These patterns
@@ -175,7 +182,7 @@ in the content file.
 The path (escaped).
 .HP 4
 .I <size>
-The size of the parity file (uint64).
+The size of the parity file (uint).
 .PD
 .RE
 .TP
@@ -202,10 +209,10 @@ The size of disk and parity as stored in the content file.
 Name of the data or parity disk.
 .HP 4
 .I <size>
-The size of the data in the disk or parity (uint64).
+The size of the data in the disk or parity (uint).
 .HP 4
 .I <free_size>
-The free size in the disk or parity (uint64).
+The free size in the disk or parity (uint).
 .PD
 .RE
 .TP
@@ -228,7 +235,7 @@ The number of elements (uint)
 The version of SnapRAID run.
 .TP
 .B unixtime:<time>
-The current time in the unix format (uint64), representing
+The current time in the unix format (uint), representing
 seconds since the epoch.
 .TP
 .B time:<YYYY\-MM\-DD HH:MM:SS>
@@ -242,30 +249,31 @@ All the arguments of the executable command. The 0 one is the
 executable run.
 .TP
 .B memory:used:<bytes>
-The total memory currently used by the application in bytes (uint64).
+The total memory currently used by the application in bytes (uint).
 .TP
 .B memory:block:<bytes>
-Size of the internal \`snapraid_block\` structure in bytes (uint64).
+Size of the internal \`snapraid_block\` structure in bytes (uint).
 .TP
 .B memory:extent:<bytes>
-Size of the internal \`snapraid_extent\` structure in bytes (uint64).
+Size of the internal \`snapraid_extent\` structure in bytes (uint).
 .TP
 .B memory:file:<bytes>
-Size of the internal \`snapraid_file\` structure in bytes (uint64).
+Size of the internal \`snapraid_file\` structure in bytes (uint).
 .TP
 .B memory:link:<bytes>
-Size of the internal \`snapraid_link\` structure in bytes (uint64).
+Size of the internal \`snapraid_link\` structure in bytes (uint).
 .TP
 .B memory:dir:<bytes>
-Size of the internal \`snapraid_dir\` structure in bytes (uint64).
+Size of the internal \`snapraid_dir\` structure in bytes (uint).
 .SH SCAN TAGS 
 These tags report detected differences between the filesystem and the
 content file. They are output for every discovered change, and
 \`scan:equal\` is only output when the \`\-\-gui\` option is used.
 .TP
 .B scan:equal:<disk_name>:<path>
-A file, link, or directory is equal (unchanged) (GUI only).
+A file, link, or directory is equal (unchanged).
 No action is required for this item.
+Only with \`\-\-gui\-verbose\`.
 .RS 4
 .PD 0
 .HP 4
@@ -409,7 +417,7 @@ Current block index position processed (uint).
 Number of blocks processed (uint).
 .HP 4
 .I <sizedone>
-Current size processed (uint64).
+Current size processed (uint).
 .HP 4
 .I <perc>
 Completion percentage (uint).
@@ -554,7 +562,7 @@ by \`/N\` to indicate the split index, where N starts
 from 0. The \`/0\` is always omitted.
 .HP 4
 .I <device>
-The unique device ID (uint64).
+The unique device ID (uint).
 .HP 4
 .I <temp>
 The current temperature read from the disk in degrees
@@ -582,7 +590,7 @@ Only monotone increasing temperatures are included in the history.
 .PD 0
 .HP 4
 .I <device>
-The unique device ID (uint64).
+The unique device ID (uint).
 .HP 4
 .I <count>
 The total number of collected data points (uint).
@@ -610,26 +618,26 @@ where T_0 is the initial temperature.
 .PD 0
 .HP 4
 .I <device>
-The unique device ID (uint64).
+The unique device ID (uint).
 .HP 4
 .I <k_heat>
-The heating rate constant, k (double).
+The heating rate constant, k (float).
 .HP 4
 .I <t_ambient>
-The ambient temperature, T_ambient (double).
+The ambient temperature, T_ambient (float).
 .HP 4
 .I <t_steady>
-The estimated steady\-state temperature, T_steady (double),
+The estimated steady\-state temperature, T_steady (float),
 which is the maximum expected temperature of the disk.
 .HP 4
 .I <rmse>
-Root Mean Square Error of the fit (double).
+Root Mean Square Error of the fit (float).
 .HP 4
 .I <r_squared>
-Coefficient of determination (R^2) of the fit (double).
+Coefficient of determination (R^2) of the fit (float).
 .HP 4
 .I <max_error>
-Maximum absolute error of the fit (double).
+Maximum absolute error of the fit (float).
 .PD
 .RE
 .TP
@@ -681,7 +689,7 @@ This determines the maximum size of data that can be added.
 .B summary:file_count:<uint>
 Total number of files in the array.
 .TP
-.B summary:file_block_count:<uint64>
+.B summary:file_block_count:<uint>
 Total number of data blocks used by files.
 .TP
 .B summary:fragmented_file_count:<uint>
@@ -696,13 +704,13 @@ This is a measure of data fragmentation overhead.
 Total number of files with a zero sub\-second timestamp. This
 can occur on certain filesystems and may affect change detection.
 .TP
-.B summary:file_size:<uint64>
+.B summary:file_size:<uint>
 Total size of all files in bytes.
 .TP
-.B summary:parity_size:<uint64>
+.B summary:parity_size:<uint>
 Total size of allocated parity blocks in bytes.
 .TP
-.B summary:parity_size_max:<uint64>
+.B summary:parity_size_max:<uint>
 Maximum possible parity size (allocated + min free) in bytes.
 This is the effective maximum protection size.
 .TP
@@ -716,14 +724,14 @@ The previous hash algorithm used, if a rehash is in progress.
 The best hash algorithm for optimal performance based on
 system capabilities.
 .TP
-.B summary:total_wasted:<uint64>
+.B summary:total_wasted:<uint>
 Total wasted space (space on data disks exceeding parity
 capacity) in bytes.
 .TP
-.B summary:total_used:<uint64>
+.B summary:total_used:<uint>
 Total used space by data files in bytes.
 .TP
-.B summary:total_free:<uint64>
+.B summary:total_free:<uint>
 Total free space (usable by data) in bytes, limited by parity
 capacity.
 .TP
@@ -793,7 +801,7 @@ Number of excess fragments on the disk.
 .B summary:disk_zerosubsecond_file_count:<name>:<uint>
 Number of files with zero sub\-second timestamp on the disk.
 .TP
-.B summary:disk_file_size:<name>:<uint64>
+.B summary:disk_file_size:<name>:<uint>
 Total size of files on the disk in bytes.
 .TP
 .B summary:disk_block_allocated:<name>:<uint>
@@ -817,14 +825,14 @@ This is the logical limit imposed by the parity files.
 .B summary:disk_block_max:<name>:<uint>
 Maximum usable blocks (minimum of \`..._by_space\` and \`..._by_parity\`).
 .TP
-.B summary:disk_space_wasted:<name>:<int64>
+.B summary:disk_space_wasted:<name>:<int>
 Wasted space on the disk in bytes (positive if disk is larger
 than usable parity space).
 .TP
-.B summary:disk_used:<name>:<uint64>
+.B summary:disk_used:<name>:<uint>
 Used space on the disk in bytes.
 .TP
-.B summary:disk_free:<name>:<uint64>
+.B summary:disk_free:<name>:<uint>
 Free usable space on the disk in bytes, limited by \`disk_block_max\`.
 .TP
 .B summary:disk_use_percent:<name>:<uint>
@@ -1316,18 +1324,18 @@ The path of the file relative to the disk\'s root
 (escaped).
 .HP 4
 .I <size>
-The size of the file in bytes (uint64).
+The size of the file in bytes (uint).
 .HP 4
 .I <mtime_sec>
 The file\'s modification time in seconds since the
-Epoch (int64).
+Epoch (int).
 .HP 4
 .I <mtime_nsec>
 The file\'s modification time nanosecond component
 (uint).
 .HP 4
 .I <inode>
-The file\'s inode number (int64).
+The file\'s inode number (uint).
 .PD
 .RE
 .TP
@@ -1372,7 +1380,7 @@ Logs the total size of all regular files processed.
 .PD 0
 .HP 4
 .I <size>
-The cumulative size of all files (uint64, bytes).
+The cumulative size of all files (uint, bytes).
 .PD
 .RE
 .TP
@@ -1423,7 +1431,7 @@ The path of the previously processed duplicate file
 relative to its disk\'s mount point (escaped).
 .HP 4
 .I <size>
-The size of the duplicate file in bytes (uint64). This
+The size of the duplicate file in bytes (uint). This
 size corresponds to the file \`<file_path2>\`.
 .PD
 .RE
@@ -1448,7 +1456,7 @@ the sum of the sizes of all files considered duplicates.
 .PD 0
 .HP 4
 .I <size>
-The total size of duplicate files in gigabytes (uint64).
+The total size of duplicate files in gigabytes (uint).
 .PD
 .RE
 .TP
@@ -1584,11 +1592,11 @@ reported by specific SMART attributes (5, 187, 188, 197, 198).
 .PD 0
 .HP 4
 .I <afr_value>
-The computed Annual Failure Rate (double).
+The computed Annual Failure Rate (float).
 .HP 4
 .I <afr_prob>
 The probability of one or more failures in the
-next year (double).
+next year (float).
 .PD
 .RE
 .TP
@@ -1598,7 +1606,7 @@ Logs the size of the disk.
 .PD 0
 .HP 4
 .I <size_bytes>
-The disk size in bytes (uint64).
+The disk size in bytes (uint).
 .PD
 .RE
 .TP
@@ -1608,7 +1616,7 @@ Logs the total error count.
 .PD 0
 .HP 4
 .I <error_count>
-The total error count (uint64).
+The total error count (uint).
 .PD
 .RE
 .TP
@@ -1636,10 +1644,10 @@ returned \'DISK FAILING\'\`.
 .PD 0
 .HP 4
 .I <flags_decimal>
-The raw flags value (uint64, decimal).
+The raw flags value (uint, decimal).
 .HP 4
 .I <flags_hex>
-The raw flags value (uint64, hexadecimal).
+The raw flags value (uint, hexadecimal).
 .PD
 .RE
 .TP
@@ -1652,10 +1660,10 @@ Logs the raw value of any assigned SMART attribute.
 The SMART attribute ID (uint).
 .HP 4
 .I <value_decimal>
-The raw attribute value (uint64, decimal).
+The raw attribute value (uint, decimal).
 .HP 4
 .I <value_hex>
-The raw attribute value (uint64, hexadecimal).
+The raw attribute value (uint, hexadecimal).
 .PD
 .RE
 .TP
@@ -1685,7 +1693,7 @@ disk was used during that time.
 .PD 0
 .HP 4
 .I <access_number>
-Total number of accesses (int64).
+Total number of accesses (uint).
 .PD
 .RE
 .SS Summary 
@@ -1699,14 +1707,14 @@ one disk failure in the next year.
 .PD 0
 .HP 4
 .I <array_afr>
-The sum of AFRs of all disks in the array (double).
+The sum of AFRs of all disks in the array (float).
 .HP 4
 .I <array_prob>
 The probability of at least one disk failure in
 .PD
 .RE
 .RS 4
-the next year (double).
+the next year (float).
 .RE
 .SH DEVICE STATUS TAGS 
 These tags log the lifecycle of hardware interactions and external
@@ -1754,7 +1762,7 @@ exit code that was not explicitly recognized as a valid state.
 .HP 4
 .I <exit_code>
 The integer exit status returned by the
-process.
+process (int).
 .PD
 .RE
 .SH ERROR TAGS 

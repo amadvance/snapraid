@@ -47,10 +47,16 @@ Description
 		The carriage return - is escaped to \r.
 		The backslash - is escaped to \\.
 
-	Some tags are output only when the `--gui` option is used. They provide
-	extra verbose state and runtime progress only useful for a GUI
-	interface.
+	Some tags are output only when the `--gui` or `--gui-verbose` option
+	is used. They provide extra verbose state and runtime progress only
+	useful for a GUI interface.
 
+	Integer values are marked as `uint` when they are unsigned and as `int`
+	when they are signed. However, for practical purposes you can treat
+	all of them as signed integers.
+	All integer values should be assumed to be 64 bits wide, regardless
+	of the signed/unsigned marker.
+	Floating point values are marked as `float`.
 
 Configuration Tags
 	These tags report the memory usage and global configuration.
@@ -97,7 +103,7 @@ Configuration Tags
 
 	=autosave:<bytes>
 		If the autosave feature is enabled, and after how many bytes
-		(uint64). This specifies the interval for content file saving.
+		(uint). This specifies the interval for content file saving.
 
 	=filter:<pattern>
 		All the active filters with their patterns. These patterns
@@ -131,7 +137,7 @@ Content Tags
 		<uuid> - The UUID of the disk containing the path as stored
 			in the content file.
 		<path> - The path (escaped).
-		<size> - The size of the parity file (uint64).
+		<size> - The size of the parity file (uint).
 
 	=content_data:<disk_name>:<uuid>
 		The data disk as stored in the content file.
@@ -144,8 +150,8 @@ Content Tags
 		The size of disk and parity as stored in the content file.
 
 		<disk_name> - Name of the data or parity disk.
-		<size> - The size of the data in the disk or parity (uint64).
-		<free_size> - The free size in the disk or parity (uint64).
+		<size> - The size of the data in the disk or parity (uint).
+		<free_size> - The free size in the disk or parity (uint).
 
 	=content_info:<kind>:<counter>
 		The counters in the content file.
@@ -159,7 +165,7 @@ Diagnostics Tags
 		The version of SnapRAID run.
 
 	=unixtime:<time>
-		The current time in the unix format (uint64), representing
+		The current time in the unix format (uint), representing
 		seconds since the epoch.
 
 	=time:<YYYY-MM-DD HH:MM:SS>
@@ -173,22 +179,22 @@ Diagnostics Tags
 		executable run.
 
 	=memory:used:<bytes>
-		The total memory currently used by the application in bytes (uint64).
+		The total memory currently used by the application in bytes (uint).
 
 	=memory:block:<bytes>
-		Size of the internal `snapraid_block` structure in bytes (uint64).
+		Size of the internal `snapraid_block` structure in bytes (uint).
 
 	=memory:extent:<bytes>
-		Size of the internal `snapraid_extent` structure in bytes (uint64).
+		Size of the internal `snapraid_extent` structure in bytes (uint).
 
 	=memory:file:<bytes>
-		Size of the internal `snapraid_file` structure in bytes (uint64).
+		Size of the internal `snapraid_file` structure in bytes (uint).
 
 	=memory:link:<bytes>
-		Size of the internal `snapraid_link` structure in bytes (uint64).
+		Size of the internal `snapraid_link` structure in bytes (uint).
 
 	=memory:dir:<bytes>
-		Size of the internal `snapraid_dir` structure in bytes (uint64).
+		Size of the internal `snapraid_dir` structure in bytes (uint).
 
 Scan Tags
 	These tags report detected differences between the filesystem and the
@@ -196,8 +202,9 @@ Scan Tags
 	`scan:equal` is only output when the `--gui` option is used.
 
 	=scan:equal:<disk_name>:<path>
-		A file, link, or directory is equal (unchanged) (GUI only).
+		A file, link, or directory is equal (unchanged).
 		No action is required for this item.
+		Only with `--gui-verbose`.
 
 		<disk_name> - Name of the data disk.
 		<path> -  Path to the file/link/dir relative to the disk mount
@@ -298,7 +305,7 @@ General Progress and Execution Tags
 
 		<blockidx> - Current block index position processed (uint).
 		<blockdone> - Number of blocks processed (uint).
-		<sizedone> - Current size processed (uint64).
+		<sizedone> - Current size processed (uint).
 		<perc> - Completion percentage (uint).
 		<eta> - Estimated time to completion in seconds (uint).
 		<speed_mbs> - Data processing speed in MB/s (uint).
@@ -373,7 +380,7 @@ Thermal Tags
 			In case of split parity, the parity name is followed
 			by `/N` to indicate the split index, where N starts
 			from 0. The `/0` is always omitted.
-		<device> - The unique device ID (uint64).
+		<device> - The unique device ID (uint).
 		<temp> - The current temperature read from the disk in degrees
 			Celsius.
 
@@ -389,7 +396,7 @@ Thermal Tags
 		so far for a specific disk, used for fitting the heating model.
 		Only monotone increasing temperatures are included in the history.
 
-		<device> - The unique device ID (uint64).
+		<device> - The unique device ID (uint).
 		<count> - The total number of collected data points (uint).
 		<data_points> - A comma-separated list of temperature/time pairs.
 			Each pair is formatted as <temp>/<time_offset>.
@@ -404,14 +411,14 @@ Thermal Tags
 		The model is: T(t) = T_steady - (T_steady - T_0) e^(-kt),
 		where T_0 is the initial temperature.
 
-		<device> - The unique device ID (uint64).
-		<k_heat> - The heating rate constant, k (double).
-		<t_ambient> - The ambient temperature, T_ambient (double).
-		<t_steady> - The estimated steady-state temperature, T_steady (double), 
+		<device> - The unique device ID (uint).
+		<k_heat> - The heating rate constant, k (float).
+		<t_ambient> - The ambient temperature, T_ambient (float).
+		<t_steady> - The estimated steady-state temperature, T_steady (float), 
 			which is the maximum expected temperature of the disk.
-		<rmse> - Root Mean Square Error of the fit (double).
-		<r_squared> - Coefficient of determination (R^2) of the fit (double).
-		<max_error> - Maximum absolute error of the fit (double).
+		<rmse> - Root Mean Square Error of the fit (float).
+		<r_squared> - Coefficient of determination (R^2) of the fit (float).
+		<max_error> - Maximum absolute error of the fit (float).
 
 	=thermal:spindown
 		Indicates that the thermal alarm limit has been reached, and
@@ -452,7 +459,7 @@ Command Status Tags
 		This determines the maximum size of data that can be added.
 	=summary:file_count:<uint>
 		Total number of files in the array.
-	=summary:file_block_count:<uint64>
+	=summary:file_block_count:<uint>
 		Total number of data blocks used by files.
 	=summary:fragmented_file_count:<uint>
 		Total number of fragmented files, meaning files whose blocks
@@ -463,11 +470,11 @@ Command Status Tags
 	=summary:zerosubsecond_file_count:<uint>
 		Total number of files with a zero sub-second timestamp. This
 		can occur on certain filesystems and may affect change detection.
-	=summary:file_size:<uint64>
+	=summary:file_size:<uint>
 		Total size of all files in bytes.
-	=summary:parity_size:<uint64>
+	=summary:parity_size:<uint>
 		Total size of allocated parity blocks in bytes.
-	=summary:parity_size_max:<uint64>
+	=summary:parity_size_max:<uint>
 		Maximum possible parity size (allocated + min free) in bytes.
 		This is the effective maximum protection size.
 	=summary:hash:<name>
@@ -477,12 +484,12 @@ Command Status Tags
 	=summary:best_hash:<name>
 		The best hash algorithm for optimal performance based on
 		system capabilities.
-	=summary:total_wasted:<uint64>
+	=summary:total_wasted:<uint>
 		Total wasted space (space on data disks exceeding parity
 		capacity) in bytes.
-	=summary:total_used:<uint64>
+	=summary:total_used:<uint>
 		Total used space by data files in bytes.
-	=summary:total_free:<uint64>
+	=summary:total_free:<uint>
 		Total free space (usable by data) in bytes, limited by parity
 		capacity.
 	=summary:total_use_percent:<uint>
@@ -530,7 +537,7 @@ Command Status Tags
 		Number of excess fragments on the disk.
 	=summary:disk_zerosubsecond_file_count:<name>:<uint>
 		Number of files with zero sub-second timestamp on the disk.
-	=summary:disk_file_size:<name>:<uint64>
+	=summary:disk_file_size:<name>:<uint>
 		Total size of files on the disk in bytes.
 	=summary:disk_block_allocated:<name>:<uint>
 		Highest block index used on the disk + 1.
@@ -547,12 +554,12 @@ Command Status Tags
 		This is the logical limit imposed by the parity files.
 	=summary:disk_block_max:<name>:<uint>
 		Maximum usable blocks (minimum of `..._by_space` and `..._by_parity`).
-	=summary:disk_space_wasted:<name>:<int64>
+	=summary:disk_space_wasted:<name>:<int>
 		Wasted space on the disk in bytes (positive if disk is larger
 		than usable parity space).
-	=summary:disk_used:<name>:<uint64>
+	=summary:disk_used:<name>:<uint>
 		Used space on the disk in bytes.
-	=summary:disk_free:<name>:<uint64>
+	=summary:disk_free:<name>:<uint>
 		Free usable space on the disk in bytes, limited by `disk_block_max`.
 	=summary:disk_use_percent:<name>:<uint>
 		Disk use percentage relative to `disk_block_max`.
@@ -827,12 +834,12 @@ Command List Tags
 		<disk_name> - The configured name of the disk.
 		<subpath> - The path of the file relative to the disk's root
 			(escaped).
-		<size> - The size of the file in bytes (uint64).
+		<size> - The size of the file in bytes (uint).
 		<mtime_sec> - The file's modification time in seconds since the
-			Epoch (int64).
+			Epoch (int).
 		<mtime_nsec> - The file's modification time nanosecond component
 			(uint).
-		<inode> - The file's inode number (int64).
+		<inode> - The file's inode number (uint).
 
 	=link_<type>:<disk_name>:<subpath>:<linkto>
 		Logs details for a link found on a disk. The `<type>` component
@@ -857,7 +864,7 @@ Command List Tags
 	=summary:file_size:<size>
 		Logs the total size of all regular files processed.
 
-		<size> - The cumulative size of all files (uint64, bytes).
+		<size> - The cumulative size of all files (uint, bytes).
 
 	=summary:link_count:<count>
 		Logs the total number of links processed (hardlinks, symlinks,
@@ -892,7 +899,7 @@ Command Dup Tags
 			of `<file_path1>`.
 		<file_path2> - The path of the previously processed duplicate file
 			relative to its disk's mount point (escaped).
-		<size> - The size of the duplicate file in bytes (uint64). This
+		<size> - The size of the duplicate file in bytes (uint). This
 			size corresponds to the file `<file_path2>`.
 
     Summary Tags
@@ -908,7 +915,7 @@ Command Dup Tags
 		Logs the total size of all duplicate files found. This size is
 		the sum of the sizes of all files considered duplicates.
 
-		<size> - The total size of duplicate files in gigabytes (uint64).
+		<size> - The total size of duplicate files in gigabytes (uint).
 
 	=summary:exit:<status>
 		Logs the overall exit status of the command. The `status` is one of
@@ -1001,19 +1008,19 @@ Command Smart And Probe Tags
 		attributes. The AFR is calculated using the maximum rate
 		reported by specific SMART attributes (5, 187, 188, 197, 198).
 
-		<afr_value> - The computed Annual Failure Rate (double).
+		<afr_value> - The computed Annual Failure Rate (float).
 		<afr_prob> - The probability of one or more failures in the
-			next year (double).
+			next year (float).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:size:<size_bytes>
 		Logs the size of the disk.
 
-		<size_bytes> - The disk size in bytes (uint64).
+		<size_bytes> - The disk size in bytes (uint).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:error:<error_count>
 		Logs the total error count.
 
-		<error_count> - The total error count (uint64).
+		<error_count> - The total error count (uint).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:rotationrate:<rate>
 		Logs the disk's rotation rate.
@@ -1031,15 +1038,15 @@ Command Smart And Probe Tags
 		`Device could not be opened`, or `SMART status check 
 		returned 'DISK FAILING'`.
 
-		<flags_decimal> - The raw flags value (uint64, decimal).
-		<flags_hex> - The raw flags value (uint64, hexadecimal).
+		<flags_decimal> - The raw flags value (uint, decimal).
+		<flags_hex> - The raw flags value (uint, hexadecimal).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:<id>:<value_decimal>:<value_hex>
 		Logs the raw value of any assigned SMART attribute.
 
 		<id> - The SMART attribute ID (uint).
-		<value_decimal> - The raw attribute value (uint64, decimal).
-		<value_hex> - The raw attribute value (uint64, hexadecimal).
+		<value_decimal> - The raw attribute value (uint, decimal).
+		<value_hex> - The raw attribute value (uint, hexadecimal).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:power:active
 		Logs that the device was confirmed to be in an active power 
@@ -1064,7 +1071,7 @@ Command Smart And Probe Tags
 		Comparing this number at different times, you can detect if the
 		disk was used during that time.
 
-		<access_number> - Total number of accesses (int64).
+		<access_number> - Total number of accesses (uint).
 
     Summary
 	Tags logging the overall failure probabilities for the array.
@@ -1074,9 +1081,9 @@ Command Smart And Probe Tags
 		(sum of individual disk AFRs) and the probability of at least
 		one disk failure in the next year.
 
-		<array_afr> - The sum of AFRs of all disks in the array (double).
+		<array_afr> - The sum of AFRs of all disks in the array (float).
 		<array_prob> - The probability of at least one disk failure in
-		the next year (double).
+		the next year (float).
 
 Device Status Tags
 	These tags log the lifecycle of hardware interactions and external
@@ -1109,7 +1116,7 @@ Device Status Tags
 		exit code that was not explicitly recognized as a valid state. 
 
 		<exit_code> - The integer exit status returned by the 
-			process.
+			process (int).
 
 Error Tags
 	These tags report specific errors that occur on data disks during the
