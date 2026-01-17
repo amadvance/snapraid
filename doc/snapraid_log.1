@@ -281,19 +281,18 @@ Only with \`\-\-gui\-verbose\`.
 Name of the data disk.
 .HP 4
 .I <path>
-Path to the file/link/dir relative to the disk mount
+Path to the file/link relative to the disk mount
 (escaped).
 .PD
 .RE
 .TP
 .B scan:add:<disk_name>:<path>
-A new file, link, or directory was found that is not in the
-content file. This item will be added to the array in a \`sync\`.
+A new file or link was found that is not in the content file.
+This item will be added to the array in a \`sync\`.
 .TP
 .B scan:remove:<disk_name>:<path>
-A file, link, or directory has been removed from the filesystem
-since the last sync. This item will be removed from the
-content file in a \`sync\`.
+A file or link has been removed from the filesystem
+since the last sync.
 .TP
 .B scan:update:<disk_name>:<path>
 A file or link has been updated (size, timestamp, or link target changed).
@@ -337,15 +336,15 @@ is assumed to be correct.
 These tags provide a final count of all detected changes.
 .TP
 .B summary:equal:<count>
-Total number of files/dirs/links whose metadata and data match
+Total number of files and links whose metadata and data match
 the current parity (uint).
 .TP
 .B summary:added:<count>
-Total number of new brand new files/dirs/links that have no
-relationship to existing parity (uint).
+Total number of brand new files and links not present in the
+last sync (uint).
 .TP
 .B summary:removed:<count>
-Total number of files/dirs/links that existed in the last sync
+Total number of files and links that existed in the last sync
 but are now missing (uint).
 .TP
 .B summary:updated:<count>
@@ -353,8 +352,8 @@ Total number of existing files where the timestamp or size has
 changed (uint).
 .TP
 .B summary:moved:<count>
-Total number of files relocated to a new path but retaining
-the same inode (uint).
+Total number of files relocated to a new path or renamed but
+retaining the same inode (uint).
 .TP
 .B summary:copied:<count>
 Total number of new files created by copying an existing

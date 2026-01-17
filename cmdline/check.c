@@ -1223,7 +1223,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u/%u\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
+				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
 				++error;
 				continue;
 			}
@@ -1329,7 +1329,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* mark that the read parity is wrong, setting ptr to 0 */
 							buffer_recov[l] = 0;
 
-							log_tag("parity_error:%u:%s: Data error, diff bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
+							log_tag("parity_error:%u:%s: Data error, diff parity bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
 							++error;
 						}
 					}
