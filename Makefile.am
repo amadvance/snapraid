@@ -248,6 +248,41 @@ PAR5 = $(srcdir)/test/test-par5.conf
 PAR6 = $(srcdir)/test/test-par6.conf
 MSG = @echo =====
 
+fastcheck: mktest
+	rm -rf bench
+	rm -f test.log
+	mkdir bench
+	mkdir bench/disk1
+	mkdir bench/disk2
+	mkdir bench/disk3
+	mkdir bench/disk4
+	mkdir bench/disk5
+	mkdir bench/disk6
+	mkdir bench/pool
+	$(MSG) Stream
+	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
+	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
+	$(TESTENV) ./snapraid$(EXEEXT) test
+	$(MSG) Create some files
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
+	echo DUP > bench/disk1/DUP1
+	echo DUP > bench/disk1/DUP2
+	echo -n > bench/disk1/ZERO
+	$(MSG) Some commands with a not empty array
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_COMMON) -c $(CONF) --test-expect-need-sync diff > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_COMMON) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) list -l test.log > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-rewrite
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-read
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-dry
+	$(MSG) Regression test completed with SUCCESS!
+	$(MSG) Please ignore any error message printed above, they are expected!
+	$(MSG) Everything OK
+
 check-local:
 	rm -rf bench
 	rm -f test.log
