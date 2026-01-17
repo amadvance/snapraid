@@ -270,7 +270,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
+					log_fatal("DANGER! Too many input/output read errors in a data disk, it isn't possible to scrub.\n");
 					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, task->path);
 					log_fatal("Stopping at block %u\n", blockcur);
 					goto bail;
@@ -324,7 +324,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(levcur));
+					log_fatal("DANGER! Too many input/output read errors in the %s disk, it isn't possible to scrub.\n", lev_name(levcur));
 					log_fatal("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(levcur));
 					log_fatal("Stopping at block %u\n", blockcur);
 					goto bail;

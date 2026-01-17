@@ -42,13 +42,13 @@ struct failed_struct {
 	int is_bad;
 
 	/**
-	 * If that we have recovered may be not updated data,
+	 * If what we have recovered may be not updated data,
 	 * an old version, or just garbage.
 	 *
 	 * Essentially, it means that we are not sure what we have recovered
 	 * is really correct. It's just our best guess.
 	 *
-	 * These "recovered" block are also written to the disk if the block is marked as ::is_bad.
+	 * These "recovered" blocks are also written to the disk if the block is marked as ::is_bad.
 	 * But these files are marked also as FILE_IS_DAMAGED, and then renamed to .unrecoverable.
 	 *
 	 * Note that this could happen only for CHG blocks.
@@ -94,7 +94,7 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 }
 
 /**
- * Check if the hash of all the failed block we are expecting to recover are now matching.
+ * Check if the hash of all the failed blocks we are expecting to recover are now matching.
  */
 static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void* buffer_zero)
 {
@@ -157,7 +157,7 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
 /**
  * Repair errors.
  * Return <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
- * If success, the parity are computed in the buffer variable.
+ * If success, the parity is computed in the buffer variable.
  */
 static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
@@ -238,7 +238,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* if we have a hash, and enough parities */
 	/* (less-or-equal failures than number of parities) */
 	if (has_hash && failed_count <= n) {
-		/* number of parities to use equal at the number of failures */
+		/* number of parities to use equal to the number of failures */
 		unsigned r = failed_count;
 
 		/* all combinations (r of n) parities */
@@ -483,9 +483,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		) {
 			/* If the block is CHG, REP or DELETED, we don't have the original content of block, */
 			/* and we must try to recover it. */
-			/* This apply to CHG and REP blocks even if they are not marked bad, */
+			/* This applies to CHG and REP blocks even if they are not marked bad, */
 			/* because the parity is computed with old content, and not with the new one. */
-			/* Note that this recovering is done just to make possible to recover any other BLK one, */
+			/* Note that this recovering is done just to make it possible to recover any other BLK one, */
 			/* we are not really interested in DELETED, CHG (old version) and REP (old version). */
 			something_unsynced = 1;
 
@@ -496,7 +496,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				/* We do this to just allow recovering of other BLK ones */
 
 				memset(buffer[failed[j].index], 0, state->block_size);
-				/* note that from now the buffer is definitively lost */
+				/* note that from now the buffer is definitely lost */
 				/* we can do this only because it's the last retry of recovering */
 
 				/* try to fetch the old block using the old hash for CHG and DELETED blocks */
@@ -504,7 +504,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				&& hash_is_unique(failed[j].block->hash)
 				&& state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0) {
 
-				/* note that from now the buffer is definitively lost */
+				/* note that from now the buffer is definitely lost */
 				/* we can do this only because it's the last retry of recovering */
 			} else {
 				/* otherwise try to recover it */
@@ -515,9 +515,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				/* not really interested to recover *only* old blocks. */
 			}
 
-			/* avoid to use the hash of this block to verify the recovering */
+			/* avoid using the hash of this block to verify the recovering */
 			/* this applies to REP blocks because we are going to recover the old state */
-			/* and the REP hash represent the new one */
+			/* and the REP hash represents the new one */
 			/* it also applies to CHG and DELETE blocks because we want to have */
 			/* a successful recovering only if a BLK one is matching */
 			failed[j].is_outofdate = 1;
@@ -541,7 +541,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	if (something_to_recover && something_unsynced) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
-			/* reprocess the REP and CHG blocks, for which we have recovered and old state */
+			/* reprocess the REP and CHG blocks, for which we have recovered an old state */
 			/* that we don't want to save into disk */
 			/* we have already marked them, but we redo it for logging */
 
@@ -587,7 +587,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 /**
  * Post process all the files at the specified block index ::i.
- * For each file, if we are at the last block, closes it,
+ * For each file, if we are at the last block, close it,
  * adjust the timestamp, and print the result.
  *
  * This works only if the whole file is processed, including its last block.
@@ -603,7 +603,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 	char esc_buffer[ESC_MAX];
 	char esc_buffer_alt[ESC_MAX];
 
-	/* for all the files print the final status, and does the final time fix */
+	/* for all the files print the final status, and do the final time fix */
 	/* we also ensure to close files after processing the last block */
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_block* block;
@@ -722,7 +722,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			/* search for the corresponding inode */
 			collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
-			/* if the inode is already in the database and it refers at a different file name, */
+			/* if the inode is already in the database and it refers to a different file name, */
 			/* we can fix the file time ONLY if the time and size allow to differentiate */
 			/* between the two files */
 
@@ -778,7 +778,7 @@ close_and_continue:
 		/* that the opened file is not the current one */
 		if (handle[j].file == file) {
 			/* ensure to close the file just after finishing with it */
-			/* to avoid to keep it open without any possible use */
+			/* to avoid keeping it open without any possible use */
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
@@ -892,7 +892,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 	handle = handle_mapping(state, &diskmax);
 
-	/* initialize the bandwith context */
+	/* initialize the bandwidth context */
 	bw_init(&bw, state->opt.bwlimit);
 
 	/* share the bandwidth context with all handles */

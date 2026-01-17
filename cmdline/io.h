@@ -112,7 +112,7 @@ struct snapraid_worker {
 	/**
 	 * The task in progress by the worker thread.
 	 *
-	 * It's an index inside in the ::task_map vector.
+	 * It's an index inside the ::task_map vector.
 	 */
 	unsigned index;
 
@@ -129,12 +129,12 @@ struct snapraid_worker {
 #define IO_WRITER_ERROR_MAX (-IO_WRITER_ERROR_BASE)
 
 /**
- * IO system that handle all parallel reads and writes.
+ * IO system that handles all parallel reads and writes.
  *
  * This represents the pool of worker threads dedicated to read and write
  * data from the disks.
  *
- * Typycal scenario is:
+ * Typical scenario is:
  *
  * # Initialize the process
  * io_start(&io, blockstart, blockmax, block_enabled);
@@ -152,7 +152,7 @@ struct snapraid_worker {
  *
  *         for_each_disk {
  *                 # Read a disk into buffer[diskcur]
- *                 # diskcur is the disk processed, and it may came in random order
+ *                 # diskcur is the disk processed, and it may come in random order
  *                 # depending on which disk is faster
  *                 #
  *                 # INTERNAL: It may wait for the read_done condition in case
@@ -177,7 +177,7 @@ struct snapraid_worker {
  *                 unsigned levcur;
  *
  *                 # Write a parity from buffer[diskmax+levcur]
- *                 # levcur is the disk processed, and it may came in random order
+ *                 # levcur is the disk processed, and it may come in random order
  *                 # depending on which disk is faster
  *                 #
  *                 # INTERNAL: It may wait for the write_done condition in case
@@ -327,7 +327,7 @@ struct snapraid_io {
 	 * it goes again to 0.
 	 *
 	 * When the caller finish with this index, it calls read_sched(),
-	 * and this ::reader_index is increamended, meaning that the data of
+	 * and this ::reader_index is incremented, meaning that the data of
 	 * the just finished index is not needed anymore and the buffer is
 	 * available to be used for the following read-ahead.
 	 *
@@ -352,7 +352,7 @@ struct snapraid_io {
 	 *
 	 * When the caller finish writing the data in the buffer for this
 	 * index, it calls write_sched() and ::writer_index is incremented,
-	 * meaning the the just finished index is scheduled to be written
+	 * meaning that the just finished index is scheduled to be written
 	 * to disk.
 	 *
 	 * When this happens a write_sched signal is broadcasted, and all the

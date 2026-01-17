@@ -45,15 +45,15 @@ void device_name_set(devinfo_t* dev, const char* name, int index)
  *  - Disks that are predicted to fail by BackBlaze are removed before
  *    they really fail, not counting as a failure.
  *
- * The following tables are computed using the data from 2014-02-14 to 2014-12-31
- * because it's the period when more SMART attributes were gathered.
+ * The following tables are computed using the data from 2014-02-14 to
+ * 2014-12-31 because it's the period when more SMART attributes were gathered.
  *
- * In this period there are 47322 disk seen, with 1988 removed because failed,
+ * In this period there are 47322 disks seen, with 1988 removed because failed,
  * and with 4121 removed because predicted to fail.
  */
 
 /**
- * Number of data point in each table.
+ * Number of data points in each table.
  */
 #define SMART_MEASURES 256
 
@@ -421,7 +421,7 @@ static double smart_afr(uint64_t* smart, const char* model)
 	}
 
 	if (smart[187] != SMART_UNASSIGNED) {
-		/* with some disks, only the lower 16 bits are significative */
+		/* with some disks, only the lower 16 bits are significant */
 		/* See: http://web.archive.org/web/20130507072056/http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf */
 		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187] & mask16);
 		if (afr < r)
@@ -433,7 +433,7 @@ static double smart_afr(uint64_t* smart, const char* model)
 		 * Don't check Command_Timeout (188) for Seagate disks.
 		 *
 		 * It's reported by users that for Archive SMR (Shingled Magnetic Recording)
-		 * and IronWolf disks to be a not significative test as
+		 * and IronWolf disks to be a not significant test as
 		 * this value increases too often also on sane disks.
 		 */
 		strncmp(model, "ST", 2) != 0 && smart[188] != SMART_UNASSIGNED
@@ -862,7 +862,7 @@ static void state_stat(struct snapraid_state* state, tommy_list* high)
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
-		/* print disk access_stat (not splitted) */
+		/* print disk access_stat (not split) */
 		if (devinfo->split == 0 && devinfo->access_stat != 0) {
 			log_tag("stat:%s:%" PRIu64 "\n", devinfo->name, devinfo->access_stat);
 		}

@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-/* Self sanity test for the RAID library */
+/* Self-test for the RAID library */
 
 #include "internal.h"
 #include "cpu.h"
@@ -22,11 +22,11 @@
 
 int main(void)
 {
-	printf("Self sanity test for the RAID Cauchy library\n\n");
+	printf("Self-test for the RAID Cauchy library\n\n");
 
 	raid_init();
 
-	printf("Self test...\n");
+	printf("Self-test...\n");
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		printf("FAILED!\n");

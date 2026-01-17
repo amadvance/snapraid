@@ -619,7 +619,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		/* LCOV_EXCL_START */
 		if (errno == EIO) {
 			log_tag("error_io:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
-			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to sync.\n");
+			log_fatal("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
 			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;

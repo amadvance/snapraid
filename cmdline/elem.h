@@ -90,7 +90,8 @@ struct snapraid_filter {
 
 /**
  * The block is new and not yet hashed.
- * This happens when a new block overwrite a just removed block, or an empty space.
+ * This happens when a new block overwrites a just removed block, or an empty
+ * space.
  *
  * The block hash field MAY be set and it represents the hash of the OLD data.
  * The hash may be also INVALID or ZERO.
@@ -100,7 +101,7 @@ struct snapraid_filter {
  *
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
- * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
+ * If the state is read from an incomplete sync, we don't really know if the hash is referring to the
  * data used to compute the parity, because the sync process was interrupted at an unknown point,
  * and the parity may or may not be updated.
  *
@@ -115,7 +116,7 @@ struct snapraid_filter {
 
 /**
  * The block is new and hashed.
- * This happens when a new block overwrite a just removed block, or an empty space.
+ * This happens when a new block overwrites a just removed block, or an empty space.
  *
  * Note that when the file copy heuristic is enabled, the REP blocks may be set
  * using this heuristic, meaning that the hash may be wrong.
@@ -139,11 +140,11 @@ struct snapraid_filter {
  * but only if it's different by all 0.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
- * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
+ * If the state is read from an incomplete sync, we don't really know if the hash is referring to the
  * data used to compute the parity, because the sync process was interrupted at an unknown point,
  * and the parity may or may not be updated.
  *
- * A now the sync process is not affected by DELETED hash, so clearing won't be really needed,
+ * As now the sync process is not affected by DELETED hash, so clearing won't be really needed,
  * but considering that we have to do it for CHG blocks, we do it also for DELETED ones,
  * clearing all the past hashes.
  * Clearing is done setting the ::clear_past_hash flag before reading the state.
@@ -228,13 +229,13 @@ struct snapraid_block {
 
 /**
  * If the file is modified from the latest sync.
- * It's used in fix to store if the state of the file before being modified.
+ * It's used in fix to store the state of the file before being modified.
  */
 #define FILE_IS_UNSYNCED 0x100
 
 /**
  * If the file is without inode.
- * It could happen in file-system where inodes are not persistent,
+ * It could happen in file-systems where inodes are not persistent,
  * or when restoring a full disk with "fix".
  * In such cases we have to clear any stored duplicate inode.
  * After the scan process completes, no file should have this flag set.

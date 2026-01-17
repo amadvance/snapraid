@@ -57,7 +57,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	/* if failed for missing write permission */
 	if (handle->f == -1 && (errno == EACCES || errno == EROFS)) {
-		/* open for real-only */
+		/* open for read-only */
 		handle->f = open(handle->path, flags | O_RDONLY);
 	}
 

@@ -4454,7 +4454,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	if (global_interrupt) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
-			msg_status("Not starting for interruption\n");
+			msg_status("Not starting due to interruption\n");
 		}
 		log_tag("sigint:0: SIGINT received\n");
 		log_flush();

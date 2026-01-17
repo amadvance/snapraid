@@ -860,7 +860,7 @@ void selftest(void)
 	log_tag("selftest:\n");
 	log_flush();
 
-	msg_progress("Self test...\n");
+	msg_progress("Self-test...\n");
 
 	/* large file check */
 	if (sizeof(off_t) < sizeof(uint64_t)) {
