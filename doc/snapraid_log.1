@@ -267,13 +267,12 @@ Size of the internal \`snapraid_link\` structure in bytes (uint).
 Size of the internal \`snapraid_dir\` structure in bytes (uint).
 .SH SCAN TAGS 
 These tags report detected differences between the filesystem and the
-content file. They are output for every discovered change, and
-\`scan:equal\` is only output when the \`\-\-gui\` option is used.
+content file. They are output for every discovered change.
 .TP
 .B scan:equal:<disk_name>:<path>
 A file, link, or directory is equal (unchanged).
 No action is required for this item.
-Only with \`\-\-gui\-verbose\`.
+Only produced when \`\-\-gui\-verbose\` option is used.
 .RS 4
 .PD 0
 .HP 4
@@ -843,13 +842,14 @@ These tags list files with zero sub\-second timestamps.
 Lists files that have a zero sub\-second timestamp.
 Up to 50 are logged per disk.
 .SS Block Information Tags 
-These tags are generated when the GUI option is enabled (\`state\->opt.gui\`).
+Status of all the blocks of the array.
 .TP
 .B block_count:<uint>
 The total number of blocks in the array.
 .TP
 .B block:<index>:<time>:<used>:<unsynced>:<bad>:<rehash>
 Status of a specific block.
+Only produced when \`\-\-gui\-verbose\` option is used.
 .RS 4
 .PD 0
 .HP 4
@@ -876,6 +876,7 @@ the block has never been scrubbed.
 .TP
 .B block_noinfo:<index>:<used>:<unsynced>
 Status of an unused block (no info recorded) in the content file.
+Only produced when \`\-\-gui\-verbose\` option is used.
 .RS 4
 .PD 0
 .HP 4
@@ -1582,19 +1583,20 @@ The disk\'s model identifier (escaped).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_index>]:afr:<afr_value>:<afr_prob>
+.B attr:<device_file>:<disk_name>[/<split_index>]:afr:<afr>:<prob>
 Logs the estimated Annual Failure Rate (AFR) and the
-probability of one failure in the next year based on SMART
-attributes. The AFR is calculated using the maximum rate
-reported by specific SMART attributes (5, 187, 188, 197, 198).
+probability of at least one failure in the next year based on
+SMART attributes. The AFR is calculated using the SMART
+attributes (5, 187, 188, 197, 198).
 .RS 4
 .PD 0
 .HP 4
-.I <afr_value>
-The computed Annual Failure Rate (float).
+.I <afr>
+The computed Annual Failure Rate (the average number
+of failures you expect in a year) (float).
 .HP 4
-.I <afr_prob>
-The probability of one or more failures in the
+.I <prob>
+The probability of at least one failure in the
 next year (float).
 .PD
 .RE
@@ -1701,19 +1703,18 @@ Tags logging the overall failure probabilities for the array.
 .B summary:array_failure:<array_afr>:<array_prob>
 Logs the total estimated failure rate for the entire array
 (sum of individual disk AFRs) and the probability of at least
-one disk failure in the next year.
+one failure in the next year.
 .RS 4
 .PD 0
 .HP 4
 .I <array_afr>
-The sum of AFRs of all disks in the array (float).
+The sum of AFRs of all disks in the array (the
+average number of failures you expect in a year) (float).
 .HP 4
 .I <array_prob>
-The probability of at least one disk failure in
-.PD
-.RE
-.RS 4
+The probability of at least one failure in
 the next year (float).
+.PD
 .RE
 .SH DEVICE STATUS TAGS 
 These tags log the lifecycle of hardware interactions and external
