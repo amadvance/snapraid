@@ -372,7 +372,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
 			        /* try to fetch the block using the known hash */
 				&& (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0
-					|| state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)
+				|| state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)
 			) {
 				/* we already have corrected it! */
 				log_tag("hash_import: Fixed entry %u\n", j);

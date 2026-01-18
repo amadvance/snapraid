@@ -1288,7 +1288,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* LCOV_EXCL_START */
 					++io_error;
 					goto bail;
-					/* LCOV_EXCL_STOP */
+				/* LCOV_EXCL_STOP */
 				case TASK_STATE_ERROR :
 					/* LCOV_EXCL_START */
 					++error;
@@ -1450,7 +1450,7 @@ bail:
 				log_fatal("WARNING! Unexpected close error in a data disk.\n");
 				log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
 				++error;
-			}			
+			}
 			++error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */

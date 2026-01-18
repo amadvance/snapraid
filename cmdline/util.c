@@ -709,7 +709,7 @@ const char* memhashname(unsigned kind)
 	case HASH_METRO : return "metro";
 	case HASH_MUSEAIR : return "museair";
 	}
-	
+
 	return 0;
 }
 

@@ -38,8 +38,9 @@ static int needs_quote(const WCHAR* arg)
 
 #define charcat(c) \
 	do { \
-		if (pos + 1 >= size) \
+		if (pos + 1 >= size) { \
 			return -1; \
+		} \
 		cmd[pos++] = (c); \
 	} while (0)
 

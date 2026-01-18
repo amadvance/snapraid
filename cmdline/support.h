@@ -57,7 +57,7 @@ void unlock_memory(void);
 
 /**
  * Reseed the random pseudo random number generator
- */ 
+ */
 void random_reseed(void);
 
 /**
@@ -490,9 +490,9 @@ void thread_yield(void);
 /****************************************************************************/
 /* match */
 
-/* 
+/*
  * Wild match function.
- * 
+ *
  * - ? matches any single character except /
  * - * matches any sequence of characters except /
  * - ** (nearby a /) matches everything including /
@@ -503,3 +503,4 @@ void thread_yield(void);
 int wnmatch(const char* p, const char* t);
 
 #endif
+

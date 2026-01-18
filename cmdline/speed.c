@@ -50,12 +50,14 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 /**
  * Stop time measurement.
  */
+/* INDENT-OFF */
 #define SPEED_STOP \
-		count += delta; \
-		gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < period * 1000LL) ; \
+	count += delta; \
+	gettimeofday(&stop, 0); \
+	} while (diffgettimeofday(&start, &stop) < period * 1000LL); \
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
+/* INDENT-ON */
 
 /**
  * Global variable used to propagate side effects.
