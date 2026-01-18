@@ -56,13 +56,13 @@ int exit_sync_needed = 2;
  * Direct access to RtlGenRandom().
  * This function is accessible only with LoadLibrary() and it's available from Windows XP.
  */
-static BOOLEAN (WINAPI* ptr_RtlGenRandom)(PVOID, ULONG);
+static BOOLEAN(WINAPI * ptr_RtlGenRandom)(PVOID, ULONG);
 
 /**
  * Direct access to GetTickCount64().
  * This function is available only from Windows Vista.
  */
-static ULONGLONG (WINAPI* ptr_GetTickCount64)(void);
+static ULONGLONG(WINAPI * ptr_GetTickCount64)(void);
 
 /**
  * Description of the last error.
@@ -1840,8 +1840,8 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 
 	/* convert the name to UTF-8 */
 	name = u16tou8ex(conv_buf_name,
-		rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
-		rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
+			rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
+			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
 
 	/* check for overflow */
 	if (len > size) {

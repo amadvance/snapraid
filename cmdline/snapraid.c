@@ -621,11 +621,13 @@ void config(char* conf, size_t conf_size, const char* argv0)
 
 #ifdef SYSCONFDIR
 	/* if it exists, give precedence at sysconfdir, usually /usr/local/etc */
-	if (access(SYSCONFDIR "/" PACKAGE ".conf", F_OK) == 0)
+	if (access(SYSCONFDIR "/" PACKAGE ".conf", F_OK) == 0) {
 		pathcpy(conf, conf_size, SYSCONFDIR "/" PACKAGE ".conf");
-	else /* otherwise fallback to plain /etc */
+	} else /* otherwise fallback to plain /etc */
 #endif
+	{
 		pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
+	}
 #endif
 }
 

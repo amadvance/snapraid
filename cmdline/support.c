@@ -129,7 +129,7 @@ uint64_t random_u64(void)
 
 	z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
 	z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
-    
+
 	return z ^ (z >> 31);
 }
 
@@ -509,8 +509,9 @@ void printp(double v, size_t pad)
 
 #define charcat(c) \
 	do { \
-		if (p == end) \
+		if (p == end) { \
 			goto bail; \
+		} \
 		*p++ = (c); \
 	} while (0)
 
@@ -1746,7 +1747,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 
 		if (*s == 0) {
 			inside = 0;
-		/* common */
+			/* common */
 		} else if (smatch(s, "Rotation Rate: Solid State") == 0) {
 			info[INFO_ROTATION_RATE] = 0;
 		} else if (sscanf(s, "Rotation Rate: %" SCNu64, &info[INFO_ROTATION_RATE]) == 1) {
@@ -1765,7 +1766,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 			}
 		} else if (sscanf(s, "Model Family: %63[^\n]", family) == 1) {
 		} else if (sscanf(s, "Device Model: %63[^\n]", model) == 1) {
-		/* SCSI */
+			/* SCSI */
 		} else if (sscanf(s, "Serial number: %63s", serial) == 1) { /* note "n" of "number" lower case */
 		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT]) == 1) {
 		} else if (sscanf(s, "Current Drive Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS]) == 1) {
@@ -1773,7 +1774,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (sscanf(s, "Accumulated start-stop cycles: %" SCNu64, &smart[SMART_START_STOP_COUNT]) == 1) {
 		} else if (sscanf(s, "Accumulated load-unload cycles: %" SCNu64, &smart[SMART_LOAD_CYCLE_COUNT]) == 1) {
 		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS]) == 1) {
-		/* ATA */
+			/* ATA */
 		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
@@ -2014,7 +2015,7 @@ void thread_yield(void)
 /* wnmatch */
 
 /**
- * Helper function for case-insensitive character comparison 
+ * Helper function for case-insensitive character comparison
  */
 static inline int char_match(char p, char t)
 {
@@ -2102,7 +2103,7 @@ int wnmatch(const char* p, const char* t)
 
 					/*
 					 * In between slashes matches to nothing
-					 * 
+					 *
 					 * Check for /##/ or ^##/ (^ start of string)
 					 *
 					 * This is required for:
@@ -2110,7 +2111,7 @@ int wnmatch(const char* p, const char* t)
 					 * "##/file.txt" matching "file.txt"
 					 * "x##/file.txt" NOT matching "xfile.txt"
 					 */
-					 if (*p == '/' && (p1 == 0 || p1 == '/')) {
+					if (*p == '/' && (p1 == 0 || p1 == '/')) {
 						/* try reducing to nothing */
 						if (wnmatch(p + 1, t) == 0)
 							return 0;
@@ -2159,7 +2160,7 @@ int wnmatch(const char* p, const char* t)
 
 			++t;
 			break;
-		default:
+		default :
 			/* literal character */
 			if (*t == 0 || !char_match(*p, *t))
 				return 1;
@@ -2173,3 +2174,4 @@ int wnmatch(const char* p, const char* t)
 	/* match successful if we've consumed all text */
 	return *t != 0;
 }
+
