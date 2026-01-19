@@ -461,40 +461,15 @@ static double smart_afr(uint64_t* smart, const char* model)
 }
 
 /**
- * Factorial.
+ * Calculates the probability of at least one failure occurring 
+ * within a year using a Poisson distribution.
+ *
+ * @param afr The aggregate Annual Failure Rate (lambda).
+ * @return The probability as a double between 0 and 1.
  */
-static double fact(unsigned n)
+static double poisson_prob_at_least_one_failure(double rate)
 {
-	double v = 1;
-
-	while (n > 1)
-		v *= n--;
-
-	return v;
-}
-
-/**
- * Probability of having exactly ::n events in a Poisson
- * distribution with rate ::rate in a time unit.
- */
-static double poisson_prob_n_failures(double rate, unsigned n)
-{
-	return pow(rate, n) * exp(-rate) / fact(n);
-}
-
-/**
- * Probability of having ::n or more events in a Poisson
- * distribution with rate ::rate in a time unit.
- */
-static double poisson_prob_n_or_more_failures(double rate, unsigned n)
-{
-	double p_neg = 0;
-	unsigned i;
-
-	for (i = 0; i < n; ++i)
-		p_neg += poisson_prob_n_failures(rate, n - 1 - i);
-
-	return 1 - p_neg;
+	return 1.0 - exp(-rate);
 }
 
 /**
@@ -538,9 +513,7 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 	raid_failure_rate = 1.0 / MTTDL;
 
 	/* probability of at least one RAID failure */
-	/* note that is almost equal at the probability of */
-	/* the first failure. */
-	return poisson_prob_n_or_more_failures(raid_failure_rate, 1);
+	return poisson_prob_at_least_one_failure(raid_failure_rate);
 }
 
 static void state_info_log(devinfo_t* devinfo)
@@ -575,7 +548,7 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 		log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
 
 	if (afr != 0)
-		log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_n_or_more_failures(afr, 1));
+		log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_at_least_one_failure(afr));
 
 	for (j = 0; j < 256; ++j)
 		if (devinfo->smart[j] != SMART_UNASSIGNED)
@@ -712,7 +685,7 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 				if (devinfo->parent != 0 || !have_parent)
 					array_failure_rate += afr;
 
-				printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
+				printf("%4.0f%%", poisson_prob_at_least_one_failure(afr) * 100);
 			}
 		}
 
@@ -762,7 +735,7 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 	 * The probability of one and of at least one failure is computed assuming
 	 * a Poisson distribution with the estimated array failure rate.
 	 */
-	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
+	p_at_least_one_failure = poisson_prob_at_least_one_failure(array_failure_rate);
 
 	printf("Probability that at least one disk is going to fail in the next year is %.0f%%.\n", p_at_least_one_failure * 100);
 	log_tag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
