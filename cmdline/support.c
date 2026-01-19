@@ -1779,9 +1779,17 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
 		} else if (smatch(s, "No Errors Logged") == 0) {
-			smart[SMART_ERROR] = 0;
+			smart[SMART_ERROR_PROTOCOL] = 0;
 		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR] = raw;
+			smart[SMART_ERROR_PROTOCOL] = raw;
+		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR_MEDIUM] = raw;
+		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR_PROTOCOL] = raw;
+		} else if (sscanf(s, "Medium error count: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR_MEDIUM] = raw;
+		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR_PROTOCOL] = raw;
 		} else if (inside) {
 			if (sscanf(s, "%u %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
 				/* LCOV_EXCL_START */

@@ -565,8 +565,10 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 	unsigned j;
 
 	log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
-	if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-		log_tag("attr:%s:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR]);
+	if (devinfo->smart[SMART_ERROR_PROTOCOL] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:error_protocol:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_PROTOCOL]);
+	if (devinfo->smart[SMART_ERROR_MEDIUM] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:error_medium:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_MEDIUM]);
 	if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
 
@@ -655,25 +657,28 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 		else
 			printf("      -");
 
+		uint64_t error_count = 0;
+		if (devinfo->smart[SMART_ERROR_PROTOCOL] != SMART_UNASSIGNED && devinfo->smart[SMART_ERROR_PROTOCOL] != 0)
+			error_count += devinfo->smart[SMART_ERROR_PROTOCOL];
+		if (devinfo->smart[SMART_ERROR_MEDIUM] != SMART_UNASSIGNED && devinfo->smart[SMART_ERROR_MEDIUM] != 0)
+			error_count += devinfo->smart[SMART_ERROR_MEDIUM];
 		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
 			flag = devinfo->smart[SMART_FLAGS];
 		else
 			flag = 0;
+
 		if (flag & SMARTCTL_FLAG_FAIL)
 			printf("    FAIL");
 		else if (flag & SMARTCTL_FLAG_PREFAIL)
 			printf(" PREFAIL");
 		else if (flag & SMARTCTL_FLAG_PREFAIL_LOGGED)
 			printf(" logfail");
-		else if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED
-			&& devinfo->smart[SMART_ERROR] != 0)
-			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
-		else if (flag & SMARTCTL_FLAG_ERROR)
+		else if (error_count != 0) {
+			printf("%8" PRIu64, error_count);
+		} else if (flag & SMARTCTL_FLAG_ERROR)
 			printf("  logerr");
 		else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
 			printf(" selferr");
-		else if (devinfo->smart[SMART_ERROR] == 0)
-			printf("       0");
 		else
 			printf("       -");
 
@@ -910,12 +915,13 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
 		entry->info[INFO_SIZE] = count * TERA;
 		entry->info[INFO_ROTATION_RATE] = 7200;
-		entry->smart[SMART_ERROR] = 0;
+		entry->smart[SMART_ERROR_MEDIUM] = 0;
+		entry->smart[SMART_ERROR_PROTOCOL] = 0;
 		entry->smart[SMART_FLAGS] = SMART_UNASSIGNED;
 		entry->smart[SMART_TEMPERATURE_CELSIUS] = 27;
 
 		switch (count) {
-		case 3 : entry->smart[SMART_ERROR] = 1; break;
+		case 3 : entry->smart[SMART_ERROR_PROTOCOL] = 1; break;
 		case 4 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_UNSUPPORTED; break;
 		case 5 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_COMMAND; break;
 		case 6 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_OPEN; break;

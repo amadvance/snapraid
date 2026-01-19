@@ -433,12 +433,28 @@ int randomize(void* ptr, size_t size);
 #define SMART_TEMPERATURE_CELSIUS 194
 
 #define SMART_FLAGS 256 /**< Flags returned by smartctl. */
-#define SMART_ERROR 257 /**< ATA Error count. */
+
+/*
+ * Counts command, transport, or controller-level errors reported by the device.
+ * These reflect failed I/O operations not directly caused by media defects
+ * (for example interface, firmware, or power-related errors).
+ * This counter is cumulative and never resets to zero, even if the underlying
+ * error condition is resolved.
+ */
+#define SMART_ERROR_PROTOCOL 257
+
+/*
+ * Counts media-level errors where data could not be reliably read or written.
+ * These indicate actual storage surface or flash failures and may imply data loss.
+ * This counter is cumulative and never resets to zero, even if the underlying
+ * error condition is resolved.
+ */
+#define SMART_ERROR_MEDIUM 258
 
 /**
  * SMART attributes count.
  */
-#define SMART_COUNT 258
+#define SMART_COUNT 259
 
 /**
  * Info attributes.

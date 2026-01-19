@@ -1018,8 +1018,22 @@ Command Smart And Probe Tags
 
 		<size_bytes> - The disk size in bytes (uint).
 
-	=attr:<device_file>:<disk_name>[/<split_index>]:error:<error_count>
-		Logs the total error count.
+	=attr:<device_file>:<disk_name>[/<split_index>]:error_protocol:<error_count>
+		Counts command, transport, or controller-level errors reported
+		by the device. These reflect failed I/O operations not directly
+		caused by media defects (for example interface, firmware, or
+		power-related errors).
+		This counter is cumulative and never resets to zero, even if
+		the underlying error condition is resolved.
+
+		<error_count> - The total error count (uint).
+
+	=attr:<device_file>:<disk_name>[/<split_index>]:error_medium:<error_count>
+		Counts media-level errors where data could not be reliably
+		read or written. These indicate actual storage surface or
+		flash failures and may imply data loss.
+		This counter is cumulative and never resets to zero, even if
+		the underlying error condition is resolved.
 
 		<error_count> - The total error count (uint).
 
