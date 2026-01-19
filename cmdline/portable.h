@@ -452,9 +452,18 @@ int randomize(void* ptr, size_t size);
 #define SMART_ERROR_MEDIUM 258
 
 /**
+ * Unified Wear Level Metric (0-100)
+ *
+ * Represents the remaining life of an SSD. 
+ * - 0:   Brand new drive (0% wear).
+ * - 100: Drive has reached or exceeded its manufacturer-rated design life.
+ */
+#define SMART_WEAR_LEVEL 259
+
+/**
  * SMART attributes count.
  */
-#define SMART_COUNT 259
+#define SMART_COUNT 260
 
 /**
  * Info attributes.

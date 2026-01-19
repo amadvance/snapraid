@@ -569,6 +569,8 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 		log_tag("attr:%s:%s:error_protocol:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_PROTOCOL]);
 	if (devinfo->smart[SMART_ERROR_MEDIUM] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:error_medium:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_MEDIUM]);
+	if (devinfo->smart[SMART_WEAR_LEVEL] != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:wear_level:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_WEAR_LEVEL]);
 	if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
 
@@ -619,12 +621,14 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 	printf("  Power");
 	printf("   Error");
 	printf("   FP");
+	printf(" Wear");
 	printf(" Size");
 	printf("\n");
 	printf("      C");
 	printf(" OnDays");
 	printf("   Count");
 	printf("     ");
+	printf("Level");
 	printf("   TB");
 	printf("  "); printl("Serial", serial_pad);
 	printf("  "); printl("Device", device_pad);
@@ -712,6 +716,12 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			}
 		}
 
+		if (devinfo->smart[SMART_WEAR_LEVEL] != SMART_UNASSIGNED) {
+			printf(" %3" PRIu64 "%%", devinfo->smart[SMART_WEAR_LEVEL]);
+		} else {
+			printf("    -");
+		}
+
 		if (devinfo->info[INFO_SIZE] != SMART_UNASSIGNED)
 			printf(" %4.1f", devinfo->info[INFO_SIZE] / 1E12);
 		else
@@ -783,9 +793,9 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 
 	/*      |<##################################################################72>|####80>| */
 	printf("These values are the probabilities that in the next year you'll have a\n");
-	printf("sequence of failures that the parity WON'T be able to recover, assuming\n");
-	printf("that you regularly scrub, and in case repair, the array in the specified\n");
-	printf("time.\n");
+	printf("sequence of failures from which the parity won't be able to recover,\n");
+	printf("assuming that you regularly scrub and repair the array (as needed)\n");
+	printf("within the specified time.\n");
 
 bail:
 	if (make_it_fail) {

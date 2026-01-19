@@ -1037,6 +1037,18 @@ Command Smart And Probe Tags
 
 		<error_count> - The total error count (uint).
 
+	=attr:<device_file>:<disk_name>[/<split_index>]:wear_level:<percentage>
+		The wear level of the SSD/NVME expressed as a percentage, where a
+		value of 0 represents a brand new drive with zero wear and
+		a value of 100 indicates the drive has reached or exceeded its
+		manufacturer-rated design life. This metric is provided as a
+		normalized unsigned integer, offering a consistent health
+		indicator across various SSD/NVME vendors and interface types
+		by mapping diverse hardware counters into a single
+		standardized scale.
+
+		<percentage> - Wear level percentage (uint).
+
 	=attr:<device_file>:<disk_name>[/<split_index>]:rotationrate:<rate>
 		Logs the disk's rotation rate.
 

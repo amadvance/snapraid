@@ -12,6 +12,7 @@ SnapRAID HISTORY
  * Added detection of the smartctl executable. Improves reliability when running
    under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.
+ * Added wear level percentage to the SMART report.
  * More log tags for the status and probe commands [Tristan Teufel].
  * Added documentation of the tags used in the log file in the new
    snapraid_log manpage.

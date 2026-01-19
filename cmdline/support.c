@@ -1730,6 +1730,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		char buf[256];
 		unsigned id;
 		uint64_t raw;
+		uint64_t normalized;
 		char* s;
 
 		s = fgets(buf, sizeof(buf), f);
@@ -1778,24 +1779,25 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
-		} else if (smatch(s, "No Errors Logged") == 0) {
+		} else if (smatch(s, "No Errors Logged") == 0) { /* ATA */
 			smart[SMART_ERROR_PROTOCOL] = 0;
-		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
+		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) { /* ATA */
 			smart[SMART_ERROR_PROTOCOL] = raw;
-		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) {
+		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) { /* NVME */
 			smart[SMART_ERROR_MEDIUM] = raw;
-		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) {
+		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) { /* NVME */
 			smart[SMART_ERROR_PROTOCOL] = raw;
 		} else if (sscanf(s, "Medium error count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR_MEDIUM] = raw;
-		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) {
+		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) { /* SCSI */
 			smart[SMART_ERROR_PROTOCOL] = raw;
+		} else if (sscanf(s, "Percentage Used: %" SCNu64 "%%", &raw) == 1) { /* NVME */
+			if (raw <= 100)
+				smart[SMART_WEAR_LEVEL] = raw;
 		} else if (inside) {
-			if (sscanf(s, "%u %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
-				/* LCOV_EXCL_START */
+			if (sscanf(s, "%u %*s %*s %" SCNu64 " %*s %*s %*s %*s %*s %" SCNu64, &id, &normalized, &raw) != 3) {
 				log_fatal("Invalid smartctl line '%s'.\n", s);
 				return -1;
-				/* LCOV_EXCL_STOP */
 			}
 
 			if (id >= 256) {
@@ -1806,6 +1808,22 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 			}
 
 			smart[id] = raw;
+
+			/* 
+			 * Map normalized health percentage to our unified wear level for SSDs 
+			 * 177: Wear_Leveling_Count (Samsung/Crucial)
+			 * 231: SSD_Life_Left (Kingston/WD)
+			 * 233: Media_Wearout_Indicator (Intel)
+			 */
+			if (normalized <= 100) {
+				switch (id) {
+				case 177 :
+				case 233 :
+				case 231 :
+					smart[SMART_WEAR_LEVEL] = 100 - normalized;
+					break;
+				}
+			}
 		}
 	}
 
