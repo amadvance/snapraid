@@ -1425,7 +1425,7 @@ end:
 	if (error + silent_error + io_error == 0)
 		log_tag("summary:exit:ok\n");
 	else if (silent_error + io_error == 0)
-		log_tag("summary:exit:alert\n");
+		log_tag("summary:exit:warning\n");
 	else
 		log_tag("summary:exit:error\n");
 	log_flush();

@@ -666,10 +666,10 @@ Command Sync/Scrub Tags
 	=summary:exit:<status>
 		Logs the overall exit status of the command. The `status` is
 		one of the following:
-    
+
 		ok - No issues. The array is fully synchronized and healthy.
-		alert - Incomplete. Some files were skipped due to modifications 
-			during execution or permission issues. No hardware risk.
+		warning - Some files were skipped due to modifications during
+			execution or permission issues. No hardware risk.
 		error - Critical failure. Indicates serious issues like I/O failures
 			or silent data corruption. Requires immediate hardware
 			or filesystem inspection.

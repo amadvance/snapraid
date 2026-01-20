@@ -7,6 +7,10 @@ This is the list of TODO items for SnapRAID.
 
 * Integration with MergeFS ?
 
+* Check Reliability Test 
+https://github.com/linuxhw/SMART
+https://github.com/linuxhw/EnterpriseDrive
+
 * Support BTRFS subvolumes. Keep track of the subvolumeid, along with the inode, and use it when searching/comparing inodes.
 The value 0 can be used for the root volume, like a normal filesystem.
 See: https://github.com/kdave/btrfs-progs/tree/master/libbtrfsutil
