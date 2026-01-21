@@ -652,9 +652,9 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			printf(" logfail");
 		else if (error_count != 0) {
 			printf("%8" PRIu64, error_count);
-		} else if (flag & SMARTCTL_FLAG_ERROR)
+		} else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
 			printf("  logerr");
-		else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
+		else if (flag & SMARTCTL_FLAG_SELFERROR_LOGGED)
 			printf(" selferr");
 		else
 			printf("       -");
@@ -911,8 +911,8 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		case 7 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_FAIL; break;
 		case 8 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL; break;
 		case 9 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL_LOGGED; break;
-		case 10 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR; break;
-		case 11 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;
+		case 10 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;
+		case 11 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_SELFERROR_LOGGED; break;
 		}
 
 		entry->power = POWER_ACTIVE;

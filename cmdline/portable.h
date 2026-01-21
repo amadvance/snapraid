@@ -488,8 +488,8 @@ int randomize(void* ptr, size_t size);
 #define SMARTCTL_FLAG_FAIL (1 << 3) /**< SMART status check returned "DISK FAILING". */
 #define SMARTCTL_FLAG_PREFAIL (1 << 4) /**< We found prefail Attributes <= threshold. */
 #define SMARTCTL_FLAG_PREFAIL_LOGGED (1 << 5) /**< SMART status check returned "DISK OK" but we found that some (usage or prefail) Attributes have been <= threshold at some time in the past. */
-#define SMARTCTL_FLAG_ERROR (1 << 6) /**< The device error log contains records of errors. */
-#define SMARTCTL_FLAG_ERROR_LOGGED (1 << 7) /**< The device self-test log contains records of errors. */
+#define SMARTCTL_FLAG_ERROR_LOGGED (1 << 6) /**< The device error log contains records of errors. */
+#define SMARTCTL_FLAG_SELFERROR_LOGGED (1 << 7) /**< The device self-test log contains records of errors. */
 
 /**
  * SMART max attribute length.
