@@ -1387,15 +1387,19 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 	if (*model == 0) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/model", major(device), minor(device));
 		attr = sysattr(path, buf, sizeof(buf));
-		if (attr && *attr)
+		if (attr && *attr) {
 			pathcpy(model, SMART_MAX, attr);
+			strtrim(model);
+		}
 	}
 
 	if (*serial == 0) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/serial", major(device), minor(device));
 		attr = sysattr(path, buf, sizeof(buf));
-		if (attr && *attr)
+		if (attr && *attr) {
 			pathcpy(serial, SMART_MAX, attr);
+			strtrim(serial);
+		}
 	}
 
 	if (*serial == 0) {
@@ -1408,8 +1412,10 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 				attr = buf + 4;
 				attr[len] = 0;
 				strtrim(attr);
-				if (*attr)
+				if (*attr) {
 					pathcpy(serial, SMART_MAX, attr);
+					strtrim(serial);
+				}
 			}
 		}
 	}

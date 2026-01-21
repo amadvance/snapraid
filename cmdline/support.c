@@ -1766,15 +1766,18 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 				}
 			}
 		} else if (sscanf(s, "Model Family: %63[^\n]", family) == 1) {
+			strtrim(family);
 		} else if (sscanf(s, "Device Model: %63[^\n]", model) == 1) {
+			strtrim(model);
+		} else if (sscanf(s, "Serial number: %63s", serial) == 1) {
+			strtrim(serial);
 			/* SCSI */
-		} else if (sscanf(s, "Serial number: %63s", serial) == 1) { /* note "n" of "number" lower case */
 		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT]) == 1) {
 		} else if (sscanf(s, "Current Drive Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS]) == 1) {
 		} else if (sscanf(s, "Drive Trip Temperature: %" SCNu64, &smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS]) == 1) {
 		} else if (sscanf(s, "Accumulated start-stop cycles: %" SCNu64, &smart[SMART_START_STOP_COUNT]) == 1) {
 		} else if (sscanf(s, "Accumulated load-unload cycles: %" SCNu64, &smart[SMART_LOAD_CYCLE_COUNT]) == 1) {
-		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS]) == 1) {
+		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS]) == 1) { /* note "n" of "number" lower case */
 			/* ATA */
 		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
 		} else if (smatch(s, "ID#") == 0) {
