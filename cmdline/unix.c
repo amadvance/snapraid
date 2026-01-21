@@ -599,38 +599,82 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 #ifdef __APPLE__
 static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 {
-	CFStringRef path_apple = CFStringCreateWithCString(kCFAllocatorDefault, path, kCFStringEncodingUTF8);
-	DASessionRef session = DASessionCreate(kCFAllocatorDefault);
+	CFStringRef path_apple = 0;
+	DASessionRef session = 0;
+	CFURLRef path_appler = 0;
+	int result = -1;
 
-	CFURLRef path_appler = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path_apple, kCFURLPOSIXPathStyle, false);
-	DADiskRef disk;
-	do {
+	*uuid = 0;
+
+	path_apple = CFStringCreateWithCString(kCFAllocatorDefault, path, kCFStringEncodingUTF8);
+	if (!path_apple) 
+		goto bail;
+
+	session = DASessionCreate(kCFAllocatorDefault);
+	if (!session) 
+		goto bail;
+
+	path_appler = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path_apple, kCFURLPOSIXPathStyle, false);
+	if (!path_appler)
+		goto bail;
+
+	/* find the mount point */
+	DADiskRef disk = NULL;
+	while (path_appler) {
 		disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, path_appler);
-		if (disk) {
-			CFRelease(path_appler);
+		if (disk)
 			break;
-		} else {
-			CFURLRef parent_path_appler = CFURLCreateCopyDeletingLastPathComponent(kCFAllocatorDefault, path_appler);
-			CFRelease(path_appler);
-			path_appler = parent_path_appler;
+
+		CFURLRef parent = CFURLCreateCopyDeletingLastPathComponent(kCFAllocatorDefault, path_appler);
+		if (!parent)
+			break;
+
+		/* check if we hit the root (parent == child) */
+		if (CFEqual(parent, path_appler)) {
+			CFRelease(parent);
+			break;
 		}
-	} while (true); // This is guaranteed to succeed eventually because it'll hit `/`.
 
-	CFDictionaryRef description = DADiskCopyDescription(disk);
-	CFUUIDRef uuid_apple = CFDictionaryGetValue(description, kDADiskDescriptionVolumeUUIDKey);
-	CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, uuid_apple);
-	bool success = CFStringGetCString(uuid_string, uuid, uuid_size, kCFStringEncodingUTF8);
-	CFRelease(uuid_string);
-	CFRelease(description);
-	CFRelease(disk);
-	CFRelease(session);
-	CFRelease(path_apple);
-
-	if (success) {
-		return 0;
-	} else {
-		return 1;
+		CFRelease(path_appler);
+		path_appler = parent;
 	}
+
+	/* safely extract the UUID */
+	if (disk) {
+		CFDictionaryRef description = DADiskCopyDescription(disk);
+		if (description) {
+			/* key might not exist for NTFS/ExFAT on some drivers */
+			const void* value = (CFUUIDRef)CFDictionaryGetValue(description, kDADiskDescriptionVolumeUUIDKey);
+       			CFStringRef uuid_string = NULL;
+
+			if (value) {
+				if (CFGetTypeID(value) == CFUUIDGetTypeID()) {
+					uuid_string = CFUUIDCreateString(kCFAllocatorDefault, (CFUUIDRef)value);
+				} else if (CFGetTypeID(value) == CFStringGetTypeID()) {
+					/* if it's already a string, retain it so we can release it later consistently */
+					uuid_string = (CFStringRef)CFRetain(value);
+				}
+			}
+
+			if (uuid_string) {
+				if (CFStringGetCString(uuid_string, uuid, uuid_size, kCFStringEncodingUTF8)) {
+					result = 0; /* success */
+				}
+				CFRelease(uuid_string);
+			}
+
+			CFRelease(description);
+		}
+		CFRelease(disk);
+	}
+
+bail:
+	/* clean up */
+	if (path_appler) CFRelease(path_appler);
+	if (session) CFRelease(session);
+	if (path_apple) CFRelease(path_apple);
+
+	return result;
 }
 #endif
 

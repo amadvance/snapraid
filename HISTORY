@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 13.1 WIP
 ========
+ * Fixed a crash on macOS when filesystem doesn't report UUID
  * Added support for local exclusion rules via .snapraidignore files placed
    directly within the array directory tree. This allows for granular,
    directory-level control over which files and folders are excluded from
