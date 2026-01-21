@@ -506,12 +506,18 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 		return -1;
 	}
 
+	int dir_fd = dirfd(d);
+	if (dir_fd == -1) {
+		log_tag("uuid:by-uuid:%u:%u: dirfd(/dev/disk/by-uuid) failed, %s\n", major(device), minor(device), strerror(errno));
+		return -1;
+	}
+
 	while ((dd = readdir(d)) != 0) {
 		/* skip "." and ".." files, UUIDs never start with '.' */
 		if (dd->d_name[0] == '.')
 			continue;
 
-		ret = fstatat(dirfd(d), dd->d_name, &st, 0);
+		ret = fstatat(dir_fd, dd->d_name, &st, 0);
 		if (ret != 0) {
 			log_tag("uuid:by-uuid:%u:%u: fstatat(%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
 			/* generic error, ignore and continue the search */
