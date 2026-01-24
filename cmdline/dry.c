@@ -28,6 +28,34 @@
 /****************************************************************************/
 /* dry */
 
+static const char* es(int err)
+{
+	if (err == EIO)
+		return "error_io";
+	else
+		return "error";
+}
+
+static void log_fatal_errno(int err, const char* name)
+{
+	if (err == EIO) {
+		log_fatal("DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
+	} else if (err == EACCES) {
+		log_fatal("WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
+	} else if (err == ENOSPC) {
+		log_fatal("WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
+	} else {
+		log_fatal("WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
+	}
+}
+
+static void log_error_errno(int err, const char* name)
+{
+	if (err == EIO) {
+		log_fatal("DANGER! Unexpected input/output error in disk %s.\n", name);
+	}
+}
+
 static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)
 {
 	struct snapraid_io* io = worker->io;
@@ -70,57 +98,49 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 			/* LCOV_EXCL_START */
 			/* This one is really an unexpected error, because we are only reading */
 			/* and closing a descriptor should never fail */
-			if (errno == EIO) {
-				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
-				log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to dry.\n");
-				log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
-				log_fatal("Stopping at block %u\n", blockcur);
-				task->state = TASK_STATE_IOERROR;
-				return;
-			}
-
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
-			log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to dry.\n");
-			log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
+			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
+			log_fatal_errno(errno, disk->name);
 			log_fatal("Stopping at block %u\n", blockcur);
-			task->state = TASK_STATE_ERROR;
+
+			if (errno == EIO) {
+				task->state = TASK_STATE_IOERROR;
+			} else {
+				task->state = TASK_STATE_ERROR;
+			}
 			return;
 			/* LCOV_EXCL_STOP */
 		}
 	}
 
-	ret = handle_open(handle, task->file, state->file_mode, log_error, 0);
+	ret = handle_open(handle, task->file, state->file_mode, log_error, 0); /* for missing file don't output a message */
 	if (ret == -1) {
-		/* LCOV_EXCL_START */
+		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 		if (errno == EIO) {
-			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
-			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to dry.\n");
-			log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
+			/* LCOV_EXCL_START */
+			log_fatal_errno(errno, disk->name);
 			log_fatal("Stopping at block %u\n", blockcur);
 			task->state = TASK_STATE_IOERROR;
 			return;
+			/* LCOV_EXCL_STOP */
 		}
 
-		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
-		/* LCOV_EXCL_STOP */
 	}
 
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
 	if (task->read_size == -1) {
-		/* LCOV_EXCL_START */
+		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		if (errno == EIO) {
-			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
-			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
+			/* LCOV_EXCL_START */
+			log_error_errno(errno, disk->name);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
+			/* LCOV_EXCL_STOP */
 		}
 
-		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
-		/* LCOV_EXCL_STOP */
 	}
 
 	/* store the path of the opened file */
@@ -142,18 +162,17 @@ static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_ta
 	/* read the parity */
 	ret = parity_read(parity_handle, blockcur, buffer, state->block_size, log_error);
 	if (ret == -1) {
-		/* LCOV_EXCL_START */
+		log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 		if (errno == EIO) {
-			log_tag("parity_error:%u:%s: Read EIO error. %s\n", blockcur, lev_config_name(level), strerror(errno));
-			log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(level), blockcur);
+			/* LCOV_EXCL_START */
+			log_error_errno(errno, lev_config_name(level));
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
+			/* LCOV_EXCL_STOP */
 		}
 
-		log_tag("parity_error:%u:%s: Read error. %s\n", blockcur, lev_config_name(level), strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
-		/* LCOV_EXCL_STOP */
 	}
 
 	task->state = TASK_STATE_DONE;
@@ -203,6 +222,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, 0);
 
+	blockcur = blockstart;
 	if (!state_progress_begin(state, blockstart, blockmax, countmax))
 		goto end;
 
@@ -270,8 +290,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output read errors in a data disk, it isn't possible to scrub.\n");
-					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, task->path);
+					log_fatal("DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
 					log_fatal("Stopping at block %u\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -324,8 +343,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output read errors in the %s disk, it isn't possible to scrub.\n", lev_name(levcur));
-					log_fatal("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(levcur));
+					log_fatal("DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_name(levcur));
 					log_fatal("Stopping at block %u\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -381,9 +399,14 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
-			log_fatal("DANGER! Unexpected close error in a data disk.\n");
-			++error;
+			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+			log_fatal_errno(errno, disk->name);
+
+			if (errno == EIO) {
+				++io_error;
+			} else {
+				++error;
+			}
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
@@ -401,6 +424,14 @@ bail:
 		log_fatal("DANGER! Unexpected errors!\n");
 	if (io_error)
 		log_fatal("DANGER! Unexpected input/output errors!\n");
+
+	log_tag("summary:error_file:%u\n", error);
+	log_tag("summary:error_io:%u\n", io_error);
+	if (error + io_error == 0)
+		log_tag("summary:exit:ok\n");
+	else
+		log_tag("summary:exit:error\n");
+	log_flush();
 
 	free(handle);
 	free(waiting_map);
@@ -441,7 +472,8 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 		ret = parity_open(&parity_handle[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("WARNING! Without an accessible %s file, it isn't possible to dry.\n", lev_name(l));
+			log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+			log_fatal_errno(errno, lev_config_name(l));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -465,6 +497,9 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 		ret = parity_close(&parity_handle[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			log_tag("parity_%s:%u:%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+			log_fatal_errno(errno, lev_config_name(l));
+
 			++error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */

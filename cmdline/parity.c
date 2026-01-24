@@ -266,8 +266,10 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t pr
 	(void)previous_size;
 
 	/* simulate a failure for testing limits */
-	if (split->limit_size != 0 && size > (data_off_t)split->limit_size)
+	if (split->limit_size != 0 && size > (data_off_t)split->limit_size) {
+		errno = ENXIO;
 		return -1;
+	}
 
 #if HAVE_FALLOCATE
 	if (!skip_fallocate) {
@@ -565,6 +567,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 	if (size < 0) {
 		/* LCOV_EXCL_START */
+		errno = ENXIO;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -589,6 +592,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 				if ((run & block_mask) != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency in split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
+					errno = ENXIO;
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
@@ -608,11 +612,13 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		if (split->st.st_size > run) {
 			/* LCOV_EXCL_START */
 			log_fatal("Unexpected over resizing parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
+			errno = ENXIO;
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else if (is_fixed && split->st.st_size < run) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed restoring parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
+			errno = ENXIO;
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else {
@@ -638,6 +644,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	if (size != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed to allocate all the required parity space. You miss %" PRIu64 " bytes.\n", size);
+		errno = ENXIO;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -872,8 +879,10 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 		if (errno == ENOSPC) {
 			log_fatal("Failed to grow parity file '%s' using write due lack of space.\n", split->path);
 		} else {
-			log_fatal("Error writing file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal("Error writing parity file '%s'. %s.\n", split->path, strerror(errno));
 		}
+		if (errno == 0)
+			errno = ENXIO;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -910,25 +919,28 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	/* if read is completely out of the valid range */
 	if (offset >= split->valid_size) {
 		/* LCOV_EXCL_START */
-		out("Missing data reading file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
+		out("Reading over the end from parity file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	count = 0;
+	errno = 0;
 	do {
 		bw_limit(handle->bw, block_size - count);
 
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
-			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
+			out("Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			out("Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
+			out("Unexpected end of parity file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
+			if (errno == 0)
+				errno = ENXIO;
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

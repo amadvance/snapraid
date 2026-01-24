@@ -175,6 +175,8 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 
 		if (errno == ENOENT)
 			out_missing("Missing file '%s'.\n", handle->path);
+		else if (errno == EACCES)
+			out("Permission denied for file '%s'.\n", handle->path);
 		else
 			out("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
@@ -250,16 +252,20 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	/* check if we are going to read only not initialized data */
 	if (offset >= handle->valid_size) {
 		/* if the file is missing, it's at 0 size, or it's rebuilt while reading */
-		if (offset == handle->valid_size || handle->valid_size == 0)
-			out_missing("Reading data from missing file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
-		else
-			out("Reading missing data from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+		if (offset == handle->valid_size || handle->valid_size == 0) {
+			out_missing("Reading missing file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+			errno = ENOENT;
+		} else {
+			out("Reading over the end from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+			errno = ENXIO;
+		}
 		return -1;
 	}
 
 	read_size = file_block_size(handle->file, file_pos, block_size);
 
 	count = 0;
+	errno = 0;
 	do {
 		bw_limit(handle->bw, block_size - count);
 
@@ -273,6 +279,8 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 		}
 		if (read_ret == 0) {
 			out("Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
+			if (errno == 0)
+				errno = ENXIO;
 			return -1;
 		}
 
@@ -310,6 +318,8 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 	if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing file '%s'. %s.\n", handle->path, strerror(errno));
+		if (errno == 0)
+			errno = ENXIO;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
