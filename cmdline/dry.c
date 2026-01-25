@@ -190,7 +190,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	unsigned error;
+	unsigned soft_error;
 	unsigned io_error;
 	unsigned l;
 	unsigned* waiting_map;
@@ -209,7 +209,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	waiting_mac = diskmax > RAID_PARITY_MAX ? diskmax : RAID_PARITY_MAX;
 	waiting_map = malloc_nofail(waiting_mac * sizeof(unsigned));
 
-	error = 0;
+	soft_error = 0;
 	io_error = 0;
 
 	/* drop until now */
@@ -278,12 +278,12 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 			if (task->state == TASK_STATE_ERROR) {
 				/* LCOV_EXCL_START */
-				++error;
+				++soft_error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
-				++error;
+				++soft_error;
 				continue;
 			}
 			if (task->state == TASK_STATE_IOERROR_CONTINUE) {
@@ -331,12 +331,12 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 			if (task->state == TASK_STATE_ERROR) {
 				/* LCOV_EXCL_START */
-				++error;
+				++soft_error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
-				++error;
+				++soft_error;
 				continue;
 			}
 			if (task->state == TASK_STATE_IOERROR_CONTINUE) {
@@ -405,29 +405,29 @@ bail:
 			if (errno == EIO) {
 				++io_error;
 			} else {
-				++error;
+				++soft_error;
 			}
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
 	}
 
-	if (error || io_error) {
+	if (soft_error || io_error) {
 		msg_status("\n");
-		msg_status("%8u file errors\n", error);
+		msg_status("%8u soft errors\n", soft_error);
 		msg_status("%8u io errors\n", io_error);
 	} else {
 		msg_status("Everything OK\n");
 	}
 
-	if (error)
+	if (soft_error)
 		log_fatal("DANGER! Unexpected errors!\n");
 	if (io_error)
 		log_fatal("DANGER! Unexpected input/output errors!\n");
 
-	log_tag("summary:error_file:%u\n", error);
+	log_tag("summary:error_soft:%u\n", soft_error);
 	log_tag("summary:error_io:%u\n", io_error);
-	if (error + io_error == 0)
+	if (soft_error + io_error == 0)
 		log_tag("summary:exit:ok\n");
 	else
 		log_tag("summary:exit:error\n");
@@ -437,7 +437,7 @@ bail:
 	free(waiting_map);
 	io_done(&io);
 
-	if (error + io_error != 0)
+	if (soft_error + io_error != 0)
 		return -1;
 	return 0;
 }
@@ -447,7 +447,7 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 	block_off_t blockmax;
 	int ret;
 	struct snapraid_parity_handle parity_handle[LEV_MAX];
-	unsigned error;
+	unsigned process_error;
 	unsigned l;
 
 	msg_progress("Drying...\n");
@@ -479,14 +479,14 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 		}
 	}
 
-	error = 0;
+	process_error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
 		ret = state_dry_process(state, parity_handle, blockstart, blockmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			++error;
+			++process_error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
@@ -500,13 +500,13 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 			log_tag("parity_%s:%u:%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 			log_fatal_errno(errno, lev_config_name(l));
 
-			++error;
+			++process_error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
 	}
 
-	if (error != 0)
+	if (process_error != 0)
 		return -1;
 	return 0;
 }

@@ -956,7 +956,7 @@ Also the error tags are possible.
 .SS Summary Tags 
 These tags provide summary statistics at the end of the command.
 .TP
-.B hash_summary:error_file:<count>
+.B hash_summary:error_soft:<count>
 Logs the total count of file\-related errors that caused a
 block to be skipped during the hashing phase. These are often
 due to file changes (missing, size/time change) during the
@@ -969,7 +969,7 @@ Total number of file errors (uint).
 .PD
 .RE
 .TP
-.B summary:error_file:<count>
+.B summary:error_soft:<count>
 Logs the total count of file\-related errors encountered during
 the process (e.g., missing files, file attribute changes).
 .RS 4
@@ -1013,8 +1013,8 @@ one of the following:
 No issues. The array is fully synchronized and healthy.
 .HP 4
 .I warning
-Some files were skipped due to modifications during
-execution or permission issues. No hardware risk.
+Some files were skipped due to likely intentional
+modifications. No hardware risk.
 .HP 4
 .I error
 Critical failure. Indicates serious issues like I/O failures
@@ -1023,7 +1023,8 @@ or filesystem inspection.
 .PD
 .RE
 .SH COMMAND CHECK/FIX TAGS 
-Tags specific for the \`check\` and \`fix\` commands.
+Tags specific for the \`check\` and \`fix\` commands. For \`audit\` mode,
+it\'s inteded \`check\` with the \`\-\-audit\-only\` option.
 Also the error tags are possible.
 .SS Fixed/Recovered Tags 
 These tags log successful repairs during fix operations.
@@ -1184,7 +1185,7 @@ These tags log the final status of files after processing.
 .TP
 .B status:unrecoverable:<disk_name>:<file_path>
 Indicates that a file has unrecoverable errors and was renamed to
-\`.unrecoverable\` (in fix mode) or cannot be recovered (in check mode).
+\`.unrecoverable\` (fix) or cannot be recovered (check).
 .RS 4
 .PD 0
 .HP 4
@@ -1209,21 +1210,9 @@ The file path relative to disk root (escaped).
 .PD
 .RE
 .TP
-.B status:damaged:<disk_name>:<file_path>
-Indicates that a file is damaged (in audit\-only mode, e.g., using \`check\`).
-.RS 4
-.PD 0
-.HP 4
-.I <disk_name>
-The name of the disk.
-.HP 4
-.I <file_path>
-The file path relative to disk root (escaped).
-.PD
-.RE
-.TP
 .B status:recoverable:<disk_name>:<file_path>
-Logs that a file has errors but could be recovered in fix mode.
+Logs that a file has errors but could be recovered with a
+\`fix\` (check).
 .RS 4
 .PD 0
 .HP 4
@@ -1236,7 +1225,7 @@ The file path relative to disk root (escaped).
 .RE
 .TP
 .B status:correct:<disk_name>:<file_path>
-Indicates that a file passed all checks successfully (verbose mode only).
+Indicates that a file passed all checks successfully (verbose).
 .RS 4
 .PD 0
 .HP 4
@@ -1250,18 +1239,42 @@ The file path relative to disk root (escaped).
 .SS Summary Tags 
 These tags provide summary statistics at the end of the command.
 .TP
-.B summary:error:<error_count>
-Logs the total number of errors encountered.
+.B summary:error_soft:<count>
+Logs the total count of file\-related errors encountered during
+the process (e.g., missing files, file attribute changes).
 .RS 4
 .PD 0
 .HP 4
-.I <error_count>
-Total number of errors (uint).
+.I <count>
+The total number of file errors encountered (uint).
+.PD
+.RE
+.TP
+.B summary:error_io:<count>
+Logs the total count of input/output errors encountered on
+data or parity disks.
+.RS 4
+.PD 0
+.HP 4
+.I <count>
+The total number of I/O errors encountered (uint).
+.PD
+.RE
+.TP
+.B summary:error_data:<count>
+Logs the total count of \`silent data errors\` (data blocks
+not matching their expected hash) encountered during the sync
+process.
+.RS 4
+.PD 0
+.HP 4
+.I <count>
+The total number of silent data errors encountered (uint).
 .PD
 .RE
 .TP
 .B summary:error_recovered:<recovered_count>
-Logs the total number of errors successfully recovered (fix mode only).
+Logs the total number of errors successfully recovered (fix).
 .RS 4
 .PD 0
 .HP 4
@@ -1270,8 +1283,18 @@ Number of recovered errors (uint).
 .PD
 .RE
 .TP
+.B summary:error_recoverable:<recoverable_count>
+Logs the total number of errors that can be recovered (check).
+.RS 4
+.PD 0
+.HP 4
+.I <recoverable_count>
+Number of recoverable errors (uint).
+.PD
+.RE
+.TP
 .B summary:error_unrecoverable:<unrecoverable_count>
-Logs the total number of unrecoverable errors (not in audit\-only mode).
+Logs the total number of unrecoverable errors (fix/check).
 .RS 4
 .PD 0
 .HP 4
@@ -1287,22 +1310,29 @@ the following:
 .PD 0
 .HP 4
 .I ok
-Indicates that the operation completed with no errors.
+Indicates that the operation completed with no errors (audit).
+.HP 4
+.I warning
+Some files were different than expected, likely caused
+by intentional modification of the files.
+No hardware risk (audit).
+.HP 4
+.I error
+Critical failure. Indicates serious issues like I/O failures
+or silent data corruption. Requires immediate hardware
+or filesystem inspection (audit).
 .HP 4
 .I recovered
 Indicates that the operation completed with all
-errors successfully recovered (fix mode only).
+errors successfully recovered (fix).
 .HP 4
 .I recoverable
 Indicates that errors were found but are all
-recoverable (check mode only).
+recoverable (check).
 .HP 4
 .I unrecoverable
 Indicates that unrecoverable errors were
-found.
-.HP 4
-.I error
-Indicates that errors were found (audit\-only mode).
+found (check/fix).
 .PD
 .RE
 .SH COMMAND LIST TAGS 
@@ -1801,30 +1831,6 @@ The integer exit status returned by the
 process (int).
 .PD
 .RE
-.SH STATUS TAGS 
-These tags log the recovery status of files after a \`check\` or \`fix\`
-command.
-.TP
-.B status:unrecoverable:<disk_name>:<file_path>
-The file is not recoverable. If a \`fix\` command was run, it
-was also renamed with the \`.unrecoverable\` extension.
-.RS 4
-.PD 0
-.HP 4
-.I <disk_name>
-The name of the disk.
-.HP 4
-.I <file_path>
-The file path relative to disk root (escaped).
-.PD
-.RE
-.TP
-.B status:recovered:<disk_name>:<file_path>
-The file was recovered by a \`fix\` command.
-.TP
-.B status:recoverable:<disk_name>:<file_path>
-The file is recoverable, and will be recovered by a \`fix\`
-command.
 .SH ERROR TAGS 
 These tags report specific errors that occur on data disks during the
 commands that access files and parities.

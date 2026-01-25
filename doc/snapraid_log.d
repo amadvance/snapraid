@@ -636,7 +636,7 @@ Command Sync/Scrub Tags
     Summary Tags
 	These tags provide summary statistics at the end of the command.
 
-	=hash_summary:error_file:<count>
+	=hash_summary:error_soft:<count>
 		Logs the total count of file-related errors that caused a
 		block to be skipped during the hashing phase. These are often
 		due to file changes (missing, size/time change) during the
@@ -644,7 +644,7 @@ Command Sync/Scrub Tags
 
 		<count> - Total number of file errors (uint).
 
-	=summary:error_file:<count>
+	=summary:error_soft:<count>
 		Logs the total count of file-related errors encountered during
 		the process (e.g., missing files, file attribute changes).
     
@@ -668,14 +668,15 @@ Command Sync/Scrub Tags
 		one of the following:
 
 		ok - No issues. The array is fully synchronized and healthy.
-		warning - Some files were skipped due to modifications during
-			execution or permission issues. No hardware risk.
+		warning - Some files were skipped due to likely intentional
+			modifications. No hardware risk.
 		error - Critical failure. Indicates serious issues like I/O failures
 			or silent data corruption. Requires immediate hardware
 			or filesystem inspection.
 
 Command Check/Fix Tags
-	Tags specific for the `check` and `fix` commands.
+	Tags specific for the `check` and `fix` commands. For `audit` mode,
+	it's inteded `check` with the `--audit-only` option.
 	Also the error tags are possible.
 
     Fixed/Recovered Tags
@@ -761,7 +762,7 @@ Command Check/Fix Tags
 
 	=status:unrecoverable:<disk_name>:<file_path>
 		Indicates that a file has unrecoverable errors and was renamed to
-		`.unrecoverable` (in fix mode) or cannot be recovered (in check mode).
+		`.unrecoverable` (fix) or cannot be recovered (check).
 
 		<disk_name> - The name of the disk.
 		<file_path> - The file path relative to disk root (escaped).
@@ -772,20 +773,15 @@ Command Check/Fix Tags
 		<disk_name> - The name of the disk.
 		<file_path> - The file path relative to disk root (escaped).
 
-	=status:damaged:<disk_name>:<file_path>
-		Indicates that a file is damaged (in audit-only mode, e.g., using `check`).
-		
-		<disk_name> - The name of the disk.
-		<file_path> - The file path relative to disk root (escaped).
-
 	=status:recoverable:<disk_name>:<file_path>
-		Logs that a file has errors but could be recovered in fix mode.
+		Logs that a file has errors but could be recovered with a
+		`fix` (check).
 
 		<disk_name> - The name of the disk.
 		<file_path> - The file path relative to disk root (escaped).
 
 	=status:correct:<disk_name>:<file_path>
-		Indicates that a file passed all checks successfully (verbose mode only).
+		Indicates that a file passed all checks successfully (verbose).
 
 		<disk_name> - The name of the disk.
 		<file_path> - The file path relative to disk root (escaped).
@@ -793,33 +789,57 @@ Command Check/Fix Tags
     Summary Tags
 	These tags provide summary statistics at the end of the command.
     
-	=summary:error:<error_count>
-		Logs the total number of errors encountered.
+	=summary:error_soft:<count>
+		Logs the total count of file-related errors encountered during
+		the process (e.g., missing files, file attribute changes).
+    
+		<count> - The total number of file errors encountered (uint).
 
-		<error_count> - Total number of errors (uint).
+	=summary:error_io:<count>
+		Logs the total count of input/output errors encountered on
+		data or parity disks.
+    
+		<count> - The total number of I/O errors encountered (uint).
+
+	=summary:error_data:<count>
+	        Logs the total count of `silent data errors` (data blocks
+		not matching their expected hash) encountered during the sync
+		process.
+    
+		<count> - The total number of silent data errors encountered (uint).
 
 	=summary:error_recovered:<recovered_count>
-		Logs the total number of errors successfully recovered (fix mode only).
+		Logs the total number of errors successfully recovered (fix).
 
 		<recovered_count> - Number of recovered errors (uint).
+		
+	=summary:error_recoverable:<recoverable_count>
+		Logs the total number of errors that can be recovered (check).
+
+		<recoverable_count> - Number of recoverable errors (uint).
 
 	=summary:error_unrecoverable:<unrecoverable_count>
-		Logs the total number of unrecoverable errors (not in audit-only mode).
+		Logs the total number of unrecoverable errors (fix/check).
 	
 		<unrecoverable_count> - Number of unrecoverable errors (uint).
 
 	=summary:exit:<status>
 		Logs the overall exit status of the command. The `status` is one of
 		the following:
-	
-		ok - Indicates that the operation completed with no errors.
+
+		ok - Indicates that the operation completed with no errors (audit).
+		warning - Some files were different than expected, likely caused
+			by intentional modification of the files.
+			No hardware risk (audit).
+		error - Critical failure. Indicates serious issues like I/O failures
+			or silent data corruption. Requires immediate hardware
+			or filesystem inspection (audit).
 		recovered - Indicates that the operation completed with all
-			errors successfully recovered (fix mode only).
+			errors successfully recovered (fix).
 		recoverable - Indicates that errors were found but are all
-			recoverable (check mode only).
+			recoverable (check).
 		unrecoverable - Indicates that unrecoverable errors were
-			found.
-		error - Indicates that errors were found (audit-only mode).
+			found (check/fix).
 
 Command List Tags
 	This section describes the tags output with the `list` command.
@@ -1145,24 +1165,6 @@ Device Status Tags
 
 		<exit_code> - The integer exit status returned by the 
 			process (int).
-
-Status Tags
-	These tags log the recovery status of files after a `check` or `fix`
-	command.
-
-	=status:unrecoverable:<disk_name>:<file_path>
-		The file is not recoverable. If a `fix` command was run, it
-		was also renamed with the `.unrecoverable` extension.
-
-		<disk_name> - The name of the disk.
-		<file_path> - The file path relative to disk root (escaped).
-
-	=status:recovered:<disk_name>:<file_path>
-		The file was recovered by a `fix` command.
-
-	=status:recoverable:<disk_name>:<file_path>
-		The file is recoverable, and will be recovered by a `fix`
-		command.
 
 Error Tags
 	These tags report specific errors that occur on data disks during the

@@ -899,7 +899,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	unsigned error;
+	unsigned soft_error;
+	unsigned io_error;
+	unsigned silent_error;
 	unsigned unrecoverable_error;
 	unsigned recovered_error;
 	struct failed_struct* failed;
@@ -936,7 +938,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
 
-	error = 0;
+	soft_error = 0;
+	io_error = 0;
+	silent_error = 0;
 	unrecoverable_error = 0;
 	recovered_error = 0;
 
@@ -1125,7 +1129,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						++failed_count;
 
 						log_tag("%s:%u:%s:%s: Open error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
-						++error;
+						
+						if (errno == EIO) {
+							++io_error;
+						} else {
+							++soft_error;
+						}
 
 						/* mark the file as missing, to avoid to retry to open it again */
 						/* note that this can be done only if we are not fixing it */
@@ -1158,7 +1167,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				) {
 					log_error("File '%s' is larger than expected.\n", handle[j].path);
 					log_tag("error:%u:%s:%s: Size error\n", i, disk->name, esc_tag(file->sub, esc_buffer));
-					++error;
+					++soft_error;
 
 					if (fix) {
 						ret = handle_truncate(&handle[j], file);
@@ -1199,7 +1208,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++failed_count;
 
 				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
-				++error;
+
+				if (errno == EIO) {
+					++io_error;
+				} else {
+					++soft_error;
+				}
 				continue;
 			}
 
@@ -1248,7 +1262,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++failed_count;
 
 				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
-				++error;
+				++silent_error;
 				continue;
 			}
 
@@ -1292,7 +1306,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 						buffer_recov[l] = 0; /* no parity to use */
 
-						++error;
+						if (errno == EIO) {
+							++io_error;
+						} else {
+							++soft_error;
+						}
 					}
 				} else {
 					buffer_recov[l] = 0;
@@ -1304,7 +1322,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (ret != 0) {
 				/* increment the number of errors */
 				if (ret > 0)
-					error += ret;
+					silent_error += ret;
 				++unrecoverable_error;
 
 				/* print a list of all the errors in files */
@@ -1332,7 +1350,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				}
 				if (partial_recover_error != 0) {
-					error += partial_recover_error;
+					silent_error += partial_recover_error;
 					++unrecoverable_error;
 				}
 
@@ -1355,7 +1373,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							buffer_recov[l] = 0;
 
 							log_tag("parity_error:%u:%s: Data error, diff parity bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
-							++error;
+							++silent_error;
 						}
 					}
 				}
@@ -1535,19 +1553,24 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				log_error("Error stating empty file '%s'. %s.\n", path, strerror(errno));
 				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub, esc_buffer));
-				++error;
+
+				if (errno == EIO) {
+					++io_error;
+				} else {
+					++soft_error;
+				}
 			} else if (!S_ISREG(st.st_mode)) {
 				unsuccessful = 1;
 
 				log_error("Error stating empty file '%s' for not regular file.\n", path);
 				log_tag("empty_error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub, esc_buffer));
-				++error;
+				++soft_error;
 			} else if (st.st_size != 0) {
 				unsuccessful = 1;
 
 				log_error("Error stating empty file '%s' for not empty file.\n", path);
 				log_tag("empty_error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), (uint64_t)st.st_size);
-				++error;
+				++soft_error;
 			}
 
 			if (fix && unsuccessful) {
@@ -1650,13 +1673,18 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 					log_error("Error stating hardlink '%s'. %s.\n", path, strerror(errno));
 					log_tag("hardlink_%s:%s:%s:%s: Hardlink stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
-					++error;
+
+					if (errno == EIO) {
+						++io_error;
+					} else {
+						++soft_error;
+					}
 				} else if (!S_ISREG(st.st_mode)) {
 					unsuccessful = 1;
 
 					log_error("Error stating hardlink '%s' for not regular file.\n", path);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
-					++error;
+					++soft_error;
 				}
 
 				/* stat the "to" file */
@@ -1671,29 +1699,32 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* if the target doesn't exist, it's unrecoverable */
 							/* because we cannot create an hardlink of a file that */
 							/* doesn't exists */
-							++unrecoverable_error;
-						} else {
 							/* but in check, we can assume that fixing will recover */
 							/* such missing file, so we assume a less drastic error */
-							++error;
+							++unrecoverable_error;
 						}
 					}
 
 					log_error("Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
 					log_tag("hardlink_%s:%s:%s:%s: Hardlink to stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
-					++error;
+
+					if (errno == EIO) {
+						++io_error;
+					} else {
+						++soft_error;
+					}
 				} else if (!S_ISREG(stto.st_mode)) {
 					unsuccessful = 1;
 
 					log_error("Error stating hardlink-to '%s' for not regular file.\n", path);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
-					++error;
+					++soft_error;
 				} else if (!unsuccessful && st.st_ino != stto.st_ino) {
 					unsuccessful = 1;
 
 					log_error("Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
-					++error;
+					++soft_error;
 				}
 			} else {
 				/* read the symlink */
@@ -1704,13 +1735,18 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 					log_error("Error reading symlink '%s'. %s.\n", path, strerror(errno));
 					log_tag("symlink_%s:%s:%s: Symlink read error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
-					++error;
+
+					if (errno == EIO) {
+						++io_error;
+					} else {
+						++soft_error;
+					}
 				} else if (ret >= PATH_MAX) {
 					unsuccessful = 1;
 
 					log_error("Error reading symlink '%s'. Symlink too long.\n", path);
 					log_tag("symlink_error:%s:%s: Symlink too long\n", disk->name, esc_tag(slink->sub, esc_buffer));
-					++error;
+					++soft_error;
 				} else {
 					linkto[ret] = 0;
 
@@ -1718,7 +1754,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						unsuccessful = 1;
 
 						log_tag("symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, esc_tag(slink->sub, esc_buffer), linkto, slink->linkto);
-						++error;
+						++soft_error;
 					}
 				}
 			}
@@ -1819,12 +1855,17 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				log_error("Error stating dir '%s'. %s.\n", path, strerror(errno));
 				log_tag("dir_%s:%s:%s: Dir stat error. %s.\n", es(errno), disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
-				++error;
+
+				if (errno == EIO) {
+					++io_error;
+				} else {
+					++soft_error;
+				}
 			} else if (!S_ISDIR(st.st_mode)) {
 				unsuccessful = 1;
 
 				log_tag("dir_error:%s:%s: Dir error for not directory\n", disk->name, esc_tag(dir->sub, esc_buffer));
-				++error;
+				++soft_error;
 			}
 
 			if (fix && unsuccessful) {
@@ -1938,9 +1979,11 @@ bail:
 		}
 	}
 
-	if (error || recovered_error || unrecoverable_error) {
+	if (soft_error || io_error || silent_error || recovered_error || unrecoverable_error) {
 		msg_status("\n");
-		msg_status("%8u errors\n", error);
+		msg_status("%8u soft errors\n", soft_error);
+		msg_status("%8u io errors\n", io_error);
+		msg_status("%8u data errors\n", silent_error);
 		if (fix) {
 			msg_status("%8u recovered errors\n", recovered_error);
 		}
@@ -1957,33 +2000,37 @@ bail:
 		msg_status("Everything OK\n");
 	}
 
-	if (error && !fix)
+	if ((soft_error || io_error || silent_error) && !fix)
 		log_fatal("WARNING! There are errors!\n");
 	if (unrecoverable_error)
 		log_fatal("DANGER! Unrecoverable errors detected!\n");
 
-	log_tag("summary:error:%u\n", error);
+	log_tag("summary:error_soft:%u\n", soft_error);
+	log_tag("summary:error_io:%u\n", io_error);
+	log_tag("summary:error_data:%u\n", silent_error);
 	if (fix)
 		log_tag("summary:error_recovered:%u\n", recovered_error);
 	if (!state->opt.auditonly)
 		log_tag("summary:error_unrecoverable:%u\n", unrecoverable_error);
 	if (fix) {
-		if (error + recovered_error + unrecoverable_error == 0)
+		if (soft_error + io_error + silent_error + recovered_error + unrecoverable_error == 0)
 			log_tag("summary:exit:ok\n");
 		else if (unrecoverable_error == 0)
 			log_tag("summary:exit:recovered\n");
 		else
 			log_tag("summary:exit:unrecoverable\n");
 	} else if (!state->opt.auditonly) {
-		if (error + unrecoverable_error == 0)
+		if (soft_error + io_error + silent_error + unrecoverable_error == 0)
 			log_tag("summary:exit:ok\n");
 		else if (unrecoverable_error == 0)
 			log_tag("summary:exit:recoverable\n");
 		else
 			log_tag("summary:exit:unrecoverable\n");
 	} else { /* audit only */
-		if (error == 0)
+		if (soft_error + silent_error + io_error == 0)
 			log_tag("summary:exit:ok\n");
+		else if (silent_error + io_error == 0)
+			log_tag("summary:exit:warning\n");
 		else
 			log_tag("summary:exit:error\n");
 	}
@@ -2010,10 +2057,14 @@ bail:
 			if (unrecoverable_error == 0)
 				return -1;
 		} else if (state->opt.expect_recoverable) {
-			if (unrecoverable_error != 0 || error == 0)
+			if (unrecoverable_error != 0)
+				return -1;
+			if (soft_error + silent_error + io_error == 0)
 				return -1;
 		} else {
-			if (error != 0 || unrecoverable_error != 0)
+			if (unrecoverable_error != 0)
+				return -1;
+			if (soft_error + silent_error + io_error != 0)
 				return -1;
 		}
 	}
@@ -2028,7 +2079,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	int ret;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
-	unsigned error;
+	unsigned process_error;
 	unsigned l;
 
 	msg_progress("Initializing...\n");
@@ -2120,14 +2171,14 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			parity_ptr[l] = 0;
 	}
 
-	error = 0;
+	process_error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
 		ret = state_check_process(state, fix, parity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			++error;
+			++process_error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
@@ -2144,7 +2195,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 					log_tag("parity_%s:%u:%s: Truncate error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 					log_fatal_errno(errno, lev_config_name(l));
 
-					++error;
+					++process_error;
 					/* continue, as we are already exiting */
 					/* LCOV_EXCL_STOP */
 				}
@@ -2156,15 +2207,14 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				log_tag("parity_%s:%u:%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 				log_fatal_errno(errno, lev_config_name(l));
 
-				++error;
+				++process_error;
 				/* continue, as we are already exiting */
 				/* LCOV_EXCL_STOP */
 			}
 		}
 	}
 
-	/* abort if error are present */
-	if (error != 0)
+	if (process_error != 0)
 		return -1;
 	return 0;
 }

@@ -664,7 +664,7 @@ Also the error tags are possible.
 ---- 9.0.1 Summary Tags ----
 These tags provide summary statistics at the end of the command.
 
-    hash_summary:error_file:<count>
+    hash_summary:error_soft:<count>
         Logs the total count of file-related errors that caused a
         block to be skipped during the hashing phase. These are often
         due to file changes (missing, size/time change) during the
@@ -672,7 +672,7 @@ These tags provide summary statistics at the end of the command.
 
     <count> - Total number of file errors (uint).
 
-    summary:error_file:<count>
+    summary:error_soft:<count>
         Logs the total count of file-related errors encountered during
         the process (e.g., missing files, file attribute changes).
 
@@ -696,8 +696,8 @@ These tags provide summary statistics at the end of the command.
         one of the following:
 
     ok - No issues. The array is fully synchronized and healthy.
-    warning - Some files were skipped due to modifications during
-        execution or permission issues. No hardware risk.
+    warning - Some files were skipped due to likely intentional
+        modifications. No hardware risk.
     error - Critical failure. Indicates serious issues like I/O failures
         or silent data corruption. Requires immediate hardware
         or filesystem inspection.
@@ -706,7 +706,8 @@ These tags provide summary statistics at the end of the command.
 10 COMMAND CHECK/FIX TAGS
 =========================
 
-Tags specific for the `check` and `fix` commands.
+Tags specific for the `check` and `fix` commands. For `audit` mode,
+it's inteded `check` with the `--audit-only` option.
 Also the error tags are possible.
 
 ---- 10.0.1 Fixed/Recovered Tags ----
@@ -792,7 +793,7 @@ These tags log the final status of files after processing.
 
     status:unrecoverable:<disk_name>:<file_path>
         Indicates that a file has unrecoverable errors and was renamed to
-        `.unrecoverable` (in fix mode) or cannot be recovered (in check mode).
+        `.unrecoverable` (fix) or cannot be recovered (check).
 
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
@@ -803,20 +804,15 @@ These tags log the final status of files after processing.
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
 
-    status:damaged:<disk_name>:<file_path>
-        Indicates that a file is damaged (in audit-only mode, e.g., using `check`).
-
-    <disk_name> - The name of the disk.
-    <file_path> - The file path relative to disk root (escaped).
-
     status:recoverable:<disk_name>:<file_path>
-        Logs that a file has errors but could be recovered in fix mode.
+        Logs that a file has errors but could be recovered with a
+        `fix` (check).
 
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
 
     status:correct:<disk_name>:<file_path>
-        Indicates that a file passed all checks successfully (verbose mode only).
+        Indicates that a file passed all checks successfully (verbose).
 
     <disk_name> - The name of the disk.
     <file_path> - The file path relative to disk root (escaped).
@@ -824,18 +820,37 @@ These tags log the final status of files after processing.
 ---- 10.0.4 Summary Tags ----
 These tags provide summary statistics at the end of the command.
 
-    summary:error:<error_count>
-        Logs the total number of errors encountered.
+    summary:error_soft:<count>
+        Logs the total count of file-related errors encountered during
+        the process (e.g., missing files, file attribute changes).
 
-    <error_count> - Total number of errors (uint).
+    <count> - The total number of file errors encountered (uint).
+
+    summary:error_io:<count>
+        Logs the total count of input/output errors encountered on
+        data or parity disks.
+
+    <count> - The total number of I/O errors encountered (uint).
+
+    summary:error_data:<count>
+        Logs the total count of `silent data errors` (data blocks
+        not matching their expected hash) encountered during the sync
+        process.
+
+    <count> - The total number of silent data errors encountered (uint).
 
     summary:error_recovered:<recovered_count>
-        Logs the total number of errors successfully recovered (fix mode only).
+        Logs the total number of errors successfully recovered (fix).
 
     <recovered_count> - Number of recovered errors (uint).
 
+    summary:error_recoverable:<recoverable_count>
+        Logs the total number of errors that can be recovered (check).
+
+    <recoverable_count> - Number of recoverable errors (uint).
+
     summary:error_unrecoverable:<unrecoverable_count>
-        Logs the total number of unrecoverable errors (not in audit-only mode).
+        Logs the total number of unrecoverable errors (fix/check).
 
     <unrecoverable_count> - Number of unrecoverable errors (uint).
 
@@ -843,14 +858,19 @@ These tags provide summary statistics at the end of the command.
         Logs the overall exit status of the command. The `status` is one of
         the following:
 
-    ok - Indicates that the operation completed with no errors.
+    ok - Indicates that the operation completed with no errors (audit).
+    warning - Some files were different than expected, likely caused
+        by intentional modification of the files.
+        No hardware risk (audit).
+    error - Critical failure. Indicates serious issues like I/O failures
+        or silent data corruption. Requires immediate hardware
+        or filesystem inspection (audit).
     recovered - Indicates that the operation completed with all
-        errors successfully recovered (fix mode only).
+        errors successfully recovered (fix).
     recoverable - Indicates that errors were found but are all
-        recoverable (check mode only).
+        recoverable (check).
     unrecoverable - Indicates that unrecoverable errors were
-        found.
-    error - Indicates that errors were found (audit-only mode).
+        found (check/fix).
 
 
 11 COMMAND LIST TAGS
@@ -1196,28 +1216,7 @@ command execution with the `smartctl` command.
         process (int).
 
 
-17 STATUS TAGS
-==============
-
-These tags log the recovery status of files after a `check` or `fix`
-command.
-
-    status:unrecoverable:<disk_name>:<file_path>
-        The file is not recoverable. If a `fix` command was run, it
-        was also renamed with the `.unrecoverable` extension.
-
-    <disk_name> - The name of the disk.
-    <file_path> - The file path relative to disk root (escaped).
-
-    status:recovered:<disk_name>:<file_path>
-        The file was recovered by a `fix` command.
-
-    status:recoverable:<disk_name>:<file_path>
-        The file is recoverable, and will be recovered by a `fix`
-        command.
-
-
-18 ERROR TAGS
+17 ERROR TAGS
 =============
 
 These tags report specific errors that occur on data disks during the

@@ -283,7 +283,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
 	int ret;
-	unsigned error;
+	unsigned soft_error;
 	unsigned silent_error;
 	unsigned io_error;
 	unsigned l;
@@ -308,7 +308,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	waiting_mac = diskmax > RAID_PARITY_MAX ? diskmax : RAID_PARITY_MAX;
 	waiting_map = malloc_nofail(waiting_mac * sizeof(unsigned));
 
-	error = 0;
+	soft_error = 0;
 	silent_error = 0;
 	io_error = 0;
 
@@ -453,12 +453,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 			if (task->state == TASK_STATE_ERROR) {
 				/* LCOV_EXCL_START */
-				++error;
+				++soft_error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
-				++error;
+				++soft_error;
 				error_on_this_block = 1;
 				continue;
 			}
@@ -507,7 +507,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
 						log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
-						++error;
+						++soft_error;
 						error_on_this_block = 1;
 					} else {
 						log_tag("error_data:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
@@ -548,12 +548,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 			if (task->state == TASK_STATE_ERROR) {
 				/* LCOV_EXCL_START */
-				++error;
+				++soft_error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
-				++error;
+				++soft_error;
 				error_on_this_block = 1;
 
 				/* if continuing on error, clear the missing buffer */
@@ -599,7 +599,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
 						log_tag("parity_error:%u:%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
-						++error;
+						++soft_error;
 						error_on_this_block = 1;
 					} else {
 						log_tag("parity_error_data:%u:%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
@@ -694,9 +694,9 @@ end:
 
 	state_usage_print(state);
 
-	if (error || silent_error || io_error) {
+	if (soft_error || silent_error || io_error) {
 		msg_status("\n");
-		msg_status("%8u file errors\n", error);
+		msg_status("%8u soft errors\n", soft_error);
 		msg_status("%8u io errors\n", io_error);
 		msg_status("%8u data errors\n", silent_error);
 	} else {
@@ -705,8 +705,8 @@ end:
 			msg_status("Everything OK\n");
 	}
 
-	if (error)
-		log_fatal("WARNING! Unexpected file errors!\n");
+	if (soft_error)
+		log_fatal("WARNING! Unexpected soft errors!\n");
 	if (io_error)
 		log_fatal("DANGER! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
 	if (silent_error)
@@ -717,10 +717,10 @@ end:
 		log_fatal("Use 'snapraid -p bad scrub' to recheck after fixing to clear the bad state.\n");
 	}
 
-	log_tag("summary:error_file:%u\n", error);
+	log_tag("summary:error_soft:%u\n", soft_error);
 	log_tag("summary:error_io:%u\n", io_error);
 	log_tag("summary:error_data:%u\n", silent_error);
-	if (error + silent_error + io_error == 0)
+	if (soft_error + silent_error + io_error == 0)
 		log_tag("summary:exit:ok\n");
 	else if (silent_error + io_error == 0)
 		log_tag("summary:exit:warning\n");
@@ -744,7 +744,7 @@ bail:
 			if (errno == EIO) {
 				++io_error;
 			} else {
-				++error;
+				++soft_error;
 			}
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
@@ -758,10 +758,10 @@ bail:
 	free(block_enabled);
 
 	if (state->opt.expect_recoverable) {
-		if (error + silent_error + io_error == 0)
+		if (soft_error + silent_error + io_error == 0)
 			return -1;
 	} else {
-		if (error + silent_error + io_error != 0)
+		if (soft_error + silent_error + io_error != 0)
 			return -1;
 	}
 	return 0;
@@ -792,7 +792,7 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 	struct snapraid_parity_handle parity_handle[LEV_MAX];
 	struct snapraid_plan ps;
 	time_t* timemap;
-	unsigned error;
+	unsigned process_error;
 	time_t now;
 	unsigned l;
 
@@ -950,11 +950,11 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		}
 	}
 
-	error = 0;
+	process_error = 0;
 
 	ret = state_scrub_process(state, parity_handle, 0, blockmax, &ps, now);
 	if (ret == -1) {
-		++error;
+		++process_error;
 		/* continue, as we are already exiting */
 	}
 
@@ -965,14 +965,13 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 			log_tag("parity_%s:%u:%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 			log_fatal_errno(errno, lev_config_name(l));
 
-			++error;
+			++process_error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
 	}
 
-	/* abort if required */
-	if (error != 0)
+	if (process_error != 0)
 		return -1;
 	return 0;
 }
