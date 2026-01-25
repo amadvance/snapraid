@@ -269,19 +269,20 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	do {
 		bw_limit(handle->bw, block_size - count);
 
-		/* read the full block to support O_DIRECT */
 		read_ret = pread(handle->f, block_buffer + count, block_size - count, offset + count);
-		if (read_ret < 0) {
+		if (read_ret == -1) {
 			/* LCOV_EXCL_START */
 			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
+			/* LCOV_EXCL_START */
 			out("Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
 			if (errno == 0)
 				errno = ENXIO;
 			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 
 		count += read_ret;
@@ -308,21 +309,34 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 	ssize_t write_ret;
 	data_off_t offset;
 	unsigned write_size;
+	unsigned count;
 	int ret;
 
 	offset = file_pos * (data_off_t)block_size;
 
 	write_size = file_block_size(handle->file, file_pos, block_size);
 
-	write_ret = pwrite(handle->f, block_buffer, write_size, offset);
-	if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */
-		/* LCOV_EXCL_START */
-		log_fatal("Error writing file '%s'. %s.\n", handle->path, strerror(errno));
-		if (errno == 0)
+	count = 0;
+	do {
+		bw_limit(handle->bw, write_size - count);
+
+		write_ret = pwrite(handle->f, block_buffer + count, write_size - count, offset + count);
+		if (write_ret == -1) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error writing file '%s'. %s.\n", handle->path, strerror(errno));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		if (write_ret == 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Unexpected 0 write to file '%s'. %s.\n", handle->path, strerror(errno));
 			errno = ENXIO;
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		count += write_ret;
+	} while (count < write_size);
 
 	/* adjust the size of the valid data */
 	if (handle->valid_size < offset + write_size) {

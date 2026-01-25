@@ -855,6 +855,7 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	ssize_t write_ret;
 	data_off_t offset;
 	struct snapraid_split_handle* split;
+	unsigned count;
 	int ret;
 
 	offset = pos * (data_off_t)block_size;
@@ -871,21 +872,31 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	if (split->valid_size < offset + block_size)
 		split->valid_size = offset + block_size;
 
-	bw_limit(handle->bw, block_size);
+	count = 0;
+	do {
+		bw_limit(handle->bw, block_size - count);
 
-	write_ret = pwrite(split->f, block_buffer, block_size, offset);
-	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
-		/* LCOV_EXCL_START */
-		if (errno == ENOSPC) {
-			log_fatal("Failed to grow parity file '%s' using write due lack of space.\n", split->path);
-		} else {
-			log_fatal("Error writing parity file '%s'. %s.\n", split->path, strerror(errno));
+		write_ret = pwrite(split->f, block_buffer + count, block_size - count, offset + count);
+		if (write_ret == -1) {
+			/* LCOV_EXCL_START */
+			if (errno == ENOSPC) {
+				log_fatal("Failed to grow parity file '%s' using write due lack of space.\n", split->path);
+			} else {
+				log_fatal("Error writing parity file '%s'. %s.\n", split->path, strerror(errno));
+			}
+			return -1;
+			/* LCOV_EXCL_STOP */
 		}
-		if (errno == 0)
+		if (write_ret == 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Unexpected 0 write to file '%s'. %s.\n", split->path, strerror(errno));
 			errno = ENXIO;
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		count += write_ret;
+	} while (count < block_size);
 
 	ret = advise_write(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
@@ -930,7 +941,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		bw_limit(handle->bw, block_size - count);
 
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
-		if (read_ret < 0) {
+		if (read_ret == -1) {
 			/* LCOV_EXCL_START */
 			out("Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
 			return -1;
