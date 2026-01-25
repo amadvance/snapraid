@@ -1801,6 +1801,30 @@ The integer exit status returned by the
 process (int).
 .PD
 .RE
+.SH STATUS TAGS 
+These tags log the recovery status of files after a \`check\` or \`fix\`
+command.
+.TP
+.B status:unrecoverable:<disk_name>:<file_path>
+The file is not recoverable. If a \`fix\` command was run, it
+was also renamed with the \`.unrecoverable\` extension.
+.RS 4
+.PD 0
+.HP 4
+.I <disk_name>
+The name of the disk.
+.HP 4
+.I <file_path>
+The file path relative to disk root (escaped).
+.PD
+.RE
+.TP
+.B status:recovered:<disk_name>:<file_path>
+The file was recovered by a \`fix\` command.
+.TP
+.B status:recoverable:<disk_name>:<file_path>
+The file is recoverable, and will be recovered by a \`fix\`
+command.
 .SH ERROR TAGS 
 These tags report specific errors that occur on data disks during the
 commands that access files and parities.
@@ -1833,7 +1857,7 @@ file containing the block (escaped).
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the
-error (e.g., \`Open/Read/Write EIO error\`, \`Open/Read/Write error\`,
+error (e.g., \`Open/Read/Write error\`,
 \`Data error at position <pos>, diff bits <diff>/<bits>\`).
 .PD
 .RE
@@ -1862,12 +1886,12 @@ The configuration name of the parity level (e.g.,
 .HP 4
 .I <msg>
 A descriptive message indicating the nature of the
-error (e.g., \`Read/Write EIO error\`, \`Read/Write error\`,
+error (e.g., \`Read/Write error\`,
 \`Data error, diff bits <diff>/<bits>\`).
 .PD
 .RE
 .TP
-.B hardlink_error:<disk_name>:<link_path>:<target_path>:<msg>
+.B hardlink_error[_io]:<disk_name>:<link_path>:<target_path>:<msg>
 Indicates an error when attempting to access a hard link.
 .RS 4
 .PD 0
@@ -1890,7 +1914,7 @@ error (e.g., \`Hardlink stat error\`,
 .PD
 .RE
 .TP
-.B symlink_error:<disk_name>:<link_path>:<msg>
+.B symlink_error[_io]:<disk_name>:<link_path>:<msg>
 Indicates an error when attempting to access a symbolic link.
 .RS 4
 .PD 0
@@ -1908,7 +1932,7 @@ error (e.g., \`Symlink read error\`,
 .PD
 .RE
 .TP
-.B dir_error:<disk_name>:<dir_path>:<msg>
+.B dir_error[_io]:<disk_name>:<dir_path>:<msg>
 Indicates an error when attempting to access a directory.
 .RS 4
 .PD 0

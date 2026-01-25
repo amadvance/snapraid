@@ -134,7 +134,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 			/* if a hash doesn't match, fail the check */
 			unsigned pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state->block_size);
 			if (blockcmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {
-				log_tag("hash_error: Hash mismatch on entry %u\n", failed_map[j]);
+				log_tag("repair_hash_error:%u: Hash mismatch\n", failed_map[j]);
 				return 0;
 			}
 
@@ -245,13 +245,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				return 0;
 
 			/* log */
-			log_tag("parity_error:%u:", pos);
+			log_tag("recover_parity_error:%u:", pos);
 			for (i = 0; i < r; ++i) {
 				if (i != 0)
-					log_tag("/");
+					log_tag(",");
 				log_tag("%s", lev_config_name(ip[i]));
 			}
-			log_tag(":parity: Parity mismatch\n");
+			log_tag(": Parity mismatch\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -285,13 +285,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				return 0;
 
 			/* log */
-			log_tag("parity_error:%u:", pos);
+			log_tag("recover_hash_error:%u:", pos);
 			for (i = 0; i < r; ++i) {
 				if (i != 0)
 					log_tag("/");
 				log_tag("%s", lev_config_name(ip[i]));
 			}
-			log_tag(":hash: Hash mismatch\n");
+			log_tag(": Hash mismatch\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -300,7 +300,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	if (error)
 		return error;
 
-	log_tag("strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n",
+	log_tag("recover_strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n",
 		pos, failed_count, n, has_hash ? "with" : "without");
 	return -1;
 }
@@ -359,9 +359,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			struct snapraid_file* file = failed[j].file;
 			block_off_t file_pos = failed[j].file_pos;
 
-			log_tag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk->name, esc_tag(file->sub, esc_buffer), file_pos);
+			log_tag("repair_entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk->name, esc_tag(file->sub, esc_buffer), file_pos);
 		} else {
-			log_tag("entry:%u:%s:%s:%s:\n", j, desc, hash, data);
+			log_tag("repair_entry:%u:%s:%s:%s:\n", j, desc, hash, data);
 		}
 	}
 
@@ -396,7 +396,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				|| state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)
 			) {
 				/* we already have corrected it! */
-				log_tag("hash_import: Fixed entry %u\n", j);
+				log_tag("repair_hash_import:%u: Fixed by import\n", j);
 			} else {
 				/* otherwise try to recover it */
 				failed_map[n] = j;
@@ -444,7 +444,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					/* it may contain garbage */
 					failed[j].is_outofdate = 1;
 
-					log_tag("hash_unknown: Unknown hash on entry %u\n", j);
+					log_tag("repair:hash_unknown:%u: Unknown hash\n", j);
 				} else if (hash_is_zero(failed[j].block->hash)) {
 					/* if the block is not filled with 0, we are sure to have */
 					/* restored it to the state after the 'sync' */
@@ -455,7 +455,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 
-						log_tag("hash_unknown: Maybe old zero on entry %u\n", j);
+						log_tag("repair_hash_unknown:%u: Maybe old zero\n", j);
 					}
 				} else {
 					/* if the hash is different than the previous one, we are sure to have */
@@ -468,7 +468,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 
-						log_tag("hash_unknown: Maybe old data on entry %u\n", j);
+						log_tag("repair_hash_unknown:%u: Maybe old data\n", j);
 					}
 				}
 			}
@@ -578,7 +578,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* and we don't want to write it to the disk */
 						failed[j].is_outofdate = 1;
 
-						log_tag("hash_unknown: Surely old data on entry %u\n", j);
+						log_tag("repair_hash_unknown:%u: Surely old data\n", j);
 					}
 				}
 			}
@@ -778,13 +778,8 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			/* we are not fixing, but only checking */
 			/* print just the final status */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
-				if (state->opt.auditonly) {
-					log_tag("status:damaged:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					msg_info("damaged %s\n", fmt_term(disk, file->sub, esc_buffer));
-				} else {
-					log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					msg_info("unrecoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
-				}
+				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
 				log_tag("status:recoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				msg_info("recoverable %s\n", fmt_term(disk, file->sub, esc_buffer));

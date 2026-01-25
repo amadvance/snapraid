@@ -1146,6 +1146,24 @@ Device Status Tags
 		<exit_code> - The integer exit status returned by the 
 			process (int).
 
+Status Tags
+	These tags log the recovery status of files after a `check` or `fix`
+	command.
+
+	=status:unrecoverable:<disk_name>:<file_path>
+		The file is not recoverable. If a `fix` command was run, it
+		was also renamed with the `.unrecoverable` extension.
+
+		<disk_name> - The name of the disk.
+		<file_path> - The file path relative to disk root (escaped).
+
+	=status:recovered:<disk_name>:<file_path>
+		The file was recovered by a `fix` command.
+
+	=status:recoverable:<disk_name>:<file_path>
+		The file is recoverable, and will be recovered by a `fix`
+		command.
+
 Error Tags
 	These tags report specific errors that occur on data disks during the
 	commands that access files and parities.
@@ -1165,7 +1183,7 @@ Error Tags
 		<file> - The path (relative to the disk mount point) of the
 			file containing the block (escaped).
 		<msg> - A descriptive message indicating the nature of the
-			error (e.g., `Open/Read/Write EIO error`, `Open/Read/Write error`,
+			error (e.g., `Open/Read/Write error`,
 			`Data error at position <pos>, diff bits <diff>/<bits>`).
 
 	=parity_error[_io|_data]:<block>:<level>:<msg>
@@ -1181,10 +1199,10 @@ Error Tags
 		<level> - The configuration name of the parity level (e.g.,
 			`parity`, `2-parity`).
 		<msg> - A descriptive message indicating the nature of the
-			error (e.g., `Read/Write EIO error`, `Read/Write error`,
+			error (e.g., `Read/Write error`,
 			`Data error, diff bits <diff>/<bits>`).
 
-	=hardlink_error:<disk_name>:<link_path>:<target_path>:<msg>
+	=hardlink_error[_io]:<disk_name>:<link_path>:<target_path>:<msg>
 		Indicates an error when attempting to access a hard link.
 
 		<disk_name> - The name of the disk.
@@ -1196,7 +1214,7 @@ Error Tags
 			`Hardlink-to error for not regular file`,
 			`Hardlink mismatch for different inode`).
 
-	=symlink_error:<disk_name>:<link_path>:<msg>
+	=symlink_error[_io]:<disk_name>:<link_path>:<msg>
 		Indicates an error when attempting to access a symbolic link.
 
 		<disk_name> - The name of the disk.
@@ -1205,7 +1223,7 @@ Error Tags
 			error (e.g., `Symlink read error`,
 			`Symlink data error '<actual>' instead of '<expected>'`).
 
-	=dir_error:<disk_name>:<dir_path>:<msg>
+	=dir_error[_io]:<disk_name>:<dir_path>:<msg>
 		Indicates an error when attempting to access a directory.
 		
 		<disk_name> - The name of the disk.
