@@ -796,7 +796,10 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 		if (len > device_pad)
 			device_pad = len;
 
+		double afr = smart_afr(devinfo->smart, devinfo->model);
+
 		state_info_log(devinfo);
+		state_smart_log(devinfo, afr);
 	}
 
 	printf("SnapRAID PROBE report:\n");
