@@ -224,10 +224,11 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 		struct snapraid_filter* filter = i->data;
 
 		if (filter->is_disk) {
-			if (wnmatch(filter->pattern, disk) == 0)
+			if (wnmatch(filter->pattern, disk) == 0) {
 				ret = filter->direction;
-			else
+			} else {
 				ret = 0;
+			}
 			if (reason != 0 && ret < 0)
 				*reason = filter;
 		} else {
@@ -240,8 +241,8 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 		} else if (ret < 0) {
 			/* exclude the file */
 			return -1;
-		} else if (filter->root[0] == 0) {
-			/* default is opposite of the last global rule (not counting local rules) */
+		} else {
+			/* default is opposite of the last rule */
 			default_direction = -filter->direction;
 			if (reason != 0 && default_direction < 0)
 				*reason = filter;
@@ -254,7 +255,7 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 	if (is_def_include)
 		return 0;
 
-	/* files are excluded/included depending of the last rule processed (not counting local filters) */
+	/* files are excluded/included depending of the last rule processed */
 	if (default_direction < 0)
 		return -1;
 
