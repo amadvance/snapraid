@@ -5197,6 +5197,7 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_error("Error opening the ignore file '%s'. %s.\n", path, strerror(errno));
+		return;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -5214,6 +5215,7 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
 			log_error("Too long line in '%s' at line %u\n", path, line);
+			break;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -5228,6 +5230,7 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_error("Invalid ignore specification '%s' in '%s' at line %u\n", buffer, path, line);
+				break;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -5242,6 +5245,7 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 		if (c != '\n') {
 			/* LCOV_EXCL_START */
 			log_error("Extra data in '%s' at line %u\n", path, line);
+			break;
 			/* LCOV_EXCL_STOP */
 		}
 		++line;
