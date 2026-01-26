@@ -253,7 +253,11 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	if (offset >= handle->valid_size) {
 		/* if the file is missing, it's at 0 size, or it's rebuilt while reading */
 		if (offset == handle->valid_size || handle->valid_size == 0) {
-			out_missing("Reading missing file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+			if (offset == 0) {
+				out_missing("Missing file '%s'.\n", handle->path);
+			} else {
+				out_missing("Missing data in file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+			}
 			errno = ENOENT;
 		} else {
 			out("Reading over the end from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
