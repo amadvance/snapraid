@@ -871,7 +871,7 @@ static struct option long_options[] = {
  * Free letters: gIjJkKMnPQrtuxXWz
  *
  * The 's' letter is used in main.c
- * The 'G' letter is free but only from 13.1
+ * The 'G' letter is free but only from 14.0
  */
 #define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
 

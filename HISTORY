@@ -1,8 +1,11 @@
 SnapRAID HISTORY
 ================
 
-13.1 WIP
+14.0 WIP
 ========
+ * More log tags for all commands in preparation for the upcoming SnapRAID
+   daemon. Pre-release will be available at https://github.com/amadvance/snapraid-daemon.
+   Note that this is the minimal SnapRAID version required to use the daemon.
  * Fixed a crash on macOS when filesystem doesn't report UUID
  * Added support for local exclusion rules via .snapraidignore files placed
    directly within the array directory tree. This allows for granular,
@@ -14,7 +17,6 @@ SnapRAID HISTORY
    under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.
  * Added wear level percentage to the SMART report.
- * More log tags for the status and probe commands [Tristan Teufel].
  * Added documentation of the tags used in the log file in the new
    snapraid_log manpage.
  * Added manual translations in multiple languages.
@@ -23,8 +25,8 @@ SnapRAID HISTORY
      feature in the speed test. Default 1000.
    --speed-test-disks-number DISKS, specifies how many disks to use in the
      speed test. Default 8.
-   --speed-test-blocks-size KB, specifies the block size in kibibytes (1024)
-     for the speed test. Default 256.
+   --speed-test-blocks-size KB, specifies the size of each block in kibibytes
+     (1024) used in the speed test. Default 256.
 
 13.0 2025/10
 ============

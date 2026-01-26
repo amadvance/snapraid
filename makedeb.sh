@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-VERSION="13.1"  # Update if needed
+VERSION="14.0"
 TARBALL="snapraid-${VERSION}.tar.gz"
 SOURCE_URL="https://github.com/amadvance/snapraid/releases/download/v${VERSION}/${TARBALL}"
 PKG_NAME="snapraid"
