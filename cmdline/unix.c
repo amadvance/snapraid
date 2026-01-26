@@ -607,11 +607,11 @@ static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 	*uuid = 0;
 
 	path_apple = CFStringCreateWithCString(kCFAllocatorDefault, path, kCFStringEncodingUTF8);
-	if (!path_apple) 
+	if (!path_apple)
 		goto bail;
 
 	session = DASessionCreate(kCFAllocatorDefault);
-	if (!session) 
+	if (!session)
 		goto bail;
 
 	path_appler = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path_apple, kCFURLPOSIXPathStyle, false);
@@ -645,7 +645,7 @@ static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 		if (description) {
 			/* key might not exist for NTFS/ExFAT on some drivers */
 			const void* value = (CFUUIDRef)CFDictionaryGetValue(description, kDADiskDescriptionVolumeUUIDKey);
-       			CFStringRef uuid_string = NULL;
+			CFStringRef uuid_string = NULL;
 
 			if (value) {
 				if (CFGetTypeID(value) == CFUUIDGetTypeID()) {

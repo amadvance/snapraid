@@ -1129,7 +1129,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						++failed_count;
 
 						log_tag("%s:%u:%s:%s: Open error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
-						
+
 						if (errno == EIO) {
 							++io_error;
 						} else {
@@ -2120,7 +2120,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 					if (errno == EIO) {
 						log_fatal_errno(errno, lev_config_name(l));
 						exit(EXIT_FAILURE);
-					} 
+					}
 
 					/* continue anyway */
 					parity_ptr[l] = 0;

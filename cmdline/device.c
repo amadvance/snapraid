@@ -461,7 +461,7 @@ static double smart_afr(uint64_t* smart, const char* model)
 }
 
 /**
- * Calculates the probability of at least one failure occurring 
+ * Calculates the probability of at least one failure occurring
  * within a year using a Poisson distribution.
  *
  * @param afr The aggregate Annual Failure Rate (lambda).

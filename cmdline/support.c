@@ -1812,8 +1812,8 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 
 			smart[id] = raw;
 
-			/* 
-			 * Map normalized health percentage to our unified wear level for SSDs 
+			/*
+			 * Map normalized health percentage to our unified wear level for SSDs
 			 * 177: Wear_Leveling_Count (Samsung/Crucial)
 			 * 231: SSD_Life_Left (Kingston/WD)
 			 * 233: Media_Wearout_Indicator (Intel)
