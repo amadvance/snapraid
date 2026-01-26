@@ -1727,4 +1727,4 @@ Questo file è Copyright (C) 2025 Andrea Mazzoleni
 14 VEDI ANCHE
 =============
 
-snapraid_log(1), rsync(1)
+snapraid_log(1), snapraidd(1)

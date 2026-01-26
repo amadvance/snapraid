@@ -178,7 +178,7 @@ Kom igång
 	och alternativet -o, --older-than för att specificera en annan ålder i dagar.
 	Till exempel, för att kontrollera 5% av arrayen för block äldre än 20 dagar, använd:
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	Om tysta eller input/output-fel hittas under processen,
 	markeras de motsvarande blocken som dåliga i `content`-filen
@@ -210,7 +210,7 @@ Kom igång
 	på symboliska länkar. Det integreras väl med SnapRAID för paritetsskydd
 	och används ofta i installationer som OpenMediaVault (OMV)
 	eller anpassade NAS-konfigurationer.
-  
+
 	För att visa alla filer i din array i samma katalogträd,
 	kan du aktivera funktionen `pooling`. Den skapar en skrivskyddad virtuell
 	vy av alla filer i din array med hjälp av symboliska länkar.
@@ -1519,4 +1519,4 @@ Upphovsrätt (Copyright)
 	Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
 Se Även (See Also)
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

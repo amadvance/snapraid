@@ -1629,4 +1629,4 @@ Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 14 SEE ALSO
 ===========
 
-snapraid_log(1), rsync(1)
+snapraid_log(1), snapraidd(1)

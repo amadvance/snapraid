@@ -163,7 +163,7 @@ Getting Started
 	指定できます。
 	たとえば、20日以上経過したブロックの5%をチェックするには、次のように使用します。
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	プロセス中にサイレントエラーまたは入出力エラーが見つかった場合、
 	対応するブロックは `content` ファイル内で不良としてマークされ、
@@ -194,7 +194,7 @@ Getting Started
 	ファイルにシームレスにアクセスできます。これは、パリティ保護のためにSnapRAIDと
 	うまく統合されており、OpenMediaVault (OMV) やカスタムNAS構成などのセットアップで
 	一般的に使用されています。
-  
+
 	アレイ内のすべてのファイルを同じディレクトリツリーに表示させるには、
 	`pooling` 機能を有効にできます。これは、シンボリックリンクを使用して、
 	アレイ内のすべてのファイルの読み取り専用の仮想ビューを作成します。
@@ -1412,4 +1412,4 @@ Copyright
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
 See Also
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

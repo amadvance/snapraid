@@ -179,7 +179,7 @@ Getting Started
 	统一的挂载点中，允许跨阵列无缝访问文件，而无需依赖符号链接。
 	它与 SnapRAID 很好地集成以提供奇偶校验保护，常用于
 	OpenMediaVault (OMV) 或自定义 NAS 配置等设置中。
-  
+
 	要使阵列中的所有文件显示在同一个目录树中，
 	您可以启用 `pooling` 功能。它使用符号链接创建了一个
 	阵列中所有文件的只读虚拟视图。
@@ -1352,4 +1352,4 @@ Copyright
 	此文件版权所有 (C) 2025 Andrea Mazzoleni
 
 See Also
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

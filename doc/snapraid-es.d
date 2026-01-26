@@ -183,7 +183,7 @@ Getting Started
 	diferente en días. Por ejemplo, para verificar el 5% del array en
 	busca de bloques con más de 20 días, use:
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	Si se encuentran errores silenciosos o de entrada/salida durante el
 	proceso, los bloques correspondientes se marcan como defectuosos en
@@ -217,7 +217,7 @@ Getting Started
 	sin depender de enlaces simbólicos. Se integra bien con SnapRAID
 	para la protección de paridad y se usa comúnmente en configuraciones
 	como OpenMediaVault (OMV) o configuraciones NAS personalizadas.
-  
+
 	Para que todos los archivos de su array se muestren en el mismo árbol
 	de directorios, puede habilitar la función de `pooling` (agrupación).
 	Crea una vista virtual de solo lectura de todos los archivos de su
@@ -1599,4 +1599,4 @@ Copyright
 	Este archivo es Copyright (C) 2025 Andrea Mazzoleni
 
 See Also
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

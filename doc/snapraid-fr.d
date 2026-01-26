@@ -188,7 +188,7 @@ Démarrer
 	différent en jours. Par exemple, pour vérifier 5 % de la baie
 	pour les blocs de plus de 20 jours, utilisez :
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	Si des erreurs silencieuses ou d'entrée/sortie sont trouvées pendant
 	le processus, les blocs correspondants sont marqués comme mauvais
@@ -223,7 +223,7 @@ Démarrer
 	Il s'intègre bien avec SnapRAID pour la protection par parité et est
 	couramment utilisé dans des configurations comme OpenMediaVault (OMV)
 	ou des configurations NAS personnalisées.
-  
+
 	Pour que tous les fichiers de votre baie apparaissent dans la même
 	arborescence de répertoires, vous pouvez activer la fonctionnalité
 	de `pooling`. Elle crée une vue virtuelle en lecture seule de tous
@@ -1640,4 +1640,4 @@ Droits d'auteur (Copyright)
 	Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
 
 Voir aussi (See Also)
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

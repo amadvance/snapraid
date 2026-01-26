@@ -1833,4 +1833,4 @@ TrueType, такий як `Lucida Console`, як
 14 Див. також (SEE ALSO)
 ========================
 
-snapraid_log(1), rsync(1)
+snapraid_log(1), snapraidd(1)

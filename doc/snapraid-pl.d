@@ -179,7 +179,7 @@ Getting Started
 	oraz opcji -o, --older-than, aby określić inny wiek w dniach.
 	Na przykład, aby sprawdzić 5% macierzy dla bloków starszych niż 20 dni, użyj:
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	Jeśli podczas procesu zostaną znalezione ciche błędy lub błędy wejścia/wyjścia,
 	odpowiednie bloki zostaną oznaczone jako złe w pliku `content`
@@ -211,7 +211,7 @@ Getting Started
 	na dowiązaniach symbolicznych. Dobrze integruje się z SnapRAID w celu ochrony
 	parzystości i jest powszechnie używane w konfiguracjach takich jak
 	OpenMediaVault (OMV) lub niestandardowe konfiguracje NAS.
-  
+
 	Aby wszystkie pliki w Twojej macierzy były widoczne w tym samym drzewie katalogów,
 	możesz włączyć funkcję `pooling`. Tworzy ona wirtualny, tylko do odczytu,
 	widok wszystkich plików w Twojej macierzy za pomocą dowiązań symbolicznych.
@@ -1512,4 +1512,4 @@ Copyright
 	Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 
 See Also
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

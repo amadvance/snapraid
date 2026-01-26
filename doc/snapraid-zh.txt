@@ -1469,4 +1469,4 @@ SnapRAID 在 Unix 中忽略任何编码。它读取并存储
 14 SEE ALSO
 ===========
 
-snapraid_log(1), rsync(1)
+snapraid_log(1), snapraidd(1)

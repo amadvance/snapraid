@@ -180,7 +180,7 @@ Primeiros Passos
 	Por exemplo, para verificar 5% do array em busca de blocos com mais de
 	20 dias, use:
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	Se erros silenciosos ou de entrada/saída forem encontrados durante o processo,
 	os blocos correspondentes serão marcados como ruins no arquivo de `content`
@@ -211,7 +211,7 @@ Primeiros Passos
 	perfeito a arquivos em todo o seu array sem depender de links simbólicos.
 	Ele se integra bem ao SnapRAID para proteção de paridade e é comumente usado
 	em configurações como OpenMediaVault (OMV) ou configurações NAS personalizadas.
-  
+
 	Para ter todos os arquivos em seu array mostrados na mesma árvore de
 	diretórios, você pode habilitar o recurso de `pooling`. Ele cria uma
 	visualização virtual somente leitura de todos os arquivos em seu array
@@ -1550,4 +1550,4 @@ Direitos Autorais (Copyright)
 	Este arquivo é Copyright (C) 2025 Andrea Mazzoleni
 
 Veja Também (See Also)
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

@@ -1513,4 +1513,4 @@ Drept de Autor (Copyright)
 	Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
 
 Vezi și (See Also)
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

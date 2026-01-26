@@ -183,7 +183,7 @@ Iniziare
 	Ad esempio, per controllare il 5% dell'array per blocchi più vecchi di
 	20 giorni, usare:
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	Se vengono trovati errori silenti o di input/output durante il processo,
 	i blocchi corrispondenti vengono contrassegnati come bad (cattivi) nel
@@ -218,7 +218,7 @@ Iniziare
 	simbolici. Si integra bene con SnapRAID per la protezione della parità
 	ed è comunemente usato in configurazioni come OpenMediaVault (OMV) o
 	NAS personalizzati.
-  
+
 	Per avere tutti i file nell'array mostrati nello stesso albero di
 	directory, è possibile abilitare la funzionalità di `pooling`. Crea
 	una vista virtuale di sola lettura di tutti i file nell'array
@@ -1610,4 +1610,4 @@ Copyright
 	Questo file è Copyright (C) 2025 Andrea Mazzoleni
 
 Vedi Anche
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1)

@@ -178,7 +178,7 @@ Getting Started
 	and the -o, --older-than option to specify a different age in days.
 	For example, to check 5% of the array for blocks older than 20 days, use:
 
-		:snapraid -p 5 -o 20 scrub  
+		:snapraid -p 5 -o 20 scrub
 
 	If silent or input/output errors are found during the process,
 	the corresponding blocks are marked as bad in the `content` file
@@ -210,7 +210,7 @@ Getting Started
 	on symbolic links. It integrates well with SnapRAID for parity
 	protection and is commonly used in setups like OpenMediaVault (OMV)
 	or custom NAS configurations.
-  
+
 	To have all the files in your array shown in the same directory tree,
 	you can enable the `pooling` feature. It creates a read-only virtual
 	view of all the files in your array using symbolic links.
@@ -1212,7 +1212,7 @@ Configuration
 	disk and estimates the long-term steady temperature they are expected
 	to reach if activity continues. The estimation is performed only after
 	the disk temperature has increased four times, ensuring that enough
-	data points are available to establish a reliable trend. 
+	data points are available to establish a reliable trend.
 	This predicted steady temperature is shown in parentheses next to the
 	current value and helps assess whether the system's cooling is
 	adequate. This estimated temperature is for informational purposes
@@ -1338,7 +1338,7 @@ Pattern
 	The single star `*` matches any sequence of characters, but like the
 	question mark, it never crosses directory boundaries. It stops at the
 	forward slash, making it suitable for matching within a single path
-	component. This is the standard wildcard behavior familiar from shell 
+	component. This is the standard wildcard behavior familiar from shell
 	globbing.
 
 	The double star `**` is more powerful, it matches any sequence of
@@ -1520,4 +1520,4 @@ Copyright
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
 See Also
-	snapraid_log(1), rsync(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

@@ -1634,4 +1634,4 @@ SnapRAID в Unix игнорирует любое кодирование. Он с
 14 SEE ALSO
 ===========
 
-snapraid_log(1), rsync(1)
+snapraid_log(1), snapraidd(1)
