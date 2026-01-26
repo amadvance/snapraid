@@ -5178,8 +5178,7 @@ int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct sna
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_tag("parity_error_io:%u:%s: Sync error\n", blockcur, lev_config_name(l));
-			log_fatal("DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
-			log_fatal("Ensure that disk '%s' is sane.\n", lev_config_name(l));
+			log_fatal("DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", lev_config_name(l));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
