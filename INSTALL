@@ -16,7 +16,7 @@ To run the application's correctness tests, execute:
 
     make check
 
-If the tests complete with "Success", install the application anddocumentation
+If the tests complete with "Success", install the application and documentation
 using:
 
     sudo make install
