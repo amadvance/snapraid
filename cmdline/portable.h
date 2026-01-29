@@ -530,6 +530,7 @@ struct devinfo_struct {
 	char serial[SMART_MAX]; /**< Serial number. */
 	char family[SMART_MAX]; /**< Family. */
 	char model[SMART_MAX]; /**< Model. */
+	char interf[SMART_MAX]; /**< Interface of the device: ata, sata, pata, nvme, usb */
 	int power; /**< POWER mode. */
 #if HAVE_THREAD
 	thread_id_t thread;

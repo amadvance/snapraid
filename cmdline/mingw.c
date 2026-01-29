@@ -2483,7 +2483,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
+static int devsmart(uint64_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2517,7 +2517,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, info, serial, family, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, inter) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -2570,7 +2570,7 @@ retry:
 }
 
 
-static void devattr_property(HANDLE h, char* serial, char* model)
+static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
 {
 	STORAGE_PROPERTY_QUERY query = { 0 };
 	STORAGE_DESCRIPTOR_HEADER header = { 0 };
@@ -2606,6 +2606,42 @@ static void devattr_property(HANDLE h, char* serial, char* model)
 		strtrim(serial);
 	}
 
+#define BusTypeVirtual            0x0E
+#define BusTypeFileBackedVirtual  0x0F
+#define BusTypeSpaces             0x10
+#define BusTypeNvme               0x11
+#define BusTypeSCM                0x12
+#define BusTypeUfs                0x13
+#define BusTypeNvmeof             0x14
+
+	/* always override interface as more detailed than smartctl */
+	const char* type = 0;
+	switch ((int)desc->BusType) { /* cast to int to avoid warnings about enum unlisted */
+	case BusTypeScsi : type = "SCSI"; break;
+	case BusTypeAtapi : type = "ATAPI"; break;
+	case BusTypeAta : type = "ATA"; break;
+	case BusType1394 : type = "FireWire"; break;
+	case BusTypeSsa : type = "SSA"; break;
+	case BusTypeFibre : type = "Fibre"; break;
+	case BusTypeUsb : type = "USB"; break;
+	case BusTypeRAID : type = "RAID"; break;
+	case BusTypeiScsi : type = "iSCSI"; break;
+	case BusTypeSas : type = "SAS"; break;
+	case BusTypeSata : type = "SATA"; break;
+	case BusTypeSd : type = "SD"; break;
+	case BusTypeMmc : type = "MMC"; break;
+	case BusTypeVirtual : type = "Virtual"; break;
+	case BusTypeFileBackedVirtual : type = "Virtual"; break;
+	case BusTypeSpaces : type = "Storage Spaces"; break;
+	case BusTypeNvme : type = "NVMe"; break;
+	case BusTypeSCM : type = "SCM"; break;
+	case BusTypeUfs : type = "UFS"; break;
+	case BusTypeNvmeof : type = "NVMe"; break;
+	default :
+	}
+	if (type)
+		snprintf(inter, SMART_MAX, "%s", type);
+
 	free(buffer);
 }
 
@@ -2640,7 +2676,7 @@ static void devattr_rotational(HANDLE h, uint64_t* rotational)
 /**
  * Get device attributes.
  */
-static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* family, char* model)
+static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	HANDLE h;
 	wchar_t conv_buf[CONV_MAX];
@@ -2666,7 +2702,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 		devattr_rotational(h, &info[INFO_ROTATION_RATE]);
 
 	if (*model == 0 || *serial == 0)
-		devattr_property(h, serial, model);
+		devattr_property(h, serial, model, interf);
 
 	if (!CloseHandle(h)) {
 		DWORD error = GetLastError();
@@ -2679,7 +2715,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 /**
  * Get POWER state
  */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* family, char* model)
+static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2713,7 +2749,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, 0, info, serial, family, model) != 0) {
+	if (smartctl_attribute(f, file, name, 0, info, serial, family, model, inter) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -2865,7 +2901,7 @@ static int devdownifup(uint64_t device, const char* name, const char* smartctl, 
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0) != 0)
+	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -3013,7 +3049,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -3025,7 +3061,7 @@ static void* thread_smart(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
 
 	return 0;
 }
@@ -3037,7 +3073,7 @@ static void* thread_probe(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -3049,7 +3085,7 @@ static void* thread_probe(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
 
 	return 0;
 }

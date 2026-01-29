@@ -527,6 +527,8 @@ static void state_info_log(devinfo_t* devinfo)
 		log_tag("attr:%s:%s:family:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->family, esc_buffer));
 	if (devinfo->model[0])
 		log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->model, esc_buffer));
+	if (devinfo->interf[0])
+		log_tag("attr:%s:%s:interface:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->interf, esc_buffer));
 	if (devinfo->info[INFO_SIZE] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_SIZE]);
 	if (devinfo->info[INFO_ROTATION_RATE] != SMART_UNASSIGNED)
@@ -897,6 +899,7 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		pathprint(entry->serial, sizeof(entry->serial), "FAKE_%s", devinfo->serial);
 		pathprint(entry->family, sizeof(entry->family), "FAKE_%s", devinfo->family);
 		pathprint(entry->model, sizeof(entry->model), "FAKE_%s", devinfo->model);
+		pathprint(entry->interf, sizeof(entry->interf), "FAKE_%s", devinfo->interf);
 		pathprint(entry->file, sizeof(entry->file), "FAKE_%s", devinfo->file);
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
 		entry->info[INFO_SIZE] = count * TERA;

@@ -1693,7 +1693,7 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
+int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	unsigned i;
 	int inside;
@@ -1702,6 +1702,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 	char dummy_serial[SMART_MAX];
 	char dummy_family[SMART_MAX];
 	char dummy_model[SMART_MAX];
+	char dummy_interface[SMART_MAX];
 
 	/* dummy attributes */
 	if (!smart)
@@ -1714,11 +1715,14 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		family = dummy_family;
 	if (!model)
 		model = dummy_model;
+	if (!inter)
+		model = dummy_interface;
 
 	/* preclear attributes */
 	*serial = 0;
 	*family = 0;
 	*model = 0;
+	*inter = 0;
 	for (i = 0; i < SMART_COUNT; ++i)
 		smart[i] = SMART_UNASSIGNED;
 	for (i = 0; i < INFO_COUNT; ++i)
@@ -1772,31 +1776,67 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (sscanf(s, "Serial number: %63s", serial) == 1) {
 			strtrim(serial);
 			/* SCSI */
+		} else if (sscanf(s, "Transport protocol: %63[^\n]", inter) == 1) {
+			if (strcmp(inter, "Fibre channel (FCP-4)") == 0)
+				strcpy(inter, "Fibre");
+			else if (strcmp(inter, "SSA") == 0)
+				strcpy(inter, "SSA");
+			else if (strcmp(inter, "IEEE 1394 (SBP-3)") == 0)
+				strcpy(inter, "FireWire");
+			else if (strcmp(inter, "RDMA (SRP)") == 0)
+				strcpy(inter, "SCSI");
+			else if (strcmp(inter, "iSCSI") == 0)
+				strcpy(inter, "iSCSI");
+			else if (strcmp(inter, "SAS (SPL-4)") == 0)
+				strcpy(inter, "SAS");
+			else if (strcmp(inter, "ADT") == 0)
+				strcpy(inter, "SCSI");
+			else if (strcmp(inter, "ATA (ACS-2)") == 0)
+				strcpy(inter, "SATA");
+			else if (strcmp(inter, "UAS") == 0)
+				strcpy(inter, "USB");
+			else if (strcmp(inter, "SOP") == 0)
+				strcpy(inter, "NVMe");
+			else if (strcmp(inter, "PCIe") == 0)
+				strcpy(inter, "PCIe");
+			else
+				strcpy(inter, "SCSI");
 		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT]) == 1) {
 		} else if (sscanf(s, "Current Drive Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS]) == 1) {
 		} else if (sscanf(s, "Drive Trip Temperature: %" SCNu64, &smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS]) == 1) {
 		} else if (sscanf(s, "Accumulated start-stop cycles: %" SCNu64, &smart[SMART_START_STOP_COUNT]) == 1) {
 		} else if (sscanf(s, "Accumulated load-unload cycles: %" SCNu64, &smart[SMART_LOAD_CYCLE_COUNT]) == 1) {
 		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS]) == 1) { /* note "n" of "number" lower case */
-			/* ATA */
-		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
-		} else if (smatch(s, "ID#") == 0) {
-			inside = 1;
-		} else if (smatch(s, "No Errors Logged") == 0) { /* ATA */
-			smart[SMART_ERROR_PROTOCOL] = 0;
-		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) { /* ATA */
-			smart[SMART_ERROR_PROTOCOL] = raw;
-		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) { /* NVME */
-			smart[SMART_ERROR_MEDIUM] = raw;
-		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) { /* NVME */
+		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR_PROTOCOL] = raw;
 		} else if (sscanf(s, "Medium error count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR_MEDIUM] = raw;
-		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) { /* SCSI */
+			/* ATA */
+		} else if (smatch(s, "ATA Version is:") == 0) {
+			strcpy(inter, "ATA");
+		} else if (smatch(s, "SATA Version is:") == 0) {
+			strcpy(inter, "SATA");
+		} else if (smatch(s, "Transport Type:   PCIe") == 0) {
+			strcpy(inter, "PCIe");
+		} else if (smatch(s, "Transport Type:   Parallel") == 0) {
+			strcpy(inter, "PATA");
+		} else if (smatch(s, "No Errors Logged") == 0) {
+			smart[SMART_ERROR_PROTOCOL] = 0;
+		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR_PROTOCOL] = raw;
+			/* NVME */
+		} else if (smatch(s, "NVMe Version:") == 0) {
+			strcpy(inter, "NVMe");
+		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR_MEDIUM] = raw;
+		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR_PROTOCOL] = raw;
 		} else if (sscanf(s, "Percentage Used: %" SCNu64 "%%", &raw) == 1) { /* NVME */
 			if (raw <= 100)
 				smart[SMART_WEAR_LEVEL] = raw;
+			/* Attributes */
+		} else if (smatch(s, "ID#") == 0) {
+			inside = 1;
 		} else if (inside) {
 			if (sscanf(s, "%u %*s %*s %" SCNu64 " %*s %*s %*s %*s %*s %" SCNu64, &id, &normalized, &raw) != 3) {
 				log_fatal("Invalid smartctl line '%s'.\n", s);

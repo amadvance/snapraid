@@ -1247,7 +1247,7 @@ static int devscan(tommy_list* list)
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
-static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
+static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1290,7 +1290,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, info, serial, family, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interface) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -1401,7 +1401,7 @@ static int devstat(dev_t device, uint64_t* count)
  * Get device attributes.
  */
 #if HAVE_LINUX_DEVICE
-static void devattr(dev_t device, uint64_t* info, char* serial, char* family, char* model)
+static void devattr(dev_t device, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
 	char path[PATH_MAX];
 	char buf[512];
@@ -1469,6 +1469,15 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 			}
 		}
 	}
+
+	/* always override interface if it's usb */
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u", major(device), minor(device));
+	ret = readlink(path, buf, sizeof(buf));
+	if (ret > 0 && (unsigned)ret < sizeof(buf)) {
+		buf[ret] = 0;
+		if (strstr(buf, "usb") != 0)
+			strcpy(interface, "USB");
+	}
 }
 #endif
 
@@ -1476,7 +1485,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
-static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model)
+static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1519,7 +1528,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, info, serial, family, model) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interface) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -1656,7 +1665,7 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, int
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0) != 0)
+	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -1851,7 +1860,7 @@ static void* thread_smart(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1863,7 +1872,7 @@ static void* thread_smart(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
 
 	return 0;
 #else
@@ -1880,7 +1889,7 @@ static void* thread_probe(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1892,7 +1901,7 @@ static void* thread_probe(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model);
+	devattr(devinfo->device, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
 
 	return 0;
 #else
