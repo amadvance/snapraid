@@ -130,6 +130,32 @@ The UUID of the filesystem containing the path.
 .PD
 .RE
 .TP
+.B fsinfo_data:<disk_name>:<type>:<label>
+The filesystem information of the specified data disk.
+.RS 4
+.PD 0
+.HP 4
+.I <type>
+The filesystem type. A string like \`ext4\`, \`ntfs\`.
+.HP 4
+.I <label>
+The label associated to the filesystem.
+.PD
+.RE
+.TP
+.B fstype_parity]:<parity_level>[/<split_index>]:<type>:<label>
+The filesystem information of the specified parity disk.
+.RS 4
+.PD 0
+.HP 4
+.I <type>
+The filesystem type. A string like \`ext4\`, \`ntfs\`.
+.HP 4
+.I <label>
+The label associated to the filesystem.
+.PD
+.RE
+.TP
 .B pool:<dir>
 The configured dir to the pool mount point (escaped).
 This is the optional mount point for the \'pool\' feature.
@@ -1610,6 +1636,16 @@ Logs the disk\'s model string.
 .HP 4
 .I <model>
 The disk\'s model identifier (escaped).
+.PD
+.RE
+.TP
+.B attr:<device_file>:<disk_name>[/<split_index>]:interface:<interface>
+Logs the disk\'s interface. Something like \`USB\`, \`SATA\`, \`NVMe\`.
+.RS 4
+.PD 0
+.HP 4
+.I <interface>
+The disk\'s interface (escaped).
 .PD
 .RE
 .TP

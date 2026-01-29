@@ -93,6 +93,18 @@ Configuration Tags
 		<path> - The path (escaped).
 		<uuid> - The UUID of the filesystem containing the path.
 
+	=fsinfo_data:<disk_name>:<type>:<label>
+		The filesystem information of the specified data disk.
+
+		<type> - The filesystem type. A string like `ext4`, `ntfs`.
+		<label> - The label associated to the filesystem.
+
+	=fstype_parity]:<parity_level>[/<split_index>]:<type>:<label>
+		The filesystem information of the specified parity disk.
+
+		<type> - The filesystem type. A string like `ext4`, `ntfs`.
+		<label> - The label associated to the filesystem.
+
 	=pool:<dir>
 		The configured dir to the pool mount point (escaped).
 		This is the optional mount point for the 'pool' feature.
@@ -120,7 +132,7 @@ Content Tags
 		The absolute path to a content file being used (escaped).
 		Content files store the metadata (like file hashes and timestamps)
 		for the array.
-		
+
 	=content_write:<path>
 		The absolute path to a content file being written (escaped).
 		You will see multiple writes as the content file is saved in
@@ -275,7 +287,7 @@ Scan Tags
 	=summary:exit:<status>
 		Logs the overall exit status of the command. The `status` is
 		one of the following:
-    
+
 		equal - Indicates that no differences were found.
 			The array is already synchronized.
 		diff - Indicates that differences were found.
@@ -288,7 +300,7 @@ General Progress and Execution Tags
 
 	=run:begin:<blockbegin>:<blockend>:<count>
 		A tag indicating the start of the command execution.
-		
+
 		<blockbegin> - Starting block index (uint).
 		<blockend> - Ending block index + 1 (uint).
 		<count> - Number of blocks to process. It may be less
@@ -359,7 +371,7 @@ Thermal Tags
 		Logs a temperature reading from a connected disk that is being
 		considered as a candidate for determining the ambient system
 		temperature.
-    
+
 		<temp> - The current temperature read from the disk
 			(uint, degrees Celsius).
 
@@ -386,7 +398,7 @@ Thermal Tags
 		Logs the highest temperature observed among all monitored disks
 		in the current measurement cycle. This is used for thermal
 		throttling.
-    
+
 		<temp> - The highest temperature observed in degrees Celsius.
 
 	=thermal:heat:<disk_name>[/<split_index>]:<device>:<count>:<data_points>
@@ -405,14 +417,14 @@ Thermal Tags
 	=thermal:params:<disk_name>[/<split_index>]:<device>:<k_heat>:<t_ambient>:<t_steady>:<rmse>:<r_squared>:<max_error>
 		Logs the estimated parameters for the exponential heating model
 		(fit using least squares) and associated quality metrics for a
-		specific disk. 
+		specific disk.
 		The model is: T(t) = T_steady - (T_steady - T_0) e^(-kt),
 		where T_0 is the initial temperature.
 
 		<device> - The unique device ID (uint).
 		<k_heat> - The heating rate constant, k (float).
 		<t_ambient> - The ambient temperature, T_ambient (float).
-		<t_steady> - The estimated steady-state temperature, T_steady (float), 
+		<t_steady> - The estimated steady-state temperature, T_steady (float),
 			which is the maximum expected temperature of the disk.
 		<rmse> - Root Mean Square Error of the fit (float).
 		<r_squared> - Coefficient of determination (R^2) of the fit (float).
@@ -630,9 +642,9 @@ Command Status Tags
 		<new> - Count of newly synced (unscrubbed) blocks in that day range.
 
 Command Sync/Scrub Tags
-	Tags specific for the `sync` and `scrub` commands. 
+	Tags specific for the `sync` and `scrub` commands.
 	Also the error tags are possible.
-	
+
     Summary Tags
 	These tags provide summary statistics at the end of the command.
 
@@ -647,20 +659,20 @@ Command Sync/Scrub Tags
 	=summary:error_soft:<count>
 		Logs the total count of file-related errors encountered during
 		the process (e.g., missing files, file attribute changes).
-    
+
 		<count> - The total number of file errors encountered (uint).
 
 	=summary:error_io:<count>
 		Logs the total count of input/output errors encountered on
 		data or parity disks.
-    
+
 		<count> - The total number of I/O errors encountered (uint).
 
 	=summary:error_data:<count>
 	        Logs the total count of `silent data errors` (data blocks
 		not matching their expected hash) encountered during the sync
 		process.
-    
+
 		<count> - The total number of silent data errors encountered (uint).
 
 	=summary:exit:<status>
@@ -681,7 +693,7 @@ Command Check/Fix Tags
 
     Fixed/Recovered Tags
 	These tags log successful repairs during fix operations.
-	
+
 	=fixed:<block_pos>:<disk_name>:<file_path>:<msg>
 		Indicates that a file was successfully fixed using parity data.
 
@@ -718,7 +730,7 @@ Command Check/Fix Tags
 
 	=symlink_fixed:<disk_name>:<link_path>:<msg>
 		Logs successful recreation of a symbolic link during fix operation.
-		
+
 		<disk_name> - The name of the disk.
 		<link_path> - The symlink path relative to disk root (escaped).
 		<msg> - A descriptive message indicating the nature of the fix
@@ -735,7 +747,7 @@ Command Check/Fix Tags
 
     Unrecoverable Error Tags
 	These tags log errors that could not be recovered.
-	
+
 	=unrecoverable:<block_pos>:<disk_name>:<file_path>:<msg>
 		Indicates that a block error could not be fixed due to
 		insufficient parity or other recovery limitations.
@@ -766,10 +778,10 @@ Command Check/Fix Tags
 
 		<disk_name> - The name of the disk.
 		<file_path> - The file path relative to disk root (escaped).
-	
+
 	=status:recovered:<disk_name>:<file_path>
 		Logs that a file was successfully recovered during fix operation.
-		
+
 		<disk_name> - The name of the disk.
 		<file_path> - The file path relative to disk root (escaped).
 
@@ -788,31 +800,31 @@ Command Check/Fix Tags
 
     Summary Tags
 	These tags provide summary statistics at the end of the command.
-    
+
 	=summary:error_soft:<count>
 		Logs the total count of file-related errors encountered during
 		the process (e.g., missing files, file attribute changes).
-    
+
 		<count> - The total number of file errors encountered (uint).
 
 	=summary:error_io:<count>
 		Logs the total count of input/output errors encountered on
 		data or parity disks.
-    
+
 		<count> - The total number of I/O errors encountered (uint).
 
 	=summary:error_data:<count>
 	        Logs the total count of `silent data errors` (data blocks
 		not matching their expected hash) encountered during the sync
 		process.
-    
+
 		<count> - The total number of silent data errors encountered (uint).
 
 	=summary:error_recovered:<recovered_count>
 		Logs the total number of errors successfully recovered (fix).
 
 		<recovered_count> - Number of recovered errors (uint).
-		
+
 	=summary:error_recoverable:<recoverable_count>
 		Logs the total number of errors that can be recovered (check).
 
@@ -820,7 +832,7 @@ Command Check/Fix Tags
 
 	=summary:error_unrecoverable:<unrecoverable_count>
 		Logs the total number of unrecoverable errors (fix/check).
-	
+
 		<unrecoverable_count> - Number of unrecoverable errors (uint).
 
 	=summary:exit:<status>
@@ -966,7 +978,7 @@ Command Rehash Tags
 	=summary:exit:<status>
 		Logs the overall exit status of the command. The `status` is one of
 		the following:
-	
+
 		scheduled - Indicates that a rehash operation has
 			been successfully scheduled. The rehash will be performed
 			incrementally in future `sync` or `scrub` commands.
@@ -987,8 +999,8 @@ Command Smart And Probe Tags
 
 	Note that a `<disk_name>` may be associated with more `<device_file>`,
 	in case the logical disk uses more physical disks. In such a case,
-	you'll see multiple `<attr>` and `<smart>` tags for the same 
-	`<disk_name>` but with different `<device_file>`. The exception is the 
+	you'll see multiple `<attr>` and `<smart>` tags for the same
+	`<disk_name>` but with different `<device_file>`. The exception is the
 	`stat` attrbute that is cumulative for all the devices part of the
 	disk.
 
@@ -1021,6 +1033,11 @@ Command Smart And Probe Tags
 		Logs the disk's model string.
 
 		<model> - The disk's model identifier (escaped).
+
+	=attr:<device_file>:<disk_name>[/<split_index>]:interface:<interface>
+		Logs the disk's interface. Something like `USB`, `SATA`, `NVMe`.
+
+		<interface> - The disk's interface (escaped).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:afr:<afr>:<prob>
 		Logs the estimated Annual Failure Rate (AFR) and the
@@ -1072,7 +1089,7 @@ Command Smart And Probe Tags
 	=attr:<device_file>:<disk_name>[/<split_index>]:rotationrate:<rate>
 		Logs the disk's rotation rate.
 
-		<rate> - The rotation rate. A value of 0 indicates a 
+		<rate> - The rotation rate. A value of 0 indicates a
 			solid-state drive (SSD) or other non-rotating medium.
 			A value of 1 indicates a rotational disk of unknown
 			precise speed. Values greater than 1 indicate the
@@ -1080,9 +1097,9 @@ Command Smart And Probe Tags
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:flags:<flags_decimal>:<flags_hex>
 		Logs the SMART status flags from the `smartctl` utility.
-		Per the smartctl manpage, these flags are bit-mapped 
-		to indicate specific issues like `Command line did not parse`, 
-		`Device could not be opened`, or `SMART status check 
+		Per the smartctl manpage, these flags are bit-mapped
+		to indicate specific issues like `Command line did not parse`,
+		`Device could not be opened`, or `SMART status check
 		returned 'DISK FAILING'`.
 
 		<flags_decimal> - The raw flags value (uint, decimal).
@@ -1096,7 +1113,7 @@ Command Smart And Probe Tags
 		<value_hex> - The raw attribute value (uint, hexadecimal).
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:power:active
-		Logs that the device was confirmed to be in an active power 
+		Logs that the device was confirmed to be in an active power
 		state after a status probe.
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:power:standby
@@ -1104,11 +1121,11 @@ Command Smart And Probe Tags
 		state.
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:power:up
-		Logs a successful spin-up operation via direct O_DIRECT 
+		Logs a successful spin-up operation via direct O_DIRECT
 		read.
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:power:down
-		Logs a successful spin-down operation initiated via the 
+		Logs a successful spin-down operation initiated via the
 		smartctl command.
 
 	=stat:<disk_name>:<access_number>
@@ -1148,22 +1165,22 @@ Device Status Tags
 
 	=device:<device_file>:<disk_name>[/<split_index>]:error:<errno>
 		Logs a low-level system error during direct file operations.
-		This is triggered when open(), read(), or close() 
+		This is triggered when open(), read(), or close()
 		calls fail during a spin-up attempt.
 
-		<errno> - The standard integer error number provided by 
+		<errno> - The standard integer error number provided by
 			the OS.
 
 	=device:<device_file>:<disk_name>[/<split_index>]:error:abort
-		Logs that an external process (smartctl) failed to complete 
-		normally, such as being terminated by a signal rather than 
+		Logs that an external process (smartctl) failed to complete
+		normally, such as being terminated by a signal rather than
 		exiting.
 
 	=device:<device_file>:<disk_name>[/<split_index>]:exit:<exit_code>
-		Logs that the external command (smartctl) returned a non-zero 
-		exit code that was not explicitly recognized as a valid state. 
+		Logs that the external command (smartctl) returned a non-zero
+		exit code that was not explicitly recognized as a valid state.
 
-		<exit_code> - The integer exit status returned by the 
+		<exit_code> - The integer exit status returned by the
 			process (int).
 
 Error Tags
@@ -1173,9 +1190,9 @@ Error Tags
 	=error[_io|_data]:<block>:<disk_name>:<file>:<msg>
 		Logs file access errors (open, read, file changed) during the
 		data disk read operation for parity calculation or verification.
-    
+
 		_io - Indicates a physical Input/Output error.
-			The disk was unable to read or write a specific block, 
+			The disk was unable to read or write a specific block,
 			typically signaling a failing sector or cable issue.
 		_data - Indicates the data was read successfully but failed
 			the checksum/hash verification. This signals `silent`
@@ -1190,9 +1207,9 @@ Error Tags
 
 	=parity_error[_io|_data]:<block>:<level>:<msg>
 		Logs errors during parity disk read or write operations.
-    
-		_io - Indicates a physical Input/Output error. 
-			The disk was unable to read or write a specific block, 
+
+		_io - Indicates a physical Input/Output error.
+			The disk was unable to read or write a specific block,
 			typically signaling a failing sector or cable issue.
 		_data - Indicates the data was read successfully but failed
 			the checksum/hash verification. This signals `silent`
@@ -1227,7 +1244,7 @@ Error Tags
 
 	=dir_error[_io]:<disk_name>:<dir_path>:<msg>
 		Indicates an error when attempting to access a directory.
-		
+
 		<disk_name> - The name of the disk.
 		<dir_path> - The directory path relative to disk root (escaped).
 		<msg> - A descriptive message indicating the nature of the

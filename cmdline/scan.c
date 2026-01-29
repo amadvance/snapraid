@@ -1575,7 +1575,7 @@ static void* scan_disk(void* arg)
 	uint64_t start;
 
 	/* check if the disk supports persistent inodes */
-	ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0);
+	ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0, 0, 0, 0, 0);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));

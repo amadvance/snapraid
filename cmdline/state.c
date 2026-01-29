@@ -151,6 +151,8 @@ void state_init(struct snapraid_state* state)
 		for (s = 0; s < SPLIT_MAX; ++s) {
 			state->parity[l].split_map[s].path[0] = 0;
 			state->parity[l].split_map[s].uuid[0] = 0;
+			state->parity[l].split_map[s].fstype[0] = 0;
+			state->parity[l].split_map[s].fslabel[0] = 0;
 			state->parity[l].split_map[s].size = PARITY_SIZE_INVALID;
 			state->parity[l].split_map[s].device = 0;
 		}
@@ -1683,7 +1685,7 @@ void state_refresh(struct snapraid_state* state)
 			/* LCOV_EXCL_STOP */
 		}
 
-		ret = fsinfo(disk->dir, 0, 0, &total_space, &free_space);
+		ret = fsinfo(disk->dir, 0, 0, &total_space, &free_space, disk->fstype, sizeof(disk->fstype), disk->fslabel, sizeof(disk->fslabel));
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error accessing disk '%s' to retrieve file-system info. %s.\n", disk->dir, strerror(errno));
@@ -1698,6 +1700,9 @@ void state_refresh(struct snapraid_state* state)
 		/* also update the disk info */
 		disk->total_blocks = map->total_blocks;
 		disk->free_blocks = map->free_blocks;
+
+		if (disk->fstype[0])
+			log_tag("fsinfo_data:%s:%s:%s\n", disk->name, disk->fstype, disk->fslabel);
 	}
 
 	/* for all parities */
@@ -1707,14 +1712,15 @@ void state_refresh(struct snapraid_state* state)
 		state->parity[l].free_blocks = 0;
 
 		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			struct snapraid_split* split = &state->parity[l].split_map[s];
 			uint64_t total_space;
 			uint64_t free_space;
 			int ret;
 
-			ret = fsinfo(state->parity[l].split_map[s].path, 0, 0, &total_space, &free_space);
+			ret = fsinfo(split->path, 0, 0, &total_space, &free_space, split->fstype, sizeof(split->fstype), split->fslabel, sizeof(split->fslabel));
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error accessing file '%s' to retrieve file-system info. %s.\n", state->parity[l].split_map[s].path, strerror(errno));
+				log_fatal("Error accessing file '%s' to retrieve file-system info. %s.\n", split->path, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1722,6 +1728,13 @@ void state_refresh(struct snapraid_state* state)
 			/* add the new free blocks */
 			state->parity[l].total_blocks += total_space / state->block_size;
 			state->parity[l].free_blocks += free_space / state->block_size;
+
+			if (split->fstype[0]) {
+				if (s == 0)
+					log_tag("fsinfo_parity:%s:%s:%s\n", lev_config_name(l), split->fstype, split->fslabel);
+				else
+					log_tag("fsinfo_parity:%s/%u:%s:%s\n", lev_config_name(l), s, split->fstype, split->fslabel);
+			}
 		}
 	}
 

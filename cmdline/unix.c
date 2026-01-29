@@ -596,6 +596,44 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 }
 #endif
 
+
+/**
+ * Get the LABEL using libblkid.
+ * It uses a cache to work without root permission, resulting in LABEL
+ * not necessarily recent.
+ */
+#if HAVE_BLKID
+static int devuuid_label(uint64_t device, char* label, size_t label_size)
+{
+	char* devname;
+	char* labelname;
+
+	devname = blkid_devno_to_devname(device);
+	if (!devname) {
+		log_tag("label:blkid:%u:%u: blkid_devno_to_devname() failed, %s\n", major(device), minor(device), strerror(errno));
+		/* device mapping failed */
+		return -1;
+	}
+
+	labelname = blkid_get_tag_value(cache, "LABEL", devname);
+	if (!labelname) {
+		log_tag("label:blkid:%u:%u: blkid_get_tag_value(LABEL,%s) failed, %s\n", major(device), minor(device), devname, strerror(errno));
+		free(devname);
+		/* label mapping failed */
+		return -1;
+	}
+
+	pathcpy(label, label_size, labelname);
+
+	log_tag("label:blkid:%u:%u:%s: found %s\n", major(device), minor(device), label, devname);
+
+	free(devname);
+	free(labelname);
+	return 0;
+}
+#endif
+
+
 #ifdef __APPLE__
 static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 {
@@ -818,11 +856,203 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space)
-{
-	char type[64];
-	const char* ptype;
+/* from man statfs */
+#define ADFS_SUPER_MAGIC 0xadf5
+#define AFFS_SUPER_MAGIC 0xADFF
+#define BDEVFS_MAGIC 0x62646576
+#define BEFS_SUPER_MAGIC 0x42465331
+#define BFS_MAGIC 0x1BADFACE
+#define BINFMTFS_MAGIC 0x42494e4d
+#define BTRFS_SUPER_MAGIC 0x9123683E
+#define CGROUP_SUPER_MAGIC 0x27e0eb
+#define CIFS_MAGIC_NUMBER 0xFF534D42
+#define CODA_SUPER_MAGIC 0x73757245
+#define COH_SUPER_MAGIC 0x012FF7B7
+#define CRAMFS_MAGIC 0x28cd3d45
+#define DEBUGFS_MAGIC 0x64626720
+#define DEVFS_SUPER_MAGIC 0x1373
+#define DEVPTS_SUPER_MAGIC 0x1cd1
+#define EFIVARFS_MAGIC 0xde5e81e4
+#define EFS_SUPER_MAGIC 0x00414A53
+#define EXT_SUPER_MAGIC 0x137D
+#define EXT2_OLD_SUPER_MAGIC 0xEF51
+#define EXT4_SUPER_MAGIC 0xEF53 /* also ext2/ext3 */
+#define FUSE_SUPER_MAGIC 0x65735546
+#define FUTEXFS_SUPER_MAGIC 0xBAD1DEA
+#define HFS_SUPER_MAGIC 0x4244
+#define HFSPLUS_SUPER_MAGIC 0x482b
+#define HOSTFS_SUPER_MAGIC 0x00c0ffee
+#define HPFS_SUPER_MAGIC 0xF995E849
+#define HUGETLBFS_MAGIC 0x958458f6
+#define ISOFS_SUPER_MAGIC 0x9660
+#define JFFS2_SUPER_MAGIC 0x72b6
+#define JFS_SUPER_MAGIC 0x3153464a
+#define MINIX_SUPER_MAGIC 0x137F
+#define MINIX_SUPER_MAGIC2 0x138F
+#define MINIX2_SUPER_MAGIC 0x2468
+#define MINIX2_SUPER_MAGIC2 0x2478
+#define MINIX3_SUPER_MAGIC 0x4d5a
+#define MQUEUE_MAGIC 0x19800202
+#define MSDOS_SUPER_MAGIC 0x4d44
+#define NCP_SUPER_MAGIC 0x564c
+#define NFS_SUPER_MAGIC 0x6969
+#define NILFS_SUPER_MAGIC 0x3434
+#define NTFS_SB_MAGIC 0x5346544e
+#define OCFS2_SUPER_MAGIC 0x7461636f
+#define OPENPROM_SUPER_MAGIC 0x9fa1
+#define PIPEFS_MAGIC 0x50495045
+#define PROC_SUPER_MAGIC 0x9fa0
+#define PSTOREFS_MAGIC 0x6165676C
+#define QNX4_SUPER_MAGIC 0x002f
+#define QNX6_SUPER_MAGIC 0x68191122
+#define RAMFS_MAGIC 0x858458f6
+#define REISERFS_SUPER_MAGIC 0x52654973
+#define ROMFS_MAGIC 0x7275
+#define SELINUX_MAGIC 0xf97cff8c
+#define SMACK_MAGIC 0x43415d53
+#define SMB_SUPER_MAGIC 0x517B
+#define SOCKFS_MAGIC 0x534F434B
+#define SQUASHFS_MAGIC 0x73717368
+#define SYSFS_MAGIC 0x62656572
+#define SYSV2_SUPER_MAGIC 0x012FF7B6
+#define SYSV4_SUPER_MAGIC 0x012FF7B5
+#define TMPFS_MAGIC 0x01021994
+#define UDF_SUPER_MAGIC 0x15013346
+#define UFS_MAGIC 0x00011954
+#define USBDEVICE_SUPER_MAGIC 0x9fa2
+#define V9FS_MAGIC 0x01021997
+#define VXFS_SUPER_MAGIC 0xa501FCF5
+#define XENFS_SUPER_MAGIC 0xabba1974
+#define XENIX_SUPER_MAGIC 0x012FF7B4
+#define XFS_SUPER_MAGIC 0x58465342
+#define _XIAFS_SUPER_MAGIC 0x012FD16D
+#define AFS_SUPER_MAGIC 0x5346414F
+#define AUFS_SUPER_MAGIC 0x61756673
+#define ANON_INODE_FS_SUPER_MAGIC 0x09041934
+#define CEPH_SUPER_MAGIC 0x00C36400
+#define ECRYPTFS_SUPER_MAGIC 0xF15F
+#define FAT_SUPER_MAGIC 0x4006
+#define FHGFS_SUPER_MAGIC 0x19830326
+#define FUSEBLK_SUPER_MAGIC 0x65735546
+#define FUSECTL_SUPER_MAGIC 0x65735543
+#define GFS_SUPER_MAGIC 0x1161970
+#define GPFS_SUPER_MAGIC 0x47504653
+#define MTD_INODE_FS_SUPER_MAGIC 0x11307854
+#define INOTIFYFS_SUPER_MAGIC 0x2BAD1DEA
+#define ISOFS_R_WIN_SUPER_MAGIC 0x4004
+#define ISOFS_WIN_SUPER_MAGIC 0x4000
+#define JFFS_SUPER_MAGIC 0x07C0
+#define KAFS_SUPER_MAGIC 0x6B414653
+#define LUSTRE_SUPER_MAGIC 0x0BD00BD0
+#define NFSD_SUPER_MAGIC 0x6E667364
+#define PANFS_SUPER_MAGIC 0xAAD7AAEA
+#define RPC_PIPEFS_SUPER_MAGIC 0x67596969
+#define SECURITYFS_SUPER_MAGIC 0x73636673
+#define UFS_BYTESWAPPED_SUPER_MAGIC 0x54190100
+#define VMHGFS_SUPER_MAGIC 0xBACBACBC
+#define VZFS_SUPER_MAGIC 0x565A4653
+#define ZFS_SUPER_MAGIC 0x2FC12FC1
 
+struct filesystem_entry {
+	unsigned id;
+	const char* name;
+	int remote;
+} FILESYSTEMS[] = {
+	{ ADFS_SUPER_MAGIC, "adfs", 0 },
+	{ AFFS_SUPER_MAGIC, "affs", 0 },
+	{ AFS_SUPER_MAGIC, "afs", 1 },
+	{ AUFS_SUPER_MAGIC, "aufs", 1 },
+	{ BEFS_SUPER_MAGIC, "befs", 0 },
+	{ BDEVFS_MAGIC, "bdevfs", 0 },
+	{ BFS_MAGIC, "bfs", 0 },
+	{ BINFMTFS_MAGIC, "binfmt_misc", 0 },
+	{ BTRFS_SUPER_MAGIC, "btrfs", 0 },
+	{ CEPH_SUPER_MAGIC, "ceph", 1 },
+	{ CGROUP_SUPER_MAGIC, "cgroupfs", 0 },
+	{ CIFS_MAGIC_NUMBER, "cifs", 1 },
+	{ CODA_SUPER_MAGIC, "coda", 1 },
+	{ COH_SUPER_MAGIC, "coh", 0 },
+	{ CRAMFS_MAGIC, "cramfs", 0 },
+	{ DEBUGFS_MAGIC, "debugfs", 0 },
+	{ DEVFS_SUPER_MAGIC, "devfs", 0 },
+	{ DEVPTS_SUPER_MAGIC, "devpts", 0 },
+	{ ECRYPTFS_SUPER_MAGIC, "ecryptfs", 0 },
+	{ EFS_SUPER_MAGIC, "efs", 0 },
+	{ EXT_SUPER_MAGIC, "ext", 0 },
+	{ EXT4_SUPER_MAGIC, "ext4", 0 },
+	{ EXT2_OLD_SUPER_MAGIC, "ext2", 0 },
+	{ FAT_SUPER_MAGIC, "fat", 0 },
+	{ FHGFS_SUPER_MAGIC, "fhgfs", 1 },
+	{ FUSEBLK_SUPER_MAGIC, "fuseblk", 1 },
+	{ FUSECTL_SUPER_MAGIC, "fusectl", 1 },
+	{ FUTEXFS_SUPER_MAGIC, "futexfs", 0 },
+	{ GFS_SUPER_MAGIC, "gfs/gfs2", 1 },
+	{ GPFS_SUPER_MAGIC, "gpfs", 1 },
+	{ HFS_SUPER_MAGIC, "hfs", 0 },
+	{ HFSPLUS_SUPER_MAGIC, "hfsplus", 0 },
+	{ HPFS_SUPER_MAGIC, "hpfs", 0 },
+	{ HUGETLBFS_MAGIC, "hugetlbfs", 0 },
+	{ MTD_INODE_FS_SUPER_MAGIC, "inodefs", 0 },
+	{ INOTIFYFS_SUPER_MAGIC, "inotifyfs", 0 },
+	{ ISOFS_SUPER_MAGIC, "isofs", 0 },
+	{ ISOFS_R_WIN_SUPER_MAGIC, "isofs", 0 },
+	{ ISOFS_WIN_SUPER_MAGIC, "isofs", 0 },
+	{ JFFS_SUPER_MAGIC, "jffs", 0 },
+	{ JFFS2_SUPER_MAGIC, "jffs2", 0 },
+	{ JFS_SUPER_MAGIC, "jfs", 0 },
+	{ KAFS_SUPER_MAGIC, "k-afs", 1 },
+	{ LUSTRE_SUPER_MAGIC, "lustre", 1 },
+	{ MINIX_SUPER_MAGIC, "minix", 0 },
+	{ MINIX_SUPER_MAGIC2, "minix", 0 },
+	{ MINIX2_SUPER_MAGIC, "minix2", 0 },
+	{ MINIX2_SUPER_MAGIC2, "minix2", 0 },
+	{ MINIX3_SUPER_MAGIC, "minix3", 0 },
+	{ MQUEUE_MAGIC, "mqueue", 0 },
+	{ MSDOS_SUPER_MAGIC, "msdos", 0 },
+	{ NCP_SUPER_MAGIC, "novell", 1 },
+	{ NFS_SUPER_MAGIC, "nfs", 1 },
+	{ NFSD_SUPER_MAGIC, "nfsd", 1 },
+	{ NILFS_SUPER_MAGIC, "nilfs", 0 },
+	{ NTFS_SB_MAGIC, "ntfs", 0 },
+	{ OPENPROM_SUPER_MAGIC, "openprom", 0 },
+	{ OCFS2_SUPER_MAGIC, "ocfs2", 1 },
+	{ PANFS_SUPER_MAGIC, "panfs", 1 },
+	{ PIPEFS_MAGIC, "pipefs", 1 },
+	{ PROC_SUPER_MAGIC, "proc", 0 },
+	{ PSTOREFS_MAGIC, "pstorefs", 0 },
+	{ QNX4_SUPER_MAGIC, "qnx4", 0 },
+	{ QNX6_SUPER_MAGIC, "qnx6", 0 },
+	{ RAMFS_MAGIC, "ramfs", 0 },
+	{ REISERFS_SUPER_MAGIC, "reiserfs", 0 },
+	{ ROMFS_MAGIC, "romfs", 0 },
+	{ RPC_PIPEFS_SUPER_MAGIC, "rpc_pipefs", 0 },
+	{ SECURITYFS_SUPER_MAGIC, "securityfs", 0 },
+	{ SELINUX_MAGIC, "selinux", 0 },
+	{ SMB_SUPER_MAGIC, "smb", 1 },
+	{ SOCKFS_MAGIC, "sockfs", 0 },
+	{ SQUASHFS_MAGIC, "squashfs", 0 },
+	{ SYSFS_MAGIC, "sysfs", 0 },
+	{ SYSV2_SUPER_MAGIC, "sysv2", 0 },
+	{ SYSV4_SUPER_MAGIC, "sysv4", 0 },
+	{ TMPFS_MAGIC, "tmpfs", 0 },
+	{ UDF_SUPER_MAGIC, "udf", 0 },
+	{ UFS_MAGIC, "ufs", 0 },
+	{ UFS_BYTESWAPPED_SUPER_MAGIC, "ufs", 0 },
+	{ USBDEVICE_SUPER_MAGIC, "usbdevfs", 0 },
+	{ V9FS_MAGIC, "v9fs", 0 },
+	{ VMHGFS_SUPER_MAGIC, "vmhgfs", 1 },
+	{ VXFS_SUPER_MAGIC, "vxfs", 0 },
+	{ VZFS_SUPER_MAGIC, "vzfs", 0 },
+	{ XENFS_SUPER_MAGIC, "xenfs", 0 },
+	{ XENIX_SUPER_MAGIC, "xenix", 0 },
+	{ XFS_SUPER_MAGIC, "xfs", 0 },
+	{ _XIAFS_SUPER_MAGIC, "xia", 0 },
+	{ ZFS_SUPER_MAGIC, "zfs", 0 },
+	{ 0 }
+};
+
+int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size)
+{
 #if HAVE_STATFS
 	struct statfs st;
 
@@ -857,8 +1087,8 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	if (has_persistent_inode) {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 		switch (st.f_type) {
-		case 0x65735546 : /* FUSE, "fuseblk" in the stat command */
-		case 0x4d44 : /* VFAT, "msdos" in the stat command */
+		case FUSEBLK_SUPER_MAGIC : /* FUSE, "fuseblk" in the stat command */
+		case MSDOS_SUPER_MAGIC : /* VFAT, "msdos" in the stat command */
 			*has_persistent_inode = 0;
 			break;
 		default :
@@ -875,8 +1105,8 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	if (has_syncronized_hardlinks) {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 		switch (st.f_type) {
-		case 0x5346544E : /* NTFS */
-		case 0x4d44 : /* VFAT, "msdos" in the stat command */
+		case NTFS_SB_MAGIC : /* NTFS */
+		case MSDOS_SUPER_MAGIC : /* VFAT, "msdos" in the stat command */
 			*has_syncronized_hardlinks = 0;
 			break;
 		default :
@@ -906,36 +1136,38 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 #endif
 	}
 
+	const char* ptype = 0;
+
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_FSTYPENAME
 	/* get the filesystem type directly from the struct (Mac OS X) */
-	(void)type;
 	ptype = st.f_fstypename;
 #elif HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 	/* get the filesystem type from f_type (Linux) */
 	/* from: https://github.com/influxdata/gopsutil/blob/master/disk/disk_linux.go */
-	switch (st.f_type) {
-	case 0x65735546 : ptype = "fuseblk"; break;
-	case 0x4D44 : ptype = "vfat/msdos"; break;
-	case 0xEF53 : ptype = "ext2/3/4"; break;
-	case 0x6969 : ptype = "nfs"; break; /* remote */
-	case 0x6E667364 : ptype = "nfsd"; break; /* remote */
-	case 0x517B : ptype = "smb"; break; /* remote */
-	case 0x5346544E : ptype = "ntfs"; break;
-	case 0x52654973 : ptype = "reiserfs"; break;
-	case 0x3153464A : ptype = "jfs"; break;
-	case 0x58465342 : ptype = "xfs"; break;
-	case 0x9123683E : ptype = "btrfs"; break;
-	case 0x2FC12FC1 : ptype = "zfs"; break;
-	default :
-		snprintf(type, sizeof(type), "0x%X", (unsigned)st.f_type);
-		ptype = type;
+	for (int i = 0; FILESYSTEMS[i].id != 0; ++i) {
+		if (st.f_type == FILESYSTEMS[i].id) {
+			ptype = FILESYSTEMS[i].name;
+			break;
+		}
 	}
-#else
-	(void)type;
-	ptype = "unknown";
 #endif
 
-	log_tag("statfs:%s: %s \n", ptype, path);
+	if (fstype) {
+		fstype[0] = 0;
+		if (ptype)
+			snprintf(fstype, fstype_size, "%s", ptype);
+	}
+
+	if (fslabel) {
+		fslabel[0] = 0;
+#if HAVE_BLKID
+		struct stat fst;
+		if (stat(path, &fst) == 0)
+			devuuid_label(fst.st_dev, fslabel, fslabel_size);
+#else
+		(void)fslabel_size;
+#endif
+	}
 
 	return 0;
 }

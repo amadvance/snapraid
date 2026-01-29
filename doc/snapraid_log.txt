@@ -100,6 +100,18 @@ These tags report the memory usage and global configuration.
     <path> - The path (escaped).
     <uuid> - The UUID of the filesystem containing the path.
 
+    fsinfo_data:<disk_name>:<type>:<label>
+        The filesystem information of the specified data disk.
+
+    <type> - The filesystem type. A string like `ext4`, `ntfs`.
+    <label> - The label associated to the filesystem.
+
+    fstype_parity]:<parity_level>[/<split_index>]:<type>:<label>
+        The filesystem information of the specified parity disk.
+
+    <type> - The filesystem type. A string like `ext4`, `ntfs`.
+    <label> - The label associated to the filesystem.
+
     pool:<dir>
         The configured dir to the pool mount point (escaped).
         This is the optional mount point for the 'pool' feature.
@@ -1067,6 +1079,11 @@ Tags logging specific disk identification and attribute values.
         Logs the disk's model string.
 
     <model> - The disk's model identifier (escaped).
+
+    attr:<device_file>:<disk_name>[/<split_index>]:interface:<interface>
+        Logs the disk's interface. Something like `USB`, `SATA`, `NVMe`.
+
+    <interface> - The disk's interface (escaped).
 
     attr:<device_file>:<disk_name>[/<split_index>]:afr:<afr>:<prob>
         Logs the estimated Annual Failure Rate (AFR) and the

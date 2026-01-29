@@ -1890,7 +1890,7 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space)
+int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size)
 {
 	wchar_t conv_buf[CONV_MAX];
 
@@ -1959,6 +1959,33 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 			*total_space = total_bytes.QuadPart;
 		if (free_space)
 			*free_space = total_free_bytes.QuadPart;
+	}
+
+	if (fstype && fslabel) {
+		wchar_t volume_root[MAX_PATH];
+		wchar_t fs_name[MAX_PATH];
+		wchar_t vol_name[MAX_PATH];
+
+		fstype[0] = 0;
+		fslabel[0] = 0;
+		if (GetVolumePathNameW(convert(conv_buf, path), volume_root, MAX_PATH)) {
+			if (GetVolumeInformationW(volume_root, vol_name, MAX_PATH, 0, 0, 0, fs_name, MAX_PATH)) {
+				char u8[CONV_MAX];
+				size_t len;
+
+				u16tou8ex(u8, fs_name, wcslen(fs_name), &len);
+				if (len + 1 <= fstype_size) {
+					memcpy(fstype, u8, len);
+					fstype[len] = 0;
+				}
+
+				u16tou8ex(u8, vol_name, wcslen(vol_name), &len);
+				if (len + 1 <= fslabel_size) {
+					memcpy(fslabel, u8, len);
+					fslabel[len] = 0;
+				}
+			}
+		}
 	}
 
 	return 0;

@@ -357,7 +357,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical);
  * Check if the underline file-system support persistent inodes.
  * Return -1 on error, 0 on success.
  */
-int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space);
+int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size);
 
 /**
  * Get the tick counter value.
