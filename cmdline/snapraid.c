@@ -26,6 +26,61 @@
 #include "io.h"
 #include "raid/raid.h"
 
+static void dump_parity_blocks_for_file(struct snapraid_disk* disk,
+                                     struct snapraid_file* file)
+{	
+    printf("%s|%s%s|%"PRIu64"\n",
+               disk->name,
+			   disk->dir, file->sub,
+			   (uint64_t)file->size);
+
+	int isFirst = 1;
+    for (unsigned i = 0; i < file->blockmax; ++i) {
+        block_off_t parity_pos = fs_file2par_find(disk, file, i);
+        /* Check if a valid position is found (assuming -1 or some invalid value if not mapped) */
+        if (parity_pos == (block_off_t)-1) {
+            // ignore - what to do?
+			fprintf(stderr, "Found invalid parity postion for file: %s%s\n", disk->dir, file->sub);
+            continue;
+        }
+
+		if(isFirst) {
+			isFirst = 0;
+		} else {
+			printf("|");
+		}
+		printf("%d", parity_pos);
+    }
+
+    printf("\n\n");
+}
+
+void dump_parity_blocks(struct snapraid_state* state)
+{
+    if (!state) {
+        fprintf(stderr, "State pointer is NULL\n");
+        return;
+    }
+		
+	printf("Block size: %d bytes\n", state->block_size);
+	printf("Parity total blocks: %d\n\n", state->parity->total_blocks); // TODO: it seems that this number is not reduced when parity file is truncated
+	msg_progress("Dumping parity blocks for files...\n\n");
+
+	tommy_node* diskNode;
+	for (diskNode = tommy_list_head(&state->disklist); diskNode != 0; diskNode = diskNode->next) {
+		struct snapraid_disk* disk = diskNode->data;
+		
+		/* sort by name */
+		tommy_list_sort(&disk->filelist, file_path_compare);
+
+		tommy_node* fileNode;
+		for (fileNode = tommy_list_head(&disk->filelist); fileNode != 0; fileNode = fileNode->next) {
+			struct snapraid_file* file = fileNode->data;
+			dump_parity_blocks_for_file(disk, file);
+		}
+	}	
+}
+
 /****************************************************************************/
 /* misc */
 
@@ -926,6 +981,7 @@ void signal_init(void)
 #define OPERATION_DEVICES 16
 #define OPERATION_SMART 17
 #define OPERATION_PROBE 18
+#define OPERATION_DUMPPARITYBLOCKS 20
 
 int snapraid_main(int argc, char* argv[])
 {
@@ -1448,6 +1504,8 @@ int snapraid_main(int argc, char* argv[])
 		operation = OPERATION_SMART;
 	} else if (strcmp(argv[optind], "probe") == 0) {
 		operation = OPERATION_PROBE;
+	} else if (strcmp(argv[optind], "dump_parity_blocks") == 0) {
+		operation = OPERATION_DUMPPARITYBLOCKS;
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unknown command '%s'\n", argv[optind]);
@@ -1891,6 +1949,10 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		state_status(&state);
+	} else if (operation == OPERATION_DUMPPARITYBLOCKS) {
+		state_read(&state);
+		dump_parity_blocks(&state);
+		
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 
