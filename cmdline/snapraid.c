@@ -25,61 +25,7 @@
 #include "state.h"
 #include "io.h"
 #include "raid/raid.h"
-
-static void dump_parity_blocks_for_file(struct snapraid_disk* disk,
-                                     struct snapraid_file* file)
-{	
-    printf("%s|%s%s|%"PRIu64"\n",
-               disk->name,
-			   disk->dir, file->sub,
-			   (uint64_t)file->size);
-
-	int isFirst = 1;
-    for (unsigned i = 0; i < file->blockmax; ++i) {
-        block_off_t parity_pos = fs_file2par_find(disk, file, i);
-        /* Check if a valid position is found (assuming -1 or some invalid value if not mapped) */
-        if (parity_pos == (block_off_t)-1) {
-            // ignore - what to do?
-			fprintf(stderr, "Found invalid parity postion for file: %s%s\n", disk->dir, file->sub);
-            continue;
-        }
-
-		if(isFirst) {
-			isFirst = 0;
-		} else {
-			printf("|");
-		}
-		printf("%d", parity_pos);
-    }
-
-    printf("\n\n");
-}
-
-void dump_parity_blocks(struct snapraid_state* state)
-{
-    if (!state) {
-        fprintf(stderr, "State pointer is NULL\n");
-        return;
-    }
-		
-	printf("Block size: %d bytes\n", state->block_size);
-	printf("Parity total blocks: %d\n\n", state->parity->total_blocks); // TODO: it seems that this number is not reduced when parity file is truncated
-	msg_progress("Dumping parity blocks for files...\n\n");
-
-	tommy_node* diskNode;
-	for (diskNode = tommy_list_head(&state->disklist); diskNode != 0; diskNode = diskNode->next) {
-		struct snapraid_disk* disk = diskNode->data;
-		
-		/* sort by name */
-		tommy_list_sort(&disk->filelist, file_path_compare);
-
-		tommy_node* fileNode;
-		for (fileNode = tommy_list_head(&disk->filelist); fileNode != 0; fileNode = fileNode->next) {
-			struct snapraid_file* file = fileNode->data;
-			dump_parity_blocks_for_file(disk, file);
-		}
-	}	
-}
+#include "parity_block.h"
 
 /****************************************************************************/
 /* misc */
@@ -93,7 +39,7 @@ void usage(const char* conf)
 {
 	version();
 
-	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|probe|touch|smart|pool|check|fix [options]\n");
+	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|probe|touch|smart|pool|check|fix|parity [options]\n");
 	printf("\n");
 	printf("Commands:\n");
 	printf("  status Print the status of the array\n");
@@ -110,6 +56,7 @@ void usage(const char* conf)
 	printf("  pool   Create or update the virtual view of the array\n");
 	printf("  check  Check the array\n");
 	printf("  fix    Fix the array\n");
+	printf("  parity Dump files to temporarily be moved from data disks to shrink parity file (no data is changed!)\n");
 	printf("\n");
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
@@ -131,6 +78,7 @@ void usage(const char* conf)
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
+	printf("  " SWITCH_GETOPT_LONG("-x, --shrink MEGABYTES", "-w") "  Amount of mb to shrink the parity file. Default: 1024)\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 	printf("\n");
 	printf("Configuration file: %s\n", conf);
@@ -744,6 +692,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
+	{ "shrink", 1, 0, 'x' },
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
 	{ "filter-disk", 1, 0, 'd' },
@@ -928,7 +877,7 @@ static struct option long_options[] = {
  * The 's' letter is used in main.c
  * The 'G' letter is free but only from 14.0
  */
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
+#define OPTIONS "x:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
 
 volatile int global_interrupt = 0;
 
@@ -981,7 +930,7 @@ void signal_init(void)
 #define OPERATION_DEVICES 16
 #define OPERATION_SMART 17
 #define OPERATION_PROBE 18
-#define OPERATION_DUMPPARITYBLOCKS 20
+#define OPERATION_PARITY 19
 
 int snapraid_main(int argc, char* argv[])
 {
@@ -1013,6 +962,7 @@ int snapraid_main(int argc, char* argv[])
 	int speed_test_blocks_size;
 	time_t t;
 	struct tm* tm;
+	unsigned int parityToShrinkInMegaBytes = 1024; /* 1 GB default */
 #if HAVE_LOCALTIME_R
 	struct tm tm_res;
 #endif
@@ -1054,6 +1004,15 @@ int snapraid_main(int argc, char* argv[])
 #endif
 		!= EOF) {
 		switch (c) {
+		case 'x' :
+			parityToShrinkInMegaBytes = (unsigned int) strtoul(optarg, &e, 10);
+			if (!e || *e || parityToShrinkInMegaBytes == 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid number of megabytes '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			break;
 		case 'c' :
 			pathimport(conf, sizeof(conf), optarg);
 			break;
@@ -1504,8 +1463,8 @@ int snapraid_main(int argc, char* argv[])
 		operation = OPERATION_SMART;
 	} else if (strcmp(argv[optind], "probe") == 0) {
 		operation = OPERATION_PROBE;
-	} else if (strcmp(argv[optind], "dump_parity_blocks") == 0) {
-		operation = OPERATION_DUMPPARITYBLOCKS;
+	} else if (strcmp(argv[optind], "parity") == 0) {
+		operation = OPERATION_PARITY;
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unknown command '%s'\n", argv[optind]);
@@ -1949,9 +1908,9 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		state_status(&state);
-	} else if (operation == OPERATION_DUMPPARITYBLOCKS) {
+	} else if (operation == OPERATION_PARITY) {
 		state_read(&state);
-		dump_parity_blocks(&state);
+		dump_parity_files_for_shrink(&state, parityToShrinkInMegaBytes);
 		
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);

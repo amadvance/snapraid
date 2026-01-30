@@ -43,6 +43,7 @@ snapraid_SOURCES = \
 	cmdline/list.c \
 	cmdline/pool.c \
 	cmdline/parity.c \
+	cmdline/parity_block.c \
 	cmdline/handle.c \
 	cmdline/touch.c \
 	cmdline/device.c \
