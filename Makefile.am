@@ -88,6 +88,7 @@ noinst_HEADERS = \
 	cmdline/elem.h \
 	cmdline/state.h \
 	cmdline/parity.h \
+	cmdline/parity_block.h \
 	cmdline/handle.h \
 	cmdline/murmur3.c \
 	cmdline/murmur3test.c \
