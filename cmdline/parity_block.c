@@ -2,6 +2,7 @@
 #include "portable.h"
 
 #include "elem.h"
+#include "parity.h"
 #include "state.h"
 #include "stream.h"
 #include "parity_block.h"
@@ -95,40 +96,24 @@ void dump_parity_files_for_shrink(struct snapraid_state* state, unsigned int par
 
 	// calculate required parity blocks to shrink
 	data_off_t maxParitySizeInBytes = 0;
-	printf("DBG: state->level: %d\n", state->level);
 	for(unsigned int levelIndex=0; levelIndex < state->level; levelIndex++)
 	{
-		struct snapraid_parity* parity = &state->parity[levelIndex];
-		printf("DBG: parity->split_mac: %d\n", parity->split_mac);
-		for(unsigned int splitIndex=0; splitIndex < parity->split_mac; splitIndex++)
-			{
-				// TODO: handle somehow split parities correctly via parity_size()
-				struct snapraid_split* split = &parity->split_map[splitIndex];
-				data_off_t parity_size = split->size;
-				printf("DBG: parity_size from split_map: %"PRIu64"\n", parity_size);
-				if(parity_size == PARITY_SIZE_INVALID)
-				{
-					// TODO: how can this happen if sync was successful? Do we need refresh the parity state here?
-					printf("DBG: parity_size from split_map is invalid\n");				
-					printf("DBG: try direct read from: %s\n", split->path);
-					// try check file directly
-					STREAM* f = sopen_read(split->path, STREAM_FLAGS_SEQUENTIAL);
-					if (f == 0)
-					{
-						printf("DBG: parity file not accessible\n");
-						continue;
-					}
-					else
-					{
-						parity_size = f->size;
-						printf("DBG: parity_size from direct read: %"PRIu64"\n", parity_size);
-						sclose(f);
-					}					 
-				}
-				
-				if(parity_size > maxParitySizeInBytes)
-					maxParitySizeInBytes = parity_size;
-			}
+		struct snapraid_parity* parity = &state->parity[levelIndex];		
+		struct snapraid_parity_handle parity_handle;
+		struct snapraid_parity_handle* parity_handle_ptr = &parity_handle;
+		int res = parity_open(parity_handle_ptr, parity, levelIndex, state->file_mode, state->block_size, state->opt.parity_limit_size);		
+		if(res != 0)
+		{
+			fprintf(stderr, "Can't read parity size\n");
+			return;
+		}
+
+		data_off_t parity_size_out;
+		parity_size(parity_handle_ptr, &parity_size_out);		
+		parity_close(parity_handle_ptr);
+
+		if(parity_size_out > maxParitySizeInBytes)
+			maxParitySizeInBytes = parity_size_out;
 	}
 	
 	if(maxParitySizeInBytes == 0) {
