@@ -962,7 +962,7 @@ int snapraid_main(int argc, char* argv[])
 	int speed_test_blocks_size;
 	time_t t;
 	struct tm* tm;
-	unsigned int parityToShrinkInMegaBytes = 1024; /* 1 GB default */
+	data_off_t parityToShrinkInMegaBytes = 1024; /* 1 GB default */
 #if HAVE_LOCALTIME_R
 	struct tm tm_res;
 #endif
@@ -1005,7 +1005,7 @@ int snapraid_main(int argc, char* argv[])
 		!= EOF) {
 		switch (c) {
 		case 'x' :
-			parityToShrinkInMegaBytes = (unsigned int) strtoul(optarg, &e, 10);
+			parityToShrinkInMegaBytes = (data_off_t) strtoull(optarg, &e, 10);
 			if (!e || *e || parityToShrinkInMegaBytes == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid number of megabytes '%s'\n", optarg);

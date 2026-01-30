@@ -8,6 +8,6 @@
 
 #include "state.h"
 
-void dump_parity_files_for_shrink(struct snapraid_state* state, unsigned int parityToFreeInMegaBytes);
+void dump_parity_files_for_shrink(struct snapraid_state* state, data_off_t parityToFreeInMegaBytes);
 
 #endif

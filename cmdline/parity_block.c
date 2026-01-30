@@ -65,7 +65,8 @@ static void collect_parity_block_file(struct snapraid_disk* disk,
 			max_parity_pos = parity_pos;	
 	}
 	
-	if(max_parity_pos == 0 || max_parity_pos < minOccupiedBlockNumber)
+	if((minOccupiedBlockNumber > 0)
+		&& (max_parity_pos == 0 || max_parity_pos < minOccupiedBlockNumber))
 		return; // entry not relevant
 
     // found a relevant block so add the corresponding file
@@ -76,60 +77,70 @@ static void collect_parity_block_file(struct snapraid_disk* disk,
 	tommy_list_insert_tail(fileList, &entry->node, entry);
 }
 
-void dump_parity_files_for_shrink(struct snapraid_state* state, unsigned int parityToShrinkInMegaBytes)
+void dump_parity_files_for_shrink(struct snapraid_state* state, data_off_t parityToShrinkInMegaBytes)
 {	
     if (!state) {
         fprintf(stderr, "State pointer is NULL\n");
         return;
     }
 
-	if(state->level == 0) {
-		fprintf(stderr, "No parity found\n");
-		return;
-	}
-	
-	printf("\n");
-	printf("Parity to shrink by: %d mb\n\n", parityToShrinkInMegaBytes);
-
 	uint32_t block_size = state->block_size;
 	printf("Block size: %d kb\n", block_size / 1024);
+	printf("\n");
 
-	// calculate required parity blocks to shrink
-	data_off_t maxParitySizeInBytes = 0;
-	for(unsigned int levelIndex=0; levelIndex < state->level; levelIndex++)
+	block_off_t minOccupiedBlockNumber;
+	int reportAll = parityToShrinkInMegaBytes == -1;
+	if(reportAll)
 	{
-		struct snapraid_parity* parity = &state->parity[levelIndex];		
-		struct snapraid_parity_handle parity_handle;
-		struct snapraid_parity_handle* parity_handle_ptr = &parity_handle;
-		int res = parity_open(parity_handle_ptr, parity, levelIndex, state->file_mode, state->block_size, state->opt.parity_limit_size);		
-		if(res != 0)
+		printf("Reporting all files\n\n");
+		minOccupiedBlockNumber = 0;
+	}
+	else
+	{
+		if(state->level == 0) {
+			fprintf(stderr, "No parity found\n");
+			return;
+		}
+					
+		printf("Parity to shrink by: %"PRIu64" mb\n\n", parityToShrinkInMegaBytes);
+
+		// calculate required parity blocks to shrink
+		data_off_t maxParitySizeInBytes = 0;
+		for(unsigned int levelIndex=0; levelIndex < state->level; levelIndex++)
 		{
-			fprintf(stderr, "Can't read parity size\n");
+			struct snapraid_parity* parity = &state->parity[levelIndex];		
+			struct snapraid_parity_handle parity_handle;
+			struct snapraid_parity_handle* parity_handle_ptr = &parity_handle;
+			int res = parity_open(parity_handle_ptr, parity, levelIndex, state->file_mode, state->block_size, state->opt.parity_limit_size);		
+			if(res != 0)
+			{
+				fprintf(stderr, "Can't read parity size\n");
+				return;
+			}
+
+			data_off_t parity_size_out;
+			parity_size(parity_handle_ptr, &parity_size_out);		
+			parity_close(parity_handle_ptr);
+
+			if(parity_size_out > maxParitySizeInBytes)
+				maxParitySizeInBytes = parity_size_out;
+		}
+		
+		if(maxParitySizeInBytes == 0) {
+			fprintf(stderr, "No parity size found\n");
 			return;
 		}
 
-		data_off_t parity_size_out;
-		parity_size(parity_handle_ptr, &parity_size_out);		
-		parity_close(parity_handle_ptr);
-
-		if(parity_size_out > maxParitySizeInBytes)
-			maxParitySizeInBytes = parity_size_out;
+		printf("Max parity size is: %"PRIu64" mb\n", maxParitySizeInBytes / 1024 / 1024);
+		block_off_t maxOccupiedBlockNumber = maxParitySizeInBytes / block_size;
+		printf("Current max parity block: %d\n", maxOccupiedBlockNumber);
+		
+		data_off_t parityToShrinkInBytes = parityToShrinkInMegaBytes * 1024 * 1024;
+		block_off_t requiredBlocksToShrink = parityToShrinkInBytes / block_size + 1;		
+		minOccupiedBlockNumber = maxOccupiedBlockNumber - requiredBlocksToShrink;
+		printf("New max parity block should be: %d\n", minOccupiedBlockNumber);
+		printf("Parity blocks to shrink: %d\n", requiredBlocksToShrink);
 	}
-	
-	if(maxParitySizeInBytes == 0) {
-		fprintf(stderr, "No parity size found\n");
-		return;
-	}
-
-	printf("Max parity size is: %"PRIu64" mb\n", maxParitySizeInBytes / 1024 / 1024);
-	block_off_t maxOccupiedBlockNumber = maxParitySizeInBytes / block_size;
-	printf("Current max parity block: %d\n", maxOccupiedBlockNumber);
-	
-	data_off_t parityToShrinkInBytes = (data_off_t)parityToShrinkInMegaBytes * 1024 * 1024;
-	block_off_t requiredBlocksToShrink = parityToShrinkInBytes / block_size + 1;		
-	block_off_t minOccupiedBlockNumber = maxOccupiedBlockNumber - requiredBlocksToShrink;
-	printf("New max parity block should be: %d\n", minOccupiedBlockNumber);
-	printf("Parity blocks to shrink: %d\n", requiredBlocksToShrink);
 
 	// collect relevant parity blocks
 	printf("\n");
