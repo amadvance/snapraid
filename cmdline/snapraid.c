@@ -78,7 +78,7 @@ void usage(const char* conf)
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
-	printf("  " SWITCH_GETOPT_LONG("-x, --shrink MEGABYTES", "-w") "  Amount of mb to shrink the parity file. Default: 1024)\n");
+	printf("  " SWITCH_GETOPT_LONG("-x, --shrink MEGABYTES", "-w") "  Amount of mb to shrink the parity file. Default: 1024). Use -1 to report all files.\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 	printf("\n");
 	printf("Configuration file: %s\n", conf);
