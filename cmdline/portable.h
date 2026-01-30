@@ -573,5 +573,10 @@ int ambient_temperature(void);
  */
 extern volatile int global_interrupt;
 
+/**
+ * Size of the spaceholder file for Windows to avoid the message of low disk space
+ */
+#define WINDOWS_SPACEHOLDER_SIZE (256 * 1024 * 1024)
+
 #endif
 

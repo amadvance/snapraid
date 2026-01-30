@@ -393,7 +393,6 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	pathprint(spaceholder_path, sizeof(spaceholder_path), "%s%s", split->path, ".spaceholder");
 
 	if (!skip_space_holder) {
-		data_off_t spaceholder_size = 256 * 1024 * 1024;
 		int spaceholder_f;
 
 		spaceholder_f = open(spaceholder_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
@@ -403,8 +402,8 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 		}
 
 		/* note that in Windows ftruncate is really allocating space */
-		if (ftruncate(spaceholder_f, spaceholder_size) != 0) {
-			log_fatal("WARNING Failed to resize the space holder file '%s' to %" PRIu64 " bytes.\n", spaceholder_path, spaceholder_size);
+		if (ftruncate(spaceholder_f, WINDOWS_SPACEHOLDER_SIZE) != 0) {
+			log_fatal("WARNING Failed to resize the space holder file '%s' to %u bytes.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE);
 			log_fatal("Assuming that no more space is available.\n");
 			close(spaceholder_f);
 			remove(spaceholder_path);

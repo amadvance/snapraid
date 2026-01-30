@@ -93,15 +93,33 @@ Configuration Tags
 		<path> - The path (escaped).
 		<uuid> - The UUID of the filesystem containing the path.
 
-	=fsinfo_data:<disk_name>:<type>:<label>
+	=fsinfo_data:<disk_name>:<size>:<free>
 		The filesystem information of the specified data disk.
 
+		<size> - The size of the data disk (uint).
+		<free_size> - The free size in the data disk (uint).
+
+	=fsinfo_parity:<parity_level>:<size>:<free>
+		The filesystem information of the specified parity disk.
+		In case of multiple splits this is the sum of the sizes of all
+		splits.
+
+		<size> - The size of the parity disk (uint).
+		<free_size> - The free size in the parity disk (uint).
+
+	=fsinfo_data_split:<disk_name>:<size>:<free>:<type>:<label>
+		The filesystem information of the specified data disk.
+
+		<size> - The size of the data disk (uint).
+		<free_size> - The free size in the data disk (uint).
 		<type> - The filesystem type. A string like `ext4`, `ntfs`.
 		<label> - The label associated to the filesystem.
 
-	=fstype_parity]:<parity_level>[/<split_index>]:<type>:<label>
-		The filesystem information of the specified parity disk.
+	=fsinfo_parity_split:<parity_level>[/<split_index>]:<size>:<free>:<type>:<label>
+		The filesystem information of the specified parity split.
 
+		<size> - The size of the parity disk (uint).
+		<free_size> - The free size in the parity disk (uint).
 		<type> - The filesystem type. A string like `ext4`, `ntfs`.
 		<label> - The label associated to the filesystem.
 
@@ -138,32 +156,40 @@ Content Tags
 		You will see multiple writes as the content file is saved in
 		multiple copies.
 
-	=content_parity:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
-		The parity files as stored in the content file.
+	=content_data:<disk_name>:<size>:<free_size>
+		The size of the data disk as stored in the content file.
+
+		<disk_name> - Name of the data disk.
+		<size> - The size of the data disk (uint).
+		<free_size> - The free size in the data disk (uint).
+
+	=content_parity:<parity_level>:<size>:<free_size>
+		The size of the parity disk as stored in the content file.
+		In case of multiple splits this is the sum of the sizes of all
+		splits.
+
+		<parity_level> - Name of the parity.
+		<size> - The total size of the parity disk (uint).
+		<free_size> - The free size in the parity disk (uint).
+
+	=content_data_split:<disk_name>:<uuid>
+		The data disk info as stored in the content file.
+
+		<disk_name> - Name of the data disk.
+		<uuid> - The UUID of the disk filesystem as stored in the
+			content file.
+
+	=content_parity_split:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
+		The parity split info as stored in the content file.
 
 		<parity_level>[/<split_index>] - One of `parity`, `2-parity`,
 			..., `6-parity`. This corresponds to the level of redundancy.
 			In case of split parity, the parity name is followed
 			by `/N` to indicate the split index, where N starts
 			from 0. The `/0` is always omitted.
-		<uuid> - The UUID of the disk containing the path as stored
-			in the content file.
-		<path> - The path (escaped).
+		<uuid> - The UUID of the disk containing the path.
+		<path> - The path of the parity file (escaped).
 		<size> - The size of the parity file (uint).
-
-	=content_data:<disk_name>:<uuid>
-		The data disk as stored in the content file.
-
-		<disk_name> - Name of the data disk.
-		<uuid> - The UUID of the disk filesystem as stored in the
-			content file.
-
-	=content_allocation:<disk_name>:<size>:<free_size>
-		The size of disk and parity as stored in the content file.
-
-		<disk_name> - Name of the data or parity disk.
-		<size> - The size of the data in the disk or parity (uint).
-		<free_size> - The free size in the disk or parity (uint).
 
 	=content_info:<kind>:<counter>
 		The counters in the content file.

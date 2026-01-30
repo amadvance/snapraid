@@ -1668,6 +1668,7 @@ void state_refresh(struct snapraid_state* state)
 {
 	tommy_node* i;
 	unsigned l, s;
+	uint64_t bs = (uint64_t)state->block_size;
 
 	/* for all disks */
 	for (i = state->maplist; i != 0; i = i->next) {
@@ -1694,15 +1695,15 @@ void state_refresh(struct snapraid_state* state)
 		}
 
 		/* set the new free blocks */
-		map->total_blocks = total_space / state->block_size;
-		map->free_blocks = free_space / state->block_size;
+		map->total_blocks = total_space / bs;
+		map->free_blocks = free_space / bs;
 
 		/* also update the disk info */
 		disk->total_blocks = map->total_blocks;
 		disk->free_blocks = map->free_blocks;
 
-		if (disk->fstype[0])
-			log_tag("fsinfo_data:%s:%s:%s\n", disk->name, disk->fstype, disk->fslabel);
+		log_tag("fsinfo_data_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", disk->name, disk->total_blocks * bs, disk->free_blocks * bs, disk->fstype, disk->fslabel);
+		log_tag("fsinfo_data:%s:%" PRIu64 ":%" PRIu64 "\n", disk->name, disk->total_blocks * bs, disk->free_blocks * bs);
 	}
 
 	/* for all parities */
@@ -1725,17 +1726,31 @@ void state_refresh(struct snapraid_state* state)
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* add the new free blocks */
-			state->parity[l].total_blocks += total_space / state->block_size;
-			state->parity[l].free_blocks += free_space / state->block_size;
+#ifdef WIN32
+			/*
+			 * Take into account the space we have to leave free
+			 * to avoid the waring about low space
+			 */
+			if (free_space >= WINDOWS_SPACEHOLDER_SIZE)
+				free_space -= WINDOWS_SPACEHOLDER_SIZE;
+			else
+				free_space = 0;
+#endif
 
-			if (split->fstype[0]) {
-				if (s == 0)
-					log_tag("fsinfo_parity:%s:%s:%s\n", lev_config_name(l), split->fstype, split->fslabel);
-				else
-					log_tag("fsinfo_parity:%s/%u:%s:%s\n", lev_config_name(l), s, split->fstype, split->fslabel);
-			}
+			/* add the new free blocks */
+			uint64_t split_total_blocks = total_space / bs;
+			uint64_t split_free_blocks = free_space / bs;
+
+			state->parity[l].total_blocks += split_total_blocks;
+			state->parity[l].free_blocks += split_free_blocks;
+
+			if (s == 0)
+				log_tag("fsinfo_parity_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", lev_config_name(l), split_total_blocks * bs, split_free_blocks * bs, split->fstype, split->fslabel);
+			else
+				log_tag("fsinfo_parity_split:%s/%u:%" PRIu64 ":%" PRIu64 ":%s:%s\n", lev_config_name(l), s, split_total_blocks * bs, split_free_blocks * bs, split->fstype, split->fslabel);
 		}
+
+		log_tag("fsinfo_parity:%s:%" PRIu64 ":%" PRIu64 "\n", lev_config_name(l), state->parity[l].total_blocks * bs, state->parity[l].free_blocks * bs);
 	}
 
 	/* note what we don't set need_write = 1, because we don't want */
@@ -2726,7 +2741,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
 					buffer,
 					v_total_blocks * (uint64_t)state->block_size,
 					v_free_blocks * (uint64_t)state->block_size);
@@ -2744,7 +2759,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			log_tag("content_data:%s:%s\n",
+			log_tag("content_data_split:%s:%s\n",
 				buffer,
 				uuid);
 
@@ -2828,7 +2843,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+			log_tag("content_parity:%s:%" PRIi64 ":%" PRIi64 "\n",
 				lev_config_name(v_level),
 				v_total_blocks * (uint64_t)state->block_size,
 				v_free_blocks * (uint64_t)state->block_size);
@@ -2849,8 +2864,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
 
-				log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
-					lev_config_name(v_level),
+				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
+					lev_config_name(v_level), /* P command always has a single split */
 					state->parity[v_level].split_map[0].uuid,
 					state->parity[v_level].split_map[0].path,
 					state->parity[v_level].split_map[0].size);
@@ -2918,7 +2933,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				state->parity[v_level].free_blocks = v_free_blocks;
 			}
 
-			log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+			log_tag("content_parity:%s:%" PRIi64 ":%" PRIi64 "\n",
 				lev_config_name(v_level),
 				v_total_blocks * (uint64_t)state->block_size,
 				v_free_blocks * (uint64_t)state->block_size);
@@ -2983,7 +2998,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							pathcpy(parity_name, sizeof(parity_name), lev_config_name(v_level));
 						else
 							pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(v_level), s);
-						log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
+						log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 							parity_name,
 							state->parity[v_level].split_map[s].uuid,
 							state->parity[v_level].split_map[s].path,
@@ -3217,11 +3232,11 @@ static void* state_write_thread(void* arg)
 			sputb32(map->free_blocks, f);
 			sputbs(map->uuid, f);
 			if (context->first) {
-				log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
 					map->name,
 					map->total_blocks * (uint64_t)state->block_size,
 					map->free_blocks * (uint64_t)state->block_size);
-				log_tag("content_data:%s:%s\n",
+				log_tag("content_data_split:%s:%s\n",
 					map->name,
 					map->uuid);
 			}
@@ -3241,7 +3256,7 @@ static void* state_write_thread(void* arg)
 		sputb32(state->parity[l].total_blocks, f);
 		sputb32(state->parity[l].free_blocks, f);
 		if (context->first) {
-			log_tag("content_allocation:%s:%" PRIi64 ":%" PRIi64 "\n",
+			log_tag("content_parity:%s:%" PRIi64 ":%" PRIi64 "\n",
 				lev_config_name(l),
 				state->parity[l].total_blocks * (uint64_t)state->block_size,
 				state->parity[l].free_blocks * (uint64_t)state->block_size);
@@ -3257,7 +3272,7 @@ static void* state_write_thread(void* arg)
 			else
 				pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(l), s);
 			if (context->first) {
-				log_tag("content_parity:%s:%s:%s:%" PRIi64 "\n",
+				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 					parity_name,
 					state->parity[l].split_map[s].uuid,
 					state->parity[l].split_map[s].path,

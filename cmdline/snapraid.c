@@ -1749,6 +1749,9 @@ int snapraid_main(int argc, char* argv[])
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
 
+		/* refresh the size info to log correct info */
+		state_refresh(&state);
+
 		ret = state_diff(&state);
 
 		/* abort if sync needed */
@@ -1821,6 +1824,9 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
+		/* refresh the size info to log correct info */
+		state_refresh(&state);
+
 		/* filter */
 		state_skip(&state);
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
@@ -1844,6 +1850,9 @@ int snapraid_main(int argc, char* argv[])
 			state_write(&state);
 	} else if (operation == OPERATION_SCRUB) {
 		state_read(&state);
+
+		/* refresh the size info before the content write */
+		state_refresh(&state);
 
 		memory();
 

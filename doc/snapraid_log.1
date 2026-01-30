@@ -130,10 +130,44 @@ The UUID of the filesystem containing the path.
 .PD
 .RE
 .TP
-.B fsinfo_data:<disk_name>:<type>:<label>
+.B fsinfo_data:<disk_name>:<size>:<free>
 The filesystem information of the specified data disk.
 .RS 4
 .PD 0
+.HP 4
+.I <size>
+The size of the data disk (uint).
+.HP 4
+.I <free_size>
+The free size in the data disk (uint).
+.PD
+.RE
+.TP
+.B fsinfo_parity:<parity_level>:<size>:<free>
+The filesystem information of the specified parity disk.
+In case of multiple splits this is the sum of the sizes of all
+splits.
+.RS 4
+.PD 0
+.HP 4
+.I <size>
+The size of the parity disk (uint).
+.HP 4
+.I <free_size>
+The free size in the parity disk (uint).
+.PD
+.RE
+.TP
+.B fsinfo_data_split:<disk_name>:<size>:<free>:<type>:<label>
+The filesystem information of the specified data disk.
+.RS 4
+.PD 0
+.HP 4
+.I <size>
+The size of the data disk (uint).
+.HP 4
+.I <free_size>
+The free size in the data disk (uint).
 .HP 4
 .I <type>
 The filesystem type. A string like \`ext4\`, \`ntfs\`.
@@ -143,10 +177,16 @@ The label associated to the filesystem.
 .PD
 .RE
 .TP
-.B fstype_parity]:<parity_level>[/<split_index>]:<type>:<label>
-The filesystem information of the specified parity disk.
+.B fsinfo_parity_split:<parity_level>[/<split_index>]:<size>:<free>:<type>:<label>
+The filesystem information of the specified parity split.
 .RS 4
 .PD 0
+.HP 4
+.I <size>
+The size of the parity disk (uint).
+.HP 4
+.I <free_size>
+The free size in the parity disk (uint).
 .HP 4
 .I <type>
 The filesystem type. A string like \`ext4\`, \`ntfs\`.
@@ -188,32 +228,42 @@ The absolute path to a content file being written (escaped).
 You will see multiple writes as the content file is saved in
 multiple copies.
 .TP
-.B content_parity:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
-The parity files as stored in the content file.
+.B content_data:<disk_name>:<size>:<free_size>
+The size of the data disk as stored in the content file.
 .RS 4
 .PD 0
 .HP 4
-.I <parity_level>[/<split_index>]
-One of \`parity\`, \`2\-parity\`,
-..., \`6\-parity\`. This corresponds to the level of redundancy.
-In case of split parity, the parity name is followed
-by \`/N\` to indicate the split index, where N starts
-from 0. The \`/0\` is always omitted.
-.HP 4
-.I <uuid>
-The UUID of the disk containing the path as stored
-in the content file.
-.HP 4
-.I <path>
-The path (escaped).
+.I <disk_name>
+Name of the data disk.
 .HP 4
 .I <size>
-The size of the parity file (uint).
+The size of the data disk (uint).
+.HP 4
+.I <free_size>
+The free size in the data disk (uint).
 .PD
 .RE
 .TP
-.B content_data:<disk_name>:<uuid>
-The data disk as stored in the content file.
+.B content_parity:<parity_level>:<size>:<free_size>
+The size of the parity disk as stored in the content file.
+In case of multiple splits this is the sum of the sizes of all
+splits.
+.RS 4
+.PD 0
+.HP 4
+.I <parity_level>
+Name of the parity.
+.HP 4
+.I <size>
+The total size of the parity disk (uint).
+.HP 4
+.I <free_size>
+The free size in the parity disk (uint).
+.PD
+.RE
+.TP
+.B content_data_split:<disk_name>:<uuid>
+The data disk info as stored in the content file.
 .RS 4
 .PD 0
 .HP 4
@@ -226,19 +276,26 @@ content file.
 .PD
 .RE
 .TP
-.B content_allocation:<disk_name>:<size>:<free_size>
-The size of disk and parity as stored in the content file.
+.B content_parity_split:<parity_level>[/<split_index>]:<uuid>:<path>:<size>
+The parity split info as stored in the content file.
 .RS 4
 .PD 0
 .HP 4
-.I <disk_name>
-Name of the data or parity disk.
+.I <parity_level>[/<split_index>]
+One of \`parity\`, \`2\-parity\`,
+..., \`6\-parity\`. This corresponds to the level of redundancy.
+In case of split parity, the parity name is followed
+by \`/N\` to indicate the split index, where N starts
+from 0. The \`/0\` is always omitted.
+.HP 4
+.I <uuid>
+The UUID of the disk containing the path.
+.HP 4
+.I <path>
+The path of the parity file (escaped).
 .HP 4
 .I <size>
-The size of the data in the disk or parity (uint).
-.HP 4
-.I <free_size>
-The free size in the disk or parity (uint).
+The size of the parity file (uint).
 .PD
 .RE
 .TP
