@@ -43,6 +43,7 @@ snapraid_SOURCES = \
 	cmdline/list.c \
 	cmdline/pool.c \
 	cmdline/parity.c \
+	cmdline/parity_block.c \
 	cmdline/handle.c \
 	cmdline/touch.c \
 	cmdline/device.c \
@@ -87,6 +88,7 @@ noinst_HEADERS = \
 	cmdline/elem.h \
 	cmdline/state.h \
 	cmdline/parity.h \
+	cmdline/parity_block.h \
 	cmdline/handle.h \
 	cmdline/murmur3.c \
 	cmdline/murmur3test.c \

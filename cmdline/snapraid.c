@@ -25,6 +25,7 @@
 #include "state.h"
 #include "io.h"
 #include "raid/raid.h"
+#include "parity_block.h"
 
 /****************************************************************************/
 /* misc */
@@ -38,7 +39,7 @@ void usage(const char* conf)
 {
 	version();
 
-	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|probe|touch|smart|pool|check|fix [options]\n");
+	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|probe|touch|smart|pool|check|fix|parity [options]\n");
 	printf("\n");
 	printf("Commands:\n");
 	printf("  status Print the status of the array\n");
@@ -55,6 +56,7 @@ void usage(const char* conf)
 	printf("  pool   Create or update the virtual view of the array\n");
 	printf("  check  Check the array\n");
 	printf("  fix    Fix the array\n");
+	printf("  parity Dump files to temporarily be moved from data disks to shrink parity file (no data is changed!)\n");
 	printf("\n");
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
@@ -76,6 +78,7 @@ void usage(const char* conf)
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
+	printf("  " SWITCH_GETOPT_LONG("-x, --shrink MEGABYTES", "-w") "  Amount of mb to shrink the parity file. Default: 1024). Use -1 to report all files.\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 	printf("\n");
 	printf("Configuration file: %s\n", conf);
@@ -689,6 +692,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
+	{ "shrink", 1, 0, 'x' },
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
 	{ "filter-disk", 1, 0, 'd' },
@@ -873,7 +877,7 @@ static struct option long_options[] = {
  * The 's' letter is used in main.c
  * The 'G' letter is free but only from 14.0
  */
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
+#define OPTIONS "x:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
 
 volatile int global_interrupt = 0;
 
@@ -926,6 +930,7 @@ void signal_init(void)
 #define OPERATION_DEVICES 16
 #define OPERATION_SMART 17
 #define OPERATION_PROBE 18
+#define OPERATION_PARITY 19
 
 int snapraid_main(int argc, char* argv[])
 {
@@ -957,6 +962,7 @@ int snapraid_main(int argc, char* argv[])
 	int speed_test_blocks_size;
 	time_t t;
 	struct tm* tm;
+	data_off_t parityToShrinkInMegaBytes = 1024; /* 1 GB default */
 #if HAVE_LOCALTIME_R
 	struct tm tm_res;
 #endif
@@ -998,6 +1004,15 @@ int snapraid_main(int argc, char* argv[])
 #endif
 		!= EOF) {
 		switch (c) {
+		case 'x' :
+			parityToShrinkInMegaBytes = (data_off_t) strtoull(optarg, &e, 10);
+			if (!e || *e || parityToShrinkInMegaBytes == 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid number of megabytes '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			break;
 		case 'c' :
 			pathimport(conf, sizeof(conf), optarg);
 			break;
@@ -1448,6 +1463,8 @@ int snapraid_main(int argc, char* argv[])
 		operation = OPERATION_SMART;
 	} else if (strcmp(argv[optind], "probe") == 0) {
 		operation = OPERATION_PROBE;
+	} else if (strcmp(argv[optind], "parity") == 0) {
+		operation = OPERATION_PARITY;
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unknown command '%s'\n", argv[optind]);
@@ -1900,6 +1917,10 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		state_status(&state);
+	} else if (operation == OPERATION_PARITY) {
+		state_read(&state);
+		dump_parity_files_for_shrink(&state, parityToShrinkInMegaBytes);
+		
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 
