@@ -2742,7 +2742,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 /**
  * Get POWER state
  */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* info, char* serial, char* family, char* model, char* inter)
+static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2757,9 +2757,9 @@ static int devprobe(uint64_t device, const char* name, const char* smartctl, int
 	if (smartctl[0]) {
 		char option[128];
 		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -i %s", exedir, option);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a %s", exedir, option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -i %s", exedir, file);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a %s", exedir, file);
 	}
 
 	count = 0;
@@ -2776,7 +2776,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, 0, info, serial, family, model, inter) != 0) {
+	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interf) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		log_tag("device:%s:%s:shell\n", file, name);
@@ -2815,18 +2815,15 @@ retry:
 		}
 	}
 
-	if (ret == 0) {
-		log_tag("attr:%s:%s:power:active\n", file, name);
-		*power = POWER_ACTIVE;
-	} else if (ret == 3) {
+	if (ret == 3) {
 		log_tag("attr:%s:%s:power:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:exit:%d\n", file, name, ret);
-		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
-		return -1;
-		/* LCOV_EXCL_STOP */
+		log_tag("attr:%s:%s:power:active\n", file, name);
+		*power = POWER_ACTIVE;
+
+		/* store the return smartctl return value */
+		smart[SMART_FLAGS] = WEXITSTATUS(ret);
 	}
 
 	return 0;
@@ -2928,7 +2925,7 @@ static int devdownifup(uint64_t device, const char* name, const char* smartctl, 
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0) != 0)
+	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -3100,7 +3097,7 @@ static void* thread_probe(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
