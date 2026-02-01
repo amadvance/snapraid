@@ -820,13 +820,13 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		ps.plan = SCRUB_EVEN;
 	} else if (plan == SCRUB_FULL) {
 		ps.plan = SCRUB_FULL;
-		msg_info("Scrub plan: full. All data blocks will be checked.\n");
+		msg_progress("Scrub plan: full. All data blocks will be checked.\n");
 	} else if (plan == SCRUB_NEW) {
 		ps.plan = SCRUB_NEW;
-		msg_info("Scrub plan: new. Only blocks that have never been scrubbed will be checked.\n");
+		msg_progress("Scrub plan: new. Only blocks that have never been scrubbed will be checked.\n");
 	} else if (plan == SCRUB_BAD) {
 		ps.plan = SCRUB_BAD;
-		msg_info("Scrub plan: bad. Only blocks previously marked as bad will be checked.\n");
+		msg_progress("Scrub plan: bad. Only blocks previously marked as bad will be checked.\n");
 	} else if (state->opt.force_scrub_at) {
 		/* scrub the specified amount of blocks */
 		ps.plan = SCRUB_AUTO;
@@ -850,14 +850,14 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 
 		if (plan >= 0) {
 			if (olderthan >= 0)
-				msg_info("Scrub plan: auto. %d%% of the array, older than %d days, will be checked.\n", plan, olderthan);
+				msg_progress("Scrub plan: auto. %d%% of the array, older than %d days, will be checked.\n", plan, olderthan);
 			else
-				msg_info("Scrub plan: auto. %d%% of the array, older than 10 days, will be checked.\n", plan);
+				msg_progress("Scrub plan: auto. %d%% of the array, older than 10 days, will be checked.\n", plan);
 		} else {
 			if (olderthan >= 0)
-				msg_info("Scrub plan: auto. 8.3%% of the array, older than %d days, will be checked.\n", olderthan);
+				msg_progress("Scrub plan: auto. 8.3%% of the array, older than %d days, will be checked.\n", olderthan);
 			else
-				msg_info("Scrub plan: auto. 8.3%% of the array, older than 10 days, will be checked.\n");
+				msg_progress("Scrub plan: auto. 8.3%% of the array, older than 10 days, will be checked.\n");
 		}
 	}
 
