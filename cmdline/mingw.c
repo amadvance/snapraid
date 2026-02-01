@@ -132,31 +132,31 @@ void os_init(int opt)
 
 	/* initialize the thread local storage for strerror(), using free() as destructor */
 	if (windows_key_create(&last_error, free) != 0) {
-		log_fatal("Error calling windows_key_create().\n");
+		log_fatal(EEXTERNAL, "Error calling windows_key_create().\n");
 		exit(EXIT_FAILURE);
 	}
 
 	tick_last = 0;
 	if (windows_mutex_init(&tick_lock, 0) != 0) {
-		log_fatal("Error calling windows_mutex_init().\n");
+		log_fatal(EEXTERNAL, "Error calling windows_mutex_init().\n");
 		exit(EXIT_FAILURE);
 	}
 
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
-		log_fatal("Error loading the NTDLL module.\n");
+		log_fatal(EEXTERNAL, "Error loading the NTDLL module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	kernel32 = GetModuleHandle("KERNEL32.DLL");
 	if (!kernel32) {
-		log_fatal("Error loading the KERNEL32 module.\n");
+		log_fatal(EEXTERNAL, "Error loading the KERNEL32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (!dll_advapi32) {
-		log_fatal("Error loading the ADVAPI32 module.\n");
+		log_fatal(EEXTERNAL, "Error loading the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -260,7 +260,7 @@ static wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_buf, CONV_MAX);
 
 	if (ret <= 0) {
-		log_fatal("Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		log_fatal(EINTERNAL, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
@@ -276,7 +276,7 @@ static char* u16tou8ex(char* conv_buf, const wchar_t* src, size_t number_of_wcha
 
 	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
 	if (ret <= 0) {
-		log_fatal("Error converting from UTF-16 to UTF-8\n");
+		log_fatal(EINTERNAL, "Error converting from UTF-16 to UTF-8\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -368,7 +368,7 @@ static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_requ
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, CONV_MAX - count);
 
 	if (ret <= 0) {
-		log_fatal("Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		log_fatal(EINTERNAL, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
@@ -528,8 +528,8 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	 * "FILE_INVALID_FILE_ID, the identifier may only be described in 128 bit form."
 	 */
 	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
-		log_fatal("Invalid inode number! Is this ReFS?\n");
 		errno = EINVAL;
+		log_fatal(errno, "Invalid inode number! Is this ReFS?\n");
 		return -1;
 	}
 
@@ -573,8 +573,8 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 
 	/* in ReFS the IDs are 128 bit, and the 64 bit interface may fail */
 	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
-		log_fatal("Invalid inode number! Is this ReFS?\n");
 		errno = EINVAL;
+		log_fatal(errno, "Invalid inode number! Is this ReFS?\n");
 		return -1;
 	}
 
@@ -630,7 +630,7 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	name = u16tou8ex(conv_buf, info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		log_fatal("Name too long\n");
+		log_fatal(EINTERNAL, "Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -649,7 +649,7 @@ static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const F
 	name = u16tou8ex(conv_buf, stream->FileName, stream->FileNameLength / 2, &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		log_fatal("Name too long\n");
+		log_fatal(EINTERNAL, "Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -707,8 +707,8 @@ static void windows_errno(DWORD error)
 		errno = EIO;
 		break;
 	default :
-		log_fatal("Unexpected Windows error %lu.\n", error);
-		errno = EIO;
+		errno = ENXIO;
+		log_fatal(errno, "Unexpected Windows error %lu.\n", error);
 		break;
 	}
 }
@@ -1021,11 +1021,9 @@ int windows_fsync(int fd)
 			 * this error, but not enough sure to ignore it.
 			 * So, we use now an extended error reporting.
 			 */
-			log_fatal("Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
-			log_fatal("Are you using ATA-over-Ethernet ? Please report it.\n");
-
-			/* normal error processing */
 			windows_errno(error);
+			log_fatal(errno, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
+			log_fatal(errno, "Are you using ATA-over-Ethernet ? Please report it.\n");
 			return -1;
 
 		case ERROR_ACCESS_DENIED :
@@ -1080,11 +1078,9 @@ static int windows_vsync(const wchar_t* volume)
 			 * this error, but not enough sure to ignore it.
 			 * So, we use now an extended error reporting.
 			 */
-			log_fatal("Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
-			log_fatal("Are you using ATA-over-Ethernet ? Please report it.\n");
-
-			/* normal error processing */
 			windows_errno(error);
+			log_fatal(errno, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
+			log_fatal(errno, "Are you using ATA-over-Ethernet ? Please report it.\n");
 			return -1;
 
 		case ERROR_ACCESS_DENIED :
@@ -1443,7 +1439,7 @@ static windows_dir* windows_opendir_find(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		log_fatal("Low memory\n");
+		log_fatal(EFAULT, "Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1577,7 +1573,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		log_fatal("Low memory\n");
+		log_fatal(EFAULT, "Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1587,7 +1583,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 	dirstream->buffer_size = 64 * 1024;
 	dirstream->buffer = malloc(dirstream->buffer_size);
 	if (!dirstream->buffer) {
-		log_fatal("Low memory\n");
+		log_fatal(EFAULT, "Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2148,7 +2144,7 @@ retry:
 		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/a7c25ba9/
 		 */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			log_fatal("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
+			log_fatal(EEXTERNAL, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
 			Sleep(50);
 			goto retry;
 		}
@@ -2186,7 +2182,7 @@ retry:
 		DWORD err = GetLastError();
 		/* See windows_pread() for comments on this error management */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			log_fatal("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
+			log_fatal(EEXTERNAL, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
 			Sleep(50);
 			goto retry;
 		}
@@ -2475,7 +2471,7 @@ static int devscan(tommy_list* list)
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2493,13 +2489,13 @@ static int devscan(tommy_list* list)
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
+		log_fatal(errno, "Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2539,7 +2535,7 @@ retry:
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2559,7 +2555,7 @@ retry:
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2771,7 +2767,7 @@ retry:
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2791,7 +2787,7 @@ retry:
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2861,7 +2857,7 @@ retry:
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2881,7 +2877,7 @@ retry:
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2908,7 +2904,7 @@ retry:
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:exit:%d\n", file, name, ret);
-		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
+		log_fatal(errno, "Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3157,7 +3153,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 
 		if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to resolve path '%s'.\n", devinfo->mount);
+			log_fatal(EEXTERNAL, "Failed to resolve path '%s'.\n", devinfo->mount);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -3165,7 +3161,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		/* expand the tree of devices */
 		if (devtree(devinfo, low) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to expand device '%s'.\n", devinfo->file);
+			log_fatal(EEXTERNAL, "Failed to expand device '%s'.\n", devinfo->file);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -3175,7 +3171,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	if (others) {
 		if (devscan(low) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to list other devices.\n");
+			log_fatal(EEXTERNAL, "Failed to list other devices.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

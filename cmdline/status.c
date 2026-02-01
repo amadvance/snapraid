@@ -365,7 +365,7 @@ int state_status(struct snapraid_state* state)
 	log_flush();
 
 	if (!count) {
-		log_fatal("The array is empty.\n");
+		log_fatal(EUSER, "The array is empty.\n");
 		free(timemap);
 		return 0;
 	}

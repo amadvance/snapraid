@@ -578,5 +578,16 @@ extern volatile int global_interrupt;
  */
 #define WINDOWS_SPACEHOLDER_SIZE (256 * 1024 * 1024)
 
+/**
+ * Generic errors
+ */
+#define EINTERNAL EFAULT /**< Internal assertion failed. */
+#define EDATA EIO /**< Silent data corruption. */
+#define ESOFT EINVAL /**< Software error, like permission denied. */
+#define EUSER EINVAL /**< Invalid value specified by the user. */
+#define EEXTERNAL EINVAL /**< Invalid external interface behaviour. */
+#define ECONTENT EINVAL /**< Invalid content file. */
+#define EENVIRONMENT EINVAL /**< Invalid physical environment, like temperature too high. */
+
 #endif
 

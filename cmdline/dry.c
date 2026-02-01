@@ -39,20 +39,20 @@ static const char* es(int err)
 static void log_fatal_errno(int err, const char* name)
 {
 	if (err == EIO) {
-		log_fatal("DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
 	} else if (err == EACCES) {
-		log_fatal("WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
 	} else if (err == ENOSPC) {
-		log_fatal("WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
 	} else {
-		log_fatal("WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
 	}
 }
 
 static void log_error_errno(int err, const char* name)
 {
 	if (err == EIO) {
-		log_fatal("DANGER! Unexpected input/output error in disk %s.\n", name);
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s.\n", name);
 	}
 }
 
@@ -100,7 +100,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 			/* and closing a descriptor should never fail */
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 			log_fatal_errno(errno, disk->name);
-			log_fatal("Stopping at block %u\n", blockcur);
+			log_fatal(errno, "Stopping at block %u\n", blockcur);
 
 			if (errno == EIO) {
 				task->state = TASK_STATE_IOERROR;
@@ -118,7 +118,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 		if (errno == EIO) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, disk->name);
-			log_fatal("Stopping at block %u\n", blockcur);
+			log_fatal(errno, "Stopping at block %u\n", blockcur);
 			task->state = TASK_STATE_IOERROR;
 			return;
 			/* LCOV_EXCL_STOP */
@@ -290,8 +290,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
-					log_fatal("Stopping at block %u\n", blockcur);
+					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
+					log_fatal(EIO, "Stopping at block %u\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
@@ -301,7 +301,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 			if (task->state != TASK_STATE_DONE) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in task state\n");
+				log_fatal(EINTERNAL, "Internal inconsistency in task state\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -343,8 +343,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_name(levcur));
-					log_fatal("Stopping at block %u\n", blockcur);
+					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_name(levcur));
+					log_fatal(EIO, "Stopping at block %u\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
@@ -352,7 +352,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 			if (task->state != TASK_STATE_DONE) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in task state\n");
+				log_fatal(EINTERNAL, "Internal inconsistency in task state\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -421,9 +421,9 @@ bail:
 	}
 
 	if (soft_error)
-		log_fatal("DANGER! Unexpected errors!\n");
+		log_fatal(ESOFT, "DANGER! Unexpected errors!\n");
 	if (io_error)
-		log_fatal("DANGER! Unexpected input/output errors!\n");
+		log_fatal(EIO, "DANGER! Unexpected input/output errors!\n");
 
 	log_tag("summary:error_soft:%u\n", soft_error);
 	log_tag("summary:error_io:%u\n", io_error);
@@ -456,7 +456,7 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal(EUSER, "Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

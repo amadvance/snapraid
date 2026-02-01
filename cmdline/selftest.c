@@ -192,7 +192,7 @@ static void test_hash(void)
 		digest = tommy_hash_u32(TEST_HASH32[i].seed, buffer_aligned, TEST_HASH32[i].len);
 		if (digest != TEST_HASH32[i].digest) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed hash32 test\n");
+			log_fatal(EINTERNAL, "Failed hash32 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -204,7 +204,7 @@ static void test_hash(void)
 		digest = tommy_strhash_u32(TEST_STRHASH32[i].seed, buffer_aligned);
 		if (digest != TEST_STRHASH32[i].digest) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed strhash32 test\n");
+			log_fatal(EINTERNAL, "Failed strhash32 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -216,7 +216,7 @@ static void test_hash(void)
 		digest = tommy_hash_u64(TEST_HASH64[i].seed, buffer_aligned, TEST_HASH64[i].len);
 		if (digest != TEST_HASH64[i].digest) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed hash64 test\n");
+			log_fatal(EINTERNAL, "Failed hash64 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -230,7 +230,7 @@ static void test_hash(void)
 		memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);
 		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed Murmur3 test\n");
+			log_fatal(EINTERNAL, "Failed Murmur3 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -243,7 +243,7 @@ static void test_hash(void)
 		memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);
 		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed Spooky2 test\n");
+			log_fatal(EINTERNAL, "Failed Spooky2 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -256,7 +256,7 @@ static void test_hash(void)
 		memhash(HASH_METRO, seed_aligned, digest, buffer_aligned, TEST_METRO[i].len);
 		if (memcmp(digest, TEST_METRO[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed Metro test\n");
+			log_fatal(EINTERNAL, "Failed Metro test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -269,7 +269,7 @@ static void test_hash(void)
 		memhash(HASH_MUSEAIR, seed_aligned, digest, buffer_aligned, TEST_MUSEAIR[i].len);
 		if (memcmp(digest, TEST_MUSEAIR[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed MuseAir test\n");
+			log_fatal(EINTERNAL, "Failed MuseAir test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -322,7 +322,7 @@ static void test_crc32c(void)
 
 		if (digest != TEST_CRC32C[i].digest || digest_gen != TEST_CRC32C[i].digest) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed CRC32C test\n");
+			log_fatal(EINTERNAL, "Failed CRC32C test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -585,7 +585,7 @@ static void test_tommy(void)
 	return;
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Failed tommy test\n");
+	log_fatal(EINTERNAL, "Failed tommy test\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -848,7 +848,7 @@ static void test_wnmatch(void)
 	for (int i = 0; WNMATCH_TEST[i].pattern; ++i) {
 		if (wnmatch(WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text) != WNMATCH_TEST[i].result) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed wnmatch test %s %s, expected %d\n", WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text, WNMATCH_TEST[i].result);
+			log_fatal(EINTERNAL, "Failed wnmatch test %s %s, expected %d\n", WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text, WNMATCH_TEST[i].result);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -865,14 +865,14 @@ void selftest(void)
 	/* large file check */
 	if (sizeof(off_t) < sizeof(uint64_t)) {
 		/* LCOV_EXCL_START */
-		log_fatal("Missing support for large files\n");
+		log_fatal(EINTERNAL, "Missing support for large files\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (util_selftest() != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed UTIL test\n");
+		log_fatal(EINTERNAL, "Failed UTIL test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -882,55 +882,55 @@ void selftest(void)
 	test_wnmatch();
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed SELF test\n");
+		log_fatal(EINTERNAL, "Failed SELF test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_sort() != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed SORT test\n");
+		log_fatal(EINTERNAL, "Failed SORT test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_insert() != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed INSERT test\n");
+		log_fatal(EINTERNAL, "Failed INSERT test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_combo() != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed COMBO test\n");
+		log_fatal(EINTERNAL, "Failed COMBO test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed GEN Vandermonde test\n");
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed REC Vandermonde test\n");
+		log_fatal(EINTERNAL, "Failed REC Vandermonde test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed GEN Cauchy test\n");
+		log_fatal(EINTERNAL, "Failed GEN Cauchy test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed REC Cauchy test\n");
+		log_fatal(EINTERNAL, "Failed REC Cauchy test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed GEN Cauchy test single data disk\n");
+		log_fatal(EINTERNAL, "Failed GEN Cauchy test single data disk\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

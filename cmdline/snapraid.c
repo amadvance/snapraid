@@ -564,7 +564,7 @@ void log_open(const char* file)
 				break;
 			default :
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid type specifier '%c' in the log file.\n", *file);
+				log_fatal(EUSER, "Invalid type specifier '%c' in the log file.\n", *file);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -579,7 +579,7 @@ void log_open(const char* file)
 	stdlog = fopen(path, mode);
 	if (!stdlog) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening the log file '%s'. %s.\n", path, strerror(errno));
+		log_fatal(errno, "Error opening the log file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -590,7 +590,7 @@ void log_close(const char* file)
 	if (stdlog != stdout && stdlog != stderr && stdlog != 0) {
 		if (fclose(stdlog) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error closing the log file '%s'. %s.\n", file, strerror(errno));
+			log_fatal(errno, "Error closing the log file '%s'. %s.\n", file, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1005,7 +1005,7 @@ int snapraid_main(int argc, char* argv[])
 			struct snapraid_filter* filter = filter_alloc_file(1, "", optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid filter specification '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1015,7 +1015,7 @@ int snapraid_main(int argc, char* argv[])
 			struct snapraid_filter* filter = filter_alloc_disk(1, optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid filter specification '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1051,7 +1051,7 @@ int snapraid_main(int argc, char* argv[])
 				plan = strtoul(optarg, &e, 10);
 				if (!e || *e || plan > 100) {
 					/* LCOV_EXCL_START */
-					log_fatal("Invalid plan/percentage '%s'\n", optarg);
+					log_fatal(EUSER, "Invalid plan/percentage '%s'\n", optarg);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1061,7 +1061,7 @@ int snapraid_main(int argc, char* argv[])
 			olderthan = strtoul(optarg, &e, 10);
 			if (!e || *e || olderthan > 1000) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid number of days '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid number of days '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1069,7 +1069,7 @@ int snapraid_main(int argc, char* argv[])
 		case 'w' : /* --bw-limit */
 			if (optarg == 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Missing bandwidth limit\n");
+				log_fatal(EUSER, "Missing bandwidth limit\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1078,7 +1078,7 @@ int snapraid_main(int argc, char* argv[])
 			opt.bwlimit = strtoul(optarg, &e, 10);
 			if (!e || e == optarg) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid bandwidth limit '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid bandwidth limit '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1092,7 +1092,7 @@ int snapraid_main(int argc, char* argv[])
 				opt.bwlimit *= 1000 * 1000 * 1000;
 			} else if (e[0] != '\0') {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid bandwidth limit suffix '%s'\n", e);
+				log_fatal(EUSER, "Invalid bandwidth limit suffix '%s'\n", e);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1101,7 +1101,7 @@ int snapraid_main(int argc, char* argv[])
 			blockstart = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid start position '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid start position '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1110,7 +1110,7 @@ int snapraid_main(int argc, char* argv[])
 			blockcount = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid count number '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid count number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1119,7 +1119,7 @@ int snapraid_main(int argc, char* argv[])
 			opt.io_error_limit = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid error limit number '%s'\n", optarg);
+				log_fatal(EUSER, "Invalid error limit number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1127,7 +1127,7 @@ int snapraid_main(int argc, char* argv[])
 		case 'i' :
 			if (import_timestamp) {
 				/* LCOV_EXCL_START */
-				log_fatal("Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
+				log_fatal(EUSER, "Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1136,7 +1136,7 @@ int snapraid_main(int argc, char* argv[])
 		case OPT_TEST_IMPORT_CONTENT :
 			if (import_content) {
 				/* LCOV_EXCL_START */
-				log_fatal("Import directory '%s' already specified as '%s'\n", optarg, import_content);
+				log_fatal(EUSER, "Import directory '%s' already specified as '%s'\n", optarg, import_content);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1145,7 +1145,7 @@ int snapraid_main(int argc, char* argv[])
 		case 'l' :
 			if (log_file) {
 				/* LCOV_EXCL_START */
-				log_fatal("Log file '%s' already specified as '%s'\n", optarg, log_file);
+				log_fatal(EUSER, "Log file '%s' already specified as '%s'\n", optarg, log_file);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1317,7 +1317,7 @@ int snapraid_main(int argc, char* argv[])
 			opt.io_cache = atoi(optarg);
 			if (opt.io_cache != 1 && (opt.io_cache < IO_MIN || opt.io_cache > IO_MAX)) {
 				/* LCOV_EXCL_START */
-				log_fatal("The IO cache should be between %u and %u.\n", IO_MIN, IO_MAX);
+				log_fatal(EUSER, "The IO cache should be between %u and %u.\n", IO_MIN, IO_MAX);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1369,7 +1369,7 @@ int snapraid_main(int argc, char* argv[])
 				FMT_MODE = FMT_PATH;
 			else {
 				/* LCOV_EXCL_START */
-				log_fatal("Unknown format '%s'\n", optarg);
+				log_fatal(EUSER, "Unknown format '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1379,7 +1379,7 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal("Unknown option '%c'\n", (char)c);
+			log_fatal(EUSER, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1450,7 +1450,7 @@ int snapraid_main(int argc, char* argv[])
 		operation = OPERATION_PROBE;
 	} else {
 		/* LCOV_EXCL_START */
-		log_fatal("Unknown command '%s'\n", argv[optind]);
+		log_fatal(EUSER, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1462,7 +1462,7 @@ int snapraid_main(int argc, char* argv[])
 	default :
 		if (opt.auditonly) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -a, --audit-only with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -a, --audit-only with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1480,7 +1480,7 @@ int snapraid_main(int argc, char* argv[])
 	default :
 		if (opt.force_device) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -D, --force-device with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -D, --force-device with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1494,7 +1494,7 @@ int snapraid_main(int argc, char* argv[])
 	default :
 		if (opt.force_nocopy) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -N, --force-nocopy with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -N, --force-nocopy with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1506,21 +1506,21 @@ int snapraid_main(int argc, char* argv[])
 	default :
 		if (opt.prehash) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -h, --pre-hash with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -h, --pre-hash with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (opt.force_full) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -F, --force-full with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -F, --force-full with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (opt.force_realloc) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -R, --force-realloc with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -R, --force-realloc with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1528,28 +1528,28 @@ int snapraid_main(int argc, char* argv[])
 
 	if (opt.force_full && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -F, --force-full and -N, --force-nocopy options simultaneously\n");
+		log_fatal(EUSER, "You cannot use the -F, --force-full and -N, --force-nocopy options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.force_realloc && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -R, --force-realloc and -N, --force-nocopy options simultaneously\n");
+		log_fatal(EUSER, "You cannot use the -R, --force-realloc and -N, --force-nocopy options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.force_realloc && opt.force_full) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -R, --force-realloc and -F, --force-full options simultaneously\n");
+		log_fatal(EUSER, "You cannot use the -R, --force-realloc and -F, --force-full options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.prehash && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use the -h, --pre-hash and -N, --force-nocopy options simultaneously\n");
+		log_fatal(EUSER, "You cannot use the -h, --pre-hash and -N, --force-nocopy options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1562,7 +1562,7 @@ int snapraid_main(int argc, char* argv[])
 	default :
 		if (!tommy_list_empty(&filterlist_disk)) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -d, --filter-disk with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -d, --filter-disk with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1571,19 +1571,19 @@ int snapraid_main(int argc, char* argv[])
 	case OPERATION_SPINDOWN :
 		if (!tommy_list_empty(&filterlist_file)) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -f, --filter with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -f, --filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (filter_missing != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -m, --filter-missing with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -m, --filter-missing with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (filter_error != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -e, --filter-error with the '%s' command\n", command);
+			log_fatal(EUSER, "You cannot use -e, --filter-error with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1593,7 +1593,7 @@ int snapraid_main(int argc, char* argv[])
 	/* because we don't keep the information on what disk is the error */
 	if (filter_error != 0 && !tommy_list_empty(&filterlist_disk)) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot use -e, --filter-error and -d, --filter-disk simultaneously\n");
+		log_fatal(EUSER, "You cannot use -e, --filter-error and -d, --filter-disk simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1605,7 +1605,7 @@ int snapraid_main(int argc, char* argv[])
 	default :
 		if (import_timestamp != 0 || import_content != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Import not allowed with the '%s' command\n", command);
+			log_fatal(EUSER, "Import not allowed with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1732,10 +1732,10 @@ int snapraid_main(int argc, char* argv[])
 		if (lock == -1) {
 			/* LCOV_EXCL_START */
 			if (errno != EWOULDBLOCK) {
-				log_fatal("Failed to create the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+				log_fatal(errno, "Failed to create the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			} else {
-				log_fatal("The lock file '%s' is already in use!\n", state.lockfile);
-				log_fatal("SnapRAID is already in use!\n");
+				log_fatal(errno, "The lock file '%s' is already in use!\n", state.lockfile);
+				log_fatal(errno, "SnapRAID is already in use!\n");
 			}
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -1804,7 +1804,7 @@ int snapraid_main(int argc, char* argv[])
 			ret = system(run); /* ignore error */
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error executing command '%s'.\n", run);
+				log_fatal(errno, "Error executing command '%s'.\n", run);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1951,7 +1951,7 @@ int snapraid_main(int argc, char* argv[])
 	if (!opt.skip_lock && state.lockfile[0]) {
 		if (lock_unlock(lock) == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to close the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+			log_fatal(errno, "Failed to close the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

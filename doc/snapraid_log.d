@@ -358,12 +358,18 @@ General Progress and Execution Tags
 	=msg:<level>:<msg>
 		Messages printed to the screen.
 
-		<level> - One of `fatal`, `error`, `expected`, `status`,
-			`progress` or `verbose`.
-		fatal - A fatal error occurred. Program will abort after this
-			message.
-		error - A generic error condition that doesn't prevent the
-			program to continue.
+		<level> - One of `fatal`, `fatal_hardware`, `error`, `error_hardware`,
+			`expected`, `status`, `progress` or `verbose`.
+		fatal, fatal_hardware - A fatal error occurred. Program will
+			abort after this message.
+			The `hardware` one means that the problem was caused
+			by a hardware failure, like an Input/Output error
+			or a silent data error.
+		error, error_hardware - A generic error condition that doesn't
+			prevent the program to continue.
+			The `hardware` one means that the problem was caused
+			by a hardware failure, like an Input/Output error
+			or a silent data error.
 		expected - An expected error condition. At present it
 			happens only when using the `-m` option with files
 			expected missing.

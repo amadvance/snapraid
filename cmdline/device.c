@@ -1013,7 +1013,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		case DEVICE_PROBE : ope = "Probe"; break;
 		case DEVICE_DOWNIFUP : ope = "Spindown"; break;
 		}
-		log_fatal("%s is unsupported in this platform.\n", ope);
+		log_fatal(ESOFT, "%s is unsupported in this platform.\n", ope);
 	} else {
 		if (operation == DEVICE_LIST) {
 			for (i = tommy_list_head(&low); i != 0; i = i->next) {

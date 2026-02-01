@@ -39,20 +39,20 @@ static const char* es(int err)
 static void log_fatal_errno(int err, const char* name)
 {
 	if (err == EIO) {
-		log_fatal("DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
 	} else if (err == EACCES) {
-		log_fatal("WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
 	} else if (err == ENOSPC) {
-		log_fatal("WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
 	} else {
-		log_fatal("WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
 	}
 }
 
 static void log_error_errno(int err, const char* name)
 {
 	if (err == EIO) {
-		log_fatal("DANGER! Unexpected input/output error in disk %s.\n", name);
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s.\n", name);
 	}
 }
 
@@ -172,7 +172,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			/* and closing a descriptor should never fail */
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 			log_fatal_errno(errno, disk->name);
-			log_fatal("Stopping at block %u\n", blockcur);
+			log_fatal(errno, "Stopping at block %u\n", blockcur);
 
 			if (errno == EIO) {
 				task->state = TASK_STATE_IOERROR;
@@ -190,7 +190,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 		if (errno == EIO) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, disk->name);
-			log_fatal("Stopping at block %u\n", blockcur);
+			log_fatal(errno, "Stopping at block %u\n", blockcur);
 			task->state = TASK_STATE_IOERROR;
 			return;
 			/* LCOV_EXCL_STOP */
@@ -466,8 +466,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
-					log_fatal("Stopping at block %u\n", blockcur);
+					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
+					log_fatal(EIO, "Stopping at block %u\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
@@ -478,7 +478,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 			if (task->state != TASK_STATE_DONE) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in task state\n");
+				log_fatal(EINTERNAL, "Internal inconsistency in task state\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -511,7 +511,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						error_on_this_block = 1;
 					} else {
 						log_tag("error_data:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
-						log_error("Data error in file '%s' at position '%u', diff hash bits %u/%u\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
+						log_error(EDATA, "Data error in file '%s' at position '%u', diff hash bits %u/%u\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -564,8 +564,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_name(levcur));
-					log_fatal("Stopping at block %u\n", blockcur);
+					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_name(levcur));
+					log_fatal(EIO, "Stopping at block %u\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
@@ -579,7 +579,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 			if (task->state != TASK_STATE_DONE) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in task state\n");
+				log_fatal(EINTERNAL, "Internal inconsistency in task state\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -603,7 +603,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						error_on_this_block = 1;
 					} else {
 						log_tag("parity_error_data:%u:%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
-						log_error("Data error in parity '%s' at position '%u', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
+						log_error(EDATA, "Data error in parity '%s' at position '%u', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -706,15 +706,15 @@ end:
 	}
 
 	if (soft_error)
-		log_fatal("WARNING! Unexpected soft errors!\n");
+		log_fatal(ESOFT, "WARNING! Unexpected soft errors!\n");
 	if (io_error)
-		log_fatal("DANGER! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
+		log_fatal(EIO, "DANGER! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
 	if (silent_error)
-		log_fatal("DANGER! Unexpected data errors! The failing blocks are now marked as bad!\n");
+		log_fatal(EDATA, "DANGER! Unexpected data errors! The failing blocks are now marked as bad!\n");
 	if (io_error || silent_error) {
-		log_fatal("Use 'snapraid status' to list the bad blocks.\n");
-		log_fatal("Use 'snapraid -e fix' to recover them.\n");
-		log_fatal("Use 'snapraid -p bad scrub' to recheck after fixing to clear the bad state.\n");
+		log_fatal(ESOFT, "Use 'snapraid status' to list the bad blocks.\n");
+		log_fatal(ESOFT, "Use 'snapraid -e fix' to recover them.\n");
+		log_fatal(ESOFT, "Use 'snapraid -p bad scrub' to recheck after fixing to clear the bad state.\n");
 	}
 
 	log_tag("summary:error_soft:%u\n", soft_error);
@@ -804,7 +804,7 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 	if ((plan == SCRUB_BAD || plan == SCRUB_NEW || plan == SCRUB_FULL)
 		&& olderthan >= 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("You can specify -o, --older-than only with a numeric percentage.\n");
+		log_fatal(EUSER, "You can specify -o, --older-than only with a numeric percentage.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -881,7 +881,7 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 
 	if (!count) {
 		/* LCOV_EXCL_START */
-		log_fatal("The array appears to be empty.\n");
+		log_fatal(EUSER, "The array is empty.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

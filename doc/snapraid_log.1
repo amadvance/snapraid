@@ -537,16 +537,22 @@ Messages printed to the screen.
 .PD 0
 .HP 4
 .I <level>
-One of \`fatal\`, \`error\`, \`expected\`, \`status\`,
-\`progress\` or \`verbose\`.
+One of \`fatal\`, \`fatal_hardware\`, \`error\`, \`error_hardware\`,
+\`expected\`, \`status\`, \`progress\` or \`verbose\`.
 .HP 4
-.I fatal
-A fatal error occurred. Program will abort after this
-message.
+.I fatal, fatal_hardware
+A fatal error occurred. Program will
+abort after this message.
+The \`hardware\` one means that the problem was caused
+by a hardware failure, like an Input/Output error
+or a silent data error.
 .HP 4
-.I error
-A generic error condition that doesn\'t prevent the
-program to continue.
+.I error, error_hardware
+A generic error condition that doesn\'t
+prevent the program to continue.
+The \`hardware\` one means that the problem was caused
+by a hardware failure, like an Input/Output error
+or a silent data error.
 .HP 4
 .I expected
 An expected error condition. At present it

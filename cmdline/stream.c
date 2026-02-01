@@ -65,7 +65,7 @@ STREAM* sopen_read(const char* file, int flags)
 		/* advise sequential access */
 		ret = posix_fadvise(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret == ENOSYS) {
-			log_fatal("WARNING! fadvise() is not supported in this platform. Performance may not be optimal!\n");
+			log_fatal(errno, "WARNING! fadvise() is not supported in this platform. Performance may not be optimal!\n");
 			/* call is not supported, like in armhf, see posix_fadvise manpage */
 			ret = 0;
 		}

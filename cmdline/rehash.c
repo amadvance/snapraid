@@ -39,7 +39,7 @@ void state_rehash(struct snapraid_state* state)
 	if (state->prevhash != HASH_UNDEFINED) {
 		/* LCOV_EXCL_START */
 		log_tag("summary:exit:already_in_progress\n");
-		log_fatal("You already have a rehash in progress.\n");
+		log_fatal(EUSER, "You already have a rehash in progress.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -47,7 +47,7 @@ void state_rehash(struct snapraid_state* state)
 	if (state->hash == state->besthash) {
 		/* LCOV_EXCL_START */
 		log_tag("summary:exit:not_required\n");
-		log_fatal("You are already using the best hash for your platform.\n");
+		log_fatal(EUSER, "You are already using the best hash for your platform.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -60,7 +60,7 @@ void state_rehash(struct snapraid_state* state)
 	state->hash = state->besthash;
 	if (randomize(state->hashseed, HASH_MAX) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to get random values.\n");
+		log_fatal(errno, "Failed to get random values.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -78,7 +78,7 @@ void state_rehash(struct snapraid_state* state)
 
 		if (info_get_rehash(info)) {
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency for a rehash already in progress\n");
+			log_fatal(EINTERNAL, "Internal inconsistency for a rehash already in progress\n");
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}

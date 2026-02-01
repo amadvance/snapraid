@@ -204,14 +204,17 @@ static void vmsg(FILE* out, const char* format, va_list ap)
 	free(dup);
 }
 
-void log_fatal(const char* format, ...)
+void log_fatal(int err, const char* format, ...)
 {
 	va_list ap;
 
 	lock_msg();
 
 	if (stdlog) {
-		fprintf(stdlog, "msg:fatal: ");
+		if (err == EIO)
+			fprintf(stdlog, "msg:fatal_hardware: ");
+		else
+			fprintf(stdlog, "msg:fatal: ");
 
 		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
@@ -229,14 +232,17 @@ void log_fatal(const char* format, ...)
 	unlock_msg();
 }
 
-void log_error(const char* format, ...)
+void log_error(int err, const char* format, ...)
 {
 	va_list ap;
 
 	lock_msg();
 
 	if (stdlog) {
-		fprintf(stdlog, "msg:error: ");
+		if (err == EIO)
+			fprintf(stdlog, "msg:error_hardware: ");
+		else
+			fprintf(stdlog, "msg:error: ");
 
 		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
@@ -254,14 +260,17 @@ void log_error(const char* format, ...)
 	unlock_msg();
 }
 
-void log_expected(const char* format, ...)
+void log_expected(int err, const char* format, ...)
 {
 	va_list ap;
 
 	lock_msg();
 
 	if (stdlog) {
-		fprintf(stdlog, "msg:expected: ");
+		if (err == EIO)
+			fprintf(stdlog, "msg:error_hardware: "); /* we never expect an hardware error */
+		else
+			fprintf(stdlog, "msg:expected: ");
 
 		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
@@ -557,7 +566,7 @@ const char* esc_tag(const char* str, char* buffer)
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Escape for log is too long\n");
+	log_fatal(EINTERNAL, "Escape for log is too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -674,7 +683,7 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Escape for shell is too long\n");
+	log_fatal(EINTERNAL, "Escape for shell is too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -746,7 +755,7 @@ const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Escape for shell is too long\n");
+	log_fatal(EINTERNAL, "Escape for shell is too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -855,7 +864,7 @@ void pathcpy(char* dst, size_t size, const char* src)
 
 	if (len + 1 > size) {
 		/* LCOV_EXCL_START */
-		log_fatal("Path too long '%s'\n", src);
+		log_fatal(EINTERNAL, "Path too long '%s'\n", src);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -870,7 +879,7 @@ void pathcat(char* dst, size_t size, const char* src)
 
 	if (dst_len + src_len + 1 > size) {
 		/* LCOV_EXCL_START */
-		log_fatal("Path too long '%s%s'\n", dst, src);
+		log_fatal(EINTERNAL, "Path too long '%s%s'\n", dst, src);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -884,7 +893,7 @@ void pathcatl(char* dst, size_t dst_len, size_t size, const char* src)
 
 	if (dst_len + src_len + 1 > size) {
 		/* LCOV_EXCL_START */
-		log_fatal("Path too long '%s%s'\n", dst, src);
+		log_fatal(EINTERNAL, "Path too long '%s%s'\n", dst, src);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -898,7 +907,7 @@ void pathcatc(char* dst, size_t size, char c)
 
 	if (dst_len + 2 > size) {
 		/* LCOV_EXCL_START */
-		log_fatal("Path too long '%s%c'\n", dst, c);
+		log_fatal(EINTERNAL, "Path too long '%s%c'\n", dst, c);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -961,9 +970,9 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 		/* LCOV_EXCL_START */
 		if (size > 0) {
 			dst[size - 1] = 0;
-			log_fatal("Path too long '%s...'\n", dst);
+			log_fatal(EINTERNAL, "Path too long '%s...'\n", dst);
 		} else {
-			log_fatal("Path too long for empty size'\n");
+			log_fatal(EINTERNAL, "Path too long for empty size'\n");
 		}
 		os_abort();
 		/* LCOV_EXCL_STOP */
@@ -977,7 +986,7 @@ void pathslash(char* dst, size_t size)
 	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
 			/* LCOV_EXCL_START */
-			log_fatal("Path too long '%s/'\n", dst);
+			log_fatal(EINTERNAL, "Path too long '%s/'\n", dst);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -1097,7 +1106,7 @@ int mkancestor(const char* file)
 	/* create it */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error creating directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1839,13 +1848,13 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 			inside = 1;
 		} else if (inside) {
 			if (sscanf(s, "%u %*s %*s %" SCNu64 " %*s %*s %*s %*s %*s %" SCNu64, &id, &normalized, &raw) != 3) {
-				log_fatal("Invalid smartctl line '%s'.\n", s);
+				log_fatal(EEXTERNAL, "Invalid smartctl line '%s'.\n", s);
 				return -1;
 			}
 
 			if (id >= 256) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid SMART id '%u'.\n", id);
+				log_fatal(EEXTERNAL, "Invalid SMART id '%u'.\n", id);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -1901,7 +1910,7 @@ void thread_mutex_init(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_init(mutex, 0) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_mutex_init().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_mutex_init().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1911,7 +1920,7 @@ void thread_mutex_destroy(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_destroy(mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_mutex_destroy().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_mutex_destroy().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1921,7 +1930,7 @@ void thread_mutex_lock(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_lock(mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_mutex_lock().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_mutex_lock().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1931,7 +1940,7 @@ void thread_mutex_unlock(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_unlock(mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_mutex_unlock().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_mutex_unlock().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1941,7 +1950,7 @@ void thread_cond_init(thread_cond_t* cond)
 {
 	if (pthread_cond_init(cond, 0) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_cond_init().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_cond_init().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1951,7 +1960,7 @@ void thread_cond_destroy(thread_cond_t* cond)
 {
 	if (pthread_cond_destroy(cond) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_cond_destroy().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_cond_destroy().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1961,7 +1970,7 @@ void thread_cond_signal(thread_cond_t* cond)
 {
 	if (pthread_cond_signal(cond) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_cond_signal().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_cond_signal().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1971,7 +1980,7 @@ void thread_cond_broadcast(thread_cond_t* cond)
 {
 	if (pthread_cond_broadcast(cond) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_cond_broadcast().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_cond_broadcast().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1981,7 +1990,7 @@ void thread_cond_wait(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (pthread_cond_wait(cond, mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_cond_wait().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_cond_wait().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2054,7 +2063,7 @@ void thread_create(thread_id_t* thread, void* (*func)(void*), void *arg)
 {
 	if (pthread_create(thread, 0, func, arg) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_create().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_create().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2064,7 +2073,7 @@ void thread_join(thread_id_t thread, void** retval)
 {
 	if (pthread_join(thread, retval) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed call to pthread_join().\n");
+		log_fatal(EINTERNAL, "Failed call to pthread_join().\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}

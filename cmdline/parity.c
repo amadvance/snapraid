@@ -145,15 +145,15 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 				if (parity_pos >= blockalloc) {
 					found = 1;
 					log_tag("outofparity:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					log_fatal("outofparity %s%s\n", disk->dir, file->sub);
+					log_fatal(ESOFT, "outofparity %s%s\n", disk->dir, file->sub);
 				}
 			}
 		}
 	}
 
 	if (found) {
-		log_fatal("\nInsufficient parity space. Data requires more parity than available.\n");
-		log_fatal("Move the 'outofparity' files to a larger disk.\n");
+		log_fatal(ESOFT, "\nInsufficient parity space. Data requires more parity than available.\n");
+		log_fatal(ESOFT, "Move the 'outofparity' files to a larger disk.\n");
 	}
 }
 
@@ -200,7 +200,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		split->f = open(split->path, flags, 0600);
 		if (split->f == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -212,7 +212,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		ret = fstat(split->f, &split->st);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -231,7 +231,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			/* ensure that the resulting size if block aligned */
 			if ((split->size & block_mask) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
+				log_fatal(ESOFT, "Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
@@ -240,7 +240,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		ret = advise_open(&split->advise, split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -397,28 +397,28 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 
 		spaceholder_f = open(spaceholder_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
 		if (spaceholder_f == -1) {
-			log_fatal("Failed to create space holder file '%s'.\n", spaceholder_path);
+			log_fatal(errno, "Failed to create space holder file '%s'.\n", spaceholder_path);
 			return -1;
 		}
 
 		/* note that in Windows ftruncate is really allocating space */
 		if (ftruncate(spaceholder_f, WINDOWS_SPACEHOLDER_SIZE) != 0) {
-			log_fatal("WARNING Failed to resize the space holder file '%s' to %u bytes.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE);
-			log_fatal("Assuming that no more space is available.\n");
+			log_fatal(errno, "WARNING Failed to resize the space holder file '%s' to %u bytes.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE);
+			log_fatal(errno, "Assuming that no more space is available.\n");
 			close(spaceholder_f);
 			remove(spaceholder_path);
 			return 0;
 		}
 
 		if (fsync(spaceholder_f) != 0) {
-			log_fatal("Failed to sync the space holder file '%s'.\n", spaceholder_path);
+			log_fatal(errno, "Failed to sync the space holder file '%s'.\n", spaceholder_path);
 			close(spaceholder_f);
 			remove(spaceholder_path);
 			return -1;
 		}
 
 		if (close(spaceholder_f) != 0) {
-			log_fatal("Failed to close the space holder file '%s'.\n", spaceholder_path);
+			log_fatal(errno, "Failed to close the space holder file '%s'.\n", spaceholder_path);
 			remove(spaceholder_path);
 			return -1;
 		}
@@ -468,7 +468,7 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	/* ensure that the resulting size if block aligned */
 	if ((base & block_mask) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency in requested parity size %" PRIu64 " with block %u\n", base, block_size);
+		log_fatal(EINTERNAL, "Internal inconsistency in requested parity size %" PRIu64 " with block %u\n", base, block_size);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -476,8 +476,8 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 #ifdef _WIN32
 	/* now delete the spaceholder file */
 	if (remove(spaceholder_path) != 0) {
-		log_fatal("WARNING Failed to remove the space holder file '%s'.\n", spaceholder_path);
-		log_fatal("Continuing anyway.\n");
+		log_error(errno, "WARNING Failed to remove the space holder file '%s'.\n", spaceholder_path);
+		log_error(errno, "Continuing anyway.\n");
 	}
 #endif
 
@@ -511,7 +511,7 @@ static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t 
 	ret = fstat(split->f, &split->st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
+		log_fatal(errno, "Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -521,12 +521,12 @@ static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t 
 		/* LCOV_EXCL_START */
 		if (f_dir > 0) {
 			if (f_errno == ENOSPC) {
-				log_fatal("Failed to grow parity file '%s' to size %" PRIu64 " due lack of space.\n", split->path, size);
+				log_fatal(errno, "Failed to grow parity file '%s' to size %" PRIu64 " due lack of space.\n", split->path, size);
 			} else {
-				log_fatal("Error growing parity file '%s' to size %" PRIu64 ". Do you have enough space? %s.\n", split->path, size, strerror(f_errno));
+				log_fatal(errno, "Error growing parity file '%s' to size %" PRIu64 ". Do you have enough space? %s.\n", split->path, size, strerror(f_errno));
 			}
 		} else {
-			log_fatal("Error truncating parity file '%s' to size %" PRIu64 ". %s.\n", split->path, size, strerror(f_errno));
+			log_fatal(errno, "Error truncating parity file '%s' to size %" PRIu64 ". %s.\n", split->path, size, strerror(f_errno));
 		}
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -590,8 +590,8 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 				if ((run & block_mask) != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inconsistency in split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
 					errno = ENXIO;
+					log_fatal(EINTERNAL, "Internal inconsistency in split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
@@ -610,14 +610,14 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 		if (split->st.st_size > run) {
 			/* LCOV_EXCL_START */
-			log_fatal("Unexpected over resizing parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			errno = ENXIO;
+			log_fatal(errno, "Unexpected over resizing parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else if (is_fixed && split->st.st_size < run) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed restoring parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			errno = ENXIO;
+			log_fatal(errno, "Failed restoring parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else {
@@ -626,7 +626,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 			if ((run & block_mask) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in final parity size %" PRIu64 " with block size %u\n", run, block_size);
+				log_fatal(EINTERNAL, "Internal inconsistency in final parity size %" PRIu64 " with block size %u\n", run, block_size);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -642,8 +642,8 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	/* if we cannot allocate all the space */
 	if (size != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to allocate all the required parity space. You miss %" PRIu64 " bytes.\n", size);
 		errno = ENXIO;
+		log_fatal(errno, "Failed to allocate all the required parity space. You miss %" PRIu64 " bytes.\n", size);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -693,7 +693,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		split->f = open_noatime(split->path, flags);
 		if (split->f == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -705,7 +705,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		ret = fstat(split->f, &split->st);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -724,7 +724,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 			/* ensure that the resulting size if block aligned */
 			if ((split->size & block_mask) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
+				log_fatal(ESOFT, "Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
@@ -733,7 +733,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		ret = advise_open(&split->advise, split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -767,7 +767,7 @@ int parity_sync(struct snapraid_parity_handle* handle)
 		ret = fsync(split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error syncing parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error syncing parity file '%s'. %s.\n", split->path, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -790,7 +790,7 @@ int parity_truncate(struct snapraid_parity_handle* handle)
 		ret = ftruncate(split->f, split->valid_size);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->valid_size, strerror(errno));
+			log_fatal(errno, "Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->valid_size, strerror(errno));
 			f_ret = -1;
 			/* LCOV_EXCL_STOP */
 
@@ -816,7 +816,7 @@ int parity_close(struct snapraid_parity_handle* handle)
 			/* This is a serious error, as it may be the result of a failed write */
 			/* identified at later time. */
 			/* In a normal file-system (not NFS) it should never happen */
-			log_fatal("Error closing parity file '%s'. %s.\n", split->path, strerror(errno));
+			log_fatal(errno, "Error closing parity file '%s'. %s.\n", split->path, strerror(errno));
 			f_ret = -1;
 			/* LCOV_EXCL_STOP */
 
@@ -862,7 +862,8 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	split = parity_split_find(handle, &offset);
 	if (!split) {
 		/* LCOV_EXCL_START */
-		log_fatal("Writing parity data outside range at extra offset %" PRIu64 ".\n", offset);
+		errno = ENXIO;
+		log_fatal(errno, "Writing parity data outside range at extra offset %" PRIu64 ".\n", offset);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -879,17 +880,17 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 		if (write_ret == -1) {
 			/* LCOV_EXCL_START */
 			if (errno == ENOSPC) {
-				log_fatal("Failed to grow parity file '%s' using write due lack of space.\n", split->path);
+				log_fatal(errno, "Failed to grow parity file '%s' using write due lack of space.\n", split->path);
 			} else {
-				log_fatal("Error writing parity file '%s'. %s.\n", split->path, strerror(errno));
+				log_fatal(errno, "Error writing parity file '%s'. %s.\n", split->path, strerror(errno));
 			}
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (write_ret == 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Unexpected 0 write to file '%s'. %s.\n", split->path, strerror(errno));
 			errno = ENXIO;
+			log_fatal(errno, "Unexpected 0 write to file '%s'. %s.\n", split->path, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -900,7 +901,7 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	ret = advise_write(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+		log_fatal(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -908,7 +909,7 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	return 0;
 }
 
-int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)
+int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -921,7 +922,8 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	split = parity_split_find(handle, &offset);
 	if (!split) {
 		/* LCOV_EXCL_START */
-		out("Reading parity data outside range at extra offset %" PRIu64 ".\n", offset);
+		errno = ENXIO;
+		out(errno, "Reading parity data outside range at extra offset %" PRIu64 ".\n", offset);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -929,7 +931,8 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	/* if read is completely out of the valid range */
 	if (offset >= split->valid_size) {
 		/* LCOV_EXCL_START */
-		out("Reading over the end from parity file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
+		errno = ENXIO;
+		out(errno, "Reading over the end from parity file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -942,15 +945,15 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret == -1) {
 			/* LCOV_EXCL_START */
-			out("Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
+			out(errno, "Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			out("Unexpected end of parity file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
 			if (errno == 0)
 				errno = ENXIO;
+			out(errno, "Unexpected end of parity file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -961,7 +964,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	ret = advise_read(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		out("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+		out(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}

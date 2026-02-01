@@ -161,7 +161,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* check if multiple files have the same name */
 		if (link_flag_has(slink, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency for link '%s%s'\n", disk->dir, sub);
+			log_fatal(EINTERNAL, "Internal inconsistency for link '%s%s'\n", disk->dir, sub);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -340,7 +340,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	/* so at this point ::first_free_block is always at 0, and we don't need to update it */
 	if (disk->first_free_block != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency for first free position at '%u' deallocating file '%s'\n", disk->first_free_block, file->sub);
+		log_fatal(EINTERNAL, "Internal inconsistency for first free position at '%u' deallocating file '%s'\n", disk->first_free_block, file->sub);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -380,7 +380,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in file '%s' deallocating block '%u:%u' state %u\n", file->sub, i, file->blockmax, block_state);
+			log_fatal(EINTERNAL, "Internal inconsistency in file '%s' deallocating block '%u:%u' state %u\n", file->sub, i, file->blockmax, block_state);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -411,7 +411,7 @@ static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapra
 
 		if (filephy(path_next, file->size, &file->physical) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal(errno, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -552,7 +552,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (lstat_sync(path_next, &synced_st, physical) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal(errno, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -574,9 +574,9 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			 * Why is the file size reported incorrectly for files that are still being written to?
 			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
 			 */
-			log_fatal("WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
+			log_fatal(ESOFT, "WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
 				(uint64_t)st->st_mtime, (uint32_t)st->st_mtimensec, (uint64_t)synced_st.st_mtime, (uint32_t)synced_st.st_mtimensec, sub);
-			log_fatal("It's better if you run SnapRAID without other processes running.\n");
+			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_mtime = synced_st.st_mtime;
 			st->st_mtimensec = synced_st.st_mtimensec;
@@ -584,26 +584,26 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (st->st_size != synced_st.st_size) {
 #ifndef _WIN32
-			log_fatal("WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
+			log_fatal(ESOFT, "WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_size, (uint64_t)synced_st.st_size, sub);
-			log_fatal("It's better if you run SnapRAID without other processes running.\n");
+			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_size = synced_st.st_size;
 		}
 
 		if (st->st_nlink != synced_st.st_nlink) {
 #ifndef _WIN32
-			log_fatal("WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
+			log_fatal(ESOFT, "WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
 				(uint32_t)st->st_nlink, (uint32_t)synced_st.st_nlink, sub);
-			log_fatal("It's better if you run SnapRAID without other processes running.\n");
+			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_nlink = synced_st.st_nlink;
 		}
 
 		if (st->st_ino != synced_st.st_ino) {
-			log_fatal("DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
+			log_fatal(ESOFT, "DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_ino, (uint64_t)synced_st.st_ino, sub);
-			log_fatal("It's better if you run SnapRAID without other processes running.\n");
+			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 			/* at this point, it's too late to change inode */
 			/* and having inconsistent inodes may result to internal failures */
 			/* so, it's better to abort */
@@ -756,7 +756,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* if has_volatile_hardlinks is true, the nlink value is not reliable */
 				if (!disk->has_volatile_hardlinks && st->st_nlink == 1) {
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
+					log_fatal(EINTERNAL, "Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -839,7 +839,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* if has_volatile_hardlinks is true, the nlink value is not reliable */
 			if (!disk->has_volatile_hardlinks && st->st_nlink == 1) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' with same inode but different attributes: size %" PRIu64 "?%" PRIu64 ", sec %" PRIu64 "?%" PRIu64 ", nsec %d?%d\n",
+				log_fatal(EINTERNAL, "Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' with same inode but different attributes: size %" PRIu64 "?%" PRIu64 ", sec %" PRIu64 "?%" PRIu64 ", nsec %d?%d\n",
 					file->inode, disk->dir, sub, disk->dir, file->sub,
 					file->size, (uint64_t)st->st_size,
 					file->mtime_sec, (uint64_t)st->st_mtime,
@@ -900,7 +900,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
+				log_fatal(EINTERNAL, "Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -909,7 +909,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in path for file '%s%s' matching and already present\n", disk->dir, sub);
+			log_fatal(EINTERNAL, "Internal inconsistency in path for file '%s%s' matching and already present\n", disk->dir, sub);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -1013,11 +1013,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
-			log_fatal("The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
-			log_fatal("It's possible that after a kernel crash this file was lost,\n");
-			log_fatal("and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub, esc_buffer));
+			log_fatal(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
+			log_fatal(ESOFT, "It's possible that after a kernel crash this file was lost,\n");
+			log_fatal(ESOFT, "and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub, esc_buffer));
 			if (!is_diff) {
-				log_fatal("If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
+				log_fatal(ESOFT, "If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
 				exit(EXIT_FAILURE);
 			}
 			/* LCOV_EXCL_STOP */
@@ -1153,7 +1153,7 @@ static void scan_emptydir(struct snapraid_scan* scan, const char* sub)
 		/* check if multiple files have the same name */
 		if (dir_flag_has(dir, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
+			log_fatal(EINTERNAL, "Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -1231,7 +1231,7 @@ struct stat* dstat(const char* file, struct stat* st)
 {
 	if (lstat(file, st) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
+		log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1262,11 +1262,11 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 	d = opendir(path_next);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening directory '%s'. %s.\n", path_next, strerror(errno));
+		log_fatal(errno, "Error opening directory '%s'. %s.\n", path_next, strerror(errno));
 		if (level == 0)
-			log_fatal("If this is the disk mount point, remember to create it manually\n");
+			log_fatal(errno, "If this is the disk mount point, remember to create it manually\n");
 		else
-			log_fatal("If it's a permission problem, you can exclude it in the config file with:\n\texclude /%s\n", sub_next);
+			log_fatal(errno, "If it's a permission problem, you can exclude it in the config file with:\n\texclude /%s\n", sub_next);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1292,8 +1292,8 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			/* restore removing additions */
 			path_next[path_len] = 0;
 			sub_next[sub_len] = 0;
-			log_fatal("Error reading directory '%s'. %s.\n", path_next, strerror(errno));
-			log_fatal("You can exclude it in the config file with:\n\texclude /%s\n", sub_next);
+			log_fatal(errno, "Error reading directory '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal(errno, "You can exclude it in the config file with:\n\texclude /%s\n", sub_next);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1311,7 +1311,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		/* check for not supported file names */
 		if (name[0] == 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Unsupported name '%s' in file '%s'.\n", name, path_next);
+			log_fatal(ESOFT, "Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1358,7 +1358,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		/* LCOV_EXCL_START */
 		/* restore removing additions */
 		path_next[path_len] = 0;
-		log_fatal("Error closing directory '%s'. %s.\n", path_next, strerror(errno));
+		log_fatal(errno, "Error closing directory '%s'. %s.\n", path_next, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1422,7 +1422,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			if (st->st_mode == 0) {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+					log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1453,7 +1453,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				if (st->st_ino == 0 || st->st_nlink == 0) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
-						log_fatal("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+						log_fatal(errno, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -1473,18 +1473,18 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				ret = readlink(path_next, tmp, PATH_MAX);
 				if (ret >= PATH_MAX) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error in readlink file '%s'. Symlink too long.\n", path_next);
+					log_fatal(EINTERNAL, "Error in readlink file '%s'. Symlink too long.\n", path_next);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
+					log_fatal(errno, "Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 				if (ret == 0)
-					log_fatal("WARNING! Empty symbolic link '%s'.\n", path_next);
+					log_fatal(ESOFT, "WARNING! Empty symbolic link '%s'.\n", path_next);
 
 				/* readlink doesn't put the final 0 */
 				tmp[ret] = 0;
@@ -1506,7 +1506,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
 				if ((uint64_t)st->st_dev != disk->device) {
-					log_fatal("WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+					log_fatal(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
 				{
@@ -1532,7 +1532,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
-				log_fatal("WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
+				log_fatal(ESOFT, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
@@ -1578,7 +1578,7 @@ static void* scan_disk(void* arg)
 	ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0, 0, 0, 0, 0);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
+		log_fatal(errno, "Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1628,7 +1628,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	tommy_node* j;
 	tommy_list scanlist;
 	int done;
-	fptr* msg;
+	msg_ptr* msg;
 	struct snapraid_scan total;
 	int no_difference;
 	char esc_buffer[ESC_MAX];
@@ -1781,7 +1781,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					/* if verbose, print the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						log_fatal("WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						log_fatal(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1851,9 +1851,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			) {
 				if (!done) {
 					done = 1;
-					log_fatal("WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
+					log_fatal(ESOFT, "WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
 				} else {
-					log_fatal(", disk '%s' at dir '%s'", disk->name, disk->dir);
+					log_fatal(ESOFT, ", disk '%s' at dir '%s'", disk->name, disk->dir);
 				}
 
 				/* detect the special condition of all files missing */
@@ -1866,17 +1866,17 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			}
 		}
 		if (done) {
-			log_fatal("\nare now missing or have been rewritten!\n");
+			log_fatal(ESOFT, "\nare now missing or have been rewritten!\n");
 			if (all_rewritten) {
-				log_fatal("This could occur when restoring a disk from a backup\n");
-				log_fatal("program that is not setting correctly the timestamps.\n");
+				log_fatal(ESOFT, "This could occur when restoring a disk from a backup\n");
+				log_fatal(ESOFT, "program that is not setting correctly the timestamps.\n");
 			}
 			if (all_missing) {
-				log_fatal("This could occur when some disks are not mounted\n");
-				log_fatal("in the expected directory.\n");
+				log_fatal(ESOFT, "This could occur when some disks are not mounted\n");
+				log_fatal(ESOFT, "in the expected directory.\n");
 			}
 			if (!is_diff) {
-				log_fatal("If you want to '%s' anyway, use 'snapraid --force-empty %s'.\n", state->command, state->command);
+				log_fatal(ESOFT, "If you want to '%s' anyway, use 'snapraid --force-empty %s'.\n", state->command, state->command);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -1891,14 +1891,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (disk->has_unreliable_physical) {
 				if (!done) {
 					done = 1;
-					log_fatal("WARNING! Physical offsets not supported for disk '%s'", disk->name);
+					log_fatal(ESOFT, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
 				} else {
-					log_fatal(", '%s'", disk->name);
+					log_fatal(ESOFT, ", '%s'", disk->name);
 				}
 			}
 		}
 		if (done) {
-			log_fatal(". The order of files won't be optimal.\n");
+			log_fatal(ESOFT, ". The order of files won't be optimal.\n");
 		}
 	}
 
@@ -1910,14 +1910,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_volatile_inodes) {
 			if (!done) {
 				done = 1;
-				log_fatal("WARNING! Inodes are not persistent for disks: '%s'", disk->name);
+				log_fatal(ESOFT, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
 			} else {
-				log_fatal(", '%s'", disk->name);
+				log_fatal(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_fatal(". Inodes are not used to detect move operations.\n");
+		log_fatal(ESOFT, ". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with changed UUID */
@@ -1932,14 +1932,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_different_uuid && !disk->had_empty_uuid) {
 			if (!done) {
 				done = 1;
-				log_fatal("WARNING! UUID is changed for disks: '%s'", disk->name);
+				log_fatal(ESOFT, "WARNING! UUID is changed for disks: '%s'", disk->name);
 			} else {
-				log_fatal(", '%s'", disk->name);
+				log_fatal(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_fatal(". Inodes are not used to detect move operations.\n");
+		log_fatal(ESOFT, ". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with unsupported UUID */
@@ -1950,17 +1950,17 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_unsupported_uuid) {
 			if (!done) {
 				done = 1;
-				log_fatal("WARNING! UUID is unsupported for disks: '%s'", disk->name);
+				log_fatal(ESOFT, "WARNING! UUID is unsupported for disks: '%s'", disk->name);
 			} else {
-				log_fatal(", '%s'", disk->name);
+				log_fatal(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_fatal(". Not using inodes to detect move operations.\n");
+		log_fatal(ESOFT, ". Not using inodes to detect move operations.\n");
 #if defined(_linux) && !HAVE_BLKID
-		log_fatal("The 'blkid' library is not linked in SnapRAID!\n");
-		log_fatal("Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
+		log_fatal(ESOFT, "The 'blkid' library is not linked in SnapRAID!\n");
+		log_fatal(ESOFT, "Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
 #endif
 	}
 

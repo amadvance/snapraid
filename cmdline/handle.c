@@ -88,7 +88,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		handle->f = -1;
 		handle->valid_size = 0;
 
-		log_fatal("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+		log_fatal(errno, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -100,7 +100,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	ret = fstat(handle->f, &handle->st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		log_fatal(errno, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -111,7 +111,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		log_fatal(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -127,9 +127,9 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		if (errno == EACCES) {
-			log_fatal("Failed to truncate file '%s' for missing write permission.\n", handle->path);
+			log_fatal(errno, "Failed to truncate file '%s' for missing write permission.\n", handle->path);
 		} else {
-			log_fatal("Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
+			log_fatal(errno, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
 		}
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -141,7 +141,7 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 	return 0;
 }
 
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out, fptr* out_missing)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, log_ptr* out, log_ptr* out_missing)
 {
 	int ret;
 	int flags;
@@ -174,11 +174,11 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 		handle->valid_size = 0;
 
 		if (errno == ENOENT)
-			out_missing("Missing file '%s'.\n", handle->path);
+			out_missing(errno, "Missing file '%s'.\n", handle->path);
 		else if (errno == EACCES)
-			out("Permission denied for file '%s'.\n", handle->path);
+			out(errno, "Permission denied for file '%s'.\n", handle->path);
 		else
-			out("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+			out(errno, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
 
@@ -189,7 +189,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	ret = fstat(handle->f, &handle->st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		out("Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		out(errno, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -200,7 +200,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		out("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		out(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -217,7 +217,7 @@ int handle_close(struct snapraid_handle* handle)
 		ret = close(handle->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+			log_fatal(errno, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 
 			/* invalidate for error */
 			handle->file = 0;
@@ -236,7 +236,7 @@ int handle_close(struct snapraid_handle* handle)
 	return 0;
 }
 
-int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing)
+int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out, log_ptr* out_missing)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -253,15 +253,15 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	if (offset >= handle->valid_size) {
 		/* if the file is missing, it's at 0 size, or it's rebuilt while reading */
 		if (offset == handle->valid_size || handle->valid_size == 0) {
-			if (offset == 0) {
-				out_missing("Missing file '%s'.\n", handle->path);
-			} else {
-				out_missing("Missing data in file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
-			}
 			errno = ENOENT;
+			if (offset == 0) {
+				out_missing(errno, "Missing file '%s'.\n", handle->path);
+			} else {
+				out_missing(errno, "Missing data in file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+			}
 		} else {
-			out("Reading over the end from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
 			errno = ENXIO;
+			out(errno, "Reading over the end from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
 		}
 		return -1;
 	}
@@ -276,15 +276,15 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 		read_ret = pread(handle->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret == -1) {
 			/* LCOV_EXCL_START */
-			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, block_size - count, strerror(errno));
+			out(errno, "Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			out("Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
 			if (errno == 0)
 				errno = ENXIO;
+			out(errno, "Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -300,7 +300,7 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	ret = advise_read(&handle->advise, handle->f, offset, block_size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		out("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		out(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -327,14 +327,14 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 		write_ret = pwrite(handle->f, block_buffer + count, write_size - count, offset + count);
 		if (write_ret == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error writing file '%s'. %s.\n", handle->path, strerror(errno));
+			log_fatal(errno, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (write_ret == 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Unexpected 0 write to file '%s'. %s.\n", handle->path, strerror(errno));
 			errno = ENXIO;
+			log_fatal(errno, "Unexpected 0 write to file '%s'. %s.\n", handle->path, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -350,7 +350,7 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 	ret = advise_write(&handle->advise, handle->f, offset, block_size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		log_fatal(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -370,7 +370,7 @@ int handle_utime(struct snapraid_handle* handle)
 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+		log_fatal(errno, "Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -420,7 +420,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		}
 		if (!map) {
 			/* LCOV_EXCL_START */
-			log_fatal("Internal error for inconsistent disk mapping.\n");
+			log_fatal(EINTERNAL, "Internal error for inconsistent disk mapping.\n");
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}

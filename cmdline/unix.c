@@ -353,13 +353,13 @@ static int tagread(const char* path, const char* tag, char* value, size_t value_
 	ret = sysread(path, buf, sizeof(buf));
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to read '%s'.\n", path);
+		log_fatal(errno, "Failed to read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if ((size_t)ret + 1 > sizeof(buf)) {
 		/* LCOV_EXCL_START */
-		log_fatal("Too long read '%s'.\n", path);
+		log_fatal(EEXTERNAL, "Too long read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -394,7 +394,7 @@ static int tagread(const char* path, const char* tag, char* value, size_t value_
 	}
 	if (!*i) {
 		/* LCOV_EXCL_START */
-		log_fatal("Missing tag '%s' for '%s'.\n", tag, path);
+		log_fatal(EEXTERNAL, "Missing tag '%s' for '%s'.\n", tag, path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -407,7 +407,7 @@ static int tagread(const char* path, const char* tag, char* value, size_t value_
 
 	if (!*i) {
 		/* LCOV_EXCL_START */
-		log_fatal("Empty tag '%s' for '%s'.\n", tag, path);
+		log_fatal(EEXTERNAL, "Empty tag '%s' for '%s'.\n", tag, path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1253,7 +1253,7 @@ static dev_t devread(const char* path)
 	f = open(path, O_RDONLY);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to open '%s'.\n", path);
+		log_fatal(errno, "Failed to open '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1262,14 +1262,14 @@ static dev_t devread(const char* path)
 	if (len < 0) {
 		/* LCOV_EXCL_START */
 		close(f);
-		log_fatal("Failed to read '%s'.\n", path);
+		log_fatal(errno, "Failed to read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
 	if (len == sizeof(buf)) {
 		/* LCOV_EXCL_START */
 		close(f);
-		log_fatal("Too long read '%s'.\n", path);
+		log_fatal(EEXTERNAL, "Too long read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1277,7 +1277,7 @@ static dev_t devread(const char* path)
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to close '%s'.\n", path);
+		log_fatal(errno, "Failed to close '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1287,7 +1287,7 @@ static dev_t devread(const char* path)
 	ma = strtoul(buf, &e, 10);
 	if (*e != ':') {
 		/* LCOV_EXCL_START */
-		log_fatal("Invalid format in '%s' for '%s'.\n", path, buf);
+		log_fatal(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1295,7 +1295,7 @@ static dev_t devread(const char* path)
 	mi = strtoul(e + 1, &e, 10);
 	if (*e != 0 && !isspace(*e)) {
 		/* LCOV_EXCL_START */
-		log_fatal("Invalid format in '%s' for '%s'.\n", path, buf);
+		log_fatal(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1372,7 +1372,7 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
 		/* get the device file */
 		if (devresolve(device, path, sizeof(path)) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+			log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1412,7 +1412,7 @@ static int devscan(tommy_list* list)
 	d = opendir(dir);
 	if (d == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to open dir '%s'.\n", dir);
+		log_fatal(errno, "Failed to open dir '%s'.\n", dir);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1490,14 +1490,14 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	x = find_smartctl();
 	if (!x) {
 		/* LCOV_EXCL_START */
-		log_fatal("Cannot find smartctl.\n");
+		log_fatal(EEXTERNAL, "Cannot find smartctl.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1517,7 +1517,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from popen).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1537,14 +1537,14 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal("Failed to run '%s' (not exited).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from sh).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1575,13 +1575,13 @@ static int devstat(dev_t device, uint64_t* count)
 	ret = sysread(path, buf, sizeof(buf));
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to read '%s'.\n", path);
+		log_fatal(errno, "Failed to read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if ((size_t)ret + 1 > sizeof(buf)) {
 		/* LCOV_EXCL_START */
-		log_fatal("Too long read '%s'.\n", path);
+		log_fatal(EEXTERNAL, "Too long read '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1728,14 +1728,14 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	x = find_smartctl();
 	if (!x) {
 		/* LCOV_EXCL_START */
-		log_fatal("Cannot find smartctl.\n");
+		log_fatal(EEXTERNAL, "Cannot find smartctl.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1755,7 +1755,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from popen).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1775,14 +1775,14 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal("Failed to run '%s' (not exited).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from sh).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1817,14 +1817,14 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	x = find_smartctl();
 	if (!x) {
 		/* LCOV_EXCL_START */
-		log_fatal("Cannot find smartctl.\n");
+		log_fatal(EEXTERNAL, "Cannot find smartctl.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1844,7 +1844,7 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from popen).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1864,21 +1864,21 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal("Failed to run '%s' (not exited).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal("Failed to run '%s' (from sh).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
-		log_fatal("Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
+		log_fatal(EEXTERNAL, "Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1922,7 +1922,7 @@ static int devup(dev_t device, const char* name)
 
 	if (devresolve(device, file, sizeof(file)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1930,7 +1930,7 @@ static int devup(dev_t device, const char* name)
 	/* O_DIRECT requires memory aligned to the block size */
 	if (posix_memalign(&buf, 4096, 4096) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to allocate aligned memory for device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(errno, "Failed to allocate aligned memory for device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1940,7 +1940,7 @@ static int devup(dev_t device, const char* name)
 		/* LCOV_EXCL_START */
 		free(buf);
 		log_tag("device:%s:%s:error:%d\n", file, name, errno);
-		log_fatal("Failed to open device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(errno, "Failed to open device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1950,7 +1950,7 @@ static int devup(dev_t device, const char* name)
 		close(f);
 		free(buf);
 		log_tag("device:%s:%s:error:%d\n", file, name, errno);
-		log_fatal("Failed to get device size '%u:%u'.\n", major(device), minor(device));
+		log_fatal(errno, "Failed to get device size '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1966,7 +1966,7 @@ static int devup(dev_t device, const char* name)
 		close(f);
 		free(buf);
 		log_tag("device:%s:%s:error:%d\n", file, name, errno);
-		log_fatal("Failed to advise device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(errno, "Failed to advise device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1978,7 +1978,7 @@ static int devup(dev_t device, const char* name)
 		close(f);
 		free(buf);
 		log_tag("device:%s:%s:error:%d\n", file, name, errno);
-		log_fatal("Failed to read device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(errno, "Failed to read device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1988,7 +1988,7 @@ static int devup(dev_t device, const char* name)
 		/* LCOV_EXCL_START */
 		free(buf);
 		log_tag("device:%s:%s:error:%d\n", file, name, errno);
-		log_fatal("Failed to close device '%u:%u'.\n", major(device), minor(device));
+		log_fatal(errno, "Failed to close device '%u:%u'.\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2193,7 +2193,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	/* sysfs interface is required */
 	if (stat("/sys/dev/block", &st) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Missing interface /sys/dev/block.\n");
+		log_fatal(EEXTERNAL, "Missing interface /sys/dev/block.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2220,7 +2220,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 			/* obtain the real device */
 			if (devdereference(device, &device) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Failed to dereference device '%u:%u'.\n", major(device), minor(device));
+				log_fatal(EEXTERNAL, "Failed to dereference device '%u:%u'.\n", major(device), minor(device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -2238,7 +2238,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		/* get the device file */
 		if (devresolve(device, devinfo->file, sizeof(devinfo->file)) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+			log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -2246,7 +2246,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		/* expand the tree of devices */
 		if (devtree(devinfo, device, low) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to expand device '%u:%u'.\n", major(device), minor(device));
+			log_fatal(EEXTERNAL, "Failed to expand device '%u:%u'.\n", major(device), minor(device));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -2256,7 +2256,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	if (others) {
 		if (devscan(low) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Failed to list other devices.\n");
+			log_fatal(EEXTERNAL, "Failed to list other devices.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -2287,7 +2287,7 @@ void os_init(int opt)
 	ret = blkid_get_cache(&cache, NULL);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("WARNING Failed to get blkid cache\n");
+		log_fatal(EEXTERNAL, "WARNING Failed to get blkid cache\n");
 		/* LCOV_EXCL_STOP */
 	}
 #endif
@@ -2379,7 +2379,7 @@ size_t direct_size(void)
 
 	if (size == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("No page size\n");
+		log_fatal(EEXTERNAL, "No page size\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

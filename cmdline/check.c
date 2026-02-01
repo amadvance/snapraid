@@ -42,13 +42,13 @@ static const char* es(int err)
 static void log_fatal_errno(int err, const char* name)
 {
 	if (err == EIO) {
-		log_fatal("DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
 	} else if (err == EACCES) {
-		log_fatal("WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
 	} else if (err == ENOSPC) {
-		log_fatal("WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
 	} else {
-		log_fatal("WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
+		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
 	}
 }
 
@@ -691,7 +691,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = rename(path, path_to);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
+					log_fatal(errno, "Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
 					log_tag("%s:%u:%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
@@ -1080,7 +1080,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_START */
 					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping at block %u\n", i);
+					log_fatal(errno, "Stopping at block %u\n", i);
 
 					++unrecoverable_error;
 					goto bail;
@@ -1095,7 +1095,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_START */
 						log_tag("%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 						log_fatal_errno(errno, disk->name);
-						log_fatal("Stopping at block %u\n", i);
+						log_fatal(errno, "Stopping at block %u\n", i);
 
 						++unrecoverable_error;
 						goto bail;
@@ -1165,7 +1165,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					&& !(state->opt.syncedonly && file_flag_has(file, FILE_IS_UNSYNCED))
 					&& handle[j].st.st_size > file->size
 				) {
-					log_error("File '%s' is larger than expected.\n", handle[j].path);
+					log_error(ESOFT, "File '%s' is larger than expected.\n", handle[j].path);
 					log_tag("error:%u:%s:%s: Size error\n", i, disk->name, esc_tag(file->sub, esc_buffer));
 					++soft_error;
 
@@ -1175,7 +1175,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* LCOV_EXCL_START */
 							log_tag("%s:%u:%s:%s: Truncate error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 							log_fatal_errno(errno, disk->name);
-							log_fatal("Stopping at block %u\n", i);
+							log_fatal(errno, "Stopping at block %u\n", i);
 
 							++unrecoverable_error;
 							goto bail;
@@ -1407,7 +1407,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* LCOV_EXCL_START */
 							log_tag("%s:%u:%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub, esc_buffer), strerror(errno));
 							log_fatal_errno(errno, failed[j].disk->name);
-							log_fatal("Stopping at block %u\n", i);
+							log_fatal(errno, "Stopping at block %u\n", i);
 
 							/* mark the file as damaged */
 							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
@@ -1457,7 +1457,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 									/* LCOV_EXCL_START */
 									log_tag("%s:%u:%s: Write error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
 									log_fatal_errno(errno, lev_config_name(l));
-									log_fatal("Stopping at block %u\n", i);
+									log_fatal(errno, "Stopping at block %u\n", i);
 
 									++unrecoverable_error;
 									goto bail;
@@ -1493,7 +1493,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		ret = file_post(state, fix, i, handle, diskmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal("Stopping at block %u\n", i);
+			log_fatal(errno, "Stopping at block %u\n", i);
 
 			++unrecoverable_error;
 			goto bail;
@@ -1562,7 +1562,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (ret == -1) {
 				unsuccessful = 1;
 
-				log_error("Error stating empty file '%s'. %s.\n", path, strerror(errno));
+				log_error(errno, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
 				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub, esc_buffer));
 
 				if (errno == EIO) {
@@ -1573,13 +1573,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			} else if (!S_ISREG(st.st_mode)) {
 				unsuccessful = 1;
 
-				log_error("Error stating empty file '%s' for not regular file.\n", path);
+				log_error(ESOFT, "Error stating empty file '%s' for not regular file.\n", path);
 				log_tag("empty_error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub, esc_buffer));
 				++soft_error;
 			} else if (st.st_size != 0) {
 				unsuccessful = 1;
 
-				log_error("Error stating empty file '%s' for not empty file.\n", path);
+				log_error(ESOFT, "Error stating empty file '%s' for not empty file.\n", path);
 				log_tag("empty_error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), (uint64_t)st.st_size);
 				++soft_error;
 			}
@@ -1591,10 +1591,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkancestor(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error creating ancestor '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
+					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
 					log_tag("empty_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1606,10 +1606,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error creating '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
+					log_fatal(errno, "Error creating '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
 					log_tag("empty_%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1620,10 +1620,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = fmtime(f, file->mtime_sec, file->mtime_nsec);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error timing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
+					log_fatal(errno, "Error timing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
 					log_tag("empty_%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					close(f);
 
@@ -1636,10 +1636,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = close(f);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error closing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
+					log_fatal(errno, "Error closing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
 					log_tag("empty_%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1682,7 +1682,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret == -1) {
 					unsuccessful = 1;
 
-					log_error("Error stating hardlink '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
 					log_tag("hardlink_%s:%s:%s:%s: Hardlink stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
 
 					if (errno == EIO) {
@@ -1693,7 +1693,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				} else if (!S_ISREG(st.st_mode)) {
 					unsuccessful = 1;
 
-					log_error("Error stating hardlink '%s' for not regular file.\n", path);
+					log_error(ESOFT, "Error stating hardlink '%s' for not regular file.\n", path);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
 					++soft_error;
 				}
@@ -1716,7 +1716,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						}
 					}
 
-					log_error("Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
+					log_error(errno, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
 					log_tag("hardlink_%s:%s:%s:%s: Hardlink to stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
 
 					if (errno == EIO) {
@@ -1727,13 +1727,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				} else if (!S_ISREG(stto.st_mode)) {
 					unsuccessful = 1;
 
-					log_error("Error stating hardlink-to '%s' for not regular file.\n", path);
+					log_error(ESOFT, "Error stating hardlink-to '%s' for not regular file.\n", path);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
 					++soft_error;
 				} else if (!unsuccessful && st.st_ino != stto.st_ino) {
 					unsuccessful = 1;
 
-					log_error("Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
+					log_error(ESOFT, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
 					++soft_error;
 				}
@@ -1744,7 +1744,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret < 0) {
 					unsuccessful = 1;
 
-					log_error("Error reading symlink '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
 					log_tag("symlink_%s:%s:%s: Symlink read error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
 
 					if (errno == EIO) {
@@ -1755,7 +1755,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				} else if (ret >= PATH_MAX) {
 					unsuccessful = 1;
 
-					log_error("Error reading symlink '%s'. Symlink too long.\n", path);
+					log_error(ESOFT, "Error reading symlink '%s'. Symlink too long.\n", path);
 					log_tag("symlink_error:%s:%s: Symlink too long\n", disk->name, esc_tag(slink->sub, esc_buffer));
 					++soft_error;
 				} else {
@@ -1777,10 +1777,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkancestor(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error creating ancestor '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
+					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
 					log_tag("%slink_%s:%u:%s:%s: Create ancestor error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1791,10 +1791,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = remove(path);
 				if (ret != 0 && errno != ENOENT) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error removing '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
+					log_fatal(errno, "Error removing '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
 					log_tag("%slink_%s:%u:%s:%s: Remove error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1806,10 +1806,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					ret = hardlink(pathto, path);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						log_fatal("Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
+						log_fatal(errno, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
 						log_tag("hardlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
 						log_fatal_errno(errno, disk->name);
-						log_fatal("Stopping\n");
+						log_fatal(errno, "Stopping\n");
 
 						++unrecoverable_error;
 						goto bail;
@@ -1822,10 +1822,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					ret = symlink(slink->linkto, path);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						log_fatal("Error writing symlink '%s' to '%s'. %s.\n", path, slink->linkto, strerror(errno));
+						log_fatal(errno, "Error writing symlink '%s' to '%s'. %s.\n", path, slink->linkto, strerror(errno));
 						log_tag("symlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
 						log_fatal_errno(errno, disk->name);
-						log_fatal("Stopping\n");
+						log_fatal(errno, "Stopping\n");
 
 						++unrecoverable_error;
 						goto bail;
@@ -1864,7 +1864,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (ret == -1) {
 				unsuccessful = 1;
 
-				log_error("Error stating dir '%s'. %s.\n", path, strerror(errno));
+				log_error(errno, "Error stating dir '%s'. %s.\n", path, strerror(errno));
 				log_tag("dir_%s:%s:%s: Dir stat error. %s.\n", es(errno), disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
 
 				if (errno == EIO) {
@@ -1884,10 +1884,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkancestor(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error creating ancestor '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
+					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
 					log_tag("dir_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1898,10 +1898,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error creating directory '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
+					log_fatal(errno, "Error creating directory '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
 					log_tag("dir_%s:%u:%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal("Stopping\n");
+					log_fatal(errno, "Stopping\n");
 
 					++unrecoverable_error;
 					goto bail;
@@ -1978,7 +1978,7 @@ bail:
 				ret = remove(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error removing '%s'. %s.\n", path, strerror(errno));
+					log_fatal(errno, "Error removing '%s'. %s.\n", path, strerror(errno));
 					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 
@@ -2011,10 +2011,16 @@ bail:
 		msg_status("Everything OK\n");
 	}
 
-	if ((soft_error || io_error || silent_error) && !fix)
-		log_fatal("WARNING! There are errors!\n");
+	if ((soft_error || io_error || silent_error) && !fix) {
+		if (soft_error)
+			log_fatal(ESOFT, "WARNING! There are soft errors!\n");
+		if (io_error)
+			log_fatal(EIO, "DANGER! Unexpected input/output errors!\n");
+		if (silent_error)
+			log_fatal(EDATA, "DANGER! Unexpected silent data errors!\n");
+	}
 	if (unrecoverable_error)
-		log_fatal("DANGER! Unrecoverable errors detected!\n");
+		log_fatal(ESOFT, "DANGER! Unrecoverable errors detected!\n");
 
 	log_tag("summary:error_soft:%u\n", soft_error);
 	log_tag("summary:error_io:%u\n", io_error);
@@ -2100,7 +2106,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal(EUSER, "Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

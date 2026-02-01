@@ -74,13 +74,18 @@ uint64_t random_u64(void);
 /* log */
 
 /**
+ * Pointer to log function.
+ */
+typedef void log_ptr(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
+
+/**
  * Fatal error messages.
  *
  * Messages printed before an early termination.
  *
  * These messages go in the log file and in stderr unconditionally.
  */
-void log_fatal(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_fatal(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
 
 /**
  * Unexpected error messages.
@@ -93,7 +98,7 @@ void log_fatal(const char* format, ...) __attribute__((format(attribute_printf, 
  *
  * These messages go in the log file if specified, otherwise they go in stderr.
  */
-void log_error(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_error(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
 
 /**
  * Expected error messages, without fallback to stderr.
@@ -104,7 +109,7 @@ void log_error(const char* format, ...) __attribute__((format(attribute_printf, 
  *
  * These messages go in the log file if specified, otherwise they are lost.
  */
-void log_expected(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_expected(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
 
 /**
  * Tag messages.
@@ -124,13 +129,13 @@ void log_tag(const char* format, ...) __attribute__((format(attribute_printf, 1,
  */
 void log_flush(void);
 
-/**
- * Pointer to log function.
- */
-typedef void fptr(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
-
 /****************************************************************************/
 /* message */
+
+/**
+ * Pointer to msg function.
+ */
+typedef void msg_ptr(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Message levels.

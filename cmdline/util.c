@@ -134,8 +134,8 @@ void mtest_vector(int n, size_t size, void** vv)
 {
 	if (fast_mtest_vector(n, size, vv) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
-		log_fatal("Try running a memory test like http://www.memtest86.com/\n");
+		log_fatal(EINTERNAL, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+		log_fatal(EINTERNAL, "Try running a memory test like http://www.memtest86.com/\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -750,7 +750,7 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		break;
 	default :
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency in hash function %u\n", kind);
+		log_fatal(EINTERNAL, "Internal inconsistency in hash function %u\n", kind);
 		exit(EXIT_FAILURE);
 		break;
 		/* LCOV_EXCL_STOP */

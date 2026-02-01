@@ -74,7 +74,7 @@ static int clean_dir(const char* dir)
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening pool directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error opening pool directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -90,7 +90,7 @@ static int clean_dir(const char* dir)
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error reading pool directory '%s'. %s.\n", dir, strerror(errno));
+			log_fatal(errno, "Error reading pool directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -114,7 +114,7 @@ static int clean_dir(const char* dir)
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+				log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -123,7 +123,7 @@ static int clean_dir(const char* dir)
 		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -143,13 +143,13 @@ static int clean_dir(const char* dir)
 						/* in Windows just ignore EACCES errors removing directories */
 						/* because it could happen that the directory is in use */
 						/* and it cannot be removed */
-						log_fatal("Directory '%s' not removed because it's in use.\n", path_next);
+						log_fatal(errno, "Directory '%s' not removed because it's in use.\n", path_next);
 						full = 1;
 					} else
 #endif
 					{
 						/* LCOV_EXCL_START */
-						log_fatal("Error removing pool directory '%s'. %s.\n", path_next, strerror(errno));
+						log_fatal(errno, "Error removing pool directory '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -166,7 +166,7 @@ static int clean_dir(const char* dir)
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error closing pool directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error closing pool directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -186,7 +186,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening pool directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error opening pool directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -202,7 +202,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error reading pool directory '%s'. %s.\n", dir, strerror(errno));
+			log_fatal(errno, "Error reading pool directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -226,7 +226,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+				log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -235,7 +235,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -249,7 +249,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 			ret = readlink(path_next, linkto, sizeof(linkto));
 			if (ret < 0 || ret >= PATH_MAX) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in readlink symlink '%s'. %s.\n", path_next, strerror(errno));
+				log_fatal(errno, "Error in readlink symlink '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -271,7 +271,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error closing pool directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error closing pool directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -293,7 +293,7 @@ static void remove_link(void* void_arg, void* void_pool)
 	ret = remove(path);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error removing symlink '%s'. %s.\n", path, strerror(errno));
+		log_fatal(errno, "Error removing symlink '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -342,7 +342,7 @@ static void make_link(tommy_hashdyn* poolset, const char* pool_dir, const char* 
 		ret = remove(path);
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error removing symlink '%s'. %s.\n", path, strerror(errno));
+			log_fatal(errno, "Error removing symlink '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -365,17 +365,17 @@ static void make_link(tommy_hashdyn* poolset, const char* pool_dir, const char* 
 	ret = symlink(linkto_exported, path);
 	if (ret != 0) {
 		if (errno == EEXIST) {
-			log_fatal("WARNING! Duplicate pooling for '%s'\n", path);
+			log_fatal(errno, "WARNING! Duplicate pooling for '%s'\n", path);
 #ifdef _WIN32
 		} else if (errno == EPERM) {
 			/* LCOV_EXCL_START */
-			log_fatal("You must run as Administrator to be able to create symlinks.\n");
+			log_fatal(errno, "You must run as Administrator to be able to create symlinks.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 #endif
 		} else {
 			/* LCOV_EXCL_START */
-			log_fatal("Error writing symlink '%s'. %s.\n", path, strerror(errno));
+			log_fatal(errno, "Error writing symlink '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -385,7 +385,7 @@ static void make_link(tommy_hashdyn* poolset, const char* pool_dir, const char* 
 		ret = lmtime(path, mtime_sec, mtime_nsec);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error setting time to symlink '%s'. %s.\n", path, strerror(errno));
+			log_fatal(errno, "Error setting time to symlink '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -404,7 +404,7 @@ void state_pool(struct snapraid_state* state)
 
 	if (state->pool[0] == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("To use the 'pool' command you must set the pool directory in the configuration file\n");
+		log_fatal(EUSER, "To use the 'pool' command you must set the pool directory in the configuration file\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

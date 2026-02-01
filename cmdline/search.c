@@ -80,10 +80,10 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	if (f == -1) {
 		/* LCOV_EXCL_START */
 		if (errno == ENOENT) {
-			log_fatal("DANGER! file '%s' disappeared.\n", path);
-			log_fatal("If you moved it, please rerun the same command.\n");
+			log_fatal(EUSER, "DANGER! file '%s' disappeared.\n", path);
+			log_fatal(EUSER, "If you moved it, please rerun the same command.\n");
 		} else {
-			log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
+			log_fatal(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
 		}
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -92,7 +92,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	ret = pread(f, arg->buffer, arg->read_size, arg->offset);
 	if (ret < 0 || (unsigned)ret != arg->read_size) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error reading file '%s'. %s.\n", path, strerror(errno));
+		log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -100,7 +100,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error closing file '%s'. %s.\n", path, strerror(errno));
+		log_fatal(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -155,7 +155,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error opening directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -174,7 +174,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error reading directory '%s'. %s.\n", dir, strerror(errno));
+			log_fatal(errno, "Error reading directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -214,7 +214,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+				log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -223,7 +223,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -248,7 +248,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal(errno, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

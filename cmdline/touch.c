@@ -58,7 +58,7 @@ void state_touch(struct snapraid_state* state)
 					/* get a random nanosecond value */
 					if (randomize(&nano, sizeof(nano)) != 0) {
 						/* LCOV_EXCL_START */
-						log_fatal("Failed to retrieve random values.\n");
+						log_fatal(errno, "Failed to retrieve random values.\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -81,7 +81,7 @@ void state_touch(struct snapraid_state* state)
 				f = open(path, flags);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
+					log_fatal(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -92,7 +92,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					log_fatal("Error accessing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -102,7 +102,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					close(f);
-					log_fatal("Error timing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal(errno, "Error timing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -114,7 +114,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					log_fatal("Error accessing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -123,7 +123,7 @@ void state_touch(struct snapraid_state* state)
 				ret = close(f);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error closing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
