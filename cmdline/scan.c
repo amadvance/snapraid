@@ -2009,18 +2009,23 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	no_difference = !total.count_move && !total.count_copy && !total.count_restore
 		&& !total.count_change && !total.count_remove && !total.count_insert;
 
+	int parity_invalid = parity_is_invalid(state);
 	if (is_diff) {
-		if (no_difference) {
-			msg_status("No differences\n");
-		} else {
+		if (!no_difference) {
 			msg_status("There are differences!\n");
+		} else {
+			msg_status("No differences\n");
 		}
+		if (parity_invalid)
+			log_error(EUSER, "The last sync was interrupted. Run it again!\n");
 	}
 
-	if (no_difference) {
-		log_tag("summary:exit:equal\n");
-	} else {
+	if (parity_invalid) {
+		log_tag("summary:exit:incomplete_sync\n");
+	} else if (!no_difference) {
 		log_tag("summary:exit:diff\n");
+	} else {
+		log_tag("summary:exit:equal\n");
 	}
 	log_flush();
 
@@ -2035,7 +2040,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			return 1;
 
 		/* check also for incomplete "sync" */
-		if (parity_is_invalid(state))
+		if (parity_invalid)
 			return 1;
 	}
 
