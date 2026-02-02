@@ -358,10 +358,6 @@ int state_status(struct snapraid_state* state)
 		}
 	}
 
-	log_tag("summary:has_unsynced:%u\n", unsynced_blocks);
-	log_tag("summary:has_unscrubbed:%u\n", unscrubbed_blocks);
-	log_tag("summary:has_rehash:%u\n", rehash);
-	log_tag("summary:has_bad:%u:%u:%u\n", bad, bad_first, bad_last);
 	log_flush();
 
 	if (!count) {

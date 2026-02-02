@@ -192,11 +192,23 @@ Content Tags
 		<size> - The size of the parity file (uint).
 
 	=content_info:<kind>:<counter>
-		The counters in the content file.
+		The counters in the content file. The `kind` is
+		one of the following:
 
-		<kind> - One of file, hardlink, symlink, dir_empty,
-			block_bad, block_rehash, block.
-		<counter> - The number of elements (uint)
+		file - The count of files.
+		hardlink - The counter of hardlinks.
+		symlink - The counter of symlinks.
+		dir_empty - The counter of empty directories.
+		block_bad - The counter of bad blocks. Bad blocks indicate data
+			or parity corruption.
+		block_rehash - The counter of blocks needing a rehash, usually
+			due to hash algorithm change.
+		block_unscrubbed - The counter of blocks that are unscrubbed
+			(just synced), meaning they have never been verified
+			since their first sync.
+		block_unsynced - The counter of blocks that are unsynced (need a sync),
+			meaning their parity data is out of date.
+		block - The total counter of blocks.
 
 Diagnostics Tags
 	=version:<version>
@@ -536,18 +548,6 @@ Command Status Tags
 		capacity.
 	=summary:total_use_percent:<uint>
 		Overall array use percentage.
-	=summary:has_unsynced:<uint>
-		Count of blocks that are unsynced (need a sync), meaning their
-		parity data is out of date.
-	=summary:has_unscrubbed:<uint>
-		Count of blocks that are unscrubbed (just synced), meaning they
-		have never been verified since the last sync.
-	=summary:has_rehash:<uint>
-		Count of blocks needing a rehash, usually due to a content file
-		update or hash algorithm change.
-	=summary:has_bad:<count>:<first>:<last>
-		Count of bad blocks, along with the first and last bad block index.
-		Bad blocks indicate data or parity corruption.
 	=summary:scrub_oldest_days:<uint>
 		Days ago the oldest block was last scrubbed.
 	=summary:scrub_median_days:<uint>

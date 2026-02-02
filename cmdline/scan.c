@@ -2009,7 +2009,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	no_difference = !total.count_move && !total.count_copy && !total.count_restore
 		&& !total.count_change && !total.count_remove && !total.count_insert;
 
-	int parity_invalid = parity_is_invalid(state);
+	int parity_invalid = state->parity_is_invalid;
 	if (is_diff) {
 		if (!no_difference) {
 			msg_status("There are differences!\n");

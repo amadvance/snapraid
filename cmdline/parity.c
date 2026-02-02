@@ -84,39 +84,6 @@ block_off_t parity_used_size(struct snapraid_state* state)
 	return parity_block;
 }
 
-int parity_is_invalid(struct snapraid_state* state)
-{
-	block_off_t blockmax;
-	block_off_t i;
-
-	blockmax = parity_allocated_size(state);
-
-	for (i = 0; i < blockmax; ++i) {
-		tommy_node* node_disk;
-		int one_invalid;
-		int one_valid;
-
-		/* for each disk */
-		one_invalid = 0;
-		one_valid = 0;
-		for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
-			struct snapraid_disk* disk = node_disk->data;
-			struct snapraid_block* block = fs_par2block_find(disk, i);
-
-			if (block_has_file(block))
-				one_valid = 1;
-			if (block_has_invalid_parity(block))
-				one_invalid = 1;
-		}
-
-		/* if both valid and invalid, we need to update */
-		if (one_invalid && one_valid)
-			return 1;
-	}
-
-	return 0;
-}
-
 void parity_overflow(struct snapraid_state* state, data_off_t size)
 {
 	tommy_node* i;

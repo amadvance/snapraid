@@ -300,16 +300,42 @@ The size of the parity file (uint).
 .RE
 .TP
 .B content_info:<kind>:<counter>
-The counters in the content file.
+The counters in the content file. The \`kind\` is
+one of the following:
 .RS 4
 .PD 0
 .HP 4
-.I <kind>
-One of file, hardlink, symlink, dir_empty,
-block_bad, block_rehash, block.
+.I file
+The count of files.
 .HP 4
-.I <counter>
-The number of elements (uint)
+.I hardlink
+The counter of hardlinks.
+.HP 4
+.I symlink
+The counter of symlinks.
+.HP 4
+.I dir_empty
+The counter of empty directories.
+.HP 4
+.I block_bad
+The counter of bad blocks. Bad blocks indicate data
+or parity corruption.
+.HP 4
+.I block_rehash
+The counter of blocks needing a rehash, usually
+due to hash algorithm change.
+.HP 4
+.I block_unscrubbed
+The counter of blocks that are unscrubbed
+(just synced), meaning they have never been verified
+since their first sync.
+.HP 4
+.I block_unsynced
+The counter of blocks that are unsynced (need a sync),
+meaning their parity data is out of date.
+.HP 4
+.I block
+The total counter of blocks.
 .PD
 .RE
 .SH DIAGNOSTICS TAGS 
@@ -824,22 +850,6 @@ capacity.
 .TP
 .B summary:total_use_percent:<uint>
 Overall array use percentage.
-.TP
-.B summary:has_unsynced:<uint>
-Count of blocks that are unsynced (need a sync), meaning their
-parity data is out of date.
-.TP
-.B summary:has_unscrubbed:<uint>
-Count of blocks that are unscrubbed (just synced), meaning they
-have never been verified since the last sync.
-.TP
-.B summary:has_rehash:<uint>
-Count of blocks needing a rehash, usually due to a content file
-update or hash algorithm change.
-.TP
-.B summary:has_bad:<count>:<first>:<last>
-Count of bad blocks, along with the first and last bad block index.
-Bad blocks indicate data or parity corruption.
 .TP
 .B summary:scrub_oldest_days:<uint>
 Days ago the oldest block was last scrubbed.

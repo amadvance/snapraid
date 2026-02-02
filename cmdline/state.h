@@ -142,6 +142,8 @@ struct snapraid_state {
 	unsigned besthash; /**< Best hash suggested. */
 	const char* command; /**< Command running. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for all devices. */
+	int parity_is_invalid; /**< If the parity is invalid, and a sync is needed. */
+
 	tommy_list contentlist; /**< List of content files. */
 	tommy_list disklist; /**< List of all the disks. */
 	tommy_list maplist; /**< List of all the disk mappings. */

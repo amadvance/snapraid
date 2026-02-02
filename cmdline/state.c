@@ -181,6 +181,7 @@ void state_init(struct snapraid_state* state)
 	state->no_conf = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		state->smartignore[i] = 0;
+	state->parity_is_invalid = 0;
 	state->thermal_stop_gathering = 0;
 	state->thermal_ambient_temperature = 0;
 	state->thermal_highest_temperature = 0;
@@ -1865,6 +1866,34 @@ static int fs_is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 }
 
 /**
+ * Check if a block parity needs sync
+ *
+ * This is the same logic used in "status" to detect an incomplete "sync",
+ * that ignores invalid block, if they are not used by a file in any disk.
+ *
+ * This means that DELETED blocks won't necessarily imply an invalid parity.
+ */
+static int fs_is_block_unsynced(struct snapraid_state* state, block_off_t pos)
+{
+	int one_invalid = 0;
+	int one_valid = 0;
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		struct snapraid_block* block = fs_par2block_find(disk, pos);
+
+		if (block_has_file(block))
+			one_valid = 1;
+		if (block_has_invalid_parity(block))
+			one_invalid = 1;
+
+		if (one_invalid && one_valid)
+			return 1;
+	}
+
+	return 0;
+}
+
+/**
  * Flush the file checking the final CRC.
  * We exploit the fact that the CRC is always stored in the last 4 bytes.
  */
@@ -1925,6 +1954,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	unsigned count_dir;
 	unsigned count_bad;
 	unsigned count_rehash;
+	unsigned count_unsynced;
+	unsigned count_unscrubbed;
 	int crc_checked;
 	char buffer[PATH_MAX];
 	int ret;
@@ -1938,6 +1969,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	count_dir = 0;
 	count_bad = 0;
 	count_rehash = 0;
+	count_unsynced = 0;
+	count_unscrubbed = 0;
 	crc_checked = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
@@ -2277,9 +2310,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					justsynced = (flag & 8) != 0;
 
 					if (bad)
-						++count_bad;
+						count_bad += v_count;
 					if (rehash)
-						++count_rehash;
+						count_rehash += v_count;
+					if (justsynced)
+						count_unscrubbed += v_count;
 
 					if (rehash && state->prevhash == HASH_UNDEFINED) {
 						/* LCOV_EXCL_START */
@@ -2311,6 +2346,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* extra info are accepted for backward compatibility */
 						/* they are discarded at the first write */
 					}
+
+					if (fs_is_block_unsynced(state, v_pos))
+						++count_unsynced;
 
 					/* go to next block */
 					++v_pos;
@@ -3084,9 +3122,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	log_tag("content_info:hardlink:%u\n", count_hardlink);
 	log_tag("content_info:symlink:%u\n", count_symlink);
 	log_tag("content_info:dir_empty:%u\n", count_dir);
+
+	log_tag("content_info:block:%u\n", blockmax);
 	log_tag("content_info:block_bad:%u\n", count_bad);
 	log_tag("content_info:block_rehash:%u\n", count_rehash);
-	log_tag("content_info:block:%u\n", blockmax);
+	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
+	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
+
+	/* set the parity validity */
+	state->parity_is_invalid = count_unsynced != 0;
 }
 
 struct state_write_thread_context {
@@ -3109,6 +3153,8 @@ struct state_write_thread_context {
 	unsigned count_dir;
 	unsigned count_bad;
 	unsigned count_rehash;
+	unsigned count_unsynced;
+	unsigned count_unscrubbed;
 };
 
 static void* state_write_thread(void* arg)
@@ -3128,6 +3174,8 @@ static void* state_write_thread(void* arg)
 	unsigned count_dir;
 	unsigned count_bad;
 	unsigned count_rehash;
+	unsigned count_unsynced;
+	unsigned count_unscrubbed;
 	tommy_node* i;
 	block_off_t idx;
 	block_off_t begin;
@@ -3139,6 +3187,8 @@ static void* state_write_thread(void* arg)
 	count_dir = 0;
 	count_bad = 0;
 	count_rehash = 0;
+	count_unsynced = 0;
+	count_unscrubbed = 0;
 
 	/* force version 3 a we want to always store the parity size */
 	/* write header */
@@ -3497,20 +3547,28 @@ static void* state_write_thread(void* arg)
 	while (begin < blockmax) {
 		snapraid_info info;
 		block_off_t end;
+		block_off_t count;
 		time_t t;
 		unsigned flag;
 
 		info = info_get(&state->infoarr, begin);
+
+		/* avoid this slow operation if not needed */
+		if (context->first && fs_is_block_unsynced(state, begin))
+			++count_unsynced;
 
 		/* find the end of run of blocks */
 		end = begin + 1;
 		while (end < blockmax
 			&& info == info_get(&state->infoarr, end)
 		) {
+			if (context->first && fs_is_block_unsynced(state, end))
+				++count_unsynced;
 			++end;
 		}
 
-		sputb32(end - begin, f);
+		count = end - begin;
+		sputb32(count, f);
 
 		/* if there is info */
 		if (info) {
@@ -3518,14 +3576,19 @@ static void* state_write_thread(void* arg)
 			flag = 1; /* info is present */
 			if (info_get_bad(info)) {
 				flag |= 2;
-				++count_bad;
+				if (context->first)
+					count_bad += count;
 			}
 			if (info_get_rehash(info)) {
 				flag |= 4;
-				++count_rehash;
+				if (context->first)
+					count_rehash += count;
 			}
-			if (info_get_justsynced(info))
+			if (info_get_justsynced(info)) {
 				flag |= 8;
+				if (context->first)
+					count_unscrubbed += count;
+			}
 			sputb32(flag, f);
 
 			t = info_get_time(info);
@@ -3599,6 +3662,8 @@ static void* state_write_thread(void* arg)
 	context->count_dir = count_dir;
 	context->count_bad = count_bad;
 	context->count_rehash = count_rehash;
+	context->count_unsynced = count_unsynced;
+	context->count_unscrubbed = count_unscrubbed;
 
 	return 0;
 }
@@ -3629,6 +3694,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	unsigned count_dir;
 	unsigned count_bad;
 	unsigned count_rehash;
+	unsigned count_unsynced;
+	unsigned count_unscrubbed;
 
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
@@ -3754,6 +3821,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	count_dir = 0;
 	count_bad = 0;
 	count_rehash = 0;
+	count_unsynced = 0;
+	count_unscrubbed = 0;
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
@@ -3803,6 +3872,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 				count_dir = context->count_dir;
 				cound_bad = context->count_bad;
 				count_rehash = context->count_rehash;
+				count_unsynced = context->count_unsynced;
+				count_unscrubbed = context->count_unscrubbed;
 			} else {
 				if (crc != context->crc) {
 					/* LCOV_EXCL_START */
@@ -3927,6 +3998,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	count_dir = context->count_dir;
 	count_bad = context->count_bad;
 	count_rehash = context->count_rehash;
+	count_unsynced = context->count_unsynced;
+	count_unscrubbed = context->count_unscrubbed;
 
 	free(context);
 #endif
@@ -3940,9 +4013,15 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	log_tag("content_info:hardlink:%u\n", count_hardlink);
 	log_tag("content_info:symlink:%u\n", count_symlink);
 	log_tag("content_info:dir_empty:%u\n", count_dir);
+
+	log_tag("content_info:block:%u\n", blockmax);
 	log_tag("content_info:block_bad:%u\n", count_bad);
 	log_tag("content_info:block_rehash:%u\n", count_rehash);
-	log_tag("content_info:block:%u\n", blockmax);
+	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
+	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
+
+	/* set the parity validity */
+	state->parity_is_invalid = count_unsynced != 0;
 
 	*out_crc = crc;
 }
