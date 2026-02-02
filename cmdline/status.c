@@ -72,7 +72,6 @@ int state_status(struct snapraid_state* state)
 	uint64_t file_block_count;
 	uint64_t file_block_free;
 	block_off_t parity_block_free;
-	unsigned unsynced_blocks;
 	unsigned unscrubbed_blocks;
 	uint64_t all_wasted;
 	int free_not_zero;
@@ -297,7 +296,6 @@ int state_status(struct snapraid_state* state)
 	bad_last = 0;
 	count = 0;
 	rehash = 0;
-	unsynced_blocks = 0;
 	unscrubbed_blocks = 0;
 	log_tag("block_count:%u\n", blockmax);
 	for (i = 0; i < blockmax; ++i) {
@@ -309,19 +307,17 @@ int state_status(struct snapraid_state* state)
 		/* for each disk */
 		one_invalid = 0;
 		one_valid = 0;
-		for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
-			struct snapraid_disk* disk = node_disk->data;
-			struct snapraid_block* block = fs_par2block_find(disk, i);
 
-			if (block_has_file(block))
-				one_valid = 1;
-			if (block_has_invalid_parity(block))
-				one_invalid = 1;
-		}
+		if (state->opt.gui_verbose) { /* avoid this time consuming operation if not needed */
+			for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
+				struct snapraid_disk* disk = node_disk->data;
+				struct snapraid_block* block = fs_par2block_find(disk, i);
 
-		/* if both valid and invalid, we need to update */
-		if (one_invalid && one_valid) {
-			++unsynced_blocks;
+				if (block_has_file(block))
+					one_valid = 1;
+				if (block_has_invalid_parity(block))
+					one_invalid = 1;
+			}
 		}
 
 		/* skip unused blocks */
@@ -367,7 +363,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	/* sort the info to get the time info */
-	qsort(timemap, count, sizeof(time_t), time_compare);
+	sort_time(timemap, count);
 
 	/* output the info map */
 	i = 0;
@@ -477,9 +473,9 @@ int state_status(struct snapraid_state* state)
 		printf("WARNING! You have scrub dates in the future! The next sync/scrub will truncate them!\n");
 	}
 
-	if (unsynced_blocks) {
+	if (state->unsynced_blocks) {
 		printf("WARNING! The array is NOT fully synced.\n");
-		printf("You have a sync in progress at %u%%.\n", muldiv(blockmax - unsynced_blocks, 100, blockmax));
+		printf("You have a sync in progress at %u%%.\n", muldiv(blockmax - state->unsynced_blocks, 100, blockmax));
 	} else {
 		printf("No sync is in progress.\n");
 	}
@@ -573,7 +569,7 @@ int state_status(struct snapraid_state* state)
 
 	if (bad)
 		log_tag("summary:exit:bad\n");
-	else if (unsynced_blocks)
+	else if (state->unsynced_blocks != 0)
 		log_tag("summary:exit:unsynced\n");
 	else
 		log_tag("summary:exit:ok\n");

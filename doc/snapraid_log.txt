@@ -346,6 +346,8 @@ These tags provide a final count of all detected changes.
         The array is already synchronized.
     diff - Indicates that differences were found.
         The array needs a `sync` operation.
+    unsynced - The array has an interrupted sync.
+        The array needs another `sync` operation.
 
 
 6 GENERAL PROGRESS AND EXECUTION TAGS

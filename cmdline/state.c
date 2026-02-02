@@ -181,7 +181,7 @@ void state_init(struct snapraid_state* state)
 	state->no_conf = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		state->smartignore[i] = 0;
-	state->parity_is_invalid = 0;
+	state->unsynced_blocks = 0;
 	state->thermal_stop_gathering = 0;
 	state->thermal_ambient_temperature = 0;
 	state->thermal_highest_temperature = 0;
@@ -3129,8 +3129,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
 	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
 
-	/* set the parity validity */
-	state->parity_is_invalid = count_unsynced != 0;
+	/* store the unsynced_blocks */
+	state->unsynced_blocks = count_unsynced;
 }
 
 struct state_write_thread_context {
@@ -4020,8 +4020,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
 	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
 
-	/* set the parity validity */
-	state->parity_is_invalid = count_unsynced != 0;
+	/* store the unsynced_blocks */
+	state->unsynced_blocks = count_unsynced;
 
 	*out_crc = crc;
 }

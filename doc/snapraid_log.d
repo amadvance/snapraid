@@ -330,6 +330,8 @@ Scan Tags
 			The array is already synchronized.
 		diff - Indicates that differences were found.
 			The array needs a `sync` operation.
+		unsynced - The array has an interrupted sync.
+			The array needs another `sync` operation.
 
 General Progress and Execution Tags
 	These tags are used to report the runtime processing of the commands
