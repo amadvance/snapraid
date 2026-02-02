@@ -13,6 +13,11 @@ SnapRAID HISTORY
    parity, mirroring the workflow of .gitignore.
  * Added support for the ** globbing character to allow recursive pattern
    matching across multiple directory levels.
+ * Added a new locate command to map physical file offsets within the
+   parity volume. This feature facilitates diagnostic analysis of the parity
+   distribution. It supports the -t, --tail option to filter files located
+   specifically at the end of the parity file. This option handles size
+   suffixes K, M, and G using decimal SI units [Ralf1108].
  * Added detection of the smartctl executable. Improves reliability when running
    under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.

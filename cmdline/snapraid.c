@@ -25,6 +25,7 @@
 #include "state.h"
 #include "io.h"
 #include "raid/raid.h"
+#include "locate.h"
 
 /****************************************************************************/
 /* misc */
@@ -714,6 +715,7 @@ static struct option long_options[] = {
 	{ "bw-limit", 1, 0, 'w' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
+	{ "tail", 1, 0, 't' },
 	{ "speed-test", 0, 0, 'T' }, /* undocumented speed test command */
 	{ "speed-test-period", 1, 0, OPT_TEST_SPEED_PERIOD }, /* for how many milliseconds test each feature. Default 1000. */
 	{ "speed-test-disks-number", 1, 0, OPT_TEST_SPEED_DISKS_NUMBER }, /* how many disk number uses in the speed test. Default 8. */
@@ -868,12 +870,38 @@ static struct option long_options[] = {
 #endif
 
 /*
- * Free letters: gIjJkKMnPQrtuxXWz
+ * Free letters: gIjJkKMnPQruxXWz
  *
  * The 's' letter is used in main.c
  * The 'G' letter is free but only from 14.0
  */
-#define OPTIONS "c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
+#define OPTIONS "t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
+
+int parse_option_size(const char* arg, uint64_t* out_size)
+{
+	char* e;
+
+	/* parse the number part */
+	data_off_t size = strtoul(optarg, &e, 10);
+	if (!e || e == arg)
+		return -1;
+
+	/* Handle suffixes */
+	if ((e[0] == 'k' || e[0] == 'K') && e[1] == 0) {
+		size *= KILO;
+	} else if ((e[0] == 'm' || e[0] == 'M') && e[1] == 0) {
+		size *= MEGA;
+	} else if ((e[0] == 'g' || e[0] == 'G') && e[1] == 0) {
+		size *= GIGA;
+	} else if ((e[0] == 't' || e[0] == 'T') && e[1] == 0) {
+		size *= TERA;
+	} else if (e[0] != '\0') {
+		return -1;
+	}
+
+	*out_size = size;
+	return 0;
+}
 
 volatile int global_interrupt = 0;
 
@@ -926,6 +954,7 @@ void signal_init(void)
 #define OPERATION_DEVICES 16
 #define OPERATION_SMART 17
 #define OPERATION_PROBE 18
+#define OPERATION_LOCATE 19
 
 int snapraid_main(int argc, char* argv[])
 {
@@ -957,6 +986,7 @@ int snapraid_main(int argc, char* argv[])
 	int speed_test_blocks_size;
 	time_t t;
 	struct tm* tm;
+	uint64_t parity_tail = 0;
 #if HAVE_LOCALTIME_R
 	struct tm tm_res;
 #endif
@@ -1074,25 +1104,9 @@ int snapraid_main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* Parse the number part */
-			opt.bwlimit = strtoul(optarg, &e, 10);
-			if (!e || e == optarg) {
+			if (parse_option_size(optarg, &opt.bwlimit) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid bandwidth limit '%s'\n", optarg);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* Handle suffixes */
-			if ((e[0] == 'k' || e[0] == 'K') && e[1] == 0) {
-				opt.bwlimit *= 1000;
-			} else if ((e[0] == 'm' || e[0] == 'M') && e[1] == 0) {
-				opt.bwlimit *= 1000 * 1000;
-			} else if ((e[0] == 'g' || e[0] == 'G') && e[1] == 0) {
-				opt.bwlimit *= 1000 * 1000 * 1000;
-			} else if (e[0] != '\0') {
-				/* LCOV_EXCL_START */
-				log_fatal(EUSER, "Invalid bandwidth limit suffix '%s'\n", e);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1132,6 +1146,14 @@ int snapraid_main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 			import_timestamp = optarg;
+			break;
+		case 't' :
+			if (parse_option_size(optarg, &parity_tail) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid tail size '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 			break;
 		case OPT_TEST_IMPORT_CONTENT :
 			if (import_content) {
@@ -1448,6 +1470,8 @@ int snapraid_main(int argc, char* argv[])
 		operation = OPERATION_SMART;
 	} else if (strcmp(argv[optind], "probe") == 0) {
 		operation = OPERATION_PROBE;
+	} else if (strcmp(argv[optind], "locate") == 0) {
+		operation = OPERATION_LOCATE;
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "Unknown command '%s'\n", argv[optind]);
@@ -1900,6 +1924,11 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		state_status(&state);
+	} else if (operation == OPERATION_LOCATE) {
+		state_read(&state);
+
+		state_locate(&state, parity_tail);
+
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 

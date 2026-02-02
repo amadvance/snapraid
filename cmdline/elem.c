@@ -19,6 +19,7 @@
 
 #include "elem.h"
 #include "support.h"
+#include "state.h"
 #include "util.h"
 
 /****************************************************************************/
@@ -1459,5 +1460,21 @@ const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* bu
 		out[1] = str;
 		return esc_shell_multi(out, 2, buffer);
 	}
+}
+
+const char* fmt_size(uint64_t size, char* buffer, size_t buffer_size)
+{
+	if (size >= 10UL * TERA)
+		snprintf(buffer, buffer_size, "%" PRIu64 " T", size / TERA);
+	else if (size >= 10UL * GIGA)
+		snprintf(buffer, buffer_size, "%" PRIu64 " G", size / GIGA);
+	else if (size >= 10UL * MEGA)
+		snprintf(buffer, buffer_size, "%" PRIu64 " M", size / MEGA);
+	else if (size >= 10UL * KILO)
+		snprintf(buffer, buffer_size, "%" PRIu64 " k", size / KILO);
+	else
+		snprintf(buffer, buffer_size, "%" PRIu64 " ", size);
+
+	return buffer;
 }
 

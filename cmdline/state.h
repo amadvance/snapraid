@@ -50,11 +50,11 @@ const char* lev_config_name(unsigned level);
 #define KILO (1000)
 #define MEGA (1000 * 1000)
 #define GIGA (1000 * 1000 * 1000)
-#define TERA (1000 * 1000 * 1000 * 1000LL)
+#define TERA (1000 * 1000 * 1000 * 1000UL)
 #define KIBI (1024)
 #define MEBI (1024 * 1024)
 #define GIBI (1024 * 1024 * 1024)
-#define TEBI (1024 * 1024 * 1024 * 1024LL)
+#define TEBI (1024 * 1024 * 1024 * 1024UL)
 
 #define SORT_PHYSICAL 1 /**< Sort by physical order. */
 #define SORT_INODE 2 /**< Sort by inode. */

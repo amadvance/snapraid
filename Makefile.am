@@ -43,6 +43,7 @@ snapraid_SOURCES = \
 	cmdline/list.c \
 	cmdline/pool.c \
 	cmdline/parity.c \
+	cmdline/locate.c \
 	cmdline/handle.c \
 	cmdline/touch.c \
 	cmdline/device.c \
@@ -87,6 +88,7 @@ noinst_HEADERS = \
 	cmdline/elem.h \
 	cmdline/state.h \
 	cmdline/parity.h \
+	cmdline/locate.h \
 	cmdline/handle.h \
 	cmdline/murmur3.c \
 	cmdline/murmur3test.c \
@@ -556,6 +558,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list --test-fmt file > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list --test-fmt disk > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list --test-fmt path > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) locate --test-fmt file > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) locate -t 10K --test-fmt path > output.log
 if HAVE_POSIX
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif

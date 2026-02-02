@@ -1257,5 +1257,10 @@ const char* fmt_poll(const struct snapraid_disk* disk, const char* str, char* bu
  */
 const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* buffer);
 
+/**
+ * Format a size adding suffix K/M/G/T
+ */
+const char* fmt_size(uint64_t size, char* buffer, size_t buffer_size);
+
 #endif
 
