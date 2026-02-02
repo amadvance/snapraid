@@ -1725,7 +1725,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 	if (!model)
 		model = dummy_model;
 	if (!inter)
-		model = dummy_interface;
+		inter = dummy_interface;
 
 	/* preclear attributes */
 	*serial = 0;
