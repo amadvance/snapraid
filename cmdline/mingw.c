@@ -3015,6 +3015,21 @@ static void* thread_spinup(void* arg)
 
 	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
+	/* after the spin up, get SMART info */
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/*
+	 * Retrieve some attributes directly from the system.
+	 *
+	 * smartctl intentionally skips queries on devices in standby mode
+	 * to prevent accidentally spinning them up.
+	 */
+	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+
 	return 0;
 }
 

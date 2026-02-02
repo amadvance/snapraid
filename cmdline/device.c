@@ -781,6 +781,22 @@ bail:
 	}
 }
 
+static void state_up(struct snapraid_state* state, tommy_list* low)
+{
+	tommy_node* i;
+
+	(void)state;
+
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
+
+		double afr = smart_afr(devinfo->smart, devinfo->model);
+
+		state_info_log(devinfo);
+		state_smart_log(devinfo, afr);
+	}
+}
+
 static void state_probe(struct snapraid_state* state, tommy_list* low)
 {
 	tommy_node* i;
@@ -1034,6 +1050,9 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 
 		if (operation == DEVICE_PROBE)
 			state_probe(state, &low);
+
+		if (operation == DEVICE_UP)
+			state_up(state, &low);
 	}
 
 	tommy_list_foreach(&high, free);
