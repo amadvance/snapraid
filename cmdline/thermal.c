@@ -326,8 +326,8 @@ void state_thermal_cooldown(struct snapraid_state* state)
 
 	if (sleep_time == 0)
 		sleep_time = 5 * 60; /* default sleep time */
-	if (sleep_time < 5 * 60)
-		sleep_time = 5 * 60; /* minimum sleep time */
+	if (sleep_time < 3 * 60)
+		sleep_time = 3 * 60; /* minimum sleep time */
 
 	/* from now on, stop any further data gathering as the heating is interrupted */
 	state->thermal_stop_gathering = 1;
