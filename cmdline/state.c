@@ -2235,7 +2235,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* if we want a full reallocation, marks block as invalid parity */
 					/* note that we do this after the force_nocopy option */
 					/* to avoid to mixup the two things */
-					if (state->opt.force_realloc
+					if (state->opt.force_realloc && state->opt.parity_tail == 0
 						&& block_state_get(block) == BLOCK_STATE_BLK) {
 						/* convert from BLK to REP */
 						block_state_set(block, BLOCK_STATE_REP);

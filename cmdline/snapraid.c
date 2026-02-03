@@ -74,8 +74,7 @@ void usage(const char* conf)
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
 	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands with inaccessible/shared disks\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
-	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
-	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
+	/* --force-full, --force-realloc and --force-realloc-tail are not listed as they are dangerous */
 	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 	printf("\n");
@@ -712,6 +711,7 @@ static struct option long_options[] = {
 	{ "force-nocopy", 0, 0, 'N' },
 	{ "force-full", 0, 0, 'F' },
 	{ "force-realloc", 0, 0, 'R' },
+	{ "force-realloc-tail", 1, 0, 'W' },
 	{ "bw-limit", 1, 0, 'w' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
@@ -870,12 +870,12 @@ static struct option long_options[] = {
 #endif
 
 /*
- * Free letters: gIjJkKMnPQruxXWz
+ * Free letters: gIjJkKMnPQruxXz
  *
  * The 's' letter is used in main.c
  * The 'G' letter is free but only from 14.0
  */
-#define OPTIONS "t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
+#define OPTIONS "t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRW:ahTC:vqHVw:"
 
 int parse_option_size(const char* arg, uint64_t* out_size)
 {
@@ -983,7 +983,6 @@ int snapraid_main(int argc, char* argv[])
 	int speed_test_blocks_size;
 	time_t t;
 	struct tm* tm;
-	uint64_t parity_tail = 0;
 #if HAVE_LOCALTIME_R
 	struct tm tm_res;
 #endif
@@ -1145,7 +1144,7 @@ int snapraid_main(int argc, char* argv[])
 			import_timestamp = optarg;
 			break;
 		case 't' :
-			if (parse_option_size(optarg, &parity_tail) != 0) {
+			if (parse_option_size(optarg, &opt.parity_tail) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid tail size '%s'\n", optarg);
 				exit(EXIT_FAILURE);
@@ -1193,6 +1192,15 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case 'R' :
 			opt.force_realloc = 1;
+			break;
+		case 'W' :
+			opt.force_realloc = 1;
+			if (parse_option_size(optarg, &opt.parity_tail) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid tail size '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 			break;
 		case 'a' :
 			opt.auditonly = 1;
@@ -1810,6 +1818,11 @@ int snapraid_main(int argc, char* argv[])
 
 		state_read(&state);
 
+		/* mark the files that have to be reallocated */
+		/* it will happen in inside scan_file_keep() called in state_scan() */
+		if (state.opt.force_realloc && opt.parity_tail != 0)
+			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
+
 		state_scan(&state);
 
 		/* refresh the size info before the content write */
@@ -1924,7 +1937,7 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_LOCATE) {
 		state_read(&state);
 
-		state_locate(&state, parity_tail);
+		state_locate(&state, opt.parity_tail);
 
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);

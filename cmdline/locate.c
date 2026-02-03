@@ -24,13 +24,20 @@
 #include "locate.h"
 
 struct snapraid_parity_entry {
-	block_off_t block_size;
+	uint32_t block_size;
 	block_off_t low; /**< Lower position in the parity */
 	block_off_t high; /**< Higher position in the parity */
 	block_off_t fragments; /**< Number of fragments in the parity */
 	struct snapraid_file* file;
 	struct snapraid_disk* disk;
 	tommy_node node;
+};
+
+struct snapraid_locate_info {
+	block_off_t block_max; /**< Number of blocks in the parity */
+	data_off_t parity_size; /**< Size in bytes of the parity */
+	block_off_t tail_block; /**< Number of blocks of the tail of the parity */
+	block_off_t low_to_free_tail_block; /**< First block that has to be freed */
 };
 
 static int parity_entry_compare(const void* void_a, const void* void_b)
@@ -69,7 +76,7 @@ static void add_size_to_sum(void* arg, void* void_entry)
 	*size_sum += entry->file->size;
 }
 
-static void collect_parity_block_file(uint32_t block_size, struct snapraid_disk* disk, struct snapraid_file* file, tommy_list* file_list, block_off_t low_occupied_block_number)
+static void collect_parity_block_file(uint32_t block_size, struct snapraid_disk* disk, struct snapraid_file* file, tommy_list* file_list, block_off_t low_to_free_tail_block)
 {
 	block_off_t parity_low = 0; /* lower block */
 	block_off_t parity_high = 0; /* higher block */
@@ -98,8 +105,8 @@ static void collect_parity_block_file(uint32_t block_size, struct snapraid_disk*
 	if (parity_fragments == 0)
 		return; /* not allocated */
 
-	if (low_occupied_block_number > 0 && parity_high < low_occupied_block_number)
-		return; /* entry not relevant */
+	if (low_to_free_tail_block > 0 && parity_high < low_to_free_tail_block)
+		return; /* entry not in the range to free */
 
 	/* found a relevant block so add the corresponding file */
 	struct snapraid_parity_entry* entry = malloc_nofail(sizeof(struct snapraid_parity_entry));
@@ -112,38 +119,44 @@ static void collect_parity_block_file(uint32_t block_size, struct snapraid_disk*
 	tommy_list_insert_tail(file_list, &entry->node, entry);
 }
 
+void state_locate_info(struct snapraid_state* state, uint64_t parity_tail, struct snapraid_locate_info* info)
+{
+	uint32_t block_size = state->block_size;
+
+	info->block_max = parity_allocated_size(state);
+	info->parity_size = info->block_max * (uint64_t)block_size;
+	info->tail_block = (parity_tail + block_size - 1) / block_size;
+	info->low_to_free_tail_block = info->block_max - info->tail_block;
+}
+
 void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 {
 	char buf[64];
-	uint64_t block_size = state->block_size;
-
-	block_off_t min_occupied_block_number;
+	uint32_t block_size = state->block_size;
+	block_off_t low_to_free_tail_block;
 
 	printf("SnapRAID locate report:\n");
 	printf("\n");
 
 	if (parity_tail == 0) {
 		printf("Locate all files\n\n");
-		min_occupied_block_number = 0;
+		low_to_free_tail_block = 0;
 	} else {
 		printf("Locate files within the tail of %sB of the parity\n\n", fmt_size(parity_tail, buf, sizeof(buf)));
 
-		data_off_t block_max = parity_allocated_size(state);
-		data_off_t parity_size = block_max * block_size;
+		struct snapraid_locate_info info;
+		state_locate_info(state, parity_tail, &info);
 
-		printf("Current parity size is %sB\n", fmt_size(parity_size, buf, sizeof(buf)));
-
-		block_off_t tail_block = (parity_tail + block_size - 1) / block_size;
-
-		if (tail_block >= block_max) {
+		printf("Current parity size is %sB\n", fmt_size(info.parity_size, buf, sizeof(buf)));
+		if (info.tail_block >= info.block_max) {
 			printf("Specified tail greater than the parity size!\n");
 			return;
 		}
 
-		min_occupied_block_number = block_max - tail_block;
+		low_to_free_tail_block = info.low_to_free_tail_block;
 	}
 
-	msg_progress("Collecting files with offset greater or equal to %" PRIu64 "\n", min_occupied_block_number * block_size);
+	msg_progress("Collecting files with offset greater or equal to %" PRIu64 "\n", low_to_free_tail_block * (uint64_t)block_size);
 
 	tommy_list files;
 	tommy_list_init(&files);
@@ -151,7 +164,7 @@ void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 		struct snapraid_disk* disk = i->data;
 		for (tommy_node* j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
-			collect_parity_block_file(block_size, disk, file, &files, min_occupied_block_number);
+			collect_parity_block_file(block_size, disk, file, &files, low_to_free_tail_block);
 		}
 	}
 
@@ -174,6 +187,64 @@ void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 		printf("       Offset         Span    Frags\n");
 
 		tommy_list_foreach(&files, dump_entry);
+	}
+
+	tommy_list_foreach(&files, free);
+}
+
+void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint64_t parity_tail)
+{
+	char buf[64];
+	uint32_t block_size = state->block_size;
+
+	struct snapraid_locate_info info;
+	state_locate_info(state, parity_tail, &info);
+	block_off_t low_to_free_tail_block = info.low_to_free_tail_block;
+
+	msg_progress("Forcing reallocation of all files within the tail of %sB of the parity\n\n", fmt_size(parity_tail, buf, sizeof(buf)));
+
+	msg_progress("Collecting files with offset greater or equal to %" PRIu64 "\n", low_to_free_tail_block * (uint64_t)block_size);
+
+	tommy_list files;
+	tommy_list_init(&files);
+	for (tommy_node* i = tommy_list_head(&state->disklist); i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		for (tommy_node* j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
+			struct snapraid_file* file = j->data;
+			collect_parity_block_file(block_size, disk, file, &files, low_to_free_tail_block);
+		}
+	}
+
+	printf("\n");
+
+	if (tommy_list_count(&files) == 0) {
+		printf("No files located in the specified parity tail.\n");
+	} else {
+		/* process all the files partiall or fully overlapping the free zone */
+		for (tommy_node* j = tommy_list_head(&files); j != 0; j = j->next) {
+			struct snapraid_parity_entry* entry = j->data;
+			struct snapraid_file* file = entry->file;
+			struct snapraid_disk* disk = entry->disk;
+
+			/* reallocate the full file, not only the part of in the free zone */
+			/* this is required because the files blocks have to be in order in */
+			/* in the parity file. */
+			/* not reallocating the file head will prevent the reallocation of the file tail */
+			for (block_off_t f = 0; f < file->blockmax; ++f) {
+				block_off_t parity_pos = fs_file2par_find(disk, file, f);
+
+				if (parity_pos == POS_NULL) {
+					/* block not yet allocated */
+					continue;
+				}
+
+				struct snapraid_block* block = fs_file2block_get(file, f);
+				if (block_state_get(block) == BLOCK_STATE_BLK) {
+					/* convert from BLK to REP */
+					block_state_set(block, BLOCK_STATE_REP);
+				}
+			}
+		}
 	}
 
 	tommy_list_foreach(&files, free);
