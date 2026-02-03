@@ -58,26 +58,27 @@ void usage(const char* conf)
 	printf("  fix    Fix the array\n");
 	printf("\n");
 	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
-	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
-	printf("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME", "-d") "  Process only files in the specified disk\n");
-	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
-	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
-	printf("  " SWITCH_GETOPT_LONG("-p, --plan PLAN       ", "-p") "  Define a scrub plan or percentage\n");
-	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
-	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
-	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
-	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
-	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre-hash all the new data\n");
-	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force syncing of files that get zero size\n");
-	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force syncing of disks that get empty\n");
-	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
-	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands with inaccessible/shared disks\n");
-	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
-	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
-	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
-	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   ", "-w") "  Limit IO bandwidth (M|G)\n");
-	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       	 ", "-c") "  Configuration file\n");
+	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  	 ", "-f") "  Process only files matching the pattern\n");
+	printf("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME	 ", "-d") "  Process only files in the specified disk\n");
+	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  	 ", "-m") "  Process only missing/deleted files\n");
+	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    	 ", "-e") "  Process only files with errors\n");
+	printf("  " SWITCH_GETOPT_LONG("-p, --plan PLAN       	 ", "-p") "  Define a scrub plan or percentage\n");
+	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS 	 ", "-o") "  Process only the older part of the array\n");
+	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      	 ", "-i") "  Import deleted files\n");
+	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        	 ", "-l") "  Log file. Default none\n");
+	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      	 ", "-a") "  Check only file data and not parity\n");
+	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        	 ", "-h") "  Pre-hash all the new data\n");
+	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      	 ", "-Z") "  Force syncing of files that get zero size\n");
+	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     	 ", "-E") "  Force syncing of disks that get empty\n");
+	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      	 ", "-U") "  Force commands on disks with uuid changed\n");
+	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    	 ", "-D") "  Force commands with inaccessible/shared disks\n");
+	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    	 ", "-N") "  Force commands disabling the copy detection\n");
+	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      	 ", "-F") "  Force a full parity computation in sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   	 ", "-R") "  Force a full parity reallocation in sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-X, --force-realloc-tail ", "-X") "  Force a tail parity reallocation in sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-w, --bw-limit RATE   	 ", "-w") "  Limit IO bandwidth (M|G)\n");
+	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         	 ", "-v") "  Verbose\n");
 	printf("\n");
 	printf("Configuration file: %s\n", conf);
 	printf("\n");
@@ -712,6 +713,7 @@ static struct option long_options[] = {
 	{ "force-nocopy", 0, 0, 'N' },
 	{ "force-full", 0, 0, 'F' },
 	{ "force-realloc", 0, 0, 'R' },
+	{ "force-realloc-tail", 0, 0, 'X' },
 	{ "bw-limit", 1, 0, 'w' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
@@ -875,7 +877,7 @@ static struct option long_options[] = {
  * The 's' letter is used in main.c
  * The 'G' letter is free but only from 14.0
  */
-#define OPTIONS "t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
+#define OPTIONS "X:t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRahTC:vqHVw:"
 
 int parse_option_size(const char* arg, uint64_t* out_size)
 {
@@ -1196,6 +1198,9 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case 'R' :
 			opt.force_realloc = 1;
+			break;
+		case 'X' :
+			opt.force_realloc_tail = 1;
 			break;
 		case 'a' :
 			opt.auditonly = 1;
@@ -1571,6 +1576,20 @@ int snapraid_main(int argc, char* argv[])
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (opt.force_realloc && opt.force_realloc_tail) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use the -R, --force-realloc and -T, --force-realloc-tail options simultaneously\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.force_realloc_tail && parity_tail == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use the -X, --force-realloc-tail without option 't' == 0 \n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	if (opt.prehash && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You cannot use the -h, --pre-hash and -N, --force-nocopy options simultaneously\n");
@@ -1812,6 +1831,11 @@ int snapraid_main(int argc, char* argv[])
 		state.clear_past_hash = 1;
 
 		state_read(&state);
+
+		// TODO: check if this is the correct place for marking, before or after regular scan?
+		// "scan_file_keep()"" will be called inside the following "state_scan()" so we have to mark the file before
+		if(state.opt.force_realloc_tail)
+			state_locate_mark_tail_blocks_for_resync(&state, parity_tail);
 
 		state_scan(&state);
 

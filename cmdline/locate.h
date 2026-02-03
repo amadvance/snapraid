@@ -25,5 +25,6 @@
 
 void state_locate(struct snapraid_state* state, uint64_t parity_tail);
 
-#endif
+void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint64_t parity_tail);
 
+#endif

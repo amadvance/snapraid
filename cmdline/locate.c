@@ -33,6 +33,13 @@ struct snapraid_parity_entry {
 	tommy_node node;
 };
 
+struct snapraid_locate_info{
+    data_off_t block_max;
+	data_off_t parity_size;
+	block_off_t tail_block;
+    block_off_t min_occupied_block_number;
+};
+
 static int parity_entry_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_parity_entry* entry_a = void_a;
@@ -112,6 +119,16 @@ static void collect_parity_block_file(uint32_t block_size, struct snapraid_disk*
 	tommy_list_insert_tail(file_list, &entry->node, entry);
 }
 
+void state_locate_info(struct snapraid_state* state, uint64_t parity_tail, struct snapraid_locate_info* info)
+{
+	uint64_t block_size = state->block_size;
+
+	info->block_max = parity_allocated_size(state);
+	info->parity_size = info->block_max * block_size;
+	info->tail_block = (parity_tail + block_size - 1) / block_size;
+	info->min_occupied_block_number = info->block_max - info->tail_block;
+}
+
 void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 {
 	char buf[64];
@@ -127,20 +144,16 @@ void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 		min_occupied_block_number = 0;
 	} else {
 		printf("Locate files within the tail of %sB of the parity\n\n", fmt_size(parity_tail, buf, sizeof(buf)));
-
-		data_off_t block_max = parity_allocated_size(state);
-		data_off_t parity_size = block_max * block_size;
-
-		printf("Current parity size is %sB\n", fmt_size(parity_size, buf, sizeof(buf)));
-
-		block_off_t tail_block = (parity_tail + block_size - 1) / block_size;
-
-		if (tail_block >= block_max) {
+		struct snapraid_locate_info info;
+		state_locate_info(state, parity_tail, &info);
+		
+		printf("Current parity size is %sB\n", fmt_size(info.parity_size, buf, sizeof(buf)));	
+		if (info.tail_block >= info.block_max) {
 			printf("Specified tail greater than the parity size!\n");
 			return;
 		}
 
-		min_occupied_block_number = block_max - tail_block;
+		min_occupied_block_number = info.min_occupied_block_number;
 	}
 
 	msg_progress("Collecting files with offset greater or equal to %" PRIu64 "\n", min_occupied_block_number * block_size);
@@ -179,3 +192,28 @@ void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 	tommy_list_foreach(&files, free);
 }
 
+void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint64_t parity_tail)
+{
+	struct snapraid_locate_info info;
+	state_locate_info(state, parity_tail, &info);
+	block_off_t min_occupied_block_number = info.min_occupied_block_number;				
+	printf("Forcing reallocation of all tail blocks from block number %d onwards\n", min_occupied_block_number);
+
+	for (tommy_node* i = tommy_list_head(&state->disklist); i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		for (tommy_node* j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
+			struct snapraid_file* file = j->data;
+			for (block_off_t f = 0; f < file->blockmax; ++f) {
+				block_off_t parity_pos = fs_file2par_find(disk, file, f);
+				if (parity_pos == POS_NULL)
+					continue; /* not allocated */
+				if (parity_pos < min_occupied_block_number)
+					continue; /* not relevant */
+
+				/* mark the file for reallocation */
+				struct snapraid_block* block = fs_file2block_get(file, f);				
+				block_state_set(block, BLOCK_STATE_REP); // TODO: check: is this operation always safe?
+			}
+		}
+	}
+}
