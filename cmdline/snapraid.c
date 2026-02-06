@@ -872,7 +872,7 @@ static struct option long_options[] = {
 #endif
 
 /*
- * Free letters: gIjJkKMnPQruxXWz
+ * Free letters: gIjJkKMnPQruxWz
  *
  * The 's' letter is used in main.c
  * The 'G' letter is free but only from 14.0
