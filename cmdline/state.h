@@ -81,7 +81,7 @@ struct snapraid_option {
 	int force_nocopy; /**< Force dangerous operations of syncing files without using copy detection. */
 	int force_full; /**< Force a full parity update. */
 	int force_realloc; /**< Force a full reallocation and parity update. */
-	int force_realloc_tail; /**< Force a full reallocation and parity update for tail space. */
+	int force_realloc_tail; /**< Force a partial reallocation and parity update for tail space. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int skip_device; /**< Skip devices matching checks. */
