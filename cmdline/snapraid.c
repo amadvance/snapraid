@@ -1553,6 +1553,13 @@ int snapraid_main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+
+		if (opt.force_realloc_tail) {
+			/* LCOV_EXCL_START */
+			log_fatal(EUSER, "You cannot use -X, --force_realloc_tail with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	if (opt.force_full && opt.force_nocopy) {
@@ -1579,6 +1586,13 @@ int snapraid_main(int argc, char* argv[])
 	if (opt.force_realloc && opt.force_realloc_tail) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You cannot use the -R, --force-realloc and -X, --force-realloc-tail options simultaneously\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.force_realloc_tail && opt.force_full) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use the -X, --force-realloc-tail and -F, --force-full options simultaneously\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
