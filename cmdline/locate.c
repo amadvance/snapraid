@@ -197,7 +197,7 @@ void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint
 	struct snapraid_locate_info info;
 	state_locate_info(state, parity_tail, &info);
 	block_off_t min_occupied_block_number = info.min_occupied_block_number;				
-	printf("Forcing reallocation of all tail blocks from block number %d onwards\n", min_occupied_block_number);
+	printf("Forcing reallocation of all tail blocks from block number %u onwards\n", min_occupied_block_number);
 
 	for (tommy_node* i = tommy_list_head(&state->disklist); i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
@@ -211,8 +211,12 @@ void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint
 					continue; /* not relevant */
 
 				/* mark the file for reallocation */
-				struct snapraid_block* block = fs_file2block_get(file, f);				
-				block_state_set(block, BLOCK_STATE_REP); // TODO: check: is this operation always safe?
+				struct snapraid_block* block = fs_file2block_get(file, f);
+				
+				// TODO: check: is condition correct or should we always set BLOCK_STATE_REP?
+				if (block_state_get(block) == BLOCK_STATE_BLK) {
+					block_state_set(block, BLOCK_STATE_REP);
+				}
 			}
 		}
 	}
