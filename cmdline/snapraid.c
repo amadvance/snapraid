@@ -1590,6 +1590,13 @@ int snapraid_main(int argc, char* argv[])
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (opt.force_realloc_tail && opt.force_nocopy) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use the -X, --force-realloc-tail and -N, --force-nocopy options simultaneously\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	if (opt.force_realloc_tail && opt.force_full) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You cannot use the -X, --force-realloc-tail and -F, --force-full options simultaneously\n");
