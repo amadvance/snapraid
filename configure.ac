@@ -8,9 +8,11 @@ AC_CONFIG_SRCDIR([cmdline/snapraid.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
 
+dnl Enables as many system-specific extensions as reasonably possible
+AC_USE_SYSTEM_EXTENSIONS
+
 dnl Checks for programs.
 AC_PROG_CC
-AC_USE_SYSTEM_EXTENSIONS
 AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind],[])
 AC_CHECK_PROG([WINE],[wine64],[wine64],[])
 AC_CHECK_PROG([SDE],[sde64],[sde64],[])
