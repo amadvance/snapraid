@@ -181,7 +181,10 @@ void state_init(struct snapraid_state* state)
 	state->no_conf = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		state->smartignore[i] = 0;
+	state->rehash_blocks = 0;
+	state->bad_blocks = 0;
 	state->unsynced_blocks = 0;
+	state->unscrubbed_blocks = 0;
 	state->thermal_stop_gathering = 0;
 	state->thermal_ambient_temperature = 0;
 	state->thermal_highest_temperature = 0;
@@ -200,6 +203,7 @@ void state_init(struct snapraid_state* state)
 	tommy_hashdyn_init(&state->previmportset);
 	tommy_hashdyn_init(&state->searchset);
 	tommy_arrayblkof_init(&state->infoarr, sizeof(snapraid_info));
+	tommy_list_init(&state->bucketlist);
 }
 
 void state_done(struct snapraid_state* state)
@@ -215,6 +219,7 @@ void state_done(struct snapraid_state* state)
 	tommy_hashdyn_done(&state->previmportset);
 	tommy_hashdyn_done(&state->searchset);
 	tommy_arrayblkof_done(&state->infoarr);
+	tommy_list_foreach(&state->bucketlist, (tommy_foreach_func*)bucket_free);
 }
 
 /**
@@ -1961,6 +1966,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	int ret;
 	tommy_array disk_mapping;
 	uint32_t mapping_max;
+	tommy_hashdyn bucket_hash;
 
 	blockmax = 0;
 	count_file = 0;
@@ -1974,6 +1980,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	crc_checked = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
+	tommy_hashdyn_init(&bucket_hash);
 
 	ret = sread(f, buffer, 12);
 	if (ret < 0) {
@@ -2325,6 +2332,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					}
 
 					info = info_make(t64 + v_oldest, bad, rehash, justsynced);
+
+					bucket_insert(&bucket_hash, t64 + v_oldest, v_count, justsynced);
 				} else {
 					info = 0;
 				}
@@ -3129,8 +3138,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
 	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
 
-	/* store the unsynced_blocks */
+	/* store the blocks counters */
+	state->rehash_blocks = count_rehash;
+	state->bad_blocks = count_bad;
 	state->unsynced_blocks = count_unsynced;
+	state->unscrubbed_blocks = count_unscrubbed;
+
+	/* store the bucket info list */
+	bucket_to_list(&bucket_hash, &state->bucketlist, &state->bucketcount);
+	tommy_hashdyn_done(&bucket_hash);
 }
 
 struct state_write_thread_context {
@@ -3145,7 +3161,8 @@ struct state_write_thread_context {
 	int info_has_rehash;
 	STREAM* f;
 	int first;
-	/* output */
+
+	/* output (required to postpone the output to the terminal after the latest write) */
 	uint32_t crc;
 	unsigned count_file;
 	unsigned count_hardlink;
@@ -3180,6 +3197,7 @@ static void* state_write_thread(void* arg)
 	block_off_t idx;
 	block_off_t begin;
 	unsigned l, s;
+	tommy_hashdyn bucket_hash;
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -3189,6 +3207,7 @@ static void* state_write_thread(void* arg)
 	count_rehash = 0;
 	count_unsynced = 0;
 	count_unscrubbed = 0;
+	tommy_hashdyn_init(&bucket_hash);
 
 	/* force version 3 a we want to always store the parity size */
 	/* write header */
@@ -3593,6 +3612,9 @@ static void* state_write_thread(void* arg)
 
 			t = info_get_time(info);
 
+			if (context->first)
+				bucket_insert(&bucket_hash, t, count, flag & 8);
+
 			/* truncate any time that is in the future */
 			if (t > info_now)
 				t = info_now;
@@ -3664,6 +3686,11 @@ static void* state_write_thread(void* arg)
 	context->count_rehash = count_rehash;
 	context->count_unsynced = count_unsynced;
 	context->count_unscrubbed = count_unscrubbed;
+
+	/* store the bucket info list */
+	if (context->first)
+		bucket_to_list(&bucket_hash, &state->bucketlist, &state->bucketcount);
+	tommy_hashdyn_done(&bucket_hash);
 
 	return 0;
 }
@@ -4020,8 +4047,11 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
 	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
 
-	/* store the unsynced_blocks */
+	/* store the blocks counters */
+	state->rehash_blocks = count_rehash;
+	state->bad_blocks = count_bad;
 	state->unsynced_blocks = count_unsynced;
+	state->unscrubbed_blocks = count_unscrubbed;
 
 	*out_crc = crc;
 }

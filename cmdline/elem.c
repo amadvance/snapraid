@@ -1413,16 +1413,73 @@ void map_free(struct snapraid_map* map)
 	free(map);
 }
 
-int time_compare(const void* void_a, const void* void_b)
-{
-	const time_t* time_a = void_a;
-	const time_t* time_b = void_b;
+/****************************************************************************/
+/* bucket */
 
-	if (*time_a < *time_b)
+static int bucket_cmp(const void* void_a, const void* void_b)
+{
+	const struct snapraid_bucket* a = void_a;
+	const struct snapraid_bucket* b = void_b;
+	if (a->time_at < b->time_at)
 		return -1;
-	if (*time_a > *time_b)
+	if (a->time_at > b->time_at)
 		return 1;
 	return 0;
+}
+
+void bucket_free(struct snapraid_bucket* bucket)
+{
+	free(bucket);
+}
+
+void bucket_insert(tommy_hashdyn* bucket_hash, time_t time_at, block_off_t count, int justsynced)
+{
+	unsigned hash = tommy_inthash_u32(time_at);
+	tommy_node* i = tommy_hashdyn_bucket(bucket_hash, hash);
+	while (i) {
+		struct snapraid_bucket* entry = i->data;
+		if (entry->time_at == time_at) {
+			if (justsynced)
+				entry->count_justsynced += count;
+			else
+				entry->count_scrubbed += count;
+			return;
+		}
+		i = i->next;
+	}
+
+	struct snapraid_bucket* entry = malloc_nofail(sizeof(struct snapraid_bucket));
+	entry->time_at = time_at;
+	if (justsynced) {
+		entry->count_justsynced = count;
+		entry->count_scrubbed = 0;
+	} else {
+		entry->count_justsynced = 0;
+		entry->count_scrubbed = count;
+	}
+
+	tommy_hashdyn_insert(bucket_hash, &entry->node, entry, hash);
+}
+
+void bucket_to_list(tommy_hashdyn* bucket_hash, tommy_list* bucket_list, block_off_t* bucketcount)
+{
+	/* clear previous list */
+	tommy_list_foreach(bucket_list, (tommy_foreach_func*)bucket_free);
+	tommy_list_init(bucket_list);
+
+	log_tag("content_info:bucket_count:%" PRIu64 "\n", (uint64_t)tommy_hashdyn_count(bucket_hash));
+
+	tommy_hashdyn_to_list(bucket_hash, bucket_list);
+
+	tommy_list_sort(bucket_list, bucket_cmp);
+
+	block_off_t count = 0;
+	for (tommy_node* i = tommy_list_head(bucket_list); i != 0; i = i->next) {
+		struct snapraid_bucket* entry = i->data;
+		count += entry->count_scrubbed + entry->count_justsynced;
+		log_tag("content_info:bucket:%" PRIu64 ":%u:%u\n", (uint64_t)entry->time_at, entry->count_scrubbed, entry->count_justsynced);
+	}
+	*bucketcount = count;
 }
 
 /****************************************************************************/

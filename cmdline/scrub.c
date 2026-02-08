@@ -783,13 +783,11 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 {
 	block_off_t blockmax;
 	block_off_t countlimit;
-	block_off_t i;
 	block_off_t count;
 	time_t recentlimit;
 	int ret;
 	struct snapraid_parity_handle parity_handle[LEV_MAX];
 	struct snapraid_plan ps;
-	time_t* timemap;
 	unsigned process_error;
 	time_t now;
 	unsigned l;
@@ -859,22 +857,10 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		}
 	}
 
-	/* identify the time limit */
-	/* we sort all the block times, and we identify the time limit for which we reach the quota */
-	/* this allow to process first the oldest blocks */
-	timemap = malloc_nofail(blockmax * sizeof(time_t));
-
-	/* copy the info in the temp vector */
 	count = 0;
-	log_tag("block_count:%u\n", blockmax);
-	for (i = 0; i < blockmax; ++i) {
-		snapraid_info info = info_get(&state->infoarr, i);
-
-		/* skip unused blocks */
-		if (info == 0)
-			continue;
-
-		timemap[count++] = info_get_time(info);
+	for (tommy_node* j = tommy_list_head(&state->bucketlist); j != 0; j = j->next) {
+		struct snapraid_bucket* bucket = j->data;
+		count += bucket->count_scrubbed + bucket->count_justsynced;
 	}
 
 	if (!count) {
@@ -884,42 +870,41 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* sort it */
-	qsort(timemap, count, sizeof(time_t), time_compare);
-
-	/* output the info map */
-	i = 0;
-	log_tag("info_count:%u\n", count);
-	while (i < count) {
-		unsigned j = i + 1;
-		while (j < count && timemap[i] == timemap[j])
-			++j;
-		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)timemap[i], j - i);
-		i = j;
-	}
-
 	/* compute the limits from count/recentlimit */
 	if (ps.plan == SCRUB_AUTO) {
 		/* no more than the full count */
 		if (countlimit > count)
 			countlimit = count;
 
-		/* decrease until we reach the specific recentlimit */
-		while (countlimit > 0 && timemap[countlimit - 1] > recentlimit)
-			--countlimit;
+		/* by default process everything */
+		ps.timelimit = now;
+		ps.lastlimit = 0;
 
-		/* if there is something to scrub */
-		if (countlimit > 0) {
-			/* get the most recent time we want to scrub */
-			ps.timelimit = timemap[countlimit - 1];
+		tommy_node* j = tommy_list_head(&state->bucketlist);
+		block_off_t processed_count = 0;
+		while (j) {
+			struct snapraid_bucket* bucket = j->data;
+			block_off_t bucket_count = bucket->count_justsynced + bucket->count_scrubbed;
 
-			/* count how many entries for this exact time we have to scrub */
-			/* if the blocks have all the same time, we end with countlimit == lastlimit */
-			ps.lastlimit = 1;
-			while (countlimit > ps.lastlimit && timemap[countlimit - ps.lastlimit - 1] == ps.timelimit)
-				++ps.lastlimit;
-		} else {
-			/* if nothing to scrub, disable also other limits */
+			if (bucket->time_at > recentlimit) {
+				ps.timelimit = recentlimit;
+				ps.lastlimit = 0;
+				break;
+			}
+
+			if (processed_count + bucket_count > countlimit) {
+				ps.timelimit = bucket->time_at;
+				ps.lastlimit = countlimit - processed_count;
+				processed_count = countlimit;
+				break;
+			}
+
+			processed_count += bucket_count;
+			j = j->next;
+		}
+
+		/* if nothing to scrub, disable also other limits */
+		if (processed_count == 0) {
 			ps.timelimit = 0;
 			ps.lastlimit = 0;
 		}
@@ -932,9 +917,6 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		ps.timelimit = 0;
 		ps.lastlimit = 0;
 	}
-
-	/* free the temp vector */
-	free(timemap);
 
 	/* open the file for reading */
 	for (l = 0; l < state->level; ++l) {

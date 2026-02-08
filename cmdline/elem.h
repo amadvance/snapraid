@@ -1233,10 +1233,27 @@ static inline snapraid_info info_get(tommy_arrayblkof* array, block_off_t pos)
 	return info;
 }
 
+/****************************************************************************/
+/* bucket */
+
+struct snapraid_bucket {
+	time_t time_at; /**< Time of the scrub */
+	block_off_t count_scrubbed; /**< Number of blocks scrubbed */
+	block_off_t count_justsynced; /**< Number of blocks justsynced */
+	tommy_node node;
+};
+
+void bucket_free(struct snapraid_bucket* bucket);
+
 /**
- * Compare times
+ * Insert an bucket record into the hashtable
  */
-int time_compare(const void* void_a, const void* void_b);
+void bucket_insert(tommy_hashdyn* bucket_hash, time_t time_at, block_off_t count, int justsynced);
+
+/**
+ * Convert the bucket hashtable to a sorted list
+ */
+void bucket_to_list(tommy_hashdyn* bucket_hash, tommy_list* bucket_list, block_off_t* bucketcount);
 
 /****************************************************************************/
 /* format */

@@ -25,7 +25,7 @@ Description
 
 	=NAME
 		This is the primary tag identifier, always a lowercase string
-		without spaces (e.g., `summary`, `block`, `info_time`).
+		without spaces (e.g., `summary`, `block`).
 	=VALUE
 		Following the `NAME`, these can be additional sub-identifiers,
 		descriptive names (like a disk name), or numeric/string data
@@ -209,6 +209,18 @@ Content Tags
 		block_unsynced - The counter of blocks that are unsynced (need a sync),
 			meaning their parity data is out of date.
 		block - The total counter of blocks.
+
+	=content_info:bucket_count:<uint>
+		Total number of info records about past scrub and sync
+		operations stored in the content file.
+
+	=content_info:bucket:<time>:<count_scrubbed>:<count_new>
+		All the info records.
+
+		<time> - Unix timestamp of the scrub/sync.
+		<count_scrubbed> - Number of blocks scrubbed at this timestamp.
+		<count_new> - Number of blocks that were synced at this
+			timestamp and haven't been scrubbed yet.
 
 Diagnostics Tags
 	=version:<version>
@@ -621,54 +633,16 @@ Command Status Tags
 		Lists files that have a zero sub-second timestamp.
 		Up to 50 are logged per disk.
 
-    Block Information Tags
-	Status of all the blocks of the array.
-
-	=block_count:<uint>
-		The total number of blocks in the array.
-
-	=block:<index>:<time>:<used>:<unsynced>:<bad>:<rehash>
-		Status of a specific block.
-		Only produced when `--gui-verbose` option is used.
-
-		<index> - Block index.
-		<time> - Last scrub time (Unix timestamp). A value of 0 means
-			the block has never been scrubbed.
-		<used> - `used` if the block contains data, otherwise empty.
-		<unsynced> - `unsynced` if the block needs a sync, otherwise empty.
-		<bad> - `bad` if the block has errors, otherwise empty.
-		<rehash> - `rehash` if the block needs a rehash, otherwise empty.
-
-	=block_noinfo:<index>:<used>:<unsynced>
-		Status of an unused block (no info recorded) in the content file.
-		Only produced when `--gui-verbose` option is used.
-
-		<index> - Block index.
-		<used> - `used` if the block contains data, otherwise empty.
-		<unsynced> - `unsynced` if the block needs a sync, otherwise empty.
-
-    Scrub History Tags
-	These tags provide details on the scrub/sync time distribution.
-
-	=info_count:<uint>
-		Total number of info records about past scrub and sync
-		operations stored in the content file.
-
-	=info_time:<time>:<count>:<status>
-		All the info records.
-
-		<time> - Unix timestamp of the scrub/sync.
-		<count> - Number of blocks processed at this timestamp.
-		<status> - `scrubbed` (for blocks verified to be correct) or
-			`new` (for synced blocks that haven't been scrubbed yet).
+    Scrub Graph Tags
+	These tags provide a simple graph data of the past scrub and sync
+	operations.
 
 	=scrub_graph_range:<max_columns>:<max_height>
 		Dimensions of the scrub history graph obtained from the
-		`info_time` records. This provides the boundary for the
+		`content_info:bucket` records. This provides the boundary for the
 		precomputed graph data available in the `scrub_graph_bar` tags.
 
-		<max_columns> - The number of columns in the graph (constant
-			GRAPH_COLUMN).
+		<max_columns> - The number of columns in the graph.
 		<max_height> - The maximum height (peak count) of blocks found
 			in any column (the highest sum of scrubbed and new blocks).
 

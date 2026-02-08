@@ -222,3 +222,61 @@ TOMMY_API tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn)
 	       + tommy_hashdyn_count(hashdyn) * (tommy_size_t)sizeof(tommy_hashdyn_node);
 }
 
+/**
+ * \brief Transfers all elements from the dynamic hashtable into a tommy_list.
+ *
+ * Removes every element from the \p hashdyn hashtable and inserts them
+ * into the provided \p list (at the tail), preserving the per-bucket order
+ * but not guaranteeing any particular global order.
+ *
+ * After the call:
+ * - the hashtable is left completely empty (\c count = 0, all buckets = NULL)
+ * - the target list contains all the elements that were previously in the hashtable
+ *
+ * This function is useful when you need to:
+ * - extract all elements to process/sort them outside the hash table
+ * - convert the hashtable into a list for sequential iteration
+ * - prepare for a full clear + re-insertion with different hash/ordering
+ * - move ownership of the nodes to a list-based container
+ *
+ * \note The operation is O(n) where n is the number of elements.
+ * \note No memory allocation is performed.
+ * \note The relative order of elements that were in the same bucket is preserved,
+ *       but the order among different buckets is bucket-order dependent.
+ *
+ * Typical usage pattern:
+ * \code
+ * tommy_list all_elements;
+ * tommy_list_init(&all_elements);
+ *
+ * // move everything out of the hashtable into the list
+ * tommy_hashdyn_to_list(&hashdyn, &all_elements);
+ *
+ * // now you can sort, filter, process sequentially, etc.
+ * tommy_list_sort(&all_elements, compare_by_value);
+ * \endcode
+ *
+ * \param hashdyn The dynamic hashtable to drain
+ * \param list    The list that will receive all the elements
+ */
+TOMMY_API void tommy_hashdyn_to_list(tommy_hashdyn* hashdyn, tommy_list* list)
+{
+	tommy_size_t bucket_max = hashdyn->bucket_max;
+	tommy_hashdyn_node** bucket = hashdyn->bucket;
+	tommy_size_t pos;
+
+	/* move everything to the list */
+	for (pos = 0; pos < bucket_max; ++pos) {
+		tommy_hashdyn_node* node = bucket[pos];
+
+		while (node) {
+			tommy_node* node_next = node->next;
+			tommy_list_insert_tail(list, node, node->data);
+			node = node_next;
+		}
+	}
+
+	/* clear all */
+	memset(hashdyn->bucket, 0, hashdyn->bucket_max * sizeof(tommy_hashdyn_node*));
+	hashdyn->count = 0;
+}

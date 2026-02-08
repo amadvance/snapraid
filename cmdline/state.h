@@ -142,7 +142,10 @@ struct snapraid_state {
 	unsigned besthash; /**< Best hash suggested. */
 	const char* command; /**< Command running. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for all devices. */
+	uint32_t rehash_blocks; /**< Blocks marked rehash */
+	uint32_t bad_blocks; /**< Blocks marked bad */
 	uint32_t unsynced_blocks; /**< If the parity is invalid, and a sync is needed. */
+	uint32_t unscrubbed_blocks; /**< Blocks never scrubbed */
 
 	tommy_list contentlist; /**< List of content files. */
 	tommy_list disklist; /**< List of all the disks. */
@@ -153,6 +156,8 @@ struct snapraid_state {
 	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
 	tommy_hashdyn searchset; /**< Hashtable by timestamp of all the search files. */
 	tommy_arrayblkof infoarr; /**< Block information array. */
+	tommy_list bucketlist; /**< Sorted list of info bucket. Derived from infoarr, but updated only state_read()/state_write() */
+	block_off_t bucketcount; /**< Sum of all the counts of the list */
 
 	/* Thermal */
 	tommy_list thermallist; /**< List of all thermal state */

@@ -48,18 +48,12 @@ int state_status(struct snapraid_state* state)
 {
 	block_off_t blockmax;
 	block_off_t i;
-	time_t* timemap;
 	time_t now;
-	block_off_t bad;
-	block_off_t bad_first;
-	block_off_t bad_last;
-	block_off_t rehash;
 	block_off_t count;
 	unsigned l;
 	unsigned dayoldest, daymedian, daynewest;
 	unsigned bar_scrubbed[GRAPH_COLUMN];
 	unsigned bar_new[GRAPH_COLUMN];
-	unsigned barpos;
 	unsigned barmax;
 	time_t oldest, newest, median;
 	unsigned x, y;
@@ -72,7 +66,6 @@ int state_status(struct snapraid_state* state)
 	uint64_t file_block_count;
 	uint64_t file_block_free;
 	block_off_t parity_block_free;
-	unsigned unscrubbed_blocks;
 	uint64_t all_wasted;
 	int free_not_zero;
 
@@ -289,100 +282,28 @@ int state_status(struct snapraid_state* state)
 	log_tag("summary:total_use_percent:%u\n", muldiv(file_block_count, 100, file_block_count + file_block_free));
 	log_flush();
 
-	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
-	timemap = malloc_nofail(blockmax * sizeof(time_t));
-	bad = 0;
-	bad_first = 0;
-	bad_last = 0;
+	oldest = 0;
+	median = 0;
+	newest = 0;
 	count = 0;
-	rehash = 0;
-	unscrubbed_blocks = 0;
-	log_tag("block_count:%u\n", blockmax);
-	for (i = 0; i < blockmax; ++i) {
-		int one_invalid;
-		int one_valid;
+	for (tommy_node* j = tommy_list_head(&state->bucketlist); j != 0; j = j->next) {
+		struct snapraid_bucket* bucket = j->data;
+		block_off_t bucket_count = bucket->count_scrubbed + bucket->count_justsynced;
 
-		snapraid_info info = info_get(&state->infoarr, i);
+		if (count == 0)
+			oldest = bucket->time_at;
+		if (count < state->bucketcount / 2)
+			median = bucket->time_at;
+		newest = bucket->time_at;
 
-		/* for each disk */
-		one_invalid = 0;
-		one_valid = 0;
-
-		if (state->opt.gui_verbose) { /* avoid this time consuming operation if not needed */
-			for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
-				struct snapraid_disk* disk = node_disk->data;
-				struct snapraid_block* block = fs_par2block_find(disk, i);
-
-				if (block_has_file(block))
-					one_valid = 1;
-				if (block_has_invalid_parity(block))
-					one_invalid = 1;
-			}
-		}
-
-		/* skip unused blocks */
-		if (info != 0) {
-			time_t scrub_time;
-
-			if (info_get_bad(info)) {
-				if (bad == 0)
-					bad_first = i;
-				bad_last = i;
-				++bad;
-			}
-
-			if (info_get_rehash(info))
-				++rehash;
-
-			scrub_time = info_get_time(info);
-
-			if (info_get_justsynced(info)) {
-				++unscrubbed_blocks;
-
-				/* mark the time as not scrubbed */
-				scrub_time |= TIME_NEW;
-			}
-
-			timemap[count++] = scrub_time;
-		}
-
-		if (state->opt.gui_verbose) {
-			if (info != 0)
-				log_tag("block:%u:%" PRIu64 ":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used" : "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
-			else
-				log_tag("block_noinfo:%u:%s:%s\n", i, one_valid ? "used" : "", one_invalid ? "unsynced" : "");
-		}
+		count += bucket_count;
 	}
-
-	log_flush();
 
 	if (!count) {
 		log_fatal(EUSER, "The array is empty.\n");
-		free(timemap);
 		return 0;
 	}
 
-	/* sort the info to get the time info */
-	sort_time(timemap, count);
-
-	/* output the info map */
-	i = 0;
-	log_tag("info_count:%u\n", count);
-	while (i < count) {
-		unsigned j = i + 1;
-		while (j < count && timemap[i] == timemap[j])
-			++j;
-		if ((timemap[i] & TIME_NEW) == 0) {
-			log_tag("info_time:%" PRIu64 ":%u:scrubbed\n", (uint64_t)timemap[i], j - i);
-		} else {
-			log_tag("info_time:%" PRIu64 ":%u:new\n", (uint64_t)(timemap[i] & ~TIME_NEW), j - i);
-		}
-		i = j;
-	}
-
-	oldest = timemap[0];
-	median = timemap[count / 2];
-	newest = timemap[count - 1];
 	dayoldest = day_ago(oldest, now);
 	daymedian = day_ago(median, now);
 	daynewest = day_ago(newest, now);
@@ -392,29 +313,19 @@ int state_status(struct snapraid_state* state)
 	log_tag("summary:scrub_newest_days:%u\n", daynewest);
 
 	/* compute graph limits */
-	barpos = 0;
 	barmax = 0;
-	for (i = 0; i < GRAPH_COLUMN; ++i) {
-		time_t limit;
-		unsigned step_scrubbed, step_new;
+	memset(bar_scrubbed, 0, sizeof(bar_scrubbed));
+	memset(bar_new, 0, sizeof(bar_new));
+	for (tommy_node* j = tommy_list_head(&state->bucketlist); j != 0; j = j->next) {
+		struct snapraid_bucket* bucket = j->data;
 
-		limit = oldest + (newest - oldest) * (i + 1) / GRAPH_COLUMN;
+		unsigned column = muldiv(bucket->time_at - oldest, GRAPH_COLUMN, newest - oldest + 1);
 
-		step_scrubbed = 0;
-		step_new = 0;
-		while (barpos < count && timemap[barpos] <= limit) {
-			if ((timemap[barpos] & TIME_NEW) != 0)
-				++step_new;
-			else
-				++step_scrubbed;
-			++barpos;
-		}
+		bar_scrubbed[column] += bucket->count_scrubbed;
+		bar_new[column] += bucket->count_justsynced;
 
-		if (step_new + step_scrubbed > barmax)
-			barmax = step_new + step_scrubbed;
-
-		bar_scrubbed[i] = step_scrubbed;
-		bar_new[i] = step_new;
+		if (bar_scrubbed[column] + bar_new[column] > barmax)
+			barmax = bar_scrubbed[column] + bar_new[column];
 	}
 
 	/* output scrub history as structured data */
@@ -480,8 +391,8 @@ int state_status(struct snapraid_state* state)
 		printf("No sync is in progress.\n");
 	}
 
-	if (unscrubbed_blocks) {
-		printf("%u%% of the array is not scrubbed.\n", muldiv_upper(unscrubbed_blocks, 100, blockmax));
+	if (state->unscrubbed_blocks) {
+		printf("%u%% of the array is not scrubbed.\n", muldiv_upper(state->unscrubbed_blocks, 100, blockmax));
 	} else {
 		printf("The full array was scrubbed at least one time.\n");
 	}
@@ -493,8 +404,8 @@ int state_status(struct snapraid_state* state)
 		printf("No file has a zero sub-second timestamp.\n");
 	}
 
-	if (rehash) {
-		printf("You have a rehash in progress at %u%%.\n", muldiv(count - rehash, 100, count));
+	if (state->rehash_blocks) {
+		printf("You have a rehash in progress at %u%%.\n", muldiv(count - state->rehash_blocks, 100, count));
 	} else {
 		if (state->besthash != state->hash) {
 			printf("No rehash is in progress, but for optimal performance one is recommended.\n");
@@ -503,60 +414,53 @@ int state_status(struct snapraid_state* state)
 		}
 	}
 
-	if (bad) {
-		printf("DANGER! In the array there are %u errors!\n\n", bad);
+	if (state->bad_blocks) {
+		printf("DANGER! In the array there are %u errors!\n\n", state->bad_blocks);
 
-		if (bad_last - bad_first + 1 == bad) {
-			printf("They are from block %u to %u.\n", bad_first, bad_last);
-		} else {
-			block_off_t bad_range;
-			block_off_t bad_count;
-			block_off_t range_start;
-			block_off_t range_count;
+		block_off_t bad_range;
+		block_off_t bad_count;
+		block_off_t range_start;
+		block_off_t range_count;
 
-			printf("They are from block %u to %u, specifically at blocks:", bad_first, bad_last);
+		printf("They are at blocks:");
 
-			/* print some of the errors */
-			bad_range = 0;
-			bad_count = 0;
-			range_start = 0;
-			range_count = 0;
-			for (i = 0; i <= blockmax; ++i) { /* one extra iteration to print the final range */
-				snapraid_info info = 0;
-				int is_bad = 0;
+		/* print some of the errors */
+		bad_range = 0;
+		bad_count = 0;
+		range_start = 0;
+		range_count = 0;
+		for (i = 0; i <= blockmax; ++i) { /* one extra iteration to print the final range */
+			snapraid_info info = 0;
+			int is_bad = 0;
 
-				if (i < blockmax) {
-					info = info_get(&state->infoarr, i);
-					if (info != 0) /* unused blocks are never bad */
-						is_bad = info_get_bad(info);
-				}
-
-				if (is_bad) {
-					/* create or extend the range */
-					if (!range_count)
-						range_start = i;
-					++range_count;
-				} else {
-					/* break the range */
-					if (range_count) {
-						if (range_count == 1) {
-							printf(" %u", range_start);
-						} else {
-							printf(" %u-%u", range_start, range_start + range_count - 1);
-						}
-						bad_count += range_count;
-						++bad_range;
-						range_count = 0;
+			if (i < blockmax) {
+				info = info_get(&state->infoarr, i);
+				if (info != 0) /* unused blocks are never bad */
+					is_bad = info_get_bad(info);
+			}
+			if (is_bad) {
+				/* create or extend the range */
+				if (!range_count)
+					range_start = i;
+				++range_count;
+			} else {
+				/* break the range */
+				if (range_count) {
+					if (range_count == 1) {
+						printf(" %u", range_start);
+					} else {
+						printf(" %u-%u", range_start, range_start + range_count - 1);
 					}
-				}
-
-				if (bad_range > 100) {
-					printf(" and %u more...", bad - bad_count);
-					break;
+					bad_count += range_count;
+					++bad_range;
+					range_count = 0;
 				}
 			}
 
-			printf("\n");
+			if (bad_range > 100) {
+				printf(" and %u more...", state->bad_blocks - bad_count);
+				break;
+			}
 		}
 
 		printf("\n");
@@ -567,15 +471,12 @@ int state_status(struct snapraid_state* state)
 		printf("No error detected.\n");
 	}
 
-	if (bad)
+	if (state->bad_blocks)
 		log_tag("summary:exit:bad\n");
 	else if (state->unsynced_blocks != 0)
 		log_tag("summary:exit:unsynced\n");
 	else
 		log_tag("summary:exit:ok\n");
-
-	/* free the temp vector */
-	free(timemap);
 
 	return 0;
 }

@@ -273,17 +273,5 @@ static inline int bit_vect_test(bit_vect_t* bit_vect, size_t off)
 unsigned muldiv(uint64_t v, uint64_t mul, uint64_t div);
 unsigned muldiv_upper(uint64_t v, uint64_t mul, uint64_t div);
 
-/****************************************************************************/
-/* sort */
-
-/**
- * Sort an array of uint64_t integers in-place
- * Optimized for arrays with many duplicate values
- *
- * @param arr    Pointer to array of uint64_t
- * @param n      Number of elements in the array
- */
-void sort_time(time_t* arr, size_t n);
-
 #endif
 
