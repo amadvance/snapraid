@@ -908,10 +908,8 @@ volatile int global_interrupt = 0;
 /* LCOV_EXCL_START */
 void signal_handler(int signum)
 {
-	(void)signum;
-
-	/* report the request of interruption */
-	global_interrupt = 1;
+	/* report the request of interruption with the signal received */
+	global_interrupt = signum;
 }
 /* LCOV_EXCL_STOP */
 
@@ -2005,7 +2003,14 @@ int snapraid_main(int argc, char* argv[])
 #ifdef _WIN32
 		exit(STATUS_CONTROL_C_EXIT);
 #else
-		exit(128 + SIGINT);
+		/* restore default handler */
+		signal(global_interrupt, SIG_DFL);
+
+		/* raise the signal again*/
+		raise(global_interrupt);
+
+		/* if raise() didn't terminate */
+		_exit(128 + global_interrupt);
 #endif
 		/* LCOV_EXCL_STOP */
 	}
