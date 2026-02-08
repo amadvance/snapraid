@@ -124,7 +124,9 @@ struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_p
 
 static int smart_temp(devinfo_t* devinfo)
 {
-	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS];
+	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS] & 0xFFFFFFFF;
+	if (t == SMART_UNASSIGNED)
+		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] & 0xFFFFFFFF;
 
 	/* validate temperature */
 	if (t == SMART_UNASSIGNED)
