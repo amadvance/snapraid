@@ -460,6 +460,12 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
  */
 int smartctl_flush(FILE* f, const char* file, const char* name);
 
+/**
+ * Extract the temperature from the SMART info.
+ * Return -1 if missing
+ */
+int smart_temp(devinfo_t* devinfo);
+
 /****************************************************************************/
 /* thread */
 

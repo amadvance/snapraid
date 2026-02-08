@@ -1902,6 +1902,23 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 	return 0;
 }
 
+int smart_temp(devinfo_t* devinfo)
+{
+	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS] & 0xFFFF;
+	if (t == SMART_UNASSIGNED)
+		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] & 0xFFFF;
+
+	/* validate temperature */
+	if (t == SMART_UNASSIGNED)
+		return -1;
+	if (t == 0)
+		return -1;
+	if (t > 100)
+		return -1;
+
+	return t;
+}
+
 /****************************************************************************/
 /* thread */
 

@@ -411,6 +411,11 @@ int state_thermal_begin(struct snapraid_state* state, time_t now);
  */
 void state_load_ignore_file(tommy_list* filter_list, const char* path, const char* sub);
 
+/**
+ * Report attributes into the log
+ */
+void state_attr(struct snapraid_state* state, tommy_list* low);
+
 /****************************************************************************/
 /* misc */
 

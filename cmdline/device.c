@@ -414,6 +414,10 @@ static double smart_afr(uint64_t* smart, const char* model)
 	uint64_t mask32 = 0xffffffffU;
 	uint64_t mask16 = 0xffffU;
 
+	/* do not estimate for not rotational */
+	if (smart[INFO_ROTATION_RATE] == 0)
+		return 0;
+
 	if (smart[5] != SMART_UNASSIGNED) {
 		double r = smart_afr_value(SMART_5_R, SMART_5_STEP, smart[5] & mask32);
 		if (afr < r)
@@ -555,6 +559,10 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 	for (j = 0; j < 256; ++j)
 		if (devinfo->smart[j] != SMART_UNASSIGNED)
 			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
+
+	int temp = smart_temp(devinfo);
+	if (temp >= 0)
+		log_tag("attr:%s:%s:temperature:%d\n", devinfo->file, devinfo->name, temp);
 }
 
 static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* low)
@@ -568,7 +576,6 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 	double p_at_least_one_failure;
 	int make_it_fail = 0;
 	uint64_t mask32 = 0xffffffffU;
-	uint64_t mask16 = 0xffffU;
 
 	/* compute lengths for padding */
 	device_pad = 0;
@@ -624,10 +631,9 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			devinfo->smart[devinfo->smartignore[j]] = SMART_UNASSIGNED;
 		}
 
-		if (devinfo->smart[SMART_TEMPERATURE_CELSIUS] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[SMART_TEMPERATURE_CELSIUS] & mask16);
-		else if (devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] & mask16);
+		int temp = smart_temp(devinfo);
+		if (temp >= 0)
+			printf("%7d", temp);
 		else
 			printf("      -");
 
@@ -781,7 +787,7 @@ bail:
 	}
 }
 
-static void state_up(struct snapraid_state* state, tommy_list* low)
+void state_attr(struct snapraid_state* state, tommy_list* low)
 {
 	tommy_node* i;
 
@@ -1057,7 +1063,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 			state_probe(state, &low);
 
 		if (operation == DEVICE_UP)
-			state_up(state, &low);
+			state_attr(state, &low);
 	}
 
 	tommy_list_foreach(&high, free);

@@ -122,23 +122,6 @@ struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_p
 	return model;
 }
 
-static int smart_temp(devinfo_t* devinfo)
-{
-	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS] & 0xFFFFFFFF;
-	if (t == SMART_UNASSIGNED)
-		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] & 0xFFFFFFFF;
-
-	/* validate temperature */
-	if (t == SMART_UNASSIGNED)
-		return -1;
-	if (t == 0)
-		return -1;
-	if (t > 100)
-		return -1;
-
-	return t;
-}
-
 void state_thermal(struct snapraid_state* state, time_t now)
 {
 	tommy_node* i;
@@ -205,6 +188,9 @@ void state_thermal(struct snapraid_state* state, time_t now)
 	/* if the list is empty, it's not supported in this platform */
 	if (tommy_list_empty(&low))
 		return;
+
+	/* report new attribute */
+	state_attr(state, &low);
 
 	/* if ambient temperature is not set, set it now with the lowest HD temperature */
 	if (state->thermal_ambient_temperature == 0) {
