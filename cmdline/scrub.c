@@ -700,9 +700,7 @@ end:
 		msg_status("%8u io errors\n", io_error);
 		msg_status("%8u data errors\n", silent_error);
 	} else {
-		/* print the result only if processed something */
-		if (countpos != 0)
-			msg_status("Everything OK\n");
+		msg_status("Everything OK\n");
 	}
 
 	if (soft_error)
