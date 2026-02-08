@@ -927,7 +927,6 @@ void signal_init(void)
 	sigaction(SIGHUP, &sa, 0);
 	sigaction(SIGTERM, &sa, 0);
 	sigaction(SIGINT, &sa, 0);
-	sigaction(SIGQUIT, &sa, 0);
 #else
 	signal(SIGINT, signal_handler);
 #endif
