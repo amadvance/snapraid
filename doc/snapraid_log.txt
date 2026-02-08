@@ -369,17 +369,23 @@ Only produced when `--gui` option is used.
     run:end
         A zero-argument tag indicating the end of the command execution.
 
-    run:pos:<blockidx>:<blockdone>:<sizedone>:<perc>:<eta>:<speed_mbs>:<cpu>:<elapsed>
+    run:pos:<blockidx>:<blockdone>:<sizedone>:<perc>:<eta>:<speed_mbs>:<cpu>:<elapsed>:<temp>:<steady_temp>
         Detailed progress information during command execution.
 
     <blockidx> - Current block index position processed (uint).
     <blockdone> - Number of blocks processed (uint).
     <sizedone> - Current size processed (uint).
     <perc> - Completion percentage (uint).
-    <eta> - Estimated time to completion in seconds (uint).
-    <speed_mbs> - Data processing speed in MB/s (uint).
-    <cpu> - CPU usage percentage (uint).
+    <eta> - Estimated time to completion in seconds. Empty if not
+        available (uint).
+    <speed_mbs> - Data processing speed in MB/s. Empty if not
+        available (uint).
+    <cpu> - CPU usage percentage. Empty if not available (uint).
     <elapsed> - Elapsed time in seconds (uint).
+    <temp> - Current max temperature of the disks. Empty if not
+        available (uint).
+    <steady_temp> - Expected steady temperature of the disks.
+        Empty if not available (uint).
 
     sigint:<blockidx>:<msg>
         A user interruption (e.g., Ctrl+C) was signaled. The process

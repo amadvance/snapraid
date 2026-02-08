@@ -4990,7 +4990,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 
 			/* estimate the remaining time in minutes */
 			if (delta_pos != 0)
-				out_eta = muldiv(countmax - countpos, delta_time, 60 * delta_pos);
+				out_eta = muldiv(countmax - countpos, delta_time, delta_pos);
 
 			if (state->opt.force_stats) {
 				os_clear();
@@ -5020,7 +5020,31 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 		}
 
 		if (state->opt.gui) {
-			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_size_speed, out_cpu, (uint64_t)elapsed);
+			char str_eta[32];
+			char str_size_speed[32];
+			char str_cpu[32];
+			char str_temp[32];
+			char str_steady[32];
+			if (out_computed) {
+				snprintf(str_eta, sizeof(str_eta), "%u", out_eta);
+				snprintf(str_size_speed, sizeof(str_size_speed), "%u", out_size_speed);
+				snprintf(str_cpu, sizeof(str_cpu), "%u", out_cpu);
+			} else {
+				str_eta[0] = 0;
+				str_size_speed[0] = 0;
+				str_cpu[0] = 0;
+			}
+			if (out_temperature) {
+				snprintf(str_temp, sizeof(str_eta), "%u", out_temperature);
+			} else {
+				str_temp[0] = 0;
+			}
+			if (out_steady) {
+				snprintf(str_steady, sizeof(str_steady), "%u", out_steady);
+			} else {
+				str_steady[0] = 0;
+			}
+			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%s:%s:%s:%" PRIu64 ":%s:%s\n", blockpos, countpos, countsize, out_perc, str_eta, str_size_speed, str_cpu, (uint64_t)elapsed, str_temp, str_steady);
 			log_flush();
 		} else {
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
@@ -5034,7 +5058,8 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 					else
 						msg_bar(", Tmax %u", out_temperature);
 				}
-				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
+				unsigned out_eta_minutes = out_eta / 60; /* minutes */
+				msg_bar(", %u:%02u ETA", out_eta_minutes / 60, out_eta_minutes % 60);
 			}
 			msg_bar("\r");
 			msg_flush();

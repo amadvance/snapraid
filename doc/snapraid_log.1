@@ -516,7 +516,7 @@ are going to be skipped (uint).
 .B run:end
 A zero\-argument tag indicating the end of the command execution.
 .TP
-.B run:pos:<blockidx>:<blockdone>:<sizedone>:<perc>:<eta>:<speed_mbs>:<cpu>:<elapsed>
+.B run:pos:<blockidx>:<blockdone>:<sizedone>:<perc>:<eta>:<speed_mbs>:<cpu>:<elapsed>:<temp>:<steady_temp>
 Detailed progress information during command execution.
 .RS 4
 .PD 0
@@ -534,16 +534,26 @@ Current size processed (uint).
 Completion percentage (uint).
 .HP 4
 .I <eta>
-Estimated time to completion in seconds (uint).
+Estimated time to completion in seconds. Empty if not
+available (uint).
 .HP 4
 .I <speed_mbs>
-Data processing speed in MB/s (uint).
+Data processing speed in MB/s. Empty if not
+available (uint).
 .HP 4
 .I <cpu>
-CPU usage percentage (uint).
+CPU usage percentage. Empty if not available (uint).
 .HP 4
 .I <elapsed>
 Elapsed time in seconds (uint).
+.HP 4
+.I <temp>
+Current max temperature of the disks. Empty if not
+available (uint).
+.HP 4
+.I <steady_temp>
+Expected steady temperature of the disks.
+Empty if not available (uint).
 .PD
 .RE
 .TP
