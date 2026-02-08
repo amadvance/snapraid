@@ -186,6 +186,10 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		}
 	}
 
+	/* with a GUI always gives time reference */
+	if (state->opt.gui)
+		log_tag("unixtime:%" PRIi64 "\n", (int64_t)now);
+
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, DEVICE_SMART);
 	} else {

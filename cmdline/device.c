@@ -950,6 +950,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	tommy_list high;
 	tommy_list low;
 	int ret;
+	time_t now = time(0);
 
 	switch (operation) {
 	case DEVICE_UP : msg_progress("Spinup...\n"); break;
@@ -1006,6 +1007,10 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 			tommy_list_insert_tail(&high, &entry->node, entry);
 		}
 	}
+
+	/* with a GUI always gives time reference */
+	if (state->opt.gui)
+		log_tag("unixtime:%" PRIi64 "\n", (int64_t)now);
 
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
