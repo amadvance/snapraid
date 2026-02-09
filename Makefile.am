@@ -650,8 +650,41 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p full scrub
 	$(MSG) Full sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -F sync
-	$(MSG) Realloc sync
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -R sync
+	$(MSG) Realloc partial/full sync
+# Full realloc to compact the parity
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-realloc sync
+	cat bench/parity.* > bench/saved-parity-before
+# Create a big file
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC1
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	cat bench/parity.* > bench/saved-parity-first-file
+# Create another big file
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	cat bench/parity.* > bench/saved-parity-second-file
+# Now remove the first one creating a hole
+	rm bench/disk1/REALLOC1
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --tail 10k locate
+	cat bench/parity.* > bench/saved-parity-hole
+# Reallocate the second file
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-realloc-tail 10k sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --tail 10k locate
+	cat bench/parity.* > bench/saved-parity-remove-hole
+# Remove also the second file
+	rm bench/disk1/REALLOC2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --tail 10k locate
+	cat bench/parity.* > bench/saved-parity-after
+# Adding files should grow the parity
+	@ [ $$(wc -c < bench/saved-parity-before) -lt $$(wc -c < bench/saved-parity-first-file) ] || exit 1
+	@ [ $$(wc -c < bench/saved-parity-first-file) -lt $$(wc -c < bench/saved-parity-second-file) ] || exit 1
+# Creating the hold should not change parity size
+	@ [ $$(wc -c < bench/saved-parity-second-file) -eq $$(wc -c < bench/saved-parity-hole) ] || exit 1
+# Removing the hole should return to the first file size
+	@ [ $$(wc -c < bench/saved-parity-first-file) -eq $$(wc -c < bench/saved-parity-remove-hole) ] || exit 1
+# Removing both files should return to initial parity size
+	@ [ $$(wc -c < bench/saved-parity-before) -eq $$(wc -c < bench/saved-parity-after) ] || exit 1
 #### SYNC PARTIAL ####
 	$(MSG) Abort sync with additions. Delete some of them, and add others and sync again.
 	$(MSG) This triggers files reallocation inside parity
