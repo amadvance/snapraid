@@ -68,7 +68,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
-	block_off_t i;
+	block_off_t blockcur;
 	unsigned j;
 	void* buffer;
 	void* buffer_alloc;
@@ -102,11 +102,11 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 		if (!disk)
 			continue;
 
-		for (i = blockstart; i < blockmax; ++i) {
+		for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
 			struct snapraid_block* block;
 			unsigned block_state;
 
-			block = fs_par2block_find(disk, i);
+			block = fs_par2block_find(disk, blockcur);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -124,8 +124,13 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 	countsize = 0;
 	countpos = 0;
-	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+	blockcur = blockstart;
+
+	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
+	if (alert > 0)
 		goto end;
+	if (alert < 0)
+		goto bail;
 
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_disk* disk = handle[j].disk;
@@ -134,7 +139,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 		if (!disk)
 			continue;
 
-		for (i = blockstart; i < blockmax; ++i) {
+		for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
 			snapraid_info info;
 			int rehash;
 			struct snapraid_block* block;
@@ -144,7 +149,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			struct snapraid_file* file;
 			block_off_t file_pos;
 
-			block = fs_par2block_find(disk, i);
+			block = fs_par2block_find(disk, blockcur);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -154,10 +159,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				continue;
 
 			/* get the file of this block */
-			file = fs_par2file_get(disk, i, &file_pos);
+			file = fs_par2file_get(disk, blockcur, &file_pos);
 
 			/* get block specific info */
-			info = info_get(&state->infoarr, i);
+			info = info_get(&state->infoarr, blockcur);
 
 			/* if we have to use the old hash */
 			rehash = info_get_rehash(info);
@@ -174,9 +179,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal(errno, "Stopping at block %u\n", i);
+					log_fatal(errno, "Stopping at block %u\n", blockcur);
 
 					if (errno == EIO) {
 						++io_error;
@@ -190,7 +195,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 			ret = handle_open(&handle[j], file, state->file_mode, log_error, log_error); /* output a message for missing files */
 			if (ret == -1) {
-				log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+				log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 				if (errno == ENOENT) {
 					log_error_errno(errno, disk->name);
 
@@ -212,7 +217,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				log_fatal_errno(errno, disk->name);
 
 				if (errno == EIO) {
-					log_fatal(errno, "Stopping at block %u\n", i);
+					log_fatal(errno, "Stopping at block %u\n", blockcur);
 					++io_error;
 				} else {
 					log_fatal(errno, "Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", fmt_poll(disk, file->sub, esc_buffer));
@@ -229,14 +234,14 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				|| handle[j].st.st_ino != file->inode
 			) {
 				if (handle[j].st.st_size != file->size) {
-					log_tag("error:%u:%s:%s: Unexpected size change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("error:%u:%s:%s: Unexpected size change\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer));
 					log_error(ESOFT, "Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle[j].path, file->size, (uint64_t)handle[j].st.st_size);
 				} else if (handle[j].st.st_mtime != file->mtime_sec
 					|| STAT_NSEC(&handle[j].st) != file->mtime_nsec) {
-					log_tag("error:%u:%s:%s: Unexpected time change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("error:%u:%s:%s: Unexpected time change\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer));
 					log_error(ESOFT, "Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, STAT_NSEC(&handle[j].st));
 				} else {
-					log_tag("error:%u:%s:%s: Unexpected inode change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("error:%u:%s:%s: Unexpected inode change\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer));
 					log_error(ESOFT, "Unexpected inode change from %" PRIu64 " to %" PRIu64 " at file '%s'.\n", file->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
 				}
 				log_error_errno(ENOENT, disk->name); /* same message for ENOENT */
@@ -251,11 +256,11 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			read_size = handle_read(&handle[j], file_pos, buffer, state->block_size, log_fatal, 0);
 			if (read_size == -1) {
 				/* LCOV_EXCL_START */
-				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
+				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 				log_fatal_errno(errno, disk->name);
 
 				if (errno == EIO) {
-					log_fatal(errno, "Stopping at block %u\n", i);
+					log_fatal(errno, "Stopping at block %u\n", blockcur);
 					++io_error;
 				} else {
 					log_fatal(errno, "Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", fmt_poll(disk, file->sub, esc_buffer));
@@ -285,7 +290,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			if (block_state == BLOCK_STATE_REP) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
-					log_tag("error_data:%u:%s:%s: Unexpected data change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("error_data:%u:%s:%s: Unexpected data change\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer));
 					log_error(EDATA, "Data change at file '%s' at position '%u'\n", handle[j].path, file_pos);
 					log_error(EDATA, "WARNING! Unexpected data modification of a file without parity!\n");
 
@@ -323,7 +328,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			++countpos;
 
 			/* progress */
-			if (state_progress(state, 0, i, countpos, countmax, countsize)) {
+			if (state_progress(state, 0, blockcur, countpos, countmax, countsize)) {
 				/* LCOV_EXCL_START */
 				*skip_sync = 1; /* avoid to run the next sync */
 				break;
@@ -390,7 +395,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			if (errno == EIO) {
@@ -409,6 +414,10 @@ finish:
 
 	if (soft_error + io_error + silent_error != 0)
 		return -1;
+
+	if (alert < 0)
+		return -1;
+
 	return 0;
 }
 
@@ -768,8 +777,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, block_enabled);
 
-	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
+	if (alert > 0)
 		goto end;
+	if (alert < 0)
+		goto bail;
 
 	while (1) {
 		unsigned failed_count;
@@ -1457,6 +1469,10 @@ bail:
 		if (soft_error + silent_error + io_error != 0)
 			return -1;
 	}
+
+	if (alert < 0)
+		return -1;
+
 	return 0;
 }
 

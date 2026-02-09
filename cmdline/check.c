@@ -966,8 +966,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	/* check all the blocks in files */
 	countsize = 0;
 	countpos = 0;
-	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+
+	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
+	if (alert > 0)
 		goto end;
+	if (alert < 0)
+		goto bail;
 
 	for (i = blockstart; i < blockmax; ++i) {
 		unsigned failed_count;
@@ -2085,6 +2089,9 @@ bail:
 				return -1;
 		}
 	}
+
+	if (alert < 0)
+		return -1;
 
 	return 0;
 }

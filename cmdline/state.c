@@ -4576,7 +4576,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 
 	/* start of thermal control */
 	if (!state_thermal_begin(state, now))
-		return 0;
+		return -1;
 
 	/* stop if requested */
 	if (global_interrupt) {
@@ -4586,11 +4586,11 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 		}
 		log_tag("sigint:0: SIGINT received\n");
 		log_flush();
-		return 0;
+		return 1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	return 1;
+	return 0;
 }
 
 void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize, const char* msg)

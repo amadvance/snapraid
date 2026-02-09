@@ -223,8 +223,12 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	io_start(&io, blockstart, blockmax, 0);
 
 	blockcur = blockstart;
-	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+
+	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
+	if (alert > 0)
 		goto end;
+	if (alert < 0)
+		goto bail;
 
 	while (1) {
 		void** buffer;
@@ -439,6 +443,10 @@ bail:
 
 	if (soft_error + io_error != 0)
 		return -1;
+
+	if (alert < 0)
+		return -1;
+
 	return 0;
 }
 

@@ -343,8 +343,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, block_enabled);
 
-	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
+	if (alert > 0)
 		goto end;
+	if (alert < 0)
+		goto bail;
 
 	while (1) {
 		unsigned char* buffer_recov[LEV_MAX];
@@ -762,6 +765,10 @@ bail:
 		if (soft_error + silent_error + io_error != 0)
 			return -1;
 	}
+
+	if (alert < 0)
+		return -1;
+
 	return 0;
 }
 
