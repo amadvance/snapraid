@@ -1820,7 +1820,7 @@ int snapraid_main(int argc, char* argv[])
 
 		/* mark the files that have to be reallocated */
 		/* it will happen in inside scan_file_keep() called in state_scan() */
-		if (state.opt.force_realloc && opt.parity_tail != 0)
+		if (state.opt.force_realloc)
 			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
 
 		state_scan(&state);

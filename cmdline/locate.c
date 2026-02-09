@@ -125,8 +125,13 @@ void state_locate_info(struct snapraid_state* state, uint64_t parity_tail, struc
 
 	info->block_max = parity_allocated_size(state);
 	info->parity_size = info->block_max * (uint64_t)block_size;
+
 	info->tail_block = (parity_tail + block_size - 1) / block_size;
-	info->low_to_free_tail_block = info->block_max - info->tail_block;
+
+	if (info->tail_block > info->block_max)
+		info->low_to_free_tail_block = 0;
+	else
+		info->low_to_free_tail_block = info->block_max - info->tail_block;
 }
 
 void state_locate(struct snapraid_state* state, uint64_t parity_tail)
@@ -148,9 +153,8 @@ void state_locate(struct snapraid_state* state, uint64_t parity_tail)
 		state_locate_info(state, parity_tail, &info);
 
 		printf("Current parity size is %sB\n", fmt_size(info.parity_size, buf, sizeof(buf)));
-		if (info.tail_block >= info.block_max) {
-			printf("Specified tail greater than the parity size!\n");
-			return;
+		if (info.tail_block > info.block_max) {
+			printf("Specified tail greater than the parity size! Operate on the full parity\n");
 		}
 
 		low_to_free_tail_block = info.low_to_free_tail_block;
@@ -196,12 +200,24 @@ void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint
 {
 	char buf[64];
 	uint32_t block_size = state->block_size;
+	block_off_t low_to_free_tail_block;
 
-	struct snapraid_locate_info info;
-	state_locate_info(state, parity_tail, &info);
-	block_off_t low_to_free_tail_block = info.low_to_free_tail_block;
+	if (parity_tail == 0) {
+		printf("Forcing reallocation of all files\n\n");
+		low_to_free_tail_block = 0;
+	} else {
+		msg_progress("Forcing reallocation of all files within the tail of %sB of the parity\n\n", fmt_size(parity_tail, buf, sizeof(buf)));
 
-	msg_progress("Forcing reallocation of all files within the tail of %sB of the parity\n\n", fmt_size(parity_tail, buf, sizeof(buf)));
+		struct snapraid_locate_info info;
+		state_locate_info(state, parity_tail, &info);
+
+		printf("Current parity size is %sB\n", fmt_size(info.parity_size, buf, sizeof(buf)));
+		if (info.tail_block > info.block_max) {
+			printf("Specified tail greater than the parity size! Operate on the full parity\n");
+		}
+
+		low_to_free_tail_block = info.low_to_free_tail_block;
+	}
 
 	msg_progress("Collecting files with offset greater or equal to %" PRIu64 "\n", low_to_free_tail_block * (uint64_t)block_size);
 
