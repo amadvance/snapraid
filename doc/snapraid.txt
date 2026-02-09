@@ -13,16 +13,17 @@ snapraid [-c, --conf CONFIG]
 	[-p, --plan PERC|bad|new|full]
 	[-o, --older-than DAYS] [-l, --log FILE]
 	[-s, --spin-down-on-error] [-w, --bw-limit RATE]
+	[-t, --tail]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-U, --force-uuid] [-D, --force-device]
 	[-N, --force-nocopy] [-F, --force-full]
-	[-R, --force-realloc]
+	[-R, --force-realloc] [-W, --force-realloc-tail]
 	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	[-L, --error-limit NUMBER]
 	[-A, --stats]
 	[-v, --verbose] [-q, --quiet]
 	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	|list|dup|pool|devices|touch|rehash
+	|list|dup|pool|devices|touch|rehash|locate
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -773,6 +774,16 @@ During the rehash, SnapRAID maintains full functionality,
 with the only exception that `dup` cannot detect duplicated
 files using a different hash.
 
+5.17 locate
+-----------
+
+Locate files stored in the parity disks. For each matching file, it
+prints its location within the parity file and the number of fragments
+it occupies.
+
+You can use the -t, --tail option to restrict the operation to files
+using only the specified tail portion of the parity.
+
 
 6 OPTIONS
 =========
@@ -886,7 +897,14 @@ SnapRAID provides the following options:
     -w, --bw-limit RATE
         Applies a global bandwidth limit for all disks. The RATE is
         the number of bytes per second. You can specify a multiplier
-        such as K, M, or G (e.g., --bw-limit 1G).
+        such as K, M, G, or T (e.g., --bw-limit 1G).
+
+    -t, --tail SIZE
+        Limit file listing to those using no more than the specified
+        tail size of the parity disks.
+        You can use multipliers such as K, M, G, or T (e.g. --tail 1G).
+        This option is only valid when used together with the `locate`
+        command.
 
     -A, --stats
         Enables an extended status view that shows additional information.
@@ -982,6 +1000,24 @@ SnapRAID provides the following options:
         WARNING! This option is for experts only, and it is highly
         recommended not to use it.
         You DO NOT have data protection during the `sync` operation.
+
+    -W, --force-realloc-tail SIZE
+        Works like -R, --force-realloc, but limited to the specified
+        tail portion (last SIZE bytes) of each parity file.
+        It forces reallocation (movement) of any file fragments/blocks
+        currently stored in that tail section, allowing them to be
+        placed anywhere in the parity file where free space is
+        available (including existing holes).
+        The main purpose of this option is to shrink the on-disk size
+        of the parity file. If the reallocation successfully clears
+        the entire tail section (no blocks remain using it), the
+        parity file is truncated, reclaiming the unused tail space.
+        You can use multipliers such as K, M, G, or T (e.g.
+        --force-realloc-tail 1G).
+        WARNING! This option is for experts only, and it is highly
+        recommended not to use it.
+        You DO NOT have data protection during the `sync` operation
+        for the affected files.
 
     -l, --log FILE
         Writes a detailed log to the specified file.

@@ -16,8 +16,14 @@ SnapRAID HISTORY
  * Added a new locate command to map physical file offsets within the
    parity volume. This feature facilitates diagnostic analysis of the parity
    distribution. It supports the -t, --tail option to filter files located
-   specifically at the end of the parity file. This option handles size
-   suffixes K, M, and G using decimal SI units [Ralf1108].
+   specifically at the end of the parity file [Ralf1108].
+ * Added new option `-W, --force-realloc-tail SIZE` for the `sync` command.
+   This option works like `--force-realloc` but applies only to the
+   specified tail portion (last SIZE bytes) of the parity file.
+   Its main purpose and result is to shrink the size of the parity file by
+   reclaiming unused space ("holes") that may exist in the parity due to
+   previous fragmentation, allowing to compact the parity toward the beginning
+   [Ralf1108].
  * Added detection of the smartctl executable. Improves reliability when running
    under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.
@@ -54,7 +60,7 @@ SnapRAID HISTORY
    dependent on the hard disk vendor.
  * Added a new "smartignore" configuration option to ignore specific SMART
    attributes.
- * Supported UUID in macOS [Nasado]
+ * Supported UUID in macOS [Nasado].
  * Windows binaries built with gcc 11.5.0 using the MXE cross compiler at
    commit 8c4378fa2b55bc28515b23e96e05d03e671d9b90 with targets
    i686-w64-mingw32.static and x86_64-w64-mingw32.static and optimization -O2.
@@ -92,12 +98,12 @@ SnapRAID HISTORY
    files and the final state of the files like 'recovered' or 'unrecovered'.
    The previous behavior is available with the -b, --filter-block-error option.
  * Improved the speed of the filtering in 'fix' and 'check'. This phase
-   happens after the "Selecting..." message.  [UhClem]
+   happens after the "Selecting..." message [UhClem].
 
 11.5 2020/05
 ============
  * Removed the default -march=native to allow deployment in any machine.
- * Fixed typos [Andrea Gelmini]
+ * Fixed typos [Andrea Gelmini].
 
 11.4 2020/05
 ============
