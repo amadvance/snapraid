@@ -210,12 +210,15 @@ Content Tags
 			meaning their parity data is out of date.
 		block - The total counter of blocks.
 
-	=content_info:bucket_count:<uint>
-		Total number of info records about past scrub and sync
-		operations stored in the content file.
+	=bucket_count:<uint>
+		Total number of info records listed with `bucket`.
 
-	=content_info:bucket:<time>:<count_scrubbed>:<count_new>
-		All the info records.
+	=bucket_block_count:<uint>
+		Total number of info blocks listed with `bucket`. This is the
+		sum of all the counters listed.
+
+	=bucket:<time>:<count_scrubbed>:<count_new>
+		The info records.
 
 		<time> - Unix timestamp of the scrub/sync.
 		<count_scrubbed> - Number of blocks scrubbed at this timestamp.

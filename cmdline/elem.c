@@ -1467,7 +1467,9 @@ void bucket_to_list(tommy_hashdyn* bucket_hash, tommy_list* bucket_list, block_o
 	tommy_list_foreach(bucket_list, (tommy_foreach_func*)bucket_free);
 	tommy_list_init(bucket_list);
 
-	log_tag("content_info:bucket_count:%" PRIu64 "\n", (uint64_t)tommy_hashdyn_count(bucket_hash));
+	log_tag("list:bucket_begin\n");
+
+	log_tag("bucket:count:%" PRIu64 "\n", (uint64_t)tommy_hashdyn_count(bucket_hash));
 
 	tommy_hashdyn_to_list(bucket_hash, bucket_list);
 
@@ -1477,8 +1479,13 @@ void bucket_to_list(tommy_hashdyn* bucket_hash, tommy_list* bucket_list, block_o
 	for (tommy_node* i = tommy_list_head(bucket_list); i != 0; i = i->next) {
 		struct snapraid_bucket* entry = i->data;
 		count += entry->count_scrubbed + entry->count_justsynced;
-		log_tag("content_info:bucket:%" PRIu64 ":%u:%u\n", (uint64_t)entry->time_at, entry->count_scrubbed, entry->count_justsynced);
+		log_tag("bucket:entry:%" PRIu64 ":%u:%u\n", (uint64_t)entry->time_at, entry->count_scrubbed, entry->count_justsynced);
 	}
+
+	log_tag("bucket:block_count:%u\n", count);
+
+	log_tag("list:bucket_end\n");
+
 	*bucketcount = count;
 }
 

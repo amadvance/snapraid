@@ -1640,6 +1640,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	else
 		msg_progress("Scanning...\n");
 
+	log_tag("list:scan_begin\n");
+
 	/* allocate all the scan data */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
@@ -2005,6 +2007,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	log_tag("summary:moved:%u\n", total.count_move);
 	log_tag("summary:copied:%u\n", total.count_copy);
 	log_tag("summary:restored:%u\n", total.count_restore);
+	log_tag("list:scan_end\n");
 
 	no_difference = !total.count_move && !total.count_copy && !total.count_restore
 		&& !total.count_change && !total.count_remove && !total.count_insert;

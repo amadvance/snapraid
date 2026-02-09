@@ -339,12 +339,15 @@ The total counter of blocks.
 .PD
 .RE
 .TP
-.B content_info:bucket_count:<uint>
-Total number of info records about past scrub and sync
-operations stored in the content file.
+.B bucket_count:<uint>
+Total number of info records listed with \`bucket\`.
 .TP
-.B content_info:bucket:<time>:<count_scrubbed>:<count_new>
-All the info records.
+.B bucket_block_count:<uint>
+Total number of info blocks listed with \`bucket\`. This is the
+sum of all the counters listed.
+.TP
+.B bucket:<time>:<count_scrubbed>:<count_new>
+The info records.
 .RS 4
 .PD 0
 .HP 4
