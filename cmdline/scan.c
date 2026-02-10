@@ -2009,6 +2009,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	log_tag("summary:restored:%u\n", total.count_restore);
 	log_tag("list:scan_end\n");
 
+	/* save in the state */
+	state->removed_files = total.count_remove;
+	state->updated_files = total.count_change;
+
 	no_difference = !total.count_move && !total.count_copy && !total.count_restore
 		&& !total.count_change && !total.count_remove && !total.count_insert;
 

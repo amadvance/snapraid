@@ -634,6 +634,19 @@ void config(char* conf, size_t conf_size, const char* argv0)
 /****************************************************************************/
 /* main */
 
+/**
+ * Only long options
+ */
+#define OPT_NO_WARNINGS 500
+#define OPT_GUI 501
+#define OPT_GUI_VERBOSE 502
+#define OPT_GUI_RESCAN_AFTER 503
+#define OPT_GUI_THRESHOLD_REMOVES 504
+#define OPT_GUI_THRESHOLD_UPDATES 505
+
+/**
+ * Test options
+ */
 #define OPT_TEST_SKIP_SELF 256
 #define OPT_TEST_KILL_AFTER_SYNC 257
 #define OPT_TEST_EXPECT_UNRECOVERABLE 258
@@ -662,7 +675,6 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_AUTOSAVE_AT 283
 #define OPT_TEST_FAKE_DEVICE 284
 #define OPT_TEST_EXPECT_NEED_SYNC 285
-#define OPT_NO_WARNINGS 286
 #define OPT_TEST_FAKE_UUID 287
 #define OPT_TEST_MATCH_FIRST_UUID 288
 #define OPT_TEST_FORCE_PARITY_UPDATE 289
@@ -684,8 +696,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SPEED_PERIOD 307
 #define OPT_TEST_SPEED_DISKS_NUMBER 308
 #define OPT_TEST_SPEED_BLOCKS_SIZE 309
-#define OPT_TEST_GUI 310
-#define OPT_TEST_GUI_VERBOSE 311
+
 
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
@@ -725,8 +736,14 @@ static struct option long_options[] = {
 	{ "quiet", 0, 0, 'q' },
 	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
-	{ "gui", 0, 0, OPT_TEST_GUI }, /* undocumented GUI interface option (it was also 'G' in the past) */
-	{ "gui-verbose", 0, 0, OPT_TEST_GUI_VERBOSE }, /* undocumented GUI interface option */
+
+
+	{ "no-warnings", 0, 0, OPT_NO_WARNINGS }, /* disable annoying warnings */
+	{ "gui", 0, 0, OPT_GUI }, /* undocumented GUI interface option (it was also 'G' in the past) */
+	{ "gui-verbose", 0, 0, OPT_GUI_VERBOSE }, /* undocumented GUI interface option */
+	{ "gui-rescan-after", 0, 0, OPT_GUI_RESCAN_AFTER }, /* undocumented GUI, force a rescan after the command to log differences */
+	{ "gui-threshold-removes", 1, 0, OPT_GUI_THRESHOLD_REMOVES }, /* abort sync if too many removed files */
+	{ "gui-threshold-updates", 1, 0, OPT_GUI_THRESHOLD_UPDATES }, /* abort sync if too many updated files */
 
 	/* The following are test specific options, DO NOT USE! */
 
@@ -807,9 +824,6 @@ static struct option long_options[] = {
 
 	/* Fake device data */
 	{ "test-fake-device", 0, 0, OPT_TEST_FAKE_DEVICE },
-
-	/* Disable annoying warnings */
-	{ "no-warnings", 0, 0, OPT_NO_WARNINGS },
 
 	/* Fake UUID */
 	{ "test-fake-uuid", 0, 0, OPT_TEST_FAKE_UUID },
@@ -1214,12 +1228,36 @@ int snapraid_main(int argc, char* argv[])
 		case 'q' :
 			--msg_level;
 			break;
-		case OPT_TEST_GUI :
+		case OPT_NO_WARNINGS :
+			opt.no_warnings = 1;
+			break;
+		case OPT_GUI :
 			opt.gui = 1;
 			break;
-		case OPT_TEST_GUI_VERBOSE :
+		case OPT_GUI_VERBOSE :
 			opt.gui = 1;
 			opt.gui_verbose = 1;
+			break;
+		case OPT_GUI_RESCAN_AFTER :
+			opt.gui_rescan_after = 1;
+			break;
+		case OPT_GUI_THRESHOLD_REMOVES :
+			opt.gui_threshold_removes = strtoul(optarg, &e, 0);
+			if (!e || *e) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid threshold '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			break;
+		case OPT_GUI_THRESHOLD_UPDATES :
+			opt.gui_threshold_updates = strtoul(optarg, &e, 0);
+			if (!e || *e) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid threshold '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 			break;
 		case 'H' :
 			usage(conf);
@@ -1327,9 +1365,6 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FAKE_DEVICE :
 			opt.fake_device = 1;
-			break;
-		case OPT_NO_WARNINGS :
-			opt.no_warnings = 1;
 			break;
 		case OPT_TEST_FAKE_UUID :
 			opt.fake_uuid = 2;
@@ -1825,6 +1860,15 @@ int snapraid_main(int argc, char* argv[])
 
 		state_scan(&state);
 
+		if (opt.gui_threshold_removes != 0 && state.removed_files > opt.gui_threshold_removes) {
+			log_fatal(EUSER, "Too many files were removed (%u, limit is %u). Sync aborted.\n", state.removed_files, opt.gui_threshold_removes);
+			exit(EXIT_FAILURE);
+		}
+		if (opt.gui_threshold_updates != 0 && state.updated_files > opt.gui_threshold_updates) {
+			log_fatal(EUSER, "Too many files were updated (%u, limit is %u). Sync aborted.\n", state.updated_files, opt.gui_threshold_updates);
+			exit(EXIT_FAILURE);
+		}
+
 		/* refresh the size info before the content write */
 		state_refresh(&state);
 
@@ -1951,7 +1995,7 @@ int snapraid_main(int argc, char* argv[])
 		state_read(&state);
 
 		state_pool(&state);
-	} else {
+	} else if (operation == OPERATION_CHECK || operation == OPERATION_FIX) {
 		state_read(&state);
 
 		/* if we are also trying to recover */
@@ -1980,7 +2024,16 @@ int snapraid_main(int argc, char* argv[])
 			ret = state_check(&state, 0, blockstart, blockcount);
 		} else { /* it's fix */
 			ret = state_check(&state, 1, blockstart, blockcount);
+
+			/* rescan if requested by the GUI */
+			if (opt.gui_rescan_after)
+				state_scan(&state);
 		}
+	} else {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Unexpected command '%s'\n", command);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* close log file */

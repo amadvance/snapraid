@@ -68,6 +68,9 @@ const char* lev_config_name(unsigned level);
 struct snapraid_option {
 	int gui; /**< GUI output. */
 	int gui_verbose; /**< GUI verbose output. */
+	int gui_rescan_after; /**< GUI force a rescan after the command. */
+	unsigned gui_threshold_removes; /**< GUI abort sync if too many removed files */
+	unsigned gui_threshold_updates; /**< GUI abort sync if too many updated files */
 	int auditonly; /**< In check, checks only the hash and not the parity. */
 	int badfileonly; /**< In fix, fixes only files marked as bad. */
 	int badblockonly; /**< In fix, fixes only the blocks marked as bad. */
@@ -147,6 +150,8 @@ struct snapraid_state {
 	uint32_t bad_blocks; /**< Blocks marked bad */
 	uint32_t unsynced_blocks; /**< If the parity is invalid, and a sync is needed. */
 	uint32_t unscrubbed_blocks; /**< Blocks never scrubbed */
+	uint32_t removed_files; /**< Files removed. Updated in scan */
+	uint32_t updated_files; /**< Files updated. Updated in scan */
 
 	tommy_list contentlist; /**< List of content files. */
 	tommy_list disklist; /**< List of all the disks. */
