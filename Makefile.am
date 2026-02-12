@@ -131,7 +131,7 @@ LIST_MAN = doc/snapraid.1 doc/snapraid_log.1 $(patsubst %, doc/snapraid-%.1, $(L
 
 LIST_TXT = doc/snapraid.txt doc/snapraid_log.txt $(patsubst %, doc/snapraid-%.txt, $(LANG_CODES))
 
-LIST_HH = doc/snapraid.hh doc/snapraid_log.hh $(patsubst %, doc/snapraid-%.hh, $(LANG_CODES))
+LIST_XML = doc/snapraid.xml doc/snapraid_log.xml $(patsubst %, doc/snapraid-%.xml, $(LANG_CODES))
 
 EXTRA_DIST = \
 	autogen.sh autover.sh \
@@ -175,7 +175,7 @@ clean-local:
 maintainer-clean-local:
 	rm -f $(LIST_MAN)
 	rm -f $(LIST_TXT)
-	rm -f $(LIST_HH)
+	rm -f $(LIST_XML)
 
 # Install localized manpages
 install-data-hook:
@@ -1117,13 +1117,13 @@ if HAVE_ADVD2
 %.html : %.d
 	advd2 html < $(srcdir)/$< > $@
 
-%.hh : %.d
-	advd2 frame < $(srcdir)/$< > $@
+%.xml : %.d
+	advd2 xml < $(srcdir)/$< > $@
 endif
 
 # Web distribution
 
-web: $(LIST_HH)
+web: $(LIST_XML)
 
 # Windows distribution
 
