@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>Download SnapRAID</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container" style="padding: 4rem 20px;">
+        <h1 style="text-align: center;">Download SnapRAID</h1>
+        
+        <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem auto;">
+            <p style="margin-bottom: 1rem; font-size: 1.2rem;">
+                The latest stable release is <strong>v12.4</strong> (Released January 2026).
+            </p>
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                See the <a href="https://github.com/amadvance/snapraid/blob/master/HISTORY">ChangeLog</a> for the detailed list of changes,
+                and <a href="https://github.com/amadvance/snapraid/blob/master/CHECKSUMS">CheckSums</a> for the SHA256 checksums.
+            </p>
+            <p style="color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">SnapRAID</strong> is a <a href="http://en.wikipedia.org/wiki/Free_Software">Free Software</a>
+                application released with the <a href="http://www.gnu.org/licenses/quick-guide-gplv3.html">GPLv3 license</a>.
+            </p>
+        </div>
+
+        <div class="grid grid-2-cols">
+            <!-- Core Binaries -->
+            <div>
+                <h2>SnapRAID CLI</h2>
+                <p>The classic command line tool.</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Version</th>
+                            <th>Download</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Windows (64-bit)</td>
+                            <td>12.4</td>
+                            <td><a href="#">snapraid-12.4-windows-x64.zip</a></td>
+                        </tr>
+                        <tr>
+                            <td>Linux (x86_64)</td>
+                            <td>12.4</td>
+                            <td><a href="#">snapraid-12.4-linux.tar.gz</a></td>
+                        </tr>
+                        <tr>
+                            <td>Source Code</td>
+                            <td>12.4</td>
+                            <td><a href="#">snapraid-12.4.tar.gz</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                    Old versions are available on <a href="https://github.com/amadvance/snapraid/releases">GitHub</a>.
+                </p>
+            </div>
+
+            <!-- Daemon -->
+            <div>
+                <h2>SnapRAID Daemon</h2>
+                <p>Includes background service and Web UI.</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Version</th>
+                            <th>Download</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Linux (Deb/Ubuntu)</td>
+                            <td>2.0</td>
+                            <td><a href="#">snapraid-daemon-2.0.deb</a></td>
+                        </tr>
+                        <tr>
+                            <td>Docker Compose</td>
+                            <td>2.0</td>
+                            <td><a href="#">docker-compose.yml</a></td>
+                        </tr>
+                        <tr>
+                            <td>Source Code</td>
+                            <td>2.0</td>
+                            <td><a href="#">daemon-src-2.0.tar.gz</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="font-size: 1.0rem; color: var(--text-secondary);">
+                    Requires SnapRAID CLI v14+ installed.
+                </p>
+            </div>
+        </div>
+
+        <!-- Donation Card -->
+        <div class="card donation-card" style="margin-top: 4rem; text-align: center;">
+            <h3 style="margin-bottom: 1rem;">Support the Project</h3>
+            <p style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.5rem;">
+                If you want to show your appreciation,
+                you can <a href="http://sourceforge.net/p/snapraid/donate/"><strong>donate</strong></a>,
+                or you can <a href="https://github.com/amadvance/snapraid/"><strong>star it on GitHub</strong></a>.
+            </p>
+            <p style="color: var(--text-secondary);">
+                Donations are used to support SnapRAID development, covering costs such as new hardware, internet services, and AI subscriptions
+            </p>
+            <a href="http://sourceforge.net/p/snapraid/donate/" class="btn btn-primary" style="background: var(--warning); color: black; box-shadow: none; margin-top: 1.5rem;">Donate via PayPal</a>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

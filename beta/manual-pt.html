@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID Manual</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" class="active">Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container manual-layout">
+        <aside class="manual-sidebar">
+            <h4>Languages</h4>
+            <select id="language-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
+                <option value="manualHTML%">English</option>
+                <option value="manual-de">German</option>
+                <option value="manual-es">Spanish</option>
+                <option value="manual-fr">French</option>
+                <option value="manual-it">Italian</option>
+                <option value="manual-ja">Japanse</option>
+                <option value="manual-ko">Korean</option>
+                <option value="manual-pl">Polish</option>
+                <option value="manual-pt">Portuguese</option>
+                <option value="manual-ro">Romanian</option>
+                <option value="manual-ru">Russian</option>
+                <option value="manual-sv">Swedish</option>
+                <option value="manual-uk">Ukranian</option>
+                <option value="manual-zh">Simplified Chinese</option>.
+
+            </select>
+
+            <h4>Contents</h4>
+            <ul id="manual-toc-list">
+                <!-- Populated by JavaScript -->
+            </ul>
+        </aside>
+
+        <main id="manual-container">
+            
+            <div class="manual-doc">
+
+<div class="manual-section-level-1">
+<h1 id="sec1" class="manual-title-level-1">
+Sinopse
+</h1>
+<pre>
+snapraid [-c, --conf CONFIG]
+&nbsp;&nbsp;&nbsp;&nbsp;[-f, --filter PATTERN] [-d, --filter-disk NAME]
+&nbsp;&nbsp;&nbsp;&nbsp;[-m, --filter-missing] [-e, --filter-error]
+&nbsp;&nbsp;&nbsp;&nbsp;[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
+&nbsp;&nbsp;&nbsp;&nbsp;[-p, --plan PERC|bad|new|full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-o, --older-than DAYS] [-l, --log FILE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-s, --spin-down-on-error] [-w, --bw-limit RATE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
+&nbsp;&nbsp;&nbsp;&nbsp;[-U, --force-uuid] [-D, --force-device]
+&nbsp;&nbsp;&nbsp;&nbsp;[-N, --force-nocopy] [-F, --force-full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-R, --force-realloc]
+&nbsp;&nbsp;&nbsp;&nbsp;[-S, --start BLKSTART] [-B, --count BLKCOUNT]
+&nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NUMBER]
+&nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
+&nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
+&nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+</pre>
+<pre>
+snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
+</pre>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec2" class="manual-title-level-1">
+Descrição
+</h1>
+<p>SnapRAID é um programa de backup projetado para arrays de disco,
+armazenando informações de paridade para recuperação de dados no
+caso de até seis falhas de disco.
+</p><p>Destinado principalmente a centros de mídia domésticos com arquivos
+grandes e que mudam com pouca frequência, o SnapRAID oferece vários recursos:
+</p><ul>
+<li>
+Você pode utilizar discos já preenchidos com arquivos sem a
+necessidade de reformatá-los, acessando-os normalmente.
+</li>
+<li>
+Todos os seus dados são submetidos a hash para garantir a integridade
+dos dados e prevenir corrupção silenciosa.
+</li>
+<li>
+Quando o número de discos com falha excede a contagem de paridade,
+a perda de dados é confinada aos discos afetados; os dados em
+outros discos permanecem acessíveis.
+</li>
+<li>
+Se você acidentalmente excluir arquivos em um disco, a recuperação é
+possível.
+</li>
+<li>
+Os discos podem ter tamanhos diferentes.
+</li>
+<li>
+Você pode adicionar discos a qualquer momento.
+</li>
+<li>
+O SnapRAID não prende seus dados; você pode parar de usá-lo
+a qualquer momento sem reformatar ou mover dados.
+</li>
+<li>
+Para acessar um arquivo, apenas um único disco precisa girar (spin),
+economizando energia e reduzindo o ruído.
+</li>
+</ul>
+<p>Para mais informações, visite o site oficial do SnapRAID:
+</p><pre>
+https://www.snapraid.it/
+</pre>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec3" class="manual-title-level-1">
+Limitações
+</h1>
+<p>SnapRAID é um híbrido entre um programa RAID e um programa de backup,
+visando combinar os melhores benefícios de ambos. No entanto, ele tem
+algumas limitações que você deve considerar antes de usá-lo.
+</p><p>A principal limitação é que, se um disco falhar e você não tiver
+sincronizado recentemente, talvez não consiga recuperar totalmente.
+Mais especificamente, você pode não conseguir recuperar até o tamanho dos
+arquivos alterados ou excluídos desde a última operação de sincronização.
+Isso ocorre mesmo que os arquivos alterados ou excluídos não estejam no
+disco com falha. É por isso que o SnapRAID é mais adequado para
+dados que raramente mudam.
+</p><p>Por outro lado, arquivos recém-adicionados não impedem a recuperação de
+arquivos já existentes. Você perderá apenas os arquivos adicionados
+recentemente se estiverem no disco com falha.
+</p><p>Outras limitações do SnapRAID são:
+</p><ul>
+<li>
+Com o SnapRAID, você ainda tem sistemas de arquivos separados para cada disco.
+Com o RAID, você obtém um único sistema de arquivos grande.
+</li>
+<li>
+O SnapRAID não faz striping de dados.
+Com o RAID, você obtém um aumento de velocidade com striping.
+</li>
+<li>
+O SnapRAID não suporta recuperação em tempo real.
+Com o RAID, você não precisa parar de trabalhar quando um disco falha.
+</li>
+<li>
+O SnapRAID pode recuperar dados apenas de um número limitado de falhas de disco.
+Com um backup, você pode recuperar de uma falha completa
+de todo o array de discos.
+</li>
+<li>
+Apenas nomes de arquivos, carimbos de data/hora, symlinks e hardlinks
+são salvos. Permissões, propriedade e atributos estendidos não são salvos.
+</li>
+</ul>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec4" class="manual-title-level-1">
+Primeiros Passos
+</h1>
+<p>Para usar o SnapRAID, você precisa primeiro selecionar um disco em seu array
+de discos para dedicar às informações de `parity` (paridade). Com um
+disco para paridade, você poderá recuperar de uma única falha de disco,
+semelhante ao RAID5.
+</p><p>Se você quiser recuperar de mais falhas de disco, semelhante ao RAID6,
+você deve reservar discos adicionais para paridade. Cada disco de paridade
+adicional permite a recuperação de mais uma falha de disco.
+</p><p>Como discos de paridade, você deve escolher os maiores discos do array,
+pois a informação de paridade pode crescer até o tamanho do maior
+disco de dados no array.
+</p><p>Esses discos serão dedicados a armazenar os arquivos de `parity`.
+Você não deve armazenar seus dados neles.
+</p><p>Em seguida, você deve definir os discos de `data` (dados) que deseja proteger
+com o SnapRAID. A proteção é mais eficaz se esses discos
+contiverem dados que raramente mudam. Por esse motivo, é melhor
+NÃO incluir o disco C:\ do Windows ou os diretórios /home, /var e /tmp
+do Unix.
+</p><p>A lista de arquivos é salva nos arquivos de `content` (conteúdo), geralmente
+armazenados nos discos de dados, paridade ou boot.
+Este arquivo contém os detalhes do seu backup, incluindo todos os
+checksums para verificar sua integridade.
+O arquivo de `content` é armazenado em várias cópias, e cada cópia deve
+estar em um disco diferente para garantir que, mesmo em caso de múltiplas
+falhas de disco, pelo menos uma cópia esteja disponível.
+</p><p>Por exemplo, suponha que você esteja interessado em apenas um nível de
+proteção de paridade, e seus discos estejam localizados em:
+</p><pre>
+/mnt/diskp &lt;- disco selecionado para paridade
+/mnt/disk1 &lt;- primeiro disco a proteger
+/mnt/disk2 &lt;- segundo disco a proteger
+/mnt/disk3 &lt;- terceiro disco a proteger
+</pre>
+<p>Você deve criar o arquivo de configuração /etc/snapraid.conf com
+as seguintes opções:
+</p><pre>
+parity /mnt/diskp/snapraid.parity
+content /var/snapraid/snapraid.content
+content /mnt/disk1/snapraid.content
+content /mnt/disk2/snapraid.content
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
+</pre>
+<p>Se você estiver no Windows, deve usar o formato de caminho do Windows, com
+letras de unidade e barras invertidas em vez de barras.
+</p><pre>
+parity E:\snapraid.parity
+content C:\snapraid\snapraid.content
+content F:\array\snapraid.content
+content G:\array\snapraid.content
+data d1 F:\array\
+data d2 G:\array\
+data d3 H:\array\
+</pre>
+<p>Se você tiver muitos discos e ficar sem letras de unidade, pode montar
+discos diretamente em subpastas. Consulte:
+</p><pre>
+https://www.google.com/search?q=Windows+mount+point
+</pre>
+<p>Neste ponto, você está pronto para executar o comando `sync` para construir
+as informações de paridade.
+</p><pre>
+snapraid sync
+</pre>
+<p>Este processo pode levar várias horas na primeira vez, dependendo do
+tamanho dos dados já presentes nos discos. Se os discos estiverem vazios,
+o processo é imediato.
+</p><p>Você pode pará-lo a qualquer momento pressionando Ctrl+C e, na próxima
+execução, ele será retomado de onde foi interrompido.
+</p><p>Quando este comando for concluído, seus dados estarão SEGUROS.
+</p><p>Agora você pode começar a usar seu array como quiser e periodicamente
+atualizar as informações de paridade executando o comando `sync`.
+</p><div class="manual-section-level-2">
+<h2 id="sec4-1" class="manual-title-level-2">
+Scrubbing
+</h2>
+<p>Para verificar periodicamente os dados e a paridade em busca de erros,
+você pode executar o comando `scrub`.
+</p><pre>
+snapraid scrub
+</pre>
+<p>Este comando compara os dados em seu array com o hash calculado
+durante o comando `sync` para verificar a integridade.
+</p><p>Cada execução do comando verifica aproximadamente 8% do array, excluindo
+dados já examinados nos 10 dias anteriores.
+Você pode usar a opção -p, --plan para especificar uma quantidade diferente
+e a opção -o, --older-than para especificar uma idade diferente em dias.
+Por exemplo, para verificar 5% do array em busca de blocos com mais de
+20 dias, use:
+</p><pre>
+snapraid -p 5 -o 20 scrub
+</pre>
+<p>Se erros silenciosos ou de entrada/saída forem encontrados durante o processo,
+os blocos correspondentes serão marcados como ruins no arquivo de `content`
+e listados no comando `status`.
+</p><pre>
+snapraid status
+</pre>
+<p>Para corrigi-los, você pode usar o comando `fix`, filtrando por blocos
+ruins com a opção -e, --filter-error:
+</p><pre>
+snapraid -e fix
+</pre>
+<p>Na próxima execução de `scrub`, os erros desaparecerão do relatório de `status`
+se estiverem realmente corrigidos. Para torná-lo mais rápido, você pode usar
+-p bad para examinar apenas blocos marcados como ruins.
+</p><pre>
+snapraid -p bad scrub
+</pre>
+<p>Executar `scrub` em um array não sincronizado pode relatar erros causados por
+arquivos removidos ou modificados. Esses erros são relatados na saída de `scrub`,
+mas os blocos relacionados não são marcados como ruins.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec4-2" class="manual-title-level-2">
+Pooling
+</h2>
+<p>Nota: O recurso de pooling descrito abaixo foi substituído pela ferramenta
+mergefs, que agora é a opção recomendada para usuários Linux na comunidade
+SnapRAID. Mergefs oferece uma maneira mais flexível e eficiente de agrupar
+várias unidades em um único ponto de montagem unificado, permitindo acesso
+perfeito a arquivos em todo o seu array sem depender de links simbólicos.
+Ele se integra bem ao SnapRAID para proteção de paridade e é comumente usado
+em configurações como OpenMediaVault (OMV) ou configurações NAS personalizadas.
+</p><p>Para ter todos os arquivos em seu array mostrados na mesma árvore de
+diretórios, você pode habilitar o recurso de `pooling`. Ele cria uma
+visualização virtual somente leitura de todos os arquivos em seu array
+usando links simbólicos.
+</p><p>Você pode configurar o diretório de `pooling` no arquivo de configuração com:
+</p><pre>
+pool /pool
+</pre>
+<p>ou, se você estiver no Windows, com:
+</p><pre>
+pool C:\pool
+</pre>
+<p>e, em seguida, executar o comando `pool` para criar ou atualizar a
+visualização virtual.
+</p><pre>
+snapraid pool
+</pre>
+<p>Se você estiver usando uma plataforma Unix e quiser compartilhar este
+diretório pela rede com máquinas Windows ou Unix, você deve adicionar
+as seguintes opções ao seu /etc/samba/smb.conf:
+</p><pre>
+# Na seção global de smb.conf
+unix extensions = no
+</pre>
+<pre>
+# Na seção de compartilhamento de smb.conf
+[pool]
+comment = Pool
+path = /pool
+read only = yes
+guest ok = yes
+wide links = yes
+follow symlinks = yes
+</pre>
+<p>No Windows, compartilhar links simbólicos por uma rede requer que os
+clientes os resolvam remotamente. Para habilitar isso, além de
+compartilhar o diretório do pool, você também deve compartilhar todos
+os discos de forma independente, usando os nomes de disco definidos no
+arquivo de configuração como pontos de compartilhamento. Você também
+deve especificar na opção `share` do arquivo de configuração o caminho
+UNC do Windows que os clientes remotos precisam usar para acessar
+esses discos compartilhados.
+</p><p>Por exemplo, operando a partir de um servidor chamado `darkstar`, você
+pode usar as opções:
+</p><pre>
+data d1 F:\array\
+data d2 G:\array\
+data d3 H:\array\
+pool C:\pool
+share \\darkstar
+</pre>
+<p>e compartilhar os seguintes diretórios pela rede:
+</p><pre>
+\\darkstar\pool -&gt; C:\pool
+\\darkstar\d1 -&gt; F:\array
+\\darkstar\d2 -&gt; G:\array
+\\darkstar\d3 -&gt; H:\array
+</pre>
+<p>para permitir que clientes remotos acessem todos os arquivos em \\darkstar\pool.
+</p><p>Você também pode precisar configurar clientes remotos para habilitar
+o acesso a symlinks remotos com o comando:
+</p><pre>
+fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
+</pre>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec4-3" class="manual-title-level-2">
+Desexcluir (Undeleting)
+</h2>
+<p>O SnapRAID funciona mais como um programa de backup do que como um sistema
+RAID, e pode ser usado para restaurar ou desexcluir arquivos para seu
+estado anterior usando a opção -f, --filter:
+</p><pre>
+snapraid fix -f FILE
+</pre>
+<p>ou para um diretório:
+</p><pre>
+snapraid fix -f DIR/
+</pre>
+<p>Você também pode usá-lo para recuperar apenas arquivos excluídos
+acidentalmente dentro de um diretório usando a opção -m, --filter-missing,
+que restaura apenas arquivos ausentes, deixando todos os outros intocados.
+</p><pre>
+snapraid fix -m -f DIR/
+</pre>
+<p>Ou para recuperar todos os arquivos excluídos em todas as unidades com:
+</p><pre>
+snapraid fix -m
+</pre>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec4-4" class="manual-title-level-2">
+Recuperando
+</h2>
+<p>O pior aconteceu e você perdeu um ou mais discos!
+</p><p>NÃO ENTRE EM PÂNICO! Você será capaz de recuperá-los!
+</p><p>A primeira coisa que você deve fazer é evitar mais alterações em seu array
+de discos. Desabilite quaisquer conexões remotas a ele e quaisquer
+processos agendados, incluindo qualquer sincronização noturna ou scrub
+agendado do SnapRAID.
+</p><p>Em seguida, prossiga com as seguintes etapas.
+</p><div class="manual-section-level-3">
+<h3 id="sec4-4-1" class="manual-title-level-3">
+PASSO 1 -&gt; Reconfigurar
+</h3>
+<p>Você precisa de algum espaço para recuperar, idealmente em discos sobressalentes
+adicionais, mas um disco USB externo ou um disco remoto será suficiente.
+</p><p>Modifique o arquivo de configuração do SnapRAID para fazer com que a opção
+`data` ou `parity` do disco com falha aponte para um local com espaço
+vazio suficiente para recuperar os arquivos.
+</p><p>Por exemplo, se o disco `d1` falhou, mude de:
+</p><pre>
+data d1 /mnt/disk1/
+</pre>
+<p>para:
+</p><pre>
+data d1 /mnt/new_spare_disk/
+</pre>
+<p>Se o disco a ser recuperado for um disco de paridade, atualize a opção
+`parity` apropriada.
+Se você tiver vários discos com falha, atualize todas as opções de
+configuração deles.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-4-2" class="manual-title-level-3">
+PASSO 2 -&gt; Corrigir
+</h3>
+<p>Execute o comando fix, armazenando o log em um arquivo externo com:
+</p><pre>
+snapraid -d NAME -l fix.log fix
+</pre>
+<p>Onde NAME é o nome do disco, como `d1` em nosso exemplo anterior.
+Se o disco a ser recuperado for um disco de paridade, use os nomes
+`parity`, `2-parity`, etc.
+Se você tiver vários discos com falha, use várias opções -d para
+especificar todos eles.
+</p><p>Este comando levará muito tempo.
+</p><p>Certifique-se de ter alguns gigabytes livres para armazenar o arquivo fix.log.
+Execute-o a partir de um disco com espaço livre suficiente.
+</p><p>Agora você recuperou tudo o que é recuperável. Se alguns arquivos estiverem
+parcialmente ou totalmente irrecuperáveis, eles serão renomeados
+adicionando a extensão `.unrecoverable`.
+</p><p>Você pode encontrar uma lista detalhada de todos os blocos irrecuperáveis
+no arquivo fix.log, verificando todas as linhas que começam com `unrecoverable:`.
+</p><p>Se você não estiver satisfeito com a recuperação, pode tentar novamente
+quantas vezes quiser.
+</p><p>Por exemplo, se você removeu arquivos do array após a última
+`sync`, isso pode resultar em alguns arquivos não sendo recuperados.
+Neste caso, você pode tentar novamente o `fix` usando a opção -i, --import,
+especificando onde esses arquivos estão agora para incluí-los novamente
+no processo de recuperação.
+</p><p>Se você estiver satisfeito com a recuperação, pode prosseguir,
+mas observe que, após a sincronização, você não pode mais tentar
+o comando `fix` novamente!
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-4-3" class="manual-title-level-3">
+PASSO 3 -&gt; Checar
+</h3>
+<p>Como uma verificação cautelosa, você pode agora executar um comando
+`check` para garantir que tudo esteja correto no disco recuperado.
+</p><pre>
+snapraid -d NAME -a check
+</pre>
+<p>Onde NAME é o nome do disco, como `d1` em nosso exemplo anterior.
+</p><p>As opções -d e -a dizem ao SnapRAID para verificar apenas o disco
+especificado e ignorar todos os dados de paridade.
+</p><p>Este comando levará muito tempo, mas se você não for excessivamente
+cauteloso, pode pulá-lo.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-4-4" class="manual-title-level-3">
+PASSO 4 -&gt; Sincronizar
+</h3>
+<p>Execute o comando `sync` para ressincronizar o array com o novo disco.
+</p><pre>
+snapraid sync
+</pre>
+<p>Se tudo for recuperado, este comando é imediato.
+</p></div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec5" class="manual-title-level-1">
+Comandos
+</h1>
+<p>SnapRAID fornece alguns comandos simples que permitem a você:
+</p><ul>
+<li>
+Imprimir o status do array -&gt; `status`
+</li>
+<li>
+Controlar os discos -&gt; `smart`, `probe`, `up`, `down`
+</li>
+<li>
+Fazer um backup/snapshot -&gt; `sync`
+</li>
+<li>
+Verificar periodicamente os dados -&gt; `scrub`
+</li>
+<li>
+Restaurar o último backup/snapshot -&gt; `fix`.
+</li>
+</ul>
+<p>Os comandos devem ser escritos em letras minúsculas.
+</p><div class="manual-section-level-2">
+<h2 id="sec5-1" class="manual-title-level-2">
+status
+</h2>
+<p>Imprime um resumo do estado do array de discos.
+</p><p>Inclui informações sobre a fragmentação da paridade, a idade
+dos blocos sem verificação e todos os erros silenciosos registrados
+encontrados durante o scrubbing.
+</p><p>As informações apresentadas referem-se à última vez que você
+executou `sync`. Modificações posteriores não são levadas em conta.
+</p><p>Se blocos ruins foram detectados, seus números de bloco são listados.
+Para corrigi-los, você pode usar o comando `fix -e`.
+</p><p>Também mostra um gráfico que representa a última vez que cada bloco
+foi examinado (scrubbed) ou sincronizado (synced). Blocos examinados
+são mostrados com '*', blocos sincronizados, mas ainda não examinados,
+com 'o'.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-2" class="manual-title-level-2">
+smart
+</h2>
+<p>Imprime um relatório SMART de todos os discos no sistema.
+</p><p>Inclui uma estimativa da probabilidade de falha no próximo
+ano, permitindo que você planeje substituições de manutenção de
+discos que mostrem atributos suspeitos.
+</p><p>Esta estimativa de probabilidade é obtida correlacionando os atributos
+SMART dos discos com os dados do Backblaze disponíveis em:
+</p><pre>
+https://www.backblaze.com/hard-drive-test-data.html
+</pre>
+<p>Se o SMART relatar que um disco está falhando, `FAIL` ou `PREFAIL` é
+impresso para esse disco, e o SnapRAID retorna com um erro.
+Neste caso, a substituição imediata do disco é altamente recomendada.
+</p><p>Outras possíveis strings de status são:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+logfail
+</div><div class="manual-tag-description">
+No passado, alguns atributos estavam abaixo do
+limite.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+logerr
+</div><div class="manual-tag-description">
+O log de erros do dispositivo contém erros.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+selferr
+</div><div class="manual-tag-description">
+O log de autoteste do dispositivo contém erros.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>Se a opção -v, --verbose for especificada, uma análise estatística
+mais profunda é fornecida. Esta análise pode ajudá-lo a decidir
+se você precisa de mais ou menos paridade.
+</p><p>Este comando usa a ferramenta `smartctl` e é equivalente a executar
+`smartctl -a` em todos os dispositivos.
+</p><p>Se seus dispositivos não forem detectados automaticamente corretamente,
+você pode especificar um comando personalizado usando a opção
+`smartctl` no arquivo de configuração.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-3" class="manual-title-level-2">
+probe
+</h2>
+<p>Imprime o estado de ENERGIA de todos os discos no sistema.
+</p><p>`Standby` significa que o disco não está girando. `Active` significa
+que o disco está girando.
+</p><p>Este comando usa a ferramenta `smartctl` e é equivalente a executar
+`smartctl -n standby -i` em todos os dispositivos.
+</p><p>Se seus dispositivos não forem detectados automaticamente corretamente,
+você pode especificar um comando personalizado usando a opção
+`smartctl` no arquivo de configuração.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-4" class="manual-title-level-2">
+up
+</h2>
+<p>Liga (spins up) todos os discos do array.
+</p><p>Você pode ligar apenas discos específicos usando a opção -d, --filter-disk.
+</p><p>Ligar todos os discos ao mesmo tempo requer muita energia.
+Certifique-se de que sua fonte de alimentação pode suportar isso.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-5" class="manual-title-level-2">
+down
+</h2>
+<p>Desliga (spins down) todos os discos do array.
+</p><p>Este comando usa a ferramenta `smartctl` e é equivalente a executar
+`smartctl -s standby,now` em todos os dispositivos.
+</p><p>Você pode desligar apenas discos específicos usando a opção -d, --filter-disk.
+</p><p>Para desligar automaticamente em caso de erro, você pode usar a opção
+-s, --spin-down-on-error com qualquer outro comando, o que é
+equivalente a executar `down` manualmente quando ocorre um erro.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-6" class="manual-title-level-2">
+diff
+</h2>
+<p>Lista todos os arquivos modificados desde o último `sync` que precisam ter
+seus dados de paridade recalculados.
+</p><p>Este comando não verifica os dados do arquivo, mas apenas o carimbo de
+data/hora, tamanho e inode do arquivo.
+</p><p>Após listar todos os arquivos alterados, um resumo das alterações é
+apresentado, agrupado por:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+equal
+</div><div class="manual-tag-description">
+Arquivos inalterados de antes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+added
+</div><div class="manual-tag-description">
+Arquivos adicionados que não estavam presentes antes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+removed
+</div><div class="manual-tag-description">
+Arquivos removidos.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+updated
+</div><div class="manual-tag-description">
+Arquivos com tamanho ou carimbo de data/hora diferente,
+o que significa que foram modificados.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+moved
+</div><div class="manual-tag-description">
+Arquivos movidos para um diretório diferente no mesmo disco.
+Eles são identificados por terem o mesmo nome, tamanho,
+carimbo de data/hora e inode, mas um diretório diferente.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+copied
+</div><div class="manual-tag-description">
+Arquivos copiados no mesmo ou em um disco diferente.
+Observe que se eles forem realmente movidos para um disco
+diferente, eles também serão contados em `removed`.
+Eles são identificados por terem o mesmo nome, tamanho e
+carimbo de data/hora. Se o carimbo de data/hora sub-segundo
+for zero, o caminho completo deve corresponder, não apenas
+o nome.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+restored
+</div><div class="manual-tag-description">
+Arquivos com um inode diferente, mas nome, tamanho e carimbo
+de data/hora correspondentes. Estes são geralmente arquivos
+restaurados após terem sido excluídos.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>Se uma `sync` for necessária, o código de retorno do processo é 2,
+em vez do padrão 0. O código de retorno 1 é usado para uma condição
+de erro genérica.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-7" class="manual-title-level-2">
+sync
+</h2>
+<p>Atualiza as informações de paridade. Todos os arquivos modificados
+no array de discos são lidos, e os dados de paridade correspondentes
+são atualizados.
+</p><p>Você pode parar este processo a qualquer momento pressionando Ctrl+C,
+sem perder o trabalho já feito.
+Na próxima execução, o processo `sync` será retomado de onde
+foi interrompido.
+</p><p>Se erros silenciosos ou de entrada/saída forem encontrados durante o processo,
+os blocos correspondentes são marcados como ruins.
+</p><p>Os arquivos são identificados por caminho e/ou inode e verificados por
+tamanho e carimbo de data/hora.
+Se o tamanho ou carimbo de data/hora do arquivo for diferente, a paridade
+dos dados é recalculada para todo o arquivo.
+Se o arquivo for movido ou renomeado no mesmo disco, mantendo o
+mesmo inode, a paridade não é recalculada.
+Se o arquivo for movido para outro disco, a paridade é recalculada,
+mas as informações de hash calculadas anteriormente são mantidas.
+</p><p>Os arquivos `content` e `parity` são modificados se necessário.
+Os arquivos no array NÃO são modificados.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-8" class="manual-title-level-2">
+scrub
+</h2>
+<p>Examina (scrubs) o array, verificando se há erros silenciosos ou de
+entrada/saída nos discos de dados e paridade.
+</p><p>Cada invocação verifica aproximadamente 8% do array, excluindo
+dados já examinados nos últimos 10 dias.
+Isso significa que examinar (scrubbing) uma vez por semana garante
+que cada bit de dados seja verificado pelo menos uma vez a cada
+três meses.
+</p><p>Você pode definir um plano de scrub ou quantidade diferente usando a opção
+-p, --plan, que aceita:
+bad - Examina blocos marcados como ruins.
+new - Examina blocos recém-sincronizados ainda não examinados.
+full - Examina tudo.
+0-100 - Examina a porcentagem especificada de blocos.
+</p><p>Se você especificar um valor percentual, também pode usar a opção
+-o, --older-than para definir a idade mínima do bloco.
+Os blocos mais antigos são examinados primeiro, garantindo uma
+verificação ideal.
+Se você quiser examinar apenas os blocos recém-sincronizados ainda
+não examinados, use a opção `-p new`.
+</p><p>Para obter detalhes do status do scrub, use o comando `status`.
+</p><p>Para qualquer erro silencioso ou de entrada/saída encontrado, os blocos
+correspondentes são marcados como ruins no arquivo de `content`.
+Esses blocos ruins são listados em `status` e podem ser corrigidos com
+`fix -e`.
+Após a correção, no próximo scrub, eles serão verificados novamente e,
+se considerados corrigidos, a marcação de ruim será removida.
+Para examinar apenas os blocos ruins, você pode usar o comando
+`scrub -p bad`.
+</p><p>É recomendado executar `scrub` apenas em um array sincronizado para
+evitar erros relatados causados por dados não sincronizados. Esses erros
+são reconhecidos como não sendo erros silenciosos, e os blocos não são
+marcados como ruins, mas tais erros são relatados na saída do comando.
+</p><p>O arquivo `content` é modificado para atualizar o tempo da última verificação
+para cada bloco e para marcar blocos ruins.
+Os arquivos `parity` NÃO são modificados.
+Os arquivos no array NÃO são modificados.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-9" class="manual-title-level-2">
+fix
+</h2>
+<p>Corrige todos os arquivos e os dados de paridade.
+</p><p>Todos os arquivos e dados de paridade são comparados com o estado de
+snapshot salvo na última `sync`.
+Se uma diferença for encontrada, ela é revertida para o snapshot armazenado.
+</p><p>ATENÇÃO! O comando `fix` não diferencia entre erros e modificações
+intencionais. Ele reverte incondicionalmente o estado do arquivo
+para a última `sync`.
+</p><p>Se nenhuma outra opção for especificada, todo o array é processado.
+Use as opções de filtro para selecionar um subconjunto de arquivos ou
+discos para operar.
+</p><p>Para corrigir apenas os blocos marcados como ruins durante `sync` e `scrub`,
+use a opção -e, --filter-error.
+Ao contrário de outras opções de filtro, esta aplica correções apenas a
+arquivos que não foram alterados desde a última `sync`.
+</p><p>O SnapRAID renomeia todos os arquivos que não podem ser corrigidos adicionando
+a extensão `.unrecoverable`.
+</p><p>Antes de corrigir, todo o array é escaneado para encontrar quaisquer
+arquivos movidos desde a última operação `sync`.
+Esses arquivos são identificados por seu carimbo de data/hora, ignorando
+seu nome e diretório, e são usados no processo de recuperação, se
+necessário.
+Se você moveu alguns deles para fora do array, pode usar a opção
+-i, --import para especificar diretórios adicionais para escanear.
+</p><p>Os arquivos são identificados apenas por caminho, não por inode.
+</p><p>O arquivo `content` NÃO é modificado.
+Os arquivos `parity` são modificados se necessário.
+Os arquivos no array são modificados se necessário.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-10" class="manual-title-level-2">
+check
+</h2>
+<p>Verifica todos os arquivos e os dados de paridade.
+</p><p>Funciona como `fix`, mas apenas simula uma recuperação e nenhuma alteração
+é escrita no array.
+</p><p>Este comando é destinado principalmente a verificações manuais,
+como após um processo de recuperação ou em outras condições especiais.
+Para verificações periódicas e agendadas, use `scrub`.
+</p><p>Se você usar a opção -a, --audit-only, apenas os dados do arquivo
+são verificados, e os dados de paridade são ignorados para uma
+execução mais rápida.
+</p><p>Os arquivos são identificados apenas por caminho, não por inode.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-11" class="manual-title-level-2">
+list
+</h2>
+<p>Lista todos os arquivos contidos no array no momento da
+última `sync`.
+</p><p>Com -v ou --verbose, o tempo sub-segundo também é mostrado.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-12" class="manual-title-level-2">
+dup
+</h2>
+<p>Lista todos os arquivos duplicados. Dois arquivos são considerados
+iguais se seus hashes corresponderem. Os dados do arquivo não são lidos;
+apenas os hashes pré-calculados são usados.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-13" class="manual-title-level-2">
+pool
+</h2>
+<p>Cria ou atualiza uma visualização virtual de todos
+os arquivos em seu array de discos no diretório `pooling`.
+</p><p>Os arquivos não são copiados, mas ligados usando
+links simbólicos.
+</p><p>Ao atualizar, todos os links simbólicos existentes e subdiretórios
+vazios são excluídos e substituídos pela nova
+visualização do array. Quaisquer outros arquivos regulares são
+deixados no lugar.
+</p><p>Nada é modificado fora do diretório do pool.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-14" class="manual-title-level-2">
+devices
+</h2>
+<p>Imprime os dispositivos de baixo nível usados pelo array.
+</p><p>Este comando exibe as associações de dispositivos no array
+e destina-se principalmente como uma interface de script.
+</p><p>As duas primeiras colunas são o ID do dispositivo de baixo nível e o
+caminho. As próximas duas colunas são o ID do dispositivo de alto nível
+e o caminho. A última coluna é o nome do disco no array.
+</p><p>Na maioria dos casos, você tem um dispositivo de baixo nível para cada disco
+no array, mas em algumas configurações mais complexas, você pode ter
+vários dispositivos de baixo nível usados por um único disco no array.
+</p><p>Nada é modificado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-15" class="manual-title-level-2">
+touch
+</h2>
+<p>Define um carimbo de data/hora sub-segundo arbitrário para todos os arquivos
+que o têm definido como zero.
+</p><p>Isso melhora a capacidade do SnapRAID de reconhecer arquivos movidos
+e copiados, pois torna o carimbo de data/hora quase único,
+reduzindo possíveis duplicatas.
+</p><p>Mais especificamente, se o carimbo de data/hora sub-segundo não for zero,
+um arquivo movido ou copiado é identificado como tal se corresponder
+ao nome, tamanho e carimbo de data/hora. Se o carimbo de data/hora
+sub-segundo for zero, ele é considerado uma cópia apenas se o caminho
+completo, tamanho e carimbo de data/hora corresponderem.
+</p><p>O carimbo de data/hora de precisão de segundo não é modificado,
+portanto, todas as datas e horas de seus arquivos serão preservadas.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-16" class="manual-title-level-2">
+rehash
+</h2>
+<p>Agenda um novo hash de todo o array.
+</p><p>Este comando altera o tipo de hash usado, tipicamente ao atualizar
+de um sistema de 32 bits para um de 64 bits, para alternar do
+MurmurHash3 para o mais rápido SpookyHash.
+</p><p>Se você já estiver usando o hash ideal, este comando
+não faz nada e informa que nenhuma ação é necessária.
+</p><p>O novo hash não é executado imediatamente, mas ocorre
+progressivamente durante `sync` e `scrub`.
+</p><p>Você pode verificar o estado do novo hash usando `status`.
+</p><p>Durante o novo hash, o SnapRAID mantém a funcionalidade total,
+com a única exceção de que `dup` não pode detectar arquivos duplicados
+usando um hash diferente.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec6" class="manual-title-level-1">
+Opções
+</h1>
+<p>SnapRAID fornece as seguintes opções:
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-c, --conf CONFIG
+</div><div class="manual-option-description">
+Seleciona o arquivo de configuração a ser usado. Se não for especificado,
+no Unix, ele usa o arquivo `/usr/local/etc/snapraid.conf` se existir,
+caso contrário, `/etc/snapraid.conf`.
+No Windows, ele usa o arquivo `snapraid.conf` no mesmo
+diretório que `snapraid.exe`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-f, --filter PATTERN
+</div><div class="manual-option-description">
+Filtra os arquivos a serem processados em `check` e `fix`.
+Apenas os arquivos que correspondem ao padrão especificado são processados.
+Esta opção pode ser usada várias vezes.
+Consulte a seção PATTERN para obter mais detalhes sobre
+especificações de padrão.
+No Unix, certifique-se de que os caracteres globbing sejam citados, se usados.
+Esta opção pode ser usada apenas com `check` e `fix`.
+Não pode ser usada com `sync` e `scrub`, pois eles sempre
+processam o array inteiro.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-d, --filter-disk NAME
+</div><div class="manual-option-description">
+Filtra os discos a serem processados em `check`, `fix`, `up` e `down`.
+Você deve especificar um nome de disco conforme definido no
+arquivo de configuração.
+Você também pode especificar discos de paridade com os nomes: `parity`,
+`2-parity`, `3-parity`, etc., para limitar as operações a um
+disco de paridade específico.
+Se você combinar múltiplas opções --filter, --filter-disk e --filter-missing,
+apenas os arquivos que correspondem a todos os filtros são selecionados.
+Esta opção pode ser usada várias vezes.
+Esta opção pode ser usada apenas com `check`, `fix`, `up` e `down`.
+Não pode ser usada com `sync` e `scrub`, pois eles sempre
+processam o array inteiro.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-m, --filter-missing
+</div><div class="manual-option-description">
+Filtra os arquivos a serem processados em `check` e `fix`.
+Apenas os arquivos ausentes ou excluídos do array são processados.
+Quando usado com `fix`, isso age como um comando `undelete` (desexcluir).
+Se você combinar múltiplas opções --filter, --filter-disk e --filter-missing,
+apenas os arquivos que correspondem a todos os filtros são selecionados.
+Esta opção pode ser usada apenas com `check` e `fix`.
+Não pode ser usada com `sync` e `scrub`, pois eles sempre
+processam o array inteiro.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-e, --filter-error
+</div><div class="manual-option-description">
+Processa os arquivos com erros em `check` e `fix`.
+Processa apenas arquivos que têm blocos marcados com erros silenciosos
+ou de entrada/saída durante `sync` e `scrub`, conforme listado em `status`.
+Esta opção pode ser usada apenas com `check` e `fix`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-p, --plan PERC|bad|new|full
+</div><div class="manual-option-description">
+Seleciona o plano de scrub. Se PERC for um valor numérico de 0 a 100,
+ele é interpretado como a porcentagem de blocos a serem examinados.
+Em vez de uma porcentagem, você pode especificar um plano:
+`bad` examina blocos ruins, `new` examina blocos ainda não examinados,
+e `full` examina tudo.
+Esta opção pode ser usada apenas com `scrub`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-o, --older-than DAYS
+</div><div class="manual-option-description">
+Seleciona a parte mais antiga do array a ser processada em `scrub`.
+DAYS é a idade mínima em dias para um bloco ser examinado;
+o padrão é 10.
+Os blocos marcados como ruins são sempre examinados,
+independentemente desta opção.
+Esta opção pode ser usada apenas com `scrub`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-a, --audit-only
+</div><div class="manual-option-description">
+Em `check`, verifica o hash dos arquivos sem
+verificar os dados de paridade.
+Se você estiver interessado apenas em verificar os dados do arquivo,
+esta opção pode acelerar significativamente o processo de verificação.
+Esta opção pode ser usada apenas com `check`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-h, --pre-hash
+</div><div class="manual-option-description">
+Em `sync`, executa uma fase de hash preliminar de todos os novos dados
+para verificação adicional antes do cálculo da paridade.
+Normalmente, em `sync`, nenhum hash preliminar é feito, e os novos
+dados são hashados logo antes do cálculo da paridade, quando são lidos
+pela primeira vez.
+Este processo ocorre quando o sistema está sob
+carga pesada, com todos os discos girando e uma CPU ocupada.
+Esta é uma condição extrema para a máquina, e se ela tiver um
+problema de hardware latente, erros silenciosos podem passar
+despercebidos porque os dados ainda não foram hashados.
+Para evitar esse risco, você pode habilitar o modo `pre-hash` para
+ter todos os dados lidos duas vezes para garantir sua integridade.
+Esta opção também verifica arquivos movidos dentro do array
+para garantir que a operação de movimentação foi bem-sucedida e,
+se necessário, permite que você execute uma operação fix antes de prosseguir.
+Esta opção pode ser usada apenas com `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-i, --import DIR
+</div><div class="manual-option-description">
+Importa do diretório especificado quaisquer arquivos excluídos
+do array após a última `sync`.
+Se você ainda tiver esses arquivos, eles podem ser usados por `check`
+e `fix` para melhorar o processo de recuperação.
+Os arquivos são lidos, incluindo em subdiretórios, e são
+identificados independentemente de seu nome.
+Esta opção pode ser usada apenas com `check` e `fix`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-s, --spin-down-on-error
+</div><div class="manual-option-description">
+Em qualquer erro, desliga (spins down) todos os discos gerenciados
+antes de sair com um código de status diferente de zero. Isso
+impede que as unidades permaneçam ativas e girando após uma
+operação abortada, ajudando a evitar acúmulo desnecessário de
+calor e consumo de energia. Use esta opção para garantir que os
+discos sejam interrompidos com segurança, mesmo quando um comando falhar.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-w, --bw-limit RATE
+</div><div class="manual-option-description">
+Aplica um limite de largura de banda global para todos os discos. A
+RATE é o número de bytes por segundo. Você pode especificar um
+multiplicador como K, M ou G (por exemplo, --bw-limit 1G).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-A, --stats
+</div><div class="manual-option-description">
+Habilita uma visualização de status estendida que mostra informações
+adicionais. A tela exibe dois gráficos:
+O primeiro gráfico mostra o número de stripes em buffer para cada
+disco, juntamente com o caminho do arquivo que está sendo
+acessado atualmente nesse disco. Tipicamente, o disco mais lento não
+terá buffer disponível, o que determina a largura de banda máxima
+alcançável.
+O segundo gráfico mostra a porcentagem de tempo gasto esperando
+nos últimos 100 segundos. Espera-se que o disco mais lento
+cause a maior parte do tempo de espera, enquanto outros discos
+devem ter pouco ou nenhum tempo de espera porque podem usar seus
+stripes em buffer.
+Este gráfico também mostra o tempo gasto esperando por cálculos
+de hash e cálculos RAID.
+Todos os cálculos são executados em paralelo com as operações de disco.
+Portanto, enquanto houver tempo de espera mensurável para
+pelo menos um disco, isso indica que a CPU é rápida o suficiente
+para acompanhar a carga de trabalho.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-Z, --force-zero
+</div><div class="manual-option-description">
+Força a operação insegura de sincronizar um arquivo com tamanho zero
+que era anteriormente não zero.
+Se o SnapRAID detectar tal condição, ele para de prosseguir
+a menos que você especifique esta opção.
+Isso permite que você detecte facilmente quando, após uma falha
+do sistema, alguns arquivos acessados foram truncados.
+Esta é uma condição possível no Linux com os sistemas de arquivos
+ext3/ext4.
+Esta opção pode ser usada apenas com `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-E, --force-empty
+</div><div class="manual-option-description">
+Força a operação insegura de sincronizar um disco com todos
+os arquivos originais ausentes.
+Se o SnapRAID detectar que todos os arquivos originalmente presentes
+no disco estão ausentes ou foram reescritos, ele para de prosseguir
+a menos que você especifique esta opção.
+Isso permite que você detecte facilmente quando um sistema de
+arquivos de dados não está montado.
+Esta opção pode ser usada apenas com `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-U, --force-uuid
+</div><div class="manual-option-description">
+Força a operação insegura de sincronizar, verificar e corrigir
+com discos que tiveram seus UUIDs alterados.
+Se o SnapRAID detectar que alguns discos tiveram seus UUIDs alterados,
+ele para de prosseguir a menos que você especifique esta opção.
+Isso permite que você detecte quando seus discos estão montados
+nos pontos de montagem errados.
+No entanto, é permitido ter uma única mudança de UUID com
+paridade única e mais com paridade múltipla, porque este é
+o caso normal ao substituir discos após uma recuperação.
+Esta opção pode ser usada apenas com `sync`, `check` ou
+`fix`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-D, --force-device
+</div><div class="manual-option-description">
+Força a operação insegura de corrigir com discos inacessíveis
+ou com discos no mesmo dispositivo físico.
+Por exemplo, se você perdeu dois discos de dados e tem um disco
+sobressalente para recuperar apenas o primeiro, você pode ignorar
+o segundo disco inacessível.
+Ou, se você quiser recuperar um disco no espaço livre restante
+em um disco já usado, compartilhando o mesmo dispositivo físico.
+Esta opção pode ser usada apenas com `fix`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-N, --force-nocopy
+</div><div class="manual-option-description">
+Em `sync`, `check` e `fix`, desabilita a heurística de detecção
+de cópia. Sem esta opção, o SnapRAID assume que arquivos com os
+mesmos atributos, como nome, tamanho e carimbo de data/hora,
+são cópias com os mesmos dados.
+Isso permite a identificação de arquivos copiados ou movidos de um
+disco para outro e reutiliza as informações de hash já calculadas
+para detectar erros silenciosos ou para recuperar arquivos ausentes.
+Em alguns casos raros, esse comportamento pode resultar em falsos
+positivos ou em um processo lento devido a muitas verificações de hash,
+e esta opção permite que você resolva tais problemas.
+Esta opção pode ser usada apenas com `sync`, `check` e `fix`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-F, --force-full
+</div><div class="manual-option-description">
+Em `sync`, força um recálculo completo da paridade.
+Esta opção pode ser usada quando você adiciona um novo nível de
+paridade ou se você reverteu para um arquivo de conteúdo antigo
+usando dados de paridade mais recentes.
+Em vez de recriar a paridade do zero, isso permite
+que você reutilize os hashes presentes no arquivo de conteúdo para
+validar dados e manter a proteção de dados durante o processo
+`sync` usando os dados de paridade existentes.
+Esta opção pode ser usada apenas com `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-R, --force-realloc
+</div><div class="manual-option-description">
+Em `sync`, força uma realocação completa de arquivos e reconstrução
+da paridade.
+Esta opção pode ser usada para realocar completamente todos os
+arquivos, removendo a fragmentação, enquanto reutiliza os hashes
+presentes no arquivo de conteúdo para validar dados.
+Esta opção pode ser usada apenas com `sync`.
+ATENÇÃO! Esta opção é apenas para especialistas e é altamente
+recomendado não usá-la.
+Você NÃO tem proteção de dados durante a operação `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-l, --log FILE
+</div><div class="manual-option-description">
+Escreve um log detalhado para o arquivo especificado.
+Se esta opção não for especificada, erros inesperados são
+impressos na tela, resultando potencialmente em saída excessiva
+em caso de muitos erros. Quando -l, --log é especificado, apenas
+erros fatais que fazem o SnapRAID parar são impressos
+na tela.
+Se o caminho começar com '&gt;&gt;', o arquivo é aberto
+no modo de anexação. Ocorrências de '%D' e '%T' no nome são
+substituídas pela data e hora no formato YYYYMMDD e
+HHMMSS. Em arquivos em lote do Windows, você deve duplicar
+o caractere '%', por exemplo, resultado-%%D.log. Para usar '&gt;&gt;', você deve
+colocar o nome entre aspas, por exemplo, `"&gt;&gt;resultado.log"`.
+Para enviar o log para a saída padrão ou erro padrão,
+você pode usar `"&gt;&amp;1"` e `"&gt;&amp;2"`, respectivamente.
+Consulte o arquivo snapraid_log.txt ou a página man para descrições
+de tags de log.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-L, --error-limit NUMBER
+</div><div class="manual-option-description">
+Define um novo limite de erro antes de interromper a execução.
+Por padrão, o SnapRAID para se encontrar mais de 100
+erros de entrada/saída, indicando que um disco provavelmente está
+falhando.
+Esta opção afeta `sync` e `scrub`, que têm permissão
+para continuar após o primeiro conjunto de erros de disco para tentar
+completar suas operações.
+No entanto, `check` e `fix` sempre param no primeiro erro.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-S, --start BLKSTART
+</div><div class="manual-option-description">
+Começa o processamento a partir do número de bloco
+especificado. Isso pode ser útil para tentar verificar
+ou corrigir blocos específicos em caso de um disco danificado.
+Esta opção é principalmente para recuperação manual avançada.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-B, --count BLKCOUNT
+</div><div class="manual-option-description">
+Processa apenas o número especificado de blocos.
+Esta opção é principalmente para recuperação manual avançada.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-C, --gen-conf CONTENT
+</div><div class="manual-option-description">
+Gera um arquivo de configuração dummy a partir de um arquivo
+de conteúdo existente.
+O arquivo de configuração é escrito na saída padrão
+e não sobrescreve um existente.
+Este arquivo de configuração também contém as informações
+necessárias para reconstruir os pontos de montagem do disco,
+caso você perca todo o sistema.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-v, --verbose
+</div><div class="manual-option-description">
+Imprime mais informações na tela.
+Se especificado uma vez, ele imprime arquivos excluídos
+e estatísticas adicionais.
+Esta opção não tem efeito nos arquivos de log.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-q, --quiet
+</div><div class="manual-option-description">
+Imprime menos informações na tela.
+Se especificado uma vez, remove a barra de progresso; duas vezes,
+as operações em execução; três vezes, as mensagens de informação;
+quatro vezes, as mensagens de status.
+Erros fatais são sempre impressos na tela.
+Esta opção não tem efeito nos arquivos de log.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-H, --help
+</div><div class="manual-option-description">
+Imprime uma tela de ajuda curta.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-V, --version
+</div><div class="manual-option-description">
+Imprime a versão do programa.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec7" class="manual-title-level-1">
+Configuração
+</h1>
+<p>SnapRAID requer um arquivo de configuração para saber onde seu array
+de discos está localizado e onde armazenar as informações de paridade.
+</p><p>No Unix, ele usa o arquivo `/usr/local/etc/snapraid.conf` se existir,
+caso contrário, `/etc/snapraid.conf`.
+No Windows, ele usa o arquivo `snapraid.conf` no mesmo
+diretório que `snapraid.exe`.
+</p><p>Deve conter as seguintes opções (sensível a maiúsculas/minúsculas):
+</p><div class="manual-section-level-2">
+<h2 id="sec7-1" class="manual-title-level-2">
+parity FILE [,FILE] ...
+</h2>
+<p>Define os arquivos a serem usados para armazenar as informações de paridade.
+A paridade permite proteção contra uma única falha de disco,
+semelhante ao RAID5.
+</p><p>Você pode especificar vários arquivos, que devem estar em discos diferentes.
+Quando um arquivo não pode mais crescer, o próximo é usado.
+O espaço total disponível deve ser pelo menos tão grande quanto o maior
+disco de dados no array.
+</p><p>Você pode adicionar arquivos de paridade adicionais mais tarde, mas você
+não pode reordenar ou removê-los.
+</p><p>Manter os discos de paridade reservados para paridade garante que
+eles não se fragmentem, melhorando o desempenho.
+</p><p>No Windows, 256 MB são deixados sem uso em cada disco para evitar o
+aviso sobre discos cheios.
+</p><p>Esta opção é obrigatória e pode ser usada apenas uma vez.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-2" class="manual-title-level-2">
+(2,3,4,5,6)-parity FILE [,FILE] ...
+</h2>
+<p>Define os arquivos a serem usados para armazenar informações de paridade extra.
+</p><p>Para cada nível de paridade especificado, um nível adicional de proteção
+é habilitado:
+</p><ul>
+<li>
+2-parity habilita paridade dupla RAID6.
+</li>
+<li>
+3-parity habilita paridade tripla.
+</li>
+<li>
+4-parity habilita paridade quádrupla (quatro).
+</li>
+<li>
+5-parity habilita paridade penta (cinco).
+</li>
+<li>
+6-parity habilita paridade hexa (seis).
+</li>
+</ul>
+<p>Cada nível de paridade requer a presença de todos os níveis de paridade
+anteriores.
+</p><p>As mesmas considerações que para a opção 'parity' se aplicam.
+</p><p>Estas opções são opcionais e podem ser usadas apenas uma vez.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-3" class="manual-title-level-2">
+z-parity FILE [,FILE] ...
+</h2>
+<p>Define um arquivo e formato alternativo para armazenar paridade tripla.
+</p><p>Esta opção é uma alternativa a '3-parity', destinada principalmente a
+CPUs de baixo custo como ARM ou AMD Phenom, Athlon e Opteron que não
+suportam o conjunto de instruções SSSE3. Nesses casos, ela fornece
+melhor desempenho.
+</p><p>Este formato é semelhante, mas mais rápido do que o usado pelo ZFS RAIDZ3.
+Assim como o ZFS, ele não funciona além da paridade tripla.
+</p><p>Ao usar '3-parity', você será avisado se for recomendado usar
+o formato 'z-parity' para melhoria de desempenho.
+</p><p>É possível converter de um formato para outro ajustando
+o arquivo de configuração com o z-parity ou 3-parity desejado
+e usando 'fix' para recriá-lo.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-4" class="manual-title-level-2">
+content FILE
+</h2>
+<p>Define o arquivo a ser usado para armazenar a lista e os checksums de todos
+os arquivos presentes em seu array de discos.
+</p><p>Pode ser colocado em um disco usado para dados, paridade ou
+qualquer outro disco disponível.
+Se você usar um disco de dados, este arquivo é automaticamente excluído
+do processo `sync`.
+</p><p>Esta opção é obrigatória e pode ser usada várias vezes para salvar
+múltiplas cópias do mesmo arquivo.
+</p><p>Você deve armazenar pelo menos uma cópia para cada disco de paridade usado
+mais um. Usar cópias adicionais não prejudica.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-5" class="manual-title-level-2">
+data NAME DIR
+</h2>
+<p>Define o nome e o ponto de montagem dos discos de dados no
+array. NAME é usado para identificar o disco e deve
+ser único. DIR é o ponto de montagem do disco no
+sistema de arquivos.
+</p><p>Você pode alterar o ponto de montagem conforme necessário, desde que
+mantenha o NAME fixo.
+</p><p>Você deve usar uma opção para cada disco de dados no array.
+</p><p>Você pode renomear um disco mais tarde alterando o NAME diretamente
+no arquivo de configuração e, em seguida, executando um comando 'sync'.
+No caso de renomeação, a associação é feita usando o UUID
+armazenado dos discos.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-6" class="manual-title-level-2">
+nohidden
+</h2>
+<p>Exclui todos os arquivos e diretórios ocultos.
+No Unix, arquivos ocultos são aqueles que começam com `.`.
+No Windows, são aqueles com o atributo oculto.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
+exclude/include PATTERN
+</h2>
+<p>Define os padrões de arquivo ou diretório a serem excluídos ou incluídos
+no processo de sincronização.
+Todos os padrões são processados na ordem especificada.
+</p><p>Se o primeiro padrão que corresponde for um `exclude`, o arquivo
+é excluído. Se for um `include`, o arquivo é incluído.
+Se nenhum padrão corresponder, o arquivo é excluído se o último padrão
+especificado for um `include`, ou incluído se o último padrão
+especificado for um `exclude`.
+</p><p>Consulte a seção PATTERN para obter mais detalhes sobre
+especificações de padrão.
+</p><p>Esta opção pode ser usada várias vezes.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
+blocksize SIZE_IN_KIBIBYTES
+</h2>
+<p>Define o tamanho básico do bloco em kibibytes para a paridade.
+Um kibibyte é 1024 bytes.
+</p><p>O `blocksize` padrão é 256, o que deve funcionar para a maioria dos casos.
+</p><p>ATENÇÃO! Esta opção é apenas para especialistas e é altamente
+recomendado não alterar este valor. Para alterar este valor no
+futuro, você precisará recriar toda a paridade!
+</p><p>Uma razão para usar um `blocksize` diferente é se você tiver muitos arquivos
+pequenos, na ordem de milhões.
+</p><p>Para cada arquivo, mesmo que apenas alguns bytes, um bloco inteiro de
+paridade é alocado, e com muitos arquivos, isso pode resultar em
+espaço de paridade não utilizado significativo.
+Quando você preenche completamente o disco de paridade, você não está
+autorizado a adicionar mais arquivos aos discos de dados.
+No entanto, a paridade desperdiçada não se acumula em todos os discos de dados.
+O espaço desperdiçado resultante de um grande número de arquivos em um disco
+de dados limita apenas a quantidade de dados nesse disco de dados,
+não em outros.
+</p><p>Como uma aproximação, você pode assumir que metade do tamanho do bloco é
+desperdiçada para cada arquivo. Por exemplo, com 100.000 arquivos e um
+tamanho de bloco de 256 KiB, você desperdiçará 12,8 GB de paridade, o
+que pode resultar em 12,8 GB a menos de espaço disponível no disco de dados.
+</p><p>Você pode verificar a quantidade de espaço desperdiçado em cada disco usando `status`.
+Esta é a quantidade de espaço que você deve deixar livre nos discos
+de dados ou usar para arquivos não incluídos no array.
+Se este valor for negativo, significa que você está perto de encher
+a paridade e representa o espaço que você ainda pode desperdiçar.
+</p><p>Para evitar esse problema, você pode usar uma partição maior para paridade.
+Por exemplo, se a partição de paridade for 12,8 GB maior que os discos de dados,
+você tem espaço extra suficiente para lidar com até 100.000
+arquivos em cada disco de dados sem qualquer espaço desperdiçado.
+</p><p>Um truque para obter uma partição de paridade maior no Linux é formatá-la
+com o comando:
+</p><pre>
+mkfs.ext4 -m 0 -T largefile4 DEVICE
+</pre>
+<p>Isso resulta em cerca de 1,5% de espaço extra, aproximadamente 60 GB para
+um disco de 4 TB, o que permite cerca de 460.000 arquivos em cada disco
+de dados sem qualquer espaço desperdiçado.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
+hashsize SIZE_IN_BYTES
+</h2>
+<p>Define o tamanho do hash em bytes para os blocos salvos.
+</p><p>O `hashsize` padrão é 16 bytes (128 bits), o que deve funcionar
+para a maioria dos casos.
+</p><p>ATENÇÃO! Esta opção é apenas para especialistas e é altamente
+recomendado não alterar este valor. Para alterar este valor no
+futuro, você precisará recriar toda a paridade!
+</p><p>Uma razão para usar um `hashsize` diferente é se o seu sistema tiver
+memória limitada. Como regra geral, o SnapRAID tipicamente requer
+1 GiB de RAM para cada 16 TB de dados no array.
+</p><p>Especificamente, para armazenar os hashes dos dados, o SnapRAID requer
+aproximadamente TS*(1+HS)/BS bytes de RAM,
+onde TS é o tamanho total em bytes do seu array de discos, BS é o
+tamanho do bloco em bytes, e HS é o tamanho do hash em bytes.
+</p><p>Por exemplo, com 8 discos de 4 TB, um tamanho de bloco de 256 KiB
+(1 KiB = 1024 bytes), e um tamanho de hash de 16, você obtém:
+</p><pre>
+RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
+</pre>
+<p>Mudando para um tamanho de hash de 8, você obtém:
+</p><pre>
+RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
+</pre>
+<p>Mudando para um tamanho de bloco de 512, você obtém:
+</p><pre>
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
+</pre>
+<p>Mudando para um tamanho de hash de 8 e um tamanho de bloco de 512, você obtém:
+</p><pre>
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
+</pre>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
+autosave SIZE_IN_GIGABYTES
+</h2>
+<p>Salva automaticamente o estado ao sincronizar ou examinar após a
+quantidade especificada de GB processados.
+Esta opção é útil para evitar reiniciar longos comandos `sync`
+do zero se interrompidos por uma falha de máquina ou qualquer outro evento.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
+temp_limit TEMPERATURE_CELSIUS
+</h2>
+<p>Define a temperatura máxima permitida do disco em Celsius. Quando especificado,
+o SnapRAID verifica periodicamente a temperatura de todos os discos usando a
+ferramenta smartctl. As temperaturas atuais dos discos são exibidas enquanto
+o SnapRAID está operando. Se algum disco exceder este limite, todas as
+operações param, e os discos são desligados (colocados em standby) pela
+duração definida pela opção `temp_sleep`. Após o período de espera, as
+operações são retomadas, potencialmente pausando novamente se o limite de
+temperatura for atingido mais uma vez.
+</p><p>Durante a operação, o SnapRAID também analisa a curva de aquecimento de
+cada disco e estima a temperatura estável de longo prazo que eles
+devem atingir se a atividade continuar. A estimativa é realizada apenas
+depois que a temperatura do disco aumentou quatro vezes, garantindo
+que pontos de dados suficientes estejam disponíveis para estabelecer uma
+tendência confiável.
+Esta temperatura estável prevista é mostrada entre parênteses ao lado
+do valor atual e ajuda a avaliar se o resfriamento do sistema é
+adequado. Esta temperatura estimada é apenas para fins informativos
+e não tem efeito no comportamento do SnapRAID. As ações do programa
+são baseadas exclusivamente nas temperaturas reais medidas dos discos.
+</p><p>Para realizar esta análise, o SnapRAID precisa de uma referência para a
+temperatura do sistema. Ele tenta primeiro lê-la dos sensores de hardware
+disponíveis. Se nenhum sensor do sistema puder ser acessado, ele usa
+a temperatura mais baixa do disco medida no início da execução como
+referência de fallback.
+</p><p>Normalmente, o SnapRAID mostra apenas a temperatura do disco mais quente.
+Para exibir a temperatura de todos os discos, use a opção -A ou --stats.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
+temp_sleep TIME_IN_MINUTES
+</h2>
+<p>Define o tempo de espera (standby time), em minutos, quando o limite de
+temperatura é atingido. Durante este período, os discos permanecem
+desligados. O padrão é 5 minutos.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
+pool DIR
+</h2>
+<p>Define o diretório de pooling onde a visualização virtual do array
+de discos é criada usando o comando `pool`.
+</p><p>O diretório já deve existir.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
+share UNC_DIR
+</h2>
+<p>Define o caminho UNC do Windows necessário para acessar os discos remotamente.
+</p><p>Se esta opção for especificada, os links simbólicos criados no diretório
+do pool usam este caminho UNC para acessar os discos.
+Sem esta opção, os links simbólicos gerados usam apenas caminhos locais,
+o que não permite compartilhar o diretório do pool pela rede.
+</p><p>Os links simbólicos são formados usando o caminho UNC especificado,
+adicionando o nome do disco conforme especificado na opção `data`,
+e finalmente adicionando o diretório e nome do arquivo.
+</p><p>Esta opção é necessária apenas para Windows.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
+smartctl DISK/PARITY OPTIONS...
+</h2>
+<p>Define opções smartctl personalizadas para obter os atributos SMART para
+cada disco. Isso pode ser necessário para controladores RAID e alguns
+discos USB que não podem ser detectados automaticamente. O placeholder
+%s é substituído pelo nome do dispositivo, mas é opcional para dispositivos
+fixos como controladores RAID.
+</p><p>DISK é o mesmo nome de disco especificado na opção `data`.
+PARITY é um dos nomes de paridade: `parity`, `2-parity`, `3-parity`,
+`4-parity`, `5-parity`, `6-parity` ou `z-parity`.
+</p><p>Nas OPTIONS especificadas, a string `%s` é substituída pelo
+nome do dispositivo. Para controladores RAID, o dispositivo é
+provavelmente fixo, e você pode não precisar usar `%s`.
+</p><p>Consulte a documentação do smartmontools para possíveis opções:
+</p><pre>
+https://www.smartmontools.org/wiki/Supported_RAID-Controllers
+https://www.smartmontools.org/wiki/Supported_USB-Devices
+</pre>
+<p>Por exemplo:
+</p><pre>
+smartctl parity -d sat %s
+</pre>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
+smartignore DISK/PARITY ATTR [ATTR...]
+</h2>
+<p>Ignora o atributo SMART especificado ao calcular a probabilidade
+de falha do disco. Esta opção é útil se um disco relatar valores
+incomuns ou enganosos para um atributo específico.
+</p><p>DISK é o mesmo nome de disco especificado na opção `data`.
+PARITY é um dos nomes de paridade: `parity`, `2-parity`, `3-parity`,
+`4-parity`, `5-parity`, `6-parity` ou `z-parity`.
+O valor especial * pode ser usado para ignorar o atributo em todos os discos.
+</p><p>Por exemplo, para ignorar o atributo `Current Pending Sector Count` em
+todos os discos:
+</p><pre>
+smartignore * 197
+</pre>
+<p>Para ignorá-lo apenas no primeiro disco de paridade:
+</p><pre>
+smartignore parity 197
+</pre>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
+Exemplos
+</h2>
+<p>Um exemplo de uma configuração típica para Unix é:
+</p><pre>
+parity /mnt/diskp/snapraid.parity
+content /mnt/diskp/snapraid.content
+content /var/snapraid/snapraid.content
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
+exclude /lost+found/
+exclude /tmp/
+smartctl d1 -d sat %s
+smartctl d2 -d usbjmicron %s
+smartctl parity -d areca,1/1 /dev/sg0
+smartctl 2-parity -d areca,2/1 /dev/sg0
+</pre>
+<p>Um exemplo de uma configuração típica para Windows é:
+</p><pre>
+parity E:\snapraid.parity
+content E:\snapraid.content
+content C:\snapraid\snapraid.content
+data d1 G:\array\
+data d2 H:\array\
+data d3 I:\array\
+exclude Thumbs.db
+exclude \$RECYCLE.BIN
+exclude \System Volume Information
+smartctl d1 -d sat %s
+smartctl d2 -d usbjmicron %s
+smartctl parity -d areca,1/1 /dev/arcmsr0
+smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+</pre>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec8" class="manual-title-level-1">
+Padrão (Pattern)
+</h1>
+<p>Os padrões fornecem uma maneira flexível de filtrar arquivos para inclusão ou
+exclusão. Ao usar caracteres de globbing, você pode definir regras que
+correspondam a nomes de arquivos específicos ou estruturas de diretórios inteiras sem
+listar cada caminho manualmente.
+</p><p>O ponto de interrogação `?` corresponde a qualquer caractere único, exceto o
+separador de diretórios. Isso o torna útil para corresponder nomes de arquivos com
+caracteres variáveis, mantendo o padrão confinado a um único nível de diretório.
+</p><p>O asterisco simples `*` corresponde a qualquer sequência de caracteres, mas, como o
+ponto de interrogação, nunca cruza as fronteiras do diretório. Ele para na
+barra invertida, tornando-o adequado para correspondência dentro de um único
+componente de caminho. Este é o comportamento padrão de curinga familiar do
+globbing de shell.
+</p><p>O asterisco duplo `**` é mais poderoso, ele corresponde a qualquer sequência de
+caracteres, incluindo separadores de diretórios. Isso permite que os padrões correspondam
+em vários níveis de diretório. Quando o `**` aparece incorporado diretamente em
+um padrão, ele pode corresponder a zero ou mais caracteres, incluindo barras entre
+o texto literal circundante.
+</p><p>O uso mais importante do `**` é na forma especial `/**/`. Isso corresponde a
+zero ou mais níveis de diretório completos, tornando possível corresponder arquivos
+em qualquer profundidade em uma árvore de diretórios sem conhecer a estrutura exata do caminho.
+Por exemplo, o padrão `src/**/main.js` corresponde a `src/main.js` (pulando
+zero diretórios), `src/ui/main.js` (pulando um diretório) e
+`src/ui/components/main.js` (pulando dois diretórios).
+</p><p>Classes de caracteres usando colchetes `[]` correspondem a um único caractere de um
+conjunto ou intervalo especificado. Como os outros padrões de caractere único, elas
+não correspondem a separadores de diretório. As classes suportam intervalos e negação usando
+um ponto de exclamação.
+</p><p>A distinção fundamental a ser lembrada é que `*`, `?` e classes de caracteres
+respeitam os limites do diretório e correspondem apenas dentro de um único
+componente de caminho, enquanto `**` é o único padrão que pode corresponder através de
+separadores de diretório.
+</p><p>Existem quatro tipos diferentes de padrões:
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+FILE
+</div><div class="manual-option-description">
+Seleciona qualquer arquivo chamado FILE.
+Este padrão se aplica apenas a arquivos, não a diretórios.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+DIR/
+</div><div class="manual-option-description">
+Seleciona qualquer diretório chamado DIR e tudo o que estiver dentro dele.
+Este padrão se aplica apenas a diretórios, não a arquivos.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+/PATH/FILE
+</div><div class="manual-option-description">
+Seleciona o caminho exato do arquivo especificado. Este padrão se aplica
+apenas a arquivos, não a diretórios.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+/PATH/DIR/
+</div><div class="manual-option-description">
+Seleciona o caminho exato do diretório especificado e tudo o que estiver
+dentro dele. Este padrão se aplica apenas a diretórios, não a arquivos.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>Quando você especifica um caminho absoluto começando com /, ele é aplicado
+no diretório raiz do array, não no diretório raiz do sistema de arquivos local.
+</p><p>No Windows, você pode usar a barra invertida \ em vez da barra.
+Diretórios do sistema Windows, junctions, pontos de montagem e outros
+diretórios especiais do Windows são tratados como arquivos, o que significa
+que para excluí-los, você deve usar uma regra de arquivo, não uma de diretório.
+</p><p>Se o nome do arquivo contiver um caractere '*', '?', '[',
+ou ']', você deve escapá-lo para evitar que seja interpretado como um
+caractere globbing. No Unix, o caractere de escape é '\'; no Windows, é '^'.
+Quando o padrão está na linha de comando, você deve duplicar o caractere
+de escape para evitar que seja interpretado pelo shell de comando.
+</p><p>No arquivo de configuração, você pode usar diferentes estratégias para filtrar
+os arquivos a serem processados.
+A abordagem mais simples é usar apenas regras `exclude` para remover todos os
+arquivos e diretórios que você não deseja processar. Por exemplo:
+</p><pre>
+# Exclui qualquer arquivo chamado `*.unrecoverable`
+exclude *.unrecoverable
+# Exclui o diretório raiz `/lost+found`
+exclude /lost+found/
+# Exclui qualquer subdiretório chamado `tmp`
+exclude tmp/
+</pre>
+<p>A abordagem oposta é definir apenas os arquivos que você deseja processar,
+usando apenas regras `include`. Por exemplo:
+</p><pre>
+# Inclui apenas alguns diretórios
+include /movies/
+include /musics/
+include /pictures/
+</pre>
+<p>A abordagem final é misturar regras `exclude` e `include`. Neste caso,
+a ordem das regras é importante. As regras anteriores têm
+precedência sobre as posteriores.
+Para simplificar, você pode listar todas as regras `exclude` primeiro e
+depois todas as regras `include`. Por exemplo:
+</p><pre>
+# Exclui qualquer arquivo chamado `*.unrecoverable`
+exclude *.unrecoverable
+# Exclui qualquer subdiretório chamado `tmp`
+exclude tmp/
+# Inclui apenas alguns diretórios
+include /movies/
+include /musics/
+include /pictures/
+</pre>
+<p>Na linha de comando, usando a opção -f, você pode usar apenas padrões `include`.
+Por exemplo:
+</p><pre>
+# Verifica apenas os arquivos .mp3.
+# No Unix, use aspas para evitar a expansão globbing pelo shell.
+snapraid -f "*.mp3" check
+</pre>
+<p>No Unix, ao usar caracteres globbing na linha de comando, você deve
+citá-los para evitar que o shell os expanda.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Ignorar Arquivos (Ignore File)
+</h1>
+<p>Além das regras globais no arquivo de configuração, você pode colocar
+arquivos `.snapraidignore` em qualquer diretório dentro do array para definir
+regras de exclusão descentralizadas.
+</p><p>As regras definidas em `.snapraidignore` são aplicadas após as regras no
+arquivo de configuração. Isso significa que elas têm uma prioridade maior e
+podem ser usadas para excluir arquivos que foram anteriormente incluídos pela
+configuração global. Efetivamente, se uma regra local corresponder, o arquivo
+é excluído independentemente das configurações globais de inclusão.
+</p><p>A lógica de padrões no `.snapraidignore` espelha a configuração global, mas
+ancora os padrões ao diretório onde o arquivo está localizado:
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+FILE
+</div><div class="manual-option-description">
+Seleciona qualquer arquivo chamado FILE neste diretório ou abaixo.
+Isso segue as mesmas regras de globbing do padrão global.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+DIR/
+</div><div class="manual-option-description">
+Seleciona qualquer diretório chamado DIR e tudo dentro dele,
+residente neste diretório ou abaixo.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+/PATH/FILE
+</div><div class="manual-option-description">
+Seleciona o arquivo exato especificado relativo à localização
+do arquivo `.snapraidignore`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+/PATH/DIR/
+</div><div class="manual-option-description">
+Seleciona o diretório exato especificado e tudo dentro dele,
+relativo à localização do arquivo `.snapraidignore`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>Ao contrário da configuração global, os arquivos `.snapraidignore` suportam
+apenas regras de exclusão; você não pode usar padrões `include` ou negação (!).
+</p><p>Por exemplo, se você tiver um `.snapraidignore` em `/mnt/disk1/projects/`:
+</p><pre>
+# Exclui APENAS /mnt/disk1/projects/output.bin
+/output.bin
+# Exclui qualquer diretório chamado 'build' dentro de projects/
+build/
+# Exclui qualquer arquivo .tmp dentro de projects/ ou suas subpastas
+*.tmp
+</pre>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
+Conteúdo (Content)
+</h1>
+<p>SnapRAID armazena a lista e os checksums de seus arquivos no arquivo content.
+</p><p>É um arquivo binário que lista todos os arquivos presentes em seu array
+de discos, juntamente com todos os checksums para verificar sua integridade.
+</p><p>Este arquivo é lido e escrito pelos comandos `sync` e `scrub` e
+lido pelos comandos `fix`, `check` e `status`.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec11" class="manual-title-level-1">
+Paridade (Parity)
+</h1>
+<p>SnapRAID armazena as informações de paridade do seu array nos arquivos parity.
+</p><p>Estes são arquivos binários contendo a paridade calculada de todos os
+blocos definidos no arquivo `content`.
+</p><p>Estes arquivos são lidos e escritos pelos comandos `sync` e `fix` e
+apenas lidos pelos comandos `scrub` e `check`.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec12" class="manual-title-level-1">
+Codificação (Encoding)
+</h1>
+<p>SnapRAID no Unix ignora qualquer codificação. Ele lê e armazena os
+nomes de arquivo com a mesma codificação usada pelo sistema de arquivos.
+</p><p>No Windows, todos os nomes lidos do sistema de arquivos são convertidos
+e processados no formato UTF-8.
+</p><p>Para que os nomes de arquivo sejam impressos corretamente, você deve
+definir o console do Windows para o modo UTF-8 com o comando `chcp 65001`
+e usar uma fonte TrueType como `Lucida Console` como fonte do console.
+Isso afeta apenas os nomes de arquivo impressos; se você
+redirecionar a saída do console para um arquivo, o arquivo resultante
+estará sempre no formato UTF-8.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec13" class="manual-title-level-1">
+Direitos Autorais (Copyright)
+</h1>
+<p>Este arquivo é Copyright (C) 2025 Andrea Mazzoleni
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec14" class="manual-title-level-1">
+Veja Também (See Also)
+</h1>
+<p>snapraid_log(1), snapraidd(1)
+</p></div>
+
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

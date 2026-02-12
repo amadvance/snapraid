@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID UI & Daemon</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" class="active">UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container" style="padding: 4rem 20px;">
+        <div class="daemon-header" style="text-align: center; margin-bottom: 4rem;">
+            <h3 class="accent-text">NEXT GENERATION</h3>
+            <h1>Classic Reliability<br/>Modern Control</h1>
+            <p style="max-width: 800px; margin: 0 auto;">
+                The SnapRAID Daemon is the modern companion service designed to move your storage from a manual, 
+                terminal-based workflow to an "always-on" background intelligence.
+            </p>
+        </div>
+
+        <div class="grid grid-2-cols" style="margin-bottom: 4rem;">
+            <div>
+                <h2>Why the Daemon?</h2>
+                <div style="margin-top: 2rem;">
+                    <h3>The "Set-and-Forget" Philosophy</h3>
+                    <p>The daemon handles the heavy lifting so you don't have to. It proactively monitors array health and manages the parity lifecycle in the background. If it detects a massive accidental deletion or a hardware error, it triggers a Safety Freeze, protecting your parity until you intervene. It is the intelligence that knows when to work and the restraint to stay silent when your disks are idle.</p>
+                    <h3>The Modern Visual Experience</h3>
+                    <p>Move your management from the terminal to the browser. The integrated Web UI provides a high-fidelity command center that is served natively by the daemon, no complex web server setup required.</p>
+                </div>
+            </div>
+            <div class="ui-shot" data-large="dashboard.png" style="width: 110%; min-height: 400px;">
+                <img src="dashboard.png" alt="Daemon Dashboard">
+                <div class="ui-shot-caption">Daemon Dashboard</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Feature Spotlight</h2>
+        <div class="grid grid-3-cols">
+            <div class="card">
+                <h3>Autonomous Maintenance</h3>
+                <p class="card-subtitle">SnapRAID on Autopilot</p>
+                <p>Stop managing cron jobs. The daemon handles the full lifecycle of up, diff, sync, and scrub based on your custom schedule, ensuring your parity is never stale.</p>
+            </div>
+            <!--
+            <div class="card">
+                <h3>The Modern Web UI</h3>
+                <p class="card-subtitle">Experience the UI, Forget the CLI</p>
+                <p>A high-performance dashboard with real-time progress bars, ETAs, and a visual "Blocks Age" history map. No CLI required for daily operations.</p>
+            </div>
+            -->
+            <div class="card">
+                <h3>Active Health Guard</h3>
+                <p class="card-subtitle">Listen to Your Disks</p>
+                <p>Beyond parity, the daemon watches the hardware. With integrated SMART monitoring, it detects pre-failure symptoms and rising temperatures before a drive goes dark.</p>
+            </div>
+            <div class="card">
+                <h3>Intelligent Power Management</h3>
+                <p class="card-subtitle">Spin-down Aware Intelligence</p>
+                <p>Intelligent logic ensures disks not accessed by applications are automatically spun down. Routine health probes respect standby states to save energy and hardware life.</p>
+            </div>
+            <div class="card">
+                <h3>Safety Interlocks</h3>
+                <p class="card-subtitle">Defend Against the Accidental</p>
+                <p>Massive accidental deletion? The daemon's safety thresholds will freeze a sync task instantly, protecting your parity from reflecting a disaster</p>
+            </div>
+            <div class="card">
+                <h3>Multi-Channel Alerts</h3>
+                <p class="card-subtitle">In the Loop, Everywhere</p>
+                <p>Whether it's a successful scrub or a critical disk error, get notified via ntfy.sh webhooks, email, or system logs the moment it happens.</p>
+            </div>
+            <div class="card">
+                <h3>Open for Integration</h3>
+                <p class="card-subtitle">The Terminal, Reimagined for Developers</p>
+                <p>Full REST API backend designed for third-party integration. Connect your array to Home Assistant, custom scripts, or mobile apps.</p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 4rem;">UI Gallery</h2>
+        <div class="ui-gallery">
+            <div class="ui-shot" data-large="disks.png">
+                <img src="disks.png" alt="Dashboard">
+                <div class="ui-shot-caption">Dashboard Overview</div>
+            </div>
+            <div class="ui-shot" data-large="tasks.png">
+                <img src="tasks.png" alt="Disk Health">
+                <div class="ui-shot-caption">Disk Health</div>
+            </div>
+            <div class="ui-shot" data-large="differences.png">
+                <img src="differences.png" alt="Task Manager">
+                <div class="ui-shot-caption">Task Manager</div>
+            </div>
+            <div class="ui-shot" data-large="recovery.png">
+                <img src="recovery.png" alt="File Recovery">
+                <div class="ui-shot-caption">File Recovery</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Overlay -->
+    <div id="ui-preview-overlay">
+        <img id="ui-preview-img" src="" alt="Large Preview">
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>How SnapRAID Works</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" class="active">How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container" style="padding: 4rem 20px;">
+        <h1 style="text-align: center; margin-bottom: 4rem;">How SnapRAID Works</h1>
+
+        <!-- Understanding Parity Section -->
+        <div style="margin-bottom: 5rem;">
+            <h2 class="section-title">Understanding Data Parity</h2>
+            <div style="max-width: 800px; margin: 0 auto 3rem auto; text-align: center;">
+                <p style="font-size: 1.1rem; color: var(--text-primary);">
+                    Parity is a mathematical "summary" of data that allows for the reconstruction of lost information without requiring a full 1:1 copy of every file.
+                </p>
+                <p style="font-size: 1rem; color: var(--text-secondary);">
+                    Traditional mirroring (copying) requires 100% extra space. Parity allows for protection using significantly less overhead by storing a mathematical relationship between files instead.
+                </p>
+            </div>
+
+            <div class="grid grid-2-cols" style="align-items: stretch;">
+                <!-- Basic Logic -->
+                <div class="card">
+                    <h3 style="color: var(--text-accent);">The Basic Logic</h3>
+                    <p class="card-subtitle">"Filling in the Blanks"</p>
+                    <p>Imagine three boxes: two for data (numbers) and one for Parity (the sum of the first two).</p>
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius); margin: 1.5rem 0; font-family: var(--font-mono); text-align: center;">
+                        <div style="display: flex; justify-content: center; gap: 1rem; align-items: center;">
+                            <div style="text-align: center;">
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">Disk 1</div>
+                                <div style="font-size: 1.5rem; font-weight: bold;">10</div>
+                            </div>
+                            <div style="color: var(--text-secondary);">+</div>
+                            <div style="text-align: center;">
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">Disk 2</div>
+                                <div style="font-size: 1.5rem; font-weight: bold;">15</div>
+                            </div>
+                            <div style="color: var(--text-secondary);">=</div>
+                            <div style="text-align: center;">
+                                <div style="color: var(--text-accent); font-size: 0.8rem;">Parity</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-accent);">25</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p>
+                        If <strong>Disk 1</strong> is destroyed, the system solves the remaining equation: 
+                        <code style="background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px;">[?] + 15 = 25</code>. 
+                        The system identifies the missing value (10) and restores it to a new disk.
+                    </p>
+                </div>
+
+                <!-- Single Parity -->
+                <div class="card">
+                    <h3 style="color: var(--text-accent);">Single Parity</h3>
+                    <p class="card-subtitle">RAID 5 Logic</p>
+                    <p>
+                        The most common form of protection, allowing an array to survive the loss of any <strong>single</strong> disk.
+                    </p>
+                    <p>
+                        <strong>Mechanism:</strong> It uses the <strong>XOR</strong> (Exclusive OR) operation. XOR compares bits across multiple disks to create a "map" that can reverse-engineer any single missing piece of the puzzle.
+                    </p>
+                    <div style="border-left: 3px solid var(--warning); padding-left: 1rem; margin-top: 1.5rem;">
+                        <p style="margin-bottom: 0; font-size: 0.9rem;">
+                            <strong>Limitation:</strong> Single parity can only solve for one unknown variable. If two disks fail simultaneously, the mathematical equation becomes unsolvable (e.g., <code style="font-size: 0.85rem;">X + Y = 25</code> has too many possibilities).
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2-cols" style="margin-top: 2rem;">
+                 <!-- Multiple Parity -->
+                 <div class="card">
+                    <h3>Multiple Parity Levels</h3>
+                    <p>Used to survive multiple simultaneous disk failures by employing more complex mathematical formulas.</p>
+                    
+                    <ul style="list-style: none; padding: 0; margin-top: 1.5rem;">
+                        <li style="margin-bottom: 1.5rem;">
+                            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Dual Parity (RAID 6)</strong>
+                            <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">Survives <strong>2</strong> simultaneous failures.</p>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Requires two separate equations: an addition-based sum (XOR) and a polynomial-based formula (Reed-Solomon) where disks are treated as coordinates on a geometric curve.</p>
+                        </li>
+                        <li>
+                            <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Triple to Hexa Parity</strong>
+                            <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">Survives <strong>3 to 6</strong> failures.</p>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Essential for large arrays (20+ disks) where the statistical risk of multiple failures during a rebuild is higher.</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Constraints & Summary -->
+                <div style="display: flex; flex-direction: column; gap: 2rem;">
+                    <div class="card" style="border-color: var(--warning); background: rgba(245, 158, 11, 0.05);">
+                        <h3 style="color: var(--warning);">The "Largest Disk" Rule</h3>
+                        <p>
+                            The Parity Disk must be <strong>at least as large</strong> as the largest Data Disk in the array.
+                        </p>
+                        <p style="margin-bottom: 0;">
+                            <strong>Reason:</strong> Parity is calculated on a "sector-by-sector" basis. To protect the 1,000th gigabyte of a data drive, the parity drive must have a 1,000th gigabyte available to store that specific calculation. Without that space, the data is left unprotected.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Role of Integrity Checksums Section -->
+        <div style="margin-top: 5rem; margin-bottom: 5rem;">
+            <h2 class="section-title">The Role of Integrity Checksums in Data Repair</h2>
+            
+            <!-- Introduction: The Silent Error Problem -->
+            <div style="max-width: 800px; margin: 0 auto 3rem auto; text-align: center;">
+                <h3 style="color: var(--text-accent); margin-bottom: 1rem;">The "Silent Error" Problem</h3>
+                <p style="font-size: 1.1rem; color: var(--text-primary);">
+                    Physical disk failure is obvious: the drive disappears. However, "Silent Corruption" (bit-rot) is invisible. 
+                    A single bit flips from a 0 to a 1, but the disk still appears "healthy" to the computer.
+                </p>
+            </div>
+
+            <div class="grid grid-2-cols" style="align-items: stretch;">
+                
+                <!-- Why Parity Alone Fails -->
+                <div class="card">
+                    <h3 style="color: var(--danger);">Why Parity Alone is Not Enough</h3>
+                    <p class="card-subtitle">"Parity can fix a hole, but it cannot find a lie."</p>
+                    
+                    <p>Recall our simple math: <code>Disk A (5) + Disk B (3) = Parity (8)</code>.</p>
+                    
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 1.5rem; border-radius: var(--radius); margin: 1.5rem 0; border: 1px solid var(--danger);">
+                        <p style="margin-bottom: 0.5rem; font-weight: bold; color: var(--danger);">Scenario: Bit-Rot on Disk A</p>
+                        <div style="font-family: var(--font-mono); font-size: 0.95rem;">
+                            <div>Original: 5 + 3 = 8 <span style="color: var(--success);">✓</span></div>
+                            <div style="margin-top: 0.5rem;">Rotten: &nbsp;<span style="text-decoration: underline; font-weight: bold;">9</span> + 3 = 12 <span style="color: var(--danger);">✗</span></div>
+                            <div style="margin-top: 0.5rem; color: var(--text-secondary); border-top: 1px dashed var(--danger); padding-top: 0.5rem;">
+                                Mismatch! 12 ≠ 8 (Parity)
+                            </div>
+                        </div>
+                    </div>
+
+                    <p>The system sees a mismatch, but faces a dilemma:</p>
+                    <ul style="list-style: none; padding-left: 0; margin-bottom: 1.5rem;">
+                        <li style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem;">
+                            <span style="color: var(--warning);">?</span> Is Disk A wrong (the 9)?
+                        </li>
+                        <li style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem;">
+                            <span style="color: var(--warning);">?</span> Is Disk B wrong (the 3)?
+                        </li>
+                        <li style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem;">
+                            <span style="color: var(--warning);">?</span> Or is the Parity disk itself wrong (the 8)?
+                        </li>
+                    </ul>
+
+                    <p style="font-size: 0.95rem; font-style: italic; color: var(--text-secondary);">
+                        Without knowing the culprit, parity is useless. If you try to "fix" the array blindly, you might overwrite good data with bad data.
+                    </p>
+                </div>
+
+                <!-- The Solution: Integrity Checksums -->
+                <div class="card" style="border-color: var(--success);">
+                    <h3 style="color: var(--success);">The Solution: Integrity Checksums</h3>
+                    <p class="card-subtitle">"Digital Fingerprints"</p>
+                    
+                    <p>A checksum is a mathematical fingerprint for a specific file or block of data.</p>
+                    
+                    <div style="margin: 1.5rem 0;">
+                        <h4 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem;">The Repair Workflow</h4>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Step 1 -->
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: var(--radius);">
+                                <div style="min-width: 24px; height: 24px; background: var(--danger); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">1</div>
+                                <div>
+                                    <div style="font-weight: bold; color: var(--text-primary);">Check Fingerprint A</div>
+                                    <div style="font-size: 0.9rem; color: var(--danger);">"Does not match." (Culprit Found!)</div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2 -->
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: var(--radius);">
+                                <div style="min-width: 24px; height: 24px; background: var(--success); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">2</div>
+                                <div>
+                                    <div style="font-weight: bold; color: var(--text-primary);">Check Fingerprint B</div>
+                                    <div style="font-size: 0.9rem; color: var(--success);">"Matches." (Data is safe.)</div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: var(--radius);">
+                                <div style="min-width: 24px; height: 24px; background: var(--success); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">3</div>
+                                <div>
+                                    <div style="font-weight: bold; color: var(--text-primary);">Check Parity</div>
+                                    <div style="font-size: 0.9rem; color: var(--success);">"Matches." (Parity is safe.)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 1.5rem;">
+                        <strong>Result:</strong> We know with 100% certainty that <strong>Disk A</strong> is the liar. We can now safely use the math (<code>Parity 8 - Disk B 3</code>) to recalculate the original <strong>5</strong> and repair the corruption.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Final Thought Banner -->
+            <div style="margin-top: 3rem; background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%); padding: 2rem; border-radius: var(--radius); text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+                <p style="font-size: 1.25rem; color: var(--text-primary); margin: 0; font-weight: 500;">
+                    "Integrity checksums provide the <strong>Identity</strong> of the error, while Parity provides the <strong>Medicine</strong>. You need both to perform a successful surgery on your data."
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

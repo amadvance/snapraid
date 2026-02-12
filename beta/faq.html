@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID FAQ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" class="active">FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container faq-layout">
+        
+        <!-- Sidebar TOC -->
+        <aside class="manual-sidebar">
+            <h4>Contents</h4>
+            <ul id="faq-toc-list">
+                <!-- Javascript will populate this based on H2/H3 tags -->
+            </ul>
+        </aside>
+
+        <main>
+            <h1 style="text-align: center;">Frequently Asked Questions</h1>
+            <p style="text-align: center; margin: 0 auto 3rem auto; max-width: 800px;">Common questions about configuration, recovery, and usage.</p>
+
+            <!-- Search Input -->
+            <input type="text" id="faq-search" class="search-input" placeholder="Search questions or keywords..." aria-label="Search FAQ">
+
+<!-- FAQ BEGIN -->
+<div id="faq-content">
+<div class="faq-section">
+<h2 id="general">
+General
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="whatisit">
+What is SnapRAID?
+</h3>
+<div class="faq-answer">
+<p>
+SnapRAID is an application that creates a partial backup of your disk array.
+If some disks in your array fail, even if they are completely broken, you can recover their contents.
+It provides only a partial backup because it does not allow recovery from a failure of the entire array,
+but only if the number of failed disks is below a predefined limit.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="diffraid">
+How is it different from RAID?
+</h3>
+<div class="faq-answer">
+<p>
+RAID solutions mirror data and propagate changes immediately to the parity data.
+In this sense, RAID systems are not backups because they do not allow restoration of an earlier state of the array.
+</p>
+<p>
+SnapRAID, however, is more akin to a backup solution, allowing you to restore the state of the last backup.
+For example, with SnapRAID, if you accidentally delete a file, you can easily recover it.
+</p>
+<p>
+Other advantages over traditional RAID5/6 solutions include:
+</p>
+<ul>
+<li>
+All your data is hashed to ensure data integrity and prevent silent corruption.
+</li>
+<li>
+If too many disks fail to allow recovery, you lose data only on the failed disks; data on other disks remains safe.
+</li>
+<li>
+If you accidentally delete files on a disk, you can recover them.
+</li>
+<li>
+You can start with already filled disks.
+</li>
+<li>
+Disks can have different sizes.
+</li>
+<li>
+You can add disks at any time.
+</li>
+<li>
+It does not lock in your data. You can stop using SnapRAID at any time without needing to reformat or move data.
+</li>
+<li>
+To access a file, only a single disk needs to spin, saving power and reducing noise.
+</li>
+<li>
+You can have up to six parity levels, compared to one for RAID5 and two for RAID6.
+</li>
+</ul>
+<p>
+RAID has advantages, such as better speed due to data striping.
+The best choice depends on your specific use case.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="difffile">
+How is it different from ZFS/Btrfs snapshots and NTFS Shadow Copy?
+</h3>
+<div class="faq-answer">
+<p>
+SnapRAID creates a file-system snapshot conceptually similar to other snapshot solutions.
+However, its primary purpose is to recover a disk to its saved state after a complete disk failure.
+</p>
+<p>
+SnapRAID is more akin to the RAID-Z/RAID functionality of ZFS/Btrfs.
+Compared to them, SnapRAID offers the following advantages:
+</p>
+<ul>
+<li>
+If too many disks fail to allow recovery, you lose data only on the failed disks; data on other disks remains safe.
+</li>
+<li>
+You can start with already filled disks.
+</li>
+<li>
+You can add disks at any time (not possible with ZFS, but possible with Btrfs).
+</li>
+<li>
+It does not lock in your data. You can stop using SnapRAID at any time without needing to reformat or move data.
+</li>
+<li>
+To access a file, only a single disk needs to spin, saving power and reducing noise.
+</li>
+<li>
+You can have up to six parity levels, compared to three for ZFS RAID-Z and two for Btrfs RAID-5/6.
+</li>
+</ul>
+<p>
+ZFS and Btrfs have advantages, such as being real-time solutions.
+The best choice depends on your specific use case.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="diffbak">
+How is it different from other backup solutions?
+</h3>
+<div class="faq-answer">
+<p>
+With a typical backup solution, you need as much space as the entire disk array for the backup.
+With SnapRAID, you need only one additional parity disk to recover from the most common case of a single disk failure.
+Adding more parity disks allows recovery from additional disk failures.
+</p>
+<p>
+Note that only a full backup allows recovery from a complete failure of the disk array,
+making it the preferred solution if you can afford it.
+SnapRAID is a good option when a full backup is not feasible.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="adv">
+What are the advantages of SnapRAID compared to similar solutions like unRAID, and Windows Storage Spaces?
+</h3>
+<div class="faq-answer">
+<p>
+Visit the
+<a href="compare">
+Compare
+</a>
+page to see a comparison with other similar solutions.
+</p>
+<p>
+A key advantage of SnapRAID is its
+<span class="bold">
+integrity and silent error management
+</span>
+, which is at the same level as (or better than)
+ZFS and Btrfs file systems. In contrast, unRAID and Windows Storage Spaces lack integrity checks.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="cost">
+How much does it cost?
+</h3>
+<div class="faq-answer">
+<p>
+Nothing. SnapRAID is a
+<a href="https://en.wikipedia.org/wiki/Free_software">
+free software
+</a>
+application released under the GPLv3 license.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="supp">
+How can I get support?
+</h3>
+<div class="faq-answer">
+<p>
+Visit the
+<a href="https://snapraid.it/support">
+Support
+</a>
+page.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="gui">
+Does SnapRAID have a GUI?
+</h3>
+<div class="faq-answer">
+<p>
+No, SnapRAID is a command-line application.
+However, there is an external GUI called
+<a href="https://elucidate.codeplex.com/">
+Elucidate
+</a>
+,
+and a plugin for
+<a href="https://www.openmediavault.org/">
+OpenMediaVault
+</a>
+.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="enc">
+Does SnapRAID provide encryption, virtual views/storage pooling, SMART monitoring, or power control?
+</h3>
+<div class="faq-answer">
+<p>
+SnapRAID provides a basic virtual views/storage pooling solution but is also compatible with other pooling solutions.
+</p>
+<p>
+For encryption, SMART monitoring, power control, and data recovery, you can use other tools.
+Here are some suggestions:
+</p>
+<table class="compare">
+<tr>
+<th>
+</th>
+<th>
+Linux
+</th>
+<th>
+Windows
+</th>
+<th>
+Mac OS X
+</th>
+</tr>
+<tr>
+<td>
+Encryption
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Dm-crypt">
+ dm-crypt/LUKS
+</a>
+<br/>
+(
+<a href="https://zackreed.me/encrypted-snapraid/">
+ tutorial
+</a>
+)
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/VeraCrypt">
+ VeraCrypt
+</a>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+Virtual views/storage pooling
+</td>
+<td>
+<a href="https://github.com/trapexit/mergerfs">
+ mergerfs
+</a>
+(
+<a href="https://zackreed.me/mergerfs-another-good-option-to-pool-your-snapraid-disks/">
+ tutorial
+</a>
+),
+<a href="https://www.greyhole.net/">
+ Greyhole
+</a>
+</td>
+<td>
+<a href="https://stablebit.com/DrivePool">
+ DrivePool ($)
+</a>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+SMART monitoring
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Smartmontools">
+ smartmontools
+</a>
+,
+<a href="https://www.berlios.de/software/gsmartcontrol/">
+ GSmartControl
+</a>
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Smartmontools">
+ smartmontools
+</a>
+,
+<a href="https://www.berlios.de/software/gsmartcontrol/">
+ GSmartControl
+</a>
+,
+<a href="https://crystalmark.info/en/software/crystaldiskinfo/">
+ CrystalDiskInfo
+</a>
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Smartmontools">
+ smartmontools
+</a>
+,
+<a href="https://www.berlios.de/software/gsmartcontrol/">
+ GSmartControl
+</a>
+,
+<a href="https://www.corecode.at/smartreporter/">
+ SMARTReporter
+</a>
+</td>
+</tr>
+<tr>
+<td>
+Power control
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Hdparm">
+ hdparm
+</a>
+</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Hdparm">
+ hdparm
+</a>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+Data recovery
+</td>
+<td>
+<a href="https://www.gnu.org/software/ddrescue/">
+ ddrescue
+</a>
+,
+<a href="https://safecopy.sourceforge.net/">
+ safecopy
+</a>
+,
+<a href="https://www.garloff.de/kurt/linux/ddrescue/">
+ dd_rescue
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="bakhome">
+Is SnapRAID suitable for backing up the home/My Documents directory?
+</h3>
+<div class="faq-answer">
+<p>
+No. If you have a limited amount of data that can be easily saved to an external USB drive
+or an online backup service, using SnapRAID is unnecessary.
+SnapRAID is best suited for backing up a
+<b>
+very large
+</b>
+amount of data,
+such as many terabytes, where a full backup copy is not feasible.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="bakos">
+Is SnapRAID suitable for backing up the boot OS disk?
+</h3>
+<div class="faq-answer">
+<p>
+No. For the disk used to boot your machine and containing the OS files,
+it’s better to use another solution, such as RAID1 or a mirror copy.
+SnapRAID requires an operating system to run and cannot recover the OS if it is missing.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="hashonly">
+Can SnapRAID hash files without parity computation?
+</h3>
+<div class="faq-answer">
+<p>
+No, SnapRAID cannot be used solely to hash files. Its hashing is designed to work in combination with parity computation
+and is not optimized for hashing alone.
+</p>
+<p>
+For a list of file verification tools, see:
+<a href="https://en.wikipedia.org/wiki/Comparison_of_file_verification_software">
+Wikipedia: Comparison of file verification software
+</a>
+.
+</p>
+<p>
+For a setup example in Ubuntu 14.04, see
+<a href="https://zackreed.me/setting-up-snapraid-on-ubuntu/">
+Zack's SnapRAID tutorial
+</a>
+.
+</p>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="setup">
+Setup
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="howmanypar">
+Do I need one or more parity disks?
+</h3>
+<div class="faq-answer">
+<p>
+As a rule of thumb, use one parity disk (RAID5) for up to four data disks,
+and then add one parity disk for each group of seven data disks, as shown in the table:
+</p>
+<table class="download">
+<tr>
+<th>
+Parities
+</th>
+<th>
+Data disks
+</th>
+</tr>
+<tr>
+<td>
+1/Single Parity/RAID5
+</td>
+<td>
+2–4
+</td>
+</tr>
+<tr>
+<td>
+2/Double Parity/RAID6
+</td>
+<td>
+5–14
+</td>
+</tr>
+<tr>
+<td>
+3/Triple Parity
+</td>
+<td>
+15–21
+</td>
+</tr>
+<tr>
+<td>
+4/Quad Parity
+</td>
+<td>
+22–28
+</td>
+</tr>
+<tr>
+<td>
+5/Penta Parity
+</td>
+<td>
+29–35
+</td>
+</tr>
+<tr>
+<td>
+6/Hexa Parity
+</td>
+<td>
+36–42
+</td>
+</tr>
+</table>
+<p>
+This table accounts for the fact that more parity levels help recover from an unsynced array
+and that disk failures may be correlated if all disks are in the same environment.
+</p>
+<p>
+Multiple failures can occur. The worst case reported in SnapRAID’s history
+is a
+<a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/eca5ed3d/">
+four-disk failure, successfully recovered using four parities
+</a>
+.
+</p>
+<p>
+For more information on parity levels and disk failure rates, see:
+<a href="https://www.zdnet.com/article/why-raid-5-stops-working-in-2009/">
+Why RAID 5 stops working in 2009
+</a>
+,
+<a href="https://www.zdnet.com/article/why-raid-6-stops-working-in-2019/">
+Why RAID 6 stops working in 2019
+</a>
+,
+<a href="https://storagemojo.com/2010/02/27/does-raid-6-stops-working-in-2019/">
+Does RAID 6 stop working in 2019?
+</a>
+,
+<a href="https://queue.acm.org/detail.cfm?id=1670144">
+Triple-Parity RAID and Beyond
+</a>
+,
+<a href="https://www.backblaze.com/blog/how-long-do-disk-drives-last/">
+How long do disk drives last?
+</a>
+.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="fs">
+Which file system is recommended for SnapRAID?
+</h3>
+<div class="faq-answer">
+<p>
+For data disks, consider these suggestions:
+</p>
+<table class="download">
+<tr>
+<th>
+Data
+</th>
+<th>
+Result
+</th>
+</tr>
+<tr>
+<td>
+Any
+</td>
+<td>
+OK. You can generally use any file system you prefer, with some exceptions noted below.
+</td>
+</tr>
+<tr>
+<td>
+Btrfs
+</td>
+<td>
+OK. Ensure SnapRAID is built with the libblkid library for UUID support.
+You will be warned at each run if this is not the case.
+Note that multiple Btrfs snapshots are not supported.
+</td>
+</tr>
+<tr>
+<td>
+ZFS
+</td>
+<td>
+Partial. UUID support is unavailable, but core SnapRAID functionalities remain usable.
+Note that multiple ZFS snapshots are not supported.
+</td>
+</tr>
+<tr>
+<td>
+FAT
+</td>
+<td>
+Uncertain. There are
+<a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/455e8d63">
+ reports
+</a>
+of duplicate inode cases. NTFS is significantly faster and recommended instead.
+</td>
+</tr>
+<tr>
+<td>
+ReFS
+</td>
+<td>
+No. ReFS uses
+<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363788%28v=vs.85%29.aspx">
+ 128-bit inodes
+</a>
+,
+which SnapRAID does not yet support.
+</td>
+</tr>
+</table>
+<p>
+For parity disks, consider these suggestions:
+</p>
+<table class="download">
+<tr>
+<th>
+Parity
+</th>
+<th>
+Result
+</th>
+</tr>
+<tr>
+<td>
+ext4
+</td>
+<td>
+OK if disks are not larger than 16 TB. The parity is stored in a single large file, and ext4 has a 16 TB file size limit.
+</td>
+</tr>
+<tr>
+<td>
+XFS
+</td>
+<td>
+OK
+</td>
+</tr>
+<tr>
+<td>
+Btrfs
+</td>
+<td>
+OK. Ensure SnapRAID is built with the libblkid library for UUID support.
+You will be warned at each run if this is not the case.
+</td>
+</tr>
+<tr>
+<td>
+JFS
+</td>
+<td>
+No. It does not support the
+<a href="https://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html">
+ fallocate()
+</a>
+command needed to allocate parity files.
+It also does not optimally implement the
+<a href="https://pubs.opengroup.org/onlinepubs/009695399/functions/posix_fadvise.html">
+ posix_fadvise()
+</a>
+command.
+</td>
+</tr>
+<tr>
+<td>
+NTFS
+</td>
+<td>
+OK in Windows. Not supported in Linux, as it does not support the
+<a href="https://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html">
+ fallocate()
+</a>
+command needed to allocate parity files.
+You can use it if the parity disk contains only the parity file.
+</td>
+</tr>
+<tr>
+<td>
+FAT
+</td>
+<td>
+No. Files larger than 4 GB cannot be stored. It is also not journaled. Use NTFS instead.
+</td>
+</tr>
+<tr>
+<td>
+HFS+
+</td>
+<td>
+OK
+</td>
+</tr>
+</table>
+<p>
+In Linux, to maximize space for the parity file system, format it with the
+<em>
+-m 0 -T largefile4
+</em>
+options, like:
+</p>
+<pre>mkfs.ext4 -m 0 -T largefile4 DEVICE</pre>
+<p>
+On an 8 TB disk, this can save about 400 GB. It is also expected to be as fast as, or faster than, the default.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="hardware">
+Which hardware configuration is recommended?
+</h3>
+<div class="faq-answer">
+<p>
+For optimal performance, connect all disks via SATA, not USB.
+</p>
+<p>
+See
+<a href="https://lime-technology.com/forum/index.php?topic=7998.0">
+Raj's Prototype Builds
+</a>
+for examples of hardware setups.
+</p>
+<p>
+For choosing hard drives, refer to
+<a href="https://www.backblaze.com/blog/what-hard-drive-should-i-buy/">
+Backblaze's What Hard Drive Should I Buy?
+</a>
+and
+<a href="https://www.backblaze.com/blog/enterprise-drive-reliability/">
+Backblaze's Enterprise Drives: Fact or Fiction?
+</a>
+.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="cpu">
+Is a multi-core CPU recommended?
+</h3>
+<div class="faq-answer">
+<p>
+No. SnapRAID is typically not CPU-bound; the limiting factor is disk read performance.
+A single-core CPU is usually sufficient.
+</p>
+<p>
+For example, in my system, I achieve a combined read speed of 400 MiB/s,
+but SnapRAID can hash at 12,000 MiB/s on a single core.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="bit64">
+Is a 64-bit operating system recommended?
+</h3>
+<div class="faq-answer">
+<p>
+Yes. SnapRAID performs better on a 64-bit operating system, as it can access more than 4 GiB of memory
+and use faster hashing and parity algorithms.
+However, for less than 30 TB of data, it performs well on a 32-bit operating system too.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="mem">
+How much memory does SnapRAID require to run?
+</h3>
+<div class="faq-answer">
+<p>
+Approximately, SnapRAID requires 1 GiB of memory for every 16 TB of data.
+</p>
+<p>
+If you have insufficient memory, the recommended solution is to install more memory.
+</p>
+<p>
+Alternatively, increase the blocksize option in the configuration file.
+Memory usage is inversely proportional to the selected block size.
+For example, using "blocksize 512" instead of the default 256 halves memory usage.
+However, a larger block size increases wasted space in parity files.
+</p>
+<p>
+Running with memory swapped to disk is not recommended, as it significantly slows performance.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="smart">
+Should I check the SMART attributes of my disks?
+</h3>
+<div class="faq-answer">
+<p>
+Yes. Approximately 20% of disks fail within four years, as
+reported by
+<a href="https://www.backblaze.com/blog/how-long-do-disk-drives-last/">
+Backblaze's How long do disk drives last?
+</a>
+.
+Monitoring SMART attributes can help anticipate failures and prevent data loss.
+</p>
+<p>
+If any of the SMART attributes
+<b>
+Reallocated_Sector_Ct (5)
+</b>
+,
+<b>
+Reported_Uncorrect (187)
+</b>
+,
+<b>
+Command_Timeout (188)
+</b>
+,
+<b>
+Current_Pending_Sector (197)
+</b>
+,
+or
+<b>
+Offline_Uncorrectable (198)
+</b>
+are non-zero, replace the disk, as recommended by
+<a href="https://www.backblaze.com/blog/hard-drive-smart-stats/">
+Backblaze's Hard Drive SMART Stats
+</a>
+.
+</p>
+<p>
+See also
+<a href="https://research.google.com/pubs/pub32774.html">
+Google's Failure trends in a large disk drive population
+</a>
+,
+which found:
+</p>
+<pre>After the first reallocation, drives are
+over 14 times more likely to fail within
+60 days than drives without reallocation
+counts.</pre>
+<pre>After the first probational event, drives
+are 16 times more likely to fail within
+60 days than drives with zero probational
+counts.</pre>
+<pre>After the first offline reallocation, drives have over
+21 times higher chances of failure within 60 days than
+drives without offline reallocations.</pre>
+<p>
+These findings recommend replacing a disk after the first error in the SMART attributes
+<b>
+Reallocated_Sector_Ct (5)
+</b>
+,
+<b>
+Current_Pending_Sector (197)
+</b>
+, or
+<b>
+Offline_Uncorrectable (198)
+</b>
+.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="multios">
+Is it possible to use SnapRAID in a dual-boot configuration, such as Windows and Linux?
+</h3>
+<div class="faq-answer">
+<p>
+Yes, SnapRAID can be used in a dual-boot configuration, regardless of the OS combination.
+</p>
+<p>
+It is recommended to run SnapRAID from only one OS.
+While it may work if run from both OSes, this scenario is not thoroughly tested and risks issues
+due to different SnapRAID versions, configurations, or content files.
+</p>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="configuration">
+Configuration
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="fcontent">
+What is the SnapRAID 'content' file?
+</h3>
+<div class="faq-answer">
+<p>
+The content file stores the list of all files in your array, including their checksums, timestamps, and other necessary information.
+</p>
+<p>
+This file will be approximately a few GiB in size, depending on the array’s size.
+For 10 TB of data, the content file will be about 500 MiB.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="fparity">
+What are the SnapRAID 'parity' and 'N-parity' files?
+</h3>
+<div class="faq-answer">
+<p>
+These files store the parity data used for recovery.
+</p>
+<p>
+Their size grows to match the largest amount of data stored on any single disk in the array.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="samba">
+How do I configure SAMBA to share the pool directory?
+</h3>
+<div class="faq-answer">
+<p>
+To configure SAMBA to share the pool directory (e.g., /pool), add the following options to
+your /etc/samba/smb.conf:
+</p>
+<pre>
+# In the global section of smb.conf
+unix extensions = no
+
+# In the share section of smb.conf
+[pool]
+comment = Pool
+path = /pool
+read only = yes
+guest ok = yes
+wide links = yes
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="winmanydisk">
+How can I use more disks than available drive letters in Windows?
+</h3>
+<div class="faq-answer">
+<p>
+Use
+<a href="https://technet.microsoft.com/en-us/library/cc938934.aspx">
+Volume Mount Points
+</a>
+to mount a disk in a directory without
+using a drive letter, similar to Linux.
+</p>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="use">
+Use
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="guidelines">
+What are the most important steps to prevent data loss?
+</h3>
+<div class="faq-answer">
+<p>
+To minimize the risk of data loss, follow these steps:
+</p>
+<ul>
+<li>
+Before running the first "sync", test your RAM with a program
+like
+<a href="https://www.memtest86.com/">
+MemTest86
+</a>
+.
+Faulty RAM is the most common cause of data loss with SnapRAID.
+</li>
+<li>
+Run the "sync" command frequently, from once a day to once a week.
+</li>
+<li>
+Run the "scrub" command weekly.
+</li>
+<li>
+Use
+<a href="https://en.wikipedia.org/wiki/Smartmontools">
+smartmontools
+</a>
+or a similar utility
+to monitor SMART attributes.
+Replace a disk at the first sign of
+<b>
+Reallocated_Sector_Ct
+</b>
+,
+<b>
+Current_Pending_Sector
+</b>
+, or
+<b>
+Offline_Uncorrectable
+</b>
+,
+even if it still functions.
+</li>
+</ul>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="adddatadisk">
+How can I add a data disk to an existing array?
+</h3>
+<div class="faq-answer">
+<p>
+To add a new data disk to the array, add the new "disk" option in the configuration file,
+then run a "sync" command:
+</p>
+<pre>
+snapraid sync
+</pre>
+<p>
+If the disk is empty, the "sync" command will complete immediately.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="remdatadisk">
+How can I remove a data disk from an existing array?
+</h3>
+<div class="faq-answer">
+<p>
+To remove a data disk from the array, follow these steps:
+</p>
+<ul>
+<li>
+Change the related "disk" option in the configuration file to point to an empty directory.
+</li>
+<li>
+Remove any "content" option pointing to that disk from the configuration file.
+</li>
+<li>
+Run a "sync" command with the "-E, --force-empty" option:
+<pre>
+snapraid sync -E
+</pre>
+The "-E" option allows SnapRAID to proceed even when detecting an empty disk.
+</li>
+<li>
+After the "sync" command completes, remove the "disk" option from the configuration file.
+</li>
+</ul>
+<p>
+The array will then have no reference to the removed disk.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="addpardisk">
+How can I add or remove a parity disk in an existing array?
+</h3>
+<div class="faq-answer">
+<p>
+To add a new parity level, add the appropriate "N-parity" option in the configuration file, then run the "sync" command
+with the "-F, --force-full" option:
+</p>
+<pre>
+snapraid -F sync
+</pre>
+<p>
+The "-F" option instructs SnapRAID to recompute the full parity.
+</p>
+<p>
+During this process, your existing parity remains unmodified, ensuring continued protection
+(note that this applies only from version 11.0).
+</p>
+<p>
+To remove a parity level, remove the highest "N-parity" option from the configuration file and delete the parity file.
+</p>
+<p>
+Note that after removing a parity file, it cannot be reused, as it becomes outdated after the next "sync" command.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="checkdisk">
+How can I verify a single data disk?
+</h3>
+<div class="faq-answer">
+<p>
+The "scrub" command verifies the entire array and cannot be limited to a single data disk.
+To verify only one data disk, use the "check" audit command with the disk specified:
+</p>
+<pre>
+snapraid check -a -d DISK_NAME
+</pre>
+<p>
+This command verifies the checksums of all files on the specified disk.
+Other data and parity disks are not read or verified.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="repdatadisk">
+How can I replace a data disk?
+</h3>
+<div class="faq-answer">
+<p>
+If the disk is lost, refer to the recovery section in the manual.
+Otherwise, copy all files to the new disk, maintaining the same directory structure and names.
+</p>
+<p>
+In Linux, use the command:
+</p>
+<pre>
+cp -av /from_dir/. /to_dir
+</pre>
+<p>
+WARNING: If using 'rsync' or 'mc' commands, ensure they are recent versions.
+'rsync' must be at least version 3.1.0 (2013), and 'mc' at least version 4.8.19 (2017).
+Older versions may not copy sub-second timestamps.
+</p>
+<p>
+In Windows, use the command:
+</p>
+<pre>
+robocopy F:\from_dir T:\to_dir /e /copyall
+</pre>
+<p>
+Update the SnapRAID configuration to point to the new mount point, then run a "diff" command to ensure everything is correct:
+</p>
+<pre>
+snapraid diff
+</pre>
+<p>
+If "diff" reports "added" or "removed" files, you may have copied files with a different directory structure.
+Correct this until "diff" reports only "equal", "restored", or "copied" files.
+</p>
+<p>
+To verify that files were copied correctly, run a "check" audit command on the replaced disk to verify checksums:
+</p>
+<pre>
+snapraid check -a -d DISK_NAME
+</pre>
+<p>
+Finally, run "sync" to update the SnapRAID state. This command will complete almost immediately:
+</p>
+<pre>
+snapraid sync
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="reppardisk">
+How can I replace a parity disk?
+</h3>
+<div class="faq-answer">
+<p>
+If the disk is still accessible, ensure the array is synced by running:
+</p>
+<pre>
+snapraid sync
+</pre>
+<p>
+Copy the parity file to the new disk and update the parity location in the configuration file.
+</p>
+<p>
+Run "sync" again to make SnapRAID recognize the new disk. This command will complete almost immediately:
+</p>
+<pre>
+snapraid sync
+</pre>
+<p>
+In Linux, a good copy command is
+<a href="https://www.gnu.org/software/ddrescue/">
+ddrescue
+</a>
+. For example:
+</p>
+<pre>
+ddrescue /OLD_DISK/parity /NEW_DISK/parity /tmp/copy.log
+</pre>
+<p>
+This copies the parity file from the old to the new location, continuing despite errors.
+To retry problematic sections, repeat the same command.
+</p>
+<p>
+A partial parity file is still useful, as it allows recovery using the valid parts.
+</p>
+<p>
+If the parity file is partially damaged or lost, use the "fix" command with the -d option to recreate it, targeting only the affected parity:
+</p>
+<pre>
+snapraid fix -d PARITY_NAME
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="move">
+How can I safely move files from one disk to another?
+</h3>
+<div class="faq-answer">
+<p>
+To safely move files between data disks in the array, follow these steps:
+</p>
+<ul>
+<li>
+Copy the files to the new location.
+</li>
+<li>
+Run a 'diff' command to verify that the copied files are identified as 'copy'.
+</li>
+<li>
+Run a 'sync' command.
+</li>
+<li>
+Delete the files from the original location.
+</li>
+<li>
+Run another 'sync' command.
+</li>
+</ul>
+<p>
+This process ensures that, even if disks fail during the sync process,
+you can recover all data. It also verifies that the hashes of moved files match the originals.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="defrag">
+Can I defragment data and parity disks?
+</h3>
+<div class="faq-answer">
+<p>
+Yes, defragmentation does not affect SnapRAID.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="ionice">
+How can I make SnapRAID less resource-intensive for other processes?
+</h3>
+<div class="faq-answer">
+<p>
+In Linux, use the
+<a href="https://linux.die.net/man/1/ionice">
+ionice
+</a>
+command with idle priority, like:
+</p>
+<pre>
+ionice -c 3 snapraid sync
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="upgrade">
+How can I upgrade to a newer version of SnapRAID?
+</h3>
+<div class="faq-answer">
+<p>
+To upgrade, replace the old SnapRAID executable with the new one.
+The new version will use your existing configuration, content, and parity files.
+</p>
+<p>
+Occasionally, the content file format changes, but newer SnapRAID versions can read all older formats.
+The content file is updated to the new format the next time it is written, if necessary.
+</p>
+<p>
+Downgrading to an older SnapRAID version is generally not possible.
+If the old version cannot read the new content file, you will receive an appropriate message.
+</p>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="recover">
+Recover
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="undelete">
+How can I undelete a recently deleted file?
+</h3>
+<div class="faq-answer">
+<p>
+Run the "fix" command with a filter for the specified file, like:
+</p>
+<pre>
+snapraid fix -f my_just_deleted_file
+</pre>
+<p>
+To undelete a directory, use:
+</p>
+<pre>
+snapraid fix -f my_just_deleted_dir/
+</pre>
+<p>
+To undelete all missing files, use:
+</p>
+<pre>
+snapraid fix -m
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="addandbreak">
+What happens if I add files and a disk fails before updating parity with "sync"?
+</h3>
+<div class="faq-answer">
+<p>
+Files added to the failed disk after the last "sync" command are lost.
+All other data is safe and can be recovered.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="delandbreak">
+What happens if I delete files and a disk fails before updating parity with "sync"?
+</h3>
+<div class="faq-answer">
+<p>
+In the worst case, files deleted or modified on non-failed disks may prevent recovery of an equivalent amount of data on the failed disk.
+For example, deleting 10 GB of data may prevent recovery of 10 GB from the failed disk.
+The exact data loss depends on how much the deleted and failed data overlap in the parity.
+</p>
+<p>
+Using two parity disks significantly improves recovery chances.
+</p>
+<p>
+To ensure safety, avoid deleting files directly. Instead, move them to another directory on the same disk,
+outside the SnapRAID-checked directory tree. Run the "sync" command, then delete the files.
+If a disk fails during the "sync", run the "fix" command, specifying the location of the deleted files:
+</p>
+<pre>
+snapraid fix -i dir_of_deleted_files
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="syncandbreak">
+What happens if a disk fails during a "sync"?
+</h3>
+<div class="faq-answer">
+<p>
+You can still recover data. In the worst case, you can recover as much data as if the disk failed before the "sync".
+If the "sync" process has progressed, SnapRAID uses the partially synced data to recover more.
+Using the "autosave" configuration option saves intermediate content files during the sync process, improving recovery.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="dataerror">
+What are "data errors" in "sync", and how do I fix them?
+</h3>
+<div class="faq-answer">
+<pre>
+Syncing...
+309505: Data error for file d4/data/index.db at position 40960
+WARNING! Unexpected data error in a data disk! The block is now marked as bad!
+Try with 'snapraid -e fix' to recover!
+</pre>
+<p>
+Data errors occur when SnapRAID detects that a file’s content has changed without an updated write timestamp.
+This should not happen and may indicate a silent disk error or a file system issue, such as an improper shutdown.
+</p>
+<p>
+If a data error is found, the "sync" process continues, marking erroneous blocks as bad.
+These can be fixed with the "-e fix" command, which typically takes only a few seconds:
+</p>
+<pre>
+snapraid -e fix
+</pre>
+<p>
+If errors occur in multiple files, check for hardware issues.
+Test your PC’s memory with a tool like
+<a href="https://www.memtest86.com/">
+MemTest86
+</a>
+.
+Also, check disk cabling and CPU temperature.
+</p>
+<p>
+Another possibility is that a program modified files without updating their timestamps.
+In Linux, this is rare, except for memory-mapped files not yet closed.
+In Windows, timestamps are guaranteed to update only after closing a file.
+See
+<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365747%28v=vs.85%29.aspx">
+MSDN WriteFile()
+</a>
+:
+</p>
+<pre>
+When writing to a file, the last write time is not fully updated until
+all handles used for writing have been closed. Therefore, to ensure an
+accurate last write time, close the file handle immediately after writing
+to the file.
+</pre>
+<p>
+For memory-mapped files in Windows, the program must manually update the timestamp,
+as Windows does not do so automatically.
+See
+<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366537%28v=vs.85%29.aspx">
+MSDN CreateFileMapping()
+</a>
+:
+</p>
+<pre>
+When modifying a file through a mapped view, the last modification timestamp
+may not be updated automatically. If required, the caller should use SetFileTime
+to set the timestamp.
+</pre>
+<p>
+To avoid these issues in Windows, run "sync" when no programs are accessing files in the array.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="log">
+How can I store all messages from a check or fix command in a file?
+</h3>
+<div class="faq-answer">
+<p>
+Use the "-l" option to generate a log file:
+</p>
+<pre>
+snapraid check -l mylog.log
+</pre>
+<p>
+These log files can be large, potentially several GB. If too large for your editor,
+use
+<a href="https://mh-nexus.de/en/hxd/">
+HxD
+</a>
+.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="recconf">
+How can I recover the snapraid.conf file?
+</h3>
+<div class="faq-answer">
+<p>
+Use the "-C, --gen-conf" command to generate a template configuration file
+compatible with your content file.
+Manual adjustments are needed to set disk mount points, but comments in the file provide guidance:
+</p>
+<pre>
+snapraid -C snapraid.content &gt; snapraid.conf.new
+</pre>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="tech">
+Tech
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="checkinfo">
+If the SnapRAID "check" command reports everything is OK, is it really OK?
+</h3>
+<div class="faq-answer">
+<p>
+Yes. SnapRAID verifies all files with a 128-bit checksum.
+If it reports they are correct, they are.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="checksum">
+What integrity checksum does SnapRAID use?
+</h3>
+<div class="faq-answer">
+<p>
+SnapRAID uses
+<a href="https://github.com/aappleby/smhasher">
+Murmur3
+</a>
+and
+<a href="https://burtleburtle.net/bob/hash/spooky.html">
+SpookyHash
+</a>
+128-bit hashes.
+Murmur3 is the default on 32-bit platforms, and SpookyHash is the default on 64-bit platforms.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="checksuminfo">
+Why are integrity checksums important?
+</h3>
+<div class="faq-answer">
+<p>
+Integrity checksums detect silent errors when a hard drive returns corrupt data without reporting an error.
+</p>
+<p>
+For an introduction to this issue, see:
+<a href="https://www.zdnet.com/blog/storage/data-corruption-is-worse-than-you-know/191">
+Data corruption is worse than you know
+</a>
+.
+</p>
+<p>
+For a detailed analysis, see:
+<a href="https://www.cs.toronto.edu/~bianca/papers/fast08.pdf">
+An Analysis of Data Corruption in the Storage Stack
+</a>
+:
+</p>
+<pre>
+A significant number (8% on average) of corruptions
+are detected during RAID reconstruction, creating the
+possibility of data loss. In this case, protection against
+double disk failures is necessary to prevent data loss.
+</pre>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="syncbreakinfo">
+How can SnapRAID recover if a disk fails during a 'sync'?
+</h3>
+<div class="faq-answer">
+<p>
+Before starting a sync, SnapRAID saves a special content file describing both the pre- and post-sync states.
+This allows SnapRAID to attempt two recovery strategies.
+</p>
+<p>
+For each block to recover, it first assumes the parity was correctly computed, as if the "sync" completed successfully.
+If this fails, it assumes the parity was not yet updated, ignoring any new files added to the array.
+</p>
+<p>
+Using double parity improves recovery when there are overlapping changes in the array.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="syncaccess">
+Can I access data disks during a 'sync'?
+</h3>
+<div class="faq-answer">
+<p>
+Yes, you can safely read from data disks during a 'sync'.
+</p>
+<p>
+You can also write, and if this interferes with the 'sync',
+the process continues, skipping the written part.
+</p>
+<p>
+This may affect potential recovery, but it is equivalent to writing just after the 'sync' completes.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="retryop">
+Does SnapRAID retry reads or writes if a disk fails?
+</h3>
+<div class="faq-answer">
+<p>
+No, SnapRAID does not retry disk operations. It reports errors and attempts to continue.
+After 100 errors, it stops execution.
+</p>
+<p>
+In such cases, it’s better to allow manual data recovery before the disk fails completely.
+Automatic retries could further damage the disk.
+To retry, repeat the command manually.
+</p>
+<p>
+You can adjust the 100-error limit using the "-L, --error-limit" option.
+</p>
+<p>
+For "fix" and "check" commands, you can resume from the point of interruption using the "-s, --start" option, specifying the block number that caused the error.
+</p>
+<p>
+For the "sync" command, the latest state is saved before termination, so restarting it will continue from where it stopped.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="lock">
+What is the snapraid.content.lock file?
+</h3>
+<div class="faq-answer">
+<p>
+This file is used by SnapRAID to check if another instance is running.
+It is created where the first content file is stored.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="subsecond">
+What does the notice about zero sub-second timestamps mean?
+</h3>
+<div class="faq-answer">
+<p>
+In the 'status' command, you may see:
+</p>
+<pre>
+You have XXXXX files with zero sub-second timestamp.
+Run the 'touch' command to set it to a non-zero value.
+</pre>
+<p>
+This indicates that some files have timestamps rounded to the nearest second,
+even though your file system supports sub-second precision.
+</p>
+<p>
+While not a problem, this may limit SnapRAID’s ability to detect moved or copied files between disks.
+</p>
+<p>
+You can set sub-second timestamps to a random value using the 'touch' command, which does not modify the second part of the timestamp.
+</p>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="performance">
+Performance
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="perfhardware">
+What is the optimal hardware configuration for the best performance?
+</h3>
+<div class="faq-answer">
+<p>
+The most critical factor is using (E)SATA connections for all disks to avoid controller slowdowns.
+Avoid USB disks.
+</p>
+<p>
+The second factor is using disks with similar performance, as the array’s read/write speed is limited by the slowest disk.
+After a sync, SnapRAID displays statistics with wait times for each disk, helping identify bottlenecks.
+</p>
+<p>
+Finally, a fast CPU can improve performance with many disks.
+Check CPU usage during sync operations to determine if it’s a limiting factor.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="blocksize">
+What is the optimal block size for the best performance?
+</h3>
+<div class="faq-answer">
+<p>
+The default block size is typically optimal.
+</p>
+<p>
+Increasing it may not improve performance and could reduce it in some cases.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="readahead">
+What is the optimal Linux read-ahead size for the best performance?
+</h3>
+<div class="faq-answer">
+<p>
+The default Linux read-ahead size of 128 KiB is optimal for SnapRAID’s default block size of 256 KiB.
+If using a larger block size, set the read-ahead size to at least half the SnapRAID block size.
+</p>
+<p>
+For example, with a SnapRAID block size of 512 KiB, configure a read-ahead size of 256 KiB for sdX using:
+</p>
+<pre>
+echo 256 &gt; /sys/block/sdX/queue/read_ahead_kb
+</pre>
+<p>
+For a SnapRAID block size smaller than 256 KiB, use the default read-ahead size.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="speed">
+How fast are the hash and parity computations?
+</h3>
+<div class="faq-answer">
+<p>
+Murmur3 hash is very fast on 32-bit systems, and SpookyHash is even faster on 64-bit systems.
+Parity computation is efficient up to double parity, even without SSE support.
+Beyond double parity, a CPU with SSSE3 support is recommended.
+For low-end CPUs without SSE, a special, incompatible triple-parity option is available.
+See 'z-parity' in the manual for details.
+</p>
+<p>
+The following results are from a Intel Core i7-10700 CPU @ 2.90GHz.
+Check your values with the -T option:
+</p>
+<pre>
+root@redstar:/root# snapraid -T
+snapraid v13.0 by Andrea Mazzoleni, http://www.snapraid.it
+Compiler gcc 15.2.0
+CPU GenuineIntel, family 6, model 165, flags sse2 ssse3 crc32 avx2
+Memory is little-endian 64-bit
+Support nanosecond timestamps with futimens()
+
+Speed test using 8 data buffers of 262144 bytes, for a total of 2048 KiB.
+Memory blocks have a displacement of 1792 bytes to improve cache performance.
+The reported values are the aggregate bandwidth of all data blocks in MB/s,
+not counting parity blocks.
+
+Memory write speed using the C memset() function:
+memset   61914
+
+CRC used to check the content file integrity:
+table    1866
+intel   12741
+
+Hash used to check the data blocks integrity:
+     best murmur3 spooky2   metro
+hash spooky2    6285   17813   20684
+
+RAID functions used for computing the parity with 'sync':
+     best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
+gen1    avx2           24995   46562   62683                           77069
+gen2    avx2            8243   15879   25788   27292                   44907
+genz   avx2e            5509   10588   14485   13920                           25175
+gen3   avx2e    1190                                   13201   14307           27268
+gen4   avx2e     914                                   10061   11006           21328
+gen5   avx2e     746                                    7970    8828           17040
+gen6   avx2e     630                                    6627    7516           14584
+
+RAID functions used for recovering with 'fix':
+     best    int8   ssse3    avx2
+rec1    avx2    1626    3949    4331
+rec2    avx2     709    1738    2231
+rec3    avx2     170     922    1414
+rec4    avx2     110     614     981
+rec5    avx2      79     426     705
+rec6    avx2      58     316     539
+</pre>
+</div>
+</div>
+</div>
+<div class="faq-section">
+<h2 id="kwownproblems">
+Known Problems
+</h2>
+<div class="faq-item">
+<h3 class="faq-question" id="panic">
+Why does my machine reboot or crash while SnapRAID is running?
+</h3>
+<div class="faq-answer">
+<p>
+SnapRAID pushes the system to extreme conditions, which may expose latent hardware or driver issues,
+resulting in a system crash or reboot.
+</p>
+<p>
+Although the issue occurs only when SnapRAID is running, it is undoubtedly a hardware or driver problem,
+as SnapRAID is a standard user application that cannot crash or reboot the system.
+</p>
+<p>
+Check the following:
+<ul>
+<li>
+Test system memory with
+<a href="https://www.memtest86.com/">
+ MemTest86
+</a>
+.
+</li>
+<li>
+Verify hard drive cabling.
+</li>
+<li>
+Ensure the power supply can support all hard drives spinning simultaneously.
+</li>
+<li>
+Check that the system temperature is not too high.
+</li>
+<li>
+Update storage-related system drivers.
+</li>
+<li>
+Review system logs or Event Viewer for clues about the issue.
+</li>
+</ul>
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="oomkiller">
+Why does SnapRAID abort without an error message in Linux?
+</h3>
+<div class="faq-answer">
+<p>
+This is likely due to insufficient free memory, causing the Linux out-of-memory (OOM) killer
+to terminate SnapRAID for using too much memory.
+Check available memory with:
+</p>
+<pre>
+free -m
+</pre>
+<p>
+If memory is low, install more memory in the machine.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="pargrowerror">
+Why do I get the error 'Failed to grow parity file 'xxx' to size xxx due to lack of space' during 'sync'?
+</h3>
+<div class="faq-answer">
+<p>
+This error indicates that SnapRAID needs to expand the parity file to a size that exceeds the available space on the parity disk.
+</p>
+<p>
+Ensure no other data is stored on the parity disk, reserving it exclusively for the parity file.
+Alternatively, move files mentioned in the output to another data disk to reduce the required parity size.
+</p>
+<p>
+In Linux, you can reformat the parity disk to increase available space using:
+</p>
+<pre>
+mkfs.ext4 -m 0 -T largefile4 DEVICE
+</pre>
+<p>
+The '-T largefile4' and '-m 0' options provide more space for the parity file.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="dupinode">
+Why do I get the error 'Internal inode xxx inconsistency...'?
+</h3>
+<div class="faq-answer">
+<p>
+This error occurs when SnapRAID detects two different files using the same inode,
+a condition that should theoretically never happen but can occur in specific cases.
+</p>
+<p>
+Ensure the mentioned files were not modified while SnapRAID was running.
+Renaming, deleting, or recreating files during SnapRAID operation can cause inode reuse, triggering this error.
+</p>
+<p>
+If using a FAT file system in Windows, convert to NTFS.
+Although inodes (FileIndex) are theoretically
+<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363788%28v=vs.85%29.aspx">
+unique in FAT
+</a>
+,
+this issue has been observed in practice.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="xls">
+Why do I get the error 'Data change at file...' with .xls files?
+</h3>
+<div class="faq-answer">
+<p>
+Excel modifies .xls files upon opening, even without saving, to store the name of the last user who accessed the file.
+This allows it to warn if another user tries to open the file simultaneously.
+Excel restores the original timestamp, but SnapRAID detects the modification, reporting a data error:
+</p>
+<pre>
+Data change at file '/xxx/xxx.xls' at position '0'
+WARNING! Unexpected data modification of a file without parity!
+</pre>
+<p>
+To work around this, see
+<a href="https://superuser.com/questions/664549/how-to-prevent-excel-from-modifying-the-file-on-exit">
+How to prevent Excel from modifying the file on exit?
+</a>
+,
+or switch to the .xlsx format.
+</p>
+</div>
+</div>
+<div class="faq-item">
+<h3 class="faq-question" id="truecrypttimestamp">
+Why are VeraCrypt containers never saved?
+</h3>
+<div class="faq-answer">
+<p>
+VeraCrypt (a fork of TrueCrypt) has a default option,
+<i>
+Preserve modification timestamp of file containers
+</i>
+,
+that prevents SnapRAID and other backup programs from detecting changes to file containers.
+Disable this option in VeraCrypt.
+</p>
+</div>
+</div>
+</div>
+</div>
+<!-- FAQ END -->
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

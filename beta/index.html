@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" class="active">Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container hero-content">
+            <h1>Intelligent Redundancy<br>for Your Disk Array</h1>
+            <p class="hero-subtext">
+                SnapRAID combines the safety of RAID with the with the convenience of backups. 
+                Now with real-time health monitoring and automation via the new <strong>SnapRAID Daemon</strong>.
+            </p>
+            <div class="hero-actions">
+                <a href="download.html" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    Download
+                </a>
+                <a href="ui.html" class="btn btn-secondary">Explore the UI</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- What is SnapRAID? Section -->
+    <section class="daemon-section">
+        <div class="container">
+            <div class="grid grid-2-cols daemon-layout">
+                <div class="daemon-text">
+                    <h2>What is SnapRAID?</h2>
+                    <p style="font-size: 1.1rem; color: var(--text-secondary);">
+                    SnapRAID is a powerful backup and redundancy program designed for disk arrays. It stores parity information (a special type of mathematical backup) that allows you to fully recover all your data even if you experience up to six simultaneous disk failures.
+                    </p>
+                    <p style="font-size: 1.1rem; color: var(--text-secondary);">
+                    It is primarily intended for home media centers and large storage arrays containing files that don't change frequently (like movies, music, and photo archives). It offers the high-end protection of a professional server but with the simplicity and flexibility of a home computer.
+                    </p>
+                </div>
+                <!-- Terminal Mockup -->
+                <div class="terminal-mockup">
+                    <div class="terminal-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="terminal-body" style="font-size: 0.95rem; line-height: 1.6;">
+                        <div class="term-line">Loading state from /db/snapraid.content...</div>
+                        <div class="term-line info">Scanning...</div>
+                        <div class="term-line">Initializing...</div>
+                        <div class="term-line">Resizing...</div>
+                        <div class="term-line success">Syncing...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Why Choose SnapRAID (New Section) -->
+    <section style="padding: 5rem 0; border-bottom: 1px solid var(--border-color); background: var(--bg-body);">
+        <div class="container">
+            <h2 class="section-title">Why Choose SnapRAID?</h2>
+            <p style="text-align: center; max-width: 800px; margin: 0 auto 4rem auto; font-size: 1.1rem; color: var(--text-secondary);">
+                SnapRAID provides a unique approach to data protection that prioritizes safety, flexibility, and energy efficiency.
+                It is designed to sit on top of your files as a safety net, ensuring your data is protected without requiring complex
+                changes to your hardware or operating system.
+            </p>
+
+            <div class="grid grid-2-cols" style="align-items: start;">
+                <!-- Column 1: Safety Net Philosophy -->
+                <div>
+                    <h3 style="color: var(--text-accent); margin-bottom: 1.5rem;">The "Safety Net" Philosophy</h3>
+                    <p>SnapRAID acts as a transparent layer of security that protects your data without ever
+                    taking it hostage. It treats your array as a collection of individual assets, providing a
+                    safety net that is both powerful and precise.</p>
+                   
+                    <ul class="feature-list" style="margin-top: 2rem;">
+                        <li style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1.5rem;">
+                            <div style="min-width: 24px; height: 24px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 14px; height: 14px; fill: var(--primary);" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-primary);">Disaster-Proof Recovery</strong>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.95rem;">The primary goal is total data reconstruction. Should a hard drive fail, SnapRAID uses its parity data to rebuild the entire contents of the lost disk onto a new one. Because it can handle up to six simultaneous failures, it provides a level of resilience that scales with your needs, ensuring that a hardware crash doesn't mean a data catastrophe.</p>
+                            </div>
+                        </li>
+                         <li style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1.5rem;">
+                             <div style="min-width: 24px; height: 24px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 14px; height: 14px; fill: var(--primary);" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-primary);">Defense Against the Invisible</strong>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.95rem;">Physical disk failure isn't the only threat; "bit-rot" or silent errors can corrupt files without warning. SnapRAID proactively defends your archive by hashing every file. It doesn't just wait for a disk to die; it constantly verifies that your data is exactly as you left it, identifying and repairing invisible corruption before it can spread.</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                </div>
+
+                <!-- Column 2: Maximum Freedom -->
+                <div>
+                    <h3 style="color: var(--text-accent); margin-bottom: 1.5rem;">Maximum Freedom, Minimum Risk</h3>
+                    <p>SnapRAID is designed for the "real world" of home hardware. Most users don't buy ten identical 20TB drives at once.</p>
+
+                    <ul class="feature-list" style="margin-top: 2rem;">
+                        <li style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1.5rem;">
+                            <div style="min-width: 24px; height: 24px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 14px; height: 14px; fill: var(--primary);" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-primary);">Grow as you go</strong>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.95rem;">You can mix a 4TB drive with a 12TB drive and add a new one whenever you find a sale.</p>
+                            </div>
+                        </li>
+                         <li style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1.5rem;">
+                             <div style="min-width: 24px; height: 24px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 14px; height: 14px; fill: var(--primary);" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-primary);">No Reformatting</strong>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.95rem;">You can start protecting disks that are already full of your movies and photos without moving them.</p>
+                            </div>
+                        </li>
+                         <li style="display: flex; gap: 1rem; align-items: start;">
+                             <div style="min-width: 24px; height: 24px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 14px; height: 14px; fill: var(--primary);" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-primary);">Zero Lock-in</strong>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.95rem;">Your data is never trapped. If you decide to stop using SnapRAID, your disks remain standard drives that can be read by any computer.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Daemon Spotlight Section -->
+    <section class="daemon-section">
+        <div class="container">
+            <div class="grid grid-2-cols daemon-layout">
+                <div class="daemon-text">
+                    <h3 class="accent-text">INTRODUCING THE DAEMON</h3>
+                    <h2>Real-Time Monitoring & Web API</h2>
+                    <p>
+                        The new SnapRAID Daemon bridges the gap between raw parity and proactive protection. 
+                        Move from a manual terminal workflow to an "always-on" background intelligence.
+                    </p>
+                    <ul class="feature-list">
+                        <li>
+                            <svg class="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            Background scrubbing and health checks
+                        </li>
+                        <li>
+                            <svg class="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            Modern Web UI for dashboard and tasks
+                        </li>
+                        <li>
+                            <svg class="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            REST API for 3rd party integration
+                        </li>
+                    </ul>
+                    <a href="ui.html" class="link-arrow">See Daemon Features &rarr;</a>
+                </div>
+                <!-- Visual Representation of Daemon Dashboard -->
+                <div style="border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);">
+                    <img src="dashboard.png" alt="SnapRAID Daemon Dashboard" style="width: 100%; height: auto; display: block;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Spotlight Section -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="section-title">Feature Spotlight</h2>
+            
+            <!-- Resilient Recovery -->
+            <div style="margin-bottom: 3rem;">
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-accent); border-left: 3px solid var(--primary); padding-left: 1rem;">Resilient Recovery</h3>
+                <div class="grid grid-2-cols">
+                    <!-- Card 0: Surgical Recovery -->
+                    <div class="card">
+                        <h3>Full Recovery</h3>
+                        <p class="card-subtitle">Total data reconstruction</p>
+                        <p>If your hard disks die, SnapRAID can fully recover all the data from the failed drives, up to the number of parity disks you have assigned (protecting you from up to 6 simultaneous failures).</p>
+                    </div>
+                    <!-- Card 3: Silent Corruption Protection -->
+                    <div class="card">
+                        <h3>Silent Corruption Protection</h3>
+                        <p class="card-subtitle">Total data integrity</p>
+                        <p>All your data is hashed to ensure integrity and prevent "bit-rot." If a file suffers from silent corruption, SnapRAID detects it and repairs it using your parity information.</p>
+                    </div>
+                    <!-- Card 1: Surgical Recovery -->
+                    <div class="card">
+                        <h3>Surgical Recovery</h3>
+                        <p class="card-subtitle">Undelete and restore</p>
+                        <p>If you accidentally delete files on a disk, recovery is possible. SnapRAID can reconstruct missing data and even undelete specific folders without affecting the rest of the array.</p>
+                    </div>
+                    <!-- Card 2: Fault Isolation -->
+                    <div class="card">
+                        <h3>Fault Isolation</h3>
+                        <p class="card-subtitle">Confined data loss</p>
+                        <p>When the number of failed disks exceeds the parity count, data loss is confined only to the affected disks. Data on all other healthy disks remains fully accessible and untouched.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Freedom -->
+            <div style="margin-bottom: 3rem;">
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-accent); border-left: 3px solid var(--primary); padding-left: 1rem;">Hardware Freedom</h3>
+                <div class="grid grid-2-cols">
+                    <!-- Card 1: Maximum Flexibility -->
+                    <div class="card">
+                        <h3>Maximum Flexibility</h3>
+                        <p class="card-subtitle">Mix, match, and grow</p>
+                        <p>Disks can have different sizes and different brands. You can add new disks to the array at any time as your storage needs grow, without the need for complex migrations.</p>
+                    </div>
+                    <!-- Card 2: Eco-Friendly Efficiency -->
+                    <div class="card">
+                        <h3>Eco-Friendly Efficiency</h3>
+                        <p class="card-subtitle">Power-saving by design</p>
+                        <p>To access a file, only a single disk needs to spin. This reduces noise, saves power, and extends the lifespan of your hardware compared to traditional RAID systems that spin every disk for every read.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Sovereignty -->
+            <div>
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-accent); border-left: 3px solid var(--primary); padding-left: 1rem;">Data Sovereignty</h3>
+                <div class="grid grid-2-cols">
+                     <!-- Card 1: Non-Locking Integration -->
+                    <div class="card">
+                        <h3>Non-Locking Integration</h3>
+                        <p class="card-subtitle">Access your data, your way</p>
+                        <p>You can utilize disks already filled with files without the need to reformat them. Access your files as usual, even without the program running. SnapRAID doesn't lock in your data; you can stop using it anytime without moving a single byte.</p>
+                    </div>
+                    <!-- Card 2: Open Source & Free -->
+                    <div class="card" style="border-color: var(--text-accent);">
+                        <h3>Open Source & Free</h3>
+                        <p class="card-subtitle">Transparent, Community-Driven, and Cost-Free</p>
+                        <p>SnapRAID is released under the GPLv3 license, ensuring the code remains open for inspection and improvement. There are no licensing fees, no subscriptions, and no hidden "Pro" tiers. You have full ownership of your data protection engine.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

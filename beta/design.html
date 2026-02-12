@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID Design</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="design" class="active">Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container" style="padding: 4rem 20px;">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <h1 style="margin-bottom: 1rem;">Design Philosophy</h1>
+            <blockquote style="font-size: 1.5rem; color: var(--text-accent); font-style: italic; margin: 0; padding: 0; border: none; font-family: serif;">
+                Simplicity is prerequisite for reliability
+            </blockquote>
+            <cite style="display: block; margin-top: 1rem; font-size: 1rem; color: var(--text-secondary); font-style: normal;">
+                <a href="http://en.wikipedia.org/wiki/Edsger_W._Dijkstra" style="color: var(--text-secondary); text-decoration: underline;">Edsger W. Dijkstra</a>
+            </cite>
+        </div>
+
+        <!-- Unix Philosophy & Reliability -->
+        <div style="max-width: 800px; margin: 0 auto 4rem auto;">
+            <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                <strong style="color: var(--text-primary);">SnapRAID</strong> was created following the <a href="http://en.wikipedia.org/wiki/Unix_philosophy">Unix philosophy</a>:
+                <em>Write programs that do one thing and do it well</em>.
+            </p>
+        </div>
+
+        <div class="grid grid-3-cols" style="margin-bottom: 4rem;">
+            <!-- Testing/Verification Card -->
+            <div class="card">
+                <h3>Reliability</h3>
+            <p>
+                The first design principle was <strong style="color: var(--text-primary);">reliability</strong>.
+                The result is a simple architecture and an easy to understand implementation.
+            </p>
+                <p>
+                    Extensive and automated tests with the runtime checker <a href="http://valgrind.org/">Valgrind</a>
+                    and with the <a href="https://github.com/google/sanitizers">Google Sanitizers</a>
+                    are done to ensure the correctness of the final application.
+                    The test has a <a href="cov/">code coverage of over 90%</a>, measured with <a href="http://ltp.sourceforge.net/coverage/lcov.php">lcov</a>.
+                </p>
+                <p>
+                    SnapRAID is also verified with the
+                    <a href="https://scan.coverity.com/projects/snapraid">Coverity Scan</a>
+                    and <a href="http://clang-analyzer.llvm.org/">clang</a> static analyzers,
+                    and with the <a href="http://lcamtuf.coredump.cx/afl/">American Fuzzy Lop</a> fuzzy tester.
+                </p>
+            </div>
+
+            <!-- Robustness Card -->
+            <div class="card">
+                <h3>Robustness</h3>
+                <p>
+                    The second design principle was <strong style="color: var(--text-primary);">robustness</strong>.
+                    It supports any kind of problem. Even on kernel panics, power-downs
+                    or any other hard failure at runtime, your redundancy data is in safe hands.
+                </p>
+                <p>
+                    It uses all the possible storage techniques to ensure to always keep consistent
+                    redundancy even after critical interruptions.
+                </p>
+            </div>
+
+            <!-- Efficiency Card -->
+            <div class="card">
+                <h3>Efficiency</h3>
+                <p>
+                    The third design principle was <strong style="color: var(--text-primary);">efficiency</strong>.
+                    It's a native C application highly optimized to ensure maximum throughput of your disk array.
+                </p>
+                <p>
+                    Integrity checks use the highly efficient <a href="http://code.google.com/p/smhasher/">murmur3</a>
+                    and <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</a> hashes at 128 bits.
+                </p>
+                <p>
+                    Redundancy computations use a custom <a href="https://github.com/amadvance/snapraid/tree/master/raid">RAID library</a>
+                    (based on Linux Kernel RAID) supporting up to six parity levels.
+                    Internal structures use <a href="http://www.tommyds.it/">TommyDS</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

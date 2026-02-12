@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>Compare SnapRAID</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="manual" >Manual</a></li>
+                    <li><a href="compare" class="active">Compare</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container" style="padding: 4rem 20px;">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Comparison</h1>
+        
+        <div style="max-width: 800px; margin: 0 auto 4rem auto; color: var(--text-secondary); line-height: 1.7;">
+            <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                <strong style="color: var(--text-primary);">SnapRAID</strong> is one of many <strong style="color: var(--text-primary);">RAID-like</strong> solutions available for disk arrays.
+            </p>
+            
+            <p style="margin-bottom: 1rem;">Some well-known alternatives include:</p>
+            
+            <ul style="margin-bottom: 2rem; list-style: none; padding-left: 0;">
+                <li style="margin-bottom: 1.25rem; padding-left: 1rem; border-left: 2px solid var(--border-color);">
+                    <a href="http://www.lime-technology.com/" target="_blank" rel="noopener">unRAID</a>  
+                    - A commercial solution (only the RAID core is GPL2). It uses a modified Linux XFS filesystem with real-time redundancy. Integrity checksums are not natively supported.
+                </li>
+<!--
+                <li style="margin-bottom: 1.25rem; padding-left: 1rem; border-left: 2px solid var(--border-color);">
+                    <s>FlexRAID</s>  
+                    - <strong style="color: var(--danger); font-size: 0.75rem; border: 1px solid var(--danger); padding: 1px 4px; border-radius: 4px; vertical-align: middle;">DISCONTINUED</strong>. A commercial, proprietary C++/Java application for Windows, with limited Linux support. It offered both snapshot and real-time redundancy, including integrity checksums.
+                </li>
+-->
+                <li style="margin-bottom: 1.25rem; padding-left: 1rem; border-left: 2px solid var(--border-color);">
+                    <a href="http://en.wikipedia.org/wiki/ZFS" target="_blank" rel="noopener">ZFS</a>  
+                    - An open-source (GPL-incompatible) filesystem with real-time redundancy and integrity checksums.
+                </li>
+                <li style="margin-bottom: 1.25rem; padding-left: 1rem; border-left: 2px solid var(--border-color);">
+                    <a href="http://en.wikipedia.org/wiki/btrfs" target="_blank" rel="noopener">Btrfs</a>  
+                    - An open-source (GPL2) Linux filesystem with real-time redundancy. Since Linux 3.9, it supports <a href="http://lwn.net/Articles/536038/" target="_blank" rel="noopener">RAID5/6 redundancy</a> and integrity checksums.  
+                    Issues have been identified, and the official <a href="https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices" target="_blank" rel="noopener">wiki</a> as of 2026 warns:  
+                    <em style="display: block; margin-top: 0.5rem; color: var(--text-secondary); background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 4px;">"There are some implementation and design deficiencies that make it unreliable for some corner cases and the feature should not be used in production, only for evaluation or testing."</em>
+                </li>
+                <li style="margin-bottom: 1.25rem; padding-left: 1rem; border-left: 2px solid var(--border-color);">
+                    <a href="https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/overview" target="_blank" rel="noopener">Storage Spaces</a>  
+                    - Microsoft’s solution, integrated into Windows 8 and later. Proprietary, with real-time redundancy but no checksum support. It also has several <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/" target="_blank" rel="noopener">limitations</a>.
+                </li>
+            </ul>
+
+        </div>
+
+        <div style="margin-top: 4rem;">
+            <h2>Key Takeaways</h2>
+            <div class="grid grid-2-cols">
+                <div class="card">
+                    <h3>Real-time vs Snapshot</h3>
+                    <p>
+               
+The primary factor for categorizing storage solutions is when redundancy information is updated. This timing determines whether the system acts as a live mirror or a point-in-time recovery tool.
+In <strong style="color: var(--text-primary);">real-time</strong> solutions, parity is updated immediately during every write operation without user action. While this ensures the array is constantly protected against hardware failure, it does not allow for the restoration of an earlier state, meaning accidental deletions are propagated instantly.
+In <strong style="color: var(--text-primary);">snapshot</strong> solutions, parity is updated only upon an explicit request, similar to a backup. This creates a fixed point in time that allows to recover files that were accidentally deleted or modified since the last sync.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>Integrity & Bitrot</h3>
+                    <p>
+Silent data corruption, or bitrot, is a <a href="https://www.zdnet.com/article/data-corruption-is-worse-than-you-know/" target="_blank" rel="noopener">major threat</a> where storage devices return corrupted data without reporting hardware errors. Unlike traditional disk failures, this bit-level degradation remains invisible until the data is accessed or an array reconstruction is attempted.
+A primary factor in categorizing storage solutions is their support for <strong style="color: var(--text-primary);">integrity checksums</strong> to detect and repair this corruption. Advanced systems use hashing to verify data blocks, allowing them to identify silent changes even if timestamps remain unaltered and use parity data to reconstruct the original, uncorrupted information.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="compare-container" style="margin-top: 4rem;">
+            <h2>Features comparison</h2>
+            <table class="data-table compare-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Feature</th>
+                        <th class="snapraid-header snapraid-col">SnapRAID</th>
+                        <th>Unraid</th>
+                        <th>ZFS</th>
+                        <th>Btrfs</th>
+                        <th>Storage Spaces</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Redundancy Model -->
+                    <tr>
+                        <td class="feature-cell">
+                            Redundancy Model
+                            <div class="cell-subtext">Real-time computes parity in real-time like RAID; snapshot computes parity on request, like backups.</div>
+                        </td>
+                        <td class="snapraid-col">Snapshot</td>
+                        <td>Real-time</td>
+                        <td>Real-time<br>Snapshot</td>
+                        <td>Real-time<br>Snapshot</td>
+                        <td>Real-time</td>
+                    </tr>
+
+                    <!-- Integrity -->
+                    <tr>
+                        <td class="feature-cell">
+                            Integrity
+                            <div class="cell-subtext">Whether data is validated with a checksum, and the default checksum type.</div>
+                        </td>
+                        <td class="snapraid-col check">Yes<br>SpookyHash<br>128-bit</td>
+                        <td class="cross">
+                            No
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    unRAID can use integrity checksums via plugins like <a href="https://forums.lime-technology.com/topic/43290-dynamix-file-integrity-plugin/">Dynamix File Integrity</a> or <a href="https://forums.lime-technology.com/topic/35615-bunker-yet-another-utility-for-file-integrity-checks/">bunker</a>. However, these are independent of parity processing and not used to aid recovery. For example, when recovering a single failed disk with dual parity, checksums can identify additional silent errors to facilitate recovery. To achieve functionality similar to SnapRAID, you would need to use the Btrfs filesystem for all your data disks.
+                                </div>
+                            </div>
+                        </td>
+                        <td class="check">Yes<br>Fletcher4<br>256-bit</td>
+                        <td class="check">Yes<br>CRC32C<br>32-bit</td>
+                        <td class="cross">
+                            No
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    Storage Spaces can be used with ReFS, which supports integrity checksums, but not in Parity mode: <a href="http://www.windowscentral.com/how-use-resilient-file-system-refs-windows-10"><i>"Although you may select Simple (no resiliency) or Parity, both options will fail the process."</i></a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Fix Silent Errors -->
+                    <tr>
+                        <td class="feature-cell">
+                            Fix Silent Errors
+                            <div class="cell-subtext">Whether silent errors are detected and fixed before propagating to parity.</div>
+                        </td>
+                        <td class="snapraid-col check">Yes</td>
+                        <td class="cross">
+                            No
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    unRAID lacks native checksums and ignores silent errors. Even worse, if a parity mismatch is detected due to a silent error in the data, the parity is automatically recomputed, making it impossible to recover the silent error, even manually. Integrity checksum plugins do not help in this case, as they are not integrated into the parity-checking process.
+                                </div>
+                            </div>
+                        </td>
+                        <td class="check">
+                            Yes
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    ZFS and Btrfs provide bit-rot protection comparable to SnapRAID. One drawback of ZFS is that its default Fletcher checksum prioritizes speed over reliability. SnapRAID uses 128-bit SpookyHash.
+                                </div>
+                            </div>
+                        </td>
+                        <td class="check">
+                            Yes
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    ZFS and Btrfs provide bit-rot protection comparable to SnapRAID. Btrfs uses CRC32C by default. SnapRAID uses 128-bit SpookyHash.
+                                </div>
+                            </div>
+                        </td>
+                        <td class="cross">No</td>
+                    </tr>
+
+                    <!-- Number of Failures -->
+                    <tr>
+                        <td class="feature-cell">Number of Failures
+                            <div class="cell-subtext">How many disk failures are supported? 1 for RAID5, 2 for RAID6.</div>
+                        </td>
+                        <td class="snapraid-col check">1-6</td>
+                        <td class="check">1-2</td>
+                        <td class="check">
+                            1-3
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    ZFS employs a suboptimal RAID-Z3 algorithm requiring ~2x computation vs SnapRAID z-parity.
+                                </div>
+                            </div>
+                        </td>
+                        <td class="check">1-2</td>
+                        <td class="check">1-2</td>
+                    </tr>
+
+                    <!-- More disk failures -->
+                    <tr>
+                        <td class="feature-cell">
+                            More disk failures
+                            <div class="cell-subtext">If more disks fail than the supported redundancy model, can data on non-failed disks be recovered?</div>
+                        </td>
+                        <td class="snapraid-col check">Yes</td>
+                        <td class="check">Yes</td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                    </tr>
+
+                    <!-- Power/Noise -->
+                    <tr>
+                        <td class="feature-cell">
+                            Power/Noise
+                            <div class="cell-subtext">How many disks spin when reading a single file?</div>
+                        </td>
+                        <td class="snapraid-col check">One</td>
+                        <td class="check">One</td>
+                        <td class="cross">All</td>
+                        <td class="cross">All</td>
+                        <td class="cross">All</td>
+                    </tr>
+
+                    <!-- Filled disks -->
+                    <tr>
+                        <td class="feature-cell">Filled Disks
+                            <div class="cell-subtext">Can you start with disks that already contain data?</div>
+                        </td>
+                        <td class="snapraid-col check">Yes</td>
+                        <td class="check">Yes</td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                    </tr>
+
+                    <!-- Add filled disks -->
+                    <tr>
+                        <td class="feature-cell">Add Filled Disks
+                            <div class="cell-subtext">Can data disks that already contain data be added later?</div>                      
+                        </td>
+                        <td class="snapraid-col check">Yes</td>
+                        <td class="cross">
+                            No
+                             <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    unRAID 7.2 claims it can add data disks to an existing array, but it effectively rebuilds parity from scratch. During this process, disks already in the array <a href="https://youtu.be/frtauLMO3-c?t=803">are not protected</a>. This puts stress on all drives with no safety net.
+                                </div>
+                            </div>
+                        </td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                    </tr>
+
+                    <!-- OS -->
+                    <tr>
+                        <td class="feature-cell">Operating System
+                            <div class="cell-subtext">Which operating systems are supported?</div>                      
+                        </td>
+                        <td class="snapraid-col">Linux, Win, macOS, BSD</td>
+                        <td>Linux</td>
+                        <td>
+                            Linux, BSD, macOS
+                             <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    ZFS is available on Linux at the kernel level via <a href="http://zfsonlinux.org/">ZFS on Linux</a>.
+                                </div>
+                            </div>
+                        </td>
+                        <td>Linux</td>
+                        <td>Windows</td>
+                    </tr>
+
+                    <!-- Age -->
+                    <tr>
+                        <td class="feature-cell">Stable Since
+                            <div class="cell-subtext">Year of the first official release supporting at least RAID5 redundancy.</div>
+                        </td>
+                        <td class="snapraid-col">2011</td>
+                        <td>2005</td>
+                        <td>2005</td>
+                        <td class="partial">
+                            Unstable
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    Btrfs has supported RAID5 since 2013, but serious issues in RAID5/6 support were <a href="https://www.phoronix.com/scan.php?page=news_item&px=Btrfs-RAID-56-Is-Bad">identified</a>. As of 2026, these remain unresolved. The official <a href="https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices" target="_blank" rel="noopener">wiki</a> states it should not be used in production.
+                                </div>
+                            </div>
+                        </td>
+                        <td>2012</td>
+                    </tr>
+                    
+                     <!-- Price -->
+                    <tr>
+                        <td class="feature-cell">License / Price
+                            <div class="cell-subtext">Software license and cost.</div>
+                        </td>
+                        <td class="snapraid-col check">GPL3 / Free</td>
+                        <td class="partial">Proprietary / Subscription</td>
+                        <td class="check">CDDL / Free</td>
+                        <td class="check">GPL2 / Free</td>
+                        <td class="partial">Proprietary / Windows</td>
+                    </tr>
+
+                    <!-- Interface -->
+                    <tr>
+                        <td class="feature-cell">Interface
+                            <div class="cell-subtext">Which interface is provided? GUI or command line?</div>
+                        </td>
+                        <td class="snapraid-col">CLI / GUI / API</td>
+                        <td>GUI / CLI / API</td>
+                        <td>
+                            CLI / GUI
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    ZFS supports external GUIs, such as Napp-it, and plugins for TrueNAS/FreeNAS and XigmaNAS.
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            CLI / GUI
+                            <div class="info-wrapper">
+                                <button class="info-btn" aria-label="More info">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </button>
+                                <div class="info-content" hidden>
+                                    Btrfs supports external GUIs, such as Rockstor.
+                                </div>
+                            </div>
+                        </td>
+                        <td>GUI</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    
+    <!-- Global Popover Element -->
+    <div id="global-popover" class="global-popover">
+        <div class="popover-arrow"></div>
+        <div id="global-popover-content"></div>
+    </div>
+    <div id="popover-overlay" class="popover-overlay"></div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+
