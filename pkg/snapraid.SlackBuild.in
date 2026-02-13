@@ -1,13 +1,13 @@
 #!/bin/bash
-# SlackBuild script for snapraid
+# SlackBuild script for @PACKAGE_NAME@
 # Written for personal use / inspired by SlackBuilds.org templates
 
 cd $(dirname $0) ; CWD=$(pwd)
 
-PRGNAM=snapraid
-VERSION=${VERSION:-13.0}
+PRGNAM=@PACKAGE@
+VERSION=@PACKAGE_VERSION@
 BUILD=${BUILD:-1}
-TAG=${TAG:-_AM}
+TAG=${TAG:-_am}
 PKGNAM=${PRGNAM}-${VERSION}
 
 if [ -z "$ARCH" ]; then
@@ -42,7 +42,7 @@ rm -rf $PKG
 mkdir -p $TMP $PKG $OUTPUT
 cd $TMP
 rm -rf $PRGNAM-$VERSION
-tar xvf $CWD/snapraid-$VERSION.tar.gz
+tar xvf $CWD/@PACKAGE@-$VERSION.tar.gz
 cd $PRGNAM-$VERSION
 chown -R root:root .
 find -L . \
@@ -62,7 +62,7 @@ CXXFLAGS="$SLKCFLAGS" \
   --docdir=/usr/doc/$PRGNAM-$VERSION \
   --build=$ARCH-slackware-linux
 
-make
+make -j4
 
 make install DESTDIR=$PKG
 

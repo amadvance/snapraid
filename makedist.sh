@@ -48,3 +48,7 @@ fi
 if ! make dist; then
 	exit 1
 fi
+
+sudo sh makeslackware.sh
+sudo sh makedeb.sh
+sudo sh makerpm.sh

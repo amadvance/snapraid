@@ -1,0 +1,13 @@
+Package: @PACKAGE@
+Version: @PACKAGE_VERSION@-1
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Andrea Mazzoleni <amadvance@gmail.com>
+Description: Disk array backup for many large rarely-changed files
+ SnapRAID is a backup program for disk arrays. It stores parity
+ information of your data and it's able to recover from up to six disk
+ failures. SnapRAID is mainly targeted for a home media center, with a
+ lot of big files that rarely change.
+Homepage: https://www.snapraid.it/
+License: GPL-3.0-or-later

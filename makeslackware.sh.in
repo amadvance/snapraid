@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Script to build a Slackware .txz package for snapraid
-# using the snapraid.SlackBuild and related files in the current directory.
+# Script to build a Slackware .txz package for @PACKAGE_NAME@
+# using the @PACKAGE@.SlackBuild and related files in the current directory.
 #
 # This version:
 # - Prefers a source tarball already present in the current directory
@@ -13,16 +13,16 @@
 
 set -euo pipefail
 
-VERSION="14.0"
-TARBALL="snapraid-${VERSION}.tar.gz"
-SOURCE_URL="https://github.com/amadvance/snapraid/releases/download/v${VERSION}/${TARBALL}"
+VERSION="@PACKAGE_VERSION@"
+TARBALL="@PACKAGE@-${VERSION}.tar.gz"
+SOURCE_URL="https://github.com/amadvance/@PACKAGE@/releases/download/v${VERSION}/${TARBALL}"
 
-if [[ ! -f "snapraid.SlackBuild" ]]; then
-  echo "Error: snapraid.SlackBuild not found in the current directory."
+if [[ ! -f "pkg/@PACKAGE@.SlackBuild" ]]; then
+  echo "Error: @PACKAGE@.SlackBuild not found in the current directory."
   exit 1
 fi
 
-if [[ ! -f "slack-desc" ]]; then
+if [[ ! -f "pkg/slack-desc" ]]; then
   echo "Error: slack-desc not found in the current directory."
   exit 1
 fi
@@ -30,23 +30,27 @@ fi
 # Prefer local tarball
 if [[ -f "./${TARBALL}" ]]; then
   echo "Found ${TARBALL} locally."
+  cp ${TARBALL} pkg/
 else
   echo "Downloading ${TARBALL}..."
   curl -L -O "$SOURCE_URL"
 fi
 
 # Set environment variables for SlackBuild
-export VERSION BUILD=1 TAG=_AM OUTPUT=$(pwd)  # Package output in current dir
+export VERSION BUILD=1 TAG=_am OUTPUT=$(pwd)  # Package output in current dir
 
 echo "Running SlackBuild..."
-bash snapraid.SlackBuild
+bash pkg/@PACKAGE@.SlackBuild
+
+echo "Cleanup..."
+rm -f pkg/${TARBALL}
 
 echo ""
 echo "Build complete!"
 echo "The .txz package should be in the current directory:"
-ls snapraid-${VERSION}-*-*.txz
+ls @PACKAGE@-${VERSION}-*-*.txz
 
 echo ""
 echo "You can install it with:"
-echo "  installpkg snapraid-${VERSION}-*-*.txz"
+echo "  installpkg @PACKAGE@-${VERSION}-*-*.txz"
 echo "  or upgradepkg if replacing an older version."

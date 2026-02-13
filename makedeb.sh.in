@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Script to manually build a Debian .deb package for snapraid on Slackware
+# Script to manually build a Debian .deb package for @PACKAGE_NAME@ on Slackware
 # (using only dpkg-deb; no dpkg-buildpackage or debhelper needed)
 #
 # This avoids the /var/lib/dpkg/status issue entirely by:
@@ -12,10 +12,10 @@
 
 set -euo pipefail
 
-VERSION="14.0"
-TARBALL="snapraid-${VERSION}.tar.gz"
-SOURCE_URL="https://github.com/amadvance/snapraid/releases/download/v${VERSION}/${TARBALL}"
-PKG_NAME="snapraid"
+VERSION="@PACKAGE_VERSION@"
+TARBALL="@PACKAGE@-${VERSION}.tar.gz"
+SOURCE_URL="https://github.com/amadvance/@PACKAGE@/releases/download/v${VERSION}/${TARBALL}"
+PKG_NAME="@PACKAGE@"
 PKG_ROOT="${PKG_NAME}-deb-root"
 CONTROL_FILE="${PKG_ROOT}/DEBIAN/control"
 
@@ -28,54 +28,40 @@ else
 fi
 
 # Clean previous builds
-rm -rf "${PKG_ROOT}" snapraid-${VERSION}
+rm -rf "${PKG_ROOT}" @PACKAGE@-${VERSION}
 
 # Extract source
 echo "Extracting source..."
 tar -xzf "${TARBALL}"
 
 # Build the software
-echo "Configuring and building snapraid..."
-cd snapraid-${VERSION}
-./configure --prefix=/usr --mandir=/usr/share/man
+echo "Configuring and building @PACKAGE@..."
+cd @PACKAGE@-${VERSION}
+./configure --prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
 make
 
 # Install into package root
 echo "Installing into temporary package root..."
 mkdir -p "../${PKG_ROOT}/usr"
-make install DESTDIR="../${PKG_ROOT}"
+make -j4 install DESTDIR="../${PKG_ROOT}"
 
 # Add example config and docs
-mkdir -p "../${PKG_ROOT}/usr/share/doc/snapraid"
-cp snapraid.conf.example COPYING AUTHORS HISTORY README "../${PKG_ROOT}/usr/share/doc/snapraid/"
+mkdir -p "../${PKG_ROOT}/usr/share/doc/@PACKAGE@"
+cp @PACKAGE@.conf.example COPYING AUTHORS HISTORY README "../${PKG_ROOT}/usr/share/doc/@PACKAGE@/"
 
 cd ..
 
 # Create DEBIAN directory and control file
-echo "Creating DEBIAN/control..."
+echo "Copying DEBIAN/control..."
 mkdir -p "${PKG_ROOT}/DEBIAN"
-cat > "$CONTROL_FILE" <<EOF
-Package: snapraid
-Version: ${VERSION}-1
-Section: utils
-Priority: optional
-Architecture: amd64
-Maintainer: Andrea Mazzoleni <amadvance@gmail.com>
-Description: Disk array backup for many large rarely-changed files
- SnapRAID is a backup program for disk arrays. It stores parity
- information of your data and it's able to recover from up to six disk
- failures. SnapRAID is mainly targeted for a home media center, with a
- lot of big files that rarely change.
-Homepage: https://www.snapraid.it/
-License: GPL-3.0-or-later
-EOF
+cp pkg/control "${PKG_ROOT}/DEBIAN/control"
 
 # Build the .deb package
 echo "Building .deb package with dpkg-deb..."
 dpkg-deb --root-owner-group --build "${PKG_ROOT}" "${PKG_NAME}_${VERSION}-1_amd64.deb"
 
 # Cleanup
-rm -rf "${PKG_ROOT}" snapraid-${VERSION}
+rm -rf "${PKG_ROOT}" @PACKAGE@-${VERSION}
 
 echo ""
 echo "Build complete!"
