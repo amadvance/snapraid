@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.65])
 dnl Get version number from git
 m4_define([git_revision], m4_esyscmd_s([./autover.sh]))
-AC_INIT([snapraid], [git_revision], [], [], [https://www.snapraid.it])
+AC_INIT([SnapRAID CLI], [git_revision], [], [snapraid], [https://www.snapraid.it])
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
 AC_CONFIG_SRCDIR([cmdline/snapraid.c])
 AC_CONFIG_HEADERS([config.h])
@@ -391,6 +391,14 @@ AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
 AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
 
-AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+PACKAGE_VERSION_UNDERSCORE=`echo "$PACKAGE_VERSION" | sed 's/-/_/g'`
+AC_SUBST([PACKAGE_VERSION_UNDERSCORE])
 
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([pkg/snapraid.info pkg/control pkg/snapraid.spec])
+AC_CONFIG_FILES([makeslackware.sh], [chmod a+x makeslackware.sh])
+AC_CONFIG_FILES([pkg/snapraid.SlackBuild], [chmod a+x pkg/snapraid.SlackBuild])
+AC_CONFIG_FILES([makedeb.sh], [chmod a+x makedeb.sh])
+AC_CONFIG_FILES([makerpm.sh], [chmod a+x makerpm.sh])
+
+AC_OUTPUT

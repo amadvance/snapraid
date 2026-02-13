@@ -2,6 +2,9 @@
 *.zip
 *.tar.gz
 *.tgz
+*.txz
+*.deb
+*.rpm
 
 # backups
 *~
@@ -42,6 +45,13 @@ mkstream
 *.gcda
 *.gcno
 *.gcov
+makeslackware.sh
+pkg/snapraid.SlackBuild
+pkg/snapraid.info
+makedeb.sh
+pkg/control
+makerpm.sh
+pkg/snapraid.spec
 
 # projects
 *.dst

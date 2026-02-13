@@ -1,0 +1,95 @@
+#!/bin/bash
+# build-@PACKAGE@-rpm.sh
+#
+# Script to build both binary and source RPMs for @PACKAGE_NAME@
+# using the @PACKAGE@-rpm.spec file in the current directory.
+#
+# This version:
+# - Works without rpmdevtools
+# - Prefers a source tarball already present in the current directory
+# - Only downloads it if not found locally
+#
+# Requirements:
+# - rpmbuild available
+# - gcc and make installed (for building @PACKAGE@)
+#
+# Usage:
+#   1. Place this script and your @PACKAGE@-rpm.spec (and optionally the tarball) in the same directory.
+#   2. Make it executable: chmod +x build-@PACKAGE@-rpm.sh
+#   3. Run it: ./build-@PACKAGE@-rpm.sh
+
+set -euo pipefail
+
+VERSION=@PACKAGE_VERSION@
+VERSION_UNDERSCORE=@PACKAGE_VERSION_UNDERSCORE@
+SPEC_FILE="@PACKAGE@.spec"
+
+if [[ ! -f "pkg/$SPEC_FILE" ]]; then
+  echo "Error: $SPEC_FILE not found in the current directory."
+  echo "Please run this script from the directory containing your $SPEC_FILE"
+  exit 1
+fi
+
+echo "SnapRAID version: $VERSION"
+
+TARBALL="@PACKAGE@-${VERSION}.tar.gz"
+SOURCE_URL="https://github.com/amadvance/@PACKAGE@/releases/download/v${VERSION}/${TARBALL}"
+
+# Set up rpmbuild tree manually in ~/rpmbuild if it doesn't exist
+RPMBUILD_DIR="$HOME/rpmbuild"
+if [[ ! -d "$RPMBUILD_DIR/SPECS" ]]; then
+  echo "Setting up rpmbuild directory structure in $RPMBUILD_DIR..."
+  mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+else
+  echo "rpmbuild directory structure already exists in $RPMBUILD_DIR"
+fi
+
+# Look for the tarball first in the current directory, then in ~/rpmbuild/SOURCES
+if [[ -f "./$TARBALL" ]]; then
+  echo "Found $TARBALL in the current directory. Copying to ~/rpmbuild/SOURCES..."
+  cp "./$TARBALL" "$RPMBUILD_DIR/SOURCES/"
+elif [[ ! -f "$RPMBUILD_DIR/SOURCES/$TARBALL" ]]; then
+  echo "Downloading $TARBALL (not found locally or in ~/rpmbuild/SOURCES)..."
+  curl -L -o "$RPMBUILD_DIR/SOURCES/$TARBALL" "$SOURCE_URL"
+else
+  echo "$TARBALL already present in ~/rpmbuild/SOURCES"
+fi
+
+ORIGINAL_TARBALL="$RPMBUILD_DIR/SOURCES/@PACKAGE@-${VERSION}.tar.gz"
+UNDERSCORE_TARBALL="$RPMBUILD_DIR/SOURCES/@PACKAGE@-${VERSION_UNDERSCORE}.tar.gz"
+
+if [[ "$VERSION" == "$VERSION_UNDERSCORE" ]]; then
+  echo "Version does not contain '-', no repack needed."
+else
+  if [[ ! -f "$UNDERSCORE_TARBALL" ]]; then
+    echo "Repacking tarball with underscore version..."
+
+    WORKDIR=$(mktemp -d)
+
+    tar -xzf "$ORIGINAL_TARBALL" -C "$WORKDIR"
+
+    mv "$WORKDIR/@PACKAGE@-${VERSION}" \
+       "$WORKDIR/@PACKAGE@-${VERSION_UNDERSCORE}"
+
+    tar -czf "$UNDERSCORE_TARBALL" -C "$WORKDIR" \
+        "@PACKAGE@-${VERSION_UNDERSCORE}"
+
+    rm -rf "$WORKDIR"
+  else
+    echo "Underscore tarball already exists."
+  fi
+fi
+
+# Copy spec file to SPECS directory (preserving the original filename)
+cp "pkg/$SPEC_FILE" "$RPMBUILD_DIR/SPECS/"
+
+echo "Building RPMs using rpmbuild -ba..."
+rpmbuild -ba --nodeps --nocheck "$RPMBUILD_DIR/SPECS/$SPEC_FILE"
+
+cp $RPMBUILD_DIR/RPMS/*/@PACKAGE@-${VERSION_UNDERSCORE}*.rpm .
+
+echo "Package created: $RPMBUILD_DIR/RPMS/@PACKAGE@-${VERSION_UNDERSCORE}*.rpm"
+echo ""
+echo "You can install the RPM with:"
+echo "  sudo dnf install @PACKAGE@-${VERSION_UNDERSCORE}*.rpm   # Fedora"
+echo "  sudo rpm -ivh @PACKAGE@-${VERSION_UNDERSCORE}*.rpm      # Others"
