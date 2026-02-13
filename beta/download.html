@@ -70,7 +70,7 @@
         
         <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem auto;">
             <p style="margin-bottom: 1rem; font-size: 1.2rem;">
-                The latest stable release is <strong>v14.0</strong> (Released March 2026).
+                The latest stable release is <strong>v14.0-rc-41-g07e40e1</strong> (Released March 2026).
             </p>
             <p style="margin-bottom: 1rem; color: var(--text-secondary);">
                 See the <a href="https://github.com/amadvance/snapraid/blob/master/HISTORY">ChangeLog</a> for the detailed list of changes,
@@ -82,9 +82,10 @@
             </p>
         </div>
 
-        <div class="grid grid-2-cols">
+
+        <div class="grid">
             <!-- Core Binaries -->
-            <div>
+            <div class="card">
                 <h2>SnapRAID CLI</h2>
                 <p>The classic command line tool.</p>
                 <table class="data-table">
@@ -92,24 +93,40 @@
                         <tr>
                             <th>Platform</th>
                             <th>Version</th>
+                            <th>Description</th>
                             <th>Download</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody>                
                         <tr>
-                            <td>Windows (64-bit)</td>
-                            <td>14.0</td>
-                            <td><a href="#">snapraid-14.0-windows-x64.zip</a></td>
+                            <td>Windows</td>
+                            <td>14.0-rc-41-g07e40e1</td>
+                            <td>Portable executable for Windows</td>
+                            <td><a href="http://ftp.snapraid.it/snapraid-14.0-rc-41-g07e40e1-windows-x64.zip">snapraid-14.0-rc-41-g07e40e1-windows-x64.zip</a></td>
                         </tr>
                         <tr>
-                            <td>Linux (x86_64)</td>
-                            <td>14.0</td>
-                            <td><a href="#">snapraid-14.0-linux.tar.gz</a></td>
+                            <td>TXZ</td>
+                            <td>14.0-rc-41-g07e40e1</td>
+                            <td>Package for Slackware</td>
+                            <td><a href="http://ftp.snapraid.it/snapraid-14.0-rc-41-g07e40e1-x86_64-1_am.txz">snapraid-14.0-rc-41-g07e40e1-x86_64-1_am.txz</a></td>
+                        </tr>                        
+                        <tr>
+                            <td>DEB</td>
+                            <td>14.0-rc-41-g07e40e1</td>
+                            <td>Package for Ubuntu/Debian</td>
+                            <td><a href="http://ftp.snapraid.it/snapraid_14.0-rc-41-g07e40e1-1_amd64.deb">snapraid_14.0-rc-41-g07e40e1-1_amd64.deb</a></td>
+                        </tr>
+                        <tr>
+                            <td>RPM</td>
+                            <td>14.0-rc-41-g07e40e1</td>
+                            <td>Package for RedHat/Fedora</td>
+                            <td><a href="http://ftp.snapraid.it/snapraid-14.0_rc_41_g07e40e1-1.x86_64.rpm">snapraid-14.0_rc_41_g07e40e1-1.x86_64.rpm</a></td>
                         </tr>
                         <tr>
                             <td>Source Code</td>
-                            <td>14.0</td>
-                            <td><a href="#">snapraid-14.0.tar.gz</a></td>
+                            <td>14.0-rc-41-g07e40e1</td>
+                            <td>C Source for compilation in all OS including Mac OS X</td>
+                            <td><a href="http://ftp.snapraid.it/snapraid-14.0-rc-41-g07e40e1.tar.gz">snapraid-14.0-rc-41-g07e40e1.tar.gz</a></td>
                         </tr>
                     </tbody>
                 </table>
@@ -119,38 +136,39 @@
             </div>
 
             <!-- Daemon -->
-            <div>
+            <div class="card">
                 <h2>SnapRAID Daemon</h2>
+                
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: start;">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="min-width: 24px;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                    <span><strong>Warning:</strong> The SnapRAID Daemon requires SnapRAID CLI 14.0+ already installed and configured</span>
+                </div>
+
                 <p>Includes background service and Web UI.</p>
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Platform</th>
                             <th>Version</th>
+                            <th>Description</th>
                             <th>Download</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>Linux (Deb/Ubuntu)</td>
-                            <td>1.0</td>
-                            <td><a href="#">snapraid-daemon-1.0.deb</a></td>
-                        </tr>
-                        <tr>
-                            <td>Docker Compose</td>
-                            <td>1.0</td>
-                            <td><a href="#">docker-compose.yml</a></td>
+                            <td>0.1-beta-109-g2f7e7a2</td>
+                            <td>Debian package (.deb)</td>
+                            <td><a href="http://ftp.snapraid.it/snapraidd_0.1-beta-109-g2f7e7a2-1_amd64.deb">snapraidd_0.1-beta-109-g2f7e7a2-1_amd64.deb</a></td>
                         </tr>
                         <tr>
                             <td>Source Code</td>
-                            <td>1.0</td>
-                            <td><a href="#">daemon-src-1.0.tar.gz</a></td>
+                            <td>0.1-beta-109-g2f7e7a2</td>
+                            <td>Go Source code</td>
+                            <td><a href="http://ftp.snapraid.it/snapraidd-0.1-beta-109-g2f7e7a2.tar.gz">snapraidd-0.1-beta-109-g2f7e7a2.tar.gz</a></td>
                         </tr>
                     </tbody>
                 </table>
-                <p style="font-size: 1.0rem; color: var(--text-secondary);">
-                    Requires SnapRAID CLI v14+ installed.
-                </p>
             </div>
         </div>
 
