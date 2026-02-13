@@ -814,6 +814,8 @@ footer {
 
 #ui-preview-overlay.active {
     opacity: 1;
+    pointer-events: auto; /* Enable clicks when active */
+    cursor: zoom-out;
 }
 
 #ui-preview-img {

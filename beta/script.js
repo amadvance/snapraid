@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  // Create H2 Link
                  const li = document.createElement('li');
                  const a = document.createElement('a');
-                 a.href = '#' + h2.id;
+                 a.setAttribute('href', '#' + h2.id);
                  a.textContent = h2.textContent;
                  li.appendChild(a);
                  faqTocList.appendChild(li);
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      questions.forEach(q => {
                          const subLi = document.createElement('li');
                          const subA = document.createElement('a');
-                         subA.href = '#' + q.id;
+                         subA.setAttribute('href', '#' + q.id);
                          subA.textContent = q.textContent;
                          subLi.appendChild(subA);
                          subUl.appendChild(subLi);
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (level === 1) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                a.href = '#' + header.id;
+                a.setAttribute('href', '#' + header.id);
                 a.textContent = header.textContent;
                 li.appendChild(a);
                 manualTocList.appendChild(li);
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                a.href = '#' + header.id;
+                a.setAttribute('href', '#' + header.id);
                 a.textContent = header.textContent;
                 li.appendChild(a);
                 currentLevel2Ul.appendChild(li);
@@ -91,12 +91,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Simple smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth'
-                });
+            const href = this.getAttribute('href');
+            // Only handle valid hash links
+            if (href && href.startsWith('#') && href.length > 1) {
+                const id = href.substring(1);
+                // Use getElementById which is more robust than querySelector for IDs with special chars
+                const target = document.getElementById(id);
+                
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    // Update URL hash without jumping
+                    history.pushState(null, null, href);
+                }
             }
         });
     });
@@ -175,24 +184,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // UI Gallery Preview on Hover
+    // UI Gallery Preview on Click
     const shots = document.querySelectorAll('.ui-shot');
     const overlay = document.getElementById('ui-preview-overlay');
     const previewImg = document.getElementById('ui-preview-img');
     
     if (overlay && previewImg) {
         shots.forEach(shot => {
-            shot.addEventListener('mouseenter', () => {
+            shot.addEventListener('click', () => {
                 const largeSrc = shot.getAttribute('data-large');
                 if (largeSrc) {
                     previewImg.src = largeSrc;
                     overlay.classList.add('active');
                 }
             });
-            
-            shot.addEventListener('mouseleave', () => {
-                overlay.classList.remove('active');
-            });
+        });
+        
+        // Close when clicking on the overlay
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('active');
         });
     }
 
