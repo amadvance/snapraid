@@ -215,22 +215,22 @@ SnapRAID 只能从有限数量的磁盘故障中恢复数据。
 Getting Started
 </h1>
 <p>要使用 SnapRAID，您需要首先选择磁盘阵列中的一个磁盘专用于
-`parity`（奇偶校验）信息。使用一个奇偶校验磁盘，
+<b>parity</b>（奇偶校验）信息。使用一个奇偶校验磁盘，
 您将能够从单磁盘故障中恢复，类似于 RAID5。
 </p><p>如果您想从更多的磁盘故障中恢复，类似于 RAID6，
 您必须预留额外的磁盘用于奇偶校验。每增加一个奇偶校验磁盘，
 就可以多恢复一个磁盘故障。
 </p><p>作为奇偶校验磁盘，您必须选择阵列中最大的磁盘，
 因为奇偶校验信息可能会增长到阵列中最大的数据磁盘的大小。
-</p><p>这些磁盘将专门用于存储 `parity` 文件。
+</p><p>这些磁盘将专门用于存储 <b>parity</b> 文件。
 您不应该在它们上面存储您的数据。
-</p><p>然后，您必须定义要使用 SnapRAID 保护的 `data`（数据）磁盘。
+</p><p>然后，您必须定义要使用 SnapRAID 保护的 <b>data</b>（数据）磁盘。
 如果这些磁盘包含很少更改的数据，保护会更有效。因此，
 最好**不要**包含 Windows C:\ 磁盘或 Unix 的 /home、/var 和 /tmp 目录。
-</p><p>文件列表保存在 `content`（内容）文件中，通常存储在数据、奇偶校验或
+</p><p>文件列表保存在 <b>content</b>（内容）文件中，通常存储在数据、奇偶校验或
 引导磁盘上。
 该文件包含备份的详细信息，包括所有用于验证其完整性的校验和。
-`content` 文件存储有多个副本，每个副本必须位于不同的磁盘上，
+<b>content</b> 文件存储有多个副本，每个副本必须位于不同的磁盘上，
 以确保存储有多个磁盘故障时，至少有一个副本可用。
 </p><p>例如，假设您只对一个奇偶校验保护级别感兴趣，并且您的磁盘位于：
 </p><pre>
@@ -264,7 +264,7 @@ data d3 H:\array\
 </p><pre>
 <a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
-<p>此时，您已准备好运行 `sync` 命令来构建奇偶校验信息。
+<p>此时，您已准备好运行 <b>sync</b> 命令来构建奇偶校验信息。
 </p><pre>
 snapraid sync
 </pre>
@@ -272,16 +272,16 @@ snapraid sync
 如果磁盘是空的，则过程是即时的。
 </p><p>您可以随时按 Ctrl+C 停止它，在下次运行时，它将从中断的地方恢复。
 </p><p>当此命令完成时，您的数据是**安全的**。
-</p><p>现在您可以开始随意使用您的阵列，并定期运行 `sync` 命令更新奇偶校验信息。
+</p><p>现在您可以开始随意使用您的阵列，并定期运行 <b>sync</b> 命令更新奇偶校验信息。
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
 Scrubbing
 </h2>
-<p>要定期检查数据和奇偶校验的错误，您可以运行 `scrub` 命令。
+<p>要定期检查数据和奇偶校验的错误，您可以运行 <b>scrub</b> 命令。
 </p><pre>
 snapraid scrub
 </pre>
-<p>此命令将阵列中的数据与 `sync` 命令期间计算的散列进行比较，
+<p>此命令将阵列中的数据与 <b>sync</b> 命令期间计算的散列进行比较，
 以验证完整性。
 </p><p>每次运行该命令会检查大约 8% 的阵列，排除在过去 10 天内
 已被 scrub 的数据。
@@ -292,21 +292,21 @@ snapraid scrub
 snapraid -p 5 -o 20 scrub
 </pre>
 <p>如果在过程中发现静默错误或输入/输出错误，
-相应的块会在 `content` 文件中被标记为坏块，并列在 `status` 命令中。
+相应的块会在 <b>content</b> 文件中被标记为坏块，并列在 <b>status</b> 命令中。
 </p><pre>
 snapraid status
 </pre>
-<p>要修复它们，您可以使用 `fix` 命令，使用 -e, --filter-error 选项过滤坏块：
+<p>要修复它们，您可以使用 <b>fix</b> 命令，使用 -e, --filter-error 选项过滤坏块：
 </p><pre>
 snapraid -e fix
 </pre>
-<p>在下次 `scrub` 时，如果它们确实被修复了，错误将从 `status` 报告中消失。
+<p>在下次 <b>scrub</b> 时，如果它们确实被修复了，错误将从 <b>status</b> 报告中消失。
 为了更快，您可以使用 -p bad 来仅 scrub 标记为坏块的块。
 </p><pre>
 snapraid -p bad scrub
 </pre>
-<p>在未同步的阵列上运行 `scrub` 可能会报告由已删除或已修改文件引起的错误。
-这些错误会在 `scrub` 输出中报告，但相关块不会被标记为坏块。
+<p>在未同步的阵列上运行 <b>scrub</b> 可能会报告由已删除或已修改文件引起的错误。
+这些错误会在 <b>scrub</b> 输出中报告，但相关块不会被标记为坏块。
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec4-2" class="manual-title-level-2">
@@ -319,9 +319,9 @@ Mergefs 提供了一种更灵活、更高效的方式，将多个驱动器汇集
 它与 SnapRAID 很好地集成以提供奇偶校验保护，常用于
 OpenMediaVault (OMV) 或自定义 NAS 配置等设置中。
 </p><p>要使阵列中的所有文件显示在同一个目录树中，
-您可以启用 `pooling` 功能。它使用符号链接创建了一个
+您可以启用 <b>pooling</b> 功能。它使用符号链接创建了一个
 阵列中所有文件的只读虚拟视图。
-</p><p>您可以在配置文件中使用以下选项配置 `pooling` 目录：
+</p><p>您可以在配置文件中使用以下选项配置 <b>pooling</b> 目录：
 </p><pre>
 pool /pool
 </pre>
@@ -329,7 +329,7 @@ pool /pool
 </p><pre>
 pool C:\pool
 </pre>
-<p>然后运行 `pool` 命令创建或更新虚拟视图。
+<p>然后运行 <b>pool</b> 命令创建或更新虚拟视图。
 </p><pre>
 snapraid pool
 </pre>
@@ -352,9 +352,9 @@ follow symlinks = yes
 <p>在 Windows 中，通过网络共享符号链接需要客户端远程解析它们。
 要启用此功能，除了共享 pool 目录之外，您还必须独立共享所有磁盘，
 使用配置文件中定义的磁盘名称作为共享点。
-您还必须在配置文件的 `share` 选项中指定远程客户端访问这些
+您还必须在配置文件的 <b>share</b> 选项中指定远程客户端访问这些
 共享磁盘所需的 Windows UNC 路径。
-</p><p>例如，在名为 `darkstar` 的服务器上操作，您可以使用以下选项：
+</p><p>例如，在名为 <b>darkstar</b> 的服务器上操作，您可以使用以下选项：
 </p><pre>
 data d1 F:\array\
 data d2 G:\array\
@@ -414,9 +414,9 @@ STEP 1 -&gt; 重新配置
 </h3>
 <p>您需要一些空间来恢复，理想情况下是在额外的备用磁盘上，
 但外部 USB 磁盘或远程磁盘也足够。
-</p><p>修改 SnapRAID 配置文件，使故障磁盘的 `data` 或 `parity` 选项指向
+</p><p>修改 SnapRAID 配置文件，使故障磁盘的 <b>data</b> 或 <b>parity</b> 选项指向
 一个具有足够空闲空间来恢复文件的位置。
-</p><p>例如，如果磁盘 `d1` 发生故障，则从：
+</p><p>例如，如果磁盘 <b>d1</b> 发生故障，则从：
 </p><pre>
 data d1 /mnt/disk1/
 </pre>
@@ -424,7 +424,7 @@ data d1 /mnt/disk1/
 </p><pre>
 data d1 /mnt/new_spare_disk/
 </pre>
-<p>如果需要恢复的磁盘是奇偶校验磁盘，请更新相应的 `parity` 选项。
+<p>如果需要恢复的磁盘是奇偶校验磁盘，请更新相应的 <b>parity</b> 选项。
 如果您有多个故障磁盘，请更新所有它们的配置选项。
 </p></div>
 <div class="manual-section-level-3">
@@ -435,34 +435,34 @@ STEP 2 -&gt; 修复
 </p><pre>
 snapraid -d NAME -l fix.log fix
 </pre>
-<p>其中 NAME 是磁盘的名称，例如我们前面例子中的 `d1`。
-如果需要恢复的磁盘是奇偶校验磁盘，请使用名称 `parity`、`2-parity` 等。
+<p>其中 NAME 是磁盘的名称，例如我们前面例子中的 <b>d1</b>。
+如果需要恢复的磁盘是奇偶校验磁盘，请使用名称 <b>parity</b>、<b>2-parity</b> 等。
 如果您有多个故障磁盘，请使用多个 -d 选项来指定所有它们。
 </p><p>此命令将花费很长时间。
 </p><p>确保您有几 GB 的可用空间来存储 fix.log 文件。
 在有足够可用空间的磁盘上运行它。
 </p><p>现在您已经恢复了所有可恢复的内容。如果有些文件部分或完全不可恢复，
-它们将被重命名并添加 `.unrecoverable` 扩展名。
-</p><p>您可以通过检查所有以 `unrecoverable:` 开头的行，在 fix.log 文件中
+它们将被重命名并添加 <b>.unrecoverable</b> 扩展名。
+</p><p>您可以通过检查所有以 <b>unrecoverable:</b> 开头的行，在 fix.log 文件中
 找到所有不可恢复块的详细列表。
 </p><p>如果您对恢复不满意，您可以根据需要重试多次。
-</p><p>例如，如果您在上次 `sync` 之后从阵列中删除了文件，
+</p><p>例如，如果您在上次 <b>sync</b> 之后从阵列中删除了文件，
 这可能导致某些文件无法恢复。
-在这种情况下，您可以使用 -i, --import 选项重试 `fix`，
+在这种情况下，您可以使用 -i, --import 选项重试 <b>fix</b>，
 指定这些文件现在在哪里，以便将它们再次包含在恢复过程中。
 </p><p>如果您对恢复感到满意，您可以继续进行，
-但请注意，在同步之后，您不能再重试 `fix` 命令了！
+但请注意，在同步之后，您不能再重试 <b>fix</b> 命令了！
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-4-3" class="manual-title-level-3">
 STEP 3 -&gt; 检查
 </h3>
-<p>作为一项谨慎的检查，您现在可以运行 `check` 命令，以确保
+<p>作为一项谨慎的检查，您现在可以运行 <b>check</b> 命令，以确保
 恢复的磁盘上的一切都是正确的。
 </p><pre>
 snapraid -d NAME -a check
 </pre>
-<p>其中 NAME 是磁盘的名称，例如我们前面例子中的 `d1`。
+<p>其中 NAME 是磁盘的名称，例如我们前面例子中的 <b>d1</b>。
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -477,7 +477,7 @@ snapraid -d NAME -a check
 <h3 id="sec4-4-4" class="manual-title-level-3">
 STEP 4 -&gt; 同步
 </h3>
-<p>运行 `sync` 命令以将阵列与新磁盘重新同步。
+<p>运行 <b>sync</b> 命令以将阵列与新磁盘重新同步。
 </p><pre>
 snapraid sync
 </pre>
@@ -492,19 +492,19 @@ Commands
 <p>SnapRAID 提供了一些简单的命令，允许您：
 </p><ul>
 <li>
-打印阵列的状态 -&gt; `status`
+打印阵列的状态 -&gt; <b>status</b>
 </li>
 <li>
-控制磁盘 -&gt; `smart`、`probe`、`up`、`down`
+控制磁盘 -&gt; <b>smart</b>、<b>probe</b>、<b>up</b>、<b>down</b>
 </li>
 <li>
-进行备份/快照 -&gt; `sync`
+进行备份/快照 -&gt; <b>sync</b>
 </li>
 <li>
-定期检查数据 -&gt; `scrub`
+定期检查数据 -&gt; <b>scrub</b>
 </li>
 <li>
-恢复上次备份/快照 -&gt; `fix`。
+恢复上次备份/快照 -&gt; <b>fix</b>。
 </li>
 </ul>
 <p>命令必须用小写字母书写。
@@ -515,12 +515,12 @@ status
 <p>打印磁盘阵列状态的摘要。
 </p><p>它包括有关奇偶校验碎片、块未经检查有多久，以及在 scrubbing
 期间遇到的所有记录的静默错误的信息。
-</p><p>所提供的信息指的是您上次运行 `sync` 的时间。
+</p><p>所提供的信息指的是您上次运行 <b>sync</b> 的时间。
 不考虑后来的修改。
 </p><p>如果检测到坏块，则会列出它们的块号。
-要修复它们，您可以使用 `fix -e` 命令。
+要修复它们，您可以使用 <b>fix -e</b> 命令。
 </p><p>它还会显示一个图表，表示每个块上次被 scrub 或 sync 的时间。
-被 scrub 的块显示为 '*'，已同步但尚未 scrub 的块显示为 'o'。
+被 scrub 的块显示为 <b>*</b>，已同步但尚未 scrub 的块显示为 <b>o</b>。
 </p><p>不会修改任何内容。
 </p></div>
 <div class="manual-section-level-2">
@@ -535,7 +535,7 @@ Backblaze 提供的以下数据进行关联获得的：
 </p><pre>
 <a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
-<p>如果 SMART 报告磁盘正在发生故障，则会为该磁盘打印 `FAIL` 或 `PREFAIL`，
+<p>如果 SMART 报告磁盘正在发生故障，则会为该磁盘打印 <b>FAIL</b> 或 <b>PREFAIL</b>，
 并且 SnapRAID 返回错误。
 在这种情况下，**强烈建议**立即更换磁盘。
 </p><p>其他可能的状态字符串有：
@@ -564,9 +564,9 @@ selferr
 </div>
 <p>如果指定了 -v, --verbose 选项，则会提供更深入的统计分析。
 此分析可以帮助您决定是否需要更多或更少的奇偶校验。
-</p><p>此命令使用 `smartctl` 工具，相当于在所有设备上运行 `smartctl -a`。
+</p><p>此命令使用 <b>smartctl</b> 工具，相当于在所有设备上运行 <b>smartctl -a</b>。
 </p><p>如果您的设备未正确自动检测，您可以使用配置
-文件中的 `smartctl` 选项指定自定义命令。
+文件中的 <b>smartctl</b> 选项指定自定义命令。
 </p><p>不会修改任何内容。
 </p></div>
 <div class="manual-section-level-2">
@@ -574,12 +574,12 @@ selferr
 probe
 </h2>
 <p>打印系统中所有磁盘的**电源**状态。
-</p><p>`Standby`（待机）表示磁盘未转动。`Active`（活动）表示
+</p><p><b>Standby</b>（待机）表示磁盘未转动。<b>Active</b>（活动）表示
 磁盘正在转动。
-</p><p>此命令使用 `smartctl` 工具，相当于在所有设备上运行
-`smartctl -n standby -i`。
+</p><p>此命令使用 <b>smartctl</b> 工具，相当于在所有设备上运行
+<b>smartctl -n standby -i</b>。
 </p><p>如果您的设备未正确自动检测，您可以使用配置
-文件中的 `smartctl` 选项指定自定义命令。
+文件中的 <b>smartctl</b> 选项指定自定义命令。
 </p><p>不会修改任何内容。
 </p></div>
 <div class="manual-section-level-2">
@@ -597,18 +597,18 @@ up
 down
 </h2>
 <p>使阵列中的所有磁盘停转。
-</p><p>此命令使用 `smartctl` 工具，相当于在所有设备上运行
-`smartctl -s standby,now`。
+</p><p>此命令使用 <b>smartctl</b> 工具，相当于在所有设备上运行
+<b>smartctl -s standby,now</b>。
 </p><p>您可以使用 -d, --filter-disk 选项只停转特定的磁盘。
 </p><p>要在发生错误时自动停转，您可以将 -s, --spin-down-on-error
-选项与任何其他命令一起使用，这相当于在发生错误时手动运行 `down`。
+选项与任何其他命令一起使用，这相当于在发生错误时手动运行 <b>down</b>。
 </p><p>不会修改任何内容。
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec5-6" class="manual-title-level-2">
 diff
 </h2>
-<p>列出自上次 `sync` 以来所有已修改、需要重新计算奇偶校验数据的
+<p>列出自上次 <b>sync</b> 以来所有已修改、需要重新计算奇偶校验数据的
 文件。
 </p><p>此命令不检查文件数据，仅检查文件时间戳、大小和 inode。
 </p><p>列出所有更改的文件后，会显示更改的摘要，按以下方式分组：
@@ -654,7 +654,7 @@ moved
 copied
 </div><div class="manual-tag-description">
 在同一磁盘或不同磁盘上复制的文件。请注意，如果
-它们确实移动到了不同的磁盘，它们也会被计入 `removed` 中。
+它们确实移动到了不同的磁盘，它们也会被计入 <b>removed</b> 中。
 它们通过具有相同的名称、大小和时间戳来识别。如果亚秒级时间戳为零，
 则必须匹配完整路径，而不仅仅是名称。
 </div>
@@ -668,7 +668,7 @@ inode 不同但名称、大小和时间戳匹配的文件。
 </div>
 </div>
 </div>
-<p>如果需要 `sync`，进程返回码为 2，而不是默认的 0。
+<p>如果需要 <b>sync</b>，进程返回码为 2，而不是默认的 0。
 返回码 1 用于一般错误情况。
 </p><p>不会修改任何内容。
 </p></div>
@@ -679,7 +679,7 @@ sync
 <p>更新奇偶校验信息。读取磁盘阵列中所有已修改的文件，
 并更新相应的奇偶校验数据。
 </p><p>您可以随时按 Ctrl+C 停止此过程，而不会丢失已完成的工作。
-在下次运行时，`sync` 过程将从中断的地方恢复。
+在下次运行时，<b>sync</b> 过程将从中断的地方恢复。
 </p><p>如果在过程中发现静默错误或输入/输出错误，
 相应的块会被标记为坏块。
 </p><p>文件通过路径和/或 inode 识别，并检查大小和时间戳。
@@ -687,7 +687,7 @@ sync
 如果文件在同一磁盘上被移动或重命名，保持相同的 inode，则不重新计算奇偶校验。
 如果文件移动到另一个磁盘，则重新计算奇偶校验，
 但保留以前计算的散列信息。
-</p><p>如果需要，会修改 `content` 和 `parity` 文件。
+</p><p>如果需要，会修改 <b>content</b> 和 <b>parity</b> 文件。
 阵列中的文件**不会**被修改。
 </p></div>
 <div class="manual-section-level-2">
@@ -708,20 +708,20 @@ full - Scrub 所有内容。
 选项来定义块应该有多旧。
 最旧的块首先被 scrub，确保最佳检查。
 如果您只想 scrub 刚刚同步但尚未 scrub 的块，
-请使用 `-p new` 选项。
-</p><p>要获取 scrub 状态的详细信息，请使用 `status` 命令。
+请使用 <b>-p new</b> 选项。
+</p><p>要获取 scrub 状态的详细信息，请使用 <b>status</b> 命令。
 </p><p>对于发现的任何静默错误或输入/输出错误，相应的块
-会在 `content` 文件中被标记为坏块。
-这些坏块列在 `status` 中，可以使用 `fix -e` 修复。
+会在 <b>content</b> 文件中被标记为坏块。
+这些坏块列在 <b>status</b> 中，可以使用 <b>fix -e</b> 修复。
 修复后，在下次 scrub 时，它们将被重新检查，如果发现已更正，
 则会删除坏块标记。
-要仅 scrub 坏块，您可以使用 `scrub -p bad` 命令。
-</p><p>建议仅在已同步的阵列上运行 `scrub`，以避免
+要仅 scrub 坏块，您可以使用 <b>scrub -p bad</b> 命令。
+</p><p>建议仅在已同步的阵列上运行 <b>scrub</b>，以避免
 由未同步数据引起的报告错误。这些错误被识别为不是静默错误，
 并且块不会被标记为坏块，但此类错误会在命令的输出中报告。
-</p><p>`content` 文件会被修改以更新每个块上次检查的时间
+</p><p><b>content</b> 文件会被修改以更新每个块上次检查的时间
 并标记坏块。
-`parity` 文件**不会**被修改。
+<b>parity</b> 文件**不会**被修改。
 阵列中的文件**不会**被修改。
 </p></div>
 <div class="manual-section-level-2">
@@ -729,28 +729,28 @@ full - Scrub 所有内容。
 fix
 </h2>
 <p>修复所有文件和奇偶校验数据。
-</p><p>所有文件和奇偶校验数据都与上次 `sync` 中保存的快照
+</p><p>所有文件和奇偶校验数据都与上次 <b>sync</b> 中保存的快照
 状态进行比较。
 如果发现差异，则将其恢复到存储的快照。
-</p><p>**警告！** `fix` 命令不区分错误和
-故意修改。它**无条件地**将文件状态恢复到上次 `sync`。
+</p><p>**警告！** <b>fix</b> 命令不区分错误和
+故意修改。它**无条件地**将文件状态恢复到上次 <b>sync</b>。
 </p><p>如果未指定其他选项，则处理整个阵列。
 使用过滤选项选择要操作的文件或磁盘的子集。
-</p><p>要仅修复在 `sync` 和 `scrub` 期间标记为坏块的块，
+</p><p>要仅修复在 <b>sync</b> 和 <b>scrub</b> 期间标记为坏块的块，
 请使用 -e, --filter-error 选项。
-与其他过滤选项不同，此选项仅对自上次 `sync` 以来未更改的
+与其他过滤选项不同，此选项仅对自上次 <b>sync</b> 以来未更改的
 文件应用修复。
 </p><p>SnapRAID 会重命名所有无法修复的文件，并添加
-`.unrecoverable` 扩展名。
-</p><p>在修复之前，会扫描整个阵列以查找自上次 `sync`
+<b>.unrecoverable</b> 扩展名。
+</p><p>在修复之前，会扫描整个阵列以查找自上次 <b>sync</b>
 操作以来移动的任何文件。
 这些文件通过它们的时间戳识别，忽略它们的名称
 和目录，并在必要时用于恢复过程。
 如果您将其中一些移到了阵列之外，您可以使用 -i, --import
 选项指定额外的目录进行扫描。
 </p><p>文件仅通过路径识别，而不通过 inode 识别。
-</p><p>`content` 文件**不会**被修改。
-如果需要，`parity` 文件会被修改。
+</p><p><b>content</b> 文件**不会**被修改。
+如果需要，<b>parity</b> 文件会被修改。
 如果需要，阵列中的文件会被修改。
 </p></div>
 <div class="manual-section-level-2">
@@ -758,11 +758,11 @@ fix
 check
 </h2>
 <p>验证所有文件和奇偶校验数据。
-</p><p>它的工作方式类似于 `fix`，但它只模拟恢复，**不会**对阵列
+</p><p>它的工作方式类似于 <b>fix</b>，但它只模拟恢复，**不会**对阵列
 写入任何更改。
 </p><p>此命令主要用于手动验证，
 例如在恢复过程之后或在其他特殊条件下。
-对于定期和计划的检查，请使用 `scrub`。
+对于定期和计划的检查，请使用 <b>scrub</b>。
 </p><p>如果您使用 -a, --audit-only 选项，则仅检查文件
 数据散列，而忽略奇偶校验数据，以加快运行速度。
 </p><p>文件仅通过路径识别，而不通过 inode 识别。
@@ -772,7 +772,7 @@ check
 <h2 id="sec5-11" class="manual-title-level-2">
 list
 </h2>
-<p>列出上次 `sync` 时阵列中包含的所有文件。
+<p>列出上次 <b>sync</b> 时阵列中包含的所有文件。
 </p><p>使用 -v 或 --verbose，还会显示亚秒级时间。
 </p><p>不会修改任何内容。
 </p></div>
@@ -788,7 +788,7 @@ dup
 <h2 id="sec5-13" class="manual-title-level-2">
 pool
 </h2>
-<p>在 `pooling` 目录中创建或更新磁盘阵列中所有文件
+<p>在 <b>pooling</b> 目录中创建或更新磁盘阵列中所有文件
 的虚拟视图。
 </p><p>文件不会被复制，而是使用符号链接连接。
 </p><p>更新时，所有现有的符号链接和空
@@ -834,11 +834,11 @@ rehash
 以从 MurmurHash3 切换到更快的 SpookyHash。
 </p><p>如果您已经在使用最佳散列，则此命令不执行任何操作，
 并通知您无需执行任何操作。
-</p><p>重新散列不会立即执行，而是在 `sync` 和 `scrub` 期间
+</p><p>重新散列不会立即执行，而是在 <b>sync</b> 和 <b>scrub</b> 期间
 逐步进行。
-</p><p>您可以使用 `status` 检查重新散列状态。
+</p><p>您可以使用 <b>status</b> 检查重新散列状态。
 </p><p>在重新散列期间，SnapRAID 保持完全功能，
-唯一的例外是 `dup` 无法使用不同的散列检测重复的文件。
+唯一的例外是 <b>dup</b> 无法使用不同的散列检测重复的文件。
 </p></div>
 </div>
 <div class="manual-section-level-1">
@@ -852,9 +852,9 @@ Options
 -c, --conf CONFIG
 </div><div class="manual-option-description">
 选择要使用的配置文件。如果未指定，在 Unix 中，
-如果存在，则使用文件 `/usr/local/etc/snapraid.conf`，
-否则使用 `/etc/snapraid.conf`。
-在 Windows 中，它使用与 `snapraid.exe` 相同的目录中的文件 `snapraid.conf`。
+如果存在，则使用文件 <b>/usr/local/etc/snapraid.conf</b>，
+否则使用 <b>/etc/snapraid.conf</b>。
+在 Windows 中，它使用与 <b>snapraid.exe</b> 相同的目录中的文件 <b>snapraid.conf</b>。
 </div>
 </div>
 </div>
@@ -863,13 +863,13 @@ Options
 <div class="manual-option-name">
 -f, --filter PATTERN
 </div><div class="manual-option-description">
-过滤要在 `check` 和 `fix` 中处理的文件。
+过滤要在 <b>check</b> 和 <b>fix</b> 中处理的文件。
 仅处理与指定模式匹配的文件。
 此选项可以多次使用。
 有关模式规范的更多详细信息，请参阅 PATTERN 部分。
 在 Unix 中，如果使用 globbing 字符，请确保它们被引用。
-此选项只能与 `check` 和 `fix` 一起使用。
-不能与 `sync` 和 `scrub` 一起使用，因为它们总是处理整个阵列。
+此选项只能与 <b>check</b> 和 <b>fix</b> 一起使用。
+不能与 <b>sync</b> 和 <b>scrub</b> 一起使用，因为它们总是处理整个阵列。
 </div>
 </div>
 </div>
@@ -878,15 +878,15 @@ Options
 <div class="manual-option-name">
 -d, --filter-disk NAME
 </div><div class="manual-option-description">
-过滤要在 `check`、`fix`、`up` 和 `down` 中处理的磁盘。
+过滤要在 <b>check</b>、<b>fix</b>、<b>up</b> 和 <b>down</b> 中处理的磁盘。
 您必须指定配置文件中定义的磁盘名称。
-您也可以指定奇偶校验磁盘的名称：`parity`、`2-parity`、
-`3-parity` 等，以将操作限制到特定的奇偶校验磁盘。
+您也可以指定奇偶校验磁盘的名称：<b>parity</b>、<b>2-parity</b>、
+<b>3-parity</b> 等，以将操作限制到特定的奇偶校验磁盘。
 如果您组合使用多个 --filter、--filter-disk 和 --filter-missing 选项，
 则仅选择与所有过滤器匹配的文件。
 此选项可以多次使用。
-此选项只能与 `check`、`fix`、`up` 和 `down` 一起使用。
-不能与 `sync` 和 `scrub` 一起使用，因为它们总是处理整个阵列。
+此选项只能与 <b>check</b>、<b>fix</b>、<b>up</b> 和 <b>down</b> 一起使用。
+不能与 <b>sync</b> 和 <b>scrub</b> 一起使用，因为它们总是处理整个阵列。
 </div>
 </div>
 </div>
@@ -895,13 +895,13 @@ Options
 <div class="manual-option-name">
 -m, --filter-missing
 </div><div class="manual-option-description">
-过滤要在 `check` 和 `fix` 中处理的文件。
+过滤要在 <b>check</b> 和 <b>fix</b> 中处理的文件。
 仅处理阵列中丢失或已删除的文件。
-与 `fix` 一起使用时，此选项充当 `undelete` 命令。
+与 <b>fix</b> 一起使用时，此选项充当 <b>undelete</b> 命令。
 如果您组合使用多个 --filter、--filter-disk 和 --filter-missing 选项，
 则仅选择与所有过滤器匹配的文件。
-此选项只能与 `check` 和 `fix` 一起使用。
-不能与 `sync` 和 `scrub` 一起使用，因为它们总是处理整个阵列。
+此选项只能与 <b>check</b> 和 <b>fix</b> 一起使用。
+不能与 <b>sync</b> 和 <b>scrub</b> 一起使用，因为它们总是处理整个阵列。
 </div>
 </div>
 </div>
@@ -910,10 +910,10 @@ Options
 <div class="manual-option-name">
 -e, --filter-error
 </div><div class="manual-option-description">
-处理 `check` 和 `fix` 中有错误的文件。
-它仅处理在 `sync` 和 `scrub` 期间块被标记为静默或输入/输出错误的
-文件，如 `status` 中所列。
-此选项只能与 `check` 和 `fix` 一起使用。
+处理 <b>check</b> 和 <b>fix</b> 中有错误的文件。
+它仅处理在 <b>sync</b> 和 <b>scrub</b> 期间块被标记为静默或输入/输出错误的
+文件，如 <b>status</b> 中所列。
+此选项只能与 <b>check</b> 和 <b>fix</b> 一起使用。
 </div>
 </div>
 </div>
@@ -925,9 +925,9 @@ Options
 选择 scrub 计划。如果 PERC 是一个介于 0 到 100 之间的数值，
 则将其解释为要 scrub 的块的百分比。
 除了百分比，您还可以指定一个计划：
-`bad` scrub 坏块，`new` scrub 尚未 scrub 的块，
-`full` scrub 所有内容。
-此选项只能与 `scrub` 一起使用。
+<b>bad</b> scrub 坏块，<b>new</b> scrub 尚未 scrub 的块，
+<b>full</b> scrub 所有内容。
+此选项只能与 <b>scrub</b> 一起使用。
 </div>
 </div>
 </div>
@@ -936,10 +936,10 @@ Options
 <div class="manual-option-name">
 -o, --older-than DAYS
 </div><div class="manual-option-description">
-选择要在 `scrub` 中处理的阵列的最旧部分。
+选择要在 <b>scrub</b> 中处理的阵列的最旧部分。
 DAYS 是块被 scrub 的最小天数；默认值为 10。
 无论此选项如何，标记为坏块的块始终会被 scrub。
-此选项只能与 `scrub` 一起使用。
+此选项只能与 <b>scrub</b> 一起使用。
 </div>
 </div>
 </div>
@@ -948,11 +948,11 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-name">
 -a, --audit-only
 </div><div class="manual-option-description">
-在 `check` 中，验证文件的散列而不
+在 <b>check</b> 中，验证文件的散列而不
 检查奇偶校验数据。
 如果您只对检查文件数据感兴趣，此选项可以显著加快
 检查过程。
-此选项只能与 `check` 一起使用。
+此选项只能与 <b>check</b> 一起使用。
 </div>
 </div>
 </div>
@@ -961,20 +961,20 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-name">
 -h, --pre-hash
 </div><div class="manual-option-description">
-在 `sync` 中，运行所有新数据的初步散列阶段，
+在 <b>sync</b> 中，运行所有新数据的初步散列阶段，
 以便在奇偶校验计算之前进行额外验证。
-通常，在 `sync` 中，不进行初步散列，并且新
+通常，在 <b>sync</b> 中，不进行初步散列，并且新
 数据仅在首次读取进行奇偶校验计算之前散列。
 此过程在系统处于
 重负载下发生，所有磁盘都在转动，CPU 也很忙。
 这对机器来说是一种极端情况，如果它有潜在的硬件问题，
 静默错误可能无法被检测到，因为数据尚未散列。
-为避免此风险，您可以启用 `pre-hash` 模式，将
+为避免此风险，您可以启用 <b>pre-hash</b> 模式，将
 所有数据读取两次以确保其完整性。
 此选项还会验证阵列内移动的文件，
 以确保移动操作成功，并在必要时
 允许您在继续之前运行 fix 操作。
-此选项只能与 `sync` 一起使用。
+此选项只能与 <b>sync</b> 一起使用。
 </div>
 </div>
 </div>
@@ -983,11 +983,11 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-name">
 -i, --import DIR
 </div><div class="manual-option-description">
-从指定目录导入自上次 `sync` 以来从阵列中删除的任何文件。
-如果您仍然拥有此类文件，它们可用于 `check`
-和 `fix` 以改进恢复过程。
+从指定目录导入自上次 <b>sync</b> 以来从阵列中删除的任何文件。
+如果您仍然拥有此类文件，它们可用于 <b>check</b>
+和 <b>fix</b> 以改进恢复过程。
 读取文件，包括在子目录中，并且无论其名称如何都会被识别。
-此选项只能与 `check` 和 `fix` 一起使用。
+此选项只能与 <b>check</b> 和 <b>fix</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1048,7 +1048,7 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 这使您可以轻松检测到在系统崩溃后，
 某些访问的文件被截断的情况。
 这在带有 ext3/ext4 文件系统的 Linux 中是一种可能的情况。
-此选项只能与 `sync` 一起使用。
+此选项只能与 <b>sync</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1061,7 +1061,7 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 如果 SnapRAID 检测到磁盘上最初存在的所有文件都丢失或被重写，
 它会停止进行，除非您指定此选项。
 这使您可以轻松检测到数据文件系统未挂载的情况。
-此选项只能与 `sync` 一起使用。
+此选项只能与 <b>sync</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1077,7 +1077,7 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 错误的挂载点的情况。
 但是，允许在单奇偶校验下进行单个 UUID 更改，
 在多奇偶校验下进行更多更改，因为这是恢复后更换磁盘时的正常情况。
-此选项只能与 `sync`、`check` 或 `fix` 一起使用。
+此选项只能与 <b>sync</b>、<b>check</b> 或 <b>fix</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1091,7 +1091,7 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 只能恢复第一个，您可以忽略第二个无法访问的磁盘。
 或者，如果您想在已使用的磁盘上剩余的可用空间中恢复一个磁盘，
 共享同一物理设备。
-此选项只能与 `fix` 一起使用。
+此选项只能与 <b>fix</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1100,14 +1100,14 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-name">
 -N, --force-nocopy
 </div><div class="manual-option-description">
-在 `sync`、`check` 和 `fix` 中，禁用复制检测启发式。
+在 <b>sync</b>、<b>check</b> 和 <b>fix</b> 中，禁用复制检测启发式。
 如果没有此选项，SnapRAID 假定具有相同属性（例如名称、大小和时间戳）
 的文件是具有相同数据的副本。
 这允许识别从一个磁盘移动到另一个磁盘的复制或移动的文件，
 并重用已计算的散列信息以检测静默错误或恢复丢失的文件。
 在某些罕见的情况下，此行为可能导致误报
 或由于许多散列验证而导致过程缓慢，此选项允许您解决此类问题。
-此选项只能与 `sync`、`check` 和 `fix` 一起使用。
+此选项只能与 <b>sync</b>、<b>check</b> 和 <b>fix</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1116,13 +1116,13 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-name">
 -F, --force-full
 </div><div class="manual-option-description">
-在 `sync` 中，强制完全重新计算奇偶校验。
+在 <b>sync</b> 中，强制完全重新计算奇偶校验。
 当您添加新的奇偶校验级别或如果使用较新的奇偶校验数据恢复到旧的内容文件时，
 可以使用此选项。
 这允许您重用内容文件中存在的散列来验证数据，
-并使用现有奇偶校验数据在 `sync` 过程中保持数据保护，
+并使用现有奇偶校验数据在 <b>sync</b> 过程中保持数据保护，
 而不是从头开始重新创建奇偶校验。
-此选项只能与 `sync` 一起使用。
+此选项只能与 <b>sync</b> 一起使用。
 </div>
 </div>
 </div>
@@ -1131,12 +1131,12 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-name">
 -R, --force-realloc
 </div><div class="manual-option-description">
-在 `sync` 中，强制完全重新分配文件并重建奇偶校验。
+在 <b>sync</b> 中，强制完全重新分配文件并重建奇偶校验。
 此选项可用于完全重新分配所有文件，
 消除碎片，同时重用内容文件中存在的散列来验证数据。
-此选项只能与 `sync` 一起使用。
+此选项只能与 <b>sync</b> 一起使用。
 **警告！** 此选项仅供专家使用，强烈建议不要使用它。
-在 `sync` 操作期间，您**没有**数据保护。
+在 <b>sync</b> 操作期间，您**没有**数据保护。
 </div>
 </div>
 </div>
@@ -1150,13 +1150,13 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 在出现许多错误的情况下，可能导致输出过多。
 指定 -l, --log 时，仅将导致 SnapRAID 停止的**致命错误**打印到
 屏幕。
-如果路径以 '&gt;&gt;' 开头，则文件以追加模式打开。
-名称中的 '%D' 和 '%T' 出现会被替换为日期和时间，格式分别为 YYYYMMDD 和
-HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
-例如 result-%%D.log。要使用 '&gt;&gt;'，您必须将名称括在引号中，
-例如 `"&gt;&gt;result.log"`。
+如果路径以 <b>&gt;&gt;</b> 开头，则文件以追加模式打开。
+名称中的 <b>%D</b> 和 <b>%T</b> 出现会被替换为日期和时间，格式分别为 YYYYMMDD 和
+HHMMSS。在 Windows 批处理文件中，您必须双写 <b>%</b> 字符，
+例如 result-%%D.log。要使用 <b>&gt;&gt;</b>，您必须将名称括在引号中，
+例如 <b>"&gt;&gt;result.log"</b>。
 要将日志输出到标准输出或标准错误，
-您可以使用 `"&gt;&amp;1"` 和 `"&gt;&amp;2"`。
+您可以使用 <b>"&gt;&amp;1"</b> 和 <b>"&gt;&amp;2"</b>。
 有关日志标签描述，请参阅 snapraid_log.txt 文件或 man 页面。
 </div>
 </div>
@@ -1169,9 +1169,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 设置停止执行前的新错误限制。
 默认情况下，如果 SnapRAID 遇到超过 100 个
 输入/输出错误，它会停止，表明磁盘可能正在发生故障。
-此选项影响 `sync` 和 `scrub`，它们被允许在第一组
+此选项影响 <b>sync</b> 和 <b>scrub</b>，它们被允许在第一组
 磁盘错误后继续，以尝试完成其操作。
-但是，`check` 和 `fix` 总是会在第一次错误时停止。
+但是，<b>check</b> 和 <b>fix</b> 总是会在第一次错误时停止。
 </div>
 </div>
 </div>
@@ -1259,9 +1259,9 @@ Configuration
 </h1>
 <p>SnapRAID 需要一个配置文件来了解您的磁盘阵列
 位于何处以及在哪里存储奇偶校验信息。
-</p><p>在 Unix 中，如果存在，它使用文件 `/usr/local/etc/snapraid.conf`，
-否则使用 `/etc/snapraid.conf`。
-在 Windows 中，它使用与 `snapraid.exe` 相同的目录中的文件 `snapraid.conf`。
+</p><p>在 Unix 中，如果存在，它使用文件 <b>/usr/local/etc/snapraid.conf</b>，
+否则使用 <b>/etc/snapraid.conf</b>。
+在 Windows 中，它使用与 <b>snapraid.exe</b> 相同的目录中的文件 <b>snapraid.conf</b>。
 </p><p>它必须包含以下选项（区分大小写）：
 </p><div class="manual-section-level-2">
 <h2 id="sec7-1" class="manual-title-level-2">
@@ -1304,7 +1304,7 @@ parity FILE [,FILE] ...
 </li>
 </ul>
 <p>每个奇偶校验级别都需要存在所有先前的奇偶校验级别。
-</p><p>与 'parity' 选项相同的注意事项适用。
+</p><p>与 <b>parity</b> 选项相同的注意事项适用。
 </p><p>这些选项是可选的，并且只能使用一次。
 </p></div>
 <div class="manual-section-level-2">
@@ -1312,15 +1312,15 @@ parity FILE [,FILE] ...
 z-parity FILE [,FILE] ...
 </h2>
 <p>定义用于存储三奇偶校验的备用文件和格式。
-</p><p>此选项是 '3-parity' 的替代方案，主要面向不支持
+</p><p>此选项是 <b>3-parity</b> 的替代方案，主要面向不支持
 SSSE3 指令集的低端 CPU，如 ARM 或 AMD Phenom、Athlon 和 Opteron。
 在这种情况下，它提供了更好的性能。
 </p><p>此格式类似于 ZFS RAIDZ3 使用的格式，但更快。
 与 ZFS 一样，它在三奇偶校验之外不起作用。
-</p><p>当使用 '3-parity' 时，如果建议使用 'z-parity' 格式以提高性能，
+</p><p>当使用 <b>3-parity</b> 时，如果建议使用 <b>z-parity</b> 格式以提高性能，
 您将收到警告。
 </p><p>可以通过调整配置文件中的所需 z-parity 或 3-parity 文件，
-并使用 'fix' 重新创建它，从一种格式转换为另一种格式。
+并使用 <b>fix</b> 重新创建它，从一种格式转换为另一种格式。
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-4" class="manual-title-level-2">
@@ -1329,7 +1329,7 @@ content FILE
 <p>定义用于存储磁盘阵列中所有文件的列表和校验和的文件。
 </p><p>它可以放置在用于数据、奇偶校验或
 任何其他可用磁盘上。
-如果您使用数据磁盘，此文件会自动从 `sync` 过程中排除。
+如果您使用数据磁盘，此文件会自动从 <b>sync</b> 过程中排除。
 </p><p>此选项是强制性的，并且可以多次使用以保存
 同一文件的多个副本。
 </p><p>您必须为使用的每个奇偶校验磁盘存储至少一个副本，
@@ -1344,7 +1344,7 @@ NAME 用于标识磁盘，并且必须是唯一的。
 DIR 是磁盘在文件系统中的挂载点。
 </p><p>您可以根据需要更改挂载点，只要保持 NAME 固定即可。
 </p><p>您应该为阵列中的每个数据磁盘使用一个选项。
-</p><p>您可以通过直接在配置文件中更改 NAME，然后运行 `sync` 命令来
+</p><p>您可以通过直接在配置文件中更改 NAME，然后运行 <b>sync</b> 命令来
 稍后重命名磁盘。
 在重命名的情况下，关联是使用存储的磁盘 UUID 完成的。
 </p></div>
@@ -1353,7 +1353,7 @@ DIR 是磁盘在文件系统中的挂载点。
 nohidden
 </h2>
 <p>排除所有隐藏文件和目录。
-在 Unix 中，隐藏文件是以 `.` 开头的文件。
+在 Unix 中，隐藏文件是以 <b>.</b> 开头的文件。
 在 Windows 中，它们是具有隐藏属性的文件。
 </p></div>
 <div class="manual-section-level-2">
@@ -1362,10 +1362,10 @@ exclude/include PATTERN
 </h2>
 <p>定义要从同步过程中排除或包含的文件或目录模式。
 所有模式都按指定的顺序处理。
-</p><p>如果匹配的第一个模式是 `exclude` 模式，则排除该文件。
-如果它是 `include` 模式，则包含该文件。
-如果没有模式匹配，则如果指定的最后一个模式是 `include`，则排除该文件，
-或者如果指定的最后一个模式是 `exclude`，则包含该文件。
+</p><p>如果匹配的第一个模式是 <b>exclude</b> 模式，则排除该文件。
+如果它是 <b>include</b> 模式，则包含该文件。
+如果没有模式匹配，则如果指定的最后一个模式是 <b>include</b>，则排除该文件，
+或者如果指定的最后一个模式是 <b>exclude</b>，则包含该文件。
 </p><p>有关模式规范的更多详细信息，请参阅 PATTERN 部分。
 </p><p>此选项可以多次使用。
 </p></div>
@@ -1390,7 +1390,7 @@ blocksize SIZE_IN_KIBIBYTES
 </p><p>作为一个近似值，您可以假设每个文件浪费了半个块大小的空间。
 例如，对于 100,000 个文件和 256 KiB 的块大小，您将浪费 12.8 GB 的奇偶校验空间，
 这可能导致数据磁盘上少 12.8 GB 的可用空间。
-</p><p>您可以使用 `status` 检查每个磁盘上浪费的空间量。
+</p><p>您可以使用 <b>status</b> 检查每个磁盘上浪费的空间量。
 这是您必须在数据磁盘上留出的空闲空间量，
 或用于不包含在阵列中的文件的空间量。
 如果此值为负，则表示您即将填满奇偶校验空间，
@@ -1444,7 +1444,7 @@ autosave SIZE_IN_GIGABYTES
 </h2>
 <p>在同步或 scrub 之后，处理指定数量的 GB 后，自动保存状态。
 此选项有助于避免在机器崩溃或任何其他事件中断时，
-从头开始重新启动长时间的 `sync` 命令。
+从头开始重新启动长时间的 <b>sync</b> 命令。
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-11" class="manual-title-level-2">
@@ -1454,7 +1454,7 @@ temp_limit TEMPERATURE_CELSIUS
 SnapRAID 会使用 smartctl 工具定期检查所有磁盘的温度。
 SnapRAID 运行时会显示当前磁盘温度。
 如果任何磁盘超过此限制，所有操作都会停止，
-并在 `temp_sleep` 选项定义的持续时间内将磁盘停转（置于待机状态）。
+并在 <b>temp_sleep</b> 选项定义的持续时间内将磁盘停转（置于待机状态）。
 在休眠期过后，操作恢复，如果温度限制再次达到，
 可能会再次暂停。
 </p><p>在操作期间，SnapRAID 还会分析每个磁盘的加热曲线，
@@ -1483,7 +1483,7 @@ temp_sleep TIME_IN_MINUTES
 <h2 id="sec7-13" class="manual-title-level-2">
 pool DIR
 </h2>
-<p>定义 `pooling` 目录，其中使用 `pool` 命令创建磁盘
+<p>定义 <b>pooling</b> 目录，其中使用 <b>pool</b> 命令创建磁盘
 阵列的虚拟视图。
 </p><p>目录必须已经存在。
 </p></div>
@@ -1496,7 +1496,7 @@ share UNC_DIR
 来访问磁盘。
 如果没有此选项，则生成的符号链接仅使用本地路径，
 这不允许通过网络共享 pool 目录。
-</p><p>符号链接是使用指定的 UNC 路径，添加在 `data` 选项中指定的
+</p><p>符号链接是使用指定的 UNC 路径，添加在 <b>data</b> 选项中指定的
 磁盘名称，最后添加文件目录和名称形成的。
 </p><p>此选项仅在 Windows 中需要。
 </p></div>
@@ -1508,12 +1508,12 @@ smartctl DISK/PARITY OPTIONS...
 这对于 RAID 控制器和一些无法自动检测的 USB
 磁盘可能需要。%s 占位符会被设备名称替换，
 但对于固定的设备（如 RAID 控制器）是可选的。
-</p><p>DISK 是在 `data` 选项中指定的相同磁盘名称。
-PARITY 是奇偶校验名称之一：`parity`、`2-parity`、`3-parity`、
-`4-parity`、`5-parity`、`6-parity` 或 `z-parity`。
-</p><p>在指定的 OPTIONS 中，字符串 `%s` 被设备名称替换。
+</p><p>DISK 是在 <b>data</b> 选项中指定的相同磁盘名称。
+PARITY 是奇偶校验名称之一：<b>parity</b>、<b>2-parity</b>、<b>3-parity</b>、
+<b>4-parity</b>、<b>5-parity</b>、<b>6-parity</b> 或 <b>z-parity</b>。
+</p><p>在指定的 OPTIONS 中，字符串 <b>%s</b> 被设备名称替换。
 对于 RAID 控制器，设备可能是固定的，
-您可能不需要使用 `%s`。
+您可能不需要使用 <b>%s</b>。
 </p><p>请参阅 smartmontools 文档以了解可能的选项：
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1530,11 +1530,11 @@ smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>在计算磁盘故障概率时忽略指定的 SMART 属性。
 如果磁盘报告了特定属性的不寻常或误导值，此选项很有用。
-</p><p>DISK 是在 `data` 选项中指定的相同磁盘名称。
-PARITY 是奇偶校验名称之一：`parity`、`2-parity`、`3-parity`、
-`4-parity`、`5-parity`、`6-parity` 或 `z-parity`。
+</p><p>DISK 是在 <b>data</b> 选项中指定的相同磁盘名称。
+PARITY 是奇偶校验名称之一：<b>parity</b>、<b>2-parity</b>、<b>3-parity</b>、
+<b>4-parity</b>、<b>5-parity</b>、<b>6-parity</b> 或 <b>z-parity</b>。
 特殊值 * 可用于在所有磁盘上忽略该属性。
-</p><p>例如，要在所有磁盘上忽略 `Current Pending Sector Count` 属性：
+</p><p>例如，要在所有磁盘上忽略 <b>Current Pending Sector Count</b> 属性：
 </p><pre>
 smartignore * 197
 </pre>
@@ -1586,24 +1586,24 @@ Pattern
 </h1>
 <p>模式提供了一种灵活的方法来过滤要包含或排除的文件。通过使用通配符（globbing），
 您可以定义匹配特定文件名或整个目录结构的规则，而无需手动列出每个路径。
-</p><p>问号 `?` 匹配除目录分隔符以外的任何单个字符。这使得它在匹配具有变量字符
+</p><p>问号 <b>?</b> 匹配除目录分隔符以外的任何单个字符。这使得它在匹配具有变量字符
 的文件名时非常有用，同时将模式限制在单个目录层级内。
-</p><p>单星号 `*` 匹配任何字符序列，但与问号一样，它绝不会跨越目录边界。
+</p><p>单星号 <b>*</b> 匹配任何字符序列，但与问号一样，它绝不会跨越目录边界。
 它在正斜杠处停止，因此适用于匹配单个路径组件内的内容。
 这是 Shell 通配符中常见的标准行为。
-</p><p>双星号 `**` 功能更强大，它可以匹配任何字符序列，包括目录分隔符。
-这允许模式匹配跨越多个目录层级。当 `**` 直接嵌入在模式中时，
+</p><p>双星号 <b>**</b> 功能更强大，它可以匹配任何字符序列，包括目录分隔符。
+这允许模式匹配跨越多个目录层级。当 <b>**</b> 直接嵌入在模式中时，
 它可以匹配零个或多个字符，包括周围文字文本之间的斜杠。
-</p><p>`**` 最重要的用法是特殊形式 `/**/`。它可以匹配零个或多个完整的目录层级，
+</p><p><b>**</b> 最重要的用法是特殊形式 <b>/**/</b>。它可以匹配零个或多个完整的目录层级，
 从而可以在不知道确切路径结构的情况下，匹配目录树中任何深度的文件。
-例如，模式 `src/**/main.js` 匹配 `src/main.js`（跳过零个目录）、
-`src/ui/main.js`（跳过一个目录）以及 `src/ui/components/main.js`
+例如，模式 <b>src/**/main.js</b> 匹配 <b>src/main.js</b>（跳过零个目录）、
+<b>src/ui/main.js</b>（跳过一个目录）以及 <b>src/ui/components/main.js</b>
 （跳过两个目录）。
-</p><p>使用方括号 `[]` 的字符类匹配指定集合或范围内的单个字符。
+</p><p>使用方括号 <b>[]</b> 的字符类匹配指定集合或范围内的单个字符。
 与其他单字符模式一样，它们不匹配目录分隔符。字符类支持使用
 感叹号进行范围指定和否定。
-</p><p>需要记住的根本区别是，`*`、`?` 和字符类都遵循目录边界，
-并且仅在单个路径组件内匹配，而 `**` 是唯一可以跨越目录分隔符匹配的模式。
+</p><p>需要记住的根本区别是，<b>*</b>、<b>?</b> 和字符类都遵循目录边界，
+并且仅在单个路径组件内匹配，而 <b>**</b> 是唯一可以跨越目录分隔符匹配的模式。
 </p><p>有四种不同类型的模式：
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1650,45 +1650,45 @@ DIR/
 Windows 系统目录、连接点、挂载点和其他 Windows
 特殊目录被视为文件，这意味着要排除它们，
 您必须使用文件规则，而不是目录规则。
-</p><p>如果文件名包含 '*'、'?'、'['
-或 ']' 字符，您必须对其进行转义，以避免将其解释为
-globbing 字符。在 Unix 中，转义字符是 '\'；在 Windows 中，它是 '^'。
+</p><p>如果文件名包含 <b>*</b>、<b>?</b>、<b>[</b>
+或 <b>]</b> 字符，您必须对其进行转义，以避免将其解释为
+globbing 字符。在 Unix 中，转义字符是 <b>\</b>；在 Windows 中，它是 <b>^</b>。
 当模式在命令行上时，您必须双写转义
 字符，以避免命令 shell 对其进行解释。
 </p><p>在配置文件中，您可以使用不同的策略来过滤要处理的文件。
-最简单的方法是仅使用 `exclude` 规则来删除所有您不想处理的
+最简单的方法是仅使用 <b>exclude</b> 规则来删除所有您不想处理的
 文件和目录。例如：
 </p><pre>
-# 排除任何名为 `*.unrecoverable` 的文件
+# 排除任何名为 <b>*.unrecoverable</b> 的文件
 exclude *.unrecoverable
-# 排除根目录 `/lost+found`
+# 排除根目录 <b>/lost+found</b>
 exclude /lost+found/
-# 排除任何名为 `tmp` 的子目录
+# 排除任何名为 <b>tmp</b> 的子目录
 exclude tmp/
 </pre>
-<p>相反的方法是仅定义您想要处理的文件，仅使用 `include` 规则。例如：
+<p>相反的方法是仅定义您想要处理的文件，仅使用 <b>include</b> 规则。例如：
 </p><pre>
 # 仅包含一些目录
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>最后的方法是混合使用 `exclude` 和 `include` 规则。在这种情况下，
+<p>最后的方法是混合使用 <b>exclude</b> 和 <b>include</b> 规则。在这种情况下，
 规则的顺序很重要。较早的规则优先于
 较晚的规则。
-为了简化，您可以先列出所有 `exclude` 规则，然后
-列出所有 `include` 规则。例如：
+为了简化，您可以先列出所有 <b>exclude</b> 规则，然后
+列出所有 <b>include</b> 规则。例如：
 </p><pre>
-# 排除任何名为 `*.unrecoverable` 的文件
+# 排除任何名为 <b>*.unrecoverable</b> 的文件
 exclude *.unrecoverable
-# 排除任何名为 `tmp` 的子目录
+# 排除任何名为 <b>tmp</b> 的子目录
 exclude tmp/
 # 仅包含一些目录
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>在命令行上，使用 -f 选项，您只能使用 `include`
+<p>在命令行上，使用 -f 选项，您只能使用 <b>include</b>
 模式。例如：
 </p><pre>
 # 仅检查 .mp3 文件。
@@ -1703,11 +1703,11 @@ snapraid -f "*.mp3" check
 Ignore File
 </h1>
 <p>除了配置文件中的全局规则外，您还可以在阵列内的任何目录中放置
-`.snapraidignore` 文件，以定义分散的排除规则。
-</p><p>在 `.snapraidignore` 中定义的规则会在配置文件中的规则之后应用。
+<b>.snapraidignore</b> 文件，以定义分散的排除规则。
+</p><p>在 <b>.snapraidignore</b> 中定义的规则会在配置文件中的规则之后应用。
 这意味着它们具有更高的优先级，可用于排除先前由全局配置包含的文件。
 实际上，如果本地规则匹配，则无论全局包含设置如何，该文件都会被排除。
-</p><p>`.snapraidignore` 中的模式逻辑与全局配置相同，但模式锚定在
+</p><p><b>.snapraidignore</b> 中的模式逻辑与全局配置相同，但模式锚定在
 该文件所在的目录：
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1734,7 +1734,7 @@ DIR/
 <div class="manual-option-name">
 /PATH/FILE
 </div><div class="manual-option-description">
-选择相对于 `.snapraidignore` 文件位置指定的精确文件。
+选择相对于 <b>.snapraidignore</b> 文件位置指定的精确文件。
 </div>
 </div>
 </div>
@@ -1743,18 +1743,18 @@ DIR/
 <div class="manual-option-name">
 /PATH/DIR/
 </div><div class="manual-option-description">
-选择相对于 `.snapraidignore` 文件位置指定的精确目录
+选择相对于 <b>.snapraidignore</b> 文件位置指定的精确目录
 及其内部的所有内容。
 </div>
 </div>
 </div>
-<p>与全局配置不同，`.snapraidignore` 文件仅支持排除规则；
-您不能使用 `include` 模式或否定符号 (!)。
-</p><p>例如，如果您在 `/mnt/disk1/projects/` 中有一个 `.snapraidignore`：
+<p>与全局配置不同，<b>.snapraidignore</b> 文件仅支持排除规则；
+您不能使用 <b>include</b> 模式或否定符号 (!)。
+</p><p>例如，如果您在 <b>/mnt/disk1/projects/</b> 中有一个 <b>.snapraidignore</b>：
 </p><pre>
 # 仅排除 /mnt/disk1/projects/output.bin
 /output.bin
-# 排除 projects/ 中任何名为 'build' 的目录
+# 排除 projects/ 中任何名为 <b>build</b> 的目录
 build/
 # 排除 projects/ 或其子文件夹中任何 .tmp 文件
 *.tmp
@@ -1767,18 +1767,18 @@ Content
 <p>SnapRAID 将文件列表和校验和存储在 content 文件中。
 </p><p>它是一个二进制文件，列出了磁盘阵列中存在的所有文件，
 以及用于验证其完整性的所有校验和。
-</p><p>此文件由 `sync` 和 `scrub` 命令读取和写入，并由
-`fix`、`check` 和 `status` 命令读取。
+</p><p>此文件由 <b>sync</b> 和 <b>scrub</b> 命令读取和写入，并由
+<b>fix</b>、<b>check</b> 和 <b>status</b> 命令读取。
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec11" class="manual-title-level-1">
 Parity
 </h1>
 <p>SnapRAID 将阵列的奇偶校验信息存储在 parity 文件中。
-</p><p>这些是二进制文件，包含 `content` 文件中定义的所有
+</p><p>这些是二进制文件，包含 <b>content</b> 文件中定义的所有
 块的计算奇偶校验。
-</p><p>这些文件由 `sync` 和 `fix` 命令读取和写入，
-并且仅由 `scrub` 和 `check` 命令读取。
+</p><p>这些文件由 <b>sync</b> 和 <b>fix</b> 命令读取和写入，
+并且仅由 <b>scrub</b> 和 <b>check</b> 命令读取。
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec12" class="manual-title-level-1">
@@ -1788,8 +1788,8 @@ Encoding
 文件系统使用的相同编码的文件名。
 </p><p>在 Windows 中，从文件系统读取的所有名称都会被转换并
 以 UTF-8 格式处理。
-</p><p>要使文件名正确打印，您必须使用命令 `chcp 65001` 将 Windows
-控制台设置为 UTF-8 模式，并使用 TrueType 字体，如 `Lucida Console`，
+</p><p>要使文件名正确打印，您必须使用命令 <b>chcp 65001</b> 将 Windows
+控制台设置为 UTF-8 模式，并使用 TrueType 字体，如 <b>Lucida Console</b>，
 作为控制台字体。这仅影响打印的文件名；如果
 您将控制台输出重定向到文件，则生成的文件始终
 采用 UTF-8 格式。

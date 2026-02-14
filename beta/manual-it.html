@@ -229,7 +229,7 @@ Permessi, proprietà e attributi estesi non vengono salvati.
 Iniziare
 </h1>
 <p>Per usare SnapRAID, è necessario prima selezionare un disco nell'array
-di dischi da dedicare alle informazioni di `parity` (parità). Con un
+di dischi da dedicare alle informazioni di <b>parity</b> (parità). Con un
 disco per la parità, si sarà in grado di recuperare da un singolo guasto
 del disco, in modo simile a RAID5.
 </p><p>Se si desidera recuperare da più guasti del disco, in modo simile a RAID6,
@@ -238,18 +238,18 @@ parità aggiuntivo consente il recupero da un guasto in più del disco.
 </p><p>Come dischi di parità, è necessario scegliere i dischi più grandi
 dell'array, poiché le informazioni di parità possono crescere fino alle
 dimensioni del più grande disco dati nell'array.
-</p><p>Questi dischi saranno dedicati alla memorizzazione dei file di `parity`.
+</p><p>Questi dischi saranno dedicati alla memorizzazione dei file di <b>parity</b>.
 Non si dovrebbero memorizzare i propri dati su di essi.
-</p><p>Quindi, è necessario definire i dischi `data` (dati) che si desidera
+</p><p>Quindi, è necessario definire i dischi <b>data</b> (dati) che si desidera
 proteggere con SnapRAID. La protezione è più efficace se questi dischi
 contengono dati che cambiano raramente. Per questo motivo, è meglio
 NON includere il disco C:\ di Windows o le directory Unix /home, /var,
 e /tmp.
-</p><p>L'elenco dei file viene salvato nei file `content` (contenuto), di solito
+</p><p>L'elenco dei file viene salvato nei file <b>content</b> (contenuto), di solito
 memorizzati sui dischi dati, di parità o di avvio.
 Questo file contiene i dettagli del backup, inclusi tutti i checksum
 per verificarne l'integrità.
-Il file `content` viene memorizzato in più copie e ogni copia deve
+Il file <b>content</b> viene memorizzato in più copie e ogni copia deve
 essere su un disco diverso per garantire che, anche in caso di guasti
 multipli del disco, sia disponibile almeno una copia.
 </p><p>Ad esempio, supponiamo di essere interessati a un solo livello di
@@ -287,7 +287,7 @@ possibile montare i dischi direttamente nelle sottocartelle. Vedi:
 </p><pre>
 <a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
-<p>A questo punto, si è pronti per eseguire il comando `sync` per costruire
+<p>A questo punto, si è pronti per eseguire il comando <b>sync</b> per costruire
 le informazioni di parità.
 </p><pre>
 snapraid sync
@@ -299,18 +299,18 @@ vuoti, il processo è immediato.
 prossima esecuzione, riprenderà da dove è stato interrotto.
 </p><p>Quando questo comando è completato, i dati sono SICURI.
 </p><p>Ora è possibile iniziare a usare l'array come si desidera e aggiornare
-periodicamente le informazioni di parità eseguendo il comando `sync`.
+periodicamente le informazioni di parità eseguendo il comando <b>sync</b>.
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
 Scrubbing
 </h2>
 <p>Per controllare periodicamente i dati e la parità per gli errori, è
-possibile eseguire il comando `scrub`.
+possibile eseguire il comando <b>scrub</b>.
 </p><pre>
 snapraid scrub
 </pre>
 <p>Questo comando confronta i dati nell'array con l'hash calcolato
-durante il comando `sync` per verificarne l'integrità.
+durante il comando <b>sync</b> per verificarne l'integrità.
 </p><p>Ogni esecuzione del comando controlla circa l'8% dell'array, escludendo
 i dati già sottoposti a scrub nei 10 giorni precedenti.
 È possibile utilizzare l'opzione -p, --plan per specificare un importo
@@ -323,25 +323,25 @@ snapraid -p 5 -o 20 scrub
 </pre>
 <p>Se vengono trovati errori silenti o di input/output durante il processo,
 i blocchi corrispondenti vengono contrassegnati come bad (cattivi) nel
-file `content` ed elencati nel comando `status`.
+file <b>content</b> ed elencati nel comando <b>status</b>.
 </p><pre>
 snapraid status
 </pre>
-<p>Per correggerli, è possibile utilizzare il comando `fix`, filtrando
+<p>Per correggerli, è possibile utilizzare il comando <b>fix</b>, filtrando
 i blocchi bad con l'opzione -e, --filter-error:
 </p><pre>
 snapraid -e fix
 </pre>
-<p>Al prossimo `scrub`, gli errori scompariranno dal report `status`
+<p>Al prossimo <b>scrub</b>, gli errori scompariranno dal report <b>status</b>
 se sono stati veramente corretti. Per renderlo più veloce, è possibile
 utilizzare -p bad per eseguire lo scrub solo dei blocchi contrassegnati
 come bad.
 </p><pre>
 snapraid -p bad scrub
 </pre>
-<p>L'esecuzione di `scrub` su un array non sincronizzato può riportare
+<p>L'esecuzione di <b>scrub</b> su un array non sincronizzato può riportare
 errori causati da file rimossi o modificati. Questi errori sono riportati
-nell'output di `scrub`, ma i blocchi correlati non sono contrassegnati
+nell'output di <b>scrub</b>, ma i blocchi correlati non sono contrassegnati
 come bad.
 </p></div>
 <div class="manual-section-level-2">
@@ -358,10 +358,10 @@ simbolici. Si integra bene con SnapRAID per la protezione della parità
 ed è comunemente usato in configurazioni come OpenMediaVault (OMV) o
 NAS personalizzati.
 </p><p>Per avere tutti i file nell'array mostrati nello stesso albero di
-directory, è possibile abilitare la funzionalità di `pooling`. Crea
+directory, è possibile abilitare la funzionalità di <b>pooling</b>. Crea
 una vista virtuale di sola lettura di tutti i file nell'array
 utilizzando collegamenti simbolici.
-</p><p>È possibile configurare la directory di `pooling` nel file di
+</p><p>È possibile configurare la directory di <b>pooling</b> nel file di
 configurazione con:
 </p><pre>
 pool /pool
@@ -370,7 +370,7 @@ pool /pool
 </p><pre>
 pool C:\pool
 </pre>
-<p>e quindi eseguire il comando `pool` per creare o aggiornare la
+<p>e quindi eseguire il comando <b>pool</b> per creare o aggiornare la
 vista virtuale.
 </p><pre>
 snapraid pool
@@ -397,10 +397,10 @@ richiede che i client li risolvano da remoto. Per abilitare questo, oltre
 a condividere la directory pool, è necessario condividere anche tutti i
 dischi in modo indipendente, utilizzando i nomi dei dischi definiti nel
 file di configurazione come punti di condivisione. È inoltre necessario
-specificare nell'opzione `share` del file di configurazione il percorso
+specificare nell'opzione <b>share</b> del file di configurazione il percorso
 UNC di Windows che i client remoti devono utilizzare per accedere a
 questi dischi condivisi.
-</p><p>Ad esempio, operando da un server chiamato `darkstar`, è possibile
+</p><p>Ad esempio, operando da un server chiamato <b>darkstar</b>, è possibile
 utilizzare le opzioni:
 </p><pre>
 data d1 F:\array\
@@ -468,9 +468,9 @@ PASSO 1 -&gt; Riconfigurazione
 riserva aggiuntivi, ma un disco USB esterno o un disco remoto saranno
 sufficienti.
 </p><p>Modificare il file di configurazione SnapRAID per far puntare l'opzione
-`data` o `parity` del disco guasto a una posizione con spazio vuoto
+<b>data</b> o <b>parity</b> del disco guasto a una posizione con spazio vuoto
 sufficiente per recuperare i file.
-</p><p>Ad esempio, se il disco `d1` è guasto, cambiare da:
+</p><p>Ad esempio, se il disco <b>d1</b> è guasto, cambiare da:
 </p><pre>
 data d1 /mnt/disk1/
 </pre>
@@ -479,7 +479,7 @@ data d1 /mnt/disk1/
 data d1 /mnt/new_spare_disk/
 </pre>
 <p>Se il disco da recuperare è un disco di parità, aggiornare l'opzione
-`parity` appropriata.
+<b>parity</b> appropriata.
 Se si hanno più dischi guasti, aggiornare tutte le loro opzioni di
 configurazione.
 </p></div>
@@ -491,40 +491,40 @@ PASSO 2 -&gt; Correzione (Fix)
 </p><pre>
 snapraid -d NAME -l fix.log fix
 </pre>
-<p>Dove NAME è il nome del disco, come `d1` nel nostro esempio precedente.
-Se il disco da recuperare è un disco di parità, usare i nomi `parity`,
-`2-parity`, ecc.
+<p>Dove NAME è il nome del disco, come <b>d1</b> nel nostro esempio precedente.
+Se il disco da recuperare è un disco di parità, usare i nomi <b>parity</b>,
+<b>2-parity</b>, ecc.
 Se si hanno più dischi guasti, usare più opzioni -d per specificarli tutti.
 </p><p>Questo comando richiederà molto tempo.
 </p><p>Assicurarsi di avere alcuni gigabyte liberi per memorizzare il file
 fix.log. Eseguirlo da un disco con spazio libero sufficiente.
 </p><p>Ora si è recuperato tutto ciò che è recuperabile. Se alcuni file sono
 parzialmente o totalmente irrecuperabili, verranno rinominati aggiungendo
-l'estensione `.unrecoverable`.
+l'estensione <b>.unrecoverable</b>.
 </p><p>È possibile trovare un elenco dettagliato di tutti i blocchi
 irrecuperabili nel file fix.log controllando tutte le righe che iniziano
-con `unrecoverable:`.
+con <b>unrecoverable:</b>.
 </p><p>Se non si è soddisfatti del recupero, è possibile riprovare tutte le
 volte che si desidera.
-</p><p>Ad esempio, se si sono rimossi file dall'array dopo l'ultimo `sync`,
+</p><p>Ad esempio, se si sono rimossi file dall'array dopo l'ultimo <b>sync</b>,
 questo può comportare che alcuni file non vengano recuperati.
-In questo caso, è possibile riprovare il `fix` usando l'opzione -i,
+In questo caso, è possibile riprovare il <b>fix</b> usando l'opzione -i,
 --import, specificando dove si trovano ora questi file per includerli
 di nuovo nel processo di recupero.
 </p><p>Se si è soddisfatti del recupero, è possibile procedere oltre,
 ma notare che dopo la sincronizzazione, non è più possibile riprovare
-il comando `fix`!
+il comando <b>fix</b>!
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-4-3" class="manual-title-level-3">
 PASSO 3 -&gt; Controllo (Check)
 </h3>
-<p>Come controllo cauto, è ora possibile eseguire un comando `check` per
+<p>Come controllo cauto, è ora possibile eseguire un comando <b>check</b> per
 assicurarsi che tutto sia corretto sul disco recuperato.
 </p><pre>
 snapraid -d NAME -a check
 </pre>
-<p>Dove NAME è il nome del disco, come `d1` nel nostro esempio precedente.
+<p>Dove NAME è il nome del disco, come <b>d1</b> nel nostro esempio precedente.
 </p><p>Le opzioni -d e -a dicono a SnapRAID di controllare solo il disco
 specificato e di ignorare tutti i dati di parità.
 </p><p>Questo comando richiederà molto tempo, ma se non si è eccessivamente
@@ -534,7 +534,7 @@ cauti, è possibile saltarlo.
 <h3 id="sec4-4-4" class="manual-title-level-3">
 PASSO 4 -&gt; Sincronizzazione (Sync)
 </h3>
-<p>Eseguire il comando `sync` per risincronizzare l'array con il nuovo disco.
+<p>Eseguire il comando <b>sync</b> per risincronizzare l'array con il nuovo disco.
 </p><pre>
 snapraid sync
 </pre>
@@ -549,19 +549,19 @@ Comandi
 <p>SnapRAID fornisce alcuni semplici comandi che consentono di:
 </p><ul>
 <li>
-Stampare lo stato dell'array -&gt; `status`
+Stampare lo stato dell'array -&gt; <b>status</b>
 </li>
 <li>
-Controllare i dischi -&gt; `smart`, `probe`, `up`, `down`
+Controllare i dischi -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Effettuare un backup/snapshot -&gt; `sync`
+Effettuare un backup/snapshot -&gt; <b>sync</b>
 </li>
 <li>
-Controllare periodicamente i dati -&gt; `scrub`
+Controllare periodicamente i dati -&gt; <b>scrub</b>
 </li>
 <li>
-Ripristinare l'ultimo backup/snapshot -&gt; `fix`.
+Ripristinare l'ultimo backup/snapshot -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>I comandi devono essere scritti in minuscolo.
@@ -574,14 +574,14 @@ status
 vecchi i blocchi senza essere controllati e tutti gli errori silenti
 registrati incontrati durante lo scrubbing.
 </p><p>Le informazioni presentate si riferiscono all'ultima volta che si è
-eseguito `sync`. Le modifiche successive non vengono prese in
+eseguito <b>sync</b>. Le modifiche successive non vengono prese in
 considerazione.
 </p><p>Se sono stati rilevati blocchi bad, vengono elencati i loro numeri
-di blocco. Per correggerli, è possibile utilizzare il comando `fix -e`.
+di blocco. Per correggerli, è possibile utilizzare il comando <b>fix -e</b>.
 </p><p>Mostra anche un grafico che rappresenta l'ultima volta che ogni blocco
 è stato sottoposto a scrub o sincronizzato. I blocchi sottoposti a scrub
-sono mostrati con '*', i blocchi sincronizzati ma non ancora sottoposti
-a scrub con 'o'.
+sono mostrati con <b>*</b>, i blocchi sincronizzati ma non ancora sottoposti
+a scrub con <b>o</b>.
 </p><p>Nulla viene modificato.
 </p></div>
 <div class="manual-section-level-2">
@@ -597,8 +597,8 @@ SMART dei dischi con i dati Backblaze disponibili all'indirizzo:
 </p><pre>
 <a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
-<p>Se SMART segnala che un disco sta per guastarsi, viene stampato `FAIL`
-o `PREFAIL` per quel disco e SnapRAID restituisce un errore.
+<p>Se SMART segnala che un disco sta per guastarsi, viene stampato <b>FAIL</b>
+o <b>PREFAIL</b> per quel disco e SnapRAID restituisce un errore.
 In questo caso, si raccomanda vivamente la sostituzione immediata del
 disco.
 </p><p>Altre possibili stringhe di stato sono:
@@ -629,11 +629,11 @@ Il log dell'autotest del dispositivo contiene errori.
 <p>Se viene specificata l'opzione -v, --verbose, viene fornita un'analisi
 statistica più approfondita. Questa analisi può aiutare a decidere se
 è necessaria più o meno parità.
-</p><p>Questo comando utilizza lo strumento `smartctl` ed è equivalente
-all'esecuzione di `smartctl -a` su tutti i dispositivi.
+</p><p>Questo comando utilizza lo strumento <b>smartctl</b> ed è equivalente
+all'esecuzione di <b>smartctl -a</b> su tutti i dispositivi.
 </p><p>Se i dispositivi non vengono rilevati automaticamente correttamente, è
 possibile specificare un comando personalizzato utilizzando l'opzione
-`smartctl` nel file di configurazione.
+<b>smartctl</b> nel file di configurazione.
 </p><p>Nulla viene modificato.
 </p></div>
 <div class="manual-section-level-2">
@@ -641,13 +641,13 @@ possibile specificare un comando personalizzato utilizzando l'opzione
 probe
 </h2>
 <p>Stampa lo stato POWER di tutti i dischi nel sistema.
-</p><p>`Standby` significa che il disco non sta girando. `Active` significa
+</p><p><b>Standby</b> significa che il disco non sta girando. <b>Active</b> significa
 che il disco sta girando.
-</p><p>Questo comando utilizza lo strumento `smartctl` ed è equivalente
-all'esecuzione di `smartctl -n standby -i` su tutti i dispositivi.
+</p><p>Questo comando utilizza lo strumento <b>smartctl</b> ed è equivalente
+all'esecuzione di <b>smartctl -n standby -i</b> su tutti i dispositivi.
 </p><p>Se i dispositivi non vengono rilevati automaticamente correttamente, è
 possibile specificare un comando personalizzato utilizzando l'opzione
-`smartctl` nel file di configurazione.
+<b>smartctl</b> nel file di configurazione.
 </p><p>Nulla viene modificato.
 </p></div>
 <div class="manual-section-level-2">
@@ -666,13 +666,13 @@ Assicurarsi che l'alimentatore possa sostenerlo.
 down
 </h2>
 <p>Ferma tutti i dischi dell'array.
-</p><p>Questo comando utilizza lo strumento `smartctl` ed è equivalente
-all'esecuzione di `smartctl -s standby,now` su tutti i dispositivi.
+</p><p>Questo comando utilizza lo strumento <b>smartctl</b> ed è equivalente
+all'esecuzione di <b>smartctl -s standby,now</b> su tutti i dispositivi.
 </p><p>È possibile fermare solo dischi specifici utilizzando l'opzione -d,
 --filter-disk.
 </p><p>Per fermare automaticamente in caso di errore, è possibile utilizzare
 l'opzione -s, --spin-down-on-error con qualsiasi altro comando,
-che è equivalente all'esecuzione manuale di `down` quando si verifica
+che è equivalente all'esecuzione manuale di <b>down</b> quando si verifica
 un errore.
 </p><p>Nulla viene modificato.
 </p></div>
@@ -680,7 +680,7 @@ un errore.
 <h2 id="sec5-6" class="manual-title-level-2">
 diff
 </h2>
-<p>Elenca tutti i file modificati dall'ultimo `sync` che devono avere i
+<p>Elenca tutti i file modificati dall'ultimo <b>sync</b> che devono avere i
 loro dati di parità ricalcolati.
 </p><p>Questo comando non controlla i dati del file, ma solo il timestamp
 del file, le dimensioni e l'inode.
@@ -731,7 +731,7 @@ copied
 </div><div class="manual-tag-description">
 File copiati sullo stesso o su un disco diverso.
 Si noti che se sono stati veramente spostati su un altro
-disco, saranno contati anche in `removed`.
+disco, saranno contati anche in <b>removed</b>.
 Sono identificati dall'avere lo stesso nome, dimensioni
 e timestamp. Se il timestamp sotto il secondo è zero,
 il percorso completo deve corrispondere, non solo il nome.
@@ -747,7 +747,7 @@ ripristinati dopo essere stati eliminati.
 </div>
 </div>
 </div>
-<p>Se è richiesto un `sync`, il codice di ritorno del processo è 2,
+<p>Se è richiesto un <b>sync</b>, il codice di ritorno del processo è 2,
 invece del predefinito 0. Il codice di ritorno 1 è utilizzato per una
 condizione di errore generica.
 </p><p>Nulla viene modificato.
@@ -761,7 +761,7 @@ nell'array di dischi vengono letti e i dati di parità
 corrispondenti vengono aggiornati.
 </p><p>È possibile interrompere questo processo in qualsiasi momento
 premendo Ctrl+C, senza perdere il lavoro già svolto.
-Alla prossima esecuzione, il processo `sync` riprenderà da dove
+Alla prossima esecuzione, il processo <b>sync</b> riprenderà da dove
 è stato interrotto.
 </p><p>Se vengono trovati errori silenti o di input/output durante il processo,
 i blocchi corrispondenti vengono contrassegnati come bad.
@@ -773,7 +773,7 @@ Se il file viene spostato o rinominato sullo stesso disco,
 mantenendo lo stesso inode, la parità non viene ricalcolata.
 Se il file viene spostato su un altro disco, la parità viene ricalcolata,
 ma le informazioni di hash precedentemente calcolate vengono mantenute.
-</p><p>I file `content` e `parity` vengono modificati se necessario.
+</p><p>I file <b>content</b> e <b>parity</b> vengono modificati se necessario.
 I file nell'array NON vengono modificati.
 </p></div>
 <div class="manual-section-level-2">
@@ -814,25 +814,25 @@ il blocco.
 I blocchi più vecchi vengono sottoposti a scrub per primi,
 garantendo un controllo ottimale.
 Se si desidera eseguire lo scrub solo dei blocchi appena sincronizzati
-non ancora sottoposti a scrub, utilizzare l'opzione `-p new`.
+non ancora sottoposti a scrub, utilizzare l'opzione <b>-p new</b>.
 </p><p>Per ottenere i dettagli dello stato dello scrub, utilizzare il comando
-`status`.
+<b>status</b>.
 </p><p>Per qualsiasi errore silente o di input/output trovato, i blocchi
-corrispondenti vengono contrassegnati come bad nel file `content`.
-Questi blocchi bad sono elencati in `status` e possono essere corretti
-con `fix -e`.
+corrispondenti vengono contrassegnati come bad nel file <b>content</b>.
+Questi blocchi bad sono elencati in <b>status</b> e possono essere corretti
+con <b>fix -e</b>.
 Dopo la correzione, al prossimo scrub, verranno ricontrollati e, se
 trovati corretti, il contrassegno bad verrà rimosso.
 Per eseguire lo scrub solo dei blocchi bad, è possibile utilizzare
-il comando `scrub -p bad`.
-</p><p>Si consiglia di eseguire `scrub` solo su un array sincronizzato per
+il comando <b>scrub -p bad</b>.
+</p><p>Si consiglia di eseguire <b>scrub</b> solo su un array sincronizzato per
 evitare errori segnalati causati da dati non sincronizzati. Questi
 errori sono riconosciuti come non essendo errori silenti e i blocchi non
 vengono contrassegnati come bad, ma tali errori sono riportati
 nell'output del comando.
-</p><p>Il file `content` viene modificato per aggiornare l'ora dell'ultimo
+</p><p>Il file <b>content</b> viene modificato per aggiornare l'ora dell'ultimo
 controllo per ogni blocco e per contrassegnare i blocchi bad.
-I file `parity` NON vengono modificati.
+I file <b>parity</b> NON vengono modificati.
 I file nell'array NON vengono modificati.
 </p></div>
 <div class="manual-section-level-2">
@@ -841,23 +841,23 @@ fix
 </h2>
 <p>Corregge tutti i file e i dati di parità.
 </p><p>Tutti i file e i dati di parità vengono confrontati con lo stato
-snapshot salvato nell'ultimo `sync`.
+snapshot salvato nell'ultimo <b>sync</b>.
 Se viene trovata una differenza, viene ripristinata allo snapshot
 memorizzato.
-</p><p>ATTENZIONE! Il comando `fix` non differenzia tra errori e modifiche
+</p><p>ATTENZIONE! Il comando <b>fix</b> non differenzia tra errori e modifiche
 intenzionali. Ripristina incondizionatamente lo stato del file
-all'ultimo `sync`.
+all'ultimo <b>sync</b>.
 </p><p>Se non viene specificata nessun'altra opzione, l'intero array viene
 elaborato. Utilizzare le opzioni di filtro per selezionare un
 sottoinsieme di file o dischi su cui operare.
-</p><p>Per correggere solo i blocchi contrassegnati come bad durante `sync`
-e `scrub`, utilizzare l'opzione -e, --filter-error.
+</p><p>Per correggere solo i blocchi contrassegnati come bad durante <b>sync</b>
+e <b>scrub</b>, utilizzare l'opzione -e, --filter-error.
 A differenza di altre opzioni di filtro, questa applica correzioni solo
-ai file che sono invariati dall'ultimo `sync`.
+ai file che sono invariati dall'ultimo <b>sync</b>.
 </p><p>SnapRAID rinomina tutti i file che non possono essere corretti aggiungendo
-l'estensione `.unrecoverable`.
+l'estensione <b>.unrecoverable</b>.
 </p><p>Prima di correggere, l'intero array viene scansionato per trovare
-eventuali file spostati dall'ultima operazione di `sync`.
+eventuali file spostati dall'ultima operazione di <b>sync</b>.
 Questi file sono identificati dal loro timestamp, ignorando il loro nome
 e la directory, e vengono utilizzati nel processo di recupero se
 necessario.
@@ -865,8 +865,8 @@ Se alcuni di essi sono stati spostati al di fuori dell'array, è possibile
 utilizzare l'opzione -i, --import per specificare directory aggiuntive
 da scansionare.
 </p><p>I file sono identificati solo dal percorso, non dall'inode.
-</p><p>Il file `content` NON viene modificato.
-I file `parity` vengono modificati se necessario.
+</p><p>Il file <b>content</b> NON viene modificato.
+I file <b>parity</b> vengono modificati se necessario.
 I file nell'array vengono modificati se necessario.
 </p></div>
 <div class="manual-section-level-2">
@@ -874,11 +874,11 @@ I file nell'array vengono modificati se necessario.
 check
 </h2>
 <p>Verifica tutti i file e i dati di parità.
-</p><p>Funziona come `fix`, ma simula solo un recupero e nessuna modifica
+</p><p>Funziona come <b>fix</b>, ma simula solo un recupero e nessuna modifica
 viene scritta nell'array.
 </p><p>Questo comando è destinato principalmente alla verifica manuale,
 ad esempio dopo un processo di recupero o in altre condizioni speciali.
-Per i controlli periodici e pianificati, utilizzare `scrub`.
+Per i controlli periodici e pianificati, utilizzare <b>scrub</b>.
 </p><p>Se si utilizza l'opzione -a, --audit-only, viene controllato solo
 l'hash dei file e i dati di parità vengono ignorati per un'esecuzione
 più veloce.
@@ -890,7 +890,7 @@ più veloce.
 list
 </h2>
 <p>Elenca tutti i file contenuti nell'array al momento dell'ultimo
-`sync`.
+<b>sync</b>.
 </p><p>Con -v o --verbose, viene mostrato anche il tempo sotto il secondo.
 </p><p>Nulla viene modificato.
 </p></div>
@@ -908,7 +908,7 @@ utilizzati solo gli hash precalcolati.
 pool
 </h2>
 <p>Crea o aggiorna una vista virtuale di tutti
-i file nell'array di dischi nella directory di `pooling`.
+i file nell'array di dischi nella directory di <b>pooling</b>.
 </p><p>I file non vengono copiati ma collegati utilizzando
 collegamenti simbolici.
 </p><p>Durante l'aggiornamento, tutti i collegamenti simbolici esistenti
@@ -960,10 +960,10 @@ passare da MurmurHash3 al più veloce SpookyHash.
 </p><p>Se si sta già utilizzando l'hash ottimale, questo comando non fa
 nulla e informa che non è necessaria alcuna azione.
 </p><p>Il rehash non viene eseguito immediatamente ma avviene
-progressivamente durante `sync` e `scrub`.
-</p><p>È possibile controllare lo stato del rehash utilizzando `status`.
+progressivamente durante <b>sync</b> e <b>scrub</b>.
+</p><p>È possibile controllare lo stato del rehash utilizzando <b>status</b>.
 </p><p>Durante il rehash, SnapRAID mantiene la piena funzionalità,
-con l'unica eccezione che `dup` non è in grado di rilevare file
+con l'unica eccezione che <b>dup</b> non è in grado di rilevare file
 duplicati utilizzando un hash diverso.
 </p></div>
 </div>
@@ -978,10 +978,10 @@ Opzioni
 -c, --conf CONFIG
 </div><div class="manual-option-description">
 Seleziona il file di configurazione da utilizzare. Se non
-specificato, in Unix utilizza il file `/usr/local/etc/snapraid.conf`
-se esiste, altrimenti `/etc/snapraid.conf`.
-In Windows, utilizza il file `snapraid.conf` nella stessa
-directory di `snapraid.exe`.
+specificato, in Unix utilizza il file <b>/usr/local/etc/snapraid.conf</b>
+se esiste, altrimenti <b>/etc/snapraid.conf</b>.
+In Windows, utilizza il file <b>snapraid.conf</b> nella stessa
+directory di <b>snapraid.exe</b>.
 </div>
 </div>
 </div>
@@ -990,7 +990,7 @@ directory di `snapraid.exe`.
 <div class="manual-option-name">
 -f, --filter PATTERN
 </div><div class="manual-option-description">
-Filtra i file da elaborare in `check` e `fix`.
+Filtra i file da elaborare in <b>check</b> e <b>fix</b>.
 Vengono elaborati solo i file che corrispondono al modello
 specificato.
 Questa opzione può essere utilizzata più volte.
@@ -998,8 +998,8 @@ Vedere la sezione PATTERN per maggiori dettagli sulle
 specifiche del modello.
 In Unix, assicurarsi che i caratteri di globbing siano citati
 se usati.
-Questa opzione può essere utilizzata solo con `check` e `fix`.
-Non può essere utilizzata con `sync` e `scrub`, poiché elaborano
+Questa opzione può essere utilizzata solo con <b>check</b> e <b>fix</b>.
+Non può essere utilizzata con <b>sync</b> e <b>scrub</b>, poiché elaborano
 sempre l'intero array.
 </div>
 </div>
@@ -1009,19 +1009,19 @@ sempre l'intero array.
 <div class="manual-option-name">
 -d, --filter-disk NAME
 </div><div class="manual-option-description">
-Filtra i dischi da elaborare in `check`, `fix`, `up` e `down`.
+Filtra i dischi da elaborare in <b>check</b>, <b>fix</b>, <b>up</b> e <b>down</b>.
 È necessario specificare un nome di disco come definito nel file
 di configurazione.
 È anche possibile specificare i dischi di parità con i nomi:
-`parity`, `2-parity`, `3-parity`, ecc., per limitare le operazioni
+<b>parity</b>, <b>2-parity</b>, <b>3-parity</b>, ecc., per limitare le operazioni
 a un disco di parità specifico.
 Se si combinano più opzioni --filter, --filter-disk e
 --filter-missing, vengono selezionati solo i file che corrispondono
 a tutti i filtri.
 Questa opzione può essere utilizzata più volte.
-Questa opzione può essere utilizzata solo con `check`, `fix`,
-`up` e `down`.
-Non può essere utilizzata con `sync` e `scrub`, poiché elaborano
+Questa opzione può essere utilizzata solo con <b>check</b>, <b>fix</b>,
+<b>up</b> e <b>down</b>.
+Non può essere utilizzata con <b>sync</b> e <b>scrub</b>, poiché elaborano
 sempre l'intero array.
 </div>
 </div>
@@ -1031,15 +1031,15 @@ sempre l'intero array.
 <div class="manual-option-name">
 -m, --filter-missing
 </div><div class="manual-option-description">
-Filtra i file da elaborare in `check` e `fix`.
+Filtra i file da elaborare in <b>check</b> e <b>fix</b>.
 Vengono elaborati solo i file mancanti o eliminati dall'array.
-Quando usato con `fix`, questo agisce come un comando di
-`undelete` (annullamento eliminazione).
+Quando usato con <b>fix</b>, questo agisce come un comando di
+<b>undelete</b> (annullamento eliminazione).
 Se si combinano più opzioni --filter, --filter-disk e
 --filter-missing, vengono selezionati solo i file che corrispondono
 a tutti i filtri.
-Questa opzione può essere utilizzata solo con `check` e `fix`.
-Non può essere utilizzata con `sync` e `scrub`, poiché elaborano
+Questa opzione può essere utilizzata solo con <b>check</b> e <b>fix</b>.
+Non può essere utilizzata con <b>sync</b> e <b>scrub</b>, poiché elaborano
 sempre l'intero array.
 </div>
 </div>
@@ -1049,11 +1049,11 @@ sempre l'intero array.
 <div class="manual-option-name">
 -e, --filter-error
 </div><div class="manual-option-description">
-Elabora i file con errori in `check` e `fix`.
+Elabora i file con errori in <b>check</b> e <b>fix</b>.
 Elabora solo i file che hanno blocchi contrassegnati con errori
-silenti o di input/output durante `sync` e `scrub`, come
-elencato in `status`.
-Questa opzione può essere utilizzata solo con `check` e `fix`.
+silenti o di input/output durante <b>sync</b> e <b>scrub</b>, come
+elencato in <b>status</b>.
+Questa opzione può essere utilizzata solo con <b>check</b> e <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1066,10 +1066,10 @@ Seleziona il piano di scrub. Se PERC è un valore numerico da 0 a
 100, viene interpretato come la percentuale di blocchi da
 sottoporre a scrub.
 Invece di una percentuale, è possibile specificare un piano:
-`bad` esegue lo scrub dei blocchi bad, `new` esegue lo scrub
-dei blocchi non ancora sottoposti a scrub, e `full` esegue lo
+<b>bad</b> esegue lo scrub dei blocchi bad, <b>new</b> esegue lo scrub
+dei blocchi non ancora sottoposti a scrub, e <b>full</b> esegue lo
 scrub di tutto.
-Questa opzione può essere utilizzata solo con `scrub`.
+Questa opzione può essere utilizzata solo con <b>scrub</b>.
 </div>
 </div>
 </div>
@@ -1078,12 +1078,12 @@ Questa opzione può essere utilizzata solo con `scrub`.
 <div class="manual-option-name">
 -o, --older-than DAYS
 </div><div class="manual-option-description">
-Seleziona la parte più vecchia dell'array da elaborare in `scrub`.
+Seleziona la parte più vecchia dell'array da elaborare in <b>scrub</b>.
 DAYS è l'età minima in giorni per un blocco da sottoporre a
 scrub; il valore predefinito è 10.
 I blocchi contrassegnati come bad vengono sempre sottoposti a scrub
 indipendentemente da questa opzione.
-Questa opzione può essere utilizzata solo con `scrub`.
+Questa opzione può essere utilizzata solo con <b>scrub</b>.
 </div>
 </div>
 </div>
@@ -1092,11 +1092,11 @@ Questa opzione può essere utilizzata solo con `scrub`.
 <div class="manual-option-name">
 -a, --audit-only
 </div><div class="manual-option-description">
-In `check`, verifica l'hash dei file senza
+In <b>check</b>, verifica l'hash dei file senza
 controllare i dati di parità.
 Se si è interessati solo al controllo dei dati del file, questa
 opzione può velocizzare significativamente il processo di controllo.
-Questa opzione può essere utilizzata solo con `check`.
+Questa opzione può essere utilizzata solo con <b>check</b>.
 </div>
 </div>
 </div>
@@ -1105,9 +1105,9 @@ Questa opzione può essere utilizzata solo con `check`.
 <div class="manual-option-name">
 -h, --pre-hash
 </div><div class="manual-option-description">
-In `sync`, esegue una fase preliminare di hashing di tutti i nuovi
+In <b>sync</b>, esegue una fase preliminare di hashing di tutti i nuovi
 dati per una verifica aggiuntiva prima del calcolo della parità.
-Di solito, in `sync`, non viene eseguito alcun hashing preliminare
+Di solito, in <b>sync</b>, non viene eseguito alcun hashing preliminare
 e i nuovi dati vengono sottoposti a hash subito prima del calcolo
 della parità quando vengono letti per la prima volta.
 Questo processo si verifica quando il sistema è sotto
@@ -1116,13 +1116,13 @@ Questa è una condizione estrema per la macchina e, se presenta un
 problema hardware latente, gli errori silenti potrebbero non
 essere rilevati perché i dati non sono ancora stati sottoposti a hash.
 Per evitare questo rischio, è possibile abilitare la modalità
-`pre-hash` per far leggere tutti i dati due volte per garantirne
+<b>pre-hash</b> per far leggere tutti i dati due volte per garantirne
 l'integrità.
 Questa opzione verifica anche i file spostati all'interno dell'array
 per garantire che l'operazione di spostamento sia andata a buon fine
 e, se necessario, consente di eseguire un'operazione di fix
 prima di procedere.
-Questa opzione può essere utilizzata solo con `sync`.
+Questa opzione può essere utilizzata solo con <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1132,12 +1132,12 @@ Questa opzione può essere utilizzata solo con `sync`.
 -i, --import DIR
 </div><div class="manual-option-description">
 Importa dalla directory specificata tutti i file eliminati
-dall'array dopo l'ultimo `sync`.
-Se si hanno ancora tali file, possono essere utilizzati da `check`
-e `fix` per migliorare il processo di recupero.
+dall'array dopo l'ultimo <b>sync</b>.
+Se si hanno ancora tali file, possono essere utilizzati da <b>check</b>
+e <b>fix</b> per migliorare il processo di recupero.
 I file vengono letti, anche nelle sottodirectory, e sono
 identificati indipendentemente dal loro nome.
-Questa opzione può essere utilizzata solo con `check` e `fix`.
+Questa opzione può essere utilizzata solo con <b>check</b> e <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1206,7 +1206,7 @@ anomalo del sistema, alcuni file a cui si è acceduto sono stati
 troncati.
 Questa è una possibile condizione in Linux con i file system
 ext3/ext4.
-Questa opzione può essere utilizzata solo con `sync`.
+Questa opzione può essere utilizzata solo con <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1222,7 +1222,7 @@ sul disco sono mancanti o riscritti, interrompe la prosecuzione
 a meno che non si specifichi questa opzione.
 Ciò consente di rilevare facilmente quando un file system di dati
 non è montato.
-Questa opzione può essere utilizzata solo con `sync`.
+Questa opzione può essere utilizzata solo con <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1241,8 +1241,8 @@ di montaggio sbagliati.
 Tuttavia, è consentito avere un singolo cambio di UUID con
 parità singola e di più con parità multipla, perché questo è
 il caso normale quando si sostituiscono i dischi dopo un recupero.
-Questa opzione può essere utilizzata solo con `sync`, `check`
-o `fix`.
+Questa opzione può essere utilizzata solo con <b>sync</b>, <b>check</b>
+o <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1259,7 +1259,7 @@ disco inaccessibile.
 Oppure, se si desidera recuperare un disco nello spazio libero
 rimasto su un disco già utilizzato, condividendo lo stesso dispositivo
 fisico.
-Questa opzione può essere utilizzata solo con `fix`.
+Questa opzione può essere utilizzata solo con <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1268,7 +1268,7 @@ Questa opzione può essere utilizzata solo con `fix`.
 <div class="manual-option-name">
 -N, --force-nocopy
 </div><div class="manual-option-description">
-In `sync`, `check` e `fix`, disabilita l'euristica di rilevamento
+In <b>sync</b>, <b>check</b> e <b>fix</b>, disabilita l'euristica di rilevamento
 della copia.
 Senza questa opzione, SnapRAID presume che i file con gli stessi
 attributi, come nome, dimensione e timestamp, siano copie con gli
@@ -1279,8 +1279,8 @@ per rilevare errori silenti o per recuperare file mancanti.
 In alcuni rari casi, questo comportamento può comportare falsi
 positivi o un processo lento a causa di molte verifiche di hash,
 e questa opzione consente di risolvere tali problemi.
-Questa opzione può essere utilizzata solo con `sync`, `check`
-e `fix`.
+Questa opzione può essere utilizzata solo con <b>sync</b>, <b>check</b>
+e <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1289,15 +1289,15 @@ e `fix`.
 <div class="manual-option-name">
 -F, --force-full
 </div><div class="manual-option-description">
-In `sync`, forza un ricalcolo completo della parità.
+In <b>sync</b>, forza un ricalcolo completo della parità.
 Questa opzione può essere utilizzata quando si aggiunge un nuovo
 livello di parità o se si è tornati a un vecchio file di contenuto
 utilizzando dati di parità più recenti.
 Invece di ricreare la parità da zero, questo consente di riutilizzare
 gli hash presenti nel file di contenuto per convalidare i dati e
-mantenere la protezione dei dati durante il processo `sync`
+mantenere la protezione dei dati durante il processo <b>sync</b>
 utilizzando i dati di parità esistenti.
-Questa opzione può essere utilizzata solo con `sync`.
+Questa opzione può essere utilizzata solo con <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1306,15 +1306,15 @@ Questa opzione può essere utilizzata solo con `sync`.
 <div class="manual-option-name">
 -R, --force-realloc
 </div><div class="manual-option-description">
-In `sync`, forza una riallocazione completa dei file e la
+In <b>sync</b>, forza una riallocazione completa dei file e la
 ricostruzione della parità.
 Questa opzione può essere utilizzata per riallocare completamente
 tutti i file, rimuovendo la frammentazione, riutilizzando gli hash
 presenti nel file di contenuto per convalidare i dati.
-Questa opzione può essere utilizzata solo con `sync`.
+Questa opzione può essere utilizzata solo con <b>sync</b>.
 ATTENZIONE! Questa opzione è solo per esperti ed è vivamente
 sconsigliato utilizzarla.
-NON si ha protezione dei dati durante l'operazione `sync`.
+NON si ha protezione dei dati durante l'operazione <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1329,14 +1329,14 @@ stampati sullo schermo, potenzialmente resulting in un output
 eccessivo in caso di molti errori. Quando -l, --log è specificato,
 vengono stampati sullo schermo solo gli errori fatali che
 causano l'arresto di SnapRAID.
-Se il percorso inizia con '&gt;&gt;', il file viene aperto in modalità
-append. Le occorrenze di '%D' e '%T' nel nome vengono sostituite
+Se il percorso inizia con <b>&gt;&gt;</b>, il file viene aperto in modalità
+append. Le occorrenze di <b>%D</b> e <b>%T</b> nel nome vengono sostituite
 con la data e l'ora nel formato YYYYMMDD e HHMMSS. Nei file batch
-di Windows, è necessario raddoppiare il carattere '%', ad esempio
-result-%%D.log. Per utilizzare '&gt;&gt;', è necessario racchiudere
-il nome tra virgolette, ad esempio `"&gt;&gt;result.log"`.
+di Windows, è necessario raddoppiare il carattere <b>%</b>, ad esempio
+result-%%D.log. Per utilizzare <b>&gt;&gt;</b>, è necessario racchiudere
+il nome tra virgolette, ad esempio <b>"&gt;&gt;result.log"</b>.
 Per indirizzare l'output del log all'output standard o all'errore
-standard, è possibile utilizzare `"&gt;&amp;1"` e `"&gt;&amp;2"`,
+standard, è possibile utilizzare <b>"&gt;&amp;1"</b> e <b>"&gt;&amp;2"</b>,
 rispettivamente.
 Vedere il file snapraid_log.txt o la pagina man per le descrizioni
 dei tag di log.
@@ -1352,10 +1352,10 @@ Imposta un nuovo limite di errore prima di interrompere l'esecuzione.
 Per impostazione predefinita, SnapRAID si interrompe se incontra
 più di 100 errori di input/output, indicando che un disco
 sta probabilmente fallendo.
-Questa opzione influisce su `sync` e `scrub`, a cui è consentito
+Questa opzione influisce su <b>sync</b> e <b>scrub</b>, a cui è consentito
 continuare dopo il primo set di errori del disco per cercare di
 completare le loro operazioni.
-Tuttavia, `check` e `fix` si interrompono sempre al primo errore.
+Tuttavia, <b>check</b> e <b>fix</b> si interrompono sempre al primo errore.
 </div>
 </div>
 </div>
@@ -1447,10 +1447,10 @@ Configurazione
 </h1>
 <p>SnapRAID richiede un file di configurazione per sapere dove si trova
 l'array di dischi e dove memorizzare le informazioni di parità.
-</p><p>In Unix, utilizza il file `/usr/local/etc/snapraid.conf` se esiste,
-altrimenti `/etc/snapraid.conf`.
-In Windows, utilizza il file `snapraid.conf` nella stessa
-directory di `snapraid.exe`.
+</p><p>In Unix, utilizza il file <b>/usr/local/etc/snapraid.conf</b> se esiste,
+altrimenti <b>/etc/snapraid.conf</b>.
+In Windows, utilizza il file <b>snapraid.conf</b> nella stessa
+directory di <b>snapraid.exe</b>.
 </p><p>Deve contenere le seguenti opzioni (sensibili al maiuscolo/minuscolo):
 </p><div class="manual-section-level-2">
 <h2 id="sec7-1" class="manual-title-level-2">
@@ -1498,7 +1498,7 @@ aggiuntivo di protezione:
 </ul>
 <p>Ogni livello di parità richiede la presenza di tutti i livelli di parità
 precedenti.
-</p><p>Si applicano le stesse considerazioni dell'opzione 'parity'.
+</p><p>Si applicano le stesse considerazioni dell'opzione <b>parity</b>.
 </p><p>Queste opzioni sono facoltative e possono essere utilizzate solo una volta.
 </p></div>
 <div class="manual-section-level-2">
@@ -1507,17 +1507,17 @@ z-parity FILE [,FILE] ...
 </h2>
 <p>Definisce un file e un formato alternativi per memorizzare la tripla
 parità.
-</p><p>Questa opzione è un'alternativa a '3-parity', destinata
+</p><p>Questa opzione è un'alternativa a <b>3-parity</b>, destinata
 principalmente a CPU di fascia bassa come ARM o AMD Phenom, Athlon
 e Opteron che non supportano il set di istruzioni SSSE3. In tali
 casi, fornisce prestazioni migliori.
 </p><p>Questo formato è simile ma più veloce di quello utilizzato da ZFS RAIDZ3.
 Come ZFS, non funziona oltre la tripla parità.
-</p><p>Quando si utilizza '3-parity', si verrà avvisati se è consigliato
-utilizzare il formato 'z-parity' per un miglioramento delle prestazioni.
+</p><p>Quando si utilizza <b>3-parity</b>, si verrà avvisati se è consigliato
+utilizzare il formato <b>z-parity</b> per un miglioramento delle prestazioni.
 </p><p>È possibile convertire da un formato all'altro regolando il file
 di configurazione con il file z-parity o 3-parity desiderato e
-utilizzando 'fix' per ricrearlo.
+utilizzando <b>fix</b> per ricrearlo.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-4" class="manual-title-level-2">
@@ -1528,7 +1528,7 @@ di tutti i file presenti nell'array di dischi.
 </p><p>Può essere posizionato su un disco utilizzato per dati, parità o
 qualsiasi altro disco disponibile.
 Se si utilizza un disco dati, questo file viene automaticamente
-escluso dal processo `sync`.
+escluso dal processo <b>sync</b>.
 </p><p>Questa opzione è obbligatoria e può essere utilizzata più volte
 per salvare più copie dello stesso file.
 </p><p>È necessario memorizzare almeno una copia per ogni disco di parità
@@ -1546,7 +1546,7 @@ purché si mantenga fisso NAME.
 </p><p>È necessario utilizzare un'opzione per ogni disco dati nell'array.
 </p><p>È possibile rinominare un disco in seguito modificando NAME
 direttamente nel file di configurazione e quindi eseguendo un
-comando 'sync'.
+comando <b>sync</b>.
 In caso di ridenominazione, l'associazione viene eseguita utilizzando
 l'UUID memorizzato dei dischi.
 </p></div>
@@ -1555,7 +1555,7 @@ l'UUID memorizzato dei dischi.
 nohidden
 </h2>
 <p>Esclude tutti i file e le directory nascosti.
-In Unix, i file nascosti sono quelli che iniziano con `.`.
+In Unix, i file nascosti sono quelli che iniziano con <b>.</b>.
 In Windows, sono quelli con l'attributo nascosto.
 </p></div>
 <div class="manual-section-level-2">
@@ -1565,11 +1565,11 @@ exclude/include PATTERN
 <p>Definisce i modelli di file o directory da escludere o includere
 nel processo di sync.
 Tutti i modelli vengono elaborati nell'ordine specificato.
-</p><p>Se il primo modello che corrisponde è un `exclude`, il file
-viene escluso. Se è un `include`, il file viene incluso.
+</p><p>Se il primo modello che corrisponde è un <b>exclude</b>, il file
+viene escluso. Se è un <b>include</b>, il file viene incluso.
 Se nessun modello corrisponde, il file viene escluso se l'ultimo
-modello specificato è un `include`, o incluso se l'ultimo modello
-specificato è un `exclude`.
+modello specificato è un <b>include</b>, o incluso se l'ultimo modello
+specificato è un <b>exclude</b>.
 </p><p>Vedere la sezione PATTERN per maggiori dettagli sulle specifiche
 del modello.
 </p><p>Questa opzione può essere utilizzata più volte.
@@ -1602,7 +1602,7 @@ dimensione di blocco di 256 KiB, si sprecheranno 12,8 GB di parità,
 il che può comportare 12,8 GB in meno di spazio disponibile sul disco
 dati.
 </p><p>È possibile controllare la quantità di spazio sprecato su ogni disco
-utilizzando `status`.
+utilizzando <b>status</b>.
 Questa è la quantità di spazio che è necessario lasciare libero sui
 dischi dati o utilizzare per i file non inclusi nell'array.
 Se questo valore è negativo, significa che si è vicini a riempire
@@ -1663,7 +1663,7 @@ autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Salva automaticamente lo stato durante la sincronizzazione o lo scrubbing
 dopo la quantità specificata di GB elaborati.
-Questa opzione è utile per evitare di riavviare lunghi comandi `sync`
+Questa opzione è utile per evitare di riavviare lunghi comandi <b>sync</b>
 da zero se interrotti da un arresto anomalo della macchina o qualsiasi
 altro evento.
 </p></div>
@@ -1677,7 +1677,7 @@ i dischi utilizzando lo strumento smartctl. Le temperature attuali dei
 dischi vengono visualizzate mentre SnapRAID è in funzione. Se un disco
 supera questo limite, tutte le operazioni si interrompono e i dischi
 vengono messi in stand-by (spin down) per la durata definita
-dall'opzione `temp_sleep`. Dopo il periodo di sonno, le operazioni
+dall'opzione <b>temp_sleep</b>. Dopo il periodo di sonno, le operazioni
 riprendono, potenzialmente mettendosi in pausa di nuovo se il limite
 di temperatura viene raggiunto ancora una volta.
 </p><p>Durante il funzionamento, SnapRAID analizza anche la curva di riscaldamento
@@ -1714,7 +1714,7 @@ viene raggiunto. Durante questo periodo, i dischi rimangono fermi
 pool DIR
 </h2>
 <p>Definisce la directory di pooling in cui viene creata la vista virtuale
-dell'array di dischi utilizzando il comando `pool`.
+dell'array di dischi utilizzando il comando <b>pool</b>.
 </p><p>La directory deve già esistere.
 </p></div>
 <div class="manual-section-level-2">
@@ -1730,7 +1730,7 @@ solo percorsi locali, il che non consente la condivisione della
 directory pool sulla rete.
 </p><p>I collegamenti simbolici sono formati utilizzando il percorso UNC
 specificato, aggiungendo il nome del disco come specificato nell'opzione
-`data` e infine aggiungendo la directory e il nome del file.
+<b>data</b> e infine aggiungendo la directory e il nome del file.
 </p><p>Questa opzione è richiesta solo per Windows.
 </p></div>
 <div class="manual-section-level-2">
@@ -1742,12 +1742,12 @@ SMART per ogni disco. Ciò potrebbe essere richiesto per controller RAID
 e alcuni dischi USB che non possono essere rilevati automaticamente.
 Il segnaposto %s viene sostituito dal nome del dispositivo, ma è
 facoltativo per dispositivi fissi come i controller RAID.
-</p><p>DISK è lo stesso nome del disco specificato nell'opzione `data`.
-PARITY è uno dei nomi di parità: `parity`, `2-parity`, `3-parity`,
-`4-parity`, `5-parity`, `6-parity` o `z-parity`.
-</p><p>Nelle OPTIONS specificate, la stringa `%s` viene sostituita dal
+</p><p>DISK è lo stesso nome del disco specificato nell'opzione <b>data</b>.
+PARITY è uno dei nomi di parità: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+<b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> o <b>z-parity</b>.
+</p><p>Nelle OPTIONS specificate, la stringa <b>%s</b> viene sostituita dal
 nome del dispositivo. Per i controller RAID, il dispositivo è
-probabilmente fisso e potrebbe non essere necessario utilizzare `%s`.
+probabilmente fisso e potrebbe non essere necessario utilizzare <b>%s</b>.
 </p><p>Fare riferimento alla documentazione di smartmontools per le possibili
 opzioni:
 </p><pre>
@@ -1766,12 +1766,12 @@ smartignore DISK/PARITY ATTR [ATTR...]
 <p>Ignora l'attributo SMART specificato durante il calcolo della
 probabilità di guasto del disco. Questa opzione è utile se un disco
 segnala valori insoliti o fuorvianti per un particolare attributo.
-</p><p>DISK è lo stesso nome del disco specificato nell'opzione `data`.
-PARITY è uno dei nomi di parità: `parity`, `2-parity`, `3-parity`,
-`4-parity`, `5-parity`, `6-parity` o `z-parity`.
+</p><p>DISK è lo stesso nome del disco specificato nell'opzione <b>data</b>.
+PARITY è uno dei nomi di parità: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+<b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> o <b>z-parity</b>.
 Il valore speciale * può essere utilizzato per ignorare l'attributo
 su tutti i dischi.
-</p><p>Ad esempio, per ignorare l'attributo `Current Pending Sector Count`
+</p><p>Ad esempio, per ignorare l'attributo <b>Current Pending Sector Count</b>
 su tutti i dischi:
 </p><pre>
 smartignore * 197
@@ -1826,32 +1826,32 @@ Pattern
 escludere. Usando i caratteri globbing, è possibile definire regole che
 corrispondano a nomi di file specifici o a intere strutture di directory senza
 elencare manualmente ogni percorso.
-</p><p>Il punto interrogativo `?` corrisponde a qualsiasi carattere singolo eccetto il
+</p><p>Il punto interrogativo <b>?</b> corrisponde a qualsiasi carattere singolo eccetto il
 separatore di directory. Questo lo rende utile per far corrispondere nomi di file
 con caratteri variabili mantenendo il pattern confinato a un singolo livello di directory.
-</p><p>L'asterisco singolo `*` corrisponde a qualsiasi sequenza di caratteri, ma come il
+</p><p>L'asterisco singolo <b>*</b> corrisponde a qualsiasi sequenza di caratteri, ma come il
 punto interrogativo, non attraversa mai i confini delle directory. Si ferma allo
 slash in avanti, rendendolo adatto per la corrispondenza all'interno di un singolo
 componente del percorso. Questo è il comportamento standard dei wildcard familiare
 dal globbing della shell.
-</p><p>Il doppio asterisco `**` è più potente, corrisponde a qualsiasi sequenza di
+</p><p>Il doppio asterisco <b>**</b> è più potente, corrisponde a qualsiasi sequenza di
 caratteri inclusi i separatori di directory. Ciò consente ai pattern di corrispondere
-attraverso più livelli di directory. Quando `**` appare inserito direttamente in
+attraverso più livelli di directory. Quando <b>**</b> appare inserito direttamente in
 un pattern, può corrispondere a zero o più caratteri inclusi gli slash tra
 il testo letterale circostante.
-</p><p>L'uso più importante di `**` è nella forma speciale `/**/`. Questa corrisponde a
+</p><p>L'uso più importante di <b>**</b> è nella forma speciale <b>/**/</b>. Questa corrisponde a
 zero o più livelli di directory completi, rendendo possibile la corrispondenza di file
 a qualsiasi profondità in un albero di directory senza conoscere l'esatta struttura del percorso.
-Per esempio, il pattern `src/**/main.js` corrisponde a `src/main.js` (saltando
-zero directory), `src/ui/main.js` (saltando una directory), e
-`src/ui/components/main.js` (saltando due directory).
-</p><p>Le classi di caratteri che usano le parentesi quadre `[]` corrispondono a un singolo carattere da un
+Per esempio, il pattern <b>src/**/main.js</b> corrisponde a <b>src/main.js</b> (saltando
+zero directory), <b>src/ui/main.js</b> (saltando una directory), e
+<b>src/ui/components/main.js</b> (saltando due directory).
+</p><p>Le classi di caratteri che usano le parentesi quadre <b>[]</b> corrispondono a un singolo carattere da un
 set o intervallo specificato. Come gli altri pattern a carattere singolo, esse
 non corrispondono ai separatori di directory. Le classi supportano intervalli e la negazione usando
 un punto esclamativo.
-</p><p>La distinzione fondamentale da ricordare è che `*`, `?` e le classi di caratteri
+</p><p>La distinzione fondamentale da ricordare è che <b>*</b>, <b>?</b> e le classi di caratteri
 rispettano tutti i confini delle directory e corrispondono solo all'interno di un singolo
-componente del percorso, mentre `**` è l'unico pattern che può corrispondere attraverso
+componente del percorso, mentre <b>**</b> è l'unico pattern che può corrispondere attraverso
 i separatori di directory.
 </p><p>Esistono quattro diversi tipi di pattern:
 </p><div class="manual-option-list">
@@ -1902,43 +1902,43 @@ in avanti /. Le directory di sistema di Windows, le junction, i punti
 di montaggio e altre directory speciali di Windows sono trattati come
 file, il che significa che per escluderli, è necessario utilizzare una
 regola di file, non una di directory.
-</p><p>Se il nome del file contiene un carattere '*', '?', '[' o ']',
+</p><p>Se il nome del file contiene un carattere <b>*</b>, <b>?</b>, <b>[</b> o <b>]</b>,
 è necessario eseguirne l'escape per evitare che venga interpretato
-come un carattere di globbing. In Unix, il carattere di escape è '\';
-in Windows, è '^'.
+come un carattere di globbing. In Unix, il carattere di escape è <b>\</b>;
+in Windows, è <b>^</b>.
 Quando il pattern è sulla riga di comando, è necessario raddoppiare
 il carattere di escape per evitare che venga interpretato dalla shell
 dei comandi.
 </p><p>Nel file di configurazione, è possibile utilizzare diverse strategie
 per filtrare i file da elaborare.
-L'approccio più semplice è utilizzare solo regole `exclude` per
+L'approccio più semplice è utilizzare solo regole <b>exclude</b> per
 rimuovere tutti i file e le directory che non si desidera elaborare.
 Ad esempio:
 </p><pre>
-# Esclude qualsiasi file denominato `*.unrecoverable`
+# Esclude qualsiasi file denominato <b>*.unrecoverable</b>
 exclude *.unrecoverable
-# Esclude la directory radice `/lost+found`
+# Esclude la directory radice <b>/lost+found</b>
 exclude /lost+found/
-# Esclude qualsiasi sottodirectory denominata `tmp`
+# Esclude qualsiasi sottodirectory denominata <b>tmp</b>
 exclude tmp/
 </pre>
 <p>L'approccio opposto è definire solo i file che si desidera elaborare,
-utilizzando solo regole `include`. Ad esempio:
+utilizzando solo regole <b>include</b>. Ad esempio:
 </p><pre>
 # Include solo alcune directory
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>L'approccio finale è mescolare regole `exclude` e `include`. In questo
+<p>L'approccio finale è mescolare regole <b>exclude</b> e <b>include</b>. In questo
 caso, l'ordine delle regole è importante. Le regole precedenti hanno
 la precedenza su quelle successive.
-Per semplificare, è possibile elencare prima tutte le regole `exclude`
-e poi tutte le regole `include`. Ad esempio:
+Per semplificare, è possibile elencare prima tutte le regole <b>exclude</b>
+e poi tutte le regole <b>include</b>. Ad esempio:
 </p><pre>
-# Esclude qualsiasi file denominato `*.unrecoverable`
+# Esclude qualsiasi file denominato <b>*.unrecoverable</b>
 exclude *.unrecoverable
-# Esclude qualsiasi sottodirectory denominata `tmp`
+# Esclude qualsiasi sottodirectory denominata <b>tmp</b>
 exclude tmp/
 # Include solo alcune directory
 include /movies/
@@ -1946,7 +1946,7 @@ include /musics/
 include /pictures/
 </pre>
 <p>Sulla riga di comando, utilizzando l'opzione -f, è possibile utilizzare
-solo pattern `include`. Ad esempio:
+solo pattern <b>include</b>. Ad esempio:
 </p><pre>
 # Controlla solo i file .mp3.
 # In Unix, utilizzare le virgolette per evitare l'espansione
@@ -1961,14 +1961,14 @@ comando, è necessario citarli per impedire alla shell di espanderli.
 Ignore File
 </h1>
 <p>In aggiunta alle regole globali nel file di configurazione, è possibile
-inserire file `.snapraidignore` in qualsiasi directory all'interno dell'array
+inserire file <b>.snapraidignore</b> in qualsiasi directory all'interno dell'array
 per definire regole di esclusione decentralizzate.
-</p><p>Le regole definite in `.snapraidignore` vengono applicate dopo le regole nel
+</p><p>Le regole definite in <b>.snapraidignore</b> vengono applicate dopo le regole nel
 file di configurazione. Ciò significa che hanno una priorità più alta e possono
 essere utilizzate per escludere file che erano stati precedentemente inclusi dalla
 configurazione globale. In pratica, se una regola locale corrisponde, il file viene
 escluso indipendentemente dalle impostazioni di inclusione globali.
-</p><p>La logica dei pattern in `.snapraidignore` rispecchia la configurazione globale
+</p><p>La logica dei pattern in <b>.snapraidignore</b> rispecchia la configurazione globale
 ma ancora i pattern alla directory in cui si trova il file:
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1996,7 +1996,7 @@ che risieda in questa directory o sotto di essa.
 /PATH/FILE
 </div><div class="manual-option-description">
 Seleziona l'esatto file specificato relativo alla posizione
-del file `.snapraidignore`.
+del file <b>.snapraidignore</b>.
 </div>
 </div>
 </div>
@@ -2006,17 +2006,17 @@ del file `.snapraidignore`.
 /PATH/DIR/
 </div><div class="manual-option-description">
 Seleziona l'esatta directory specificata e tutto ciò che contiene,
-relativa alla posizione del file `.snapraidignore`.
+relativa alla posizione del file <b>.snapraidignore</b>.
 </div>
 </div>
 </div>
-<p>A differenza della configurazione globale, i file `.snapraidignore` supportano
-solo regole di esclusione; non è possibile utilizzare pattern `include` o negazioni (!).
-</p><p>Ad esempio, se hai un `.snapraidignore` in `/mnt/disk1/projects/`:
+<p>A differenza della configurazione globale, i file <b>.snapraidignore</b> supportano
+solo regole di esclusione; non è possibile utilizzare pattern <b>include</b> o negazioni (!).
+</p><p>Ad esempio, se hai un <b>.snapraidignore</b> in <b>/mnt/disk1/projects/</b>:
 </p><pre>
 # Esclude SOLO /mnt/disk1/projects/output.bin
 /output.bin
-# Esclude qualsiasi directory chiamata 'build' all'interno di projects/
+# Esclude qualsiasi directory chiamata <b>build</b> all'interno di projects/
 build/
 # Esclude qualsiasi file .tmp all'interno di projects/ o delle sue sottocartelle
 *.tmp
@@ -2029,8 +2029,8 @@ Content
 <p>SnapRAID memorizza l'elenco e i checksum dei file nel file di contenuto.
 </p><p>È un file binario che elenca tutti i file presenti nell'array di dischi,
 insieme a tutti i checksum per verificarne l'integrità.
-</p><p>Questo file viene letto e scritto dai comandi `sync` e `scrub` e
-letto dai comandi `fix`, `check` e `status`.
+</p><p>Questo file viene letto e scritto dai comandi <b>sync</b> e <b>scrub</b> e
+letto dai comandi <b>fix</b>, <b>check</b> e <b>status</b>.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec11" class="manual-title-level-1">
@@ -2039,9 +2039,9 @@ Parity
 <p>SnapRAID memorizza le informazioni di parità dell'array nei file di
 parità.
 </p><p>Questi sono file binari contenenti la parità calcolata di tutti i
-blocchi definiti nel file `content`.
-</p><p>Questi file vengono letti e scritti dai comandi `sync` e `fix` e
-solo letti dai comandi `scrub` e `check`.
+blocchi definiti nel file <b>content</b>.
+</p><p>Questi file vengono letti e scritti dai comandi <b>sync</b> e <b>fix</b> e
+solo letti dai comandi <b>scrub</b> e <b>check</b>.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec12" class="manual-title-level-1">
@@ -2052,8 +2052,8 @@ nomi dei file con la stessa codifica utilizzata dal file system.
 </p><p>In Windows, tutti i nomi letti dal file system vengono convertiti e
 elaborati in formato UTF-8.
 </p><p>Per avere i nomi dei file stampati correttamente, è necessario impostare
-la console di Windows in modalità UTF-8 con il comando `chcp 65001` e
-utilizzare un carattere TrueType come `Lucida Console` come carattere
+la console di Windows in modalità UTF-8 con il comando <b>chcp 65001</b> e
+utilizzare un carattere TrueType come <b>Lucida Console</b> come carattere
 della console.
 Questo influisce solo sui nomi dei file stampati; se si
 reindirizza l'output della console a un file, il file risultante è

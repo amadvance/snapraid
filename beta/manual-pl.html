@@ -227,7 +227,7 @@ Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
 Getting Started
 </h1>
 <p>Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
-dysków, który zostanie przeznaczony na informacje o `parzystości`. Z jednym dyskiem
+dysków, który zostanie przeznaczony na informacje o <b>parzystości</b>. Z jednym dyskiem
 na parzystość będziesz w stanie odzyskać dane po awarii pojedynczego dysku,
 podobnie jak w RAID5.
 </p><p>Jeśli chcesz odzyskać dane po większej liczbie awarii dysków, podobnie jak
@@ -236,18 +236,18 @@ dysk parzystości umożliwia odzyskanie danych po jeszcze jednej awarii dysku.
 </p><p>Jako dyski parzystości musisz wybrać największe dyski w macierzy,
 ponieważ informacje o parzystości mogą urosnąć do rozmiaru największego
 dysku danych w macierzy.
-</p><p>Dyski te będą przeznaczone do przechowywania plików `parzystości`.
+</p><p>Dyski te będą przeznaczone do przechowywania plików <b>parzystości</b>.
 Nie powinieneś na nich przechowywać swoich danych.
-</p><p>Następnie musisz zdefiniować dyski `danych`, które chcesz chronić
+</p><p>Następnie musisz zdefiniować dyski <b>danych</b>, które chcesz chronić
 za pomocą SnapRAID. Ochrona jest bardziej skuteczna, jeśli te dyski
 zawierają dane, które rzadko się zmieniają. Z tego powodu lepiej jest
 NIE włączać dysku C:\ w systemie Windows ani katalogów /home, /var i /tmp
 w systemie Unix.
-</p><p>Lista plików jest zapisywana w plikach `zawartości`, zwykle
+</p><p>Lista plików jest zapisywana w plikach <b>zawartości</b>, zwykle
 przechowywanych na dyskach danych, parzystości lub rozruchowych.
 Plik ten zawiera szczegóły Twojej kopii zapasowej, w tym wszystkie
 sumy kontrolne w celu weryfikacji jej integralności.
-Plik `zawartości` jest przechowywany w wielu kopiach, a każda kopia musi
+Plik <b>zawartości</b> jest przechowywany w wielu kopiach, a każda kopia musi
 znajdować się na innym dysku, aby zapewnić, że nawet w przypadku wielu
 awarii dysków, przynajmniej jedna kopia jest dostępna.
 </p><p>Na przykład, załóżmy, że interesuje Cię tylko jeden poziom parzystości
@@ -285,7 +285,7 @@ dyski bezpośrednio w podfolderach. Zobacz:
 </p><pre>
 <a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
-<p>W tym momencie jesteś gotowy do uruchomienia polecenia `sync`, aby zbudować
+<p>W tym momencie jesteś gotowy do uruchomienia polecenia <b>sync</b>, aby zbudować
 informacje o parzystości.
 </p><pre>
 snapraid sync
@@ -297,18 +297,18 @@ proces jest natychmiastowy.
 uruchomieniu wznowi się w miejscu, w którym został przerwany.
 </p><p>Kiedy to polecenie się zakończy, Twoje dane są BEZPIECZNE.
 </p><p>Teraz możesz zacząć używać swojej macierzy, jak chcesz, i okresowo
-aktualizować informacje o parzystości, uruchamiając polecenie `sync`.
+aktualizować informacje o parzystości, uruchamiając polecenie <b>sync</b>.
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
 Scrubbing
 </h2>
 <p>Aby okresowo sprawdzać dane i parzystość pod kątem błędów, możesz
-uruchomić polecenie `scrub`.
+uruchomić polecenie <b>scrub</b>.
 </p><pre>
 snapraid scrub
 </pre>
 <p>To polecenie porównuje dane w Twojej macierzy z haszem obliczonym
-podczas polecenia `sync`, aby zweryfikować integralność.
+podczas polecenia <b>sync</b>, aby zweryfikować integralność.
 </p><p>Każde uruchomienie polecenia sprawdza około 8% macierzy, z wyłączeniem danych
 już sprawdzonych w ciągu poprzednich 10 dni.
 Możesz użyć opcji -p, --plan, aby określić inną ilość,
@@ -318,25 +318,25 @@ Na przykład, aby sprawdzić 5% macierzy dla bloków starszych niż 20 dni, uży
 snapraid -p 5 -o 20 scrub
 </pre>
 <p>Jeśli podczas procesu zostaną znalezione ciche błędy lub błędy wejścia/wyjścia,
-odpowiednie bloki zostaną oznaczone jako złe w pliku `content`
-i wymienione w poleceniu `status`.
+odpowiednie bloki zostaną oznaczone jako złe w pliku <b>content</b>
+i wymienione w poleceniu <b>status</b>.
 </p><pre>
 snapraid status
 </pre>
-<p>Aby je naprawić, możesz użyć polecenia `fix`, filtrując złe bloki
+<p>Aby je naprawić, możesz użyć polecenia <b>fix</b>, filtrując złe bloki
 za pomocą opcji -e, --filter-error:
 </p><pre>
 snapraid -e fix
 </pre>
-<p>Przy następnym `scrub`, błędy znikną z raportu `status`,
+<p>Przy następnym <b>scrub</b>, błędy znikną z raportu <b>status</b>,
 jeśli zostały faktycznie naprawione. Aby przyspieszyć, możesz użyć -p bad, aby
 sprawdzić tylko bloki oznaczone jako złe.
 </p><pre>
 snapraid -p bad scrub
 </pre>
-<p>Uruchomienie `scrub` na niezsynchronizowanej macierzy może zgłosić błędy
+<p>Uruchomienie <b>scrub</b> na niezsynchronizowanej macierzy może zgłosić błędy
 spowodowane usuniętymi lub zmodyfikowanymi plikami. Błędy te są zgłaszane
-w wyniku `scrub`, ale powiązane bloki nie są oznaczane jako złe.
+w wyniku <b>scrub</b>, ale powiązane bloki nie są oznaczane jako złe.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec4-2" class="manual-title-level-2">
@@ -351,9 +351,9 @@ na dowiązaniach symbolicznych. Dobrze integruje się z SnapRAID w celu ochrony
 parzystości i jest powszechnie używane w konfiguracjach takich jak
 OpenMediaVault (OMV) lub niestandardowe konfiguracje NAS.
 </p><p>Aby wszystkie pliki w Twojej macierzy były widoczne w tym samym drzewie katalogów,
-możesz włączyć funkcję `pooling`. Tworzy ona wirtualny, tylko do odczytu,
+możesz włączyć funkcję <b>pooling</b>. Tworzy ona wirtualny, tylko do odczytu,
 widok wszystkich plików w Twojej macierzy za pomocą dowiązań symbolicznych.
-</p><p>Katalog `pooling` możesz skonfigurować w pliku konfiguracyjnym za pomocą:
+</p><p>Katalog <b>pooling</b> możesz skonfigurować w pliku konfiguracyjnym za pomocą:
 </p><pre>
 pool /pool
 </pre>
@@ -361,7 +361,7 @@ pool /pool
 </p><pre>
 pool C:\pool
 </pre>
-<p>a następnie uruchom polecenie `pool`, aby utworzyć lub zaktualizować wirtualny widok.
+<p>a następnie uruchom polecenie <b>pool</b>, aby utworzyć lub zaktualizować wirtualny widok.
 </p><pre>
 snapraid pool
 </pre>
@@ -386,9 +386,9 @@ follow symlinks = yes
 zdalnego ich rozwiązywania. Aby to umożliwić, oprócz udostępnienia katalogu puli,
 musisz również udostępnić wszystkie dyski niezależnie, używając nazw dysków
 zdefiniowanych w pliku konfiguracyjnym jako punkty udostępniania. Musisz również
-określić w opcji `share` w pliku konfiguracyjnym ścieżkę UNC Windows,
+określić w opcji <b>share</b> w pliku konfiguracyjnym ścieżkę UNC Windows,
 której klienci zdalni muszą użyć, aby uzyskać dostęp do tych udostępnionych dysków.
-</p><p>Na przykład, działając z serwera o nazwie `darkstar`, możesz użyć
+</p><p>Na przykład, działając z serwera o nazwie <b>darkstar</b>, możesz użyć
 opcji:
 </p><pre>
 data d1 F:\array\
@@ -452,10 +452,10 @@ KROK 1 -&gt; Ponowna konfiguracja
 </h3>
 <p>Potrzebujesz trochę miejsca do odzyskania, najlepiej na dodatkowych
 zapasowych dyskach, ale wystarczy zewnętrzny dysk USB lub dysk zdalny.
-</p><p>Zmodyfikuj plik konfiguracyjny SnapRAID, aby opcja `data` lub `parity`
+</p><p>Zmodyfikuj plik konfiguracyjny SnapRAID, aby opcja <b>data</b> lub <b>parity</b>
 uszkodzonego dysku wskazywała na lokalizację z wystarczającą ilością pustego
 miejsca do odzyskania plików.
-</p><p>Na przykład, jeśli dysk `d1` uległ awarii, zmień z:
+</p><p>Na przykład, jeśli dysk <b>d1</b> uległ awarii, zmień z:
 </p><pre>
 data d1 /mnt/disk1/
 </pre>
@@ -464,7 +464,7 @@ data d1 /mnt/disk1/
 data d1 /mnt/new_spare_disk/
 </pre>
 <p>Jeśli dysk do odzyskania jest dyskiem parzystości, zaktualizuj odpowiednią
-opcję `parity`.
+opcję <b>parity</b>.
 Jeśli masz wiele uszkodzonych dysków, zaktualizuj wszystkie ich opcje konfiguracyjne.
 </p></div>
 <div class="manual-section-level-3">
@@ -475,8 +475,8 @@ KROK 2 -&gt; Naprawa
 </p><pre>
 snapraid -d NAME -l fix.log fix
 </pre>
-<p>Gdzie NAME to nazwa dysku, taka jak `d1` w naszym poprzednim przykładzie.
-Jeśli dysk do odzyskania jest dyskiem parzystości, użyj nazw `parity`, `2-parity`,
+<p>Gdzie NAME to nazwa dysku, taka jak <b>d1</b> w naszym poprzednim przykładzie.
+Jeśli dysk do odzyskania jest dyskiem parzystości, użyj nazw <b>parity</b>, <b>2-parity</b>,
 itp.
 Jeśli masz wiele uszkodzonych dysków, użyj wielu opcji -d, aby określić
 wszystkie z nich.
@@ -485,29 +485,29 @@ wszystkie z nich.
 Uruchom je z dysku z wystarczającą ilością wolnego miejsca.
 </p><p>Teraz odzyskałeś wszystko, co jest możliwe do odzyskania. Jeśli niektóre pliki
 są częściowo lub całkowicie nie do odzyskania, zostaną one przemianowane
-poprzez dodanie rozszerzenia `.unrecoverable`.
+poprzez dodanie rozszerzenia <b>.unrecoverable</b>.
 </p><p>Szczegółową listę wszystkich nie do odzyskania bloków znajdziesz w pliku fix.log,
-sprawdzając wszystkie linie zaczynające się od `unrecoverable:`.
+sprawdzając wszystkie linie zaczynające się od <b>unrecoverable:</b>.
 </p><p>Jeśli nie jesteś zadowolony z odzyskiwania, możesz spróbować ponownie
 tyle razy, ile chcesz.
 </p><p>Na przykład, jeśli usunąłeś pliki z macierzy po ostatniej
-`sync`, może to spowodować, że niektóre pliki nie zostaną odzyskane.
-W tym przypadku możesz ponowić próbę `fix` za pomocą opcji -i, --import,
+<b>sync</b>, może to spowodować, że niektóre pliki nie zostaną odzyskane.
+W tym przypadku możesz ponowić próbę <b>fix</b> za pomocą opcji -i, --import,
 określając, gdzie te pliki znajdują się teraz, aby włączyć je ponownie
 do procesu odzyskiwania.
 </p><p>Jeśli jesteś zadowolony z odzyskiwania, możesz kontynuować,
-ale pamiętaj, że po synchronizacji nie możesz już ponowić próby polecenia `fix`!
+ale pamiętaj, że po synchronizacji nie możesz już ponowić próby polecenia <b>fix</b>!
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-4-3" class="manual-title-level-3">
 KROK 3 -&gt; Sprawdzenie
 </h3>
-<p>Jako ostrożne sprawdzenie, możesz teraz uruchomić polecenie `check`, aby upewnić się, że
+<p>Jako ostrożne sprawdzenie, możesz teraz uruchomić polecenie <b>check</b>, aby upewnić się, że
 wszystko jest poprawne na odzyskanym dysku.
 </p><pre>
 snapraid -d NAME -a check
 </pre>
-<p>Gdzie NAME to nazwa dysku, taka jak `d1` w naszym poprzednim przykładzie.
+<p>Gdzie NAME to nazwa dysku, taka jak <b>d1</b> w naszym poprzednim przykładzie.
 </p><p>Opcje -d i -a mówią SnapRAID, aby sprawdził tylko określony dysk
 i zignorował wszystkie dane parzystości.
 </p><p>To polecenie zajmie dużo czasu, ale jeśli nie jesteś zbyt ostrożny,
@@ -517,7 +517,7 @@ możesz je pominąć.
 <h3 id="sec4-4-4" class="manual-title-level-3">
 KROK 4 -&gt; Synchronizacja
 </h3>
-<p>Uruchom polecenie `sync`, aby ponownie zsynchronizować macierz z nowym dyskiem.
+<p>Uruchom polecenie <b>sync</b>, aby ponownie zsynchronizować macierz z nowym dyskiem.
 </p><pre>
 snapraid sync
 </pre>
@@ -532,19 +532,19 @@ Commands
 <p>SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 </p><ul>
 <li>
-Wyświetlenie statusu macierzy -&gt; `status`
+Wyświetlenie statusu macierzy -&gt; <b>status</b>
 </li>
 <li>
-Kontrolę dysków -&gt; `smart`, `probe`, `up`, `down`
+Kontrolę dysków -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Wykonanie kopii zapasowej/migawki -&gt; `sync`
+Wykonanie kopii zapasowej/migawki -&gt; <b>sync</b>
 </li>
 <li>
-Okresowe sprawdzanie danych -&gt; `scrub`
+Okresowe sprawdzanie danych -&gt; <b>scrub</b>
 </li>
 <li>
-Przywrócenie ostatniej kopii zapasowej/migawki -&gt; `fix`.
+Przywrócenie ostatniej kopii zapasowej/migawki -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>Polecenia muszą być zapisane małymi literami.
@@ -557,12 +557,12 @@ status
 są bloki bez sprawdzenia i wszystkie zarejestrowane ciche
 błędy napotkane podczas scrubbingu.
 </p><p>Prezentowane informacje odnoszą się do ostatniego momentu, w którym
-uruchomiłeś `sync`. Późniejsze modyfikacje nie są brane pod uwagę.
+uruchomiłeś <b>sync</b>. Późniejsze modyfikacje nie są brane pod uwagę.
 </p><p>Jeśli wykryto złe bloki, ich numery bloków są wymienione.
-Aby je naprawić, możesz użyć polecenia `fix -e`.
+Aby je naprawić, możesz użyć polecenia <b>fix -e</b>.
 </p><p>Pokazuje również wykres reprezentujący ostatni raz, kiedy każdy blok
 został sprawdzony lub zsynchronizowany. Sprawdzone bloki są pokazane
-za pomocą '*', bloki zsynchronizowane, ale jeszcze niesprawdzone, za pomocą 'o'.
+za pomocą <b>*</b>, bloki zsynchronizowane, ale jeszcze niesprawdzone, za pomocą <b>o</b>.
 </p><p>Nic nie jest modyfikowane.
 </p></div>
 <div class="manual-section-level-2">
@@ -579,7 +579,7 @@ dysków z danymi Backblaze dostępnymi pod adresem:
 <a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>Jeśli SMART zgłosi, że dysk ulega awarii, dla tego dysku
-wyświetlane jest `FAIL` lub `PREFAIL`, a SnapRAID zwraca błąd.
+wyświetlane jest <b>FAIL</b> lub <b>PREFAIL</b>, a SnapRAID zwraca błąd.
 W takim przypadku natychmiastowa wymiana dysku jest wysoce zalecana.
 </p><p>Inne możliwe ciągi statusu to:
 </p><div class="manual-tag-list">
@@ -609,10 +609,10 @@ Dziennik autotestu urządzenia zawiera błędy.
 <p>Jeśli określono opcję -v, --verbose, dostarczana jest głębsza analiza
 statystyczna. Ta analiza może pomóc Ci zdecydować, czy potrzebujesz
 więcej czy mniej parzystości.
-</p><p>To polecenie używa narzędzia `smartctl` i jest równoważne
-uruchomieniu `smartctl -a` na wszystkich urządzeniach.
+</p><p>To polecenie używa narzędzia <b>smartctl</b> i jest równoważne
+uruchomieniu <b>smartctl -a</b> na wszystkich urządzeniach.
 </p><p>Jeśli Twoje urządzenia nie zostaną poprawnie wykryte automatycznie, możesz określić
-niestandardowe polecenie za pomocą opcji `smartctl` w pliku konfiguracyjnym.
+niestandardowe polecenie za pomocą opcji <b>smartctl</b> w pliku konfiguracyjnym.
 </p><p>Nic nie jest modyfikowane.
 </p></div>
 <div class="manual-section-level-2">
@@ -620,12 +620,12 @@ niestandardowe polecenie za pomocą opcji `smartctl` w pliku konfiguracyjnym.
 probe
 </h2>
 <p>Wyświetla stan ZASILANIA wszystkich dysków w systemie.
-</p><p>`Standby` oznacza, że dysk się nie kręci. `Active` oznacza,
+</p><p><b>Standby</b> oznacza, że dysk się nie kręci. <b>Active</b> oznacza,
 że dysk się kręci.
-</p><p>To polecenie używa narzędzia `smartctl` i jest równoważne
-uruchomieniu `smartctl -n standby -i` na wszystkich urządzeniach.
+</p><p>To polecenie używa narzędzia <b>smartctl</b> i jest równoważne
+uruchomieniu <b>smartctl -n standby -i</b> na wszystkich urządzeniach.
 </p><p>Jeśli Twoje urządzenia nie zostaną poprawnie wykryte automatycznie, możesz określić
-niestandardowe polecenie za pomocą opcji `smartctl` w pliku konfiguracyjnym.
+niestandardowe polecenie za pomocą opcji <b>smartctl</b> w pliku konfiguracyjnym.
 </p><p>Nic nie jest modyfikowane.
 </p></div>
 <div class="manual-section-level-2">
@@ -643,19 +643,19 @@ Upewnij się, że Twój zasilacz jest w stanie to wytrzymać.
 down
 </h2>
 <p>Zatrzymuje wszystkie dyski macierzy.
-</p><p>To polecenie używa narzędzia `smartctl` i jest równoważne
-uruchomieniu `smartctl -s standby,now` na wszystkich urządzeniach.
+</p><p>To polecenie używa narzędzia <b>smartctl</b> i jest równoważne
+uruchomieniu <b>smartctl -s standby,now</b> na wszystkich urządzeniach.
 </p><p>Możesz zatrzymać tylko określone dyski za pomocą opcji -d, --filter-disk.
 </p><p>Aby automatycznie zatrzymać dyski w przypadku błędu, możesz użyć
 opcji -s, --spin-down-on-error z dowolnym innym poleceniem, co jest
-równoważne ręcznemu uruchomieniu `down`, gdy wystąpi błąd.
+równoważne ręcznemu uruchomieniu <b>down</b>, gdy wystąpi błąd.
 </p><p>Nic nie jest modyfikowane.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec5-6" class="manual-title-level-2">
 diff
 </h2>
-<p>Wyświetla listę wszystkich plików zmodyfikowanych od ostatniej `sync`, które
+<p>Wyświetla listę wszystkich plików zmodyfikowanych od ostatniej <b>sync</b>, które
 wymagają ponownego obliczenia danych parzystości.
 </p><p>To polecenie nie sprawdza danych pliku, a jedynie znacznik czasu pliku,
 rozmiar i inode.
@@ -706,7 +706,7 @@ copied
 </div><div class="manual-tag-description">
 Pliki skopiowane na tym samym lub innym dysku. Zauważ, że jeśli
 zostały faktycznie przeniesione na inny dysk, zostaną również
-policzone w `removed`.
+policzone w <b>removed</b>.
 Są one identyfikowane przez tę samą nazwę, rozmiar i
 znacznik czasu. Jeśli znacznik czasu z dokładnością do podsekundy wynosi zero,
 musi pasować pełna ścieżka, a nie tylko nazwa.
@@ -721,7 +721,7 @@ Są to zazwyczaj pliki przywrócone po usunięciu.
 </div>
 </div>
 </div>
-<p>Jeśli wymagana jest `sync`, kod powrotu procesu wynosi 2, zamiast
+<p>Jeśli wymagana jest <b>sync</b>, kod powrotu procesu wynosi 2, zamiast
 domyślnego 0. Kod powrotu 1 jest używany dla ogólnego stanu błędu.
 </p><p>Nic nie jest modyfikowane.
 </p></div>
@@ -734,7 +734,7 @@ w macierzy dysków są odczytywane, a odpowiednie dane parzystości
 są aktualizowane.
 </p><p>Możesz zatrzymać ten proces w dowolnym momencie, naciskając Ctrl+C,
 bez utraty już wykonanej pracy.
-Przy następnym uruchomieniu proces `sync` wznowi się w miejscu, w którym
+Przy następnym uruchomieniu proces <b>sync</b> wznowi się w miejscu, w którym
 został przerwany.
 </p><p>Jeśli podczas procesu zostaną znalezione ciche błędy lub błędy wejścia/wyjścia,
 odpowiednie bloki zostaną oznaczone jako złe.
@@ -746,7 +746,7 @@ Jeśli plik zostanie przeniesiony lub zmieniony na tym samym dysku, zachowując 
 parzystość nie jest ponownie obliczana.
 Jeśli plik zostanie przeniesiony na inny dysk, parzystość jest ponownie obliczana,
 ale wcześniej obliczone informacje o haszu są zachowywane.
-</p><p>Pliki `content` i `parity` są modyfikowane w razie potrzeby.
+</p><p>Pliki <b>content</b> i <b>parity</b> są modyfikowane w razie potrzeby.
 Pliki w macierzy NIE są modyfikowane.
 </p></div>
 <div class="manual-section-level-2">
@@ -769,21 +769,21 @@ full - Sprawdza wszystko.
 aby zdefiniować, jak stary powinien być blok.
 Najpierw sprawdzane są najstarsze bloki, co zapewnia optymalne sprawdzenie.
 Jeśli chcesz sprawdzić tylko bloki właśnie zsynchronizowane, jeszcze niesprawdzone,
-użyj opcji `-p new`.
-</p><p>Aby uzyskać szczegóły statusu sprawdzania, użyj polecenia `status`.
+użyj opcji <b>-p new</b>.
+</p><p>Aby uzyskać szczegóły statusu sprawdzania, użyj polecenia <b>status</b>.
 </p><p>Dla każdego znalezionego cichego błędu lub błędu wejścia/wyjścia, odpowiednie bloki
-są oznaczane jako złe w pliku `content`.
-Te złe bloki są wymienione w `status` i mogą zostać naprawione za pomocą `fix -e`.
+są oznaczane jako złe w pliku <b>content</b>.
+Te złe bloki są wymienione w <b>status</b> i mogą zostać naprawione za pomocą <b>fix -e</b>.
 Po naprawie, przy następnym sprawdzeniu, zostaną one ponownie sprawdzone, a jeśli okaże się,
 że zostały poprawione, oznaczenie złego zostanie usunięte.
-Aby sprawdzić tylko złe bloki, możesz użyć polecenia `scrub -p bad`.
-</p><p>Zaleca się uruchamianie `scrub` tylko na zsynchronizowanej macierzy, aby uniknąć
+Aby sprawdzić tylko złe bloki, możesz użyć polecenia <b>scrub -p bad</b>.
+</p><p>Zaleca się uruchamianie <b>scrub</b> tylko na zsynchronizowanej macierzy, aby uniknąć
 zgłaszania błędów spowodowanych przez niezsynchronizowane dane. Błędy te są rozpoznawane
 jako nie będące cichymi błędami, a bloki nie są oznaczane jako złe,
 ale takie błędy są zgłaszane w wyniku polecenia.
-</p><p>Plik `content` jest modyfikowany w celu zaktualizowania czasu ostatniego sprawdzenia
+</p><p>Plik <b>content</b> jest modyfikowany w celu zaktualizowania czasu ostatniego sprawdzenia
 dla każdego bloku i oznaczenia złych bloków.
-Pliki `parity` NIE są modyfikowane.
+Pliki <b>parity</b> NIE są modyfikowane.
 Pliki w macierzy NIE są modyfikowane.
 </p></div>
 <div class="manual-section-level-2">
@@ -792,28 +792,28 @@ fix
 </h2>
 <p>Naprawia wszystkie pliki i dane parzystości.
 </p><p>Wszystkie pliki i dane parzystości są porównywane ze stanem migawki
-zapisanym w ostatniej `sync`.
+zapisanym w ostatniej <b>sync</b>.
 Jeśli zostanie znaleziona różnica, jest ona przywracana do zapisanego stanu migawki.
-</p><p>OSTRZEŻENIE! Polecenie `fix` nie rozróżnia błędów od
+</p><p>OSTRZEŻENIE! Polecenie <b>fix</b> nie rozróżnia błędów od
 celowych modyfikacji. Bezwarunkowo przywraca stan pliku
-do ostatniej `sync`.
+do ostatniej <b>sync</b>.
 </p><p>Jeśli nie określono żadnej innej opcji, przetwarzana jest cała macierz.
 Użyj opcji filtra, aby wybrać podzbiór plików lub dysków do operacji.
-</p><p>Aby naprawić tylko bloki oznaczone jako złe podczas `sync` i `scrub`,
+</p><p>Aby naprawić tylko bloki oznaczone jako złe podczas <b>sync</b> i <b>scrub</b>,
 użyj opcji -e, --filter-error.
 W przeciwieństwie do innych opcji filtra, ta stosuje poprawki tylko do plików, które są
-niezmienione od ostatniej `sync`.
+niezmienione od ostatniej <b>sync</b>.
 </p><p>SnapRAID zmienia nazwy wszystkich plików, których nie można naprawić, dodając
-rozszerzenie `.unrecoverable`.
+rozszerzenie <b>.unrecoverable</b>.
 </p><p>Przed naprawą, cała macierz jest skanowana w celu znalezienia wszelkich plików przeniesionych
-od ostatniej operacji `sync`.
+od ostatniej operacji <b>sync</b>.
 Pliki te są identyfikowane na podstawie ich znacznika czasu, ignorując ich nazwę
 i katalog, i są używane w procesie odzyskiwania, jeśli to konieczne.
 Jeśli przeniosłeś niektóre z nich poza macierz, możesz użyć opcji -i, --import,
 aby określić dodatkowe katalogi do skanowania.
 </p><p>Pliki są identyfikowane tylko po ścieżce, a nie po inode.
-</p><p>Plik `content` NIE jest modyfikowany.
-Pliki `parity` są modyfikowane w razie potrzeby.
+</p><p>Plik <b>content</b> NIE jest modyfikowany.
+Pliki <b>parity</b> są modyfikowane w razie potrzeby.
 Pliki w macierzy są modyfikowane w razie potrzeby.
 </p></div>
 <div class="manual-section-level-2">
@@ -821,11 +821,11 @@ Pliki w macierzy są modyfikowane w razie potrzeby.
 check
 </h2>
 <p>Weryfikuje wszystkie pliki i dane parzystości.
-</p><p>Działa jak `fix`, ale tylko symuluje odzyskiwanie i żadne zmiany
+</p><p>Działa jak <b>fix</b>, ale tylko symuluje odzyskiwanie i żadne zmiany
 nie są zapisywane w macierzy.
 </p><p>To polecenie jest przeznaczone głównie do ręcznej weryfikacji,
 takiej jak po procesie odzyskiwania lub w innych specjalnych warunkach.
-Do okresowych i zaplanowanych sprawdzeń użyj `scrub`.
+Do okresowych i zaplanowanych sprawdzeń użyj <b>scrub</b>.
 </p><p>Jeśli użyjesz opcji -a, --audit-only, sprawdzane są tylko
 dane pliku, a dane parzystości są ignorowane, co zapewnia
 szybsze działanie.
@@ -837,7 +837,7 @@ szybsze działanie.
 list
 </h2>
 <p>Wyświetla listę wszystkich plików zawartych w macierzy w momencie
-ostatniej `sync`.
+ostatniej <b>sync</b>.
 </p><p>Z -v lub --verbose, wyświetlany jest również czas z dokładnością do podsekundy.
 </p><p>Nic nie jest modyfikowane.
 </p></div>
@@ -855,7 +855,7 @@ wcześniej obliczone hasze.
 pool
 </h2>
 <p>Tworzy lub aktualizuje wirtualny widok wszystkich
-plików w Twojej macierzy dysków w katalogu `pooling`.
+plików w Twojej macierzy dysków w katalogu <b>pooling</b>.
 </p><p>Pliki nie są kopiowane, ale linkowane za pomocą
 dowiązań symbolicznych.
 </p><p>Podczas aktualizacji, wszystkie istniejące dowiązania symboliczne i puste
@@ -906,10 +906,10 @@ MurmurHash3 na szybszy SpookyHash.
 </p><p>Jeśli używasz już optymalnego hasza, to polecenie
 nic nie robi i informuje Cię, że nie jest potrzebne żadne działanie.
 </p><p>Ponowne haszowanie nie jest wykonywane natychmiast, ale odbywa się
-stopniowo podczas `sync` i `scrub`.
-</p><p>Możesz sprawdzić stan ponownego haszowania za pomocą `status`.
+stopniowo podczas <b>sync</b> i <b>scrub</b>.
+</p><p>Możesz sprawdzić stan ponownego haszowania za pomocą <b>status</b>.
 </p><p>Podczas ponownego haszowania SnapRAID zachowuje pełną funkcjonalność,
-z jedynym wyjątkiem, że `dup` nie może wykryć zduplikowanych
+z jedynym wyjątkiem, że <b>dup</b> nie może wykryć zduplikowanych
 plików używających innego hasza.
 </p></div>
 </div>
@@ -924,10 +924,10 @@ Options
 -c, --conf CONFIG
 </div><div class="manual-option-description">
 Wybiera plik konfiguracyjny do użycia. Jeśli nie określono, w systemie Unix
-używa pliku `/usr/local/etc/snapraid.conf`, jeśli istnieje,
-w przeciwnym razie `/etc/snapraid.conf`.
-W systemie Windows używa pliku `snapraid.conf` w tym samym
-katalogu co `snapraid.exe`.
+używa pliku <b>/usr/local/etc/snapraid.conf</b>, jeśli istnieje,
+w przeciwnym razie <b>/etc/snapraid.conf</b>.
+W systemie Windows używa pliku <b>snapraid.conf</b> w tym samym
+katalogu co <b>snapraid.exe</b>.
 </div>
 </div>
 </div>
@@ -936,14 +936,14 @@ katalogu co `snapraid.exe`.
 <div class="manual-option-name">
 -f, --filter PATTERN
 </div><div class="manual-option-description">
-Filtruje pliki do przetworzenia w `check` i `fix`.
+Filtruje pliki do przetworzenia w <b>check</b> i <b>fix</b>.
 Przetwarzane są tylko pliki pasujące do określonego wzorca.
 Ta opcja może być używana wielokrotnie.
 Zobacz sekcję PATTERN, aby uzyskać więcej szczegółów na temat
 specyfikacji wzorców.
 W systemie Unix upewnij się, że znaki globbing są cytowane, jeśli są używane.
-Ta opcja może być używana tylko z `check` i `fix`.
-Nie może być używana z `sync` i `scrub`, ponieważ zawsze
+Ta opcja może być używana tylko z <b>check</b> i <b>fix</b>.
+Nie może być używana z <b>sync</b> i <b>scrub</b>, ponieważ zawsze
 przetwarzają całą macierz.
 </div>
 </div>
@@ -953,15 +953,15 @@ przetwarzają całą macierz.
 <div class="manual-option-name">
 -d, --filter-disk NAME
 </div><div class="manual-option-description">
-Filtruje dyski do przetworzenia w `check`, `fix`, `up` i `down`.
+Filtruje dyski do przetworzenia w <b>check</b>, <b>fix</b>, <b>up</b> i <b>down</b>.
 Musisz określić nazwę dysku zdefiniowaną w pliku konfiguracyjnym.
-Możesz również określić dyski parzystości za pomocą nazw: `parity`, `2-parity`,
-`3-parity`, itp., aby ograniczyć operacje do określonego dysku parzystości.
+Możesz również określić dyski parzystości za pomocą nazw: <b>parity</b>, <b>2-parity</b>,
+<b>3-parity</b>, itp., aby ograniczyć operacje do określonego dysku parzystości.
 Jeśli połączysz wiele opcji --filter, --filter-disk i --filter-missing,
 wybrane zostaną tylko pliki pasujące do wszystkich filtrów.
 Ta opcja może być używana wielokrotnie.
-Ta opcja może być używana tylko z `check`, `fix`, `up` i `down`.
-Nie może być używana z `sync` i `scrub`, ponieważ zawsze
+Ta opcja może być używana tylko z <b>check</b>, <b>fix</b>, <b>up</b> i <b>down</b>.
+Nie może być używana z <b>sync</b> i <b>scrub</b>, ponieważ zawsze
 przetwarzają całą macierz.
 </div>
 </div>
@@ -971,13 +971,13 @@ przetwarzają całą macierz.
 <div class="manual-option-name">
 -m, --filter-missing
 </div><div class="manual-option-description">
-Filtruje pliki do przetworzenia w `check` i `fix`.
+Filtruje pliki do przetworzenia w <b>check</b> i <b>fix</b>.
 Przetwarzane są tylko pliki brakujące lub usunięte z macierzy.
-Użyte z `fix`, działa to jako polecenie `undelete`.
+Użyte z <b>fix</b>, działa to jako polecenie <b>undelete</b>.
 Jeśli połączysz wiele opcji --filter, --filter-disk i --filter-missing,
 wybrane zostaną tylko pliki pasujące do wszystkich filtrów.
-Ta opcja może być używana tylko z `check` i `fix`.
-Nie może być używana z `sync` i `scrub`, ponieważ zawsze
+Ta opcja może być używana tylko z <b>check</b> i <b>fix</b>.
+Nie może być używana z <b>sync</b> i <b>scrub</b>, ponieważ zawsze
 przetwarzają całą macierz.
 </div>
 </div>
@@ -987,10 +987,10 @@ przetwarzają całą macierz.
 <div class="manual-option-name">
 -e, --filter-error
 </div><div class="manual-option-description">
-Przetwarza pliki z błędami w `check` i `fix`.
+Przetwarza pliki z błędami w <b>check</b> i <b>fix</b>.
 Przetwarza tylko pliki, które mają bloki oznaczone cichymi
-błędami lub błędami wejścia/wyjścia podczas `sync` i `scrub`, jak wymieniono w `status`.
-Ta opcja może być używana tylko z `check` i `fix`.
+błędami lub błędami wejścia/wyjścia podczas <b>sync</b> i <b>scrub</b>, jak wymieniono w <b>status</b>.
+Ta opcja może być używana tylko z <b>check</b> i <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1002,9 +1002,9 @@ Ta opcja może być używana tylko z `check` i `fix`.
 Wybiera plan sprawdzania. Jeśli PERC jest wartością numeryczną od 0 do 100,
 jest interpretowany jako procent bloków do sprawdzenia.
 Zamiast wartości procentowej możesz określić plan:
-`bad` sprawdza złe bloki, `new` sprawdza bloki jeszcze niesprawdzone,
-a `full` sprawdza wszystko.
-Ta opcja może być używana tylko z `scrub`.
+<b>bad</b> sprawdza złe bloki, <b>new</b> sprawdza bloki jeszcze niesprawdzone,
+a <b>full</b> sprawdza wszystko.
+Ta opcja może być używana tylko z <b>scrub</b>.
 </div>
 </div>
 </div>
@@ -1013,11 +1013,11 @@ Ta opcja może być używana tylko z `scrub`.
 <div class="manual-option-name">
 -o, --older-than DAYS
 </div><div class="manual-option-description">
-Wybiera najstarszą część macierzy do przetworzenia w `scrub`.
+Wybiera najstarszą część macierzy do przetworzenia w <b>scrub</b>.
 DAYS to minimalny wiek w dniach dla bloku, który ma być sprawdzony;
 domyślnie jest to 10.
 Bloki oznaczone jako złe są zawsze sprawdzane niezależnie od tej opcji.
-Ta opcja może być używana tylko z `scrub`.
+Ta opcja może być używana tylko z <b>scrub</b>.
 </div>
 </div>
 </div>
@@ -1026,11 +1026,11 @@ Ta opcja może być używana tylko z `scrub`.
 <div class="manual-option-name">
 -a, --audit-only
 </div><div class="manual-option-description">
-W `check`, weryfikuje hasz plików bez
+W <b>check</b>, weryfikuje hasz plików bez
 sprawdzania danych parzystości.
 Jeśli interesuje Cię tylko sprawdzenie danych pliku, ta
 opcja może znacznie przyspieszyć proces sprawdzania.
-Ta opcja może być używana tylko z `check`.
+Ta opcja może być używana tylko z <b>check</b>.
 </div>
 </div>
 </div>
@@ -1039,9 +1039,9 @@ Ta opcja może być używana tylko z `check`.
 <div class="manual-option-name">
 -h, --pre-hash
 </div><div class="manual-option-description">
-W `sync`, uruchamia wstępną fazę haszowania wszystkich nowych danych
+W <b>sync</b>, uruchamia wstępną fazę haszowania wszystkich nowych danych
 w celu dodatkowej weryfikacji przed obliczeniem parzystości.
-Zazwyczaj w `sync` nie jest wykonywane wstępne haszowanie, a nowe
+Zazwyczaj w <b>sync</b> nie jest wykonywane wstępne haszowanie, a nowe
 dane są haszowane tuż przed obliczeniem parzystości, gdy są odczytywane
 po raz pierwszy.
 Ten proces zachodzi, gdy system jest pod
@@ -1049,12 +1049,12 @@ dużym obciążeniem, wszystkie dyski się kręcą, a CPU jest zajęte.
 Jest to ekstremalny warunek dla maszyny, a jeśli ma
 ukryty problem sprzętowy, ciche błędy mogą pozostać niewykryte,
 ponieważ dane nie są jeszcze haszowane.
-Aby uniknąć tego ryzyka, możesz włączyć tryb `pre-hash`, aby
+Aby uniknąć tego ryzyka, możesz włączyć tryb <b>pre-hash</b>, aby
 wszystkie dane były odczytywane dwukrotnie w celu zapewnienia ich integralności.
 Ta opcja weryfikuje również pliki przeniesione wewnątrz macierzy,
 aby upewnić się, że operacja przeniesienia zakończyła się pomyślnie, i, jeśli to konieczne,
 umożliwia uruchomienie operacji fix przed kontynuowaniem.
-Ta opcja może być używana tylko z `sync`.
+Ta opcja może być używana tylko z <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1064,12 +1064,12 @@ Ta opcja może być używana tylko z `sync`.
 -i, --import DIR
 </div><div class="manual-option-description">
 Importuje z określonego katalogu wszelkie pliki usunięte
-z macierzy po ostatniej `sync`.
-Jeśli nadal masz takie pliki, mogą być użyte przez `check`
-i `fix`, aby poprawić proces odzyskiwania.
+z macierzy po ostatniej <b>sync</b>.
+Jeśli nadal masz takie pliki, mogą być użyte przez <b>check</b>
+i <b>fix</b>, aby poprawić proces odzyskiwania.
 Pliki są odczytywane, w tym w podkatalogach, i są
 identyfikowane niezależnie od ich nazwy.
-Ta opcja może być używana tylko z `check` i `fix`.
+Ta opcja może być używana tylko z <b>check</b> i <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1134,7 +1134,7 @@ chyba że określisz tę opcję.
 Pozwala to łatwo wykryć, kiedy po awarii systemu
 niektóre dostępne pliki zostały obcięte.
 Jest to możliwy stan w systemie Linux z systemami plików ext3/ext4.
-Ta opcja może być używana tylko z `sync`.
+Ta opcja może być używana tylko z <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1150,7 +1150,7 @@ na dysku lub zostały przepisane, zatrzymuje przetwarzanie,
 chyba że określisz tę opcję.
 Pozwala to łatwo wykryć, kiedy system plików danych nie jest
 zamontowany.
-Ta opcja może być używana tylko z `sync`.
+Ta opcja może być używana tylko z <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1168,8 +1168,8 @@ niewłaściwych punktach montowania.
 Dozwolona jest jednak pojedyncza zmiana UUID z
 pojedynczą parzystością i więcej z wielokrotną parzystością, ponieważ jest to
 normalny przypadek podczas wymiany dysków po odzyskaniu.
-Ta opcja może być używana tylko z `sync`, `check` lub
-`fix`.
+Ta opcja może być używana tylko z <b>sync</b>, <b>check</b> lub
+<b>fix</b>.
 </div>
 </div>
 </div>
@@ -1184,7 +1184,7 @@ Na przykład, jeśli straciłeś dwa dyski danych i masz zapasowy dysk do odzysk
 tylko pierwszego, możesz zignorować drugi niedostępny dysk.
 Lub, jeśli chcesz odzyskać dysk w wolnym miejscu pozostawionym na
 już używanym dysku, współdzielącym to samo urządzenie fizyczne.
-Ta opcja może być używana tylko z `fix`.
+Ta opcja może być używana tylko z <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1193,7 +1193,7 @@ Ta opcja może być używana tylko z `fix`.
 <div class="manual-option-name">
 -N, --force-nocopy
 </div><div class="manual-option-description">
-W `sync`, `check` i `fix`, wyłącza heurystykę wykrywania kopii.
+W <b>sync</b>, <b>check</b> i <b>fix</b>, wyłącza heurystykę wykrywania kopii.
 Bez tej opcji SnapRAID zakłada, że pliki o tych samych
 atrybutach, takich jak nazwa, rozmiar i znacznik czasu, są kopiami z tymi
 samymi danymi.
@@ -1203,7 +1203,7 @@ w celu wykrycia cichych błędów lub odzyskania brakujących plików.
 W niektórych rzadkich przypadkach to zachowanie może prowadzić do fałszywych alarmów
 lub spowolnienia procesu z powodu wielu weryfikacji hasza, a ta
 opcja pozwala rozwiązać takie problemy.
-Ta opcja może być używana tylko z `sync`, `check` i `fix`.
+Ta opcja może być używana tylko z <b>sync</b>, <b>check</b> i <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1212,14 +1212,14 @@ Ta opcja może być używana tylko z `sync`, `check` i `fix`.
 <div class="manual-option-name">
 -F, --force-full
 </div><div class="manual-option-description">
-W `sync`, wymusza pełne ponowne obliczenie parzystości.
+W <b>sync</b>, wymusza pełne ponowne obliczenie parzystości.
 Ta opcja może być używana, gdy dodajesz nowy poziom parzystości lub jeśli
 powróciłeś do starego pliku zawartości, używając nowszych danych parzystości.
 Zamiast ponownego tworzenia parzystości od podstaw, pozwala to
 na ponowne wykorzystanie haszy obecnych w pliku zawartości do walidacji danych
-i utrzymania ochrony danych podczas procesu `sync` za pomocą
+i utrzymania ochrony danych podczas procesu <b>sync</b> za pomocą
 istniejących danych parzystości.
-Ta opcja może być używana tylko z `sync`.
+Ta opcja może być używana tylko z <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1228,14 +1228,14 @@ Ta opcja może być używana tylko z `sync`.
 <div class="manual-option-name">
 -R, --force-realloc
 </div><div class="manual-option-description">
-W `sync`, wymusza pełną realokację plików i przebudowę parzystości.
+W <b>sync</b>, wymusza pełną realokację plików i przebudowę parzystości.
 Ta opcja może być używana do całkowitej realokacji wszystkich plików,
 usuwając fragmentację, jednocześnie ponownie wykorzystując hasze obecne w pliku zawartości
 do walidacji danych.
-Ta opcja może być używana tylko z `sync`.
+Ta opcja może być używana tylko z <b>sync</b>.
 OSTRZEŻENIE! Ta opcja jest tylko dla ekspertów i jest wysoce
 zalecane, aby jej nie używać.
-NIE MASZ ochrony danych podczas operacji `sync`.
+NIE MASZ ochrony danych podczas operacji <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1250,14 +1250,14 @@ na ekranie, potencjalnie prowadząc do nadmiernego wyjścia w przypadku
 wielu błędów. Gdy -l, --log jest określone, tylko
 krytyczne błędy, które powodują zatrzymanie SnapRAID, są drukowane
 na ekranie.
-Jeśli ścieżka zaczyna się od '&gt;&gt;', plik jest otwierany
-w trybie dołączania. Wystąpienia '%D' i '%T' w nazwie są
+Jeśli ścieżka zaczyna się od <b>&gt;&gt;</b>, plik jest otwierany
+w trybie dołączania. Wystąpienia <b>%D</b> i <b>%T</b> w nazwie są
 zastępowane datą i czasem w formacie RRRRMMDD i
 GGMMSS. W plikach wsadowych Windows musisz podwoić
-znak '%', np. result-%%D.log. Aby użyć '&gt;&gt;', musisz
-ujęć nazwę w cudzysłów, np. `"&gt;&gt;result.log"`.
+znak <b>%</b>, np. result-%%D.log. Aby użyć <b>&gt;&gt;</b>, musisz
+ujęć nazwę w cudzysłów, np. <b>"&gt;&gt;result.log"</b>.
 Aby wyprowadzić log do standardowego wyjścia lub standardowego błędu,
-możesz użyć odpowiednio `"&gt;&amp;1"` i `"&gt;&amp;2"`.
+możesz użyć odpowiednio <b>"&gt;&amp;1"</b> i <b>"&gt;&amp;2"</b>.
 Opisy tagów logu znajdziesz w pliku snapraid_log.txt lub na stronie podręcznika.
 </div>
 </div>
@@ -1270,10 +1270,10 @@ Opisy tagów logu znajdziesz w pliku snapraid_log.txt lub na stronie podręcznik
 Ustawia nowy limit błędów przed zatrzymaniem wykonania.
 Domyślnie SnapRAID zatrzymuje się, jeśli napotka więcej niż 100
 błędów wejścia/wyjścia, co wskazuje, że dysk prawdopodobnie ulega awarii.
-Ta opcja dotyczy `sync` i `scrub`, które mogą
+Ta opcja dotyczy <b>sync</b> i <b>scrub</b>, które mogą
 kontynuować po pierwszym zestawie błędów dysku, aby spróbować
 ukończyć swoje operacje.
-Jednak `check` i `fix` zawsze zatrzymują się przy pierwszym błędzie.
+Jednak <b>check</b> i <b>fix</b> zawsze zatrzymują się przy pierwszym błędzie.
 </div>
 </div>
 </div>
@@ -1365,10 +1365,10 @@ Configuration
 </h1>
 <p>SnapRAID wymaga pliku konfiguracyjnego, aby wiedzieć, gdzie znajduje się Twoja macierz
 dysków i gdzie przechowywać informacje o parzystości.
-</p><p>W systemie Unix używa pliku `/usr/local/etc/snapraid.conf`, jeśli istnieje,
-w przeciwnym razie `/etc/snapraid.conf`.
-W systemie Windows używa pliku `snapraid.conf` w tym samym
-katalogu co `snapraid.exe`.
+</p><p>W systemie Unix używa pliku <b>/usr/local/etc/snapraid.conf</b>, jeśli istnieje,
+w przeciwnym razie <b>/etc/snapraid.conf</b>.
+W systemie Windows używa pliku <b>snapraid.conf</b> w tym samym
+katalogu co <b>snapraid.exe</b>.
 </p><p>Musi zawierać następujące opcje (uwzględniające wielkość liter):
 </p><div class="manual-section-level-2">
 <h2 id="sec7-1" class="manual-title-level-2">
@@ -1414,7 +1414,7 @@ poziom ochrony:
 </li>
 </ul>
 <p>Każdy poziom parzystości wymaga obecności wszystkich poprzednich poziomów parzystości.
-</p><p>Obowiązują te same uwagi, co dla opcji 'parity'.
+</p><p>Obowiązują te same uwagi, co dla opcji <b>parity</b>.
 </p><p>Te opcje są opcjonalne i mogą być używane tylko raz.
 </p></div>
 <div class="manual-section-level-2">
@@ -1422,17 +1422,17 @@ poziom ochrony:
 z-parity FILE [,FILE] ...
 </h2>
 <p>Definiuje alternatywny plik i format do przechowywania potrójnej parzystości.
-</p><p>Ta opcja jest alternatywą dla '3-parity', przeznaczoną głównie dla
+</p><p>Ta opcja jest alternatywą dla <b>3-parity</b>, przeznaczoną głównie dla
 procesorów niskiej klasy, takich jak ARM lub AMD Phenom, Athlon i Opteron,
 które nie obsługują zestawu instrukcji SSSE3. W takich przypadkach zapewnia
 lepszą wydajność.
 </p><p>Ten format jest podobny, ale szybszy niż ten używany przez ZFS RAIDZ3.
 Podobnie jak ZFS, nie działa powyżej potrójnej parzystości.
-</p><p>Podczas używania '3-parity' zostaniesz ostrzeżony, jeśli zaleca się użycie
-formatu 'z-parity' w celu poprawy wydajności.
+</p><p>Podczas używania <b>3-parity</b> zostaniesz ostrzeżony, jeśli zaleca się użycie
+formatu <b>z-parity</b> w celu poprawy wydajności.
 </p><p>Możliwa jest konwersja z jednego formatu na inny poprzez dostosowanie
 pliku konfiguracyjnego z pożądanym plikiem z-parity lub 3-parity
-i użycie 'fix' do jego ponownego utworzenia.
+i użycie <b>fix</b> do jego ponownego utworzenia.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-4" class="manual-title-level-2">
@@ -1443,7 +1443,7 @@ plików obecnych w Twojej macierzy dysków.
 </p><p>Może być umieszczony na dysku używanym do danych, parzystości lub
 każdym innym dostępnym dysku.
 Jeśli użyjesz dysku danych, ten plik jest automatycznie wykluczony
-z procesu `sync`.
+z procesu <b>sync</b>.
 </p><p>Ta opcja jest obowiązkowa i może być używana wielokrotnie do zapisania
 wielu kopii tego samego pliku.
 </p><p>Musisz przechowywać co najmniej jedną kopię dla każdego używanego dysku parzystości
@@ -1461,7 +1461,7 @@ systemie plików.
 zachowasz stałą nazwę NAME.
 </p><p>Powinieneś użyć jednej opcji dla każdego dysku danych w macierzy.
 </p><p>Możesz później zmienić nazwę dysku, zmieniając bezpośrednio nazwę NAME
-w pliku konfiguracyjnym, a następnie uruchamiając polecenie 'sync'.
+w pliku konfiguracyjnym, a następnie uruchamiając polecenie <b>sync</b>.
 W przypadku zmiany nazwy, skojarzenie odbywa się za pomocą zapisanego
 UUID dysków.
 </p></div>
@@ -1470,7 +1470,7 @@ UUID dysków.
 nohidden
 </h2>
 <p>Wyklucza wszystkie ukryte pliki i katalogi.
-W systemie Unix ukryte pliki to te zaczynające się od `.`.
+W systemie Unix ukryte pliki to te zaczynające się od <b>.</b>.
 W systemie Windows są to te z atrybutem ukrycia.
 </p></div>
 <div class="manual-section-level-2">
@@ -1480,10 +1480,10 @@ exclude/include PATTERN
 <p>Definiuje wzorce plików lub katalogów do wykluczenia lub włączenia
 do procesu synchronizacji.
 Wszystkie wzorce są przetwarzane w określonej kolejności.
-</p><p>Jeśli pierwszy pasujący wzorzec jest `exclude`, plik
-jest wykluczony. Jeśli jest to `include`, plik jest włączony.
+</p><p>Jeśli pierwszy pasujący wzorzec jest <b>exclude</b>, plik
+jest wykluczony. Jeśli jest to <b>include</b>, plik jest włączony.
 Jeśli żaden wzorzec nie pasuje, plik jest wykluczony, jeśli ostatni określony
-wzorzec to `include`, lub włączony, jeśli ostatni określony wzorzec to `exclude`.
+wzorzec to <b>include</b>, lub włączony, jeśli ostatni określony wzorzec to <b>exclude</b>.
 </p><p>Zobacz sekcję PATTERN, aby uzyskać więcej szczegółów na temat specyfikacji
 wzorców.
 </p><p>Ta opcja może być używana wielokrotnie.
@@ -1511,7 +1511,7 @@ ilość danych na tym dysku danych, a nie na innych.
 marnowana dla każdego pliku. Na przykład, z 100 000 plików i rozmiarem bloku 256 KiB,
 zmarnujesz 12,8 GB parzystości, co może skutkować
 12,8 GB mniejszą dostępną przestrzenią na dysku danych.
-</p><p>Możesz sprawdzić ilość zmarnowanego miejsca na każdym dysku za pomocą `status`.
+</p><p>Możesz sprawdzić ilość zmarnowanego miejsca na każdym dysku za pomocą <b>status</b>.
 Jest to ilość miejsca, którą musisz pozostawić wolną na dyskach danych
 lub użyć dla plików nie włączonych do macierzy.
 Jeśli ta wartość jest ujemna, oznacza to, że jesteś blisko wypełnienia
@@ -1570,7 +1570,7 @@ autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Automatycznie zapisuje stan podczas synchronizacji lub sprawdzania po przetworzeniu
 określonej ilości GB.
-Ta opcja jest przydatna, aby uniknąć ponownego uruchamiania długich poleceń `sync`
+Ta opcja jest przydatna, aby uniknąć ponownego uruchamiania długich poleceń <b>sync</b>
 od zera, jeśli zostaną przerwane przez awarię maszyny lub inne zdarzenie.
 </p></div>
 <div class="manual-section-level-2">
@@ -1582,7 +1582,7 @@ SnapRAID okresowo sprawdza temperaturę wszystkich dysków za pomocą
 narzędzia smartctl. Aktualne temperatury dysków są wyświetlane podczas
 działania SnapRAID. Jeśli którykolwiek dysk przekroczy ten limit, wszystkie operacje
 zostają zatrzymane, a dyski są zatrzymywane (przechodzą w stan gotowości) na czas
-zdefiniowany przez opcję `temp_sleep`. Po okresie uśpienia, operacje
+zdefiniowany przez opcję <b>temp_sleep</b>. Po okresie uśpienia, operacje
 są wznawiane, potencjalnie ponownie zatrzymując się, jeśli limit temperatury
 zostanie ponownie osiągnięty.
 </p><p>Podczas działania SnapRAID analizuje również krzywą nagrzewania każdego
@@ -1614,7 +1614,7 @@ W tym okresie dyski pozostają zatrzymane. Domyślnie jest to 5 minut.
 pool DIR
 </h2>
 <p>Definiuje katalog puli, w którym tworzony jest wirtualny widok macierzy
-dysków za pomocą polecenia `pool`.
+dysków za pomocą polecenia <b>pool</b>.
 </p><p>Katalog musi już istnieć.
 </p></div>
 <div class="manual-section-level-2">
@@ -1627,7 +1627,7 @@ używają tej ścieżki UNC do dostępu do dysków.
 Bez tej opcji generowane dowiązania symboliczne używają tylko ścieżek lokalnych,
 co nie pozwala na udostępnianie katalogu puli w sieci.
 </p><p>Dowiązania symboliczne są tworzone przy użyciu określonej ścieżki UNC,
-dodając nazwę dysku określoną w opcji `data`, a na końcu dodając
+dodając nazwę dysku określoną w opcji <b>data</b>, a na końcu dodając
 katalog i nazwę pliku.
 </p><p>Ta opcja jest wymagana tylko dla systemu Windows.
 </p></div>
@@ -1639,12 +1639,12 @@ smartctl DISK/PARITY OPTIONS...
 każdego dysku. Może to być wymagane dla kontrolerów RAID i niektórych dysków USB,
 których nie można wykryć automatycznie. Symbol zastępczy %s jest zastępowany
 nazwą urządzenia, ale jest opcjonalny dla stałych urządzeń, takich jak kontrolery RAID.
-</p><p>DISK to ta sama nazwa dysku określona w opcji `data`.
-PARITY to jedna z nazw parzystości: `parity`, `2-parity`, `3-parity`,
-`4-parity`, `5-parity`, `6-parity` lub `z-parity`.
-</p><p>W określonych OPCJACH ciąg `%s` jest zastępowany
+</p><p>DISK to ta sama nazwa dysku określona w opcji <b>data</b>.
+PARITY to jedna z nazw parzystości: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+<b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> lub <b>z-parity</b>.
+</p><p>W określonych OPCJACH ciąg <b>%s</b> jest zastępowany
 nazwą urządzenia. W przypadku kontrolerów RAID, urządzenie jest
-prawdopodobnie stałe i może nie być konieczne użycie `%s`.
+prawdopodobnie stałe i może nie być konieczne użycie <b>%s</b>.
 </p><p>Zapoznaj się z dokumentacją smartmontools, aby uzyskać możliwe opcje:
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1662,11 +1662,11 @@ smartignore DISK/PARITY ATTR [ATTR...]
 <p>Ignoruje określony atrybut SMART podczas obliczania prawdopodobieństwa
 awarii dysku. Ta opcja jest przydatna, jeśli dysk zgłasza nietypowe lub
 wprowadzające w błąd wartości dla określonego atrybutu.
-</p><p>DISK to ta sama nazwa dysku określona w opcji `data`.
-PARITY to jedna z nazw parzystości: `parity`, `2-parity`, `3-parity`,
-`4-parity`, `5-parity`, `6-parity` lub `z-parity`.
+</p><p>DISK to ta sama nazwa dysku określona w opcji <b>data</b>.
+PARITY to jedna z nazw parzystości: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+<b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> lub <b>z-parity</b>.
 Specjalna wartość * może być użyta do zignorowania atrybutu na wszystkich dyskach.
-</p><p>Na przykład, aby zignorować atrybut `Current Pending Sector Count` na
+</p><p>Na przykład, aby zignorować atrybut <b>Current Pending Sector Count</b> na
 wszystkich dyskach:
 </p><pre>
 smartignore * 197
@@ -1721,32 +1721,32 @@ Pattern
 wykluczenia. Używając znaków globbingowych, można zdefiniować reguły, które
 pasują do określonych nazw plików lub całych struktur katalogów bez
 ręcznego wymieniania każdej ścieżki.
-</p><p>Znak zapytania `?` dopasowuje dowolny pojedynczy znak z wyjątkiem
+</p><p>Znak zapytania <b>?</b> dopasowuje dowolny pojedynczy znak z wyjątkiem
 separatora katalogów. Dzięki temu jest przydatny do dopasowywania nazw plików ze
 zmiennymi znakami, przy jednoczesnym ograniczeniu wzorca do jednego poziomu katalogu.
-</p><p>Pojedyncza gwiazdka `*` dopasowuje dowolną sekwencję znaków, ale podobnie jak
+</p><p>Pojedyncza gwiazdka <b>*</b> dopasowuje dowolną sekwencję znaków, ale podobnie jak
 znak zapytania, nigdy nie przekracza granic katalogów. Zatrzymuje się na
 ukośniku, co czyni ją odpowiednią do dopasowywania w obrębie jednego
 składnika ścieżki. Jest to standardowe zachowanie symboli wieloznacznych znane
 z globbingu powłoki (shell).
-</p><p>Podwójna gwiazdka `**` jest potężniejsza, dopasowuje dowolną sekwencję
+</p><p>Podwójna gwiazdka <b>**</b> jest potężniejsza, dopasowuje dowolną sekwencję
 znaków, w tym separatory katalogów. Pozwala to wzorcom dopasowywać się
-na wielu poziomach katalogów. Gdy `**` pojawia się bezpośrednio wewnątrz
+na wielu poziomach katalogów. Gdy <b>**</b> pojawia się bezpośrednio wewnątrz
 wzorca, może dopasować zero lub więcej znaków, w tym ukośniki między
 otaczającym tekstem dosłownym.
-</p><p>Najważniejszym zastosowaniem `**` jest specjalna forma `/**/`. Dopasowuje ona
+</p><p>Najważniejszym zastosowaniem <b>**</b> jest specjalna forma <b>/**/</b>. Dopasowuje ona
 zero lub więcej pełnych poziomów katalogów, umożliwiając dopasowanie plików
 na dowolnej głębokości w drzewie katalogów bez znajomości dokładnej struktury ścieżki.
-Na przykład wzorzec `src/**/main.js` pasuje do `src/main.js` (pomijając
-zero katalogów), `src/ui/main.js` (pomijając jeden katalog) oraz
-`src/ui/components/main.js` (pomijając dwa katalogi).
-</p><p>Klasy znaków używające nawiasów kwadratowych `[]` dopasowują pojedynczy znak z
+Na przykład wzorzec <b>src/**/main.js</b> pasuje do <b>src/main.js</b> (pomijając
+zero katalogów), <b>src/ui/main.js</b> (pomijając jeden katalog) oraz
+<b>src/ui/components/main.js</b> (pomijając dwa katalogi).
+</p><p>Klasy znaków używające nawiasów kwadratowych <b>[]</b> dopasowują pojedynczy znak z
 określonego zestawu lub zakresu. Podobnie jak inne wzorce pojedynczych znaków,
 nie pasują one do separatorów katalogów. Klasy obsługują zakresy i negację za pomocą
 wykrzyknika.
-</p><p>Podstawową różnicą, o której należy pamiętać, jest to, że `*`, `?` i klasy znaków
+</p><p>Podstawową różnicą, o której należy pamiętać, jest to, że <b>*</b>, <b>?</b> i klasy znaków
 wszystkie respektują granice katalogów i dopasowują się tylko w obrębie jednego
-składnika ścieżki, podczas gdy `**` jest jedynym wzorcem, który może dopasowywać się poprzez
+składnika ścieżki, podczas gdy <b>**</b> jest jedynym wzorcem, który może dopasowywać się poprzez
 separatory katalogów.
 </p><p>Istnieją cztery różne typy wzorców:
 </p><div class="manual-option-list">
@@ -1795,47 +1795,47 @@ katalogu głównym macierzy, a nie w katalogu głównym lokalnego systemu plikó
 Katalogi systemowe Windows, połączenia, punkty montowania i inne
 specjalne katalogi Windows są traktowane jako pliki, co oznacza, że aby je
 wykluczyć, musisz użyć reguły pliku, a nie katalogu.
-</p><p>Jeśli nazwa pliku zawiera znak '*', '?', '[',
-lub ']', musisz go uciec, aby uniknąć interpretacji jako
-znaku globbing. W systemie Unix znakiem ucieczki jest '\'; w systemie Windows jest to '^'.
+</p><p>Jeśli nazwa pliku zawiera znak <b>*</b>, <b>?</b>, <b>[</b>,
+lub <b>]</b>, musisz go uciec, aby uniknąć interpretacji jako
+znaku globbing. W systemie Unix znakiem ucieczki jest <b>\</b>; w systemie Windows jest to <b>^</b>.
 Gdy wzorzec znajduje się w wierszu poleceń, musisz podwoić znak ucieczki,
 aby uniknąć interpretacji przez powłokę poleceń.
 </p><p>W pliku konfiguracyjnym możesz użyć różnych strategii do filtrowania
 plików do przetworzenia.
-Najprostszym podejściem jest użycie tylko reguł `exclude`, aby usunąć wszystkie
+Najprostszym podejściem jest użycie tylko reguł <b>exclude</b>, aby usunąć wszystkie
 pliki i katalogi, których nie chcesz przetwarzać. Na przykład:
 </p><pre>
-# Wyklucza dowolny plik o nazwie `*.unrecoverable`
+# Wyklucza dowolny plik o nazwie <b>*.unrecoverable</b>
 exclude *.unrecoverable
-# Wyklucza katalog główny `/lost+found`
+# Wyklucza katalog główny <b>/lost+found</b>
 exclude /lost+found/
-# Wyklucza dowolny podkatalog o nazwie `tmp`
+# Wyklucza dowolny podkatalog o nazwie <b>tmp</b>
 exclude tmp/
 </pre>
 <p>Odwrotnym podejściem jest zdefiniowanie tylko plików, które chcesz przetwarzać,
-używając tylko reguł `include`. Na przykład:
+używając tylko reguł <b>include</b>. Na przykład:
 </p><pre>
 # Włącza tylko niektóre katalogi
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>Ostatecznym podejściem jest mieszanie reguł `exclude` i `include`. W tym przypadku
+<p>Ostatecznym podejściem jest mieszanie reguł <b>exclude</b> i <b>include</b>. W tym przypadku
 kolejność reguł jest ważna. Wcześniejsze reguły mają
 pierwszeństwo przed późniejszymi.
-Aby uprościć, możesz najpierw wymienić wszystkie reguły `exclude`, a następnie
-wszystkie reguły `include`. Na przykład:
+Aby uprościć, możesz najpierw wymienić wszystkie reguły <b>exclude</b>, a następnie
+wszystkie reguły <b>include</b>. Na przykład:
 </p><pre>
-# Wyklucza dowolny plik o nazwie `*.unrecoverable`
+# Wyklucza dowolny plik o nazwie <b>*.unrecoverable</b>
 exclude *.unrecoverable
-# Wyklucza dowolny podkatalog o nazwie `tmp`
+# Wyklucza dowolny podkatalog o nazwie <b>tmp</b>
 exclude tmp/
 # Włącza tylko niektóre katalogi
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>W wierszu poleceń, używając opcji -f, możesz użyć tylko wzorców `include`.
+<p>W wierszu poleceń, używając opcji -f, możesz użyć tylko wzorców <b>include</b>.
 Na przykład:
 </p><pre>
 # Sprawdza tylko pliki .mp3.
@@ -1850,14 +1850,14 @@ je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
 Ignore File
 </h1>
 <p>Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
-`.snapraidignore` w dowolnym katalogu w macierzy, aby zdefiniować
+<b>.snapraidignore</b> w dowolnym katalogu w macierzy, aby zdefiniować
 zdecentralizowane reguły wykluczania.
-</p><p>Reguły zdefiniowane w `.snapraidignore` są stosowane po regułach w pliku
+</p><p>Reguły zdefiniowane w <b>.snapraidignore</b> są stosowane po regułach w pliku
 konfiguracyjnym. Oznacza to, że mają one wyższy priorytet i mogą być używane
 do wykluczania plików, które zostały wcześniej uwzględnione przez konfigurację
 globalną. Skutecznie, jeśli reguła lokalna pasuje, plik jest wykluczany bez
 względu na globalne ustawienia uwzględniania.
-</p><p>Logika wzorców w `.snapraidignore` odzwierciedla konfigurację globalną, ale
+</p><p>Logika wzorców w <b>.snapraidignore</b> odzwierciedla konfigurację globalną, ale
 zakotwicza wzorce w katalogu, w którym znajduje się plik:
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1885,7 +1885,7 @@ znajdujący się w tym katalogu lub poniżej.
 /PATH/FILE
 </div><div class="manual-option-description">
 Wybiera dokładnie określony plik względem lokalizacji
-pliku `.snapraidignore`.
+pliku <b>.snapraidignore</b>.
 </div>
 </div>
 </div>
@@ -1895,17 +1895,17 @@ pliku `.snapraidignore`.
 /PATH/DIR/
 </div><div class="manual-option-description">
 Wybiera dokładnie określony katalog i wszystko w jego wnętrzu,
-względem lokalizacji pliku `.snapraidignore`.
+względem lokalizacji pliku <b>.snapraidignore</b>.
 </div>
 </div>
 </div>
-<p>W przeciwieństwie do konfiguracji globalnej, pliki `.snapraidignore` obsługują
-tylko reguły wykluczania; nie można używać wzorców `include` ani negacji (!).
-</p><p>Na przykład, jeśli masz `.snapraidignore` w `/mnt/disk1/projects/`:
+<p>W przeciwieństwie do konfiguracji globalnej, pliki <b>.snapraidignore</b> obsługują
+tylko reguły wykluczania; nie można używać wzorców <b>include</b> ani negacji (!).
+</p><p>Na przykład, jeśli masz <b>.snapraidignore</b> w <b>/mnt/disk1/projects/</b>:
 </p><pre>
 # Wyklucza TYLKO /mnt/disk1/projects/output.bin
 /output.bin
-# Wyklucza każdy katalog o nazwie 'build' wewnątrz projects/
+# Wyklucza każdy katalog o nazwie <b>build</b> wewnątrz projects/
 build/
 # Wyklucza każdy plik .tmp wewnątrz projects/ lub jego podfolderach
 *.tmp
@@ -1918,8 +1918,8 @@ Content
 <p>SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 </p><p>Jest to plik binarny, który zawiera listę wszystkich plików obecnych w Twojej macierzy dysków,
 wraz ze wszystkimi sumami kontrolnymi w celu weryfikacji ich integralności.
-</p><p>Ten plik jest odczytywany i zapisywany przez polecenia `sync` i `scrub`
-oraz odczytywany przez polecenia `fix`, `check` i `status`.
+</p><p>Ten plik jest odczytywany i zapisywany przez polecenia <b>sync</b> i <b>scrub</b>
+oraz odczytywany przez polecenia <b>fix</b>, <b>check</b> i <b>status</b>.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec11" class="manual-title-level-1">
@@ -1928,9 +1928,9 @@ Parity
 <p>SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
 parzystości.
 </p><p>Są to pliki binarne zawierające obliczoną parzystość wszystkich
-bloków zdefiniowanych w pliku `content`.
-</p><p>Pliki te są odczytywane i zapisywane przez polecenia `sync` i `fix`
-oraz tylko odczytywane przez polecenia `scrub` i `check`.
+bloków zdefiniowanych w pliku <b>content</b>.
+</p><p>Pliki te są odczytywane i zapisywane przez polecenia <b>sync</b> i <b>fix</b>
+oraz tylko odczytywane przez polecenia <b>scrub</b> i <b>check</b>.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec12" class="manual-title-level-1">
@@ -1941,8 +1941,8 @@ nazwy plików z tym samym kodowaniem używanym przez system plików.
 </p><p>W systemie Windows wszystkie nazwy odczytane z systemu plików są konwertowane i
 przetwarzane w formacie UTF-8.
 </p><p>Aby nazwy plików były poprawnie drukowane, musisz ustawić konsolę Windows
-na tryb UTF-8 za pomocą polecenia `chcp 65001` i użyć
-czcionki TrueType, takiej jak `Lucida Console`, jako czcionki konsoli.
+na tryb UTF-8 za pomocą polecenia <b>chcp 65001</b> i użyć
+czcionki TrueType, takiej jak <b>Lucida Console</b>, jako czcionki konsoli.
 Dotyczy to tylko drukowanych nazw plików; jeśli
 przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 w formacie UTF-8.

@@ -636,6 +636,12 @@ footer {
 .manual-doc ul { margin-bottom: 1.5rem; padding-left: 2rem; list-style-type: disc; }
 .manual-doc li { margin-bottom: 0.5rem; }
 
+.manual-doc b {
+    font-weight: bold;
+    font-family: var(--font-mono);
+    color: var(--text-accent);
+}
+
 /* The Pre Tag */
 .manual-doc pre {
     background: #000000;

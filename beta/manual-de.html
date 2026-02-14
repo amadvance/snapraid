@@ -192,7 +192,7 @@ berücksichtigen sollten.
 ausfällt und Sie in letzter Zeit keine Synchronisierung durchgeführt haben,
 Sie möglicherweise nicht vollständig wiederherstellen können.
 Genauer gesagt können Sie möglicherweise nicht bis zur Größe der
-geänderten oder gelöschten Dateien seit der letzten `sync`-Operation
+geänderten oder gelöschten Dateien seit der letzten <b>sync</b>-Operation
 wiederherstellen. Dies tritt auch dann auf, wenn die geänderten oder
 gelöschten Dateien sich nicht auf der ausgefallenen Festplatte befinden.
 Aus diesem Grund ist SnapRAID besser für Daten geeignet, die sich
@@ -233,7 +233,7 @@ und erweiterte Attribute werden nicht gespeichert.
 Getting Started
 </h1>
 <p>Um SnapRAID zu verwenden, müssen Sie zuerst eine Festplatte in Ihrem
-Festplatten-Array auswählen, die für `parity`-Informationen
+Festplatten-Array auswählen, die für <b>parity</b>-Informationen
 reserviert wird. Mit einer Festplatte für Parität können Sie von
 einem einzelnen Festplattenausfall wiederherstellen, ähnlich wie bei RAID5.
 </p><p>Wenn Sie von mehr Festplattenausfällen wiederherstellen möchten,
@@ -243,18 +243,18 @@ Wiederherstellung von einem weiteren Festplattenausfall.
 </p><p>Als Paritätsfestplatten müssen Sie die größten Festplatten im Array
 auswählen, da die Paritätsinformationen auf die Größe der größten
 Datenfestplatte im Array anwachsen können.
-</p><p>Diese Festplatten werden zum Speichern der `parity`-Dateien
+</p><p>Diese Festplatten werden zum Speichern der <b>parity</b>-Dateien
 reserviert. Sie sollten Ihre Daten nicht darauf speichern.
-</p><p>Anschließend müssen Sie die `data`-Festplatten definieren, die Sie
+</p><p>Anschließend müssen Sie die <b>data</b>-Festplatten definieren, die Sie
 mit SnapRAID schützen möchten. Der Schutz ist effektiver, wenn diese
 Festplatten Daten enthalten, die sich selten ändern. Aus diesem Grund
 ist es besser, die Windows C:\-Festplatte oder die Unix-Verzeichnisse
 /home, /var und /tmp NICHT einzuschließen.
-</p><p>Die Liste der Dateien wird in den `content`-Dateien gespeichert,
+</p><p>Die Liste der Dateien wird in den <b>content</b>-Dateien gespeichert,
 die normalerweise auf den Daten-, Paritäts- oder Boot-Festplatten
 gespeichert werden. Diese Datei enthält die Details Ihrer Sicherung,
 einschließlich aller Prüfsummen zur Überprüfung ihrer Integrität.
-Die `content`-Datei wird in mehreren Kopien gespeichert, und jede Kopie
+Die <b>content</b>-Datei wird in mehreren Kopien gespeichert, und jede Kopie
 muss sich auf einer anderen Festplatte befinden, um sicherzustellen,
 dass selbst bei mehreren Festplattenausfällen mindestens eine Kopie
 verfügbar ist.
@@ -294,7 +294,7 @@ einhängen (mounten). Siehe:
 </p><pre>
 <a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
-<p>Zu diesem Zeitpunkt sind Sie bereit, den Befehl `sync` auszuführen,
+<p>Zu diesem Zeitpunkt sind Sie bereit, den Befehl <b>sync</b> auszuführen,
 um die Paritätsinformationen zu erstellen.
 </p><pre>
 snapraid sync
@@ -306,18 +306,18 @@ Wenn die Festplatten leer sind, ist der Vorgang sofort abgeschlossen.
 nächsten Lauf wird er dort fortgesetzt, wo er unterbrochen wurde.
 </p><p>Wenn dieser Befehl abgeschlossen ist, sind Ihre Daten SICHER.
 </p><p>Jetzt können Sie Ihr Array nach Belieben verwenden und die Paritätsinformationen
-regelmäßig durch Ausführen des `sync`-Befehls aktualisieren.
+regelmäßig durch Ausführen des <b>sync</b>-Befehls aktualisieren.
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
 Scrubbing
 </h2>
 <p>Um die Daten und die Parität regelmäßig auf Fehler zu überprüfen,
-können Sie den Befehl `scrub` ausführen.
+können Sie den Befehl <b>scrub</b> ausführen.
 </p><pre>
 snapraid scrub
 </pre>
 <p>Dieser Befehl vergleicht die Daten in Ihrem Array mit dem Hash,
-der während des `sync`-Befehls berechnet wurde, um die Integrität
+der während des <b>sync</b>-Befehls berechnet wurde, um die Integrität
 zu überprüfen.
 </p><p>Jeder Lauf des Befehls überprüft ungefähr 8% des Arrays,
 ausgenommen Daten, die bereits in den letzten 10 Tagen gescrubbed wurden.
@@ -330,27 +330,27 @@ snapraid -p 5 -o 20 scrub
 </pre>
 <p>Wenn während des Vorgangs stille oder Eingabe-/Ausgabefehler
 gefunden werden, werden die entsprechenden Blöcke in der
-`content`-Datei als fehlerhaft (bad) markiert und im Befehl
-`status` aufgelistet.
+<b>content</b>-Datei als fehlerhaft (bad) markiert und im Befehl
+<b>status</b> aufgelistet.
 </p><pre>
 snapraid status
 </pre>
-<p>Um sie zu beheben, können Sie den Befehl `fix` verwenden und dabei
+<p>Um sie zu beheben, können Sie den Befehl <b>fix</b> verwenden und dabei
 nach fehlerhaften Blöcken mit der Option -e, --filter-error
 filtern:
 </p><pre>
 snapraid -e fix
 </pre>
-<p>Beim nächsten `scrub` verschwinden die Fehler aus dem `status`-Bericht,
+<p>Beim nächsten <b>scrub</b> verschwinden die Fehler aus dem <b>status</b>-Bericht,
 wenn sie tatsächlich behoben sind. Um es schneller zu machen,
 können Sie -p bad verwenden, um nur als fehlerhaft markierte Blöcke
 zu scrubben.
 </p><pre>
 snapraid -p bad scrub
 </pre>
-<p>Das Ausführen von `scrub` auf einem nicht synchronisierten Array
+<p>Das Ausführen von <b>scrub</b> auf einem nicht synchronisierten Array
 kann Fehler melden, die durch entfernte oder geänderte Dateien
-verursacht wurden. Diese Fehler werden in der `scrub`-Ausgabe
+verursacht wurden. Diese Fehler werden in der <b>scrub</b>-Ausgabe
 gemeldet, aber die zugehörigen Blöcke werden nicht als fehlerhaft
 markiert.
 </p></div>
@@ -369,10 +369,10 @@ Es lässt sich gut mit SnapRAID zum Paritätsschutz integrieren und
 wird häufig in Setups wie OpenMediaVault (OMV) oder benutzerdefinierten
 NAS-Konfigurationen verwendet.
 </p><p>Um alle Dateien in Ihrem Array im selben Verzeichnisbaum anzuzeigen,
-können Sie die `pooling`-Funktion aktivieren. Sie erstellt eine
+können Sie die <b>pooling</b>-Funktion aktivieren. Sie erstellt eine
 schreibgeschützte virtuelle Ansicht aller Dateien in Ihrem Array
 mithilfe symbolischer Links.
-</p><p>Sie können das `pooling`-Verzeichnis in der Konfigurationsdatei
+</p><p>Sie können das <b>pooling</b>-Verzeichnis in der Konfigurationsdatei
 mit folgender Option konfigurieren:
 </p><pre>
 pool /pool
@@ -381,7 +381,7 @@ pool /pool
 </p><pre>
 pool C:\pool
 </pre>
-<p>und anschließend den Befehl `pool` ausführen, um die virtuelle
+<p>und anschließend den Befehl <b>pool</b> ausführen, um die virtuelle
 Ansicht zu erstellen oder zu aktualisieren.
 </p><pre>
 snapraid pool
@@ -409,10 +409,10 @@ dass Clients diese remote auflösen. Um dies zu ermöglichen,
 müssen Sie neben der Freigabe des Pool-Verzeichnisses auch alle
 Festplatten unabhängig freigeben, indem Sie die in der Konfigurationsdatei
 definierten Festplattennamen als Freigabepunkte verwenden.
-Sie müssen auch in der Option `share` der Konfigurationsdatei
+Sie müssen auch in der Option <b>share</b> der Konfigurationsdatei
 den Windows UNC-Pfad angeben, den Remote-Clients benötigen, um
 auf diese freigegebenen Festplatten zuzugreifen.
-</p><p>Zum Beispiel, wenn Sie von einem Server namens `darkstar` aus
+</p><p>Zum Beispiel, wenn Sie von einem Server namens <b>darkstar</b> aus
 arbeiten, können Sie die Optionen verwenden:
 </p><pre>
 data d1 F:\array\
@@ -473,7 +473,7 @@ verloren!
 </p><p>Das erste, was Sie tun müssen, ist, weitere Änderungen an Ihrem
 Festplatten-Array zu vermeiden. Deaktivieren Sie alle Remote-Verbindungen
 dazu und alle geplanten Prozesse, einschließlich geplanter SnapRAID-nächtlicher
-`sync`- oder `scrub`-Läufe.
+<b>sync</b>- oder <b>scrub</b>-Läufe.
 </p><p>Fahren Sie dann mit den folgenden Schritten fort.
 </p><div class="manual-section-level-3">
 <h3 id="sec4-4-1" class="manual-title-level-3">
@@ -482,10 +482,10 @@ STEP 1 -&gt; Reconfigure
 <p>Sie benötigen etwas Platz zur Wiederherstellung, idealerweise auf
 zusätzlichen Ersatzfestplatten, aber eine externe USB-Festplatte oder
 eine Remote-Festplatte ist ausreichend.
-</p><p>Ändern Sie die SnapRAID-Konfigurationsdatei so, dass die `data`-
-oder `parity`-Option der ausgefallenen Festplatte auf einen Ort mit
+</p><p>Ändern Sie die SnapRAID-Konfigurationsdatei so, dass die <b>data</b>-
+oder <b>parity</b>-Option der ausgefallenen Festplatte auf einen Ort mit
 genügend leerem Speicherplatz zur Wiederherstellung der Dateien zeigt.
-</p><p>Wenn zum Beispiel die Festplatte `d1` ausgefallen ist, ändern Sie von:
+</p><p>Wenn zum Beispiel die Festplatte <b>d1</b> ausgefallen ist, ändern Sie von:
 </p><pre>
 data d1 /mnt/disk1/
 </pre>
@@ -494,7 +494,7 @@ data d1 /mnt/disk1/
 data d1 /mnt/new_spare_disk/
 </pre>
 <p>Wenn die wiederherzustellende Festplatte eine Paritätsfestplatte ist,
-aktualisieren Sie die entsprechende `parity`-Option.
+aktualisieren Sie die entsprechende <b>parity</b>-Option.
 Wenn Sie mehrere ausgefallene Festplatten haben, aktualisieren Sie
 alle ihre Konfigurationsoptionen.
 </p></div>
@@ -502,14 +502,14 @@ alle ihre Konfigurationsoptionen.
 <h3 id="sec4-4-2" class="manual-title-level-3">
 STEP 2 -&gt; Fix
 </h3>
-<p>Führen Sie den `fix`-Befehl aus und speichern Sie das Protokoll
+<p>Führen Sie den <b>fix</b>-Befehl aus und speichern Sie das Protokoll
 in einer externen Datei mit:
 </p><pre>
 snapraid -d NAME -l fix.log fix
 </pre>
-<p>Wobei NAME der Name der Festplatte ist, wie z.B. `d1` in unserem
+<p>Wobei NAME der Name der Festplatte ist, wie z.B. <b>d1</b> in unserem
 vorherigen Beispiel. Wenn die wiederherzustellende Festplatte eine
-Paritätsfestplatte ist, verwenden Sie die Namen `parity`, `2-parity`,
+Paritätsfestplatte ist, verwenden Sie die Namen <b>parity</b>, <b>2-parity</b>,
 usw. Wenn Sie mehrere ausgefallene Festplatten haben, verwenden Sie
 mehrere -d-Optionen, um alle anzugeben.
 </p><p>Dieser Befehl wird lange dauern.
@@ -518,34 +518,34 @@ Datei fix.log zu speichern. Führen Sie ihn von einer Festplatte
 mit ausreichend freiem Speicherplatz aus.
 </p><p>Jetzt haben Sie alles wiederhergestellt, was wiederherstellbar ist.
 Wenn einige Dateien teilweise oder vollständig nicht wiederherstellbar
-sind, werden sie umbenannt, indem die Erweiterung `.unrecoverable`
+sind, werden sie umbenannt, indem die Erweiterung <b>.unrecoverable</b>
 hinzugefügt wird.
 </p><p>Sie finden eine detaillierte Liste aller nicht wiederherstellbaren
 Blöcke in der Datei fix.log, indem Sie alle Zeilen überprüfen,
-die mit `unrecoverable:` beginnen.
+die mit <b>unrecoverable:</b> beginnen.
 </p><p>Wenn Sie mit der Wiederherstellung nicht zufrieden sind, können Sie
 sie so oft wie gewünscht wiederholen.
-</p><p>Wenn Sie zum Beispiel Dateien nach dem letzten `sync` aus dem Array
+</p><p>Wenn Sie zum Beispiel Dateien nach dem letzten <b>sync</b> aus dem Array
 entfernt haben, kann dies dazu führen, dass einige Dateien nicht
-wiederhergestellt werden. In diesem Fall können Sie den `fix`
+wiederhergestellt werden. In diesem Fall können Sie den <b>fix</b>
 mithilfe der Option -i, --import wiederholen, wobei Sie angeben,
 wo sich diese Dateien jetzt befinden, um sie erneut in den
 Wiederherstellungsprozess einzubeziehen.
 </p><p>Wenn Sie mit der Wiederherstellung zufrieden sind, können Sie
 fortfahren, aber beachten Sie, dass Sie nach der Synchronisierung
-den `fix`-Befehl nicht mehr wiederholen können!
+den <b>fix</b>-Befehl nicht mehr wiederholen können!
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-4-3" class="manual-title-level-3">
 STEP 3 -&gt; Check
 </h3>
-<p>Als vorsichtige Überprüfung können Sie jetzt einen `check`-Befehl
+<p>Als vorsichtige Überprüfung können Sie jetzt einen <b>check</b>-Befehl
 ausführen, um sicherzustellen, dass auf der wiederhergestellten
 Festplatte alles korrekt ist.
 </p><pre>
 snapraid -d NAME -a check
 </pre>
-<p>Wobei NAME der Name der Festplatte ist, wie z.B. `d1` in unserem
+<p>Wobei NAME der Name der Festplatte ist, wie z.B. <b>d1</b> in unserem
 vorherigen Beispiel.
 </p><p>Die Optionen -d und -a weisen SnapRAID an, nur die angegebene
 Festplatte zu überprüfen und alle Paritätsdaten zu ignorieren.
@@ -556,7 +556,7 @@ vorsichtig sind, können Sie ihn überspringen.
 <h3 id="sec4-4-4" class="manual-title-level-3">
 STEP 4 -&gt; Sync
 </h3>
-<p>Führen Sie den `sync`-Befehl aus, um das Array mit der neuen
+<p>Führen Sie den <b>sync</b>-Befehl aus, um das Array mit der neuen
 Festplatte zu resynchronisieren.
 </p><pre>
 snapraid sync
@@ -572,19 +572,19 @@ Commands
 <p>SnapRAID bietet einige einfache Befehle, mit denen Sie:
 </p><ul>
 <li>
-Den Status des Arrays ausgeben -&gt; `status`
+Den Status des Arrays ausgeben -&gt; <b>status</b>
 </li>
 <li>
-Die Festplatten steuern -&gt; `smart`, `probe`, `up`, `down`
+Die Festplatten steuern -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Eine Sicherung/einen Snapshot erstellen -&gt; `sync`
+Eine Sicherung/einen Snapshot erstellen -&gt; <b>sync</b>
 </li>
 <li>
-Daten regelmäßig überprüfen -&gt; `scrub`
+Daten regelmäßig überprüfen -&gt; <b>scrub</b>
 </li>
 <li>
-Die letzte Sicherung/den letzten Snapshot wiederherstellen -&gt; `fix`.
+Die letzte Sicherung/den letzten Snapshot wiederherstellen -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>Befehle müssen in Kleinbuchstaben geschrieben werden.
@@ -597,15 +597,15 @@ status
 die Blöcke sind, ohne Überprüfung, und alle aufgezeichneten
 stillen Fehler, die beim Scrubbing aufgetreten sind.
 </p><p>Die präsentierten Informationen beziehen sich auf den letzten Zeitpunkt,
-zu dem Sie `sync` ausgeführt haben. Spätere Änderungen werden
+zu dem Sie <b>sync</b> ausgeführt haben. Spätere Änderungen werden
 nicht berücksichtigt.
 </p><p>Wenn fehlerhafte Blöcke erkannt wurden, werden deren Blocknummern
-aufgelistet. Um sie zu beheben, können Sie den Befehl `fix -e`
+aufgelistet. Um sie zu beheben, können Sie den Befehl <b>fix -e</b>
 verwenden.
 </p><p>Es zeigt auch ein Diagramm an, das den letzten Zeitpunkt darstellt,
 zu dem jeder Block gescrubbed oder synchronisiert wurde. Gescrubbed
-Blöcke werden mit '*', Blöcke, die synchronisiert, aber noch nicht
-gescrubbed wurden, mit 'o' angezeigt.
+Blöcke werden mit <b>*</b>, Blöcke, die synchronisiert, aber noch nicht
+gescrubbed wurden, mit <b>o</b> angezeigt.
 </p><p>Es wird nichts geändert.
 </p></div>
 <div class="manual-section-level-2">
@@ -622,8 +622,8 @@ folgender Adresse verfügbar sind:
 </p><pre>
 <a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
-<p>Wenn SMART meldet, dass eine Festplatte ausfällt, wird `FAIL`
-oder `PREFAIL` für diese Festplatte gedruckt, und SnapRAID
+<p>Wenn SMART meldet, dass eine Festplatte ausfällt, wird <b>FAIL</b>
+oder <b>PREFAIL</b> für diese Festplatte gedruckt, und SnapRAID
 endet mit einem Fehler. In diesem Fall wird ein sofortiger
 Austausch der Festplatte dringend empfohlen.
 </p><p>Weitere mögliche Statuszeichenfolgen sind:
@@ -654,10 +654,10 @@ Das Geräte-Selbsttestprotokoll enthält Fehler.
 <p>Wenn die Option -v, --verbose angegeben ist, wird eine tiefere
 statistische Analyse bereitgestellt. Diese Analyse kann Ihnen bei
 der Entscheidung helfen, ob Sie mehr oder weniger Parität benötigen.
-</p><p>Dieser Befehl verwendet das `smartctl`-Tool und entspricht dem
-Ausführen von `smartctl -a` auf allen Geräten.
+</p><p>Dieser Befehl verwendet das <b>smartctl</b>-Tool und entspricht dem
+Ausführen von <b>smartctl -a</b> auf allen Geräten.
 </p><p>Wenn Ihre Geräte nicht korrekt automatisch erkannt werden, können Sie
-einen benutzerdefinierten Befehl mithilfe der `smartctl`-Option
+einen benutzerdefinierten Befehl mithilfe der <b>smartctl</b>-Option
 in der Konfigurationsdatei angeben.
 </p><p>Es wird nichts geändert.
 </p></div>
@@ -666,12 +666,12 @@ in der Konfigurationsdatei angeben.
 probe
 </h2>
 <p>Gibt den POWER-Zustand aller Festplatten im System aus.
-</p><p>`Standby` bedeutet, dass die Festplatte nicht dreht. `Active`
+</p><p><b>Standby</b> bedeutet, dass die Festplatte nicht dreht. <b>Active</b>
 bedeutet, dass die Festplatte dreht.
-</p><p>Dieser Befehl verwendet das `smartctl`-Tool und entspricht dem
-Ausführen von `smartctl -n standby -i` auf allen Geräten.
+</p><p>Dieser Befehl verwendet das <b>smartctl</b>-Tool und entspricht dem
+Ausführen von <b>smartctl -n standby -i</b> auf allen Geräten.
 </p><p>Wenn Ihre Geräte nicht korrekt automatisch erkannt werden, können Sie
-einen benutzerdefinierten Befehl mithilfe der `smartctl`-Option
+einen benutzerdefinierten Befehl mithilfe der <b>smartctl</b>-Option
 in der Konfigurationsdatei angeben.
 </p><p>Es wird nichts geändert.
 </p></div>
@@ -691,13 +691,13 @@ Stellen Sie sicher, dass Ihr Netzteil dies aushalten kann.
 down
 </h2>
 <p>Dreht alle Festplatten des Arrays herunter (spins down).
-</p><p>Dieser Befehl verwendet das `smartctl`-Tool und entspricht dem
-Ausführen von `smartctl -s standby,now` auf allen Geräten.
+</p><p>Dieser Befehl verwendet das <b>smartctl</b>-Tool und entspricht dem
+Ausführen von <b>smartctl -s standby,now</b> auf allen Geräten.
 </p><p>Sie können nur bestimmte Festplatten mithilfe der Option -d, --filter-disk
 herunterdrehen.
 </p><p>Um automatisch bei einem Fehler herunterzufahren, können Sie die Option
 -s, --spin-down-on-error mit jedem anderen Befehl verwenden, was dem
-manuellen Ausführen von `down` bei Auftreten eines Fehlers
+manuellen Ausführen von <b>down</b> bei Auftreten eines Fehlers
 entspricht.
 </p><p>Es wird nichts geändert.
 </p></div>
@@ -705,7 +705,7 @@ entspricht.
 <h2 id="sec5-6" class="manual-title-level-2">
 diff
 </h2>
-<p>Listet alle Dateien auf, die seit dem letzten `sync` geändert wurden
+<p>Listet alle Dateien auf, die seit dem letzten <b>sync</b> geändert wurden
 und deren Paritätsdaten neu berechnet werden müssen.
 </p><p>Dieser Befehl überprüft nicht die Dateidaten, sondern nur den
 Dateizeitstempel, die Größe und die Inode.
@@ -757,7 +757,7 @@ copied
 </div><div class="manual-tag-description">
 Auf dieselbe oder eine andere Festplatte kopierte
 Dateien. Beachten Sie, dass wenn sie tatsächlich auf eine
-andere Festplatte verschoben werden, sie auch unter `removed`
+andere Festplatte verschoben werden, sie auch unter <b>removed</b>
 gezählt werden. Sie werden durch denselben Namen, dieselbe
 Größe und denselben Zeitstempel identifiziert. Wenn der
 Untersekunden-Zeitstempel Null ist, muss der vollständige
@@ -774,7 +774,7 @@ Dateien, die nach dem Löschen wiederhergestellt wurden.
 </div>
 </div>
 </div>
-<p>Wenn ein `sync` erforderlich ist, ist der Rückgabecode des Prozesses 2
+<p>Wenn ein <b>sync</b> erforderlich ist, ist der Rückgabecode des Prozesses 2
 anstelle des Standardwerts 0. Der Rückgabecode 1 wird für eine
 allgemeine Fehlerbedingung verwendet.
 </p><p>Es wird nichts geändert.
@@ -788,7 +788,7 @@ im Festplatten-Array werden gelesen, und die entsprechenden
 Paritätsdaten werden aktualisiert.
 </p><p>Sie können diesen Vorgang jederzeit durch Drücken von Strg+C
 anhalten, ohne die bereits geleistete Arbeit zu verlieren.
-Beim nächsten Lauf wird der `sync`-Vorgang dort fortgesetzt,
+Beim nächsten Lauf wird der <b>sync</b>-Vorgang dort fortgesetzt,
 wo er unterbrochen wurde.
 </p><p>Wenn während des Vorgangs stille oder Eingabe-/Ausgabefehler
 gefunden werden, werden die entsprechenden Blöcke als fehlerhaft
@@ -803,7 +803,7 @@ berechnet.
 Wenn die Datei auf eine andere Festplatte verschoben wird, wird die
 Parität neu berechnet, aber die zuvor berechneten Hash-Informationen
 werden beibehalten.
-</p><p>Die `content`- und `parity`-Dateien werden bei Bedarf geändert.
+</p><p>Die <b>content</b>- und <b>parity</b>-Dateien werden bei Bedarf geändert.
 Die Dateien im Array werden NICHT geändert.
 </p></div>
 <div class="manual-section-level-2">
@@ -842,27 +842,27 @@ Scrubbt den angegebenen Prozentsatz der Blöcke.
 soll. Die ältesten Blöcke werden zuerst gescrubbed, um eine optimale
 Überprüfung zu gewährleisten. Wenn Sie nur die gerade synchronisierten
 Blöcke scrubben möchten, die noch nicht gescrubbed wurden,
-verwenden Sie die Option `-p new`.
+verwenden Sie die Option <b>-p new</b>.
 </p><p>Um Details zum Scrub-Status zu erhalten, verwenden Sie den Befehl
-`status`.
+<b>status</b>.
 </p><p>Für jeden gefundenen stillen oder Eingabe-/Ausgabefehler werden die
-entsprechenden Blöcke in der `content`-Datei als fehlerhaft (bad)
-markiert. Diese fehlerhaften Blöcke werden in `status` aufgelistet
-und können mit `fix -e` behoben werden. Nach der Behebung werden
+entsprechenden Blöcke in der <b>content</b>-Datei als fehlerhaft (bad)
+markiert. Diese fehlerhaften Blöcke werden in <b>status</b> aufgelistet
+und können mit <b>fix -e</b> behoben werden. Nach der Behebung werden
 sie beim nächsten Scrub erneut überprüft, und wenn sie als korrigiert
 befunden werden, wird die fehlerhafte Markierung entfernt.
 Um nur die fehlerhaften Blöcke zu scrubben, können Sie den Befehl
-`scrub -p bad` verwenden.
-</p><p>Es wird empfohlen, `scrub` nur auf einem synchronisierten Array
+<b>scrub -p bad</b> verwenden.
+</p><p>Es wird empfohlen, <b>scrub</b> nur auf einem synchronisierten Array
 auszuführen, um gemeldete Fehler zu vermeiden, die durch nicht
 synchronisierte Daten verursacht werden. Diese Fehler werden als
 keine stillen Fehler erkannt, und die Blöcke werden nicht als fehlerhaft
 markiert, aber solche Fehler werden in der Ausgabe des Befehls
 gemeldet.
-</p><p>Die `content`-Datei wird geändert, um die Zeit der letzten
+</p><p>Die <b>content</b>-Datei wird geändert, um die Zeit der letzten
 Überprüfung für jeden Block zu aktualisieren und fehlerhafte
 Blöcke zu markieren.
-Die `parity`-Dateien werden NICHT geändert.
+Die <b>parity</b>-Dateien werden NICHT geändert.
 Die Dateien im Array werden NICHT geändert.
 </p></div>
 <div class="manual-section-level-2">
@@ -871,23 +871,23 @@ fix
 </h2>
 <p>Behebt alle Dateien und die Paritätsdaten.
 </p><p>Alle Dateien und Paritätsdaten werden mit dem Snapshot-Zustand
-verglichen, der beim letzten `sync` gespeichert wurde.
+verglichen, der beim letzten <b>sync</b> gespeichert wurde.
 Wenn eine Abweichung gefunden wird, wird sie auf den gespeicherten
 Snapshot zurückgesetzt.
-</p><p>WARNUNG! Der Befehl `fix` unterscheidet nicht zwischen Fehlern und
+</p><p>WARNUNG! Der Befehl <b>fix</b> unterscheidet nicht zwischen Fehlern und
 beabsichtigten Änderungen. Er setzt den Dateizustand bedingungslos
-auf den letzten `sync` zurück.
+auf den letzten <b>sync</b> zurück.
 </p><p>Wenn keine andere Option angegeben ist, wird das gesamte Array verarbeitet.
 Verwenden Sie die Filteroptionen, um eine Teilmenge von Dateien
 oder Festplatten für die Operation auszuwählen.
-</p><p>Um nur die Blöcke zu beheben, die während `sync` und `scrub` als
+</p><p>Um nur die Blöcke zu beheben, die während <b>sync</b> und <b>scrub</b> als
 fehlerhaft markiert wurden, verwenden Sie die Option -e, --filter-error.
 Im Gegensatz zu anderen Filteroptionen wendet diese Behebungen nur
-auf Dateien an, die seit dem letzten `sync` unverändert sind.
+auf Dateien an, die seit dem letzten <b>sync</b> unverändert sind.
 </p><p>SnapRAID benennt alle Dateien, die nicht behoben werden können,
-durch Hinzufügen der Erweiterung `.unrecoverable` um.
+durch Hinzufügen der Erweiterung <b>.unrecoverable</b> um.
 </p><p>Vor dem Beheben wird das gesamte Array gescannt, um alle Dateien
-zu finden, die seit der letzten `sync`-Operation verschoben wurden.
+zu finden, die seit der letzten <b>sync</b>-Operation verschoben wurden.
 Diese Dateien werden anhand ihres Zeitstempels identifiziert, wobei
 Name und Verzeichnis ignoriert werden, und werden bei Bedarf im
 Wiederherstellungsprozess verwendet. Wenn Sie einige davon außerhalb
@@ -895,8 +895,8 @@ des Arrays verschoben haben, können Sie die Option -i, --import
 verwenden, um zusätzliche Verzeichnisse zum Scannen anzugeben.
 </p><p>Dateien werden nur anhand des Pfads identifiziert, nicht anhand
 der Inode.
-</p><p>Die `content`-Datei wird NICHT geändert.
-Die `parity`-Dateien werden bei Bedarf geändert.
+</p><p>Die <b>content</b>-Datei wird NICHT geändert.
+Die <b>parity</b>-Dateien werden bei Bedarf geändert.
 Die Dateien im Array werden bei Bedarf geändert.
 </p></div>
 <div class="manual-section-level-2">
@@ -904,12 +904,12 @@ Die Dateien im Array werden bei Bedarf geändert.
 check
 </h2>
 <p>Überprüft alle Dateien und die Paritätsdaten.
-</p><p>Es funktioniert wie `fix`, simuliert jedoch nur eine Wiederherstellung,
+</p><p>Es funktioniert wie <b>fix</b>, simuliert jedoch nur eine Wiederherstellung,
 und es werden keine Änderungen in das Array geschrieben.
 </p><p>Dieser Befehl ist primär für manuelle Überprüfung gedacht, wie z.B.
 nach einem Wiederherstellungsprozess oder unter anderen speziellen
 Bedingungen. Für regelmäßige und geplante Überprüfungen verwenden
-Sie `scrub`.
+Sie <b>scrub</b>.
 </p><p>Wenn Sie die Option -a, --audit-only verwenden, wird nur der Hash
 der Dateien überprüft, und die Paritätsdaten werden für einen
 schnelleren Lauf ignoriert.
@@ -921,7 +921,7 @@ der Inode.
 <h2 id="sec5-11" class="manual-title-level-2">
 list
 </h2>
-<p>Listet alle Dateien auf, die sich zum Zeitpunkt des letzten `sync`
+<p>Listet alle Dateien auf, die sich zum Zeitpunkt des letzten <b>sync</b>
 im Array befanden.
 </p><p>Mit -v oder --verbose wird auch die Untersekundenzeit angezeigt.
 </p><p>Es wird nichts geändert.
@@ -940,7 +940,7 @@ es werden nur die vorab berechneten Hashes verwendet.
 pool
 </h2>
 <p>Erstellt oder aktualisiert eine virtuelle Ansicht aller
-Dateien in Ihrem Festplatten-Array im `pooling`-Verzeichnis.
+Dateien in Ihrem Festplatten-Array im <b>pooling</b>-Verzeichnis.
 </p><p>Die Dateien werden nicht kopiert, sondern mithilfe symbolischer
 Links verknüpft.
 </p><p>Beim Aktualisieren werden alle vorhandenen symbolischen Links und
@@ -993,10 +993,10 @@ MurmurHash3 auf den schnelleren SpookyHash umzuschalten.
 </p><p>Wenn Sie bereits den optimalen Hash verwenden, tut dieser Befehl
 nichts und informiert Sie darüber, dass keine Aktion erforderlich ist.
 </p><p>Die Neu-Hash-Berechnung wird nicht sofort durchgeführt, sondern
-findet schrittweise während `sync` und `scrub` statt.
-</p><p>Sie können den Neu-Hash-Zustand mithilfe von `status` überprüfen.
+findet schrittweise während <b>sync</b> und <b>scrub</b> statt.
+</p><p>Sie können den Neu-Hash-Zustand mithilfe von <b>status</b> überprüfen.
 </p><p>Während der Neu-Hash-Berechnung behält SnapRAID die volle
-Funktionalität bei, mit der einzigen Ausnahme, dass `dup` keine
+Funktionalität bei, mit der einzigen Ausnahme, dass <b>dup</b> keine
 doppelten Dateien mit einem anderen Hash erkennen kann.
 </p></div>
 </div>
@@ -1011,10 +1011,10 @@ Options
 -c, --conf CONFIG
 </div><div class="manual-option-description">
 Wählt die zu verwendende Konfigurationsdatei aus. Wenn nicht
-angegeben, wird unter Unix die Datei `/usr/local/etc/snapraid.conf`
-verwendet, falls sie existiert, andernfalls `/etc/snapraid.conf`.
-Unter Windows wird die Datei `snapraid.conf` im selben
-Verzeichnis wie `snapraid.exe` verwendet.
+angegeben, wird unter Unix die Datei <b>/usr/local/etc/snapraid.conf</b>
+verwendet, falls sie existiert, andernfalls <b>/etc/snapraid.conf</b>.
+Unter Windows wird die Datei <b>snapraid.conf</b> im selben
+Verzeichnis wie <b>snapraid.exe</b> verwendet.
 </div>
 </div>
 </div>
@@ -1023,14 +1023,14 @@ Verzeichnis wie `snapraid.exe` verwendet.
 <div class="manual-option-name">
 -f, --filter PATTERN
 </div><div class="manual-option-description">
-Filtert die zu verarbeitenden Dateien in `check` und `fix`.
+Filtert die zu verarbeitenden Dateien in <b>check</b> und <b>fix</b>.
 Nur die Dateien, die dem angegebenen Muster entsprechen, werden
 verarbeitet. Diese Option kann mehrmals verwendet werden.
 Weitere Details zu Musterspezifikationen finden Sie im
 Abschnitt PATTERN. Unter Unix stellen Sie sicher, dass Globbing-Zeichen
 in Anführungszeichen gesetzt werden, wenn sie verwendet werden.
-Diese Option kann nur mit `check` und `fix` verwendet werden.
-Sie kann nicht mit `sync` und `scrub` verwendet werden, da
+Diese Option kann nur mit <b>check</b> und <b>fix</b> verwendet werden.
+Sie kann nicht mit <b>sync</b> und <b>scrub</b> verwendet werden, da
 diese immer das gesamte Array verarbeiten.
 </div>
 </div>
@@ -1040,16 +1040,16 @@ diese immer das gesamte Array verarbeiten.
 <div class="manual-option-name">
 -d, --filter-disk NAME
 </div><div class="manual-option-description">
-Filtert die zu verarbeitenden Festplatten in `check`, `fix`, `up`
-und `down`. Sie müssen einen Festplattennamen angeben, wie
+Filtert die zu verarbeitenden Festplatten in <b>check</b>, <b>fix</b>, <b>up</b>
+und <b>down</b>. Sie müssen einen Festplattennamen angeben, wie
 in der Konfigurationsdatei definiert. Sie können auch Paritätsfestplatten
-mit den Namen `parity`, `2-parity`, `3-parity`, usw. angeben,
+mit den Namen <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>, usw. angeben,
 um Vorgänge auf eine bestimmte Paritätsfestplatte zu beschränken.
 Wenn Sie mehrere --filter, --filter-disk und --filter-missing
 Optionen kombinieren, werden nur Dateien ausgewählt, die allen
 Filtern entsprechen. Diese Option kann mehrmals verwendet werden.
-Diese Option kann nur mit `check`, `fix`, `up` und `down` verwendet
-werden. Sie kann nicht mit `sync` und `scrub` verwendet werden,
+Diese Option kann nur mit <b>check</b>, <b>fix</b>, <b>up</b> und <b>down</b> verwendet
+werden. Sie kann nicht mit <b>sync</b> und <b>scrub</b> verwendet werden,
 da diese immer das gesamte Array verarbeiten.
 </div>
 </div>
@@ -1059,14 +1059,14 @@ da diese immer das gesamte Array verarbeiten.
 <div class="manual-option-name">
 -m, --filter-missing
 </div><div class="manual-option-description">
-Filtert die zu verarbeitenden Dateien in `check` und `fix`.
+Filtert die zu verarbeitenden Dateien in <b>check</b> und <b>fix</b>.
 Nur die Dateien, die im Array fehlen oder gelöscht wurden, werden
-verarbeitet. Bei Verwendung mit `fix` fungiert dies als
-`undelete`-Befehl (Wiederherstellung von Gelöschtem).
+verarbeitet. Bei Verwendung mit <b>fix</b> fungiert dies als
+<b>undelete</b>-Befehl (Wiederherstellung von Gelöschtem).
 Wenn Sie mehrere --filter, --filter-disk und --filter-missing
 Optionen kombinieren, werden nur Dateien ausgewählt, die allen
-Filtern entsprechen. Diese Option kann nur mit `check` und `fix`
-verwendet werden. Sie kann nicht mit `sync` und `scrub`
+Filtern entsprechen. Diese Option kann nur mit <b>check</b> und <b>fix</b>
+verwendet werden. Sie kann nicht mit <b>sync</b> und <b>scrub</b>
 verwendet werden, da diese immer das gesamte Array verarbeiten.
 </div>
 </div>
@@ -1076,11 +1076,11 @@ verwendet werden, da diese immer das gesamte Array verarbeiten.
 <div class="manual-option-name">
 -e, --filter-error
 </div><div class="manual-option-description">
-Verarbeitet die Dateien mit Fehlern in `check` und `fix`.
-Es verarbeitet nur Dateien, deren Blöcke während `sync`
-und `scrub` als mit stillen oder Eingabe-/Ausgabefehlern
-markiert wurden, wie in `status` aufgelistet.
-Diese Option kann nur mit `check` und `fix` verwendet werden.
+Verarbeitet die Dateien mit Fehlern in <b>check</b> und <b>fix</b>.
+Es verarbeitet nur Dateien, deren Blöcke während <b>sync</b>
+und <b>scrub</b> als mit stillen oder Eingabe-/Ausgabefehlern
+markiert wurden, wie in <b>status</b> aufgelistet.
+Diese Option kann nur mit <b>check</b> und <b>fix</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1092,10 +1092,10 @@ Diese Option kann nur mit `check` und `fix` verwendet werden.
 Wählt den Scrub-Plan aus. Wenn PERC ein numerischer Wert
 von 0 bis 100 ist, wird er als Prozentsatz der zu scrubbenden
 Blöcke interpretiert. Anstelle eines Prozentsatzes können Sie
-einen Plan angeben: `bad` scrubbt fehlerhafte Blöcke,
-`new` scrubbt Blöcke, die noch nicht gescrubbed wurden,
-und `full` scrubbt alles.
-Diese Option kann nur mit `scrub` verwendet werden.
+einen Plan angeben: <b>bad</b> scrubbt fehlerhafte Blöcke,
+<b>new</b> scrubbt Blöcke, die noch nicht gescrubbed wurden,
+und <b>full</b> scrubbt alles.
+Diese Option kann nur mit <b>scrub</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1104,12 +1104,12 @@ Diese Option kann nur mit `scrub` verwendet werden.
 <div class="manual-option-name">
 -o, --older-than DAYS
 </div><div class="manual-option-description">
-Wählt den ältesten Teil des Arrays aus, der in `scrub`
+Wählt den ältesten Teil des Arrays aus, der in <b>scrub</b>
 verarbeitet werden soll. DAYS ist das Mindestalter in Tagen,
 damit ein Block gescrubbed werden kann; der Standardwert
 ist 10. Blöcke, die als fehlerhaft markiert sind, werden
 immer gescrubbed, unabhängig von dieser Option.
-Diese Option kann nur mit `scrub` verwendet werden.
+Diese Option kann nur mit <b>scrub</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1118,11 +1118,11 @@ Diese Option kann nur mit `scrub` verwendet werden.
 <div class="manual-option-name">
 -a, --audit-only
 </div><div class="manual-option-description">
-Überprüft in `check` den Hash der Dateien, ohne die Paritätsdaten
+Überprüft in <b>check</b> den Hash der Dateien, ohne die Paritätsdaten
 zu überprüfen. Wenn Sie nur an der Überprüfung der Dateidaten
 interessiert sind, kann diese Option den Überprüfungsprozess
 erheblich beschleunigen.
-Diese Option kann nur mit `check` verwendet werden.
+Diese Option kann nur mit <b>check</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1131,9 +1131,9 @@ Diese Option kann nur mit `check` verwendet werden.
 <div class="manual-option-name">
 -h, --pre-hash
 </div><div class="manual-option-description">
-Führt in `sync` eine vorläufige Hash-Phase aller neuen Daten
+Führt in <b>sync</b> eine vorläufige Hash-Phase aller neuen Daten
 zur zusätzlichen Überprüfung vor der Paritätsberechnung durch.
-Normalerweise wird in `sync` keine vorläufige Hash-Berechnung
+Normalerweise wird in <b>sync</b> keine vorläufige Hash-Berechnung
 durchgeführt, und die neuen Daten werden unmittelbar vor der
 Paritätsberechnung gehasht, wenn sie zum ersten Mal gelesen werden.
 Dieser Vorgang tritt auf, wenn das System unter starker Last
@@ -1141,13 +1141,13 @@ steht, wobei alle Festplatten drehen und eine ausgelastete CPU
 vorliegt. Dies ist ein Extremzustand für die Maschine, und wenn
 sie ein latentes Hardwareproblem hat, können stille Fehler
 unentdeckt bleiben, da die Daten noch nicht gehasht sind.
-Um dieses Risiko zu vermeiden, können Sie den `pre-hash`-Modus
+Um dieses Risiko zu vermeiden, können Sie den <b>pre-hash</b>-Modus
 aktivieren, um alle Daten zweimal lesen zu lassen und so ihre
 Integrität sicherzustellen. Diese Option überprüft auch im Array
 verschobene Dateien, um sicherzustellen, dass die Verschiebeoperation
 erfolgreich war, und ermöglicht es Ihnen, bei Bedarf eine
-`fix`-Operation durchzuführen, bevor Sie fortfahren.
-Diese Option kann nur mit `sync` verwendet werden.
+<b>fix</b>-Operation durchzuführen, bevor Sie fortfahren.
+Diese Option kann nur mit <b>sync</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1157,12 +1157,12 @@ Diese Option kann nur mit `sync` verwendet werden.
 -i, --import DIR
 </div><div class="manual-option-description">
 Importiert aus dem angegebenen Verzeichnis alle Dateien, die
-nach dem letzten `sync` aus dem Array gelöscht wurden.
-Wenn Sie solche Dateien noch haben, können sie von `check` und
-`fix` verwendet werden, um den Wiederherstellungsprozess zu
+nach dem letzten <b>sync</b> aus dem Array gelöscht wurden.
+Wenn Sie solche Dateien noch haben, können sie von <b>check</b> und
+<b>fix</b> verwendet werden, um den Wiederherstellungsprozess zu
 verbessern. Die Dateien werden gelesen, auch in Unterverzeichnissen,
 und unabhängig von ihrem Namen identifiziert.
-Diese Option kann nur mit `check` und `fix` verwendet werden.
+Diese Option kann nur mit <b>check</b> und <b>fix</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1228,7 +1228,7 @@ Sie geben diese Option an. Dies ermöglicht es Ihnen, leicht zu
 erkennen, wann nach einem Systemabsturz einige zugegriffene Dateien
 abgeschnitten (truncated) wurden. Dies ist eine mögliche Bedingung
 unter Linux mit den ext3/ext4-Dateisystemen.
-Diese Option kann nur mit `sync` verwendet werden.
+Diese Option kann nur mit <b>sync</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1244,7 +1244,7 @@ vorhandenen Dateien fehlen oder überschrieben wurden, stoppt es
 den Vorgang, es sei denn, Sie geben diese Option an.
 Dies ermöglicht es Ihnen, leicht zu erkennen, wann ein Daten-Dateisystem
 nicht gemountet (eingehängt) ist.
-Diese Option kann nur mit `sync` verwendet werden.
+Diese Option kann nur mit <b>sync</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1263,7 +1263,7 @@ Es ist jedoch erlaubt, eine einzelne UUID-Änderung mit einfacher
 Parität zu haben und mehr mit mehrfacher Parität, da dies
 der normale Fall beim Austausch von Festplatten nach einer
 Wiederherstellung ist.
-Diese Option kann nur mit `sync`, `check` oder `fix` verwendet
+Diese Option kann nur mit <b>sync</b>, <b>check</b> oder <b>fix</b> verwendet
 werden.
 </div>
 </div>
@@ -1282,7 +1282,7 @@ Oder wenn Sie eine Festplatte in dem auf einer bereits
 verwendeten Festplatte verbleibenden freien Speicherplatz
 wiederherstellen möchten, wobei sie dasselbe physische Gerät
 gemeinsam nutzen.
-Diese Option kann nur mit `fix` verwendet werden.
+Diese Option kann nur mit <b>fix</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1291,7 +1291,7 @@ Diese Option kann nur mit `fix` verwendet werden.
 <div class="manual-option-name">
 -N, --force-nocopy
 </div><div class="manual-option-description">
-Deaktiviert in `sync`, `check` und `fix` die Kopiererkennungsheuristik.
+Deaktiviert in <b>sync</b>, <b>check</b> und <b>fix</b> die Kopiererkennungsheuristik.
 Ohne diese Option geht SnapRAID davon aus, dass Dateien mit den
 gleichen Attributen, wie Name, Größe und Zeitstempel, Kopien mit
 denselben Daten sind. Dies ermöglicht die Identifizierung von
@@ -1302,7 +1302,7 @@ In einigen seltenen Fällen kann dieses Verhalten zu falsch positiven
 Ergebnissen oder einem langsamen Vorgang aufgrund vieler Hash-Überprüfungen
 führen, und diese Option ermöglicht es Ihnen, solche Probleme
 zu beheben.
-Diese Option kann nur mit `sync`, `check` und `fix` verwendet
+Diese Option kann nur mit <b>sync</b>, <b>check</b> und <b>fix</b> verwendet
 werden.
 </div>
 </div>
@@ -1312,15 +1312,15 @@ werden.
 <div class="manual-option-name">
 -F, --force-full
 </div><div class="manual-option-description">
-Erzwingt in `sync` eine vollständige Neuberechnung der Parität.
+Erzwingt in <b>sync</b> eine vollständige Neuberechnung der Parität.
 Diese Option kann verwendet werden, wenn Sie eine neue Paritätsstufe
 hinzufügen oder wenn Sie zu einer alten Content-Datei mit
 neueren Paritätsdaten zurückgekehrt sind. Anstatt die Parität
 von Grund auf neu zu erstellen, ermöglicht dies die Wiederverwendung
 der in der Content-Datei vorhandenen Hashes zur Validierung
 von Daten und zur Aufrechterhaltung des Datenschutzes während
-des `sync`-Vorgangs unter Verwendung der vorhandenen Paritätsdaten.
-Diese Option kann nur mit `sync` verwendet werden.
+des <b>sync</b>-Vorgangs unter Verwendung der vorhandenen Paritätsdaten.
+Diese Option kann nur mit <b>sync</b> verwendet werden.
 </div>
 </div>
 </div>
@@ -1329,16 +1329,16 @@ Diese Option kann nur mit `sync` verwendet werden.
 <div class="manual-option-name">
 -R, --force-realloc
 </div><div class="manual-option-description">
-Erzwingt in `sync` eine vollständige Neuallokation von Dateien
+Erzwingt in <b>sync</b> eine vollständige Neuallokation von Dateien
 und eine Wiederherstellung der Parität.
 Diese Option kann verwendet werden, um alle Dateien vollständig
 neu zuzuweisen und die Fragmentierung zu entfernen, während
 die in der Content-Datei vorhandenen Hashes zur Validierung
 von Daten wiederverwendet werden.
-Diese Option kann nur mit `sync` verwendet werden.
+Diese Option kann nur mit <b>sync</b> verwendet werden.
 WARNUNG! Diese Option ist nur für Experten gedacht, und es wird
 dringend empfohlen, sie nicht zu verwenden.
-Sie haben während der `sync`-Operation KEINEN Datenschutz.
+Sie haben während der <b>sync</b>-Operation KEINEN Datenschutz.
 </div>
 </div>
 </div>
@@ -1353,14 +1353,14 @@ auf dem Bildschirm ausgegeben, was bei vielen Fehlern möglicherweise
 zu einer übermäßigen Ausgabe führt. Wenn -l, --log angegeben
 ist, werden nur schwerwiegende Fehler, die SnapRAID zum Stoppen
 bringen, auf dem Bildschirm ausgegeben.
-Wenn der Pfad mit '&gt;&gt;' beginnt, wird die Datei im Anhängemodus
-(append mode) geöffnet. Vorkommen von '%D' und '%T' im Namen
+Wenn der Pfad mit <b>&gt;&gt;</b> beginnt, wird die Datei im Anhängemodus
+(append mode) geöffnet. Vorkommen von <b>%D</b> und <b>%T</b> im Namen
 werden durch Datum und Uhrzeit im Format YYYYMMDD bzw. HHMMSS
-ersetzt. In Windows-Batch-Dateien müssen Sie das '%'-Zeichen
-verdoppeln, z.B. result-%%D.log. Um '&gt;&gt;' zu verwenden, müssen
-Sie den Namen in Anführungszeichen setzen, z.B. `"&gt;&gt;result.log"`.
+ersetzt. In Windows-Batch-Dateien müssen Sie das <b>%</b>-Zeichen
+verdoppeln, z.B. result-%%D.log. Um <b>&gt;&gt;</b> zu verwenden, müssen
+Sie den Namen in Anführungszeichen setzen, z.B. <b>"&gt;&gt;result.log"</b>.
 Um das Protokoll an die Standardausgabe oder den Standardfehler
-auszugeben, können Sie `"&gt;&amp;1"` bzw. `"&gt;&amp;2"` verwenden.
+auszugeben, können Sie <b>"&gt;&amp;1"</b> bzw. <b>"&gt;&amp;2"</b> verwenden.
 Beschreibungen der Protokoll-Tags finden Sie in der Datei
 snapraid_log.txt oder in der Manpage.
 </div>
@@ -1375,9 +1375,9 @@ Legt ein neues Fehlerlimit fest, bevor die Ausführung gestoppt
 wird. Standardmäßig stoppt SnapRAID, wenn es mehr als 100
 Eingabe-/Ausgabefehler feststellt, was darauf hindeutet, dass
 eine Festplatte wahrscheinlich ausfällt. Diese Option wirkt sich
-auf `sync` und `scrub` aus, denen es gestattet ist, nach dem
+auf <b>sync</b> und <b>scrub</b> aus, denen es gestattet ist, nach dem
 ersten Satz von Festplattenfehlern fortzufahren, um ihre Vorgänge
-abzuschließen. `check` und `fix` stoppen jedoch immer beim
+abzuschließen. <b>check</b> und <b>fix</b> stoppen jedoch immer beim
 ersten Fehler.
 </div>
 </div>
@@ -1472,10 +1472,10 @@ Configuration
 <p>SnapRAID benötigt eine Konfigurationsdatei, um zu wissen, wo sich
 Ihr Festplatten-Array befindet und wo die Paritätsinformationen
 gespeichert werden sollen.
-</p><p>Unter Unix wird die Datei `/usr/local/etc/snapraid.conf` verwendet,
-falls sie existiert, andernfalls `/etc/snapraid.conf`.
-Unter Windows wird die Datei `snapraid.conf` im selben
-Verzeichnis wie `snapraid.exe` verwendet.
+</p><p>Unter Unix wird die Datei <b>/usr/local/etc/snapraid.conf</b> verwendet,
+falls sie existiert, andernfalls <b>/etc/snapraid.conf</b>.
+Unter Windows wird die Datei <b>snapraid.conf</b> im selben
+Verzeichnis wie <b>snapraid.exe</b> verwendet.
 </p><p>Sie muss die folgenden Optionen (Groß- und Kleinschreibung beachten)
 enthalten:
 </p><div class="manual-section-level-2">
@@ -1525,7 +1525,7 @@ aktiviert:
 </ul>
 <p>Jede Paritätsstufe erfordert die Anwesenheit aller vorherigen
 Paritätsstufen.
-</p><p>Die gleichen Überlegungen wie bei der Option 'parity' gelten.
+</p><p>Die gleichen Überlegungen wie bei der Option <b>parity</b> gelten.
 </p><p>Diese Optionen sind optional und können nur einmal verwendet werden.
 </p></div>
 <div class="manual-section-level-2">
@@ -1534,17 +1534,17 @@ z-parity FILE [,FILE] ...
 </h2>
 <p>Definiert eine alternative Datei und ein alternatives Format zum
 Speichern von Triple-Parität.
-</p><p>Diese Option ist eine Alternative zu '3-parity', die primär für
+</p><p>Diese Option ist eine Alternative zu <b>3-parity</b>, die primär für
 Low-End-CPUs wie ARM oder AMD Phenom, Athlon und Opteron gedacht
 ist, die den SSSE3-Befehlssatz nicht unterstützen. In solchen Fällen
 bietet sie eine bessere Leistung.
 </p><p>Dieses Format ähnelt dem von ZFS RAIDZ3, ist aber schneller.
 Wie ZFS funktioniert es nicht jenseits der Triple-Parität.
-</p><p>Bei Verwendung von '3-parity' werden Sie gewarnt, wenn das
-'z-parity'-Format zur Leistungsverbesserung empfohlen wird.
+</p><p>Bei Verwendung von <b>3-parity</b> werden Sie gewarnt, wenn das
+<b>z-parity</b>-Format zur Leistungsverbesserung empfohlen wird.
 </p><p>Es ist möglich, von einem Format in ein anderes zu konvertieren,
 indem die Konfigurationsdatei mit der gewünschten z-parity- oder
-3-parity-Datei angepasst und `fix` zur Neuerstellung verwendet wird.
+3-parity-Datei angepasst und <b>fix</b> zur Neuerstellung verwendet wird.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-4" class="manual-title-level-2">
@@ -1555,7 +1555,7 @@ aller im Festplatten-Array vorhandenen Dateien verwendet werden soll.
 </p><p>Sie kann auf einer für Daten, Parität oder einer anderen
 verfügbaren Festplatte platziert werden.
 Wenn Sie eine Datenfestplatte verwenden, wird diese Datei automatisch
-vom `sync`-Vorgang ausgeschlossen.
+vom <b>sync</b>-Vorgang ausgeschlossen.
 </p><p>Diese Option ist obligatorisch und kann mehrmals verwendet werden,
 um mehrere Kopien derselben Datei zu speichern.
 </p><p>Sie müssen mindestens eine Kopie für jede verwendete Paritätsfestplatte
@@ -1573,7 +1573,7 @@ Einhängepunkt der Festplatte im Dateisystem.
 den NAME unverändert lassen.
 </p><p>Sie sollten eine Option für jede Datenfestplatte im Array verwenden.
 </p><p>Sie können eine Festplatte später umbenennen, indem Sie den NAME
-direkt in der Konfigurationsdatei ändern und dann einen `sync`-Befehl
+direkt in der Konfigurationsdatei ändern und dann einen <b>sync</b>-Befehl
 ausführen. Im Falle einer Umbenennung erfolgt die Zuordnung
 mithilfe der gespeicherten UUID der Festplatten.
 </p></div>
@@ -1582,22 +1582,22 @@ mithilfe der gespeicherten UUID der Festplatten.
 nohidden
 </h2>
 <p>Schließt alle versteckten Dateien und Verzeichnisse aus.
-Unter Unix sind versteckte Dateien solche, die mit `.` beginnen.
+Unter Unix sind versteckte Dateien solche, die mit <b>.</b> beginnen.
 Unter Windows sind es solche mit dem versteckten Attribut.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
-<p>Definiert die Datei- oder Verzeichnismuster, die im `sync`-Vorgang
+<p>Definiert die Datei- oder Verzeichnismuster, die im <b>sync</b>-Vorgang
 ausgeschlossen oder eingeschlossen werden sollen.
 Alle Muster werden in der angegebenen Reihenfolge verarbeitet.
-</p><p>Wenn das erste übereinstimmende Muster ein `exclude`-Muster ist,
-wird die Datei ausgeschlossen. Wenn es ein `include`-Muster ist,
+</p><p>Wenn das erste übereinstimmende Muster ein <b>exclude</b>-Muster ist,
+wird die Datei ausgeschlossen. Wenn es ein <b>include</b>-Muster ist,
 wird die Datei eingeschlossen. Wenn kein Muster übereinstimmt,
 wird die Datei ausgeschlossen, wenn das zuletzt angegebene Muster
-ein `include` ist, oder eingeschlossen, wenn das zuletzt angegebene
-Muster ein `exclude` ist.
+ein <b>include</b> ist, oder eingeschlossen, wenn das zuletzt angegebene
+Muster ein <b>exclude</b> ist.
 </p><p>Weitere Details zu Musterspezifikationen finden Sie im Abschnitt
 PATTERN.
 </p><p>Diese Option kann mehrmals verwendet werden.
@@ -1630,7 +1630,7 @@ Blockgröße für jede Datei verschwendet wird. Mit beispielsweise
 Sie 12,8 GB Parität, was zu 12,8 GB weniger verfügbarem Speicherplatz
 auf der Datenfestplatte führen kann.
 </p><p>Sie können die Menge des verschwendeten Platzes auf jeder Festplatte
-mithilfe von `status` überprüfen. Dies ist die Menge an Platz, die Sie
+mithilfe von <b>status</b> überprüfen. Dies ist die Menge an Platz, die Sie
 auf den Datenfestplatten freilassen oder für Dateien verwenden müssen,
 die nicht im Array enthalten sind. Wenn dieser Wert negativ ist,
 bedeutet dies, dass Sie kurz davor sind, die Parität zu füllen,
@@ -1691,7 +1691,7 @@ autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Speichert den Zustand beim Synchronisieren oder Scrubben automatisch
 nach der angegebenen Menge an verarbeiteten GB.
-Diese Option ist nützlich, um zu vermeiden, dass lange `sync`-Befehle
+Diese Option ist nützlich, um zu vermeiden, dass lange <b>sync</b>-Befehle
 von vorne gestartet werden müssen, wenn sie durch einen Maschinenabsturz
 oder ein anderes Ereignis unterbrochen werden.
 </p></div>
@@ -1704,7 +1704,7 @@ Wenn angegeben, überprüft SnapRAID regelmäßig die Temperatur aller
 Festplatten mithilfe des smartctl-Tools. Die aktuellen Festplattentemperaturen
 werden während des Betriebs von SnapRAID angezeigt. Wenn eine Festplatte
 diesen Grenzwert überschreitet, werden alle Vorgänge gestoppt, und
-die Festplatten werden für die durch die Option `temp_sleep` definierte
+die Festplatten werden für die durch die Option <b>temp_sleep</b> definierte
 Dauer heruntergefahren (in den Standby-Modus versetzt). Nach der
 Schlafperiode werden die Vorgänge fortgesetzt und möglicherweise
 erneut pausiert, wenn der Temperaturgrenzwert erneut erreicht wird.
@@ -1742,7 +1742,7 @@ Der Standardwert ist 5 Minuten.
 pool DIR
 </h2>
 <p>Definiert das Pooling-Verzeichnis, in dem die virtuelle Ansicht des
-Festplatten-Arrays mithilfe des Befehls `pool` erstellt wird.
+Festplatten-Arrays mithilfe des Befehls <b>pool</b> erstellt wird.
 </p><p>Das Verzeichnis muss bereits existieren.
 </p></div>
 <div class="manual-section-level-2">
@@ -1757,7 +1757,7 @@ zuzugreifen. Ohne diese Option verwenden die generierten symbolischen
 Links nur lokale Pfade, was die Freigabe des Pool-Verzeichnisses
 über das Netzwerk nicht ermöglicht.
 </p><p>Die symbolischen Links werden unter Verwendung des angegebenen UNC-Pfads
-gebildet, wobei der in der `data`-Option angegebene Festplattenname
+gebildet, wobei der in der <b>data</b>-Option angegebene Festplattenname
 und schließlich das Dateiverzeichnis und der Name hinzugefügt werden.
 </p><p>Diese Option ist nur für Windows erforderlich.
 </p></div>
@@ -1770,12 +1770,12 @@ für jede Festplatte abzurufen. Dies kann für RAID-Controller und einige
 USB-Festplatten erforderlich sein, die nicht automatisch erkannt
 werden können. Der Platzhalter %s wird durch den Gerätenamen ersetzt,
 ist aber für feste Geräte wie RAID-Controller optional.
-</p><p>DISK ist derselbe Festplattenname, der in der `data`-Option angegeben
-ist. PARITY ist einer der Paritätsnamen: `parity`, `2-parity`,
-`3-parity`, `4-parity`, `5-parity`, `6-parity` oder `z-parity`.
-</p><p>In den angegebenen OPTIONS wird die Zeichenfolge `%s` durch den
+</p><p>DISK ist derselbe Festplattenname, der in der <b>data</b>-Option angegeben
+ist. PARITY ist einer der Paritätsnamen: <b>parity</b>, <b>2-parity</b>,
+<b>3-parity</b>, <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> oder <b>z-parity</b>.
+</p><p>In den angegebenen OPTIONS wird die Zeichenfolge <b>%s</b> durch den
 Gerätenamen ersetzt. Bei RAID-Controllern ist das Gerät
-wahrscheinlich fest, und Sie müssen `%s` möglicherweise nicht verwenden.
+wahrscheinlich fest, und Sie müssen <b>%s</b> möglicherweise nicht verwenden.
 </p><p>Weitere mögliche Optionen finden Sie in der smartmontools-Dokumentation:
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1794,12 +1794,12 @@ smartignore DISK/PARITY ATTR [ATTR...]
 Wahrscheinlichkeit eines Festplattenausfalls. Diese Option ist
 nützlich, wenn eine Festplatte ungewöhnliche oder irreführende
 Werte für ein bestimmtes Attribut meldet.
-</p><p>DISK ist derselbe Festplattenname, der in der `data`-Option angegeben
-ist. PARITY ist einer der Paritätsnamen: `parity`, `2-parity`,
-`3-parity`, `4-parity`, `5-parity`, `6-parity` oder `z-parity`.
+</p><p>DISK ist derselbe Festplattenname, der in der <b>data</b>-Option angegeben
+ist. PARITY ist einer der Paritätsnamen: <b>parity</b>, <b>2-parity</b>,
+<b>3-parity</b>, <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> oder <b>z-parity</b>.
 Der Sonderwert * kann verwendet werden, um das Attribut auf allen
 Festplatten zu ignorieren.
-</p><p>Um beispielsweise das Attribut `Current Pending Sector Count` auf allen
+</p><p>Um beispielsweise das Attribut <b>Current Pending Sector Count</b> auf allen
 Festplatten zu ignorieren:
 </p><pre>
 smartignore * 197
@@ -1854,32 +1854,32 @@ Pattern
 den Ausschluss zu filtern. Durch die Verwendung von Globbing-Zeichen können Sie Regeln definieren,
 die mit bestimmten Dateinamen oder ganzen Verzeichnisstrukturen übereinstimmen, ohne
 jeden Pfad manuell auflisten zu müssen.
-</p><p>Das Fragezeichen `?` entspricht einem beliebigen einzelnen Zeichen außer dem
+</p><p>Das Fragezeichen <b>?</b> entspricht einem beliebigen einzelnen Zeichen außer dem
 Verzeichnistrennzeichen. Dies macht es nützlich für den Abgleich von Dateinamen mit variablen
 Zeichen, während das Muster auf eine einzelne Verzeichnisebene beschränkt bleibt.
-</p><p>Der einfache Stern `*` entspricht einer beliebigen Folge von Zeichen, aber wie das
+</p><p>Der einfache Stern <b>*</b> entspricht einer beliebigen Folge von Zeichen, aber wie das
 Fragezeichen überschreitet er niemals Verzeichnisgrenzen. Er stoppt beim
 Schrägstrich, was ihn für den Abgleich innerhalb einer einzelnen Pfadkomponente
 geeignet macht. Dies ist das Standardverhalten von Wildcards, das vom Shell-
 Globbing bekannt ist.
-</p><p>Der Doppelstern `**` ist mächtiger; er entspricht jeder Folge von
+</p><p>Der Doppelstern <b>**</b> ist mächtiger; er entspricht jeder Folge von
 Zeichen einschließlich Verzeichnistrennzeichen. Dies ermöglicht es Mustern, über
-mehrere Verzeichnisebenen hinweg übereinzustimmen. Wenn `**` direkt in
+mehrere Verzeichnisebenen hinweg übereinzustimmen. Wenn <b>**</b> direkt in
 ein Muster eingebettet ist, kann es null oder mehr Zeichen einschließlich Schrägstrichen zwischen
 dem umgebenden wörtlichen Text entsprechen.
-</p><p>Die wichtigste Verwendung von `**` ist in der speziellen Form `/**/`. Dies entspricht
+</p><p>Die wichtigste Verwendung von <b>**</b> ist in der speziellen Form <b>/**/</b>. Dies entspricht
 null oder mehr vollständigen Verzeichnisebenen, was es möglich macht, Dateien
 in jeder Tiefe eines Verzeichnisbaums abzugleichen, ohne die genaue Pfadstruktur zu kennen.
-Zum Beispiel entspricht das Muster `src/**/main.js` dem Pfad `src/main.js` (Überspringen
-von null Verzeichnissen), `src/ui/main.js` (Überspringen eines Verzeichnisses) und
-`src/ui/components/main.js` (Überspringen von zwei Verzeichnissen).
-</p><p>Zeichenklassen mit eckigen Klammern `[]` entsprechen einem einzelnen Zeichen aus einer
+Zum Beispiel entspricht das Muster <b>src/**/main.js</b> dem Pfad <b>src/main.js</b> (Überspringen
+von null Verzeichnissen), <b>src/ui/main.js</b> (Überspringen eines Verzeichnisses) und
+<b>src/ui/components/main.js</b> (Überspringen von zwei Verzeichnissen).
+</p><p>Zeichenklassen mit eckigen Klammern <b>[]</b> entsprechen einem einzelnen Zeichen aus einer
 bestimmten Menge oder einem Bereich. Wie die anderen Einzelzeichenmuster
 entsprechen sie nicht den Verzeichnistrennzeichen. Klassen unterstützen Bereiche und Negierung durch
 ein Ausrufezeichen.
-</p><p>Der grundlegende Unterschied, den man sich merken sollte, ist, dass `*`, `?` und Zeichenklassen
+</p><p>Der grundlegende Unterschied, den man sich merken sollte, ist, dass <b>*</b>, <b>?</b> und Zeichenklassen
 alle Verzeichnisgrenzen respektieren und nur innerhalb einer einzelnen Pfadkomponente
-übereinstimmen, während `**` das einzige Muster ist, das über Verzeichnistrennzeichen
+übereinstimmen, während <b>**</b> das einzige Muster ist, das über Verzeichnistrennzeichen
 hinweg übereinstimmen kann.
 </p><p>Es gibt vier verschiedene Arten von Mustern:
 </p><div class="manual-option-list">
@@ -1930,27 +1930,27 @@ verwenden. Windows-Systemverzeichnisse, Junctions, Einhängepunkte
 (Mount Points) und andere spezielle Windows-Verzeichnisse werden
 als Dateien behandelt, was bedeutet, dass Sie zum Ausschließen
 eine Dateiregel verwenden müssen, nicht eine Verzeichnisregel.
-</p><p>Wenn der Dateiname ein Zeichen '*', '?', '[', oder ']' enthält,
+</p><p>Wenn der Dateiname ein Zeichen <b>*</b>, <b>?</b>, <b>[</b>, oder <b>]</b> enthält,
 müssen Sie es escapen, um zu vermeiden, dass es als Globbing-Zeichen
-interpretiert wird. Unter Unix ist das Escape-Zeichen '\'; unter
-Windows ist es '^'. Wenn sich das Muster in der Befehlszeile befindet,
+interpretiert wird. Unter Unix ist das Escape-Zeichen <b>\</b>; unter
+Windows ist es <b>^</b>. Wenn sich das Muster in der Befehlszeile befindet,
 müssen Sie das Escape-Zeichen verdoppeln, um zu vermeiden, dass es
 von der Befehlsshell interpretiert wird.
 </p><p>In der Konfigurationsdatei können Sie verschiedene Strategien zum
 Filtern der zu verarbeitenden Dateien verwenden.
-Der einfachste Ansatz besteht darin, nur `exclude`-Regeln zu verwenden,
+Der einfachste Ansatz besteht darin, nur <b>exclude</b>-Regeln zu verwenden,
 um alle Dateien und Verzeichnisse zu entfernen, die Sie nicht
 verarbeiten möchten. Zum Beispiel:
 </p><pre>
-# Schließt jede Datei namens `*.unrecoverable` aus
+# Schließt jede Datei namens <b>*.unrecoverable</b> aus
 exclude *.unrecoverable
-# Schließt das Stammverzeichnis `/lost+found` aus
+# Schließt das Stammverzeichnis <b>/lost+found</b> aus
 exclude /lost+found/
-# Schließt jedes Unterverzeichnis namens `tmp` aus
+# Schließt jedes Unterverzeichnis namens <b>tmp</b> aus
 exclude tmp/
 </pre>
 <p>Der gegenteilige Ansatz besteht darin, nur die Dateien zu definieren,
-die Sie verarbeiten möchten, indem Sie nur `include`-Regeln verwenden.
+die Sie verarbeiten möchten, indem Sie nur <b>include</b>-Regeln verwenden.
 Zum Beispiel:
 </p><pre>
 # Schließt nur einige Verzeichnisse ein
@@ -1958,22 +1958,22 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>Der letzte Ansatz besteht darin, `exclude`- und `include`-Regeln
+<p>Der letzte Ansatz besteht darin, <b>exclude</b>- und <b>include</b>-Regeln
 zu mischen. In diesem Fall ist die Reihenfolge der Regeln wichtig.
 Frühere Regeln haben Vorrang vor späteren.
-Zur Vereinfachung können Sie zuerst alle `exclude`-Regeln und
-dann alle `include`-Regeln auflisten. Zum Beispiel:
+Zur Vereinfachung können Sie zuerst alle <b>exclude</b>-Regeln und
+dann alle <b>include</b>-Regeln auflisten. Zum Beispiel:
 </p><pre>
-# Schließt jede Datei namens `*.unrecoverable` aus
+# Schließt jede Datei namens <b>*.unrecoverable</b> aus
 exclude *.unrecoverable
-# Schließt jedes Unterverzeichnis namens `tmp` aus
+# Schließt jedes Unterverzeichnis namens <b>tmp</b> aus
 exclude tmp/
 # Schließt nur einige Verzeichnisse ein
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-<p>In der Befehlszeile können Sie mit der Option -f nur `include`-Muster
+<p>In der Befehlszeile können Sie mit der Option -f nur <b>include</b>-Muster
 verwenden. Zum Beispiel:
 </p><pre>
 # Überprüft nur die .mp3-Dateien.
@@ -1988,14 +1988,14 @@ Anführungszeichen setzen, um zu verhindern, dass die Shell sie erweitert.
 Dateien Ignorieren
 </h1>
 <p>Zusätzlich zu den globalen Regeln in der Konfigurationsdatei können Sie
-`.snapraidignore`-Dateien in jedem Verzeichnis innerhalb des Arrays platzieren,
+<b>.snapraidignore</b>-Dateien in jedem Verzeichnis innerhalb des Arrays platzieren,
 um dezentrale Ausschlussregeln zu definieren.
-</p><p>Regeln, die in `.snapraidignore` definiert sind, werden nach den Regeln in der
+</p><p>Regeln, die in <b>.snapraidignore</b> definiert sind, werden nach den Regeln in der
 Konfigurationsdatei angewendet. Dies bedeutet, dass sie eine höhere Priorität haben
 und verwendet werden können, um Dateien auszuschließen, die zuvor durch die globale
 Konfiguration eingeschlossen wurden. Effektiv wird eine Datei ausgeschlossen, wenn
 eine lokale Regel zutrifft, unabhängig von den globalen Include-Einstellungen.
-</p><p>Die Musterlogik in `.snapraidignore` spiegelt die globale Konfiguration wider,
+</p><p>Die Musterlogik in <b>.snapraidignore</b> spiegelt die globale Konfiguration wider,
 verankert die Muster jedoch an dem Verzeichnis, in dem sich die Datei befindet:
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -2023,7 +2023,7 @@ in diesem Verzeichnis oder darunter befindet.
 /PATH/FILE
 </div><div class="manual-option-description">
 Wählt die exakt angegebene Datei relativ zum Speicherort
-der `.snapraidignore`-Datei aus.
+der <b>.snapraidignore</b>-Datei aus.
 </div>
 </div>
 </div>
@@ -2033,17 +2033,17 @@ der `.snapraidignore`-Datei aus.
 /PATH/DIR/
 </div><div class="manual-option-description">
 Wählt das exakt angegebene Verzeichnis und alles darin aus,
-relativ zum Speicherort der `.snapraidignore`-Datei.
+relativ zum Speicherort der <b>.snapraidignore</b>-Datei.
 </div>
 </div>
 </div>
-<p>Im Gegensatz zur globalen Konfiguration unterstützen `.snapraidignore`-Dateien nur
-Ausschlussregeln; Sie können keine `include`-Muster oder Negationen (!) verwenden.
-</p><p>Wenn Sie beispielsweise eine `.snapraidignore` in `/mnt/disk1/projects/` haben:
+<p>Im Gegensatz zur globalen Konfiguration unterstützen <b>.snapraidignore</b>-Dateien nur
+Ausschlussregeln; Sie können keine <b>include</b>-Muster oder Negationen (!) verwenden.
+</p><p>Wenn Sie beispielsweise eine <b>.snapraidignore</b> in <b>/mnt/disk1/projects/</b> haben:
 </p><pre>
 # Schließt NUR /mnt/disk1/projects/output.bin aus
 /output.bin
-# Schließt jedes Verzeichnis namens 'build' innerhalb von projects/ aus
+# Schließt jedes Verzeichnis namens <b>build</b> innerhalb von projects/ aus
 build/
 # Schließt jede .tmp-Datei innerhalb von projects/ oder deren Unterordnern aus
 *.tmp
@@ -2058,8 +2058,8 @@ Content-Datei.
 </p><p>Es ist eine Binärdatei, die alle im Festplatten-Array vorhandenen
 Dateien auflistet, zusammen mit allen Prüfsummen zur Überprüfung
 ihrer Integrität.
-</p><p>Diese Datei wird von den Befehlen `sync` und `scrub` gelesen und
-geschrieben und von den Befehlen `fix`, `check` und `status` gelesen.
+</p><p>Diese Datei wird von den Befehlen <b>sync</b> und <b>scrub</b> gelesen und
+geschrieben und von den Befehlen <b>fix</b>, <b>check</b> und <b>status</b> gelesen.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec11" class="manual-title-level-1">
@@ -2068,9 +2068,9 @@ Parity
 <p>SnapRAID speichert die Paritätsinformationen Ihres Arrays in den
 Paritätsdateien.
 </p><p>Dies sind Binärdateien, die die berechnete Parität aller in der
-`content`-Datei definierten Blöcke enthalten.
-</p><p>Diese Dateien werden von den Befehlen `sync` und `fix` gelesen
-und geschrieben und nur von den Befehlen `scrub` und `check` gelesen.
+<b>content</b>-Datei definierten Blöcke enthalten.
+</p><p>Diese Dateien werden von den Befehlen <b>sync</b> und <b>fix</b> gelesen
+und geschrieben und nur von den Befehlen <b>scrub</b> und <b>check</b> gelesen.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec12" class="manual-title-level-1">
@@ -2082,8 +2082,8 @@ verwendet wird.
 </p><p>Unter Windows werden alle vom Dateisystem gelesenen Namen konvertiert
 und im UTF-8-Format verarbeitet.
 </p><p>Um Dateinamen korrekt auszugeben, müssen Sie die Windows-Konsole
-mit dem Befehl `chcp 65001` auf den UTF-8-Modus einstellen und
-eine TrueType-Schriftart wie `Lucida Console` als Konsolenschriftart
+mit dem Befehl <b>chcp 65001</b> auf den UTF-8-Modus einstellen und
+eine TrueType-Schriftart wie <b>Lucida Console</b> als Konsolenschriftart
 verwenden. Dies betrifft nur die gedruckten Dateinamen; wenn Sie
 die Konsolenausgabe in eine Datei umleiten, ist die resultierende
 Datei immer im UTF-8-Format.
