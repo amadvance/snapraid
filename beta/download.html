@@ -6,11 +6,11 @@
     <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
     <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
     <title>Download SnapRAID</title>
-    <style>html,body{background-color:#020617;color:#f8fafc;}</style>
     <link rel="stylesheet" href="style.css">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <link rel="apple-touch-icon" sizes="180x180" href="/beta/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/beta/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/beta/favicon-16x16.png">
+    <link rel="manifest" href="/beta/site.webmanifest">
     <script src="script.js"></script>
 
 <!-- Google Analytics 4 -->
@@ -67,30 +67,32 @@
 
     <div class="container" style="padding: 4rem 20px;">
         <h1 style="text-align: center;">Download SnapRAID</h1>
+      
+        <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem auto;">
         
-        <div style="text-align: center; max-width: 900px; margin: 0 auto 3rem auto;">
             <p style="margin-bottom: 1rem; font-size: 1.2rem;">
-                The latest SnapRAID CLI release is <strong>v14.0-rc-41-g07e40e1</strong> (Released March 2026).
+                SnapRAID CLI <strong>v14.0-rc-41-g07e40e1</strong> (Released March 2026).
             </p>
+
             <p style="margin-bottom: 1rem; font-size: 1.2rem;">
-                The latest SnapRAID Daemon release is <strong>v0.1-beta-109-g2f7e7a2</strong> (Released March 2026).
-            </p>            
-            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                See the <a href="https://github.com/amadvance/snapraid/blob/master/HISTORY">ChangeLog</a> for the detailed list of changes,
-                and <a href="https://github.com/amadvance/snapraid/blob/master/CHECKSUMS">CheckSums</a> for the SHA256 checksums.
+                SnapRAID Daemon <strong>v0.1-beta-109-g2f7e7a2</strong> (Released March 2026).
             </p>
+        
             <p style="color: var(--text-secondary);">
                 <strong style="color: var(--text-primary);">SnapRAID</strong> is a <a href="http://en.wikipedia.org/wiki/Free_Software">Free Software</a>
                 application released with the <a href="http://www.gnu.org/licenses/quick-guide-gplv3.html">GPLv3 license</a>.
             </p>
         </div>
 
-
         <div class="grid">
-            <!-- Core Binaries -->
+            <!-- SnapRAID CLI -->
             <div class="card">
                 <h2>SnapRAID CLI</h2>
-                <p>The classic command line tool.</p>
+                <p>
+                  The classic command line tool.
+                  See the <a href="https://github.com/amadvance/snapraid/blob/master/HISTORY">ChangeLog</a> for the detailed list of changes,
+                  and <a href="https://github.com/amadvance/snapraid/blob/master/CHECKSUMS">CheckSums</a> for the SHA256 checksums.
+               </p>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -147,7 +149,12 @@
                     <span><strong>Warning:</strong> The SnapRAID Daemon requires SnapRAID CLI 14.0+ already installed and configured</span>
                 </div>
 
-                <p>Includes background service and Web UI.</p>
+                <p>
+                  Includes background service and Web UI.
+                  See the <a href="https://github.com/amadvance/snapraid-daemon/blob/master/HISTORY">ChangeLog</a> for the detailed list of changes,
+                  and <a href="https://github.com/amadvance/snapraid-daemon/blob/master/CHECKSUMS">CheckSums</a> for the SHA256 checksums.
+                </p>
+
                 <table class="data-table">
                     <thead>
                         <tr>
