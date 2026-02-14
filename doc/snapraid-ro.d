@@ -403,8 +403,8 @@ Comenzi
 	Pentru a le repara, puteți utiliza comanda `fix -e`.
 
 	De asemenea, arată un grafic care reprezintă ultima dată când fiecare bloc
-	a fost verificat (scrubbed) sau sincronizat. Blocurile verificate sunt afișate cu '*',
-	blocurile sincronizate, dar încă neverificate, cu 'o'.
+	a fost verificat (scrubbed) sau sincronizat. Blocurile verificate sunt afișate cu `*`,
+	blocurile sincronizate, dar încă neverificate, cu `o`.
 
 	Nimic nu este modificat.
 
@@ -925,11 +925,11 @@ Opțiuni
 		multe erori. Când -l, --log este specificat, doar
 		erorile fatale care fac SnapRAID să se oprească sunt tipărite
 		pe ecran.
-		Dacă calea începe cu '>>', fișierul este deschis
-		în modul de adăugare. Aparițiile de '%D' și '%T' în nume sunt
+		Dacă calea începe cu `>>`, fișierul este deschis
+		în modul de adăugare. Aparițiile de `%D` și `%T` în nume sunt
 		înlocuite cu data și ora în formatul YYYYMMDD și
 		HHMMSS. În fișierele batch Windows, trebuie să dublați
-		caracterul '%', de exemplu, result-%%D.log. Pentru a utiliza '>>', trebuie
+		caracterul `%`, de exemplu, result-%%D.log. Pentru a utiliza `>>`, trebuie
 		să închideți numele între ghilimele, de exemplu, `">>result.log"`.
 		Pentru a scoate jurnalul la ieșirea standard sau la eroarea standard,
 		puteți utiliza `">&1"` și `">&2"`, respectiv.
@@ -1029,14 +1029,14 @@ Configurare
 	Fiecare nivel de paritate necesită prezența tuturor nivelurilor de paritate
 	anterioare.
 
-	Aceleași considerații ca pentru opțiunea 'parity' se aplică.
+	Aceleași considerații ca pentru opțiunea `parity` se aplică.
 
 	Aceste opțiuni sunt opționale și pot fi utilizate o singură dată.
 
   z-parity FILE [,FILE] ...
 	Definește un fișier și un format alternativ pentru a stoca paritatea triplă.
 
-	Această opțiune este o alternativă la '3-parity', destinată în primul rând
+	Această opțiune este o alternativă la `3-parity`, destinată în primul rând
 	CPU-urilor low-end precum ARM sau AMD Phenom, Athlon și Opteron care nu
 	suportă setul de instrucțiuni SSSE3. În astfel de cazuri, oferă
 	o performanță mai bună.
@@ -1044,12 +1044,12 @@ Configurare
 	Acest format este similar, dar mai rapid decât cel utilizat de ZFS RAIDZ3.
 	Ca și ZFS, nu funcționează dincolo de paritatea triplă.
 
-	Când utilizați '3-parity', veți fi avertizați dacă este recomandat să utilizați
-	formatul 'z-parity' pentru îmbunătățirea performanței.
+	Când utilizați `3-parity`, veți fi avertizați dacă este recomandat să utilizați
+	formatul `z-parity` pentru îmbunătățirea performanței.
 
 	Este posibil să convertiți de la un format la altul ajustând
 	fișierul de configurare cu fișierul z-parity sau 3-parity dorit
-	și utilizând 'fix' pentru a-l recrea.
+	și utilizând `fix` pentru a-l recrea.
 
   content FILE
 	Definește fișierul de utilizat pentru a stoca lista și sumele de control (checksums) a tuturor
@@ -1078,7 +1078,7 @@ Configurare
 	Ar trebui să utilizați o opțiune pentru fiecare disc de date din matrice.
 
 	Puteți redenumi un disc mai târziu schimbând NAME direct
-	în fișierul de configurare și apoi rulând o comandă 'sync'.
+	în fișierul de configurare și apoi rulând o comandă `sync`.
 	În cazul redenumirii, asocierea se face utilizând UUID-ul stocat
 	al discurilor.
 
@@ -1384,9 +1384,9 @@ Model (Pattern)
 	speciale Windows sunt tratate ca fișiere, ceea ce înseamnă că pentru a le exclude,
 	trebuie să utilizați o regulă de fișier, nu una de director.
 
-	Dacă numele fișierului conține un caracter '*', '?', '[',
-	sau ']', trebuie să îl escape-ați pentru a evita să fie interpretat ca un
-	caracter de globbing. În Unix, caracterul escape este '\'; în Windows, este '^'.
+	Dacă numele fișierului conține un caracter `*`, `?`, `[`,
+	sau `]`, trebuie să îl escape-ați pentru a evita să fie interpretat ca un
+	caracter de globbing. În Unix, caracterul escape este `\`; în Windows, este `^`.
 	Când modelul este pe linia de comandă, trebuie să dublați caracterul escape
 	pentru a evita ca acesta să fie interpretat de shell-ul de comandă.
 
@@ -1472,7 +1472,7 @@ Fișiere de Ignorat (Ignore File)
 
 		:# Exclude DOAR /mnt/disk1/projects/output.bin
 		:/output.bin
-		:# Exclude orice director numit 'build' în interiorul projects/
+		:# Exclude orice director numit `build` în interiorul projects/
 		:build/
 		:# Exclude orice fișier .tmp în interiorul projects/ sau subfolderele sale
 		:*.tmp

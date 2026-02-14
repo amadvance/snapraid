@@ -441,8 +441,8 @@ Para corrigi-los, você pode usar o comando `fix -e`.
 
 Também mostra um gráfico que representa a última vez que cada bloco
 foi examinado (scrubbed) ou sincronizado (synced). Blocos examinados
-são mostrados com '*', blocos sincronizados, mas ainda não examinados,
-com 'o'.
+são mostrados com `*`, blocos sincronizados, mas ainda não examinados,
+com `o`.
 
 Nada é modificado.
 
@@ -1013,11 +1013,11 @@ SnapRAID fornece as seguintes opções:
         em caso de muitos erros. Quando -l, --log é especificado, apenas
         erros fatais que fazem o SnapRAID parar são impressos
         na tela.
-        Se o caminho começar com '>>', o arquivo é aberto
-        no modo de anexação. Ocorrências de '%D' e '%T' no nome são
+        Se o caminho começar com `>>`, o arquivo é aberto
+        no modo de anexação. Ocorrências de `%D` e `%T` no nome são
         substituídas pela data e hora no formato YYYYMMDD e
         HHMMSS. Em arquivos em lote do Windows, você deve duplicar
-        o caractere '%', por exemplo, resultado-%%D.log. Para usar '>>', você deve
+        o caractere `%`, por exemplo, resultado-%%D.log. Para usar `>>`, você deve
         colocar o nome entre aspas, por exemplo, `">>resultado.log"`.
         Para enviar o log para a saída padrão ou erro padrão,
         você pode usar `">&1"` e `">&2"`, respectivamente.
@@ -1127,7 +1127,7 @@ Para cada nível de paridade especificado, um nível adicional de proteção
 Cada nível de paridade requer a presença de todos os níveis de paridade
 anteriores.
 
-As mesmas considerações que para a opção 'parity' se aplicam.
+As mesmas considerações que para a opção `parity` se aplicam.
 
 Estas opções são opcionais e podem ser usadas apenas uma vez.
 
@@ -1136,7 +1136,7 @@ Estas opções são opcionais e podem ser usadas apenas uma vez.
 
 Define um arquivo e formato alternativo para armazenar paridade tripla.
 
-Esta opção é uma alternativa a '3-parity', destinada principalmente a
+Esta opção é uma alternativa a `3-parity`, destinada principalmente a
 CPUs de baixo custo como ARM ou AMD Phenom, Athlon e Opteron que não
 suportam o conjunto de instruções SSSE3. Nesses casos, ela fornece
 melhor desempenho.
@@ -1144,12 +1144,12 @@ melhor desempenho.
 Este formato é semelhante, mas mais rápido do que o usado pelo ZFS RAIDZ3.
 Assim como o ZFS, ele não funciona além da paridade tripla.
 
-Ao usar '3-parity', você será avisado se for recomendado usar
-o formato 'z-parity' para melhoria de desempenho.
+Ao usar `3-parity`, você será avisado se for recomendado usar
+o formato `z-parity` para melhoria de desempenho.
 
 É possível converter de um formato para outro ajustando
 o arquivo de configuração com o z-parity ou 3-parity desejado
-e usando 'fix' para recriá-lo.
+e usando `fix` para recriá-lo.
 
 7.4 content FILE
 ----------------
@@ -1182,7 +1182,7 @@ mantenha o NAME fixo.
 Você deve usar uma opção para cada disco de dados no array.
 
 Você pode renomear um disco mais tarde alterando o NAME diretamente
-no arquivo de configuração e, em seguida, executando um comando 'sync'.
+no arquivo de configuração e, em seguida, executando um comando `sync`.
 No caso de renomeação, a associação é feita usando o UUID
 armazenado dos discos.
 
@@ -1520,9 +1520,9 @@ Diretórios do sistema Windows, junctions, pontos de montagem e outros
 diretórios especiais do Windows são tratados como arquivos, o que significa
 que para excluí-los, você deve usar uma regra de arquivo, não uma de diretório.
 
-Se o nome do arquivo contiver um caractere '*', '?', '[',
-ou ']', você deve escapá-lo para evitar que seja interpretado como um
-caractere globbing. No Unix, o caractere de escape é '\'; no Windows, é '^'.
+Se o nome do arquivo contiver um caractere `*`, `?`, `[`,
+ou `]`, você deve escapá-lo para evitar que seja interpretado como um
+caractere globbing. No Unix, o caractere de escape é `\`; no Windows, é `^`.
 Quando o padrão está na linha de comando, você deve duplicar o caractere
 de escape para evitar que seja interpretado pelo shell de comando.
 
@@ -1611,7 +1611,7 @@ Por exemplo, se você tiver um `.snapraidignore` em `/mnt/disk1/projects/`:
 
     # Exclui APENAS /mnt/disk1/projects/output.bin
     /output.bin
-    # Exclui qualquer diretório chamado 'build' dentro de projects/
+    # Exclui qualquer diretório chamado `build` dentro de projects/
     build/
     # Exclui qualquer arquivo .tmp dentro de projects/ ou suas subpastas
     *.tmp

@@ -408,8 +408,8 @@ Commands
 	To fix them, you can use the `fix -e` command.
 
 	It also shows a graph representing the last time each block
-	was scrubbed or synced. Scrubbed blocks are shown with '*',
-	blocks synced but not yet scrubbed with 'o'.
+	was scrubbed or synced. Scrubbed blocks are shown with `*`,
+	blocks synced but not yet scrubbed with `o`.
 
 	Nothing is modified.
 
@@ -965,11 +965,11 @@ Options
 		many errors. When -l, --log is specified, only
 		fatal errors that cause SnapRAID to stop are printed
 		to the screen.
-		If the path starts with '>>', the file is opened
-		in append mode. Occurrences of '%D' and '%T' in the name are
+		If the path starts with `>>`, the file is opened
+		in append mode. Occurrences of `%D` and `%T` in the name are
 		replaced with the date and time in the format YYYYMMDD and
 		HHMMSS. In Windows batch files, you must double
-		the '%' character, e.g., result-%%D.log. To use '>>', you must
+		the `%` character, e.g., result-%%D.log. To use `>>`, you must
 		enclose the name in quotes, e.g., `">>result.log"`.
 		To output the log to standard output or standard error,
 		you can use `">&1"` and `">&2"`, respectively.
@@ -1070,14 +1070,14 @@ Configuration
 	Each parity level requires the presence of all previous parity
 	levels.
 
-	The same considerations as for the 'parity' option apply.
+	The same considerations as for the `parity` option apply.
 
 	These options are optional and can be used only once.
 
   z-parity FILE [,FILE] ...
 	Defines an alternate file and format to store triple parity.
 
-	This option is an alternative to '3-parity', primarily intended for
+	This option is an alternative to `3-parity`, primarily intended for
 	low-end CPUs like ARM or AMD Phenom, Athlon, and Opteron that do not
 	support the SSSE3 instruction set. In such cases, it provides
 	better performance.
@@ -1085,12 +1085,12 @@ Configuration
 	This format is similar to but faster than the one used by ZFS RAIDZ3.
 	Like ZFS, it does not work beyond triple parity.
 
-	When using '3-parity', you will be warned if it is recommended to use
-	the 'z-parity' format for performance improvement.
+	When using `3-parity`, you will be warned if it is recommended to use
+	the `z-parity` format for performance improvement.
 
 	It is possible to convert from one format to another by adjusting
 	the configuration file with the desired z-parity or 3-parity file
-	and using 'fix' to recreate it.
+	and using `fix` to recreate it.
 
   content FILE
 	Defines the file to use to store the list and checksums of all the
@@ -1119,7 +1119,7 @@ Configuration
 	You should use one option for each data disk in the array.
 
 	You can rename a disk later by changing the NAME directly
-	in the configuration file and then running a 'sync' command.
+	in the configuration file and then running a `sync` command.
 	In the case of renaming, the association is done using the stored
 	UUID of the disks.
 
@@ -1424,9 +1424,9 @@ Pattern
 	special directories are treated as files, meaning that to exclude
 	them, you must use a file rule, not a directory one.
 
-	If the file name contains a '*', '?', '[',
-	or ']' character, you must escape it to avoid having it interpreted as a
-	globbing character. In Unix, the escape character is '\'; in Windows, it is '^'.
+	If the file name contains a `*`, `?`, `[`,
+	or `]` character, you must escape it to avoid having it interpreted as a
+	globbing character. In Unix, the escape character is `\`; in Windows, it is `^`.
 	When the pattern is on the command line, you must double the escape
 	character to avoid having it interpreted by the command shell.
 
@@ -1512,7 +1512,7 @@ Ignore File
 
 		:# Excludes ONLY /mnt/disk1/projects/output.bin
 		:/output.bin
-		:# Excludes any directory named 'build' inside projects/
+		:# Excludes any directory named `build` inside projects/
 		:build/
 		:# Excludes any .tmp file inside projects/ or its subfolders
 		:*.tmp

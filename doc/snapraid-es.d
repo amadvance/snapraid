@@ -425,7 +425,7 @@ Commands
 
 	También muestra un gráfico que representa la última vez que cada
 	bloque fue fregado o sincronizado. Los bloques fregados se muestran
-	con '*', los bloques sincronizados pero aún no fregados con 'o'.
+	con `*`, los bloques sincronizados pero aún no fregados con `o`.
 
 	Nada se modifica.
 
@@ -980,11 +980,11 @@ Options
 		excesiva en caso de muchos errores. Cuando se especifica -l,
 		--log, solo los errores fatales que hacen que SnapRAID se
 		detenga se imprimen en la pantalla.
-		Si la ruta comienza con '>>', el archivo se abre
-		en modo de anexar. Las ocurrencias de '%D' y '%T' en el nombre
+		Si la ruta comienza con `>>`, el archivo se abre
+		en modo de anexar. Las ocurrencias de `%D` y `%T` en el nombre
 		se reemplazan con la fecha y hora en el formato AAAA MM DD y HH MM SS.
 		En archivos por lotes de Windows, debe duplicar el
-		carácter '%', por ejemplo, resultado-%%D.log. Para usar '>>',
+		carácter `%`, por ejemplo, resultado-%%D.log. Para usar `>>`,
 		debe encerrar el nombre entre comillas, por ejemplo, `">>resultado.log"`.
 		Para enviar el registro a la salida estándar o al error
 		estándar, puede usar `">&1"` y `">&2"`, respectivamente.
@@ -1088,14 +1088,14 @@ Configuration
 	Cada nivel de paridad requiere la presencia de todos los niveles
 	de paridad anteriores.
 
-	Se aplican las mismas consideraciones que para la opción 'parity'.
+	Se aplican las mismas consideraciones que para la opción `parity`.
 
 	Estas opciones son opcionales y solo se pueden usar una vez.
 
   z-parity FILE [,FILE] ...
 	Define un archivo y un formato alternativos para almacenar paridad triple.
 
-	Esta opción es una alternativa a '3-parity', destinada principalmente
+	Esta opción es una alternativa a `3-parity`, destinada principalmente
 	a CPU de gama baja como ARM o AMD Phenom, Athlon y Opteron que no
 	admiten el conjunto de instrucciones SSSE3. En tales casos,
 	proporciona un mejor rendimiento.
@@ -1103,12 +1103,12 @@ Configuration
 	Este formato es similar pero más rápido que el utilizado por ZFS RAIDZ3.
 	Al igual que ZFS, no funciona más allá de la paridad triple.
 
-	Al usar '3-parity', se le advertirá si se recomienda usar
-	el formato 'z-parity' para mejorar el rendimiento.
+	Al usar `3-parity`, se le advertirá si se recomienda usar
+	el formato `z-parity` para mejorar el rendimiento.
 
 	Es posible convertir de un formato a otro ajustando
 	el archivo de configuración con el archivo z-parity o 3-parity
-	deseado y usando 'fix' para recrearlo.
+	deseado y usando `fix` para recrearlo.
 
   content FILE
 	Define el archivo a usar para almacenar la lista y las sumas de
@@ -1138,7 +1138,7 @@ Configuration
 
 	Puede cambiar el nombre de un disco más tarde cambiando el NAME
 	directamente en el archivo de configuración y luego ejecutando un
-	comando 'sync'. En el caso de cambiar el nombre, la asociación se
+	comando `sync`. En el caso de cambiar el nombre, la asociación se
 	realiza utilizando el UUID almacenado de los discos.
 
   nohidden
@@ -1464,10 +1464,10 @@ Pattern
 	archivos, lo que significa que para excluirlos, debe usar una regla
 	de archivo, no una de directorio.
 
-	Si el nombre del archivo contiene un carácter '*', '?', '[',
-	o ']', debe escaparlo para evitar que se interprete como un
-	carácter globbing. En Unix, el carácter de escape es '\';
-	en Windows, es '^'. Cuando el patrón está en la línea de comandos,
+	Si el nombre del archivo contiene un carácter `*`, `?`, `[`,
+	o `]`, debe escaparlo para evitar que se interprete como un
+	carácter globbing. En Unix, el carácter de escape es `\`;
+	en Windows, es `^`. Cuando el patrón está en la línea de comandos,
 	debe duplicar el carácter de escape para evitar que sea
 	interpretado por el shell de comandos.
 
@@ -1554,7 +1554,7 @@ Ignorar Archivos
 
 		:# Excluye SOLO /mnt/disk1/projects/output.bin
 		:/output.bin
-		:# Excluye cualquier directorio llamado 'build' dentro de projects/
+		:# Excluye cualquier directorio llamado `build` dentro de projects/
 		:build/
 		:# Excluye cualquier archivo .tmp dentro de projects/ o sus subcarpetas
 		:*.tmp

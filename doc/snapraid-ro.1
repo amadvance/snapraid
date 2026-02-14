@@ -665,8 +665,8 @@ Dacă au fost detectate blocuri defecte, numerele lor de bloc sunt listate.
 Pentru a le repara, puteți utiliza comanda \`fix \-e\`.
 .PP
 De asemenea, arată un grafic care reprezintă ultima dată când fiecare bloc
-a fost verificat (scrubbed) sau sincronizat. Blocurile verificate sunt afișate cu \'*\',
-blocurile sincronizate, dar încă neverificate, cu \'o\'.
+a fost verificat (scrubbed) sau sincronizat. Blocurile verificate sunt afișate cu \`*\`,
+blocurile sincronizate, dar încă neverificate, cu \`o\`.
 .PP
 Nimic nu este modificat.
 .SS smart 
@@ -1203,11 +1203,11 @@ pe ecran, putând rezulta o ieșire excesivă în caz de
 multe erori. Când \-l, \-\-log este specificat, doar
 erorile fatale care fac SnapRAID să se oprească sunt tipărite
 pe ecran.
-Dacă calea începe cu \'>>\', fișierul este deschis
-în modul de adăugare. Aparițiile de \'%D\' și \'%T\' în nume sunt
+Dacă calea începe cu \`>>\`, fișierul este deschis
+în modul de adăugare. Aparițiile de \`%D\` și \`%T\` în nume sunt
 înlocuite cu data și ora în formatul YYYYMMDD și
 HHMMSS. În fișierele batch Windows, trebuie să dublați
-caracterul \'%\', de exemplu, result\-%%D.log. Pentru a utiliza \'>>\', trebuie
+caracterul \`%\`, de exemplu, result\-%%D.log. Pentru a utiliza \`>>\`, trebuie
 să închideți numele între ghilimele, de exemplu, \`\[dq]>>result.log\[dq]\`.
 Pentru a scoate jurnalul la ieșirea standard sau la eroarea standard,
 puteți utiliza \`\[dq]>&1\[dq]\` și \`\[dq]>&2\[dq]\`, respectiv.
@@ -1310,13 +1310,13 @@ Pentru fiecare nivel de paritate specificat, este activat un nivel suplimentar d
 Fiecare nivel de paritate necesită prezența tuturor nivelurilor de paritate
 anterioare.
 .PP
-Aceleași considerații ca pentru opțiunea \'parity\' se aplică.
+Aceleași considerații ca pentru opțiunea \`parity\` se aplică.
 .PP
 Aceste opțiuni sunt opționale și pot fi utilizate o singură dată.
 .SS z\-parity FILE [,FILE] ... 
 Definește un fișier și un format alternativ pentru a stoca paritatea triplă.
 .PP
-Această opțiune este o alternativă la \'3\-parity\', destinată în primul rând
+Această opțiune este o alternativă la \`3\-parity\`, destinată în primul rând
 CPU\-urilor low\-end precum ARM sau AMD Phenom, Athlon și Opteron care nu
 suportă setul de instrucțiuni SSSE3. În astfel de cazuri, oferă
 o performanță mai bună.
@@ -1324,12 +1324,12 @@ o performanță mai bună.
 Acest format este similar, dar mai rapid decât cel utilizat de ZFS RAIDZ3.
 Ca și ZFS, nu funcționează dincolo de paritatea triplă.
 .PP
-Când utilizați \'3\-parity\', veți fi avertizați dacă este recomandat să utilizați
-formatul \'z\-parity\' pentru îmbunătățirea performanței.
+Când utilizați \`3\-parity\`, veți fi avertizați dacă este recomandat să utilizați
+formatul \`z\-parity\` pentru îmbunătățirea performanței.
 .PP
 Este posibil să convertiți de la un format la altul ajustând
 fișierul de configurare cu fișierul z\-parity sau 3\-parity dorit
-și utilizând \'fix\' pentru a\-l recrea.
+și utilizând \`fix\` pentru a\-l recrea.
 .SS content FILE 
 Definește fișierul de utilizat pentru a stoca lista și sumele de control (checksums) a tuturor
 fișierelor prezente în matricea dvs. de discuri.
@@ -1356,7 +1356,7 @@ păstrați NAME fix.
 Ar trebui să utilizați o opțiune pentru fiecare disc de date din matrice.
 .PP
 Puteți redenumi un disc mai târziu schimbând NAME direct
-în fișierul de configurare și apoi rulând o comandă \'sync\'.
+în fișierul de configurare și apoi rulând o comandă \`sync\`.
 În cazul redenumirii, asocierea se face utilizând UUID\-ul stocat
 al discurilor.
 .SS nohidden 
@@ -1757,9 +1757,9 @@ Directoarele de sistem Windows, joncțiunile, punctele de montare și alte direc
 speciale Windows sunt tratate ca fișiere, ceea ce înseamnă că pentru a le exclude,
 trebuie să utilizați o regulă de fișier, nu una de director.
 .PP
-Dacă numele fișierului conține un caracter \'*\', \'?\', \'[\',
-sau \']\', trebuie să îl escape\-ați pentru a evita să fie interpretat ca un
-caracter de globbing. În Unix, caracterul escape este \'\\\'; în Windows, este \'^\'.
+Dacă numele fișierului conține un caracter \`*\`, \`?\`, \`[\`,
+sau \`]\`, trebuie să îl escape\-ați pentru a evita să fie interpretat ca un
+caracter de globbing. În Unix, caracterul escape este \`\\\`; în Windows, este \`^\`.
 Când modelul este pe linia de comandă, trebuie să dublați caracterul escape
 pentru a evita ca acesta să fie interpretat de shell\-ul de comandă.
 .PP
@@ -1918,7 +1918,7 @@ De exemplu, dacă aveți un \`.snapraidignore\` în \`/mnt/disk1/projects/\`:
 .PD 0
 .PP
 .PD
-# Exclude orice director numit \'build\' în interiorul projects/
+# Exclude orice director numit \`build\` în interiorul projects/
 .PD 0
 .PP
 .PD
