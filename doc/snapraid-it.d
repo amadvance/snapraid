@@ -426,8 +426,8 @@ Comandi
 
 	Mostra anche un grafico che rappresenta l'ultima volta che ogni blocco
 	è stato sottoposto a scrub o sincronizzato. I blocchi sottoposti a scrub
-	sono mostrati con '*', i blocchi sincronizzati ma non ancora sottoposti
-	a scrub con 'o'.
+	sono mostrati con `*`, i blocchi sincronizzati ma non ancora sottoposti
+	a scrub con `o`.
 
 	Nulla viene modificato.
 
@@ -990,11 +990,11 @@ Opzioni
 		eccessivo in caso di molti errori. Quando -l, --log è specificato,
 		vengono stampati sullo schermo solo gli errori fatali che
 		causano l'arresto di SnapRAID.
-		Se il percorso inizia con '>>', il file viene aperto in modalità
-		append. Le occorrenze di '%D' e '%T' nel nome vengono sostituite
+		Se il percorso inizia con `>>`, il file viene aperto in modalità
+		append. Le occorrenze di `%D` e `%T` nel nome vengono sostituite
 		con la data e l'ora nel formato YYYYMMDD e HHMMSS. Nei file batch
-		di Windows, è necessario raddoppiare il carattere '%', ad esempio
-		result-%%D.log. Per utilizzare '>>', è necessario racchiudere
+		di Windows, è necessario raddoppiare il carattere `%`, ad esempio
+		result-%%D.log. Per utilizzare `>>`, è necessario racchiudere
 		il nome tra virgolette, ad esempio `">>result.log"`.
 		Per indirizzare l'output del log all'output standard o all'errore
 		standard, è possibile utilizzare `">&1"` e `">&2"`,
@@ -1099,7 +1099,7 @@ Configurazione
 	Ogni livello di parità richiede la presenza di tutti i livelli di parità
 	precedenti.
 
-	Si applicano le stesse considerazioni dell'opzione 'parity'.
+	Si applicano le stesse considerazioni dell'opzione `parity`.
 
 	Queste opzioni sono facoltative e possono essere utilizzate solo una volta.
 
@@ -1107,7 +1107,7 @@ Configurazione
 	Definisce un file e un formato alternativi per memorizzare la tripla
 	parità.
 
-	Questa opzione è un'alternativa a '3-parity', destinata
+	Questa opzione è un'alternativa a `3-parity`, destinata
 	principalmente a CPU di fascia bassa come ARM o AMD Phenom, Athlon
 	e Opteron che non supportano il set di istruzioni SSSE3. In tali
 	casi, fornisce prestazioni migliori.
@@ -1115,12 +1115,12 @@ Configurazione
 	Questo formato è simile ma più veloce di quello utilizzato da ZFS RAIDZ3.
 	Come ZFS, non funziona oltre la tripla parità.
 
-	Quando si utilizza '3-parity', si verrà avvisati se è consigliato
-	utilizzare il formato 'z-parity' per un miglioramento delle prestazioni.
+	Quando si utilizza `3-parity`, si verrà avvisati se è consigliato
+	utilizzare il formato `z-parity` per un miglioramento delle prestazioni.
 
 	È possibile convertire da un formato all'altro regolando il file
 	di configurazione con il file z-parity o 3-parity desiderato e
-	utilizzando 'fix' per ricrearlo.
+	utilizzando `fix` per ricrearlo.
 
   content FILE
 	Definisce il file da utilizzare per memorizzare l'elenco e i checksum
@@ -1149,7 +1149,7 @@ Configurazione
 
 	È possibile rinominare un disco in seguito modificando NAME
 	direttamente nel file di configurazione e quindi eseguendo un
-	comando 'sync'.
+	comando `sync`.
 	In caso di ridenominazione, l'associazione viene eseguita utilizzando
 	l'UUID memorizzato dei dischi.
 
@@ -1475,10 +1475,10 @@ Pattern
 	file, il che significa che per escluderli, è necessario utilizzare una
 	regola di file, non una di directory.
 
-	Se il nome del file contiene un carattere '*', '?', '[' o ']',
+	Se il nome del file contiene un carattere `*`, `?`, `[` o `]`,
 	è necessario eseguirne l'escape per evitare che venga interpretato
-	come un carattere di globbing. In Unix, il carattere di escape è '\';
-	in Windows, è '^'.
+	come un carattere di globbing. In Unix, il carattere di escape è `\`;
+	in Windows, è `^`.
 	Quando il pattern è sulla riga di comando, è necessario raddoppiare
 	il carattere di escape per evitare che venga interpretato dalla shell
 	dei comandi.
@@ -1567,7 +1567,7 @@ Ignore File
 
 		:# Esclude SOLO /mnt/disk1/projects/output.bin
 		:/output.bin
-		:# Esclude qualsiasi directory chiamata 'build' all'interno di projects/
+		:# Esclude qualsiasi directory chiamata `build` all'interno di projects/
 		:build/
 		:# Esclude qualsiasi file .tmp all'interno di projects/ o delle sue sottocartelle
 		:*.tmp

@@ -450,8 +450,8 @@ Commands
 
 	Es zeigt auch ein Diagramm an, das den letzten Zeitpunkt darstellt,
 	zu dem jeder Block gescrubbed oder synchronisiert wurde. Gescrubbed
-	Blöcke werden mit '*', Blöcke, die synchronisiert, aber noch nicht
-	gescrubbed wurden, mit 'o' angezeigt.
+	Blöcke werden mit `*`, Blöcke, die synchronisiert, aber noch nicht
+	gescrubbed wurden, mit `o` angezeigt.
 
 	Es wird nichts geändert.
 
@@ -1014,11 +1014,11 @@ Options
 		zu einer übermäßigen Ausgabe führt. Wenn -l, --log angegeben
 		ist, werden nur schwerwiegende Fehler, die SnapRAID zum Stoppen
 		bringen, auf dem Bildschirm ausgegeben.
-		Wenn der Pfad mit '>>' beginnt, wird die Datei im Anhängemodus
-		(append mode) geöffnet. Vorkommen von '%D' und '%T' im Namen
+		Wenn der Pfad mit `>>` beginnt, wird die Datei im Anhängemodus
+		(append mode) geöffnet. Vorkommen von `%D` und `%T` im Namen
 		werden durch Datum und Uhrzeit im Format YYYYMMDD bzw. HHMMSS
-		ersetzt. In Windows-Batch-Dateien müssen Sie das '%'-Zeichen
-		verdoppeln, z.B. result-%%D.log. Um '>>' zu verwenden, müssen
+		ersetzt. In Windows-Batch-Dateien müssen Sie das `%`-Zeichen
+		verdoppeln, z.B. result-%%D.log. Um `>>` zu verwenden, müssen
 		Sie den Namen in Anführungszeichen setzen, z.B. `">>result.log"`.
 		Um das Protokoll an die Standardausgabe oder den Standardfehler
 		auszugeben, können Sie `">&1"` bzw. `">&2"` verwenden.
@@ -1126,7 +1126,7 @@ Configuration
 	Jede Paritätsstufe erfordert die Anwesenheit aller vorherigen
 	Paritätsstufen.
 
-	Die gleichen Überlegungen wie bei der Option 'parity' gelten.
+	Die gleichen Überlegungen wie bei der Option `parity` gelten.
 
 	Diese Optionen sind optional und können nur einmal verwendet werden.
 
@@ -1134,7 +1134,7 @@ Configuration
 	Definiert eine alternative Datei und ein alternatives Format zum
 	Speichern von Triple-Parität.
 
-	Diese Option ist eine Alternative zu '3-parity', die primär für
+	Diese Option ist eine Alternative zu `3-parity`, die primär für
 	Low-End-CPUs wie ARM oder AMD Phenom, Athlon und Opteron gedacht
 	ist, die den SSSE3-Befehlssatz nicht unterstützen. In solchen Fällen
 	bietet sie eine bessere Leistung.
@@ -1142,8 +1142,8 @@ Configuration
 	Dieses Format ähnelt dem von ZFS RAIDZ3, ist aber schneller.
 	Wie ZFS funktioniert es nicht jenseits der Triple-Parität.
 
-	Bei Verwendung von '3-parity' werden Sie gewarnt, wenn das
-	'z-parity'-Format zur Leistungsverbesserung empfohlen wird.
+	Bei Verwendung von `3-parity` werden Sie gewarnt, wenn das
+	`z-parity`-Format zur Leistungsverbesserung empfohlen wird.
 
 	Es ist möglich, von einem Format in ein anderes zu konvertieren,
 	indem die Konfigurationsdatei mit der gewünschten z-parity- oder
@@ -1503,10 +1503,10 @@ Pattern
 	als Dateien behandelt, was bedeutet, dass Sie zum Ausschließen
 	eine Dateiregel verwenden müssen, nicht eine Verzeichnisregel.
 
-	Wenn der Dateiname ein Zeichen '*', '?', '[', oder ']' enthält,
+	Wenn der Dateiname ein Zeichen `*`, `?`, `[`, oder `]` enthält,
 	müssen Sie es escapen, um zu vermeiden, dass es als Globbing-Zeichen
-	interpretiert wird. Unter Unix ist das Escape-Zeichen '\'; unter
-	Windows ist es '^'. Wenn sich das Muster in der Befehlszeile befindet,
+	interpretiert wird. Unter Unix ist das Escape-Zeichen `\`; unter
+	Windows ist es `^`. Wenn sich das Muster in der Befehlszeile befindet,
 	müssen Sie das Escape-Zeichen verdoppeln, um zu vermeiden, dass es
 	von der Befehlsshell interpretiert wird.
 
@@ -1594,7 +1594,7 @@ Dateien Ignorieren
 
 		:# Schließt NUR /mnt/disk1/projects/output.bin aus
 		:/output.bin
-		:# Schließt jedes Verzeichnis namens 'build' innerhalb von projects/ aus
+		:# Schließt jedes Verzeichnis namens `build` innerhalb von projects/ aus
 		:build/
 		:# Schließt jede .tmp-Datei innerhalb von projects/ oder deren Unterordnern aus
 		:*.tmp

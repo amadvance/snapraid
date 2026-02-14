@@ -433,8 +433,8 @@ Om dåliga block upptäcktes, listas deras blocknummer.
 För att fixa dem kan du använda kommandot `fix -e`.
 
 Det visar också ett diagram som representerar den senaste tidpunkten då varje block
-skrubbades eller synkroniserades. Skrubbade block visas med '*',
-block synkroniserade men ännu inte skrubbade med 'o'.
+skrubbades eller synkroniserades. Skrubbade block visas med `*`,
+block synkroniserade men ännu inte skrubbade med `o`.
 
 Inget ändras.
 
@@ -989,11 +989,11 @@ SnapRAID tillhandahåller följande alternativ:
         många fel. När -l, --log specificeras, skrivs endast
         fatala fel som får SnapRAID att stoppa ut
         på skärmen.
-        Om sökvägen börjar med '>>', öppnas filen
-        i tilläggsläge. Förekomster av '%D' och '%T' i namnet ersätts
+        Om sökvägen börjar med `>>`, öppnas filen
+        i tilläggsläge. Förekomster av `%D` och `%T` i namnet ersätts
         med datum och tid i formatet YYYYMMDD respektive
         HHMMSS. I Windows batch-filer måste du dubblera
-        '%'-tecknet, t.ex. result-%%D.log. För att använda '>>' måste du
+        `%`-tecknet, t.ex. result-%%D.log. För att använda `>>` måste du
         omsluta namnet i citattecken, t.ex. `">>result.log"`.
         För att skicka ut loggen till standardutdata eller standardfel,
         kan du använda `">&1"` respektive `">&2"`.
@@ -1100,7 +1100,7 @@ För varje paritetsnivå som specificeras aktiveras en ytterligare skyddsnivå:
 Varje paritetsnivå kräver närvaro av alla föregående paritets-
 nivåer.
 
-Samma överväganden som för alternativet 'parity' gäller.
+Samma överväganden som för alternativet `parity` gäller.
 
 Dessa alternativ är valfria och kan endast användas en gång.
 
@@ -1109,7 +1109,7 @@ Dessa alternativ är valfria och kan endast användas en gång.
 
 Definierar en alternativ fil och ett format för att lagra trippel paritet.
 
-Detta alternativ är ett alternativ till '3-parity', främst avsett för
+Detta alternativ är ett alternativ till `3-parity`, främst avsett för
 lågpresterande processorer som ARM eller AMD Phenom, Athlon och Opteron som inte
 stöder SSSE3-instruktionsuppsättningen. I sådana fall ger det
 bättre prestanda.
@@ -1117,12 +1117,12 @@ bättre prestanda.
 Detta format liknar, men är snabbare än, det som används av ZFS RAIDZ3.
 Liksom ZFS fungerar det inte utöver trippel paritet.
 
-När du använder '3-parity' kommer du att varnas om det rekommenderas att använda
-formatet 'z-parity' för prestandaförbättring.
+När du använder `3-parity` kommer du att varnas om det rekommenderas att använda
+formatet `z-parity` för prestandaförbättring.
 
 Det är möjligt att konvertera från ett format till ett annat genom att justera
 konfigurationsfilen med önskad z-parity eller 3-parity fil
-och använda 'fix' för att återskapa den.
+och använda `fix` för att återskapa den.
 
 7.4 content FIL
 ---------------
@@ -1155,7 +1155,7 @@ du behåller NAMN fixerat.
 Du bör använda ett alternativ för varje datadisk i arrayen.
 
 Du kan byta namn på en disk senare genom att ändra NAMN direkt
-i konfigurationsfilen och sedan köra ett 'sync'-kommando.
+i konfigurationsfilen och sedan köra ett `sync`-kommando.
 I händelse av namnbyte görs associationen med hjälp av den lagrade
 UUID:n för diskarna.
 
@@ -1488,9 +1488,9 @@ Windows systemkataloger, junction points, monteringspunkter och andra Windows
 speciella kataloger behandlas som filer, vilket innebär att för att exkludera
 dem måste du använda en fil-regel, inte en katalog-regel.
 
-Om filnamnet innehåller tecknet '*', '?', '[',
-eller ']', måste du undvika det för att förhindra att det tolkas som ett
-globbing-tecken. I Unix är undvikande-tecknet '\'; i Windows är det '^'.
+Om filnamnet innehåller tecknet `*`, `?`, `[`,
+eller `]`, måste du undvika det för att förhindra att det tolkas som ett
+globbing-tecken. I Unix är undvikande-tecknet `\`; i Windows är det `^`.
 När mönstret är på kommandoraden måste du dubbla undvikande-
 tecknet för att förhindra att det tolkas av kommandoskalet.
 
@@ -1579,7 +1579,7 @@ Till exempel, om du har en `.snapraidignore` i `/mnt/disk1/projects/`:
 
     # Exkluderar ENDAST /mnt/disk1/projects/output.bin
     /output.bin
-    # Exkluderar alla kataloger med namnet 'build' inuti projects/
+    # Exkluderar alla kataloger med namnet `build` inuti projects/
     build/
     # Exkluderar alla .tmp-filer inuti projects/ eller dess undermappar
     *.tmp

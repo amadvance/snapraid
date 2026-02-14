@@ -440,7 +440,7 @@ Commandes
 
 	Il montre également un graphique représentant la dernière fois que chaque
 	bloc a été nettoyé ou synchronisé. Les blocs nettoyés sont affichés
-	avec '*', les blocs synchronisés mais pas encore nettoyés avec 'o'.
+	avec `*`, les blocs synchronisés mais pas encore nettoyés avec `o`.
 
 	Rien n'est modifié.
 
@@ -1012,12 +1012,12 @@ Options
 		excessive en cas de nombreuses erreurs. Lorsque -l, --log est
 		spécifié, seules les erreurs fatales qui entraînent l'arrêt
 		de SnapRAID sont imprimées à l'écran.
-		Si le chemin commence par '>>', le fichier est ouvert
-		en mode ajout. Les occurrences de '%D' et '%T' dans le nom sont
+		Si le chemin commence par `>>`, le fichier est ouvert
+		en mode ajout. Les occurrences de `%D` et `%T` dans le nom sont
 		remplacées par la date et l'heure au format YYYYMMDD et
 		HHMMSS. Dans les fichiers batch Windows, vous devez doubler
-		le caractère '%', par exemple, result-%%D.log. Pour utiliser
-		'>>', vous devez encadrer le nom de guillemets, par exemple,
+		le caractère `%`, par exemple, result-%%D.log. Pour utiliser
+		`>>`, vous devez encadrer le nom de guillemets, par exemple,
 		`">>result.log"`.
 		Pour sortir le journal sur la sortie standard ou l'erreur
 		standard, vous pouvez utiliser `">&1"` et `">&2"`,
@@ -1123,14 +1123,14 @@ Configuration
 	Chaque niveau de parité nécessite la présence de tous les niveaux
 	de parité précédents.
 
-	Les mêmes considérations que pour l'option 'parity' s'appliquent.
+	Les mêmes considérations que pour l'option `parity` s'appliquent.
 
 	Ces options sont facultatives et ne peuvent être utilisées qu'une seule fois.
 
   z-parity FICHIER [,FICHIER] ...
 	Définit un fichier et un format alternatifs pour stocker la triple parité.
 
-	Cette option est une alternative à '3-parity', principalement destinée
+	Cette option est une alternative à `3-parity`, principalement destinée
 	aux processeurs bas de gamme comme ARM ou AMD Phenom, Athlon et Opteron
 	qui ne prennent pas en charge l'ensemble d'instructions SSSE3. Dans de
 	tels cas, elle offre de meilleures performances.
@@ -1138,13 +1138,13 @@ Configuration
 	Ce format est similaire mais plus rapide que celui utilisé par ZFS RAIDZ3.
 	Comme ZFS, il ne fonctionne pas au-delà de la triple parité.
 
-	Lors de l'utilisation de '3-parity', vous serez averti s'il est
-	recommandé d'utiliser le format 'z-parity' pour une amélioration des
+	Lors de l'utilisation de `3-parity`, vous serez averti s'il est
+	recommandé d'utiliser le format `z-parity` pour une amélioration des
 	performances.
 
 	Il est possible de convertir d'un format à l'autre en ajustant
 	le fichier de configuration avec le fichier z-parity ou 3-parity souhaité
-	et en utilisant 'fix' pour le recréer.
+	et en utilisant `fix` pour le recréer.
 
   content FICHIER
 	Définit le fichier à utiliser pour stocker la liste et les sommes de
@@ -1174,7 +1174,7 @@ Configuration
 	de la baie.
 
 	Vous pouvez renommer un disque plus tard en changeant le NOM directement
-	dans le fichier de configuration, puis en exécutant une commande 'sync'.
+	dans le fichier de configuration, puis en exécutant une commande `sync`.
 	Dans le cas d'un renommage, l'association est faite en utilisant l'UUID
 	stocké des disques.
 
@@ -1501,10 +1501,10 @@ Motif (Pattern)
 	ce qui signifie que pour les exclure, vous devez utiliser une règle
 	de fichier, pas une règle de répertoire.
 
-	Si le nom de fichier contient un caractère '*', '?', '[',
-	ou ']', vous devez l'échapper pour éviter qu'il ne soit interprété
+	Si le nom de fichier contient un caractère `*`, `?`, `[`,
+	ou `]`, vous devez l'échapper pour éviter qu'il ne soit interprété
 	comme un caractère de globbing. Sous Unix, le caractère d'échappement
-	est '\' ; sous Windows, c'est '^'.
+	est `\` ; sous Windows, c'est `^`.
 	Lorsque le motif est sur la ligne de commande, vous devez doubler
 	le caractère d'échappement pour éviter qu'il ne soit interprété
 	par le shell de commande.
@@ -1594,7 +1594,7 @@ Ignorer des Fichiers (Ignore Files)
 
 		:# Exclut UNIQUEMENT /mnt/disk1/projects/output.bin
 		:/output.bin
-		:# Exclut tout répertoire nommé 'build' dans projects/
+		:# Exclut tout répertoire nommé `build` dans projects/
 		:build/
 		:# Exclut tout fichier .tmp dans projects/ ou ses sous-dossiers
 		:*.tmp

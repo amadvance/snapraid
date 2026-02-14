@@ -677,8 +677,8 @@ Para corrigi\-los, você pode usar o comando \`fix \-e\`.
 .PP
 Também mostra um gráfico que representa a última vez que cada bloco
 foi examinado (scrubbed) ou sincronizado (synced). Blocos examinados
-são mostrados com \'*\', blocos sincronizados, mas ainda não examinados,
-com \'o\'.
+são mostrados com \`*\`, blocos sincronizados, mas ainda não examinados,
+com \`o\`.
 .PP
 Nada é modificado.
 .SS smart 
@@ -1232,11 +1232,11 @@ impressos na tela, resultando potencialmente em saída excessiva
 em caso de muitos erros. Quando \-l, \-\-log é especificado, apenas
 erros fatais que fazem o SnapRAID parar são impressos
 na tela.
-Se o caminho começar com \'>>\', o arquivo é aberto
-no modo de anexação. Ocorrências de \'%D\' e \'%T\' no nome são
+Se o caminho começar com \`>>\`, o arquivo é aberto
+no modo de anexação. Ocorrências de \`%D\` e \`%T\` no nome são
 substituídas pela data e hora no formato YYYYMMDD e
 HHMMSS. Em arquivos em lote do Windows, você deve duplicar
-o caractere \'%\', por exemplo, resultado\-%%D.log. Para usar \'>>\', você deve
+o caractere \`%\`, por exemplo, resultado\-%%D.log. Para usar \`>>\`, você deve
 colocar o nome entre aspas, por exemplo, \`\[dq]>>resultado.log\[dq]\`.
 Para enviar o log para a saída padrão ou erro padrão,
 você pode usar \`\[dq]>&1\[dq]\` e \`\[dq]>&2\[dq]\`, respectivamente.
@@ -1342,13 +1342,13 @@ Para cada nível de paridade especificado, um nível adicional de proteção
 Cada nível de paridade requer a presença de todos os níveis de paridade
 anteriores.
 .PP
-As mesmas considerações que para a opção \'parity\' se aplicam.
+As mesmas considerações que para a opção \`parity\` se aplicam.
 .PP
 Estas opções são opcionais e podem ser usadas apenas uma vez.
 .SS z\-parity FILE [,FILE] ... 
 Define um arquivo e formato alternativo para armazenar paridade tripla.
 .PP
-Esta opção é uma alternativa a \'3\-parity\', destinada principalmente a
+Esta opção é uma alternativa a \`3\-parity\`, destinada principalmente a
 CPUs de baixo custo como ARM ou AMD Phenom, Athlon e Opteron que não
 suportam o conjunto de instruções SSSE3. Nesses casos, ela fornece
 melhor desempenho.
@@ -1356,12 +1356,12 @@ melhor desempenho.
 Este formato é semelhante, mas mais rápido do que o usado pelo ZFS RAIDZ3.
 Assim como o ZFS, ele não funciona além da paridade tripla.
 .PP
-Ao usar \'3\-parity\', você será avisado se for recomendado usar
-o formato \'z\-parity\' para melhoria de desempenho.
+Ao usar \`3\-parity\`, você será avisado se for recomendado usar
+o formato \`z\-parity\` para melhoria de desempenho.
 .PP
 É possível converter de um formato para outro ajustando
 o arquivo de configuração com o z\-parity ou 3\-parity desejado
-e usando \'fix\' para recriá\-lo.
+e usando \`fix\` para recriá\-lo.
 .SS content FILE 
 Define o arquivo a ser usado para armazenar a lista e os checksums de todos
 os arquivos presentes em seu array de discos.
@@ -1388,7 +1388,7 @@ mantenha o NAME fixo.
 Você deve usar uma opção para cada disco de dados no array.
 .PP
 Você pode renomear um disco mais tarde alterando o NAME diretamente
-no arquivo de configuração e, em seguida, executando um comando \'sync\'.
+no arquivo de configuração e, em seguida, executando um comando \`sync\`.
 No caso de renomeação, a associação é feita usando o UUID
 armazenado dos discos.
 .SS nohidden 
@@ -1794,9 +1794,9 @@ Diretórios do sistema Windows, junctions, pontos de montagem e outros
 diretórios especiais do Windows são tratados como arquivos, o que significa
 que para excluí\-los, você deve usar uma regra de arquivo, não uma de diretório.
 .PP
-Se o nome do arquivo contiver um caractere \'*\', \'?\', \'[\',
-ou \']\', você deve escapá\-lo para evitar que seja interpretado como um
-caractere globbing. No Unix, o caractere de escape é \'\\\'; no Windows, é \'^\'.
+Se o nome do arquivo contiver um caractere \`*\`, \`?\`, \`[\`,
+ou \`]\`, você deve escapá\-lo para evitar que seja interpretado como um
+caractere globbing. No Unix, o caractere de escape é \`\\\`; no Windows, é \`^\`.
 Quando o padrão está na linha de comando, você deve duplicar o caractere
 de escape para evitar que seja interpretado pelo shell de comando.
 .PP
@@ -1955,7 +1955,7 @@ Por exemplo, se você tiver um \`.snapraidignore\` em \`/mnt/disk1/projects/\`:
 .PD 0
 .PP
 .PD
-# Exclui qualquer diretório chamado \'build\' dentro de projects/
+# Exclui qualquer diretório chamado \`build\` dentro de projects/
 .PD 0
 .PP
 .PD

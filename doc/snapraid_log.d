@@ -1116,8 +1116,7 @@ Command Smart And Probe Tags
 		Logs the SMART status flags from the `smartctl` utility.
 		Per the smartctl manpage, these flags are bit-mapped
 		to indicate specific issues like `Command line did not parse`,
-		`Device could not be opened`, or `SMART status check
-		returned 'DISK FAILING'`.
+		`Device could not be opened`, or `SMART status check returned 'DISK FAILING'`.
 
 		<flags_decimal> - The raw flags value (uint, decimal).
 		<flags_hex> - The raw flags value (uint, hexadecimal).

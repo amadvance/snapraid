@@ -408,7 +408,7 @@ Commands
 
 	Pokazuje również wykres reprezentujący ostatni raz, kiedy każdy blok
 	został sprawdzony lub zsynchronizowany. Sprawdzone bloki są pokazane
-	za pomocą '*', bloki zsynchronizowane, ale jeszcze niesprawdzone, za pomocą 'o'.
+	za pomocą `*`, bloki zsynchronizowane, ale jeszcze niesprawdzone, za pomocą `o`.
 
 	Nic nie jest modyfikowane.
 
@@ -925,11 +925,11 @@ Options
 		wielu błędów. Gdy -l, --log jest określone, tylko
 		krytyczne błędy, które powodują zatrzymanie SnapRAID, są drukowane
 		na ekranie.
-		Jeśli ścieżka zaczyna się od '>>', plik jest otwierany
-		w trybie dołączania. Wystąpienia '%D' i '%T' w nazwie są
+		Jeśli ścieżka zaczyna się od `>>`, plik jest otwierany
+		w trybie dołączania. Wystąpienia `%D` i `%T` w nazwie są
 		zastępowane datą i czasem w formacie RRRRMMDD i
 		GGMMSS. W plikach wsadowych Windows musisz podwoić
-		znak '%', np. result-%%D.log. Aby użyć '>>', musisz
+		znak `%`, np. result-%%D.log. Aby użyć `>>`, musisz
 		ujęć nazwę w cudzysłów, np. `">>result.log"`.
 		Aby wyprowadzić log do standardowego wyjścia lub standardowego błędu,
 		możesz użyć odpowiednio `">&1"` i `">&2"`.
@@ -1029,14 +1029,14 @@ Configuration
 
 	Każdy poziom parzystości wymaga obecności wszystkich poprzednich poziomów parzystości.
 
-	Obowiązują te same uwagi, co dla opcji 'parity'.
+	Obowiązują te same uwagi, co dla opcji `parity`.
 
 	Te opcje są opcjonalne i mogą być używane tylko raz.
 
   z-parity FILE [,FILE] ...
 	Definiuje alternatywny plik i format do przechowywania potrójnej parzystości.
 
-	Ta opcja jest alternatywą dla '3-parity', przeznaczoną głównie dla
+	Ta opcja jest alternatywą dla `3-parity`, przeznaczoną głównie dla
 	procesorów niskiej klasy, takich jak ARM lub AMD Phenom, Athlon i Opteron,
 	które nie obsługują zestawu instrukcji SSSE3. W takich przypadkach zapewnia
 	lepszą wydajność.
@@ -1044,12 +1044,12 @@ Configuration
 	Ten format jest podobny, ale szybszy niż ten używany przez ZFS RAIDZ3.
 	Podobnie jak ZFS, nie działa powyżej potrójnej parzystości.
 
-	Podczas używania '3-parity' zostaniesz ostrzeżony, jeśli zaleca się użycie
-	formatu 'z-parity' w celu poprawy wydajności.
+	Podczas używania `3-parity` zostaniesz ostrzeżony, jeśli zaleca się użycie
+	formatu `z-parity` w celu poprawy wydajności.
 
 	Możliwa jest konwersja z jednego formatu na inny poprzez dostosowanie
 	pliku konfiguracyjnego z pożądanym plikiem z-parity lub 3-parity
-	i użycie 'fix' do jego ponownego utworzenia.
+	i użycie `fix` do jego ponownego utworzenia.
 
   content FILE
 	Definiuje plik do użycia do przechowywania listy i sum kontrolnych wszystkich
@@ -1078,7 +1078,7 @@ Configuration
 	Powinieneś użyć jednej opcji dla każdego dysku danych w macierzy.
 
 	Możesz później zmienić nazwę dysku, zmieniając bezpośrednio nazwę NAME
-	w pliku konfiguracyjnym, a następnie uruchamiając polecenie 'sync'.
+	w pliku konfiguracyjnym, a następnie uruchamiając polecenie `sync`.
 	W przypadku zmiany nazwy, skojarzenie odbywa się za pomocą zapisanego
 	UUID dysków.
 
@@ -1382,9 +1382,9 @@ Pattern
 	specjalne katalogi Windows są traktowane jako pliki, co oznacza, że aby je
 	wykluczyć, musisz użyć reguły pliku, a nie katalogu.
 
-	Jeśli nazwa pliku zawiera znak '*', '?', '[',
-	lub ']', musisz go uciec, aby uniknąć interpretacji jako
-	znaku globbing. W systemie Unix znakiem ucieczki jest '\'; w systemie Windows jest to '^'.
+	Jeśli nazwa pliku zawiera znak `*`, `?`, `[`,
+	lub `]`, musisz go uciec, aby uniknąć interpretacji jako
+	znaku globbing. W systemie Unix znakiem ucieczki jest `\`; w systemie Windows jest to `^`.
 	Gdy wzorzec znajduje się w wierszu poleceń, musisz podwoić znak ucieczki,
 	aby uniknąć interpretacji przez powłokę poleceń.
 
@@ -1470,7 +1470,7 @@ Ignore File
 
 		:# Wyklucza TYLKO /mnt/disk1/projects/output.bin
 		:/output.bin
-		:# Wyklucza każdy katalog o nazwie 'build' wewnątrz projects/
+		:# Wyklucza każdy katalog o nazwie `build` wewnątrz projects/
 		:build/
 		:# Wyklucza każdy plik .tmp wewnątrz projects/ lub jego podfolderach
 		:*.tmp
