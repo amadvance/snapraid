@@ -1,0 +1,4055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID Log Manual</title>
+    <style>html,body{background-color:#020617;color:#f8fafc;}</style>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">    
+    <script src="script.js"></script>
+
+<!-- Google Analytics 4 -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W1Z5FKHYQ4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W1Z5FKHYQ4');
+</script>
+
+<!-- Google Universal Analytics -->
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index" class="logo">
+                <img src="favicon-32x32.png"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="manual" class="active">Manual</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <div class="container manual-layout">
+        <aside class="manual-sidebar">
+
+            <h4>Component</h4>
+            <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
+                <option value="manual.html">Command Line</option>
+                <option value="manual-daemon.html">Daemon</option>
+                <option value="manual-log.html">Log</option>
+            </select>
+
+            <h4>Contents</h4>
+            <ul id="manual-toc-list">
+                <!-- Populated by JavaScript -->
+            </ul>
+        </aside>
+
+        <main id="manual-container">
+            
+            <div class="manual-doc">
+
+<div class="manual-section-level-1">
+<h1 id="sec1" class="manual-title-level-1">
+Description
+</h1>
+<p>This document describes the structured log tags output by SnapRAID,
+which are designed to be used by tools monitoring the SnapRAID
+processing state. The tags provide information in an easy-to-parse
+format, ideal for automation and integration.
+</p><p>To capture these structured log tags, you must use the `--log` option
+with SnapRAID.
+</p><p>You can direct the output to a specific file, or force the output to
+the standard output or standard error using the special arguments
+`&gt;&amp;1` or `&gt;&amp;2`. Note that these arguments often need to be quoted on
+the command line to prevent the shell from interpreting them.
+</p><p>Example:
+</p><pre>
+snapraid status --log "&gt;&amp;2"
+</pre>
+<p>The output tags strictly adhere to the following format:
+</p><pre>
+NAME:VALUE:VALUE:VALUE...&lt;EOL&gt;
+</pre>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+NAME
+</div><div class="manual-option-description">
+This is the primary tag identifier, always a lowercase string
+without spaces (e.g., `summary`, `block`).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+VALUE
+</div><div class="manual-option-description">
+Following the `NAME`, these can be additional sub-identifiers,
+descriptive names (like a disk name), or numeric/string data
+values. They are separated by a colon `:`.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+&lt;EOL&gt;
+</div><div class="manual-option-description">
+Each tag is terminated by an end-of-line character.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>This document provides a summary of the tags generated by SnapRAID.
+For the most detailed and up-to-date information regarding the meaning
+and context of the values, it is recommended to check the source
+code's `log_tag()` statements.
+</p><p>When a path is output, it is always escaped using a backslash (\) as
+the escape character.
+</p><p>The following characters are escaped into sequences:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+The colon
+</div><div class="manual-tag-description">
+is escaped to \d.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+The newline
+</div><div class="manual-tag-description">
+is escaped to \n.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+The carriage return
+</div><div class="manual-tag-description">
+is escaped to \r.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+The backslash
+</div><div class="manual-tag-description">
+is escaped to \\.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>Some tags are output only when the `--gui` or `--gui-verbose` option
+is used. They provide extra verbose state and runtime progress only
+useful for a GUI interface.
+</p><p>Integer values are marked as `uint` when they are unsigned and as `int`
+when they are signed. However, for practical purposes you can treat
+all of them as signed integers.
+All integer values should be assumed to be 64 bits wide, regardless
+of the signed/unsigned marker.
+Floating point values are marked as `float`.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec2" class="manual-title-level-1">
+Configuration Tags
+</h1>
+<p>These tags report the memory usage and global configuration.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+conf:file:&lt;path&gt;
+</div><div class="manual-option-description">
+Configuration file loaded (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+conf:missing:
+</div><div class="manual-option-description">
+Operating without a configuration file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+blocksize:&lt;bytes&gt;
+</div><div class="manual-option-description">
+The configured block size in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+data:&lt;disk_name&gt;:&lt;dir&gt;:&lt;uuid&gt;
+</div><div class="manual-option-description">
+The data disks as defined in the configuration file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The assigned name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;dir&gt;
+</div><div class="manual-tag-description">
+The directory entry point of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;uuid&gt;
+</div><div class="manual-tag-description">
+The UUID of the filesystem containing the dir.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+mode:&lt;raidname&gt;
+</div><div class="manual-option-description">
+The RAID mode used. One of `par1`, `par2`, `par3`, `par4`,
+`par5`, `par6` or `parz`. The number indicates the maximum
+number of simultaneous disk failures the array can withstand.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+&lt;parity_level&gt;[/&lt;split_index&gt;]:&lt;path&gt;:&lt;uuid&gt;
+</div><div class="manual-option-description">
+The parity files as defined in the configuration file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;parity_level&gt;[/&lt;split_index&gt;]
+</div><div class="manual-tag-description">
+One of `parity`, `2-parity`,
+..., `6-parity`. This corresponds to the level of redundancy.
+In case of split parity, the parity name is followed
+by `/N` to indicate the split index, where N starts
+from 0. The `/0` is always omitted.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;path&gt;
+</div><div class="manual-tag-description">
+The path (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;uuid&gt;
+</div><div class="manual-tag-description">
+The UUID of the filesystem containing the path.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+fsinfo_data:&lt;disk_name&gt;:&lt;size&gt;:&lt;free&gt;
+</div><div class="manual-option-description">
+The filesystem information of the specified data disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the data disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;free_size&gt;
+</div><div class="manual-tag-description">
+The free size in the data disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+fsinfo_parity:&lt;parity_level&gt;:&lt;size&gt;:&lt;free&gt;
+</div><div class="manual-option-description">
+The filesystem information of the specified parity disk.
+In case of multiple splits this is the sum of the sizes of all
+splits.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the parity disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;free_size&gt;
+</div><div class="manual-tag-description">
+The free size in the parity disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+fsinfo_data_split:&lt;disk_name&gt;:&lt;size&gt;:&lt;free&gt;:&lt;type&gt;:&lt;label&gt;
+</div><div class="manual-option-description">
+The filesystem information of the specified data disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the data disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;free_size&gt;
+</div><div class="manual-tag-description">
+The free size in the data disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;type&gt;
+</div><div class="manual-tag-description">
+The filesystem type. A string like `ext4`, `ntfs`.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;label&gt;
+</div><div class="manual-tag-description">
+The label associated to the filesystem.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+fsinfo_parity_split:&lt;parity_level&gt;[/&lt;split_index&gt;]:&lt;size&gt;:&lt;free&gt;:&lt;type&gt;:&lt;label&gt;
+</div><div class="manual-option-description">
+The filesystem information of the specified parity split.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the parity disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;free_size&gt;
+</div><div class="manual-tag-description">
+The free size in the parity disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;type&gt;
+</div><div class="manual-tag-description">
+The filesystem type. A string like `ext4`, `ntfs`.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;label&gt;
+</div><div class="manual-tag-description">
+The label associated to the filesystem.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+pool:&lt;dir&gt;
+</div><div class="manual-option-description">
+The configured dir to the pool mount point (escaped).
+This is the optional mount point for the 'pool' feature.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+share:&lt;dir&gt;
+</div><div class="manual-option-description">
+The configured dir to the pool mount point (escaped).
+This is the optional mount point for the 'share' feature.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+autosave:&lt;bytes&gt;
+</div><div class="manual-option-description">
+If the autosave feature is enabled, and after how many bytes
+(uint). This specifies the interval for content file saving.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+filter:&lt;pattern&gt;
+</div><div class="manual-option-description">
+All the active filters with their patterns. These patterns
+exclude specific files or directories from the SnapRAID array.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+filter:nohidden:
+</div><div class="manual-option-description">
+If the no-hidden filter is enabled, meaning hidden files/directories
+(starting with '.') are excluded from the array.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec3" class="manual-title-level-1">
+Content Tags
+</h1>
+<p>These tags report the information stored in the content file.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content:&lt;path&gt;
+</div><div class="manual-option-description">
+The absolute path to a content file being used (escaped).
+Content files store the metadata (like file hashes and timestamps)
+for the array.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content_write:&lt;path&gt;
+</div><div class="manual-option-description">
+The absolute path to a content file being written (escaped).
+You will see multiple writes as the content file is saved in
+multiple copies.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content_data:&lt;disk_name&gt;:&lt;size&gt;:&lt;free_size&gt;
+</div><div class="manual-option-description">
+The size of the data disk as stored in the content file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+Name of the data disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the data disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;free_size&gt;
+</div><div class="manual-tag-description">
+The free size in the data disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content_parity:&lt;parity_level&gt;:&lt;size&gt;:&lt;free_size&gt;
+</div><div class="manual-option-description">
+The size of the parity disk as stored in the content file.
+In case of multiple splits this is the sum of the sizes of all
+splits.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;parity_level&gt;
+</div><div class="manual-tag-description">
+Name of the parity.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The total size of the parity disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;free_size&gt;
+</div><div class="manual-tag-description">
+The free size in the parity disk (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content_data_split:&lt;disk_name&gt;:&lt;uuid&gt;
+</div><div class="manual-option-description">
+The data disk info as stored in the content file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+Name of the data disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;uuid&gt;
+</div><div class="manual-tag-description">
+The UUID of the disk filesystem as stored in the
+content file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content_parity_split:&lt;parity_level&gt;[/&lt;split_index&gt;]:&lt;uuid&gt;:&lt;path&gt;:&lt;size&gt;
+</div><div class="manual-option-description">
+The parity split info as stored in the content file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;parity_level&gt;[/&lt;split_index&gt;]
+</div><div class="manual-tag-description">
+One of `parity`, `2-parity`,
+..., `6-parity`. This corresponds to the level of redundancy.
+In case of split parity, the parity name is followed
+by `/N` to indicate the split index, where N starts
+from 0. The `/0` is always omitted.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;uuid&gt;
+</div><div class="manual-tag-description">
+The UUID of the disk containing the path.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;path&gt;
+</div><div class="manual-tag-description">
+The path of the parity file (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the parity file (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+content_info:&lt;kind&gt;:&lt;counter&gt;
+</div><div class="manual-option-description">
+The counters in the content file. The `kind` is
+one of the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+file
+</div><div class="manual-tag-description">
+The count of files.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+hardlink
+</div><div class="manual-tag-description">
+The counter of hardlinks.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+symlink
+</div><div class="manual-tag-description">
+The counter of symlinks.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+dir_empty
+</div><div class="manual-tag-description">
+The counter of empty directories.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+block_bad
+</div><div class="manual-tag-description">
+The counter of bad blocks. Bad blocks indicate data
+or parity corruption.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+block_rehash
+</div><div class="manual-tag-description">
+The counter of blocks needing a rehash, usually
+due to hash algorithm change.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+block_unscrubbed
+</div><div class="manual-tag-description">
+The counter of blocks that are unscrubbed
+(just synced), meaning they have never been verified
+since their first sync.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+block_unsynced
+</div><div class="manual-tag-description">
+The counter of blocks that are unsynced (need a sync),
+meaning their parity data is out of date.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+block
+</div><div class="manual-tag-description">
+The total counter of blocks.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+bucket_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of info records listed with `bucket`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+bucket_block_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of info blocks listed with `bucket`. This is the
+sum of all the counters listed.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+bucket:&lt;time&gt;:&lt;count_scrubbed&gt;:&lt;count_new&gt;
+</div><div class="manual-option-description">
+The info records.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;time&gt;
+</div><div class="manual-tag-description">
+Unix timestamp of the scrub/sync.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count_scrubbed&gt;
+</div><div class="manual-tag-description">
+Number of blocks scrubbed at this timestamp.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count_new&gt;
+</div><div class="manual-tag-description">
+Number of blocks that were synced at this
+timestamp and haven't been scrubbed yet.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec4" class="manual-title-level-1">
+Diagnostics Tags
+</h1>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+version:&lt;version&gt;
+</div><div class="manual-option-description">
+The version of SnapRAID run.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+unixtime:&lt;time&gt;
+</div><div class="manual-option-description">
+The current time in the unix format (uint), representing
+seconds since the epoch.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+time:&lt;YYYY-MM-DD HH:MM:SS&gt;
+</div><div class="manual-option-description">
+The current time in human format.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+command:&lt;command&gt;
+</div><div class="manual-option-description">
+The command run. One of `sync`, `scrub`, `check`, `fix`, `status`, ...
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+argv:&lt;number&gt;:&lt;argument&gt;
+</div><div class="manual-option-description">
+All the arguments of the executable command. The 0 one is the
+executable run.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+memory:used:&lt;bytes&gt;
+</div><div class="manual-option-description">
+The total memory currently used by the application in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+memory:block:&lt;bytes&gt;
+</div><div class="manual-option-description">
+Size of the internal `snapraid_block` structure in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+memory:extent:&lt;bytes&gt;
+</div><div class="manual-option-description">
+Size of the internal `snapraid_extent` structure in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+memory:file:&lt;bytes&gt;
+</div><div class="manual-option-description">
+Size of the internal `snapraid_file` structure in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+memory:link:&lt;bytes&gt;
+</div><div class="manual-option-description">
+Size of the internal `snapraid_link` structure in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+memory:dir:&lt;bytes&gt;
+</div><div class="manual-option-description">
+Size of the internal `snapraid_dir` structure in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec5" class="manual-title-level-1">
+Scan Tags
+</h1>
+<p>These tags report detected differences between the filesystem and the
+content file. They are output for every discovered change.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:equal:&lt;disk_name&gt;:&lt;path&gt;
+</div><div class="manual-option-description">
+A file, link, or directory is equal (unchanged).
+No action is required for this item.
+Only produced when `--gui-verbose` option is used.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+Name of the data disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;path&gt;
+</div><div class="manual-tag-description">
+Path to the file/link relative to the disk mount
+(escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:add:&lt;disk_name&gt;:&lt;path&gt;
+</div><div class="manual-option-description">
+A new file or link was found that is not in the content file.
+This item will be added to the array in a `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:remove:&lt;disk_name&gt;:&lt;path&gt;
+</div><div class="manual-option-description">
+A file or link has been removed from the filesystem
+since the last sync.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:update:&lt;disk_name&gt;:&lt;path&gt;
+</div><div class="manual-option-description">
+A file or link has been updated (size, timestamp, or link target changed).
+This item will have its content data blocks re-hashed in a `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:move:&lt;disk_name&gt;:&lt;old_path&gt;:&lt;new_path&gt;
+</div><div class="manual-option-description">
+A file was moved on the same disk. This is an efficient operation
+that only updates the path metadata without re-hashing blocks.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;old_path&gt;
+</div><div class="manual-tag-description">
+The old path to the file (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;new_path&gt;
+</div><div class="manual-tag-description">
+The new path to the file (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:copy:&lt;disk_name&gt;:&lt;path&gt;:&lt;source_disk&gt;:&lt;source_path&gt;
+</div><div class="manual-option-description">
+A new file was found to be a copy of a file from another disk.
+This is detected by matching file size and timestamp, and is an
+efficient operation that avoids re-hashing all blocks.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;source_disk&gt;
+</div><div class="manual-tag-description">
+The original file's disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;source_path&gt;
+</div><div class="manual-tag-description">
+The original file's location (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scan:restore:&lt;disk_name&gt;:&lt;path&gt;
+</div><div class="manual-option-description">
+A file's inode has changed but not its date-time and size,
+which suggests the file may be restored from backup.
+The file won't be re-hashed in `sync` as its precomputed hash
+is assumed to be correct.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<p>These tags provide a final count of all detected changes.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:equal:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of files and links whose metadata and data match
+the current parity (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:added:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of brand new files and links not present in the
+last sync (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:removed:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of files and links that existed in the last sync
+but are now missing (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:updated:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of existing files where the timestamp or size has
+changed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:moved:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of files relocated to a new path or renamed but
+retaining the same inode (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:copied:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of new files created by copying an existing
+protected file to a new path (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:restored:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of new files matching a parity entry by
+name/time/size but with a new inode (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:&lt;status&gt;
+</div><div class="manual-option-description">
+Logs the overall exit status of the command. The `status` is
+one of the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+equal
+</div><div class="manual-tag-description">
+Indicates that no differences were found.
+The array is already synchronized.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+diff
+</div><div class="manual-tag-description">
+Indicates that differences were found.
+The array needs a `sync` operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+unsynced
+</div><div class="manual-tag-description">
+The array has an interrupted sync.
+The array needs another `sync` operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec6" class="manual-title-level-1">
+General Progress and Execution Tags
+</h1>
+<p>These tags are used to report the runtime processing of the commands
+`sync`, `scrub`, `check` and `fix`.
+Only produced when `--gui` option is used.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+run:begin:&lt;blockbegin&gt;:&lt;blockend&gt;:&lt;count&gt;
+</div><div class="manual-option-description">
+A tag indicating the start of the command execution.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;blockbegin&gt;
+</div><div class="manual-tag-description">
+Starting block index (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;blockend&gt;
+</div><div class="manual-tag-description">
+Ending block index + 1 (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+Number of blocks to process. It may be less
+than &lt;blockend&gt; - &lt;blockbegin&gt; + 1 if some blocks
+are going to be skipped (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+run:end
+</div><div class="manual-option-description">
+A zero-argument tag indicating the end of the command execution.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+run:pos:&lt;blockidx&gt;:&lt;blockdone&gt;:&lt;sizedone&gt;:&lt;perc&gt;:&lt;eta&gt;:&lt;speed_mbs&gt;:&lt;cpu&gt;:&lt;elapsed&gt;:&lt;temp&gt;:&lt;steady_temp&gt;
+</div><div class="manual-option-description">
+Detailed progress information during command execution.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;blockidx&gt;
+</div><div class="manual-tag-description">
+Current block index position processed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;blockdone&gt;
+</div><div class="manual-tag-description">
+Number of blocks processed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;sizedone&gt;
+</div><div class="manual-tag-description">
+Current size processed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;perc&gt;
+</div><div class="manual-tag-description">
+Completion percentage (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;eta&gt;
+</div><div class="manual-tag-description">
+Estimated time to completion in seconds. Empty if not
+available (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;speed_mbs&gt;
+</div><div class="manual-tag-description">
+Data processing speed in MB/s. Empty if not
+available (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;cpu&gt;
+</div><div class="manual-tag-description">
+CPU usage percentage. Empty if not available (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;elapsed&gt;
+</div><div class="manual-tag-description">
+Elapsed time in seconds (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+Current max temperature of the disks. Empty if not
+available (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;steady_temp&gt;
+</div><div class="manual-tag-description">
+Expected steady temperature of the disks.
+Empty if not available (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+sigint:&lt;blockidx&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+A user interruption (e.g., Ctrl+C) was signaled. The process
+is gracefully aborting.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;blockidx&gt;
+</div><div class="manual-tag-description">
+Current block index position (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+Text message exactly as it's printed on screen.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+msg:&lt;level&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Messages printed to the screen.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;level&gt;
+</div><div class="manual-tag-description">
+One of `fatal`, `fatal_hardware`, `error`, `error_hardware`,
+`expected`, `status`, `progress` or `verbose`.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+fatal, fatal_hardware
+</div><div class="manual-tag-description">
+A fatal error occurred. Program will
+abort after this message.
+The `hardware` one means that the problem was caused
+by a hardware failure, like an Input/Output error
+or a silent data error.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+error, error_hardware
+</div><div class="manual-tag-description">
+A generic error condition that doesn't
+prevent the program to continue.
+The `hardware` one means that the problem was caused
+by a hardware failure, like an Input/Output error
+or a silent data error.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+expected
+</div><div class="manual-tag-description">
+An expected error condition. At present it
+happens only when using the `-m` option with files
+expected missing.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+status
+</div><div class="manual-tag-description">
+A status message, usually providing context or a summary.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+progress
+</div><div class="manual-tag-description">
+A progress message, often part of an ongoing operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+verbose
+</div><div class="manual-tag-description">
+A verbose informative message, only shown in verbose mode.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+Text message exactly as it's printed on screen.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec7" class="manual-title-level-1">
+Thermal Tags
+</h1>
+<p>The following tags are produced by the thermal monitoring functions
+when SnapRAID is processing, typically during operations that involve
+disk access.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:ambient:device:&lt;hwmon_dir&gt;:&lt;name&gt;:&lt;temp_file&gt;:&lt;label&gt;:&lt;temp&gt;
+</div><div class="manual-option-description">
+Logs a temperature reading found in the system using the Linux
+/sys/class/hwmon interface. Only present in Linux.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;hwmon_dir&gt;
+</div><div class="manual-tag-description">
+The hwmon directory name (e.g., hwmon0).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;name&gt;
+</div><div class="manual-tag-description">
+The name of the hwmon device (e.g., k10temp).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp_file&gt;
+</div><div class="manual-tag-description">
+The temperature file name (e.g., temp1_input).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;label&gt;
+</div><div class="manual-tag-description">
+The label associated with the temperature sensor (e.g., Tdie).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+The temperature reading in degrees Celsius.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:ambient:candidate:&lt;temp&gt;
+</div><div class="manual-option-description">
+Reports a temperature reading that is a candidate for the
+ambient temperature, used in the heating model calculation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+The candidate temperature in degrees Celsius.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:system:candidate:&lt;temp&gt;
+</div><div class="manual-option-description">
+Logs a temperature reading from a connected disk that is being
+considered as a candidate for determining the ambient system
+temperature.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+The current temperature read from the disk
+(uint, degrees Celsius).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:system:final:&lt;temp&gt;
+</div><div class="manual-option-description">
+Logs the final ambient system temperature calculated. This
+value is the lowest valid temperature observed among all
+candidates, representing the room temperature.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+The calculated ambient temperature in degrees Celsius.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:current:&lt;disk_name&gt;[/&lt;split_index&gt;]:&lt;device&gt;:&lt;temp&gt;
+</div><div class="manual-option-description">
+Logs the most recent temperature reading for a specific disk
+device.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;[/&lt;split_index&gt;]
+</div><div class="manual-tag-description">
+The configured name of the disk.
+In case of split parity, the parity name is followed
+by `/N` to indicate the split index, where N starts
+from 0. The `/0` is always omitted.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;device&gt;
+</div><div class="manual-tag-description">
+The unique device ID (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+The current temperature read from the disk in degrees
+Celsius.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:highest:&lt;temp&gt;
+</div><div class="manual-option-description">
+Logs the highest temperature observed among all monitored disks
+in the current measurement cycle. This is used for thermal
+throttling.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+The highest temperature observed in degrees Celsius.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:heat:&lt;disk_name&gt;[/&lt;split_index&gt;]:&lt;device&gt;:&lt;count&gt;:&lt;data_points&gt;
+</div><div class="manual-option-description">
+Logs the entire history of temperature data points collected
+so far for a specific disk, used for fitting the heating model.
+Only monotone increasing temperatures are included in the history.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;device&gt;
+</div><div class="manual-tag-description">
+The unique device ID (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of collected data points (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;data_points&gt;
+</div><div class="manual-tag-description">
+A comma-separated list of temperature/time pairs.
+Each pair is formatted as &lt;temp&gt;/&lt;time_offset&gt;.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;temp&gt;
+</div><div class="manual-tag-description">
+Temperature reading in degrees Celsius.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;time_offset&gt;
+</div><div class="manual-tag-description">
+Time offset from the start of the thermal
+monitoring (uint, seconds).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:params:&lt;disk_name&gt;[/&lt;split_index&gt;]:&lt;device&gt;:&lt;k_heat&gt;:&lt;t_ambient&gt;:&lt;t_steady&gt;:&lt;rmse&gt;:&lt;r_squared&gt;:&lt;max_error&gt;
+</div><div class="manual-option-description">
+Logs the estimated parameters for the exponential heating model
+(fit using least squares) and associated quality metrics for a
+specific disk.
+The model is: T(t) = T_steady - (T_steady - T_0) e^(-kt),
+where T_0 is the initial temperature.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;device&gt;
+</div><div class="manual-tag-description">
+The unique device ID (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;k_heat&gt;
+</div><div class="manual-tag-description">
+The heating rate constant, k (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;t_ambient&gt;
+</div><div class="manual-tag-description">
+The ambient temperature, T_ambient (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;t_steady&gt;
+</div><div class="manual-tag-description">
+The estimated steady-state temperature, T_steady (float),
+which is the maximum expected temperature of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;rmse&gt;
+</div><div class="manual-tag-description">
+Root Mean Square Error of the fit (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;r_squared&gt;
+</div><div class="manual-tag-description">
+Coefficient of determination (R^2) of the fit (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;max_error&gt;
+</div><div class="manual-tag-description">
+Maximum absolute error of the fit (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:spindown
+</div><div class="manual-option-description">
+Indicates that the thermal alarm limit has been reached, and
+the process is initiating a disk spindown to begin the
+cooldown procedure, preventing overheating.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:cooldown:&lt;sleep_time&gt;
+</div><div class="manual-option-description">
+Indicates the duration of the cooldown waiting period after
+spindown.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;sleep_time&gt;
+</div><div class="manual-tag-description">
+The total time the system will wait for
+cooldown (uint, seconds).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+thermal:spinup
+</div><div class="manual-option-description">
+Indicates that the cooldown period is complete, and the disks
+are being spun back up to resume the operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec8" class="manual-title-level-1">
+Command Status Tags
+</h1>
+<p>This section describes the tags output with the `status` command.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary Tags
+</h3>
+<p>These tags provide general information about the array configuration
+and overall state.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:block_size:&lt;uint&gt;
+</div><div class="manual-option-description">
+The size of a block in bytes. This is the unit of parity
+protection.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:parity_block_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+The total number of blocks allocated for all parity levels
+combined.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:parity_block_total:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total blocks available for a specific parity level (e.g.,
+`parity`, `2-parity`).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:parity_block_free:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Free blocks available for a specific parity level.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:parity_block_free_min:&lt;uint&gt;
+</div><div class="manual-option-description">
+The minimum number of free blocks across all parity levels.
+This determines the maximum size of data that can be added.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:file_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of files in the array.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:file_block_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of data blocks used by files.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:fragmented_file_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of fragmented files, meaning files whose blocks
+are not contiguous.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:excess_fragment_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of excess fragments (one less than the total fragments).
+This is a measure of data fragmentation overhead.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:zerosubsecond_file_count:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total number of files with a zero sub-second timestamp. This
+can occur on certain filesystems and may affect change detection.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:file_size:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total size of all files in bytes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:parity_size:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total size of allocated parity blocks in bytes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:parity_size_max:&lt;uint&gt;
+</div><div class="manual-option-description">
+Maximum possible parity size (allocated + min free) in bytes.
+This is the effective maximum protection size.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:hash:&lt;name&gt;
+</div><div class="manual-option-description">
+The current hash algorithm in use (e.g., `sha256`).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:prev_hash:&lt;name&gt;
+</div><div class="manual-option-description">
+The previous hash algorithm used, if a rehash is in progress.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:best_hash:&lt;name&gt;
+</div><div class="manual-option-description">
+The best hash algorithm for optimal performance based on
+system capabilities.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:total_wasted:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total wasted space (space on data disks exceeding parity
+capacity) in bytes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:total_used:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total used space by data files in bytes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:total_free:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total free space (usable by data) in bytes, limited by parity
+capacity.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:total_use_percent:&lt;uint&gt;
+</div><div class="manual-option-description">
+Overall array use percentage.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:scrub_oldest_days:&lt;uint&gt;
+</div><div class="manual-option-description">
+Days ago the oldest block was last scrubbed.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:scrub_median_days:&lt;uint&gt;
+</div><div class="manual-option-description">
+Days ago the median block was last scrubbed.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:scrub_newest_days:&lt;uint&gt;
+</div><div class="manual-option-description">
+Days ago the newest block was last scrubbed.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:&lt;status&gt;
+</div><div class="manual-option-description">
+Logs the overall exit status of the command. The `status` is
+one of the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+ok
+</div><div class="manual-tag-description">
+No issues. The array is fully synchronized and healthy.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+bad
+</div><div class="manual-tag-description">
+The array has some blocks marked as bad.
+The array needs a `-e fix` and and a `-p bad scrub`
+operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+unsynced
+</div><div class="manual-tag-description">
+The array has an interrupted sync.
+The array needs another `sync` operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Per-Disk Tags
+</h3>
+<p>These tags provide statistics for individual data disks. &lt;name&gt;
+is the disk name.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_file_count:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Number of files on the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_count:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Number of blocks used by files on the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_fragmented_file_count:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Number of fragmented files on the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_excess_fragment_count:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Number of excess fragments on the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_zerosubsecond_file_count:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Number of files with zero sub-second timestamp on the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_file_size:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total size of files on the disk in bytes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_allocated:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Highest block index used on the disk + 1.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_total:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total blocks on the disk (physical size).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_free:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Free blocks on the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_max_by_space:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total blocks by disk space (used + free blocks), representing
+the physical limit of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_max_by_parity:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Total blocks limited by parity space (parity size + min parity
+free blocks).
+This is the logical limit imposed by the parity files.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_block_max:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Maximum usable blocks (minimum of `..._by_space` and `..._by_parity`).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_space_wasted:&lt;name&gt;:&lt;int&gt;
+</div><div class="manual-option-description">
+Wasted space on the disk in bytes (positive if disk is larger
+than usable parity space).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_used:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Used space on the disk in bytes.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_free:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Free usable space on the disk in bytes, limited by `disk_block_max`.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:disk_use_percent:&lt;name&gt;:&lt;uint&gt;
+</div><div class="manual-option-description">
+Disk use percentage relative to `disk_block_max`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+File Timestamp Tags
+</h3>
+<p>These tags list files with zero sub-second timestamps.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+zerosubsecond:&lt;disk_name&gt;:&lt;file_path&gt;
+</div><div class="manual-option-description">
+Lists files that have a zero sub-second timestamp.
+Up to 50 are logged per disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Scrub Graph Tags
+</h3>
+<p>These tags provide a simple graph data of the past scrub and sync
+operations.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scrub_graph_range:&lt;max_columns&gt;:&lt;max_height&gt;
+</div><div class="manual-option-description">
+Dimensions of the scrub history graph obtained from the
+`content_info:bucket` records. This provides the boundary for the
+precomputed graph data available in the `scrub_graph_bar` tags.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;max_columns&gt;
+</div><div class="manual-tag-description">
+The number of columns in the graph.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;max_height&gt;
+</div><div class="manual-tag-description">
+The maximum height (peak count) of blocks found
+in any column (the highest sum of scrubbed and new blocks).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+scrub_graph_bar:&lt;index&gt;:&lt;days_ago&gt;:&lt;scrubbed&gt;:&lt;new&gt;
+</div><div class="manual-option-description">
+Data for a column of the scrub history graph. Each column
+represents a time period.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;index&gt;
+</div><div class="manual-tag-description">
+Column index. From 0 to max_columns - 1.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;days_ago&gt;
+</div><div class="manual-tag-description">
+Days ago for this column's time range.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;scrubbed&gt;
+</div><div class="manual-tag-description">
+Count of scrubbed blocks in that day range.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;new&gt;
+</div><div class="manual-tag-description">
+Count of newly synced (unscrubbed) blocks in that day range.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Command Sync/Scrub Tags
+</h1>
+<p>Tags specific for the `sync` and `scrub` commands.
+Also the error tags are possible.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary Tags
+</h3>
+<p>These tags provide summary statistics at the end of the command.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+hash_summary:error_soft:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of file-related errors that caused a
+block to be skipped during the hashing phase. These are often
+due to file changes (missing, size/time change) during the
+sync operation. This happens only in `sync`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+Total number of file errors (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_soft:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of file-related errors encountered during
+the process (e.g., missing files, file attribute changes).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of file errors encountered (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_io:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of input/output errors encountered on
+data or parity disks.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of I/O errors encountered (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_data:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of `silent data errors` (data blocks
+not matching their expected hash) encountered during the sync
+process.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of silent data errors encountered (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:&lt;status&gt;
+</div><div class="manual-option-description">
+Logs the overall exit status of the command. The `status` is
+one of the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+ok
+</div><div class="manual-tag-description">
+No issues. The array is fully synchronized and healthy.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+warning
+</div><div class="manual-tag-description">
+Some files were skipped due to likely intentional
+modifications. No hardware risk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+error
+</div><div class="manual-tag-description">
+Critical failure. Indicates serious issues like I/O failures
+or silent data corruption. Requires immediate hardware
+or filesystem inspection.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
+Command Check/Fix Tags
+</h1>
+<p>Tags specific for the `check` and `fix` commands. For `audit` mode,
+it's inteded `check` with the `--audit-only` option.
+Also the error tags are possible.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Fixed/Recovered Tags
+</h3>
+<p>These tags log successful repairs during fix operations.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+fixed:&lt;block_pos&gt;:&lt;disk_name&gt;:&lt;file_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Indicates that a file was successfully fixed using parity data.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;block_pos&gt;
+</div><div class="manual-tag-description">
+The block position being processed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the fix
+(e.g., `Fixed size`, `Fixed data error at position...`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+parity_fixed:&lt;block_pos&gt;:&lt;parity&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Indicates that corrupted parity data was successfully
+recomputed and written.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;block_pos&gt;
+</div><div class="manual-tag-description">
+The block position being processed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;parity&gt;
+</div><div class="manual-tag-description">
+The name of the parity level (e.g., `parity`, `2-parity`).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the fix
+(e.g., `Fixed data error`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+empty_fixed:&lt;disk_name&gt;:&lt;file_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs successful recreation of a missing or corrupted empty file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the fix
+(e.g., `Fixed empty file`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+hardlink_fixed:&lt;disk_name&gt;:&lt;link_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs successful recreation of a hard link during fix operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;link_path&gt;
+</div><div class="manual-tag-description">
+The hard link path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the fix
+(e.g., `Fixed hardlink error`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+symlink_fixed:&lt;disk_name&gt;:&lt;link_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs successful recreation of a symbolic link during fix operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;link_path&gt;
+</div><div class="manual-tag-description">
+The symlink path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the fix
+(e.g., `Fixed symlink error`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+dir_fixed:&lt;disk_name&gt;:&lt;dir_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs successful recreation of a missing directory during fix
+operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;dir_path&gt;
+</div><div class="manual-tag-description">
+The directory path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the fix
+(e.g., `Fixed dir error`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Unrecoverable Error Tags
+</h3>
+<p>These tags log errors that could not be recovered.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+unrecoverable:&lt;block_pos&gt;:&lt;disk_name&gt;:&lt;file_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Indicates that a block error could not be fixed due to
+insufficient parity or other recovery limitations.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;block_pos&gt;
+</div><div class="manual-tag-description">
+The block position being processed (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the problem
+(e.g., `Unrecoverable error at position &lt;file_pos&gt;`,
+`Unrecoverable unsynced error at position &lt;file_pos&gt;`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+collision:&lt;disk_name&gt;:&lt;file_path&gt;:&lt;collision_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs that the modification time was not set on a recovered file to
+avoid inode collision with another file.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;collision_path&gt;
+</div><div class="manual-tag-description">
+The path of the colliding file (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the problem
+(e.g., `Not setting modification time to avoid inode collision`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+File Status Tags
+</h3>
+<p>These tags log the final status of files after processing.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+status:unrecoverable:&lt;disk_name&gt;:&lt;file_path&gt;
+</div><div class="manual-option-description">
+Indicates that a file has unrecoverable errors and was renamed to
+`.unrecoverable` (fix) or cannot be recovered (check).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+status:recovered:&lt;disk_name&gt;:&lt;file_path&gt;
+</div><div class="manual-option-description">
+Logs that a file was successfully recovered during fix operation.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+status:recoverable:&lt;disk_name&gt;:&lt;file_path&gt;
+</div><div class="manual-option-description">
+Logs that a file has errors but could be recovered with a
+`fix` (check).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+status:correct:&lt;disk_name&gt;:&lt;file_path&gt;
+</div><div class="manual-option-description">
+Indicates that a file passed all checks successfully (verbose).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary Tags
+</h3>
+<p>These tags provide summary statistics at the end of the command.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_soft:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of file-related errors encountered during
+the process (e.g., missing files, file attribute changes).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of file errors encountered (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_io:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of input/output errors encountered on
+data or parity disks.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of I/O errors encountered (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_data:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total count of `silent data errors` (data blocks
+not matching their expected hash) encountered during the sync
+process.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of silent data errors encountered (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_recovered:&lt;recovered_count&gt;
+</div><div class="manual-option-description">
+Logs the total number of errors successfully recovered (fix).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;recovered_count&gt;
+</div><div class="manual-tag-description">
+Number of recovered errors (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_recoverable:&lt;recoverable_count&gt;
+</div><div class="manual-option-description">
+Logs the total number of errors that can be recovered (check).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;recoverable_count&gt;
+</div><div class="manual-tag-description">
+Number of recoverable errors (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:error_unrecoverable:&lt;unrecoverable_count&gt;
+</div><div class="manual-option-description">
+Logs the total number of unrecoverable errors (fix/check).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;unrecoverable_count&gt;
+</div><div class="manual-tag-description">
+Number of unrecoverable errors (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:&lt;status&gt;
+</div><div class="manual-option-description">
+Logs the overall exit status of the command. The `status` is one of
+the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+ok
+</div><div class="manual-tag-description">
+Indicates that the operation completed with no errors (audit).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+warning
+</div><div class="manual-tag-description">
+Some files were different than expected, likely caused
+by intentional modification of the files.
+No hardware risk (audit).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+error
+</div><div class="manual-tag-description">
+Critical failure. Indicates serious issues like I/O failures
+or silent data corruption. Requires immediate hardware
+or filesystem inspection (audit).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+recovered
+</div><div class="manual-tag-description">
+Indicates that the operation completed with all
+errors successfully recovered (fix).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+recoverable
+</div><div class="manual-tag-description">
+Indicates that errors were found but are all
+recoverable (check).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+unrecoverable
+</div><div class="manual-tag-description">
+Indicates that unrecoverable errors were
+found (check/fix).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec11" class="manual-title-level-1">
+Command List Tags
+</h1>
+<p>This section describes the tags output with the `list` command.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+List Tags
+</h3>
+<p>These tags log details about individual files and links processed during
+the listing operation.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+file:&lt;disk_name&gt;:&lt;subpath&gt;:&lt;size&gt;:&lt;mtime_sec&gt;:&lt;mtime_nsec&gt;:&lt;inode&gt;
+</div><div class="manual-option-description">
+Logs details for a regular file found on a disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The configured name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;subpath&gt;
+</div><div class="manual-tag-description">
+The path of the file relative to the disk's root
+(escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the file in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;mtime_sec&gt;
+</div><div class="manual-tag-description">
+The file's modification time in seconds since the
+Epoch (int).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;mtime_nsec&gt;
+</div><div class="manual-tag-description">
+The file's modification time nanosecond component
+(uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;inode&gt;
+</div><div class="manual-tag-description">
+The file's inode number (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+link_&lt;type&gt;:&lt;disk_name&gt;:&lt;subpath&gt;:&lt;linkto&gt;
+</div><div class="manual-option-description">
+Logs details for a link found on a disk. The `&lt;type&gt;` component
+varies based on the kind of link.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;type&gt;
+</div><div class="manual-tag-description">
+The type of link, one of: `hardlink`, `symlink`,
+`symdir` (symlink to a directory), `junction`
+(Windows-specific reparse point).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The configured name of the disk (string).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;subpath&gt;
+</div><div class="manual-tag-description">
+The path of the link relative to the disk's root
+(escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;linkto&gt;
+</div><div class="manual-tag-description">
+The target path of the link (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary Tags
+</h3>
+<p>These tags log final statistics about the entire listing operation.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:file_count:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total number of regular files processed.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of files (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:file_size:&lt;size&gt;
+</div><div class="manual-option-description">
+Logs the total size of all regular files processed.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The cumulative size of all files (uint, bytes).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:link_count:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total number of links processed (hardlinks, symlinks,
+symdirs, junctions).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of links (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:ok
+</div><div class="manual-option-description">
+Indicates a successful completion of the listing operation.
+Note that if a fatal error happens, the program will abort,
+and you won't get this tag.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec12" class="manual-title-level-1">
+Command Dup Tags
+</h1>
+<p>This section describes the tags output with the `dup` command.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Duplicate Tags
+</h3>
+<p>These tags log information about detected duplicate files and provide
+a summary of the duplicate finding process. The content hash of the
+whole file is used to determine duplicates.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+dup:&lt;diskname1&gt;:&lt;file_path1&gt;:&lt;diskname2&gt;:&lt;file_path2&gt;:&lt;size&gt;: dup
+</div><div class="manual-option-description">
+Logs the information about a pair of duplicate files found.
+The first file listed is the one just processed, and the second
+file is the previously processed file that has the same content hash.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;diskname1&gt;
+</div><div class="manual-tag-description">
+The configured name of the disk containing the
+newly processed duplicate file.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path1&gt;
+</div><div class="manual-tag-description">
+The path of the newly processed duplicate file
+relative to its disk's mount point (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;diskname2&gt;
+</div><div class="manual-tag-description">
+The configured name of the disk containing the
+previously processed file that is the duplicate
+of `&lt;file_path1&gt;`.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path2&gt;
+</div><div class="manual-tag-description">
+The path of the previously processed duplicate file
+relative to its disk's mount point (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The size of the duplicate file in bytes (uint). This
+size corresponds to the file `&lt;file_path2&gt;`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary Tags
+</h3>
+<p>These tags provide a final summary of the duplicate finding process.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:dup_count:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total number of duplicate files found. A file is counted
+as a duplicate if its hash matches a hash already seen.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total count of duplicate files (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:dup_size:&lt;size&gt;
+</div><div class="manual-option-description">
+Logs the total size of all duplicate files found. This size is
+the sum of the sizes of all files considered duplicates.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size&gt;
+</div><div class="manual-tag-description">
+The total size of duplicate files in gigabytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:&lt;status&gt;
+</div><div class="manual-option-description">
+Logs the overall exit status of the command. The `status` is one of
+the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+unique
+</div><div class="manual-tag-description">
+Indicates that no duplicate files were found.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+dup
+</div><div class="manual-tag-description">
+Indicates that at least one duplicate file was found.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec13" class="manual-title-level-1">
+Command Pool Tags
+</h1>
+<p>This section describes the tags output with the `pool` command.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:link_count:&lt;count&gt;
+</div><div class="manual-option-description">
+Logs the total number of links created (symlinks, junctions).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;count&gt;
+</div><div class="manual-tag-description">
+The total number of links (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:ok
+</div><div class="manual-option-description">
+Indicates a successful completion of the pool operation.
+Note that if a fatal error happens, the program will abort,
+and you won't get this tag.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec14" class="manual-title-level-1">
+Command Rehash Tags
+</h1>
+<p>This section describes the tags output with the `rehash` command.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary Tags
+</h3>
+<p>These tags provide a final summary of the rehash scheduling process.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:exit:&lt;status&gt;
+</div><div class="manual-option-description">
+Logs the overall exit status of the command. The `status` is one of
+the following:
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+scheduled
+</div><div class="manual-tag-description">
+Indicates that a rehash operation has
+been successfully scheduled. The rehash will be performed
+incrementally in future `sync` or `scrub` commands.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+already_in_progress
+</div><div class="manual-tag-description">
+Indicates that that a rehash is already
+in progress and cannot be scheduled again. This causes the
+program to exit with a fatal error.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+not_required
+</div><div class="manual-tag-description">
+Indicates that the current hash algorithm is
+already the `best hash` for the platform, and thus
+a rehash is not required. This causes the program to
+exit with a fatal error.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec15" class="manual-title-level-1">
+Command Smart And Probe Tags
+</h1>
+<p>This section describes the tags output by the `smart` and `probe`
+commands. The main difference between the two is that `probe` doesn't
+spin up the disk, so it won't be able to get all attributes if the
+disk is spun down. The `smart` command, instead, will always get all
+attributes, but with the risk of spinning up all disks.
+</p><p>Note that a `&lt;disk_name&gt;` may be associated with more `&lt;device_file&gt;`,
+in case the logical disk uses more physical disks. In such a case,
+you'll see multiple `&lt;attr&gt;` and `&lt;smart&gt;` tags for the same
+`&lt;disk_name&gt;` but with different `&lt;device_file&gt;`. The exception is the
+`stat` attrbute that is cumulative for all the devices part of the
+disk.
+</p><p>In case of split parity, the parity name is followed by `/N` to indicate
+the split index, where N starts from 0. The `/0` is always omitted.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Attributes
+</h3>
+<p>Tags logging specific disk identification and attribute values.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+smart:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]
+</div><div class="manual-option-description">
+Logs the start of the SMART report for a device.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;device_file&gt;
+</div><div class="manual-tag-description">
+The file path of the device (e.g., /dev/sdb).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;[/&lt;split_index&gt;]
+</div><div class="manual-tag-description">
+The configured name of the disk.
+In case of split parity, the parity name is followed
+by `/N` to indicate the split index, where N starts
+from 0. The `/0` is always omitted.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:serial:&lt;serial_number&gt;
+</div><div class="manual-option-description">
+Logs the disk's serial number.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;serial_number&gt;
+</div><div class="manual-tag-description">
+The disk's serial number (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:family:&lt;family&gt;
+</div><div class="manual-option-description">
+Logs the disk's model family string.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;family&gt;
+</div><div class="manual-tag-description">
+The disk's model family identifier (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:model:&lt;model&gt;
+</div><div class="manual-option-description">
+Logs the disk's model string.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;model&gt;
+</div><div class="manual-tag-description">
+The disk's model identifier (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:interface:&lt;interface&gt;
+</div><div class="manual-option-description">
+Logs the disk's interface. Something like `USB`, `SATA`, `NVMe`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;interface&gt;
+</div><div class="manual-tag-description">
+The disk's interface (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:afr:&lt;afr&gt;:&lt;prob&gt;
+</div><div class="manual-option-description">
+Logs the estimated Annual Failure Rate (AFR) and the
+probability of at least one failure in the next year based on
+SMART attributes. The AFR is calculated using the SMART
+attributes (5, 187, 188, 197, 198).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;afr&gt;
+</div><div class="manual-tag-description">
+The computed Annual Failure Rate (the average number
+of failures you expect in a year) (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;prob&gt;
+</div><div class="manual-tag-description">
+The probability of at least one failure in the
+next year (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:size:&lt;size_bytes&gt;
+</div><div class="manual-option-description">
+Logs the size of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;size_bytes&gt;
+</div><div class="manual-tag-description">
+The disk size in bytes (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:error_protocol:&lt;error_count&gt;
+</div><div class="manual-option-description">
+Counts command, transport, or controller-level errors reported
+by the device. These reflect failed I/O operations not directly
+caused by media defects (for example interface, firmware, or
+power-related errors).
+This counter is cumulative and never resets to zero, even if
+the underlying error condition is resolved.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;error_count&gt;
+</div><div class="manual-tag-description">
+The total error count (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:error_medium:&lt;error_count&gt;
+</div><div class="manual-option-description">
+Counts media-level errors where data could not be reliably
+read or written. These indicate actual storage surface or
+flash failures and may imply data loss.
+This counter is cumulative and never resets to zero, even if
+the underlying error condition is resolved.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;error_count&gt;
+</div><div class="manual-tag-description">
+The total error count (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:wear_level:&lt;percentage&gt;
+</div><div class="manual-option-description">
+The wear level of the SSD/NVME expressed as a percentage, where a
+value of 0 represents a brand new drive with zero wear and
+a value of 100 indicates the drive has reached or exceeded its
+manufacturer-rated design life. This metric is provided as a
+normalized unsigned integer, offering a consistent health
+indicator across various SSD/NVME vendors and interface types
+by mapping diverse hardware counters into a single
+standardized scale.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;percentage&gt;
+</div><div class="manual-tag-description">
+Wear level percentage (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:rotationrate:&lt;rate&gt;
+</div><div class="manual-option-description">
+Logs the disk's rotation rate.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;rate&gt;
+</div><div class="manual-tag-description">
+The rotation rate. A value of 0 indicates a
+solid-state drive (SSD) or other non-rotating medium.
+A value of 1 indicates a rotational disk of unknown
+precise speed. Values greater than 1 indicate the
+rotational speed in RPM.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:flags:&lt;flags_decimal&gt;:&lt;flags_hex&gt;
+</div><div class="manual-option-description">
+Logs the SMART status flags from the `smartctl` utility.
+Per the smartctl manpage, these flags are bit-mapped
+to indicate specific issues like `Command line did not parse`,
+`Device could not be opened`, or `SMART status check
+returned 'DISK FAILING'`.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;flags_decimal&gt;
+</div><div class="manual-tag-description">
+The raw flags value (uint, decimal).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;flags_hex&gt;
+</div><div class="manual-tag-description">
+The raw flags value (uint, hexadecimal).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:&lt;id&gt;:&lt;value_decimal&gt;:&lt;value_hex&gt;
+</div><div class="manual-option-description">
+Logs the raw value of any assigned SMART attribute.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;id&gt;
+</div><div class="manual-tag-description">
+The SMART attribute ID (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;value_decimal&gt;
+</div><div class="manual-tag-description">
+The raw attribute value (uint, decimal).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;value_hex&gt;
+</div><div class="manual-tag-description">
+The raw attribute value (uint, hexadecimal).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:power:active
+</div><div class="manual-option-description">
+Logs that the device was confirmed to be in an active power
+state after a status probe.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:power:standby
+</div><div class="manual-option-description">
+Logs that the device was confirmed to be in a standby/spun-down
+state.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:power:up
+</div><div class="manual-option-description">
+Logs a successful spin-up operation via direct O_DIRECT
+read.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:power:down
+</div><div class="manual-option-description">
+Logs a successful spin-down operation initiated via the
+smartctl command.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+stat:&lt;disk_name&gt;:&lt;access_number&gt;
+</div><div class="manual-option-description">
+Logs the total number of read and write accesses done on the
+disk. This is a cumulative value that include all the devices
+and split of the disk.
+Comparing this number at different times, you can detect if the
+disk was used during that time.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;access_number&gt;
+</div><div class="manual-tag-description">
+Total number of accesses (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+Summary
+</h3>
+<p>Tags logging the overall failure probabilities for the array.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:array_failure:&lt;array_afr&gt;:&lt;array_prob&gt;
+</div><div class="manual-option-description">
+Logs the total estimated failure rate for the entire array
+(sum of individual disk AFRs) and the probability of at least
+one failure in the next year.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;array_afr&gt;
+</div><div class="manual-tag-description">
+The sum of AFRs of all disks in the array (the
+average number of failures you expect in a year) (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;array_prob&gt;
+</div><div class="manual-tag-description">
+The probability of at least one failure in
+the next year (float).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+Device Status Tags
+</h1>
+<p>These tags log the lifecycle of hardware interactions and external
+command execution with the `smartctl` command.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+device:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:shell
+</div><div class="manual-option-description">
+Logs a failure in the command shell execution environment.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;device_file&gt;
+</div><div class="manual-tag-description">
+The system path to the device node.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;[/&lt;split_index&gt;]
+</div><div class="manual-tag-description">
+The configured name of the disk.
+In case of split parity, the parity name is followed
+by `/N` to indicate the split index, where N starts
+from 0. The `/0` is always omitted.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+device:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:error:&lt;errno&gt;
+</div><div class="manual-option-description">
+Logs a low-level system error during direct file operations.
+This is triggered when open(), read(), or close()
+calls fail during a spin-up attempt.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;errno&gt;
+</div><div class="manual-tag-description">
+The standard integer error number provided by
+the OS.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+device:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:error:abort
+</div><div class="manual-option-description">
+Logs that an external process (smartctl) failed to complete
+normally, such as being terminated by a signal rather than
+exiting.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+device:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:exit:&lt;exit_code&gt;
+</div><div class="manual-option-description">
+Logs that the external command (smartctl) returned a non-zero
+exit code that was not explicitly recognized as a valid state.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;exit_code&gt;
+</div><div class="manual-tag-description">
+The integer exit status returned by the
+process (int).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec17" class="manual-title-level-1">
+Error Tags
+</h1>
+<p>These tags report specific errors that occur on data disks during the
+commands that access files and parities.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+error[_io|_data]:&lt;block&gt;:&lt;disk_name&gt;:&lt;file&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs file access errors (open, read, file changed) during the
+data disk read operation for parity calculation or verification.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+_io
+</div><div class="manual-tag-description">
+Indicates a physical Input/Output error.
+The disk was unable to read or write a specific block,
+typically signaling a failing sector or cable issue.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+_data
+</div><div class="manual-tag-description">
+Indicates the data was read successfully but failed
+the checksum/hash verification. This signals `silent`
+corruption or an unsuccessful parity match.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;block&gt;
+</div><div class="manual-tag-description">
+The zero-based index of the block where the error occurred (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the data disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file&gt;
+</div><div class="manual-tag-description">
+The path (relative to the disk mount point) of the
+file containing the block (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the
+error (e.g., `Open/Read/Write error`,
+`Data error at position &lt;pos&gt;, diff bits &lt;diff&gt;/&lt;bits&gt;`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+parity_error[_io|_data]:&lt;block&gt;:&lt;level&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Logs errors during parity disk read or write operations.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+_io
+</div><div class="manual-tag-description">
+Indicates a physical Input/Output error.
+The disk was unable to read or write a specific block,
+typically signaling a failing sector or cable issue.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+_data
+</div><div class="manual-tag-description">
+Indicates the data was read successfully but failed
+the checksum/hash verification. This signals `silent`
+corruption or an unsuccessful parity match.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;block&gt;
+</div><div class="manual-tag-description">
+The zero-based index of the block where the error occurred (uint).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;level&gt;
+</div><div class="manual-tag-description">
+The configuration name of the parity level (e.g.,
+`parity`, `2-parity`).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the
+error (e.g., `Read/Write error`,
+`Data error, diff bits &lt;diff&gt;/&lt;bits&gt;`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+hardlink_error[_io]:&lt;disk_name&gt;:&lt;link_path&gt;:&lt;target_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Indicates an error when attempting to access a hard link.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;link_path&gt;
+</div><div class="manual-tag-description">
+The hard link path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;target_path&gt;
+</div><div class="manual-tag-description">
+The target path of the hard link (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the
+error (e.g., `Hardlink stat error`,
+`Hardlink error for not regular file`, `Hardlink to stat error`,
+`Hardlink-to error for not regular file`,
+`Hardlink mismatch for different inode`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+symlink_error[_io]:&lt;disk_name&gt;:&lt;link_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Indicates an error when attempting to access a symbolic link.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;link_path&gt;
+</div><div class="manual-tag-description">
+The symlink path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the
+error (e.g., `Symlink read error`,
+`Symlink data error '&lt;actual&gt;' instead of '&lt;expected&gt;'`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+dir_error[_io]:&lt;disk_name&gt;:&lt;dir_path&gt;:&lt;msg&gt;
+</div><div class="manual-option-description">
+Indicates an error when attempting to access a directory.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;dir_path&gt;
+</div><div class="manual-tag-description">
+The directory path relative to disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;msg&gt;
+</div><div class="manual-tag-description">
+A descriptive message indicating the nature of the
+error (e.g., `Dir stat error`, `Dir error for not directory`).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+outofparity:&lt;disk_name&gt;:&lt;file_path&gt;
+</div><div class="manual-option-description">
+Logs that a file's blocks extend beyond the available parity
+space, indicating that the parity files are too small to
+protect all data. This occurs when data requires more parity
+than is available on the parity disk(s) and is a critical
+warning.
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+<div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;disk_name&gt;
+</div><div class="manual-tag-description">
+The name of the disk containing the file.
+</div> <!-- description -->
+</div> <!-- entry -->
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;file_path&gt;
+</div><div class="manual-tag-description">
+The file path relative to the disk root (escaped).
+</div> <!-- description -->
+</div> <!-- entry -->
+</div> <!-- list -->
+</div>
+
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>SnapRAID</h3>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://www.reddit.com/r/Snapraid/">Reddit r/snapraid</a></li>
+                    <li><a href="https://sourceforge.net/p/snapraid/discussion/1677233/">SourceForge Forum</a></li>
+                    <li><a href="https://github.com/amadvance/snapraid/">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+
