@@ -184,6 +184,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Manual Section Selector functionality
+    const manualSelector = document.getElementById('manual-selector');
+    if (manualSelector) {
+        const currentFile = window.location.pathname.split('/').pop() || 'manual.html';
+        const options = Array.from(manualSelector.options);
+        const matchingOption = options.find(opt => opt.value === currentFile);
+        
+        if (matchingOption) {
+            manualSelector.value = currentFile;
+        } else {
+            // Default to first option (CLI) if current file doesn't match specific sections
+            // This handles cases like manual-it.html where we want "CLI" selected
+            if (currentFile.includes('manual') && !currentFile.includes('daemon') && !currentFile.includes('log')) {
+                 const cliOption = options.find(opt => opt.value === 'manual.html');
+                 if (cliOption) manualSelector.value = 'manual.html';
+            }
+        }
+
+        // Redirect on change
+        manualSelector.addEventListener('change', (e) => {
+            const selectedPage = e.target.value;
+            if (selectedPage) {
+                window.location.href = selectedPage;
+            }
+        });
+    }
+
     // UI Gallery Preview on Click
     const shots = document.querySelectorAll('.ui-shot');
     const overlay = document.getElementById('ui-preview-overlay');

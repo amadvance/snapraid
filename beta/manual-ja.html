@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
     <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
-    <title>SnapRAID Manual</title>
+    <title>SnapRAID CLI Manual</title>
     <style>html,body{background-color:#020617;color:#f8fafc;}</style>
     <link rel="stylesheet" href="style.css">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -66,7 +66,16 @@
 
 
     <div class="container manual-layout">
+
         <aside class="manual-sidebar">
+
+            <h4>Component</h4>
+            <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
+                <option value="manual.html">Command Line</option>
+                <option value="manual-daemon.html">Daemon</option>
+                <option value="manual-log.html">Log</option>
+            </select>
+
             <h4>Languages</h4>
             <select id="language-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual">English</option>
@@ -91,6 +100,7 @@
                 <!-- Populated by JavaScript -->
             </ul>
         </aside>
+
 
         <main id="manual-container">
             

@@ -212,7 +212,7 @@ A primary factor in categorizing storage solutions is their support for <strong 
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                 </button>
                                 <div class="info-content" hidden>
-                                    ZFS and Btrfs provide bit-rot protection comparable to SnapRAID. One drawback of ZFS is that its default Fletcher checksum prioritizes speed over reliability. SnapRAID uses 128-bit SpookyHash.
+                                    ZFS provides bit-rot protection comparable to SnapRAID. One drawback of ZFS is that its default Fletcher checksum prioritizes speed over reliability. SnapRAID uses 128-bit SpookyHash.
                                 </div>
                             </div>
                         </td>
@@ -223,7 +223,7 @@ A primary factor in categorizing storage solutions is their support for <strong 
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                 </button>
                                 <div class="info-content" hidden>
-                                    ZFS and Btrfs provide bit-rot protection comparable to SnapRAID. Btrfs uses CRC32C by default. SnapRAID uses 128-bit SpookyHash.
+                                    Btrfs provides bit-rot protection comparable to SnapRAID. Btrfs uses CRC32C by default. SnapRAID uses 128-bit SpookyHash.
                                 </div>
                             </div>
                         </td>
@@ -303,7 +303,7 @@ A primary factor in categorizing storage solutions is their support for <strong 
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                 </button>
                                 <div class="info-content" hidden>
-                                    unRAID 7.2 claims it can add data disks to an existing array, but it effectively rebuilds parity from scratch. During this process, disks already in the array <a href="https://youtu.be/frtauLMO3-c?t=803">are not protected</a>. This puts stress on all drives with no safety net.
+                                    unRAID 7.2 claims it can add data disks to an existing array, but it effectively rebuilds parity from scratch. During this process, disks already in the array <a href="https://youtu.be/frtauLMO3-c?t=803">are not protected</a>. This puts stress on all drives with no safety net. If any disk is near failure, there’s a high risk it could fail during this operation. With unRAID, the only safe way to add a new data disk to an existing array is to pre-clear it first. 
                                 </div>
                             </div>
                         </td>
