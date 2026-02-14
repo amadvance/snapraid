@@ -69,7 +69,7 @@
 
         <aside class="manual-sidebar">
 
-            <h4>Component</h4>
+            <h4>Components</h4>
             <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual.html">Command Line</option>
                 <option value="manual-daemon.html">Daemon</option>
@@ -177,7 +177,7 @@ energie și reducând zgomotul.
 </ul>
 <p>Pentru mai multe informații, vă rugăm să vizitați site-ul oficial SnapRAID:
 </p><pre>
-https://www.snapraid.it/
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -281,7 +281,7 @@ data d3 H:\array\
 <p>Dacă aveți multe discuri și rămâneți fără litere de unitate, puteți monta
 discurile direct în subfoldere. Vedeți:
 </p><pre>
-https://www.google.com/search?q=Windows+mount+point
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
 <p>În acest moment, sunteți gata să rulați comanda `sync` pentru a construi
 informațiile de paritate.
@@ -572,7 +572,7 @@ atribute suspecte.
 </p><p>Această estimare a probabilității este obținută prin corelarea atributelor SMART
 ale discurilor cu datele Backblaze disponibile la:
 </p><pre>
-https://www.backblaze.com/hard-drive-test-data.html
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>Dacă SMART raportează că un disc este pe cale să eșueze, `FAIL` sau `PREFAIL` este tipărit
 pentru acel disc, iar SnapRAID returnează o eroare.
@@ -585,23 +585,23 @@ logfail
 </div><div class="manual-tag-description">
 În trecut, unele atribute au fost mai mici decât
 pragul.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 logerr
 </div><div class="manual-tag-description">
 Jurnalul de erori al dispozitivului conține erori.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 selferr
 </div><div class="manual-tag-description">
 Jurnalul de auto-test al dispozitivului conține erori.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Dacă opțiunea -v, --verbose este specificată, este furnizată o analiză statistică
 mai profundă. Această analiză vă poate ajuta să decideți dacă aveți nevoie de mai multă
 sau mai puțină paritate.
@@ -663,30 +663,30 @@ grupate după:
 equal
 </div><div class="manual-tag-description">
 Fișiere neschimbate față de înainte.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 added
 </div><div class="manual-tag-description">
 Fișiere adăugate care nu erau prezente înainte.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 removed
 </div><div class="manual-tag-description">
 Fișiere eliminate.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 updated
 </div><div class="manual-tag-description">
 Fișiere cu o dimensiune sau marcă temporală diferită, ceea ce înseamnă că au
 fost modificate.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 moved
@@ -694,8 +694,8 @@ moved
 Fișiere mutate într-un director diferit pe același disc.
 Sunt identificate având același nume, dimensiune, marcă temporală
 și inod, dar un director diferit.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 copied
@@ -706,17 +706,17 @@ numărate în `removed`.
 Sunt identificate având același nume, dimensiune și
 marcă temporală. Dacă marca temporală sub-secundă este zero,
 întreaga cale trebuie să se potrivească, nu doar numele.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
 Fișiere cu un inod diferit, dar nume, dimensiune și marcă temporală care se potrivesc.
 Acestea sunt de obicei fișiere restaurate după ce au fost șterse.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Dacă este necesară o `sync`, codul de retur al procesului este 2, în loc de
 cel implicit 0. Codul de retur 1 este utilizat pentru o condiție de eroare generică.
 </p><p>Nimic nu este modificat.
@@ -924,9 +924,9 @@ utilizează fișierul `/usr/local/etc/snapraid.conf` dacă există,
 altfel `/etc/snapraid.conf`.
 În Windows, utilizează fișierul `snapraid.conf` din același
 director ca `snapraid.exe`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -941,9 +941,9 @@ specificațiile modelului.
 Această opțiune poate fi utilizată doar cu `check` și `fix`.
 Nu poate fi utilizată cu `sync` și `scrub`, deoarece acestea
 procesează întotdeauna întreaga matrice.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -959,9 +959,9 @@ Această opțiune poate fi utilizată de mai multe ori.
 Această opțiune poate fi utilizată doar cu `check`, `fix`, `up` și `down`.
 Nu poate fi utilizată cu `sync` și `scrub`, deoarece acestea
 procesează întotdeauna întreaga matrice.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -975,9 +975,9 @@ sunt selectate doar fișierele care se potrivesc cu toate filtrele.
 Această opțiune poate fi utilizată doar cu `check` și `fix`.
 Nu poate fi utilizată cu `sync` și `scrub`, deoarece acestea
 procesează întotdeauna întreaga matrice.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -987,9 +987,9 @@ Procesează fișierele cu erori în `check` și `fix`.
 Procesează doar fișierele care au blocuri marcate cu erori silențioase
 sau de intrare/ieșire în timpul `sync` și `scrub`, așa cum sunt listate în `status`.
 Această opțiune poate fi utilizată doar cu `check` și `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1001,9 +1001,9 @@ este interpretată ca procentul de blocuri de verificat.
 `bad` verifică blocurile defecte, `new` verifică blocurile care nu au fost încă verificate,
 iar `full` verifică totul.
 Această opțiune poate fi utilizată doar cu `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1014,9 +1014,9 @@ DAYS este vârsta minimă în zile pentru ca un bloc să fie verificat;
 valoarea implicită este 10.
 Blocurile marcate ca defecte sunt întotdeauna verificate, indiferent de această opțiune.
 Această opțiune poate fi utilizată doar cu `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1027,9 +1027,9 @@ a verifica datele de paritate.
 Dacă sunteți interesați doar de verificarea datelor fișierului, această
 opțiune poate accelera semnificativ procesul de verificare.
 Această opțiune poate fi utilizată doar cu `check`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1051,9 +1051,9 @@ Această opțiune verifică și fișierele mutate în cadrul matricei
 pentru a se asigura că operațiunea de mutare a fost reușită și, dacă este necesar,
 vă permite să rulați o operațiune de reparare (fix) înainte de a continua.
 Această opțiune poate fi utilizată doar cu `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1066,9 +1066,9 @@ Dacă mai aveți astfel de fișiere, ele pot fi utilizate de `check`
 Fișierele sunt citite, inclusiv în subdirectoare, și sunt
 identificate indiferent de numele lor.
 Această opțiune poate fi utilizată doar cu `check` și `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1080,9 +1080,9 @@ rămână active și să se rotească după o operațiune întreruptă,
 ajutând la evitarea acumulării inutile de căldură și a consumului de energie.
 Utilizați această opțiune pentru a vă asigura că discurile sunt oprite în siguranță
 chiar și atunci când o comandă eșuează.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1091,9 +1091,9 @@ chiar și atunci când o comandă eșuează.
 Aplică o limită globală de lățime de bandă pentru toate discurile. RATE este
 numărul de octeți pe secundă. Puteți specifica un multiplicator
 cum ar fi K, M sau G (de exemplu, --bw-limit 1G).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1115,9 +1115,9 @@ Toate calculele rulează în paralel cu operațiunile de disc.
 Prin urmare, atâta timp cât există timp de așteptare măsurabil pentru
 cel puțin un disc, indică faptul că CPU-ul este suficient de rapid pentru a
 ține pasul cu sarcina de lucru.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1131,9 +1131,9 @@ Acest lucru vă permite să detectați cu ușurință când, după o cădere de 
 unele fișiere accesate au fost trunchiate.
 Aceasta este o condiție posibilă în Linux cu sistemele de fișiere ext3/ext4.
 Această opțiune poate fi utilizată doar cu `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1151,9 +1151,9 @@ paritate simplă și mai multe cu paritate multiplă, deoarece acesta este
 cazul normal la înlocuirea discurilor după o recuperare.
 Această opțiune poate fi utilizată doar cu `sync`, `check` sau
 `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1170,9 +1170,9 @@ paritate simplă și mai multe cu paritate multiplă, deoarece acesta este
 cazul normal la înlocuirea discurilor după o recuperare.
 Această opțiune poate fi utilizată doar cu `sync`, `check` sau
 `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1185,9 +1185,9 @@ doar primul, puteți ignora al doilea disc inaccesibil.
 Sau, dacă doriți să recuperați un disc în spațiul liber rămas pe un
 disc deja utilizat, partajând același dispozitiv fizic.
 Această opțiune poate fi utilizată doar cu `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1204,9 +1204,9 @@ pentru a detecta erori silențioase sau pentru a recupera fișiere lipsă.
 sau la un proces lent din cauza multor verificări hash, iar această
 opțiune vă permite să rezolvați astfel de probleme.
 Această opțiune poate fi utilizată doar cu `sync`, `check` și `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1220,9 +1220,9 @@ să reutilizați hash-urile prezente în fișierul de conținut pentru a valida 
 și a menține protecția datelor în timpul procesului `sync` utilizând
 datele de paritate existente.
 Această opțiune poate fi utilizată doar cu `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1236,9 +1236,9 @@ Această opțiune poate fi utilizată doar cu `sync`.
 ATENȚIE! Această opțiune este doar pentru experți și este puternic
 recomandat să nu o utilizați.
 NU aveți protecție a datelor în timpul operațiunii `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1259,9 +1259,9 @@ să închideți numele între ghilimele, de exemplu, `"&gt;&gt;result.log"`.
 Pentru a scoate jurnalul la ieșirea standard sau la eroarea standard,
 puteți utiliza `"&gt;&amp;1"` și `"&gt;&amp;2"`, respectiv.
 Vedeți fișierul snapraid_log.txt sau pagina de manual pentru descrieri ale etichetelor jurnalului.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1274,9 +1274,9 @@ Această opțiune afectează `sync` și `scrub`, cărora li se permite
 să continue după primul set de erori de disc pentru a încerca
 să își finalizeze operațiunile.
 Cu toate acestea, `check` și `fix` se opresc întotdeauna la prima eroare.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1286,9 +1286,9 @@ Cu toate acestea, `check` și `fix` se opresc întotdeauna la prima eroare.
 specificat. Acest lucru poate fi util pentru a reîncerca verificarea
 sau repararea anumitor blocuri în cazul unui disc deteriorat.
 Această opțiune este în principal pentru recuperarea manuală avansată.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1296,9 +1296,9 @@ Această opțiune este în principal pentru recuperarea manuală avansată.
 </div><div class="manual-option-description">
 Procesează doar numărul specificat de blocuri.
 Această opțiune este în principal pentru recuperarea manuală avansată.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1311,9 +1311,9 @@ Fișierul de configurare este scris la ieșirea standard
 Acest fișier de configurare conține și informațiile
 necesare pentru a reconstrui punctele de montare a discului în cazul în care
 pierdeți întregul sistem.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1323,9 +1323,9 @@ Tipărește mai multe informații pe ecran.
 Dacă este specificat o dată, tipărește fișierele excluse
 și statistici suplimentare.
 Această opțiune nu are niciun efect asupra fișierelor jurnal.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1337,27 +1337,27 @@ operațiunile în curs; de trei ori, mesajele info
 ; de patru ori, mesajele de stare.
 Erorile fatale sunt întotdeauna tipărite pe ecran.
 Această opțiune nu are niciun efect asupra fișierelor jurnal.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 Tipărește un ecran de ajutor scurt.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 Tipărește versiunea programului.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
@@ -1649,8 +1649,8 @@ numele dispozitivului. Pentru controlerele RAID, dispozitivul este
 probabil fix și este posibil să nu fie nevoie să utilizați `%s`.
 </p><p>Consultați documentația smartmontools pentru opțiuni posibile:
 </p><pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
 <p>De exemplu:
 </p><pre>
@@ -1758,9 +1758,9 @@ FILE
 </div><div class="manual-option-description">
 Selectează orice fișier cu numele FILE.
 Acest model se aplică numai fișierelor, nu și directoarelor.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1768,9 +1768,9 @@ DIR/
 </div><div class="manual-option-description">
 Selectează orice director cu numele DIR și tot ce se află în interior.
 Acest model se aplică numai directoarelor, nu și fișierelor.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1778,9 +1778,9 @@ Acest model se aplică numai directoarelor, nu și fișierelor.
 </div><div class="manual-option-description">
 Selectează calea exactă a fișierului specificat. Acest model se aplică
 numai fișierelor, nu și directoarelor.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1788,9 +1788,9 @@ numai fișierelor, nu și directoarelor.
 </div><div class="manual-option-description">
 Selectează calea exactă a directorului specificat și tot ce se află
 în interior. Acest model se aplică numai directoarelor, nu și fișierelor.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Când specificați o cale absolută care începe cu /, aceasta este aplicată la
 directorul rădăcină al matricei, nu la directorul rădăcină al sistemului de fișiere local.
 </p><p>În Windows, puteți utiliza backslash-ul \ în loc de slash-ul /.
@@ -1868,9 +1868,9 @@ FILE
 </div><div class="manual-option-description">
 Selectează orice fișier numit FILE în acest director sau mai jos.
 Acesta urmează aceleași reguli de globbing ca modelul global.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1878,9 +1878,9 @@ DIR/
 </div><div class="manual-option-description">
 Selectează orice director numit DIR și tot ce se află în interior,
 aflat în acest director sau mai jos.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1888,9 +1888,9 @@ aflat în acest director sau mai jos.
 </div><div class="manual-option-description">
 Selectează fișierul exact specificat raportat la locația
 fișierului `.snapraidignore`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1898,9 +1898,9 @@ fișierului `.snapraidignore`.
 </div><div class="manual-option-description">
 Selectează directorul exact specificat și tot ce se află în interior,
 raportat la locația fișierului `.snapraidignore`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Spre deosebire de configurația globală, fișierele `.snapraidignore` suportă
 doar reguli de excludere; nu puteți utiliza modele de `include` sau negația (!).
 </p><p>De exemplu, dacă aveți un `.snapraidignore` în `/mnt/disk1/projects/`:

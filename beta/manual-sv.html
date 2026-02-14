@@ -69,7 +69,7 @@
 
         <aside class="manual-sidebar">
 
-            <h4>Component</h4>
+            <h4>Components</h4>
             <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual.html">Command Line</option>
                 <option value="manual-daemon.html">Daemon</option>
@@ -177,7 +177,7 @@ vilket sparar ström och minskar buller.
 </ul>
 <p>För mer information, besök den officiella SnapRAID-webbplatsen:
 </p><pre>
-https://www.snapraid.it/
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -282,7 +282,7 @@ data d3 H:\array\
 <p>Om du har många diskar och får slut på enhetsbeteckningar kan du montera
 diskar direkt i undermappar. Se:
 </p><pre>
-https://www.google.com/search?q=Windows+mount+point
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
 <p>Vid denna punkt är du redo att köra kommandot `sync` för att bygga
 paritetsinformationen.
@@ -576,7 +576,7 @@ misstänkta attribut.
 </p><p>Denna sannolikhetsuppskattning erhålls genom att korrelera SMART-attributen
 för diskarna med Backblaze-data som finns tillgänglig på:
 </p><pre>
-https://www.backblaze.com/hard-drive-test-data.html
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>Om SMART rapporterar att en disk håller på att misslyckas, skrivs `FAIL` eller `PREFAIL` ut
 för den disken, och SnapRAID returnerar med ett fel.
@@ -589,23 +589,23 @@ logfail
 </div><div class="manual-tag-description">
 Tidigare var vissa attribut lägre än
 tröskelvärdet.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 logerr
 </div><div class="manual-tag-description">
 Enhetens fellogg innehåller fel.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 selferr
 </div><div class="manual-tag-description">
 Enhetens självtestlogg innehåller fel.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Om alternativet -v, --verbose specificeras, tillhandahålls en djupare statistisk analys.
 Denna analys kan hjälpa dig att bestämma om du behöver mer
 eller mindre paritet.
@@ -670,30 +670,30 @@ grupperade efter:
 equal
 </div><div class="manual-tag-description">
 Filer oförändrade från tidigare.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 added
 </div><div class="manual-tag-description">
 Filer tillagda som inte fanns tidigare.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 removed
 </div><div class="manual-tag-description">
 Filer borttagna.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 updated
 </div><div class="manual-tag-description">
 Filer med en annan storlek eller tidsstämpel, vilket innebär att de
 modifierades.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 moved
@@ -701,8 +701,8 @@ moved
 Filer flyttade till en annan katalog på samma disk.
 De identifieras genom att ha samma namn, storlek, tidsstämpel
 och inode, men en annan katalog.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 copied
@@ -713,17 +713,17 @@ räknas i `removed`.
 De identifieras genom att ha samma namn, storlek och
 tidsstämpel. Om undertidsstämpeln är noll,
 måste hela sökvägen matcha, inte bara namnet.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
 Filer med en annan inode men matchande namn, storlek och tidsstämpel.
 Dessa är vanligtvis filer som återställts efter att ha raderats.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Om en `sync` krävs är processens returkod 2, istället för standard 0.
 Returkoden 1 används för ett generiskt feltillstånd.
 </p><p>Inget ändras.
@@ -931,9 +931,9 @@ används filen `/usr/local/etc/snapraid.conf` om den finns,
 annars `/etc/snapraid.conf`.
 I Windows används filen `snapraid.conf` i samma
 katalog som `snapraid.exe`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -948,9 +948,9 @@ I Unix, se till att globbing-tecken citeras om de används.
 Detta alternativ kan endast användas med `check` och `fix`.
 Det kan inte användas med `sync` och `scrub`, eftersom de alltid
 behandlar hela arrayen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -967,9 +967,9 @@ Detta alternativ kan användas flera gånger.
 Detta alternativ kan endast användas med `check`, `fix`, `up` och `down`.
 Det kan inte användas med `sync` och `scrub`, eftersom de alltid
 behandlar hela arrayen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -983,9 +983,9 @@ väljs endast filer som matchar alla filter.
 Detta alternativ kan endast användas med `check` och `fix`.
 Det kan inte användas med `sync` och `scrub`, eftersom de alltid
 behandlar hela arrayen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -995,9 +995,9 @@ Behandlar filerna med fel i `check` och `fix`.
 Det behandlar endast filer som har block markerade med tysta
 eller input/output-fel under `sync` och `scrub`, som listas i `status`.
 Detta alternativ kan endast användas med `check` och `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1009,9 +1009,9 @@ Istället för en procentsats kan du specificera en plan:
 `bad` skrubbar dåliga block, `new` skrubbar block som ännu inte skrubbats,
 och `full` skrubbar allt.
 Detta alternativ kan endast användas med `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1022,9 +1022,9 @@ DAYS är den minsta åldern i dagar för ett block att skrubbas;
 standard är 10.
 Block markerade som dåliga skrubbas alltid oavsett detta alternativ.
 Detta alternativ kan endast användas med `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1035,9 +1035,9 @@ att kontrollera paritetsdata.
 Om du bara är intresserad av att kontrollera filens data, kan detta
 alternativ avsevärt påskynda kontrollprocessen.
 Detta alternativ kan endast användas med `check`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1059,9 +1059,9 @@ Detta alternativ verifierar också filer som flyttats inom arrayen
 för att säkerställa att flyttoperationen lyckades och, om nödvändigt,
 låter dig köra en fix-operation innan du fortsätter.
 Detta alternativ kan endast användas med `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1074,9 +1074,9 @@ och `fix` för att förbättra återställningsprocessen.
 Filerna läses, inklusive i underkataloger, och identifieras
 oavsett deras namn.
 Detta alternativ kan endast användas med `check` och `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1088,9 +1088,9 @@ förblir aktiva och snurrar efter en avbruten operation,
 vilket hjälper till att undvika onödig värmeuppbyggnad och ström-
 förbrukning. Använd detta alternativ för att säkerställa att diskar stoppas säkert
 även när ett kommando misslyckas.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1099,9 +1099,9 @@ förbrukning. Använd detta alternativ för att säkerställa att diskar stoppas
 Tillämpar en global bandbreddsbegränsning för alla diskar. RATE är
 antalet byte per sekund. Du kan specificera en multiplikator
 som K, M eller G (t.ex. --bw-limit 1G).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1124,9 +1124,9 @@ Alla beräkningar körs parallellt med diskoperationer.
 Därför, så länge det finns mätbar väntetid för minst en disk,
 indikerar det att CPU:n är snabb nog att
 hålla jämna steg med arbetsbelastningen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1140,9 +1140,9 @@ Detta gör att du enkelt kan upptäcka när, efter en systemkrasch,
 vissa filer som användes trunkerades.
 Detta är ett möjligt tillstånd i Linux med filsystemen ext3/ext4.
 Detta alternativ kan endast användas med `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1156,9 +1156,9 @@ om du inte specificerar detta alternativ.
 Detta gör att du enkelt kan upptäcka när ett datafilsystem inte är
 monterat.
 Detta alternativ kan endast användas med `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1175,9 +1175,9 @@ enkel paritet, och fler med multipel paritet, eftersom detta är
 det normala fallet när man byter ut diskar efter en återställning.
 Detta alternativ kan endast användas med `sync`, `check` eller
 `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1190,9 +1190,9 @@ endast den första, kan du ignorera den andra otillgängliga disken.
 Eller, om du vill återställa en disk i det lediga utrymme som finns kvar på en
 redan använd disk, dela samma fysiska enhet.
 Detta alternativ kan endast användas med `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1209,9 +1209,9 @@ I vissa sällsynta fall kan detta beteende leda till falska positiva
 eller en långsam process på grund av många hash-verifieringar, och detta
 alternativ låter dig lösa sådana problem.
 Detta alternativ kan endast användas med `sync`, `check` och `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1225,9 +1225,9 @@ Istället för att återskapa pariteten från grunden låter detta dig
 och bibehålla dataskyddet under `sync`-processen med hjälp av
 den befintliga paritetsdatan.
 Detta alternativ kan endast användas med `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1241,9 +1241,9 @@ Detta alternativ kan endast användas med `sync`.
 VARNING! Detta alternativ är endast för experter, och det rekommenderas
 starkt att inte använda det.
 Du HAR INGET dataskydd under `sync`-operationen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1264,9 +1264,9 @@ omsluta namnet i citattecken, t.ex. `"&gt;&gt;result.log"`.
 För att skicka ut loggen till standardutdata eller standardfel,
 kan du använda `"&gt;&amp;1"` respektive `"&gt;&amp;2"`.
 Se filen snapraid_log.txt eller man-sidan för beskrivningar av logg-taggar.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1279,9 +1279,9 @@ Detta alternativ påverkar `sync` och `scrub`, som tillåts
 att fortsätta efter den första uppsättningen diskfel för att försöka
 slutföra sina operationer.
 Däremot stoppar `check` och `fix` alltid vid det första felet.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1291,9 +1291,9 @@ Börjar behandlingen från det specificerade
 blocknumret. Detta kan vara användbart för att försöka igen att kontrollera
 eller fixa specifika block i händelse av en skadad disk.
 Detta alternativ är främst för avancerad manuell återställning.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1301,9 +1301,9 @@ Detta alternativ är främst för avancerad manuell återställning.
 </div><div class="manual-option-description">
 Behandlar endast det specificerade antalet block.
 Detta alternativ är främst för avancerad manuell återställning.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1316,9 +1316,9 @@ och skriver inte över en befintlig fil.
 Denna konfigurationsfil innehåller också den information
 som behövs för att rekonstruera diskmonteringspunkterna om du
 förlorar hela systemet.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1328,9 +1328,9 @@ Skriver ut mer information på skärmen.
 Om det specificeras en gång, skrivs exkluderade filer
 och ytterligare statistik ut.
 Detta alternativ har ingen effekt på loggfilerna.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1342,27 +1342,27 @@ de pågående operationerna; tre gånger, informations-
 meddelandena; fyra gånger, statusmeddelandena.
 Fatala fel skrivs alltid ut på skärmen.
 Detta alternativ har ingen effekt på loggfilerna.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 Skriver ut en kort hjälpskärm.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 Skriver ut programversionen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
@@ -1654,8 +1654,8 @@ enhetens namn. För RAID-kontroller är enheten
 sannolikt fixerad, och du kanske inte behöver använda `%s`.
 </p><p>Se smartmontools dokumentation för möjliga alternativ:
 </p><pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
 <p>Till exempel:
 </p><pre>
@@ -1763,9 +1763,9 @@ FILE
 </div><div class="manual-option-description">
 Väljer valfri fil med namnet FILE.
 Detta mönster gäller endast filer, inte kataloger.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1773,9 +1773,9 @@ DIR/
 </div><div class="manual-option-description">
 Väljer valfri katalog med namnet DIR och allt innehåll.
 Detta mönster gäller endast kataloger, inte filer.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1783,9 +1783,9 @@ Detta mönster gäller endast kataloger, inte filer.
 </div><div class="manual-option-description">
 Väljer den exakt angivna filsökvägen. Detta mönster gäller
 endast filer, inte kataloger.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1793,9 +1793,9 @@ endast filer, inte kataloger.
 </div><div class="manual-option-description">
 Väljer den exakt angivna katalogsökvägen och allt innehåll.
 Detta mönster gäller endast kataloger, inte filer.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>När du specificerar en absolut sökväg som börjar med /, tillämpas den vid
 array-rotkatalogen, inte den lokala filsystemets rotkatalog.
 </p><p>I Windows kan du använda bakåtsnedstrecket \ istället för framåtsnedstrecket /.
@@ -1873,9 +1873,9 @@ FILE
 </div><div class="manual-option-description">
 Väljer alla filer med namnet FILE i denna katalog eller under.
 Detta följer samma globbing-regler som det globala mönstret.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1883,9 +1883,9 @@ DIR/
 </div><div class="manual-option-description">
 Väljer alla kataloger med namnet DIR och allt innehåll, som finns
 i denna katalog eller under.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1893,9 +1893,9 @@ i denna katalog eller under.
 </div><div class="manual-option-description">
 Väljer den exakt angivna filen relativt platsen för
 `.snapraidignore`-filen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1903,9 +1903,9 @@ Väljer den exakt angivna filen relativt platsen för
 </div><div class="manual-option-description">
 Väljer den exakt angivna katalogen och allt innehåll, relativt
 platsen för `.snapraidignore`-filen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Till skillnad från den globala konfigurationen stöder `.snapraidignore`-filer
 endast exkluderingsregler; du kan inte använda `include`-mönster eller negation (!).
 </p><p>Till exempel, om du har en `.snapraidignore` i `/mnt/disk1/projects/`:

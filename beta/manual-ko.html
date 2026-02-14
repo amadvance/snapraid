@@ -69,7 +69,7 @@
 
         <aside class="manual-sidebar">
 
-            <h4>Component</h4>
+            <h4>Components</h4>
             <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual.html">Command Line</option>
                 <option value="manual-daemon.html">Daemon</option>
@@ -176,7 +176,7 @@ SnapRAID는 데이터를 가두지 않습니다. 언제든지 포맷하거나 �
 </ul>
 <p>더 자세한 정보는 공식 SnapRAID 사이트를 방문하십시오:
 </p><pre>
-https://www.snapraid.it/
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -277,7 +277,7 @@ data d3 H:\array\
 <p>디스크가 많아 드라이브 문자가 부족한 경우, 디스크를 하위 폴더에
 직접 마운트할 수 있습니다. 다음을 참조하십시오:
 </p><pre>
-https://www.google.com/search?q=Windows+mount+point
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
 <p>이 시점에서, 패리티 정보를 빌드하기 위해 `sync` 명령을 실행할
 준비가 되었습니다.
@@ -506,9 +506,9 @@ snapraid -d NAME -a check
 <div class="manual-option-name">
 -d 및 -a 옵션은 SnapRAID에게 지정된 디스크만 확인하고 모든 패리티
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>데이터를 무시하도록 지시합니다.
 </p><p>이 명령은 오랜 시간이 걸리지만, 지나치게 조심스럽지 않다면 건너뛸 수
 있습니다.
@@ -574,7 +574,7 @@ smart
 </p><p>이 확률 추정치는 다음에서 사용 가능한 Backblaze 데이터와 디스크의
 SMART 속성을 상호 연관시켜 얻습니다:
 </p><pre>
-https://www.backblaze.com/hard-drive-test-data.html
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>SMART가 디스크가 실패하고 있다고 보고하면, 해당 디스크에 대해
 `FAIL` 또는 `PREFAIL`이 출력되며, SnapRAID는 오류를 반환하며 종료됩니다.
@@ -586,31 +586,31 @@ https://www.backblaze.com/hard-drive-test-data.html
 logfail
 </div><div class="manual-tag-description">
 과거에 일부 속성이 임계값보다 낮았습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 logerr
 </div><div class="manual-tag-description">
 장치 오류 로그에 오류가 포함되어 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 selferr
 </div><div class="manual-tag-description">
 장치 자체 테스트 로그에 오류가 포함되어 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -v, --verbose 옵션이 지정되면, 더 깊은 통계 분석이 제공됩니다.
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>이 분석은 더 많거나 적은 패리티가 필요한지 결정하는 데 도움이 될 수 있습니다.
 </p><p>이 명령은 `smartctl` 도구를 사용하며, 모든 장치에서 `smartctl -a`를
 실행하는 것과 동일합니다.
@@ -641,9 +641,9 @@ up
 <div class="manual-option-name">
 -d, --filter-disk 옵션을 사용하여 특정 디스크만 회전시킬 수 있습니다.
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>모든 디스크를 동시에 회전시키려면 많은 전력이 필요합니다.
 전원 공급 장치가 이를 지탱할 수 있는지 확인하십시오.
 </p><p>아무것도 수정되지 않습니다.
@@ -660,9 +660,9 @@ down
 <div class="manual-option-name">
 -d, --filter-disk 옵션을 사용하여 특정 디스크만 회전 중지할 수 있습니다.
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>오류 발생 시 자동으로 회전 중지하려면, 다른 명령과 함께 -s, --spin-down-on-error
 옵션을 사용할 수 있습니다. 이는 오류 발생 시 수동으로 `down`을 실행하는 것과
 동일합니다.
@@ -684,29 +684,29 @@ diff
 equal
 </div><div class="manual-tag-description">
 이전과 변경되지 않은 파일.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 added
 </div><div class="manual-tag-description">
 이전에 없던 추가된 파일.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 removed
 </div><div class="manual-tag-description">
 제거된 파일.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 updated
 </div><div class="manual-tag-description">
 크기 또는 타임스탬프가 다른 파일, 즉 수정된 파일.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 moved
@@ -714,8 +714,8 @@ moved
 동일한 디스크의 다른 디렉토리로 이동된 파일.
 이들은 이름, 크기, 타임스탬프 및 아이노드가 동일하지만
 디렉토리가 다른 것으로 식별됩니다.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 copied
@@ -725,17 +725,17 @@ copied
 이들은 이름, 크기 및 타임스탬프가 동일한 것으로 식별됩니다.
 하위 초 타임스탬프(sub-second timestamp)가 0인 경우,
 이름뿐만 아니라 전체 경로가 일치해야 합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
 아이노드는 다르지만 이름, 크기 및 타임스탬프가 일치하는 파일.
 이들은 일반적으로 삭제 후 복원된 파일입니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>`sync`가 필요한 경우, 프로세스 반환 코드는 기본 0 대신 2입니다.
 반환 코드 1은 일반적인 오류 조건에 사용됩니다.
 </p><p>아무것도 수정되지 않습니다.
@@ -777,9 +777,9 @@ scrub
 <div class="manual-option-name">
 -p, --plan 옵션을 사용하여 다른 스크럽 계획 또는 양을 정의할 수 있으며,
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>다음 값을 허용합니다:
 bad - bad로 표시된 블록 스크럽.
 new - 동기화되었지만 아직 스크럽되지 않은 블록 스크럽.
@@ -850,9 +850,9 @@ check
 <div class="manual-option-name">
 -a, --audit-only 옵션을 사용하면 파일 데이터만 확인하고
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>패리티 데이터는 무시하여 실행 속도를 높일 수 있습니다.
 </p><p>파일은 아이노드가 아닌 경로로만 식별됩니다.
 </p><p>아무것도 수정되지 않습니다.
@@ -867,9 +867,9 @@ list
 <div class="manual-option-name">
 -v 또는 --verbose를 사용하면 하위 초 시간도 표시됩니다.
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>아무것도 수정되지 않습니다.
 </p></div>
 <div class="manual-section-level-2">
@@ -954,9 +954,9 @@ Options
 그렇지 않으면 `/etc/snapraid.conf`를 사용합니다.
 Windows에서는 `snapraid.exe`와 같은 디렉토리에 있는
 `snapraid.conf` 파일을 사용합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -969,9 +969,9 @@ Windows에서는 `snapraid.exe`와 같은 디렉토리에 있는
 Unix에서는 글로빙 문자가 사용되는 경우 따옴표로 묶어야 합니다.
 이 옵션은 `check` 및 `fix`에서만 사용할 수 있습니다.
 `sync` 및 `scrub`은 항상 전체 어레이를 처리하므로 사용할 수 없습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -986,9 +986,9 @@ Unix에서는 글로빙 문자가 사용되는 경우 따옴표로 묶어야 합
 이 옵션은 여러 번 사용될 수 있습니다.
 이 옵션은 `check`, `fix`, `up`, 및 `down`에서만 사용할 수 있습니다.
 `sync` 및 `scrub`은 항상 전체 어레이를 처리하므로 사용할 수 없습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1001,9 +1001,9 @@ Unix에서는 글로빙 문자가 사용되는 경우 따옴표로 묶어야 합
 모든 필터와 일치하는 파일만 선택됩니다.
 이 옵션은 `check` 및 `fix`에서만 사용할 수 있습니다.
 `sync` 및 `scrub`은 항상 전체 어레이를 처리하므로 사용할 수 없습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1013,9 +1013,9 @@ Unix에서는 글로빙 문자가 사용되는 경우 따옴표로 묶어야 합
 `status`에 나열된 대로 `sync` 및 `scrub` 중에 무단 또는 입출력 오류가
 표시된 블록을 가진 파일만 처리합니다.
 이 옵션은 `check` 및 `fix`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1027,9 +1027,9 @@ Unix에서는 글로빙 문자가 사용되는 경우 따옴표로 묶어야 합
 `bad`는 bad 블록을 스크럽하고, `new`는 아직 스크럽되지 않은
 막 동기화된 블록을 스크럽하며, `full`은 모든 것을 스크럽합니다.
 이 옵션은 `scrub`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1040,9 +1040,9 @@ DAYS는 블록이 스크럽되어야 하는 최소 일령(days)이며,
 기본값은 10입니다.
 bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 이 옵션은 `scrub`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1053,9 +1053,9 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 파일 데이터만 확인하는 데 관심이 있다면, 이 옵션은 확인 프로세스의
 속도를 상당히 높일 수 있습니다.
 이 옵션은 `check`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1076,9 +1076,9 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 성공했는지 확인하고, 필요한 경우 계속 진행하기 전에 fix 작업을
 실행할 수 있도록 합니다.
 이 옵션은 `sync`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1091,9 +1091,9 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 파일은 하위 디렉토리를 포함하여 읽히며, 이름에 관계없이
 식별됩니다.
 이 옵션은 `check` 및 `fix`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1104,9 +1104,9 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 활성 상태로 회전하는 것을 방지하여 불필요한 열 축적 및 전력
 소비를 방지하는 데 도움이 됩니다. 명령이 실패하더라도 디스크가
 안전하게 중지되도록 이 옵션을 사용하십시오.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1115,9 +1115,9 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 모든 디스크에 대한 전역 대역폭 제한을 적용합니다. RATE는
 초당 바이트 수입니다. K, M, 또는 G와 같은 승수(예: --bw-limit 1G)를
 지정할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1138,9 +1138,9 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 모든 계산은 디스크 작업과 병렬로 실행됩니다.
 따라서 적어도 하나의 디스크에 대해 측정 가능한 대기 시간이
 있는 한, 이는 CPU가 워크로드에 충분히 빠르다는 것을 나타냅니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1154,9 +1154,9 @@ SnapRAID가 이러한 조건을 감지하면, 이 옵션을 지정하지 않는 
 수 있도록 합니다.
 이는 ext3/ext4 파일 시스템을 사용하는 Linux에서 가능한 조건입니다.
 이 옵션은 `sync`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1170,9 +1170,9 @@ SnapRAID가 디스크에 원래 있던 모든 파일이 누락되거나 다시
 이는 데이터 파일 시스템이 마운트되지 않았을 때 쉽게 감지할
 수 있도록 합니다.
 이 옵션은 `sync`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1188,9 +1188,9 @@ SnapRAID가 일부 디스크의 UUID가 변경되었음을 감지하면,
 여러 패리티를 사용하는 경우 더 많은 변경이 허용됩니다. 이는
 복구 후 디스크를 교체할 때의 일반적인 경우이기 때문입니다.
 이 옵션은 `sync`, `check`, 또는 `fix`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1204,9 +1204,9 @@ SnapRAID가 일부 디스크의 UUID가 변경되었음을 감지하면,
 또는 이미 사용 중인 디스크에 남은 여유 공간에 디스크를 복구하려는
 경우, 동일한 물리적 장치를 공유합니다.
 이 옵션은 `fix`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1224,9 +1224,9 @@ SnapRAID가 일부 디스크의 UUID가 변경되었음을 감지하면,
 해시 확인으로 인한 느린 프로세스를 초래할 수 있으며, 이 옵션을
 사용하면 이러한 문제를 해결할 수 있습니다.
 이 옵션은 `sync`, `check`, 및 `fix`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1240,9 +1240,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 기존 패리티 데이터를 사용하여 `sync` 프로세스 중에 데이터 보호를
 유지할 수 있습니다.
 이 옵션은 `sync`에서만 사용할 수 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1256,9 +1256,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 **경고!** 이 옵션은 전문가 전용이며, 사용하지 않는 것이
 강력히 권장됩니다.
 `sync` 작업 중에는 데이터 보호가 없습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1277,9 +1277,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 로그를 표준 출력 또는 표준 오류로 출력하려면 각각 `"&gt;&amp;1"` 및 `"&gt;&amp;2"`를
 사용할 수 있습니다.
 로그 태그 설명은 snapraid_log.txt 파일 또는 man 페이지를 참조하십시오.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1292,9 +1292,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 세트 후에 계속 진행하여 작업을 완료하려고 시도할 수 있도록
 허용합니다.
 그러나 `check` 및 `fix`는 항상 첫 번째 오류에서 중지됩니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1304,9 +1304,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 이는 손상된 디스크의 경우 특정 블록을 다시 확인하거나 수정하는 데
 유용할 수 있습니다.
 이 옵션은 주로 고급 수동 복구를 위한 것입니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1314,9 +1314,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 </div><div class="manual-option-description">
 지정된 수의 블록만 처리합니다.
 이 옵션은 주로 고급 수동 복구를 위한 것입니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1326,9 +1326,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 설정 파일은 표준 출력으로 작성되며 기존 파일을 덮어쓰지 않습니다.
 이 설정 파일에는 전체 시스템을 잃을 경우 디스크 마운트 지점을
 재구성하는 데 필요한 정보도 포함되어 있습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1337,9 +1337,9 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 화면에 더 많은 정보를 출력합니다.
 한 번 지정하면 제외된 파일 및 추가 통계를 출력합니다.
 이 옵션은 로그 파일에는 영향을 미치지 않습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1351,27 +1351,27 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 제거하고, 네 번 지정하면 상태 메시지를 제거합니다.
 치명적인 오류는 항상 화면에 출력됩니다.
 이 옵션은 로그 파일에는 영향을 미치지 않습니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 간단한 도움말 화면을 출력합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 프로그램 버전을 출력합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
@@ -1654,8 +1654,8 @@ RAID 컨트롤러의 경우 장치가 고정되어 있을 가능성이 높으므
 `%s`를 사용할 필요가 없을 수 있습니다.
 </p><p>가능한 옵션은 smartmontools 설명서를 참조하십시오:
 </p><pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
 <p>예:
 </p><pre>
@@ -1759,9 +1759,9 @@ FILE
 </div><div class="manual-option-description">
 FILE이라는 이름의 모든 파일을 선택합니다.
 이 패턴은 디렉토리가 아닌 파일에만 적용됩니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1769,9 +1769,9 @@ DIR/
 </div><div class="manual-option-description">
 DIR이라는 이름의 모든 디렉토리와 그 안의 모든 것을 선택합니다.
 이 패턴은 파일이 아닌 디렉토리에만 적용됩니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1779,9 +1779,9 @@ DIR이라는 이름의 모든 디렉토리와 그 안의 모든 것을 선택합
 </div><div class="manual-option-description">
 지정된 정확한 파일 경로를 선택합니다. 이 패턴은 디렉토리가 아닌
 파일에만 적용됩니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1789,17 +1789,17 @@ DIR이라는 이름의 모든 디렉토리와 그 안의 모든 것을 선택합
 </div><div class="manual-option-description">
 지정된 정확한 디렉토리 경로와 그 안의 모든 것을 선택합니다.
 이 패턴은 파일이 아닌 디렉토리에만 적용됩니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 /로 시작하는 절대 경로를 지정하면 로컬 파일 시스템의 루트 디렉토리가
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>아닌 어레이 루트 디렉토리에 적용됩니다.
 </p><p>Windows에서는 정방향 슬래시 / 대신 역슬래시 \를 사용할 수 있습니다.
 Windows 시스템 디렉토리, 접합점(junctions), 마운트 지점 및 기타
@@ -1875,9 +1875,9 @@ FILE
 </div><div class="manual-option-description">
 이 디렉토리 또는 그 하위에서 FILE이라는 이름의 모든 파일을 선택합니다.
 이는 전역 패턴과 동일한 글로빙(globbing) 규칙을 따릅니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1885,9 +1885,9 @@ DIR/
 </div><div class="manual-option-description">
 이 디렉토리 또는 그 하위에서 DIR이라는 이름의 모든 디렉토리와
 그 안의 모든 항목을 선택합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1895,9 +1895,9 @@ DIR/
 </div><div class="manual-option-description">
 `.snapraidignore` 파일의 위치를 기준으로 지정된 정확한 파일을
 선택합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1905,9 +1905,9 @@ DIR/
 </div><div class="manual-option-description">
 `.snapraidignore` 파일의 위치를 기준으로 지정된 정확한 디렉토리와
 그 안의 모든 항목을 선택합니다.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>전역 설정과 달리, `.snapraidignore` 파일은 제외 규칙만 지원합니다.
 `include` 패턴이나 부정(!)은 사용할 수 없습니다.
 </p><p>예를 들어, `/mnt/disk1/projects/`에 `.snapraidignore`가 있는 경우:

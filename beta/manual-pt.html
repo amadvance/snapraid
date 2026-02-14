@@ -69,7 +69,7 @@
 
         <aside class="manual-sidebar">
 
-            <h4>Component</h4>
+            <h4>Components</h4>
             <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual.html">Command Line</option>
                 <option value="manual-daemon.html">Daemon</option>
@@ -177,7 +177,7 @@ economizando energia e reduzindo o ruído.
 </ul>
 <p>Para mais informações, visite o site oficial do SnapRAID:
 </p><pre>
-https://www.snapraid.it/
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -283,7 +283,7 @@ data d3 H:\array\
 <p>Se você tiver muitos discos e ficar sem letras de unidade, pode montar
 discos diretamente em subpastas. Consulte:
 </p><pre>
-https://www.google.com/search?q=Windows+mount+point
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
 <p>Neste ponto, você está pronto para executar o comando `sync` para construir
 as informações de paridade.
@@ -584,7 +584,7 @@ discos que mostrem atributos suspeitos.
 </p><p>Esta estimativa de probabilidade é obtida correlacionando os atributos
 SMART dos discos com os dados do Backblaze disponíveis em:
 </p><pre>
-https://www.backblaze.com/hard-drive-test-data.html
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>Se o SMART relatar que um disco está falhando, `FAIL` ou `PREFAIL` é
 impresso para esse disco, e o SnapRAID retorna com um erro.
@@ -597,23 +597,23 @@ logfail
 </div><div class="manual-tag-description">
 No passado, alguns atributos estavam abaixo do
 limite.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 logerr
 </div><div class="manual-tag-description">
 O log de erros do dispositivo contém erros.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 selferr
 </div><div class="manual-tag-description">
 O log de autoteste do dispositivo contém erros.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Se a opção -v, --verbose for especificada, uma análise estatística
 mais profunda é fornecida. Esta análise pode ajudá-lo a decidir
 se você precisa de mais ou menos paridade.
@@ -677,30 +677,30 @@ apresentado, agrupado por:
 equal
 </div><div class="manual-tag-description">
 Arquivos inalterados de antes.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 added
 </div><div class="manual-tag-description">
 Arquivos adicionados que não estavam presentes antes.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 removed
 </div><div class="manual-tag-description">
 Arquivos removidos.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 updated
 </div><div class="manual-tag-description">
 Arquivos com tamanho ou carimbo de data/hora diferente,
 o que significa que foram modificados.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 moved
@@ -708,8 +708,8 @@ moved
 Arquivos movidos para um diretório diferente no mesmo disco.
 Eles são identificados por terem o mesmo nome, tamanho,
 carimbo de data/hora e inode, mas um diretório diferente.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 copied
@@ -721,8 +721,8 @@ Eles são identificados por terem o mesmo nome, tamanho e
 carimbo de data/hora. Se o carimbo de data/hora sub-segundo
 for zero, o caminho completo deve corresponder, não apenas
 o nome.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
@@ -730,9 +730,9 @@ restored
 Arquivos com um inode diferente, mas nome, tamanho e carimbo
 de data/hora correspondentes. Estes são geralmente arquivos
 restaurados após terem sido excluídos.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Se uma `sync` for necessária, o código de retorno do processo é 2,
 em vez do padrão 0. O código de retorno 1 é usado para uma condição
 de erro genérica.
@@ -948,9 +948,9 @@ no Unix, ele usa o arquivo `/usr/local/etc/snapraid.conf` se existir,
 caso contrário, `/etc/snapraid.conf`.
 No Windows, ele usa o arquivo `snapraid.conf` no mesmo
 diretório que `snapraid.exe`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -965,9 +965,9 @@ No Unix, certifique-se de que os caracteres globbing sejam citados, se usados.
 Esta opção pode ser usada apenas com `check` e `fix`.
 Não pode ser usada com `sync` e `scrub`, pois eles sempre
 processam o array inteiro.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -985,9 +985,9 @@ Esta opção pode ser usada várias vezes.
 Esta opção pode ser usada apenas com `check`, `fix`, `up` e `down`.
 Não pode ser usada com `sync` e `scrub`, pois eles sempre
 processam o array inteiro.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1001,9 +1001,9 @@ apenas os arquivos que correspondem a todos os filtros são selecionados.
 Esta opção pode ser usada apenas com `check` e `fix`.
 Não pode ser usada com `sync` e `scrub`, pois eles sempre
 processam o array inteiro.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1013,9 +1013,9 @@ Processa os arquivos com erros em `check` e `fix`.
 Processa apenas arquivos que têm blocos marcados com erros silenciosos
 ou de entrada/saída durante `sync` e `scrub`, conforme listado em `status`.
 Esta opção pode ser usada apenas com `check` e `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1027,9 +1027,9 @@ Em vez de uma porcentagem, você pode especificar um plano:
 `bad` examina blocos ruins, `new` examina blocos ainda não examinados,
 e `full` examina tudo.
 Esta opção pode ser usada apenas com `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1041,9 +1041,9 @@ o padrão é 10.
 Os blocos marcados como ruins são sempre examinados,
 independentemente desta opção.
 Esta opção pode ser usada apenas com `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1054,9 +1054,9 @@ verificar os dados de paridade.
 Se você estiver interessado apenas em verificar os dados do arquivo,
 esta opção pode acelerar significativamente o processo de verificação.
 Esta opção pode ser usada apenas com `check`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1078,9 +1078,9 @@ Esta opção também verifica arquivos movidos dentro do array
 para garantir que a operação de movimentação foi bem-sucedida e,
 se necessário, permite que você execute uma operação fix antes de prosseguir.
 Esta opção pode ser usada apenas com `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1093,9 +1093,9 @@ e `fix` para melhorar o processo de recuperação.
 Os arquivos são lidos, incluindo em subdiretórios, e são
 identificados independentemente de seu nome.
 Esta opção pode ser usada apenas com `check` e `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1107,9 +1107,9 @@ impede que as unidades permaneçam ativas e girando após uma
 operação abortada, ajudando a evitar acúmulo desnecessário de
 calor e consumo de energia. Use esta opção para garantir que os
 discos sejam interrompidos com segurança, mesmo quando um comando falhar.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1118,9 +1118,9 @@ discos sejam interrompidos com segurança, mesmo quando um comando falhar.
 Aplica um limite de largura de banda global para todos os discos. A
 RATE é o número de bytes por segundo. Você pode especificar um
 multiplicador como K, M ou G (por exemplo, --bw-limit 1G).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1144,9 +1144,9 @@ Todos os cálculos são executados em paralelo com as operações de disco.
 Portanto, enquanto houver tempo de espera mensurável para
 pelo menos um disco, isso indica que a CPU é rápida o suficiente
 para acompanhar a carga de trabalho.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1161,9 +1161,9 @@ do sistema, alguns arquivos acessados foram truncados.
 Esta é uma condição possível no Linux com os sistemas de arquivos
 ext3/ext4.
 Esta opção pode ser usada apenas com `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1177,9 +1177,9 @@ a menos que você especifique esta opção.
 Isso permite que você detecte facilmente quando um sistema de
 arquivos de dados não está montado.
 Esta opção pode ser usada apenas com `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1196,9 +1196,9 @@ paridade única e mais com paridade múltipla, porque este é
 o caso normal ao substituir discos após uma recuperação.
 Esta opção pode ser usada apenas com `sync`, `check` ou
 `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1212,9 +1212,9 @@ o segundo disco inacessível.
 Ou, se você quiser recuperar um disco no espaço livre restante
 em um disco já usado, compartilhando o mesmo dispositivo físico.
 Esta opção pode ser usada apenas com `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1231,9 +1231,9 @@ Em alguns casos raros, esse comportamento pode resultar em falsos
 positivos ou em um processo lento devido a muitas verificações de hash,
 e esta opção permite que você resolva tais problemas.
 Esta opção pode ser usada apenas com `sync`, `check` e `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1248,9 +1248,9 @@ que você reutilize os hashes presentes no arquivo de conteúdo para
 validar dados e manter a proteção de dados durante o processo
 `sync` usando os dados de paridade existentes.
 Esta opção pode ser usada apenas com `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1265,9 +1265,9 @@ Esta opção pode ser usada apenas com `sync`.
 ATENÇÃO! Esta opção é apenas para especialistas e é altamente
 recomendado não usá-la.
 Você NÃO tem proteção de dados durante a operação `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1289,9 +1289,9 @@ Para enviar o log para a saída padrão ou erro padrão,
 você pode usar `"&gt;&amp;1"` e `"&gt;&amp;2"`, respectivamente.
 Consulte o arquivo snapraid_log.txt ou a página man para descrições
 de tags de log.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1305,9 +1305,9 @@ Esta opção afeta `sync` e `scrub`, que têm permissão
 para continuar após o primeiro conjunto de erros de disco para tentar
 completar suas operações.
 No entanto, `check` e `fix` sempre param no primeiro erro.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1317,9 +1317,9 @@ Começa o processamento a partir do número de bloco
 especificado. Isso pode ser útil para tentar verificar
 ou corrigir blocos específicos em caso de um disco danificado.
 Esta opção é principalmente para recuperação manual avançada.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1327,9 +1327,9 @@ Esta opção é principalmente para recuperação manual avançada.
 </div><div class="manual-option-description">
 Processa apenas o número especificado de blocos.
 Esta opção é principalmente para recuperação manual avançada.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1342,9 +1342,9 @@ e não sobrescreve um existente.
 Este arquivo de configuração também contém as informações
 necessárias para reconstruir os pontos de montagem do disco,
 caso você perca todo o sistema.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1354,9 +1354,9 @@ Imprime mais informações na tela.
 Se especificado uma vez, ele imprime arquivos excluídos
 e estatísticas adicionais.
 Esta opção não tem efeito nos arquivos de log.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1368,27 +1368,27 @@ as operações em execução; três vezes, as mensagens de informação;
 quatro vezes, as mensagens de status.
 Erros fatais são sempre impressos na tela.
 Esta opção não tem efeito nos arquivos de log.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 Imprime uma tela de ajuda curta.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 Imprime a versão do programa.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
@@ -1686,8 +1686,8 @@ nome do dispositivo. Para controladores RAID, o dispositivo é
 provavelmente fixo, e você pode não precisar usar `%s`.
 </p><p>Consulte a documentação do smartmontools para possíveis opções:
 </p><pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
 <p>Por exemplo:
 </p><pre>
@@ -1795,9 +1795,9 @@ FILE
 </div><div class="manual-option-description">
 Seleciona qualquer arquivo chamado FILE.
 Este padrão se aplica apenas a arquivos, não a diretórios.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1805,9 +1805,9 @@ DIR/
 </div><div class="manual-option-description">
 Seleciona qualquer diretório chamado DIR e tudo o que estiver dentro dele.
 Este padrão se aplica apenas a diretórios, não a arquivos.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1815,9 +1815,9 @@ Este padrão se aplica apenas a diretórios, não a arquivos.
 </div><div class="manual-option-description">
 Seleciona o caminho exato do arquivo especificado. Este padrão se aplica
 apenas a arquivos, não a diretórios.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1825,9 +1825,9 @@ apenas a arquivos, não a diretórios.
 </div><div class="manual-option-description">
 Seleciona o caminho exato do diretório especificado e tudo o que estiver
 dentro dele. Este padrão se aplica apenas a diretórios, não a arquivos.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Quando você especifica um caminho absoluto começando com /, ele é aplicado
 no diretório raiz do array, não no diretório raiz do sistema de arquivos local.
 </p><p>No Windows, você pode usar a barra invertida \ em vez da barra.
@@ -1905,9 +1905,9 @@ FILE
 </div><div class="manual-option-description">
 Seleciona qualquer arquivo chamado FILE neste diretório ou abaixo.
 Isso segue as mesmas regras de globbing do padrão global.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1915,9 +1915,9 @@ DIR/
 </div><div class="manual-option-description">
 Seleciona qualquer diretório chamado DIR e tudo dentro dele,
 residente neste diretório ou abaixo.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1925,9 +1925,9 @@ residente neste diretório ou abaixo.
 </div><div class="manual-option-description">
 Seleciona o arquivo exato especificado relativo à localização
 do arquivo `.snapraidignore`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1935,9 +1935,9 @@ do arquivo `.snapraidignore`.
 </div><div class="manual-option-description">
 Seleciona o diretório exato especificado e tudo dentro dele,
 relativo à localização do arquivo `.snapraidignore`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Ao contrário da configuração global, os arquivos `.snapraidignore` suportam
 apenas regras de exclusão; você não pode usar padrões `include` ou negação (!).
 </p><p>Por exemplo, se você tiver um `.snapraidignore` em `/mnt/disk1/projects/`:

@@ -69,7 +69,7 @@
 
         <aside class="manual-sidebar">
 
-            <h4>Component</h4>
+            <h4>Components</h4>
             <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual.html">Command Line</option>
                 <option value="manual-daemon.html">Daemon</option>
@@ -180,7 +180,7 @@ SnapRAID не блокує ваші дані; ви можете припинит
 <p>Для отримання додаткової інформації відвідайте офіційний сайт
 SnapRAID:
 </p><pre>
-https://www.snapraid.it/
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -295,7 +295,7 @@ data d3 H:\array\
 <p>Якщо у вас багато дисків і закінчилися літери дисків, ви можете
 монтувати диски безпосередньо у вкладені папки. Див:
 </p><pre>
-https://www.google.com/search?q=Windows+mount+point
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
 <p>На цьому етапі ви готові запустити команду `sync` для побудови
 інформації парності.
@@ -618,7 +618,7 @@ smart
 </p><p>Ця оцінка ймовірності отримана шляхом кореляції атрибутів
 SMART дисків з даними Backblaze, доступними за адресою:
 </p><pre>
-https://www.backblaze.com/hard-drive-test-data.html
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>Якщо SMART повідомляє, що диск виходить з ладу, для цього
 диска виводиться `FAIL` або `PREFAIL`, і SnapRAID повертає
@@ -632,23 +632,23 @@ logfail
 </div><div class="manual-tag-description">
 У минулому деякі атрибути були нижчими за
 поріг.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 logerr
 </div><div class="manual-tag-description">
 Журнал помилок пристрою містить помилки.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 selferr
 </div><div class="manual-tag-description">
 Журнал самотестування пристрою містить помилки.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Якщо вказано опцію -v, --verbose, надається глибший
 статистичний аналіз. Цей аналіз може допомогти вам вирішити,
 чи потрібна вам більша або менша парність.
@@ -715,30 +715,30 @@ diff
 equal (рівні)
 </div><div class="manual-tag-description">
 Файли, незмінені з попереднього стану.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 added (додані)
 </div><div class="manual-tag-description">
 Файли, додані, яких не було раніше.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 removed (видалені)
 </div><div class="manual-tag-description">
 Файли, видалені.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 updated (оновлені)
 </div><div class="manual-tag-description">
 Файли з іншим розміром або часовою
 міткою, що означає, що вони були змінені.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 moved (переміщені)
@@ -747,8 +747,8 @@ moved (переміщені)
 на тому ж диску. Вони ідентифікуються за тим же
 іменем, розміром, часовою міткою та inode, але іншим
 каталогом.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 copied (скопійовані)
@@ -761,8 +761,8 @@ copied (скопійовані)
 та часовою міткою. Якщо часова мітка з точністю
 до долі секунди дорівнює нулю, повний шлях повинен
 збігатися, а не лише ім'я.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored (відновлені)
@@ -770,9 +770,9 @@ restored (відновлені)
 Файли з іншим inode, але
 збігаються ім'я, розмір та часова мітка. Це
 зазвичай файли, відновлені після видалення.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Якщо потрібна `sync`, код повернення процесу дорівнює 2,
 замість стандартного 0. Код повернення 1 використовується для
 загальної умови помилки.
@@ -822,16 +822,16 @@ new - Скрабувати щойно синхронізовані блоки, �
 full
 </div><div class="manual-tag-description">
 Скрабувати все.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 0-100
 </div><div class="manual-tag-description">
 Скрабувати вказаний відсоток блоків.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Якщо ви вказуєте відсоткове значення, ви також можете
 використовувати опцію -o, --older-than, щоб визначити,
 яким має бути вік блоку.
@@ -1014,9 +1014,9 @@ rehash
 якщо він існує, інакше `/etc/snapraid.conf`.
 У Windows використовується файл `snapraid.conf` у тому
 самому каталозі, що й `snapraid.exe`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1032,9 +1032,9 @@ rehash
 Цю опцію можна використовувати лише з `check` та `fix`.
 Її не можна використовувати з `sync` та `scrub`, оскільки
 вони завжди обробляють весь масив.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1054,9 +1054,9 @@ rehash
 `up` та `down`.
 Її не можна використовувати з `sync` та `scrub`, оскільки
 вони завжди обробляють весь масив.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1072,9 +1072,9 @@ rehash
 Цю опцію можна використовувати лише з `check` та `fix`.
 Її не можна використовувати з `sync` та `scrub`, оскільки
 вони завжди обробляють весь масив.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1085,9 +1085,9 @@ rehash
 прихованими помилками або помилками введення/виведення
 під час `sync` та `scrub`, як зазначено у `status`.
 Цю опцію можна використовувати лише з `check` та `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1100,9 +1100,9 @@ rehash
 скрабує погані блоки, `new` скрабує блоки, які ще не
 були скрабовані, і `full` скрабує все.
 Цю опцію можна використовувати лише з `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1114,9 +1114,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 Блоки, позначені як погані, завжди скрабуються
 незалежно від цієї опції.
 Цю опцію можна використовувати лише з `scrub`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1126,9 +1126,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 парності. Якщо вас цікавить лише перевірка даних файлів,
 ця опція може значно прискорити процес перевірки.
 Цю опцію можна використовувати лише з `check`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1153,9 +1153,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 успішною, і, якщо необхідно, дозволяє запустити операцію
 виправлення перед продовженням.
 Цю опцію можна використовувати лише з `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1169,9 +1169,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 Файли зчитуються, включаючи підкаталоги, та
 ідентифікуються незалежно від їхнього імені.
 Цю опцію можна використовувати лише з `check` та `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1185,9 +1185,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 Використовуйте цю опцію, щоб забезпечити безпечну
 зупинку дисків, навіть коли команда завершується
 помилкою.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1197,9 +1197,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 для всіх дисків. RATE — це кількість байтів на секунду.
 Ви можете вказати множник, такий як K, M або G (наприклад,
 --bw-limit 1G).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1226,9 +1226,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 диска. Тому, доки є вимірюваний час очікування
 принаймні для одного диска, це вказує на те, що ЦП
 достатньо швидкий, щоб справлятися з робочим навантаженням.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1243,9 +1243,9 @@ DAYS — це мінімальний вік у днях для блоку, як�
 Це можлива умова в Linux з файловими системами
 ext3/ext4.
 Цю опцію можна використовувати лише з `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1259,9 +1259,9 @@ ext3/ext4.
 Це дозволяє легко виявити, коли файлова система
 даних не змонтована.
 Цю опцію можна використовувати лише з `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1278,9 +1278,9 @@ ext3/ext4.
 випадок при заміні дисків після відновлення.
 Цю опцію можна використовувати лише з `sync`, `check`
 або `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1295,9 +1295,9 @@ ext3/ext4.
 залишеному на вже використовуваному диску, що
 використовує той самий фізичний пристрій.
 Цю опцію можна використовувати лише з `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1318,9 +1318,9 @@ ext3/ext4.
 дозволяє вирішити такі проблеми.
 Цю опцію можна використовувати лише з `sync`, `check`
 та `fix`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1337,9 +1337,9 @@ ext3/ext4.
 даних під час процесу `sync`, використовуючи
 існуючі дані парності.
 Цю опцію можна використовувати лише з `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1355,9 +1355,9 @@ ext3/ext4.
 УВАГА! Ця опція лише для експертів, і
 настійно не рекомендується її використовувати.
 Ви НЕ маєте захисту даних під час операції `sync`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1381,9 +1381,9 @@ ext3/ext4.
 `"&gt;&amp;1"` та `"&gt;&amp;2"` відповідно.
 Дивіться файл snapraid_log.txt або man-сторінку
 для описів тегів журналу.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1398,9 +1398,9 @@ ext3/ext4.
 помилок диска, щоб спробувати завершити
 свої операції. Однак `check` та `fix` завжди
 зупиняються при першій помилці.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1412,9 +1412,9 @@ ext3/ext4.
 випадку пошкодженого диска.
 Ця опція в основному для розширеного ручного
 відновлення.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1423,9 +1423,9 @@ ext3/ext4.
 Обробляє лише вказану кількість блоків.
 Ця опція в основному для розширеного ручного
 відновлення.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1438,9 +1438,9 @@ ext3/ext4.
 Цей конфігураційний файл також містить інформацію,
 необхідну для реконструкції точок монтування диска
 у випадку втрати всієї системи.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1450,9 +1450,9 @@ ext3/ext4.
 Якщо вказано один раз, виводить виключені файли
 та додаткову статистику.
 Ця опція не впливає на файли журналу.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1464,27 +1464,27 @@ ext3/ext4.
 повідомлення; чотири рази — повідомлення про
 статус. Фатальні помилки завжди виводяться на
 екран. Ця опція не впливає на файли журналу.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 Виводить короткий довідковий екран.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 Виводить версію програми.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
@@ -1833,8 +1833,8 @@ PARITY — це одне з імен парності: `parity`,
 </p><p>Зверніться до документації smartmontools
 для можливих опцій:
 </p><pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
 <p>Наприклад:
 </p><pre>
@@ -1945,9 +1945,9 @@ FILE
 </div><div class="manual-option-description">
 Вибирає будь-який файл з ім'ям FILE.
 Цей шаблон застосовується тільки до файлів, а не до директорій.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1955,9 +1955,9 @@ DIR/
 </div><div class="manual-option-description">
 Вибирає будь-яку директорію з ім'ям DIR і все, що знаходиться всередині.
 Цей шаблон застосовується тільки до директорій, а не до файлів.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1965,9 +1965,9 @@ DIR/
 </div><div class="manual-option-description">
 Вибирає точно вказаний шлях до файлу. Цей шаблон застосовується
 тільки до файлів, а не до директорій.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1975,9 +1975,9 @@ DIR/
 </div><div class="manual-option-description">
 Вибирає точно вказаний шлях до директорії і все, що знаходиться
 всередині. Цей шаблон застосовується тільки до директорій, а не до файлів.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>Коли ви вказуєте абсолютний шлях, що починається
 з /, він застосовується до кореневого каталогу
 масиву, а не до кореневого каталогу локальної
@@ -2071,9 +2071,9 @@ FILE
 </div><div class="manual-option-description">
 Вибирає будь-який файл із ім'ям FILE у цьому каталозі або нижче.
 Це відповідає тим самим правилам підстановки, що і в глобальному шаблоні.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -2081,9 +2081,9 @@ DIR/
 </div><div class="manual-option-description">
 Вибирає будь-який каталог із ім'ям DIR та весь його вміст, що
 знаходиться в цьому каталозі або нижче.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -2091,9 +2091,9 @@ DIR/
 </div><div class="manual-option-description">
 Вибирає точно вказаний файл відносно розташування
 файлу `.snapraidignore`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -2101,9 +2101,9 @@ DIR/
 </div><div class="manual-option-description">
 Вибирає точно вказаний каталог та весь його вміст відносно
 розташування файлу `.snapraidignore`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>На відміну від глобальної конфігурації, файли `.snapraidignore` підтримують
 лише правила виключення; ви не можете використовувати шаблони `include` або заперечення (!).
 </p><p>Наприклад, якщо у вас є `.snapraidignore` у `/mnt/disk1/projects/`:

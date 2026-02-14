@@ -69,7 +69,7 @@
 
         <aside class="manual-sidebar">
 
-            <h4>Component</h4>
+            <h4>Components</h4>
             <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
                 <option value="manual.html">Command Line</option>
                 <option value="manual-daemon.html">Daemon</option>
@@ -169,7 +169,7 @@ SnapRAID 不会锁定您的数据；您可以随时停止使用它，无需重�
 </ul>
 <p>欲了解更多信息，请访问 SnapRAID 官方网站：
 </p><pre>
-https://www.snapraid.it/
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -262,7 +262,7 @@ data d3 H:\array\
 </pre>
 <p>如果您有许多磁盘且驱动器号用尽，您可以将磁盘直接挂载到子文件夹中。请参阅：
 </p><pre>
-https://www.google.com/search?q=Windows+mount+point
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
 <p>此时，您已准备好运行 `sync` 命令来构建奇偶校验信息。
 </p><pre>
@@ -468,9 +468,9 @@ snapraid -d NAME -a check
 <div class="manual-option-name">
 -d 和 -a 选项告诉 SnapRAID 只检查指定的磁盘并忽略所有奇偶校验数据。
 </div><div class="manual-option-description">
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>此命令将花费很长时间，但如果您不是过于谨慎，可以跳过它。
 </p></div>
 <div class="manual-section-level-3">
@@ -533,7 +533,7 @@ smart
 </p><p>此概率估计是通过将磁盘的 SMART 属性与
 Backblaze 提供的以下数据进行关联获得的：
 </p><pre>
-https://www.backblaze.com/hard-drive-test-data.html
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
 <p>如果 SMART 报告磁盘正在发生故障，则会为该磁盘打印 `FAIL` 或 `PREFAIL`，
 并且 SnapRAID 返回错误。
@@ -545,23 +545,23 @@ https://www.backblaze.com/hard-drive-test-data.html
 logfail
 </div><div class="manual-tag-description">
 过去，某些属性低于阈值。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 logerr
 </div><div class="manual-tag-description">
 设备错误日志包含错误。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 selferr
 </div><div class="manual-tag-description">
 设备自检日志包含错误。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>如果指定了 -v, --verbose 选项，则会提供更深入的统计分析。
 此分析可以帮助您决定是否需要更多或更少的奇偶校验。
 </p><p>此命令使用 `smartctl` 工具，相当于在所有设备上运行 `smartctl -a`。
@@ -618,37 +618,37 @@ diff
 equal
 </div><div class="manual-tag-description">
 文件与之前相比未更改。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 added
 </div><div class="manual-tag-description">
 之前不存在、已添加的文件。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 removed
 </div><div class="manual-tag-description">
 已删除的文件。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 updated
 </div><div class="manual-tag-description">
 大小或时间戳不同的文件，表示它们已被修改。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
 在同一磁盘上移动到不同目录的文件。
 它们通过具有相同的名称、大小、时间戳和 inode，但目录不同来识别。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 copied
@@ -657,17 +657,17 @@ copied
 它们确实移动到了不同的磁盘，它们也会被计入 `removed` 中。
 它们通过具有相同的名称、大小和时间戳来识别。如果亚秒级时间戳为零，
 则必须匹配完整路径，而不仅仅是名称。
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
 inode 不同但名称、大小和时间戳匹配的文件。
 这些通常是删除后恢复的文件。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>如果需要 `sync`，进程返回码为 2，而不是默认的 0。
 返回码 1 用于一般错误情况。
 </p><p>不会修改任何内容。
@@ -855,9 +855,9 @@ Options
 如果存在，则使用文件 `/usr/local/etc/snapraid.conf`，
 否则使用 `/etc/snapraid.conf`。
 在 Windows 中，它使用与 `snapraid.exe` 相同的目录中的文件 `snapraid.conf`。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -870,9 +870,9 @@ Options
 在 Unix 中，如果使用 globbing 字符，请确保它们被引用。
 此选项只能与 `check` 和 `fix` 一起使用。
 不能与 `sync` 和 `scrub` 一起使用，因为它们总是处理整个阵列。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -887,9 +887,9 @@ Options
 此选项可以多次使用。
 此选项只能与 `check`、`fix`、`up` 和 `down` 一起使用。
 不能与 `sync` 和 `scrub` 一起使用，因为它们总是处理整个阵列。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -902,9 +902,9 @@ Options
 则仅选择与所有过滤器匹配的文件。
 此选项只能与 `check` 和 `fix` 一起使用。
 不能与 `sync` 和 `scrub` 一起使用，因为它们总是处理整个阵列。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -914,9 +914,9 @@ Options
 它仅处理在 `sync` 和 `scrub` 期间块被标记为静默或输入/输出错误的
 文件，如 `status` 中所列。
 此选项只能与 `check` 和 `fix` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -928,9 +928,9 @@ Options
 `bad` scrub 坏块，`new` scrub 尚未 scrub 的块，
 `full` scrub 所有内容。
 此选项只能与 `scrub` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -940,9 +940,9 @@ Options
 DAYS 是块被 scrub 的最小天数；默认值为 10。
 无论此选项如何，标记为坏块的块始终会被 scrub。
 此选项只能与 `scrub` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -953,9 +953,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 如果您只对检查文件数据感兴趣，此选项可以显著加快
 检查过程。
 此选项只能与 `check` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -975,9 +975,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 以确保移动操作成功，并在必要时
 允许您在继续之前运行 fix 操作。
 此选项只能与 `sync` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -988,9 +988,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 和 `fix` 以改进恢复过程。
 读取文件，包括在子目录中，并且无论其名称如何都会被识别。
 此选项只能与 `check` 和 `fix` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1000,9 +1000,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 将所有托管的磁盘停转。这可以防止驱动器在中止操作后
 保持活动和转动，有助于避免不必要的热量积聚和功耗。
 使用此选项可确保即使命令失败，磁盘也能安全停止。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1011,9 +1011,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 对所有磁盘应用全局带宽限制。RATE 是
 每秒的字节数。您可以指定乘数，例如 K、M 或 G
 （例如，--bw-limit 1G）。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1034,9 +1034,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 所有计算都与磁盘操作并行运行。
 因此，只要至少一个磁盘有可测量的等待时间，
 就表明 CPU 足够快，能够跟上工作负载。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1049,9 +1049,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 某些访问的文件被截断的情况。
 这在带有 ext3/ext4 文件系统的 Linux 中是一种可能的情况。
 此选项只能与 `sync` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1062,9 +1062,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 它会停止进行，除非您指定此选项。
 这使您可以轻松检测到数据文件系统未挂载的情况。
 此选项只能与 `sync` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1078,9 +1078,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 但是，允许在单奇偶校验下进行单个 UUID 更改，
 在多奇偶校验下进行更多更改，因为这是恢复后更换磁盘时的正常情况。
 此选项只能与 `sync`、`check` 或 `fix` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1092,9 +1092,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 或者，如果您想在已使用的磁盘上剩余的可用空间中恢复一个磁盘，
 共享同一物理设备。
 此选项只能与 `fix` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1108,9 +1108,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 在某些罕见的情况下，此行为可能导致误报
 或由于许多散列验证而导致过程缓慢，此选项允许您解决此类问题。
 此选项只能与 `sync`、`check` 和 `fix` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1123,9 +1123,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 并使用现有奇偶校验数据在 `sync` 过程中保持数据保护，
 而不是从头开始重新创建奇偶校验。
 此选项只能与 `sync` 一起使用。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1137,9 +1137,9 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 此选项只能与 `sync` 一起使用。
 **警告！** 此选项仅供专家使用，强烈建议不要使用它。
 在 `sync` 操作期间，您**没有**数据保护。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1158,9 +1158,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 要将日志输出到标准输出或标准错误，
 您可以使用 `"&gt;&amp;1"` 和 `"&gt;&amp;2"`。
 有关日志标签描述，请参阅 snapraid_log.txt 文件或 man 页面。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1172,9 +1172,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 此选项影响 `sync` 和 `scrub`，它们被允许在第一组
 磁盘错误后继续，以尝试完成其操作。
 但是，`check` 和 `fix` 总是会在第一次错误时停止。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1183,9 +1183,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 从指定的块号开始处理。
 在磁盘损坏的情况下，这对于重试检查或修复特定块可能很有用。
 此选项主要用于高级手动恢复。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1193,9 +1193,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 </div><div class="manual-option-description">
 仅处理指定数量的块。
 此选项主要用于高级手动恢复。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1205,9 +1205,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 配置文件写入标准输出，不会覆盖现有文件。
 此配置文件还包含在您丢失整个系统的情况下
 重建磁盘挂载点所需的信息。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1217,9 +1217,9 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 如果指定一次，它会打印排除的文件
 和附加统计信息。
 此选项对日志文件没有影响。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1231,27 +1231,27 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 '%' 字符，
 消息；四次，状态消息。
 致命错误始终会打印到屏幕。
 此选项对日志文件没有影响。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 打印简短的帮助屏幕。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 打印程序版本。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
@@ -1516,8 +1516,8 @@ PARITY 是奇偶校验名称之一：`parity`、`2-parity`、`3-parity`、
 您可能不需要使用 `%s`。
 </p><p>请参阅 smartmontools 文档以了解可能的选项：
 </p><pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
 <p>例如：
 </p><pre>
@@ -1612,9 +1612,9 @@ FILE
 </div><div class="manual-option-description">
 选择任何名为 FILE 的文件。
 此模式仅适用于文件，不适用于目录。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1622,18 +1622,18 @@ DIR/
 </div><div class="manual-option-description">
 选择任何名为 DIR 的目录及其内部的所有内容。
 此模式仅适用于目录，不适用于文件。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 /PATH/FILE
 </div><div class="manual-option-description">
 选择指定的确切文件路径。此模式仅适用于文件，不适用于目录。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1641,9 +1641,9 @@ DIR/
 </div><div class="manual-option-description">
 选择指定的确切目录路径及其内部的所有内容。此模式仅适用于目录，
 不适用于文件。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>当您指定以 / 开头的绝对路径时，它应用于阵列**根目录**，
 而不是本地文件系统根目录。
 </p><p>在 Windows 中，您可以使用反斜杠 \ 代替正斜杠 /。
@@ -1716,9 +1716,9 @@ FILE
 </div><div class="manual-option-description">
 选择此目录或其下方任何名为 FILE 的文件。
 这遵循与全局模式相同的通配符规则。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1726,18 +1726,18 @@ DIR/
 </div><div class="manual-option-description">
 选择任何名为 DIR 的目录及其内部的所有内容，
 位于此目录或其下方。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 /PATH/FILE
 </div><div class="manual-option-description">
 选择相对于 `.snapraidignore` 文件位置指定的精确文件。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -1745,9 +1745,9 @@ DIR/
 </div><div class="manual-option-description">
 选择相对于 `.snapraidignore` 文件位置指定的精确目录
 及其内部的所有内容。
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>与全局配置不同，`.snapraidignore` 文件仅支持排除规则；
 您不能使用 `include` 模式或否定符号 (!)。
 </p><p>例如，如果您在 `/mnt/disk1/projects/` 中有一个 `.snapraidignore`：
