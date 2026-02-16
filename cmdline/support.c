@@ -1912,13 +1912,15 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 
 int smart_temp(devinfo_t* devinfo)
 {
-	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS].raw & 0xFFFF;
+	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS].raw;
 	if (t == SMART_UNASSIGNED)
-		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].raw & 0xFFFF;
-
-	/* validate temperature */
+		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].raw;
 	if (t == SMART_UNASSIGNED)
 		return -1;
+
+	/* mask out min/max values */
+	t &= 0xFFFFUL;
+
 	if (t == 0)
 		return -1;
 	if (t > 100)
