@@ -2506,7 +2506,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
+static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2738,7 +2738,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 /**
  * Get POWER state
  */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
+static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];

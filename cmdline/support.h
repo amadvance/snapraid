@@ -453,7 +453,7 @@ void malloc_fail(size_t size);
  * Read smartctl attributes from a stream.
  * Return 0 on success.
  */
-int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* interf);
+int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf);
 
 /**
  * Flush smartctl output from a stream.

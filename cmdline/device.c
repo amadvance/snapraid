@@ -408,7 +408,7 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
  * we use the maximum rate reported, and we do not sum them,
  * because the attributes are not independent.
  */
-static double smart_afr(struct smart_struct* smart, const char* model)
+static double smart_afr(struct smart_attr* smart, const char* model)
 {
 	double afr = 0;
 	uint64_t mask32 = 0xffffffffU;
@@ -556,10 +556,31 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 	if (afr != 0)
 		log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_at_least_one_failure(afr));
 
-	for (j = 0; j < 256; ++j)
-		if (devinfo->smart[j].raw != SMART_UNASSIGNED) {
-			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%s\n", devinfo->file, devinfo->name, j, devinfo->smart[j].raw, devinfo->smart[j].raw, devinfo->smart[j].norm, devinfo->smart[j].worst, devinfo->smart[j].thresh, devinfo->smart[j].name);
+	for (j = 0; j < 256; ++j) {
+		struct smart_attr* attr = &devinfo->smart[j];
+		if (attr->raw != SMART_UNASSIGNED) {
+			const char* type = "";;
+			const char* updated = "";
+			const char* when_failed = "";
+
+			if (attr->flags & SMART_ATTR_TYPE_PREFAIL)
+				type = "prefail";
+			else if (attr->flags & SMART_ATTR_TYPE_OLDAGE)
+				type = "oldage";
+			if (attr->flags & SMART_ATTR_UPDATE_ALWAYS)
+				updated = "always";
+			else if (attr->flags & SMART_ATTR_UPDATE_OFFLINE)
+				updated = "offline";
+			if (attr->flags & SMART_ATTR_WHEN_FAILED_NOW)
+				when_failed = "now";
+			else if (attr->flags & SMART_ATTR_WHEN_FAILED_PAST)
+				when_failed = "past";
+			else if (attr->flags & SMART_ATTR_WHEN_FAILED_NEVER)
+				when_failed = "never";
+
+			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%s:%s:%s:%s\n", devinfo->file, devinfo->name, j, attr->raw, attr->raw, attr->norm, attr->worst, attr->thresh, attr->name, type, updated, when_failed);
 		}
+	}
 
 	int temp = smart_temp(devinfo);
 	if (temp >= 0)

@@ -502,6 +502,25 @@ int randomize(void* ptr, size_t size);
  */
 #define SMART_UNASSIGNED 0xFFFFFFFFFFFFFFFFULL
 
+/**
+ * SMART Attribute flags
+ */
+#define SMART_ATTR_TYPE_PREFAIL 1
+#define SMART_ATTR_TYPE_OLDAGE 2
+#define SMART_ATTR_UPDATE_ALWAYS 4
+#define SMART_ATTR_UPDATE_OFFLINE 8
+#define SMART_ATTR_WHEN_FAILED_NOW 16
+#define SMART_ATTR_WHEN_FAILED_PAST 32
+#define SMART_ATTR_WHEN_FAILED_NEVER 64
+
+struct smart_attr {
+	char name[128]; /**< SMART attribute name. */
+	uint64_t raw; /**< SMART attributes raw. */
+	uint64_t norm; /**< SMART attributes normalized. */
+	uint64_t worst; /**< SMART attributes worst. */
+	uint64_t thresh; /**< SMART attributes threshold. */
+	int flags; /**< SMART_ATTR_* flags */
+};
 
 /**
  * Power mode
@@ -509,14 +528,6 @@ int randomize(void* ptr, size_t size);
 #define POWER_STANDBY 0
 #define POWER_ACTIVE 1
 #define POWER_UNKNOWN -1
-
-struct smart_struct {
-	char name[128]; /**< SMART attribute name. */
-	uint64_t raw; /**< SMART attributes raw. */
-	uint64_t norm; /**< SMART attributes normalized. */
-	uint64_t worst; /**< SMART attributes worst. */
-	uint64_t thresh; /**< SMART attributes threshold. */
-};
 
 /**
  * Device info entry.
@@ -533,7 +544,7 @@ struct devinfo_struct {
 #endif
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	struct devinfo_struct* split; /**< Pointer at first split if any. */
-	struct smart_struct smart[SMART_COUNT]; /**< All smart values. */
+	struct smart_attr smart[SMART_COUNT]; /**< All smart values. */
 	uint64_t info[INFO_COUNT]; /**< Info attributes. */
 	uint64_t access_stat; /**< Access stat info. */
 	char serial[SMART_MAX]; /**< Serial number. */

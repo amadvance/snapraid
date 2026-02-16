@@ -1794,7 +1794,7 @@ The raw flags value (uint, hexadecimal).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_index>]:<id>:<raw_decimal>:<raw_hex>:<norm>:<worst>:<thresh>:<name>
+.B attr:<device_file>:<disk_name>[/<split_index>]:<id>:<raw_decimal>:<raw_hex>:<norm>:<worst>:<thresh>:<name>:<type>:<updated>:<when_failed>
 Logs the raw value of any assigned SMART attribute.
 .RS 4
 .PD 0
@@ -1819,6 +1819,15 @@ The threshold value (uint).
 .HP 4
 .I <name>
 Name of the attribute.
+.HP 4
+.I <type>
+Type of the attribute: \`prefail\` or \`oldage\`.
+.HP 4
+.I <updated>
+Update method of the attribute: \`always\` or \`offline\`.
+.HP 4
+.I <when_failed>
+If and when the attribute failed: \`never\` or \`past\` or \`now\`.
 .PD
 .RE
 .TP

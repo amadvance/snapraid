@@ -1702,11 +1702,11 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
+int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	unsigned i;
 	int inside;
-	struct smart_struct dummy_smart[SMART_COUNT];
+	struct smart_attr dummy_smart[SMART_COUNT];
 	uint64_t dummy_info[INFO_COUNT];
 	char dummy_serial[SMART_MAX];
 	char dummy_family[SMART_MAX];
@@ -1732,7 +1732,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 	*family = 0;
 	*model = 0;
 	*inter = 0;
-	memset(smart, 0, sizeof(struct smart_struct) * SMART_COUNT);
+	memset(smart, 0, sizeof(struct smart_attr) * SMART_COUNT);
 	for (i = 0; i < SMART_COUNT; ++i)
 		smart[i].raw = SMART_UNASSIGNED;
 	for (i = 0; i < INFO_COUNT; ++i)
@@ -1851,11 +1851,16 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			inside = 1;
 		} else if (inside) {
 			char id_name[128] = { 0 };
+			char type[64] = { 0 };
+			char updated[64] = { 0 };
+			char when_failed[64] = { 0 };
 			uint64_t min, max;
 			int minmax;
-			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %*s %*s %*s %" SCNu64 " (Min/Max %" SCNu64 "/%" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, &raw, &min, &max) == 8) {
+			int flags;
+
+			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64 " (Min/Max %" SCNu64 "/%" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw, &min, &max) == 11) {
 				minmax = 1;
-			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %*s %*s %*s %" SCNu64, &id, id_name, &norm, &worst, &thresh, &raw) == 6) {
+			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64, &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw) == 9) {
 				minmax = 0;
 			} else {
 				log_fatal(EEXTERNAL, "Invalid smartctl line '%s'.\n", s);
@@ -1868,6 +1873,22 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
+
+			flags = 0;
+			if (strcmp(type, "Pre-fail") == 0)
+				flags |= SMART_ATTR_TYPE_PREFAIL;
+			else if (strcmp(type, "Old_age") == 0)
+				flags |= SMART_ATTR_TYPE_OLDAGE;
+			if (strcmp(updated, "Always") == 0)
+				flags |= SMART_ATTR_UPDATE_ALWAYS;
+			else if (strcmp(updated, "Offline") == 0)
+				flags |= SMART_ATTR_UPDATE_OFFLINE;
+			if (strcmp(when_failed, "FAILING_NOW") == 0)
+				flags |= SMART_ATTR_WHEN_FAILED_NOW;
+			else if (strcmp(when_failed, "In_the_past") == 0)
+				flags |= SMART_ATTR_WHEN_FAILED_PAST;
+			else if (strcmp(when_failed, "-") == 0)
+				flags |= SMART_ATTR_WHEN_FAILED_NEVER;
 
 			/* revert the min/max decoding done by smartctl */
 			if (minmax
@@ -1882,6 +1903,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			smart[id].norm = norm;
 			smart[id].worst = worst;
 			smart[id].thresh = thresh;
+			smart[id].flags = flags;
 			pathcpy(smart[id].name, sizeof(smart[id].name), id_name);
 
 			/*
