@@ -1851,7 +1851,13 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			inside = 1;
 		} else if (inside) {
 			char id_name[128] = { 0 };
-			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %*s %*s %*s %" SCNu64, &id, id_name, &norm, &worst, &thresh, &raw) != 6) {
+			uint64_t min, max;
+			int minmax;
+			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %*s %*s %*s %" SCNu64 " (Min/Max %" SCNu64 "/%" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, &raw, &min, &max) == 8) {
+				minmax = 1;
+			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %*s %*s %*s %" SCNu64, &id, id_name, &norm, &worst, &thresh, &raw) == 6) {
+				minmax = 0;
+			} else {
 				log_fatal(EEXTERNAL, "Invalid smartctl line '%s'.\n", s);
 				return -1;
 			}
@@ -1861,6 +1867,15 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 				log_fatal(EEXTERNAL, "Invalid SMART id '%u'.\n", id);
 				return -1;
 				/* LCOV_EXCL_STOP */
+			}
+
+			/* revert the min/max decoding done by smartctl */
+			if (minmax
+				&& raw <= 0xFFFFUL
+				&& min <= 0xFFFFUL
+				&& max <= 0xFFFFUL) {
+				raw |= min << 16;
+				raw |= max << 32;
 			}
 
 			smart[id].raw = raw;
