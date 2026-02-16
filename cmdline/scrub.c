@@ -786,7 +786,7 @@ static uint32_t md(uint32_t a, uint32_t b, uint32_t c)
 	return v;
 }
 
-int state_scrub(struct snapraid_state* state, int plan, int olderthan)
+int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 {
 	block_off_t blockmax;
 	block_off_t countlimit;
@@ -804,7 +804,7 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 
 	msg_progress("Initializing...\n");
 
-	if ((plan == SCRUB_BAD || plan == SCRUB_NEW || plan == SCRUB_FULL)
+	if ((plan100 == SCRUB_BAD || plan100 == SCRUB_NEW || plan100 == SCRUB_FULL)
 		&& olderthan >= 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You can specify -o, --older-than only with a numeric percentage.\n");
@@ -821,13 +821,13 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 	ps.state = state;
 	if (state->opt.force_scrub_even) {
 		ps.plan = SCRUB_EVEN;
-	} else if (plan == SCRUB_FULL) {
+	} else if (plan100 == SCRUB_FULL) {
 		ps.plan = SCRUB_FULL;
 		msg_progress("Scrub plan: full. All data blocks will be checked.\n");
-	} else if (plan == SCRUB_NEW) {
+	} else if (plan100 == SCRUB_NEW) {
 		ps.plan = SCRUB_NEW;
 		msg_progress("Scrub plan: new. Only blocks that have never been scrubbed will be checked.\n");
-	} else if (plan == SCRUB_BAD) {
+	} else if (plan100 == SCRUB_BAD) {
 		ps.plan = SCRUB_BAD;
 		msg_progress("Scrub plan: bad. Only blocks previously marked as bad will be checked.\n");
 	} else if (state->opt.force_scrub_at) {
@@ -837,8 +837,8 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		recentlimit = now;
 	} else {
 		ps.plan = SCRUB_AUTO;
-		if (plan >= 0) {
-			countlimit = md(blockmax, plan, 100);
+		if (plan100 >= 0) {
+			countlimit = md(blockmax, plan100, 10000);
 		} else {
 			/* by default scrub 8.33% of the array (100/12=8.(3)) */
 			countlimit = md(blockmax, 1, 12);
@@ -851,11 +851,11 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 			recentlimit = now - 10 * 24 * 3600;
 		}
 
-		if (plan >= 0) {
+		if (plan100 >= 0) {
 			if (olderthan >= 0)
-				msg_progress("Scrub plan: auto. %d%% of the array, older than %d days, will be checked.\n", plan, olderthan);
+				msg_progress("Scrub plan: auto. %.1f%% of the array, older than %d days, will be checked.\n", plan100 / 100.0, olderthan);
 			else
-				msg_progress("Scrub plan: auto. %d%% of the array, older than 10 days, will be checked.\n", plan);
+				msg_progress("Scrub plan: auto. %.1f%% of the array, older than 10 days, will be checked.\n", plan100 / 100.0);
 		} else {
 			if (olderthan >= 0)
 				msg_progress("Scrub plan: auto. 8.3%% of the array, older than %d days, will be checked.\n", olderthan);

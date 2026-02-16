@@ -981,7 +981,7 @@ int snapraid_main(int argc, char* argv[])
 	tommy_list filterlist_disk;
 	int filter_missing;
 	int filter_error;
-	int plan;
+	int plan100;
 	int olderthan;
 	char* e;
 	const char* command;
@@ -1019,7 +1019,7 @@ int snapraid_main(int argc, char* argv[])
 	speed_test_disks_number = -1;
 	filter_missing = 0;
 	filter_error = 0;
-	plan = SCRUB_AUTO;
+	plan100 = SCRUB_AUTO;
 	olderthan = SCRUB_AUTO;
 	import_timestamp = 0;
 	import_content = 0;
@@ -1082,14 +1082,15 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case 'p' :
 			if (strcmp(optarg, "bad") == 0) {
-				plan = SCRUB_BAD;
+				plan100 = SCRUB_BAD;
 			} else if (strcmp(optarg, "new") == 0) {
-				plan = SCRUB_NEW;
+				plan100 = SCRUB_NEW;
 			} else if (strcmp(optarg, "full") == 0) {
-				plan = SCRUB_FULL;
+				plan100 = SCRUB_FULL;
 			} else {
-				plan = strtoul(optarg, &e, 10);
-				if (!e || *e || plan > 100) {
+				double plan_double = strtod(optarg, &e);
+				plan100 = plan_double * 100;
+				if (!e || *e || plan100 > 10000) {
 					/* LCOV_EXCL_START */
 					log_fatal(EUSER, "Invalid plan/percentage '%s'\n", optarg);
 					exit(EXIT_FAILURE);
@@ -1937,7 +1938,7 @@ int snapraid_main(int argc, char* argv[])
 		/* intercept signals while operating */
 		signal_init();
 
-		ret = state_scrub(&state, plan, olderthan);
+		ret = state_scrub(&state, plan100, olderthan);
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
 

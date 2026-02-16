@@ -24,6 +24,8 @@ SnapRAID HISTORY
    reclaiming unused space ("holes") that may exist in the parity due to
    previous fragmentation, allowing to compact the parity toward the beginning
    [Ralf1108].
+ * The -p / --plan option now accepts percentage values with decimal points
+   (e.g. -p 1.5, -p 0.2)
  * Added detection of the smartctl executable. Improves reliability when running
    under sudo or in environments where /sbin and /usr/sbin are not in PATH.
  * Avoided saving the content file when it was not strictly necessary.
