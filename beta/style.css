@@ -770,12 +770,12 @@ footer {
 .donation-card { border-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
 
 /* UI Gallery */
-.ui-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem; }
+.ui-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; margin-top: 2rem; }
 .ui-shot {
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     overflow: hidden;
-    height: 200px;
+    height: 280px;
     background: #000;
     position: relative;
     cursor: pointer;
@@ -788,9 +788,19 @@ footer {
     transition: transform 0.3s ease;
 }
 .ui-shot:hover img {
-    transform: scale(1.05);
+    transform: scale(1.25);
 }
-.ui-shot-caption { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); color: white; padding: 0.5rem; font-size: 0.8rem; text-align: center; }
+.ui-shot-caption { 
+    position: absolute; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    background: rgba(0,0,0,0.8); 
+    color: white; 
+    padding: 0.5rem; 
+    font-size: 0.8rem; 
+    text-align: center; 
+}
 
 /* Preview Overlay */
 #ui-preview-overlay {
