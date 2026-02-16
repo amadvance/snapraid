@@ -1702,11 +1702,11 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
+int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	unsigned i;
 	int inside;
-	uint64_t dummy_smart[SMART_COUNT];
+	struct smart_struct dummy_smart[SMART_COUNT];
 	uint64_t dummy_info[INFO_COUNT];
 	char dummy_serial[SMART_MAX];
 	char dummy_family[SMART_MAX];
@@ -1732,8 +1732,9 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 	*family = 0;
 	*model = 0;
 	*inter = 0;
+	memset(smart, 0, sizeof(struct smart_struct) * SMART_COUNT);
 	for (i = 0; i < SMART_COUNT; ++i)
-		smart[i] = SMART_UNASSIGNED;
+		smart[i].raw = SMART_UNASSIGNED;
 	for (i = 0; i < INFO_COUNT; ++i)
 		info[i] = SMART_UNASSIGNED;
 
@@ -1743,7 +1744,9 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		char buf[256];
 		unsigned id;
 		uint64_t raw;
-		uint64_t normalized;
+		uint64_t norm;
+		uint64_t worst;
+		uint64_t thresh;
 		char* s;
 
 		s = fgets(buf, sizeof(buf), f);
@@ -1810,16 +1813,16 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 				strcpy(inter, "PCIe");
 			else
 				strcpy(inter, "SCSI");
-		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT]) == 1) {
-		} else if (sscanf(s, "Current Drive Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS]) == 1) {
-		} else if (sscanf(s, "Drive Trip Temperature: %" SCNu64, &smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS]) == 1) {
-		} else if (sscanf(s, "Accumulated start-stop cycles: %" SCNu64, &smart[SMART_START_STOP_COUNT]) == 1) {
-		} else if (sscanf(s, "Accumulated load-unload cycles: %" SCNu64, &smart[SMART_LOAD_CYCLE_COUNT]) == 1) {
-		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS]) == 1) { /* note "n" of "number" lower case */
+		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT].raw) == 1) {
+		} else if (sscanf(s, "Current Drive Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS].raw) == 1) {
+		} else if (sscanf(s, "Drive Trip Temperature: %" SCNu64, &smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].raw) == 1) {
+		} else if (sscanf(s, "Accumulated start-stop cycles: %" SCNu64, &smart[SMART_START_STOP_COUNT].raw) == 1) {
+		} else if (sscanf(s, "Accumulated load-unload cycles: %" SCNu64, &smart[SMART_LOAD_CYCLE_COUNT].raw) == 1) {
+		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS].raw) == 1) { /* note "n" of "number" lower case */
 		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR_PROTOCOL] = raw;
+			smart[SMART_ERROR_PROTOCOL].raw = raw;
 		} else if (sscanf(s, "Medium error count: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR_MEDIUM] = raw;
+			smart[SMART_ERROR_MEDIUM].raw = raw;
 			/* ATA */
 		} else if (smatch(s, "ATA Version is:") == 0) {
 			strcpy(inter, "ATA");
@@ -1830,24 +1833,25 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (smatch(s, "Transport Type:   Parallel") == 0) {
 			strcpy(inter, "PATA");
 		} else if (smatch(s, "No Errors Logged") == 0) {
-			smart[SMART_ERROR_PROTOCOL] = 0;
+			smart[SMART_ERROR_PROTOCOL].raw = 0;
 		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR_PROTOCOL] = raw;
+			smart[SMART_ERROR_PROTOCOL].raw = raw;
 			/* NVME */
 		} else if (smatch(s, "NVMe Version:") == 0) {
 			strcpy(inter, "NVMe");
 		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR_MEDIUM] = raw;
+			smart[SMART_ERROR_MEDIUM].raw = raw;
 		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR_PROTOCOL] = raw;
+			smart[SMART_ERROR_PROTOCOL].raw = raw;
 		} else if (sscanf(s, "Percentage Used: %" SCNu64 "%%", &raw) == 1) { /* NVME */
 			if (raw <= 100)
-				smart[SMART_WEAR_LEVEL] = raw;
+				smart[SMART_WEAR_LEVEL].raw = raw;
 			/* Attributes */
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
 		} else if (inside) {
-			if (sscanf(s, "%u %*s %*s %" SCNu64 " %*s %*s %*s %*s %*s %" SCNu64, &id, &normalized, &raw) != 3) {
+			char id_name[128] = { 0 };
+			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %*s %*s %*s %" SCNu64, &id, id_name, &norm, &worst, &thresh, &raw) != 6) {
 				log_fatal(EEXTERNAL, "Invalid smartctl line '%s'.\n", s);
 				return -1;
 			}
@@ -1859,7 +1863,11 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 				/* LCOV_EXCL_STOP */
 			}
 
-			smart[id] = raw;
+			smart[id].raw = raw;
+			smart[id].norm = norm;
+			smart[id].worst = worst;
+			smart[id].thresh = thresh;
+			pathcpy(smart[id].name, sizeof(smart[id].name), id_name);
 
 			/*
 			 * Map normalized health percentage to our unified wear level for SSDs
@@ -1867,12 +1875,12 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 			 * 231: SSD_Life_Left (Kingston/WD)
 			 * 233: Media_Wearout_Indicator (Intel)
 			 */
-			if (normalized <= 100) {
+			if (norm <= 100) {
 				switch (id) {
 				case 177 :
 				case 233 :
 				case 231 :
-					smart[SMART_WEAR_LEVEL] = 100 - normalized;
+					smart[SMART_WEAR_LEVEL].raw = 100 - norm;
 					break;
 				}
 			}
@@ -1904,9 +1912,9 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 
 int smart_temp(devinfo_t* devinfo)
 {
-	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS] & 0xFFFF;
+	uint64_t t = devinfo->smart[SMART_TEMPERATURE_CELSIUS].raw & 0xFFFF;
 	if (t == SMART_UNASSIGNED)
-		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] & 0xFFFF;
+		t = devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].raw & 0xFFFF;
 
 	/* validate temperature */
 	if (t == SMART_UNASSIGNED)

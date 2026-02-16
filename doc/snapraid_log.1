@@ -1794,7 +1794,7 @@ The raw flags value (uint, hexadecimal).
 .PD
 .RE
 .TP
-.B attr:<device_file>:<disk_name>[/<split_index>]:<id>:<value_decimal>:<value_hex>
+.B attr:<device_file>:<disk_name>[/<split_index>]:<id>:<raw_decimal>:<raw_hex>:<norm>:<worst>:<thresh>:<name>
 Logs the raw value of any assigned SMART attribute.
 .RS 4
 .PD 0
@@ -1802,11 +1802,23 @@ Logs the raw value of any assigned SMART attribute.
 .I <id>
 The SMART attribute ID (uint).
 .HP 4
-.I <value_decimal>
+.I <raw_decimal>
 The raw attribute value (uint, decimal).
 .HP 4
-.I <value_hex>
+.I <raw_hex>
 The raw attribute value (uint, hexadecimal).
+.HP 4
+.I <norm>
+The normalized value (uint).
+.HP 4
+.I <worst>
+The worst value (uint).
+.HP 4
+.I <thresh>
+The threshold value (uint).
+.HP 4
+.I <name>
+Name of the attribute.
 .PD
 .RE
 .TP

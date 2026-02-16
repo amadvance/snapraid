@@ -408,26 +408,26 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
  * we use the maximum rate reported, and we do not sum them,
  * because the attributes are not independent.
  */
-static double smart_afr(uint64_t* smart, const char* model)
+static double smart_afr(struct smart_struct* smart, const char* model)
 {
 	double afr = 0;
 	uint64_t mask32 = 0xffffffffU;
 	uint64_t mask16 = 0xffffU;
 
 	/* do not estimate for not rotational */
-	if (smart[INFO_ROTATION_RATE] == 0)
+	if (smart[INFO_ROTATION_RATE].raw == 0)
 		return 0;
 
-	if (smart[5] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_5_R, SMART_5_STEP, smart[5] & mask32);
+	if (smart[5].raw != SMART_UNASSIGNED) {
+		double r = smart_afr_value(SMART_5_R, SMART_5_STEP, smart[5].raw & mask32);
 		if (afr < r)
 			afr = r;
 	}
 
-	if (smart[187] != SMART_UNASSIGNED) {
+	if (smart[187].raw != SMART_UNASSIGNED) {
 		/* with some disks, only the lower 16 bits are significant */
 		/* See: http://web.archive.org/web/20130507072056/http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf */
-		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187] & mask16);
+		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187].raw & mask16);
 		if (afr < r)
 			afr = r;
 	}
@@ -440,23 +440,23 @@ static double smart_afr(uint64_t* smart, const char* model)
 		 * and IronWolf disks to be a not significant test as
 		 * this value increases too often also on sane disks.
 		 */
-		strncmp(model, "ST", 2) != 0 && smart[188] != SMART_UNASSIGNED
+		strncmp(model, "ST", 2) != 0 && smart[188].raw != SMART_UNASSIGNED
 	) {
 		/* with Seagate disks, there are three different 16 bits value reported */
 		/* the lowest one is the most significant */
-		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188] & mask16);
+		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188].raw & mask16);
 		if (afr < r)
 			afr = r;
 	}
 
-	if (smart[197] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_197_R, SMART_197_STEP, smart[197] & mask32);
+	if (smart[197].raw != SMART_UNASSIGNED) {
+		double r = smart_afr_value(SMART_197_R, SMART_197_STEP, smart[197].raw & mask32);
 		if (afr < r)
 			afr = r;
 	}
 
-	if (smart[198] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_198_R, SMART_198_STEP, smart[198] & mask32);
+	if (smart[198].raw != SMART_UNASSIGNED) {
+		double r = smart_afr_value(SMART_198_R, SMART_198_STEP, smart[198].raw & mask32);
 		if (afr < r)
 			afr = r;
 	}
@@ -544,21 +544,22 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 	unsigned j;
 
 	log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
-	if (devinfo->smart[SMART_ERROR_PROTOCOL] != SMART_UNASSIGNED)
-		log_tag("attr:%s:%s:error_protocol:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_PROTOCOL]);
-	if (devinfo->smart[SMART_ERROR_MEDIUM] != SMART_UNASSIGNED)
-		log_tag("attr:%s:%s:error_medium:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_MEDIUM]);
-	if (devinfo->smart[SMART_WEAR_LEVEL] != SMART_UNASSIGNED)
-		log_tag("attr:%s:%s:wear_level:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_WEAR_LEVEL]);
-	if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
-		log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
+	if (devinfo->smart[SMART_ERROR_PROTOCOL].raw != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:error_protocol:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_PROTOCOL].raw);
+	if (devinfo->smart[SMART_ERROR_MEDIUM].raw != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:error_medium:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR_MEDIUM].raw);
+	if (devinfo->smart[SMART_WEAR_LEVEL].raw != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:wear_level:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_WEAR_LEVEL].raw);
+	if (devinfo->smart[SMART_FLAGS].raw != SMART_UNASSIGNED)
+		log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS].raw, devinfo->smart[SMART_FLAGS].raw);
 
 	if (afr != 0)
 		log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_at_least_one_failure(afr));
 
 	for (j = 0; j < 256; ++j)
-		if (devinfo->smart[j] != SMART_UNASSIGNED)
-			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
+		if (devinfo->smart[j].raw != SMART_UNASSIGNED) {
+			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%s\n", devinfo->file, devinfo->name, j, devinfo->smart[j].raw, devinfo->smart[j].raw, devinfo->smart[j].norm, devinfo->smart[j].worst, devinfo->smart[j].thresh, devinfo->smart[j].name);
+		}
 
 	int temp = smart_temp(devinfo);
 	if (temp >= 0)
@@ -627,8 +628,8 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 
 		/* clear attributes to ignore */
 		for (j = 0; j < SMART_IGNORE_MAX; ++j) {
-			devinfo->smart[state->smartignore[j]] = SMART_UNASSIGNED;
-			devinfo->smart[devinfo->smartignore[j]] = SMART_UNASSIGNED;
+			devinfo->smart[state->smartignore[j]].raw = SMART_UNASSIGNED;
+			devinfo->smart[devinfo->smartignore[j]].raw = SMART_UNASSIGNED;
 		}
 
 		int temp = smart_temp(devinfo);
@@ -637,18 +638,18 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 		else
 			printf("      -");
 
-		if (devinfo->smart[SMART_POWER_ON_HOURS] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, (devinfo->smart[SMART_POWER_ON_HOURS] & mask32) / 24);
+		if (devinfo->smart[SMART_POWER_ON_HOURS].raw != SMART_UNASSIGNED)
+			printf("%7" PRIu64, (devinfo->smart[SMART_POWER_ON_HOURS].raw & mask32) / 24);
 		else
 			printf("      -");
 
 		uint64_t error_count = 0;
-		if (devinfo->smart[SMART_ERROR_PROTOCOL] != SMART_UNASSIGNED && devinfo->smart[SMART_ERROR_PROTOCOL] != 0)
-			error_count += devinfo->smart[SMART_ERROR_PROTOCOL];
-		if (devinfo->smart[SMART_ERROR_MEDIUM] != SMART_UNASSIGNED && devinfo->smart[SMART_ERROR_MEDIUM] != 0)
-			error_count += devinfo->smart[SMART_ERROR_MEDIUM];
-		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
-			flag = devinfo->smart[SMART_FLAGS];
+		if (devinfo->smart[SMART_ERROR_PROTOCOL].raw != SMART_UNASSIGNED && devinfo->smart[SMART_ERROR_PROTOCOL].raw != 0)
+			error_count += devinfo->smart[SMART_ERROR_PROTOCOL].raw;
+		if (devinfo->smart[SMART_ERROR_MEDIUM].raw != SMART_UNASSIGNED && devinfo->smart[SMART_ERROR_MEDIUM].raw != 0)
+			error_count += devinfo->smart[SMART_ERROR_MEDIUM].raw;
+		if (devinfo->smart[SMART_FLAGS].raw != SMART_UNASSIGNED)
+			flag = devinfo->smart[SMART_FLAGS].raw;
 		else
 			flag = 0;
 
@@ -697,8 +698,8 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			}
 		}
 
-		if (devinfo->smart[SMART_WEAR_LEVEL] != SMART_UNASSIGNED) {
-			printf(" %3" PRIu64 "%%", devinfo->smart[SMART_WEAR_LEVEL]);
+		if (devinfo->smart[SMART_WEAR_LEVEL].raw != SMART_UNASSIGNED) {
+			printf(" %3" PRIu64 "%%", devinfo->smart[SMART_WEAR_LEVEL].raw);
 		} else {
 			printf("    -");
 		}
@@ -910,10 +911,14 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 
 		for (j = 0; j < 256; ++j) {
 			switch (count) {
-			case 0 : entry->smart[j] = 0; break;
-			case 1 : entry->smart[j] = SMART_UNASSIGNED; break;
+			case 0 :
+				entry->smart[j].raw = 0;
+				break;
+			case 1 :
+				entry->smart[j].raw = SMART_UNASSIGNED;
+				break;
 			default :
-				entry->smart[j] = 0;
+				entry->smart[j].raw = 0;
 				break;
 			}
 		}
@@ -926,21 +931,21 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
 		entry->info[INFO_SIZE] = count * TERA;
 		entry->info[INFO_ROTATION_RATE] = 7200;
-		entry->smart[SMART_ERROR_MEDIUM] = 0;
-		entry->smart[SMART_ERROR_PROTOCOL] = 0;
-		entry->smart[SMART_FLAGS] = SMART_UNASSIGNED;
-		entry->smart[SMART_TEMPERATURE_CELSIUS] = 27;
+		entry->smart[SMART_ERROR_MEDIUM].raw = 0;
+		entry->smart[SMART_ERROR_PROTOCOL].raw = 0;
+		entry->smart[SMART_FLAGS].raw = SMART_UNASSIGNED;
+		entry->smart[SMART_TEMPERATURE_CELSIUS].raw = 27;
 
 		switch (count) {
-		case 3 : entry->smart[SMART_ERROR_PROTOCOL] = 1; break;
-		case 4 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_UNSUPPORTED; break;
-		case 5 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_COMMAND; break;
-		case 6 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_OPEN; break;
-		case 7 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_FAIL; break;
-		case 8 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL; break;
-		case 9 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL_LOGGED; break;
-		case 10 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;
-		case 11 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_SELFERROR_LOGGED; break;
+		case 3 : entry->smart[SMART_ERROR_PROTOCOL].raw = 1; break;
+		case 4 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_UNSUPPORTED; break;
+		case 5 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_COMMAND; break;
+		case 6 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_OPEN; break;
+		case 7 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_FAIL; break;
+		case 8 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_PREFAIL; break;
+		case 9 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_PREFAIL_LOGGED; break;
+		case 10 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_ERROR_LOGGED; break;
+		case 11 : entry->smart[SMART_FLAGS].raw = SMARTCTL_FLAG_SELFERROR_LOGGED; break;
 		}
 
 		entry->power = POWER_ACTIVE;

@@ -1121,12 +1121,16 @@ Command Smart And Probe Tags
 		<flags_decimal> - The raw flags value (uint, decimal).
 		<flags_hex> - The raw flags value (uint, hexadecimal).
 
-	=attr:<device_file>:<disk_name>[/<split_index>]:<id>:<value_decimal>:<value_hex>
+	=attr:<device_file>:<disk_name>[/<split_index>]:<id>:<raw_decimal>:<raw_hex>:<norm>:<worst>:<thresh>:<name>
 		Logs the raw value of any assigned SMART attribute.
 
 		<id> - The SMART attribute ID (uint).
-		<value_decimal> - The raw attribute value (uint, decimal).
-		<value_hex> - The raw attribute value (uint, hexadecimal).
+		<raw_decimal> - The raw attribute value (uint, decimal).
+		<raw_hex> - The raw attribute value (uint, hexadecimal).
+		<norm> - The normalized value (uint).
+		<worst> - The worst value (uint).
+		<thresh> - The threshold value (uint).
+		<name> - Name of the attribute.
 
 	=attr:<device_file>:<disk_name>[/<split_index>]:power:active
 		Logs that the device was confirmed to be in an active power

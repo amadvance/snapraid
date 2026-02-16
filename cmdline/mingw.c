@@ -2506,7 +2506,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
+static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2574,7 +2574,7 @@ retry:
 		 * Note that getting error 4 is instead very common, even with full info gathering.
 		 */
 		if ((ret == 0 || ret == 2)
-			&& smart[9] == SMART_UNASSIGNED
+			&& smart[SMART_POWER_ON_HOURS].raw == SMART_UNASSIGNED
 			&& info[INFO_SIZE] == SMART_UNASSIGNED
 			&& info[INFO_ROTATION_RATE] == SMART_UNASSIGNED
 		) {
@@ -2587,7 +2587,7 @@ retry:
 	}
 
 	/* store the smartctl return value */
-	smart[SMART_FLAGS] = ret;
+	smart[SMART_FLAGS].raw = ret;
 
 	return 0;
 }
@@ -2738,7 +2738,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 /**
  * Get POWER state
  */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
+static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2819,7 +2819,7 @@ retry:
 		*power = POWER_ACTIVE;
 
 		/* store the return smartctl return value */
-		smart[SMART_FLAGS] = WEXITSTATUS(ret);
+		smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
 	}
 
 	return 0;

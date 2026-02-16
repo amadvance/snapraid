@@ -1479,7 +1479,7 @@ static int devscan(tommy_list* list)
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
-static int devsmart(dev_t device, const char* name, const char* smartctl, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
+static int devsmart(dev_t device, const char* name, const char* smartctl, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1550,7 +1550,7 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, uint64
 	}
 
 	/* store the return smartctl return value */
-	smart[SMART_FLAGS] = WEXITSTATUS(ret);
+	smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
 
 	return 0;
 }
@@ -1717,7 +1717,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
-static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, uint64_t* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
+static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, struct smart_struct* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
 	char cmd[PATH_MAX + 64];
 	char file[PATH_MAX];
@@ -1795,7 +1795,7 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		*power = POWER_ACTIVE;
 
 		/* store the return smartctl return value */
-		smart[SMART_FLAGS] = WEXITSTATUS(ret);
+		smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
 	}
 
 	return 0;
