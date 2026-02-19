@@ -539,6 +539,15 @@ static void state_info_log(devinfo_t* devinfo)
 		log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_ROTATION_RATE]);
 }
 
+static void state_smart_ignore(struct snapraid_state* state, devinfo_t* devinfo)
+{
+	/* clear attributes to ignore */
+	for (int i = 0; i < SMART_IGNORE_MAX; ++i) {
+		devinfo->smart[state->smartignore[i]].raw = SMART_UNASSIGNED;
+		devinfo->smart[devinfo->smartignore[i]].raw = SMART_UNASSIGNED;
+	}
+}
+
 static void state_smart_log(devinfo_t* devinfo, double afr)
 {
 	unsigned j;
@@ -647,11 +656,7 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 		double afr;
 		uint64_t flag;
 
-		/* clear attributes to ignore */
-		for (j = 0; j < SMART_IGNORE_MAX; ++j) {
-			devinfo->smart[state->smartignore[j]].raw = SMART_UNASSIGNED;
-			devinfo->smart[devinfo->smartignore[j]].raw = SMART_UNASSIGNED;
-		}
+		state_smart_ignore(state, devinfo);
 
 		int temp = smart_temp(devinfo);
 		if (temp >= 0)
@@ -818,6 +823,8 @@ void state_attr(struct snapraid_state* state, tommy_list* low)
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
+		state_smart_ignore(state, devinfo);
+
 		double afr = smart_afr(devinfo->smart, devinfo->model);
 
 		state_info_log(devinfo);
@@ -837,6 +844,8 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		size_t len;
 		devinfo_t* devinfo = i->data;
+
+		state_smart_ignore(state, devinfo);
 
 		len = strlen(devinfo->file);
 		if (len > device_pad)
