@@ -1497,7 +1497,7 @@ int snapraid_main(int argc, char* argv[])
 		operation = OPERATION_STATUS;
 	} else if (strcmp(argv[optind], "test-rewrite") == 0) {
 		operation = OPERATION_REWRITE;
-	} else if (strcmp(argv[optind], "test-read") == 0) {
+	} else if (strcmp(argv[optind], "read") == 0) {
 		operation = OPERATION_READ;
 	} else if (strcmp(argv[optind], "touch") == 0) {
 		operation = OPERATION_TOUCH;
