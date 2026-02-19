@@ -163,6 +163,11 @@ Forces the daemon to load web interface assets directly from the
 filesystem for every request, bypassing internal memory caching.
 This is intended for development environments to allow real-time
 testing of UI changes.
+This option is only effective when <b>net_web_root</b> is configured
+to point to an expanded directory on the filesystem.
+It has no effect if the web assets are being served from a
+compressed .zip file, as the daemon must crawl and index the
+archive's contents at startup regardless of this flag.
 This option is not recommended for production use due to the
 increased I/O overhead and for security reasons, as it could
 potentially expose the system to directory traversal
