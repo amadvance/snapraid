@@ -226,7 +226,7 @@ se marcan como defectuosos.
 -----------
 
 Nota: La función de pooling descrita a continuación ha sido
-sustituida por la herramienta mergefs, que ahora es la opción
+sustituida por la herramienta mergerfs, que ahora es la opción
 recomendada para los usuarios de Linux en la comunidad SnapRAID.
 Mergefs proporciona una forma más flexible y eficiente de agrupar
 múltiples unidades en un único punto de montaje unificado,

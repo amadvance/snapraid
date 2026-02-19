@@ -204,7 +204,7 @@ Getting Started
 
   Pooling
 	Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
-	narzędzie mergefs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
+	narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
 	w społeczności SnapRAID. Mergefs zapewnia bardziej elastyczny i wydajny
 	sposób łączenia wielu dysków w jeden ujednolicony punkt montowania,
 	umożliwiając bezproblemowy dostęp do plików w całej macierzy bez polegania

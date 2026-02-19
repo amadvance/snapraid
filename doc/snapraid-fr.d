@@ -215,7 +215,7 @@ Démarrer
 
   Mise en commun (Pooling)
 	Note : La fonctionnalité de mise en commun décrite ci-dessous a été
-	remplacée par l'outil mergefs, qui est désormais l'option recommandée
+	remplacée par l'outil mergerfs, qui est désormais l'option recommandée
 	pour les utilisateurs Linux de la communauté SnapRAID. Mergefs offre
 	un moyen plus flexible et efficace de regrouper plusieurs disques
 	dans un seul point de montage unifié, permettant un accès transparent

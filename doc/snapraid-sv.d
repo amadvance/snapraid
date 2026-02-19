@@ -203,7 +203,7 @@ Kom igång
 
   Poolning
 	Obs: Poolningsfunktionen som beskrivs nedan har ersatts av verktyget
-	mergefs, som nu är det rekommenderade alternativet för Linux-användare i
+	mergerfs, som nu är det rekommenderade alternativet för Linux-användare i
 	SnapRAID-communityt. Mergefs ger ett mer flexibelt och effektivt
 	sätt att poola flera enheter till en enda enhetlig monteringspunkt,
 	vilket möjliggör sömlös åtkomst till filer över din array utan att förlita sig

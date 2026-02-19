@@ -221,7 +221,7 @@ output, but the related blocks are not marked as bad.
 -----------
 
 Note: The pooling feature described below has been superseded by the
-mergefs tool, which is now the recommended option for Linux users in
+mergerfs tool, which is now the recommended option for Linux users in
 the SnapRAID community. Mergefs provides a more flexible and efficient
 way to pool multiple drives into a single unified mount point,
 allowing seamless access to files across your array without relying

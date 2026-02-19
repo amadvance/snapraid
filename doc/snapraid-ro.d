@@ -202,7 +202,7 @@ Noțiuni de Bază
 
   Pooling (Agregare)
 	Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
-	mergefs, care este acum opțiunea recomandată pentru utilizatorii Linux în
+	mergerfs, care este acum opțiunea recomandată pentru utilizatorii Linux în
 	comunitatea SnapRAID. Mergefs oferă o modalitate mai flexibilă și eficientă
 	de a agrega mai multe discuri într-un singur punct de montare unificat,
 	permițând accesul neîntrerupt la fișiere pe toată matricea dvs. fără a se baza

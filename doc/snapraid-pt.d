@@ -205,7 +205,7 @@ Primeiros Passos
 
   Pooling
 	Nota: O recurso de pooling descrito abaixo foi substituído pela ferramenta
-	mergefs, que agora é a opção recomendada para usuários Linux na comunidade
+	mergerfs, que agora é a opção recomendada para usuários Linux na comunidade
 	SnapRAID. Mergefs oferece uma maneira mais flexível e eficiente de agrupar
 	várias unidades em um único ponto de montagem unificado, permitindo acesso
 	perfeito a arquivos em todo o seu array sem depender de links simbólicos.

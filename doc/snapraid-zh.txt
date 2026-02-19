@@ -190,8 +190,8 @@ SnapRAID 的其他限制包括：
 4.2 Pooling
 -----------
 
-注意：下面描述的 pooling 功能已被 mergefs 工具取代，
-mergefs 现在是 SnapRAID 社区推荐的 Linux 用户选项。
+注意：下面描述的 pooling 功能已被 mergerfs 工具取代，
+mergerfs 现在是 SnapRAID 社区推荐的 Linux 用户选项。
 Mergefs 提供了一种更灵活、更高效的方式，将多个驱动器汇集到一个
 统一的挂载点中，允许跨阵列无缝访问文件，而无需依赖符号链接。
 它与 SnapRAID 很好地集成以提供奇偶校验保护，常用于
