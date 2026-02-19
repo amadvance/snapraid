@@ -1164,76 +1164,89 @@ have exceeded the 'spindown_idle_minutes' threshold.
 <h1 id="sec6" class="manual-title-level-1">
 Signals
 </h1>
-<p>SIGHUP
-</p><p>Reloads the configuration file and resets the internal state.
+<p>This section defines how the daemon responds to standard Unix signals,
+allowing for external process control and graceful management of the
+service lifecycle.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+SIGHUP
+</h3>
+<p>Reloads the configuration file and resets the internal state.
 It also reloads the Web UI. This is the recommended way to
 apply changes to static&nbsp;&nbsp;&nbsp;&nbsp;parameters without restarting the
 service.
-</p><p>SIGTERM, SIGINT
-</p><p>Initiates a graceful shutdown. If a task is currently
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+SIGTERM, SIGINT
+</h3>
+<p>Initiates a graceful shutdown. If a task is currently
 running, the daemon attempts to terminate the child process
 before exiting.
-</p><p>SIGQUIT
-</p><p>Immediately terminates the process using the default signal
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+SIGQUIT
+</h3>
+<p>Immediately terminates the process using the default signal
 action and may generate a core dump. This signal is intended
 for emergency debugging and post mortem analysis of a hung
 or misbehaving daemon. No cleanup or graceful shutdown is
 performed.
 </p></div>
+</div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
 Files
 </h1>
-<p>$PREFIX/etc/snapraidd.conf
-</p><p>The primary configuration file location. The $PREFIX variable
+<p>The following list specifies the default filesystem paths used by the
+daemon for configuration, data persistence, and inter-process communication.
+</p><div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+$PREFIX/etc/snapraidd.conf
+</h3>
+<p>The primary configuration file location. The $PREFIX variable
 represents the installation path chosen at build time (typically
 via the <b>--prefix</b> argument to the configure script). Common
 values include <b>/usr/local</b> or <b>/usr</b>. If this file does not
 exist, the daemon falls back to <b>/etc/snapraidd.conf</b>.
-</p><p>$PREFIX/share/snapraidd
-</p><p>The primary system data directory. This is the first location
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
+$PREFIX/share/snapraidd
+</h3>
+<p>The primary system data directory. This is the first location
 searched for the web dashboard ZIP file (e.g., commander.zip).
 If not found here, the daemon falls back to <b>/usr/share/snapraidd</b>.
-</p><div class="manual-option-list">
-<div class="manual-option-entry">
-<div class="manual-option-name">
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
 /etc/snapraidd.conf
-</div><div class="manual-option-description">
-The secondary/system-wide configuration file location, used if
+</h3>
+<p>The secondary/system-wide configuration file location, used if
 the prefix-specific file is missing.
-</div>
-</div>
-</div>
-<div class="manual-option-list">
-<div class="manual-option-entry">
-<div class="manual-option-name">
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
 /usr/share/snapraidd
-</div><div class="manual-option-description">
-The secondary/system-wide data directory, used as a fallback for
+</h3>
+<p>The secondary/system-wide data directory, used as a fallback for
 web assets.
-</div>
-</div>
-</div>
-<div class="manual-option-list">
-<div class="manual-option-entry">
-<div class="manual-option-name">
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
 /run/snapraidd.pid
-</div><div class="manual-option-description">
-Default PID file location.
-</div>
-</div>
-</div>
-<div class="manual-option-list">
-<div class="manual-option-entry">
-<div class="manual-option-name">
+</h3>
+<p>Default PID file location.
+</p></div>
+<div class="manual-section-level-3">
+<h3 class="manual-title-level-3">
 /var/log/snapraid
-</div><div class="manual-option-description">
-Default directory for SnapRAID command execution logs. This
+</h3>
+<p>Default directory for SnapRAID command execution logs. This
 directory contains the output of the SnapRAID binary itself,
 rather than the daemon's service logs.
-</div>
-</div>
-</div>
+</p></div>
 </div>
 
 
