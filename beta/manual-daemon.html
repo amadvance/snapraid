@@ -127,13 +127,13 @@ Options
 -c, --conf CONFIG
 </div><div class="manual-option-description">
 Specifies the path to the configuration file. Default:
-`$PREFIX/etc/snapraidd.conf` and `/etc/snapraidd.conf` if
+<b>$PREFIX/etc/snapraidd.conf</b> and <b>/etc/snapraidd.conf</b> if
 not found. The $PREFIX variable represents the installation
-path chosen at build time (typically via the `--prefix`
+path chosen at build time (typically via the <b>--prefix</b>
 argument to the configure script).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -141,19 +141,19 @@ argument to the configure script).
 </div><div class="manual-option-description">
 Runs the process in the foreground. This prevents the
 daemon from detaching from the terminal (daemonizing).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -p, --pidfile FILE
 </div><div class="manual-option-description">
 Overrides the default location for the PID file. Default:
-`/run/snapraidd.pid`.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+<b>/run/snapraidd.pid</b>.
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -167,36 +167,36 @@ This option is not recommended for production use due to the
 increased I/O overhead and for security reasons, as it could
 potentially expose the system to directory traversal
 vulnerabilities if not properly isolated.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -v, --verbose
 </div><div class="manual-option-description">
 Verbose logging including all HTTP requests.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -H, --help
 </div><div class="manual-option-description">
 Prints a short help screen.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 -V, --version
 </div><div class="manual-option-description">
 Prints the program version.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
@@ -205,7 +205,7 @@ Configuration
 <p>The SnapRAID Daemon is configured via a plain-text .conf file,
 defaulting to $PREFIX/etc/snapraidd.conf and if not found to
 /etc/snapraidd.conf. The $PREFIX variable represents the installation
-path chosen at build time (typically via the `--prefix` argument to
+path chosen at build time (typically via the <b>--prefix</b> argument to
 the configure script).
 </p><p>This file governs the behavior of the automation engine, network
 accessibility, safety interlocks, and hardware monitoring parameters.
@@ -221,9 +221,9 @@ as the listening port (net_port) and the system user for
 scripts (script_run_as_user), are immutable via the REST API.
 These require manual file edits followed by a SIGHUP signal
 (e.g., systemctl reload snapraidd) to take effect.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-tag-list">
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
@@ -235,75 +235,212 @@ via the PATCH /snapraid/v1/config endpoint. Changes made through
 the API are instantly applied to the running process and
 persisted back to the configuration file, preserving any
 manual comments.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>To prevent race conditions, users should avoid editing the
 configuration file manually while simultaneously issuing configuration
 updates via the REST API. If a manual edit is performed while the
 daemon is active, ensure a reload is triggered immediately to
 synchronize the daemon's internal memory state with the disk.
-</p><p>For complete technical documentation, please refer to the
-`snapraidd.conf.example` file.
+</p><p>For a comprehensive view of how these settings are applied in a
+real-world environment, refer to the <b>snapraidd.conf.example</b> file
+typically located in the documentation directory of the installation.
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
 Network &amp; REST API
 </h2>
 <p>These settings control the network interface. These options are not
-visible from the REST API and can be set only in the snapraidd.conf
-file.
+visible from the REST API. They requires a manual edit of the
+configuration file and a configuration reload (SIGHUP) to apply.
 </p><div class="manual-section-level-3">
 <h3 id="sec4-1-1" class="manual-title-level-3">
 net_enabled
 </h3>
-<p>Master toggle for the HTTP interface.
-Set to 1 to enable the REST API, otherwise, the daemon operates in
-local-only mode.
+<p>Acts as the master toggle for the network interface. When set to 1,
+the daemon enables the REST API and prepares to serve the web dashboard.
+If set to 0 or left blank, the daemon operates in a secure, local-only
+mode, and no network ports are opened.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-1-2" class="manual-title-level-3">
 net_port
 </h3>
-<p>Defines the IP address and port the daemon binds to (e.g., `127.0.0.1:8080`).
-Supports IPv4, IPv6, and multiple ports.
+<p>Defines the specific IP address and port(s) to which the daemon binds.
+The format follows [IP_ADDRESS:]PORT[s].
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+IPv4IPv6
+</div><div class="manual-tag-description">
+Bind to specific local addresses (e.g., 127.0.0.1:8080 or
+[::1]:8080).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Wildcard
+</div><div class="manual-tag-description">
+Providing only a port (e.g., 8080) binds to all available
+IPv4 interfaces (0.0.0.0).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+MultiplePorts
+</div><div class="manual-tag-description">
+Multiple listeners can be configured by providing a
+comma-separated list.
+</div>
+</div>
+</div>
+<p>If left unset, the daemon defaults to 127.0.0.1:8080. Modification
+requires a configuration reload and is restricted from API access.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-1-3" class="manual-title-level-3">
 net_acl
 </h3>
-<p>Restricts API access to specific client IPs using a comma-separated
-list of allow (+) or deny (-) rules.
+<p>Restricts API and dashboard access to specific client IP addresses or
+subnets using a comma-separated Access Control List (ACL).
+</p><p>The syntax uses + to allow and - to deny, supporting CIDR notation
+(e.g., /24). If any rules are defined, the daemon adopts a "deny by default"
+stance. The rules are processed sequentially, and the last matching rule
+determines the outcome.
+If unset, it defaults to +127.0.0.1.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-1-4" class="manual-title-level-3">
 net_security_headers
 </h3>
-<p>When enabled (1), injects security headers like CSP and X-Frame-Options
-to harden the API against browser-based attacks.
+<p>When enabled (1), the daemon injects several browser-level security
+hardening headers into every HTTP response. These include
+Content-Security-Policy (restricting resource loading),
+X-Frame-Options (preventing clickjacking via iframes),
+X-Content-Type-Options (disabling MIME-sniffing),
+and Referrer-Policy.
+</p><p>This should only be disabled (0) if the daemon is behind a reverse
+proxy (like Nginx or Traefik) that is already configured to handle
+these security headers.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-1-5" class="manual-title-level-3">
 net_allowed_origin
 </h3>
-<p>Configures CORS. Use `self` for standard setups, `none` to block
-browser access, or a specific URL for custom dashboards.
-</p></div>
+<p>Configures Cross-Origin Resource Sharing (CORS) to determine which web
+applications can interact with the API.
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+self
+</div><div class="manual-tag-description">
+(Default/Recommended) Dynamically reflects the 'Host' header
+of the request, allowing the built-in UI to work across various hostnames or IPs.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+none
+</div><div class="manual-tag-description">
+Omits CORS headers entirely, blocking browser-based access from any origin.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+URL
+</div><div class="manual-tag-description">
+Restricts access to a specific origin (e.g., http://192.168.1.50:3000).
+</div>
+</div>
+</div>
+</div>
 <div class="manual-section-level-3">
 <h3 id="sec4-1-6" class="manual-title-level-3">
 net_config_full_access
 </h3>
-<p>Determines if restricted parameters (like scripts and log paths) can
-be modified via the REST API. Defaults to 0 (Read-only).
-</p></div>
+<p>A security flag that determines whether sensitive configuration parameters
+can be modified via the REST API.
+</p><p>By default (0), sensitive options such as script paths, log directories,
+and notification users are read-only to prevent unauthorized privilege
+escalation or system modification.
+</p><p>By default (0), security-sensitive options are strictly read-only to
+prevent unauthorized system modifications or privilege escalation
+through the web interface.
+</p><p>When set to 1, the following configuration options become accessible
+for modification via PATCH requests:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+script_run_as_user
+</div><div class="manual-tag-description">
+The account used for executing pre/post scripts.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+script_pre_run
+</div><div class="manual-tag-description">
+The absolute path to the pre-execution script.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+script_post_run
+</div><div class="manual-tag-description">
+The absolute path to the post-execution script.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+log_directory
+</div><div class="manual-tag-description">
+The persistent storage path for command outputs.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+log_retention_days
+</div><div class="manual-tag-description">
+The duration for which log files are kept.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+notify_run_as_user
+</div><div class="manual-tag-description">
+The account used for notification commands.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+notify_heartbeat
+</div><div class="manual-tag-description">
+The command used for health monitoring pings.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+notify_result
+</div><div class="manual-tag-description">
+The command used for sending task reports.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+notify_result_level
+</div><div class="manual-tag-description">
+The severity threshold for sending notifications.
+</div>
+</div>
+</div>
+</div>
 <div class="manual-section-level-3">
 <h3 id="sec4-1-7" class="manual-title-level-3">
 net_web_root
 </h3>
-<p>Specifies the local path where the web dashboard assets are located.
-This option supports both a standard directory and a single compressed
-ZIP file. If a ZIP file is provided, the internal HTTP server will
-serve assets directly from the archive without requiring extraction to
-the disk.
+<p>Specifies the source of the web dashboard assets. The daemon supports
+both a standard directory and a single compressed ZIP file for asset
+delivery.
 </p><p>The daemon resolves the location of the assets based on the following
 rules:
 </p><div class="manual-tag-list">
@@ -311,14 +448,11 @@ rules:
 <div class="manual-tag-name">
 ZIP_Filename
 </div><div class="manual-tag-description">
-If only a filename is provided (e.g., commander.zip),
-the daemon initiates a search within the standard installation
-data directories. It first checks the directory associated
-with the configured installation prefix, located at
-$PREFIX/share/snapraidd/, and then the system-wide data
-directory at /usr/share/snapraidd/.
-</div> <!-- description -->
-</div> <!-- entry -->
+If a simple filename is provided (e.g., commander.zip),
+the daemon searches for it in $PREFIX/share/snapraidd/ or
+/usr/share/snapraidd/.
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 ZIP_Path
@@ -327,17 +461,17 @@ If a path to a ZIP file is provided, it must be absolute
 (e.g., /opt/snapraid/ui.zip). The daemon will attempt to use
 this specific file exclusively and will not perform a search
 in system directories.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 Directories
 </div><div class="manual-tag-description">
 If the target is a directory rather than a ZIP archive,
 the path must be absolute (e.g., /var/www/snapraid-ui/).
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <p>If the specified path or filename cannot be resolved, if a directory
 path is not absolute, or if the ZIP archive is inaccessible or
 malformed, the built-in HTTP server will be unable to serve the web
@@ -356,153 +490,260 @@ net_config_full_access option is enabled.
 <h3 id="sec4-2-1" class="manual-title-level-3">
 maintenance_schedule
 </h3>
-<p>Defines when the automated sync, scrub, and report sequence occurs
-(e.g., `daily 02:00` or `weekly Mon 03:00`).
+<p>Defines the timing for the automated maintenance sequence, which
+consists of a sync, followed by a scrub, and concluding with a report.
+If this option is unset, automated maintenance is disabled.
+</p><p>The format must be either "daily HH:MM" or "weekly [Day] HH:MM".
+Hours are specified in a 24-hour format (00-23), and days are
+represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-2-2" class="manual-title-level-3">
 sync_threshold_deletes
 </h3>
-<p>Maximum number of deleted/missing files allowed before a scheduled
-sync is aborted to prevent accidental parity loss.
+<p>Sets the maximum number of deleted or missing files allowed before a
+sync operation is automatically aborted. This serves as a safety
+mechanism to prevent accidental parity loss due to unintended mass
+deletions. This threshold is enforced during scheduled runs and
+maintenance API calls, but is bypassed for standalone sync API
+requests to allow for manual overrides.
+Set to 0 to disable this check.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-2-3" class="manual-title-level-3">
 sync_threshold_updates
 </h3>
-<p>Maximum number of modified files allowed before a scheduled sync is
-suspended.
+<p>Sets the maximum number of modified or updated files allowed before a
+sync operation is aborted. Similar to the delete threshold, this
+prevents the parity from being overwritten if an unexpected number
+of files have changed. This is enforced during scheduled runs but
+bypassed for manual standalone sync requests.
+Set to 0 to disable this check.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-2-4" class="manual-title-level-3">
 sync_prehash
 </h3>
-<p>Enables the SnapRAID prehash option to verify files before updating
-parity, protecting against faulty RAM or cables.
+<p>If set to 1, the sync command is executed with the --prehash option.
+This calculates hashes before moving data to verify integrity,
+helping to prevent silent errors caused by faulty memory.
+If missing or set to 0, no pre-hashing is performed.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-2-5" class="manual-title-level-3">
 sync_force_zero
 </h3>
-<p>Permits synchronization even if protected files have unexpectedly
-shrunk to zero bytes.
+<p>If set to 1, the daemon allows a sync to proceed even if it detects
+files that have shrunk to zero size since the last run.
+By default (missing or 0), the daemon will halt the sync to protect
+against potential data corruption or accidental file clearing.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-2-6" class="manual-title-level-3">
 scrub_percentage
 </h3>
-<p>The percentage of the array verified during the scrub phase of
-automated maintenance.
+<p>Determines the portion of the array to be verified during the scrub
+phase following a successful sync. The value can be an integer or a
+decimal (e.g., 0.7 for 0.7%).
+If missing or set to 0, the scrub phase is skipped entirely.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec4-2-7" class="manual-title-level-3">
 scrub_older_than
 </h3>
-<p>Restricts scrubbing to blocks that have not been verified within the
-specified number of days.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec4-2-8" class="manual-title-level-3">
-probe_interval_minutes
-</h3>
-<p>Interval for background health checks. SMART attributes are only
-queried if disks are already active to avoid waking them.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec4-2-9" class="manual-title-level-3">
-spindown_idle_minutes
-</h3>
-<p>Inactivity threshold (in minutes) after which the daemon will issue a
-spindown command to the disks.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec4-2-10" class="manual-title-level-3">
-script_run_as_user
-</h3>
-<p>The system user account utilized for the execution of pre- and
-post-run hooks.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec4-2-11" class="manual-title-level-3">
-script_pre_run/script_post_run
-</h3>
-<p>Absolute paths to executable shell scripts triggered before or after
-SnapRAID activity.
+<p>Specifies that only blocks older than the defined number of days
+should be scrubbed. This allows the daemon to focus verification on
+older data while skipping recently synced blocks.
+If missing or set to 0, no age-based filtering is applied.
 </p></div>
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-3" class="manual-title-level-2">
+Disk Monitoring &amp; Power
+</h2>
+<p>The following settings manage how the daemon interacts with physical
+hardware to monitor disk health and optimize energy consumption
+</p><div class="manual-section-level-3">
+<h3 id="sec4-3-1" class="manual-title-level-3">
+probe_interval_minutes
+</h3>
+<p>Controls the frequency at which the daemon checks disk SMART attributes.
+To prevent unnecessary disk wear, the daemon only performs this check
+if the disks are already spinning.
+If set to 0 or left blank, SMART monitoring is disabled.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-3-2" class="manual-title-level-3">
+spindown_idle_minutes
+</h3>
+<p>Manages power consumption by automatically spinning down disks after
+the specified duration of inactivity.
+</p><p>Unlike the internal task logic of the daemon, this timer monitors the
+global activity of the disks across the entire operating system.
+A disk will only be spun down if it has remained completely idle for
+the specified period. If any other application, service, or system
+process accesses the disk, the idle timer is reset. The daemon will
+not force a spindown if the disk is currently in use by the system.
+</p><p>If this option is unset, the daemon will not manage disk power states,
+relying instead on the OS or hardware controllers.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-3-3" class="manual-title-level-3">
+script_pre_run/script_post_run
+</h3>
+<p>Defines absolute paths to custom scripts to be executed immediately before
+or after the sync, scrub, check, or fix commands. These scripts allow
+for custom logic such as mounting drives or sending custom alerts.
+</p><p>security Requirements:
+- The path must be absolute (starting with /).
+- The script must not be world-writable (recommended permissions: 700 or 755).
+- The script owner must match the daemon user or be root.
+- The script must contain a valid shebang (e.g., #!/bin/sh).
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-3-4" class="manual-title-level-3">
+script_run_as_user
+</h3>
+<p>Specifies the user account used to execute the pre-run and post-run
+scripts. If this is missing or blank, scripts are executed with the
+same privileges as the daemon process.
+</p></div>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec4-4" class="manual-title-level-2">
 Logging &amp; Notifications
 </h2>
 <p>These settings control the logging and notification operations performed
 by the SnapRAID daemon.
 </p><div class="manual-section-level-3">
-<h3 id="sec4-3-1" class="manual-title-level-3">
+<h3 id="sec4-4-1" class="manual-title-level-3">
 log_directory
 </h3>
-<p>Path where individual SnapRAID command outputs are stored as `.log`
-files. Default: `/var/log/snapraid`.
+<p>The log_directory defines where the output of individual SnapRAID
+commands is stored. If left unset, the daemon defaults to
+/var/log/snapraid.
+</p><p>Setting this option to an empty value (log_directory = ) will
+explicitly disable the saving of command output to persistent files.
+</p><p>IMPORTANT: While it is possible to leave this empty to avoid saving files,
+these logs are used by the daemon to reconstruct the past state of the
+array (e.g., tracking the last successful sync or scrub). If no log
+directory is provided, the daemon will lose its "memory" of previous
+task results every time it is restarted.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-2" class="manual-title-level-3">
+<h3 id="sec4-4-2" class="manual-title-level-3">
 log_retention_days
 </h3>
-<p>Number of days to keep log files before they are purged.
+<p>To prevent your storage from filling up, log_retention_days sets the
+age at which old command logs are deleted. Logs are kept indefinitely
+if this is set to 0 or left unset.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-3" class="manual-title-level-3">
+<h3 id="sec4-4-3" class="manual-title-level-3">
 notify_syslog_enabled
 </h3>
-<p>Enables logging of daemon activity to the OS system log (syslog/journald).
+<p>When set to 1, daemon activity is sent to the operating system system
+log (syslog/journald). While lifecycle events like starting and
+stopping are always captured, task-related messages are filtered by
+<b>notify_syslog_level</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-4" class="manual-title-level-3">
+<h3 id="sec4-4-4" class="manual-title-level-3">
 notify_syslog_level
 </h3>
 <p>Sets the minimum severity for syslog task entries.
-Possible values: info, warning, error, critical. Default: error.
+Possible values are <b>info</b>, <b>warning</b>, <b>error</b>, and <b>critical</b>.
+The default is <b>error</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-5" class="manual-title-level-3">
+<h3 id="sec4-4-5" class="manual-title-level-3">
 notify_heartbeat
 </h3>
-<p>A shell command (e.g., `curl`) executed only upon task success, ideal
-for "dead man's switch" monitoring.
+<p>Defines a command to run ONLY if the maintenance task was successful
+(it is not triggered by other tasks, such as heal or undelete).
+This is ideal for external monitoring services like "Dead Man's Snitch"
+or Healthchecks.io. If this ping stops, it indicates the server is down
+or the task is failing.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-6" class="manual-title-level-3">
+<h3 id="sec4-4-6" class="manual-title-level-3">
 notify_result
 </h3>
-<p>A shell command triggered after task completion; it receives the task
-report via stdin.
+<p>Specifies a command triggered after every high-level task (maintenance,
+heal, or undelete). The command is only executed if the task's result
+matches the notify_result_level. The daemon pipes a structured,
+plain-text task report directly into the command's stdin.
+</p><p>The daemon automatically chooses a wide (80-col) or narrow (32-col)
+report based on the command and arguments used (e.g., presence of "mail"
+or "smtps"). Users can manually override this by adding --wide or
+--narrow to the command string. These tags are stripped before execution.
+</p><p>Before execution, the daemon scans the command string and replaces the
+following tokens with dynamic values corresponding to the current
+task's state and results:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+%s
+</div><div class="manual-tag-description">
+Subject string (e.g., "[ERROR] SnapRAID Maintenance").
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+%l
+</div><div class="manual-tag-description">
+Task level (critical, error, warning, info, debug).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+%n
+</div><div class="manual-tag-description">
+ntfy priority (urgent, high, default, low, min).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+%t
+</div><div class="manual-tag-description">
+ntfy tag (skull, warning, default, -1, +1, heavy_check_mark).
+</div>
+</div>
+</div>
+<p>If the command contains --mail-from or --mail-rcpt, the daemon
+automatically prepends standard email headers (From, To, Subject)
+followed by a blank line to the report text. This ensures
+compatibility with curl's SMTP engine.
+</p><p>When using curl for SMTP, it is recommended to use the --netrc flag.
+This allows curl to read credentials from a local file rather than
+exposing passwords in the command line or process list.
+</p><p>File format (~/.netrc):
+</p><pre>
+machine smtp.gmail.com
+login your_email@gmail.com
+password your-16-char-app-password
+</pre>
+<p>If <b>notify_run_as_user</b> is configured, ensure that user has a valid
+home directory containing a .netrc file with 600 permissions for SMTP
+authentication. Failure to do so may result in authentication errors
+(e.g., curl error 55).
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-7" class="manual-title-level-3">
+<h3 id="sec4-4-7" class="manual-title-level-3">
 notify_result_level
 </h3>
-<p>Controls the filter for `notify_result`. The notification is sent only
+<p>Controls the filter for <b>notify_result</b>. The notification is sent only
 if the task result is equal to or more severe than this level.
-Possible values: info, warning, error, critical. Default: error.
+Valid values are <b>info</b> (always send), <b>warning</b>, <b>error</b>, and <b>critical</b>.
+The default is <b>error</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-8" class="manual-title-level-3">
-notify_email_recipient
-</h3>
-<p>Local system email address for receiving health reports.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec4-3-9" class="manual-title-level-3">
-notify_email_level
-</h3>
-<p>Sets the minimum severity for email reports.
-Possible values: info, warning, error, critical. Default: error.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec4-3-10" class="manual-title-level-3">
+<h3 id="sec4-4-8" class="manual-title-level-3">
 notify_differences
 </h3>
-<p>If enabled, includes a detailed list of file changes (added/removed/modified)
-in the notification reports.
+<p>If set to 1, the daemon logs a detailed list of file changes discovered
+before a sync begins. If set to 0 or missing, no difference report is
+generated.
 </p></div>
 </div>
 </div>
@@ -513,8 +754,9 @@ Rest API
 <p>The SnapRAID Daemon provides a comprehensive RESTful JSON interface
 for monitoring and controlling the parity array.
 </p><p>For complete technical documentation, including request schemas and
-specific error codes, please refer to the snapraidd.yaml OpenAPI
-specification file.
+specific error codes, please refer to the <b>snapraidd.yaml</b> OpenAPI
+specification file typically located in the documentation directory of
+the installation.
 </p><div class="manual-section-level-2">
 <h2 id="sec5-1" class="manual-title-level-2">
 Maintenance &amp; Recovery
@@ -523,7 +765,7 @@ Maintenance &amp; Recovery
 These high-level endpoints encapsulate complex SnapRAID logic into
 single, automated tasks that manage the lifecycle of the array and the
 recovery of data.
-They typically end with a `report` command that generates a notification
+They typically end with a <b>report</b> command that generates a notification
 with a full report of the result of the operation.
 </p><div class="manual-section-level-3">
 <h3 id="sec5-1-1" class="manual-title-level-3">
@@ -760,96 +1002,96 @@ curl -X POST <a href="http://localhost:8080/snapraid/v1/schedule">http://localho
 up
 </div><div class="manual-tag-description">
 Spins up all drives in the array.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 down
 </div><div class="manual-tag-description">
 Spins down array drives to save power.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 probe
 </div><div class="manual-tag-description">
 Verifies the power status of all configured disks and gathers
 SMART information for those already spinning.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 smart
 </div><div class="manual-tag-description">
 Collects and parses SMART attributes from all drives to assess
 physical health.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 diff
 </div><div class="manual-tag-description">
 Scans the array to identify changed, added, or deleted files
 since the last sync.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 status
 </div><div class="manual-tag-description">
 Provides a summary of the array state, including parity
 levels and data distribution.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 sync
 </div><div class="manual-tag-description">
 Updates the parity information to match the current state of
 the data disks.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 scrub
 </div><div class="manual-tag-description">
 Verifies the integrity of the data and parity by recalculating
 checksums for a portion of the array.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 check
 </div><div class="manual-tag-description">
 Performs a full verification of the array integrity without
 modifying any data.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 fix
 </div><div class="manual-tag-description">
 Attempts to recover deleted files or repair corrupted data using
 the parity information.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 report
 </div><div class="manual-tag-description">
 Generates a comprehensive summary of the last operations and
 array statistics.
-</div> <!-- description -->
-</div> <!-- entry -->
+</div>
+</div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 down_idle
 </div><div class="manual-tag-description">
 Executes a conditional spindown operation of the disks that
 have exceeded the 'spindown_idle_minutes' threshold.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -874,19 +1116,19 @@ or misbehaving daemon. No cleanup or graceful shutdown is
 performed.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec8" class="manual-title-level-1">
+<h1 id="sec7" class="manual-title-level-1">
 Files
 </h1>
 <p>$PREFIX/etc/snapraidd.conf
 </p><p>The primary configuration file location. The $PREFIX variable
 represents the installation path chosen at build time (typically
-via the `--prefix` argument to the configure script). Common
-values include `/usr/local` or `/usr`. If this file does not
-exist, the daemon falls back to `/etc/snapraidd.conf`.
+via the <b>--prefix</b> argument to the configure script). Common
+values include <b>/usr/local</b> or <b>/usr</b>. If this file does not
+exist, the daemon falls back to <b>/etc/snapraidd.conf</b>.
 </p><p>$PREFIX/share/snapraidd
 </p><p>The primary system data directory. This is the first location
 searched for the web dashboard ZIP file (e.g., commander.zip).
-If not found here, the daemon falls back to `/usr/share/snapraidd`.
+If not found here, the daemon falls back to <b>/usr/share/snapraidd</b>.
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -894,9 +1136,9 @@ If not found here, the daemon falls back to `/usr/share/snapraidd`.
 </div><div class="manual-option-description">
 The secondary/system-wide configuration file location, used if
 the prefix-specific file is missing.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -904,18 +1146,18 @@ the prefix-specific file is missing.
 </div><div class="manual-option-description">
 The secondary/system-wide data directory, used as a fallback for
 web assets.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
 /run/snapraidd.pid
 </div><div class="manual-option-description">
 Default PID file location.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
@@ -924,9 +1166,9 @@ Default PID file location.
 Default directory for SnapRAID command execution logs. This
 directory contains the output of the SnapRAID binary itself,
 rather than the daemon's service logs.
-</div> <!-- description -->
-</div> <!-- entry -->
-</div> <!-- list -->
+</div>
+</div>
+</div>
 </div>
 
 
