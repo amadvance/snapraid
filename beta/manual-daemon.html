@@ -594,12 +594,21 @@ script_pre_run/script_post_run
 <p>Defines absolute paths to custom scripts to be executed immediately before
 or after the sync, scrub, check, or fix commands. These scripts allow
 for custom logic such as mounting drives or sending custom alerts.
-</p><p>security Requirements:
-- The path must be absolute (starting with /).
-- The script must not be world-writable (recommended permissions: 700 or 755).
-- The script owner must match the daemon user or be root.
-- The script must contain a valid shebang (e.g., #!/bin/sh).
-</p></div>
+</p><ul>
+<li>
+The path must be absolute (starting with /).
+</li>
+<li>
+The script must not be world-writable (recommended permissions: 700 or 755).
+</li>
+<li>
+The script owner must match the daemon user or be root.
+</li>
+<li>
+The script must contain a valid shebang (e.g., #!/bin/sh).
+</li>
+</ul>
+</div>
 <div class="manual-section-level-3">
 <h3 id="sec4-3-4" class="manual-title-level-3">
 script_run_as_user
@@ -745,6 +754,60 @@ notify_differences
 before a sync begins. If set to 0 or missing, no difference report is
 generated.
 </p></div>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec4-5" class="manual-title-level-2">
+Notification Examples:
+</h2>
+<p>The following examples demonstrate common notification and heartbeat
+configurations
+</p><div class="manual-section-level-3">
+<h3 id="sec4-5-1" class="manual-title-level-3">
+External Heartbeat Monitoring (Healthchecks.io)
+</h3>
+<p>To monitor that automated maintenance is running successfully, use a service
+like Healthchecks.io.
+</p><p>In this example, curl sends a simple GET request to a unique monitoring URL.
+The flags ensure that curl fails silently on server errors (-f), does not hang
+indefinitely (--max-time), and attempts to overcome transient network issues (--retry).
+</p><pre>
+notify_heartbeat = curl -f --max-time 30 --retry 3 <a href="https://hc-ping.com/your_private_uuid">https://hc-ping.com/your_private_uuid</a>
+</pre>
+</div>
+<div class="manual-section-level-3">
+<h3 id="sec4-5-2" class="manual-title-level-3">
+Push Notifications (ntfy.sh)
+</h3>
+<p>This uses curl to send the report as a POST request to a push notification service.
+It utilizes the --narrow flag to ensure the report is readable on mobile devices
+and maps SnapRAID status to ntfy titles, priorities, and emojis via placeholders.
+</p><pre>
+notify_result = curl --narrow -f --max-time 30 --retry 3 -H "Title: %s" -H "Priority: %n" -H "Tag: %t" -H "Email: your_email@example.com" --data-binary @- <a href="https://ntfy.sh/your_private_topic">https://ntfy.sh/your_private_topic</a>
+</pre>
+</div>
+<div class="manual-section-level-3">
+<h3 id="sec4-5-3" class="manual-title-level-3">
+Local System Mail (mail)
+</h3>
+<p>A traditional approach using the standard Linux mail utility. This is
+ideal if you have a local Mail Transfer Agent (MTA) like Postfix or
+Exim already configured on your system.
+</p><pre>
+notify_result = mail -s "%s" your_user@localhost
+</pre>
+</div>
+<div class="manual-section-level-3">
+<h3 id="sec4-5-4" class="manual-title-level-3">
+Direct Delivery (SMTP-over-SSL)
+</h3>
+<p>This leverages curl's built-in SMTP engine for direct delivery to an
+external provider. By using the --netrc option, login credentials
+remain secured in a separate file rather than being exposed in the
+process list or logs.
+</p><pre>
+notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-from your_email@gmail.com --mail-rcpt your_email@gmail.com --upload-file -
+</pre>
+</div>
 </div>
 </div>
 <div class="manual-section-level-1">
