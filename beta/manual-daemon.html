@@ -256,7 +256,7 @@ typically located in the documentation directory of the installation.
 Network &amp; REST API
 </h2>
 <p>These settings control the network interface. These options are not
-visible from the REST API. They requires a manual edit of the
+visible from the REST API. They require a manual edit of the
 configuration file and a configuration reload (SIGHUP) to apply.
 </p><div class="manual-section-level-3">
 <h3 id="sec4-1-1" class="manual-title-level-3">
@@ -276,7 +276,7 @@ The format follows [IP_ADDRESS:]PORT[s].
 </p><div class="manual-tag-list">
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-IPv4IPv6
+IPv4/IPv6
 </div><div class="manual-tag-description">
 Bind to specific local addresses (e.g., 127.0.0.1:8080 or
 [::1]:8080).
@@ -292,7 +292,7 @@ IPv4 interfaces (0.0.0.0).
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-MultiplePorts
+Multiple_Ports
 </div><div class="manual-tag-description">
 Multiple listeners can be configured by providing a
 comma-separated list.
@@ -365,9 +365,6 @@ net_config_full_access
 </h3>
 <p>A security flag that determines whether sensitive configuration parameters
 can be modified via the REST API.
-</p><p>By default (0), sensitive options such as script paths, log directories,
-and notification users are read-only to prevent unauthorized privilege
-escalation or system modification.
 </p><p>By default (0), security-sensitive options are strictly read-only to
 prevent unauthorized system modifications or privilege escalation
 through the web interface.
@@ -547,9 +544,9 @@ against potential data corruption or accidental file clearing.
 <h3 id="sec4-2-6" class="manual-title-level-3">
 scrub_percentage
 </h3>
-<p>Determines the portion of the array to be verified during the scrub
-phase following a successful sync. The value can be an integer or a
-decimal (e.g., 0.7 for 0.7%).
+<p>Determines the portion of the array verified after a successful sync.
+You may use decimal points to specify fractions of a percent
+(e.g., 0.7 to verify 0.7% of the array).
 If missing or set to 0, the scrub phase is skipped entirely.
 </p></div>
 <div class="manual-section-level-3">
@@ -817,7 +814,7 @@ notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
-Rest API
+REST API
 </h1>
 <p>The SnapRAID Daemon provides a comprehensive RESTful JSON interface
 for monitoring and controlling the parity array.
