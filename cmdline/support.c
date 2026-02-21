@@ -1702,6 +1702,80 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
+/*
+ * scomma()
+ *
+ * Matches a literal prefix (the second argument), then parses the following
+ * unsigned 64-bit integer, allowing comma thousand separators (U.S. style).
+ *
+ * Whitespace is flexible around the prefix and before the number.
+ * Commas are ignored during number parsing but basic validation is applied.
+ *
+ * Returns:
+ *   1 - successfully parsed a valid uint64_t
+ *   0 - prefix mismatch, no digits found, invalid format or overflow
+ */
+int scomma(const char* str, const char* prefix, uint64_t* value)
+{
+	const char *s = str;
+	const char *f = prefix;
+
+	/* match literal prefix, tolerating whitespace differences */
+	while (*f) {
+		/* skip whitespace in both strings */
+		while (isspace((unsigned char)*f)) f++;
+		while (isspace((unsigned char)*s)) s++;
+
+		if (*f == '\0') break;
+		if (*s != *f) {
+			return 0; /* prefix mismatch */
+		}
+		s++;
+		f++;
+	}
+
+	/* skip whitespace before the number starts */
+	while (isspace((unsigned char)*s)) s++;
+
+	uint64_t num = 0;
+	int digits_seen = 0;
+	int comma_seen = 0;
+
+	/* parse digits, ignoring commas */
+	while (*s) {
+		if (*s >= '0' && *s <= '9') {
+			unsigned digit = (unsigned)(*s - '0');
+
+			/* check for uint64_t overflow before multiplying */
+			if (num > (UINT64_MAX - digit) / 10ULL) {
+				return 0;
+			}
+
+			num = num * 10ULL + digit;
+			digits_seen++;
+			comma_seen = 0;
+		} else if (*s == ',') {
+			/* disallow leading or consecutive commas */
+			if (digits_seen == 0 || comma_seen) {
+				return 0;
+			}
+			comma_seen = 1;
+		} else {
+			/* any other character ends the number */
+			break;
+		}
+		s++;
+	}
+
+	/* require at least one digit */
+	if (digits_seen == 0) {
+		return 0;
+	}
+
+	*value = num;
+	return 1;
+}
+
 int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	unsigned i;
@@ -1787,7 +1861,47 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			strtrim(model);
 		} else if (sscanf(s, "Serial number: %63s", serial) == 1) {
 			strtrim(serial);
-			/* SCSI */
+/* SCSI */
+/*
+   Vendor:               WD
+   Product:              WD4001FYYG-01SL3
+   Revision:             VR08
+   Compliance:           SPC-4
+   User Capacity:        4,000,787,030,016 bytes [4.00 TB]
+   Logical block size:   512 bytes
+   Rotation Rate:        7200 rpm
+   Form Factor:          3.5 inches
+   Logical Unit id:      0x50000c0f01f55dd0
+   Serial number:        WMC1F0D41KD5
+   Device type:          disk
+   Transport protocol:   SAS (SPL-3)
+   Local Time is:        Fri Jan 28 14:14:51 2022 CET
+   SMART support is:     Available - device has SMART capability.
+   SMART support is:     Enabled
+   Temperature Warning:  Enabled
+
+   Current Drive Temperature:	 38 C
+   Drive Trip Temperature:		65 C
+
+   Manufactured in week 25 of year 2012
+   Specified cycle count over device lifetime:  10000
+   Accumulated start-stop cycles:  103
+   Specified load-unload count over device lifetime:  300000
+   Accumulated load-unload cycles:  103
+   Elements in grown defect list: 5
+
+   Vendor (Seagate) cache information
+   Blocks sent to initiator = 569127595
+   Blocks received from initiator = 2633690060
+   Blocks read from cache and sent to initiator = 1881027254
+   Number of read and write commands whose size <= segment size = 181284019
+   Number of read and write commands whose size > segment size = 0
+
+   Vendor (Seagate/Hitachi) factory information
+   number of hours powered up = 25024.80
+   number of minutes until next internal SMART test = 42
+
+ */
 		} else if (sscanf(s, "Transport protocol: %63[^\n]", inter) == 1) {
 			if (strcmp(inter, "Fibre channel (FCP-4)") == 0)
 				strcpy(inter, "Fibre");
@@ -1813,17 +1927,43 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 				strcpy(inter, "PCIe");
 			else
 				strcpy(inter, "SCSI");
+			/* map generic attributes to SMART attr */
 		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT].raw) == 1) {
+			pathcpy(smart[SMART_REALLOCATED_SECTOR_COUNT].name, sizeof(smart[SMART_REALLOCATED_SECTOR_COUNT].name), "Elements_In_Grown_Defect_List");
 		} else if (sscanf(s, "Current Drive Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS].raw) == 1) {
+			pathcpy(smart[SMART_TEMPERATURE_CELSIUS].name, sizeof(smart[SMART_TEMPERATURE_CELSIUS].name), "Current_Drive_Temperature");
 		} else if (sscanf(s, "Drive Trip Temperature: %" SCNu64, &smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].raw) == 1) {
+			pathcpy(smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].name, sizeof(smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS].name), "Drive_Trip_Temperature");
 		} else if (sscanf(s, "Accumulated start-stop cycles: %" SCNu64, &smart[SMART_START_STOP_COUNT].raw) == 1) {
+			pathcpy(smart[SMART_START_STOP_COUNT].name, sizeof(smart[SMART_START_STOP_COUNT].name), "Accumulated_Start-Stop_Cycles");
 		} else if (sscanf(s, "Accumulated load-unload cycles: %" SCNu64, &smart[SMART_LOAD_CYCLE_COUNT].raw) == 1) {
+			pathcpy(smart[SMART_LOAD_CYCLE_COUNT].name, sizeof(smart[SMART_LOAD_CYCLE_COUNT].name), "Accumulated_Load-Unload_Cycles");
 		} else if (sscanf(s, "  number of hours powered up = %" SCNu64, &smart[SMART_POWER_ON_HOURS].raw) == 1) { /* note "n" of "number" lower case */
+			pathcpy(smart[SMART_POWER_ON_HOURS].name, sizeof(smart[SMART_POWER_ON_HOURS].name), "Number_Of_Hours_Powered_Up");
+			/* special entries */
 		} else if (sscanf(s, "Non-medium error count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR_PROTOCOL].raw = raw;
-		} else if (sscanf(s, "Medium error count: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR_MEDIUM].raw = raw;
-			/* ATA */
+/* ATA */
+/*
+   ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+   1 Raw_Read_Error_Rate     0x002f   200   200   051    Pre-fail  Always       -       0
+   3 Spin_Up_Time            0x0027   172   169   021    Pre-fail  Always       -       8383
+   4 Start_Stop_Count        0x0032   100   100   000    Old_age   Always       -       24
+   5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always       -       0
+   7 Seek_Error_Rate         0x002e   200   200   000    Old_age   Always       -       0
+   9 Power_On_Hours          0x0032   083   083   000    Old_age   Always       -       12471
+   10 Spin_Retry_Count        0x0032   100   253   000    Old_age   Always       -       0
+   11 Calibration_Retry_Count 0x0032   100   253   000    Old_age   Always       -       0
+   12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       24
+   192 Power-Off_Retract_Count 0x0032   200   200   000    Old_age   Always       -       9
+   193 Load_Cycle_Count        0x0032   157   157   000    Old_age   Always       -       131565
+   194 Temperature_Celsius     0x0022   127   119   000    Old_age   Always       -       25
+   196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always       -       0
+   197 Current_Pending_Sector  0x0032   200   200   000    Old_age   Always       -       0
+   198 Offline_Uncorrectable   0x0030   100   253   000    Old_age   Offline      -       0
+   199 UDMA_CRC_Error_Count    0x0032   200   200   000    Old_age   Always       -       0
+   200 Multi_Zone_Error_Rate   0x0008   200   200   000    Old_age   Offline      -       0
+ */
 		} else if (smatch(s, "ATA Version is:") == 0) {
 			strcpy(inter, "ATA");
 		} else if (smatch(s, "SATA Version is:") == 0) {
@@ -1832,20 +1972,49 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			strcpy(inter, "PCIe");
 		} else if (smatch(s, "Transport Type:   Parallel") == 0) {
 			strcpy(inter, "PATA");
+			/* special entries */
 		} else if (smatch(s, "No Errors Logged") == 0) {
 			smart[SMART_ERROR_PROTOCOL].raw = 0;
 		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR_PROTOCOL].raw = raw;
-			/* NVME */
+/* NVME */
+/*
+   Critical Warning:                   0x00
+   Temperature:                        55 Celsius
+   Available Spare:                    100%
+   Available Spare Threshold:          10%
+   Percentage Used:                    8%
+   Data Units Read:                    213,006,510 [109 TB]
+   Data Units Written:                 549,370,112 [281 TB]
+   Host Read Commands:                 11,210,192,197
+   Host Write Commands:                20,687,602,229
+   Controller Busy Time:               14,055
+   Power Cycles:                       39
+   Power On Hours:                     4,204
+   Unsafe Shutdowns:                   9
+   Media and Data Integrity Errors:    0
+   Error Information Log Entries:      1,479,242
+   Warning  Comp. Temperature Time:    0
+   Critical Comp. Temperature Time:    0
+   Temperature Sensor 2:               75 Celsius
+   Thermal Temp. 1 Total Time:         58745
+ */
 		} else if (smatch(s, "NVMe Version:") == 0) {
 			strcpy(inter, "NVMe");
-		} else if (sscanf(s, "Media and Data Integrity Errors: %" SCNu64, &raw) == 1) {
+			/* special entries */
+		} else if (scomma(s, "Media and Data Integrity Errors:", &raw) == 1) {
 			smart[SMART_ERROR_MEDIUM].raw = raw;
-		} else if (sscanf(s, "Error Information Log Entries: %" SCNu64, &raw) == 1) {
+		} else if (scomma(s, "Error Information Log Entries:", &raw) == 1) {
 			smart[SMART_ERROR_PROTOCOL].raw = raw;
-		} else if (sscanf(s, "Percentage Used: %" SCNu64 "%%", &raw) == 1) { /* NVME */
-			if (raw <= 100)
-				smart[SMART_WEAR_LEVEL].raw = raw;
+		} else if (sscanf(s, "Percentage Used: %" SCNu64 "%%", &raw) == 1) {
+			smart[SMART_WEAR_LEVEL].raw = raw; /* take care that it can be greather than 100%, meaning that it's used over the expected lifetime */
+			/* map generic attributes to SMART attr */
+		} else if (sscanf(s, "Temperature: %" SCNu64, &smart[SMART_TEMPERATURE_CELSIUS].raw) == 1) {
+			pathcpy(smart[SMART_TEMPERATURE_CELSIUS].name, sizeof(smart[SMART_TEMPERATURE_CELSIUS].name), "Temperature");
+		} else if (scomma(s, "Power On Hours:", &smart[SMART_POWER_ON_HOURS].raw) == 1) {
+			pathcpy(smart[SMART_POWER_ON_HOURS].name, sizeof(smart[SMART_POWER_ON_HOURS].name), "Power_On_Hours");
+		} else if (scomma(s, "Power Cycles:", &smart[SMART_POWER_CYCLE_COUNT].raw) == 1) {
+			pathcpy(smart[SMART_POWER_CYCLE_COUNT].name, sizeof(smart[SMART_POWER_CYCLE_COUNT].name), "Power_Cycles");
 			/* Attributes */
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
