@@ -71,6 +71,20 @@ unsigned char random_u8(void);
 uint64_t random_u64(void);
 
 /****************************************************************************/
+/* error */
+
+/**
+ * Return if the error is at hardware level
+ */
+int is_hw(int err);
+
+/**
+ * Log errors with standard messages
+ */
+void log_fatal_errno(int err, const char* name);
+void log_error_errno(int err, const char* name);
+
+/****************************************************************************/
 /* log */
 
 /**

@@ -30,30 +30,10 @@
 
 static const char* es(int err)
 {
-	if (err == EIO)
+	if (is_hw(err))
 		return "error_io";
 	else
 		return "error";
-}
-
-static void log_fatal_errno(int err, const char* name)
-{
-	if (err == EIO) {
-		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
-	} else if (err == EACCES) {
-		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
-	} else if (err == ENOSPC) {
-		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
-	} else {
-		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
-	}
-}
-
-static void log_error_errno(int err, const char* name)
-{
-	if (err == EIO) {
-		log_fatal(err, "DANGER! Unexpected input/output error in disk %s.\n", name);
-	}
 }
 
 /**
@@ -174,7 +154,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
 
-			if (errno == EIO) {
+			if (is_hw(errno)) {
 				task->state = TASK_STATE_IOERROR;
 			} else {
 				task->state = TASK_STATE_ERROR;
@@ -187,7 +167,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	ret = handle_open(handle, task->file, state->file_mode, log_error, 0); /* for missing file don't output a message */
 	if (ret == -1) {
 		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
-		if (errno == EIO) {
+		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
@@ -218,7 +198,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
 	if (task->read_size == -1) {
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
-		if (errno == EIO) {
+		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_error_errno(errno, disk->name);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
@@ -250,7 +230,7 @@ static void scrub_parity_reader(struct snapraid_worker* worker, struct snapraid_
 	ret = parity_read(parity_handle, blockcur, buffer, state->block_size, log_error);
 	if (ret == -1) {
 		log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
-		if (errno == EIO) {
+		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_error_errno(errno, lev_config_name(level));
 			task->state = TASK_STATE_IOERROR_CONTINUE;
@@ -742,7 +722,7 @@ bail:
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
-			if (errno == EIO) {
+			if (is_hw(errno)) {
 				++io_error;
 			} else {
 				++soft_error;

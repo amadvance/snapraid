@@ -30,38 +30,10 @@
 
 static const char* es(int err)
 {
-	if (err == EIO)
+	if (is_hw(err))
 		return "error_io";
 	else
 		return "error";
-}
-
-static void log_fatal_errno(int err, const char* name)
-{
-	if (err == EIO) {
-		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
-	} else if (err == EACCES) {
-		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
-	} else if (err == ENOSPC) {
-		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
-	} else {
-		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
-	}
-}
-
-static void log_error_errno(int err, const char* name)
-{
-	if (err == EIO) {
-		log_fatal(err, "DANGER! Unexpected input/output error in disk %s.\n", name);
-	} else if (err == EACCES) {
-		log_error(err, "WARNING! Grant permission in the disk %s.\n", name);
-		log_error(err, "Rerun the sync command when finished.\n");
-	} else if (err == ENOSPC) {
-		log_error(err, "WARNING! Ensure there is free space on the disk %s.\n", name);
-	} else if (err == ENOENT) {
-		log_error(err, "WARNING! You cannot modify files during a sync.\n");
-		log_error(err, "Rerun the sync command when finished.\n");
-	}
 }
 
 static int state_hash_process(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, int* skip_sync)
@@ -183,7 +155,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping at block %u\n", blockcur);
 
-					if (errno == EIO) {
+					if (is_hw(errno)) {
 						++io_error;
 					} else {
 						++soft_error;
@@ -216,7 +188,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* LCOV_EXCL_START */
 				log_fatal_errno(errno, disk->name);
 
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					log_fatal(errno, "Stopping at block %u\n", blockcur);
 					++io_error;
 				} else {
@@ -259,7 +231,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 				log_fatal_errno(errno, disk->name);
 
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					log_fatal(errno, "Stopping at block %u\n", blockcur);
 					++io_error;
 				} else {
@@ -349,7 +321,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				log_fatal_errno(errno, disk->name);
 				log_fatal(errno, "Stopping at block %u\n", blockmax);
 
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					++io_error;
 				} else {
 					++soft_error;
@@ -398,7 +370,7 @@ bail:
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
-			if (errno == EIO) {
+			if (is_hw(errno)) {
 				++io_error;
 			} else {
 				++soft_error;
@@ -549,7 +521,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
 
-			if (errno == EIO) {
+			if (is_hw(errno)) {
 				task->state = TASK_STATE_IOERROR;
 			} else {
 				task->state = TASK_STATE_ERROR;
@@ -582,7 +554,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		/* LCOV_EXCL_START */
 		log_fatal_errno(errno, disk->name);
 
-		if (errno == EIO) {
+		if (is_hw(errno)) {
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
 			task->state = TASK_STATE_IOERROR;
 		} else {
@@ -621,7 +593,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		/* LCOV_EXCL_START */
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 
-		if (errno == EIO) {
+		if (is_hw(errno)) {
 			log_error_errno(errno, disk->name);
 			/* continue until the error limit is reached */
 			task->state = TASK_STATE_IOERROR_CONTINUE;
@@ -656,7 +628,7 @@ static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_t
 		/* LCOV_EXCL_START */
 		log_tag("parity_%s:%u:%s: Write error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 
-		if (errno == EIO) {
+		if (is_hw(errno)) {
 			log_error_errno(errno, lev_config_name(level));
 			/* continue until the error limit is reached */
 			task->state = TASK_STATE_IOERROR_CONTINUE;
@@ -1091,7 +1063,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(l), strerror(errno));
-						if (errno == EIO) {
+						if (is_hw(errno)) {
 							log_error_errno(errno, lev_config_name(l));
 							if (io_error >= state->opt.io_error_limit) {
 								log_fatal(errno, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_config_name(l));
@@ -1441,7 +1413,7 @@ bail:
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
-			if (errno == EIO) {
+			if (is_hw(errno)) {
 				++io_error;
 			} else {
 				++soft_error;

@@ -134,6 +134,114 @@ uint64_t random_u64(void)
 }
 
 /****************************************************************************/
+/* error */
+
+int is_hw(int err)
+{
+	if (err == EIO)
+		return 1;
+#ifdef EFSCORRUPTED
+	if (err == EFSCORRUPTED) /* used by XFS inside the kernel - never expected in user mode as converted to EUCLEAN */
+		return 1;
+#endif
+#ifdef EUCLEAN
+	if (err == EUCLEAN) /* used by XFS at user level instead of EFSCORRUPTED */
+		return 1;
+#endif
+#ifdef EBADCRC
+	if (err == EBADCRC) /* used by BTRFS - never expected in user mode as converted to EIO */
+		return 1;
+#endif
+#ifdef EBADMSG
+	if (err == EBADMSG) /* used by BTRFS - never expected in user mode as converted to EIO */
+		return 1;
+#endif
+#ifdef ENOMEDIUM
+	if (err == ENOMEDIUM) /* medium removed */
+		return 1;
+#endif
+#ifdef EHWPOISON
+	if (err == EHWPOISON) /* hardware memory error */
+		return 1;
+#endif
+	return 0;
+}
+
+void log_fatal_errno(int err, const char* name)
+{
+	if (err == EIO) {
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
+#ifdef EFSCORRUPTED
+	} else if (err == EFSCORRUPTED) {
+		log_fatal(err, "DANGER! Unexpected corrupted error in disk %s. It isn't possible to continue.\n", name);
+#endif
+#ifdef EUCLEAN
+	} else if (err == EUCLEAN) {
+		log_fatal(err, "DANGER! Unexpected corrupted error in disk %s. It isn't possible to continue.\n", name);
+#endif
+#ifdef EBADCRC
+	} else if (err == EBADCRC) {
+		log_fatal(err, "DANGER! Unexpected bad crc error in disk %s. It isn't possible to continue.\n", name);
+#endif
+#ifdef EBADMSG
+	} else if (err == EBADMSG) {
+		log_fatal(err, "DANGER! Unexpected bad crc error in disk %s. It isn't possible to continue.\n", name);
+#endif
+#ifdef ENOMEDIUM
+	} else if (err == ENOMEDIUM) {
+		log_fatal(err, "DANGER! Unexpected medium removed in disk %s. It isn't possible to continue.\n", name);
+#endif
+#ifdef EHWPOISON
+	} else if (err == EHWPOISON) {
+		log_fatal(err, "DANGER! Unexpected memory error in disk %s. It isn't possible to continue.\n", name);
+#endif
+	} else if (err == EACCES) {
+		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
+	} else if (err == ENOSPC) {
+		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
+	} else {
+		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
+	}
+}
+
+void log_error_errno(int err, const char* name)
+{
+	if (err == EIO) {
+		log_fatal(err, "DANGER! Unexpected input/output error in disk %s.\n", name);
+#ifdef EFSCORRUPTED
+	} else if (err == EFSCORRUPTED) {
+		log_fatal(err, "DANGER! Unexpected corrupted error in disk %s.\n", name);
+#endif
+#ifdef EUCLEAN
+	} else if (err == EUCLEAN) {
+		log_fatal(err, "DANGER! Unexpected corrupted error in disk %s.\n", name);
+#endif
+#ifdef EBADCRC
+	} else if (err == EBADCRC) {
+		log_fatal(err, "DANGER! Unexpected bad crc error in disk %s.\n", name);
+#endif
+#ifdef EBADMSG
+	} else if (err == EBADMSG) {
+		log_fatal(err, "DANGER! Unexpected bad crc error in disk %s.\n", name);
+#endif
+#ifdef ENOMEDIUM
+	} else if (err == ENOMEDIUM) {
+		log_fatal(err, "DANGER! Unexpected medium removed in disk %s.\n", name);
+#endif
+#ifdef EHWPOISON
+	} else if (err == EHWPOISON) {
+		log_fatal(err, "DANGER! Unexpected memory error in disk %s.\n", name);
+#endif
+	} else if (err == EACCES) {
+		log_error(err, "WARNING! Grant permission in the disk %s.\n", name);
+	} else if (err == ENOSPC) {
+		log_error(err, "WARNING! Ensure there is free space on the disk %s.\n", name);
+	} else if (err == ENOENT) {
+		log_error(err, "WARNING! You cannot modify files while running.\n");
+	}
+}
+
+/****************************************************************************/
 /* print */
 
 int msg_level = 0;
@@ -211,7 +319,7 @@ void log_fatal(int err, const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		if (err == EIO)
+		if (is_hw(err))
 			fprintf(stdlog, "msg:fatal_hardware: ");
 		else
 			fprintf(stdlog, "msg:fatal: ");
@@ -239,7 +347,7 @@ void log_error(int err, const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		if (err == EIO)
+		if (is_hw(err))
 			fprintf(stdlog, "msg:error_hardware: ");
 		else
 			fprintf(stdlog, "msg:error: ");
@@ -267,7 +375,7 @@ void log_expected(int err, const char* format, ...)
 	lock_msg();
 
 	if (stdlog) {
-		if (err == EIO)
+		if (is_hw(err))
 			fprintf(stdlog, "msg:error_hardware: "); /* we never expect an hardware error */
 		else
 			fprintf(stdlog, "msg:expected: ");

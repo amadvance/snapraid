@@ -33,23 +33,10 @@
 
 static const char* es(int err)
 {
-	if (err == EIO)
+	if (is_hw(err))
 		return "error_io";
 	else
 		return "error";
-}
-
-static void log_fatal_errno(int err, const char* name)
-{
-	if (err == EIO) {
-		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
-	} else if (err == EACCES) {
-		log_fatal(err, "WARNING! Grant permission in the disk %s. It isn't possible to continue.\n", name);
-	} else if (err == ENOSPC) {
-		log_fatal(err, "WARNING! Ensure there is free space on the disk %s. It isn't possible to continue.\n", name);
-	} else {
-		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
-	}
 }
 
 /**
@@ -1134,7 +1121,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 						log_tag("%s:%u:%s:%s: Open error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 
-						if (errno == EIO) {
+						if (is_hw(errno)) {
 							++io_error;
 						} else {
 							++soft_error;
@@ -1219,7 +1206,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					++io_error;
 				} else {
 					++soft_error;
@@ -1321,7 +1308,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 						buffer_recov[l] = 0; /* no parity to use */
 
-						if (errno == EIO) {
+						if (is_hw(errno)) {
 							++io_error;
 						} else {
 							++soft_error;
@@ -1569,7 +1556,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				log_error(errno, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
 				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub, esc_buffer));
 
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					++io_error;
 				} else {
 					++soft_error;
@@ -1689,7 +1676,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					log_error(errno, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
 					log_tag("hardlink_%s:%s:%s:%s: Hardlink stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
 
-					if (errno == EIO) {
+					if (is_hw(errno)) {
 						++io_error;
 					} else {
 						++soft_error;
@@ -1723,7 +1710,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					log_error(errno, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
 					log_tag("hardlink_%s:%s:%s:%s: Hardlink to stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
 
-					if (errno == EIO) {
+					if (is_hw(errno)) {
 						++io_error;
 					} else {
 						++soft_error;
@@ -1751,7 +1738,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					log_error(errno, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
 					log_tag("symlink_%s:%s:%s: Symlink read error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
 
-					if (errno == EIO) {
+					if (is_hw(errno)) {
 						++io_error;
 					} else {
 						++soft_error;
@@ -1871,7 +1858,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				log_error(errno, "Error stating dir '%s'. %s.\n", path, strerror(errno));
 				log_tag("dir_%s:%s:%s: Dir stat error. %s.\n", es(errno), disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
 
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					++io_error;
 				} else {
 					++soft_error;
@@ -2141,7 +2128,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 				if (ret == -1) {
 					log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
-					if (errno == EIO) {
+					if (is_hw(errno)) {
 						log_fatal_errno(errno, lev_config_name(l));
 						exit(EXIT_FAILURE);
 					}
@@ -2178,7 +2165,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 			if (ret == -1) {
 				log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
-				if (errno == EIO) {
+				if (is_hw(errno)) {
 					log_fatal_errno(errno, lev_config_name(l));
 					exit(EXIT_FAILURE);
 				}
