@@ -54,8 +54,8 @@ body {
     gap: 2rem;
 }
 
-.grid-2-cols { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.grid-3-cols { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.grid-2-cols { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.grid-3-cols { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .grid-4-cols { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 
 /* --- Typography --- */
@@ -770,7 +770,7 @@ footer {
 .donation-card { border-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
 
 /* UI Gallery */
-.ui-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; margin-top: 2rem; }
+.ui-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
 .ui-shot {
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
