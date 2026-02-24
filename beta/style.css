@@ -771,6 +771,7 @@ footer {
 
 /* UI Gallery */
 .ui-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
+.ui-phone-gallery { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 .ui-shot {
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
