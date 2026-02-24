@@ -1,6 +1,6 @@
 Name:           @PACKAGE@
 Summary:        Disk array backup for many large rarely-changed files
-Version:        @PACKAGE_VERSION_UNDERSCORE@
+Version:        @PACKAGE_VERSION@
 Release:        1%{?dist}
 License:        GPL-3.0-or-later
 Group:          Applications/System

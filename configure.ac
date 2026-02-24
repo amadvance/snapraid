@@ -391,9 +391,6 @@ AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
 AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
 
-PACKAGE_VERSION_UNDERSCORE=`echo "$PACKAGE_VERSION" | sed 's/-/_/g'`
-AC_SUBST([PACKAGE_VERSION_UNDERSCORE])
-
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([pkg/snapraid.info pkg/control pkg/snapraid.spec])
 AC_CONFIG_FILES([makeslackware.sh], [chmod a+x makeslackware.sh])
