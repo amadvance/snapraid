@@ -32,7 +32,7 @@
 
 void version(void)
 {
-	msg_status(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+	msg_status(PACKAGE_NAME " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 }
 
 void usage(const char* conf)
