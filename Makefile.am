@@ -164,7 +164,7 @@ EXTRA_DIST = \
 	pkg/snapraid.info.in \
 	pkg/slack-desc \
 	makedeb.sh.in \
-	pkg/control \
+	pkg/control.in \
 	makerpm.sh.in \
 	pkg/snapraid.spec.in
 
@@ -179,7 +179,7 @@ clean-local:
 	rm -f tommyds/*.gcda tommyds/*.gcno tommyds/*.gcov
 	rm -f lcov.info
 	rm -f gmon.out
-	rm -f makeslackware.sh pkg/snapraid.SlackBuild pkg/snapraid.info makedeb.sh pkg/snapraid.control makerpm.sh pkg/snapraid-rpm.spec
+	rm -f makeslackware.sh pkg/snapraid.SlackBuild pkg/snapraid.info makedeb.sh pkg/control makerpm.sh pkg/snapraid.spec
 	rm -f pkg/snapraid-*.txz pkg/snapraid_*.deb pkg/snapraid-*.rpm
 
 maintainer-clean-local:
@@ -193,6 +193,21 @@ install-data-hook:
 		mkdir -p $(DESTDIR)$(mandir)/$$lang/man1; \
 		$(INSTALL_DATA) $(srcdir)/doc/snapraid-$$lang.1 $(DESTDIR)$(mandir)/$$lang/man1/snapraid.1; \
 	done
+	@echo ""
+	@echo "=================================================================="
+	@echo " $(PACKAGE_NAME) installation complete!"
+	@echo "=================================================================="
+	@echo ""
+	@if test -z "$(DESTDIR)"; then \
+		if test ! -f /etc/snapraidd.conf -a ! -f $(sysconfdir)/snapraid.conf; then \
+			echo "Configuration:"; \
+			echo "  1. Create your configuration file:"; \
+			echo "     cp $(docdir)/snapraid.conf.example /etc/snapraid.conf"; \
+			echo "  2. Edit /etc/snapraid.conf to match your setup."; \
+			echo ""; \
+			echo "=================================================================="; \
+		fi; \
+	fi
 
 # Uninstall localized manpages
 uninstall-hook:
