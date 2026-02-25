@@ -1875,8 +1875,8 @@ int scomma(const char* str, const char* prefix, uint64_t* value)
 		s++;
 	}
 
-	/* require at least one digit */
-	if (digits_seen == 0) {
+	/* require at least one digit and no trailing comma */
+	if (digits_seen == 0 || comma_seen) {
 		return 0;
 	}
 

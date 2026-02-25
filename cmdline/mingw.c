@@ -2819,7 +2819,8 @@ retry:
 		*power = POWER_ACTIVE;
 
 		/* store the return smartctl return value */
-		smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
+		if (smart)
+			smart[SMART_FLAGS].raw = ret;
 	}
 
 	return 0;
