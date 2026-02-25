@@ -2818,8 +2818,9 @@ retry:
 		log_tag("attr:%s:%s:power:active\n", file, name);
 		*power = POWER_ACTIVE;
 
-		/* store the return smartctl return value */
-		smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
+		/* store the smartctl return value */
+		if (smart)
+			smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
 	}
 
 	return 0;
