@@ -18,7 +18,7 @@ Synopsis
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -714,6 +714,19 @@ Commands
 	z jedynym wyjątkiem, że `dup` nie może wykryć zduplikowanych
 	plików używających innego hasza.
 
+  locate
+	Lokalizuje pliki zapisane na dyskach parzystości. Dla każdego dopasowanego pliku
+	wypisuje jego lokalizację w pliku parzystości oraz liczbę zajmowanych przez
+	niego fragmentów.
+
+	Możesz użyć opcji -t, --tail, aby ograniczyć operację do plików zajmujących
+	określoną końcową część parzystości.
+
+	Jeśli chcesz dokonać realokacji tych plików, możesz użyć opcji
+	-W, --force-realloc-tail.
+	Pamiętaj, że takie pliki nie będą chronione przez parzystość podczas procesu
+	realokacji.
+
 Options
 	SnapRAID udostępnia następujące opcje:
 
@@ -825,6 +838,13 @@ Options
 		liczba bajtów na sekundę. Możesz określić mnożnik,
 		taki jak K, M lub G (np. --bw-limit 1G).
 
+	-t, --tail ROZMIAR
+		Ogranicza listę plików do tych, które nie używają więcej niż określony
+		końcowy rozmiar dysków parzystości.
+		Możesz użyć mnożników takich jak K, M, G lub T (np. --tail 1G).
+		Opcja ta jest ważna tylko wtedy, gdy jest używana wraz z poleceniem
+		`locate`.
+
 	-A, --stats
 		Włącza rozszerzony widok statusu, który pokazuje dodatkowe informacje.
 		Ekran wyświetla dwa wykresy:
@@ -917,6 +937,28 @@ Options
 		OSTRZEŻENIE! Ta opcja jest tylko dla ekspertów i jest wysoce
 		zalecane, aby jej nie używać.
 		NIE MASZ ochrony danych podczas operacji `sync`.
+
+	-W, --force-realloc-tail ROZMIAR
+		Działa jak -R, --force-realloc, ale ogranicza się do określonej części
+		końcowej (ostatnie ROZMIAR bajtów) każdego pliku parzystości.
+		Wymusza realokację (przeniesienie) wszelkich fragmentów/bloków plików
+		obecnie przechowywanych w tej sekcji końcowej, pozwalając na ich
+		umieszczenie w dowolnym miejscu w pliku (plikach) parzystości, gdzie
+		dostępne jest wolne miejsce (w tym w istniejących lukach).
+		Głównym celem tej opcji jest zmniejszenie rozmiaru pliku parzystości
+		na dysku.
+		Jeśli realokacja pomyślnie wyczyści całą sekcję końcową (nie pozostaną
+		żadne bloki korzystające z niej), plik parzystości zostanie przycięty,
+		odzyskując nieużywane miejsce na końcu.
+		Możesz użyć mnożników takich jak K, M, G lub T (np.
+		--force-realloc-tail 1G).
+		Możesz użyć locate -t, --tail, aby wcześniej poznać pliki, których
+		będzie to dotyczyć.
+		OSTRZEŻENIE!
+		Ta opcja jest przeznaczona wyłącznie dla ekspertów i zdecydowanie
+		zaleca się jej nie używać.
+		Podczas operacji `sync` pliki, których to dotyczy, NIE mają ochrony
+		danych.
 
 	-l, --log FILE
 		Zapisuje szczegółowy log do określonego pliku.

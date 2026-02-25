@@ -18,7 +18,7 @@ Synopsis
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -787,6 +787,19 @@ Commands
 	Funktionalität bei, mit der einzigen Ausnahme, dass `dup` keine
 	doppelten Dateien mit einem anderen Hash erkennen kann.
 
+  locate
+	Lokalisiert Dateien, die auf den Paritätsfestplatten gespeichert sind. Für jede
+	übereinstimmende Datei wird deren Position innerhalb der Paritätsdatei und die Anzahl
+	der belegten Fragmente ausgegeben.
+
+	Sie können die Option -t, --tail verwenden, um den Vorgang auf Dateien zu beschränken,
+	die den angegebenen Endbereich (Tail) der Parität belegen.
+
+	Wenn Sie diese Dateien neu zuweisen möchten, können Sie die Option
+	-W, --force-realloc-tail verwenden.
+	Beachten Sie, dass solche Dateien während des Neuzuweisungsprozesses
+	nicht durch die Parität geschützt sind.
+
 Options
 	SnapRAID bietet die folgenden Optionen:
 
@@ -905,6 +918,13 @@ Options
 		an. RATE ist die Anzahl der Bytes pro Sekunde. Sie können
 		einen Multiplikator wie K, M oder G angeben (z.B. --bw-limit 1G).
 
+	-t, --tail GRÖSSE
+		Beschränkt die Dateiliste auf diejenigen, die nicht mehr als die
+		angegebene Tail-Größe der Paritätsfestplatten belegen.
+		Sie können Multiplikatoren wie K, M, G oder T verwenden (z. B. --tail 1G).
+		Diese Option ist nur in Verbindung mit dem Befehl
+		`locate` gültig.
+
 	-A, --stats
 		Aktiviert eine erweiterte Statusansicht, die zusätzliche
 		Informationen anzeigt. Der Bildschirm zeigt zwei Diagramme an:
@@ -1006,6 +1026,28 @@ Options
 		WARNUNG! Diese Option ist nur für Experten gedacht, und es wird
 		dringend empfohlen, sie nicht zu verwenden.
 		Sie haben während der `sync`-Operation KEINEN Datenschutz.
+
+	-W, --force-realloc-tail GRÖSSE
+		Funktioniert wie -R, --force-realloc, ist jedoch auf den angegebenen
+		Endbereich (die letzten GRÖSSE Bytes) jeder Paritätsdatei beschränkt.
+		Erzwingt die Neuzuweisung (Verschiebung) aller Dateifragmente/-blöcke, die
+		derzeit in diesem Endabschnitt gespeichert sind, sodass sie an beliebiger Stelle
+		in den Paritätsdateien platziert werden können, wo freier Speicherplatz
+		verfügbar ist (einschließlich vorhandener Lücken).
+		Der Hauptzweck dieser Option besteht darin, die Größe der Paritätsdatei
+		auf der Festplatte zu verringern.
+		Wenn die Neuzuweisung den gesamten Endabschnitt erfolgreich leert
+		(keine Blöcke verbleiben dort), wird die Paritätsdatei gekürzt,
+		wodurch der ungenutzte Endbereich freigegeben wird.
+		Sie können Multiplikatoren wie K, M, G oder T verwenden (z. B.
+		--force-realloc-tail 1G).
+		Sie können locate -t, --tail verwenden, um die betroffenen Dateien
+		im Voraus zu ermitteln.
+		WARNUNG!
+		Diese Option ist nur für Experten gedacht und es wird dringend
+		empfohlen, sie nicht zu verwenden.
+		Während des `sync`-Vorgangs besteht für die betroffenen Dateien
+		KEIN Datenschutz.
 
 	-l, --log FILE
 		Schreibt ein detailliertes Protokoll in die angegebene Datei.

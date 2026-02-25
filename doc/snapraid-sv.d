@@ -18,7 +18,7 @@ Synopsis
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -717,6 +717,18 @@ Kommandon
 	med det enda undantaget att `dup` inte kan upptäcka dubbletter
 	med hjälp av en annan hash.
 
+  locate
+	Lokaliserar filer som lagras på paritetsdiskarna. För varje matchande fil
+	skrivs dess plats i paritetsfilen och antalet fragment den upptar ut.
+
+	Du kan använda alternativet -t, --tail för att begränsa åtgärden till filer som
+	upptar den angivna slutdelen (tail) av pariteten.
+
+	Om du vill omallokera dessa filer kan du använda alternativet
+	-W, --force-realloc-tail.
+	Var medveten om att sådana filer inte skyddas av paritet under
+	omallokeringsprocessen.
+
 Alternativ
 	SnapRAID tillhandahåller följande alternativ:
 
@@ -829,6 +841,13 @@ Alternativ
 		antalet byte per sekund. Du kan specificera en multiplikator
 		som K, M eller G (t.ex. --bw-limit 1G).
 
+	-t, --tail STORLEK
+		Begränsa fillistan till de som inte använder mer än den angivna
+		slutstorleken på paritetsdiskarna.
+		Du kan använda multiplikatorer som K, M, G eller T (t.ex. --tail 1G).
+		Detta alternativ är endast giltigt när det används tillsammans med
+		kommandot `locate`.
+
 	-A, --stats
 		Aktiverar en utökad statusvy som visar ytterligare information.
 		Skärmen visar två diagram:
@@ -922,6 +941,27 @@ Alternativ
 		VARNING! Detta alternativ är endast för experter, och det rekommenderas
 		starkt att inte använda det.
 		Du HAR INGET dataskydd under `sync`-operationen.
+
+	-W, --force-realloc-tail STORLEK
+		Fungerar som -R, --force-realloc, men begränsat till den angivna
+		slutdelen (de sista STORLEK byten) av varje paritetsfil.
+		Den tvingar omallokering (flytt) av alla filfragment/block som för
+		närvarande lagras i den slutsektionen, vilket gör att de kan placeras
+		var som helst i paritetsfilen/filerna där ledigt utrymme finns
+		(inklusive befintliga hål).
+		Huvudsyftet med detta alternativ är att minska paritetsfilens storlek
+		på disken.
+		Om omallokeringen lyckas rensa hela slutsektionen (inga block är kvar
+		som använder den), trunkeras paritetsfilen och det oanvända
+		slututrymmet återtas.
+		Du kan använda multiplikatorer som K, M, G eller T (t.ex.
+		--force-realloc-tail 1G).
+		Du kan använda locate -t, --tail för att i förväg veta vilka filer
+		som påverkas.
+		VARNING!
+		Detta alternativ är endast för experter, och det rekommenderas
+		starkt att inte använda det.
+		Du har INGET dataskydd under `sync`-åtgärden för de berörda filerna.
 
 	-l, --log FILE
 		Skriver en detaljerad logg till den specificerade filen.

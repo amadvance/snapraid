@@ -18,7 +18,7 @@ Synopsis
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -747,6 +747,19 @@ Commands
 	completa, con la única excepción de que `dup` no puede detectar
 	archivos duplicados utilizando un hash diferente.
 
+  locate
+	Localiza archivos almacenados en los discos de paridad. Para cada archivo coincidente,
+	imprime su ubicación dentro del archivo de paridad y el número de fragmentos
+	que ocupa.
+
+	Puede usar la opción -t, --tail para restringir la operación a los archivos
+	que ocupan la porción final especificada de la paridad.
+
+	Si desea reasignar estos archivos, puede usar la opción
+	-W, --force-realloc-tail.
+	Tenga en cuenta que dichos archivos no estarán protegidos por la paridad durante
+	el proceso de reasignación.
+
 Options
 	SnapRAID proporciona las siguientes opciones:
 
@@ -872,6 +885,13 @@ Options
 		RATE es el número de bytes por segundo. Puede especificar un
 		multiplicador como K, M o G (por ejemplo, --bw-limit 1G).
 
+	-t, --tail TAMAÑO
+		Limita la lista de archivos a aquellos que no usan más del
+		tamaño de cola especificado de los discos de paridad.
+		Puede usar multiplicadores como K, M, G o T (por ejemplo, --tail 1G).
+		Esta opción solo es válida cuando se usa junto con el comando
+		`locate`.
+
 	-A, --stats
 		Habilita una vista de estado extendida que muestra información
 		adicional. La pantalla muestra dos gráficos:
@@ -972,6 +992,28 @@ Options
 		¡ADVERTENCIA! Esta opción es solo para expertos y se
 		recomienda encarecidamente no usarla.
 		NO tiene protección de datos durante la operación `sync`.
+
+	-W, --force-realloc-tail TAMAÑO
+		Funciona como -R, --force-realloc, pero limitado a la porción final
+		especificada (últimos TAMAÑO bytes) de cada archivo de paridad.
+		Fuerza la reasignación (movimiento) de cualquier fragmento/bloque de archivo
+		actualmente almacenado en esa sección final, permitiendo que se coloquen
+		en cualquier lugar de los archivos de paridad donde haya espacio libre
+		disponible (incluyendo huecos existentes).
+		El propósito principal de esta opción es reducir el tamaño en disco
+		del archivo de paridad.
+		Si la reasignación vacía con éxito toda la sección final
+		(no quedan bloques usándola), el archivo de paridad se trunca,
+		recuperando el espacio final no utilizado.
+		Puede usar multiplicadores como K, M, G o T (por ejemplo,
+		--force-realloc-tail 1G).
+		Puede usar locate -t, --tail para conocer de antemano
+		los archivos afectados.
+		¡ADVERTENCIA!
+		Esta opción es solo para expertos y se recomienda
+		encarecidamente no usarla.
+		Usted NO tiene protección de datos durante la operación `sync`
+		para los archivos afectados.
 
 	-l, --log FILE
 		Escribe un registro detallado en el archivo especificado.

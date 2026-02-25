@@ -18,7 +18,7 @@ Sinossi
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -754,6 +754,19 @@ Comandi
 	con l'unica eccezione che `dup` non è in grado di rilevare file
 	duplicati utilizzando un hash diverso.
 
+  locate
+	Individua i file memorizzati nei dischi di parità. Per ogni file corrispondente,
+	stampa la sua posizione all'interno del file di parità e il numero di frammenti
+	che occupa.
+
+	È possibile utilizzare l'opzione -t, --tail per limitare l'operazione ai file
+	che occupano la porzione di coda specificata della parità.
+	Se si desidera riallocare questi file, è possibile utilizzare l'opzione
+	-W, --force-realloc-tail.
+
+	Si tenga presente che tali file non saranno protetti dalla parità durante
+	il processo di riallocazione.
+
 Opzioni
 	SnapRAID fornisce le seguenti opzioni:
 
@@ -877,7 +890,14 @@ Opzioni
 	-w, --bw-limit RATE
 		Applica un limite di larghezza di banda globale per tutti i dischi.
 		RATE è il numero di byte al secondo. È possibile specificare un
-		moltiplicatore come K, M o G (ad esempio, --bw-limit 1G).
+		moltiplicatore come K, M, G o T (ad esempio, --bw-limit 1G).
+
+	-t, --tail DIMENSIONE
+		Limita l'elenco dei file a quelli che non utilizzano più della
+		dimensione di coda specificata dei dischi di parità.
+		È possibile utilizzare moltiplicatori come K, M, G o T (ad es. --tail 1G).
+		Questa opzione è valida solo se utilizzata insieme al comando
+		`locate`.
 
 	-A, --stats
 		Abilita una vista dello stato estesa che mostra informazioni
@@ -982,6 +1002,28 @@ Opzioni
 		ATTENZIONE! Questa opzione è solo per esperti ed è vivamente
 		sconsigliato utilizzarla.
 		NON si ha protezione dei dati durante l'operazione `sync`.
+
+	-W, --force-realloc-tail DIMENSIONE
+		Funziona come -R, --force-realloc, ma limitatamente alla porzione
+		di coda specificata (ultimi DIMENSIONE byte) di ogni file di parità.
+		Forza la riallocazione (spostamento) di qualsiasi frammento/blocco di file
+		attualmente memorizzato in quella sezione di coda, consentendo loro di essere
+		posizionati ovunque nei file di parità dove sia disponibile spazio libero
+		(inclusi i buchi esistenti).
+		Lo scopo principale di questa opzione è ridurre la dimensione su disco
+		del file di parità.
+		Se la riallocazione svuota con successo l'intera sezione di coda
+		(non rimangono blocchi che la utilizzano), il file di parità viene
+		troncato, recuperando lo spazio di coda inutilizzato.
+		È possibile utilizzare moltiplicatori come K, M, G o T (ad es.
+		--force-realloc-tail 1G).
+		È possibile utilizzare locate -t, --tail per conoscere in anticipo
+		i file interessati.
+		ATTENZIONE!
+		Questa opzione è solo per esperti ed è caldamente
+		raccomandato di non usarla.
+		NON si ha protezione dei dati durante l'operazione di `sync`
+		per i file interessati.
 
 	-l, --log FILE
 		Scrive un log dettagliato nel file specificato.

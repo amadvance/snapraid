@@ -720,11 +720,15 @@ Commands
 
   locate
 	Locate files stored in the parity disks. For each matching file, it
-	prints its location within the parity file and the number of fragments
-	it occupies.
+        prints its location within the parity file and the number of fragments
+        it occupies.
 
 	You can use the -t, --tail option to restrict the operation to files
-	using only the specified tail portion of the parity.
+        occupying the specified tail portion of the parity.
+
+	If you want to reallocate these files, you can then use the
+        -W, --force-realloc-tail option. Be aware that such files will
+        not be protected by parity during the reallocation process.
 
 Options
 	SnapRAID provides the following options:
@@ -945,7 +949,7 @@ Options
 		tail portion (last SIZE bytes) of each parity file.
 		It forces reallocation (movement) of any file fragments/blocks
 		currently stored in that tail section, allowing them to be
-		placed anywhere in the parity file where free space is
+		placed anywhere in the parity file(s) where free space is
 		available (including existing holes).
 		The main purpose of this option is to shrink the on-disk size
 		of the parity file. If the reallocation successfully clears
@@ -953,6 +957,8 @@ Options
 		parity file is truncated, reclaiming the unused tail space.
 		You can use multipliers such as K, M, G, or T (e.g.
 		--force-realloc-tail 1G).
+		You can use locate -t, --tail to know in advance the affected
+		files.
 		WARNING! This option is for experts only, and it is highly
 		recommended not to use it.
 		You DO NOT have data protection during the `sync` operation

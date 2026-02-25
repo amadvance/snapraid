@@ -66,7 +66,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	|list|dup|pool|devices|touch|rehash
+	|list|dup|pool|devices|touch|rehash|locate
 .PD 0
 .PD
 .PP
@@ -1043,6 +1043,18 @@ progressivamente durante \`sync\` e \`scrub\`.
 Durante il rehash, SnapRAID mantiene la piena funzionalità,
 con l\'unica eccezione che \`dup\` non è in grado di rilevare file
 duplicati utilizzando un hash diverso.
+.SS locate 
+Individua i file memorizzati nei dischi di parità. Per ogni file corrispondente,
+stampa la sua posizione all\'interno del file di parità e il numero di frammenti
+che occupa.
+.PP
+È possibile utilizzare l\'opzione \-t, \-\-tail per limitare l\'operazione ai file
+che occupano la porzione di coda specificata della parità.
+Se si desidera riallocare questi file, è possibile utilizzare l\'opzione
+\-W, \-\-force\-realloc\-tail.
+.PP
+Si tenga presente che tali file non saranno protetti dalla parità durante
+il processo di riallocazione.
 .SH OPZIONI 
 SnapRAID fornisce le seguenti opzioni:
 .TP
@@ -1166,7 +1178,14 @@ arrestati in modo sicuro anche in caso di errore di un comando.
 .B \-w, \-\-bw\-limit RATE
 Applica un limite di larghezza di banda globale per tutti i dischi.
 RATE è il numero di byte al secondo. È possibile specificare un
-moltiplicatore come K, M o G (ad esempio, \-\-bw\-limit 1G).
+moltiplicatore come K, M, G o T (ad esempio, \-\-bw\-limit 1G).
+.TP
+.B \-t, \-\-tail DIMENSIONE
+Limita l\'elenco dei file a quelli che non utilizzano più della
+dimensione di coda specificata dei dischi di parità.
+È possibile utilizzare moltiplicatori come K, M, G o T (ad es. \-\-tail 1G).
+Questa opzione è valida solo se utilizzata insieme al comando
+\`locate\`.
 .TP
 .B \-A, \-\-stats
 Abilita una vista dello stato estesa che mostra informazioni
@@ -1271,6 +1290,28 @@ Questa opzione può essere utilizzata solo con \`sync\`.
 ATTENZIONE! Questa opzione è solo per esperti ed è vivamente
 sconsigliato utilizzarla.
 NON si ha protezione dei dati durante l\'operazione \`sync\`.
+.TP
+.B \-W, \-\-force\-realloc\-tail DIMENSIONE
+Funziona come \-R, \-\-force\-realloc, ma limitatamente alla porzione
+di coda specificata (ultimi DIMENSIONE byte) di ogni file di parità.
+Forza la riallocazione (spostamento) di qualsiasi frammento/blocco di file
+attualmente memorizzato in quella sezione di coda, consentendo loro di essere
+posizionati ovunque nei file di parità dove sia disponibile spazio libero
+(inclusi i buchi esistenti).
+Lo scopo principale di questa opzione è ridurre la dimensione su disco
+del file di parità.
+Se la riallocazione svuota con successo l\'intera sezione di coda
+(non rimangono blocchi che la utilizzano), il file di parità viene
+troncato, recuperando lo spazio di coda inutilizzato.
+È possibile utilizzare moltiplicatori come K, M, G o T (ad es.
+\-\-force\-realloc\-tail 1G).
+È possibile utilizzare locate \-t, \-\-tail per conoscere in anticipo
+i file interessati.
+ATTENZIONE!
+Questa opzione è solo per esperti ed è caldamente
+raccomandato di non usarla.
+NON si ha protezione dei dati durante l\'operazione di \`sync\`
+per i file interessati.
 .TP
 .B \-l, \-\-log FILE
 Scrive un log dettagliato nel file specificato.

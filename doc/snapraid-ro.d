@@ -18,7 +18,7 @@ Sintaxă
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -710,6 +710,19 @@ Comenzi
 	cu singura excepție că `dup` nu poate detecta fișierele duplicate
 	folosind un hash diferit.
 
+  locate
+	Localizează fișierele stocate pe discurile de paritate. Pentru fiecare fișier
+	potrivit, afișează locația acestuia în fișierul de paritate și numărul de
+	fragmente pe care le ocupă.
+
+	Puteți utiliza opțiunea -t, --tail pentru a restricționa operațiunea la fișierele
+	care ocupă porțiunea finală specificată a parității.
+	Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
+	-W, --force-realloc-tail.
+
+	Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul procesului
+	de realocare.
+
 Opțiuni
 	SnapRAID oferă următoarele opțiuni:
 
@@ -821,6 +834,13 @@ Opțiuni
 		numărul de octeți pe secundă. Puteți specifica un multiplicator
 		cum ar fi K, M sau G (de exemplu, --bw-limit 1G).
 
+	-t, --tail DIMENSIUNE
+		Limitează listarea fișierelor la cele care nu utilizează mai mult de
+		dimensiunea finală specificată a discurilor de paritate.
+		Puteți utiliza multiplicatori precum K, M, G sau T (ex. --tail 1G).
+		Această opțiune este valabilă numai atunci când este utilizată împreună
+		cu comanda `locate`.
+
 	-A, --stats
 		Activează o vizualizare de stare extinsă care arată informații suplimentare.
 		Ecranul afișează două grafice:
@@ -917,6 +937,28 @@ Opțiuni
 		ATENȚIE! Această opțiune este doar pentru experți și este puternic
 		recomandat să nu o utilizați.
 		NU aveți protecție a datelor în timpul operațiunii `sync`.
+
+	-W, --force-realloc-tail DIMENSIUNE
+		Funcționează ca -R, --force-realloc, dar limitat la porțiunea finală
+		specificată (ultimii DIMENSIUNE octeți) ai fiecărui fișier de paritate.
+		Forțează realocarea (mutarea) oricăror fragmente/blocuri de fișiere stocate
+		în prezent în acea secțiune finală, permițându-le să fie plasate oriunde
+		în fișierul/fișierele de paritate unde este disponibil spațiu liber
+		(inclusiv golurile existente).
+		Scopul principal al acestei opțiuni este de a reduce dimensiunea pe disc
+		a fișierului de paritate.
+		Dacă realocarea eliberează cu succes întreaga secțiune finală
+		(nu mai rămân blocuri care să o utilizeze), fișierul de paritate este
+		trunchiat, recuperând spațiul final neutilizat.
+		Puteți utiliza multiplicatori precum K, M, G sau T (ex.
+		--force-realloc-tail 1G).
+		Puteți utiliza locate -t, --tail pentru a cunoaște în avans
+		fișierele afectate.
+		AVERTIZARE!
+		Această opțiune este doar pentru experți și se recomandă
+		insistent să nu fie utilizată.
+		NU beneficiați de protecție a datelor în timpul operațiunii `sync`
+		pentru fișierele afectate.
 
 	-l, --log FILE
 		Scrie un jurnal detaliat în fișierul specificat.

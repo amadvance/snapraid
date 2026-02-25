@@ -18,7 +18,7 @@ Synopsis
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
-	:	|list|dup|pool|devices|touch|rehash
+	:	|list|dup|pool|devices|touch|rehash|locate
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENU]
 
@@ -771,6 +771,19 @@ Commandes
 	fonctionnalités, à la seule exception que `dup` ne peut pas
 	détecter les fichiers en double utilisant un hachage différent.
 
+  locate
+	Localise les fichiers stockés sur les disques de parité. Pour chaque fichier
+	correspondant, il affiche son emplacement dans le fichier de parité et le nombre
+	de fragments qu'il occupe.
+
+	Vous pouvez utiliser l'option -t, --tail pour restreindre l'opération aux fichiers
+	occupant la partie terminale spécifiée de la parité.
+
+	Si vous souhaitez réallouer ces fichiers, vous pouvez alors utiliser l'option
+	-W, --force-realloc-tail.
+	Sachez que ces fichiers ne seront pas protégés par la parité pendant le processus
+	de réallocation.
+
 Options
 	SnapRAID fournit les options suivantes :
 
@@ -899,6 +912,13 @@ Options
 		Le DÉBIT est le nombre d'octets par seconde. Vous pouvez spécifier
 		un multiplicateur tel que K, M ou G (par exemple, --bw-limit 1G).
 
+	-t, --tail TAILLE
+		Limite la liste des fichiers à ceux n'utilisant pas plus que la
+		taille de queue spécifiée des disques de parité.
+		Vous pouvez utiliser des multiplicateurs tels que K, M, G ou T (ex: --tail 1G).
+		Cette option n'est valide que lorsqu'elle est utilisée avec la
+		commande `locate`.
+
 	-A, --stats
 		Active une vue d'état étendue qui affiche des informations
 		supplémentaires.
@@ -1004,6 +1024,28 @@ Options
 		AVERTISSEMENT ! Cette option est réservée aux experts, et il est
 		fortement recommandé de ne pas l'utiliser.
 		Vous N'AVEZ AUCUNE protection des données pendant l'opération `sync`.
+
+	-W, --force-realloc-tail TAILLE
+		Fonctionne comme -R, --force-realloc, maar limité à la partie terminale
+		spécifiée (les derniers TAILLE octets) de chaque fichier de parité.
+		Force la réallocation (déplacement) de tout fragment/bloc de fichier
+		actuellement stocké dans cette section terminale, leur permettant d'être
+		placés n'importe où dans le(s) fichier(s) de parité où de l'espace libre
+		est disponible (y compris les trous existants).
+		Le but principal de cette option est de réduire la taille sur disque
+		du fichier de parité.
+		Si la réallocation réussit à vider toute la section terminale
+		(plus aucun bloc ne l'utilise), le fichier de parité est tronqué,
+		récupérant l'espace terminal inutilisé.
+		Vous pouvez utiliser des multiplicateurs tels que K, M, G ou T (ex:
+		--force-realloc-tail 1G).
+		Vous pouvez utiliser locate -t, --tail pour connaître à l'avance
+		les fichiers affectés.
+		AVERTISSEMENT !
+		Cette option est réservée aux experts et il est fortement
+		recommandé de ne pas l'utiliser.
+		Vous n'avez PAS de protection des données pendant l'opération `sync`
+		pour les fichiers affectés.
 
 	-l, --log FICHIER
 		Écrit un journal détaillé dans le fichier spécifié.
