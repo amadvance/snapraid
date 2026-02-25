@@ -1825,25 +1825,29 @@ static int smatch(const char* str, const char* pattern)
  */
 int scomma(const char* str, const char* prefix, uint64_t* value)
 {
-	const char *s = str;
-	const char *f = prefix;
+	const char* s = str;
+	const char* f = prefix;
 
 	/* match literal prefix, tolerating whitespace differences */
 	while (*f) {
 		/* skip whitespace in both strings */
-		while (isspace((unsigned char)*f)) f++;
-		while (isspace((unsigned char)*s)) s++;
+		while (isspace((unsigned char)*f))
+			++f;
+		while (isspace((unsigned char)*s))
+			++s;
 
-		if (*f == '\0') break;
-		if (*s != *f) {
+		if (*f == 0)
+			break;
+		if (*s != *f)
 			return 0; /* prefix mismatch */
-		}
-		s++;
-		f++;
+
+		++s;
+		++f;
 	}
 
 	/* skip whitespace before the number starts */
-	while (isspace((unsigned char)*s)) s++;
+	while (isspace((unsigned char)*s))
+		++s;
 
 	uint64_t num = 0;
 	int digits_seen = 0;
@@ -1855,30 +1859,33 @@ int scomma(const char* str, const char* prefix, uint64_t* value)
 			unsigned digit = (unsigned)(*s - '0');
 
 			/* check for uint64_t overflow before multiplying */
-			if (num > (UINT64_MAX - digit) / 10ULL) {
+			if (num > (UINT64_MAX - digit) / 10ULL)
 				return 0;
-			}
 
 			num = num * 10ULL + digit;
-			digits_seen++;
+			++digits_seen;
 			comma_seen = 0;
 		} else if (*s == ',') {
-			/* disallow leading or consecutive commas */
-			if (digits_seen == 0 || comma_seen) {
+			/* disallow leading commas */
+			if (digits_seen == 0)
 				return 0;
-			}
+
+			/* if two consecutive commas, stop parsing */
+			if (comma_seen)
+				break;
+
 			comma_seen = 1;
 		} else {
 			/* any other character ends the number */
 			break;
 		}
-		s++;
+
+		++s;
 	}
 
 	/* require at least one digit */
-	if (digits_seen == 0) {
+	if (digits_seen == 0)
 		return 0;
-	}
 
 	*value = num;
 	return 1;
