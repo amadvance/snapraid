@@ -46,6 +46,7 @@ mkstream
 *.gcno
 *.gcov
 makeslackware.sh
+makeslackdist.sh
 pkg/snapraid.SlackBuild
 pkg/snapraid.info
 makedeb.sh

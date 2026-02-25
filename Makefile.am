@@ -160,6 +160,7 @@ EXTRA_DIST = \
 	raid/test/speedtest.c \
 	raid/test/invtest.c \
 	makeslackware.sh.in \
+	makeslackdist.sh.in \
 	pkg/snapraid.SlackBuild.in \
 	pkg/snapraid.info.in \
 	pkg/slack-desc \
@@ -179,7 +180,7 @@ clean-local:
 	rm -f tommyds/*.gcda tommyds/*.gcno tommyds/*.gcov
 	rm -f lcov.info
 	rm -f gmon.out
-	rm -f makeslackware.sh pkg/snapraid.SlackBuild pkg/snapraid.info makedeb.sh pkg/control makerpm.sh pkg/snapraid.spec
+	rm -f makeslackware.sh makeslackdist.sh pkg/snapraid.SlackBuild pkg/snapraid.info makedeb.sh pkg/control makerpm.sh pkg/snapraid.spec
 	rm -f pkg/snapraid-*.txz pkg/snapraid_*.deb pkg/snapraid-*.rpm
 
 maintainer-clean-local:

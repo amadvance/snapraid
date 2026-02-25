@@ -1,10 +1,8 @@
 PRGNAM="@PACKAGE@"
 VERSION="@PACKAGE_VERSION@"
 HOMEPAGE="https://www.snapraid.it/"
-DOWNLOAD="https://github.com/amadvance/snapraid/releases/download/v${VERSION}/@PACKAGE@-${VERSION}.tar.gz"
-MD5SUM="UNSUPPORTED"  # Optional; compute manually if needed
-DOWNLOAD_x86_64="$DOWNLOAD"
-MD5SUM_x86_64=""
+DOWNLOAD="https://github.com/amadvance/@PACKAGE@/releases/download/v@PACKAGE_VERSION@/@PACKAGE@-@PACKAGE_VERSION@.tar.gz"
+MD5SUM="@MD5SUM@"
 REQUIRES=""
 MAINTAINER="Andrea Mazzoleni"
 EMAIL="amadvance@gmail.com"
