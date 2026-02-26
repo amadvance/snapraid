@@ -434,7 +434,10 @@ int randomize(void* ptr, size_t size);
 #define SMART_LOAD_CYCLE_COUNT 193
 #define SMART_TEMPERATURE_CELSIUS 194
 
-#define SMART_FLAGS 256 /**< Flags returned by smartctl. */
+/**
+ * Flags returned by smartctl via exit code
+ */
+#define SMART_FLAGS 256
 
 /*
  * Counts command, transport, or controller-level errors reported by the device.
@@ -468,6 +471,22 @@ int randomize(void* ptr, size_t size);
 #define SMART_COUNT 260
 
 /**
+ * NVME custom SMART attributes
+ *
+ * The numbers are just arbitrary to put them in unused space
+ */
+#define SMART_NVME_CRITICAL_WARNING 100
+#define SMART_NVME_AVAILABLE_SPARE 101
+#define SMART_NVME_DATA_UNITS_READ 102
+#define SMART_NVME_DATA_UNITS_WRITTEN 103
+#define SMART_NVME_HOST_READ_COMMANDS 104
+#define SMART_NVME_HOST_WRITE_COMMANDS 105
+#define SMART_NVME_CONTROLLER_BUSY_TIME 106
+#define SMART_NVME_UNSAFE_SHUTDOWNS 107
+#define SMART_NVME_WARNING_COMP_TEMPERATURE_TIME 108
+#define SMART_NVME_CRITICAL_COMP_TEMPERATURE_TIME 109
+
+/**
  * Info attributes.
  */
 #define INFO_SIZE 0 /**< Size in bytes. */
@@ -478,8 +497,10 @@ int randomize(void* ptr, size_t size);
  */
 #define INFO_COUNT 2
 
-
-#define SMART_IGNORE_MAX 4 /**< Max number of ignored smart attributes */
+/**
+ * Max number of ignored smart attributes
+ */
+#define SMART_IGNORE_MAX 4
 
 /**
  * Flags returned by smartctl.
@@ -546,7 +567,7 @@ struct devinfo_struct {
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	struct devinfo_struct* split; /**< Pointer at first split if any. */
 	struct smart_attr smart[SMART_COUNT]; /**< All smart values. */
-	uint64_t info[INFO_COUNT]; /**< Info attributes. */
+	uint64_t info[INFO_COUNT]; /**< Informational attributes not related to SMART telemetry. */
 	uint64_t access_stat; /**< Access stat info. */
 	char serial[SMART_MAX]; /**< Serial number. */
 	char family[SMART_MAX]; /**< Family. */

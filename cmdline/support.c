@@ -2130,7 +2130,30 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			pathcpy(smart[SMART_POWER_ON_HOURS].name, sizeof(smart[SMART_POWER_ON_HOURS].name), "Power_On_Hours");
 		} else if (scomma(s, "Power Cycles:", &smart[SMART_POWER_CYCLE_COUNT].raw) == 1) {
 			pathcpy(smart[SMART_POWER_CYCLE_COUNT].name, sizeof(smart[SMART_POWER_CYCLE_COUNT].name), "Power_Cycles");
-			/* Attributes */
+			/* map specific attributes to UNUSED SMART attr */
+		} else if (sscanf(s, "Critical Warning: %" SCNx64, &smart[SMART_NVME_CRITICAL_WARNING].raw) == 1) {
+			pathcpy(smart[SMART_NVME_CRITICAL_WARNING].name, sizeof(smart[SMART_NVME_CRITICAL_WARNING].name), "Critical_Warning");
+		} else if (sscanf(s, "Available Spare: %" SCNu64 "%%", &smart[SMART_NVME_AVAILABLE_SPARE].raw) == 1) {
+			pathcpy(smart[SMART_NVME_AVAILABLE_SPARE].name, sizeof(smart[SMART_NVME_AVAILABLE_SPARE].name), "Available_Spare");
+		} else if (scomma(s, "Data Units Read:", &smart[SMART_NVME_DATA_UNITS_READ].raw) == 1) {
+			pathcpy(smart[SMART_NVME_DATA_UNITS_READ].name, sizeof(smart[SMART_NVME_DATA_UNITS_READ].name), "Data_Units_Read");
+		} else if (scomma(s, "Data Units Written:", &smart[SMART_NVME_DATA_UNITS_WRITTEN].raw) == 1) {
+			pathcpy(smart[SMART_NVME_DATA_UNITS_WRITTEN].name, sizeof(smart[SMART_NVME_DATA_UNITS_WRITTEN].name), "Data_Units_Written");
+		} else if (scomma(s, "Host Read Commands:", &smart[SMART_NVME_HOST_READ_COMMANDS].raw) == 1) {
+			pathcpy(smart[SMART_NVME_HOST_READ_COMMANDS].name, sizeof(smart[SMART_NVME_HOST_READ_COMMANDS].name), "Host_Read_Commands");
+		} else if (scomma(s, "Host Write Commands:", &smart[SMART_NVME_HOST_WRITE_COMMANDS].raw) == 1) {
+			pathcpy(smart[SMART_NVME_HOST_WRITE_COMMANDS].name, sizeof(smart[SMART_NVME_HOST_WRITE_COMMANDS].name), "Host_Write_Commands");
+		} else if (scomma(s, "Controller Busy Time:", &smart[SMART_NVME_CONTROLLER_BUSY_TIME].raw) == 1) {
+			pathcpy(smart[SMART_NVME_CONTROLLER_BUSY_TIME].name, sizeof(smart[SMART_NVME_CONTROLLER_BUSY_TIME].name), "Controller_Busy_Time");
+		} else if (scomma(s, "Unsafe Shutdowns:", &smart[SMART_NVME_UNSAFE_SHUTDOWNS].raw) == 1) {
+			pathcpy(smart[SMART_NVME_UNSAFE_SHUTDOWNS].name, sizeof(smart[SMART_NVME_UNSAFE_SHUTDOWNS].name), "Unsafe_Shutdowns");
+			/* smartctl doesn't print this with command, but %d */
+		} else if (scomma(s, "Warning  Comp. Temperature Time:", &smart[SMART_NVME_WARNING_COMP_TEMPERATURE_TIME].raw) == 1) {
+			pathcpy(smart[SMART_NVME_WARNING_COMP_TEMPERATURE_TIME].name, sizeof(smart[SMART_NVME_WARNING_COMP_TEMPERATURE_TIME].name), "Warning_Comp_Temperature_Time");
+			/* smartctl doesn't print this with command, but %d */
+		} else if (scomma(s, "Critical Comp. Temperature Time:", &smart[SMART_NVME_CRITICAL_COMP_TEMPERATURE_TIME].raw) == 1) {
+			pathcpy(smart[SMART_NVME_CRITICAL_COMP_TEMPERATURE_TIME].name, sizeof(smart[SMART_NVME_CRITICAL_COMP_TEMPERATURE_TIME].name), "Critical_Comp_Temperature_Time");
+			/* ATA Attributes table */
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
 		} else if (inside) {
