@@ -168,6 +168,15 @@ const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_si
 	return out;
 }
 
+/**
+ * Apply a filter to the specified path
+ *
+ * @param filter The filter to apply.
+ * @param reason Assign to it the filter that caused rejection.
+ * @param path The path to filter.
+ * @param is_dir if the path refers to a directory, otherwise to a file.
+ * @return < 0 if the path is excluded, > 0 if the path is included, 0 if the filter doesn't apply.
+ */
 static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* path, int is_dir)
 {
 	if (filter->root[0] != 0) { /* if it's a local filter */
@@ -190,7 +199,7 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 		if (wnmatch(filter->pattern + 1, path) == 0)
 			ret = filter->direction;
 	} else {
-		/* the patch is relative, first try to match from the root */
+		/* the path is relative, first try to match from the root */
 		if (wnmatch(filter->pattern, path) == 0) {
 			ret = filter->direction;
 		} else {
@@ -213,11 +222,31 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 	return ret;
 }
 
+/**
+ * Apply a list of filter to a specific disk/sub path
+ *
+ * @param filterlist The list of filter to apply
+ * @param reason Assign to it the filter that caused rejection.
+ * @param disk The disk that contain the path
+ * @param sub The path in the disk
+ * @param is_dir If the path refers to a directory, otherwise it's a file
+ * @param is_def_include If no filter apply, if by default force the inclusion. Used to include directory by default.
+ * @return < 0 if the path is excluded, == 0 if the path is included.
+ */
+
 static int filter_element(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub, int is_dir, int is_def_include)
 {
 	tommy_node* i;
 
-	int default_direction = 1; /* by default include all */
+	/**
+	 * The rule is that the latest filter defines the behaviour of paths
+	 * that doesn't match any filter.
+	 *
+	 * If the latest filter is an 'exclusion' filter, the default is to include.
+	 * If the latest filter is an 'inclusion' filter, the default is to exclude.
+	 * If there are no filter, the default is to include.
+	 */
+	int default_direction = 1;
 
 	/* for each filter */
 	for (i = tommy_list_head(filterlist); i != 0; i = i->next) {
@@ -243,7 +272,7 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 			/* exclude the file */
 			return -1;
 		} else {
-			/* default is opposite of the last rule */
+			/* default is opposite of the last filter */
 			default_direction = -filter->direction;
 			if (reason != 0 && default_direction < 0)
 				*reason = filter;
