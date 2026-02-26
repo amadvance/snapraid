@@ -28,7 +28,7 @@
 /**
  * Differential us of two timeval.
  */
-static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
+static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
 {
 	int64_t d;
 
@@ -144,9 +144,9 @@ void speed(int period, int nd, int size)
 	printf("CPU is not a x86/x64\n");
 #endif
 #if WORDS_BIGENDIAN
-	printf("Memory is big-endian %d-bit\n", (int)sizeof(void *) * 8);
+	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
 #else
-	printf("Memory is little-endian %d-bit\n", (int)sizeof(void *) * 8);
+	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
 #endif
 
 #if HAVE_FUTIMENS

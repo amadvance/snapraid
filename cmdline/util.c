@@ -576,7 +576,7 @@ static inline void util_write64(void* ptr, uint64_t v)
  *  Overwrites B contents with C's high 64 bits.
  */
 #if defined(__x86_64__) || defined(_M_X64)
-static inline void util_mum(uint64_t *A, uint64_t *B)
+static inline void util_mum(uint64_t* A, uint64_t* B)
 {
 	uint64_t a = *A;
 	uint64_t b = *B;
@@ -593,7 +593,7 @@ static inline void util_mum(uint64_t *A, uint64_t *B)
 	*B = high;
 }
 #elif defined(__aarch64__) || defined(_M_ARM64)
-static inline void util_mum(uint64_t *A, uint64_t *B)
+static inline void util_mum(uint64_t* A, uint64_t* B)
 {
 	uint64_t a = *A;
 	uint64_t b = *B;
@@ -608,14 +608,14 @@ static inline void util_mum(uint64_t *A, uint64_t *B)
 	*B = high;
 }
 #elif defined(__SIZEOF_INT128__)
-static inline void util_mum(uint64_t *A, uint64_t *B)
+static inline void util_mum(uint64_t* A, uint64_t* B)
 {
 	__uint128_t product = ((__uint128_t)*A) * ((__uint128_t)*B);
 	*A = (uint64_t)product;
 	*B = (uint64_t)(product >> 64);
 }
 #else
-static inline void util_mum(uint64_t *A, uint64_t *B)
+static inline void util_mum(uint64_t* A, uint64_t* B)
 {
 	uint64_t a = *A;
 	uint64_t b = *B;

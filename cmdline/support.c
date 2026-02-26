@@ -955,7 +955,7 @@ char* worddigitstr(const char* haystack, const char* needle)
 		if (s == haystack || isspace((unsigned char)s[-1]) || isdigit((unsigned char)s[-1])) {
 			/* right boundary */
 			if (s[len] == '\0' || isspace((unsigned char)s[len]) || isdigit((unsigned char)s[len])) {
-				return (char *)s;
+				return (char*)s;
 			}
 		}
 	}
@@ -2430,7 +2430,7 @@ void thread_cond_broadcast_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex
 	}
 }
 
-void thread_create(thread_id_t* thread, void* (*func)(void*), void *arg)
+void thread_create(thread_id_t* thread, void* (*func)(void*), void* arg)
 {
 	if (pthread_create(thread, 0, func, arg) != 0) {
 		/* LCOV_EXCL_START */

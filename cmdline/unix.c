@@ -2336,7 +2336,7 @@ void os_abort(void)
 #ifdef __GNUC__
 	printf(", gcc " __VERSION__);
 #endif
-	printf(", %d-bit", (int)sizeof(void *) * 8);
+	printf(", %d-bit", (int)sizeof(void*) * 8);
 	printf(", PATH_MAX=%d", PATH_MAX);
 	printf("\n");
 
