@@ -56,7 +56,12 @@ void unlock_memory(void);
 /* random */
 
 /**
- * Reseed the random pseudo random number generator
+ * Seed the random pseudo random number generator
+ */
+void random_seed(uint64_t seed);
+
+/**
+ * Reseed the random pseudo random number generator with the tick count
  */
 void random_reseed(void);
 

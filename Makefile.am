@@ -142,6 +142,7 @@ EXTRA_DIST = \
 	test/test-par1.conf \
 	test/test-par2.conf \
 	test/test-par3.conf \
+	test/test-parz.conf \
 	test/test-par4.conf \
 	test/test-par5.conf \
 	test/test-par6.conf \
@@ -271,6 +272,7 @@ RENAME = $(srcdir)/test/test-par6-rename.conf
 PAR1 = $(srcdir)/test/test-par1.conf
 PAR2 = $(srcdir)/test/test-par2.conf
 PAR3 = $(srcdir)/test/test-par3.conf
+PARZ = $(srcdir)/test/test-parz.conf
 PAR4 = $(srcdir)/test/test-par4.conf
 PAR5 = $(srcdir)/test/test-par5.conf
 PAR6 = $(srcdir)/test/test-par6.conf
@@ -563,8 +565,10 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-none -c $(PAR1) sync -F --test-io-cache 1
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-sequential -c $(PAR1) sync -F --test-io-stats
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-flush -c $(PAR1) sync -F --test-io-cache 1
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-flush-window -c $(PAR1) sync -F
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-discard-window -c $(PAR1) sync -F
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-direct -c $(PAR1) sync -F
 #### CHANGE LINKS ####
 # Use a different size ("22" instead of "1") to ensure to recognize the file different
 # even if it gets the same timestamp in case subsecond timestamp is no available
@@ -776,6 +780,12 @@ endif
 	mv bench/disk4/a/7* bench/disk4/b/
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+#### SNAPRAIDIGNORE
+	echo "a*" > bench/disk1/a/.snapraidignore
+	echo "b*" > bench/disk1/.snapraidignore
+	echo "c/" > bench/disk1/.snapraidignore
+	echo "/d/" > bench/disk1/.snapraidignore
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 if !HAVE_MEMORY_CHECKER
 #### RECOVER 1 ####
 	$(MSG) Delete one disk, fix and check with PAR1
@@ -807,6 +817,20 @@ if !HAVE_MEMORY_CHECKER
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test-fail-strategy2.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR3) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR3) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+#### RECOVER Z ####
+	$(MSG) Compute PARZ - keeping PAR1 and PAR2 as they are
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PARZ) fix -d 3-parity -l test.log
+	$(MSG) Delete three disks, fix and check with PARZ
+	rm -r bench/disk3
+	mkdir bench/disk3
+	rm -r bench/disk4
+	mkdir bench/disk4
+	rm -r bench/disk5
+	mkdir bench/disk5
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PARZ) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PARZ) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 #### RECOVER 4 ####

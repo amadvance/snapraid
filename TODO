@@ -7,6 +7,8 @@ This is the list of TODO items for SnapRAID.
 
 * Integration with MergeFS ?
 
+* Evaluate use of syscall getdents64() instead of readdir(): https://linux.die.net/man/2/getdents64
+
 * Check Reliability Test 
 https://github.com/linuxhw/SMART
 https://github.com/linuxhw/EnterpriseDrive

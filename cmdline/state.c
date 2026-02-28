@@ -1655,7 +1655,7 @@ static void state_map(struct snapraid_state* state)
 
 	/* recommend number of parities */
 	if (!state->opt.no_warnings) {
-		/* intentionally use log_fatal() instead of log_error() to give more visibility at the warning */
+		/* LCOV_EXCL_START */
 		if (diskcount >= 36 && state->level < 6) {
 			log_error(EUSER, "WARNING! For %u disks, it's recommended to use six parity levels.\n", diskcount);
 		} else if (diskcount >= 29 && state->level < 5) {
@@ -1667,6 +1667,7 @@ static void state_map(struct snapraid_state* state)
 		} else if (diskcount >= 5 && state->level < 2) {
 			log_error(EUSER, "WARNING! For %u disks, it's recommended to use two parity levels.\n", diskcount);
 		}
+		/* LCOV_EXCL_STOP */
 	}
 }
 

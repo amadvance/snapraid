@@ -764,6 +764,7 @@ const char* hash_config_name(unsigned kind)
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
 	case HASH_METRO : return "metro";
+	case HASH_MUSEAIR : return "museair";
 	default :
 		/* LCOV_EXCL_START */
 		return "unknown";

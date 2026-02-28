@@ -98,6 +98,11 @@ void lock_done(void)
 
 static uint64_t random_state = 1;
 
+void random_seed(uint64_t seed)
+{
+	random_state = seed;
+}
+
 void random_reseed(void)
 {
 	random_state = tick();
@@ -138,6 +143,7 @@ uint64_t random_u64(void)
 
 int is_hw(int err)
 {
+	/* LCOV_EXCL_START */
 	if (err == EIO)
 		return 1;
 #ifdef EFSCORRUPTED
@@ -164,11 +170,13 @@ int is_hw(int err)
 	if (err == EHWPOISON) /* hardware memory error */
 		return 1;
 #endif
+	/* LCOV_EXCL_STOP */
 	return 0;
 }
 
 void log_fatal_errno(int err, const char* name)
 {
+	/* LCOV_EXCL_START */
 	if (err == EIO) {
 		log_fatal(err, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", name);
 #ifdef EFSCORRUPTED
@@ -202,10 +210,12 @@ void log_fatal_errno(int err, const char* name)
 	} else {
 		log_fatal(err, "WARNING! Without a working %s disk, it isn't possible to continue.\n", name);
 	}
+	/* LCOV_EXCL_STOP */
 }
 
 void log_error_errno(int err, const char* name)
 {
+	/* LCOV_EXCL_START */
 	if (err == EIO) {
 		log_fatal(err, "DANGER! Unexpected input/output error in disk %s.\n", name);
 #ifdef EFSCORRUPTED
@@ -232,6 +242,7 @@ void log_error_errno(int err, const char* name)
 	} else if (err == EHWPOISON) {
 		log_fatal(err, "DANGER! Unexpected memory error in disk %s.\n", name);
 #endif
+		/* LCOV_EXCL_STOP */
 	} else if (err == EACCES) {
 		log_error(err, "WARNING! Grant permission in the disk %s.\n", name);
 	} else if (err == ENOSPC) {

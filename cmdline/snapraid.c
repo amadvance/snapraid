@@ -101,9 +101,11 @@ void test(int argc, char* argv[])
 	int i;
 	char buffer[ESC_MAX];
 
-	/* special testing code for quoting */
+	/* special testing code */
 	if (argc < 2 || strcmp(argv[1], "test") != 0)
 		return;
+
+	lock_init();
 
 	assert(strcmp(strpolish(strcpy(buffer, "\r \n\xFF")), "    ") == 0);
 	assert(strcmp(strtrim(strcpy(buffer, " trim trim \n\r")), "trim trim") == 0);
@@ -486,7 +488,13 @@ void test(int argc, char* argv[])
 	assert(strcmp(esc_shell("test_2024-01-01.log", buffer), "test_2024-01-01.log") == 0);
 #endif
 
+	random_seed(0);
+	assert(random_u8() == 0xAF);
+	assert(random_u64() == 0x6E789E6AA1B965F4ULL);
+
 	printf("Everything OK\n");
+
+	lock_done();
 
 	exit(EXIT_SUCCESS);
 }
