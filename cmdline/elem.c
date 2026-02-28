@@ -766,7 +766,6 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 #if HAVE_THREAD
 	thread_mutex_init(&disk->fs_mutex);
-	disk->fs_mutex_enabled = 0; /* lock will be enabled at threads start */
 #endif
 
 	disk->smartctl[0] = 0;
@@ -825,20 +824,10 @@ void disk_free(struct snapraid_disk* disk)
 	free(disk);
 }
 
-void disk_start_thread(struct snapraid_disk* disk)
-{
-#if HAVE_THREAD
-	disk->fs_mutex_enabled = 1;
-#else
-	(void)disk;
-#endif
-}
-
 static inline void fs_lock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD
-	if (disk->fs_mutex_enabled)
-		thread_mutex_lock(&disk->fs_mutex);
+	thread_mutex_lock(&disk->fs_mutex);
 #else
 	(void)disk;
 #endif
@@ -847,8 +836,7 @@ static inline void fs_lock(struct snapraid_disk* disk)
 static inline void fs_unlock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD
-	if (disk->fs_mutex_enabled)
-		thread_mutex_unlock(&disk->fs_mutex);
+	thread_mutex_unlock(&disk->fs_mutex);
 #else
 	(void)disk;
 #endif

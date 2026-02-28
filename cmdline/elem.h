@@ -379,7 +379,6 @@ struct snapraid_disk {
 	 * change during multithread processing.
 	 */
 	thread_mutex_t fs_mutex;
-	int fs_mutex_enabled; /*< If the lock has to be used. */
 
 	/**
 	 * Mutex for protecting the scan process.
@@ -996,11 +995,6 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
  * Deallocate a disk.
  */
 void disk_free(struct snapraid_disk* disk);
-
-/**
- * Enable multithread support for the disk.
- */
-void disk_start_thread(struct snapraid_disk* disk);
 
 /**
  * Get the size of the disk in blocks.
