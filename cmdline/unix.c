@@ -135,24 +135,25 @@ static int sysread(const char* path, char* buf, size_t buf_size)
  * Trim spaces.
  * Always put an ending 0.
  * Do not report error on reading.
+ * Return an error if truncated
  *
- * Return 0 on error, otherwise a pointer to buf
+ * Return -1 on error, 0 on success
  */
 #if HAVE_LINUX_DEVICE
-static char* sysattr(const char* path, char* buf, size_t buf_size)
+static int sysattr(const char* path, char* buf, size_t buf_size)
 {
 	int len;
 
 	len = sysread(path, buf, buf_size);
 	if (len < 0) {
 		/* LCOV_EXCL_START */
-		return 0;
+		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if ((size_t)len + 1 > buf_size) {
 		/* LCOV_EXCL_START */
-		return 0;
+		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -160,7 +161,7 @@ static char* sysattr(const char* path, char* buf, size_t buf_size)
 
 	strtrim(buf);
 
-	return buf;
+	return 0;
 }
 #endif
 
@@ -1640,17 +1641,15 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 	char path[PATH_MAX];
 	char buf[512];
 	int ret;
-	char* attr;
 
 	(void)family; /* not available, smartctl uses an internal database to get it */
 
 	if (info[INFO_SIZE] == SMART_UNASSIGNED) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/size", major(device), minor(device));
-		attr = sysattr(path, buf, sizeof(buf));
-		if (attr) {
+		if (sysattr(path, buf, sizeof(buf)) == 0) {
 			char* e;
 			uint64_t v;
-			v = strtoul(attr, &e, 10);
+			v = strtoul(buf, &e, 10);
 			if (*e == 0)
 				info[INFO_SIZE] = v * 512;
 		}
@@ -1658,11 +1657,10 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 
 	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/queue/rotational", major(device), minor(device));
-		attr = sysattr(path, buf, sizeof(buf));
-		if (attr) {
+		if (sysattr(path, buf, sizeof(buf)) == 0) {
 			char* e;
 			uint64_t v;
-			v = strtoul(attr, &e, 10);
+			v = strtoul(buf, &e, 10);
 			if (*e == 0)
 				info[INFO_ROTATION_RATE] = v;
 		}
@@ -1670,19 +1668,17 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 
 	if (*model == 0) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/model", major(device), minor(device));
-		attr = sysattr(path, buf, sizeof(buf));
-		if (attr && *attr) {
-			pathcpy(model, SMART_MAX, attr);
-			strtrim(model);
+		if (sysattr(path, buf, sizeof(buf)) == 0) {
+			if (buf[0] != 0)
+				pathcpy(model, SMART_MAX, buf);
 		}
 	}
 
 	if (*serial == 0) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device/serial", major(device), minor(device));
-		attr = sysattr(path, buf, sizeof(buf));
-		if (attr && *attr) {
-			pathcpy(serial, SMART_MAX, attr);
-			strtrim(serial);
+		if (sysattr(path, buf, sizeof(buf)) == 0) {
+			if (buf[0] != 0)
+				pathcpy(serial, SMART_MAX, buf);
 		}
 	}
 
@@ -1693,13 +1689,11 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 		if (ret > 4) {
 			unsigned len = (unsigned char)buf[3];
 			if (4 + len <= (size_t)ret && 4 + len + 1 <= sizeof(buf)) {
-				attr = buf + 4;
+				char* attr = buf + 4;
 				attr[len] = 0;
 				strtrim(attr);
-				if (*attr) {
+				if (*attr)
 					pathcpy(serial, SMART_MAX, attr);
-					strtrim(serial);
-				}
 			}
 		}
 	}
@@ -2470,7 +2464,7 @@ int ambient_temperature(void)
 			/* read the temperature */
 			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s", entry->d_name, hwmon_entry->d_name);
 
-			if (!sysattr(path, value, sizeof(value)))
+			if (sysattr(path, value, sizeof(value)) != 0)
 				continue;
 
 			temp = strtol(value, &e, 10) / 1000;
@@ -2482,14 +2476,14 @@ int ambient_temperature(void)
 
 			/* read the corresponding name */
 			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/name", entry->d_name);
-			if (!sysattr(path, name, sizeof(name))) {
-				/* fallback to using the hwmon entry */
+			if (sysattr(path, name, sizeof(name)) != 0) {
+				/* fallback to using the hwmon name */
 				pathcpy(name, sizeof(name), entry->d_name);
 			}
 
 			/* read the corresponding label file */
 			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s_label", entry->d_name, hwmon_entry->d_name);
-			if (!sysattr(path, label, sizeof(label))) {
+			if (sysattr(path, label, sizeof(label)) != 0) {
 				/* fallback to using the temp* name (e.g., temp1, temp2) */
 				pathcpy(label, sizeof(label), hwmon_entry->d_name);
 			}
