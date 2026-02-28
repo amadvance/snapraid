@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">12</td>
@@ -173,18 +173,18 @@
 <a name="111"><span class="lineNum">     111 </span>            :  * Initializes the list.</a>
 <a name="112"><span class="lineNum">     112 </span>            :  * The list is completely inplace, so it doesn't need to be deinitialized.</a>
 <a name="113"><span class="lineNum">     113 </span>            :  */</a>
-<a name="114"><span class="lineNum">     114 </span><span class="lineCov">      18934 : tommy_inline void tommy_list_init(tommy_list* list)</span></a>
+<a name="114"><span class="lineNum">     114 </span><span class="lineCov">      18984 : tommy_inline void tommy_list_init(tommy_list* list)</span></a>
 <a name="115"><span class="lineNum">     115 </span>            : {</a>
-<a name="116"><span class="lineNum">     116 </span><span class="lineCov">      18934 :         *list = 0;</span></a>
-<a name="117"><span class="lineNum">     117 </span><span class="lineCov">      18934 : }</span></a>
+<a name="116"><span class="lineNum">     116 </span><span class="lineCov">      18984 :         *list = 0;</span></a>
+<a name="117"><span class="lineNum">     117 </span><span class="lineCov">      18984 : }</span></a>
 <a name="118"><span class="lineNum">     118 </span>            : </a>
 <a name="119"><span class="lineNum">     119 </span>            : /**</a>
 <a name="120"><span class="lineNum">     120 </span>            :  * Gets the head of the list.</a>
 <a name="121"><span class="lineNum">     121 </span>            :  * \return The head node. For empty lists 0 is returned.</a>
 <a name="122"><span class="lineNum">     122 </span>            :  */</a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">   27439506 : tommy_inline tommy_node* tommy_list_head(tommy_list* list)</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">   27440663 : tommy_inline tommy_node* tommy_list_head(tommy_list* list)</span></a>
 <a name="124"><span class="lineNum">     124 </span>            : {</a>
-<a name="125"><span class="lineNum">     125 </span><span class="lineCov">   27439506 :         return *list;</span></a>
+<a name="125"><span class="lineNum">     125 </span><span class="lineCov">   27440663 :         return *list;</span></a>
 <a name="126"><span class="lineNum">     126 </span>            : }</a>
 <a name="127"><span class="lineNum">     127 </span>            : </a>
 <a name="128"><span class="lineNum">     128 </span>            : /**</a>
@@ -206,16 +206,16 @@
 <a name="144"><span class="lineNum">     144 </span>            :  * \param list The list to initialize.</a>
 <a name="145"><span class="lineNum">     145 </span>            :  * \param node The node to insert.</a>
 <a name="146"><span class="lineNum">     146 </span>            :  */</a>
-<a name="147"><span class="lineNum">     147 </span><span class="lineCov">   24028643 : tommy_inline void tommy_list_insert_first(tommy_list* list, tommy_node* node)</span></a>
+<a name="147"><span class="lineNum">     147 </span><span class="lineCov">   24003025 : tommy_inline void tommy_list_insert_first(tommy_list* list, tommy_node* node)</span></a>
 <a name="148"><span class="lineNum">     148 </span>            : {</a>
 <a name="149"><span class="lineNum">     149 </span>            :         /* one element &quot;circular&quot; prev list */</a>
-<a name="150"><span class="lineNum">     150 </span><span class="lineCov">   24028643 :         node-&gt;prev = node;</span></a>
+<a name="150"><span class="lineNum">     150 </span><span class="lineCov">   24003025 :         node-&gt;prev = node;</span></a>
 <a name="151"><span class="lineNum">     151 </span>            : </a>
 <a name="152"><span class="lineNum">     152 </span>            :         /* one element &quot;0 terminated&quot; next list */</a>
-<a name="153"><span class="lineNum">     153 </span><span class="lineCov">   24028643 :         node-&gt;next = 0;</span></a>
+<a name="153"><span class="lineNum">     153 </span><span class="lineCov">   24003025 :         node-&gt;next = 0;</span></a>
 <a name="154"><span class="lineNum">     154 </span>            : </a>
-<a name="155"><span class="lineNum">     155 </span><span class="lineCov">   24028643 :         *list = node;</span></a>
-<a name="156"><span class="lineNum">     156 </span><span class="lineCov">   24028643 : }</span></a>
+<a name="155"><span class="lineNum">     155 </span><span class="lineCov">   24003025 :         *list = node;</span></a>
+<a name="156"><span class="lineNum">     156 </span><span class="lineCov">   24003025 : }</span></a>
 <a name="157"><span class="lineNum">     157 </span>            : </a>
 <a name="158"><span class="lineNum">     158 </span>            : /** \internal</a>
 <a name="159"><span class="lineNum">     159 </span>            :  * Inserts an element at the head of a non-empty list.</a>
@@ -243,16 +243,16 @@
 <a name="181"><span class="lineNum">     181 </span>            :  * \param head The node at the list head. It cannot be 0.</a>
 <a name="182"><span class="lineNum">     182 </span>            :  * \param node The node to insert.</a>
 <a name="183"><span class="lineNum">     183 </span>            :  */</a>
-<a name="184"><span class="lineNum">     184 </span><span class="lineCov">   11532222 : tommy_inline void tommy_list_insert_tail_not_empty(tommy_node* head, tommy_node* node)</span></a>
+<a name="184"><span class="lineNum">     184 </span><span class="lineCov">   11558516 : tommy_inline void tommy_list_insert_tail_not_empty(tommy_node* head, tommy_node* node)</span></a>
 <a name="185"><span class="lineNum">     185 </span>            : {</a>
 <a name="186"><span class="lineNum">     186 </span>            :         /* insert in the &quot;circular&quot; prev list */</a>
-<a name="187"><span class="lineNum">     187 </span><span class="lineCov">   11532222 :         node-&gt;prev = head-&gt;prev;</span></a>
-<a name="188"><span class="lineNum">     188 </span><span class="lineCov">   11532222 :         head-&gt;prev = node;</span></a>
+<a name="187"><span class="lineNum">     187 </span><span class="lineCov">   11558516 :         node-&gt;prev = head-&gt;prev;</span></a>
+<a name="188"><span class="lineNum">     188 </span><span class="lineCov">   11558516 :         head-&gt;prev = node;</span></a>
 <a name="189"><span class="lineNum">     189 </span>            : </a>
 <a name="190"><span class="lineNum">     190 </span>            :         /* insert in the &quot;0 terminated&quot; next list */</a>
-<a name="191"><span class="lineNum">     191 </span><span class="lineCov">   11532222 :         node-&gt;next = 0;</span></a>
-<a name="192"><span class="lineNum">     192 </span><span class="lineCov">   11532222 :         node-&gt;prev-&gt;next = node;</span></a>
-<a name="193"><span class="lineNum">     193 </span><span class="lineCov">   11532222 : }</span></a>
+<a name="191"><span class="lineNum">     191 </span><span class="lineCov">   11558516 :         node-&gt;next = 0;</span></a>
+<a name="192"><span class="lineNum">     192 </span><span class="lineCov">   11558516 :         node-&gt;prev-&gt;next = node;</span></a>
+<a name="193"><span class="lineNum">     193 </span><span class="lineCov">   11558516 : }</span></a>
 <a name="194"><span class="lineNum">     194 </span>            : </a>
 <a name="195"><span class="lineNum">     195 </span>            : /**</a>
 <a name="196"><span class="lineNum">     196 </span>            :  * Inserts an element at the head of a list.</a>
@@ -278,17 +278,17 @@
 <a name="216"><span class="lineNum">     216 </span>            :  * \param node The node to insert.</a>
 <a name="217"><span class="lineNum">     217 </span>            :  * \param data The object containing the node. It's used to set the tommy_node::data field of the node.</a>
 <a name="218"><span class="lineNum">     218 </span>            :  */</a>
-<a name="219"><span class="lineNum">     219 </span><span class="lineCov">   19084521 : tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, void* data)</span></a>
+<a name="219"><span class="lineNum">     219 </span><span class="lineCov">   19085101 : tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, void* data)</span></a>
 <a name="220"><span class="lineNum">     220 </span>            : {</a>
-<a name="221"><span class="lineNum">     221 </span><span class="lineCov">   19084521 :         tommy_node* head = tommy_list_head(list);</span></a>
+<a name="221"><span class="lineNum">     221 </span><span class="lineCov">   19085101 :         tommy_node* head = tommy_list_head(list);</span></a>
 <a name="222"><span class="lineNum">     222 </span>            : </a>
-<a name="223"><span class="lineNum">     223 </span><span class="lineCov">   19084521 :         if (head)</span></a>
-<a name="224"><span class="lineNum">     224 </span><span class="lineCov">    9598692 :                 tommy_list_insert_tail_not_empty(head, node);</span></a>
+<a name="223"><span class="lineNum">     223 </span><span class="lineCov">   19085101 :         if (head)</span></a>
+<a name="224"><span class="lineNum">     224 </span><span class="lineCov">    9613379 :                 tommy_list_insert_tail_not_empty(head, node);</span></a>
 <a name="225"><span class="lineNum">     225 </span>            :         else</a>
-<a name="226"><span class="lineNum">     226 </span><span class="lineCov">    9485829 :                 tommy_list_insert_first(list, node);</span></a>
+<a name="226"><span class="lineNum">     226 </span><span class="lineCov">    9471722 :                 tommy_list_insert_first(list, node);</span></a>
 <a name="227"><span class="lineNum">     227 </span>            : </a>
-<a name="228"><span class="lineNum">     228 </span><span class="lineCov">   19084521 :         node-&gt;data = data;</span></a>
-<a name="229"><span class="lineNum">     229 </span><span class="lineCov">   19084521 : }</span></a>
+<a name="228"><span class="lineNum">     228 </span><span class="lineCov">   19085101 :         node-&gt;data = data;</span></a>
+<a name="229"><span class="lineNum">     229 </span><span class="lineCov">   19085101 : }</span></a>
 <a name="230"><span class="lineNum">     230 </span>            : </a>
 <a name="231"><span class="lineNum">     231 </span>            : /**</a>
 <a name="232"><span class="lineNum">     232 </span>            :  * Removes an element from the list.</a>
@@ -299,23 +299,23 @@
 <a name="237"><span class="lineNum">     237 </span>            :  * \param node The node to remove. The node must be in the list.</a>
 <a name="238"><span class="lineNum">     238 </span>            :  * \return The tommy_node::data field of the node removed.</a>
 <a name="239"><span class="lineNum">     239 </span>            :  */</a>
-<a name="240"><span class="lineNum">     240 </span><span class="lineCov">     336440 : tommy_inline void* tommy_list_remove_existing(tommy_list* list, tommy_node* node)</span></a>
+<a name="240"><span class="lineNum">     240 </span><span class="lineCov">     336876 : tommy_inline void* tommy_list_remove_existing(tommy_list* list, tommy_node* node)</span></a>
 <a name="241"><span class="lineNum">     241 </span>            : {</a>
-<a name="242"><span class="lineNum">     242 </span><span class="lineCov">     336440 :         tommy_node* head = tommy_list_head(list);</span></a>
+<a name="242"><span class="lineNum">     242 </span><span class="lineCov">     336876 :         tommy_node* head = tommy_list_head(list);</span></a>
 <a name="243"><span class="lineNum">     243 </span>            : </a>
 <a name="244"><span class="lineNum">     244 </span>            :         /* remove from the &quot;circular&quot; prev list */</a>
-<a name="245"><span class="lineNum">     245 </span><span class="lineCov">     336440 :         if (node-&gt;next)</span></a>
-<a name="246"><span class="lineNum">     246 </span><span class="lineCov">     114378 :                 node-&gt;next-&gt;prev = node-&gt;prev;</span></a>
+<a name="245"><span class="lineNum">     245 </span><span class="lineCov">     336876 :         if (node-&gt;next)</span></a>
+<a name="246"><span class="lineNum">     246 </span><span class="lineCov">     114609 :                 node-&gt;next-&gt;prev = node-&gt;prev;</span></a>
 <a name="247"><span class="lineNum">     247 </span>            :         else</a>
-<a name="248"><span class="lineNum">     248 </span><span class="lineCov">     222062 :                 head-&gt;prev = node-&gt;prev; /* the last */</span></a>
+<a name="248"><span class="lineNum">     248 </span><span class="lineCov">     222267 :                 head-&gt;prev = node-&gt;prev; /* the last */</span></a>
 <a name="249"><span class="lineNum">     249 </span>            : </a>
 <a name="250"><span class="lineNum">     250 </span>            :         /* remove from the &quot;0 terminated&quot; next list */</a>
-<a name="251"><span class="lineNum">     251 </span><span class="lineCov">     336440 :         if (head == node)</span></a>
-<a name="252"><span class="lineNum">     252 </span><span class="lineCov">     238235 :                 *list = node-&gt;next; /* the new head, in case 0 */</span></a>
+<a name="251"><span class="lineNum">     251 </span><span class="lineCov">     336876 :         if (head == node)</span></a>
+<a name="252"><span class="lineNum">     252 </span><span class="lineCov">     238682 :                 *list = node-&gt;next; /* the new head, in case 0 */</span></a>
 <a name="253"><span class="lineNum">     253 </span>            :         else</a>
-<a name="254"><span class="lineNum">     254 </span><span class="lineCov">      98205 :                 node-&gt;prev-&gt;next = node-&gt;next;</span></a>
+<a name="254"><span class="lineNum">     254 </span><span class="lineCov">      98194 :                 node-&gt;prev-&gt;next = node-&gt;next;</span></a>
 <a name="255"><span class="lineNum">     255 </span>            : </a>
-<a name="256"><span class="lineNum">     256 </span><span class="lineCov">     336440 :         return node-&gt;data;</span></a>
+<a name="256"><span class="lineNum">     256 </span><span class="lineCov">     336876 :         return node-&gt;data;</span></a>
 <a name="257"><span class="lineNum">     257 </span>            : }</a>
 <a name="258"><span class="lineNum">     258 </span>            : </a>
 <a name="259"><span class="lineNum">     259 </span>            : /**</a>
@@ -334,24 +334,24 @@
 <a name="272"><span class="lineNum">     272 </span>            :         /* if the second is empty, nothing to do */</a>
 <a name="273"><span class="lineNum">     273 </span><span class="lineCov">      79280 :         second_head = tommy_list_head(second);</span></a>
 <a name="274"><span class="lineNum">     274 </span><span class="lineCov">      79280 :         if (second_head == 0)</span></a>
-<a name="275"><span class="lineNum">     275 </span><span class="lineCov">      69889 :                 return;</span></a>
+<a name="275"><span class="lineNum">     275 </span><span class="lineCov">      70071 :                 return;</span></a>
 <a name="276"><span class="lineNum">     276 </span>            : </a>
 <a name="277"><span class="lineNum">     277 </span>            :         /* if the first is empty, copy the second */</a>
-<a name="278"><span class="lineNum">     278 </span><span class="lineCov">       9391 :         first_head = tommy_list_head(first);</span></a>
-<a name="279"><span class="lineNum">     279 </span><span class="lineCov">       9391 :         if (first_head == 0) {</span></a>
-<a name="280"><span class="lineNum">     280 </span><span class="lineCov">       8317 :                 *first = *second;</span></a>
-<a name="281"><span class="lineNum">     281 </span><span class="lineCov">       8317 :                 return;</span></a>
+<a name="278"><span class="lineNum">     278 </span><span class="lineCov">       9209 :         first_head = tommy_list_head(first);</span></a>
+<a name="279"><span class="lineNum">     279 </span><span class="lineCov">       9209 :         if (first_head == 0) {</span></a>
+<a name="280"><span class="lineNum">     280 </span><span class="lineCov">       8162 :                 *first = *second;</span></a>
+<a name="281"><span class="lineNum">     281 </span><span class="lineCov">       8162 :                 return;</span></a>
 <a name="282"><span class="lineNum">     282 </span>            :         }</a>
 <a name="283"><span class="lineNum">     283 </span>            : </a>
 <a name="284"><span class="lineNum">     284 </span>            :         /* tail of the first list */</a>
-<a name="285"><span class="lineNum">     285 </span><span class="lineCov">       1074 :         first_tail = first_head-&gt;prev;</span></a>
+<a name="285"><span class="lineNum">     285 </span><span class="lineCov">       1047 :         first_tail = first_head-&gt;prev;</span></a>
 <a name="286"><span class="lineNum">     286 </span>            : </a>
 <a name="287"><span class="lineNum">     287 </span>            :         /* set the &quot;circular&quot; prev list */</a>
-<a name="288"><span class="lineNum">     288 </span><span class="lineCov">       1074 :         first_head-&gt;prev = second_head-&gt;prev;</span></a>
-<a name="289"><span class="lineNum">     289 </span><span class="lineCov">       1074 :         second_head-&gt;prev = first_tail;</span></a>
+<a name="288"><span class="lineNum">     288 </span><span class="lineCov">       1047 :         first_head-&gt;prev = second_head-&gt;prev;</span></a>
+<a name="289"><span class="lineNum">     289 </span><span class="lineCov">       1047 :         second_head-&gt;prev = first_tail;</span></a>
 <a name="290"><span class="lineNum">     290 </span>            : </a>
 <a name="291"><span class="lineNum">     291 </span>            :         /* set the &quot;0 terminated&quot; next list */</a>
-<a name="292"><span class="lineNum">     292 </span><span class="lineCov">       1074 :         first_tail-&gt;next = second_head;</span></a>
+<a name="292"><span class="lineNum">     292 </span><span class="lineCov">       1047 :         first_tail-&gt;next = second_head;</span></a>
 <a name="293"><span class="lineNum">     293 </span>            : }</a>
 <a name="294"><span class="lineNum">     294 </span>            : </a>
 <a name="295"><span class="lineNum">     295 </span>            : /**</a>
@@ -367,9 +367,9 @@
 <a name="305"><span class="lineNum">     305 </span>            :  * Checks if empty.</a>
 <a name="306"><span class="lineNum">     306 </span>            :  * \return If the list is empty.</a>
 <a name="307"><span class="lineNum">     307 </span>            :  */</a>
-<a name="308"><span class="lineNum">     308 </span><span class="lineCov">       7447 : tommy_inline tommy_bool_t tommy_list_empty(tommy_list* list)</span></a>
+<a name="308"><span class="lineNum">     308 </span><span class="lineCov">       7444 : tommy_inline tommy_bool_t tommy_list_empty(tommy_list* list)</span></a>
 <a name="309"><span class="lineNum">     309 </span>            : {</a>
-<a name="310"><span class="lineNum">     310 </span><span class="lineCov">       7447 :         return tommy_list_head(list) == 0;</span></a>
+<a name="310"><span class="lineNum">     310 </span><span class="lineCov">       7444 :         return tommy_list_head(list) == 0;</span></a>
 <a name="311"><span class="lineNum">     311 </span>            : }</a>
 <a name="312"><span class="lineNum">     312 </span>            : </a>
 <a name="313"><span class="lineNum">     313 </span>            : /**</a>
@@ -417,16 +417,16 @@
 <a name="355"><span class="lineNum">     355 </span>            :  * tommy_list_foreach(&amp;list, free);</a>
 <a name="356"><span class="lineNum">     356 </span>            :  * \endcode</a>
 <a name="357"><span class="lineNum">     357 </span>            :  */</a>
-<a name="358"><span class="lineNum">     358 </span><span class="lineCov">      14796 : tommy_inline void tommy_list_foreach(tommy_list* list, tommy_foreach_func* func)</span></a>
+<a name="358"><span class="lineNum">     358 </span><span class="lineCov">      14846 : tommy_inline void tommy_list_foreach(tommy_list* list, tommy_foreach_func* func)</span></a>
 <a name="359"><span class="lineNum">     359 </span>            : {</a>
-<a name="360"><span class="lineNum">     360 </span><span class="lineCov">      14796 :         tommy_node* node = tommy_list_head(list);</span></a>
+<a name="360"><span class="lineNum">     360 </span><span class="lineCov">      14846 :         tommy_node* node = tommy_list_head(list);</span></a>
 <a name="361"><span class="lineNum">     361 </span>            : </a>
-<a name="362"><span class="lineNum">     362 </span><span class="lineCov">    4108729 :         while (node) {</span></a>
-<a name="363"><span class="lineNum">     363 </span><span class="lineCov">    4093933 :                 void* data = node-&gt;data;</span></a>
-<a name="364"><span class="lineNum">     364 </span><span class="lineCov">    4093933 :                 node = node-&gt;next;</span></a>
-<a name="365"><span class="lineNum">     365 </span><span class="lineCov">    4093933 :                 func(data);</span></a>
+<a name="362"><span class="lineNum">     362 </span><span class="lineCov">    4108770 :         while (node) {</span></a>
+<a name="363"><span class="lineNum">     363 </span><span class="lineCov">    4093924 :                 void* data = node-&gt;data;</span></a>
+<a name="364"><span class="lineNum">     364 </span><span class="lineCov">    4093924 :                 node = node-&gt;next;</span></a>
+<a name="365"><span class="lineNum">     365 </span><span class="lineCov">    4093924 :                 func(data);</span></a>
 <a name="366"><span class="lineNum">     366 </span>            :         }</a>
-<a name="367"><span class="lineNum">     367 </span><span class="lineCov">      14796 : }</span></a>
+<a name="367"><span class="lineNum">     367 </span><span class="lineCov">      14846 : }</span></a>
 <a name="368"><span class="lineNum">     368 </span>            : </a>
 <a name="369"><span class="lineNum">     369 </span>            : /**</a>
 <a name="370"><span class="lineNum">     370 </span>            :  * Calls the specified function with an argument for each element in the list.</a>

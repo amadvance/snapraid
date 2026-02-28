@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -267,9 +267,9 @@
 <a name="205"><span class="lineNum">     205 </span>            :  * \param hash Hash of the element to find.</a>
 <a name="206"><span class="lineNum">     206 </span>            :  * \return The head of the bucket, or 0 if empty.</a>
 <a name="207"><span class="lineNum">     207 </span>            :  */</a>
-<a name="208"><span class="lineNum">     208 </span><span class="lineCov">    3248010 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span></a>
+<a name="208"><span class="lineNum">     208 </span><span class="lineCov">    3232326 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span></a>
 <a name="209"><span class="lineNum">     209 </span>            : {</a>
-<a name="210"><span class="lineNum">     210 </span><span class="lineCov">    3248010 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span></a>
+<a name="210"><span class="lineNum">     210 </span><span class="lineCov">    3232326 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span></a>
 <a name="211"><span class="lineNum">     211 </span>            : }</a>
 <a name="212"><span class="lineNum">     212 </span>            : </a>
 <a name="213"><span class="lineNum">     213 </span>            : /**</a>
@@ -282,17 +282,17 @@
 <a name="220"><span class="lineNum">     220 </span>            :  * \param hash Hash of the element to find.</a>
 <a name="221"><span class="lineNum">     221 </span>            :  * \return The first element found, or 0 if none.</a>
 <a name="222"><span class="lineNum">     222 </span>            :  */</a>
-<a name="223"><span class="lineNum">     223 </span><span class="lineCov">    3175958 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span></a>
+<a name="223"><span class="lineNum">     223 </span><span class="lineCov">    3176368 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span></a>
 <a name="224"><span class="lineNum">     224 </span>            : {</a>
-<a name="225"><span class="lineNum">     225 </span><span class="lineCov">    3175958 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span></a>
+<a name="225"><span class="lineNum">     225 </span><span class="lineCov">    3176368 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span></a>
 <a name="226"><span class="lineNum">     226 </span>            : </a>
-<a name="227"><span class="lineNum">     227 </span><span class="lineCov">    3864355 :         while (i) {</span></a>
+<a name="227"><span class="lineNum">     227 </span><span class="lineCov">    3868088 :         while (i) {</span></a>
 <a name="228"><span class="lineNum">     228 </span>            :                 /* we first check if the hash matches, as in the same bucket we may have multiple hash values */</a>
-<a name="229"><span class="lineNum">     229 </span><span class="lineCov">    1917649 :                 if (i-&gt;index == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span></a>
-<a name="230"><span class="lineNum">     230 </span><span class="lineCov">    1229252 :                         return i-&gt;data;</span></a>
-<a name="231"><span class="lineNum">     231 </span><span class="lineCov">     688397 :                 i = i-&gt;next;</span></a>
+<a name="229"><span class="lineNum">     229 </span><span class="lineCov">    1923487 :                 if (i-&gt;index == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span></a>
+<a name="230"><span class="lineNum">     230 </span><span class="lineCov">    1231767 :                         return i-&gt;data;</span></a>
+<a name="231"><span class="lineNum">     231 </span><span class="lineCov">     691720 :                 i = i-&gt;next;</span></a>
 <a name="232"><span class="lineNum">     232 </span>            :         }</a>
-<a name="233"><span class="lineNum">     233 </span><span class="lineCov">    1946706 :         return 0;</span></a>
+<a name="233"><span class="lineNum">     233 </span><span class="lineCov">    1944601 :         return 0;</span></a>
 <a name="234"><span class="lineNum">     234 </span>            : }</a>
 <a name="235"><span class="lineNum">     235 </span>            : </a>
 <a name="236"><span class="lineNum">     236 </span>            : /**</a>
@@ -343,9 +343,9 @@
 <a name="281"><span class="lineNum">     281 </span>            : /**</a>
 <a name="282"><span class="lineNum">     282 </span>            :  * Gets the number of elements.</a>
 <a name="283"><span class="lineNum">     283 </span>            :  */</a>
-<a name="284"><span class="lineNum">     284 </span><span class="lineCov">        424 : tommy_inline tommy_size_t tommy_hashdyn_count(tommy_hashdyn* hashdyn)</span></a>
+<a name="284"><span class="lineNum">     284 </span><span class="lineCov">        423 : tommy_inline tommy_size_t tommy_hashdyn_count(tommy_hashdyn* hashdyn)</span></a>
 <a name="285"><span class="lineNum">     285 </span>            : {</a>
-<a name="286"><span class="lineNum">     286 </span><span class="lineCov">        424 :         return hashdyn-&gt;count;</span></a>
+<a name="286"><span class="lineNum">     286 </span><span class="lineCov">        423 :         return hashdyn-&gt;count;</span></a>
 <a name="287"><span class="lineNum">     287 </span>            : }</a>
 <a name="288"><span class="lineNum">     288 </span>            : </a>
 <a name="289"><span class="lineNum">     289 </span>            : /**</a>

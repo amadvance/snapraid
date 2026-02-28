@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">766</td>
+            <td class="headerCovTableEntry">765</td>
             <td class="headerCovTableEntry">862</td>
-            <td class="headerCovTableEntryMed">88.9 %</td>
+            <td class="headerCovTableEntryMed">88.7 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">10</td>
@@ -93,12 +93,12 @@
 <a name="31"><span class="lineNum">      31 </span>            : /****************************************************************************/</a>
 <a name="32"><span class="lineNum">      32 </span>            : /* check */</a>
 <a name="33"><span class="lineNum">      33 </span>            : </a>
-<a name="34"><span class="lineNum">      34 </span><span class="lineCov">     731365 : static const char* es(int err)</span></a>
+<a name="34"><span class="lineNum">      34 </span><span class="lineCov">     731403 : static const char* es(int err)</span></a>
 <a name="35"><span class="lineNum">      35 </span>            : {</a>
-<a name="36"><span class="lineNum">      36 </span><span class="lineCov">     731365 :         if (is_hw(err))</span></a>
+<a name="36"><span class="lineNum">      36 </span><span class="lineCov">     731403 :         if (is_hw(err))</span></a>
 <a name="37"><span class="lineNum">      37 </span><span class="lineNoCov">          0 :                 return &quot;error_io&quot;;</span></a>
 <a name="38"><span class="lineNum">      38 </span>            :         else</a>
-<a name="39"><span class="lineNum">      39 </span><span class="lineCov">     731365 :                 return &quot;error&quot;;</span></a>
+<a name="39"><span class="lineNum">      39 </span><span class="lineCov">     731403 :                 return &quot;error&quot;;</span></a>
 <a name="40"><span class="lineNum">      40 </span>            : }</a>
 <a name="41"><span class="lineNum">      41 </span>            : </a>
 <a name="42"><span class="lineNum">      42 </span>            : /**</a>
@@ -137,64 +137,64 @@
 <a name="75"><span class="lineNum">      75 </span>            :  * Check if a block hash matches the specified buffer.</a>
 <a name="76"><span class="lineNum">      76 </span>            :  * Return ==0 if equal</a>
 <a name="77"><span class="lineNum">      77 </span>            :  */</a>
-<a name="78"><span class="lineNum">      78 </span><span class="lineCov">     468600 : static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned pos_size, unsigned char* buffer, unsigned char* buffer_zero)</span></a>
+<a name="78"><span class="lineNum">      78 </span><span class="lineCov">     468795 : static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned pos_size, unsigned char* buffer, unsigned char* buffer_zero)</span></a>
 <a name="79"><span class="lineNum">      79 </span>            : {</a>
 <a name="80"><span class="lineNum">      80 </span>            :         unsigned char hash[HASH_MAX];</a>
 <a name="81"><span class="lineNum">      81 </span>            : </a>
 <a name="82"><span class="lineNum">      82 </span>            :         /* now compute the hash of the valid part */</a>
-<a name="83"><span class="lineNum">      83 </span><span class="lineCov">     468600 :         if (rehash) {</span></a>
+<a name="83"><span class="lineNum">      83 </span><span class="lineCov">     468795 :         if (rehash) {</span></a>
 <a name="84"><span class="lineNum">      84 </span><span class="lineNoCov">          0 :                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, hash, buffer, pos_size);</span></a>
 <a name="85"><span class="lineNum">      85 </span>            :         } else {</a>
-<a name="86"><span class="lineNum">      86 </span><span class="lineCov">     468600 :                 memhash(state-&gt;hash, state-&gt;hashseed, hash, buffer, pos_size);</span></a>
+<a name="86"><span class="lineNum">      86 </span><span class="lineCov">     468795 :                 memhash(state-&gt;hash, state-&gt;hashseed, hash, buffer, pos_size);</span></a>
 <a name="87"><span class="lineNum">      87 </span>            :         }</a>
 <a name="88"><span class="lineNum">      88 </span>            : </a>
 <a name="89"><span class="lineNum">      89 </span>            :         /* compare the hash */</a>
-<a name="90"><span class="lineNum">      90 </span><span class="lineCov">     468600 :         if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span></a>
-<a name="91"><span class="lineNum">      91 </span><span class="lineCov">      14376 :                 return -1;</span></a>
+<a name="90"><span class="lineNum">      90 </span><span class="lineCov">     468795 :         if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span></a>
+<a name="91"><span class="lineNum">      91 </span><span class="lineCov">      14403 :                 return -1;</span></a>
 <a name="92"><span class="lineNum">      92 </span>            :         }</a>
 <a name="93"><span class="lineNum">      93 </span>            : </a>
 <a name="94"><span class="lineNum">      94 </span>            :         /* compare to the end of the block */</a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">     454224 :         if (pos_size &lt; state-&gt;block_size) {</span></a>
-<a name="96"><span class="lineNum">      96 </span><span class="lineCov">     187417 :                 if (memcmp(buffer + pos_size, buffer_zero + pos_size, state-&gt;block_size - pos_size) != 0) {</span></a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">         42 :                         return -1;</span></a>
+<a name="95"><span class="lineNum">      95 </span><span class="lineCov">     454392 :         if (pos_size &lt; state-&gt;block_size) {</span></a>
+<a name="96"><span class="lineNum">      96 </span><span class="lineCov">     187544 :                 if (memcmp(buffer + pos_size, buffer_zero + pos_size, state-&gt;block_size - pos_size) != 0) {</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">         45 :                         return -1;</span></a>
 <a name="98"><span class="lineNum">      98 </span>            :                 }</a>
 <a name="99"><span class="lineNum">      99 </span>            :         }</a>
 <a name="100"><span class="lineNum">     100 </span>            : </a>
-<a name="101"><span class="lineNum">     101 </span><span class="lineCov">     454182 :         return 0;</span></a>
+<a name="101"><span class="lineNum">     101 </span><span class="lineCov">     454347 :         return 0;</span></a>
 <a name="102"><span class="lineNum">     102 </span>            : }</a>
 <a name="103"><span class="lineNum">     103 </span>            : </a>
 <a name="104"><span class="lineNum">     104 </span>            : /**</a>
 <a name="105"><span class="lineNum">     105 </span>            :  * Check if the hash of all the failed blocks we are expecting to recover are now matching.</a>
 <a name="106"><span class="lineNum">     106 </span>            :  */</a>
-<a name="107"><span class="lineNum">     107 </span><span class="lineCov">     210036 : static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void* buffer_zero)</span></a>
+<a name="107"><span class="lineNum">     107 </span><span class="lineCov">     210236 : static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void* buffer_zero)</span></a>
 <a name="108"><span class="lineNum">     108 </span>            : {</a>
 <a name="109"><span class="lineNum">     109 </span>            :         unsigned j;</a>
 <a name="110"><span class="lineNum">     110 </span>            :         int hash_checked;</a>
 <a name="111"><span class="lineNum">     111 </span>            : </a>
-<a name="112"><span class="lineNum">     112 </span><span class="lineCov">     210036 :         hash_checked = 0; /* keep track if we check at least one block */</span></a>
+<a name="112"><span class="lineNum">     112 </span><span class="lineCov">     210236 :         hash_checked = 0; /* keep track if we check at least one block */</span></a>
 <a name="113"><span class="lineNum">     113 </span>            : </a>
 <a name="114"><span class="lineNum">     114 </span>            :         /* check if the recovered blocks are OK */</a>
-<a name="115"><span class="lineNum">     115 </span><span class="lineCov">     668740 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="115"><span class="lineNum">     115 </span><span class="lineCov">     669105 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
 <a name="116"><span class="lineNum">     116 </span>            :                 /* if we are expected to recover this block */</a>
-<a name="117"><span class="lineNum">     117 </span><span class="lineCov">     473122 :                 if (!failed[failed_map[j]].is_outofdate</span></a>
+<a name="117"><span class="lineNum">     117 </span><span class="lineCov">     473317 :                 if (!failed[failed_map[j]].is_outofdate</span></a>
 <a name="118"><span class="lineNum">     118 </span>            :                         /* if the block has a hash to check */</a>
-<a name="119"><span class="lineNum">     119 </span><span class="lineCov">     468600 :                         &amp;&amp; block_has_updated_hash(failed[failed_map[j]].block)</span></a>
+<a name="119"><span class="lineNum">     119 </span><span class="lineCov">     468795 :                         &amp;&amp; block_has_updated_hash(failed[failed_map[j]].block)</span></a>
 <a name="120"><span class="lineNum">     120 </span>            :                 ) {</a>
 <a name="121"><span class="lineNum">     121 </span>            :                         /* if a hash doesn't match, fail the check */</a>
-<a name="122"><span class="lineNum">     122 </span><span class="lineCov">     468600 :                         unsigned pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state-&gt;block_size);</span></a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">     468600 :                         if (blockcmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {</span></a>
-<a name="124"><span class="lineNum">     124 </span><span class="lineCov">      14418 :                                 log_tag(&quot;repair_hash_error:%u: Hash mismatch\n&quot;, failed_map[j]);</span></a>
-<a name="125"><span class="lineNum">     125 </span><span class="lineCov">      14418 :                                 return 0;</span></a>
+<a name="122"><span class="lineNum">     122 </span><span class="lineCov">     468795 :                         unsigned pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state-&gt;block_size);</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">     468795 :                         if (blockcmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {</span></a>
+<a name="124"><span class="lineNum">     124 </span><span class="lineCov">      14448 :                                 log_tag(&quot;repair_hash_error:%u: Hash mismatch\n&quot;, failed_map[j]);</span></a>
+<a name="125"><span class="lineNum">     125 </span><span class="lineCov">      14448 :                                 return 0;</span></a>
 <a name="126"><span class="lineNum">     126 </span>            :                         }</a>
 <a name="127"><span class="lineNum">     127 </span>            : </a>
-<a name="128"><span class="lineNum">     128 </span><span class="lineCov">     454182 :                         hash_checked = 1;</span></a>
+<a name="128"><span class="lineNum">     128 </span><span class="lineCov">     454347 :                         hash_checked = 1;</span></a>
 <a name="129"><span class="lineNum">     129 </span>            :                 }</a>
 <a name="130"><span class="lineNum">     130 </span>            :         }</a>
 <a name="131"><span class="lineNum">     131 </span>            : </a>
 <a name="132"><span class="lineNum">     132 </span>            :         /* if nothing checked, we reject it */</a>
 <a name="133"><span class="lineNum">     133 </span>            :         /* note that we are excluding this case at upper level */</a>
 <a name="134"><span class="lineNum">     134 </span>            :         /* but checking again doesn't hurt */</a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">     195618 :         if (!hash_checked) {</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">     195788 :         if (!hash_checked) {</span></a>
 <a name="136"><span class="lineNum">     136 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="137"><span class="lineNum">     137 </span>            :                 return 0;</a>
 <a name="138"><span class="lineNum">     138 </span>            :                 /* LCOV_EXCL_STOP */</a>
@@ -202,8 +202,8 @@
 <a name="140"><span class="lineNum">     140 </span>            : </a>
 <a name="141"><span class="lineNum">     141 </span>            :         /* if we checked something, and no block failed the check */</a>
 <a name="142"><span class="lineNum">     142 </span>            :         /* recompute all the redundancy information */</a>
-<a name="143"><span class="lineNum">     143 </span><span class="lineCov">     195618 :         raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</span></a>
-<a name="144"><span class="lineNum">     144 </span><span class="lineCov">     195618 :         return 1;</span></a>
+<a name="143"><span class="lineNum">     143 </span><span class="lineCov">     195788 :         raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</span></a>
+<a name="144"><span class="lineNum">     144 </span><span class="lineCov">     195788 :         return 1;</span></a>
 <a name="145"><span class="lineNum">     145 </span>            : }</a>
 <a name="146"><span class="lineNum">     146 </span>            : </a>
 <a name="147"><span class="lineNum">     147 </span>            : /**</a>
@@ -229,7 +229,7 @@
 <a name="167"><span class="lineNum">     167 </span>            :  * Return &lt;0 if failure for missing strategy, &gt;0 if data is wrong and we cannot rebuild correctly, 0 on success.</a>
 <a name="168"><span class="lineNum">     168 </span>            :  * If success, the parity is computed in the buffer variable.</a>
 <a name="169"><span class="lineNum">     169 </span>            :  */</a>
-<a name="170"><span class="lineNum">     170 </span><span class="lineCov">     252597 : static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)</span></a>
+<a name="170"><span class="lineNum">     170 </span><span class="lineCov">     252818 : static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)</span></a>
 <a name="171"><span class="lineNum">     171 </span>            : {</a>
 <a name="172"><span class="lineNum">     172 </span>            :         unsigned i, n;</a>
 <a name="173"><span class="lineNum">     173 </span>            :         int error;</a>
@@ -238,7 +238,7 @@
 <a name="176"><span class="lineNum">     176 </span>            :         int ip[LEV_MAX];</a>
 <a name="177"><span class="lineNum">     177 </span>            : </a>
 <a name="178"><span class="lineNum">     178 </span>            :         /* no fix required, already checked at higher level, but just to be sure */</a>
-<a name="179"><span class="lineNum">     179 </span><span class="lineCov">     252597 :         if (failed_count == 0) {</span></a>
+<a name="179"><span class="lineNum">     179 </span><span class="lineCov">     252818 :         if (failed_count == 0) {</span></a>
 <a name="180"><span class="lineNum">     180 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="181"><span class="lineNum">     181 </span>            :                 /* recompute only the parity */</a>
 <a name="182"><span class="lineNum">     182 </span>            :                 raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</a>
@@ -246,28 +246,28 @@
 <a name="184"><span class="lineNum">     184 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="185"><span class="lineNum">     185 </span>            :         }</a>
 <a name="186"><span class="lineNum">     186 </span>            : </a>
-<a name="187"><span class="lineNum">     187 </span><span class="lineCov">     252597 :         n = state-&gt;level;</span></a>
-<a name="188"><span class="lineNum">     188 </span><span class="lineCov">     252597 :         error = 0;</span></a>
+<a name="187"><span class="lineNum">     187 </span><span class="lineCov">     252818 :         n = state-&gt;level;</span></a>
+<a name="188"><span class="lineNum">     188 </span><span class="lineCov">     252818 :         error = 0;</span></a>
 <a name="189"><span class="lineNum">     189 </span>            : </a>
 <a name="190"><span class="lineNum">     190 </span>            :         /* setup vector of failed disk indexes */</a>
-<a name="191"><span class="lineNum">     191 </span><span class="lineCov">     891533 :         for (i = 0; i &lt; failed_count; ++i)</span></a>
-<a name="192"><span class="lineNum">     192 </span><span class="lineCov">     638936 :                 id[i] = failed[failed_map[i]].index;</span></a>
+<a name="191"><span class="lineNum">     191 </span><span class="lineCov">     892011 :         for (i = 0; i &lt; failed_count; ++i)</span></a>
+<a name="192"><span class="lineNum">     192 </span><span class="lineCov">     639193 :                 id[i] = failed[failed_map[i]].index;</span></a>
 <a name="193"><span class="lineNum">     193 </span>            : </a>
 <a name="194"><span class="lineNum">     194 </span>            :         /* check if there is at least a failed block that can be checked for correctness using the hash */</a>
 <a name="195"><span class="lineNum">     195 </span>            :         /* if there isn't, we have to sacrifice a parity block to check that the result is correct */</a>
-<a name="196"><span class="lineNum">     196 </span><span class="lineCov">     252597 :         has_hash = 0;</span></a>
-<a name="197"><span class="lineNum">     197 </span><span class="lineCov">     891533 :         for (i = 0; i &lt; failed_count; ++i) {</span></a>
+<a name="196"><span class="lineNum">     196 </span><span class="lineCov">     252818 :         has_hash = 0;</span></a>
+<a name="197"><span class="lineNum">     197 </span><span class="lineCov">     892011 :         for (i = 0; i &lt; failed_count; ++i) {</span></a>
 <a name="198"><span class="lineNum">     198 </span>            :                 /* if we are expected to recover this block */</a>
-<a name="199"><span class="lineNum">     199 </span><span class="lineCov">     638936 :                 if (!failed[failed_map[i]].is_outofdate</span></a>
+<a name="199"><span class="lineNum">     199 </span><span class="lineCov">     639193 :                 if (!failed[failed_map[i]].is_outofdate</span></a>
 <a name="200"><span class="lineNum">     200 </span>            :                         /* if the block has a hash to check */</a>
-<a name="201"><span class="lineNum">     201 </span><span class="lineCov">     629892 :                         &amp;&amp; block_has_updated_hash(failed[failed_map[i]].block)</span></a>
+<a name="201"><span class="lineNum">     201 </span><span class="lineCov">     630149 :                         &amp;&amp; block_has_updated_hash(failed[failed_map[i]].block)</span></a>
 <a name="202"><span class="lineNum">     202 </span>            :                 )</a>
-<a name="203"><span class="lineNum">     203 </span><span class="lineCov">     629884 :                         has_hash = 1;</span></a>
+<a name="203"><span class="lineNum">     203 </span><span class="lineCov">     630141 :                         has_hash = 1;</span></a>
 <a name="204"><span class="lineNum">     204 </span>            :         }</a>
 <a name="205"><span class="lineNum">     205 </span>            : </a>
 <a name="206"><span class="lineNum">     206 </span>            :         /* if we don't have a hash, but we have an extra parity */</a>
 <a name="207"><span class="lineNum">     207 </span>            :         /* (strictly-less failures than number of parities) */</a>
-<a name="208"><span class="lineNum">     208 </span><span class="lineCov">     252597 :         if (!has_hash &amp;&amp; failed_count &lt; n) {</span></a>
+<a name="208"><span class="lineNum">     208 </span><span class="lineCov">     252818 :         if (!has_hash &amp;&amp; failed_count &lt; n) {</span></a>
 <a name="209"><span class="lineNum">     209 </span>            :                 /* number of parity to use, one more to check the recovering */</a>
 <a name="210"><span class="lineNum">     210 </span><span class="lineCov">          8 :                 unsigned r = failed_count + 1;</span></a>
 <a name="211"><span class="lineNum">     211 </span>            : </a>
@@ -307,51 +307,51 @@
 <a name="245"><span class="lineNum">     245 </span>            : </a>
 <a name="246"><span class="lineNum">     246 </span>            :         /* if we have a hash, and enough parities */</a>
 <a name="247"><span class="lineNum">     247 </span>            :         /* (less-or-equal failures than number of parities) */</a>
-<a name="248"><span class="lineNum">     248 </span><span class="lineCov">     252589 :         if (has_hash &amp;&amp; failed_count &lt;= n) {</span></a>
+<a name="248"><span class="lineNum">     248 </span><span class="lineCov">     252810 :         if (has_hash &amp;&amp; failed_count &lt;= n) {</span></a>
 <a name="249"><span class="lineNum">     249 </span>            :                 /* number of parities to use equal to the number of failures */</a>
-<a name="250"><span class="lineNum">     250 </span><span class="lineCov">     204946 :                 unsigned r = failed_count;</span></a>
+<a name="250"><span class="lineNum">     250 </span><span class="lineCov">     205126 :                 unsigned r = failed_count;</span></a>
 <a name="251"><span class="lineNum">     251 </span>            : </a>
 <a name="252"><span class="lineNum">     252 </span>            :                 /* all combinations (r of n) parities */</a>
-<a name="253"><span class="lineNum">     253 </span><span class="lineCov">     204946 :                 combination_first(r, n, ip);</span></a>
+<a name="253"><span class="lineNum">     253 </span><span class="lineCov">     205126 :                 combination_first(r, n, ip);</span></a>
 <a name="254"><span class="lineNum">     254 </span>            :                 do {</a>
 <a name="255"><span class="lineNum">     255 </span>            :                         /* if a parity is missing, do nothing */</a>
-<a name="256"><span class="lineNum">     256 </span><span class="lineCov">     687807 :                         for (i = 0; i &lt; r; ++i) {</span></a>
-<a name="257"><span class="lineNum">     257 </span><span class="lineCov">     477771 :                                 if (buffer_recov[ip[i]] == 0)</span></a>
+<a name="256"><span class="lineNum">     256 </span><span class="lineCov">     688202 :                         for (i = 0; i &lt; r; ++i) {</span></a>
+<a name="257"><span class="lineNum">     257 </span><span class="lineCov">     477966 :                                 if (buffer_recov[ip[i]] == 0)</span></a>
 <a name="258"><span class="lineNum">     258 </span><span class="lineCov">       4649 :                                         break;</span></a>
 <a name="259"><span class="lineNum">     259 </span>            :                         }</a>
-<a name="260"><span class="lineNum">     260 </span><span class="lineCov">     214685 :                         if (i != r)</span></a>
+<a name="260"><span class="lineNum">     260 </span><span class="lineCov">     214885 :                         if (i != r)</span></a>
 <a name="261"><span class="lineNum">     261 </span><span class="lineCov">       4649 :                                 continue;</span></a>
 <a name="262"><span class="lineNum">     262 </span>            : </a>
 <a name="263"><span class="lineNum">     263 </span>            :                         /* copy the parities to use */</a>
-<a name="264"><span class="lineNum">     264 </span><span class="lineCov">     683158 :                         for (i = 0; i &lt; r; ++i)</span></a>
-<a name="265"><span class="lineNum">     265 </span><span class="lineCov">     473122 :                                 memcpy(buffer[diskmax + ip[i]], buffer_recov[ip[i]], state-&gt;block_size);</span></a>
+<a name="264"><span class="lineNum">     264 </span><span class="lineCov">     683553 :                         for (i = 0; i &lt; r; ++i)</span></a>
+<a name="265"><span class="lineNum">     265 </span><span class="lineCov">     473317 :                                 memcpy(buffer[diskmax + ip[i]], buffer_recov[ip[i]], state-&gt;block_size);</span></a>
 <a name="266"><span class="lineNum">     266 </span>            : </a>
 <a name="267"><span class="lineNum">     267 </span>            :                         /* recover */</a>
-<a name="268"><span class="lineNum">     268 </span><span class="lineCov">     210036 :                         raid_data(r, id, ip, diskmax, state-&gt;block_size, buffer);</span></a>
+<a name="268"><span class="lineNum">     268 </span><span class="lineCov">     210236 :                         raid_data(r, id, ip, diskmax, state-&gt;block_size, buffer);</span></a>
 <a name="269"><span class="lineNum">     269 </span>            : </a>
 <a name="270"><span class="lineNum">     270 </span>            :                         /* use the hash to check the result */</a>
-<a name="271"><span class="lineNum">     271 </span><span class="lineCov">     210036 :                         if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))</span></a>
-<a name="272"><span class="lineNum">     272 </span><span class="lineCov">     195618 :                                 return 0;</span></a>
+<a name="271"><span class="lineNum">     271 </span><span class="lineCov">     210236 :                         if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))</span></a>
+<a name="272"><span class="lineNum">     272 </span><span class="lineCov">     195788 :                                 return 0;</span></a>
 <a name="273"><span class="lineNum">     273 </span>            : </a>
 <a name="274"><span class="lineNum">     274 </span>            :                         /* log */</a>
-<a name="275"><span class="lineNum">     275 </span><span class="lineCov">      14418 :                         log_tag(&quot;recover_hash_error:%u:&quot;, pos);</span></a>
-<a name="276"><span class="lineNum">     276 </span><span class="lineCov">      28836 :                         for (i = 0; i &lt; r; ++i) {</span></a>
-<a name="277"><span class="lineNum">     277 </span><span class="lineCov">      14418 :                                 if (i != 0)</span></a>
+<a name="275"><span class="lineNum">     275 </span><span class="lineCov">      14448 :                         log_tag(&quot;recover_hash_error:%u:&quot;, pos);</span></a>
+<a name="276"><span class="lineNum">     276 </span><span class="lineCov">      28896 :                         for (i = 0; i &lt; r; ++i) {</span></a>
+<a name="277"><span class="lineNum">     277 </span><span class="lineCov">      14448 :                                 if (i != 0)</span></a>
 <a name="278"><span class="lineNum">     278 </span><span class="lineNoCov">          0 :                                         log_tag(&quot;/&quot;);</span></a>
-<a name="279"><span class="lineNum">     279 </span><span class="lineCov">      14418 :                                 log_tag(&quot;%s&quot;, lev_config_name(ip[i]));</span></a>
+<a name="279"><span class="lineNum">     279 </span><span class="lineCov">      14448 :                                 log_tag(&quot;%s&quot;, lev_config_name(ip[i]));</span></a>
 <a name="280"><span class="lineNum">     280 </span>            :                         }</a>
-<a name="281"><span class="lineNum">     281 </span><span class="lineCov">      14418 :                         log_tag(&quot;: Hash mismatch\n&quot;);</span></a>
-<a name="282"><span class="lineNum">     282 </span><span class="lineCov">      14418 :                         ++error;</span></a>
-<a name="283"><span class="lineNum">     283 </span><span class="lineCov">      38134 :                 } while (combination_next(r, n, ip));</span></a>
+<a name="281"><span class="lineNum">     281 </span><span class="lineCov">      14448 :                         log_tag(&quot;: Hash mismatch\n&quot;);</span></a>
+<a name="282"><span class="lineNum">     282 </span><span class="lineCov">      14448 :                         ++error;</span></a>
+<a name="283"><span class="lineNum">     283 </span><span class="lineCov">      38194 :                 } while (combination_next(r, n, ip));</span></a>
 <a name="284"><span class="lineNum">     284 </span>            :         }</a>
 <a name="285"><span class="lineNum">     285 </span>            : </a>
 <a name="286"><span class="lineNum">     286 </span>            :         /* return the number of failed attempts, or -1 if no strategy */</a>
-<a name="287"><span class="lineNum">     287 </span><span class="lineCov">      56971 :         if (error)</span></a>
-<a name="288"><span class="lineNum">     288 </span><span class="lineCov">       9328 :                 return error;</span></a>
+<a name="287"><span class="lineNum">     287 </span><span class="lineCov">      57022 :         if (error)</span></a>
+<a name="288"><span class="lineNum">     288 </span><span class="lineCov">       9338 :                 return error;</span></a>
 <a name="289"><span class="lineNum">     289 </span>            : </a>
-<a name="290"><span class="lineNum">     290 </span><span class="lineCov">      47643 :         log_tag(&quot;recover_strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n&quot;,</span></a>
+<a name="290"><span class="lineNum">     290 </span><span class="lineCov">      47684 :         log_tag(&quot;recover_strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n&quot;,</span></a>
 <a name="291"><span class="lineNum">     291 </span>            :                 pos, failed_count, n, has_hash ? &quot;with&quot; : &quot;without&quot;);</a>
-<a name="292"><span class="lineNum">     292 </span><span class="lineCov">      47643 :         return -1;</span></a>
+<a name="292"><span class="lineNum">     292 </span><span class="lineCov">      47684 :         return -1;</span></a>
 <a name="293"><span class="lineNum">     293 </span>            : }</a>
 <a name="294"><span class="lineNum">     294 </span>            : </a>
 <a name="295"><span class="lineNum">     295 </span><span class="lineCov">     872338 : static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)</span></a>
@@ -368,47 +368,47 @@
 <a name="306"><span class="lineNum">     306 </span>            : </a>
 <a name="307"><span class="lineNum">     307 </span>            :         /* if nothing failed, just recompute the parity */</a>
 <a name="308"><span class="lineNum">     308 </span><span class="lineCov">     872338 :         if (failed_count == 0) {</span></a>
-<a name="309"><span class="lineNum">     309 </span><span class="lineCov">     584829 :                 raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</span></a>
-<a name="310"><span class="lineNum">     310 </span><span class="lineCov">     584829 :                 return 0;</span></a>
+<a name="309"><span class="lineNum">     309 </span><span class="lineCov">     584608 :                 raid_gen(diskmax, state-&gt;level, state-&gt;block_size, buffer);</span></a>
+<a name="310"><span class="lineNum">     310 </span><span class="lineCov">     584608 :                 return 0;</span></a>
 <a name="311"><span class="lineNum">     311 </span>            :         }</a>
 <a name="312"><span class="lineNum">     312 </span>            : </a>
 <a name="313"><span class="lineNum">     313 </span>            :         /* logs the status */</a>
-<a name="314"><span class="lineNum">     314 </span><span class="lineCov">    1016464 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="314"><span class="lineNum">     314 </span><span class="lineCov">    1016942 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
 <a name="315"><span class="lineNum">     315 </span>            :                 const char* desc;</a>
 <a name="316"><span class="lineNum">     316 </span>            :                 const char* hash;</a>
 <a name="317"><span class="lineNum">     317 </span>            :                 const char* data;</a>
-<a name="318"><span class="lineNum">     318 </span><span class="lineCov">     728955 :                 struct snapraid_block* block = failed[j].block;</span></a>
-<a name="319"><span class="lineNum">     319 </span><span class="lineCov">     728955 :                 unsigned block_state = block_state_get(block);</span></a>
+<a name="318"><span class="lineNum">     318 </span><span class="lineCov">     729212 :                 struct snapraid_block* block = failed[j].block;</span></a>
+<a name="319"><span class="lineNum">     319 </span><span class="lineCov">     729212 :                 unsigned block_state = block_state_get(block);</span></a>
 <a name="320"><span class="lineNum">     320 </span>            : </a>
-<a name="321"><span class="lineNum">     321 </span><span class="lineCov">     728955 :                 switch (block_state) {</span></a>
+<a name="321"><span class="lineNum">     321 </span><span class="lineCov">     729212 :                 switch (block_state) {</span></a>
 <a name="322"><span class="lineNum">     322 </span><span class="lineCov">      18454 :                 case BLOCK_STATE_DELETED : desc = &quot;delete&quot;; break;</span></a>
 <a name="323"><span class="lineNum">     323 </span><span class="lineCov">      13851 :                 case BLOCK_STATE_CHG : desc = &quot;change&quot;; break;</span></a>
 <a name="324"><span class="lineNum">     324 </span><span class="lineCov">      62282 :                 case BLOCK_STATE_REP : desc = &quot;replace&quot;; break;</span></a>
-<a name="325"><span class="lineNum">     325 </span><span class="lineCov">     634368 :                 case BLOCK_STATE_BLK : desc = &quot;block&quot;; break;</span></a>
+<a name="325"><span class="lineNum">     325 </span><span class="lineCov">     634625 :                 case BLOCK_STATE_BLK : desc = &quot;block&quot;; break;</span></a>
 <a name="326"><span class="lineNum">     326 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="327"><span class="lineNum">     327 </span>            :                 default : desc = &quot;unknown&quot;; break;</a>
 <a name="328"><span class="lineNum">     328 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="329"><span class="lineNum">     329 </span>            :                 }</a>
 <a name="330"><span class="lineNum">     330 </span>            : </a>
-<a name="331"><span class="lineNum">     331 </span><span class="lineCov">     728955 :                 if (hash_is_invalid(block-&gt;hash)) {</span></a>
+<a name="331"><span class="lineNum">     331 </span><span class="lineCov">     729212 :                 if (hash_is_invalid(block-&gt;hash)) {</span></a>
 <a name="332"><span class="lineNum">     332 </span><span class="lineCov">      13843 :                         hash = &quot;lost&quot;;</span></a>
-<a name="333"><span class="lineNum">     333 </span><span class="lineCov">     715112 :                 } else if (hash_is_zero(block-&gt;hash)) {</span></a>
+<a name="333"><span class="lineNum">     333 </span><span class="lineCov">     715369 :                 } else if (hash_is_zero(block-&gt;hash)) {</span></a>
 <a name="334"><span class="lineNum">     334 </span><span class="lineCov">          8 :                         hash = &quot;zero&quot;;</span></a>
 <a name="335"><span class="lineNum">     335 </span>            :                 } else {</a>
-<a name="336"><span class="lineNum">     336 </span><span class="lineCov">     715104 :                         hash = &quot;known&quot;;</span></a>
+<a name="336"><span class="lineNum">     336 </span><span class="lineCov">     715361 :                         hash = &quot;known&quot;;</span></a>
 <a name="337"><span class="lineNum">     337 </span>            :                 }</a>
 <a name="338"><span class="lineNum">     338 </span>            : </a>
-<a name="339"><span class="lineNum">     339 </span><span class="lineCov">     728955 :                 if (failed[j].is_bad)</span></a>
-<a name="340"><span class="lineNum">     340 </span><span class="lineCov">     643230 :                         data = &quot;bad&quot;;</span></a>
+<a name="339"><span class="lineNum">     339 </span><span class="lineCov">     729212 :                 if (failed[j].is_bad)</span></a>
+<a name="340"><span class="lineNum">     340 </span><span class="lineCov">     643487 :                         data = &quot;bad&quot;;</span></a>
 <a name="341"><span class="lineNum">     341 </span>            :                 else</a>
 <a name="342"><span class="lineNum">     342 </span><span class="lineCov">      85725 :                         data = &quot;good&quot;;</span></a>
 <a name="343"><span class="lineNum">     343 </span>            : </a>
-<a name="344"><span class="lineNum">     344 </span><span class="lineCov">     728955 :                 if (failed[j].file) {</span></a>
-<a name="345"><span class="lineNum">     345 </span><span class="lineCov">     710501 :                         struct snapraid_disk* disk = failed[j].disk;</span></a>
-<a name="346"><span class="lineNum">     346 </span><span class="lineCov">     710501 :                         struct snapraid_file* file = failed[j].file;</span></a>
-<a name="347"><span class="lineNum">     347 </span><span class="lineCov">     710501 :                         block_off_t file_pos = failed[j].file_pos;</span></a>
+<a name="344"><span class="lineNum">     344 </span><span class="lineCov">     729212 :                 if (failed[j].file) {</span></a>
+<a name="345"><span class="lineNum">     345 </span><span class="lineCov">     710758 :                         struct snapraid_disk* disk = failed[j].disk;</span></a>
+<a name="346"><span class="lineNum">     346 </span><span class="lineCov">     710758 :                         struct snapraid_file* file = failed[j].file;</span></a>
+<a name="347"><span class="lineNum">     347 </span><span class="lineCov">     710758 :                         block_off_t file_pos = failed[j].file_pos;</span></a>
 <a name="348"><span class="lineNum">     348 </span>            : </a>
-<a name="349"><span class="lineNum">     349 </span><span class="lineCov">     710501 :                         log_tag(&quot;repair_entry:%u:%s:%s:%s:%s:%s:%u:\n&quot;, j, desc, hash, data, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos);</span></a>
+<a name="349"><span class="lineNum">     349 </span><span class="lineCov">     710758 :                         log_tag(&quot;repair_entry:%u:%s:%s:%s:%s:%s:%u:\n&quot;, j, desc, hash, data, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos);</span></a>
 <a name="350"><span class="lineNum">     350 </span>            :                 } else {</a>
 <a name="351"><span class="lineNum">     351 </span><span class="lineCov">      18454 :                         log_tag(&quot;repair_entry:%u:%s:%s:%s:\n&quot;, j, desc, hash, data);</span></a>
 <a name="352"><span class="lineNum">     352 </span>            :                 }</a>
@@ -430,35 +430,35 @@
 <a name="368"><span class="lineNum">     368 </span>            :         /* We are interested to recover BLK, REP and CHG blocks if they are marked as bad, */</a>
 <a name="369"><span class="lineNum">     369 </span>            :         /* but we are not interested in DELETED ones. */</a>
 <a name="370"><span class="lineNum">     370 </span>            : </a>
-<a name="371"><span class="lineNum">     371 </span><span class="lineCov">     287509 :         n = 0;</span></a>
-<a name="372"><span class="lineNum">     372 </span><span class="lineCov">     287509 :         something_to_recover = 0; /* keep track if there is at least one block to fix */</span></a>
-<a name="373"><span class="lineNum">     373 </span><span class="lineCov">    1016464 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="374"><span class="lineNum">     374 </span><span class="lineCov">     728955 :                 if (failed[j].is_bad) {</span></a>
-<a name="375"><span class="lineNum">     375 </span><span class="lineCov">     643230 :                         unsigned block_state = block_state_get(failed[j].block);</span></a>
+<a name="371"><span class="lineNum">     371 </span><span class="lineCov">     287730 :         n = 0;</span></a>
+<a name="372"><span class="lineNum">     372 </span><span class="lineCov">     287730 :         something_to_recover = 0; /* keep track if there is at least one block to fix */</span></a>
+<a name="373"><span class="lineNum">     373 </span><span class="lineCov">    1016942 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="374"><span class="lineNum">     374 </span><span class="lineCov">     729212 :                 if (failed[j].is_bad) {</span></a>
+<a name="375"><span class="lineNum">     375 </span><span class="lineCov">     643487 :                         unsigned block_state = block_state_get(failed[j].block);</span></a>
 <a name="376"><span class="lineNum">     376 </span>            : </a>
-<a name="377"><span class="lineNum">     377 </span><span class="lineCov">     643230 :                         assert(block_state != BLOCK_STATE_DELETED); /* we cannot have bad DELETED blocks */</span></a>
+<a name="377"><span class="lineNum">     377 </span><span class="lineCov">     643487 :                         assert(block_state != BLOCK_STATE_DELETED); /* we cannot have bad DELETED blocks */</span></a>
 <a name="378"><span class="lineNum">     378 </span>            : </a>
 <a name="379"><span class="lineNum">     379 </span>            :                         /* if we have the hash for it */</a>
-<a name="380"><span class="lineNum">     380 </span><span class="lineCov">     643230 :                         if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)</span></a>
+<a name="380"><span class="lineNum">     380 </span><span class="lineCov">     643487 :                         if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)</span></a>
 <a name="381"><span class="lineNum">     381 </span>            :                                 /* try to fetch the block using the known hash */</a>
-<a name="382"><span class="lineNum">     382 </span><span class="lineCov">     643222 :                                 &amp;&amp; (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0</span></a>
-<a name="383"><span class="lineNum">     383 </span><span class="lineCov">     638750 :                                 || state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)</span></a>
+<a name="382"><span class="lineNum">     382 </span><span class="lineCov">     643479 :                                 &amp;&amp; (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0</span></a>
+<a name="383"><span class="lineNum">     383 </span><span class="lineCov">     639007 :                                 || state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)</span></a>
 <a name="384"><span class="lineNum">     384 </span>            :                         ) {</a>
 <a name="385"><span class="lineNum">     385 </span>            :                                 /* we already have corrected it! */</a>
 <a name="386"><span class="lineNum">     386 </span><span class="lineCov">      22382 :                                 log_tag(&quot;repair_hash_import:%u: Fixed by import\n&quot;, j);</span></a>
 <a name="387"><span class="lineNum">     387 </span>            :                         } else {</a>
 <a name="388"><span class="lineNum">     388 </span>            :                                 /* otherwise try to recover it */</a>
-<a name="389"><span class="lineNum">     389 </span><span class="lineCov">     620848 :                                 failed_map[n] = j;</span></a>
-<a name="390"><span class="lineNum">     390 </span><span class="lineCov">     620848 :                                 ++n;</span></a>
+<a name="389"><span class="lineNum">     389 </span><span class="lineCov">     621105 :                                 failed_map[n] = j;</span></a>
+<a name="390"><span class="lineNum">     390 </span><span class="lineCov">     621105 :                                 ++n;</span></a>
 <a name="391"><span class="lineNum">     391 </span>            : </a>
 <a name="392"><span class="lineNum">     392 </span>            :                                 /* we have something to try to recover */</a>
-<a name="393"><span class="lineNum">     393 </span><span class="lineCov">     620848 :                                 something_to_recover = 1;</span></a>
+<a name="393"><span class="lineNum">     393 </span><span class="lineCov">     621105 :                                 something_to_recover = 1;</span></a>
 <a name="394"><span class="lineNum">     394 </span>            :                         }</a>
 <a name="395"><span class="lineNum">     395 </span>            :                 }</a>
 <a name="396"><span class="lineNum">     396 </span>            :         }</a>
 <a name="397"><span class="lineNum">     397 </span>            : </a>
 <a name="398"><span class="lineNum">     398 </span>            :         /* if nothing to fix */</a>
-<a name="399"><span class="lineNum">     399 </span><span class="lineCov">     287509 :         if (!something_to_recover) {</span></a>
+<a name="399"><span class="lineNum">     399 </span><span class="lineCov">     287730 :         if (!something_to_recover) {</span></a>
 <a name="400"><span class="lineNum">     400 </span><span class="lineCov">      43956 :                 log_tag(&quot;recover_sync:%u:%u: Skipped for already recovered\n&quot;, pos, n);</span></a>
 <a name="401"><span class="lineNum">     401 </span>            : </a>
 <a name="402"><span class="lineNum">     402 </span>            :                 /* recompute only the parity */</a>
@@ -466,22 +466,22 @@
 <a name="404"><span class="lineNum">     404 </span><span class="lineCov">      43956 :                 return 0;</span></a>
 <a name="405"><span class="lineNum">     405 </span>            :         }</a>
 <a name="406"><span class="lineNum">     406 </span>            : </a>
-<a name="407"><span class="lineNum">     407 </span><span class="lineCov">     243553 :         ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);</span></a>
-<a name="408"><span class="lineNum">     408 </span><span class="lineCov">     243553 :         if (ret == 0) {</span></a>
+<a name="407"><span class="lineNum">     407 </span><span class="lineCov">     243774 :         ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);</span></a>
+<a name="408"><span class="lineNum">     408 </span><span class="lineCov">     243774 :         if (ret == 0) {</span></a>
 <a name="409"><span class="lineNum">     409 </span>            :                 /* reprocess the CHG blocks, for which we don't have a hash to check */</a>
 <a name="410"><span class="lineNum">     410 </span>            :                 /* if they were BAD we have to use some heuristics to ensure that we have recovered  */</a>
 <a name="411"><span class="lineNum">     411 </span>            :                 /* the state after the sync. If unsure, we assume the worst case */</a>
 <a name="412"><span class="lineNum">     412 </span>            : </a>
-<a name="413"><span class="lineNum">     413 </span><span class="lineCov">     667399 :                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="413"><span class="lineNum">     413 </span><span class="lineCov">     667734 :                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
 <a name="414"><span class="lineNum">     414 </span>            :                         /* we take care only of BAD blocks we have to write back */</a>
-<a name="415"><span class="lineNum">     415 </span><span class="lineCov">     476295 :                         if (failed[j].is_bad) {</span></a>
-<a name="416"><span class="lineNum">     416 </span><span class="lineCov">     462823 :                                 unsigned block_state = block_state_get(failed[j].block);</span></a>
+<a name="415"><span class="lineNum">     415 </span><span class="lineCov">     476460 :                         if (failed[j].is_bad) {</span></a>
+<a name="416"><span class="lineNum">     416 </span><span class="lineCov">     462988 :                                 unsigned block_state = block_state_get(failed[j].block);</span></a>
 <a name="417"><span class="lineNum">     417 </span>            : </a>
 <a name="418"><span class="lineNum">     418 </span>            :                                 /* BLK and REP blocks are always OK, because at this point */</a>
 <a name="419"><span class="lineNum">     419 </span>            :                                 /* we have already checked their hash */</a>
-<a name="420"><span class="lineNum">     420 </span><span class="lineCov">     462823 :                                 if (block_state != BLOCK_STATE_CHG) {</span></a>
-<a name="421"><span class="lineNum">     421 </span><span class="lineCov">     462815 :                                         assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);</span></a>
-<a name="422"><span class="lineNum">     422 </span><span class="lineCov">     462815 :                                         continue;</span></a>
+<a name="420"><span class="lineNum">     420 </span><span class="lineCov">     462988 :                                 if (block_state != BLOCK_STATE_CHG) {</span></a>
+<a name="421"><span class="lineNum">     421 </span><span class="lineCov">     462980 :                                         assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);</span></a>
+<a name="422"><span class="lineNum">     422 </span><span class="lineCov">     462980 :                                         continue;</span></a>
 <a name="423"><span class="lineNum">     423 </span>            :                                 }</a>
 <a name="424"><span class="lineNum">     424 </span>            : </a>
 <a name="425"><span class="lineNum">     425 </span>            :                                 /* for CHG blocks we have to 'guess' if they are correct or not */</a>
@@ -523,15 +523,15 @@
 <a name="461"><span class="lineNum">     461 </span>            :                         }</a>
 <a name="462"><span class="lineNum">     462 </span>            :                 }</a>
 <a name="463"><span class="lineNum">     463 </span>            : </a>
-<a name="464"><span class="lineNum">     464 </span><span class="lineCov">     191104 :                 return 0;</span></a>
+<a name="464"><span class="lineNum">     464 </span><span class="lineCov">     191274 :                 return 0;</span></a>
 <a name="465"><span class="lineNum">     465 </span>            :         }</a>
-<a name="466"><span class="lineNum">     466 </span><span class="lineCov">      52449 :         if (ret &gt; 0)</span></a>
-<a name="467"><span class="lineNum">     467 </span><span class="lineCov">       9328 :                 error += ret;</span></a>
+<a name="466"><span class="lineNum">     466 </span><span class="lineCov">      52500 :         if (ret &gt; 0)</span></a>
+<a name="467"><span class="lineNum">     467 </span><span class="lineCov">       9338 :                 error += ret;</span></a>
 <a name="468"><span class="lineNum">     468 </span>            : </a>
-<a name="469"><span class="lineNum">     469 </span><span class="lineCov">      52449 :         if (ret &lt; 0)</span></a>
-<a name="470"><span class="lineNum">     470 </span><span class="lineCov">      43121 :                 log_tag(&quot;recover_sync:%u:%u: Failed with no attempts\n&quot;, pos, n);</span></a>
+<a name="469"><span class="lineNum">     469 </span><span class="lineCov">      52500 :         if (ret &lt; 0)</span></a>
+<a name="470"><span class="lineNum">     470 </span><span class="lineCov">      43162 :                 log_tag(&quot;recover_sync:%u:%u: Failed with no attempts\n&quot;, pos, n);</span></a>
 <a name="471"><span class="lineNum">     471 </span>            :         else</a>
-<a name="472"><span class="lineNum">     472 </span><span class="lineCov">       9328 :                 log_tag(&quot;recover_sync:%u:%u: Failed with %d attempts\n&quot;, pos, n, ret);</span></a>
+<a name="472"><span class="lineNum">     472 </span><span class="lineCov">       9338 :                 log_tag(&quot;recover_sync:%u:%u: Failed with %d attempts\n&quot;, pos, n, ret);</span></a>
 <a name="473"><span class="lineNum">     473 </span>            : </a>
 <a name="474"><span class="lineNum">     474 </span>            :         /* Now assume that the parity IS NOT updated at the current state, */</a>
 <a name="475"><span class="lineNum">     475 </span>            :         /* but still represent the state before the last 'sync' process. */</a>
@@ -541,15 +541,15 @@
 <a name="479"><span class="lineNum">     479 </span>            :         /* but we are not interested to recover CHG (new version) and REP (new version) blocks, */</a>
 <a name="480"><span class="lineNum">     480 </span>            :         /* even if marked as bad, because we don't have parity for them and it's just impossible, */</a>
 <a name="481"><span class="lineNum">     481 </span>            :         /* and we are not interested to recover DELETED ones. */</a>
-<a name="482"><span class="lineNum">     482 </span><span class="lineCov">      52449 :         n = 0;</span></a>
-<a name="483"><span class="lineNum">     483 </span><span class="lineCov">      52449 :         something_to_recover = 0; /* keep track if there is at least one block to fix */</span></a>
-<a name="484"><span class="lineNum">     484 </span><span class="lineCov">      52449 :         something_unsynced = 0; /* keep track if we have some unsynced info to process */</span></a>
-<a name="485"><span class="lineNum">     485 </span><span class="lineCov">     232673 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="486"><span class="lineNum">     486 </span><span class="lineCov">     180224 :                 unsigned block_state = block_state_get(failed[j].block);</span></a>
+<a name="482"><span class="lineNum">     482 </span><span class="lineCov">      52500 :         n = 0;</span></a>
+<a name="483"><span class="lineNum">     483 </span><span class="lineCov">      52500 :         something_to_recover = 0; /* keep track if there is at least one block to fix */</span></a>
+<a name="484"><span class="lineNum">     484 </span><span class="lineCov">      52500 :         something_unsynced = 0; /* keep track if we have some unsynced info to process */</span></a>
+<a name="485"><span class="lineNum">     485 </span><span class="lineCov">     232816 :         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="486"><span class="lineNum">     486 </span><span class="lineCov">     180316 :                 unsigned block_state = block_state_get(failed[j].block);</span></a>
 <a name="487"><span class="lineNum">     487 </span>            : </a>
-<a name="488"><span class="lineNum">     488 </span><span class="lineCov">     180224 :                 if (block_state == BLOCK_STATE_DELETED</span></a>
-<a name="489"><span class="lineNum">     489 </span><span class="lineCov">     171180 :                         || block_state == BLOCK_STATE_CHG</span></a>
-<a name="490"><span class="lineNum">     490 </span><span class="lineCov">     171180 :                         || block_state == BLOCK_STATE_REP</span></a>
+<a name="488"><span class="lineNum">     488 </span><span class="lineCov">     180316 :                 if (block_state == BLOCK_STATE_DELETED</span></a>
+<a name="489"><span class="lineNum">     489 </span><span class="lineCov">     171272 :                         || block_state == BLOCK_STATE_CHG</span></a>
+<a name="490"><span class="lineNum">     490 </span><span class="lineCov">     171272 :                         || block_state == BLOCK_STATE_REP</span></a>
 <a name="491"><span class="lineNum">     491 </span>            :                 ) {</a>
 <a name="492"><span class="lineNum">     492 </span>            :                         /* If the block is CHG, REP or DELETED, we don't have the original content of block, */</a>
 <a name="493"><span class="lineNum">     493 </span>            :                         /* and we must try to recover it. */</a>
@@ -591,24 +591,24 @@
 <a name="529"><span class="lineNum">     529 </span>            :                         /* it also applies to CHG and DELETE blocks because we want to have */</a>
 <a name="530"><span class="lineNum">     530 </span>            :                         /* a successful recovering only if a BLK one is matching */</a>
 <a name="531"><span class="lineNum">     531 </span><span class="lineCov">       9044 :                         failed[j].is_outofdate = 1;</span></a>
-<a name="532"><span class="lineNum">     532 </span><span class="lineCov">     171180 :                 } else if (failed[j].is_bad) {</span></a>
+<a name="532"><span class="lineNum">     532 </span><span class="lineCov">     171272 :                 } else if (failed[j].is_bad) {</span></a>
 <a name="533"><span class="lineNum">     533 </span>            :                         /* If the block is bad we don't know its content, and we try to recover it */</a>
 <a name="534"><span class="lineNum">     534 </span>            :                         /* At this point, we can have only BLK ones */</a>
 <a name="535"><span class="lineNum">     535 </span>            : </a>
-<a name="536"><span class="lineNum">     536 </span><span class="lineCov">     171180 :                         assert(block_state == BLOCK_STATE_BLK);</span></a>
+<a name="536"><span class="lineNum">     536 </span><span class="lineCov">     171272 :                         assert(block_state == BLOCK_STATE_BLK);</span></a>
 <a name="537"><span class="lineNum">     537 </span>            : </a>
 <a name="538"><span class="lineNum">     538 </span>            :                         /* we have something we are interested to recover */</a>
-<a name="539"><span class="lineNum">     539 </span><span class="lineCov">     171180 :                         something_to_recover = 1;</span></a>
+<a name="539"><span class="lineNum">     539 </span><span class="lineCov">     171272 :                         something_to_recover = 1;</span></a>
 <a name="540"><span class="lineNum">     540 </span>            : </a>
 <a name="541"><span class="lineNum">     541 </span>            :                         /* we try to recover it */</a>
-<a name="542"><span class="lineNum">     542 </span><span class="lineCov">     171180 :                         failed_map[n] = j;</span></a>
-<a name="543"><span class="lineNum">     543 </span><span class="lineCov">     171180 :                         ++n;</span></a>
+<a name="542"><span class="lineNum">     542 </span><span class="lineCov">     171272 :                         failed_map[n] = j;</span></a>
+<a name="543"><span class="lineNum">     543 </span><span class="lineCov">     171272 :                         ++n;</span></a>
 <a name="544"><span class="lineNum">     544 </span>            :                 }</a>
 <a name="545"><span class="lineNum">     545 </span>            :         }</a>
 <a name="546"><span class="lineNum">     546 </span>            : </a>
 <a name="547"><span class="lineNum">     547 </span>            :         /* if nothing to fix, we just don't try */</a>
 <a name="548"><span class="lineNum">     548 </span>            :         /* if nothing unsynced we also don't retry, because it's the same try as before */</a>
-<a name="549"><span class="lineNum">     549 </span><span class="lineCov">      52449 :         if (something_to_recover &amp;&amp; something_unsynced) {</span></a>
+<a name="549"><span class="lineNum">     549 </span><span class="lineCov">      52500 :         if (something_to_recover &amp;&amp; something_unsynced) {</span></a>
 <a name="550"><span class="lineNum">     550 </span><span class="lineCov">       9044 :                 ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);</span></a>
 <a name="551"><span class="lineNum">     551 </span><span class="lineCov">       9044 :                 if (ret == 0) {</span></a>
 <a name="552"><span class="lineNum">     552 </span>            :                         /* reprocess the REP and CHG blocks, for which we have recovered an old state */</a>
@@ -642,17 +642,17 @@
 <a name="580"><span class="lineNum">     580 </span>            :                 else</a>
 <a name="581"><span class="lineNum">     581 </span><span class="lineNoCov">          0 :                         log_tag(&quot;recover_unsync:%u:%u: Failed with %d attempts\n&quot;, pos, n, ret);</span></a>
 <a name="582"><span class="lineNum">     582 </span>            :         } else {</a>
-<a name="583"><span class="lineNum">     583 </span><span class="lineCov">      43405 :                 log_tag(&quot;recover_unsync:%u:%u: Skipped for%s%s\n&quot;, pos, n,</span></a>
+<a name="583"><span class="lineNum">     583 </span><span class="lineCov">      43456 :                 log_tag(&quot;recover_unsync:%u:%u: Skipped for%s%s\n&quot;, pos, n,</span></a>
 <a name="584"><span class="lineNum">     584 </span>            :                         !something_to_recover ? &quot; nothing to recover&quot; : &quot;&quot;,</a>
 <a name="585"><span class="lineNum">     585 </span>            :                         !something_unsynced ? &quot; nothing unsynced&quot; : &quot;&quot;</a>
 <a name="586"><span class="lineNum">     586 </span>            :                 );</a>
 <a name="587"><span class="lineNum">     587 </span>            :         }</a>
 <a name="588"><span class="lineNum">     588 </span>            : </a>
 <a name="589"><span class="lineNum">     589 </span>            :         /* return the number of failed attempts, or -1 if no strategy */</a>
-<a name="590"><span class="lineNum">     590 </span><span class="lineCov">      47927 :         if (error)</span></a>
-<a name="591"><span class="lineNum">     591 </span><span class="lineCov">       4806 :                 return error;</span></a>
+<a name="590"><span class="lineNum">     590 </span><span class="lineCov">      47978 :         if (error)</span></a>
+<a name="591"><span class="lineNum">     591 </span><span class="lineCov">       4816 :                 return error;</span></a>
 <a name="592"><span class="lineNum">     592 </span>            :         else</a>
-<a name="593"><span class="lineNum">     593 </span><span class="lineCov">      43121 :                 return -1;</span></a>
+<a name="593"><span class="lineNum">     593 </span><span class="lineCov">      43162 :                 return -1;</span></a>
 <a name="594"><span class="lineNum">     594 </span>            : }</a>
 <a name="595"><span class="lineNum">     595 </span>            : </a>
 <a name="596"><span class="lineNum">     596 </span>            : /**</a>
@@ -686,7 +686,7 @@
 <a name="624"><span class="lineNum">     624 </span><span class="lineCov">    5469678 :                 disk = handle[j].disk;</span></a>
 <a name="625"><span class="lineNum">     625 </span><span class="lineCov">    5469678 :                 if (!disk) {</span></a>
 <a name="626"><span class="lineNum">     626 </span>            :                         /* if no disk, nothing to do */</a>
-<a name="627"><span class="lineNum">     627 </span><span class="lineCov">    3341616 :                         continue;</span></a>
+<a name="627"><span class="lineNum">     627 </span><span class="lineCov">    3341619 :                         continue;</span></a>
 <a name="628"><span class="lineNum">     628 </span>            :                 }</a>
 <a name="629"><span class="lineNum">     629 </span>            : </a>
 <a name="630"><span class="lineNum">     630 </span><span class="lineCov">    5455617 :                 block = fs_par2block_find(disk, i);</span></a>
@@ -700,35 +700,35 @@
 <a name="638"><span class="lineNum">     638 </span>            :                 /* if it isn't the last block in the file */</a>
 <a name="639"><span class="lineNum">     639 </span><span class="lineCov">    5245100 :                 if (!file_block_is_last(file, file_pos)) {</span></a>
 <a name="640"><span class="lineNum">     640 </span>            :                         /* nothing to do */</a>
-<a name="641"><span class="lineNum">     641 </span><span class="lineCov">    3117038 :                         continue;</span></a>
+<a name="641"><span class="lineNum">     641 </span><span class="lineCov">    3117041 :                         continue;</span></a>
 <a name="642"><span class="lineNum">     642 </span>            :                 }</a>
 <a name="643"><span class="lineNum">     643 </span>            : </a>
 <a name="644"><span class="lineNum">     644 </span>            :                 /* if the file is excluded, we have nothing to adjust as the file is never written */</a>
-<a name="645"><span class="lineNum">     645 </span><span class="lineCov">    2128062 :                 if (file_flag_has(file, FILE_IS_EXCLUDED)</span></a>
-<a name="646"><span class="lineNum">     646 </span><span class="lineCov">    2070660 :                         || (state-&gt;opt.syncedonly &amp;&amp; file_flag_has(file, FILE_IS_UNSYNCED))) {</span></a>
+<a name="645"><span class="lineNum">     645 </span><span class="lineCov">    2128059 :                 if (file_flag_has(file, FILE_IS_EXCLUDED)</span></a>
+<a name="646"><span class="lineNum">     646 </span><span class="lineCov">    2070705 :                         || (state-&gt;opt.syncedonly &amp;&amp; file_flag_has(file, FILE_IS_UNSYNCED))) {</span></a>
 <a name="647"><span class="lineNum">     647 </span>            :                         /* nothing to do, but close the file */</a>
-<a name="648"><span class="lineNum">     648 </span><span class="lineCov">      57402 :                         goto close_and_continue;</span></a>
+<a name="648"><span class="lineNum">     648 </span><span class="lineCov">      57354 :                         goto close_and_continue;</span></a>
 <a name="649"><span class="lineNum">     649 </span>            :                 }</a>
 <a name="650"><span class="lineNum">     650 </span>            : </a>
 <a name="651"><span class="lineNum">     651 </span>            :                 /* finish the fix process if it's the last block of the files */</a>
-<a name="652"><span class="lineNum">     652 </span><span class="lineCov">    2070660 :                 if (fix) {</span></a>
+<a name="652"><span class="lineNum">     652 </span><span class="lineCov">    2070705 :                 if (fix) {</span></a>
 <a name="653"><span class="lineNum">     653 </span>            :                         /* mark that we finished with this file */</a>
 <a name="654"><span class="lineNum">     654 </span>            :                         /* to identify later any NOT finished ones */</a>
-<a name="655"><span class="lineNum">     655 </span><span class="lineCov">     765508 :                         file_flag_set(file, FILE_IS_FINISHED);</span></a>
+<a name="655"><span class="lineNum">     655 </span><span class="lineCov">     765553 :                         file_flag_set(file, FILE_IS_FINISHED);</span></a>
 <a name="656"><span class="lineNum">     656 </span>            : </a>
 <a name="657"><span class="lineNum">     657 </span>            :                         /* if the file is damaged, meaning that a fix failed */</a>
-<a name="658"><span class="lineNum">     658 </span><span class="lineCov">     765508 :                         if (file_flag_has(file, FILE_IS_DAMAGED)) {</span></a>
+<a name="658"><span class="lineNum">     658 </span><span class="lineCov">     765553 :                         if (file_flag_has(file, FILE_IS_DAMAGED)) {</span></a>
 <a name="659"><span class="lineNum">     659 </span>            :                                 /* rename it to .unrecoverable */</a>
 <a name="660"><span class="lineNum">     660 </span>            :                                 char path[PATH_MAX];</a>
 <a name="661"><span class="lineNum">     661 </span>            :                                 char path_to[PATH_MAX];</a>
 <a name="662"><span class="lineNum">     662 </span>            : </a>
-<a name="663"><span class="lineNum">     663 </span><span class="lineCov">      63262 :                                 pathprint(path, sizeof(path), &quot;%s%s&quot;, disk-&gt;dir, file-&gt;sub);</span></a>
-<a name="664"><span class="lineNum">     664 </span><span class="lineCov">      63262 :                                 pathprint(path_to, sizeof(path_to), &quot;%s%s.unrecoverable&quot;, disk-&gt;dir, file-&gt;sub);</span></a>
+<a name="663"><span class="lineNum">     663 </span><span class="lineCov">      63301 :                                 pathprint(path, sizeof(path), &quot;%s%s&quot;, disk-&gt;dir, file-&gt;sub);</span></a>
+<a name="664"><span class="lineNum">     664 </span><span class="lineCov">      63301 :                                 pathprint(path_to, sizeof(path_to), &quot;%s%s.unrecoverable&quot;, disk-&gt;dir, file-&gt;sub);</span></a>
 <a name="665"><span class="lineNum">     665 </span>            : </a>
 <a name="666"><span class="lineNum">     666 </span>            :                                 /* ensure to close the file before renaming */</a>
-<a name="667"><span class="lineNum">     667 </span><span class="lineCov">      63262 :                                 if (handle[j].file == file) {</span></a>
-<a name="668"><span class="lineNum">     668 </span><span class="lineCov">      63262 :                                         ret = handle_close(&amp;handle[j]);</span></a>
-<a name="669"><span class="lineNum">     669 </span><span class="lineCov">      63262 :                                         if (ret != 0) {</span></a>
+<a name="667"><span class="lineNum">     667 </span><span class="lineCov">      63301 :                                 if (handle[j].file == file) {</span></a>
+<a name="668"><span class="lineNum">     668 </span><span class="lineCov">      63301 :                                         ret = handle_close(&amp;handle[j]);</span></a>
+<a name="669"><span class="lineNum">     669 </span><span class="lineCov">      63301 :                                         if (ret != 0) {</span></a>
 <a name="670"><span class="lineNum">     670 </span>            :                                                 /* LCOV_EXCL_START */</a>
 <a name="671"><span class="lineNum">     671 </span>            :                                                 log_tag(&quot;%s:%u:%s:%s: Close error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="672"><span class="lineNum">     672 </span>            :                                                 log_fatal_errno(errno, disk-&gt;name);</a>
@@ -737,8 +737,8 @@
 <a name="675"><span class="lineNum">     675 </span>            :                                         }</a>
 <a name="676"><span class="lineNum">     676 </span>            :                                 }</a>
 <a name="677"><span class="lineNum">     677 </span>            : </a>
-<a name="678"><span class="lineNum">     678 </span><span class="lineCov">      63262 :                                 ret = rename(path, path_to);</span></a>
-<a name="679"><span class="lineNum">     679 </span><span class="lineCov">      63262 :                                 if (ret != 0) {</span></a>
+<a name="678"><span class="lineNum">     678 </span><span class="lineCov">      63301 :                                 ret = rename(path, path_to);</span></a>
+<a name="679"><span class="lineNum">     679 </span><span class="lineCov">      63301 :                                 if (ret != 0) {</span></a>
 <a name="680"><span class="lineNum">     680 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="681"><span class="lineNum">     681 </span>            :                                         log_fatal(errno, &quot;Error renaming '%s%s'. %s.\n&quot;, disk-&gt;dir, file-&gt;sub, strerror(errno));</a>
 <a name="682"><span class="lineNum">     682 </span>            :                                         log_tag(&quot;%s:%u:%s:%s: Rename error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
@@ -747,22 +747,22 @@
 <a name="685"><span class="lineNum">     685 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="686"><span class="lineNum">     686 </span>            :                                 }</a>
 <a name="687"><span class="lineNum">     687 </span>            : </a>
-<a name="688"><span class="lineNum">     688 </span><span class="lineCov">      63262 :                                 log_tag(&quot;status:unrecoverable:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="689"><span class="lineNum">     689 </span><span class="lineCov">      63262 :                                 msg_info(&quot;unrecoverable %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="688"><span class="lineNum">     688 </span><span class="lineCov">      63301 :                                 log_tag(&quot;status:unrecoverable:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="689"><span class="lineNum">     689 </span><span class="lineCov">      63301 :                                 msg_info(&quot;unrecoverable %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
 <a name="690"><span class="lineNum">     690 </span>            : </a>
 <a name="691"><span class="lineNum">     691 </span>            :                                 /* and do not set the time if damaged */</a>
-<a name="692"><span class="lineNum">     692 </span><span class="lineCov">      63262 :                                 goto close_and_continue;</span></a>
+<a name="692"><span class="lineNum">     692 </span><span class="lineCov">      63301 :                                 goto close_and_continue;</span></a>
 <a name="693"><span class="lineNum">     693 </span>            :                         }</a>
 <a name="694"><span class="lineNum">     694 </span>            : </a>
 <a name="695"><span class="lineNum">     695 </span>            :                         /* if the file is not fixed, meaning that it is untouched */</a>
-<a name="696"><span class="lineNum">     696 </span><span class="lineCov">     702246 :                         if (!file_flag_has(file, FILE_IS_FIXED)) {</span></a>
+<a name="696"><span class="lineNum">     696 </span><span class="lineCov">     702252 :                         if (!file_flag_has(file, FILE_IS_FIXED)) {</span></a>
 <a name="697"><span class="lineNum">     697 </span>            :                                 /* nothing to do, but close the file */</a>
-<a name="698"><span class="lineNum">     698 </span><span class="lineCov">     581072 :                                 goto close_and_continue;</span></a>
+<a name="698"><span class="lineNum">     698 </span><span class="lineCov">     581048 :                                 goto close_and_continue;</span></a>
 <a name="699"><span class="lineNum">     699 </span>            :                         }</a>
 <a name="700"><span class="lineNum">     700 </span>            : </a>
 <a name="701"><span class="lineNum">     701 </span>            :                         /* if the file is closed or different than the one expected, reopen it */</a>
 <a name="702"><span class="lineNum">     702 </span>            :                         /* a different open file could happen when filtering for bad blocks */</a>
-<a name="703"><span class="lineNum">     703 </span><span class="lineCov">     121174 :                         if (handle[j].file != file) {</span></a>
+<a name="703"><span class="lineNum">     703 </span><span class="lineCov">     121204 :                         if (handle[j].file != file) {</span></a>
 <a name="704"><span class="lineNum">     704 </span>            :                                 /* keep a pointer at the file we are going to close for error reporting */</a>
 <a name="705"><span class="lineNum">     705 </span><span class="lineNoCov">          0 :                                 struct snapraid_file* report = handle[j].file;</span></a>
 <a name="706"><span class="lineNum">     706 </span><span class="lineNoCov">          0 :                                 ret = handle_close(&amp;handle[j]);</span></a>
@@ -786,13 +786,13 @@
 <a name="724"><span class="lineNum">     724 </span>            :                                 }</a>
 <a name="725"><span class="lineNum">     725 </span>            :                         }</a>
 <a name="726"><span class="lineNum">     726 </span>            : </a>
-<a name="727"><span class="lineNum">     727 </span><span class="lineCov">     121174 :                         log_tag(&quot;status:recovered:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="728"><span class="lineNum">     728 </span><span class="lineCov">     121174 :                         msg_info(&quot;recovered %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="727"><span class="lineNum">     727 </span><span class="lineCov">     121204 :                         log_tag(&quot;status:recovered:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="728"><span class="lineNum">     728 </span><span class="lineCov">     121204 :                         msg_info(&quot;recovered %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
 <a name="729"><span class="lineNum">     729 </span>            : </a>
-<a name="730"><span class="lineNum">     730 </span><span class="lineCov">     121174 :                         inode = handle[j].st.st_ino;</span></a>
+<a name="730"><span class="lineNum">     730 </span><span class="lineCov">     121204 :                         inode = handle[j].st.st_ino;</span></a>
 <a name="731"><span class="lineNum">     731 </span>            : </a>
 <a name="732"><span class="lineNum">     732 </span>            :                         /* search for the corresponding inode */</a>
-<a name="733"><span class="lineNum">     733 </span><span class="lineCov">     121174 :                         collide_file = tommy_hashdyn_search(&amp;disk-&gt;inodeset, file_inode_compare_to_arg, &amp;inode, file_inode_hash(inode));</span></a>
+<a name="733"><span class="lineNum">     733 </span><span class="lineCov">     121204 :                         collide_file = tommy_hashdyn_search(&amp;disk-&gt;inodeset, file_inode_compare_to_arg, &amp;inode, file_inode_hash(inode));</span></a>
 <a name="734"><span class="lineNum">     734 </span>            : </a>
 <a name="735"><span class="lineNum">     735 </span>            :                         /* if the inode is already in the database and it refers to a different file name, */</a>
 <a name="736"><span class="lineNum">     736 </span>            :                         /* we can fix the file time ONLY if the time and size allow to differentiate */</a>
@@ -802,15 +802,15 @@
 <a name="740"><span class="lineNum">     740 </span>            :                         /* when recreating them the inodes may be reused in a different order, */</a>
 <a name="741"><span class="lineNum">     741 </span>            :                         /* and at the next sync some files may have matching inode/size/time even if different name */</a>
 <a name="742"><span class="lineNum">     742 </span>            :                         /* not allowing sync to detect that the file is changed and not renamed */</a>
-<a name="743"><span class="lineNum">     743 </span><span class="lineCov">     121174 :                         if (!collide_file /* if not in the database, there is no collision */</span></a>
-<a name="744"><span class="lineNum">     744 </span><span class="lineCov">      42214 :                                 || strcmp(collide_file-&gt;sub, file-&gt;sub) == 0 /* if the name is the same, it's the right collision */</span></a>
-<a name="745"><span class="lineNum">     745 </span><span class="lineCov">      33405 :                                 || collide_file-&gt;size != file-&gt;size /* if the size is different, the collision is identified */</span></a>
+<a name="743"><span class="lineNum">     743 </span><span class="lineCov">     121204 :                         if (!collide_file /* if not in the database, there is no collision */</span></a>
+<a name="744"><span class="lineNum">     744 </span><span class="lineCov">      44180 :                                 || strcmp(collide_file-&gt;sub, file-&gt;sub) == 0 /* if the name is the same, it's the right collision */</span></a>
+<a name="745"><span class="lineNum">     745 </span><span class="lineCov">      35319 :                                 || collide_file-&gt;size != file-&gt;size /* if the size is different, the collision is identified */</span></a>
 <a name="746"><span class="lineNum">     746 </span><span class="lineCov">          9 :                                 || collide_file-&gt;mtime_sec != file-&gt;mtime_sec /* if the mtime is different, the collision is identified */</span></a>
-<a name="747"><span class="lineNum">     747 </span><span class="lineCov">          5 :                                 || collide_file-&gt;mtime_nsec != file-&gt;mtime_nsec /* same for mtime_nsec */</span></a>
+<a name="747"><span class="lineNum">     747 </span><span class="lineCov">          8 :                                 || collide_file-&gt;mtime_nsec != file-&gt;mtime_nsec /* same for mtime_nsec */</span></a>
 <a name="748"><span class="lineNum">     748 </span>            :                         ) {</a>
 <a name="749"><span class="lineNum">     749 </span>            :                                 /* set the original modification time */</a>
-<a name="750"><span class="lineNum">     750 </span><span class="lineCov">     121173 :                                 ret = handle_utime(&amp;handle[j]);</span></a>
-<a name="751"><span class="lineNum">     751 </span><span class="lineCov">     121173 :                                 if (ret == -1) {</span></a>
+<a name="750"><span class="lineNum">     750 </span><span class="lineCov">     121204 :                                 ret = handle_utime(&amp;handle[j]);</span></a>
+<a name="751"><span class="lineNum">     751 </span><span class="lineCov">     121204 :                                 if (ret == -1) {</span></a>
 <a name="752"><span class="lineNum">     752 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="753"><span class="lineNum">     753 </span>            :                                         log_tag(&quot;%s:%u:%s:%s: Time error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="754"><span class="lineNum">     754 </span>            :                                         log_fatal_errno(errno, disk-&gt;name);</a>
@@ -821,35 +821,35 @@
 <a name="759"><span class="lineNum">     759 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="760"><span class="lineNum">     760 </span>            :                                 }</a>
 <a name="761"><span class="lineNum">     761 </span>            :                         } else {</a>
-<a name="762"><span class="lineNum">     762 </span><span class="lineCov">          1 :                                 log_tag(&quot;collision:%s:%s:%s: Not setting modification time to avoid inode collision\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), esc_tag(collide_file-&gt;sub, esc_buffer_alt));</span></a>
+<a name="762"><span class="lineNum">     762 </span><span class="lineNoCov">          0 :                                 log_tag(&quot;collision:%s:%s:%s: Not setting modification time to avoid inode collision\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), esc_tag(collide_file-&gt;sub, esc_buffer_alt));</span></a>
 <a name="763"><span class="lineNum">     763 </span>            :                         }</a>
 <a name="764"><span class="lineNum">     764 </span>            :                 } else {</a>
 <a name="765"><span class="lineNum">     765 </span>            :                         /* we are not fixing, but only checking */</a>
 <a name="766"><span class="lineNum">     766 </span>            :                         /* print just the final status */</a>
 <a name="767"><span class="lineNum">     767 </span><span class="lineCov">    1305152 :                         if (file_flag_has(file, FILE_IS_DAMAGED)) {</span></a>
-<a name="768"><span class="lineNum">     768 </span><span class="lineCov">       9430 :                                 log_tag(&quot;status:unrecoverable:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="769"><span class="lineNum">     769 </span><span class="lineCov">       9430 :                                 msg_info(&quot;unrecoverable %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
-<a name="770"><span class="lineNum">     770 </span><span class="lineCov">    1295722 :                         } else if (file_flag_has(file, FILE_IS_FIXED)) {</span></a>
-<a name="771"><span class="lineNum">     771 </span><span class="lineCov">      76206 :                                 log_tag(&quot;status:recoverable:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="772"><span class="lineNum">     772 </span><span class="lineCov">      76206 :                                 msg_info(&quot;recoverable %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="768"><span class="lineNum">     768 </span><span class="lineCov">       9483 :                                 log_tag(&quot;status:unrecoverable:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="769"><span class="lineNum">     769 </span><span class="lineCov">       9483 :                                 msg_info(&quot;unrecoverable %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="770"><span class="lineNum">     770 </span><span class="lineCov">    1295669 :                         } else if (file_flag_has(file, FILE_IS_FIXED)) {</span></a>
+<a name="771"><span class="lineNum">     771 </span><span class="lineCov">      76272 :                                 log_tag(&quot;status:recoverable:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="772"><span class="lineNum">     772 </span><span class="lineCov">      76272 :                                 msg_info(&quot;recoverable %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
 <a name="773"><span class="lineNum">     773 </span>            :                         } else {</a>
 <a name="774"><span class="lineNum">     774 </span>            :                                 /* we don't use msg_verbose() because it also goes into the log */</a>
-<a name="775"><span class="lineNum">     775 </span><span class="lineCov">    1219516 :                                 if (msg_level &gt;= MSG_VERBOSE) {</span></a>
-<a name="776"><span class="lineNum">     776 </span><span class="lineCov">      20373 :                                         log_tag(&quot;status:correct:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="777"><span class="lineNum">     777 </span><span class="lineCov">      20373 :                                         msg_info(&quot;correct %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="775"><span class="lineNum">     775 </span><span class="lineCov">    1219397 :                                 if (msg_level &gt;= MSG_VERBOSE) {</span></a>
+<a name="776"><span class="lineNum">     776 </span><span class="lineCov">      20355 :                                         log_tag(&quot;status:correct:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="777"><span class="lineNum">     777 </span><span class="lineCov">      20355 :                                         msg_info(&quot;correct %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
 <a name="778"><span class="lineNum">     778 </span>            :                                 }</a>
 <a name="779"><span class="lineNum">     779 </span>            :                         }</a>
 <a name="780"><span class="lineNum">     780 </span>            :                 }</a>
 <a name="781"><span class="lineNum">     781 </span>            : </a>
-<a name="782"><span class="lineNum">     782 </span><span class="lineCov">    1199143 : close_and_continue:</span></a>
+<a name="782"><span class="lineNum">     782 </span><span class="lineCov">    1199042 : close_and_continue:</span></a>
 <a name="783"><span class="lineNum">     783 </span>            :                 /* if the opened file is the correct one, close it */</a>
 <a name="784"><span class="lineNum">     784 </span>            :                 /* in case of excluded and fragmented files it's possible */</a>
 <a name="785"><span class="lineNum">     785 </span>            :                 /* that the opened file is not the current one */</a>
-<a name="786"><span class="lineNum">     786 </span><span class="lineCov">    2128062 :                 if (handle[j].file == file) {</span></a>
+<a name="786"><span class="lineNum">     786 </span><span class="lineCov">    2128059 :                 if (handle[j].file == file) {</span></a>
 <a name="787"><span class="lineNum">     787 </span>            :                         /* ensure to close the file just after finishing with it */</a>
 <a name="788"><span class="lineNum">     788 </span>            :                         /* to avoid keeping it open without any possible use */</a>
-<a name="789"><span class="lineNum">     789 </span><span class="lineCov">    1986088 :                         ret = handle_close(&amp;handle[j]);</span></a>
-<a name="790"><span class="lineNum">     790 </span><span class="lineCov">    1986088 :                         if (ret != 0) {</span></a>
+<a name="789"><span class="lineNum">     789 </span><span class="lineCov">    1986081 :                         ret = handle_close(&amp;handle[j]);</span></a>
+<a name="790"><span class="lineNum">     790 </span><span class="lineCov">    1986081 :                         if (ret != 0) {</span></a>
 <a name="791"><span class="lineNum">     791 </span>            :                                 /* LCOV_EXCL_START */</a>
 <a name="792"><span class="lineNum">     792 </span>            :                                 log_tag(&quot;%s:%u:%s:%s: Close error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="793"><span class="lineNum">     793 </span>            :                                 log_fatal_errno(errno, disk-&gt;name);</a>
@@ -902,7 +902,7 @@
 <a name="840"><span class="lineNum">     840 </span>            :                  * the bad blocks.</a>
 <a name="841"><span class="lineNum">     841 </span>            :                  */</a>
 <a name="842"><span class="lineNum">     842 </span><span class="lineCov">       9374 :                 if (info_get_bad(info))</span></a>
-<a name="843"><span class="lineNum">     843 </span><span class="lineCov">       1771 :                         return 1;</span></a>
+<a name="843"><span class="lineNum">     843 </span><span class="lineCov">       1772 :                         return 1;</span></a>
 <a name="844"><span class="lineNum">     844 </span>            :         } else {</a>
 <a name="845"><span class="lineNum">     845 </span>            :                 /* if a parity is not excluded, include all blocks, even unused ones */</a>
 <a name="846"><span class="lineNum">     846 </span><span class="lineCov">    1061137 :                 for (l = 0; l &lt; state-&gt;level; ++l) {</span></a>
@@ -913,21 +913,21 @@
 <a name="851"><span class="lineNum">     851 </span>            :         }</a>
 <a name="852"><span class="lineNum">     852 </span>            : </a>
 <a name="853"><span class="lineNum">     853 </span>            :         /* filter for the files */</a>
-<a name="854"><span class="lineNum">     854 </span><span class="lineCov">     238634 :         for (j = 0; j &lt; diskmax; ++j) {</span></a>
+<a name="854"><span class="lineNum">     854 </span><span class="lineCov">     238648 :         for (j = 0; j &lt; diskmax; ++j) {</span></a>
 <a name="855"><span class="lineNum">     855 </span>            :                 struct snapraid_block* block;</a>
 <a name="856"><span class="lineNum">     856 </span>            : </a>
 <a name="857"><span class="lineNum">     857 </span>            :                 /* if no disk, nothing to check */</a>
-<a name="858"><span class="lineNum">     858 </span><span class="lineCov">     214768 :                 if (!handle[j].disk)</span></a>
+<a name="858"><span class="lineNum">     858 </span><span class="lineCov">     214782 :                 if (!handle[j].disk)</span></a>
 <a name="859"><span class="lineNum">     859 </span><span class="lineNoCov">          0 :                         continue;</span></a>
 <a name="860"><span class="lineNum">     860 </span>            : </a>
-<a name="861"><span class="lineNum">     861 </span><span class="lineCov">     214768 :                 block = fs_par2block_find(handle[j].disk, i);</span></a>
+<a name="861"><span class="lineNum">     861 </span><span class="lineCov">     214782 :                 block = fs_par2block_find(handle[j].disk, i);</span></a>
 <a name="862"><span class="lineNum">     862 </span>            : </a>
 <a name="863"><span class="lineNum">     863 </span>            :                 /* try to recover all files, even the ones without hash */</a>
 <a name="864"><span class="lineNum">     864 </span>            :                 /* because in some cases we can recover also them */</a>
-<a name="865"><span class="lineNum">     865 </span><span class="lineCov">     214768 :                 if (block_has_file(block)) {</span></a>
-<a name="866"><span class="lineNum">     866 </span><span class="lineCov">     210845 :                         struct snapraid_file* file = fs_par2file_get(handle[j].disk, i, 0);</span></a>
-<a name="867"><span class="lineNum">     867 </span><span class="lineCov">     210845 :                         if (!file_flag_has(file, FILE_IS_EXCLUDED)) { /* only if the file is not filtered out */</span></a>
-<a name="868"><span class="lineNum">     868 </span><span class="lineCov">      25427 :                                 return 1;</span></a>
+<a name="865"><span class="lineNum">     865 </span><span class="lineCov">     214782 :                 if (block_has_file(block)) {</span></a>
+<a name="866"><span class="lineNum">     866 </span><span class="lineCov">     210859 :                         struct snapraid_file* file = fs_par2file_get(handle[j].disk, i, 0);</span></a>
+<a name="867"><span class="lineNum">     867 </span><span class="lineCov">     210859 :                         if (!file_flag_has(file, FILE_IS_EXCLUDED)) { /* only if the file is not filtered out */</span></a>
+<a name="868"><span class="lineNum">     868 </span><span class="lineCov">      25426 :                                 return 1;</span></a>
 <a name="869"><span class="lineNum">     869 </span>            :                         }</a>
 <a name="870"><span class="lineNum">     870 </span>            :                 }</a>
 <a name="871"><span class="lineNum">     871 </span>            :         }</a>
@@ -1068,7 +1068,7 @@
 <a name="1006"><span class="lineNum">    1006 </span><span class="lineCov">    5469678 :                         if (!disk) {</span></a>
 <a name="1007"><span class="lineNum">    1007 </span>            :                                 /* use an empty block */</a>
 <a name="1008"><span class="lineNum">    1008 </span><span class="lineCov">      14061 :                                 memset(buffer[j], 0, state-&gt;block_size);</span></a>
-<a name="1009"><span class="lineNum">    1009 </span><span class="lineCov">     940909 :                                 continue;</span></a>
+<a name="1009"><span class="lineNum">    1009 </span><span class="lineCov">     941260 :                                 continue;</span></a>
 <a name="1010"><span class="lineNum">    1010 </span>            :                         }</a>
 <a name="1011"><span class="lineNum">    1011 </span>            : </a>
 <a name="1012"><span class="lineNum">    1012 </span>            :                         /* if the disk block is not used */</a>
@@ -1127,9 +1127,9 @@
 <a name="1065"><span class="lineNum">    1065 </span>            :                         /* if the file is closed or different than the current one */</a>
 <a name="1066"><span class="lineNum">    1066 </span><span class="lineCov">    5245100 :                         if (handle[j].file == 0 || handle[j].file != file) {</span></a>
 <a name="1067"><span class="lineNum">    1067 </span>            :                                 /* keep a pointer at the file we are going to close for error reporting */</a>
-<a name="1068"><span class="lineNum">    1068 </span><span class="lineCov">    2259176 :                                 struct snapraid_file* report = handle[j].file;</span></a>
-<a name="1069"><span class="lineNum">    1069 </span><span class="lineCov">    2259176 :                                 ret = handle_close(&amp;handle[j]);</span></a>
-<a name="1070"><span class="lineNum">    1070 </span><span class="lineCov">    2259176 :                                 if (ret == -1) {</span></a>
+<a name="1068"><span class="lineNum">    1068 </span><span class="lineCov">    2259318 :                                 struct snapraid_file* report = handle[j].file;</span></a>
+<a name="1069"><span class="lineNum">    1069 </span><span class="lineCov">    2259318 :                                 ret = handle_close(&amp;handle[j]);</span></a>
+<a name="1070"><span class="lineNum">    1070 </span><span class="lineCov">    2259318 :                                 if (ret == -1) {</span></a>
 <a name="1071"><span class="lineNum">    1071 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="1072"><span class="lineNum">    1072 </span>            :                                         log_tag(&quot;%s:%u:%s:%s: Close error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(report-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="1073"><span class="lineNum">    1073 </span>            :                                         log_fatal_errno(errno, disk-&gt;name);</a>
@@ -1141,10 +1141,10 @@
 <a name="1079"><span class="lineNum">    1079 </span>            :                                 }</a>
 <a name="1080"><span class="lineNum">    1080 </span>            : </a>
 <a name="1081"><span class="lineNum">    1081 </span>            :                                 /* if fixing, and the file is not excluded, we must open for writing */</a>
-<a name="1082"><span class="lineNum">    1082 </span><span class="lineCov">    2259176 :                                 if (fix &amp;&amp; !file_flag_has(file, FILE_IS_EXCLUDED)) {</span></a>
+<a name="1082"><span class="lineNum">    1082 </span><span class="lineCov">    2259318 :                                 if (fix &amp;&amp; !file_flag_has(file, FILE_IS_EXCLUDED)) {</span></a>
 <a name="1083"><span class="lineNum">    1083 </span>            :                                         /* if fixing, create the file, open for writing and resize if required */</a>
-<a name="1084"><span class="lineNum">    1084 </span><span class="lineCov">     771292 :                                         ret = handle_create(&amp;handle[j], file, state-&gt;file_mode);</span></a>
-<a name="1085"><span class="lineNum">    1085 </span><span class="lineCov">     771292 :                                         if (ret == -1) {</span></a>
+<a name="1084"><span class="lineNum">    1084 </span><span class="lineCov">     771350 :                                         ret = handle_create(&amp;handle[j], file, state-&gt;file_mode);</span></a>
+<a name="1085"><span class="lineNum">    1085 </span><span class="lineCov">     771350 :                                         if (ret == -1) {</span></a>
 <a name="1086"><span class="lineNum">    1086 </span>            :                                                 /* LCOV_EXCL_START */</a>
 <a name="1087"><span class="lineNum">    1087 </span>            :                                                 log_tag(&quot;%s:%u:%s:%s: Create error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="1088"><span class="lineNum">    1088 </span>            :                                                 log_fatal_errno(errno, disk-&gt;name);</a>
@@ -1156,75 +1156,75 @@
 <a name="1094"><span class="lineNum">    1094 </span>            :                                         }</a>
 <a name="1095"><span class="lineNum">    1095 </span>            : </a>
 <a name="1096"><span class="lineNum">    1096 </span>            :                                         /* check if the file was just created */</a>
-<a name="1097"><span class="lineNum">    1097 </span><span class="lineCov">     771292 :                                         if (handle[j].created != 0) {</span></a>
+<a name="1097"><span class="lineNum">    1097 </span><span class="lineCov">     771350 :                                         if (handle[j].created != 0) {</span></a>
 <a name="1098"><span class="lineNum">    1098 </span>            :                                                 /* if fragmented, it may be reopened, so remember that the file */</a>
 <a name="1099"><span class="lineNum">    1099 </span>            :                                                 /* was originally missing */</a>
-<a name="1100"><span class="lineNum">    1100 </span><span class="lineCov">     113113 :                                                 file_flag_set(file, FILE_IS_CREATED);</span></a>
+<a name="1100"><span class="lineNum">    1100 </span><span class="lineCov">     113069 :                                                 file_flag_set(file, FILE_IS_CREATED);</span></a>
 <a name="1101"><span class="lineNum">    1101 </span>            :                                         }</a>
 <a name="1102"><span class="lineNum">    1102 </span>            :                                 } else {</a>
 <a name="1103"><span class="lineNum">    1103 </span>            :                                         /* open the file only for reading */</a>
-<a name="1104"><span class="lineNum">    1104 </span><span class="lineCov">    1487884 :                                         if (!file_flag_has(file, FILE_IS_MISSING)) {</span></a>
-<a name="1105"><span class="lineNum">    1105 </span><span class="lineCov">    1372280 :                                                 ret = handle_open(&amp;handle[j], file, state-&gt;file_mode, log_error, state-&gt;opt.expected_missing ? log_expected : 0);</span></a>
+<a name="1104"><span class="lineNum">    1104 </span><span class="lineCov">    1487968 :                                         if (!file_flag_has(file, FILE_IS_MISSING)) {</span></a>
+<a name="1105"><span class="lineNum">    1105 </span><span class="lineCov">    1372199 :                                                 ret = handle_open(&amp;handle[j], file, state-&gt;file_mode, log_error, state-&gt;opt.expected_missing ? log_expected : 0);</span></a>
 <a name="1106"><span class="lineNum">    1106 </span>            :                                         } else {</a>
-<a name="1107"><span class="lineNum">    1107 </span><span class="lineCov">     115604 :                                                 errno = ENOENT;</span></a>
-<a name="1108"><span class="lineNum">    1108 </span><span class="lineCov">     115604 :                                                 ret = -1; /* if the file is missing, we cannot open it */</span></a>
+<a name="1107"><span class="lineNum">    1107 </span><span class="lineCov">     115769 :                                                 errno = ENOENT;</span></a>
+<a name="1108"><span class="lineNum">    1108 </span><span class="lineCov">     115769 :                                                 ret = -1; /* if the file is missing, we cannot open it */</span></a>
 <a name="1109"><span class="lineNum">    1109 </span>            :                                         }</a>
-<a name="1110"><span class="lineNum">    1110 </span><span class="lineCov">    1487884 :                                         if (ret == -1) {</span></a>
+<a name="1110"><span class="lineNum">    1110 </span><span class="lineCov">    1487968 :                                         if (ret == -1) {</span></a>
 <a name="1111"><span class="lineNum">    1111 </span>            :                                                 /* save the failed block for the check/fix */</a>
-<a name="1112"><span class="lineNum">    1112 </span><span class="lineCov">     194317 :                                                 failed[failed_count].is_bad = 1;</span></a>
-<a name="1113"><span class="lineNum">    1113 </span><span class="lineCov">     194317 :                                                 failed[failed_count].is_outofdate = 0;</span></a>
-<a name="1114"><span class="lineNum">    1114 </span><span class="lineCov">     194317 :                                                 failed[failed_count].index = j;</span></a>
-<a name="1115"><span class="lineNum">    1115 </span><span class="lineCov">     194317 :                                                 failed[failed_count].block = block;</span></a>
-<a name="1116"><span class="lineNum">    1116 </span><span class="lineCov">     194317 :                                                 failed[failed_count].disk = disk;</span></a>
-<a name="1117"><span class="lineNum">    1117 </span><span class="lineCov">     194317 :                                                 failed[failed_count].file = file;</span></a>
-<a name="1118"><span class="lineNum">    1118 </span><span class="lineCov">     194317 :                                                 failed[failed_count].file_pos = file_pos;</span></a>
-<a name="1119"><span class="lineNum">    1119 </span><span class="lineCov">     194317 :                                                 failed[failed_count].handle = &amp;handle[j];</span></a>
-<a name="1120"><span class="lineNum">    1120 </span><span class="lineCov">     194317 :                                                 ++failed_count;</span></a>
+<a name="1112"><span class="lineNum">    1112 </span><span class="lineCov">     194447 :                                                 failed[failed_count].is_bad = 1;</span></a>
+<a name="1113"><span class="lineNum">    1113 </span><span class="lineCov">     194447 :                                                 failed[failed_count].is_outofdate = 0;</span></a>
+<a name="1114"><span class="lineNum">    1114 </span><span class="lineCov">     194447 :                                                 failed[failed_count].index = j;</span></a>
+<a name="1115"><span class="lineNum">    1115 </span><span class="lineCov">     194447 :                                                 failed[failed_count].block = block;</span></a>
+<a name="1116"><span class="lineNum">    1116 </span><span class="lineCov">     194447 :                                                 failed[failed_count].disk = disk;</span></a>
+<a name="1117"><span class="lineNum">    1117 </span><span class="lineCov">     194447 :                                                 failed[failed_count].file = file;</span></a>
+<a name="1118"><span class="lineNum">    1118 </span><span class="lineCov">     194447 :                                                 failed[failed_count].file_pos = file_pos;</span></a>
+<a name="1119"><span class="lineNum">    1119 </span><span class="lineCov">     194447 :                                                 failed[failed_count].handle = &amp;handle[j];</span></a>
+<a name="1120"><span class="lineNum">    1120 </span><span class="lineCov">     194447 :                                                 ++failed_count;</span></a>
 <a name="1121"><span class="lineNum">    1121 </span>            : </a>
-<a name="1122"><span class="lineNum">    1122 </span><span class="lineCov">     194317 :                                                 log_tag(&quot;%s:%u:%s:%s: Open error at position %u. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, strerror(errno));</span></a>
+<a name="1122"><span class="lineNum">    1122 </span><span class="lineCov">     194447 :                                                 log_tag(&quot;%s:%u:%s:%s: Open error at position %u. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, strerror(errno));</span></a>
 <a name="1123"><span class="lineNum">    1123 </span>            : </a>
-<a name="1124"><span class="lineNum">    1124 </span><span class="lineCov">     194317 :                                                 if (is_hw(errno)) {</span></a>
+<a name="1124"><span class="lineNum">    1124 </span><span class="lineCov">     194447 :                                                 if (is_hw(errno)) {</span></a>
 <a name="1125"><span class="lineNum">    1125 </span><span class="lineNoCov">          0 :                                                         ++io_error;</span></a>
 <a name="1126"><span class="lineNum">    1126 </span>            :                                                 } else {</a>
-<a name="1127"><span class="lineNum">    1127 </span><span class="lineCov">     194317 :                                                         ++soft_error;</span></a>
+<a name="1127"><span class="lineNum">    1127 </span><span class="lineCov">     194447 :                                                         ++soft_error;</span></a>
 <a name="1128"><span class="lineNum">    1128 </span>            :                                                 }</a>
 <a name="1129"><span class="lineNum">    1129 </span>            : </a>
 <a name="1130"><span class="lineNum">    1130 </span>            :                                                 /* mark the file as missing, to avoid to retry to open it again */</a>
 <a name="1131"><span class="lineNum">    1131 </span>            :                                                 /* note that this can be done only if we are not fixing it */</a>
 <a name="1132"><span class="lineNum">    1132 </span>            :                                                 /* otherwise, it could be recreated */</a>
-<a name="1133"><span class="lineNum">    1133 </span><span class="lineCov">     194317 :                                                 file_flag_set(file, FILE_IS_MISSING);</span></a>
-<a name="1134"><span class="lineNum">    1134 </span><span class="lineCov">     194317 :                                                 continue;</span></a>
+<a name="1133"><span class="lineNum">    1133 </span><span class="lineCov">     194447 :                                                 file_flag_set(file, FILE_IS_MISSING);</span></a>
+<a name="1134"><span class="lineNum">    1134 </span><span class="lineCov">     194447 :                                                 continue;</span></a>
 <a name="1135"><span class="lineNum">    1135 </span>            :                                         }</a>
 <a name="1136"><span class="lineNum">    1136 </span>            :                                 }</a>
 <a name="1137"><span class="lineNum">    1137 </span>            : </a>
 <a name="1138"><span class="lineNum">    1138 </span>            :                                 /* if it's the first open, and not excluded */</a>
-<a name="1139"><span class="lineNum">    1139 </span><span class="lineCov">    2064859 :                                 if (!file_flag_has(file, FILE_IS_OPENED)</span></a>
-<a name="1140"><span class="lineNum">    1140 </span><span class="lineCov">    2049425 :                                         &amp;&amp; !file_flag_has(file, FILE_IS_EXCLUDED)) {</span></a>
+<a name="1139"><span class="lineNum">    1139 </span><span class="lineCov">    2064871 :                                 if (!file_flag_has(file, FILE_IS_OPENED)</span></a>
+<a name="1140"><span class="lineNum">    1140 </span><span class="lineCov">    2049466 :                                         &amp;&amp; !file_flag_has(file, FILE_IS_EXCLUDED)) {</span></a>
 <a name="1141"><span class="lineNum">    1141 </span>            : </a>
 <a name="1142"><span class="lineNum">    1142 </span>            :                                         /* check if the file is changed */</a>
-<a name="1143"><span class="lineNum">    1143 </span><span class="lineCov">    1995721 :                                         if (handle[j].st.st_size != file-&gt;size</span></a>
-<a name="1144"><span class="lineNum">    1144 </span><span class="lineCov">    1802900 :                                                 || handle[j].st.st_mtime != file-&gt;mtime_sec</span></a>
-<a name="1145"><span class="lineNum">    1145 </span><span class="lineCov">    1779966 :                                                 || STAT_NSEC(&amp;handle[j].st) != file-&gt;mtime_nsec</span></a>
+<a name="1143"><span class="lineNum">    1143 </span><span class="lineCov">    1995801 :                                         if (handle[j].st.st_size != file-&gt;size</span></a>
+<a name="1144"><span class="lineNum">    1144 </span><span class="lineCov">    1803079 :                                                 || handle[j].st.st_mtime != file-&gt;mtime_sec</span></a>
+<a name="1145"><span class="lineNum">    1145 </span><span class="lineCov">    1780127 :                                                 || STAT_NSEC(&amp;handle[j].st) != file-&gt;mtime_nsec</span></a>
 <a name="1146"><span class="lineNum">    1146 </span>            :                                                 /* don't check the inode to support file-system without persistent inodes */</a>
 <a name="1147"><span class="lineNum">    1147 </span>            :                                         ) {</a>
 <a name="1148"><span class="lineNum">    1148 </span>            :                                                 /* report that the file is not synced */</a>
-<a name="1149"><span class="lineNum">    1149 </span><span class="lineCov">     215755 :                                                 file_flag_set(file, FILE_IS_UNSYNCED);</span></a>
+<a name="1149"><span class="lineNum">    1149 </span><span class="lineCov">     215674 :                                                 file_flag_set(file, FILE_IS_UNSYNCED);</span></a>
 <a name="1150"><span class="lineNum">    1150 </span>            :                                         }</a>
 <a name="1151"><span class="lineNum">    1151 </span>            :                                 }</a>
 <a name="1152"><span class="lineNum">    1152 </span>            : </a>
 <a name="1153"><span class="lineNum">    1153 </span>            :                                 /* if it's the first open, and not excluded and larger */</a>
-<a name="1154"><span class="lineNum">    1154 </span><span class="lineCov">    2064859 :                                 if (!file_flag_has(file, FILE_IS_OPENED)</span></a>
-<a name="1155"><span class="lineNum">    1155 </span><span class="lineCov">    2049425 :                                         &amp;&amp; !file_flag_has(file, FILE_IS_EXCLUDED)</span></a>
-<a name="1156"><span class="lineNum">    1156 </span><span class="lineCov">    1995721 :                                         &amp;&amp; !(state-&gt;opt.syncedonly &amp;&amp; file_flag_has(file, FILE_IS_UNSYNCED))</span></a>
-<a name="1157"><span class="lineNum">    1157 </span><span class="lineCov">    1995721 :                                         &amp;&amp; handle[j].st.st_size &gt; file-&gt;size</span></a>
+<a name="1154"><span class="lineNum">    1154 </span><span class="lineCov">    2064871 :                                 if (!file_flag_has(file, FILE_IS_OPENED)</span></a>
+<a name="1155"><span class="lineNum">    1155 </span><span class="lineCov">    2049466 :                                         &amp;&amp; !file_flag_has(file, FILE_IS_EXCLUDED)</span></a>
+<a name="1156"><span class="lineNum">    1156 </span><span class="lineCov">    1995801 :                                         &amp;&amp; !(state-&gt;opt.syncedonly &amp;&amp; file_flag_has(file, FILE_IS_UNSYNCED))</span></a>
+<a name="1157"><span class="lineNum">    1157 </span><span class="lineCov">    1995801 :                                         &amp;&amp; handle[j].st.st_size &gt; file-&gt;size</span></a>
 <a name="1158"><span class="lineNum">    1158 </span>            :                                 ) {</a>
-<a name="1159"><span class="lineNum">    1159 </span><span class="lineCov">       8795 :                                         log_error(ESOFT, &quot;File '%s' is larger than expected.\n&quot;, handle[j].path);</span></a>
-<a name="1160"><span class="lineNum">    1160 </span><span class="lineCov">       8795 :                                         log_tag(&quot;error:%u:%s:%s: Size error\n&quot;, i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="1161"><span class="lineNum">    1161 </span><span class="lineCov">       8795 :                                         ++soft_error;</span></a>
+<a name="1159"><span class="lineNum">    1159 </span><span class="lineCov">       8695 :                                         log_error(ESOFT, &quot;File '%s' is larger than expected.\n&quot;, handle[j].path);</span></a>
+<a name="1160"><span class="lineNum">    1160 </span><span class="lineCov">       8695 :                                         log_tag(&quot;error:%u:%s:%s: Size error\n&quot;, i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="1161"><span class="lineNum">    1161 </span><span class="lineCov">       8695 :                                         ++soft_error;</span></a>
 <a name="1162"><span class="lineNum">    1162 </span>            : </a>
-<a name="1163"><span class="lineNum">    1163 </span><span class="lineCov">       8795 :                                         if (fix) {</span></a>
-<a name="1164"><span class="lineNum">    1164 </span><span class="lineCov">       3256 :                                                 ret = handle_truncate(&amp;handle[j], file);</span></a>
-<a name="1165"><span class="lineNum">    1165 </span><span class="lineCov">       3256 :                                                 if (ret == -1) {</span></a>
+<a name="1163"><span class="lineNum">    1163 </span><span class="lineCov">       8695 :                                         if (fix) {</span></a>
+<a name="1164"><span class="lineNum">    1164 </span><span class="lineCov">       3213 :                                                 ret = handle_truncate(&amp;handle[j], file);</span></a>
+<a name="1165"><span class="lineNum">    1165 </span><span class="lineCov">       3213 :                                                 if (ret == -1) {</span></a>
 <a name="1166"><span class="lineNum">    1166 </span>            :                                                         /* LCOV_EXCL_START */</a>
 <a name="1167"><span class="lineNum">    1167 </span>            :                                                         log_tag(&quot;%s:%u:%s:%s: Truncate error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="1168"><span class="lineNum">    1168 </span>            :                                                         log_fatal_errno(errno, disk-&gt;name);</a>
@@ -1235,58 +1235,58 @@
 <a name="1173"><span class="lineNum">    1173 </span>            :                                                         /* LCOV_EXCL_STOP */</a>
 <a name="1174"><span class="lineNum">    1174 </span>            :                                                 }</a>
 <a name="1175"><span class="lineNum">    1175 </span>            : </a>
-<a name="1176"><span class="lineNum">    1176 </span><span class="lineCov">       3256 :                                                 log_tag(&quot;fixed:%u:%s:%s: Fixed size\n&quot;, i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="1177"><span class="lineNum">    1177 </span><span class="lineCov">       3256 :                                                 ++recovered_error;</span></a>
+<a name="1176"><span class="lineNum">    1176 </span><span class="lineCov">       3213 :                                                 log_tag(&quot;fixed:%u:%s:%s: Fixed size\n&quot;, i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="1177"><span class="lineNum">    1177 </span><span class="lineCov">       3213 :                                                 ++recovered_error;</span></a>
 <a name="1178"><span class="lineNum">    1178 </span>            :                                         }</a>
 <a name="1179"><span class="lineNum">    1179 </span>            :                                 }</a>
 <a name="1180"><span class="lineNum">    1180 </span>            : </a>
 <a name="1181"><span class="lineNum">    1181 </span>            :                                 /* mark the file as opened at least one time */</a>
 <a name="1182"><span class="lineNum">    1182 </span>            :                                 /* this is used to avoid to check the unsynced and size */</a>
 <a name="1183"><span class="lineNum">    1183 </span>            :                                 /* more than one time, in case the file is reopened later */</a>
-<a name="1184"><span class="lineNum">    1184 </span><span class="lineCov">    2064859 :                                 file_flag_set(file, FILE_IS_OPENED);</span></a>
+<a name="1184"><span class="lineNum">    1184 </span><span class="lineCov">    2064871 :                                 file_flag_set(file, FILE_IS_OPENED);</span></a>
 <a name="1185"><span class="lineNum">    1185 </span>            :                         }</a>
 <a name="1186"><span class="lineNum">    1186 </span>            : </a>
 <a name="1187"><span class="lineNum">    1187 </span>            :                         /* read from the file */</a>
-<a name="1188"><span class="lineNum">    1188 </span><span class="lineCov">    5050783 :                         if (file_flag_has(file, FILE_IS_MISSING)) {</span></a>
+<a name="1188"><span class="lineNum">    1188 </span><span class="lineCov">    5050653 :                         if (file_flag_has(file, FILE_IS_MISSING)) {</span></a>
 <a name="1189"><span class="lineNum">    1189 </span>            :                                 /* if the file is reported missing, don't even try to read it */</a>
-<a name="1190"><span class="lineNum">    1190 </span><span class="lineCov">     256474 :                                 errno = ENOENT;</span></a>
-<a name="1191"><span class="lineNum">    1191 </span><span class="lineCov">     256474 :                                 read_size = -1;</span></a>
+<a name="1190"><span class="lineNum">    1190 </span><span class="lineCov">     256551 :                                 errno = ENOENT;</span></a>
+<a name="1191"><span class="lineNum">    1191 </span><span class="lineCov">     256551 :                                 read_size = -1;</span></a>
 <a name="1192"><span class="lineNum">    1192 </span>            :                         } else {</a>
-<a name="1193"><span class="lineNum">    1193 </span><span class="lineCov">    4794309 :                                 read_size = handle_read(&amp;handle[j], file_pos, buffer[j], state-&gt;block_size, log_error, state-&gt;opt.expected_missing ? log_expected : 0);</span></a>
+<a name="1193"><span class="lineNum">    1193 </span><span class="lineCov">    4794102 :                                 read_size = handle_read(&amp;handle[j], file_pos, buffer[j], state-&gt;block_size, log_error, state-&gt;opt.expected_missing ? log_expected : 0);</span></a>
 <a name="1194"><span class="lineNum">    1194 </span>            :                         }</a>
-<a name="1195"><span class="lineNum">    1195 </span><span class="lineCov">    5050783 :                         if (read_size == -1) {</span></a>
+<a name="1195"><span class="lineNum">    1195 </span><span class="lineCov">    5050653 :                         if (read_size == -1) {</span></a>
 <a name="1196"><span class="lineNum">    1196 </span>            :                                 /* save the failed block for the check/fix */</a>
-<a name="1197"><span class="lineNum">    1197 </span><span class="lineCov">     442171 :                                 failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */</span></a>
-<a name="1198"><span class="lineNum">    1198 </span><span class="lineCov">     442171 :                                 failed[failed_count].is_outofdate = 0;</span></a>
-<a name="1199"><span class="lineNum">    1199 </span><span class="lineCov">     442171 :                                 failed[failed_count].index = j;</span></a>
-<a name="1200"><span class="lineNum">    1200 </span><span class="lineCov">     442171 :                                 failed[failed_count].block = block;</span></a>
-<a name="1201"><span class="lineNum">    1201 </span><span class="lineCov">     442171 :                                 failed[failed_count].disk = disk;</span></a>
-<a name="1202"><span class="lineNum">    1202 </span><span class="lineCov">     442171 :                                 failed[failed_count].file = file;</span></a>
-<a name="1203"><span class="lineNum">    1203 </span><span class="lineCov">     442171 :                                 failed[failed_count].file_pos = file_pos;</span></a>
-<a name="1204"><span class="lineNum">    1204 </span><span class="lineCov">     442171 :                                 failed[failed_count].handle = &amp;handle[j];</span></a>
-<a name="1205"><span class="lineNum">    1205 </span><span class="lineCov">     442171 :                                 ++failed_count;</span></a>
+<a name="1197"><span class="lineNum">    1197 </span><span class="lineCov">     442068 :                                 failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */</span></a>
+<a name="1198"><span class="lineNum">    1198 </span><span class="lineCov">     442068 :                                 failed[failed_count].is_outofdate = 0;</span></a>
+<a name="1199"><span class="lineNum">    1199 </span><span class="lineCov">     442068 :                                 failed[failed_count].index = j;</span></a>
+<a name="1200"><span class="lineNum">    1200 </span><span class="lineCov">     442068 :                                 failed[failed_count].block = block;</span></a>
+<a name="1201"><span class="lineNum">    1201 </span><span class="lineCov">     442068 :                                 failed[failed_count].disk = disk;</span></a>
+<a name="1202"><span class="lineNum">    1202 </span><span class="lineCov">     442068 :                                 failed[failed_count].file = file;</span></a>
+<a name="1203"><span class="lineNum">    1203 </span><span class="lineCov">     442068 :                                 failed[failed_count].file_pos = file_pos;</span></a>
+<a name="1204"><span class="lineNum">    1204 </span><span class="lineCov">     442068 :                                 failed[failed_count].handle = &amp;handle[j];</span></a>
+<a name="1205"><span class="lineNum">    1205 </span><span class="lineCov">     442068 :                                 ++failed_count;</span></a>
 <a name="1206"><span class="lineNum">    1206 </span>            : </a>
-<a name="1207"><span class="lineNum">    1207 </span><span class="lineCov">     442171 :                                 log_tag(&quot;%s:%u:%s:%s: Read error at position %u. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, strerror(errno));</span></a>
+<a name="1207"><span class="lineNum">    1207 </span><span class="lineCov">     442068 :                                 log_tag(&quot;%s:%u:%s:%s: Read error at position %u. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, strerror(errno));</span></a>
 <a name="1208"><span class="lineNum">    1208 </span>            : </a>
-<a name="1209"><span class="lineNum">    1209 </span><span class="lineCov">     442171 :                                 if (is_hw(errno)) {</span></a>
+<a name="1209"><span class="lineNum">    1209 </span><span class="lineCov">     442068 :                                 if (is_hw(errno)) {</span></a>
 <a name="1210"><span class="lineNum">    1210 </span><span class="lineNoCov">          0 :                                         ++io_error;</span></a>
 <a name="1211"><span class="lineNum">    1211 </span>            :                                 } else {</a>
-<a name="1212"><span class="lineNum">    1212 </span><span class="lineCov">     442171 :                                         ++soft_error;</span></a>
+<a name="1212"><span class="lineNum">    1212 </span><span class="lineCov">     442068 :                                         ++soft_error;</span></a>
 <a name="1213"><span class="lineNum">    1213 </span>            :                                 }</a>
 <a name="1214"><span class="lineNum">    1214 </span>            : </a>
 <a name="1215"><span class="lineNum">    1215 </span>            :                                 /* if we are reading at the end, mark the file as missing to avoid to try to read it again at the next block */</a>
-<a name="1216"><span class="lineNum">    1216 </span><span class="lineCov">     442171 :                                 if (errno == ENOENT) {</span></a>
-<a name="1217"><span class="lineNum">    1217 </span><span class="lineCov">     432266 :                                         file_flag_set(file, FILE_IS_MISSING);</span></a>
+<a name="1216"><span class="lineNum">    1216 </span><span class="lineCov">     442068 :                                 if (errno == ENOENT) {</span></a>
+<a name="1217"><span class="lineNum">    1217 </span><span class="lineCov">     432259 :                                         file_flag_set(file, FILE_IS_MISSING);</span></a>
 <a name="1218"><span class="lineNum">    1218 </span>            :                                 }</a>
-<a name="1219"><span class="lineNum">    1219 </span><span class="lineCov">     442171 :                                 continue;</span></a>
+<a name="1219"><span class="lineNum">    1219 </span><span class="lineCov">     442068 :                                 continue;</span></a>
 <a name="1220"><span class="lineNum">    1220 </span>            :                         }</a>
 <a name="1221"><span class="lineNum">    1221 </span>            : </a>
-<a name="1222"><span class="lineNum">    1222 </span><span class="lineCov">    4608612 :                         countsize += read_size;</span></a>
+<a name="1222"><span class="lineNum">    1222 </span><span class="lineCov">    4608585 :                         countsize += read_size;</span></a>
 <a name="1223"><span class="lineNum">    1223 </span>            : </a>
 <a name="1224"><span class="lineNum">    1224 </span>            :                         /* always insert CHG blocks, the repair functions needs all of them */</a>
 <a name="1225"><span class="lineNum">    1225 </span>            :                         /* because the parity may be still referring at the old state */</a>
 <a name="1226"><span class="lineNum">    1226 </span>            :                         /* and the repair must be aware of it */</a>
-<a name="1227"><span class="lineNum">    1227 </span><span class="lineCov">    4608612 :                         if (block_state == BLOCK_STATE_CHG) {</span></a>
+<a name="1227"><span class="lineNum">    1227 </span><span class="lineCov">    4608585 :                         if (block_state == BLOCK_STATE_CHG) {</span></a>
 <a name="1228"><span class="lineNum">    1228 </span>            :                                 /* we DO NOT mark them as bad to avoid to overwrite them with wrong data. */</a>
 <a name="1229"><span class="lineNum">    1229 </span>            :                                 /* if we don't have a hash, we always assume the first read of the block correct. */</a>
 <a name="1230"><span class="lineNum">    1230 </span><span class="lineCov">      13843 :                                 failed[failed_count].is_bad = 0; /* we assume the CHG block correct */</span></a>
@@ -1301,39 +1301,39 @@
 <a name="1239"><span class="lineNum">    1239 </span><span class="lineCov">      13843 :                                 continue;</span></a>
 <a name="1240"><span class="lineNum">    1240 </span>            :                         }</a>
 <a name="1241"><span class="lineNum">    1241 </span>            : </a>
-<a name="1242"><span class="lineNum">    1242 </span><span class="lineCov">    4594769 :                         assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);</span></a>
+<a name="1242"><span class="lineNum">    1242 </span><span class="lineCov">    4594742 :                         assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);</span></a>
 <a name="1243"><span class="lineNum">    1243 </span>            : </a>
 <a name="1244"><span class="lineNum">    1244 </span>            :                         /* compute the hash of the block just read */</a>
-<a name="1245"><span class="lineNum">    1245 </span><span class="lineCov">    4594769 :                         if (rehash) {</span></a>
+<a name="1245"><span class="lineNum">    1245 </span><span class="lineCov">    4594742 :                         if (rehash) {</span></a>
 <a name="1246"><span class="lineNum">    1246 </span><span class="lineCov">      27243 :                                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, hash, buffer[j], read_size);</span></a>
 <a name="1247"><span class="lineNum">    1247 </span>            :                         } else {</a>
-<a name="1248"><span class="lineNum">    1248 </span><span class="lineCov">    4567526 :                                 memhash(state-&gt;hash, state-&gt;hashseed, hash, buffer[j], read_size);</span></a>
+<a name="1248"><span class="lineNum">    1248 </span><span class="lineCov">    4567499 :                                 memhash(state-&gt;hash, state-&gt;hashseed, hash, buffer[j], read_size);</span></a>
 <a name="1249"><span class="lineNum">    1249 </span>            :                         }</a>
 <a name="1250"><span class="lineNum">    1250 </span>            : </a>
 <a name="1251"><span class="lineNum">    1251 </span>            :                         /* compare the hash */</a>
-<a name="1252"><span class="lineNum">    1252 </span><span class="lineCov">    4594769 :                         if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span></a>
-<a name="1253"><span class="lineNum">    1253 </span><span class="lineCov">      12572 :                                 unsigned diff = memdiff(hash, block-&gt;hash, BLOCK_HASH_SIZE);</span></a>
+<a name="1252"><span class="lineNum">    1252 </span><span class="lineCov">    4594742 :                         if (memcmp(hash, block-&gt;hash, BLOCK_HASH_SIZE) != 0) {</span></a>
+<a name="1253"><span class="lineNum">    1253 </span><span class="lineCov">      12896 :                                 unsigned diff = memdiff(hash, block-&gt;hash, BLOCK_HASH_SIZE);</span></a>
 <a name="1254"><span class="lineNum">    1254 </span>            : </a>
 <a name="1255"><span class="lineNum">    1255 </span>            :                                 /* save the failed block for the check/fix */</a>
-<a name="1256"><span class="lineNum">    1256 </span><span class="lineCov">      12572 :                                 failed[failed_count].is_bad = 1; /* it's bad because the hash doesn't match */</span></a>
-<a name="1257"><span class="lineNum">    1257 </span><span class="lineCov">      12572 :                                 failed[failed_count].is_outofdate = 0;</span></a>
-<a name="1258"><span class="lineNum">    1258 </span><span class="lineCov">      12572 :                                 failed[failed_count].index = j;</span></a>
-<a name="1259"><span class="lineNum">    1259 </span><span class="lineCov">      12572 :                                 failed[failed_count].block = block;</span></a>
-<a name="1260"><span class="lineNum">    1260 </span><span class="lineCov">      12572 :                                 failed[failed_count].disk = disk;</span></a>
-<a name="1261"><span class="lineNum">    1261 </span><span class="lineCov">      12572 :                                 failed[failed_count].file = file;</span></a>
-<a name="1262"><span class="lineNum">    1262 </span><span class="lineCov">      12572 :                                 failed[failed_count].file_pos = file_pos;</span></a>
-<a name="1263"><span class="lineNum">    1263 </span><span class="lineCov">      12572 :                                 failed[failed_count].handle = &amp;handle[j];</span></a>
-<a name="1264"><span class="lineNum">    1264 </span><span class="lineCov">      12572 :                                 ++failed_count;</span></a>
+<a name="1256"><span class="lineNum">    1256 </span><span class="lineCov">      12896 :                                 failed[failed_count].is_bad = 1; /* it's bad because the hash doesn't match */</span></a>
+<a name="1257"><span class="lineNum">    1257 </span><span class="lineCov">      12896 :                                 failed[failed_count].is_outofdate = 0;</span></a>
+<a name="1258"><span class="lineNum">    1258 </span><span class="lineCov">      12896 :                                 failed[failed_count].index = j;</span></a>
+<a name="1259"><span class="lineNum">    1259 </span><span class="lineCov">      12896 :                                 failed[failed_count].block = block;</span></a>
+<a name="1260"><span class="lineNum">    1260 </span><span class="lineCov">      12896 :                                 failed[failed_count].disk = disk;</span></a>
+<a name="1261"><span class="lineNum">    1261 </span><span class="lineCov">      12896 :                                 failed[failed_count].file = file;</span></a>
+<a name="1262"><span class="lineNum">    1262 </span><span class="lineCov">      12896 :                                 failed[failed_count].file_pos = file_pos;</span></a>
+<a name="1263"><span class="lineNum">    1263 </span><span class="lineCov">      12896 :                                 failed[failed_count].handle = &amp;handle[j];</span></a>
+<a name="1264"><span class="lineNum">    1264 </span><span class="lineCov">      12896 :                                 ++failed_count;</span></a>
 <a name="1265"><span class="lineNum">    1265 </span>            : </a>
-<a name="1266"><span class="lineNum">    1266 </span><span class="lineCov">      12572 :                                 log_tag(&quot;error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n&quot;, i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);</span></a>
-<a name="1267"><span class="lineNum">    1267 </span><span class="lineCov">      12572 :                                 ++silent_error;</span></a>
-<a name="1268"><span class="lineNum">    1268 </span><span class="lineCov">      12572 :                                 continue;</span></a>
+<a name="1266"><span class="lineNum">    1266 </span><span class="lineCov">      12896 :                                 log_tag(&quot;error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n&quot;, i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);</span></a>
+<a name="1267"><span class="lineNum">    1267 </span><span class="lineCov">      12896 :                                 ++silent_error;</span></a>
+<a name="1268"><span class="lineNum">    1268 </span><span class="lineCov">      12896 :                                 continue;</span></a>
 <a name="1269"><span class="lineNum">    1269 </span>            :                         }</a>
 <a name="1270"><span class="lineNum">    1270 </span>            : </a>
 <a name="1271"><span class="lineNum">    1271 </span>            :                         /* always insert REP blocks, the repair functions needs all of them */</a>
 <a name="1272"><span class="lineNum">    1272 </span>            :                         /* because the parity may be still referring at the old state */</a>
 <a name="1273"><span class="lineNum">    1273 </span>            :                         /* and the repair must be aware of it */</a>
-<a name="1274"><span class="lineNum">    1274 </span><span class="lineCov">    4582197 :                         if (block_state == BLOCK_STATE_REP) {</span></a>
+<a name="1274"><span class="lineNum">    1274 </span><span class="lineCov">    4581846 :                         if (block_state == BLOCK_STATE_REP) {</span></a>
 <a name="1275"><span class="lineNum">    1275 </span><span class="lineCov">      53428 :                                 failed[failed_count].is_bad = 0; /* it's not bad */</span></a>
 <a name="1276"><span class="lineNum">    1276 </span><span class="lineCov">      53428 :                                 failed[failed_count].is_outofdate = 0;</span></a>
 <a name="1277"><span class="lineNum">    1277 </span><span class="lineCov">      53428 :                                 failed[failed_count].index = j;</span></a>
@@ -1385,35 +1385,35 @@
 <a name="1323"><span class="lineNum">    1323 </span><span class="lineCov">     872338 :                         ret = repair(state, rehash, i, diskmax, failed, failed_map, failed_count, buffer, buffer_recov, buffer_zero);</span></a>
 <a name="1324"><span class="lineNum">    1324 </span><span class="lineCov">     872338 :                         if (ret != 0) {</span></a>
 <a name="1325"><span class="lineNum">    1325 </span>            :                                 /* increment the number of errors */</a>
-<a name="1326"><span class="lineNum">    1326 </span><span class="lineCov">      47927 :                                 if (ret &gt; 0)</span></a>
-<a name="1327"><span class="lineNum">    1327 </span><span class="lineCov">       4806 :                                         silent_error += ret;</span></a>
-<a name="1328"><span class="lineNum">    1328 </span><span class="lineCov">      47927 :                                 ++unrecoverable_error;</span></a>
+<a name="1326"><span class="lineNum">    1326 </span><span class="lineCov">      47978 :                                 if (ret &gt; 0)</span></a>
+<a name="1327"><span class="lineNum">    1327 </span><span class="lineCov">       4816 :                                         silent_error += ret;</span></a>
+<a name="1328"><span class="lineNum">    1328 </span><span class="lineCov">      47978 :                                 ++unrecoverable_error;</span></a>
 <a name="1329"><span class="lineNum">    1329 </span>            : </a>
 <a name="1330"><span class="lineNum">    1330 </span>            :                                 /* print a list of all the errors in files */</a>
-<a name="1331"><span class="lineNum">    1331 </span><span class="lineCov">     219107 :                                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="1332"><span class="lineNum">    1332 </span><span class="lineCov">     171180 :                                         if (failed[j].is_bad)</span></a>
-<a name="1333"><span class="lineNum">    1333 </span><span class="lineCov">     166658 :                                                 log_tag(&quot;unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n&quot;, i, failed[j].disk-&gt;name, esc_tag(failed[j].file-&gt;sub, esc_buffer), failed[j].file_pos);</span></a>
+<a name="1331"><span class="lineNum">    1331 </span><span class="lineCov">     219250 :                                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="1332"><span class="lineNum">    1332 </span><span class="lineCov">     171272 :                                         if (failed[j].is_bad)</span></a>
+<a name="1333"><span class="lineNum">    1333 </span><span class="lineCov">     166750 :                                                 log_tag(&quot;unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n&quot;, i, failed[j].disk-&gt;name, esc_tag(failed[j].file-&gt;sub, esc_buffer), failed[j].file_pos);</span></a>
 <a name="1334"><span class="lineNum">    1334 </span>            :                                 }</a>
 <a name="1335"><span class="lineNum">    1335 </span>            : </a>
 <a name="1336"><span class="lineNum">    1336 </span>            :                                 /* keep track of damaged files */</a>
-<a name="1337"><span class="lineNum">    1337 </span><span class="lineCov">     219107 :                                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="1338"><span class="lineNum">    1338 </span><span class="lineCov">     171180 :                                         if (failed[j].is_bad)</span></a>
-<a name="1339"><span class="lineNum">    1339 </span><span class="lineCov">     166658 :                                                 file_flag_set(failed[j].file, FILE_IS_DAMAGED);</span></a>
+<a name="1337"><span class="lineNum">    1337 </span><span class="lineCov">     219250 :                                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="1338"><span class="lineNum">    1338 </span><span class="lineCov">     171272 :                                         if (failed[j].is_bad)</span></a>
+<a name="1339"><span class="lineNum">    1339 </span><span class="lineCov">     166750 :                                                 file_flag_set(failed[j].file, FILE_IS_DAMAGED);</span></a>
 <a name="1340"><span class="lineNum">    1340 </span>            :                                 }</a>
 <a name="1341"><span class="lineNum">    1341 </span>            :                         } else {</a>
 <a name="1342"><span class="lineNum">    1342 </span>            :                                 /* now counts partial recovers */</a>
 <a name="1343"><span class="lineNum">    1343 </span>            :                                 /* note that this could happen only when we have an incomplete 'sync' */</a>
 <a name="1344"><span class="lineNum">    1344 </span>            :                                 /* and that we have recovered is the state before the 'sync' */</a>
-<a name="1345"><span class="lineNum">    1345 </span><span class="lineCov">     824411 :                                 int partial_recover_error = 0;</span></a>
+<a name="1345"><span class="lineNum">    1345 </span><span class="lineCov">     824360 :                                 int partial_recover_error = 0;</span></a>
 <a name="1346"><span class="lineNum">    1346 </span>            : </a>
 <a name="1347"><span class="lineNum">    1347 </span>            :                                 /* print a list of all the errors in files */</a>
-<a name="1348"><span class="lineNum">    1348 </span><span class="lineCov">    1382186 :                                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="1349"><span class="lineNum">    1349 </span><span class="lineCov">     557775 :                                         if (failed[j].is_bad &amp;&amp; failed[j].is_outofdate) {</span></a>
+<a name="1348"><span class="lineNum">    1348 </span><span class="lineCov">    1382300 :                                 for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="1349"><span class="lineNum">    1349 </span><span class="lineCov">     557940 :                                         if (failed[j].is_bad &amp;&amp; failed[j].is_outofdate) {</span></a>
 <a name="1350"><span class="lineNum">    1350 </span><span class="lineCov">          8 :                                                 ++partial_recover_error;</span></a>
 <a name="1351"><span class="lineNum">    1351 </span><span class="lineCov">          8 :                                                 log_tag(&quot;unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n&quot;, i, failed[j].disk-&gt;name, esc_tag(failed[j].file-&gt;sub, esc_buffer), failed[j].file_pos);</span></a>
 <a name="1352"><span class="lineNum">    1352 </span>            :                                         }</a>
 <a name="1353"><span class="lineNum">    1353 </span>            :                                 }</a>
-<a name="1354"><span class="lineNum">    1354 </span><span class="lineCov">     824411 :                                 if (partial_recover_error != 0) {</span></a>
+<a name="1354"><span class="lineNum">    1354 </span><span class="lineCov">     824360 :                                 if (partial_recover_error != 0) {</span></a>
 <a name="1355"><span class="lineNum">    1355 </span><span class="lineCov">          8 :                                         silent_error += partial_recover_error;</span></a>
 <a name="1356"><span class="lineNum">    1356 </span><span class="lineCov">          8 :                                         ++unrecoverable_error;</span></a>
 <a name="1357"><span class="lineNum">    1357 </span>            :                                 }</a>
@@ -1427,36 +1427,36 @@
 <a name="1365"><span class="lineNum">    1365 </span>            :                                  * It's also OK to have data errors on unused parity, because sync doesn't</a>
 <a name="1366"><span class="lineNum">    1366 </span>            :                                  * update it.</a>
 <a name="1367"><span class="lineNum">    1367 </span>            :                                  */</a>
-<a name="1368"><span class="lineNum">    1368 </span><span class="lineCov">     824411 :                                 if (used_parity &amp;&amp; valid_parity) {</span></a>
+<a name="1368"><span class="lineNum">    1368 </span><span class="lineCov">     824360 :                                 if (used_parity &amp;&amp; valid_parity) {</span></a>
 <a name="1369"><span class="lineNum">    1369 </span>            :                                         /* check the parity */</a>
-<a name="1370"><span class="lineNum">    1370 </span><span class="lineCov">    3738622 :                                         for (l = 0; l &lt; state-&gt;level; ++l) {</span></a>
-<a name="1371"><span class="lineNum">    1371 </span><span class="lineCov">    2975796 :                                                 if (buffer_recov[l] != 0 &amp;&amp; memcmp(buffer_recov[l], buffer[diskmax + l], state-&gt;block_size) != 0) {</span></a>
-<a name="1372"><span class="lineNum">    1372 </span><span class="lineCov">      21250 :                                                         unsigned diff = memdiff(buffer_recov[l], buffer[diskmax + l], state-&gt;block_size);</span></a>
+<a name="1370"><span class="lineNum">    1370 </span><span class="lineCov">    3738520 :                                         for (l = 0; l &lt; state-&gt;level; ++l) {</span></a>
+<a name="1371"><span class="lineNum">    1371 </span><span class="lineCov">    2975745 :                                                 if (buffer_recov[l] != 0 &amp;&amp; memcmp(buffer_recov[l], buffer[diskmax + l], state-&gt;block_size) != 0) {</span></a>
+<a name="1372"><span class="lineNum">    1372 </span><span class="lineCov">      21240 :                                                         unsigned diff = memdiff(buffer_recov[l], buffer[diskmax + l], state-&gt;block_size);</span></a>
 <a name="1373"><span class="lineNum">    1373 </span>            : </a>
 <a name="1374"><span class="lineNum">    1374 </span>            :                                                         /* mark that the read parity is wrong, setting ptr to 0 */</a>
-<a name="1375"><span class="lineNum">    1375 </span><span class="lineCov">      21250 :                                                         buffer_recov[l] = 0;</span></a>
+<a name="1375"><span class="lineNum">    1375 </span><span class="lineCov">      21240 :                                                         buffer_recov[l] = 0;</span></a>
 <a name="1376"><span class="lineNum">    1376 </span>            : </a>
-<a name="1377"><span class="lineNum">    1377 </span><span class="lineCov">      21250 :                                                         log_tag(&quot;parity_error:%u:%s: Data error, diff parity bits %u/%u\n&quot;, i, lev_config_name(l), diff, state-&gt;block_size * 8);</span></a>
-<a name="1378"><span class="lineNum">    1378 </span><span class="lineCov">      21250 :                                                         ++silent_error;</span></a>
+<a name="1377"><span class="lineNum">    1377 </span><span class="lineCov">      21240 :                                                         log_tag(&quot;parity_error:%u:%s: Data error, diff parity bits %u/%u\n&quot;, i, lev_config_name(l), diff, state-&gt;block_size * 8);</span></a>
+<a name="1378"><span class="lineNum">    1378 </span><span class="lineCov">      21240 :                                                         ++silent_error;</span></a>
 <a name="1379"><span class="lineNum">    1379 </span>            :                                                 }</a>
 <a name="1380"><span class="lineNum">    1380 </span>            :                                         }</a>
 <a name="1381"><span class="lineNum">    1381 </span>            :                                 }</a>
 <a name="1382"><span class="lineNum">    1382 </span>            : </a>
 <a name="1383"><span class="lineNum">    1383 </span>            :                                 /* now write recovered files */</a>
-<a name="1384"><span class="lineNum">    1384 </span><span class="lineCov">     824411 :                                 if (fix) {</span></a>
+<a name="1384"><span class="lineNum">    1384 </span><span class="lineCov">     824360 :                                 if (fix) {</span></a>
 <a name="1385"><span class="lineNum">    1385 </span>            :                                         /* update the fixed files */</a>
-<a name="1386"><span class="lineNum">    1386 </span><span class="lineCov">     655355 :                                         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="1386"><span class="lineNum">    1386 </span><span class="lineCov">     655347 :                                         for (j = 0; j &lt; failed_count; ++j) {</span></a>
 <a name="1387"><span class="lineNum">    1387 </span>            :                                                 /* nothing to do if it doesn't need recovering */</a>
-<a name="1388"><span class="lineNum">    1388 </span><span class="lineCov">     338027 :                                                 if (!failed[j].is_bad)</span></a>
+<a name="1388"><span class="lineNum">    1388 </span><span class="lineCov">     338061 :                                                 if (!failed[j].is_bad)</span></a>
 <a name="1389"><span class="lineNum">    1389 </span><span class="lineCov">      40318 :                                                         continue;</span></a>
 <a name="1390"><span class="lineNum">    1390 </span>            : </a>
 <a name="1391"><span class="lineNum">    1391 </span>            :                                                 /* do not fix if the file is excluded */</a>
-<a name="1392"><span class="lineNum">    1392 </span><span class="lineCov">     297709 :                                                 if (file_flag_has(failed[j].file, FILE_IS_EXCLUDED)</span></a>
-<a name="1393"><span class="lineNum">    1393 </span><span class="lineCov">     288429 :                                                         || (state-&gt;opt.syncedonly &amp;&amp; file_flag_has(failed[j].file, FILE_IS_UNSYNCED)))</span></a>
+<a name="1392"><span class="lineNum">    1392 </span><span class="lineCov">     297743 :                                                 if (file_flag_has(failed[j].file, FILE_IS_EXCLUDED)</span></a>
+<a name="1393"><span class="lineNum">    1393 </span><span class="lineCov">     288463 :                                                         || (state-&gt;opt.syncedonly &amp;&amp; file_flag_has(failed[j].file, FILE_IS_UNSYNCED)))</span></a>
 <a name="1394"><span class="lineNum">    1394 </span><span class="lineCov">       9280 :                                                         continue;</span></a>
 <a name="1395"><span class="lineNum">    1395 </span>            : </a>
-<a name="1396"><span class="lineNum">    1396 </span><span class="lineCov">     288429 :                                                 ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state-&gt;block_size);</span></a>
-<a name="1397"><span class="lineNum">    1397 </span><span class="lineCov">     288429 :                                                 if (ret == -1) {</span></a>
+<a name="1396"><span class="lineNum">    1396 </span><span class="lineCov">     288463 :                                                 ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state-&gt;block_size);</span></a>
+<a name="1397"><span class="lineNum">    1397 </span><span class="lineCov">     288463 :                                                 if (ret == -1) {</span></a>
 <a name="1398"><span class="lineNum">    1398 </span>            :                                                         /* LCOV_EXCL_START */</a>
 <a name="1399"><span class="lineNum">    1399 </span>            :                                                         log_tag(&quot;%s:%u:%s:%s: Write error. %s.\n&quot;, es(errno), i, failed[j].disk-&gt;name, esc_tag(failed[j].file-&gt;sub, esc_buffer), strerror(errno));</a>
 <a name="1400"><span class="lineNum">    1400 </span>            :                                                         log_fatal_errno(errno, failed[j].disk-&gt;name);</a>
@@ -1471,7 +1471,7 @@
 <a name="1409"><span class="lineNum">    1409 </span>            :                                                 }</a>
 <a name="1410"><span class="lineNum">    1410 </span>            : </a>
 <a name="1411"><span class="lineNum">    1411 </span>            :                                                 /* if we are not sure that the recovered content is uptodate */</a>
-<a name="1412"><span class="lineNum">    1412 </span><span class="lineCov">     288429 :                                                 if (failed[j].is_outofdate) {</span></a>
+<a name="1412"><span class="lineNum">    1412 </span><span class="lineCov">     288463 :                                                 if (failed[j].is_outofdate) {</span></a>
 <a name="1413"><span class="lineNum">    1413 </span>            :                                                         /* mark the file as damaged */</a>
 <a name="1414"><span class="lineNum">    1414 </span><span class="lineCov">          8 :                                                         file_flag_set(failed[j].file, FILE_IS_DAMAGED);</span></a>
 <a name="1415"><span class="lineNum">    1415 </span><span class="lineCov">          8 :                                                         continue;</span></a>
@@ -1479,10 +1479,10 @@
 <a name="1417"><span class="lineNum">    1417 </span>            : </a>
 <a name="1418"><span class="lineNum">    1418 </span>            :                                                 /* mark the file as containing some fixes */</a>
 <a name="1419"><span class="lineNum">    1419 </span>            :                                                 /* note that it could be also marked as damaged in other iterations */</a>
-<a name="1420"><span class="lineNum">    1420 </span><span class="lineCov">     288421 :                                                 file_flag_set(failed[j].file, FILE_IS_FIXED);</span></a>
+<a name="1420"><span class="lineNum">    1420 </span><span class="lineCov">     288455 :                                                 file_flag_set(failed[j].file, FILE_IS_FIXED);</span></a>
 <a name="1421"><span class="lineNum">    1421 </span>            : </a>
-<a name="1422"><span class="lineNum">    1422 </span><span class="lineCov">     288421 :                                                 log_tag(&quot;fixed:%u:%s:%s: Fixed data error at position %u\n&quot;, i, failed[j].disk-&gt;name, esc_tag(failed[j].file-&gt;sub, esc_buffer), failed[j].file_pos);</span></a>
-<a name="1423"><span class="lineNum">    1423 </span><span class="lineCov">     288421 :                                                 ++recovered_error;</span></a>
+<a name="1422"><span class="lineNum">    1422 </span><span class="lineCov">     288455 :                                                 log_tag(&quot;fixed:%u:%s:%s: Fixed data error at position %u\n&quot;, i, failed[j].disk-&gt;name, esc_tag(failed[j].file-&gt;sub, esc_buffer), failed[j].file_pos);</span></a>
+<a name="1423"><span class="lineNum">    1423 </span><span class="lineCov">     288455 :                                                 ++recovered_error;</span></a>
 <a name="1424"><span class="lineNum">    1424 </span>            :                                         }</a>
 <a name="1425"><span class="lineNum">    1425 </span>            : </a>
 <a name="1426"><span class="lineNum">    1426 </span>            :                                         /*</a>
@@ -1495,11 +1495,11 @@
 <a name="1433"><span class="lineNum">    1433 </span>            :                                          * we already have allocated space for it on parity file creation,</a>
 <a name="1434"><span class="lineNum">    1434 </span>            :                                          * and its content doesn't matter.</a>
 <a name="1435"><span class="lineNum">    1435 </span>            :                                          */</a>
-<a name="1436"><span class="lineNum">    1436 </span><span class="lineCov">     317328 :                                         if (used_parity &amp;&amp; valid_parity) {</span></a>
+<a name="1436"><span class="lineNum">    1436 </span><span class="lineCov">     317286 :                                         if (used_parity &amp;&amp; valid_parity) {</span></a>
 <a name="1437"><span class="lineNum">    1437 </span>            :                                                 /* update the parity */</a>
-<a name="1438"><span class="lineNum">    1438 </span><span class="lineCov">     982581 :                                                 for (l = 0; l &lt; state-&gt;level; ++l) {</span></a>
+<a name="1438"><span class="lineNum">    1438 </span><span class="lineCov">     982497 :                                                 for (l = 0; l &lt; state-&gt;level; ++l) {</span></a>
 <a name="1439"><span class="lineNum">    1439 </span>            :                                                         /* if the parity on disk is wrong */</a>
-<a name="1440"><span class="lineNum">    1440 </span><span class="lineCov">     714433 :                                                         if (buffer_recov[l] == 0</span></a>
+<a name="1440"><span class="lineNum">    1440 </span><span class="lineCov">     714391 :                                                         if (buffer_recov[l] == 0</span></a>
 <a name="1441"><span class="lineNum">    1441 </span>            :                                                                 /* and we have access at the parity */</a>
 <a name="1442"><span class="lineNum">    1442 </span><span class="lineCov">      72150 :                                                                 &amp;&amp; parity[l] != 0</span></a>
 <a name="1443"><span class="lineNum">    1443 </span>            :                                                                 /* and the parity is not excluded */</a>
@@ -1525,9 +1525,9 @@
 <a name="1463"><span class="lineNum">    1463 </span>            :                                 } else {</a>
 <a name="1464"><span class="lineNum">    1464 </span>            :                                         /* if we are not fixing, we just set the FIXED flag */</a>
 <a name="1465"><span class="lineNum">    1465 </span>            :                                         /* meaning that we could fix this file if we try */</a>
-<a name="1466"><span class="lineNum">    1466 </span><span class="lineCov">     726831 :                                         for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="1467"><span class="lineNum">    1467 </span><span class="lineCov">     219748 :                                                 if (failed[j].is_bad) {</span></a>
-<a name="1468"><span class="lineNum">    1468 </span><span class="lineCov">     178863 :                                                         file_flag_set(failed[j].file, FILE_IS_FIXED);</span></a>
+<a name="1466"><span class="lineNum">    1466 </span><span class="lineCov">     726953 :                                         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="1467"><span class="lineNum">    1467 </span><span class="lineCov">     219879 :                                                 if (failed[j].is_bad) {</span></a>
+<a name="1468"><span class="lineNum">    1468 </span><span class="lineCov">     178994 :                                                         file_flag_set(failed[j].file, FILE_IS_FIXED);</span></a>
 <a name="1469"><span class="lineNum">    1469 </span>            :                                                 }</a>
 <a name="1470"><span class="lineNum">    1470 </span>            :                                         }</a>
 <a name="1471"><span class="lineNum">    1471 </span>            :                                 }</a>
@@ -1535,9 +1535,9 @@
 <a name="1473"><span class="lineNum">    1473 </span>            :                 } else {</a>
 <a name="1474"><span class="lineNum">    1474 </span>            :                         /* if we are not checking, we just set the DAMAGED flag */</a>
 <a name="1475"><span class="lineNum">    1475 </span>            :                         /* to report that the file is damaged, and we don't know if we can fix it */</a>
-<a name="1476"><span class="lineNum">    1476 </span><span class="lineCov">      45105 :                         for (j = 0; j &lt; failed_count; ++j) {</span></a>
-<a name="1477"><span class="lineNum">    1477 </span><span class="lineCov">       5830 :                                 if (failed[j].is_bad) {</span></a>
-<a name="1478"><span class="lineNum">    1478 </span><span class="lineCov">       5830 :                                         file_flag_set(failed[j].file, FILE_IS_DAMAGED);</span></a>
+<a name="1476"><span class="lineNum">    1476 </span><span class="lineCov">      45199 :                         for (j = 0; j &lt; failed_count; ++j) {</span></a>
+<a name="1477"><span class="lineNum">    1477 </span><span class="lineCov">       5924 :                                 if (failed[j].is_bad) {</span></a>
+<a name="1478"><span class="lineNum">    1478 </span><span class="lineCov">       5924 :                                         file_flag_set(failed[j].file, FILE_IS_DAMAGED);</span></a>
 <a name="1479"><span class="lineNum">    1479 </span>            :                                 }</a>
 <a name="1480"><span class="lineNum">    1480 </span>            :                         }</a>
 <a name="1481"><span class="lineNum">    1481 </span>            :                 }</a>
@@ -1613,23 +1613,23 @@
 <a name="1551"><span class="lineNum">    1551 </span><span class="lineCov">       2779 :                         pathprint(path, sizeof(path), &quot;%s%s&quot;, disk-&gt;dir, file-&gt;sub);</span></a>
 <a name="1552"><span class="lineNum">    1552 </span><span class="lineCov">       2779 :                         ret = stat(path, &amp;st);</span></a>
 <a name="1553"><span class="lineNum">    1553 </span><span class="lineCov">       2779 :                         if (ret == -1) {</span></a>
-<a name="1554"><span class="lineNum">    1554 </span><span class="lineCov">        179 :                                 unsuccessful = 1;</span></a>
+<a name="1554"><span class="lineNum">    1554 </span><span class="lineCov">        176 :                                 unsuccessful = 1;</span></a>
 <a name="1555"><span class="lineNum">    1555 </span>            : </a>
-<a name="1556"><span class="lineNum">    1556 </span><span class="lineCov">        179 :                                 log_error(errno, &quot;Error stating empty file '%s'. %s.\n&quot;, path, strerror(errno));</span></a>
-<a name="1557"><span class="lineNum">    1557 </span><span class="lineCov">        179 :                                 log_tag(&quot;empty_%s:%s:%s: Empty file stat error\n&quot;, es(errno), disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="1556"><span class="lineNum">    1556 </span><span class="lineCov">        176 :                                 log_error(errno, &quot;Error stating empty file '%s'. %s.\n&quot;, path, strerror(errno));</span></a>
+<a name="1557"><span class="lineNum">    1557 </span><span class="lineCov">        176 :                                 log_tag(&quot;empty_%s:%s:%s: Empty file stat error\n&quot;, es(errno), disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
 <a name="1558"><span class="lineNum">    1558 </span>            : </a>
-<a name="1559"><span class="lineNum">    1559 </span><span class="lineCov">        179 :                                 if (is_hw(errno)) {</span></a>
+<a name="1559"><span class="lineNum">    1559 </span><span class="lineCov">        176 :                                 if (is_hw(errno)) {</span></a>
 <a name="1560"><span class="lineNum">    1560 </span><span class="lineNoCov">          0 :                                         ++io_error;</span></a>
 <a name="1561"><span class="lineNum">    1561 </span>            :                                 } else {</a>
-<a name="1562"><span class="lineNum">    1562 </span><span class="lineCov">        179 :                                         ++soft_error;</span></a>
+<a name="1562"><span class="lineNum">    1562 </span><span class="lineCov">        176 :                                         ++soft_error;</span></a>
 <a name="1563"><span class="lineNum">    1563 </span>            :                                 }</a>
-<a name="1564"><span class="lineNum">    1564 </span><span class="lineCov">       2600 :                         } else if (!S_ISREG(st.st_mode)) {</span></a>
+<a name="1564"><span class="lineNum">    1564 </span><span class="lineCov">       2603 :                         } else if (!S_ISREG(st.st_mode)) {</span></a>
 <a name="1565"><span class="lineNum">    1565 </span><span class="lineNoCov">          0 :                                 unsuccessful = 1;</span></a>
 <a name="1566"><span class="lineNum">    1566 </span>            : </a>
 <a name="1567"><span class="lineNum">    1567 </span><span class="lineNoCov">          0 :                                 log_error(ESOFT, &quot;Error stating empty file '%s' for not regular file.\n&quot;, path);</span></a>
 <a name="1568"><span class="lineNum">    1568 </span><span class="lineNoCov">          0 :                                 log_tag(&quot;empty_error:%s:%s: Empty file error for not regular file\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
 <a name="1569"><span class="lineNum">    1569 </span><span class="lineNoCov">          0 :                                 ++soft_error;</span></a>
-<a name="1570"><span class="lineNum">    1570 </span><span class="lineCov">       2600 :                         } else if (st.st_size != 0) {</span></a>
+<a name="1570"><span class="lineNum">    1570 </span><span class="lineCov">       2603 :                         } else if (st.st_size != 0) {</span></a>
 <a name="1571"><span class="lineNum">    1571 </span><span class="lineCov">          5 :                                 unsuccessful = 1;</span></a>
 <a name="1572"><span class="lineNum">    1572 </span>            : </a>
 <a name="1573"><span class="lineNum">    1573 </span><span class="lineCov">          5 :                                 log_error(ESOFT, &quot;Error stating empty file '%s' for not empty file.\n&quot;, path);</span></a>
@@ -1641,8 +1641,8 @@
 <a name="1579"><span class="lineNum">    1579 </span>            :                                 int f;</a>
 <a name="1580"><span class="lineNum">    1580 </span>            : </a>
 <a name="1581"><span class="lineNum">    1581 </span>            :                                 /* create the ancestor directories */</a>
-<a name="1582"><span class="lineNum">    1582 </span><span class="lineCov">        159 :                                 ret = mkancestor(path);</span></a>
-<a name="1583"><span class="lineNum">    1583 </span><span class="lineCov">        159 :                                 if (ret != 0) {</span></a>
+<a name="1582"><span class="lineNum">    1582 </span><span class="lineCov">        158 :                                 ret = mkancestor(path);</span></a>
+<a name="1583"><span class="lineNum">    1583 </span><span class="lineCov">        158 :                                 if (ret != 0) {</span></a>
 <a name="1584"><span class="lineNum">    1584 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="1585"><span class="lineNum">    1585 </span>            :                                         log_fatal(errno, &quot;Error creating ancestor '%s%s'. %s.\n&quot;, disk-&gt;dir, file-&gt;sub, strerror(errno));</a>
 <a name="1586"><span class="lineNum">    1586 </span>            :                                         log_tag(&quot;empty_%s:%u:%s:%s: Create ancestor error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
@@ -1656,8 +1656,8 @@
 <a name="1594"><span class="lineNum">    1594 </span>            : </a>
 <a name="1595"><span class="lineNum">    1595 </span>            :                                 /* create it */</a>
 <a name="1596"><span class="lineNum">    1596 </span>            :                                 /* O_NOFOLLOW: do not follow links to ensure to open the real file */</a>
-<a name="1597"><span class="lineNum">    1597 </span><span class="lineCov">        159 :                                 f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);</span></a>
-<a name="1598"><span class="lineNum">    1598 </span><span class="lineCov">        159 :                                 if (f == -1) {</span></a>
+<a name="1597"><span class="lineNum">    1597 </span><span class="lineCov">        158 :                                 f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);</span></a>
+<a name="1598"><span class="lineNum">    1598 </span><span class="lineCov">        158 :                                 if (f == -1) {</span></a>
 <a name="1599"><span class="lineNum">    1599 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="1600"><span class="lineNum">    1600 </span>            :                                         log_fatal(errno, &quot;Error creating '%s%s'. %s.\n&quot;, disk-&gt;dir, file-&gt;sub, strerror(errno));</a>
 <a name="1601"><span class="lineNum">    1601 </span>            :                                         log_tag(&quot;empty_%s:%u:%s:%s: Create error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
@@ -1670,8 +1670,8 @@
 <a name="1608"><span class="lineNum">    1608 </span>            :                                 }</a>
 <a name="1609"><span class="lineNum">    1609 </span>            : </a>
 <a name="1610"><span class="lineNum">    1610 </span>            :                                 /* set the original modification time */</a>
-<a name="1611"><span class="lineNum">    1611 </span><span class="lineCov">        159 :                                 ret = fmtime(f, file-&gt;mtime_sec, file-&gt;mtime_nsec);</span></a>
-<a name="1612"><span class="lineNum">    1612 </span><span class="lineCov">        159 :                                 if (ret != 0) {</span></a>
+<a name="1611"><span class="lineNum">    1611 </span><span class="lineCov">        158 :                                 ret = fmtime(f, file-&gt;mtime_sec, file-&gt;mtime_nsec);</span></a>
+<a name="1612"><span class="lineNum">    1612 </span><span class="lineCov">        158 :                                 if (ret != 0) {</span></a>
 <a name="1613"><span class="lineNum">    1613 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="1614"><span class="lineNum">    1614 </span>            :                                         log_fatal(errno, &quot;Error timing '%s%s'. %s.\n&quot;, disk-&gt;dir, file-&gt;sub, strerror(errno));</a>
 <a name="1615"><span class="lineNum">    1615 </span>            :                                         log_tag(&quot;empty_%s:%u:%s:%s: Time error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
@@ -1686,8 +1686,8 @@
 <a name="1624"><span class="lineNum">    1624 </span>            :                                 }</a>
 <a name="1625"><span class="lineNum">    1625 </span>            : </a>
 <a name="1626"><span class="lineNum">    1626 </span>            :                                 /* close it */</a>
-<a name="1627"><span class="lineNum">    1627 </span><span class="lineCov">        159 :                                 ret = close(f);</span></a>
-<a name="1628"><span class="lineNum">    1628 </span><span class="lineCov">        159 :                                 if (ret != 0) {</span></a>
+<a name="1627"><span class="lineNum">    1627 </span><span class="lineCov">        158 :                                 ret = close(f);</span></a>
+<a name="1628"><span class="lineNum">    1628 </span><span class="lineCov">        158 :                                 if (ret != 0) {</span></a>
 <a name="1629"><span class="lineNum">    1629 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="1630"><span class="lineNum">    1630 </span>            :                                         log_fatal(errno, &quot;Error closing '%s%s'. %s.\n&quot;, disk-&gt;dir, file-&gt;sub, strerror(errno));</a>
 <a name="1631"><span class="lineNum">    1631 </span>            :                                         log_tag(&quot;empty_%s:%u:%s:%s: Close error. %s.\n&quot;, es(errno), i, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer), strerror(errno));</a>
@@ -1699,11 +1699,11 @@
 <a name="1637"><span class="lineNum">    1637 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="1638"><span class="lineNum">    1638 </span>            :                                 }</a>
 <a name="1639"><span class="lineNum">    1639 </span>            : </a>
-<a name="1640"><span class="lineNum">    1640 </span><span class="lineCov">        159 :                                 log_tag(&quot;empty_fixed:%s:%s: Fixed empty file\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="1641"><span class="lineNum">    1641 </span><span class="lineCov">        159 :                                 ++recovered_error;</span></a>
+<a name="1640"><span class="lineNum">    1640 </span><span class="lineCov">        158 :                                 log_tag(&quot;empty_fixed:%s:%s: Fixed empty file\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="1641"><span class="lineNum">    1641 </span><span class="lineCov">        158 :                                 ++recovered_error;</span></a>
 <a name="1642"><span class="lineNum">    1642 </span>            : </a>
-<a name="1643"><span class="lineNum">    1643 </span><span class="lineCov">        159 :                                 log_tag(&quot;status:recovered:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
-<a name="1644"><span class="lineNum">    1644 </span><span class="lineCov">        159 :                                 msg_info(&quot;recovered %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
+<a name="1643"><span class="lineNum">    1643 </span><span class="lineCov">        158 :                                 log_tag(&quot;status:recovered:%s:%s\n&quot;, disk-&gt;name, esc_tag(file-&gt;sub, esc_buffer));</span></a>
+<a name="1644"><span class="lineNum">    1644 </span><span class="lineCov">        158 :                                 msg_info(&quot;recovered %s\n&quot;, fmt_term(disk, file-&gt;sub, esc_buffer));</span></a>
 <a name="1645"><span class="lineNum">    1645 </span>            :                         }</a>
 <a name="1646"><span class="lineNum">    1646 </span>            :                 }</a>
 <a name="1647"><span class="lineNum">    1647 </span>            : </a>
@@ -1795,30 +1795,30 @@
 <a name="1733"><span class="lineNum">    1733 </span><span class="lineCov">      66426 :                                 pathprint(path, sizeof(path), &quot;%s%s&quot;, disk-&gt;dir, slink-&gt;sub);</span></a>
 <a name="1734"><span class="lineNum">    1734 </span><span class="lineCov">      66426 :                                 ret = readlink(path, linkto, sizeof(linkto));</span></a>
 <a name="1735"><span class="lineNum">    1735 </span><span class="lineCov">      66426 :                                 if (ret &lt; 0) {</span></a>
-<a name="1736"><span class="lineNum">    1736 </span><span class="lineCov">       4279 :                                         unsuccessful = 1;</span></a>
+<a name="1736"><span class="lineNum">    1736 </span><span class="lineCov">       4293 :                                         unsuccessful = 1;</span></a>
 <a name="1737"><span class="lineNum">    1737 </span>            : </a>
-<a name="1738"><span class="lineNum">    1738 </span><span class="lineCov">       4279 :                                         log_error(errno, &quot;Error reading symlink '%s'. %s.\n&quot;, path, strerror(errno));</span></a>
-<a name="1739"><span class="lineNum">    1739 </span><span class="lineCov">       4279 :                                         log_tag(&quot;symlink_%s:%s:%s: Symlink read error. %s.\n&quot;, es(errno), disk-&gt;name, esc_tag(slink-&gt;sub, esc_buffer), strerror(errno));</span></a>
+<a name="1738"><span class="lineNum">    1738 </span><span class="lineCov">       4293 :                                         log_error(errno, &quot;Error reading symlink '%s'. %s.\n&quot;, path, strerror(errno));</span></a>
+<a name="1739"><span class="lineNum">    1739 </span><span class="lineCov">       4293 :                                         log_tag(&quot;symlink_%s:%s:%s: Symlink read error. %s.\n&quot;, es(errno), disk-&gt;name, esc_tag(slink-&gt;sub, esc_buffer), strerror(errno));</span></a>
 <a name="1740"><span class="lineNum">    1740 </span>            : </a>
-<a name="1741"><span class="lineNum">    1741 </span><span class="lineCov">       4279 :                                         if (is_hw(errno)) {</span></a>
+<a name="1741"><span class="lineNum">    1741 </span><span class="lineCov">       4293 :                                         if (is_hw(errno)) {</span></a>
 <a name="1742"><span class="lineNum">    1742 </span><span class="lineNoCov">          0 :                                                 ++io_error;</span></a>
 <a name="1743"><span class="lineNum">    1743 </span>            :                                         } else {</a>
-<a name="1744"><span class="lineNum">    1744 </span><span class="lineCov">       4279 :                                                 ++soft_error;</span></a>
+<a name="1744"><span class="lineNum">    1744 </span><span class="lineCov">       4293 :                                                 ++soft_error;</span></a>
 <a name="1745"><span class="lineNum">    1745 </span>            :                                         }</a>
-<a name="1746"><span class="lineNum">    1746 </span><span class="lineCov">      62147 :                                 } else if (ret &gt;= PATH_MAX) {</span></a>
+<a name="1746"><span class="lineNum">    1746 </span><span class="lineCov">      62133 :                                 } else if (ret &gt;= PATH_MAX) {</span></a>
 <a name="1747"><span class="lineNum">    1747 </span><span class="lineNoCov">          0 :                                         unsuccessful = 1;</span></a>
 <a name="1748"><span class="lineNum">    1748 </span>            : </a>
 <a name="1749"><span class="lineNum">    1749 </span><span class="lineNoCov">          0 :                                         log_error(ESOFT, &quot;Error reading symlink '%s'. Symlink too long.\n&quot;, path);</span></a>
 <a name="1750"><span class="lineNum">    1750 </span><span class="lineNoCov">          0 :                                         log_tag(&quot;symlink_error:%s:%s: Symlink too long\n&quot;, disk-&gt;name, esc_tag(slink-&gt;sub, esc_buffer));</span></a>
 <a name="1751"><span class="lineNum">    1751 </span><span class="lineNoCov">          0 :                                         ++soft_error;</span></a>
 <a name="1752"><span class="lineNum">    1752 </span>            :                                 } else {</a>
-<a name="1753"><span class="lineNum">    1753 </span><span class="lineCov">      62147 :                                         linkto[ret] = 0;</span></a>
+<a name="1753"><span class="lineNum">    1753 </span><span class="lineCov">      62133 :                                         linkto[ret] = 0;</span></a>
 <a name="1754"><span class="lineNum">    1754 </span>            : </a>
-<a name="1755"><span class="lineNum">    1755 </span><span class="lineCov">      62147 :                                         if (strcmp(linkto, slink-&gt;linkto) != 0) {</span></a>
-<a name="1756"><span class="lineNum">    1756 </span><span class="lineCov">        557 :                                                 unsuccessful = 1;</span></a>
+<a name="1755"><span class="lineNum">    1755 </span><span class="lineCov">      62133 :                                         if (strcmp(linkto, slink-&gt;linkto) != 0) {</span></a>
+<a name="1756"><span class="lineNum">    1756 </span><span class="lineCov">        543 :                                                 unsuccessful = 1;</span></a>
 <a name="1757"><span class="lineNum">    1757 </span>            : </a>
-<a name="1758"><span class="lineNum">    1758 </span><span class="lineCov">        557 :                                                 log_tag(&quot;symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n&quot;, disk-&gt;name, esc_tag(slink-&gt;sub, esc_buffer), linkto, slink-&gt;linkto);</span></a>
-<a name="1759"><span class="lineNum">    1759 </span><span class="lineCov">        557 :                                                 ++soft_error;</span></a>
+<a name="1758"><span class="lineNum">    1758 </span><span class="lineCov">        543 :                                                 log_tag(&quot;symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n&quot;, disk-&gt;name, esc_tag(slink-&gt;sub, esc_buffer), linkto, slink-&gt;linkto);</span></a>
+<a name="1759"><span class="lineNum">    1759 </span><span class="lineCov">        543 :                                                 ++soft_error;</span></a>
 <a name="1760"><span class="lineNum">    1760 </span>            :                                         }</a>
 <a name="1761"><span class="lineNum">    1761 </span>            :                                 }</a>
 <a name="1762"><span class="lineNum">    1762 </span>            :                         }</a>
@@ -2018,9 +2018,9 @@
 <a name="1956"><span class="lineNum">    1956 </span>            :                                 }</a>
 <a name="1957"><span class="lineNum">    1957 </span>            : </a>
 <a name="1958"><span class="lineNum">    1958 </span>            :                                 /* if processing was finished */</a>
-<a name="1959"><span class="lineNum">    1959 </span><span class="lineCov">     113113 :                                 if (file_flag_has(file, FILE_IS_FINISHED)) {</span></a>
+<a name="1959"><span class="lineNum">    1959 </span><span class="lineCov">     113069 :                                 if (file_flag_has(file, FILE_IS_FINISHED)) {</span></a>
 <a name="1960"><span class="lineNum">    1960 </span>            :                                         /* nothing to do */</a>
-<a name="1961"><span class="lineNum">    1961 </span><span class="lineCov">     113113 :                                         continue;</span></a>
+<a name="1961"><span class="lineNum">    1961 </span><span class="lineCov">     113069 :                                         continue;</span></a>
 <a name="1962"><span class="lineNum">    1962 </span>            :                                 }</a>
 <a name="1963"><span class="lineNum">    1963 </span>            : </a>
 <a name="1964"><span class="lineNum">    1964 </span>            :                                 /* if the file was originally missing, and processing not yet finished */</a>

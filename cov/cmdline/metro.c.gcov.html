@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -107,9 +107,9 @@
 <a name="45"><span class="lineNum">      45 </span>            : static const uint64_t k2 = 0x7BDEC03B;</a>
 <a name="46"><span class="lineNum">      46 </span>            : static const uint64_t k3 = 0x2F5870A5;</a>
 <a name="47"><span class="lineNum">      47 </span>            : </a>
-<a name="48"><span class="lineNum">      48 </span><span class="lineCov">        369 : void MetroHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span></a>
+<a name="48"><span class="lineNum">      48 </span><span class="lineCov">        393 : void MetroHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span></a>
 <a name="49"><span class="lineNum">      49 </span>            : {</a>
-<a name="50"><span class="lineNum">      50 </span><span class="lineCov">        369 :         const uint8_t* ptr = data;</span></a>
+<a name="50"><span class="lineNum">      50 </span><span class="lineCov">        393 :         const uint8_t* ptr = data;</span></a>
 <a name="51"><span class="lineNum">      51 </span>            :         uint64_t v[4];</a>
 <a name="52"><span class="lineNum">      52 </span>            : </a>
 <a name="53"><span class="lineNum">      53 </span>            :         /*</a>
@@ -120,10 +120,10 @@
 <a name="58"><span class="lineNum">      58 </span>            :          * v[0] = (static_cast&lt;uint64_t&gt;(seed) - k0) * k3;</a>
 <a name="59"><span class="lineNum">      59 </span>            :          * v[1] = (static_cast&lt;uint64_t&gt;(seed) + k1) * k2;</a>
 <a name="60"><span class="lineNum">      60 </span>            :          */</a>
-<a name="61"><span class="lineNum">      61 </span><span class="lineCov">        369 :         v[0] = (util_read64(seed) - k0) * k3;</span></a>
-<a name="62"><span class="lineNum">      62 </span><span class="lineCov">        369 :         v[1] = (util_read64(seed + 8) + k1) * k2;</span></a>
+<a name="61"><span class="lineNum">      61 </span><span class="lineCov">        393 :         v[0] = (util_read64(seed) - k0) * k3;</span></a>
+<a name="62"><span class="lineNum">      62 </span><span class="lineCov">        393 :         v[1] = (util_read64(seed + 8) + k1) * k2;</span></a>
 <a name="63"><span class="lineNum">      63 </span>            : </a>
-<a name="64"><span class="lineNum">      64 </span><span class="lineCov">        369 :         if (size &gt;= 32) {</span></a>
+<a name="64"><span class="lineNum">      64 </span><span class="lineCov">        393 :         if (size &gt;= 32) {</span></a>
 <a name="65"><span class="lineNum">      65 </span>            :                 /*</a>
 <a name="66"><span class="lineNum">      66 </span>            :                  * EXTENSION: Initialize secondary state using both halves of the 128-bit seed</a>
 <a name="67"><span class="lineNum">      67 </span>            :                  *</a>
@@ -131,24 +131,24 @@
 <a name="69"><span class="lineNum">      69 </span>            :                  * v[2] = (static_cast&lt;uint64_t&gt;(seed) + k0) * k2;</a>
 <a name="70"><span class="lineNum">      70 </span>            :                  * v[3] = (static_cast&lt;uint64_t&gt;(seed) - k1) * k3;</a>
 <a name="71"><span class="lineNum">      71 </span>            :                  */</a>
-<a name="72"><span class="lineNum">      72 </span><span class="lineCov">        333 :                 v[2] = (util_read64(seed) + k0) * k2;</span></a>
-<a name="73"><span class="lineNum">      73 </span><span class="lineCov">        333 :                 v[3] = (util_read64(seed + 8) - k1) * k3;</span></a>
+<a name="72"><span class="lineNum">      72 </span><span class="lineCov">        357 :                 v[2] = (util_read64(seed) + k0) * k2;</span></a>
+<a name="73"><span class="lineNum">      73 </span><span class="lineCov">        357 :                 v[3] = (util_read64(seed + 8) - k1) * k3;</span></a>
 <a name="74"><span class="lineNum">      74 </span>            : </a>
 <a name="75"><span class="lineNum">      75 </span>            :                 do {</a>
-<a name="76"><span class="lineNum">      76 </span><span class="lineCov">     852876 :                         v[0] += util_read64(ptr) * k0; ptr += 8; v[0] = util_rotr64(v[0], 29) + v[2];</span></a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">     852876 :                         v[1] += util_read64(ptr) * k1; ptr += 8; v[1] = util_rotr64(v[1], 29) + v[3];</span></a>
-<a name="78"><span class="lineNum">      78 </span><span class="lineCov">     852876 :                         v[2] += util_read64(ptr) * k2; ptr += 8; v[2] = util_rotr64(v[2], 29) + v[0];</span></a>
-<a name="79"><span class="lineNum">      79 </span><span class="lineCov">     852876 :                         v[3] += util_read64(ptr) * k3; ptr += 8; v[3] = util_rotr64(v[3], 29) + v[1];</span></a>
-<a name="80"><span class="lineNum">      80 </span><span class="lineCov">     852876 :                         size -= 32;</span></a>
-<a name="81"><span class="lineNum">      81 </span><span class="lineCov">     852876 :                 } while (size &gt;= 32);</span></a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineCov">    1049484 :                         v[0] += util_read64(ptr) * k0; ptr += 8; v[0] = util_rotr64(v[0], 29) + v[2];</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">    1049484 :                         v[1] += util_read64(ptr) * k1; ptr += 8; v[1] = util_rotr64(v[1], 29) + v[3];</span></a>
+<a name="78"><span class="lineNum">      78 </span><span class="lineCov">    1049484 :                         v[2] += util_read64(ptr) * k2; ptr += 8; v[2] = util_rotr64(v[2], 29) + v[0];</span></a>
+<a name="79"><span class="lineNum">      79 </span><span class="lineCov">    1049484 :                         v[3] += util_read64(ptr) * k3; ptr += 8; v[3] = util_rotr64(v[3], 29) + v[1];</span></a>
+<a name="80"><span class="lineNum">      80 </span><span class="lineCov">    1049484 :                         size -= 32;</span></a>
+<a name="81"><span class="lineNum">      81 </span><span class="lineCov">    1049484 :                 } while (size &gt;= 32);</span></a>
 <a name="82"><span class="lineNum">      82 </span>            : </a>
-<a name="83"><span class="lineNum">      83 </span><span class="lineCov">        333 :                 v[2] ^= util_rotr64(((v[0] + v[3]) * k0) + v[1], 21) * k1;</span></a>
-<a name="84"><span class="lineNum">      84 </span><span class="lineCov">        333 :                 v[3] ^= util_rotr64(((v[1] + v[2]) * k1) + v[0], 21) * k0;</span></a>
-<a name="85"><span class="lineNum">      85 </span><span class="lineCov">        333 :                 v[0] ^= util_rotr64(((v[0] + v[2]) * k0) + v[3], 21) * k1;</span></a>
-<a name="86"><span class="lineNum">      86 </span><span class="lineCov">        333 :                 v[1] ^= util_rotr64(((v[1] + v[3]) * k1) + v[2], 21) * k0;</span></a>
+<a name="83"><span class="lineNum">      83 </span><span class="lineCov">        357 :                 v[2] ^= util_rotr64(((v[0] + v[3]) * k0) + v[1], 21) * k1;</span></a>
+<a name="84"><span class="lineNum">      84 </span><span class="lineCov">        357 :                 v[3] ^= util_rotr64(((v[1] + v[2]) * k1) + v[0], 21) * k0;</span></a>
+<a name="85"><span class="lineNum">      85 </span><span class="lineCov">        357 :                 v[0] ^= util_rotr64(((v[0] + v[2]) * k0) + v[3], 21) * k1;</span></a>
+<a name="86"><span class="lineNum">      86 </span><span class="lineCov">        357 :                 v[1] ^= util_rotr64(((v[1] + v[3]) * k1) + v[2], 21) * k0;</span></a>
 <a name="87"><span class="lineNum">      87 </span>            :         }</a>
 <a name="88"><span class="lineNum">      88 </span>            : </a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">        369 :         if (size &gt;= 16) {</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">        393 :         if (size &gt;= 16) {</span></a>
 <a name="90"><span class="lineNum">      90 </span><span class="lineCov">        132 :                 v[0] += util_read64(ptr) * k2; ptr += 8; v[0] = util_rotr64(v[0], 33) * k3;</span></a>
 <a name="91"><span class="lineNum">      91 </span><span class="lineCov">        132 :                 v[1] += util_read64(ptr) * k2; ptr += 8; v[1] = util_rotr64(v[1], 33) * k3;</span></a>
 <a name="92"><span class="lineNum">      92 </span><span class="lineCov">        132 :                 v[0] ^= util_rotr64((v[0] * k2) + v[1], 45) * k1;</span></a>
@@ -156,37 +156,37 @@
 <a name="94"><span class="lineNum">      94 </span><span class="lineCov">        132 :                 size -= 16;</span></a>
 <a name="95"><span class="lineNum">      95 </span>            :         }</a>
 <a name="96"><span class="lineNum">      96 </span>            : </a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">        369 :         if (size &gt;= 8) {</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">        393 :         if (size &gt;= 8) {</span></a>
 <a name="98"><span class="lineNum">      98 </span><span class="lineCov">        134 :                 v[0] += util_read64(ptr) * k2; ptr += 8; v[0] = util_rotr64(v[0], 33) * k3;</span></a>
 <a name="99"><span class="lineNum">      99 </span><span class="lineCov">        134 :                 v[0] ^= util_rotr64((v[0] * k2) + v[1], 27) * k1;</span></a>
 <a name="100"><span class="lineNum">     100 </span><span class="lineCov">        134 :                 size -= 8;</span></a>
 <a name="101"><span class="lineNum">     101 </span>            :         }</a>
 <a name="102"><span class="lineNum">     102 </span>            : </a>
-<a name="103"><span class="lineNum">     103 </span><span class="lineCov">        369 :         if (size &gt;= 4) {</span></a>
+<a name="103"><span class="lineNum">     103 </span><span class="lineCov">        393 :         if (size &gt;= 4) {</span></a>
 <a name="104"><span class="lineNum">     104 </span><span class="lineCov">        132 :                 v[1] += util_read32(ptr) * k2; ptr += 4; v[1] = util_rotr64(v[1], 33) * k3;</span></a>
 <a name="105"><span class="lineNum">     105 </span><span class="lineCov">        132 :                 v[1] ^= util_rotr64((v[1] * k3) + v[0], 46) * k0;</span></a>
 <a name="106"><span class="lineNum">     106 </span><span class="lineCov">        132 :                 size -= 4;</span></a>
 <a name="107"><span class="lineNum">     107 </span>            :         }</a>
 <a name="108"><span class="lineNum">     108 </span>            : </a>
-<a name="109"><span class="lineNum">     109 </span><span class="lineCov">        369 :         if (size &gt;= 2) {</span></a>
+<a name="109"><span class="lineNum">     109 </span><span class="lineCov">        393 :         if (size &gt;= 2) {</span></a>
 <a name="110"><span class="lineNum">     110 </span><span class="lineCov">        135 :                 v[0] += util_read16(ptr) * k2; ptr += 2; v[0] = util_rotr64(v[0], 33) * k3;</span></a>
 <a name="111"><span class="lineNum">     111 </span><span class="lineCov">        135 :                 v[0] ^= util_rotr64((v[0] * k2) + v[1], 22) * k1;</span></a>
 <a name="112"><span class="lineNum">     112 </span><span class="lineCov">        135 :                 size -= 2;</span></a>
 <a name="113"><span class="lineNum">     113 </span>            :         }</a>
 <a name="114"><span class="lineNum">     114 </span>            : </a>
-<a name="115"><span class="lineNum">     115 </span><span class="lineCov">        369 :         if (size &gt;= 1) {</span></a>
+<a name="115"><span class="lineNum">     115 </span><span class="lineCov">        393 :         if (size &gt;= 1) {</span></a>
 <a name="116"><span class="lineNum">     116 </span><span class="lineCov">        133 :                 v[1] += util_read8(ptr) * k2; v[1] = util_rotr64(v[1], 33) * k3;</span></a>
 <a name="117"><span class="lineNum">     117 </span><span class="lineCov">        133 :                 v[1] ^= util_rotr64((v[1] * k3) + v[0], 58) * k0;</span></a>
 <a name="118"><span class="lineNum">     118 </span>            :         }</a>
 <a name="119"><span class="lineNum">     119 </span>            : </a>
-<a name="120"><span class="lineNum">     120 </span><span class="lineCov">        369 :         v[0] += util_rotr64((v[0] * k0) + v[1], 13);</span></a>
-<a name="121"><span class="lineNum">     121 </span><span class="lineCov">        369 :         v[1] += util_rotr64((v[1] * k1) + v[0], 37);</span></a>
-<a name="122"><span class="lineNum">     122 </span><span class="lineCov">        369 :         v[0] += util_rotr64((v[0] * k2) + v[1], 13);</span></a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">        369 :         v[1] += util_rotr64((v[1] * k3) + v[0], 37);</span></a>
+<a name="120"><span class="lineNum">     120 </span><span class="lineCov">        393 :         v[0] += util_rotr64((v[0] * k0) + v[1], 13);</span></a>
+<a name="121"><span class="lineNum">     121 </span><span class="lineCov">        393 :         v[1] += util_rotr64((v[1] * k1) + v[0], 37);</span></a>
+<a name="122"><span class="lineNum">     122 </span><span class="lineCov">        393 :         v[0] += util_rotr64((v[0] * k2) + v[1], 13);</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">        393 :         v[1] += util_rotr64((v[1] * k3) + v[0], 37);</span></a>
 <a name="124"><span class="lineNum">     124 </span>            : </a>
-<a name="125"><span class="lineNum">     125 </span><span class="lineCov">        369 :         util_write64(digest, v[0]);</span></a>
-<a name="126"><span class="lineNum">     126 </span><span class="lineCov">        369 :         util_write64(digest + 8, v[1]);</span></a>
-<a name="127"><span class="lineNum">     127 </span><span class="lineCov">        369 : }</span></a>
+<a name="125"><span class="lineNum">     125 </span><span class="lineCov">        393 :         util_write64(digest, v[0]);</span></a>
+<a name="126"><span class="lineNum">     126 </span><span class="lineCov">        393 :         util_write64(digest + 8, v[1]);</span></a>
+<a name="127"><span class="lineNum">     127 </span><span class="lineCov">        393 : }</span></a>
 <a name="128"><span class="lineNum">     128 </span>            : </a>
 </pre>
       </td>

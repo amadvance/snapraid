@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -462,14 +462,14 @@
 <a name="400"><span class="lineNum">     400 </span>            : /**</a>
 <a name="401"><span class="lineNum">     401 </span>            :  * Bit scan reverse or integer log2 for 64 bits.</a>
 <a name="402"><span class="lineNum">     402 </span>            :  */</a>
-<a name="403"><span class="lineNum">     403 </span><span class="lineCov">    8515825 : tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)</span></a>
+<a name="403"><span class="lineNum">     403 </span><span class="lineCov">    8496878 : tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)</span></a>
 <a name="404"><span class="lineNum">     404 </span>            : {</a>
 <a name="405"><span class="lineNum">     405 </span>            : #if defined(_MSC_VER)</a>
 <a name="406"><span class="lineNum">     406 </span>            :         unsigned long count;</a>
 <a name="407"><span class="lineNum">     407 </span>            :         _BitScanReverse64(&amp;count, value);</a>
 <a name="408"><span class="lineNum">     408 </span>            :         return count;</a>
 <a name="409"><span class="lineNum">     409 </span>            : #elif defined(__GNUC__)</a>
-<a name="410"><span class="lineNum">     410 </span><span class="lineCov">    8515825 :         return __builtin_clzll(value) ^ 63;</span></a>
+<a name="410"><span class="lineNum">     410 </span><span class="lineCov">    8496878 :         return __builtin_clzll(value) ^ 63;</span></a>
 <a name="411"><span class="lineNum">     411 </span>            : #else</a>
 <a name="412"><span class="lineNum">     412 </span>            :         tommy_uint32_t l = value &amp; 0xFFFFFFFFU;</a>
 <a name="413"><span class="lineNum">     413 </span>            :         tommy_uint32_t h = value &gt;&gt; 32;</a>
@@ -513,14 +513,14 @@
 <a name="451"><span class="lineNum">     451 </span>            : /**</a>
 <a name="452"><span class="lineNum">     452 </span>            :  * Bit scan forward or trailing zero count for 64 bits.</a>
 <a name="453"><span class="lineNum">     453 </span>            :  */</a>
-<a name="454"><span class="lineNum">     454 </span><span class="lineCov">       2198 : tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)</span></a>
+<a name="454"><span class="lineNum">     454 </span><span class="lineCov">       2196 : tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)</span></a>
 <a name="455"><span class="lineNum">     455 </span>            : {</a>
 <a name="456"><span class="lineNum">     456 </span>            : #if defined(_MSC_VER)</a>
 <a name="457"><span class="lineNum">     457 </span>            :         unsigned long count;</a>
 <a name="458"><span class="lineNum">     458 </span>            :         _BitScanForward64(&amp;count, value);</a>
 <a name="459"><span class="lineNum">     459 </span>            :         return count;</a>
 <a name="460"><span class="lineNum">     460 </span>            : #elif defined(__GNUC__)</a>
-<a name="461"><span class="lineNum">     461 </span><span class="lineCov">       2198 :         return __builtin_ctzll(value);</span></a>
+<a name="461"><span class="lineNum">     461 </span><span class="lineCov">       2196 :         return __builtin_ctzll(value);</span></a>
 <a name="462"><span class="lineNum">     462 </span>            : #else</a>
 <a name="463"><span class="lineNum">     463 </span>            :         tommy_uint32_t l = value &amp; 0xFFFFFFFFU;</a>
 <a name="464"><span class="lineNum">     464 </span>            :         tommy_uint32_t h = value &gt;&gt; 32;</a>

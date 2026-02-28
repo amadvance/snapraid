@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">6</td>
@@ -131,12 +131,12 @@
 <a name="69"><span class="lineNum">      69 </span>            : </a>
 <a name="70"><span class="lineNum">      70 </span>            :         /* bad blocks are always scrubbed in all plans */</a>
 <a name="71"><span class="lineNum">      71 </span><span class="lineCov">      56085 :         if (info_get_bad(info))</span></a>
-<a name="72"><span class="lineNum">      72 </span><span class="lineCov">       1771 :                 return 1;</span></a>
+<a name="72"><span class="lineNum">      72 </span><span class="lineCov">       1772 :                 return 1;</span></a>
 <a name="73"><span class="lineNum">      73 </span>            : </a>
-<a name="74"><span class="lineNum">      74 </span><span class="lineCov">      54314 :         switch (plan-&gt;plan) {</span></a>
-<a name="75"><span class="lineNum">      75 </span><span class="lineCov">       8523 :         case SCRUB_FULL :</span></a>
+<a name="74"><span class="lineNum">      74 </span><span class="lineCov">      54313 :         switch (plan-&gt;plan) {</span></a>
+<a name="75"><span class="lineNum">      75 </span><span class="lineCov">       8522 :         case SCRUB_FULL :</span></a>
 <a name="76"><span class="lineNum">      76 </span>            :                 /* in 'full' plan everything is scrubbed */</a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">       8523 :                 return 1;</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">       8522 :                 return 1;</span></a>
 <a name="78"><span class="lineNum">      78 </span><span class="lineCov">       9215 :         case SCRUB_EVEN :</span></a>
 <a name="79"><span class="lineNum">      79 </span>            :                 /* in 'even' plan, scrub only even blocks */</a>
 <a name="80"><span class="lineNum">      80 </span><span class="lineCov">       9215 :                 return i % 2 == 0;</span></a>
@@ -206,9 +206,9 @@
 <a name="144"><span class="lineNum">     144 </span>            :         /* if the file is different than the current one, close it */</a>
 <a name="145"><span class="lineNum">     145 </span><span class="lineCov">     153017 :         if (handle-&gt;file != 0 &amp;&amp; handle-&gt;file != task-&gt;file) {</span></a>
 <a name="146"><span class="lineNum">     146 </span>            :                 /* keep a pointer at the file we are going to close for error reporting */</a>
-<a name="147"><span class="lineNum">     147 </span><span class="lineCov">      72541 :                 struct snapraid_file* report = handle-&gt;file;</span></a>
-<a name="148"><span class="lineNum">     148 </span><span class="lineCov">      72541 :                 ret = handle_close(handle);</span></a>
-<a name="149"><span class="lineNum">     149 </span><span class="lineCov">      72541 :                 if (ret == -1) {</span></a>
+<a name="147"><span class="lineNum">     147 </span><span class="lineCov">      72572 :                 struct snapraid_file* report = handle-&gt;file;</span></a>
+<a name="148"><span class="lineNum">     148 </span><span class="lineCov">      72572 :                 ret = handle_close(handle);</span></a>
+<a name="149"><span class="lineNum">     149 </span><span class="lineCov">      72572 :                 if (ret == -1) {</span></a>
 <a name="150"><span class="lineNum">     150 </span>            :                         /* LCOV_EXCL_START */</a>
 <a name="151"><span class="lineNum">     151 </span>            :                         /* This one is really an unexpected error, because we are only reading */</a>
 <a name="152"><span class="lineNum">     152 </span>            :                         /* and closing a descriptor should never fail */</a>
@@ -907,9 +907,9 @@
 <a name="845"><span class="lineNum">     845 </span>            :         }</a>
 <a name="846"><span class="lineNum">     846 </span>            : </a>
 <a name="847"><span class="lineNum">     847 </span><span class="lineCov">         11 :         count = 0;</span></a>
-<a name="848"><span class="lineNum">     848 </span><span class="lineCov">         29 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
-<a name="849"><span class="lineNum">     849 </span><span class="lineCov">         18 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
-<a name="850"><span class="lineNum">     850 </span><span class="lineCov">         18 :                 count += bucket-&gt;count_scrubbed + bucket-&gt;count_justsynced;</span></a>
+<a name="848"><span class="lineNum">     848 </span><span class="lineCov">         27 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
+<a name="849"><span class="lineNum">     849 </span><span class="lineCov">         16 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
+<a name="850"><span class="lineNum">     850 </span><span class="lineCov">         16 :                 count += bucket-&gt;count_scrubbed + bucket-&gt;count_justsynced;</span></a>
 <a name="851"><span class="lineNum">     851 </span>            :         }</a>
 <a name="852"><span class="lineNum">     852 </span>            : </a>
 <a name="853"><span class="lineNum">     853 </span><span class="lineCov">         11 :         if (!count) {</span></a>

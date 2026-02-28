@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -102,58 +102,58 @@
 <a name="40"><span class="lineNum">      40 </span>            : /*</a>
 <a name="41"><span class="lineNum">      41 </span>            :  * GENz (triple parity with powers of 2^-1) SSE2 implementation</a>
 <a name="42"><span class="lineNum">      42 </span>            :  */</a>
-<a name="43"><span class="lineNum">      43 </span><span class="lineCov">         13 : void raid_genz_sse2(int nd, size_t size, void **vv)</span></a>
+<a name="43"><span class="lineNum">      43 </span><span class="lineCov">         11 : void raid_genz_sse2(int nd, size_t size, void **vv)</span></a>
 <a name="44"><span class="lineNum">      44 </span>            : {</a>
-<a name="45"><span class="lineNum">      45 </span><span class="lineCov">         13 :         uint8_t **v = (uint8_t**)vv;</span></a>
+<a name="45"><span class="lineNum">      45 </span><span class="lineCov">         11 :         uint8_t **v = (uint8_t**)vv;</span></a>
 <a name="46"><span class="lineNum">      46 </span>            :         uint8_t *p;</a>
 <a name="47"><span class="lineNum">      47 </span>            :         uint8_t *q;</a>
 <a name="48"><span class="lineNum">      48 </span>            :         uint8_t *r;</a>
 <a name="49"><span class="lineNum">      49 </span>            :         int d, l;</a>
 <a name="50"><span class="lineNum">      50 </span>            :         size_t i;</a>
 <a name="51"><span class="lineNum">      51 </span>            : </a>
-<a name="52"><span class="lineNum">      52 </span><span class="lineCov">         13 :         l = nd - 1;</span></a>
-<a name="53"><span class="lineNum">      53 </span><span class="lineCov">         13 :         p = v[nd];</span></a>
-<a name="54"><span class="lineNum">      54 </span><span class="lineCov">         13 :         q = v[nd + 1];</span></a>
-<a name="55"><span class="lineNum">      55 </span><span class="lineCov">         13 :         r = v[nd + 2];</span></a>
+<a name="52"><span class="lineNum">      52 </span><span class="lineCov">         11 :         l = nd - 1;</span></a>
+<a name="53"><span class="lineNum">      53 </span><span class="lineCov">         11 :         p = v[nd];</span></a>
+<a name="54"><span class="lineNum">      54 </span><span class="lineCov">         11 :         q = v[nd + 1];</span></a>
+<a name="55"><span class="lineNum">      55 </span><span class="lineCov">         11 :         r = v[nd + 2];</span></a>
 <a name="56"><span class="lineNum">      56 </span>            : </a>
 <a name="57"><span class="lineNum">      57 </span>            :         raid_sse_begin();</a>
 <a name="58"><span class="lineNum">      58 </span>            : </a>
-<a name="59"><span class="lineNum">      59 </span><span class="lineCov">         13 :         asm volatile (&quot;movdqa %0,%%xmm7&quot; : : &quot;m&quot; (gfzconst16.poly[0]));</span></a>
-<a name="60"><span class="lineNum">      60 </span><span class="lineCov">         13 :         asm volatile (&quot;movdqa %0,%%xmm3&quot; : : &quot;m&quot; (gfzconst16.half[0]));</span></a>
-<a name="61"><span class="lineNum">      61 </span><span class="lineCov">         13 :         asm volatile (&quot;movdqa %0,%%xmm6&quot; : : &quot;m&quot; (gfzconst16.low7[0]));</span></a>
+<a name="59"><span class="lineNum">      59 </span><span class="lineCov">         11 :         asm volatile (&quot;movdqa %0,%%xmm7&quot; : : &quot;m&quot; (gfzconst16.poly[0]));</span></a>
+<a name="60"><span class="lineNum">      60 </span><span class="lineCov">         11 :         asm volatile (&quot;movdqa %0,%%xmm3&quot; : : &quot;m&quot; (gfzconst16.half[0]));</span></a>
+<a name="61"><span class="lineNum">      61 </span><span class="lineCov">         11 :         asm volatile (&quot;movdqa %0,%%xmm6&quot; : : &quot;m&quot; (gfzconst16.low7[0]));</span></a>
 <a name="62"><span class="lineNum">      62 </span>            : </a>
-<a name="63"><span class="lineNum">      63 </span><span class="lineCov">     196637 :         for (i = 0; i &lt; size; i += 16) {</span></a>
-<a name="64"><span class="lineNum">      64 </span><span class="lineCov">     196624 :                 asm volatile (&quot;movdqa %0,%%xmm0&quot; : : &quot;m&quot; (v[l][i]));</span></a>
-<a name="65"><span class="lineNum">      65 </span><span class="lineCov">     196624 :                 asm volatile (&quot;movdqa %xmm0,%xmm1&quot;);</span></a>
-<a name="66"><span class="lineNum">      66 </span><span class="lineCov">     196624 :                 asm volatile (&quot;movdqa %xmm0,%xmm2&quot;);</span></a>
-<a name="67"><span class="lineNum">      67 </span><span class="lineCov">    1573376 :                 for (d = l - 1; d &gt;= 0; --d) {</span></a>
-<a name="68"><span class="lineNum">      68 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm4,%xmm4&quot;);</span></a>
-<a name="69"><span class="lineNum">      69 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pcmpgtb %xmm1,%xmm4&quot;);</span></a>
-<a name="70"><span class="lineNum">      70 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;paddb %xmm1,%xmm1&quot;);</span></a>
-<a name="71"><span class="lineNum">      71 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pand %xmm7,%xmm4&quot;);</span></a>
-<a name="72"><span class="lineNum">      72 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);</span></a>
+<a name="63"><span class="lineNum">      63 </span><span class="lineCov">     163867 :         for (i = 0; i &lt; size; i += 16) {</span></a>
+<a name="64"><span class="lineNum">      64 </span><span class="lineCov">     163856 :                 asm volatile (&quot;movdqa %0,%%xmm0&quot; : : &quot;m&quot; (v[l][i]));</span></a>
+<a name="65"><span class="lineNum">      65 </span><span class="lineCov">     163856 :                 asm volatile (&quot;movdqa %xmm0,%xmm1&quot;);</span></a>
+<a name="66"><span class="lineNum">      66 </span><span class="lineCov">     163856 :                 asm volatile (&quot;movdqa %xmm0,%xmm2&quot;);</span></a>
+<a name="67"><span class="lineNum">      67 </span><span class="lineCov">    1311232 :                 for (d = l - 1; d &gt;= 0; --d) {</span></a>
+<a name="68"><span class="lineNum">      68 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm4,%xmm4&quot;);</span></a>
+<a name="69"><span class="lineNum">      69 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pcmpgtb %xmm1,%xmm4&quot;);</span></a>
+<a name="70"><span class="lineNum">      70 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;paddb %xmm1,%xmm1&quot;);</span></a>
+<a name="71"><span class="lineNum">      71 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pand %xmm7,%xmm4&quot;);</span></a>
+<a name="72"><span class="lineNum">      72 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);</span></a>
 <a name="73"><span class="lineNum">      73 </span>            : </a>
-<a name="74"><span class="lineNum">      74 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;movdqa %xmm2,%xmm4&quot;);</span></a>
-<a name="75"><span class="lineNum">      75 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm5,%xmm5&quot;);</span></a>
-<a name="76"><span class="lineNum">      76 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;psllw $7,%xmm4&quot;);</span></a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;psrlw $1,%xmm2&quot;);</span></a>
-<a name="78"><span class="lineNum">      78 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pcmpgtb %xmm4,%xmm5&quot;);</span></a>
-<a name="79"><span class="lineNum">      79 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pand %xmm6,%xmm2&quot;);</span></a>
-<a name="80"><span class="lineNum">      80 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pand %xmm3,%xmm5&quot;);</span></a>
-<a name="81"><span class="lineNum">      81 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm5,%xmm2&quot;);</span></a>
+<a name="74"><span class="lineNum">      74 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;movdqa %xmm2,%xmm4&quot;);</span></a>
+<a name="75"><span class="lineNum">      75 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm5,%xmm5&quot;);</span></a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;psllw $7,%xmm4&quot;);</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;psrlw $1,%xmm2&quot;);</span></a>
+<a name="78"><span class="lineNum">      78 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pcmpgtb %xmm4,%xmm5&quot;);</span></a>
+<a name="79"><span class="lineNum">      79 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pand %xmm6,%xmm2&quot;);</span></a>
+<a name="80"><span class="lineNum">      80 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pand %xmm3,%xmm5&quot;);</span></a>
+<a name="81"><span class="lineNum">      81 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm5,%xmm2&quot;);</span></a>
 <a name="82"><span class="lineNum">      82 </span>            : </a>
-<a name="83"><span class="lineNum">      83 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;movdqa %0,%%xmm4&quot; : : &quot;m&quot; (v[d][i]));</span></a>
-<a name="84"><span class="lineNum">      84 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm4,%xmm0&quot;);</span></a>
-<a name="85"><span class="lineNum">      85 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);</span></a>
-<a name="86"><span class="lineNum">      86 </span><span class="lineCov">    1376752 :                         asm volatile (&quot;pxor %xmm4,%xmm2&quot;);</span></a>
+<a name="83"><span class="lineNum">      83 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;movdqa %0,%%xmm4&quot; : : &quot;m&quot; (v[d][i]));</span></a>
+<a name="84"><span class="lineNum">      84 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm4,%xmm0&quot;);</span></a>
+<a name="85"><span class="lineNum">      85 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);</span></a>
+<a name="86"><span class="lineNum">      86 </span><span class="lineCov">    1147376 :                         asm volatile (&quot;pxor %xmm4,%xmm2&quot;);</span></a>
 <a name="87"><span class="lineNum">      87 </span>            :                 }</a>
-<a name="88"><span class="lineNum">      88 </span><span class="lineCov">     196624 :                 asm volatile (&quot;movntdq %%xmm0,%0&quot; : &quot;=m&quot; (p[i]));</span></a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">     196624 :                 asm volatile (&quot;movntdq %%xmm1,%0&quot; : &quot;=m&quot; (q[i]));</span></a>
-<a name="90"><span class="lineNum">      90 </span><span class="lineCov">     196624 :                 asm volatile (&quot;movntdq %%xmm2,%0&quot; : &quot;=m&quot; (r[i]));</span></a>
+<a name="88"><span class="lineNum">      88 </span><span class="lineCov">     163856 :                 asm volatile (&quot;movntdq %%xmm0,%0&quot; : &quot;=m&quot; (p[i]));</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">     163856 :                 asm volatile (&quot;movntdq %%xmm1,%0&quot; : &quot;=m&quot; (q[i]));</span></a>
+<a name="90"><span class="lineNum">      90 </span><span class="lineCov">     163856 :                 asm volatile (&quot;movntdq %%xmm2,%0&quot; : &quot;=m&quot; (r[i]));</span></a>
 <a name="91"><span class="lineNum">      91 </span>            :         }</a>
 <a name="92"><span class="lineNum">      92 </span>            : </a>
 <a name="93"><span class="lineNum">      93 </span>            :         raid_sse_end();</a>
-<a name="94"><span class="lineNum">      94 </span><span class="lineCov">         13 : }</span></a>
+<a name="94"><span class="lineNum">      94 </span><span class="lineCov">         11 : }</span></a>
 <a name="95"><span class="lineNum">      95 </span>            : #endif</a>
 <a name="96"><span class="lineNum">      96 </span>            : </a>
 <a name="97"><span class="lineNum">      97 </span>            : #if defined(CONFIG_X86_64) &amp;&amp; defined(CONFIG_SSE2)</a>

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 09:49:08</td>
+            <td class="headerValue">2026-02-28 10:17:21</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -148,7 +148,7 @@
 <a name="86"><span class="lineNum">      86 </span><span class="lineCov">         90 :                 log_tag(&quot;summary:parity_block_total:%s:%u\n&quot;, lev_config_name(l), state-&gt;parity[l].total_blocks);</span></a>
 <a name="87"><span class="lineNum">      87 </span><span class="lineCov">         90 :                 log_tag(&quot;summary:parity_block_free:%s:%u\n&quot;, lev_config_name(l), state-&gt;parity[l].free_blocks);</span></a>
 <a name="88"><span class="lineNum">      88 </span><span class="lineCov">         90 :                 if (state-&gt;parity[l].free_blocks &lt; parity_block_free)</span></a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">          4 :                         parity_block_free = state-&gt;parity[l].free_blocks;</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">          1 :                         parity_block_free = state-&gt;parity[l].free_blocks;</span></a>
 <a name="90"><span class="lineNum">      90 </span><span class="lineCov">         90 :                 if (state-&gt;parity[l].free_blocks != 0)</span></a>
 <a name="91"><span class="lineNum">      91 </span><span class="lineCov">         79 :                         free_not_zero = 1;</span></a>
 <a name="92"><span class="lineNum">      92 </span>            :         }</a>
@@ -226,7 +226,7 @@
 <a name="164"><span class="lineNum">     164 </span>            :                                 /* keep track of latest block used */</a>
 <a name="165"><span class="lineNum">     165 </span><span class="lineCov">      95396 :                                 last_pos = fs_file2par_get(disk, file, file-&gt;blockmax - 1);</span></a>
 <a name="166"><span class="lineNum">     166 </span><span class="lineCov">      95396 :                                 if (last_pos &gt; disk_block_latest_used) {</span></a>
-<a name="167"><span class="lineNum">     167 </span><span class="lineCov">      92536 :                                         disk_block_latest_used = last_pos;</span></a>
+<a name="167"><span class="lineNum">     167 </span><span class="lineCov">      92537 :                                         disk_block_latest_used = last_pos;</span></a>
 <a name="168"><span class="lineNum">     168 </span>            :                                 }</a>
 <a name="169"><span class="lineNum">     169 </span>            : </a>
 <a name="170"><span class="lineNum">     170 </span><span class="lineCov">      95396 :                                 if (fragmented) {</span></a>
@@ -348,17 +348,17 @@
 <a name="286"><span class="lineNum">     286 </span><span class="lineCov">         15 :         median = 0;</span></a>
 <a name="287"><span class="lineNum">     287 </span><span class="lineCov">         15 :         newest = 0;</span></a>
 <a name="288"><span class="lineNum">     288 </span><span class="lineCov">         15 :         count = 0;</span></a>
-<a name="289"><span class="lineNum">     289 </span><span class="lineCov">         32 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
-<a name="290"><span class="lineNum">     290 </span><span class="lineCov">         17 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
-<a name="291"><span class="lineNum">     291 </span><span class="lineCov">         17 :                 block_off_t bucket_count = bucket-&gt;count_scrubbed + bucket-&gt;count_justsynced;</span></a>
+<a name="289"><span class="lineNum">     289 </span><span class="lineCov">         30 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
+<a name="290"><span class="lineNum">     290 </span><span class="lineCov">         15 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
+<a name="291"><span class="lineNum">     291 </span><span class="lineCov">         15 :                 block_off_t bucket_count = bucket-&gt;count_scrubbed + bucket-&gt;count_justsynced;</span></a>
 <a name="292"><span class="lineNum">     292 </span>            : </a>
-<a name="293"><span class="lineNum">     293 </span><span class="lineCov">         17 :                 if (count == 0)</span></a>
+<a name="293"><span class="lineNum">     293 </span><span class="lineCov">         15 :                 if (count == 0)</span></a>
 <a name="294"><span class="lineNum">     294 </span><span class="lineCov">          9 :                         oldest = bucket-&gt;time_at;</span></a>
-<a name="295"><span class="lineNum">     295 </span><span class="lineCov">         17 :                 if (count &lt; state-&gt;bucketcount / 2)</span></a>
-<a name="296"><span class="lineNum">     296 </span><span class="lineCov">         14 :                         median = bucket-&gt;time_at;</span></a>
-<a name="297"><span class="lineNum">     297 </span><span class="lineCov">         17 :                 newest = bucket-&gt;time_at;</span></a>
+<a name="295"><span class="lineNum">     295 </span><span class="lineCov">         15 :                 if (count &lt; state-&gt;bucketcount / 2)</span></a>
+<a name="296"><span class="lineNum">     296 </span><span class="lineCov">         12 :                         median = bucket-&gt;time_at;</span></a>
+<a name="297"><span class="lineNum">     297 </span><span class="lineCov">         15 :                 newest = bucket-&gt;time_at;</span></a>
 <a name="298"><span class="lineNum">     298 </span>            : </a>
-<a name="299"><span class="lineNum">     299 </span><span class="lineCov">         17 :                 count += bucket_count;</span></a>
+<a name="299"><span class="lineNum">     299 </span><span class="lineCov">         15 :                 count += bucket_count;</span></a>
 <a name="300"><span class="lineNum">     300 </span>            :         }</a>
 <a name="301"><span class="lineNum">     301 </span>            : </a>
 <a name="302"><span class="lineNum">     302 </span><span class="lineCov">         15 :         if (!count) {</span></a>
@@ -378,15 +378,15 @@
 <a name="316"><span class="lineNum">     316 </span><span class="lineCov">          9 :         barmax = 0;</span></a>
 <a name="317"><span class="lineNum">     317 </span><span class="lineCov">          9 :         memset(bar_scrubbed, 0, sizeof(bar_scrubbed));</span></a>
 <a name="318"><span class="lineNum">     318 </span><span class="lineCov">          9 :         memset(bar_new, 0, sizeof(bar_new));</span></a>
-<a name="319"><span class="lineNum">     319 </span><span class="lineCov">         26 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
-<a name="320"><span class="lineNum">     320 </span><span class="lineCov">         17 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
+<a name="319"><span class="lineNum">     319 </span><span class="lineCov">         24 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
+<a name="320"><span class="lineNum">     320 </span><span class="lineCov">         15 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
 <a name="321"><span class="lineNum">     321 </span>            : </a>
-<a name="322"><span class="lineNum">     322 </span><span class="lineCov">         17 :                 unsigned column = muldiv(bucket-&gt;time_at - oldest, GRAPH_COLUMN, newest - oldest + 1);</span></a>
+<a name="322"><span class="lineNum">     322 </span><span class="lineCov">         15 :                 unsigned column = muldiv(bucket-&gt;time_at - oldest, GRAPH_COLUMN, newest - oldest + 1);</span></a>
 <a name="323"><span class="lineNum">     323 </span>            : </a>
-<a name="324"><span class="lineNum">     324 </span><span class="lineCov">         17 :                 bar_scrubbed[column] += bucket-&gt;count_scrubbed;</span></a>
-<a name="325"><span class="lineNum">     325 </span><span class="lineCov">         17 :                 bar_new[column] += bucket-&gt;count_justsynced;</span></a>
+<a name="324"><span class="lineNum">     324 </span><span class="lineCov">         15 :                 bar_scrubbed[column] += bucket-&gt;count_scrubbed;</span></a>
+<a name="325"><span class="lineNum">     325 </span><span class="lineCov">         15 :                 bar_new[column] += bucket-&gt;count_justsynced;</span></a>
 <a name="326"><span class="lineNum">     326 </span>            : </a>
-<a name="327"><span class="lineNum">     327 </span><span class="lineCov">         17 :                 if (bar_scrubbed[column] + bar_new[column] &gt; barmax)</span></a>
+<a name="327"><span class="lineNum">     327 </span><span class="lineCov">         15 :                 if (bar_scrubbed[column] + bar_new[column] &gt; barmax)</span></a>
 <a name="328"><span class="lineNum">     328 </span><span class="lineCov">         12 :                         barmax = bar_scrubbed[column] + bar_new[column];</span></a>
 <a name="329"><span class="lineNum">     329 </span>            :         }</a>
 <a name="330"><span class="lineNum">     330 </span>            : </a>
@@ -416,20 +416,20 @@
 <a name="354"><span class="lineNum">     354 </span><span class="lineCov">       9450 :                         unsigned scrubbed = bar_scrubbed[x];</span></a>
 <a name="355"><span class="lineNum">     355 </span>            : </a>
 <a name="356"><span class="lineNum">     356 </span><span class="lineCov">       9450 :                         if (both &gt; pivot_upper) {</span></a>
-<a name="357"><span class="lineNum">     357 </span><span class="lineCov">        156 :                                 if (scrubbed &gt; pivot_lower)</span></a>
+<a name="357"><span class="lineNum">     357 </span><span class="lineCov">        157 :                                 if (scrubbed &gt; pivot_lower)</span></a>
 <a name="358"><span class="lineNum">     358 </span><span class="lineCov">         60 :                                         printf(&quot;*&quot;);</span></a>
 <a name="359"><span class="lineNum">     359 </span>            :                                 else</a>
-<a name="360"><span class="lineNum">     360 </span><span class="lineCov">         96 :                                         printf(&quot;o&quot;);</span></a>
-<a name="361"><span class="lineNum">     361 </span><span class="lineCov">       9294 :                         } else if (both &gt; pivot_lower) {</span></a>
-<a name="362"><span class="lineNum">     362 </span><span class="lineCov">         17 :                                 if (scrubbed == both)</span></a>
+<a name="360"><span class="lineNum">     360 </span><span class="lineCov">         97 :                                         printf(&quot;o&quot;);</span></a>
+<a name="361"><span class="lineNum">     361 </span><span class="lineCov">       9293 :                         } else if (both &gt; pivot_lower) {</span></a>
+<a name="362"><span class="lineNum">     362 </span><span class="lineCov">         15 :                                 if (scrubbed == both)</span></a>
 <a name="363"><span class="lineNum">     363 </span><span class="lineCov">          6 :                                         printf(&quot;*&quot;);</span></a>
 <a name="364"><span class="lineNum">     364 </span>            :                                 else</a>
-<a name="365"><span class="lineNum">     365 </span><span class="lineCov">         11 :                                         printf(&quot;o&quot;);</span></a>
+<a name="365"><span class="lineNum">     365 </span><span class="lineCov">          9 :                                         printf(&quot;o&quot;);</span></a>
 <a name="366"><span class="lineNum">     366 </span>            :                         } else {</a>
-<a name="367"><span class="lineNum">     367 </span><span class="lineCov">       9277 :                                 if (y == GRAPH_ROW - 1)</span></a>
-<a name="368"><span class="lineNum">     368 </span><span class="lineCov">        613 :                                         printf(&quot;_&quot;);</span></a>
+<a name="367"><span class="lineNum">     367 </span><span class="lineCov">       9278 :                                 if (y == GRAPH_ROW - 1)</span></a>
+<a name="368"><span class="lineNum">     368 </span><span class="lineCov">        615 :                                         printf(&quot;_&quot;);</span></a>
 <a name="369"><span class="lineNum">     369 </span>            :                                 else</a>
-<a name="370"><span class="lineNum">     370 </span><span class="lineCov">       8664 :                                         printf(&quot; &quot;);</span></a>
+<a name="370"><span class="lineNum">     370 </span><span class="lineCov">       8663 :                                         printf(&quot; &quot;);</span></a>
 <a name="371"><span class="lineNum">     371 </span>            :                         }</a>
 <a name="372"><span class="lineNum">     372 </span>            :                 }</a>
 <a name="373"><span class="lineNum">     373 </span><span class="lineCov">        135 :                 printf(&quot;\n&quot;);</span></a>
@@ -491,27 +491,27 @@
 <a name="429"><span class="lineNum">     429 </span><span class="lineCov">          2 :                 bad_count = 0;</span></a>
 <a name="430"><span class="lineNum">     430 </span><span class="lineCov">          2 :                 range_start = 0;</span></a>
 <a name="431"><span class="lineNum">     431 </span><span class="lineCov">          2 :                 range_count = 0;</span></a>
-<a name="432"><span class="lineNum">     432 </span><span class="lineCov">        887 :                 for (i = 0; i &lt;= blockmax; ++i) { /* one extra iteration to print the final range */</span></a>
-<a name="433"><span class="lineNum">     433 </span><span class="lineCov">        887 :                         snapraid_info info = 0;</span></a>
-<a name="434"><span class="lineNum">     434 </span><span class="lineCov">        887 :                         int is_bad = 0;</span></a>
+<a name="432"><span class="lineNum">     432 </span><span class="lineCov">        894 :                 for (i = 0; i &lt;= blockmax; ++i) { /* one extra iteration to print the final range */</span></a>
+<a name="433"><span class="lineNum">     433 </span><span class="lineCov">        894 :                         snapraid_info info = 0;</span></a>
+<a name="434"><span class="lineNum">     434 </span><span class="lineCov">        894 :                         int is_bad = 0;</span></a>
 <a name="435"><span class="lineNum">     435 </span>            : </a>
-<a name="436"><span class="lineNum">     436 </span><span class="lineCov">        887 :                         if (i &lt; blockmax) {</span></a>
-<a name="437"><span class="lineNum">     437 </span><span class="lineCov">        887 :                                 info = info_get(&amp;state-&gt;infoarr, i);</span></a>
-<a name="438"><span class="lineNum">     438 </span><span class="lineCov">        887 :                                 if (info != 0) /* unused blocks are never bad */</span></a>
-<a name="439"><span class="lineNum">     439 </span><span class="lineCov">        887 :                                         is_bad = info_get_bad(info);</span></a>
+<a name="436"><span class="lineNum">     436 </span><span class="lineCov">        894 :                         if (i &lt; blockmax) {</span></a>
+<a name="437"><span class="lineNum">     437 </span><span class="lineCov">        894 :                                 info = info_get(&amp;state-&gt;infoarr, i);</span></a>
+<a name="438"><span class="lineNum">     438 </span><span class="lineCov">        894 :                                 if (info != 0) /* unused blocks are never bad */</span></a>
+<a name="439"><span class="lineNum">     439 </span><span class="lineCov">        894 :                                         is_bad = info_get_bad(info);</span></a>
 <a name="440"><span class="lineNum">     440 </span>            :                         }</a>
-<a name="441"><span class="lineNum">     441 </span><span class="lineCov">        887 :                         if (is_bad) {</span></a>
+<a name="441"><span class="lineNum">     441 </span><span class="lineCov">        894 :                         if (is_bad) {</span></a>
 <a name="442"><span class="lineNum">     442 </span>            :                                 /* create or extend the range */</a>
-<a name="443"><span class="lineNum">     443 </span><span class="lineCov">        259 :                                 if (!range_count)</span></a>
+<a name="443"><span class="lineNum">     443 </span><span class="lineCov">        263 :                                 if (!range_count)</span></a>
 <a name="444"><span class="lineNum">     444 </span><span class="lineCov">        202 :                                         range_start = i;</span></a>
-<a name="445"><span class="lineNum">     445 </span><span class="lineCov">        259 :                                 ++range_count;</span></a>
+<a name="445"><span class="lineNum">     445 </span><span class="lineCov">        263 :                                 ++range_count;</span></a>
 <a name="446"><span class="lineNum">     446 </span>            :                         } else {</a>
 <a name="447"><span class="lineNum">     447 </span>            :                                 /* break the range */</a>
-<a name="448"><span class="lineNum">     448 </span><span class="lineCov">        628 :                                 if (range_count) {</span></a>
+<a name="448"><span class="lineNum">     448 </span><span class="lineCov">        631 :                                 if (range_count) {</span></a>
 <a name="449"><span class="lineNum">     449 </span><span class="lineCov">        202 :                                         if (range_count == 1) {</span></a>
-<a name="450"><span class="lineNum">     450 </span><span class="lineCov">        153 :                                                 printf(&quot; %u&quot;, range_start);</span></a>
+<a name="450"><span class="lineNum">     450 </span><span class="lineCov">        155 :                                                 printf(&quot; %u&quot;, range_start);</span></a>
 <a name="451"><span class="lineNum">     451 </span>            :                                         } else {</a>
-<a name="452"><span class="lineNum">     452 </span><span class="lineCov">         49 :                                                 printf(&quot; %u-%u&quot;, range_start, range_start + range_count - 1);</span></a>
+<a name="452"><span class="lineNum">     452 </span><span class="lineCov">         47 :                                                 printf(&quot; %u-%u&quot;, range_start, range_start + range_count - 1);</span></a>
 <a name="453"><span class="lineNum">     453 </span>            :                                         }</a>
 <a name="454"><span class="lineNum">     454 </span><span class="lineCov">        202 :                                         bad_count += range_count;</span></a>
 <a name="455"><span class="lineNum">     455 </span><span class="lineCov">        202 :                                         ++bad_range;</span></a>
@@ -519,7 +519,7 @@
 <a name="457"><span class="lineNum">     457 </span>            :                                 }</a>
 <a name="458"><span class="lineNum">     458 </span>            :                         }</a>
 <a name="459"><span class="lineNum">     459 </span>            : </a>
-<a name="460"><span class="lineNum">     460 </span><span class="lineCov">        887 :                         if (bad_range &gt; 100) {</span></a>
+<a name="460"><span class="lineNum">     460 </span><span class="lineCov">        894 :                         if (bad_range &gt; 100) {</span></a>
 <a name="461"><span class="lineNum">     461 </span><span class="lineCov">          2 :                                 printf(&quot; and %u more...&quot;, state-&gt;bad_blocks - bad_count);</span></a>
 <a name="462"><span class="lineNum">     462 </span><span class="lineCov">          2 :                                 break;</span></a>
 <a name="463"><span class="lineNum">     463 </span>            :                         }</a>
