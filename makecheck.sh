@@ -9,9 +9,9 @@ SOURCE=`pwd`
 # Dest directory
 DEST=`mktemp -d`
 
-cd $DEST
-
 make distclean
+
+cd $DEST
 
 if ! $SOURCE/configure; then
 	exit 1

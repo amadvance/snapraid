@@ -60,8 +60,3 @@ if ! make check distclean; then
 fi
 
 cd $SOURCE
-
-if ! ./configure; then
-	exit 1
-fi
-
