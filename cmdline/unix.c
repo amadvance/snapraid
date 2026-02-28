@@ -768,10 +768,8 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	/* In Linux get the real physical address of the file */
 	/* Note that FIEMAP doesn't require root permission */
 	int f;
-	struct {
-		struct fiemap fiemap;
-		struct fiemap_extent extent;
-	} fm;
+	struct fiemap* fiemap;
+	size_t fiemap_size;
 	unsigned int blknum;
 
 	f = open(path, O_RDONLY);
@@ -781,15 +779,17 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 
 	/* first try with FIEMAP */
 	/* if works for ext2, ext3, ext4, xfs, btrfs */
-	memset(&fm, 0, sizeof(fm));
-	fm.fiemap.fm_start = 0;
-	fm.fiemap.fm_length = ~0ULL;
-	fm.fiemap.fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */
-	fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */
+	fiemap_size = sizeof(struct fiemap) + sizeof(struct fiemap_extent);
+	fiemap = malloc_nofail(fiemap_size);
+	memset(fiemap, 0, fiemap_size);
+	fiemap->fm_start = 0;
+	fiemap->fm_length = ~0ULL;
+	fiemap->fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */
+	fiemap->fm_extent_count = 1; /* we are interested only at the first block */
 
-	if (ioctl(f, FS_IOC_FIEMAP, &fm) != -1) {
-		uint32_t flags = fm.fiemap.fm_extents[0].fe_flags;
-		uint64_t offset = fm.fiemap.fm_extents[0].fe_physical;
+	if (ioctl(f, FS_IOC_FIEMAP, fiemap) != -1) {
+		uint32_t flags = fiemap->fm_extents[0].fe_flags;
+		uint64_t offset = fiemap->fm_extents[0].fe_physical;
 
 		/* check some condition for validating the offset */
 		if (flags & FIEMAP_EXTENT_DATA_INLINE) {
@@ -811,6 +811,8 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 			return -1;
 		return 0;
 	}
+
+	free(fiemap);
 
 	/* if the file is empty, FIBMAP doesn't work, and we don't even try to use it */
 	if (size == 0) {
