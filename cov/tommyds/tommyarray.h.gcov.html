@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 10:17:21</td>
+            <td class="headerValue">2026-02-28 16:42:47</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">5</td>
@@ -147,16 +147,16 @@
 <a name="85"><span class="lineNum">      85 </span>            :  * You must be sure that space for this position is already</a>
 <a name="86"><span class="lineNum">      86 </span>            :  * allocated calling tommy_array_grow().</a>
 <a name="87"><span class="lineNum">      87 </span>            :  */</a>
-<a name="88"><span class="lineNum">      88 </span><span class="lineCov">    8496878 : tommy_inline void** tommy_array_ref(tommy_array* array, tommy_size_t pos)</span></a>
+<a name="88"><span class="lineNum">      88 </span><span class="lineCov">    8788416 : tommy_inline void** tommy_array_ref(tommy_array* array, tommy_size_t pos)</span></a>
 <a name="89"><span class="lineNum">      89 </span>            : {</a>
 <a name="90"><span class="lineNum">      90 </span>            :         tommy_uint_t bsr;</a>
 <a name="91"><span class="lineNum">      91 </span>            : </a>
-<a name="92"><span class="lineNum">      92 </span><span class="lineCov">    8496878 :         assert(pos &lt; array-&gt;count);</span></a>
+<a name="92"><span class="lineNum">      92 </span><span class="lineCov">    8788416 :         assert(pos &lt; array-&gt;count);</span></a>
 <a name="93"><span class="lineNum">      93 </span>            : </a>
 <a name="94"><span class="lineNum">      94 </span>            :         /* get the highest bit set, in case of all 0, return 0 */</a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">    8496878 :         bsr = tommy_ilog2(pos | 1);</span></a>
+<a name="95"><span class="lineNum">      95 </span><span class="lineCov">    8788416 :         bsr = tommy_ilog2(pos | 1);</span></a>
 <a name="96"><span class="lineNum">      96 </span>            : </a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">    8496878 :         return &amp;array-&gt;bucket[bsr][pos];</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">    8788416 :         return &amp;array-&gt;bucket[bsr][pos];</span></a>
 <a name="98"><span class="lineNum">      98 </span>            : }</a>
 <a name="99"><span class="lineNum">      99 </span>            : </a>
 <a name="100"><span class="lineNum">     100 </span>            : /**</a>
@@ -164,19 +164,19 @@
 <a name="102"><span class="lineNum">     102 </span>            :  * You must be sure that space for this position is already</a>
 <a name="103"><span class="lineNum">     103 </span>            :  * allocated calling tommy_array_grow().</a>
 <a name="104"><span class="lineNum">     104 </span>            :  */</a>
-<a name="105"><span class="lineNum">     105 </span><span class="lineCov">       2301 : tommy_inline void tommy_array_set(tommy_array* array, tommy_size_t pos, void* element)</span></a>
+<a name="105"><span class="lineNum">     105 </span><span class="lineCov">       2365 : tommy_inline void tommy_array_set(tommy_array* array, tommy_size_t pos, void* element)</span></a>
 <a name="106"><span class="lineNum">     106 </span>            : {</a>
-<a name="107"><span class="lineNum">     107 </span><span class="lineCov">       2301 :         *tommy_array_ref(array, pos) = element;</span></a>
-<a name="108"><span class="lineNum">     108 </span><span class="lineCov">       2301 : }</span></a>
+<a name="107"><span class="lineNum">     107 </span><span class="lineCov">       2365 :         *tommy_array_ref(array, pos) = element;</span></a>
+<a name="108"><span class="lineNum">     108 </span><span class="lineCov">       2365 : }</span></a>
 <a name="109"><span class="lineNum">     109 </span>            : </a>
 <a name="110"><span class="lineNum">     110 </span>            : /**</a>
 <a name="111"><span class="lineNum">     111 </span>            :  * Gets the element at the specified position.</a>
 <a name="112"><span class="lineNum">     112 </span>            :  * You must be sure that space for this position is already</a>
 <a name="113"><span class="lineNum">     113 </span>            :  * allocated calling tommy_array_grow().</a>
 <a name="114"><span class="lineNum">     114 </span>            :  */</a>
-<a name="115"><span class="lineNum">     115 </span><span class="lineCov">    8494577 : tommy_inline void* tommy_array_get(tommy_array* array, tommy_size_t pos)</span></a>
+<a name="115"><span class="lineNum">     115 </span><span class="lineCov">    8786051 : tommy_inline void* tommy_array_get(tommy_array* array, tommy_size_t pos)</span></a>
 <a name="116"><span class="lineNum">     116 </span>            : {</a>
-<a name="117"><span class="lineNum">     117 </span><span class="lineCov">    8494577 :         return *tommy_array_ref(array, pos);</span></a>
+<a name="117"><span class="lineNum">     117 </span><span class="lineCov">    8786051 :         return *tommy_array_ref(array, pos);</span></a>
 <a name="118"><span class="lineNum">     118 </span>            : }</a>
 <a name="119"><span class="lineNum">     119 </span>            : </a>
 <a name="120"><span class="lineNum">     120 </span>            : /**</a>
@@ -194,9 +194,9 @@
 <a name="132"><span class="lineNum">     132 </span>            : /**</a>
 <a name="133"><span class="lineNum">     133 </span>            :  * Gets the initialized size of the array.</a>
 <a name="134"><span class="lineNum">     134 </span>            :  */</a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">    1635801 : tommy_inline tommy_size_t tommy_array_size(tommy_array* array)</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">    1689854 : tommy_inline tommy_size_t tommy_array_size(tommy_array* array)</span></a>
 <a name="136"><span class="lineNum">     136 </span>            : {</a>
-<a name="137"><span class="lineNum">     137 </span><span class="lineCov">    1635801 :         return array-&gt;count;</span></a>
+<a name="137"><span class="lineNum">     137 </span><span class="lineCov">    1689854 :         return array-&gt;count;</span></a>
 <a name="138"><span class="lineNum">     138 </span>            : }</a>
 <a name="139"><span class="lineNum">     139 </span>            : </a>
 <a name="140"><span class="lineNum">     140 </span>            : /**</a>

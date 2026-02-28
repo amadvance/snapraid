@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 10:17:21</td>
+            <td class="headerValue">2026-02-28 16:42:47</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -188,14 +188,14 @@
 <a name="126"><span class="lineNum">     126 </span>            : </a>
 <a name="127"><span class="lineNum">     127 </span>            :                 /* for each file in the disk */</a>
 <a name="128"><span class="lineNum">     128 </span><span class="lineCov">         90 :                 node = disk-&gt;filelist;</span></a>
-<a name="129"><span class="lineNum">     129 </span><span class="lineCov">      95624 :                 while (node) {</span></a>
+<a name="129"><span class="lineNum">     129 </span><span class="lineCov">      95576 :                 while (node) {</span></a>
 <a name="130"><span class="lineNum">     130 </span>            :                         struct snapraid_file* file;</a>
 <a name="131"><span class="lineNum">     131 </span>            : </a>
-<a name="132"><span class="lineNum">     132 </span><span class="lineCov">      95534 :                         file = node-&gt;data;</span></a>
-<a name="133"><span class="lineNum">     133 </span><span class="lineCov">      95534 :                         node = node-&gt;next; /* next node */</span></a>
+<a name="132"><span class="lineNum">     132 </span><span class="lineCov">      95486 :                         file = node-&gt;data;</span></a>
+<a name="133"><span class="lineNum">     133 </span><span class="lineCov">      95486 :                         node = node-&gt;next; /* next node */</span></a>
 <a name="134"><span class="lineNum">     134 </span>            : </a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">      95534 :                         if (file-&gt;mtime_nsec == STAT_NSEC_INVALID</span></a>
-<a name="136"><span class="lineNum">     136 </span><span class="lineCov">      95534 :                                 || file-&gt;mtime_nsec == 0</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">      95486 :                         if (file-&gt;mtime_nsec == STAT_NSEC_INVALID</span></a>
+<a name="136"><span class="lineNum">     136 </span><span class="lineCov">      95486 :                                 || file-&gt;mtime_nsec == 0</span></a>
 <a name="137"><span class="lineNum">     137 </span>            :                         ) {</a>
 <a name="138"><span class="lineNum">     138 </span><span class="lineNoCov">          0 :                                 ++file_zerosubsecond;</span></a>
 <a name="139"><span class="lineNum">     139 </span><span class="lineNoCov">          0 :                                 ++disk_file_zerosubsecond;</span></a>
@@ -206,43 +206,43 @@
 <a name="144"><span class="lineNum">     144 </span>            :                         }</a>
 <a name="145"><span class="lineNum">     145 </span>            : </a>
 <a name="146"><span class="lineNum">     146 </span>            :                         /* check fragmentation */</a>
-<a name="147"><span class="lineNum">     147 </span><span class="lineCov">      95534 :                         if (file-&gt;blockmax != 0) {</span></a>
+<a name="147"><span class="lineNum">     147 </span><span class="lineCov">      95486 :                         if (file-&gt;blockmax != 0) {</span></a>
 <a name="148"><span class="lineNum">     148 </span>            :                                 block_off_t prev_pos;</a>
 <a name="149"><span class="lineNum">     149 </span>            :                                 block_off_t last_pos;</a>
 <a name="150"><span class="lineNum">     150 </span>            :                                 int fragmented;</a>
 <a name="151"><span class="lineNum">     151 </span>            : </a>
-<a name="152"><span class="lineNum">     152 </span><span class="lineCov">      95396 :                                 fragmented = 0;</span></a>
-<a name="153"><span class="lineNum">     153 </span><span class="lineCov">      95396 :                                 prev_pos = fs_file2par_get(disk, file, 0);</span></a>
-<a name="154"><span class="lineNum">     154 </span><span class="lineCov">     235735 :                                 for (j = 1; j &lt; file-&gt;blockmax; ++j) {</span></a>
-<a name="155"><span class="lineNum">     155 </span><span class="lineCov">     140339 :                                         block_off_t parity_pos = fs_file2par_get(disk, file, j);</span></a>
-<a name="156"><span class="lineNum">     156 </span><span class="lineCov">     140339 :                                         if (prev_pos + 1 != parity_pos) {</span></a>
-<a name="157"><span class="lineNum">     157 </span><span class="lineCov">        698 :                                                 fragmented = 1;</span></a>
-<a name="158"><span class="lineNum">     158 </span><span class="lineCov">        698 :                                                 ++extra_fragment;</span></a>
-<a name="159"><span class="lineNum">     159 </span><span class="lineCov">        698 :                                                 ++disk_extra_fragment;</span></a>
+<a name="152"><span class="lineNum">     152 </span><span class="lineCov">      95348 :                                 fragmented = 0;</span></a>
+<a name="153"><span class="lineNum">     153 </span><span class="lineCov">      95348 :                                 prev_pos = fs_file2par_get(disk, file, 0);</span></a>
+<a name="154"><span class="lineNum">     154 </span><span class="lineCov">     235648 :                                 for (j = 1; j &lt; file-&gt;blockmax; ++j) {</span></a>
+<a name="155"><span class="lineNum">     155 </span><span class="lineCov">     140300 :                                         block_off_t parity_pos = fs_file2par_get(disk, file, j);</span></a>
+<a name="156"><span class="lineNum">     156 </span><span class="lineCov">     140300 :                                         if (prev_pos + 1 != parity_pos) {</span></a>
+<a name="157"><span class="lineNum">     157 </span><span class="lineCov">        713 :                                                 fragmented = 1;</span></a>
+<a name="158"><span class="lineNum">     158 </span><span class="lineCov">        713 :                                                 ++extra_fragment;</span></a>
+<a name="159"><span class="lineNum">     159 </span><span class="lineCov">        713 :                                                 ++disk_extra_fragment;</span></a>
 <a name="160"><span class="lineNum">     160 </span>            :                                         }</a>
-<a name="161"><span class="lineNum">     161 </span><span class="lineCov">     140339 :                                         prev_pos = parity_pos;</span></a>
+<a name="161"><span class="lineNum">     161 </span><span class="lineCov">     140300 :                                         prev_pos = parity_pos;</span></a>
 <a name="162"><span class="lineNum">     162 </span>            :                                 }</a>
 <a name="163"><span class="lineNum">     163 </span>            : </a>
 <a name="164"><span class="lineNum">     164 </span>            :                                 /* keep track of latest block used */</a>
-<a name="165"><span class="lineNum">     165 </span><span class="lineCov">      95396 :                                 last_pos = fs_file2par_get(disk, file, file-&gt;blockmax - 1);</span></a>
-<a name="166"><span class="lineNum">     166 </span><span class="lineCov">      95396 :                                 if (last_pos &gt; disk_block_latest_used) {</span></a>
-<a name="167"><span class="lineNum">     167 </span><span class="lineCov">      92537 :                                         disk_block_latest_used = last_pos;</span></a>
+<a name="165"><span class="lineNum">     165 </span><span class="lineCov">      95348 :                                 last_pos = fs_file2par_get(disk, file, file-&gt;blockmax - 1);</span></a>
+<a name="166"><span class="lineNum">     166 </span><span class="lineCov">      95348 :                                 if (last_pos &gt; disk_block_latest_used) {</span></a>
+<a name="167"><span class="lineNum">     167 </span><span class="lineCov">      92458 :                                         disk_block_latest_used = last_pos;</span></a>
 <a name="168"><span class="lineNum">     168 </span>            :                                 }</a>
 <a name="169"><span class="lineNum">     169 </span>            : </a>
-<a name="170"><span class="lineNum">     170 </span><span class="lineCov">      95396 :                                 if (fragmented) {</span></a>
-<a name="171"><span class="lineNum">     171 </span><span class="lineCov">        582 :                                         ++file_fragmented;</span></a>
-<a name="172"><span class="lineNum">     172 </span><span class="lineCov">        582 :                                         ++disk_file_fragmented;</span></a>
+<a name="170"><span class="lineNum">     170 </span><span class="lineCov">      95348 :                                 if (fragmented) {</span></a>
+<a name="171"><span class="lineNum">     171 </span><span class="lineCov">        593 :                                         ++file_fragmented;</span></a>
+<a name="172"><span class="lineNum">     172 </span><span class="lineCov">        593 :                                         ++disk_file_fragmented;</span></a>
 <a name="173"><span class="lineNum">     173 </span>            :                                 }</a>
 <a name="174"><span class="lineNum">     174 </span>            : </a>
-<a name="175"><span class="lineNum">     175 </span><span class="lineCov">      95396 :                                 disk_block_count += file-&gt;blockmax;</span></a>
+<a name="175"><span class="lineNum">     175 </span><span class="lineCov">      95348 :                                 disk_block_count += file-&gt;blockmax;</span></a>
 <a name="176"><span class="lineNum">     176 </span>            :                         }</a>
 <a name="177"><span class="lineNum">     177 </span>            : </a>
 <a name="178"><span class="lineNum">     178 </span>            :                         /* count files */</a>
-<a name="179"><span class="lineNum">     179 </span><span class="lineCov">      95534 :                         ++file_count;</span></a>
-<a name="180"><span class="lineNum">     180 </span><span class="lineCov">      95534 :                         ++disk_file_count;</span></a>
-<a name="181"><span class="lineNum">     181 </span><span class="lineCov">      95534 :                         file_size += file-&gt;size;</span></a>
-<a name="182"><span class="lineNum">     182 </span><span class="lineCov">      95534 :                         file_block_count += file-&gt;blockmax;</span></a>
-<a name="183"><span class="lineNum">     183 </span><span class="lineCov">      95534 :                         disk_file_size += file-&gt;size;</span></a>
+<a name="179"><span class="lineNum">     179 </span><span class="lineCov">      95486 :                         ++file_count;</span></a>
+<a name="180"><span class="lineNum">     180 </span><span class="lineCov">      95486 :                         ++disk_file_count;</span></a>
+<a name="181"><span class="lineNum">     181 </span><span class="lineCov">      95486 :                         file_size += file-&gt;size;</span></a>
+<a name="182"><span class="lineNum">     182 </span><span class="lineCov">      95486 :                         file_block_count += file-&gt;blockmax;</span></a>
+<a name="183"><span class="lineNum">     183 </span><span class="lineCov">      95486 :                         disk_file_size += file-&gt;size;</span></a>
 <a name="184"><span class="lineNum">     184 </span>            :                 }</a>
 <a name="185"><span class="lineNum">     185 </span>            : </a>
 <a name="186"><span class="lineNum">     186 </span><span class="lineCov">         90 :                 if (disk-&gt;free_blocks != 0)</span></a>
@@ -348,17 +348,17 @@
 <a name="286"><span class="lineNum">     286 </span><span class="lineCov">         15 :         median = 0;</span></a>
 <a name="287"><span class="lineNum">     287 </span><span class="lineCov">         15 :         newest = 0;</span></a>
 <a name="288"><span class="lineNum">     288 </span><span class="lineCov">         15 :         count = 0;</span></a>
-<a name="289"><span class="lineNum">     289 </span><span class="lineCov">         30 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
-<a name="290"><span class="lineNum">     290 </span><span class="lineCov">         15 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
-<a name="291"><span class="lineNum">     291 </span><span class="lineCov">         15 :                 block_off_t bucket_count = bucket-&gt;count_scrubbed + bucket-&gt;count_justsynced;</span></a>
+<a name="289"><span class="lineNum">     289 </span><span class="lineCov">         34 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
+<a name="290"><span class="lineNum">     290 </span><span class="lineCov">         19 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
+<a name="291"><span class="lineNum">     291 </span><span class="lineCov">         19 :                 block_off_t bucket_count = bucket-&gt;count_scrubbed + bucket-&gt;count_justsynced;</span></a>
 <a name="292"><span class="lineNum">     292 </span>            : </a>
-<a name="293"><span class="lineNum">     293 </span><span class="lineCov">         15 :                 if (count == 0)</span></a>
+<a name="293"><span class="lineNum">     293 </span><span class="lineCov">         19 :                 if (count == 0)</span></a>
 <a name="294"><span class="lineNum">     294 </span><span class="lineCov">          9 :                         oldest = bucket-&gt;time_at;</span></a>
-<a name="295"><span class="lineNum">     295 </span><span class="lineCov">         15 :                 if (count &lt; state-&gt;bucketcount / 2)</span></a>
-<a name="296"><span class="lineNum">     296 </span><span class="lineCov">         12 :                         median = bucket-&gt;time_at;</span></a>
-<a name="297"><span class="lineNum">     297 </span><span class="lineCov">         15 :                 newest = bucket-&gt;time_at;</span></a>
+<a name="295"><span class="lineNum">     295 </span><span class="lineCov">         19 :                 if (count &lt; state-&gt;bucketcount / 2)</span></a>
+<a name="296"><span class="lineNum">     296 </span><span class="lineCov">         14 :                         median = bucket-&gt;time_at;</span></a>
+<a name="297"><span class="lineNum">     297 </span><span class="lineCov">         19 :                 newest = bucket-&gt;time_at;</span></a>
 <a name="298"><span class="lineNum">     298 </span>            : </a>
-<a name="299"><span class="lineNum">     299 </span><span class="lineCov">         15 :                 count += bucket_count;</span></a>
+<a name="299"><span class="lineNum">     299 </span><span class="lineCov">         19 :                 count += bucket_count;</span></a>
 <a name="300"><span class="lineNum">     300 </span>            :         }</a>
 <a name="301"><span class="lineNum">     301 </span>            : </a>
 <a name="302"><span class="lineNum">     302 </span><span class="lineCov">         15 :         if (!count) {</span></a>
@@ -378,15 +378,15 @@
 <a name="316"><span class="lineNum">     316 </span><span class="lineCov">          9 :         barmax = 0;</span></a>
 <a name="317"><span class="lineNum">     317 </span><span class="lineCov">          9 :         memset(bar_scrubbed, 0, sizeof(bar_scrubbed));</span></a>
 <a name="318"><span class="lineNum">     318 </span><span class="lineCov">          9 :         memset(bar_new, 0, sizeof(bar_new));</span></a>
-<a name="319"><span class="lineNum">     319 </span><span class="lineCov">         24 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
-<a name="320"><span class="lineNum">     320 </span><span class="lineCov">         15 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
+<a name="319"><span class="lineNum">     319 </span><span class="lineCov">         28 :         for (tommy_node* j = tommy_list_head(&amp;state-&gt;bucketlist); j != 0; j = j-&gt;next) {</span></a>
+<a name="320"><span class="lineNum">     320 </span><span class="lineCov">         19 :                 struct snapraid_bucket* bucket = j-&gt;data;</span></a>
 <a name="321"><span class="lineNum">     321 </span>            : </a>
-<a name="322"><span class="lineNum">     322 </span><span class="lineCov">         15 :                 unsigned column = muldiv(bucket-&gt;time_at - oldest, GRAPH_COLUMN, newest - oldest + 1);</span></a>
+<a name="322"><span class="lineNum">     322 </span><span class="lineCov">         19 :                 unsigned column = muldiv(bucket-&gt;time_at - oldest, GRAPH_COLUMN, newest - oldest + 1);</span></a>
 <a name="323"><span class="lineNum">     323 </span>            : </a>
-<a name="324"><span class="lineNum">     324 </span><span class="lineCov">         15 :                 bar_scrubbed[column] += bucket-&gt;count_scrubbed;</span></a>
-<a name="325"><span class="lineNum">     325 </span><span class="lineCov">         15 :                 bar_new[column] += bucket-&gt;count_justsynced;</span></a>
+<a name="324"><span class="lineNum">     324 </span><span class="lineCov">         19 :                 bar_scrubbed[column] += bucket-&gt;count_scrubbed;</span></a>
+<a name="325"><span class="lineNum">     325 </span><span class="lineCov">         19 :                 bar_new[column] += bucket-&gt;count_justsynced;</span></a>
 <a name="326"><span class="lineNum">     326 </span>            : </a>
-<a name="327"><span class="lineNum">     327 </span><span class="lineCov">         15 :                 if (bar_scrubbed[column] + bar_new[column] &gt; barmax)</span></a>
+<a name="327"><span class="lineNum">     327 </span><span class="lineCov">         19 :                 if (bar_scrubbed[column] + bar_new[column] &gt; barmax)</span></a>
 <a name="328"><span class="lineNum">     328 </span><span class="lineCov">         12 :                         barmax = bar_scrubbed[column] + bar_new[column];</span></a>
 <a name="329"><span class="lineNum">     329 </span>            :         }</a>
 <a name="330"><span class="lineNum">     330 </span>            : </a>
@@ -416,20 +416,20 @@
 <a name="354"><span class="lineNum">     354 </span><span class="lineCov">       9450 :                         unsigned scrubbed = bar_scrubbed[x];</span></a>
 <a name="355"><span class="lineNum">     355 </span>            : </a>
 <a name="356"><span class="lineNum">     356 </span><span class="lineCov">       9450 :                         if (both &gt; pivot_upper) {</span></a>
-<a name="357"><span class="lineNum">     357 </span><span class="lineCov">        157 :                                 if (scrubbed &gt; pivot_lower)</span></a>
-<a name="358"><span class="lineNum">     358 </span><span class="lineCov">         60 :                                         printf(&quot;*&quot;);</span></a>
+<a name="357"><span class="lineNum">     357 </span><span class="lineCov">        156 :                                 if (scrubbed &gt; pivot_lower)</span></a>
+<a name="358"><span class="lineNum">     358 </span><span class="lineCov">         61 :                                         printf(&quot;*&quot;);</span></a>
 <a name="359"><span class="lineNum">     359 </span>            :                                 else</a>
-<a name="360"><span class="lineNum">     360 </span><span class="lineCov">         97 :                                         printf(&quot;o&quot;);</span></a>
-<a name="361"><span class="lineNum">     361 </span><span class="lineCov">       9293 :                         } else if (both &gt; pivot_lower) {</span></a>
-<a name="362"><span class="lineNum">     362 </span><span class="lineCov">         15 :                                 if (scrubbed == both)</span></a>
+<a name="360"><span class="lineNum">     360 </span><span class="lineCov">         95 :                                         printf(&quot;o&quot;);</span></a>
+<a name="361"><span class="lineNum">     361 </span><span class="lineCov">       9294 :                         } else if (both &gt; pivot_lower) {</span></a>
+<a name="362"><span class="lineNum">     362 </span><span class="lineCov">         19 :                                 if (scrubbed == both)</span></a>
 <a name="363"><span class="lineNum">     363 </span><span class="lineCov">          6 :                                         printf(&quot;*&quot;);</span></a>
 <a name="364"><span class="lineNum">     364 </span>            :                                 else</a>
-<a name="365"><span class="lineNum">     365 </span><span class="lineCov">          9 :                                         printf(&quot;o&quot;);</span></a>
+<a name="365"><span class="lineNum">     365 </span><span class="lineCov">         13 :                                         printf(&quot;o&quot;);</span></a>
 <a name="366"><span class="lineNum">     366 </span>            :                         } else {</a>
-<a name="367"><span class="lineNum">     367 </span><span class="lineCov">       9278 :                                 if (y == GRAPH_ROW - 1)</span></a>
-<a name="368"><span class="lineNum">     368 </span><span class="lineCov">        615 :                                         printf(&quot;_&quot;);</span></a>
+<a name="367"><span class="lineNum">     367 </span><span class="lineCov">       9275 :                                 if (y == GRAPH_ROW - 1)</span></a>
+<a name="368"><span class="lineNum">     368 </span><span class="lineCov">        611 :                                         printf(&quot;_&quot;);</span></a>
 <a name="369"><span class="lineNum">     369 </span>            :                                 else</a>
-<a name="370"><span class="lineNum">     370 </span><span class="lineCov">       8663 :                                         printf(&quot; &quot;);</span></a>
+<a name="370"><span class="lineNum">     370 </span><span class="lineCov">       8664 :                                         printf(&quot; &quot;);</span></a>
 <a name="371"><span class="lineNum">     371 </span>            :                         }</a>
 <a name="372"><span class="lineNum">     372 </span>            :                 }</a>
 <a name="373"><span class="lineNum">     373 </span><span class="lineCov">        135 :                 printf(&quot;\n&quot;);</span></a>
@@ -491,27 +491,27 @@
 <a name="429"><span class="lineNum">     429 </span><span class="lineCov">          2 :                 bad_count = 0;</span></a>
 <a name="430"><span class="lineNum">     430 </span><span class="lineCov">          2 :                 range_start = 0;</span></a>
 <a name="431"><span class="lineNum">     431 </span><span class="lineCov">          2 :                 range_count = 0;</span></a>
-<a name="432"><span class="lineNum">     432 </span><span class="lineCov">        894 :                 for (i = 0; i &lt;= blockmax; ++i) { /* one extra iteration to print the final range */</span></a>
-<a name="433"><span class="lineNum">     433 </span><span class="lineCov">        894 :                         snapraid_info info = 0;</span></a>
-<a name="434"><span class="lineNum">     434 </span><span class="lineCov">        894 :                         int is_bad = 0;</span></a>
+<a name="432"><span class="lineNum">     432 </span><span class="lineCov">        870 :                 for (i = 0; i &lt;= blockmax; ++i) { /* one extra iteration to print the final range */</span></a>
+<a name="433"><span class="lineNum">     433 </span><span class="lineCov">        870 :                         snapraid_info info = 0;</span></a>
+<a name="434"><span class="lineNum">     434 </span><span class="lineCov">        870 :                         int is_bad = 0;</span></a>
 <a name="435"><span class="lineNum">     435 </span>            : </a>
-<a name="436"><span class="lineNum">     436 </span><span class="lineCov">        894 :                         if (i &lt; blockmax) {</span></a>
-<a name="437"><span class="lineNum">     437 </span><span class="lineCov">        894 :                                 info = info_get(&amp;state-&gt;infoarr, i);</span></a>
-<a name="438"><span class="lineNum">     438 </span><span class="lineCov">        894 :                                 if (info != 0) /* unused blocks are never bad */</span></a>
-<a name="439"><span class="lineNum">     439 </span><span class="lineCov">        894 :                                         is_bad = info_get_bad(info);</span></a>
+<a name="436"><span class="lineNum">     436 </span><span class="lineCov">        870 :                         if (i &lt; blockmax) {</span></a>
+<a name="437"><span class="lineNum">     437 </span><span class="lineCov">        870 :                                 info = info_get(&amp;state-&gt;infoarr, i);</span></a>
+<a name="438"><span class="lineNum">     438 </span><span class="lineCov">        870 :                                 if (info != 0) /* unused blocks are never bad */</span></a>
+<a name="439"><span class="lineNum">     439 </span><span class="lineCov">        870 :                                         is_bad = info_get_bad(info);</span></a>
 <a name="440"><span class="lineNum">     440 </span>            :                         }</a>
-<a name="441"><span class="lineNum">     441 </span><span class="lineCov">        894 :                         if (is_bad) {</span></a>
+<a name="441"><span class="lineNum">     441 </span><span class="lineCov">        870 :                         if (is_bad) {</span></a>
 <a name="442"><span class="lineNum">     442 </span>            :                                 /* create or extend the range */</a>
-<a name="443"><span class="lineNum">     443 </span><span class="lineCov">        263 :                                 if (!range_count)</span></a>
+<a name="443"><span class="lineNum">     443 </span><span class="lineCov">        254 :                                 if (!range_count)</span></a>
 <a name="444"><span class="lineNum">     444 </span><span class="lineCov">        202 :                                         range_start = i;</span></a>
-<a name="445"><span class="lineNum">     445 </span><span class="lineCov">        263 :                                 ++range_count;</span></a>
+<a name="445"><span class="lineNum">     445 </span><span class="lineCov">        254 :                                 ++range_count;</span></a>
 <a name="446"><span class="lineNum">     446 </span>            :                         } else {</a>
 <a name="447"><span class="lineNum">     447 </span>            :                                 /* break the range */</a>
-<a name="448"><span class="lineNum">     448 </span><span class="lineCov">        631 :                                 if (range_count) {</span></a>
+<a name="448"><span class="lineNum">     448 </span><span class="lineCov">        616 :                                 if (range_count) {</span></a>
 <a name="449"><span class="lineNum">     449 </span><span class="lineCov">        202 :                                         if (range_count == 1) {</span></a>
-<a name="450"><span class="lineNum">     450 </span><span class="lineCov">        155 :                                                 printf(&quot; %u&quot;, range_start);</span></a>
+<a name="450"><span class="lineNum">     450 </span><span class="lineCov">        157 :                                                 printf(&quot; %u&quot;, range_start);</span></a>
 <a name="451"><span class="lineNum">     451 </span>            :                                         } else {</a>
-<a name="452"><span class="lineNum">     452 </span><span class="lineCov">         47 :                                                 printf(&quot; %u-%u&quot;, range_start, range_start + range_count - 1);</span></a>
+<a name="452"><span class="lineNum">     452 </span><span class="lineCov">         45 :                                                 printf(&quot; %u-%u&quot;, range_start, range_start + range_count - 1);</span></a>
 <a name="453"><span class="lineNum">     453 </span>            :                                         }</a>
 <a name="454"><span class="lineNum">     454 </span><span class="lineCov">        202 :                                         bad_count += range_count;</span></a>
 <a name="455"><span class="lineNum">     455 </span><span class="lineCov">        202 :                                         ++bad_range;</span></a>
@@ -519,7 +519,7 @@
 <a name="457"><span class="lineNum">     457 </span>            :                                 }</a>
 <a name="458"><span class="lineNum">     458 </span>            :                         }</a>
 <a name="459"><span class="lineNum">     459 </span>            : </a>
-<a name="460"><span class="lineNum">     460 </span><span class="lineCov">        894 :                         if (bad_range &gt; 100) {</span></a>
+<a name="460"><span class="lineNum">     460 </span><span class="lineCov">        870 :                         if (bad_range &gt; 100) {</span></a>
 <a name="461"><span class="lineNum">     461 </span><span class="lineCov">          2 :                                 printf(&quot; and %u more...&quot;, state-&gt;bad_blocks - bad_count);</span></a>
 <a name="462"><span class="lineNum">     462 </span><span class="lineCov">          2 :                                 break;</span></a>
 <a name="463"><span class="lineNum">     463 </span>            :                         }</a>

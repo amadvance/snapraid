@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 10:17:21</td>
+            <td class="headerValue">2026-02-28 16:42:47</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">0</td>
@@ -170,11 +170,11 @@
 <a name="108"><span class="lineNum">     108 </span>            :         int i;</a>
 <a name="109"><span class="lineNum">     109 </span>            : </a>
 <a name="110"><span class="lineNum">     110 </span>            :         (void)n; /* unused, but kept for clarity */</a>
-<a name="111"><span class="lineNum">     111 </span><span class="lineCov">     207971 :         assert(0 &lt; r &amp;&amp; r &lt;= n);</span></a>
+<a name="111"><span class="lineNum">     111 </span><span class="lineCov">     220779 :         assert(0 &lt; r &amp;&amp; r &lt;= n);</span></a>
 <a name="112"><span class="lineNum">     112 </span>            : </a>
-<a name="113"><span class="lineNum">     113 </span><span class="lineCov">     689369 :         for (i = 0; i &lt; r; ++i)</span></a>
-<a name="114"><span class="lineNum">     114 </span><span class="lineCov">     481398 :                 c[i] = i;</span></a>
-<a name="115"><span class="lineNum">     115 </span><span class="lineCov">     207971 : }</span></a>
+<a name="113"><span class="lineNum">     113 </span><span class="lineCov">     740966 :         for (i = 0; i &lt; r; ++i)</span></a>
+<a name="114"><span class="lineNum">     114 </span><span class="lineCov">     520187 :                 c[i] = i;</span></a>
+<a name="115"><span class="lineNum">     115 </span><span class="lineCov">     220779 : }</span></a>
 <a name="116"><span class="lineNum">     116 </span>            : </a>
 <a name="117"><span class="lineNum">     117 </span>            : /**</a>
 <a name="118"><span class="lineNum">     118 </span>            :  * Get the next combination without repetition of r of n elements.</a>
@@ -182,19 +182,19 @@
 <a name="120"><span class="lineNum">     120 </span>            :  */</a>
 <a name="121"><span class="lineNum">     121 </span>            : static __always_inline int combination_next(int r, int n, int *c)</a>
 <a name="122"><span class="lineNum">     122 </span>            : {</a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">      52228 :         int i = r - 1; /* present position */</span></a>
-<a name="124"><span class="lineNum">     124 </span><span class="lineCov">      52228 :         int h = n; /* high limit for this position */</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">      52350 :         int i = r - 1; /* present position */</span></a>
+<a name="124"><span class="lineNum">     124 </span><span class="lineCov">      52350 :         int h = n; /* high limit for this position */</span></a>
 <a name="125"><span class="lineNum">     125 </span>            : </a>
-<a name="126"><span class="lineNum">     126 </span><span class="lineCov">      85101 : recurse:</span></a>
+<a name="126"><span class="lineNum">     126 </span><span class="lineCov">      85223 : recurse:</span></a>
 <a name="127"><span class="lineNum">     127 </span>            :         /* next element at position i */</a>
-<a name="128"><span class="lineNum">     128 </span><span class="lineCov">      85101 :         ++c[i];</span></a>
+<a name="128"><span class="lineNum">     128 </span><span class="lineCov">      85223 :         ++c[i];</span></a>
 <a name="129"><span class="lineNum">     129 </span>            : </a>
 <a name="130"><span class="lineNum">     130 </span>            :         /* if the position has reached the max */</a>
-<a name="131"><span class="lineNum">     131 </span><span class="lineCov">      85101 :         if (c[i] &gt;= h) {</span></a>
+<a name="131"><span class="lineNum">     131 </span><span class="lineCov">      85223 :         if (c[i] &gt;= h) {</span></a>
 <a name="132"><span class="lineNum">     132 </span>            : </a>
 <a name="133"><span class="lineNum">     133 </span>            :                 /* if we are at the first level, we have finished */</a>
-<a name="134"><span class="lineNum">     134 </span><span class="lineCov">      45043 :                 if (i == 0)</span></a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">      12170 :                         return 0;</span></a>
+<a name="134"><span class="lineNum">     134 </span><span class="lineCov">      45090 :                 if (i == 0)</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">      12217 :                         return 0;</span></a>
 <a name="136"><span class="lineNum">     136 </span>            : </a>
 <a name="137"><span class="lineNum">     137 </span>            :                 /* increase the previous position */</a>
 <a name="138"><span class="lineNum">     138 </span><span class="lineCov">      32873 :                 --i;</span></a>
@@ -202,16 +202,16 @@
 <a name="140"><span class="lineNum">     140 </span><span class="lineCov">      32873 :                 goto recurse;</span></a>
 <a name="141"><span class="lineNum">     141 </span>            :         }</a>
 <a name="142"><span class="lineNum">     142 </span>            : </a>
-<a name="143"><span class="lineNum">     143 </span><span class="lineCov">      40058 :         ++i;</span></a>
+<a name="143"><span class="lineNum">     143 </span><span class="lineCov">      40133 :         ++i;</span></a>
 <a name="144"><span class="lineNum">     144 </span>            : </a>
 <a name="145"><span class="lineNum">     145 </span>            :         /* initialize all the next positions, if any */</a>
-<a name="146"><span class="lineNum">     146 </span><span class="lineCov">      62603 :         while (i &lt; r) {</span></a>
+<a name="146"><span class="lineNum">     146 </span><span class="lineCov">      62678 :         while (i &lt; r) {</span></a>
 <a name="147"><span class="lineNum">     147 </span>            :                 /* each position start at the next value of the previous one */</a>
 <a name="148"><span class="lineNum">     148 </span><span class="lineCov">      22545 :                 c[i] = c[i - 1] + 1;</span></a>
 <a name="149"><span class="lineNum">     149 </span><span class="lineCov">      22545 :                 ++i;</span></a>
 <a name="150"><span class="lineNum">     150 </span>            :         }</a>
 <a name="151"><span class="lineNum">     151 </span>            : </a>
-<a name="152"><span class="lineNum">     152 </span><span class="lineCov">      40058 :         return 1;</span></a>
+<a name="152"><span class="lineNum">     152 </span><span class="lineCov">      40133 :         return 1;</span></a>
 <a name="153"><span class="lineNum">     153 </span>            : }</a>
 <a name="154"><span class="lineNum">     154 </span>            : #endif</a>
 <a name="155"><span class="lineNum">     155 </span>            : </a>
