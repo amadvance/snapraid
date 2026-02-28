@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">19</td>
             <td class="headerCovTableEntry">20</td>
-            <td class="headerCovTableEntryHi">95.0 %</td>
+            <td class="headerCovTableEntry">21</td>
+            <td class="headerCovTableEntryHi">95.2 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2025-10-28 11:59:11</td>
+            <td class="headerValue">2026-02-28 09:49:08</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -100,64 +100,67 @@
 <a name="38"><span class="lineNum">      38 </span>            :         /* check if a rehash is already in progress */</a>
 <a name="39"><span class="lineNum">      39 </span><span class="lineCov">          1 :         if (state-&gt;prevhash != HASH_UNDEFINED) {</span></a>
 <a name="40"><span class="lineNum">      40 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="41"><span class="lineNum">      41 </span>            :                 log_fatal(&quot;You already have a rehash in progress.\n&quot;);</a>
-<a name="42"><span class="lineNum">      42 </span>            :                 exit(EXIT_FAILURE);</a>
-<a name="43"><span class="lineNum">      43 </span>            :                 /* LCOV_EXCL_STOP */</a>
-<a name="44"><span class="lineNum">      44 </span>            :         }</a>
-<a name="45"><span class="lineNum">      45 </span>            : </a>
-<a name="46"><span class="lineNum">      46 </span><span class="lineCov">          1 :         if (state-&gt;hash == state-&gt;besthash) {</span></a>
-<a name="47"><span class="lineNum">      47 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="48"><span class="lineNum">      48 </span>            :                 log_fatal(&quot;You are already using the best hash for your platform.\n&quot;);</a>
-<a name="49"><span class="lineNum">      49 </span>            :                 exit(EXIT_FAILURE);</a>
-<a name="50"><span class="lineNum">      50 </span>            :                 /* LCOV_EXCL_STOP */</a>
-<a name="51"><span class="lineNum">      51 </span>            :         }</a>
-<a name="52"><span class="lineNum">      52 </span>            : </a>
-<a name="53"><span class="lineNum">      53 </span>            :         /* copy the present hash as previous one */</a>
-<a name="54"><span class="lineNum">      54 </span><span class="lineCov">          1 :         state-&gt;prevhash = state-&gt;hash;</span></a>
-<a name="55"><span class="lineNum">      55 </span><span class="lineCov">          1 :         memcpy(state-&gt;prevhashseed, state-&gt;hashseed, HASH_MAX);</span></a>
-<a name="56"><span class="lineNum">      56 </span>            : </a>
-<a name="57"><span class="lineNum">      57 </span>            :         /* set the new hash and seed */</a>
-<a name="58"><span class="lineNum">      58 </span><span class="lineCov">          1 :         state-&gt;hash = state-&gt;besthash;</span></a>
-<a name="59"><span class="lineNum">      59 </span><span class="lineCov">          1 :         if (randomize(state-&gt;hashseed, HASH_MAX) != 0) {</span></a>
-<a name="60"><span class="lineNum">      60 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="61"><span class="lineNum">      61 </span>            :                 log_fatal(&quot;Failed to get random values.\n&quot;);</a>
-<a name="62"><span class="lineNum">      62 </span>            :                 exit(EXIT_FAILURE);</a>
-<a name="63"><span class="lineNum">      63 </span>            :                 /* LCOV_EXCL_STOP */</a>
-<a name="64"><span class="lineNum">      64 </span>            :         }</a>
-<a name="65"><span class="lineNum">      65 </span>            : </a>
-<a name="66"><span class="lineNum">      66 </span>            :         /* mark all the block for rehashing */</a>
-<a name="67"><span class="lineNum">      67 </span><span class="lineCov">       9216 :         for (i = 0; i &lt; blockmax; ++i) {</span></a>
-<a name="68"><span class="lineNum">      68 </span>            :                 snapraid_info info;</a>
-<a name="69"><span class="lineNum">      69 </span>            : </a>
-<a name="70"><span class="lineNum">      70 </span>            :                 /* if it's unused */</a>
-<a name="71"><span class="lineNum">      71 </span><span class="lineCov">       9215 :                 info = info_get(&amp;state-&gt;infoarr, i);</span></a>
-<a name="72"><span class="lineNum">      72 </span><span class="lineCov">       9215 :                 if (info == 0) {</span></a>
-<a name="73"><span class="lineNum">      73 </span>            :                         /* skip it */</a>
-<a name="74"><span class="lineNum">      74 </span><span class="lineNoCov">          0 :                         continue;</span></a>
-<a name="75"><span class="lineNum">      75 </span>            :                 }</a>
-<a name="76"><span class="lineNum">      76 </span>            : </a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">       9215 :                 if (info_get_rehash(info)) {</span></a>
-<a name="78"><span class="lineNum">      78 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="79"><span class="lineNum">      79 </span>            :                         log_fatal(&quot;Internal inconsistency for a rehash already in progress\n&quot;);</a>
-<a name="80"><span class="lineNum">      80 </span>            :                         os_abort();</a>
-<a name="81"><span class="lineNum">      81 </span>            :                         /* LCOV_EXCL_STOP */</a>
-<a name="82"><span class="lineNum">      82 </span>            :                 }</a>
-<a name="83"><span class="lineNum">      83 </span>            : </a>
-<a name="84"><span class="lineNum">      84 </span>            :                 /* enable the rehash */</a>
-<a name="85"><span class="lineNum">      85 </span><span class="lineCov">       9215 :                 info = info_set_rehash(info);</span></a>
-<a name="86"><span class="lineNum">      86 </span>            : </a>
-<a name="87"><span class="lineNum">      87 </span>            :                 /* save it */</a>
-<a name="88"><span class="lineNum">      88 </span><span class="lineCov">       9215 :                 info_set(&amp;state-&gt;infoarr, i, info);</span></a>
-<a name="89"><span class="lineNum">      89 </span>            :         }</a>
-<a name="90"><span class="lineNum">      90 </span>            : </a>
-<a name="91"><span class="lineNum">      91 </span>            :         /* save the new content file */</a>
-<a name="92"><span class="lineNum">      92 </span><span class="lineCov">          1 :         state-&gt;need_write = 1;</span></a>
-<a name="93"><span class="lineNum">      93 </span>            : </a>
-<a name="94"><span class="lineNum">      94 </span><span class="lineCov">          1 :         msg_status(&quot;A rehash is now scheduled. It will take place progressively in the next\n&quot;);</span></a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">          1 :         msg_status(&quot;'sync' and 'scrub' commands. You can check the rehash progress using the\n&quot;);</span></a>
-<a name="96"><span class="lineNum">      96 </span><span class="lineCov">          1 :         msg_status(&quot;'status' command.\n&quot;);</span></a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">          1 : }</span></a>
-<a name="98"><span class="lineNum">      98 </span>            : </a>
+<a name="41"><span class="lineNum">      41 </span>            :                 log_tag(&quot;summary:exit:already_in_progress\n&quot;);</a>
+<a name="42"><span class="lineNum">      42 </span>            :                 log_fatal(EUSER, &quot;You already have a rehash in progress.\n&quot;);</a>
+<a name="43"><span class="lineNum">      43 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="44"><span class="lineNum">      44 </span>            :                 /* LCOV_EXCL_STOP */</a>
+<a name="45"><span class="lineNum">      45 </span>            :         }</a>
+<a name="46"><span class="lineNum">      46 </span>            : </a>
+<a name="47"><span class="lineNum">      47 </span><span class="lineCov">          1 :         if (state-&gt;hash == state-&gt;besthash) {</span></a>
+<a name="48"><span class="lineNum">      48 </span>            :                 /* LCOV_EXCL_START */</a>
+<a name="49"><span class="lineNum">      49 </span>            :                 log_tag(&quot;summary:exit:not_required\n&quot;);</a>
+<a name="50"><span class="lineNum">      50 </span>            :                 log_fatal(EUSER, &quot;You are already using the best hash for your platform.\n&quot;);</a>
+<a name="51"><span class="lineNum">      51 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="52"><span class="lineNum">      52 </span>            :                 /* LCOV_EXCL_STOP */</a>
+<a name="53"><span class="lineNum">      53 </span>            :         }</a>
+<a name="54"><span class="lineNum">      54 </span>            : </a>
+<a name="55"><span class="lineNum">      55 </span>            :         /* copy the present hash as previous one */</a>
+<a name="56"><span class="lineNum">      56 </span><span class="lineCov">          1 :         state-&gt;prevhash = state-&gt;hash;</span></a>
+<a name="57"><span class="lineNum">      57 </span><span class="lineCov">          1 :         memcpy(state-&gt;prevhashseed, state-&gt;hashseed, HASH_MAX);</span></a>
+<a name="58"><span class="lineNum">      58 </span>            : </a>
+<a name="59"><span class="lineNum">      59 </span>            :         /* set the new hash and seed */</a>
+<a name="60"><span class="lineNum">      60 </span><span class="lineCov">          1 :         state-&gt;hash = state-&gt;besthash;</span></a>
+<a name="61"><span class="lineNum">      61 </span><span class="lineCov">          1 :         if (randomize(state-&gt;hashseed, HASH_MAX) != 0) {</span></a>
+<a name="62"><span class="lineNum">      62 </span>            :                 /* LCOV_EXCL_START */</a>
+<a name="63"><span class="lineNum">      63 </span>            :                 log_fatal(errno, &quot;Failed to get random values.\n&quot;);</a>
+<a name="64"><span class="lineNum">      64 </span>            :                 exit(EXIT_FAILURE);</a>
+<a name="65"><span class="lineNum">      65 </span>            :                 /* LCOV_EXCL_STOP */</a>
+<a name="66"><span class="lineNum">      66 </span>            :         }</a>
+<a name="67"><span class="lineNum">      67 </span>            : </a>
+<a name="68"><span class="lineNum">      68 </span>            :         /* mark all the block for rehashing */</a>
+<a name="69"><span class="lineNum">      69 </span><span class="lineCov">       9216 :         for (i = 0; i &lt; blockmax; ++i) {</span></a>
+<a name="70"><span class="lineNum">      70 </span>            :                 snapraid_info info;</a>
+<a name="71"><span class="lineNum">      71 </span>            : </a>
+<a name="72"><span class="lineNum">      72 </span>            :                 /* if it's unused */</a>
+<a name="73"><span class="lineNum">      73 </span><span class="lineCov">       9215 :                 info = info_get(&amp;state-&gt;infoarr, i);</span></a>
+<a name="74"><span class="lineNum">      74 </span><span class="lineCov">       9215 :                 if (info == 0) {</span></a>
+<a name="75"><span class="lineNum">      75 </span>            :                         /* skip it */</a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineNoCov">          0 :                         continue;</span></a>
+<a name="77"><span class="lineNum">      77 </span>            :                 }</a>
+<a name="78"><span class="lineNum">      78 </span>            : </a>
+<a name="79"><span class="lineNum">      79 </span><span class="lineCov">       9215 :                 if (info_get_rehash(info)) {</span></a>
+<a name="80"><span class="lineNum">      80 </span>            :                         /* LCOV_EXCL_START */</a>
+<a name="81"><span class="lineNum">      81 </span>            :                         log_fatal(EINTERNAL, &quot;Internal inconsistency for a rehash already in progress\n&quot;);</a>
+<a name="82"><span class="lineNum">      82 </span>            :                         os_abort();</a>
+<a name="83"><span class="lineNum">      83 </span>            :                         /* LCOV_EXCL_STOP */</a>
+<a name="84"><span class="lineNum">      84 </span>            :                 }</a>
+<a name="85"><span class="lineNum">      85 </span>            : </a>
+<a name="86"><span class="lineNum">      86 </span>            :                 /* enable the rehash */</a>
+<a name="87"><span class="lineNum">      87 </span><span class="lineCov">       9215 :                 info = info_set_rehash(info);</span></a>
+<a name="88"><span class="lineNum">      88 </span>            : </a>
+<a name="89"><span class="lineNum">      89 </span>            :                 /* save it */</a>
+<a name="90"><span class="lineNum">      90 </span><span class="lineCov">       9215 :                 info_set(&amp;state-&gt;infoarr, i, info);</span></a>
+<a name="91"><span class="lineNum">      91 </span>            :         }</a>
+<a name="92"><span class="lineNum">      92 </span>            : </a>
+<a name="93"><span class="lineNum">      93 </span>            :         /* save the new content file */</a>
+<a name="94"><span class="lineNum">      94 </span><span class="lineCov">          1 :         state-&gt;need_write = 1;</span></a>
+<a name="95"><span class="lineNum">      95 </span>            : </a>
+<a name="96"><span class="lineNum">      96 </span><span class="lineCov">          1 :         msg_status(&quot;A rehash is now scheduled. It will take place progressively in the next\n&quot;);</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">          1 :         msg_status(&quot;'sync' and 'scrub' commands. You can check the rehash progress using the\n&quot;);</span></a>
+<a name="98"><span class="lineNum">      98 </span><span class="lineCov">          1 :         msg_status(&quot;'status' command.\n&quot;);</span></a>
+<a name="99"><span class="lineNum">      99 </span><span class="lineCov">          1 :         log_tag(&quot;summary:exit:scheduled\n&quot;);</span></a>
+<a name="100"><span class="lineNum">     100 </span><span class="lineCov">          1 : }</span></a>
+<a name="101"><span class="lineNum">     101 </span>            : </a>
 </pre>
       </td>
     </tr>

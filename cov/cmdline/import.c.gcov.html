@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2025-10-28 11:59:11</td>
+            <td class="headerValue">2026-02-28 09:49:08</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -108,10 +108,10 @@
 <a name="46"><span class="lineNum">      46 </span>            :  * Compute the hash of the hash for an import block.</a>
 <a name="47"><span class="lineNum">      47 </span>            :  * We just use the first 32 bit of the hash itself.</a>
 <a name="48"><span class="lineNum">      48 </span>            :  */</a>
-<a name="49"><span class="lineNum">      49 </span><span class="lineCov">     656800 : static inline tommy_uint32_t import_block_hash(const unsigned char* hash)</span></a>
+<a name="49"><span class="lineNum">      49 </span><span class="lineCov">     656738 : static inline tommy_uint32_t import_block_hash(const unsigned char* hash)</span></a>
 <a name="50"><span class="lineNum">      50 </span>            : {</a>
 <a name="51"><span class="lineNum">      51 </span>            :         /* the hash data is not aligned, and we cannot access it with a direct cast */</a>
-<a name="52"><span class="lineNum">      52 </span><span class="lineCov">     656800 :         return hash[0] | ((uint32_t)hash[1] &lt;&lt; 8) | ((uint32_t)hash[2] &lt;&lt; 16) | ((uint32_t)hash[3] &lt;&lt; 24);</span></a>
+<a name="52"><span class="lineNum">      52 </span><span class="lineCov">     656738 :         return hash[0] | ((uint32_t)hash[1] &lt;&lt; 8) | ((uint32_t)hash[2] &lt;&lt; 16) | ((uint32_t)hash[3] &lt;&lt; 24);</span></a>
 <a name="53"><span class="lineNum">      53 </span>            : }</a>
 <a name="54"><span class="lineNum">      54 </span>            : </a>
 <a name="55"><span class="lineNum">      55 </span><span class="lineCov">       1750 : static void import_file(struct snapraid_state* state, const char* path, uint64_t size)</span></a>
@@ -141,7 +141,7 @@
 <a name="79"><span class="lineNum">      79 </span><span class="lineCov">       1750 :         f = open(path, flags);</span></a>
 <a name="80"><span class="lineNum">      80 </span><span class="lineCov">       1750 :         if (f == -1) {</span></a>
 <a name="81"><span class="lineNum">      81 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="82"><span class="lineNum">      82 </span>            :                 log_fatal(&quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="82"><span class="lineNum">      82 </span>            :                 log_fatal(errno, &quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="83"><span class="lineNum">      83 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="84"><span class="lineNum">      84 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="85"><span class="lineNum">      85 </span>            :         }</a>
@@ -149,7 +149,7 @@
 <a name="87"><span class="lineNum">      87 </span><span class="lineCov">       1750 :         ret = advise_open(&amp;advise, f);</span></a>
 <a name="88"><span class="lineNum">      88 </span><span class="lineCov">       1750 :         if (ret != 0) {</span></a>
 <a name="89"><span class="lineNum">      89 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="90"><span class="lineNum">      90 </span>            :                 log_fatal(&quot;Error advising file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="90"><span class="lineNum">      90 </span>            :                 log_fatal(errno, &quot;Error advising file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="91"><span class="lineNum">      91 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="92"><span class="lineNum">      92 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="93"><span class="lineNum">      93 </span>            :         }</a>
@@ -164,7 +164,7 @@
 <a name="102"><span class="lineNum">     102 </span><span class="lineCov">       4472 :                 ret = read(f, buffer, read_size);</span></a>
 <a name="103"><span class="lineNum">     103 </span><span class="lineCov">       4472 :                 if (ret &lt; 0 || (unsigned)ret != read_size) {</span></a>
 <a name="104"><span class="lineNum">     104 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="105"><span class="lineNum">     105 </span>            :                         log_fatal(&quot;Error reading file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="105"><span class="lineNum">     105 </span>            :                         log_fatal(errno, &quot;Error reading file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="106"><span class="lineNum">     106 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="107"><span class="lineNum">     107 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="108"><span class="lineNum">     108 </span>            :                 }</a>
@@ -190,7 +190,7 @@
 <a name="128"><span class="lineNum">     128 </span><span class="lineCov">       1750 :         ret = close(f);</span></a>
 <a name="129"><span class="lineNum">     129 </span><span class="lineCov">       1750 :         if (ret != 0) {</span></a>
 <a name="130"><span class="lineNum">     130 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="131"><span class="lineNum">     131 </span>            :                 log_fatal(&quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="131"><span class="lineNum">     131 </span>            :                 log_fatal(errno, &quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="132"><span class="lineNum">     132 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="133"><span class="lineNum">     133 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="134"><span class="lineNum">     134 </span>            :         }</a>
@@ -207,24 +207,24 @@
 <a name="145"><span class="lineNum">     145 </span><span class="lineCov">       1750 :         free(file);</span></a>
 <a name="146"><span class="lineNum">     146 </span><span class="lineCov">       1750 : }</span></a>
 <a name="147"><span class="lineNum">     147 </span>            : </a>
-<a name="148"><span class="lineNum">     148 </span><span class="lineCov">     652328 : int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)</span></a>
+<a name="148"><span class="lineNum">     148 </span><span class="lineCov">     652266 : int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)</span></a>
 <a name="149"><span class="lineNum">     149 </span>            : {</a>
 <a name="150"><span class="lineNum">     150 </span>            :         struct snapraid_import_block* block;</a>
 <a name="151"><span class="lineNum">     151 </span>            :         int ret;</a>
 <a name="152"><span class="lineNum">     152 </span>            :         int f;</a>
-<a name="153"><span class="lineNum">     153 </span><span class="lineCov">     652328 :         const unsigned char* hash = missing_block-&gt;hash;</span></a>
-<a name="154"><span class="lineNum">     154 </span><span class="lineCov">     652328 :         unsigned block_size = state-&gt;block_size;</span></a>
+<a name="153"><span class="lineNum">     153 </span><span class="lineCov">     652266 :         const unsigned char* hash = missing_block-&gt;hash;</span></a>
+<a name="154"><span class="lineNum">     154 </span><span class="lineCov">     652266 :         unsigned block_size = state-&gt;block_size;</span></a>
 <a name="155"><span class="lineNum">     155 </span>            :         unsigned read_size;</a>
 <a name="156"><span class="lineNum">     156 </span>            :         unsigned char buffer_hash[HASH_MAX];</a>
 <a name="157"><span class="lineNum">     157 </span>            :         const char* path;</a>
 <a name="158"><span class="lineNum">     158 </span>            : </a>
-<a name="159"><span class="lineNum">     159 </span><span class="lineCov">     652328 :         if (rehash) {</span></a>
+<a name="159"><span class="lineNum">     159 </span><span class="lineCov">     652266 :         if (rehash) {</span></a>
 <a name="160"><span class="lineNum">     160 </span><span class="lineNoCov">          0 :                 block = tommy_hashdyn_search(&amp;state-&gt;previmportset, import_block_prevhash_compare, hash, import_block_hash(hash));</span></a>
 <a name="161"><span class="lineNum">     161 </span>            :         } else {</a>
-<a name="162"><span class="lineNum">     162 </span><span class="lineCov">     652328 :                 block = tommy_hashdyn_search(&amp;state-&gt;importset, import_block_hash_compare, hash, import_block_hash(hash));</span></a>
+<a name="162"><span class="lineNum">     162 </span><span class="lineCov">     652266 :                 block = tommy_hashdyn_search(&amp;state-&gt;importset, import_block_hash_compare, hash, import_block_hash(hash));</span></a>
 <a name="163"><span class="lineNum">     163 </span>            :         }</a>
-<a name="164"><span class="lineNum">     164 </span><span class="lineCov">     652328 :         if (!block)</span></a>
-<a name="165"><span class="lineNum">     165 </span><span class="lineCov">     647856 :                 return -1;</span></a>
+<a name="164"><span class="lineNum">     164 </span><span class="lineCov">     652266 :         if (!block)</span></a>
+<a name="165"><span class="lineNum">     165 </span><span class="lineCov">     647794 :                 return -1;</span></a>
 <a name="166"><span class="lineNum">     166 </span>            : </a>
 <a name="167"><span class="lineNum">     167 </span><span class="lineCov">       4472 :         path = block-&gt;file-&gt;path;</span></a>
 <a name="168"><span class="lineNum">     168 </span><span class="lineCov">       4472 :         read_size = block-&gt;size;</span></a>
@@ -233,10 +233,10 @@
 <a name="171"><span class="lineNum">     171 </span><span class="lineCov">       4472 :         if (f == -1) {</span></a>
 <a name="172"><span class="lineNum">     172 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="173"><span class="lineNum">     173 </span>            :                 if (errno == ENOENT) {</a>
-<a name="174"><span class="lineNum">     174 </span>            :                         log_fatal(&quot;DANGER! file '%s' disappeared.\n&quot;, path);</a>
-<a name="175"><span class="lineNum">     175 </span>            :                         log_fatal(&quot;If you moved it, please rerun the same command.\n&quot;);</a>
+<a name="174"><span class="lineNum">     174 </span>            :                         log_fatal(errno, &quot;DANGER! file '%s' disappeared.\n&quot;, path);</a>
+<a name="175"><span class="lineNum">     175 </span>            :                         log_fatal(errno, &quot;If you moved it, please rerun the same command.\n&quot;);</a>
 <a name="176"><span class="lineNum">     176 </span>            :                 } else {</a>
-<a name="177"><span class="lineNum">     177 </span>            :                         log_fatal(&quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="177"><span class="lineNum">     177 </span>            :                         log_fatal(errno, &quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="178"><span class="lineNum">     178 </span>            :                 }</a>
 <a name="179"><span class="lineNum">     179 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="180"><span class="lineNum">     180 </span>            :                 /* LCOV_EXCL_STOP */</a>
@@ -245,7 +245,7 @@
 <a name="183"><span class="lineNum">     183 </span><span class="lineCov">       4472 :         ret = pread(f, buffer, read_size, block-&gt;offset);</span></a>
 <a name="184"><span class="lineNum">     184 </span><span class="lineCov">       4472 :         if (ret &lt; 0 || (unsigned)ret != read_size) {</span></a>
 <a name="185"><span class="lineNum">     185 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="186"><span class="lineNum">     186 </span>            :                 log_fatal(&quot;Error reading file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="186"><span class="lineNum">     186 </span>            :                 log_fatal(errno, &quot;Error reading file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="187"><span class="lineNum">     187 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="188"><span class="lineNum">     188 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="189"><span class="lineNum">     189 </span>            :         }</a>
@@ -253,7 +253,7 @@
 <a name="191"><span class="lineNum">     191 </span><span class="lineCov">       4472 :         ret = close(f);</span></a>
 <a name="192"><span class="lineNum">     192 </span><span class="lineCov">       4472 :         if (ret != 0) {</span></a>
 <a name="193"><span class="lineNum">     193 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="194"><span class="lineNum">     194 </span>            :                 log_fatal(&quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="194"><span class="lineNum">     194 </span>            :                 log_fatal(errno, &quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="195"><span class="lineNum">     195 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="196"><span class="lineNum">     196 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="197"><span class="lineNum">     197 </span>            :         }</a>
@@ -271,8 +271,8 @@
 <a name="209"><span class="lineNum">     209 </span>            : </a>
 <a name="210"><span class="lineNum">     210 </span><span class="lineCov">       4472 :         if (memcmp(buffer_hash, hash, BLOCK_HASH_SIZE) != 0) {</span></a>
 <a name="211"><span class="lineNum">     211 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="212"><span class="lineNum">     212 </span>            :                 log_fatal(&quot;Error in data reading file '%s'.\n&quot;, path);</a>
-<a name="213"><span class="lineNum">     213 </span>            :                 log_fatal(&quot;Please don't change imported files while running.\n&quot;);</a>
+<a name="212"><span class="lineNum">     212 </span>            :                 log_fatal(EUSER, &quot;Mismatch in data reading file '%s'.\n&quot;, path);</a>
+<a name="213"><span class="lineNum">     213 </span>            :                 log_fatal(EUSER, &quot;Please don't change imported files while running.\n&quot;);</a>
 <a name="214"><span class="lineNum">     214 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="215"><span class="lineNum">     215 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="216"><span class="lineNum">     216 </span>            :         }</a>
@@ -287,7 +287,7 @@
 <a name="225"><span class="lineNum">     225 </span><span class="lineCov">          1 :         d = opendir(dir);</span></a>
 <a name="226"><span class="lineNum">     226 </span><span class="lineCov">          1 :         if (!d) {</span></a>
 <a name="227"><span class="lineNum">     227 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="228"><span class="lineNum">     228 </span>            :                 log_fatal(&quot;Error opening directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="228"><span class="lineNum">     228 </span>            :                 log_fatal(errno, &quot;Error opening directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="229"><span class="lineNum">     229 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="230"><span class="lineNum">     230 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="231"><span class="lineNum">     231 </span>            :         }</a>
@@ -303,7 +303,7 @@
 <a name="241"><span class="lineNum">     241 </span><span class="lineCov">       1812 :                 dd = readdir(d);</span></a>
 <a name="242"><span class="lineNum">     242 </span><span class="lineCov">       1812 :                 if (dd == 0 &amp;&amp; errno != 0) {</span></a>
 <a name="243"><span class="lineNum">     243 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="244"><span class="lineNum">     244 </span>            :                         log_fatal(&quot;Error reading directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="244"><span class="lineNum">     244 </span>            :                         log_fatal(errno, &quot;Error reading directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="245"><span class="lineNum">     245 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="246"><span class="lineNum">     246 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="247"><span class="lineNum">     247 </span>            :                 }</a>
@@ -330,7 +330,7 @@
 <a name="268"><span class="lineNum">     268 </span>            :                 if (st.st_mode == 0) {</a>
 <a name="269"><span class="lineNum">     269 </span>            :                         if (lstat(path_next, &amp;st) != 0) {</a>
 <a name="270"><span class="lineNum">     270 </span>            :                                 /* LCOV_EXCL_START */</a>
-<a name="271"><span class="lineNum">     271 </span>            :                                 log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="271"><span class="lineNum">     271 </span>            :                                 log_fatal(errno, &quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="272"><span class="lineNum">     272 </span>            :                                 exit(EXIT_FAILURE);</a>
 <a name="273"><span class="lineNum">     273 </span>            :                                 /* LCOV_EXCL_STOP */</a>
 <a name="274"><span class="lineNum">     274 </span>            :                         }</a>
@@ -339,7 +339,7 @@
 <a name="277"><span class="lineNum">     277 </span>            :                 /* get lstat info about the file */</a>
 <a name="278"><span class="lineNum">     278 </span><span class="lineCov">       1809 :                 if (lstat(path_next, &amp;st) != 0) {</span></a>
 <a name="279"><span class="lineNum">     279 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="280"><span class="lineNum">     280 </span>            :                         log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="280"><span class="lineNum">     280 </span>            :                         log_fatal(errno, &quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="281"><span class="lineNum">     281 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="282"><span class="lineNum">     282 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="283"><span class="lineNum">     283 </span>            :                 }</a>
@@ -355,7 +355,7 @@
 <a name="293"><span class="lineNum">     293 </span>            : </a>
 <a name="294"><span class="lineNum">     294 </span><span class="lineCov">          1 :         if (closedir(d) != 0) {</span></a>
 <a name="295"><span class="lineNum">     295 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="296"><span class="lineNum">     296 </span>            :                 log_fatal(&quot;Error closing directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="296"><span class="lineNum">     296 </span>            :                 log_fatal(errno, &quot;Error closing directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="297"><span class="lineNum">     297 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="298"><span class="lineNum">     298 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="299"><span class="lineNum">     299 </span>            :         }</a>
@@ -370,7 +370,7 @@
 <a name="308"><span class="lineNum">     308 </span>            :         /* if the hash is not full */</a>
 <a name="309"><span class="lineNum">     309 </span><span class="lineCov">          1 :         if (BLOCK_HASH_SIZE != HASH_MAX) {</span></a>
 <a name="310"><span class="lineNum">     310 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="311"><span class="lineNum">     311 </span>            :                 log_fatal(&quot;You cannot import files when using a reduced hash.\n&quot;);</a>
+<a name="311"><span class="lineNum">     311 </span>            :                 log_fatal(EUSER, &quot;You cannot import files when using a reduced hash.\n&quot;);</a>
 <a name="312"><span class="lineNum">     312 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="313"><span class="lineNum">     313 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="314"><span class="lineNum">     314 </span>            :         }</a>

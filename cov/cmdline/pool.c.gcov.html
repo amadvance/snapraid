@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2025-10-28 11:59:11</td>
+            <td class="headerValue">2026-02-28 09:49:08</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">9</td>
@@ -136,7 +136,7 @@
 <a name="74"><span class="lineNum">      74 </span><span class="lineCov">          7 :         d = opendir(dir);</span></a>
 <a name="75"><span class="lineNum">      75 </span><span class="lineCov">          7 :         if (!d) {</span></a>
 <a name="76"><span class="lineNum">      76 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="77"><span class="lineNum">      77 </span>            :                 log_fatal(&quot;Error opening pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="77"><span class="lineNum">      77 </span>            :                 log_fatal(errno, &quot;Error opening pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="78"><span class="lineNum">      78 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="79"><span class="lineNum">      79 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="80"><span class="lineNum">      80 </span>            :         }</a>
@@ -152,7 +152,7 @@
 <a name="90"><span class="lineNum">      90 </span><span class="lineCov">      17093 :                 dd = readdir(d);</span></a>
 <a name="91"><span class="lineNum">      91 </span><span class="lineCov">      17093 :                 if (dd == 0 &amp;&amp; errno != 0) {</span></a>
 <a name="92"><span class="lineNum">      92 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="93"><span class="lineNum">      93 </span>            :                         log_fatal(&quot;Error reading pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="93"><span class="lineNum">      93 </span>            :                         log_fatal(errno, &quot;Error reading pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="94"><span class="lineNum">      94 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="95"><span class="lineNum">      95 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="96"><span class="lineNum">      96 </span>            :                 }</a>
@@ -176,7 +176,7 @@
 <a name="114"><span class="lineNum">     114 </span>            :                 if (st.st_mode == 0) {</a>
 <a name="115"><span class="lineNum">     115 </span>            :                         if (lstat(path_next, &amp;st) != 0) {</a>
 <a name="116"><span class="lineNum">     116 </span>            :                                 /* LCOV_EXCL_START */</a>
-<a name="117"><span class="lineNum">     117 </span>            :                                 log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="117"><span class="lineNum">     117 </span>            :                                 log_fatal(errno, &quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="118"><span class="lineNum">     118 </span>            :                                 exit(EXIT_FAILURE);</a>
 <a name="119"><span class="lineNum">     119 </span>            :                                 /* LCOV_EXCL_STOP */</a>
 <a name="120"><span class="lineNum">     120 </span>            :                         }</a>
@@ -185,7 +185,7 @@
 <a name="123"><span class="lineNum">     123 </span>            :                 /* get lstat info about the file */</a>
 <a name="124"><span class="lineNum">     124 </span><span class="lineCov">      17072 :                 if (lstat(path_next, &amp;st) != 0) {</span></a>
 <a name="125"><span class="lineNum">     125 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="126"><span class="lineNum">     126 </span>            :                         log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="126"><span class="lineNum">     126 </span>            :                         log_fatal(errno, &quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="127"><span class="lineNum">     127 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="128"><span class="lineNum">     128 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="129"><span class="lineNum">     129 </span>            :                 }</a>
@@ -205,13 +205,13 @@
 <a name="143"><span class="lineNum">     143 </span>            :                                                 /* in Windows just ignore EACCES errors removing directories */</a>
 <a name="144"><span class="lineNum">     144 </span>            :                                                 /* because it could happen that the directory is in use */</a>
 <a name="145"><span class="lineNum">     145 </span>            :                                                 /* and it cannot be removed */</a>
-<a name="146"><span class="lineNum">     146 </span>            :                                                 log_fatal(&quot;Directory '%s' not removed because it's in use.\n&quot;, path_next);</a>
+<a name="146"><span class="lineNum">     146 </span>            :                                                 log_fatal(errno, &quot;Directory '%s' not removed because it's in use.\n&quot;, path_next);</a>
 <a name="147"><span class="lineNum">     147 </span>            :                                                 full = 1;</a>
 <a name="148"><span class="lineNum">     148 </span>            :                                         } else</a>
 <a name="149"><span class="lineNum">     149 </span>            : #endif</a>
 <a name="150"><span class="lineNum">     150 </span>            :                                         {</a>
 <a name="151"><span class="lineNum">     151 </span>            :                                                 /* LCOV_EXCL_START */</a>
-<a name="152"><span class="lineNum">     152 </span>            :                                                 log_fatal(&quot;Error removing pool directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="152"><span class="lineNum">     152 </span>            :                                                 log_fatal(errno, &quot;Error removing pool directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="153"><span class="lineNum">     153 </span>            :                                                 exit(EXIT_FAILURE);</a>
 <a name="154"><span class="lineNum">     154 </span>            :                                                 /* LCOV_EXCL_STOP */</a>
 <a name="155"><span class="lineNum">     155 </span>            :                                         }</a>
@@ -228,7 +228,7 @@
 <a name="166"><span class="lineNum">     166 </span>            : </a>
 <a name="167"><span class="lineNum">     167 </span><span class="lineCov">          7 :         if (closedir(d) != 0) {</span></a>
 <a name="168"><span class="lineNum">     168 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="169"><span class="lineNum">     169 </span>            :                 log_fatal(&quot;Error closing pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="169"><span class="lineNum">     169 </span>            :                 log_fatal(errno, &quot;Error closing pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="170"><span class="lineNum">     170 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="171"><span class="lineNum">     171 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="172"><span class="lineNum">     172 </span>            :         }</a>
@@ -248,7 +248,7 @@
 <a name="186"><span class="lineNum">     186 </span><span class="lineCov">          5 :         d = opendir(dir);</span></a>
 <a name="187"><span class="lineNum">     187 </span><span class="lineCov">          5 :         if (!d) {</span></a>
 <a name="188"><span class="lineNum">     188 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="189"><span class="lineNum">     189 </span>            :                 log_fatal(&quot;Error opening pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="189"><span class="lineNum">     189 </span>            :                 log_fatal(errno, &quot;Error opening pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="190"><span class="lineNum">     190 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="191"><span class="lineNum">     191 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="192"><span class="lineNum">     192 </span>            :         }</a>
@@ -264,7 +264,7 @@
 <a name="202"><span class="lineNum">     202 </span><span class="lineCov">       5768 :                 dd = readdir(d);</span></a>
 <a name="203"><span class="lineNum">     203 </span><span class="lineCov">       5768 :                 if (dd == 0 &amp;&amp; errno != 0) {</span></a>
 <a name="204"><span class="lineNum">     204 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="205"><span class="lineNum">     205 </span>            :                         log_fatal(&quot;Error reading pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="205"><span class="lineNum">     205 </span>            :                         log_fatal(errno, &quot;Error reading pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="206"><span class="lineNum">     206 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="207"><span class="lineNum">     207 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="208"><span class="lineNum">     208 </span>            :                 }</a>
@@ -288,7 +288,7 @@
 <a name="226"><span class="lineNum">     226 </span>            :                 if (st.st_mode == 0) {</a>
 <a name="227"><span class="lineNum">     227 </span>            :                         if (lstat(path_next, &amp;st) != 0) {</a>
 <a name="228"><span class="lineNum">     228 </span>            :                                 /* LCOV_EXCL_START */</a>
-<a name="229"><span class="lineNum">     229 </span>            :                                 log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="229"><span class="lineNum">     229 </span>            :                                 log_fatal(errno, &quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="230"><span class="lineNum">     230 </span>            :                                 exit(EXIT_FAILURE);</a>
 <a name="231"><span class="lineNum">     231 </span>            :                                 /* LCOV_EXCL_STOP */</a>
 <a name="232"><span class="lineNum">     232 </span>            :                         }</a>
@@ -297,7 +297,7 @@
 <a name="235"><span class="lineNum">     235 </span>            :                 /* get lstat info about the file */</a>
 <a name="236"><span class="lineNum">     236 </span><span class="lineCov">       5753 :                 if (lstat(path_next, &amp;st) != 0) {</span></a>
 <a name="237"><span class="lineNum">     237 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="238"><span class="lineNum">     238 </span>            :                         log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="238"><span class="lineNum">     238 </span>            :                         log_fatal(errno, &quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="239"><span class="lineNum">     239 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="240"><span class="lineNum">     240 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="241"><span class="lineNum">     241 </span>            :                 }</a>
@@ -311,7 +311,7 @@
 <a name="249"><span class="lineNum">     249 </span><span class="lineCov">       5751 :                         ret = readlink(path_next, linkto, sizeof(linkto));</span></a>
 <a name="250"><span class="lineNum">     250 </span><span class="lineCov">       5751 :                         if (ret &lt; 0 || ret &gt;= PATH_MAX) {</span></a>
 <a name="251"><span class="lineNum">     251 </span>            :                                 /* LCOV_EXCL_START */</a>
-<a name="252"><span class="lineNum">     252 </span>            :                                 log_fatal(&quot;Error in readlink symlink '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
+<a name="252"><span class="lineNum">     252 </span>            :                                 log_fatal(errno, &quot;Error in readlink symlink '%s'. %s.\n&quot;, path_next, strerror(errno));</a>
 <a name="253"><span class="lineNum">     253 </span>            :                                 exit(EXIT_FAILURE);</a>
 <a name="254"><span class="lineNum">     254 </span>            :                                 /* LCOV_EXCL_STOP */</a>
 <a name="255"><span class="lineNum">     255 </span>            :                         }</a>
@@ -333,7 +333,7 @@
 <a name="271"><span class="lineNum">     271 </span>            : </a>
 <a name="272"><span class="lineNum">     272 </span><span class="lineCov">          5 :         if (closedir(d) != 0) {</span></a>
 <a name="273"><span class="lineNum">     273 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="274"><span class="lineNum">     274 </span>            :                 log_fatal(&quot;Error closing pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
+<a name="274"><span class="lineNum">     274 </span>            :                 log_fatal(errno, &quot;Error closing pool directory '%s'. %s.\n&quot;, dir, strerror(errno));</a>
 <a name="275"><span class="lineNum">     275 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="276"><span class="lineNum">     276 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="277"><span class="lineNum">     277 </span>            :         }</a>
@@ -355,7 +355,7 @@
 <a name="293"><span class="lineNum">     293 </span><span class="lineCov">         61 :         ret = remove(path);</span></a>
 <a name="294"><span class="lineNum">     294 </span><span class="lineCov">         61 :         if (ret &lt; 0) {</span></a>
 <a name="295"><span class="lineNum">     295 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="296"><span class="lineNum">     296 </span>            :                 log_fatal(&quot;Error removing symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="296"><span class="lineNum">     296 </span>            :                 log_fatal(errno, &quot;Error removing symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="297"><span class="lineNum">     297 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="298"><span class="lineNum">     298 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="299"><span class="lineNum">     299 </span>            :         }</a>
@@ -404,7 +404,7 @@
 <a name="342"><span class="lineNum">     342 </span><span class="lineCov">        335 :                 ret = remove(path);</span></a>
 <a name="343"><span class="lineNum">     343 </span><span class="lineCov">        335 :                 if (ret &lt; 0) {</span></a>
 <a name="344"><span class="lineNum">     344 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="345"><span class="lineNum">     345 </span>            :                         log_fatal(&quot;Error removing symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="345"><span class="lineNum">     345 </span>            :                         log_fatal(errno, &quot;Error removing symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="346"><span class="lineNum">     346 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="347"><span class="lineNum">     347 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="348"><span class="lineNum">     348 </span>            :                 }</a>
@@ -427,17 +427,17 @@
 <a name="365"><span class="lineNum">     365 </span><span class="lineCov">      12234 :         ret = symlink(linkto_exported, path);</span></a>
 <a name="366"><span class="lineNum">     366 </span><span class="lineCov">      12234 :         if (ret != 0) {</span></a>
 <a name="367"><span class="lineNum">     367 </span><span class="lineCov">        521 :                 if (errno == EEXIST) {</span></a>
-<a name="368"><span class="lineNum">     368 </span><span class="lineCov">        521 :                         log_fatal(&quot;WARNING! Duplicate pooling for '%s'\n&quot;, path);</span></a>
+<a name="368"><span class="lineNum">     368 </span><span class="lineCov">        521 :                         log_fatal(errno, &quot;WARNING! Duplicate pooling for '%s'\n&quot;, path);</span></a>
 <a name="369"><span class="lineNum">     369 </span>            : #ifdef _WIN32</a>
 <a name="370"><span class="lineNum">     370 </span>            :                 } else if (errno == EPERM) {</a>
 <a name="371"><span class="lineNum">     371 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="372"><span class="lineNum">     372 </span>            :                         log_fatal(&quot;You must run as Administrator to be able to create symlinks.\n&quot;);</a>
+<a name="372"><span class="lineNum">     372 </span>            :                         log_fatal(errno, &quot;You must run as Administrator to be able to create symlinks.\n&quot;);</a>
 <a name="373"><span class="lineNum">     373 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="374"><span class="lineNum">     374 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="375"><span class="lineNum">     375 </span>            : #endif</a>
 <a name="376"><span class="lineNum">     376 </span>            :                 } else {</a>
 <a name="377"><span class="lineNum">     377 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="378"><span class="lineNum">     378 </span>            :                         log_fatal(&quot;Error writing symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="378"><span class="lineNum">     378 </span>            :                         log_fatal(errno, &quot;Error writing symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="379"><span class="lineNum">     379 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="380"><span class="lineNum">     380 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="381"><span class="lineNum">     381 </span>            :                 }</a>
@@ -447,7 +447,7 @@
 <a name="385"><span class="lineNum">     385 </span><span class="lineCov">      11645 :                 ret = lmtime(path, mtime_sec, mtime_nsec);</span></a>
 <a name="386"><span class="lineNum">     386 </span><span class="lineCov">      11645 :                 if (ret != 0) {</span></a>
 <a name="387"><span class="lineNum">     387 </span>            :                         /* LCOV_EXCL_START */</a>
-<a name="388"><span class="lineNum">     388 </span>            :                         log_fatal(&quot;Error setting time to symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="388"><span class="lineNum">     388 </span>            :                         log_fatal(errno, &quot;Error setting time to symlink '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="389"><span class="lineNum">     389 </span>            :                         exit(EXIT_FAILURE);</a>
 <a name="390"><span class="lineNum">     390 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="391"><span class="lineNum">     391 </span>            :                 }</a>
@@ -466,7 +466,7 @@
 <a name="404"><span class="lineNum">     404 </span>            : </a>
 <a name="405"><span class="lineNum">     405 </span><span class="lineCov">          3 :         if (state-&gt;pool[0] == 0) {</span></a>
 <a name="406"><span class="lineNum">     406 </span>            :                 /* LCOV_EXCL_START */</a>
-<a name="407"><span class="lineNum">     407 </span>            :                 log_fatal(&quot;To use the 'pool' command you must set the pool directory in the configuration file\n&quot;);</a>
+<a name="407"><span class="lineNum">     407 </span>            :                 log_fatal(EUSER, &quot;To use the 'pool' command you must set the pool directory in the configuration file\n&quot;);</a>
 <a name="408"><span class="lineNum">     408 </span>            :                 exit(EXIT_FAILURE);</a>
 <a name="409"><span class="lineNum">     409 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="410"><span class="lineNum">     410 </span>            :         }</a>
