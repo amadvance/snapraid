@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 16:42:47</td>
+            <td class="headerValue">2026-03-01 15:35:05</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -148,23 +148,23 @@
 <a name="86"><span class="lineNum">      86 </span>            :  * You must be sure that space for this position is already</a>
 <a name="87"><span class="lineNum">      87 </span>            :  * allocated calling tommy_arrayblkof_grow().</a>
 <a name="88"><span class="lineNum">      88 </span>            :  */</a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">    4811750 : tommy_inline void* tommy_arrayblkof_ref(tommy_arrayblkof* array, tommy_size_t pos)</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">    4826303 : tommy_inline void* tommy_arrayblkof_ref(tommy_arrayblkof* array, tommy_size_t pos)</span></a>
 <a name="90"><span class="lineNum">      90 </span>            : {</a>
 <a name="91"><span class="lineNum">      91 </span>            :         unsigned char* base;</a>
 <a name="92"><span class="lineNum">      92 </span>            : </a>
-<a name="93"><span class="lineNum">      93 </span><span class="lineCov">    4811750 :         assert(pos &lt; array-&gt;count);</span></a>
+<a name="93"><span class="lineNum">      93 </span><span class="lineCov">    4826303 :         assert(pos &lt; array-&gt;count);</span></a>
 <a name="94"><span class="lineNum">      94 </span>            : </a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">    4811750 :         base = tommy_cast(unsigned char*, tommy_array_get(&amp;array-&gt;block, pos / TOMMY_ARRAYBLKOF_SIZE));</span></a>
+<a name="95"><span class="lineNum">      95 </span><span class="lineCov">    4826303 :         base = tommy_cast(unsigned char*, tommy_array_get(&amp;array-&gt;block, pos / TOMMY_ARRAYBLKOF_SIZE));</span></a>
 <a name="96"><span class="lineNum">      96 </span>            : </a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">    4811750 :         return base + (pos % TOMMY_ARRAYBLKOF_SIZE) * array-&gt;element_size;</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">    4826303 :         return base + (pos % TOMMY_ARRAYBLKOF_SIZE) * array-&gt;element_size;</span></a>
 <a name="98"><span class="lineNum">      98 </span>            : }</a>
 <a name="99"><span class="lineNum">      99 </span>            : </a>
 <a name="100"><span class="lineNum">     100 </span>            : /**</a>
 <a name="101"><span class="lineNum">     101 </span>            :  * Gets the initialized size of the array.</a>
 <a name="102"><span class="lineNum">     102 </span>            :  */</a>
-<a name="103"><span class="lineNum">     103 </span><span class="lineCov">    3253235 : tommy_inline tommy_size_t tommy_arrayblkof_size(tommy_arrayblkof* array)</span></a>
+<a name="103"><span class="lineNum">     103 </span><span class="lineCov">    3267582 : tommy_inline tommy_size_t tommy_arrayblkof_size(tommy_arrayblkof* array)</span></a>
 <a name="104"><span class="lineNum">     104 </span>            : {</a>
-<a name="105"><span class="lineNum">     105 </span><span class="lineCov">    3253235 :         return array-&gt;count;</span></a>
+<a name="105"><span class="lineNum">     105 </span><span class="lineCov">    3267582 :         return array-&gt;count;</span></a>
 <a name="106"><span class="lineNum">     106 </span>            : }</a>
 <a name="107"><span class="lineNum">     107 </span>            : </a>
 <a name="108"><span class="lineNum">     108 </span>            : /**</a>

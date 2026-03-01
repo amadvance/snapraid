@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 16:42:47</td>
+            <td class="headerValue">2026-03-01 15:35:05</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">0</td>
@@ -169,11 +169,11 @@
 <a name="107"><span class="lineNum">     107 </span>            :  */</a>
 <a name="108"><span class="lineNum">     108 </span>            : static __always_inline void *__align_ptr(void *ptr, uintptr_t size)</a>
 <a name="109"><span class="lineNum">     109 </span>            : {</a>
-<a name="110"><span class="lineNum">     110 </span><span class="lineCov">     110369 :         uintptr_t offset = (uintptr_t)ptr;</span></a>
+<a name="110"><span class="lineNum">     110 </span><span class="lineCov">     110371 :         uintptr_t offset = (uintptr_t)ptr;</span></a>
 <a name="111"><span class="lineNum">     111 </span>            : </a>
-<a name="112"><span class="lineNum">     112 </span><span class="lineCov">     110369 :         offset = (offset + size - 1U) &amp; ~(size - 1U);</span></a>
+<a name="112"><span class="lineNum">     112 </span><span class="lineCov">     110371 :         offset = (offset + size - 1U) &amp; ~(size - 1U);</span></a>
 <a name="113"><span class="lineNum">     113 </span>            : </a>
-<a name="114"><span class="lineNum">     114 </span><span class="lineCov">     110369 :         return (void *)offset;</span></a>
+<a name="114"><span class="lineNum">     114 </span><span class="lineCov">     110371 :         return (void *)offset;</span></a>
 <a name="115"><span class="lineNum">     115 </span>            : }</a>
 <a name="116"><span class="lineNum">     116 </span>            : </a>
 <a name="117"><span class="lineNum">     117 </span>            : /*</a>
@@ -286,7 +286,7 @@
 <a name="224"><span class="lineNum">     224 </span>            : #ifdef CONFIG_SSE2</a>
 <a name="225"><span class="lineNum">     225 </span>            : static __always_inline void raid_sse_begin(void)</a>
 <a name="226"><span class="lineNum">     226 </span>            : {</a>
-<a name="227"><span class="lineNum">     227 </span><span class="lineCov">    1452077 : }</span></a>
+<a name="227"><span class="lineNum">     227 </span><span class="lineCov">    1452408 : }</span></a>
 <a name="228"><span class="lineNum">     228 </span>            : </a>
 <a name="229"><span class="lineNum">     229 </span>            : static __always_inline void raid_sse_end(void)</a>
 <a name="230"><span class="lineNum">     230 </span>            : {</a>
@@ -294,7 +294,7 @@
 <a name="232"><span class="lineNum">     232 </span>            :         /* that use a weak memory model. To ensure that other processors */</a>
 <a name="233"><span class="lineNum">     233 </span>            :         /* see correctly the data written, we use a store-store memory */</a>
 <a name="234"><span class="lineNum">     234 </span>            :         /* barrier at the end of the asm code */</a>
-<a name="235"><span class="lineNum">     235 </span><span class="lineCov">    1452077 :         asm volatile (&quot;sfence&quot; : : : &quot;memory&quot;);</span></a>
+<a name="235"><span class="lineNum">     235 </span><span class="lineCov">    1452408 :         asm volatile (&quot;sfence&quot; : : : &quot;memory&quot;);</span></a>
 <a name="236"><span class="lineNum">     236 </span>            : </a>
 <a name="237"><span class="lineNum">     237 </span>            :         /* clobbers registers used in the asm code */</a>
 <a name="238"><span class="lineNum">     238 </span>            :         /* this is required because in the Windows ABI, */</a>
@@ -304,21 +304,21 @@
 <a name="242"><span class="lineNum">     242 </span>            :         /* we check for __SSE2_ because we require that the */</a>
 <a name="243"><span class="lineNum">     243 </span>            :         /* compiler supports SSE2 registers in the clobber list */</a>
 <a name="244"><span class="lineNum">     244 </span>            : #ifdef __SSE2__</a>
-<a name="245"><span class="lineNum">     245 </span><span class="lineCov">    1452077 :         asm volatile (&quot;&quot; : : : &quot;%xmm0&quot;, &quot;%xmm1&quot;, &quot;%xmm2&quot;, &quot;%xmm3&quot;);</span></a>
-<a name="246"><span class="lineNum">     246 </span><span class="lineCov">    1452077 :         asm volatile (&quot;&quot; : : : &quot;%xmm4&quot;, &quot;%xmm5&quot;, &quot;%xmm6&quot;, &quot;%xmm7&quot;);</span></a>
+<a name="245"><span class="lineNum">     245 </span><span class="lineCov">    1452408 :         asm volatile (&quot;&quot; : : : &quot;%xmm0&quot;, &quot;%xmm1&quot;, &quot;%xmm2&quot;, &quot;%xmm3&quot;);</span></a>
+<a name="246"><span class="lineNum">     246 </span><span class="lineCov">    1452408 :         asm volatile (&quot;&quot; : : : &quot;%xmm4&quot;, &quot;%xmm5&quot;, &quot;%xmm6&quot;, &quot;%xmm7&quot;);</span></a>
 <a name="247"><span class="lineNum">     247 </span>            : #ifdef CONFIG_X86_64</a>
-<a name="248"><span class="lineNum">     248 </span><span class="lineCov">    1452077 :         asm volatile (&quot;&quot; : : : &quot;%xmm8&quot;, &quot;%xmm9&quot;, &quot;%xmm10&quot;, &quot;%xmm11&quot;);</span></a>
-<a name="249"><span class="lineNum">     249 </span><span class="lineCov">    1452077 :         asm volatile (&quot;&quot; : : : &quot;%xmm12&quot;, &quot;%xmm13&quot;, &quot;%xmm14&quot;, &quot;%xmm15&quot;);</span></a>
+<a name="248"><span class="lineNum">     248 </span><span class="lineCov">    1452408 :         asm volatile (&quot;&quot; : : : &quot;%xmm8&quot;, &quot;%xmm9&quot;, &quot;%xmm10&quot;, &quot;%xmm11&quot;);</span></a>
+<a name="249"><span class="lineNum">     249 </span><span class="lineCov">    1452408 :         asm volatile (&quot;&quot; : : : &quot;%xmm12&quot;, &quot;%xmm13&quot;, &quot;%xmm14&quot;, &quot;%xmm15&quot;);</span></a>
 <a name="250"><span class="lineNum">     250 </span>            : #endif</a>
 <a name="251"><span class="lineNum">     251 </span>            : #endif</a>
-<a name="252"><span class="lineNum">     252 </span><span class="lineCov">    1452077 : }</span></a>
+<a name="252"><span class="lineNum">     252 </span><span class="lineCov">    1452408 : }</span></a>
 <a name="253"><span class="lineNum">     253 </span>            : #endif</a>
 <a name="254"><span class="lineNum">     254 </span>            : </a>
 <a name="255"><span class="lineNum">     255 </span>            : #ifdef CONFIG_AVX2</a>
 <a name="256"><span class="lineNum">     256 </span>            : static __always_inline void raid_avx_begin(void)</a>
 <a name="257"><span class="lineNum">     257 </span>            : {</a>
 <a name="258"><span class="lineNum">     258 </span>            :         raid_sse_begin();</a>
-<a name="259"><span class="lineNum">     259 </span><span class="lineCov">      76343 : }</span></a>
+<a name="259"><span class="lineNum">     259 </span><span class="lineCov">      76348 : }</span></a>
 <a name="260"><span class="lineNum">     260 </span>            : </a>
 <a name="261"><span class="lineNum">     261 </span>            : static __always_inline void raid_avx_end(void)</a>
 <a name="262"><span class="lineNum">     262 </span>            : {</a>
@@ -327,8 +327,8 @@
 <a name="265"><span class="lineNum">     265 </span>            :         /* reset the upper part of the ymm registers */</a>
 <a name="266"><span class="lineNum">     266 </span>            :         /* to avoid the 70 clocks penalty on the next */</a>
 <a name="267"><span class="lineNum">     267 </span>            :         /* xmm register use */</a>
-<a name="268"><span class="lineNum">     268 </span><span class="lineCov">      76343 :         asm volatile (&quot;vzeroupper&quot; : : : &quot;memory&quot;);</span></a>
-<a name="269"><span class="lineNum">     269 </span><span class="lineCov">      76343 : }</span></a>
+<a name="268"><span class="lineNum">     268 </span><span class="lineCov">      76348 :         asm volatile (&quot;vzeroupper&quot; : : : &quot;memory&quot;);</span></a>
+<a name="269"><span class="lineNum">     269 </span><span class="lineCov">      76348 : }</span></a>
 <a name="270"><span class="lineNum">     270 </span>            : #endif</a>
 <a name="271"><span class="lineNum">     271 </span>            : #endif /* CONFIG_X86 */</a>
 <a name="272"><span class="lineNum">     272 </span>            : </a>

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 16:42:47</td>
+            <td class="headerValue">2026-03-01 15:35:05</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">6</td>
@@ -184,7 +184,7 @@
 <a name="122"><span class="lineNum">     122 </span><span class="lineCov">         30 :         return model;</span></a>
 <a name="123"><span class="lineNum">     123 </span>            : }</a>
 <a name="124"><span class="lineNum">     124 </span>            : </a>
-<a name="125"><span class="lineNum">     125 </span><span class="lineCov">       2620 : void state_thermal(struct snapraid_state* state, time_t now)</span></a>
+<a name="125"><span class="lineNum">     125 </span><span class="lineCov">       2621 : void state_thermal(struct snapraid_state* state, time_t now)</span></a>
 <a name="126"><span class="lineNum">     126 </span>            : {</a>
 <a name="127"><span class="lineNum">     127 </span>            :         tommy_node* i;</a>
 <a name="128"><span class="lineNum">     128 </span>            :         unsigned j;</a>
@@ -192,8 +192,8 @@
 <a name="130"><span class="lineNum">     130 </span>            :         tommy_list low;</a>
 <a name="131"><span class="lineNum">     131 </span>            :         int ret;</a>
 <a name="132"><span class="lineNum">     132 </span>            : </a>
-<a name="133"><span class="lineNum">     133 </span><span class="lineCov">       2620 :         if (state-&gt;thermal_temperature_limit == 0)</span></a>
-<a name="134"><span class="lineNum">     134 </span><span class="lineCov">        204 :                 return;</span></a>
+<a name="133"><span class="lineNum">     133 </span><span class="lineCov">       2621 :         if (state-&gt;thermal_temperature_limit == 0)</span></a>
+<a name="134"><span class="lineNum">     134 </span><span class="lineCov">        205 :                 return;</span></a>
 <a name="135"><span class="lineNum">     135 </span>            : </a>
 <a name="136"><span class="lineNum">     136 </span><span class="lineCov">       2416 :         tommy_list_init(&amp;high);</span></a>
 <a name="137"><span class="lineNum">     137 </span><span class="lineCov">       2416 :         tommy_list_init(&amp;low);</span></a>
@@ -362,11 +362,11 @@
 <a name="300"><span class="lineNum">     300 </span><span class="lineCov">       2416 :         tommy_list_foreach(&amp;low, free);</span></a>
 <a name="301"><span class="lineNum">     301 </span>            : }</a>
 <a name="302"><span class="lineNum">     302 </span>            : </a>
-<a name="303"><span class="lineNum">     303 </span><span class="lineCov">    1103855 : int state_thermal_alarm(struct snapraid_state* state)</span></a>
+<a name="303"><span class="lineNum">     303 </span><span class="lineCov">    1103967 : int state_thermal_alarm(struct snapraid_state* state)</span></a>
 <a name="304"><span class="lineNum">     304 </span>            : {</a>
 <a name="305"><span class="lineNum">     305 </span>            :         /* if no limit, there is no thermal support */</a>
-<a name="306"><span class="lineNum">     306 </span><span class="lineCov">    1103855 :         if (state-&gt;thermal_temperature_limit == 0)</span></a>
-<a name="307"><span class="lineNum">     307 </span><span class="lineCov">    1101439 :                 return 0;</span></a>
+<a name="306"><span class="lineNum">     306 </span><span class="lineCov">    1103967 :         if (state-&gt;thermal_temperature_limit == 0)</span></a>
+<a name="307"><span class="lineNum">     307 </span><span class="lineCov">    1101551 :                 return 0;</span></a>
 <a name="308"><span class="lineNum">     308 </span>            : </a>
 <a name="309"><span class="lineNum">     309 </span><span class="lineCov">       2416 :         if (state-&gt;thermal_highest_temperature &lt;= state-&gt;thermal_temperature_limit)</span></a>
 <a name="310"><span class="lineNum">     310 </span><span class="lineCov">       2416 :                 return 0;</span></a>

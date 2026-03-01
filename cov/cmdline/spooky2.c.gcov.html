@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 16:42:47</td>
+            <td class="headerValue">2026-03-01 15:35:05</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -170,7 +170,7 @@
 <a name="108"><span class="lineNum">     108 </span>            : //</a>
 <a name="109"><span class="lineNum">     109 </span>            : #define sc_const 0xdeadbeefdeadbeefLL</a>
 <a name="110"><span class="lineNum">     110 </span>            : </a>
-<a name="111"><span class="lineNum">     111 </span><span class="lineCov">    3883326 : void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span></a>
+<a name="111"><span class="lineNum">     111 </span><span class="lineCov">    3884308 : void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span></a>
 <a name="112"><span class="lineNum">     112 </span>            : {</a>
 <a name="113"><span class="lineNum">     113 </span>            :         uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;</a>
 <a name="114"><span class="lineNum">     114 </span>            :         uint64_t buf[sc_numVars];</a>
@@ -182,45 +182,45 @@
 <a name="120"><span class="lineNum">     120 </span>            :         unsigned i;</a>
 <a name="121"><span class="lineNum">     121 </span>            : #endif</a>
 <a name="122"><span class="lineNum">     122 </span>            : </a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">    3883326 :         h9 = util_read64(seed + 0);</span></a>
-<a name="124"><span class="lineNum">     124 </span><span class="lineCov">    3883326 :         h10 = util_read64(seed + 8);</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">    3884308 :         h9 = util_read64(seed + 0);</span></a>
+<a name="124"><span class="lineNum">     124 </span><span class="lineCov">    3884308 :         h10 = util_read64(seed + 8);</span></a>
 <a name="125"><span class="lineNum">     125 </span>            : </a>
-<a name="126"><span class="lineNum">     126 </span><span class="lineCov">    3883326 :         h0 = h3 = h6 = h9;</span></a>
-<a name="127"><span class="lineNum">     127 </span><span class="lineCov">    3883326 :         h1 = h4 = h7 = h10;</span></a>
-<a name="128"><span class="lineNum">     128 </span><span class="lineCov">    3883326 :         h2 = h5 = h8 = h11 = sc_const;</span></a>
+<a name="126"><span class="lineNum">     126 </span><span class="lineCov">    3884308 :         h0 = h3 = h6 = h9;</span></a>
+<a name="127"><span class="lineNum">     127 </span><span class="lineCov">    3884308 :         h1 = h4 = h7 = h10;</span></a>
+<a name="128"><span class="lineNum">     128 </span><span class="lineCov">    3884308 :         h2 = h5 = h8 = h11 = sc_const;</span></a>
 <a name="129"><span class="lineNum">     129 </span>            : </a>
-<a name="130"><span class="lineNum">     130 </span><span class="lineCov">    3883326 :         nblocks = size / sc_blockSize;</span></a>
-<a name="131"><span class="lineNum">     131 </span><span class="lineCov">    3883326 :         blocks = data;</span></a>
-<a name="132"><span class="lineNum">     132 </span><span class="lineCov">    3883326 :         end = blocks + nblocks * sc_numVars;</span></a>
+<a name="130"><span class="lineNum">     130 </span><span class="lineCov">    3884308 :         nblocks = size / sc_blockSize;</span></a>
+<a name="131"><span class="lineNum">     131 </span><span class="lineCov">    3884308 :         blocks = data;</span></a>
+<a name="132"><span class="lineNum">     132 </span><span class="lineCov">    3884308 :         end = blocks + nblocks * sc_numVars;</span></a>
 <a name="133"><span class="lineNum">     133 </span>            : </a>
 <a name="134"><span class="lineNum">     134 </span>            :         /* body */</a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">   34719772 :         while (blocks &lt; end) {</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">   34838191 :         while (blocks &lt; end) {</span></a>
 <a name="136"><span class="lineNum">     136 </span>            : #if WORDS_BIGENDIAN</a>
 <a name="137"><span class="lineNum">     137 </span>            :                 for (i = 0; i &lt; sc_numVars; ++i)</a>
 <a name="138"><span class="lineNum">     138 </span>            :                         buf[i] = util_swap64(blocks[i]);</a>
 <a name="139"><span class="lineNum">     139 </span>            :                 Mix(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</a>
 <a name="140"><span class="lineNum">     140 </span>            : #else</a>
-<a name="141"><span class="lineNum">     141 </span><span class="lineCov">   30836446 :                 Mix(blocks, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span></a>
+<a name="141"><span class="lineNum">     141 </span><span class="lineCov">   30953883 :                 Mix(blocks, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span></a>
 <a name="142"><span class="lineNum">     142 </span>            : #endif</a>
-<a name="143"><span class="lineNum">     143 </span><span class="lineCov">   30836446 :                 blocks += sc_numVars;</span></a>
+<a name="143"><span class="lineNum">     143 </span><span class="lineCov">   30953883 :                 blocks += sc_numVars;</span></a>
 <a name="144"><span class="lineNum">     144 </span>            :         }</a>
 <a name="145"><span class="lineNum">     145 </span>            : </a>
 <a name="146"><span class="lineNum">     146 </span>            :         /* tail */</a>
-<a name="147"><span class="lineNum">     147 </span><span class="lineCov">    3883326 :         size_remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));</span></a>
-<a name="148"><span class="lineNum">     148 </span><span class="lineCov">    3883326 :         memcpy(buf, end, size_remainder);</span></a>
-<a name="149"><span class="lineNum">     149 </span><span class="lineCov">    3883326 :         memset(((uint8_t*)buf) + size_remainder, 0, sc_blockSize - size_remainder);</span></a>
-<a name="150"><span class="lineNum">     150 </span><span class="lineCov">    3883326 :         ((uint8_t*)buf)[sc_blockSize - 1] = size_remainder;</span></a>
+<a name="147"><span class="lineNum">     147 </span><span class="lineCov">    3884308 :         size_remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));</span></a>
+<a name="148"><span class="lineNum">     148 </span><span class="lineCov">    3884308 :         memcpy(buf, end, size_remainder);</span></a>
+<a name="149"><span class="lineNum">     149 </span><span class="lineCov">    3884308 :         memset(((uint8_t*)buf) + size_remainder, 0, sc_blockSize - size_remainder);</span></a>
+<a name="150"><span class="lineNum">     150 </span><span class="lineCov">    3884308 :         ((uint8_t*)buf)[sc_blockSize - 1] = size_remainder;</span></a>
 <a name="151"><span class="lineNum">     151 </span>            : </a>
 <a name="152"><span class="lineNum">     152 </span>            :         /* finalization */</a>
 <a name="153"><span class="lineNum">     153 </span>            : #if WORDS_BIGENDIAN</a>
 <a name="154"><span class="lineNum">     154 </span>            :         for (i = 0; i &lt; sc_numVars; ++i)</a>
 <a name="155"><span class="lineNum">     155 </span>            :                 buf[i] = util_swap64(buf[i]);</a>
 <a name="156"><span class="lineNum">     156 </span>            : #endif</a>
-<a name="157"><span class="lineNum">     157 </span><span class="lineCov">    3883326 :         End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span></a>
+<a name="157"><span class="lineNum">     157 </span><span class="lineCov">    3884308 :         End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span></a>
 <a name="158"><span class="lineNum">     158 </span>            : </a>
-<a name="159"><span class="lineNum">     159 </span><span class="lineCov">    3883326 :         util_write64(digest + 0, h0);</span></a>
-<a name="160"><span class="lineNum">     160 </span><span class="lineCov">    3883326 :         util_write64(digest + 8, h1);</span></a>
-<a name="161"><span class="lineNum">     161 </span><span class="lineCov">    3883326 : }</span></a>
+<a name="159"><span class="lineNum">     159 </span><span class="lineCov">    3884308 :         util_write64(digest + 0, h0);</span></a>
+<a name="160"><span class="lineNum">     160 </span><span class="lineCov">    3884308 :         util_write64(digest + 8, h1);</span></a>
+<a name="161"><span class="lineNum">     161 </span><span class="lineCov">    3884308 : }</span></a>
 <a name="162"><span class="lineNum">     162 </span>            : </a>
 </pre>
       </td>

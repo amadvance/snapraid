@@ -14,15 +14,27 @@
     --c-slate-950: #020618;
 
     /* Interpolated */
-    --c-slate-905:  hsl(224 51% 11%);   /* #0d1428 */
-    --c-slate-910:  hsl(224 55% 10%);   /* #0c1226 */
-    --c-slate-915:  hsl(225 59% 10%);   /* #0b1024 */
-    --c-slate-920:  hsl(225 63%  9%);   /* #0a0e22 */
-    --c-slate-925:  hsl(226 66%  8%);   /* #090c1f */
-    --c-slate-930:  hsl(227 70%  7%);   /* #080b1c */
-    --c-slate-935:  hsl(227 74%  7%);   /* #070919 */
-    --c-slate-940:  hsl(228 78%  6%);   /* #060917 */
-    --c-slate-945:  hsl(228 81%  6%);   /* #050715 */
+    --c-slate-905:  hsl(224 51% 11%);
+    --c-slate-910:  hsl(224 55% 10%);
+    --c-slate-915:  hsl(225 59% 10%);
+    --c-slate-920:  hsl(225 63%  9%);
+    --c-slate-925:  hsl(226 66%  8%);
+    --c-slate-930:  hsl(227 70%  7%);
+    --c-slate-935:  hsl(227 74%  7%);
+    --c-slate-940:  hsl(228 78%  6%);
+    --c-slate-945:  hsl(228 81%  6%);
+
+    --c-orange-50: #FFF7ED;
+    --c-orange-100: #FFEDD4;
+    --c-orange-200: #FFD6A7;
+    --c-orange-300: #FFB86A;
+    --c-orange-400: #FF8904;
+    --c-orange-500: #FF692A;
+    --c-orange-600: #F54927;
+    --c-orange-700: #CA3519;
+    --c-orange-800: #9F2D01;
+    --c-orange-900: #7E2A0C;
+    --c-orange-950: #441306;
 
     --bg-body: var(--c-slate-950);       /* Deep Slate */
     --bg-surface: var(--c-slate-910);    /* Lighter Slate */
@@ -788,7 +800,37 @@ footer {
 /* Support Cards */
 .support-card { display: flex; gap: 1rem; align-items: start; }
 .support-icon { min-width: 40px; height: 40px; fill: var(--text-secondary); }
-.donation-card { border-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+
+.donation-card { 
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warning); 
+    border-radius: 4px;    
+    text-align: center;
+    color: var(--warning);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+ }
+
+.donation-card p { 
+    color: var(--warning);
+}
+
+.donation-card a { 
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.warning-card { 
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warning);
+    color: var(--warning);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: start;
+}
 
 /* UI Gallery */
 .ui-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }

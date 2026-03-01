@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-02-28 16:42:47</td>
+            <td class="headerValue">2026-03-01 15:35:05</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">18</td>
@@ -94,31 +94,31 @@
 <a name="32"><span class="lineNum">      32 </span>            : /****************************************************************************/</a>
 <a name="33"><span class="lineNum">      33 </span>            : /* parity */</a>
 <a name="34"><span class="lineNum">      34 </span>            : </a>
-<a name="35"><span class="lineNum">      35 </span><span class="lineCov">        688 : block_off_t parity_allocated_size(struct snapraid_state* state)</span></a>
+<a name="35"><span class="lineNum">      35 </span><span class="lineCov">        689 : block_off_t parity_allocated_size(struct snapraid_state* state)</span></a>
 <a name="36"><span class="lineNum">      36 </span>            : {</a>
 <a name="37"><span class="lineNum">      37 </span>            :         block_off_t parity_block;</a>
 <a name="38"><span class="lineNum">      38 </span>            :         tommy_node* i;</a>
 <a name="39"><span class="lineNum">      39 </span>            : </a>
 <a name="40"><span class="lineNum">      40 </span>            :         /* compute the size of the parity file */</a>
-<a name="41"><span class="lineNum">      41 </span><span class="lineCov">        688 :         parity_block = 0;</span></a>
-<a name="42"><span class="lineNum">      42 </span><span class="lineCov">       4806 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span></a>
-<a name="43"><span class="lineNum">      43 </span><span class="lineCov">       4118 :                 struct snapraid_disk* disk = i-&gt;data;</span></a>
+<a name="41"><span class="lineNum">      41 </span><span class="lineCov">        689 :         parity_block = 0;</span></a>
+<a name="42"><span class="lineNum">      42 </span><span class="lineCov">       4813 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span></a>
+<a name="43"><span class="lineNum">      43 </span><span class="lineCov">       4124 :                 struct snapraid_disk* disk = i-&gt;data;</span></a>
 <a name="44"><span class="lineNum">      44 </span>            : </a>
 <a name="45"><span class="lineNum">      45 </span>            :                 /* start from the declared size */</a>
-<a name="46"><span class="lineNum">      46 </span><span class="lineCov">       4118 :                 block_off_t block = fs_size(disk);</span></a>
+<a name="46"><span class="lineNum">      46 </span><span class="lineCov">       4124 :                 block_off_t block = fs_size(disk);</span></a>
 <a name="47"><span class="lineNum">      47 </span>            : </a>
 <a name="48"><span class="lineNum">      48 </span>            :                 /* decrease the block until an allocated one, but part of a file */</a>
 <a name="49"><span class="lineNum">      49 </span>            :                 /* we don't stop at deleted blocks, because we want to have them cleared */</a>
 <a name="50"><span class="lineNum">      50 </span>            :                 /* if they are at the end of the parity */</a>
-<a name="51"><span class="lineNum">      51 </span><span class="lineCov">     187957 :                 while (block &gt; parity_block &amp;&amp; !block_has_file(fs_par2block_find(disk, block - 1)))</span></a>
+<a name="51"><span class="lineNum">      51 </span><span class="lineCov">     187963 :                 while (block &gt; parity_block &amp;&amp; !block_has_file(fs_par2block_find(disk, block - 1)))</span></a>
 <a name="52"><span class="lineNum">      52 </span><span class="lineCov">     183839 :                         --block;</span></a>
 <a name="53"><span class="lineNum">      53 </span>            : </a>
 <a name="54"><span class="lineNum">      54 </span>            :                 /* get the highest value */</a>
-<a name="55"><span class="lineNum">      55 </span><span class="lineCov">       4118 :                 if (block &gt; parity_block)</span></a>
-<a name="56"><span class="lineNum">      56 </span><span class="lineCov">       2407 :                         parity_block = block;</span></a>
+<a name="55"><span class="lineNum">      55 </span><span class="lineCov">       4124 :                 if (block &gt; parity_block)</span></a>
+<a name="56"><span class="lineNum">      56 </span><span class="lineCov">       2412 :                         parity_block = block;</span></a>
 <a name="57"><span class="lineNum">      57 </span>            :         }</a>
 <a name="58"><span class="lineNum">      58 </span>            : </a>
-<a name="59"><span class="lineNum">      59 </span><span class="lineCov">        688 :         return parity_block;</span></a>
+<a name="59"><span class="lineNum">      59 </span><span class="lineCov">        689 :         return parity_block;</span></a>
 <a name="60"><span class="lineNum">      60 </span>            : }</a>
 <a name="61"><span class="lineNum">      61 </span>            : </a>
 <a name="62"><span class="lineNum">      62 </span><span class="lineCov">         96 : block_off_t parity_used_size(struct snapraid_state* state)</span></a>
@@ -135,8 +135,8 @@
 <a name="73"><span class="lineNum">      73 </span><span class="lineCov">        575 :                 block_off_t block = fs_size(disk);</span></a>
 <a name="74"><span class="lineNum">      74 </span>            : </a>
 <a name="75"><span class="lineNum">      75 </span>            :                 /* decrease the block until an used one */</a>
-<a name="76"><span class="lineNum">      76 </span><span class="lineCov">     223634 :                 while (block &gt; parity_block &amp;&amp; !block_has_file_and_valid_parity(fs_par2block_find(disk, block - 1)))</span></a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">     223059 :                         --block;</span></a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineCov">     223636 :                 while (block &gt; parity_block &amp;&amp; !block_has_file_and_valid_parity(fs_par2block_find(disk, block - 1)))</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">     223061 :                         --block;</span></a>
 <a name="78"><span class="lineNum">      78 </span>            : </a>
 <a name="79"><span class="lineNum">      79 </span>            :                 /* get the highest value */</a>
 <a name="80"><span class="lineNum">      80 </span><span class="lineCov">        575 :                 if (block &gt; parity_block)</span></a>
@@ -859,26 +859,26 @@
 <a name="797"><span class="lineNum">     797 </span><span class="lineCov">       1087 :         return f_ret;</span></a>
 <a name="798"><span class="lineNum">     798 </span>            : }</a>
 <a name="799"><span class="lineNum">     799 </span>            : </a>
-<a name="800"><span class="lineNum">     800 </span><span class="lineCov">    4274145 : struct snapraid_split_handle* parity_split_find(struct snapraid_parity_handle* handle, data_off_t* offset)</span></a>
+<a name="800"><span class="lineNum">     800 </span><span class="lineCov">    4275381 : struct snapraid_split_handle* parity_split_find(struct snapraid_parity_handle* handle, data_off_t* offset)</span></a>
 <a name="801"><span class="lineNum">     801 </span>            : {</a>
 <a name="802"><span class="lineNum">     802 </span>            :         unsigned s;</a>
 <a name="803"><span class="lineNum">     803 </span>            : </a>
-<a name="804"><span class="lineNum">     804 </span><span class="lineCov">    4274145 :         if (*offset &lt; 0)</span></a>
+<a name="804"><span class="lineNum">     804 </span><span class="lineCov">    4275381 :         if (*offset &lt; 0)</span></a>
 <a name="805"><span class="lineNum">     805 </span><span class="lineNoCov">          0 :                 return 0;</span></a>
 <a name="806"><span class="lineNum">     806 </span>            : </a>
-<a name="807"><span class="lineNum">     807 </span><span class="lineCov">    6758486 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span></a>
-<a name="808"><span class="lineNum">     808 </span><span class="lineCov">    6747126 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span></a>
+<a name="807"><span class="lineNum">     807 </span><span class="lineCov">    6760512 :         for (s = 0; s &lt; handle-&gt;split_mac; ++s) {</span></a>
+<a name="808"><span class="lineNum">     808 </span><span class="lineCov">    6749152 :                 struct snapraid_split_handle* split = &amp;handle-&gt;split_map[s];</span></a>
 <a name="809"><span class="lineNum">     809 </span>            : </a>
-<a name="810"><span class="lineNum">     810 </span><span class="lineCov">    6747126 :                 if (*offset &lt; split-&gt;size)</span></a>
-<a name="811"><span class="lineNum">     811 </span><span class="lineCov">    4262785 :                         return split;</span></a>
+<a name="810"><span class="lineNum">     810 </span><span class="lineCov">    6749152 :                 if (*offset &lt; split-&gt;size)</span></a>
+<a name="811"><span class="lineNum">     811 </span><span class="lineCov">    4264021 :                         return split;</span></a>
 <a name="812"><span class="lineNum">     812 </span>            : </a>
-<a name="813"><span class="lineNum">     813 </span><span class="lineCov">    2484341 :                 *offset -= split-&gt;size;</span></a>
+<a name="813"><span class="lineNum">     813 </span><span class="lineCov">    2485131 :                 *offset -= split-&gt;size;</span></a>
 <a name="814"><span class="lineNum">     814 </span>            :         }</a>
 <a name="815"><span class="lineNum">     815 </span>            : </a>
 <a name="816"><span class="lineNum">     816 </span><span class="lineCov">      11360 :         return 0;</span></a>
 <a name="817"><span class="lineNum">     817 </span>            : }</a>
 <a name="818"><span class="lineNum">     818 </span>            : </a>
-<a name="819"><span class="lineNum">     819 </span><span class="lineCov">     648191 : int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span></a>
+<a name="819"><span class="lineNum">     819 </span><span class="lineCov">     649421 : int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span></a>
 <a name="820"><span class="lineNum">     820 </span>            : {</a>
 <a name="821"><span class="lineNum">     821 </span>            :         ssize_t write_ret;</a>
 <a name="822"><span class="lineNum">     822 </span>            :         data_off_t offset;</a>
@@ -886,10 +886,10 @@
 <a name="824"><span class="lineNum">     824 </span>            :         unsigned count;</a>
 <a name="825"><span class="lineNum">     825 </span>            :         int ret;</a>
 <a name="826"><span class="lineNum">     826 </span>            : </a>
-<a name="827"><span class="lineNum">     827 </span><span class="lineCov">     648191 :         offset = pos * (data_off_t)block_size;</span></a>
+<a name="827"><span class="lineNum">     827 </span><span class="lineCov">     649421 :         offset = pos * (data_off_t)block_size;</span></a>
 <a name="828"><span class="lineNum">     828 </span>            : </a>
-<a name="829"><span class="lineNum">     829 </span><span class="lineCov">     648191 :         split = parity_split_find(handle, &amp;offset);</span></a>
-<a name="830"><span class="lineNum">     830 </span><span class="lineCov">     648191 :         if (!split) {</span></a>
+<a name="829"><span class="lineNum">     829 </span><span class="lineCov">     649421 :         split = parity_split_find(handle, &amp;offset);</span></a>
+<a name="830"><span class="lineNum">     830 </span><span class="lineCov">     649421 :         if (!split) {</span></a>
 <a name="831"><span class="lineNum">     831 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="832"><span class="lineNum">     832 </span>            :                 errno = ENXIO;</a>
 <a name="833"><span class="lineNum">     833 </span>            :                 log_fatal(errno, &quot;Writing parity data outside range at extra offset %&quot; PRIu64 &quot;.\n&quot;, offset);</a>
@@ -898,15 +898,15 @@
 <a name="836"><span class="lineNum">     836 </span>            :         }</a>
 <a name="837"><span class="lineNum">     837 </span>            : </a>
 <a name="838"><span class="lineNum">     838 </span>            :         /* update the valid range */</a>
-<a name="839"><span class="lineNum">     839 </span><span class="lineCov">     648191 :         if (split-&gt;valid_size &lt; offset + block_size)</span></a>
+<a name="839"><span class="lineNum">     839 </span><span class="lineCov">     649421 :         if (split-&gt;valid_size &lt; offset + block_size)</span></a>
 <a name="840"><span class="lineNum">     840 </span><span class="lineCov">     186950 :                 split-&gt;valid_size = offset + block_size;</span></a>
 <a name="841"><span class="lineNum">     841 </span>            : </a>
-<a name="842"><span class="lineNum">     842 </span><span class="lineCov">     648191 :         count = 0;</span></a>
+<a name="842"><span class="lineNum">     842 </span><span class="lineCov">     649421 :         count = 0;</span></a>
 <a name="843"><span class="lineNum">     843 </span>            :         do {</a>
-<a name="844"><span class="lineNum">     844 </span><span class="lineCov">     648191 :                 bw_limit(handle-&gt;bw, block_size - count);</span></a>
+<a name="844"><span class="lineNum">     844 </span><span class="lineCov">     649421 :                 bw_limit(handle-&gt;bw, block_size - count);</span></a>
 <a name="845"><span class="lineNum">     845 </span>            : </a>
-<a name="846"><span class="lineNum">     846 </span><span class="lineCov">     648191 :                 write_ret = pwrite(split-&gt;f, block_buffer + count, block_size - count, offset + count);</span></a>
-<a name="847"><span class="lineNum">     847 </span><span class="lineCov">     648191 :                 if (write_ret == -1) {</span></a>
+<a name="846"><span class="lineNum">     846 </span><span class="lineCov">     649421 :                 write_ret = pwrite(split-&gt;f, block_buffer + count, block_size - count, offset + count);</span></a>
+<a name="847"><span class="lineNum">     847 </span><span class="lineCov">     649421 :                 if (write_ret == -1) {</span></a>
 <a name="848"><span class="lineNum">     848 </span>            :                         /* LCOV_EXCL_START */</a>
 <a name="849"><span class="lineNum">     849 </span>            :                         if (errno == ENOSPC) {</a>
 <a name="850"><span class="lineNum">     850 </span>            :                                 log_fatal(errno, &quot;Failed to grow parity file '%s' using write due lack of space.\n&quot;, split-&gt;path);</a>
@@ -916,7 +916,7 @@
 <a name="854"><span class="lineNum">     854 </span>            :                         return -1;</a>
 <a name="855"><span class="lineNum">     855 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="856"><span class="lineNum">     856 </span>            :                 }</a>
-<a name="857"><span class="lineNum">     857 </span><span class="lineCov">     648191 :                 if (write_ret == 0) {</span></a>
+<a name="857"><span class="lineNum">     857 </span><span class="lineCov">     649421 :                 if (write_ret == 0) {</span></a>
 <a name="858"><span class="lineNum">     858 </span>            :                         /* LCOV_EXCL_START */</a>
 <a name="859"><span class="lineNum">     859 </span>            :                         errno = ENXIO;</a>
 <a name="860"><span class="lineNum">     860 </span>            :                         log_fatal(errno, &quot;Unexpected 0 write to file '%s'. %s.\n&quot;, split-&gt;path, strerror(errno));</a>
@@ -924,21 +924,21 @@
 <a name="862"><span class="lineNum">     862 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="863"><span class="lineNum">     863 </span>            :                 }</a>
 <a name="864"><span class="lineNum">     864 </span>            : </a>
-<a name="865"><span class="lineNum">     865 </span><span class="lineCov">     648191 :                 count += write_ret;</span></a>
-<a name="866"><span class="lineNum">     866 </span><span class="lineCov">     648191 :         } while (count &lt; block_size);</span></a>
+<a name="865"><span class="lineNum">     865 </span><span class="lineCov">     649421 :                 count += write_ret;</span></a>
+<a name="866"><span class="lineNum">     866 </span><span class="lineCov">     649421 :         } while (count &lt; block_size);</span></a>
 <a name="867"><span class="lineNum">     867 </span>            : </a>
-<a name="868"><span class="lineNum">     868 </span><span class="lineCov">     648191 :         ret = advise_write(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span></a>
-<a name="869"><span class="lineNum">     869 </span><span class="lineCov">     648191 :         if (ret != 0) {</span></a>
+<a name="868"><span class="lineNum">     868 </span><span class="lineCov">     649421 :         ret = advise_write(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span></a>
+<a name="869"><span class="lineNum">     869 </span><span class="lineCov">     649421 :         if (ret != 0) {</span></a>
 <a name="870"><span class="lineNum">     870 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="871"><span class="lineNum">     871 </span>            :                 log_fatal(errno, &quot;Error advising parity file '%s'. %s.\n&quot;, split-&gt;path, strerror(errno));</a>
 <a name="872"><span class="lineNum">     872 </span>            :                 return -1;</a>
 <a name="873"><span class="lineNum">     873 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="874"><span class="lineNum">     874 </span>            :         }</a>
 <a name="875"><span class="lineNum">     875 </span>            : </a>
-<a name="876"><span class="lineNum">     876 </span><span class="lineCov">     648191 :         return 0;</span></a>
+<a name="876"><span class="lineNum">     876 </span><span class="lineCov">     649421 :         return 0;</span></a>
 <a name="877"><span class="lineNum">     877 </span>            : }</a>
 <a name="878"><span class="lineNum">     878 </span>            : </a>
-<a name="879"><span class="lineNum">     879 </span><span class="lineCov">    3625954 : int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out)</span></a>
+<a name="879"><span class="lineNum">     879 </span><span class="lineCov">    3625960 : int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out)</span></a>
 <a name="880"><span class="lineNum">     880 </span>            : {</a>
 <a name="881"><span class="lineNum">     881 </span>            :         ssize_t read_ret;</a>
 <a name="882"><span class="lineNum">     882 </span>            :         data_off_t offset;</a>
@@ -946,10 +946,10 @@
 <a name="884"><span class="lineNum">     884 </span>            :         struct snapraid_split_handle* split;</a>
 <a name="885"><span class="lineNum">     885 </span>            :         int ret;</a>
 <a name="886"><span class="lineNum">     886 </span>            : </a>
-<a name="887"><span class="lineNum">     887 </span><span class="lineCov">    3625954 :         offset = pos * (data_off_t)block_size;</span></a>
+<a name="887"><span class="lineNum">     887 </span><span class="lineCov">    3625960 :         offset = pos * (data_off_t)block_size;</span></a>
 <a name="888"><span class="lineNum">     888 </span>            : </a>
-<a name="889"><span class="lineNum">     889 </span><span class="lineCov">    3625954 :         split = parity_split_find(handle, &amp;offset);</span></a>
-<a name="890"><span class="lineNum">     890 </span><span class="lineCov">    3625954 :         if (!split) {</span></a>
+<a name="889"><span class="lineNum">     889 </span><span class="lineCov">    3625960 :         split = parity_split_find(handle, &amp;offset);</span></a>
+<a name="890"><span class="lineNum">     890 </span><span class="lineCov">    3625960 :         if (!split) {</span></a>
 <a name="891"><span class="lineNum">     891 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="892"><span class="lineNum">     892 </span>            :                 errno = ENXIO;</a>
 <a name="893"><span class="lineNum">     893 </span>            :                 out(errno, &quot;Reading parity data outside range at extra offset %&quot; PRIu64 &quot;.\n&quot;, offset);</a>
@@ -958,7 +958,7 @@
 <a name="896"><span class="lineNum">     896 </span>            :         }</a>
 <a name="897"><span class="lineNum">     897 </span>            : </a>
 <a name="898"><span class="lineNum">     898 </span>            :         /* if read is completely out of the valid range */</a>
-<a name="899"><span class="lineNum">     899 </span><span class="lineCov">    3614594 :         if (offset &gt;= split-&gt;valid_size) {</span></a>
+<a name="899"><span class="lineNum">     899 </span><span class="lineCov">    3614600 :         if (offset &gt;= split-&gt;valid_size) {</span></a>
 <a name="900"><span class="lineNum">     900 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="901"><span class="lineNum">     901 </span>            :                 errno = ENXIO;</a>
 <a name="902"><span class="lineNum">     902 </span>            :                 out(errno, &quot;Reading over the end from parity file '%s' at offset %&quot; PRIu64 &quot; for size %u.\n&quot;, split-&gt;path, offset, block_size);</a>
@@ -966,19 +966,19 @@
 <a name="904"><span class="lineNum">     904 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="905"><span class="lineNum">     905 </span>            :         }</a>
 <a name="906"><span class="lineNum">     906 </span>            : </a>
-<a name="907"><span class="lineNum">     907 </span><span class="lineCov">    3529132 :         count = 0;</span></a>
-<a name="908"><span class="lineNum">     908 </span><span class="lineCov">    3529132 :         errno = 0;</span></a>
+<a name="907"><span class="lineNum">     907 </span><span class="lineCov">    3529138 :         count = 0;</span></a>
+<a name="908"><span class="lineNum">     908 </span><span class="lineCov">    3529138 :         errno = 0;</span></a>
 <a name="909"><span class="lineNum">     909 </span>            :         do {</a>
-<a name="910"><span class="lineNum">     910 </span><span class="lineCov">    3529132 :                 bw_limit(handle-&gt;bw, block_size - count);</span></a>
+<a name="910"><span class="lineNum">     910 </span><span class="lineCov">    3529138 :                 bw_limit(handle-&gt;bw, block_size - count);</span></a>
 <a name="911"><span class="lineNum">     911 </span>            : </a>
-<a name="912"><span class="lineNum">     912 </span><span class="lineCov">    3529132 :                 read_ret = pread(split-&gt;f, block_buffer + count, block_size - count, offset + count);</span></a>
-<a name="913"><span class="lineNum">     913 </span><span class="lineCov">    3529132 :                 if (read_ret == -1) {</span></a>
+<a name="912"><span class="lineNum">     912 </span><span class="lineCov">    3529138 :                 read_ret = pread(split-&gt;f, block_buffer + count, block_size - count, offset + count);</span></a>
+<a name="913"><span class="lineNum">     913 </span><span class="lineCov">    3529138 :                 if (read_ret == -1) {</span></a>
 <a name="914"><span class="lineNum">     914 </span>            :                         /* LCOV_EXCL_START */</a>
 <a name="915"><span class="lineNum">     915 </span>            :                         out(errno, &quot;Error reading parity file '%s' at offset %&quot; PRIu64 &quot; for size %u. %s.\n&quot;, split-&gt;path, offset + count, block_size - count, strerror(errno));</a>
 <a name="916"><span class="lineNum">     916 </span>            :                         return -1;</a>
 <a name="917"><span class="lineNum">     917 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="918"><span class="lineNum">     918 </span>            :                 }</a>
-<a name="919"><span class="lineNum">     919 </span><span class="lineCov">    3529132 :                 if (read_ret == 0) {</span></a>
+<a name="919"><span class="lineNum">     919 </span><span class="lineCov">    3529138 :                 if (read_ret == 0) {</span></a>
 <a name="920"><span class="lineNum">     920 </span>            :                         /* LCOV_EXCL_START */</a>
 <a name="921"><span class="lineNum">     921 </span>            :                         if (errno == 0)</a>
 <a name="922"><span class="lineNum">     922 </span>            :                                 errno = ENXIO;</a>
@@ -987,18 +987,18 @@
 <a name="925"><span class="lineNum">     925 </span>            :                         /* LCOV_EXCL_STOP */</a>
 <a name="926"><span class="lineNum">     926 </span>            :                 }</a>
 <a name="927"><span class="lineNum">     927 </span>            : </a>
-<a name="928"><span class="lineNum">     928 </span><span class="lineCov">    3529132 :                 count += read_ret;</span></a>
-<a name="929"><span class="lineNum">     929 </span><span class="lineCov">    3529132 :         } while (count &lt; block_size);</span></a>
+<a name="928"><span class="lineNum">     928 </span><span class="lineCov">    3529138 :                 count += read_ret;</span></a>
+<a name="929"><span class="lineNum">     929 </span><span class="lineCov">    3529138 :         } while (count &lt; block_size);</span></a>
 <a name="930"><span class="lineNum">     930 </span>            : </a>
-<a name="931"><span class="lineNum">     931 </span><span class="lineCov">    3529132 :         ret = advise_read(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span></a>
-<a name="932"><span class="lineNum">     932 </span><span class="lineCov">    3529132 :         if (ret != 0) {</span></a>
+<a name="931"><span class="lineNum">     931 </span><span class="lineCov">    3529138 :         ret = advise_read(&amp;split-&gt;advise, split-&gt;f, offset, block_size);</span></a>
+<a name="932"><span class="lineNum">     932 </span><span class="lineCov">    3529138 :         if (ret != 0) {</span></a>
 <a name="933"><span class="lineNum">     933 </span>            :                 /* LCOV_EXCL_START */</a>
 <a name="934"><span class="lineNum">     934 </span>            :                 out(errno, &quot;Error advising parity file '%s'. %s.\n&quot;, split-&gt;path, strerror(errno));</a>
 <a name="935"><span class="lineNum">     935 </span>            :                 return -1;</a>
 <a name="936"><span class="lineNum">     936 </span>            :                 /* LCOV_EXCL_STOP */</a>
 <a name="937"><span class="lineNum">     937 </span>            :         }</a>
 <a name="938"><span class="lineNum">     938 </span>            : </a>
-<a name="939"><span class="lineNum">     939 </span><span class="lineCov">    3529132 :         return block_size;</span></a>
+<a name="939"><span class="lineNum">     939 </span><span class="lineCov">    3529138 :         return block_size;</span></a>
 <a name="940"><span class="lineNum">     940 </span>            : }</a>
 <a name="941"><span class="lineNum">     941 </span>            : </a>
 </pre>

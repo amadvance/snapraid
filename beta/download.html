@@ -144,12 +144,12 @@
             <div class="card">
                 <h2>SnapRAID Daemon (Automation, Web UI, REST API)</h2>
                 
-                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: start;">
+                <div class="warning-card">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="min-width: 24px;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
                     <span><strong>Warning:</strong> The SnapRAID Daemon requires SnapRAID CLI 14.0+ already installed and configured</span>
                 </div>
                 
-                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: start;">
+                <div class="warning-card">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="min-width: 24px;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
                     <span><strong>Warning:</strong> SnapRAID Daemon is currently available only for Linux. Windows support is being considered based on community interest. If you are a Mac developer interested in volunteering your expertise to bring the daemon to macOS as an open-source collaborator, we would love to hear from you!</span>
                 </div>
@@ -200,20 +200,24 @@
                     Old versions are available on <a href="https://github.com/amadvance/snapraid-daemon/releases">GitHub</a>.
                 </p>
             </div>
-        </div>
 
-        <!-- Donation Card -->
-        <div class="card donation-card" style="margin-top: 4rem; text-align: center;">
-            <h3 style="margin-bottom: 1rem;">Support the Project</h3>
-            <p style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.5rem;">
-                If you want to show your appreciation,
-                you can <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"><strong>donate</strong></a>,
-                or you can <a href="https://github.com/amadvance/snapraid/"><strong>star it on GitHub</strong></a>.
-            </p>
-            <p style="color: var(--text-secondary);">
-                Donations are used to support SnapRAID development, covering costs such as new hardware, internet services, and AI subscriptions
-            </p>
-            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest" class="btn btn-primary" style="background: var(--warning); color: black; box-shadow: none; margin-top: 1.5rem;">Donate via PayPal</a>
+            <!-- Donation Card -->
+            <div class="card donation-card">
+                <h2 style="color: var(--text-warning);">
+<svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                Support the Project
+<svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </h2>
+                <p>
+                    If you want to show your appreciation,
+                    you can <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"><strong>donate with Paypal</strong></a>,
+                    or you can <a href="https://github.com/amadvance/snapraid/"><strong>star SnapRAID CLI <img src="https://img.shields.io/github/stars/amadvance/snapraid?style=flat"></strong></a> and <a href="https://github.com/amadvance/snapraid-daemon/"><strong>star SnapRAID Daemon <img src="https://img.shields.io/github/stars/amadvance/snapraid-daemon?style=flat"></strong></a> on GitHub.
+                </p>
+                <p>
+                    Donations are used to support SnapRAID development, covering costs such as new hardware, internet services, and AI subscriptions
+                </p>
+                <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest" class="btn btn-primary" style="background: var(--warning); color: black; box-shadow: none; margin-top: 1rem;">Donate via PayPal</a>
+            </div>
         </div>
     </div>
     
