@@ -408,14 +408,16 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
  * we use the maximum rate reported, and we do not sum them,
  * because the attributes are not independent.
  */
-static double smart_afr(struct smart_attr* smart, const char* model)
+static double smart_afr(devinfo_t* devinfo)
 {
 	double afr = 0;
 	uint64_t mask32 = 0xffffffffU;
 	uint64_t mask16 = 0xffffU;
+	uint64_t* info = devinfo->info;
+	struct smart_attr* smart = devinfo->smart;
 
 	/* do not estimate for not rotational */
-	if (smart[INFO_ROTATION_RATE].raw == 0)
+	if (info[INFO_ROTATION_RATE] == 0)
 		return 0;
 
 	if (smart[5].raw != SMART_UNASSIGNED) {
@@ -440,7 +442,7 @@ static double smart_afr(struct smart_attr* smart, const char* model)
 		 * and IronWolf disks to be a not significant test as
 		 * this value increases too often also on sane disks.
 		 */
-		strncmp(model, "ST", 2) != 0 && smart[188].raw != SMART_UNASSIGNED
+		strncmp(devinfo->model, "ST", 2) != 0 && smart[188].raw != SMART_UNASSIGNED
 	) {
 		/* with Seagate disks, there are three different 16 bits value reported */
 		/* the lowest one is the most significant */
@@ -710,7 +712,7 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 			afr = 0;
 			printf("  SSD");
 		} else {
-			afr = smart_afr(devinfo->smart, devinfo->model);
+			afr = smart_afr(devinfo);
 
 			if (afr == 0) {
 				/* this happens only if no data */
@@ -825,7 +827,7 @@ void state_attr(struct snapraid_state* state, tommy_list* low)
 
 		state_smart_ignore(state, devinfo);
 
-		double afr = smart_afr(devinfo->smart, devinfo->model);
+		double afr = smart_afr(devinfo);
 
 		state_info_log(devinfo);
 		state_smart_log(devinfo, afr);
@@ -851,7 +853,7 @@ static void state_probe(struct snapraid_state* state, tommy_list* low)
 		if (len > device_pad)
 			device_pad = len;
 
-		double afr = smart_afr(devinfo->smart, devinfo->model);
+		double afr = smart_afr(devinfo);
 
 		state_info_log(devinfo);
 		state_smart_log(devinfo, afr);
