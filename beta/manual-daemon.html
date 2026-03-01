@@ -101,7 +101,7 @@ snapraidd [-V, --version] [-H, --help]
 <h1 id="sec2" class="manual-title-level-1">
 Description
 </h1>
-<p>SnapRAID-Daemon is a specialized companion service designed to move SnapRAID
+<p>SnapRAID Daemon is a specialized companion service designed to move SnapRAID
 from a manual, command-line interface (CLI) workflow to an 'always-on'
 background service.
 </p><p>Under the hood, the daemon uses the same SnapRAID CLI binary, providing the
@@ -217,8 +217,8 @@ via binary packages, this file is typically placed at <b>/etc/snapraidd.conf</b>
 If you are installing from source, it is recommended to run
 <b>./configure --sysconfdir=/etc</b> during the build process to ensure the
 configuration is placed in the standard <b>/etc</b> directory.
-</p><p>Using this default configuration file, the UI is accessible via&nbsp;&nbsp;&nbsp;&nbsp;a web
-browser at the following address:
+</p><p>Using this default configuration file, the UI is accessible locally
+via a web browser at the following address:
 </p><p><a href="http://127.0.0.1:7627">http://127.0.0.1:7627</a>
 <br>
 </p><p>The default port, 7627, was chosen as a mnemonic, representing the
@@ -233,7 +233,7 @@ directory will be empty.
 files and provide the daemon with the necessary metadata to establish
 the array's baseline state.
 </p><p>Once the service is running, you should review <b>/etc/snapraidd.conf</b>
-or use the Settings panel in the UI to tailor the behavior to your
+or use the <b>Settings</b> panel in the UI to tailor the behavior to your
 environment.
 </p><p>Typical post-installation steps include:
 </p><ul>
@@ -252,16 +252,19 @@ regarding array health and task outcomes.
 </ul>
 <p>To make manual changes to the <b>/etc/snapraidd.conf</b> file effective,
 you must either restart the daemon or send a <b>SIGHUP</b> signal to the
-running process. Unlike manual file edits, changes made through the UI
-are applied to the running process and saved to the configuration file
-pressing the <b>Save</b> button.
+running process.
 </p><p>Example:
 </p><pre>
 sudo killall -HUP snapraidd
 </pre>
-<p>By default, the daemon binds to the loopback interface, meaning the
+<p>Unlike manual file edits, changes made through the UI are applied to
+the running process and saved to the configuration file pressing the
+<b>Save</b> button.
+</p><p>By default, the daemon binds to the loopback interface, meaning the
 UI is accessible only from the local machine and not from other devices
-on the network.
+on the network. To allow access from other devices on the network,
+you must modify the <b>net_*</b> options to bind the daemon to a reachable
+network interface.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
@@ -269,9 +272,12 @@ Health
 </h1>
 <p>The array's aggregate health is determined by evaluating historical log
 data alongside real-time hardware telemetry.
-</p><p>If the array transitions into any problematic state, the daemon
-immediately issues an alert through the configured notification system.
-</p><p>In the REST API, this state is reported by the <b>health</b> field.
+</p><p>If the array transitions into a problematic state, the daemon issues
+an alert through the configured notification system. Note that the
+detection of such states is not instantaneous, it occurs during the
+telemetry collection cycle, the frequency of which is determined by
+the <b>probe_interval_minutes</b> option.
+</p><p>In the REST API, the health state is reported by the <b>health</b> field.
 Whenever the health is not PASSED, a supplementary <b>health_reason</b> field
 is provided to give a discursive explanation of the specific condition or
 failure detected.
@@ -352,12 +358,12 @@ accessibility, safety interlocks, and hardware monitoring parameters.
 </p><p>The configuration system is designed with a "triple-tier" management
 philosophy to balance operational convenience with rigorous system
 security:
-</p><p>Tier 1 Core Network (Immutable) -
-</p><p>This tier includes critical security and networking parameters,
-such as the master API toggle, port bindings, and access
-control lists. These settings are completely inaccessible via
-the REST API. To modify them, you must perform a manual file
-edit followed by a SIGHUP signal to reload the configuration into memory.
+</p><p>Tier 1 Core Network (Immutable) - This tier includes critical security
+</p><p>and networking parameters, such as the master API toggle, port
+bindings, and access control lists. These settings are completely
+inaccessible via the REST API.
+To modify them, you must perform a manual file edit followed
+by a SIGHUP signal to reload the configuration into memory.
 </p><p>Tier 2 Protected Operations (Secured) - These parameters involve
 </p><p>security-sensitive automation, such as system user assignments,
 external script paths, and logging policies. By default, these
@@ -419,7 +425,7 @@ Bind to specific local addresses (e.g., 127.0.0.1:7627 or
 Port
 </div><div class="manual-tag-description">
 Providing only a port (e.g., 7627) binds to all available
-IPv4 interfaces (0.0.0.0).
+interfaces (0.0.0.0).
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -431,10 +437,9 @@ comma-separated list.
 </div>
 </div>
 </div>
-<p>If left unset, the daemon defaults to 127.0.0.1:7627. Modification
-requires a configuration reload and is restricted from API access.
+<p>If left unset, the daemon defaults to 127.0.0.1:7627.
 </p><p>To export the service to a VPN like Tailscale or a local network, you
-must bind to all interfaces (0.0.0.0) by specifying only the port number.
+should bind to all interfaces by specifying only the port number.
 </p><p>Examples:
 </p><pre>
 net_port=127.0.0.1:7627       - IPv4 localhost only (Recommended).
@@ -627,6 +632,13 @@ the path must be absolute (e.g., /var/www/snapraid-ui/).
 path is not absolute, or if the ZIP archive is inaccessible or
 malformed, the built-in HTTP server will be unable to serve the web
 interface.
+</p><p>The daemon recursively crawls the directory or archive at startup to
+provide high-performance, compressed delivery of the UI.
+</p><p>When a directory is specified, assets are cached in memory, as a result,
+manual changes to asset files on the disk will not be reflected in the
+UI until the daemon is restarted. This behavior can be bypassed by using
+the -N, --no-cache option during daemon startup, which is recommended
+for development environments only.
 </p></div>
 </div>
 <div class="manual-section-level-2">
@@ -634,7 +646,7 @@ interface.
 Automation &amp; Maintenance
 </h2>
 <p>These settings control the automation and maintenance tasks run by
-the SnapRAID daemon.
+the SnapRAID Daemon.
 </p><p>For security reasons, some of them can be set via the REST API only if the
 net_config_full_access option is enabled.
 </p><div class="manual-section-level-3">
@@ -644,7 +656,7 @@ maintenance_schedule
 <p>Defines the timing for the automated maintenance sequence, which
 consists of a sync, followed by a scrub, and concluding with a report.
 If this option is unset, automated maintenance is disabled.
-</p><p>The format must be either "HH:MM" or "[Day] HH:MM".
+</p><p>The format must be either "HH:MM" or "Day HH:MM".
 Hours are specified in a 24-hour format (00-23), and days are
 represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
 </p></div>
@@ -655,10 +667,8 @@ sync_threshold_deletes
 <p>Sets the maximum number of deleted or missing files allowed before a
 sync operation is automatically aborted. This serves as a safety
 mechanism to prevent accidental parity loss due to unintended mass
-deletions. This threshold is enforced during scheduled runs and
-maintenance API calls, but is bypassed for standalone sync API
-requests to allow for manual overrides.
-Set to 0 to disable this check.
+deletions. This safety check is enforced during automated maintenance
+schedules and tasks initiated through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-2-3" class="manual-title-level-3">
@@ -667,17 +677,19 @@ sync_threshold_updates
 <p>Sets the maximum number of modified or updated files allowed before a
 sync operation is aborted. Similar to the delete threshold, this
 prevents the parity from being overwritten if an unexpected number
-of files have changed. This is enforced during scheduled runs but
-bypassed for manual standalone sync requests.
-Set to 0 to disable this check.
+of files have changed. This safety check is enforced during automated
+maintenance schedules and tasks initiated through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-2-4" class="manual-title-level-3">
 sync_prehash
 </h3>
 <p>If set to 1, the sync command is executed with the --prehash option.
-This calculates hashes before moving data to verify integrity,
-helping to prevent silent errors caused by faulty memory.
+This calculates the hash of all files before the synchronization process
+begins. By hashing data before the system is subjected to the high
+CPU and I/O load typical of a sync operation, it protects against
+silent data corruption caused by faulty memory that may only trigger
+under critical system stress.
 If missing or set to 0, no pre-hashing is performed.
 </p></div>
 <div class="manual-section-level-3">
@@ -688,6 +700,9 @@ sync_force_zero
 files that have shrunk to zero size since the last run.
 By default (missing or 0), the daemon will halt the sync to protect
 against potential data corruption or accidental file clearing.
+This setting is particularly useful for detecting and acknowledging
+instances where files, accessed during a system crash, have been
+truncated to zero bytes by the filesystem.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-2-6" class="manual-title-level-3">
@@ -729,12 +744,10 @@ spindown_idle_minutes
 </h3>
 <p>Manages power consumption by automatically spinning down disks after
 the specified duration of inactivity.
-</p><p>Unlike the internal task logic of the daemon, this timer monitors the
-global activity of the disks across the entire operating system.
-A disk will only be spun down if it has remained completely idle for
-the specified period. If any other application, service, or system
-process accesses the disk, the idle timer is reset. The daemon will
-not force a spindown if the disk is currently in use by the system.
+</p><p>This timer monitors the global activity of the disks across the entire
+operating system. A disk will only be spun down if it has remained
+completely idle for the specified period. If any other application,
+service, or system process accesses the disk, the idle timer is reset.
 </p><p>If this option is unset, the daemon will not manage disk power states,
 relying instead on the OS or hardware controllers.
 </p></div>
@@ -774,7 +787,7 @@ same privileges as the daemon process.
 Logging &amp; Notifications
 </h2>
 <p>These settings control the logging and notification operations performed
-by the SnapRAID daemon.
+by the SnapRAID Daemon.
 </p><div class="manual-section-level-3">
 <h3 id="sec6-4-1" class="manual-title-level-3">
 log_directory
@@ -831,12 +844,12 @@ notify_result
 </h3>
 <p>Specifies a command triggered after every report task generated by
 high-level tasks or by a SMART telemetry change. The command is only
-executed if the task's result matches the notify_result_level.
+executed if the task's result matches the <b>notify_result_level</b>.
 The daemon pipes a structured, plain-text task report directly into
 the command's stdin.
 </p><p>The daemon automatically chooses a wide (80-col) or narrow (32-col)
 report based on the command and arguments used (e.g., presence of "mail"
-or "smtps"). Users can manually override this by adding --wide or
+or "smtps" strings). Users can manually override this by adding --wide or
 --narrow to the command string. These tags are stripped before execution.
 </p><p>Before execution, the daemon scans the command string and replaces the
 following tokens with dynamic values corresponding to the current
@@ -980,8 +993,8 @@ Maintenance &amp; Recovery
 These high-level endpoints encapsulate complex SnapRAID logic into
 single, automated tasks that manage the lifecycle of the array and the
 recovery of data.
-They typically end with a <b>report</b> command that generates a notification
-with a full report of the result of the operation.
+They typically conclude with a <b>report</b> command that generates a
+notification containing the operation's results.
 </p><div class="manual-section-level-3">
 <h3 id="sec7-1-1" class="manual-title-level-3">
 /snapraid/v1/maintenance
@@ -991,7 +1004,7 @@ a parity synchronization, followed by a data integrity scrub, and
 concludes by issuing a system-wide health report.
 This is the primary endpoint for routine array upkeep.
 This task is subject to the 'sync_threshold_deletes' and
-'sync_threshold_update' safety checks defined in the configuration.
+'sync_threshold_updates' safety checks defined in the configuration.
 The percentage of the array checked and the age filter are determined
 by the 'scrub_percentage' and 'scrub_older_than' settings.
 </p><p>Example:
