@@ -127,7 +127,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -336,7 +336,7 @@ snapraid -p bad scrub
 <h2 id="sec4-2" class="manual-title-level-2">
 Pooling
 </h2>
-<p>참고: 아래에 설명된 풀링(pooling) 기능은 **mergefs** 도구로 대체되었으며,
+<p>참고: 아래에 설명된 풀링(pooling) 기능은 **mergerfs** 도구로 대체되었으며,
 이는 SnapRAID 커뮤니티에서 Linux 사용자를 위한 권장 옵션입니다.
 Mergefs는 여러 드라이브를 단일 통합 마운트 지점으로 풀링하는 더 유연하고
 효율적인 방법을 제공하여, 심볼릭 링크에 의존하지 않고 어레이 전체의
@@ -938,6 +938,27 @@ rehash
 </p><p>재해시 중에도 SnapRAID는 전체 기능을 유지하며, 유일한 예외는
 <b>dup</b>가 다른 해시를 사용하는 중복 파일을 감지할 수 없다는 것입니다.
 </p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
+</h2>
+<p>패리티 디스크에 저장된 파일을 찾습니다. 일치하는 각 파일에 대해
+패리티 파일 내의 위치와 점유하고 있는 조각(fragment)의 수를
+출력합니다.
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-t, --tail 옵션을 사용하여 패리티의 지정된 꼬리(tail) 부분을 점유하는
+</div><div class="manual-option-description">
+</div>
+</div>
+</div>
+<p>파일로 작업을 제한할 수 있습니다.
+</p><p>이 파일들을 재할당하려면 -W, --force-realloc-tail 옵션을
+사용할 수 있습니다.
+재할당 과정 동안 해당 파일들은 패리티에 의해 보호되지 않으므로
+주의하십시오.
+</p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -1121,6 +1142,18 @@ bad로 표시된 블록은 이 옵션에 관계없이 항상 스크럽됩니다.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+-t, --tail 크기
+</div><div class="manual-option-description">
+패리티 디스크의 지정된 꼬리 크기 이하를 사용하는 파일로
+목록을 제한합니다.
+K, M, G, T와 같은 배수를 사용할 수 있습니다 (예: --tail 1G).
+이 옵션은 <b>locate</b> 명령과 함께 사용할 때만 유효합니다.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -A, --stats
 </div><div class="manual-option-description">
 추가 정보를 보여주는 확장된 상태 보기를 활성화합니다.
@@ -1256,6 +1289,31 @@ content 파일에 있는 해시를 재사용하여 데이터를 검증하고
 **경고!** 이 옵션은 전문가 전용이며, 사용하지 않는 것이
 강력히 권장됩니다.
 <b>sync</b> 작업 중에는 데이터 보호가 없습니다.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail 크기
+</div><div class="manual-option-description">
+-R, --force-realloc과 같이 작동하지만, 각 패리티 파일의 지정된
+꼬리 부분(마지막 '크기' 바이트)으로 제한됩니다.
+현재 해당 꼬리 섹션에 저장된 모든 파일 조각/블록의 재할당(이동)을
+강제하여, 여유 공간이 있는 패리티 파일 내의 어느 곳이든(기존
+빈 공간 포함) 배치될 수 있도록 합니다.
+이 옵션의 주요 목적은 패리티 파일의 디스크상 크기를 줄이는 것입니다.
+재할당을 통해 전체 꼬리 섹션이 성공적으로 비워지면(남은 블록이 없음),
+패리티 파일이 잘리고(truncated) 사용되지 않는 꼬리 공간을 회수합니다.
+K, M, G, T와 같은 배수를 사용할 수 있습니다 (예:
+--force-realloc-tail 1G).
+locate -t, --tail을 사용하여 영향을 받는 파일을 사전에
+확인할 수 있습니다.
+경고!
+이 옵션은 전문가 전용이며, 사용하지 않을 것을 강력히
+권장합니다.
+영향을 받는 파일에 대해서는 <b>sync</b> 작업 동안 데이터 보호를
+받을 수 없습니다.
 </div>
 </div>
 </div>

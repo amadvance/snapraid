@@ -205,6 +205,141 @@ Prints the program version.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
+Getting Started
+</h1>
+<p>The daemon acts as a management layer for the SnapRAID CLI. Therefore,
+SnapRAID must be installed and fully configured before starting the
+service. All interactions with the underlying parity array are handled
+through the standard SnapRAID binary.
+</p><p>During the installation process, a default configuration file is
+provisioned to enable the REST API and the Web UI. For users installing
+via binary packages, this file is typically placed at <b>/etc/snapraidd.conf</b>.
+If you are installing from source, it is recommended to run
+<b>./configure --sysconfdir=/etc</b> during the build process to ensure the
+configuration is placed in the standard <b>/etc</b> directory.
+</p><p>Using this default configuration file, the UI is accessible via&nbsp;&nbsp;&nbsp;&nbsp;a web
+browser at the following address:
+</p><p><a href="http://127.0.0.1:7627">http://127.0.0.1:7627</a>
+<br>
+</p><p>The default port, 7627, was chosen as a mnemonic, representing the
+word "SNAP" as typed on a standard telephone keypad.
+</p><p>At startup, the daemon parses historical logs from <b>/var/log/snapraid</b>
+to reconstruct the current state of the array. These logs are
+generated and saved by the daemon itself during the execution
+of SnapRAID CLI commands. Consequently, on the very first run, this
+directory will be empty.
+</p><p>In this initial scenario, the daemon automatically triggers a SnapRAID
+<b>read</b> command. This allows SnapRAID to process its internal <b>content</b>
+files and provide the daemon with the necessary metadata to establish
+the array's baseline state.
+</p><p>Once the service is running, you should review <b>/etc/snapraidd.conf</b>
+or use the Settings panel in the UI to tailor the behavior to your
+environment.
+</p><p>Typical post-installation steps include:
+</p><ul>
+<li>
+Defining a <b>maintenance_schedule</b> for automated sync and scrub
+operations.
+</li>
+<li>
+Setting <b>spindown_idle_minutes</b> to optimize energy usage for
+disks not in active use.
+</li>
+<li>
+Configuring the <b>notify_result</b> system to receive alerts
+regarding array health and task outcomes.
+</li>
+</ul>
+<p>To make manual changes to the <b>/etc/snapraidd.conf</b> file effective,
+you must either restart the daemon or send a <b>SIGHUP</b> signal to the
+running process. Unlike manual file edits, changes made through the UI
+are applied to the running process and saved to the configuration file
+pressing the <b>Save</b> button.
+</p><p>Example:
+</p><pre>
+sudo killall -HUP snapraidd
+</pre>
+<p>By default, the daemon binds to the loopback interface, meaning the
+UI is accessible only from the local machine and not from other devices
+on the network.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec5" class="manual-title-level-1">
+Health
+</h1>
+<p>The array's aggregate health is determined by evaluating historical log
+data alongside real-time hardware telemetry.
+</p><p>If the array transitions into any problematic state, the daemon
+immediately issues an alert through the configured notification system.
+</p><p>In the REST API, this state is reported by the <b>health</b> field.
+Whenever the health is not PASSED, a supplementary <b>health_reason</b> field
+is provided to give a discursive explanation of the specific condition or
+failure detected.
+</p><p>The Web UI also reflects these states by displaying a prominent top
+banner across all pages if the health is in a problematic state. This
+ensures that critical issues are visible regardless of the specific
+dashboard view being accessed.
+</p><p>The possible health states are:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PENDING
+</div><div class="manual-tag-description">
+The health has not yet been assessed. The daemon requires a
+successful hardware probe where all disks are spinning at
+least once to read SMART attributes.
+Issuing an <b>up</b> command is sufficient to satisfy this.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PASSED
+</div><div class="manual-tag-description">
+The array is fully healthy. All disks report positive SMART
+status and the last scrub found no data corruption.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CORRUPT
+</div><div class="manual-tag-description">
+Silent errors (hash or parity mismatches) were detected, though
+no physical hardware issues were identified.
+In this state, scheduled maintenance remains active.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PREFAIL
+</div><div class="manual-tag-description">
+The SMART telemetry reports a pre-failing condition (e.g.,
+reallocated sectors), or a task encountered input/output errors
+while accessing files.
+File input/output errors are temporary and they are cleared
+automatically after a successful sync.
+Automated maintenance is suspended in this state, and manual
+intervention is required.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+FAILING
+</div><div class="manual-tag-description">
+The SMART telemetry reports a critical failing condition, or a
+disk has disappeared from the system.
+Automated maintenance is suspended in this state, and immediate
+manual intervention is required.
+</div>
+</div>
+</div>
+<p>Individual tasks also maintain a health state reflecting only the
+problems identified during that specific operation.
+For example, an array in a CORRUPT state may still produce a PASSED
+result for a <b>probe</b> task if that operation encountered no specific
+errors.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec6" class="manual-title-level-1">
 Configuration
 </h1>
 <p>The SnapRAID Daemon is configured via a plain-text .conf file,
@@ -214,52 +349,49 @@ path chosen at build time (typically via the <b>--prefix</b> argument to
 the configure script).
 </p><p>This file governs the behavior of the automation engine, network
 accessibility, safety interlocks, and hardware monitoring parameters.
-</p><p>The configuration system is designed with a "hybrid" management
-philosophy to balance convenience with system security:
-</p><div class="manual-tag-list">
-<div class="manual-tag-entry">
-<div class="manual-tag-name">
-Static_Parameters
-</div><div class="manual-tag-description">
-Critical security and networking settings, such
-as the listening port (net_port) and the system user for
-scripts (script_run_as_user), are immutable via the REST API.
-These require manual file edits followed by a SIGHUP signal
-(e.g., systemctl reload snapraidd) to take effect.
-</div>
-</div>
-</div>
-<div class="manual-tag-list">
-<div class="manual-tag-entry">
-<div class="manual-tag-name">
-Dynamic_Parameters
-</div><div class="manual-tag-description">
-Operational settings, like the maintenance
-schedule or scrub percentages, can be modified in real-time
-via the PATCH /snapraid/v1/config endpoint. Changes made through
-the API are instantly applied to the running process and
-persisted back to the configuration file, preserving any
-manual comments.
-</div>
-</div>
-</div>
-<p>To prevent race conditions, users should avoid editing the
-configuration file manually while simultaneously issuing configuration
-updates via the REST API. If a manual edit is performed while the
-daemon is active, ensure a reload is triggered immediately to
-synchronize the daemon's internal memory state with the disk.
-</p><p>For a comprehensive view of how these settings are applied in a
-real-world environment, refer to the <b>snapraidd.conf.example</b> file
-typically located in the documentation directory of the installation.
+</p><p>The configuration system is designed with a "triple-tier" management
+philosophy to balance operational convenience with rigorous system
+security:
+</p><p>Tier 1 Core Network (Immutable) -
+</p><p>This tier includes critical security and networking parameters,
+such as the master API toggle, port bindings, and access
+control lists. These settings are completely inaccessible via
+the REST API. To modify them, you must perform a manual file
+edit followed by a SIGHUP signal to reload the configuration into memory.
+</p><p>Tier 2 Protected Operations (Secured) - These parameters involve
+</p><p>security-sensitive automation, such as system user assignments,
+external script paths, and logging policies. By default, these
+options are read-only via the REST API. They can only be
+modified via API PATCH requests if the <b>net_config_full_access</b>
+flag is manually enabled in this file.
+</p><p>Tier 3 Dynamic Logic (Live) - This tier consists of standard
+</p><p>operational settings like maintenance schedules, scrub intensities,
+and disk monitoring intervals. These parameters are fully
+accessible and can be modified in real-time via the API.
+Changes made through the REST interface are instantly applied
+to the running process and persisted back to this file while
+preserving all existing manual comments.
+</p><p>To make changes to the <b>/etc/snapraidd.conf</b> file effective, you must
+either restart the daemon or send a SIGHUP signal to the running process.
+This is required for any manual edit to ensure the daemon's memory state
+stays in sync with the file and to prevent the API from accidentally
+overwriting your changes.
+</p><p>Example:
+</p><pre>
+sudo killall -HUP snapraidd
+</pre>
+<p>For a comprehensive view of how these settings are applied in a
+real-world environment, refer to the comments in the <b>snapraidd.conf</b>
+file installed.
 </p><div class="manual-section-level-2">
-<h2 id="sec4-1" class="manual-title-level-2">
+<h2 id="sec6-1" class="manual-title-level-2">
 Network &amp; REST API
 </h2>
 <p>These settings control the network interface. These options are not
 visible from the REST API. They require a manual edit of the
 configuration file and a configuration reload (SIGHUP) to apply.
 </p><div class="manual-section-level-3">
-<h3 id="sec4-1-1" class="manual-title-level-3">
+<h3 id="sec6-1-1" class="manual-title-level-3">
 net_enabled
 </h3>
 <p>Acts as the master toggle for the network interface. When set to 1,
@@ -268,7 +400,7 @@ If set to 0 or left blank, the daemon operates in a secure, local-only
 mode, and no network ports are opened.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-1-2" class="manual-title-level-3">
+<h3 id="sec6-1-2" class="manual-title-level-3">
 net_port
 </h3>
 <p>Defines the specific IP address and port(s) to which the daemon binds.
@@ -278,15 +410,15 @@ The format follows [IP_ADDRESS:]PORT[s].
 <div class="manual-tag-name">
 IPv4/IPv6
 </div><div class="manual-tag-description">
-Bind to specific local addresses (e.g., 127.0.0.1:8080 or
-[::1]:8080).
+Bind to specific local addresses (e.g., 127.0.0.1:7627 or
+[::1]:7627).
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-Wildcard
+Port
 </div><div class="manual-tag-description">
-Providing only a port (e.g., 8080) binds to all available
+Providing only a port (e.g., 7627) binds to all available
 IPv4 interfaces (0.0.0.0).
 </div>
 </div>
@@ -299,11 +431,20 @@ comma-separated list.
 </div>
 </div>
 </div>
-<p>If left unset, the daemon defaults to 127.0.0.1:8080. Modification
+<p>If left unset, the daemon defaults to 127.0.0.1:7627. Modification
 requires a configuration reload and is restricted from API access.
-</p></div>
+</p><p>To export the service to a VPN like Tailscale or a local network, you
+must bind to all interfaces (0.0.0.0) by specifying only the port number.
+</p><p>Examples:
+</p><pre>
+net_port=127.0.0.1:7627       - IPv4 localhost only (Recommended).
+net_port=7627                 - All IPv4 interfaces (Required for Tailscale/LAN).
+net_port=[::1]:7627           - IPv6 loopback only.
+net_port=127.0.0.1:7627,8080  - Listen on multiple ports on localhost.
+</pre>
+</div>
 <div class="manual-section-level-3">
-<h3 id="sec4-1-3" class="manual-title-level-3">
+<h3 id="sec6-1-3" class="manual-title-level-3">
 net_acl
 </h3>
 <p>Restricts API and dashboard access to specific client IP addresses or
@@ -313,9 +454,17 @@ subnets using a comma-separated Access Control List (ACL).
 stance. The rules are processed sequentially, and the last matching rule
 determines the outcome.
 If unset, it defaults to +127.0.0.1.
-</p></div>
+</p><p>To allow access via Tailscale or similar services, ensure you add the
+relevant network prefix (e.g., +100.0.0.0/8).
+</p><p>Examples:
+</p><pre>
+net_acl=+127.0.0.1,+::1          - Allow IPv4 and IPv6 loopback.
+net_acl=+100.0.0.0/8,+127.0.0.1  - Allow Tailscale and localhost.
+net_acl=+192.168.1.0/24          - Allow local subnet only.
+</pre>
+</div>
 <div class="manual-section-level-3">
-<h3 id="sec4-1-4" class="manual-title-level-3">
+<h3 id="sec6-1-4" class="manual-title-level-3">
 net_security_headers
 </h3>
 <p>When enabled (1), the daemon injects several browser-level security
@@ -329,7 +478,7 @@ proxy (like Nginx or Traefik) that is already configured to handle
 these security headers.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-1-5" class="manual-title-level-3">
+<h3 id="sec6-1-5" class="manual-title-level-3">
 net_allowed_origin
 </h3>
 <p>Configures Cross-Origin Resource Sharing (CORS) to determine which web
@@ -360,7 +509,7 @@ Restricts access to a specific origin (e.g., http://192.168.1.50:3000).
 </div>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec4-1-6" class="manual-title-level-3">
+<h3 id="sec6-1-6" class="manual-title-level-3">
 net_config_full_access
 </h3>
 <p>A security flag that determines whether sensitive configuration parameters
@@ -437,7 +586,7 @@ The severity threshold for sending notifications.
 </div>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec4-1-7" class="manual-title-level-3">
+<h3 id="sec6-1-7" class="manual-title-level-3">
 net_web_root
 </h3>
 <p>Specifies the source of the web dashboard assets. The daemon supports
@@ -481,7 +630,7 @@ interface.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec4-2" class="manual-title-level-2">
+<h2 id="sec6-2" class="manual-title-level-2">
 Automation &amp; Maintenance
 </h2>
 <p>These settings control the automation and maintenance tasks run by
@@ -489,18 +638,18 @@ the SnapRAID daemon.
 </p><p>For security reasons, some of them can be set via the REST API only if the
 net_config_full_access option is enabled.
 </p><div class="manual-section-level-3">
-<h3 id="sec4-2-1" class="manual-title-level-3">
+<h3 id="sec6-2-1" class="manual-title-level-3">
 maintenance_schedule
 </h3>
 <p>Defines the timing for the automated maintenance sequence, which
 consists of a sync, followed by a scrub, and concluding with a report.
 If this option is unset, automated maintenance is disabled.
-</p><p>The format must be either "daily HH:MM" or "weekly [Day] HH:MM".
+</p><p>The format must be either "HH:MM" or "[Day] HH:MM".
 Hours are specified in a 24-hour format (00-23), and days are
 represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-2-2" class="manual-title-level-3">
+<h3 id="sec6-2-2" class="manual-title-level-3">
 sync_threshold_deletes
 </h3>
 <p>Sets the maximum number of deleted or missing files allowed before a
@@ -512,7 +661,7 @@ requests to allow for manual overrides.
 Set to 0 to disable this check.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-2-3" class="manual-title-level-3">
+<h3 id="sec6-2-3" class="manual-title-level-3">
 sync_threshold_updates
 </h3>
 <p>Sets the maximum number of modified or updated files allowed before a
@@ -523,7 +672,7 @@ bypassed for manual standalone sync requests.
 Set to 0 to disable this check.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-2-4" class="manual-title-level-3">
+<h3 id="sec6-2-4" class="manual-title-level-3">
 sync_prehash
 </h3>
 <p>If set to 1, the sync command is executed with the --prehash option.
@@ -532,7 +681,7 @@ helping to prevent silent errors caused by faulty memory.
 If missing or set to 0, no pre-hashing is performed.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-2-5" class="manual-title-level-3">
+<h3 id="sec6-2-5" class="manual-title-level-3">
 sync_force_zero
 </h3>
 <p>If set to 1, the daemon allows a sync to proceed even if it detects
@@ -541,7 +690,7 @@ By default (missing or 0), the daemon will halt the sync to protect
 against potential data corruption or accidental file clearing.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-2-6" class="manual-title-level-3">
+<h3 id="sec6-2-6" class="manual-title-level-3">
 scrub_percentage
 </h3>
 <p>Determines the portion of the array verified after a successful sync.
@@ -550,7 +699,7 @@ You may use decimal points to specify fractions of a percent
 If missing or set to 0, the scrub phase is skipped entirely.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-2-7" class="manual-title-level-3">
+<h3 id="sec6-2-7" class="manual-title-level-3">
 scrub_older_than
 </h3>
 <p>Specifies that only blocks older than the defined number of days
@@ -560,13 +709,13 @@ If missing or set to 0, no age-based filtering is applied.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec4-3" class="manual-title-level-2">
+<h2 id="sec6-3" class="manual-title-level-2">
 Disk Monitoring &amp; Power
 </h2>
 <p>The following settings manage how the daemon interacts with physical
 hardware to monitor disk health and optimize energy consumption
 </p><div class="manual-section-level-3">
-<h3 id="sec4-3-1" class="manual-title-level-3">
+<h3 id="sec6-3-1" class="manual-title-level-3">
 probe_interval_minutes
 </h3>
 <p>Controls the frequency at which the daemon checks disk SMART attributes.
@@ -575,7 +724,7 @@ if the disks are already spinning.
 If set to 0 or left blank, SMART monitoring is disabled.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-2" class="manual-title-level-3">
+<h3 id="sec6-3-2" class="manual-title-level-3">
 spindown_idle_minutes
 </h3>
 <p>Manages power consumption by automatically spinning down disks after
@@ -590,7 +739,7 @@ not force a spindown if the disk is currently in use by the system.
 relying instead on the OS or hardware controllers.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-3" class="manual-title-level-3">
+<h3 id="sec6-3-3" class="manual-title-level-3">
 script_pre_run/script_post_run
 </h3>
 <p>Defines absolute paths to custom scripts to be executed immediately before
@@ -612,7 +761,7 @@ The script must contain a valid shebang (e.g., #!/bin/sh).
 </ul>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec4-3-4" class="manual-title-level-3">
+<h3 id="sec6-3-4" class="manual-title-level-3">
 script_run_as_user
 </h3>
 <p>Specifies the user account used to execute the pre-run and post-run
@@ -621,13 +770,13 @@ same privileges as the daemon process.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec4-4" class="manual-title-level-2">
+<h2 id="sec6-4" class="manual-title-level-2">
 Logging &amp; Notifications
 </h2>
 <p>These settings control the logging and notification operations performed
 by the SnapRAID daemon.
 </p><div class="manual-section-level-3">
-<h3 id="sec4-4-1" class="manual-title-level-3">
+<h3 id="sec6-4-1" class="manual-title-level-3">
 log_directory
 </h3>
 <p>The log_directory defines where the output of individual SnapRAID
@@ -642,7 +791,7 @@ directory is provided, the daemon will lose its "memory" of previous
 task results every time it is restarted.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-2" class="manual-title-level-3">
+<h3 id="sec6-4-2" class="manual-title-level-3">
 log_retention_days
 </h3>
 <p>To prevent your storage from filling up, log_retention_days sets the
@@ -650,7 +799,7 @@ age at which old command logs are deleted. Logs are kept indefinitely
 if this is set to 0 or left unset.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-3" class="manual-title-level-3">
+<h3 id="sec6-4-3" class="manual-title-level-3">
 notify_syslog_enabled
 </h3>
 <p>When set to 1, daemon activity is sent to the operating system system
@@ -659,7 +808,7 @@ stopping are always captured, task-related messages are filtered by
 <b>notify_syslog_level</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-4" class="manual-title-level-3">
+<h3 id="sec6-4-4" class="manual-title-level-3">
 notify_syslog_level
 </h3>
 <p>Sets the minimum severity for syslog task entries.
@@ -667,7 +816,7 @@ Possible values are <b>info</b>, <b>warning</b>, <b>error</b>, and <b>critical</
 The default is <b>error</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-5" class="manual-title-level-3">
+<h3 id="sec6-4-5" class="manual-title-level-3">
 notify_heartbeat
 </h3>
 <p>Defines a command to run ONLY if the maintenance task was successful
@@ -677,13 +826,14 @@ or Healthchecks.io. If this ping stops, it indicates the server is down
 or the task is failing.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-6" class="manual-title-level-3">
+<h3 id="sec6-4-6" class="manual-title-level-3">
 notify_result
 </h3>
-<p>Specifies a command triggered after every high-level task (maintenance,
-heal, or undelete). The command is only executed if the task's result
-matches the notify_result_level. The daemon pipes a structured,
-plain-text task report directly into the command's stdin.
+<p>Specifies a command triggered after every report task generated by
+high-level tasks or by a SMART telemetry change. The command is only
+executed if the task's result matches the notify_result_level.
+The daemon pipes a structured, plain-text task report directly into
+the command's stdin.
 </p><p>The daemon automatically chooses a wide (80-col) or narrow (32-col)
 report based on the command and arguments used (e.g., presence of "mail"
 or "smtps"). Users can manually override this by adding --wide or
@@ -717,7 +867,7 @@ ntfy priority (urgent, high, default, low, min).
 <div class="manual-tag-name">
 %t
 </div><div class="manual-tag-description">
-ntfy tag (skull, warning, default, -1, +1, heavy_check_mark).
+ntfy tag (rotating_light, warning, default, -1, +1, heavy_check_mark).
 </div>
 </div>
 </div>
@@ -740,7 +890,7 @@ authentication. Failure to do so may result in authentication errors
 (e.g., curl error 55).
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-7" class="manual-title-level-3">
+<h3 id="sec6-4-7" class="manual-title-level-3">
 notify_result_level
 </h3>
 <p>Controls the filter for <b>notify_result</b>. The notification is sent only
@@ -749,7 +899,7 @@ Valid values are <b>info</b> (always send), <b>warning</b>, <b>error</b>, and <b
 The default is <b>error</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec4-4-8" class="manual-title-level-3">
+<h3 id="sec6-4-8" class="manual-title-level-3">
 notify_differences
 </h3>
 <p>If set to 1, the daemon logs a detailed list of file changes discovered
@@ -758,13 +908,13 @@ generated.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec4-5" class="manual-title-level-2">
-Notification Examples:
+<h2 id="sec6-5" class="manual-title-level-2">
+Notification Examples
 </h2>
 <p>The following examples demonstrate common notification and heartbeat
 configurations
 </p><div class="manual-section-level-3">
-<h3 id="sec4-5-1" class="manual-title-level-3">
+<h3 id="sec6-5-1" class="manual-title-level-3">
 External Heartbeat Monitoring (Healthchecks.io)
 </h3>
 <p>To monitor that automated maintenance is running successfully, use a service
@@ -777,7 +927,7 @@ notify_heartbeat = curl -f --max-time 30 --retry 3 <a href="https://hc-ping.com/
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec4-5-2" class="manual-title-level-3">
+<h3 id="sec6-5-2" class="manual-title-level-3">
 Push Notifications (ntfy.sh)
 </h3>
 <p>This uses curl to send the report as a POST request to a push notification service.
@@ -788,7 +938,7 @@ notify_result = curl --narrow -f --max-time 30 --retry 3 -H "Title: %s" -H "Prio
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec4-5-3" class="manual-title-level-3">
+<h3 id="sec6-5-3" class="manual-title-level-3">
 Local System Mail (mail)
 </h3>
 <p>A traditional approach using the standard Linux mail utility. This is
@@ -799,7 +949,7 @@ notify_result = mail -s "%s" your_user@localhost
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec4-5-4" class="manual-title-level-3">
+<h3 id="sec6-5-4" class="manual-title-level-3">
 Direct Delivery (SMTP-over-SSL)
 </h3>
 <p>This leverages curl's built-in SMTP engine for direct delivery to an
@@ -813,7 +963,7 @@ notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-
 </div>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec5" class="manual-title-level-1">
+<h1 id="sec7" class="manual-title-level-1">
 REST API
 </h1>
 <p>The SnapRAID Daemon provides a comprehensive RESTful JSON interface
@@ -823,7 +973,7 @@ specific error codes, please refer to the <b>snapraidd.yaml</b> OpenAPI
 specification file typically located in the documentation directory of
 the installation.
 </p><div class="manual-section-level-2">
-<h2 id="sec5-1" class="manual-title-level-2">
+<h2 id="sec7-1" class="manual-title-level-2">
 Maintenance &amp; Recovery
 </h2>
 <p>The API prioritizes orchestrated workflows over raw command execution.
@@ -833,7 +983,7 @@ recovery of data.
 They typically end with a <b>report</b> command that generates a notification
 with a full report of the result of the operation.
 </p><div class="manual-section-level-3">
-<h3 id="sec5-1-1" class="manual-title-level-3">
+<h3 id="sec7-1-1" class="manual-title-level-3">
 /snapraid/v1/maintenance
 </h3>
 <p>Triggers the complete automated maintenance sequence. It orchestrates
@@ -846,13 +996,13 @@ The percentage of the array checked and the age filter are determined
 by the 'scrub_percentage' and 'scrub_older_than' settings.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:8080/snapraid/v1/maintenance">http://localhost:8080/snapraid/v1/maintenance</a>
+curl -X POST <a href="http://localhost:7627/snapraid/v1/maintenance">http://localhost:7627/snapraid/v1/maintenance</a>
 </pre>
 <p>It is implemented with the sequence of commands: up, diff, sync, scrub, and
 report.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec5-1-2" class="manual-title-level-3">
+<h3 id="sec7-1-2" class="manual-title-level-3">
 /snapraid/v1/heal
 </h3>
 <p>Executes a specialized silent error recovery workflow. The daemon
@@ -862,13 +1012,13 @@ blocks to ensure the recovery was successful, and concludes by issuing
 a report of the result.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:8080/snapraid/v1/heal">http://localhost:8080/snapraid/v1/heal</a>
+curl -X POST <a href="http://localhost:7627/snapraid/v1/heal">http://localhost:7627/snapraid/v1/heal</a>
 </pre>
 <p>It is implemented with the sequence of commands: up, fix -e, scrub -p bad,
 and report.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec5-1-3" class="manual-title-level-3">
+<h3 id="sec7-1-3" class="manual-title-level-3">
 /snapraid/v1/undelete
 </h3>
 <p>Invokes the SnapRAID restoration engine to recover files that have been
@@ -877,7 +1027,7 @@ This is used to roll back accidental deletions to the state of the
 last successful synchronization.
 </p><p>Example:
 </p><pre>
-curl -s -X POST <a href="http://localhost:8080/snapraid/v1/undelete">http://localhost:8080/snapraid/v1/undelete</a> \
+curl -s -X POST <a href="http://localhost:7627/snapraid/v1/undelete">http://localhost:7627/snapraid/v1/undelete</a> \
 &nbsp;&nbsp;&nbsp;&nbsp;-H "Content-Type: application/json" \
 &nbsp;&nbsp;&nbsp;&nbsp;-d '{ "filters": [ "*.txt" ] }'
 </pre>
@@ -885,7 +1035,7 @@ curl -s -X POST <a href="http://localhost:8080/snapraid/v1/undelete">http://loca
 and report.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec5-1-4" class="manual-title-level-3">
+<h3 id="sec7-1-4" class="manual-title-level-3">
 /snapraid/v1/suspend_idle
 </h3>
 <p>Probes the disks to gather their latest activity state and executes a
@@ -895,19 +1045,19 @@ down_idle command to disks that have exceeded the
 generated.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:8080/snapraid/v1/suspend_idle">http://localhost:8080/snapraid/v1/suspend_idle</a>
+curl -X POST <a href="http://localhost:7627/snapraid/v1/suspend_idle">http://localhost:7627/snapraid/v1/suspend_idle</a>
 </pre>
 <p>It is implemented with the sequence of commands: probe, down_idle.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec5-2" class="manual-title-level-2">
+<h2 id="sec7-2" class="manual-title-level-2">
 Monitoring &amp; Inventory
 </h2>
 <p>These endpoints provide high-level visibility into the global state of
 the storage stack and the health of the underlying physical hardware.
 </p><div class="manual-section-level-3">
-<h3 id="sec5-2-1" class="manual-title-level-3">
+<h3 id="sec7-2-1" class="manual-title-level-3">
 /snapraid/v1/array
 </h3>
 <p>Provides a high-level telemetry summary of the entire parity array.
@@ -916,11 +1066,11 @@ aggregate space utilization, the current state of parity protection,
 and the timestamp of the last successful maintenance.
 </p><p>Example:
 </p><pre>
-curl -s <a href="http://localhost:8080/snapraid/v1/array">http://localhost:8080/snapraid/v1/array</a> | jq
+curl -s <a href="http://localhost:7627/snapraid/v1/array">http://localhost:7627/snapraid/v1/array</a> | jq
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec5-2-2" class="manual-title-level-3">
+<h3 id="sec7-2-2" class="manual-title-level-3">
 /snapraid/v1/disks
 </h3>
 <p>Returns a comprehensive inventory of every physical disk associated
@@ -929,18 +1079,18 @@ metrics including SMART health status, temperature, and the current
 power state (Active/Spin-up vs. Standby/Spin-down).
 </p><p>Example:
 </p><pre>
-curl -s <a href="http://localhost:8080/snapraid/v1/disks">http://localhost:8080/snapraid/v1/disks</a> | jq
+curl -s <a href="http://localhost:7627/snapraid/v1/disks">http://localhost:7627/snapraid/v1/disks</a> | jq
 </pre>
 </div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec5-3" class="manual-title-level-2">
+<h2 id="sec7-3" class="manual-title-level-2">
 Configuration
 </h2>
 <p>Provides a programmatic interface to retrieve and modify the
 operational parameters of the daemon in real-time.
 </p><div class="manual-section-level-3">
-<h3 id="sec5-3-1" class="manual-title-level-3">
+<h3 id="sec7-3-1" class="manual-title-level-3">
 /snapraid/v1/config
 </h3>
 <p>Retrieves and updates the current runtime configuration parameters of
@@ -950,14 +1100,14 @@ Note that certain networking and security settings are read-only and
 require a manual edit and SIGHUP.
 </p><p>Example:
 </p><pre>
-curl -X GET <a href="http://localhost:8080/snapraid/v1/config">http://localhost:8080/snapraid/v1/config</a> | jq
-curl -X PATCH <a href="http://localhost:8080/snapraid/v1/config">http://localhost:8080/snapraid/v1/config</a> \
+curl -X GET <a href="http://localhost:7627/snapraid/v1/config">http://localhost:7627/snapraid/v1/config</a> | jq
+curl -X PATCH <a href="http://localhost:7627/snapraid/v1/config">http://localhost:7627/snapraid/v1/config</a> \
 &nbsp;&nbsp;&nbsp;&nbsp;-d '{ "probe_interval_minutes": 10 }'
 </pre>
 </div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec5-4" class="manual-title-level-2">
+<h2 id="sec7-4" class="manual-title-level-2">
 Activity Control
 </h2>
 <p>All operations that modify the array state are asynchronous; they
@@ -966,7 +1116,7 @@ execution.
 </p><p>Because tasks run in the background, these endpoints are used to
 monitor progress and manage the execution lifecycle.
 </p><div class="manual-section-level-3">
-<h3 id="sec5-4-1" class="manual-title-level-3">
+<h3 id="sec7-4-1" class="manual-title-level-3">
 /snapraid/v1/activity
 </h3>
 <p>Provides real-time telemetry for the currently executing task,
@@ -975,11 +1125,11 @@ and a live stream of the process log output.
 If no task is in execution, it returns the last completed task.
 </p><p>Example:
 </p><pre>
-curl -s <a href="http://localhost:8080/snapraid/v1/activity">http://localhost:8080/snapraid/v1/activity</a> | jq
+curl -s <a href="http://localhost:7627/snapraid/v1/activity">http://localhost:7627/snapraid/v1/activity</a> | jq
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec5-4-2" class="manual-title-level-3">
+<h3 id="sec7-4-2" class="manual-title-level-3">
 /snapraid/v1/tasks
 </h3>
 <p>Lists all tasks waiting, the task currently active, and the task
@@ -987,30 +1137,30 @@ execution history. The response from this entry point can be very long,
 as the history may span up to a month.
 </p><p>Example:
 </p><pre>
-curl -s <a href="http://localhost:8080/snapraid/v1/tasks">http://localhost:8080/snapraid/v1/tasks</a> | jq
+curl -s <a href="http://localhost:7627/snapraid/v1/tasks">http://localhost:7627/snapraid/v1/tasks</a> | jq
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec5-4-3" class="manual-title-level-3">
+<h3 id="sec7-4-3" class="manual-title-level-3">
 /snapraid/v1/stop
 </h3>
 <p>Terminates the currently running task (such as sync or scrub) by
 sending a SIGTERM signal to the background process.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:8080/snapraid/v1/stop">http://localhost:8080/snapraid/v1/stop</a>
+curl -X POST <a href="http://localhost:7627/snapraid/v1/stop">http://localhost:7627/snapraid/v1/stop</a>
 </pre>
 </div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec5-5" class="manual-title-level-2">
+<h2 id="sec7-5" class="manual-title-level-2">
 State and Cache Management
 </h2>
 <p>To optimize performance and support lightweight monitoring (such as
 desktop status bars), the daemon implements a state synchronization
 mechanism via the /v1/state endpoint.
 </p><div class="manual-section-level-3">
-<h3 id="sec5-5-1" class="manual-title-level-3">
+<h3 id="sec7-5-1" class="manual-title-level-3">
 /snapraid/v1/state
 </h3>
 <p>The response provides a high-level summary of the daemon's current
@@ -1027,12 +1177,12 @@ because they are reset if the daemon restarts. You should compare
 them only for equality.
 </p><p>Example:
 </p><pre>
-curl -X GET <a href="http://localhost:8080/snapraid/v1/state">http://localhost:8080/snapraid/v1/state</a> | jq
+curl -X GET <a href="http://localhost:7627/snapraid/v1/state">http://localhost:7627/snapraid/v1/state</a> | jq
 </pre>
 </div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec5-6" class="manual-title-level-2">
+<h2 id="sec7-6" class="manual-title-level-2">
 Schedule
 </h2>
 <p>The schedule entry point allows batching multiple SnapRAID commands
@@ -1051,13 +1201,13 @@ preserving any independent tasks previously queued in the system.
 finalizer. It will execute regardless of previous failures to ensure
 the generation of a report that reflects the final state of the system.
 </p><div class="manual-section-level-3">
-<h3 id="sec5-6-1" class="manual-title-level-3">
+<h3 id="sec7-6-1" class="manual-title-level-3">
 /snapraid/v1/schedule
 </h3>
 <p>Queues a sequence of standard SnapRAID operations.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:8080/snapraid/v1/schedule">http://localhost:8080/snapraid/v1/schedule</a> \
+curl -X POST <a href="http://localhost:7627/snapraid/v1/schedule">http://localhost:7627/snapraid/v1/schedule</a> \
 &nbsp;&nbsp;&nbsp;&nbsp;-d '{"tasks": [{"command": "diff"}, {"command": "report"}]}'
 </pre>
 <p>Supported Commands:
@@ -1161,7 +1311,7 @@ have exceeded the 'spindown_idle_minutes' threshold.
 </div>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec6" class="manual-title-level-1">
+<h1 id="sec8" class="manual-title-level-1">
 Signals
 </h1>
 <p>This section defines how the daemon responds to standard Unix signals,
@@ -1196,7 +1346,7 @@ performed.
 </p></div>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec7" class="manual-title-level-1">
+<h1 id="sec9" class="manual-title-level-1">
 Files
 </h1>
 <p>The following list specifies the default filesystem paths used by the

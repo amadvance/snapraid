@@ -127,7 +127,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -342,7 +342,7 @@ utdata, men de relaterade blocken markeras inte som dåliga.
 Poolning
 </h2>
 <p>Obs: Poolningsfunktionen som beskrivs nedan har ersatts av verktyget
-mergefs, som nu är det rekommenderade alternativet för Linux-användare i
+mergerfs, som nu är det rekommenderade alternativet för Linux-användare i
 SnapRAID-communityt. Mergefs ger ett mer flexibelt och effektivt
 sätt att poola flera enheter till en enda enhetlig monteringspunkt,
 vilket möjliggör sömlös åtkomst till filer över din array utan att förlita sig
@@ -915,6 +915,19 @@ progressivt under <b>sync</b> och <b>scrub</b>.
 med det enda undantaget att <b>dup</b> inte kan upptäcka dubbletter
 med hjälp av en annan hash.
 </p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
+</h2>
+<p>Lokaliserar filer som lagras på paritetsdiskarna. För varje matchande fil
+skrivs dess plats i paritetsfilen och antalet fragment den upptar ut.
+</p><p>Du kan använda alternativet -t, --tail för att begränsa åtgärden till filer som
+upptar den angivna slutdelen (tail) av pariteten.
+</p><p>Om du vill omallokera dessa filer kan du använda alternativet
+-W, --force-realloc-tail.
+Var medveten om att sådana filer inte skyddas av paritet under
+omallokeringsprocessen.
+</p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -1105,6 +1118,19 @@ som K, M eller G (t.ex. --bw-limit 1G).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+-t, --tail STORLEK
+</div><div class="manual-option-description">
+Begränsa fillistan till de som inte använder mer än den angivna
+slutstorleken på paritetsdiskarna.
+Du kan använda multiplikatorer som K, M, G eller T (t.ex. --tail 1G).
+Detta alternativ är endast giltigt när det används tillsammans med
+kommandot <b>locate</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -A, --stats
 </div><div class="manual-option-description">
 Aktiverar en utökad statusvy som visar ytterligare information.
@@ -1241,6 +1267,33 @@ Detta alternativ kan endast användas med <b>sync</b>.
 VARNING! Detta alternativ är endast för experter, och det rekommenderas
 starkt att inte använda det.
 Du HAR INGET dataskydd under <b>sync</b>-operationen.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail STORLEK
+</div><div class="manual-option-description">
+Fungerar som -R, --force-realloc, men begränsat till den angivna
+slutdelen (de sista STORLEK byten) av varje paritetsfil.
+Den tvingar omallokering (flytt) av alla filfragment/block som för
+närvarande lagras i den slutsektionen, vilket gör att de kan placeras
+var som helst i paritetsfilen/filerna där ledigt utrymme finns
+(inklusive befintliga hål).
+Huvudsyftet med detta alternativ är att minska paritetsfilens storlek
+på disken.
+Om omallokeringen lyckas rensa hela slutsektionen (inga block är kvar
+som använder den), trunkeras paritetsfilen och det oanvända
+slututrymmet återtas.
+Du kan använda multiplikatorer som K, M, G eller T (t.ex.
+--force-realloc-tail 1G).
+Du kan använda locate -t, --tail för att i förväg veta vilka filer
+som påverkas.
+VARNING!
+Detta alternativ är endast för experter, och det rekommenderas
+starkt att inte använda det.
+Du har INGET dataskydd under <b>sync</b>-åtgärden för de berörda filerna.
 </div>
 </div>
 </div>

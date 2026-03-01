@@ -3542,7 +3542,7 @@ The raw flags value (uint, hexadecimal).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
-attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:&lt;id&gt;:&lt;value_decimal&gt;:&lt;value_hex&gt;
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:&lt;id&gt;:&lt;raw_decimal&gt;:&lt;raw_hex&gt;:&lt;norm&gt;:&lt;worst&gt;:&lt;thresh&gt;:&lt;name&gt;:&lt;type&gt;:&lt;updated&gt;:&lt;when_failed&gt;
 </div><div class="manual-option-description">
 Logs the raw value of any assigned SMART attribute.
 </div>
@@ -3558,16 +3558,65 @@ The SMART attribute ID (uint).
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-&lt;value_decimal&gt;
+&lt;raw_decimal&gt;
 </div><div class="manual-tag-description">
 The raw attribute value (uint, decimal).
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-&lt;value_hex&gt;
+&lt;raw_hex&gt;
 </div><div class="manual-tag-description">
 The raw attribute value (uint, hexadecimal).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;norm&gt;
+</div><div class="manual-tag-description">
+The normalized value (uint).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;worst&gt;
+</div><div class="manual-tag-description">
+The worst value (uint).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;thresh&gt;
+</div><div class="manual-tag-description">
+The threshold value (uint).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;name&gt;
+</div><div class="manual-tag-description">
+Name of the attribute.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;type&gt;
+</div><div class="manual-tag-description">
+Type of the attribute: <b>prefail</b> or <b>oldage</b>.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;updated&gt;
+</div><div class="manual-tag-description">
+Update method of the attribute: <b>always</b> or <b>offline</b>.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+&lt;when_failed&gt;
+</div><div class="manual-tag-description">
+If and when the attribute failed: <b>never</b> or <b>past</b> or <b>now</b>.
 </div>
 </div>
 </div>

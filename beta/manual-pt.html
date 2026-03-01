@@ -127,7 +127,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -344,7 +344,7 @@ mas os blocos relacionados não são marcados como ruins.
 Pooling
 </h2>
 <p>Nota: O recurso de pooling descrito abaixo foi substituído pela ferramenta
-mergefs, que agora é a opção recomendada para usuários Linux na comunidade
+mergerfs, que agora é a opção recomendada para usuários Linux na comunidade
 SnapRAID. Mergefs oferece uma maneira mais flexível e eficiente de agrupar
 várias unidades em um único ponto de montagem unificado, permitindo acesso
 perfeito a arquivos em todo o seu array sem depender de links simbólicos.
@@ -932,6 +932,20 @@ progressivamente durante <b>sync</b> e <b>scrub</b>.
 com a única exceção de que <b>dup</b> não pode detectar arquivos duplicados
 usando um hash diferente.
 </p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
+</h2>
+<p>Localiza arquivos armazenados nos discos de paridade. Para cada arquivo
+correspondente, imprime sua localização dentro do arquivo de paridade e o
+número de fragmentos que ocupa.
+</p><p>Você pode usar a opção -t, --tail para restringir a operação aos arquivos
+que ocupam a parte final especificada da paridade.
+</p><p>Se desejar realocar esses arquivos, você poderá usar a opção
+-W, --force-realloc-tail.
+Esteja ciente de que tais arquivos não estarão protegidos pela paridade durante
+o processo de realocação.
+</p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -1124,6 +1138,19 @@ multiplicador como K, M ou G (por exemplo, --bw-limit 1G).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+-t, --tail TAMANHO
+</div><div class="manual-option-description">
+Limita a listagem de arquivos àqueles que não usam mais do que o
+tamanho final especificado dos discos de paridade.
+Você pode usar multiplicadores como K, M, G ou T (ex: --tail 1G).
+Esta opção só é válida quando usada em conjunto com o comando
+<b>locate</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -A, --stats
 </div><div class="manual-option-description">
 Habilita uma visualização de status estendida que mostra informações
@@ -1265,6 +1292,34 @@ Esta opção pode ser usada apenas com <b>sync</b>.
 ATENÇÃO! Esta opção é apenas para especialistas e é altamente
 recomendado não usá-la.
 Você NÃO tem proteção de dados durante a operação <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail TAMANHO
+</div><div class="manual-option-description">
+Funciona como -R, --force-realloc, mas limitado à parte final
+especificada (últimos TAMANHO bytes) de cada arquivo de paridade.
+Força a realocação (movimentação) de quaisquer fragmentos/blocos de arquivos
+atualmente armazenados nessa seção final, permitindo que sejam colocados
+em qualquer lugar no(s) arquivo(s) de paridade onde houver espaço livre
+disponível (incluindo espaços vazios existentes).
+O objetivo principal desta opção é diminuir o tamanho em disco
+do arquivo de paridade.
+Se a realocação limpar com sucesso toda a seção final (nenhum bloco
+permanecer usando-a), o arquivo de paridade será truncado,
+recuperando o espaço final não utilizado.
+Você pode usar multiplicadores como K, M, G ou T (ex:
+--force-realloc-tail 1G).
+Você pode usar locate -t, --tail para saber antecipadamente os
+arquivos afetados.
+AVISO!
+Esta opção é apenas para especialistas e é altamente recomendado
+não utilizá-la.
+Você NÃO terá proteção de datos durante a operação <b>sync</b> para os
+arquivos afetados.
 </div>
 </div>
 </div>

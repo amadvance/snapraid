@@ -127,7 +127,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -349,7 +349,7 @@ come bad.
 Pooling
 </h2>
 <p>Nota: La funzionalità di pooling descritta di seguito è stata
-sostituita dallo strumento mergefs, che è ora l'opzione consigliata
+sostituita dallo strumento mergerfs, che è ora l'opzione consigliata
 per gli utenti Linux nella comunità SnapRAID. Mergefs fornisce un modo
 più flessibile ed efficiente per raggruppare più unità in un singolo
 punto di montaggio unificato, consentendo un accesso trasparente ai
@@ -966,6 +966,20 @@ progressivamente durante <b>sync</b> e <b>scrub</b>.
 con l'unica eccezione che <b>dup</b> non è in grado di rilevare file
 duplicati utilizzando un hash diverso.
 </p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
+</h2>
+<p>Individua i file memorizzati nei dischi di parità. Per ogni file corrispondente,
+stampa la sua posizione all'interno del file di parità e il numero di frammenti
+che occupa.
+</p><p>È possibile utilizzare l'opzione -t, --tail per limitare l'operazione ai file
+che occupano la porzione di coda specificata della parità.
+Se si desidera riallocare questi file, è possibile utilizzare l'opzione
+-W, --force-realloc-tail.
+</p><p>Si tenga presente che tali file non saranno protetti dalla parità durante
+il processo di riallocazione.
+</p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -1162,7 +1176,20 @@ arrestati in modo sicuro anche in caso di errore di un comando.
 </div><div class="manual-option-description">
 Applica un limite di larghezza di banda globale per tutti i dischi.
 RATE è il numero di byte al secondo. È possibile specificare un
-moltiplicatore come K, M o G (ad esempio, --bw-limit 1G).
+moltiplicatore come K, M, G o T (ad esempio, --bw-limit 1G).
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-t, --tail DIMENSIONE
+</div><div class="manual-option-description">
+Limita l'elenco dei file a quelli che non utilizzano più della
+dimensione di coda specificata dei dischi di parità.
+È possibile utilizzare moltiplicatori come K, M, G o T (ad es. --tail 1G).
+Questa opzione è valida solo se utilizzata insieme al comando
+<b>locate</b>.
 </div>
 </div>
 </div>
@@ -1315,6 +1342,34 @@ Questa opzione può essere utilizzata solo con <b>sync</b>.
 ATTENZIONE! Questa opzione è solo per esperti ed è vivamente
 sconsigliato utilizzarla.
 NON si ha protezione dei dati durante l'operazione <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail DIMENSIONE
+</div><div class="manual-option-description">
+Funziona come -R, --force-realloc, ma limitatamente alla porzione
+di coda specificata (ultimi DIMENSIONE byte) di ogni file di parità.
+Forza la riallocazione (spostamento) di qualsiasi frammento/blocco di file
+attualmente memorizzato in quella sezione di coda, consentendo loro di essere
+posizionati ovunque nei file di parità dove sia disponibile spazio libero
+(inclusi i buchi esistenti).
+Lo scopo principale di questa opzione è ridurre la dimensione su disco
+del file di parità.
+Se la riallocazione svuota con successo l'intera sezione di coda
+(non rimangono blocchi che la utilizzano), il file di parità viene
+troncato, recuperando lo spazio di coda inutilizzato.
+È possibile utilizzare moltiplicatori come K, M, G o T (ad es.
+--force-realloc-tail 1G).
+È possibile utilizzare locate -t, --tail per conoscere in anticipo
+i file interessati.
+ATTENZIONE!
+Questa opzione è solo per esperti ed è caldamente
+raccomandato di non usarla.
+NON si ha protezione dei dati durante l'operazione di <b>sync</b>
+per i file interessati.
 </div>
 </div>
 </div>

@@ -127,7 +127,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -341,7 +341,7 @@ dar blocurile aferente nu sunt marcate ca defecte.
 Pooling (Agregare)
 </h2>
 <p>Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
-mergefs, care este acum opțiunea recomandată pentru utilizatorii Linux în
+mergerfs, care este acum opțiunea recomandată pentru utilizatorii Linux în
 comunitatea SnapRAID. Mergefs oferă o modalitate mai flexibilă și eficientă
 de a agrega mai multe discuri într-un singur punct de montare unificat,
 permițând accesul neîntrerupt la fișiere pe toată matricea dvs. fără a se baza
@@ -908,6 +908,20 @@ progresiv în timpul <b>sync</b> și <b>scrub</b>.
 cu singura excepție că <b>dup</b> nu poate detecta fișierele duplicate
 folosind un hash diferit.
 </p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
+</h2>
+<p>Localizează fișierele stocate pe discurile de paritate. Pentru fiecare fișier
+potrivit, afișează locația acestuia în fișierul de paritate și numărul de
+fragmente pe care le ocupă.
+</p><p>Puteți utiliza opțiunea -t, --tail pentru a restricționa operațiunea la fișierele
+care ocupă porțiunea finală specificată a parității.
+Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
+-W, --force-realloc-tail.
+</p><p>Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul procesului
+de realocare.
+</p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -1097,6 +1111,19 @@ cum ar fi K, M sau G (de exemplu, --bw-limit 1G).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+-t, --tail DIMENSIUNE
+</div><div class="manual-option-description">
+Limitează listarea fișierelor la cele care nu utilizează mai mult de
+dimensiunea finală specificată a discurilor de paritate.
+Puteți utiliza multiplicatori precum K, M, G sau T (ex. --tail 1G).
+Această opțiune este valabilă numai atunci când este utilizată împreună
+cu comanda <b>locate</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -A, --stats
 </div><div class="manual-option-description">
 Activează o vizualizare de stare extinsă care arată informații suplimentare.
@@ -1236,6 +1263,34 @@ Această opțiune poate fi utilizată doar cu <b>sync</b>.
 ATENȚIE! Această opțiune este doar pentru experți și este puternic
 recomandat să nu o utilizați.
 NU aveți protecție a datelor în timpul operațiunii <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail DIMENSIUNE
+</div><div class="manual-option-description">
+Funcționează ca -R, --force-realloc, dar limitat la porțiunea finală
+specificată (ultimii DIMENSIUNE octeți) ai fiecărui fișier de paritate.
+Forțează realocarea (mutarea) oricăror fragmente/blocuri de fișiere stocate
+în prezent în acea secțiune finală, permițându-le să fie plasate oriunde
+în fișierul/fișierele de paritate unde este disponibil spațiu liber
+(inclusiv golurile existente).
+Scopul principal al acestei opțiuni este de a reduce dimensiunea pe disc
+a fișierului de paritate.
+Dacă realocarea eliberează cu succes întreaga secțiune finală
+(nu mai rămân blocuri care să o utilizeze), fișierul de paritate este
+trunchiat, recuperând spațiul final neutilizat.
+Puteți utiliza multiplicatori precum K, M, G sau T (ex.
+--force-realloc-tail 1G).
+Puteți utiliza locate -t, --tail pentru a cunoaște în avans
+fișierele afectate.
+AVERTIZARE!
+Această opțiune este doar pentru experți și se recomandă
+insistent să nu fie utilizată.
+NU beneficiați de protecție a datelor în timpul operațiunii <b>sync</b>
+pentru fișierele afectate.
 </div>
 </div>
 </div>

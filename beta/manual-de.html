@@ -127,7 +127,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -359,7 +359,7 @@ markiert.
 Pooling
 </h2>
 <p>Hinweis: Die unten beschriebene Pooling-Funktion wurde durch das
-Tool mergefs ersetzt, das jetzt die empfohlene Option für Linux-Benutzer
+Tool mergerfs ersetzt, das jetzt die empfohlene Option für Linux-Benutzer
 in der SnapRAID-Community ist. Mergefs bietet eine flexiblere
 und effizientere Möglichkeit, mehrere Laufwerke zu einem einzigen,
 vereinheitlichten Einhängepunkt (Mount Point) zusammenzufassen,
@@ -999,6 +999,20 @@ findet schrittweise während <b>sync</b> und <b>scrub</b> statt.
 Funktionalität bei, mit der einzigen Ausnahme, dass <b>dup</b> keine
 doppelten Dateien mit einem anderen Hash erkennen kann.
 </p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
+</h2>
+<p>Lokalisiert Dateien, die auf den Paritätsfestplatten gespeichert sind. Für jede
+übereinstimmende Datei wird deren Position innerhalb der Paritätsdatei und die Anzahl
+der belegten Fragmente ausgegeben.
+</p><p>Sie können die Option -t, --tail verwenden, um den Vorgang auf Dateien zu beschränken,
+die den angegebenen Endbereich (Tail) der Parität belegen.
+</p><p>Wenn Sie diese Dateien neu zuweisen möchten, können Sie die Option
+-W, --force-realloc-tail verwenden.
+Beachten Sie, dass solche Dateien während des Neuzuweisungsprozesses
+nicht durch die Parität geschützt sind.
+</p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -1195,6 +1209,19 @@ einen Multiplikator wie K, M oder G angeben (z.B. --bw-limit 1G).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+-t, --tail GRÖSSE
+</div><div class="manual-option-description">
+Beschränkt die Dateiliste auf diejenigen, die nicht mehr als die
+angegebene Tail-Größe der Paritätsfestplatten belegen.
+Sie können Multiplikatoren wie K, M, G oder T verwenden (z. B. --tail 1G).
+Diese Option ist nur in Verbindung mit dem Befehl
+<b>locate</b> gültig.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -A, --stats
 </div><div class="manual-option-description">
 Aktiviert eine erweiterte Statusansicht, die zusätzliche
@@ -1339,6 +1366,34 @@ Diese Option kann nur mit <b>sync</b> verwendet werden.
 WARNUNG! Diese Option ist nur für Experten gedacht, und es wird
 dringend empfohlen, sie nicht zu verwenden.
 Sie haben während der <b>sync</b>-Operation KEINEN Datenschutz.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail GRÖSSE
+</div><div class="manual-option-description">
+Funktioniert wie -R, --force-realloc, ist jedoch auf den angegebenen
+Endbereich (die letzten GRÖSSE Bytes) jeder Paritätsdatei beschränkt.
+Erzwingt die Neuzuweisung (Verschiebung) aller Dateifragmente/-blöcke, die
+derzeit in diesem Endabschnitt gespeichert sind, sodass sie an beliebiger Stelle
+in den Paritätsdateien platziert werden können, wo freier Speicherplatz
+verfügbar ist (einschließlich vorhandener Lücken).
+Der Hauptzweck dieser Option besteht darin, die Größe der Paritätsdatei
+auf der Festplatte zu verringern.
+Wenn die Neuzuweisung den gesamten Endabschnitt erfolgreich leert
+(keine Blöcke verbleiben dort), wird die Paritätsdatei gekürzt,
+wodurch der ungenutzte Endbereich freigegeben wird.
+Sie können Multiplikatoren wie K, M, G oder T verwenden (z. B.
+--force-realloc-tail 1G).
+Sie können locate -t, --tail verwenden, um die betroffenen Dateien
+im Voraus zu ermitteln.
+WARNUNG!
+Diese Option ist nur für Experten gedacht und es wird dringend
+empfohlen, sie nicht zu verwenden.
+Während des <b>sync</b>-Vorgangs besteht für die betroffenen Dateien
+KEIN Datenschutz.
 </div>
 </div>
 </div>
