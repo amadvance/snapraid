@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-14.0 WIP
-========
+14.0rc1 01/03/2026
+==================
  * More log tags for all commands in preparation for the upcoming SnapRAID
    daemon. Pre-release will be available at https://github.com/amadvance/snapraid-daemon.
    Note that this is the minimal SnapRAID version required to use the daemon.
