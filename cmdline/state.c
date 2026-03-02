@@ -552,6 +552,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	unsigned line;
 	tommy_node* i;
 	unsigned l, s;
+	char esc_buffer[ESC_MAX];
+	char esc_buffer1[ESC_MAX];
 
 	/* copy the options */
 	state->opt = *opt;
@@ -571,7 +573,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* store current command */
 	state->command = command;
 
-	log_tag("conf:file:%s\n", path);
+	log_tag("conf:file:%s\n", esc_tag(path, esc_buffer));
 
 	f = sopen_read(path, 0);
 	if (!f) {
@@ -1374,26 +1376,26 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	log_tag("blocksize:%u\n", state->block_size);
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		log_tag("data:%s:%s:%s\n", disk->name, disk->dir, disk->uuid);
+		log_tag("data:%s:%s:%s\n", esc_tag(disk->name, esc_buffer), esc_tag(disk->dir, esc_buffer1), disk->uuid);
 	}
 
 	log_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
 	for (l = 0; l < state->level; ++l) {
-		log_tag("%s:%s:%s\n", lev_config_name(l), state->parity[l].split_map[0].path, state->parity[l].split_map[0].uuid);
+		log_tag("%s:%s:%s\n", lev_config_name(l), esc_tag(state->parity[l].split_map[0].path, esc_buffer), state->parity[l].split_map[0].uuid);
 		for (s = 1; s < state->parity[l].split_mac; ++s) {
-			log_tag("%s/%u:%s:%s\n", lev_config_name(l), s, state->parity[l].split_map[s].path, state->parity[l].split_map[s].uuid);
+			log_tag("%s/%u:%s:%s\n", lev_config_name(l), s, esc_tag(state->parity[l].split_map[s].path, esc_buffer), state->parity[l].split_map[s].uuid);
 		}
 	}
 	if (state->pool[0] != 0)
-		log_tag("pool:%s\n", state->pool);
+		log_tag("pool:%s\n", esc_tag(state->pool, esc_buffer));
 	if (state->share[0] != 0)
-		log_tag("share:%s\n", state->share);
+		log_tag("share:%s\n", esc_tag(state->share, esc_buffer));
 	if (state->autosave != 0)
 		log_tag("autosave:%" PRIu64 "\n", state->autosave);
 	for (i = tommy_list_head(&state->filterlist); i != 0; i = i->next) {
 		char out[PATH_MAX];
 		struct snapraid_filter* filter = i->data;
-		log_tag("filter:%s\n", filter_type(filter, out, sizeof(out)));
+		log_tag("filter:%s\n", esc_tag(filter_type(filter, out, sizeof(out)), esc_buffer));
 	}
 	if (state->filter_hidden)
 		log_tag("filter:nohidden:\n");
@@ -1673,6 +1675,7 @@ static void state_map(struct snapraid_state* state)
 
 void state_refresh(struct snapraid_state* state)
 {
+	char esc_buffer[ESC_MAX];
 	tommy_node* i;
 	unsigned l, s;
 	uint64_t bs = (uint64_t)state->block_size;
@@ -1709,8 +1712,8 @@ void state_refresh(struct snapraid_state* state)
 		disk->total_blocks = map->total_blocks;
 		disk->free_blocks = map->free_blocks;
 
-		log_tag("fsinfo_data_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", disk->name, disk->total_blocks * bs, disk->free_blocks * bs, disk->fstype, disk->fslabel);
-		log_tag("fsinfo_data:%s:%" PRIu64 ":%" PRIu64 "\n", disk->name, disk->total_blocks * bs, disk->free_blocks * bs);
+		log_tag("fsinfo_data_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", esc_tag(disk->name, esc_buffer), disk->total_blocks * bs, disk->free_blocks * bs, disk->fstype, disk->fslabel);
+		log_tag("fsinfo_data:%s:%" PRIu64 ":%" PRIu64 "\n", esc_tag(disk->name, esc_buffer), disk->total_blocks * bs, disk->free_blocks * bs);
 	}
 
 	/* for all parities */
@@ -1953,6 +1956,7 @@ static void decoding_error(const char* path, STREAM* f)
 
 static void state_read_content(struct snapraid_state* state, const char* path, STREAM* f)
 {
+	char esc_buffer[ESC_MAX];
 	block_off_t blockmax;
 	unsigned count_file;
 	unsigned count_hardlink;
@@ -2781,7 +2785,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				}
 
 				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
-					buffer,
+					esc_tag(buffer, esc_buffer),
 					v_total_blocks * (uint64_t)state->block_size,
 					v_free_blocks * (uint64_t)state->block_size);
 			} else {
@@ -2799,7 +2803,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			log_tag("content_data_split:%s:%s\n",
-				buffer,
+				esc_tag(buffer, esc_buffer),
 				uuid);
 
 			/* find the disk */
@@ -2906,7 +2910,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 					lev_config_name(v_level), /* P command always has a single split */
 					state->parity[v_level].split_map[0].uuid,
-					state->parity[v_level].split_map[0].path,
+					esc_tag(state->parity[v_level].split_map[0].path, esc_buffer),
 					state->parity[v_level].split_map[0].size);
 			}
 		} else if (c == 'Q') {
@@ -3040,7 +3044,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 							parity_name,
 							state->parity[v_level].split_map[s].uuid,
-							state->parity[v_level].split_map[s].path,
+							esc_tag(state->parity[v_level].split_map[s].path, esc_buffer),
 							state->parity[v_level].split_map[s].size);
 					}
 				}
@@ -3168,6 +3172,7 @@ struct state_write_thread_context {
 
 static void* state_write_thread(void* arg)
 {
+	char esc_buffer[ESC_MAX];
 	struct state_write_thread_context* context = arg;
 	struct snapraid_state* state = context->state;
 	block_off_t blockmax = context->blockmax;
@@ -3294,11 +3299,11 @@ static void* state_write_thread(void* arg)
 			sputbs(map->uuid, f);
 			if (context->first) {
 				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
-					map->name,
+					esc_tag(map->name, esc_buffer),
 					map->total_blocks * (uint64_t)state->block_size,
 					map->free_blocks * (uint64_t)state->block_size);
 				log_tag("content_data_split:%s:%s\n",
-					map->name,
+					esc_tag(map->name, esc_buffer),
 					map->uuid);
 			}
 			if (serror(f)) {

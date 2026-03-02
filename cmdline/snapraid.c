@@ -977,6 +977,7 @@ void signal_init(void)
 
 int snapraid_main(int argc, char* argv[])
 {
+	char esc_buffer[ESC_MAX];
 	int c;
 	struct snapraid_option opt;
 	char conf[PATH_MAX];
@@ -1784,7 +1785,7 @@ int snapraid_main(int argc, char* argv[])
 	}
 	log_tag("command:%s\n", command);
 	for (i = 0; i < argc; ++i)
-		log_tag("argv:%u:%s\n", i, argv[i]);
+		log_tag("argv:%u:%s\n", i, esc_tag(argv[i], esc_buffer));
 	log_flush();
 
 	if (!opt.skip_self)
