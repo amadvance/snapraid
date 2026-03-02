@@ -105,7 +105,7 @@ void random_seed(uint64_t seed)
 
 void random_reseed(void)
 {
-	random_state = tick();
+	random_state = os_tick();
 }
 
 unsigned char random_u8(void)

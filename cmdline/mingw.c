@@ -71,7 +71,7 @@ static ULONGLONG(WINAPI * ptr_GetTickCount64)(void);
 static windows_key_t last_error;
 
 /**
- * Monotone tick counter
+ * Monotone os_tick counter
  */
 static windows_mutex_t tick_lock;
 static uint64_t tick_last;
@@ -2210,13 +2210,13 @@ size_t windows_direct_size(void)
 	return si.dwPageSize;
 }
 
-uint64_t tick(void)
+uint64_t os_tick(void)
 {
 	LARGE_INTEGER t;
 	uint64_t r;
 
 	/*
-	 * Ensure to return a strict monotone tick counter.
+	 * Ensure to return a strict monotone os_tick counter.
 	 *
 	 * We had reports of invalid stats due faulty High Precision Event Timer.
 	 * See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a2122fd6/
@@ -2241,7 +2241,7 @@ uint64_t tick(void)
 	return r;
 }
 
-uint64_t tick_ms(void)
+uint64_t os_tick_ms(void)
 {
 	/* GetTickCount64() isn't supported in Windows XP */
 	if (ptr_GetTickCount64 != 0)
@@ -3006,7 +3006,7 @@ static void* thread_spinup(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
 		/* LCOV_EXCL_START */
@@ -3014,7 +3014,7 @@ static void* thread_spinup(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	/* after the spin up, get SMART info */
 	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
@@ -3042,7 +3042,7 @@ static void* thread_spindown(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
 		/* LCOV_EXCL_START */
@@ -3050,7 +3050,7 @@ static void* thread_spindown(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 }
@@ -3064,7 +3064,7 @@ static void* thread_spindownifup(void* arg)
 	uint64_t start;
 	int power;
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, &power) != 0) {
 		/* LCOV_EXCL_START */
@@ -3073,7 +3073,7 @@ static void* thread_spindownifup(void* arg)
 	}
 
 	if (power == POWER_ACTIVE)
-		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 }

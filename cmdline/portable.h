@@ -46,6 +46,11 @@
  */
 #define _WIN32_WINNT 0x600
 
+/**
+ * Undef as it clashes with windows.h declarations
+ */
+#undef DATADIR
+
 #include <windows.h>
 #endif
 
@@ -208,12 +213,6 @@
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-#define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
-#endif
 
 #if HAVE_GETOPT_H
 #include <getopt.h>
@@ -230,42 +229,6 @@
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
-#endif
-
-/**
- * Enable thread use.
- */
-#ifdef _WIN32
-#define HAVE_THREAD 1
-typedef void* windows_thread_t;
-typedef CRITICAL_SECTION windows_mutex_t;
-typedef CONDITION_VARIABLE windows_cond_t;
-typedef void* windows_key_t;
-/* remap to pthread */
-#define thread_id_t windows_thread_t
-#define thread_mutex_t windows_mutex_t
-#define thread_cond_t windows_cond_t
-#define pthread_mutex_init windows_mutex_init
-#define pthread_mutex_destroy windows_mutex_destroy
-#define pthread_mutex_lock windows_mutex_lock
-#define pthread_mutex_unlock windows_mutex_unlock
-#define pthread_cond_init windows_cond_init
-#define pthread_cond_destroy windows_cond_destroy
-#define pthread_cond_signal windows_cond_signal
-#define pthread_cond_broadcast windows_cond_broadcast
-#define pthread_cond_wait windows_cond_wait
-#define pthread_create windows_create
-#define pthread_join windows_join
-#else
-#if HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
-#if HAVE_PTHREAD_CREATE
-#define HAVE_THREAD 1
-typedef pthread_t thread_id_t;
-typedef pthread_mutex_t thread_mutex_t;
-typedef pthread_cond_t thread_cond_t;
-#endif
 #endif
 
 #if HAVE_IO_H
@@ -286,6 +249,64 @@ typedef pthread_cond_t thread_cond_t;
 #endif
 
 /**
+ * Includes specific support for Windows or Linux.
+ */
+#ifdef __MINGW32__
+#include "mingw.h"
+#else
+#include "unix.h"
+#endif
+
+/****************************************************************************/
+/* os */
+
+/**
+ * Get the os_tick counter value.
+ *
+ * Note that the frequency is unspecified, because the time measure
+ * is meant to be used to compare the ratio between usage times.
+ */
+uint64_t os_tick(void);
+
+/**
+ * Get the os_tick counter value in millisecond.
+ */
+uint64_t os_tick_ms(void);
+
+/**
+ * Initializes the system.
+ */
+void os_init(int opt);
+
+/**
+ * Deinitialize the system.
+ */
+void os_done(void);
+
+/**
+ * Abort the process with a stacktrace.
+ */
+void os_abort(void) __noreturn;
+
+/**
+ * Clear the screen.
+ */
+void os_clear(void);
+
+/**
+ * Global variable to identify if Ctrl+C is pressed.
+ */
+extern volatile int global_interrupt;
+
+/****************************************************************************/
+/* app */
+
+/**
+ * Include list support to have tommy_node.
+ */
+#include "tommyds/tommylist.h"
+
+/**
  * Basic block position type.
  * With 32 bits and 128k blocks you can address 256 TB.
  */
@@ -296,20 +317,6 @@ typedef uint32_t block_off_t;
  * It's signed as file size and offset are usually signed.
  */
 typedef int64_t data_off_t;
-
-/**
- * Includes specific support for Windows or Linux.
- */
-#ifdef __MINGW32__
-#include "mingw.h"
-#else
-#include "unix.h"
-#endif
-
-/**
- * Include list support to have tommy_node.
- */
-#include "tommyds/tommylist.h"
 
 /**
  * Another name for link() to avoid confusion with local variables called "link".
@@ -358,39 +365,6 @@ int filephy(const char* path, uint64_t size, uint64_t* physical);
  * Return -1 on error, 0 on success.
  */
 int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size);
-
-/**
- * Get the tick counter value.
- *
- * Note that the frequency is unspecified, because the time measure
- * is meant to be used to compare the ratio between usage times.
- */
-uint64_t tick(void);
-
-/**
- * Get the tick counter value in millisecond.
- */
-uint64_t tick_ms(void);
-
-/**
- * Initializes the system.
- */
-void os_init(int opt);
-
-/**
- * Deinitialize the system.
- */
-void os_done(void);
-
-/**
- * Abort the process with a stacktrace.
- */
-void os_abort(void) __noreturn;
-
-/**
- * Clear the screen.
- */
-void os_clear(void);
 
 /**
  * Log file.
@@ -609,11 +583,6 @@ int devtest(tommy_list* high, tommy_list* low, int operation);
  * Return 0 if not available.
  */
 int ambient_temperature(void);
-
-/**
- * Global variable to identify if Ctrl+C is pressed.
- */
-extern volatile int global_interrupt;
 
 /**
  * Size of the spaceholder file for Windows to avoid the message of low disk space

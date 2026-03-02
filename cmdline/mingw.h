@@ -398,6 +398,27 @@ size_t windows_direct_size(void);
 /****************************************************************************/
 /* thread */
 
+#define HAVE_THREAD 1
+typedef void* windows_thread_t;
+typedef CRITICAL_SECTION windows_mutex_t;
+typedef CONDITION_VARIABLE windows_cond_t;
+typedef void* windows_key_t;
+/* remap to pthread */
+#define thread_id_t windows_thread_t
+#define thread_mutex_t windows_mutex_t
+#define thread_cond_t windows_cond_t
+#define pthread_mutex_init windows_mutex_init
+#define pthread_mutex_destroy windows_mutex_destroy
+#define pthread_mutex_lock windows_mutex_lock
+#define pthread_mutex_unlock windows_mutex_unlock
+#define pthread_cond_init windows_cond_init
+#define pthread_cond_destroy windows_cond_destroy
+#define pthread_cond_signal windows_cond_signal
+#define pthread_cond_broadcast windows_cond_broadcast
+#define pthread_cond_wait windows_cond_wait
+#define pthread_create windows_create
+#define pthread_join windows_join
+
 /**
  * Like the pthread_* equivalent.
  */

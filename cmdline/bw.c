@@ -23,7 +23,7 @@ void bw_init(struct snapraid_bw* bw, uint64_t limit)
 {
 	bw->limit = limit;
 	bw->total = 0;
-	bw->start = tick_ms();
+	bw->start = os_tick_ms();
 }
 
 void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
@@ -31,7 +31,7 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 	if (!bw || bw->limit == 0)
 		return;
 
-	uint64_t elapsed = tick_ms() - bw->start;
+	uint64_t elapsed = os_tick_ms() - bw->start;
 	uint64_t done;
 	uint64_t eta;
 

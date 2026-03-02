@@ -1612,12 +1612,12 @@ static void* scan_disk(void* arg)
 		}
 	}
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	scan_dir(scan, 0, scan->is_diff, disk->dir, "");
 
 	if (!scan->is_diff)
-		msg_progress("Scanned %s in %" PRIu64 " seconds\n", disk->name, (tick_ms() - start) / 1000);
+		msg_progress("Scanned %s in %" PRIu64 " seconds\n", disk->name, (os_tick_ms() - start) / 1000);
 
 	return 0;
 }

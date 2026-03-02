@@ -18,6 +18,13 @@
 #ifndef __UNIX_H
 #define __UNIX_H
 
+#ifndef WEXITSTATUS
+#define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+#define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
+
 #ifdef __linux__
 #define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
 #define HAVE_DIRECT_IO 1 /**< Support O_DIRECT in open(). */
@@ -62,6 +69,20 @@ const char* stat_desc(struct stat* st);
  * Return the alignment requirement for direct IO.
  */
 size_t direct_size(void);
+
+/****************************************************************************/
+/* thread */
+
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+
+#if HAVE_PTHREAD_CREATE
+#define HAVE_THREAD 1
+typedef pthread_t thread_id_t;
+typedef pthread_mutex_t thread_mutex_t;
+typedef pthread_cond_t thread_cond_t;
+#endif
 
 #endif
 

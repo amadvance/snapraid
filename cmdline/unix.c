@@ -1175,7 +1175,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
-uint64_t tick(void)
+uint64_t os_tick(void)
 {
 #if HAVE_MACH_ABSOLUTE_TIME
 	/* for Mac OS X */
@@ -1207,7 +1207,7 @@ uint64_t tick(void)
 #endif
 }
 
-uint64_t tick_ms(void)
+uint64_t os_tick_ms(void)
 {
 	struct timeval tv;
 
@@ -2010,7 +2010,7 @@ static void* thread_spinup(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	if (devup(devinfo->device, devinfo->name) != 0) {
 		/* LCOV_EXCL_START */
@@ -2018,7 +2018,7 @@ static void* thread_spinup(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	/* after the spin up, get SMART info */
 	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
@@ -2051,7 +2051,7 @@ static void* thread_spindown(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
 		/* LCOV_EXCL_START */
@@ -2059,7 +2059,7 @@ static void* thread_spindown(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 #else
@@ -2078,7 +2078,7 @@ static void* thread_spindownifup(void* arg)
 	uint64_t start;
 	int power;
 
-	start = tick_ms();
+	start = os_tick_ms();
 
 	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, &power) != 0) {
 		/* LCOV_EXCL_START */
@@ -2087,7 +2087,7 @@ static void* thread_spindownifup(void* arg)
 	}
 
 	if (power == POWER_ACTIVE)
-		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 #else
