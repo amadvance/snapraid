@@ -2820,7 +2820,7 @@ retry:
 
 		/* store the smartctl return value */
 		if (smart)
-			smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
+			smart[SMART_FLAGS].raw = ret;
 	}
 
 	return 0;

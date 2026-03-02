@@ -18,13 +18,6 @@
 #ifndef __UNIX_H
 #define __UNIX_H
 
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-#define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
-#endif
-
 #ifdef __linux__
 #define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
 #define HAVE_DIRECT_IO 1 /**< Support O_DIRECT in open(). */
