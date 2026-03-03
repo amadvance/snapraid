@@ -1398,6 +1398,79 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
 #endif
 
 /**
+ * Compute disk usage by aggregating access statistics.
+ */
+#if HAVE_LINUX_DEVICE
+static int devstat(dev_t device, uint64_t* count)
+{
+	char path[PATH_MAX];
+	char buf[512];
+	int token;
+	int ret;
+	char* i;
+
+	*count = 0;
+
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/stat", major(device), minor(device));
+
+	ret = sysread(path, buf, sizeof(buf));
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Failed to read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if ((size_t)ret + 1 > sizeof(buf)) {
+		/* LCOV_EXCL_START */
+		log_fatal(EEXTERNAL, "Too long read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* ending 0 */
+	buf[ret] = 0;
+
+	i = buf;
+	token = 1; /* token number */
+	while (*i) {
+		char* n;
+		char* e;
+		unsigned long long v;
+
+		/* skip spaces */
+		while (*i && isspace(*i))
+			++i;
+
+		/* read digits */
+		n = i;
+		while (*i && isdigit(*i))
+			++i;
+
+		if (i == n) /* if no digit, abort */
+			break;
+		if (*i == 0 || !isspace(*i)) /* if no space, abort */
+			break;
+		*i++ = 0; /* put a terminator */
+
+		v = strtoull(n, &e, 10);
+		if (*e != 0)
+			break;
+
+		/* sum reads and writes completed */
+		if (token == 1 || token == 5) {
+			*count += v;
+			if (token == 5)
+				break; /* stop here */
+		}
+
+		++token;
+	}
+
+	return 0;
+}
+#endif
+
+/**
  * Scan all the devices.
  *
  * If a device is already in, it's not added again.
@@ -1468,6 +1541,13 @@ static int devscan(tommy_list* list)
 
 		devinfo->device = device;
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
+
+		/* retrieve access stat for the low level device */
+		uint64_t access_stat;
+		if (devstat(device, &access_stat) == 0) {
+			/* cumulate access stat in the first split */
+			devinfo->access_stat = access_stat;
+		}
 
 		/* insert in the list */
 		tommy_list_insert_tail(list, &devinfo->node, devinfo);
@@ -1554,79 +1634,6 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, struct
 
 	/* store the return smartctl return value */
 	smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
-
-	return 0;
-}
-#endif
-
-/**
- * Compute disk usage by aggregating access statistics.
- */
-#if HAVE_LINUX_DEVICE
-static int devstat(dev_t device, uint64_t* count)
-{
-	char path[PATH_MAX];
-	char buf[512];
-	int token;
-	int ret;
-	char* i;
-
-	*count = 0;
-
-	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/stat", major(device), minor(device));
-
-	ret = sysread(path, buf, sizeof(buf));
-	if (ret < 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to read '%s'.\n", path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if ((size_t)ret + 1 > sizeof(buf)) {
-		/* LCOV_EXCL_START */
-		log_fatal(EEXTERNAL, "Too long read '%s'.\n", path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* ending 0 */
-	buf[ret] = 0;
-
-	i = buf;
-	token = 1; /* token number */
-	while (*i) {
-		char* n;
-		char* e;
-		unsigned long long v;
-
-		/* skip spaces */
-		while (*i && isspace(*i))
-			++i;
-
-		/* read digits */
-		n = i;
-		while (*i && isdigit(*i))
-			++i;
-
-		if (i == n) /* if no digit, abort */
-			break;
-		if (*i == 0 || !isspace(*i)) /* if no space, abort */
-			break;
-		*i++ = 0; /* put a terminator */
-
-		v = strtoull(n, &e, 10);
-		if (*e != 0)
-			break;
-
-		/* sum reads and writes completed */
-		if (token == 1 || token == 5) {
-			*count += v;
-			if (token == 5)
-				break; /* stop here */
-		}
-
-		++token;
-	}
 
 	return 0;
 }
@@ -2210,7 +2217,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* for each device */
+	/* for each high device */
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		uint64_t device = devinfo->device;
@@ -2273,6 +2280,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
 #else
 	(void)high;
 	(void)others;

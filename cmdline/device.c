@@ -912,7 +912,30 @@ static void state_stat(struct snapraid_state* state, tommy_list* high)
 
 		/* print disk access_stat (not split) */
 		if (devinfo->split == 0 && devinfo->access_stat != 0) {
-			log_tag("stat:%s:%" PRIu64 "\n", devinfo->name, devinfo->access_stat);
+			if (devinfo->name[0])
+				log_tag("stat:%s:%" PRIu64 "\n", devinfo->name, devinfo->access_stat);
+			else
+				log_tag("stat_device:%s:%" PRIu64 "\n", devinfo->file, devinfo->access_stat);
+		}
+	}
+}
+
+static void state_devices(struct snapraid_state* state, tommy_list* low)
+{
+	tommy_node* i;
+
+	(void)state;
+
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
+		devinfo_t* parent = devinfo->parent;
+
+		if (parent) {
+#ifdef _WIN32
+			printf("%" PRIu64 "\t%s\t%08" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->wfile, parent->device, parent->wfile, parent->name);
+#else
+			printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
+#endif
 		}
 	}
 }
@@ -1058,7 +1081,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
 	} else {
-		int others = operation == DEVICE_SMART || operation == DEVICE_PROBE;
+		int others = operation == DEVICE_SMART || operation == DEVICE_PROBE || operation == DEVICE_LIST;
 
 		ret = devquery(&high, &low, operation, others);
 	}
@@ -1079,19 +1102,8 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		}
 		log_fatal(ESOFT, "%s is unsupported in this platform.\n", ope);
 	} else {
-		if (operation == DEVICE_LIST) {
-			for (i = tommy_list_head(&low); i != 0; i = i->next) {
-				devinfo_t* devinfo = i->data;
-				devinfo_t* parent = devinfo->parent;
-#ifdef _WIN32
-				printf("%" PRIu64 "\t%s\t%08" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->wfile, parent->device, parent->wfile, parent->name);
-#else
-				printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
-#endif
-			}
-		}
-
 		state_stat(state, &high);
+		state_stat(state, &low);
 
 		if (operation == DEVICE_SMART)
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);
@@ -1101,6 +1113,9 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 
 		if (operation == DEVICE_UP)
 			state_attr(state, &low);
+
+		if (operation == DEVICE_LIST)
+			state_devices(state, &low);
 	}
 
 	tommy_list_foreach(&high, free);

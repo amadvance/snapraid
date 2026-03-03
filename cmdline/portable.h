@@ -539,7 +539,7 @@ struct devinfo_struct {
 	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */
 #endif
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
-	struct devinfo_struct* split; /**< Pointer at first split if any. */
+	struct devinfo_struct* split; /**< Pointer at first split if this one is not the first. */
 	struct smart_attr smart[SMART_COUNT]; /**< All smart values. */
 	uint64_t info[INFO_COUNT]; /**< Informational attributes not related to SMART telemetry. */
 	uint64_t access_stat; /**< Access stat info. */
