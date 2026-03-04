@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+14.0rc2 31/03/2026
+==================
+ * Extended Windows support to be on par with the Linux version.
+
 14.0rc1 01/03/2026
 ==================
  * More log tags for all commands in preparation for the upcoming SnapRAID
