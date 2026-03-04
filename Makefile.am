@@ -1187,12 +1187,10 @@ distwindows-x86: $(DISTWIN)
 	cp $(DISTWIN) tmp
 	cp support/smartctl.exe tmp/smartctl.exe
 	todos < snapraid.conf.example.windows > tmp/snapraid.conf.example
-	todos < INSTALL.windows > tmp/install.txt
 	todos < README > tmp/readme.txt
 	todos < AUTHORS > tmp/authors.txt
 	todos < HISTORY > tmp/history.txt
 	todos < COPYING > tmp/copying.txt
-	todos < TODO > tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
 	rm -r tmp
 
@@ -1202,11 +1200,9 @@ distwindows-x64: $(DISTWIN)
 	cp $(DISTWIN) tmp
 	cp support/smartctl.exe tmp/smartctl.exe
 	todos < snapraid.conf.example.windows > tmp/snapraid.conf.example
-	todos < INSTALL.windows > tmp/install.txt
 	todos < README > tmp/readme.txt
 	todos < AUTHORS > tmp/authors.txt
 	todos < HISTORY > tmp/history.txt
 	todos < COPYING > tmp/copying.txt
-	todos < TODO > tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp
