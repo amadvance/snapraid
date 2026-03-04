@@ -9,6 +9,16 @@ mktest_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
 mkstream_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
 endif
 
+# Windows
+if HOST_WINDOWS
+snapraid_LDADD = resource_res.o
+
+resource_res.o: cmdline/resource.rc cmdline/resource.manifest
+	$(WINDRES) --include-dir=. --include-dir=$(srcdir) $< -o $@
+
+CLEANFILES = resource_res.o
+endif
+
 snapraid_SOURCES = \
 	raid/raid.c \
 	raid/check.c \
@@ -151,6 +161,8 @@ EXTRA_DIST = \
 	test/test-par6-rename.conf \
 	test/test-par6-thermal.conf \
 	snapraid.conf.example \
+	cmdline/resource.rc \
+	cmdline/resource.manifest \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
 	tommyds/LICENSE \

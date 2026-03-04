@@ -1,0 +1,35 @@
+#include <windows.h>
+
+#include "../config.h"
+
+1 RT_MANIFEST "resource.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        // 0409 = US English; 04b0 = Unicode (UTF-16)
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName",      "Andrea Mazzoleni"
+            VALUE "FileDescription",  "SnapRAID CLI"
+            VALUE "FileVersion",      PACKAGE_VERSION
+            VALUE "InternalName",     "snapraid"
+            VALUE "LegalCopyright",   "Copyright (C) 2026 Andrea Mazzoleni"
+            VALUE "OriginalFilename", "snapraid.exe"
+            VALUE "ProductName",      "SnapRAID"
+            VALUE "ProductVersion",   PACKAGE_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

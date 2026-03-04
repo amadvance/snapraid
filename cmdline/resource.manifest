@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- SnapRAID Windows Daemon Manifest -->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <assemblyIdentity 
+        version="1.0.0.0" 
+        processorArchitecture="*" 
+        name="snapraid" 
+        type="win32" 
+    />
+    <description>SnapRAID Windows Daemon Service</description>
+
+    <!-- UAC PRIVILEGES: Forces 'requireAdministrator' so the daemon can access physical disks. -->
+    <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+        <security>
+            <requestedPrivileges>
+                <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+            </requestedPrivileges>
+        </security>
+    </trustInfo>
+
+    <!-- OS COMPATIBILITY: Declares support for Win 10/11 to prevent 'Version Lying'. -->
+    <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+        <application>
+            <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+        </application>
+    </compatibility>
+
+    <application xmlns="urn:schemas-microsoft-com:asm.v3">
+        <windowsSettings>
+            <!-- Enables paths longer than 260 characters for deep backup trees. -->
+            <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+
+            <!-- Sets ANSI code page to UTF-8 so fopen() works like it does on Linux. -->
+            <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>
+
+            <!-- Enables the more efficient Segment Heap. -->
+            <heapType xmlns="http://schemas.microsoft.com/SMI/2020/WindowsSettings">SegmentHeap</heapType>
+        </windowsSettings>
+    </application>
+</assembly>

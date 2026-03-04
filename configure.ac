@@ -19,6 +19,17 @@ AC_CHECK_PROG([SDE],[sde64],[sde64],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
+# Check if we are targeting Windows
+is_windows=no
+AS_CASE([$host_os], [mingw*|msys*|cygwin*], [is_windows=yes])
+AM_CONDITIONAL([HOST_WINDOWS], [test "x$is_windows" = "xyes"])
+
+# Check for Windows-specific tools only if on Windows
+if test "x$is_windows" = "xyes"; then
+    AC_CHECK_TOOL([WINDMC], [windmc])
+    AC_CHECK_TOOL([WINDRES], [windres])
+fi
+
 dnl Options to improve stacktrace (some disabled as no crash reported by years)
 AC_CHECK_CC_OPT([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-pointer", [])
 # AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
