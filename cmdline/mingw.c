@@ -2391,6 +2391,61 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 }
 
 /**
+ * Compute disk usage by aggregating access statistics.
+ *
+ * On many Windows versions, these raw disk performance counters are disabled by default to save overhead.
+ *
+ * If DeviceIoControl call with IOCTL_DISK_PERFORMANCE returns zeros or fails, the counters are likely disabled.
+ *
+ * Run the following command from an elevated command prompt:
+ *
+ *   diskperf -y
+ *
+ * This change usually requires a reboot to take effect at the driver level.
+ */
+static int devstat(uint64_t device, const char* name, const char* wfile, uint64_t* count)
+{
+	wchar_t conv_buf[CONV_MAX];
+	HANDLE h;
+	BOOL ret;
+	DISK_PERFORMANCE ds;
+	DWORD bytes;
+	char file[128];
+
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
+
+	/* open the volume */
+	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return -1;
+	}
+
+	bytes = 0;
+	ret = DeviceIoControl(h, IOCTL_DISK_PERFORMANCE, NULL, 0, &ds, sizeof(ds), &bytes, NULL);
+	if (!ret) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return -1;
+	}
+
+	if (!CloseHandle(h)) {
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return -1;
+	}
+
+	*count = ds.ReadCount + ds.WriteCount;
+
+	return 0;
+}
+
+/**
  * Read smartctl --scan from a stream.
  * Return 0 on success.
  */
@@ -2443,6 +2498,11 @@ static int smartctl_scan(FILE* f, tommy_list* list)
 					devinfo->device = device;
 					pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
 					pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
+
+					/* retrieve access stat for the low level device */
+					uint64_t access_stat;
+					if (devstat(device, devinfo->name, devinfo->wfile, &access_stat) == 0)
+						devinfo->access_stat = access_stat;
 
 					/* insert in the list */
 					tommy_list_insert_tail(list, &devinfo->node, devinfo);
@@ -3166,12 +3226,22 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	/* for each device */
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
+		uint64_t access_stat;
 
 		if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(EEXTERNAL, "Failed to resolve path '%s'.\n", devinfo->mount);
 			return -1;
 			/* LCOV_EXCL_STOP */
+		}
+
+		/* retrieve access stat for the high level device */
+		if (devstat(devinfo->device, devinfo->name, devinfo->wfile, &access_stat) == 0) {
+			/* cumulate access stat in the first split */
+			if (devinfo->split)
+				devinfo->split->access_stat += access_stat;
+			else
+				devinfo->access_stat += access_stat;
 		}
 
 		/* expand the tree of devices */

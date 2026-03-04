@@ -1544,10 +1544,8 @@ static int devscan(tommy_list* list)
 
 		/* retrieve access stat for the low level device */
 		uint64_t access_stat;
-		if (devstat(device, &access_stat) == 0) {
-			/* cumulate access stat in the first split */
+		if (devstat(device, &access_stat) == 0)
 			devinfo->access_stat = access_stat;
-		}
 
 		/* insert in the list */
 		tommy_list_insert_tail(list, &devinfo->node, devinfo);
