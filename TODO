@@ -13,9 +13,13 @@ This is the list of TODO items for SnapRAID.
 https://github.com/linuxhw/SMART
 https://github.com/linuxhw/EnterpriseDrive
 
-* Support BTRFS subvolumes. Keep track of the subvolumeid, along with the inode, and use it when searching/comparing inodes.
+* Support BTRFS subvolumes. Keep track of the subvolumeid, along with the inode,
+and use it when searching/comparing inodes.
 The value 0 can be used for the root volume, like a normal filesystem.
 See: https://github.com/kdave/btrfs-progs/tree/master/libbtrfsutil
+Check also that other tools are doing:
+See: https://github.com/automorphism88/snapraid-btrfs
+See: https://github.com/dim-geo/btrfssnapraid
 
 * A "dependents" output option to [--test-fmt file|disk|path|dependents] for LIST.
 Example, snapraid LIST --test-fmt dependents >FileList_with_dependents.txt
