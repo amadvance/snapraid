@@ -1,0 +1,34 @@
+SnapRAID is a backup program for disk arrays. It stores parity
+information of your data and recovers from up to six disk failures.
+
+SnapRAID is targeted for a home media server, where you have a lot
+of large files which rarely change.
+
+Features:
+- All your data is hashed to ensure data integrity and avoid silent
+  corruption.
+- If the disk failures are too many to allow a recovery, you lose
+  the data only on the failed disks. All the data in the other
+  disks is safe.
+- If you accidentally delete some files in a disk, you can recover
+  them.
+- You can use disks of different sizes.
+- You can add disks at any time.
+- It does not lock-in your data. You can stop using SnapRAID at any
+  time without the need to reformat or move data.
+
+Requirements:
+- None
+
+Configuration:
+Before using SnapRAID, you must create a configuration file.
+A template is provided at:
+- /etc/snapraid.conf.new
+
+Copy this to /etc/snapraid.conf and edit it to define your data
+and parity disks.
+
+Note:
+This package does not include the snapraid-daemon. If you wish to
+automate sync and scrub tasks with a Web UI, you should also
+install the snapraid-daemon package.
