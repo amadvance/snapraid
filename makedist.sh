@@ -12,6 +12,9 @@ if test "x$1" = "x-d"; then
 DEBUG=--enable-debug
 fi
 
+# Ask root permissions at the start
+sudo echo We are root
+
 make distclean
 
 # Reconfigure (with force) to get the latest revision from git
