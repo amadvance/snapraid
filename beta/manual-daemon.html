@@ -102,7 +102,7 @@ snapraidd [-V, --version] [-H, --help]
 Description
 </h1>
 <p>SnapRAID Daemon is a specialized companion service designed to move SnapRAID
-from a manual, command-line interface (CLI) workflow to an 'always-on'
+from a manual, command-line interface (CLI) workflow to an <b>always-on</b>
 background service.
 </p><p>Under the hood, the daemon uses the same SnapRAID CLI binary, providing the
 same level of reliability.
@@ -391,13 +391,54 @@ real-world environment, refer to the comments in the <b>snapraidd.conf</b>
 file installed.
 </p><div class="manual-section-level-2">
 <h2 id="sec6-1" class="manual-title-level-2">
+System
+</h2>
+<p>These settings control the core execution environment and the
+underlying daemon.
+These options are not visible or modifiable via the REST API.
+They require a manual edit of the configuration file and a
+configuration reload (SIGHUP) or daemon restart to apply.
+</p><div class="manual-section-level-3">
+<h3 id="sec6-1-1" class="manual-title-level-3">
+sys_engine
+</h3>
+<p>Sets the absolute path to the SnapRAID executable. If omitted,
+the daemon searches /usr/bin and /usr/local/bin on Linux, /usr/bin
+in Wine, and the daemon's base directory on Windows.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-1-2" class="manual-title-level-3">
+sys_log_directory
+</h3>
+<p>Defines where the output of individual SnapRAID commands is stored.
+If left unset, the daemon defaults to /var/log/snapraid in Linux
+and /log in the installation directory in Windows.
+</p><p>Setting this option to an empty value (sys_log_directory = ) will
+explicitly disable the saving of command output to persistent files.
+</p><p>IMPORTANT: While it is possible to leave this empty to avoid saving files,
+these logs are used by the daemon to reconstruct the past state of the
+array (e.g., tracking the last successful sync or scrub). If no log
+directory is provided, the daemon will lose its "memory" of previous
+task results every time it is restarted.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-1-3" class="manual-title-level-3">
+sys_log_retention_days
+</h3>
+<p>To prevent your storage from filling up, sys_log_retention_days sets the
+age at which old command logs are deleted. Logs are kept indefinitely
+if this is set to 0 or left unset.
+</p></div>
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec6-2" class="manual-title-level-2">
 Network &amp; REST API
 </h2>
 <p>These settings control the network interface. These options are not
 visible from the REST API. They require a manual edit of the
 configuration file and a configuration reload (SIGHUP) to apply.
 </p><div class="manual-section-level-3">
-<h3 id="sec6-1-1" class="manual-title-level-3">
+<h3 id="sec6-2-1" class="manual-title-level-3">
 net_enabled
 </h3>
 <p>Acts as the master toggle for the network interface. When set to 1,
@@ -406,7 +447,7 @@ If set to 0 or left blank, the daemon operates in a secure, local-only
 mode, and no network ports are opened.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-1-2" class="manual-title-level-3">
+<h3 id="sec6-2-2" class="manual-title-level-3">
 net_port
 </h3>
 <p>Defines the specific IP address and port(s) to which the daemon binds.
@@ -449,7 +490,7 @@ net_port=127.0.0.1:7627,8080  - Listen on multiple ports on localhost.
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-1-3" class="manual-title-level-3">
+<h3 id="sec6-2-3" class="manual-title-level-3">
 net_acl
 </h3>
 <p>Restricts API and dashboard access to specific client IP addresses or
@@ -469,7 +510,7 @@ net_acl=+192.168.1.0/24          - Allow local subnet only.
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-1-4" class="manual-title-level-3">
+<h3 id="sec6-2-4" class="manual-title-level-3">
 net_security_headers
 </h3>
 <p>When enabled (1), the daemon injects several browser-level security
@@ -483,7 +524,7 @@ proxy (like Nginx or Traefik) that is already configured to handle
 these security headers.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-1-5" class="manual-title-level-3">
+<h3 id="sec6-2-5" class="manual-title-level-3">
 net_allowed_origin
 </h3>
 <p>Configures Cross-Origin Resource Sharing (CORS) to determine which web
@@ -493,7 +534,7 @@ applications can interact with the API.
 <div class="manual-tag-name">
 self
 </div><div class="manual-tag-description">
-(Default/Recommended) Dynamically reflects the 'Host' header
+(Default/Recommended) Dynamically reflects the <b>Host</b> header
 of the request, allowing the built-in UI to work across various hostnames or IPs.
 </div>
 </div>
@@ -514,7 +555,7 @@ Restricts access to a specific origin (e.g., http://192.168.1.50:3000).
 </div>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-1-6" class="manual-title-level-3">
+<h3 id="sec6-2-6" class="manual-title-level-3">
 net_config_full_access
 </h3>
 <p>A security flag that determines whether sensitive configuration parameters
@@ -527,37 +568,16 @@ for modification via PATCH requests:
 </p><div class="manual-tag-list">
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-script_run_as_user
+hook_run_as_user
 </div><div class="manual-tag-description">
-The account used for executing pre/post scripts.
+The account used for executing hook_script.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
-script_pre_run
+hook_script
 </div><div class="manual-tag-description">
-The absolute path to the pre-execution script.
-</div>
-</div>
-<div class="manual-tag-entry">
-<div class="manual-tag-name">
-script_post_run
-</div><div class="manual-tag-description">
-The absolute path to the post-execution script.
-</div>
-</div>
-<div class="manual-tag-entry">
-<div class="manual-tag-name">
-log_directory
-</div><div class="manual-tag-description">
-The persistent storage path for command outputs.
-</div>
-</div>
-<div class="manual-tag-entry">
-<div class="manual-tag-name">
-log_retention_days
-</div><div class="manual-tag-description">
-The duration for which log files are kept.
+The absolute path to the hook script.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -591,7 +611,7 @@ The severity threshold for sending notifications.
 </div>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-1-7" class="manual-title-level-3">
+<h3 id="sec6-2-7" class="manual-title-level-3">
 net_web_root
 </h3>
 <p>Specifies the source of the web dashboard assets. The daemon supports
@@ -642,7 +662,7 @@ for development environments only.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec6-2" class="manual-title-level-2">
+<h2 id="sec6-3" class="manual-title-level-2">
 Automation &amp; Maintenance
 </h2>
 <p>These settings control the automation and maintenance tasks run by
@@ -650,7 +670,7 @@ the SnapRAID Daemon.
 </p><p>For security reasons, some of them can be set via the REST API only if the
 net_config_full_access option is enabled.
 </p><div class="manual-section-level-3">
-<h3 id="sec6-2-1" class="manual-title-level-3">
+<h3 id="sec6-3-1" class="manual-title-level-3">
 maintenance_schedule
 </h3>
 <p>Defines the timing for the automated maintenance sequence, which
@@ -661,7 +681,25 @@ Hours are specified in a 24-hour format (00-23), and days are
 represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-2-2" class="manual-title-level-3">
+<h3 id="sec6-3-2" class="manual-title-level-3">
+scrub_percentage
+</h3>
+<p>Determines the portion of the array verified after a successful sync.
+You may use decimal points to specify fractions of a percent
+(e.g., 0.7 to verify 0.7% of the array).
+If missing or set to 0, the scrub phase is skipped entirely.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-3-3" class="manual-title-level-3">
+scrub_older_than
+</h3>
+<p>Specifies that only blocks older than the defined number of days
+should be scrubbed. This allows the daemon to focus verification on
+older data while skipping recently synced blocks.
+If missing or set to 0, no age-based filtering is applied.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-3-4" class="manual-title-level-3">
 sync_threshold_deletes
 </h3>
 <p>Sets the maximum number of deleted or missing files allowed before a
@@ -671,7 +709,7 @@ deletions. This safety check is enforced during automated maintenance
 schedules and tasks initiated through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-2-3" class="manual-title-level-3">
+<h3 id="sec6-3-5" class="manual-title-level-3">
 sync_threshold_updates
 </h3>
 <p>Sets the maximum number of modified or updated files allowed before a
@@ -681,7 +719,7 @@ of files have changed. This safety check is enforced during automated
 maintenance schedules and tasks initiated through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-2-4" class="manual-title-level-3">
+<h3 id="sec6-3-6" class="manual-title-level-3">
 sync_prehash
 </h3>
 <p>If set to 1, the sync command is executed with the --prehash option.
@@ -693,7 +731,7 @@ under critical system stress.
 If missing or set to 0, no pre-hashing is performed.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-2-5" class="manual-title-level-3">
+<h3 id="sec6-3-7" class="manual-title-level-3">
 sync_force_zero
 </h3>
 <p>If set to 1, the daemon allows a sync to proceed even if it detects
@@ -704,33 +742,15 @@ This setting is particularly useful for detecting and acknowledging
 instances where files, accessed during a system crash, have been
 truncated to zero bytes by the filesystem.
 </p></div>
-<div class="manual-section-level-3">
-<h3 id="sec6-2-6" class="manual-title-level-3">
-scrub_percentage
-</h3>
-<p>Determines the portion of the array verified after a successful sync.
-You may use decimal points to specify fractions of a percent
-(e.g., 0.7 to verify 0.7% of the array).
-If missing or set to 0, the scrub phase is skipped entirely.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec6-2-7" class="manual-title-level-3">
-scrub_older_than
-</h3>
-<p>Specifies that only blocks older than the defined number of days
-should be scrubbed. This allows the daemon to focus verification on
-older data while skipping recently synced blocks.
-If missing or set to 0, no age-based filtering is applied.
-</p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec6-3" class="manual-title-level-2">
+<h2 id="sec6-4" class="manual-title-level-2">
 Disk Monitoring &amp; Power
 </h2>
 <p>The following settings manage how the daemon interacts with physical
 hardware to monitor disk health and optimize energy consumption
 </p><div class="manual-section-level-3">
-<h3 id="sec6-3-1" class="manual-title-level-3">
+<h3 id="sec6-4-1" class="manual-title-level-3">
 probe_interval_minutes
 </h3>
 <p>Controls the frequency at which the daemon checks disk SMART attributes.
@@ -739,7 +759,7 @@ if the disks are already spinning.
 If set to 0 or left blank, SMART monitoring is disabled.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-2" class="manual-title-level-3">
+<h3 id="sec6-4-2" class="manual-title-level-3">
 spindown_idle_minutes
 </h3>
 <p>Manages power consumption by automatically spinning down disks after
@@ -752,67 +772,73 @@ service, or system process accesses the disk, the idle timer is reset.
 relying instead on the OS or hardware controllers.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-3" class="manual-title-level-3">
-script_pre_run/script_post_run
+<h3 id="sec6-4-3" class="manual-title-level-3">
+hook_script
 </h3>
-<p>Defines absolute paths to custom scripts to be executed immediately before
-or after the sync, scrub, check, or fix commands. These scripts allow
-for custom logic such as mounting drives or sending custom alerts.
-</p><ul>
-<li>
-The path must be absolute (starting with /).
-</li>
-<li>
-The script must not be world-writable (recommended permissions: 700 or 755).
-</li>
-<li>
-The script owner must match the daemon user or be root.
-</li>
-<li>
-The script must contain a valid shebang (e.g., #!/bin/sh).
-</li>
-</ul>
+<p>Defines an absolute path to an executable script to be triggered by
+daemon events.
+</p><p>The script is executed with a single positional argument that
+represents the lifecycle stage of the task currently being processed
+by the daemon:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+task-begin
+</div><div class="manual-tag-description">
+Triggered immediately before the daemon begins a
+scheduled sequence of actions that access the array
+(e.g., sync, scrub, or maintenance).
 </div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+task-end
+</div><div class="manual-tag-description">
+Triggered after the entire sequence of actions has
+concluded successfully.
+</div>
+</div>
+</div>
+<p>task-error: Triggered if the task sequence is aborted, interrupted,
+</p><p>or encounters an operational failure.
+</p><p>Note that 'task-end' reflects only whether the task finished its
+execution cycle. It does not necessarily reflect hardware or data
+integrity. For example, a sync command may return 'task-end' even if
+the array is technically in a corrupt state, provided the sync process
+itself finished without crashing.
+</p><p>Future versions of the daemon will introduce new event types that may
+not relate to array access or follow the <b>task-</b> naming convention.
+It is strongly recommended to implement a default handler to ignore
+unrecognized events
+</p><p>SECURITY REQUIREMENTS:
+* The path MUST be absolute (starting with /).
+* The script file MUST NOT be world-writable (recommended: 700 or 755).
+* The script owner MUST match the user running the daemon or be root.
+* The script MUST contain a valid shebang (e.g., #!/bin/sh).
+</p><p>This remains inactive if no path is defined.
+</p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-4" class="manual-title-level-3">
-script_run_as_user
+<h3 id="sec6-4-4" class="manual-title-level-3">
+hook_run_as_user
 </h3>
-<p>Specifies the user account used to execute the pre-run and post-run
-scripts. If this is missing or blank, scripts are executed with the
+<p>Specifies the user account used to execute the hook_script.
+If this is missing or blank, the script is executed with the
 same privileges as the daemon process.
+</p><p>On Linux, "nobody" is the standard choice for maximum isolation.
+On Windows, "LocalService" is the preferred choice as it provides
+minimal local access while maintaining network capabilities.
+Alternatively, "NetworkService" can be used if the script specifically
+requires the computer's network identity to access remote resources.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec6-4" class="manual-title-level-2">
-Logging &amp; Notifications
+<h2 id="sec6-5" class="manual-title-level-2">
+Notifications
 </h2>
-<p>These settings control the logging and notification operations performed
-by the SnapRAID Daemon.
+<p>These settings control the notification operations performed by the
+daemon.
 </p><div class="manual-section-level-3">
-<h3 id="sec6-4-1" class="manual-title-level-3">
-log_directory
-</h3>
-<p>The log_directory defines where the output of individual SnapRAID
-commands is stored. If left unset, the daemon defaults to
-/var/log/snapraid.
-</p><p>Setting this option to an empty value (log_directory = ) will
-explicitly disable the saving of command output to persistent files.
-</p><p>IMPORTANT: While it is possible to leave this empty to avoid saving files,
-these logs are used by the daemon to reconstruct the past state of the
-array (e.g., tracking the last successful sync or scrub). If no log
-directory is provided, the daemon will lose its "memory" of previous
-task results every time it is restarted.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec6-4-2" class="manual-title-level-3">
-log_retention_days
-</h3>
-<p>To prevent your storage from filling up, log_retention_days sets the
-age at which old command logs are deleted. Logs are kept indefinitely
-if this is set to 0 or left unset.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec6-4-3" class="manual-title-level-3">
+<h3 id="sec6-5-1" class="manual-title-level-3">
 notify_syslog_enabled
 </h3>
 <p>When set to 1, daemon activity is sent to the operating system system
@@ -821,7 +847,7 @@ stopping are always captured, task-related messages are filtered by
 <b>notify_syslog_level</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-4-4" class="manual-title-level-3">
+<h3 id="sec6-5-2" class="manual-title-level-3">
 notify_syslog_level
 </h3>
 <p>Sets the minimum severity for syslog task entries.
@@ -829,7 +855,7 @@ Possible values are <b>info</b>, <b>warning</b>, <b>error</b>, and <b>critical</
 The default is <b>error</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-4-5" class="manual-title-level-3">
+<h3 id="sec6-5-3" class="manual-title-level-3">
 notify_heartbeat
 </h3>
 <p>Defines a command to run ONLY if the maintenance task was successful
@@ -839,7 +865,7 @@ or Healthchecks.io. If this ping stops, it indicates the server is down
 or the task is failing.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-4-6" class="manual-title-level-3">
+<h3 id="sec6-5-4" class="manual-title-level-3">
 notify_result
 </h3>
 <p>Specifies a command triggered after every report task generated by
@@ -903,7 +929,7 @@ authentication. Failure to do so may result in authentication errors
 (e.g., curl error 55).
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-4-7" class="manual-title-level-3">
+<h3 id="sec6-5-5" class="manual-title-level-3">
 notify_result_level
 </h3>
 <p>Controls the filter for <b>notify_result</b>. The notification is sent only
@@ -912,7 +938,20 @@ Valid values are <b>info</b> (always send), <b>warning</b>, <b>error</b>, and <b
 The default is <b>error</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-4-8" class="manual-title-level-3">
+<h3 id="sec6-5-6" class="manual-title-level-3">
+notify_run_as_user
+</h3>
+<p>The user account used for notify_heartbeat, notify_result and mail
+notifications. If missing or left blank, the task runs with the
+daemon's current privileges.
+</p><p>On Linux, "nobody" is the standard choice for maximum isolation.
+On Windows, "LocalService" is the preferred choice as it provides
+minimal local access while maintaining network capabilities.
+Alternatively, "NetworkService" can be used if the script specifically
+requires the computer's network identity to access remote resources.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-5-7" class="manual-title-level-3">
 notify_differences
 </h3>
 <p>If set to 1, the daemon logs a detailed list of file changes discovered
@@ -921,13 +960,13 @@ generated.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec6-5" class="manual-title-level-2">
+<h2 id="sec6-6" class="manual-title-level-2">
 Notification Examples
 </h2>
 <p>The following examples demonstrate common notification and heartbeat
 configurations
 </p><div class="manual-section-level-3">
-<h3 id="sec6-5-1" class="manual-title-level-3">
+<h3 id="sec6-6-1" class="manual-title-level-3">
 External Heartbeat Monitoring (Healthchecks.io)
 </h3>
 <p>To monitor that automated maintenance is running successfully, use a service
@@ -940,7 +979,7 @@ notify_heartbeat = curl -f --max-time 30 --retry 3 <a href="https://hc-ping.com/
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-5-2" class="manual-title-level-3">
+<h3 id="sec6-6-2" class="manual-title-level-3">
 Push Notifications (ntfy.sh)
 </h3>
 <p>This uses curl to send the report as a POST request to a push notification service.
@@ -951,7 +990,7 @@ notify_result = curl --narrow -f --max-time 30 --retry 3 -H "Title: %s" -H "Prio
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-5-3" class="manual-title-level-3">
+<h3 id="sec6-6-3" class="manual-title-level-3">
 Local System Mail (mail)
 </h3>
 <p>A traditional approach using the standard Linux mail utility. This is
@@ -962,7 +1001,7 @@ notify_result = mail -s "%s" your_user@localhost
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-5-4" class="manual-title-level-3">
+<h3 id="sec6-6-4" class="manual-title-level-3">
 Direct Delivery (SMTP-over-SSL)
 </h3>
 <p>This leverages curl's built-in SMTP engine for direct delivery to an
@@ -1003,10 +1042,10 @@ notification containing the operation's results.
 a parity synchronization, followed by a data integrity scrub, and
 concludes by issuing a system-wide health report.
 This is the primary endpoint for routine array upkeep.
-This task is subject to the 'sync_threshold_deletes' and
-'sync_threshold_updates' safety checks defined in the configuration.
+This task is subject to the <b>sync_threshold_deletes</b> and
+<b>sync_threshold_updates</b> safety checks defined in the configuration.
 The percentage of the array checked and the age filter are determined
-by the 'scrub_percentage' and 'scrub_older_than' settings.
+by the <b>scrub_percentage</b> and <b>scrub_older_than</b> settings.
 </p><p>Example:
 </p><pre>
 curl -X POST <a href="http://localhost:7627/snapraid/v1/maintenance">http://localhost:7627/snapraid/v1/maintenance</a>
@@ -1054,7 +1093,7 @@ and report.
 <p>Probes the disks to gather their latest activity state and executes a
 conditional spindown operation. The daemon will only issue the
 down_idle command to disks that have exceeded the
-'spindown_idle_minutes' threshold. In this case, no report is
+<b>spindown_idle_minutes</b> threshold. In this case, no report is
 generated.
 </p><p>Example:
 </p><pre>
@@ -1062,6 +1101,25 @@ curl -X POST <a href="http://localhost:7627/snapraid/v1/suspend_idle">http://loc
 </pre>
 <p>It is implemented with the sequence of commands: probe, down_idle.
 </p></div>
+<div class="manual-section-level-3">
+<h3 id="sec7-1-5" class="manual-title-level-3">
+/snapraid/v1/refresh:
+</h3>
+<p>Forces the daemon to re-synchronize its internal state with the
+content file. This is intended for use after manual interventions
+performed outside the daemon interface (e.g., replacing
+a failed disk, fixing UUID mismatches, or manually updating configuration).
+</p><p>The operation executes a <b>read</b> task to load the current content file
+data, followed by a <b>report</b> task to evaluate and broadcast the
+resulting array health.
+</p><p>This is specifically useful for clearing <b>FAILING</b> or <b>PREFAIL</b> modes
+once the underlying hardware or configuration issues have been
+resolved manually.
+</p><p>Example:
+</p><pre>
+curl -X POST <a href="http://localhost:7627/snapraid/v1/refresh">http://localhost:7627/snapraid/v1/refresh</a>
+</pre>
+</div>
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec7-2" class="manual-title-level-2">
@@ -1316,7 +1374,7 @@ array statistics.
 down_idle
 </div><div class="manual-tag-description">
 Executes a conditional spindown operation of the disks that
-have exceeded the 'spindown_idle_minutes' threshold.
+have exceeded the <b>spindown_idle_minutes</b> threshold.
 </div>
 </div>
 </div>
