@@ -37,13 +37,13 @@ tar -xzf "${TARBALL}"
 # Build the software
 echo "Configuring and building @PACKAGE@..."
 cd @PACKAGE@-${VERSION}
-./configure --prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
-make
+./configure --prefix=/usr --sysconfdir=/etc
+make -j4
 
 # Install into package root
 echo "Installing into temporary package root..."
 mkdir -p "../${PKG_ROOT}/usr"
-make -j4 install DESTDIR="../${PKG_ROOT}"
+make install DESTDIR="../${PKG_ROOT}"
 
 # Add example config and docs
 mkdir -p "../${PKG_ROOT}/usr/share/doc/@PACKAGE@"

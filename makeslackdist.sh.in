@@ -7,13 +7,15 @@ PRGNAM="@PACKAGE@"
 VERSION="@PACKAGE_VERSION@"
 TARBALL="@PACKAGE@.tar.gz"
 SOURCE_TARBALL="@PACKAGE@-${VERSION}.tar.gz"
+STAGING_DIR="${PRGNAM}-slack-dist-root"
 
 echo "Calculating MD5 sum..."
 MD5SUM=$(md5sum "$SOURCE_TARBALL" | cut -d' ' -f1)
 
+# Clean previous builds
+rm -rf "${STAGING_DIR}"
+
 # Create a temporary staging area
-# We use a unique name to avoid conflicts
-STAGING_DIR="tmp_build_dist"
 mkdir -p $STAGING_DIR/$PRGNAM
 
 # Copy Build Files from the pkg directory
@@ -26,10 +28,9 @@ cp pkg/README $STAGING_DIR/$PRGNAM/
 sed -e "s/@MD5SUM@/$MD5SUM/g" pkg/$PRGNAM.info > $STAGING_DIR/$PRGNAM/$PRGNAM.info
 
 # We create the tarball in the current root directory
-tar -czf "$TARBALL" -C $STAGING_DIR $PRGNAM
+tar --owner=0 --group=0 -czf "$TARBALL" -C $STAGING_DIR $PRGNAM
 
-# Remove the entire staging directory
-echo "Removing staging artifacts..."
+# Cleanup
 rm -rf $STAGING_DIR
 
 echo ""
