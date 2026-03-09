@@ -180,7 +180,12 @@ EXTRA_DIST = \
 	makedeb.sh.in \
 	pkg/control.in \
 	makerpm.sh.in \
-	pkg/snapraid.spec.in
+	pkg/snapraid.spec.in \
+	makearch.sh.in \
+	makearchdist.sh.in \
+	pkg/.PKGINFO.in \
+	pkg/PKGBUILD.in \
+	pkg/.SRCINFO.in
 
 man1_MANS = doc/snapraid.1 doc/snapraid_log.1
 

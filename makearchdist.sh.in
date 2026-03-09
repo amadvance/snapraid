@@ -1,0 +1,43 @@
+#!/bin/bash
+# makearchdist.sh - Creates the source distribution for Arch
+
+set -euo pipefail
+
+PRGNAM="@PACKAGE@"
+VERSION="@PACKAGE_VERSION@"
+TARBALL="@PACKAGE@.src.tar.gz"
+SOURCE_TARBALL="@PACKAGE@-${VERSION}.tar.gz"
+PKG_NAME="@PACKAGE@"
+PKG_ROOT="${PKG_NAME}-arch-dist-root"
+
+echo "Calculating SHA256 sum..."
+SHA256SUM=$(sha256sum "$SOURCE_TARBALL" | cut -d' ' -f1)
+
+# Clean previous builds
+rm -rf "${PKG_ROOT}"
+
+# Create a temporary staging area
+mkdir -p $PKG_ROOT/$PRGNAM
+
+# Copy Files
+echo "Copying into"
+cat pkg/.SRCINFO > "$PKG_ROOT/$PRGNAM/.SRCINFO"
+
+# Process the PKGBUILD file and replace placeholders 
+sed -e "s/@SHA256SUM@/$SHA256SUM/g" pkg/PKGBUILD > "$PKG_ROOT/$PRGNAM/PKGBUILD"
+
+# We create the tarball in the current root directory
+echo "Building .SRC package..."
+tar --owner=0 --group=0 -czf "$TARBALL" -C $PKG_ROOT $PRGNAM/
+
+echo "Cleanup..."
+rm -rf "${PKG_ROOT}"
+
+echo ""
+echo "Success! The tarball is: $TARBALL"
+echo "SHA256SUM updated to: $SHA256SUM"
+echo ""
+echo "You can install it with:"
+echo "  tar -xvf $TARBALL"
+echo "  cd snapraid-daemon"
+echo "  sudo makepkg -si"

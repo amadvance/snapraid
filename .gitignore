@@ -53,6 +53,11 @@ makedeb.sh
 pkg/control
 makerpm.sh
 pkg/snapraid.spec
+makearch.sh
+makearchdist.sh
+pkg/.PKGINFO
+pkg/PKGBUILD
+pkg/.SRCINFO
 
 # projects
 *.dst

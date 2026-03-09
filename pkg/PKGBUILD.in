@@ -1,0 +1,30 @@
+# Maintainer: Andrea Mazzoleni <amadvance@gmail.com>
+pkgname=@PACKAGE@
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc="Disk array backup for many large rarely-changed files"
+arch=('x86_64')
+url="https://www.snapraid.it/"
+license=('GPL3')
+depends=('zlib' 'zstd' 'snapraid>=14.0' 'systemd')
+makedepends=('gcc' 'make')
+install="${pkgname}.install"
+source=("https://github.com/amadvance/@PACKAGE@/releases/download/v@PACKAGE_VERSION@/@PACKAGE@-@PACKAGE_VERSION@.tar.gz")
+sha256sums=('@SHA256@')
+
+build() {
+  cd "$pkgname-$pkgver"
+  ./configure --prefix=/usr --sysconfdir=/etc --with-init-type=none
+  make
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  make DESTDIR="$pkgdir/" install
+  
+  # Add example config and docs (Matches your script's logic)
+  install -Dm644 snapraid.conf.example "$pkgdir/usr/share/doc/$pkgname/snapraid.conf.example"
+
+  # Arch Policy: License must also be in the license directory
+  install -Dm644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+}

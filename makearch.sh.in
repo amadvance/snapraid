@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# Script to build a Arch .pkg package for @PACKAGE_NAME@
+#
+# This version:
+# - Prefers a source tarball already present in the current directory
+# - Only downloads it if not found locally
+#
+# Requirements:
+# - Run as root (or with sudo) for proper ownership/permissions in package
+
+set -euo pipefail
+
+VERSION="@PACKAGE_VERSION@"
+TARBALL="@PACKAGE@-${VERSION}.tar.gz"
+SOURCE_URL="https://github.com/amadvance/@PACKAGE@/releases/download/v${VERSION}/${TARBALL}"
+PKG_NAME="@PACKAGE@"
+PKG_ROOT="${PKG_NAME}-arch-root"
+
+if [[ ! -f "pkg/.PKGINFO" ]]; then
+  echo "Error: .PKGINFO not found in the current directory."
+  exit 1
+fi
+
+# Prefer local tarball
+if [[ -f "./${TARBALL}" ]]; then
+  echo "Found ${TARBALL} locally."
+else
+  echo "Downloading ${TARBALL}..."
+  curl -L -O "$SOURCE_URL"
+fi
+
+# Clean previous builds
+rm -rf "${PKG_ROOT}" @PACKAGE@-${VERSION}
+
+# Extract source
+echo "Extracting source..."
+tar -xzf "${TARBALL}"
+
+# Build the software
+echo "Configuring and building @PACKAGE@..."
+cd @PACKAGE@-${VERSION}
+./configure --prefix=/usr --sysconfdir=/etc
+make -j4
+
+# Install into package root
+echo "Installing into temporary package root..."
+mkdir -p "../${PKG_ROOT}/usr"
+make install DESTDIR="../${PKG_ROOT}"
+
+# Add example config and docs
+mkdir -p "../${PKG_ROOT}/usr/share/doc/@PACKAGE@"
+cp @PACKAGE@.conf.example COPYING AUTHORS HISTORY README "../${PKG_ROOT}/usr/share/doc/@PACKAGE@/"
+
+cd ..
+
+# Copy Files
+echo "Copying into"
+BUILD_DATE=$(date -u +%s)
+PACKAGE_SIZE=$(du -sb "${PKG_ROOT}" | awk '{print $1}')
+sed -e "s/@BUILD_DATE@/${BUILD_DATE}/" \
+    -e "s/@PACKAGE_SIZE@/${PACKAGE_SIZE}/" \
+    pkg/.PKGINFO > "${PKG_ROOT}/.PKGINFO"
+
+cd ${PKG_ROOT}
+
+echo "Create .MTREE"
+bsdtar -czf .MTREE --format=mtree --options='!all,use-set,type,uid,gid,mode,time,size,md5,sha256,link' .PKGINFO usr
+
+# Build the .deb package
+echo "Building .PKG package..."
+tar --owner=0 --group=0 -cvf - .PKGINFO .MTREE usr | zstd -c -z -q - > ../${PKG_NAME}-${VERSION}-1-x86_64.pkg.tar.zst
+
+cd ..
+
+echo "Cleanup..."
+rm -rf "${PKG_ROOT}" @PACKAGE@-${VERSION}
+
+echo ""
+echo "Build complete!"
+echo "The .pkg package should be in the current directory:"
+ls @PACKAGE@-${VERSION}-*-*.zst
+
+echo ""
+echo "You can install it with:"
+echo "  sudo pacman -U ${PKG_NAME}-${VERSION}-1-x86_64.pkg.tar.zst"

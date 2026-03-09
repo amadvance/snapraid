@@ -1,0 +1,17 @@
+pkgbase = @PACKAGE@
+	pkgdesc = Disk array backup for many large rarely-changed files
+	pkgver = @VERSION@
+	pkgrel = 1
+	url = https://www.snapraid.it/
+	arch = x86_64
+	license = GPL3
+	makedepends = gcc
+	makedepends = make
+	depends = zlib
+	depends = zstd
+	depends = snapraid>=14.0
+	depends = systemd
+	source = https://github.com/amadvance/@PACKAGE@/releases/download/v@PACKAGE_VERSION@/@PACKAGE@-@PACKAGE_VERSION@.tar.gz
+	sha256sums = @SHA256@
+
+pkgname = @PACKAGE@

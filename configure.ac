@@ -403,11 +403,13 @@ AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([pkg/snapraid.info pkg/control pkg/snapraid.spec])
+AC_CONFIG_FILES([pkg/snapraid.info pkg/control pkg/snapraid.spec pkg/.PKGINFO pkg/PKGBUILD pkg/.SRCINFO])
 AC_CONFIG_FILES([makeslackware.sh], [chmod a+x makeslackware.sh])
 AC_CONFIG_FILES([makeslackdist.sh], [chmod a+x makeslackdist.sh])
 AC_CONFIG_FILES([pkg/snapraid.SlackBuild], [chmod a+x pkg/snapraid.SlackBuild])
 AC_CONFIG_FILES([makedeb.sh], [chmod a+x makedeb.sh])
 AC_CONFIG_FILES([makerpm.sh], [chmod a+x makerpm.sh])
+AC_CONFIG_FILES([makearch.sh], [chmod a+x makearch.sh])
+AC_CONFIG_FILES([makearchdist.sh], [chmod a+x makearchdist.sh])
 
 AC_OUTPUT
