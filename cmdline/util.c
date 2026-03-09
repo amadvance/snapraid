@@ -799,7 +799,7 @@ int lock_lock(const char* file)
 {
 	int f;
 
-	f = open(file, O_CREAT | O_TRUNC | O_WRONLY, 0600);
+	f = open(file, O_RDONLY | O_CREAT, 0600);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
 		return -1;
