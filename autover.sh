@@ -22,9 +22,10 @@ if [ -z "$VERSION" ]; then
 fi
 
 # Apply common rules to all outputs:
-# 1. Replace "rc-" with "rc"
-# 2. Replace "beta-" with "beta"
-# 3. Replace all remaining dashes with "."
-VERSION=$(echo "$VERSION" | sed 's/rc-/rc/g; s/beta-/beta/g; s/-/./g')
+# - Remove "-" at the end
+# - Replace "rc-" with "rc"
+# - Replace "beta-" with "beta"
+# - Replace all remaining dashes with "."
+VERSION=$(echo "$VERSION" | sed 's/-$//; s/rc-/rc/g; s/beta-/beta/g; s/-/./g')
 
 printf '%s' "$VERSION"
