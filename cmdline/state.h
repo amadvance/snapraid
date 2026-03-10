@@ -69,6 +69,7 @@ struct snapraid_option {
 	int gui; /**< GUI output. */
 	int gui_verbose; /**< GUI verbose output. */
 	int gui_rescan_after; /**< GUI force a rescan after the command. */
+	int gui_touch_before; /**< GUI force a touch before the command. */
 	unsigned gui_threshold_removes; /**< GUI abort sync if too many removed files */
 	unsigned gui_threshold_updates; /**< GUI abort sync if too many updated files */
 	int auditonly; /**< In check, checks only the hash and not the parity. */

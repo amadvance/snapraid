@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+14.0rc3 ?/03/2026
+==================
+ * Added new --gui options for better interaction with SnapRAID Daemon. 
+ * Removed the UAC request for Windows executable.
+
 14.0rc2 08/03/2026
 ==================
  * Extended Windows support to be on par with the Linux version.
@@ -8,7 +13,7 @@ SnapRAID HISTORY
 14.0rc1 01/03/2026
 ==================
  * More log tags for all commands in preparation for the upcoming SnapRAID
-   daemon. Pre-release will be available at https://github.com/amadvance/snapraid-daemon.
+   Daemon. Pre-release will be available at https://github.com/amadvance/snapraid-daemon.
    Note that this is the minimal SnapRAID version required to use the daemon.
  * Fixed a crash on macOS when filesystem doesn't report UUID
  * Added support for local exclusion rules via .snapraidignore files placed

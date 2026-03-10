@@ -649,8 +649,9 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_GUI 501
 #define OPT_GUI_VERBOSE 502
 #define OPT_GUI_RESCAN_AFTER 503
-#define OPT_GUI_THRESHOLD_REMOVES 504
-#define OPT_GUI_THRESHOLD_UPDATES 505
+#define OPT_GUI_TOUCH_BEFORE 504
+#define OPT_GUI_THRESHOLD_REMOVES 505
+#define OPT_GUI_THRESHOLD_UPDATES 506
 
 /**
  * Test options
@@ -750,8 +751,9 @@ static struct option long_options[] = {
 	{ "gui", 0, 0, OPT_GUI }, /* undocumented GUI interface option (it was also 'G' in the past) */
 	{ "gui-verbose", 0, 0, OPT_GUI_VERBOSE }, /* undocumented GUI interface option */
 	{ "gui-rescan-after", 0, 0, OPT_GUI_RESCAN_AFTER }, /* undocumented GUI, force a rescan after the command to log differences */
-	{ "gui-threshold-removes", 1, 0, OPT_GUI_THRESHOLD_REMOVES }, /* abort sync if too many removed files */
-	{ "gui-threshold-updates", 1, 0, OPT_GUI_THRESHOLD_UPDATES }, /* abort sync if too many updated files */
+	{ "gui-touch-before", 0, 0, OPT_GUI_TOUCH_BEFORE }, /* undocumented GUI, force a touch before the command */
+	{ "gui-threshold-removes", 1, 0, OPT_GUI_THRESHOLD_REMOVES }, /* undocumented GUI, abort sync if too many removed files */
+	{ "gui-threshold-updates", 1, 0, OPT_GUI_THRESHOLD_UPDATES }, /* undocumented GUI, abort sync if too many updated files */
 
 	/* The following are test specific options, DO NOT USE! */
 
@@ -1250,6 +1252,9 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case OPT_GUI_RESCAN_AFTER :
 			opt.gui_rescan_after = 1;
+			break;
+		case OPT_GUI_TOUCH_BEFORE :
+			opt.gui_touch_before = 1;
 			break;
 		case OPT_GUI_THRESHOLD_REMOVES :
 			opt.gui_threshold_removes = strtoul(optarg, &e, 0);
@@ -1867,6 +1872,9 @@ int snapraid_main(int argc, char* argv[])
 		/* it will happen in inside scan_file_keep() called in state_scan() */
 		if (state.opt.force_realloc)
 			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
+
+		if (opt.gui_touch_before)
+			state_touch(&state);
 
 		state_scan(&state);
 

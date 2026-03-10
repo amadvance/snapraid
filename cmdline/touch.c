@@ -81,7 +81,7 @@ void state_touch(struct snapraid_state* state)
 				f = open(path, flags);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
-					log_fatal(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -92,7 +92,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					log_fatal(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -102,7 +102,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					close(f);
-					log_fatal(errno, "Error timing file '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error timing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -114,7 +114,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					log_fatal(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -123,7 +123,7 @@ void state_touch(struct snapraid_state* state)
 				ret = close(f);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));
+					log_error(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
