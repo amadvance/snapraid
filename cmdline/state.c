@@ -2133,6 +2133,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
 
+	/* mark all disks as single threads */
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		disk->single_thread = 1;
+	}
+
 	ret = sread(f, buffer, 12);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
@@ -3229,6 +3235,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
+	}
+
+	/* mark all disks as multi threads */
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		disk->single_thread = 0;
 	}
 
 	tommy_array_done(&disk_mapping);

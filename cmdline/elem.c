@@ -765,6 +765,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	pathslash(disk->dir, sizeof(disk->dir));
 
 #if HAVE_THREAD
+	disk->single_thread = 0;
 	thread_mutex_init(&disk->fs_mutex);
 #endif
 
@@ -856,7 +857,8 @@ void extra_free(struct snapraid_extra* extra)
 static inline void fs_lock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD
-	thread_mutex_lock(&disk->fs_mutex);
+	if (!disk->single_thread)
+		thread_mutex_lock(&disk->fs_mutex);
 #else
 	(void)disk;
 #endif
@@ -865,7 +867,8 @@ static inline void fs_lock(struct snapraid_disk* disk)
 static inline void fs_unlock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD
-	thread_mutex_unlock(&disk->fs_mutex);
+	if (!disk->single_thread)
+		thread_mutex_unlock(&disk->fs_mutex);
 #else
 	(void)disk;
 #endif

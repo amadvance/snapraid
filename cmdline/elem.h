@@ -388,6 +388,8 @@ struct snapraid_disk {
 	int skip_access; /**< If the disk is inaccessible and it should be skipped. */
 
 #if HAVE_THREAD
+	int single_thread; /**< Running in single thread, and then not needing the mutex */
+
 	/**
 	 * Mutex for protecting the filesystem structure.
 	 *

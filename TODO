@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Use a memory mapped file to read the content file
+
 * Integration with MergeFS ?
 
 * Evaluate use of syscall getdents64() instead of readdir(): https://linux.die.net/man/2/getdents64
