@@ -3,7 +3,8 @@ SnapRAID HISTORY
 
 14.0rc3 ?/03/2026
 ==================
- * Added new --gui options for better interaction with SnapRAID Daemon. 
+ * New 'extra' config option to define additional disks to monitor with the
+   'probe' and 'smart' commands. This replaces the previous autodetection.
  * Removed the UAC request for Windows executable.
 
 14.0rc2 08/03/2026

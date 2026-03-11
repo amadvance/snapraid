@@ -37,6 +37,13 @@ data d1 /mnt/disk1/
 data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 
+# Defines the name and mount point of additional disks to monitor
+# with the 'smart' and 'probe' commands.
+# This is useful for monitoring disks that are not part of the array
+# but are required for the system to function, such as the boot disk.
+# Format: "other DISK_NAME DISK_MOUNT_POINT"
+extra boot /
+
 # Excludes hidden files and directories (uncomment to enable).
 #nohidden
 

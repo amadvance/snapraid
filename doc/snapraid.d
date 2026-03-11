@@ -1129,6 +1129,16 @@ Configuration
 	In the case of renaming, the association is done using the stored
 	UUID of the disks.
 
+  extra NAME DIR
+	Defines the name and mount point of additional disks to monitor
+	with the `smart` and `probe` commands.
+
+	This is useful for monitoring disks that are not part of the
+	array but are required for the system to function, such as
+	the boot disk.
+
+	Note that such disks are not affected by the `up` and `down` commands.
+
   nohidden
 	Excludes all hidden files and directories.
 	In Unix, hidden files are those starting with `.`.

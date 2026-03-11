@@ -331,8 +331,27 @@ struct snapraid_extent {
 	tommy_tree_node file_node; /**< Tree sorter by <file,file_pos>. */
 };
 
+
 /**
- * Disk.
+ * Other disk.
+ */
+struct snapraid_extra {
+	char name[PATH_MAX]; /**< Name of the disk. */
+	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
+	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
+	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
+	char fstype[FSINFO_MAX]; /**< Filesystem type */
+	char fslabel[FSINFO_MAX]; /**< Filesystem label */
+
+	uint64_t device; /**< Device identifier. */
+
+	/* nodes for data structures */
+	tommy_node node;
+};
+
+/**
+ * Data disk.
  */
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
@@ -995,6 +1014,16 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
  * Deallocate a disk.
  */
 void disk_free(struct snapraid_disk* disk);
+
+/**
+ * Allocate a extra disk.
+ */
+struct snapraid_extra* extra_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid);
+
+/**
+ * Deallocate a other disk.
+ */
+void extra_free(struct snapraid_extra* other);
 
 /**
  * Get the size of the disk in blocks.

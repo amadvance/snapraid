@@ -570,7 +570,7 @@ void device_name_set(devinfo_t* dev, const char* name, int index);
  *
  * The passed "low" device list must be already initialized.
  */
-int devquery(tommy_list* high, tommy_list* low, int operation, int others);
+int devquery(tommy_list* high, tommy_list* low, int operation);
 
 /**
  * Fill with fake data the device list.

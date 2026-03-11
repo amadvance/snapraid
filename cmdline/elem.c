@@ -824,6 +824,35 @@ void disk_free(struct snapraid_disk* disk)
 	free(disk);
 }
 
+struct snapraid_extra* extra_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid)
+{
+	struct snapraid_extra* extra;
+	unsigned i;
+
+	extra = malloc_nofail(sizeof(struct snapraid_extra));
+	pathcpy(extra->name, sizeof(extra->name), name);
+	pathimport(extra->dir, sizeof(extra->dir), dir);
+	pathcpy(extra->uuid, sizeof(extra->uuid), uuid);
+
+	/* ensure that the dir terminate with "/" if it isn't empty */
+	pathslash(extra->dir, sizeof(extra->dir));
+
+	extra->smartctl[0] = 0;
+	for (i = 0; i < SMART_IGNORE_MAX; ++i)
+		extra->smartignore[i] = 0;
+	extra->fstype[0] = 0;
+	extra->fslabel[0] = 0;
+	extra->device = dev;
+
+	return extra;
+}
+
+void extra_free(struct snapraid_extra* extra)
+{
+	free(extra);
+}
+
+
 static inline void fs_lock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD

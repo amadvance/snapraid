@@ -178,7 +178,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, DEVICE_SMART);
 	} else {
-		ret = devquery(&high, &low, DEVICE_SMART, 0 /* only disks in the array */);
+		ret = devquery(&high, &low, DEVICE_SMART);
 	}
 
 	/* on error, just disable thermal gathering */

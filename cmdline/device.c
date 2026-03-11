@@ -914,8 +914,6 @@ static void state_stat(struct snapraid_state* state, tommy_list* high)
 		if (devinfo->split == 0 && devinfo->access_stat != 0) {
 			if (devinfo->name[0])
 				log_tag("stat:%s:%" PRIu64 "\n", devinfo->name, devinfo->access_stat);
-			else
-				log_tag("stat_device:%s:%" PRIu64 "\n", devinfo->file, devinfo->access_stat);
 		}
 	}
 }
@@ -1074,6 +1072,36 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		}
 	}
 
+	/* extra disks are never spundown or spunup */
+	int include_extra = 1;
+	switch (operation) {
+	case DEVICE_UP :
+	case DEVICE_DOWN :
+	case DEVICE_DOWNIFUP :
+		include_extra = 0;
+		break;
+	}
+	if (include_extra) {
+		/* for all extra disks */
+		for (i = state->extralist; i != 0; i = i->next) {
+			struct snapraid_extra* extra = i->data;
+			devinfo_t* entry;
+
+			if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, extra->name, 0) != 0)
+				continue;
+
+			entry = calloc_nofail(1, sizeof(devinfo_t));
+
+			entry->device = extra->device;
+			device_name_set(entry, extra->name, 0);
+			pathcpy(entry->mount, sizeof(entry->mount), extra->dir);
+			pathcpy(entry->smartctl, sizeof(entry->smartctl), extra->smartctl);
+			memcpy(entry->smartignore, extra->smartignore, sizeof(extra->smartignore));
+
+			tommy_list_insert_tail(&high, &entry->node, entry);
+		}
+	}
+
 	/* with a GUI always gives time reference */
 	if (state->opt.gui)
 		log_tag("unixtime:%" PRIi64 "\n", (int64_t)now);
@@ -1081,9 +1109,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
 	} else {
-		int others = operation == DEVICE_SMART || operation == DEVICE_PROBE || operation == DEVICE_LIST;
-
-		ret = devquery(&high, &low, operation, others);
+		ret = devquery(&high, &low, operation);
 	}
 
 	/* if the list is empty, it's not supported in this platform */
@@ -1103,7 +1129,6 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		log_fatal(ESOFT, "%s is unsupported in this platform.\n", ope);
 	} else {
 		state_stat(state, &high);
-		state_stat(state, &low);
 
 		if (operation == DEVICE_SMART)
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);

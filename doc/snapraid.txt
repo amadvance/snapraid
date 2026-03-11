@@ -1203,14 +1203,26 @@ in the configuration file and then running a `sync` command.
 In the case of renaming, the association is done using the stored
 UUID of the disks.
 
-7.6 nohidden
+7.6 extra NAME DIR
+------------------
+
+Defines the name and mount point of additional disks to monitor
+with the `smart` and `probe` commands.
+
+This is useful for monitoring disks that are not part of the
+array but are required for the system to function, such as
+the boot disk.
+
+Note that such disks are not affected by the `up` and `down` commands.
+
+7.7 nohidden
 ------------
 
 Excludes all hidden files and directories.
 In Unix, hidden files are those starting with `.`.
 In Windows, they are those with the hidden attribute.
 
-7.7 exclude/include PATTERN
+7.8 exclude/include PATTERN
 ---------------------------
 
 Defines the file or directory patterns to exclude or include
@@ -1228,7 +1240,7 @@ specifications.
 
 This option can be used multiple times.
 
-7.8 blocksize SIZE_IN_KIBIBYTES
+7.9 blocksize SIZE_IN_KIBIBYTES
 -------------------------------
 
 Defines the basic block size in kibibytes for the parity.
@@ -1276,8 +1288,8 @@ This results in about 1.5% extra space, approximately 60 GB for
 a 4 TB disk, which allows about 460,000 files on each data disk without
 any wasted space.
 
-7.9 hashsize SIZE_IN_BYTES
---------------------------
+7.10 hashsize SIZE_IN_BYTES
+---------------------------
 
 Defines the hash size in bytes for the saved blocks.
 
@@ -1314,7 +1326,7 @@ Switching to both a hash size of 8 and a block size of 512, you get:
 
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 
-7.10 autosave SIZE_IN_GIGABYTES
+7.11 autosave SIZE_IN_GIGABYTES
 -------------------------------
 
 Automatically saves the state when syncing or scrubbing after the
@@ -1322,7 +1334,7 @@ specified amount of GB processed.
 This option is useful to avoid restarting long `sync`
 commands from scratch if interrupted by a machine crash or any other event.
 
-7.11 temp_limit TEMPERATURE_CELSIUS
+7.12 temp_limit TEMPERATURE_CELSIUS
 -----------------------------------
 
 Sets the maximum allowed disk temperature in Celsius. When specified,
@@ -1353,14 +1365,14 @@ temperature measured at the start of the run as a fallback reference.
 Normally, SnapRAID shows only the temperature of the hottest disk.
 To display the temperature of all disks, use the -A or --stats option.
 
-7.12 temp_sleep TIME_IN_MINUTES
+7.13 temp_sleep TIME_IN_MINUTES
 -------------------------------
 
 Sets the standby time, in minutes, when the temperature limit is
 reached. During this period, the disks remain spun down. The default
 is 5 minutes.
 
-7.13 pool DIR
+7.14 pool DIR
 -------------
 
 Defines the pooling directory where the virtual view of the disk
@@ -1368,7 +1380,7 @@ array is created using the `pool` command.
 
 The directory must already exist.
 
-7.14 share UNC_DIR
+7.15 share UNC_DIR
 ------------------
 
 Defines the Windows UNC path required to access the disks remotely.
@@ -1384,7 +1396,7 @@ file directory and name.
 
 This option is required only for Windows.
 
-7.15 smartctl DISK/PARITY OPTIONS...
+7.16 smartctl DISK/PARITY OPTIONS...
 ------------------------------------
 
 Defines custom smartctl options to obtain the SMART attributes for
@@ -1409,7 +1421,7 @@ For example:
 
     smartctl parity -d sat %s
 
-7.16 smartignore DISK/PARITY ATTR [ATTR...]
+7.17 smartignore DISK/PARITY ATTR [ATTR...]
 -------------------------------------------
 
 Ignores the specified SMART attribute when computing the probability
@@ -1430,7 +1442,7 @@ To ignore it only on the first parity disk:
 
     smartignore parity 197
 
-7.17 Examples
+7.18 Examples
 -------------
 
 An example of a typical configuration for Unix is:

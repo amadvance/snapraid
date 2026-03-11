@@ -2446,124 +2446,6 @@ static int devstat(uint64_t device, const char* name, const char* wfile, uint64_
 }
 
 /**
- * Read smartctl --scan from a stream.
- * Return 0 on success.
- */
-static int smartctl_scan(FILE* f, tommy_list* list)
-{
-	while (1) {
-		char buf[256];
-		char* s;
-
-		s = fgets(buf, sizeof(buf), f);
-		if (s == 0)
-			break;
-
-		/* remove extraneous chars */
-		s = strpolish(buf);
-
-		log_tag("smartctl:scan::text: %s\n", s);
-
-		if (*s == '/') {
-			char* sep = strchr(s, ' ');
-			if (sep) {
-				tommy_node* i;
-				const char* number;
-				uint64_t device;
-
-				/* clear everything after the first space */
-				*sep = 0;
-
-				/* get the device number from the device file */
-				/* note that this is Windows specific */
-				/* for the format /dev/pdX of smartmontools */
-				number = s;
-				while (*number != 0 && !isdigit(*number))
-					++number;
-				device = atoi(number);
-
-				/* check if already present */
-				/* comparing the device file */
-				for (i = tommy_list_head(list); i != 0; i = i->next) {
-					devinfo_t* devinfo = i->data;
-					if (devinfo->device == device)
-						break;
-				}
-
-				/* if not found */
-				if (i == 0) {
-					devinfo_t* devinfo;
-
-					devinfo = calloc_nofail(1, sizeof(devinfo_t));
-					devinfo->device = device;
-					pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
-					pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
-
-					/* retrieve access stat for the low level device */
-					uint64_t access_stat;
-					if (devstat(device, devinfo->name, devinfo->wfile, &access_stat) == 0)
-						devinfo->access_stat = access_stat;
-
-					/* insert in the list */
-					tommy_list_insert_tail(list, &devinfo->node, devinfo);
-				}
-			}
-		}
-	}
-
-	return 0;
-}
-
-/**
- * Scan all the devices.
- */
-static int devscan(tommy_list* list)
-{
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[MAX_PATH + 128];
-	FILE* f;
-	int ret;
-
-	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" --scan-open -d pd", exedir);
-
-	log_tag("smartctl:scan::run: %s\n", u16tou8(conv_buf, cmd));
-
-	f = _wpopen(cmd, L"rt");
-	if (!f) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (smartctl_scan(f, list) != 0) {
-		/* LCOV_EXCL_START */
-		pclose(f);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	ret = pclose(f);
-
-	log_tag("smartctl:scan::ret: %x\n", ret);
-
-	if (ret == -1) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	return 0;
-}
-
-/**
  * Get SMART attributes.
  */
 static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
@@ -3218,7 +3100,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int devquery(tommy_list* high, tommy_list* low, int operation, int others)
+int devquery(tommy_list* high, tommy_list* low, int operation)
 {
 	tommy_node* i;
 	void* (*func)(void* arg) = 0;
@@ -3248,16 +3130,6 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		if (devtree(devinfo, low) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(EEXTERNAL, "Failed to expand device '%s'.\n", devinfo->file);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
-	/* add other devices */
-	if (others) {
-		if (devscan(low) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to list other devices.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

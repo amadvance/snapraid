@@ -155,7 +155,8 @@ struct snapraid_state {
 	uint32_t updated_files; /**< Files updated. Updated in scan */
 
 	tommy_list contentlist; /**< List of content files. */
-	tommy_list disklist; /**< List of all the disks. */
+	tommy_list disklist; /**< List of all the data disks. */
+	tommy_list extralist; /**< List of all the other disks. */
 	tommy_list maplist; /**< List of all the disk mappings. */
 	tommy_list filterlist; /**< List of inclusion/exclusion. */
 	tommy_list importlist; /**< List of import file. */

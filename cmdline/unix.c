@@ -1471,92 +1471,6 @@ static int devstat(dev_t device, uint64_t* count)
 #endif
 
 /**
- * Scan all the devices.
- *
- * If a device is already in, it's not added again.
- */
-#if HAVE_LINUX_DEVICE
-static int devscan(tommy_list* list)
-{
-	char dir[PATH_MAX];
-	DIR* d;
-	struct dirent* dd;
-
-	pathprint(dir, sizeof(dir), "/sys/dev/block/");
-
-	/* check if there is a slaves list */
-	d = opendir(dir);
-	if (d == 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to open dir '%s'.\n", dir);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	while ((dd = readdir(d)) != 0) {
-		char path[PATH_MAX];
-		tommy_node* i;
-		dev_t device;
-		devinfo_t* devinfo;
-
-		if (dd->d_name[0] == '.')
-			continue;
-
-		pathprint(path, sizeof(path), "/sys/dev/block/%s/device", dd->d_name);
-
-		/* check if it's a real device */
-		if (access(path, F_OK) != 0)
-			continue;
-
-		pathprint(path, sizeof(path), "/sys/dev/block/%s/dev", dd->d_name);
-
-		device = devread(path);
-		if (!device) {
-			/* LCOV_EXCL_START */
-			log_tag("scan:skip: Skipping device %s because failed to read its device number.\n", dd->d_name);
-			continue;
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* check if already present */
-		for (i = tommy_list_head(list); i != 0; i = i->next) {
-			devinfo = i->data;
-			if (devinfo->device == device)
-				break;
-		}
-
-		/* if already present */
-		if (i != 0)
-			continue;
-
-		/* get the device file */
-		if (devresolve(device, path, sizeof(path)) != 0) {
-			/* LCOV_EXCL_START */
-			log_tag("scan:skip: Skipping device %u:%u because failed to resolve.\n", major(device), minor(device));
-			continue;
-			/* LCOV_EXCL_STOP */
-		}
-
-		devinfo = calloc_nofail(1, sizeof(devinfo_t));
-
-		devinfo->device = device;
-		pathcpy(devinfo->file, sizeof(devinfo->file), path);
-
-		/* retrieve access stat for the low level device */
-		uint64_t access_stat;
-		if (devstat(device, &access_stat) == 0)
-			devinfo->access_stat = access_stat;
-
-		/* insert in the list */
-		tommy_list_insert_tail(list, &devinfo->node, devinfo);
-	}
-
-	closedir(d);
-	return 0;
-}
-#endif
-
-/**
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
@@ -2199,7 +2113,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int devquery(tommy_list* high, tommy_list* low, int operation, int others)
+int devquery(tommy_list* high, tommy_list* low, int operation)
 {
 	void* (*func)(void* arg) = 0;
 
@@ -2268,20 +2182,8 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 			/* LCOV_EXCL_STOP */
 		}
 	}
-
-	/* add other devices */
-	if (others) {
-		if (devscan(low) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to list other devices.\n");
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
 #else
 	(void)high;
-	(void)others;
 #endif
 
 	switch (operation) {

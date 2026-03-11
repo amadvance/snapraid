@@ -194,6 +194,7 @@ void state_init(struct snapraid_state* state)
 	state->thermal_cooldown_time = 0;
 
 	tommy_list_init(&state->disklist);
+	tommy_list_init(&state->extralist);
 	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
 	tommy_list_init(&state->filterlist);
@@ -209,6 +210,7 @@ void state_init(struct snapraid_state* state)
 void state_done(struct snapraid_state* state)
 {
 	tommy_list_foreach(&state->disklist, (tommy_foreach_func*)disk_free);
+	tommy_list_foreach(&state->extralist, (tommy_foreach_func*)extra_free);
 	tommy_list_foreach(&state->maplist, (tommy_foreach_func*)map_free);
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
@@ -502,13 +504,20 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				break;
 		}
 		if (j == 0) {
+			for (j = state->extralist; j != 0; j = j->next) {
+				struct snapraid_extra* extra = j->data;
+				if (wnmatch(filter->pattern, extra->name) == 0)
+					break;
+			}
+		}
+		if (j == 0) {
 			/* check matching with parity disks */
 			for (l = 0; l < state->level; ++l)
 				if (wnmatch(filter->pattern, lev_config_name(l)) == 0)
 					break;
 			if (l == state->level) {
 				/* LCOV_EXCL_START */
-				log_fatal(EUSER, "Option -d, --filter-disk %s doesn't match any data or parity disk.\n", filter->pattern);
+				log_fatal(EUSER, "Option -d, --filter-disk %s doesn't match any data or parity or extra disk.\n", filter->pattern);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1020,6 +1029,92 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			disk = disk_alloc(buffer, dir, dev, uuid, skip_access);
 
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
+		} else if (strcmp(tag, "extra") == 0) {
+			char dir[PATH_MAX];
+			char device[PATH_MAX];
+			char uuid[UUID_MAX];
+			struct snapraid_extra* extra;
+			uint64_t dev;
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid 'extra' name specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (!*buffer) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Empty 'extra' name specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			sgetspace(f);
+
+			ret = sgetlasttok(f, dir, sizeof(dir));
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid 'extra' dir specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (!*dir) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Empty 'extra' dir specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* get the device of the dir */
+			pathimport(device, sizeof(device), dir);
+
+			/* check if the disk name already exists */
+			for (i = state->extralist; i != 0; i = i->next) {
+				extra = i->data;
+				if (strcmp(extra->name, buffer) == 0)
+					break;
+			}
+			if (i) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Duplicate 'extra' name '%s' at line %u\n", buffer, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* if the disk has to be present */
+			if (!state->opt.skip_disk_access) {
+				struct stat st;
+
+				if (stat(device, &st) == 0) {
+					dev = st.st_dev;
+
+					/* read the uuid, if unsupported use an empty one */
+					if (devuuid(dev, dir, uuid, sizeof(uuid)) != 0) {
+						*uuid = 0;
+					}
+
+					/* fake a different UUID when testing */
+					if (state->opt.fake_uuid) {
+						snprintf(uuid, sizeof(uuid), "fake-uuid-%d", state->opt.fake_uuid);
+						--state->opt.fake_uuid;
+					}
+				} else {
+					/* use a fake device, and mark the disk to be skipped */
+					dev = 0;
+					*uuid = 0;
+				}
+			} else {
+				/* use a fake device */
+				dev = 0;
+				*uuid = 0;
+			}
+
+			extra = extra_alloc(buffer, dir, dev, uuid);
+
+			tommy_list_insert_tail(&state->extralist, &extra->node, extra);
 		} else if (strcmp(tag, "smartctl") == 0) {
 			char custom[PATH_MAX];
 
@@ -1073,29 +1168,47 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 				pathcpy(state->parity[level].smartctl, sizeof(state->parity[level].smartctl), custom);
 			} else {
-				struct snapraid_disk* disk;
-
 				/* search the disk */
-				disk = 0;
+				struct snapraid_disk* found_disk = 0;
 				for (i = state->disklist; i != 0; i = i->next) {
-					disk = i->data;
-					if (strcmp(disk->name, buffer) == 0)
+					struct snapraid_disk* disk = i->data;
+					if (strcmp(disk->name, buffer) == 0) {
+						found_disk = disk;
 						break;
+					}
 				}
-				if (!disk) {
-					/* LCOV_EXCL_START */
-					log_fatal(EUSER, "Missing disk 'smartctl' '%s' at line %u\n", buffer, line);
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
+				struct snapraid_extra* found_extra = 0;
+				for (i = state->extralist; i != 0; i = i->next) {
+					struct snapraid_extra* extra = i->data;
+					if (strcmp(extra->name, buffer) == 0) {
+						found_extra = extra;
+						break;
+					}
 				}
-				if (disk->smartctl[0] != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal(EUSER, "Duplicate disk name '%s' at line %u\n", buffer, line);
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
+				if (found_disk) {
+					if (found_disk->smartctl[0] != 0) {
+						/* LCOV_EXCL_START */
+						log_fatal(EUSER, "Duplicate 'smartctl' name '%s' at line %u\n", buffer, line);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
 
-				pathcpy(disk->smartctl, sizeof(disk->smartctl), custom);
+					pathcpy(found_disk->smartctl, sizeof(found_disk->smartctl), custom);
+				} else if (found_extra) {
+					if (found_extra->smartctl[0] != 0) {
+						/* LCOV_EXCL_START */
+						log_fatal(EUSER, "Duplicate 'smartctl' name '%s' at line %u\n", buffer, line);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+
+					pathcpy(found_extra->smartctl, sizeof(found_extra->smartctl), custom);
+				} else {
+					/* LCOV_EXCL_START */
+					log_fatal(EUSER, "Unknown 'smartctl' name '%s' at line %u\n", buffer, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			}
 		} else if (strcmp(tag, "smartignore") == 0) {
 			int* smart;
@@ -1122,23 +1235,33 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			} else if (lev_config_scan(buffer, &level, 0) == 0) { /* search for parity */
 				smart = state->parity[level].smartignore;
 			} else {
-				struct snapraid_disk* disk;
-
 				/* search the disk */
-				disk = 0;
+				struct snapraid_disk* found_disk = 0;
 				for (i = state->disklist; i != 0; i = i->next) {
-					disk = i->data;
-					if (strcmp(disk->name, buffer) == 0)
+					struct snapraid_disk* disk = i->data;
+					if (strcmp(disk->name, buffer) == 0) {
+						found_disk = disk;
 						break;
+					}
 				}
-				if (!disk) {
+				struct snapraid_extra* found_extra = 0;
+				for (i = state->extralist; i != 0; i = i->next) {
+					struct snapraid_extra* extra = i->data;
+					if (strcmp(extra->name, buffer) == 0) {
+						found_extra = extra;
+						break;
+					}
+				}
+				if (found_disk) {
+					smart = found_disk->smartignore;
+				} else if (found_extra) {
+					smart = found_extra->smartignore;
+				} else {
 					/* LCOV_EXCL_START */
-					log_fatal(EUSER, "Missing disk 'smartctl' '%s' at line %u\n", buffer, line);
+					log_fatal(EUSER, "Unknown 'smartignore' name '%s' at line %u\n", buffer, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
-
-				smart = disk->smartignore;
 			}
 
 			int si = 0;
@@ -1377,6 +1500,10 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		log_tag("data:%s:%s:%s\n", esc_tag(disk->name, esc_buffer), esc_tag(disk->dir, esc_buffer1), disk->uuid);
+	}
+	for (i = state->extralist; i != 0; i = i->next) {
+		struct snapraid_extra* extra = i->data;
+		log_tag("extra:%s:%s:%s\n", esc_tag(extra->name, esc_buffer), esc_tag(extra->dir, esc_buffer1), extra->uuid);
 	}
 
 	log_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
@@ -1762,6 +1889,25 @@ void state_refresh(struct snapraid_state* state)
 
 		log_tag("fsinfo_parity:%s:%" PRIu64 ":%" PRIu64 "\n", lev_config_name(l), state->parity[l].total_blocks * bs, state->parity[l].free_blocks * bs);
 	}
+
+	/* for all extra disks */
+	for (i = state->extralist; i != 0; i = i->next) {
+		struct snapraid_extra* extra = i->data;
+		uint64_t total_space;
+		uint64_t free_space;
+		int ret;
+
+		ret = fsinfo(extra->dir, 0, 0, &total_space, &free_space, extra->fstype, sizeof(extra->fstype), extra->fslabel, sizeof(extra->fslabel));
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error accessing disk '%s' to retrieve file-system info. %s.\n", extra->dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		log_tag("fsinfo_extra:%s:%" PRIu64 ":%" PRIu64 "\n", esc_tag(extra->name, esc_buffer), total_space, free_space);
+	}
+
 
 	/* note what we don't set need_write = 1, because we don't want */
 	/* to update the content file only for the free space info. */

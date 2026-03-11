@@ -1408,6 +1408,15 @@ You can rename a disk later by changing the NAME directly
 in the configuration file and then running a \`sync\` command.
 In the case of renaming, the association is done using the stored
 UUID of the disks.
+.SS extra NAME DIR 
+Defines the name and mount point of additional disks to monitor
+with the \`smart\` and \`probe\` commands.
+.PP
+This is useful for monitoring disks that are not part of the
+array but are required for the system to function, such as
+the boot disk.
+.PP
+Note that such disks are not affected by the \`up\` and \`down\` commands.
 .SS nohidden 
 Excludes all hidden files and directories.
 In Unix, hidden files are those starting with \`.\`.
