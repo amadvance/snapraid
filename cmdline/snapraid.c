@@ -1968,6 +1968,8 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_READ) {
 		state_read(&state);
 
+		/* intentionally DO NOT CALL state_refresh() because it spins up disks */
+
 		memory();
 	} else if (operation == OPERATION_TOUCH) {
 		state_read(&state);
