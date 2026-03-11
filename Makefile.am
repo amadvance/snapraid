@@ -1134,6 +1134,9 @@ endif
 
 MANUAL = ./snapraid --test-skip-device -c test/test-par1.conf sync
 
+run:
+	$(MANUAL)
+
 valgrind:
 	valgrind \
 		--tool=memcheck \
@@ -1160,6 +1163,18 @@ cachegrind:
 		-v $(MANUAL) \
 		2> cachegrind.log
 		tail cachegrind.log
+
+heaptrack:
+	/usr/local/heaptrack/bin/heaptrack $(MANUAL)
+
+perf:
+	@trap 'perf report; exit 1' INT; perf record -g -- $(MANUAL)
+
+perfstat:
+	perf stat -d -- $(MANUAL)
+	
+perfmem:
+	@trap 'perf mem report; exit 1' INT; perf mem record -- $(MANUAL)
 
 lcov_reset:
 	lcov --directory . -z
