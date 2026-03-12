@@ -588,14 +588,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	if (!f) {
 		/* LCOV_EXCL_START */
 		if (errno == ENOENT) {
-			if (state->opt.auto_conf) {
-				log_tag("conf:missing:\n");
-				/* mark that we are without a configuration file */
-				state->no_conf = 1;
-				state->level = 0;
-				return;
-			}
-
 			log_fatal(errno, "No configuration file found at '%s'\n", path);
 		} else if (errno == EACCES) {
 			log_fatal(errno, "You do not have rights to access the configuration file '%s'\n", path);

@@ -117,7 +117,6 @@ struct snapraid_option {
 	int match_first_uuid; /**< Force the matching of the first UUID. */
 	int force_parity_update; /**< Force parity update even if data is not changed. */
 	unsigned io_cache; /**< Number of IO buffers to use. 0 for default. */
-	int auto_conf; /**< Allow to run without configuration file. */
 	int force_stats; /**< Force stats print during process. */
 	uint64_t parity_limit_size; /**< Test limit for parity files. */
 	int skip_multi_scan; /**< Don't use threads in scan. */

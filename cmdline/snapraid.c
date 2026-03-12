@@ -1763,14 +1763,6 @@ int snapraid_main(int argc, char* argv[])
 		break;
 	}
 
-	switch (operation) {
-	case OPERATION_SMART :
-	case OPERATION_PROBE :
-		/* allow to run without configuration file */
-		opt.auto_conf = 1;
-		break;
-	}
-
 	/* open the log file */
 	log_open(log_file);
 
