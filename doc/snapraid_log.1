@@ -431,8 +431,9 @@ A file or link has been updated (size, timestamp, or link target changed).
 This item will have its content data blocks re\-hashed in a \`sync\`.
 .TP
 .B scan:move:<disk_name>:<old_path>:<new_path>
-A file was moved on the same disk. This is an efficient operation
-that only updates the path metadata without re\-hashing blocks.
+A file was moved to a different directory on the same disk.
+This is an efficient operation that only updates the path
+metadata without rehashing blocks.
 .RS 4
 .PD 0
 .HP 4
@@ -445,9 +446,11 @@ The new path to the file (escaped).
 .RE
 .TP
 .B scan:copy:<disk_name>:<path>:<source_disk>:<source_path>
-A new file was found to be a copy of a file from another disk.
-This is detected by matching file size and timestamp, and is an
-efficient operation that avoids re\-hashing all blocks.
+A new file was found to be a copy of a file on the same or
+any other disk.
+This is detected by matching the file name,
+size, and timestamp, and is an efficient operation that avoids
+rehashing all blocks.
 .RS 4
 .PD 0
 .HP 4
@@ -459,9 +462,16 @@ The original file\'s location (escaped).
 .PD
 .RE
 .TP
+.B scan:relocate:<disk_name>:<path>:<source_disk>:<source_path>
+Like \`copy\`, but the original file has disappeared.
+The difference between \`move\` and \`relocate\` on the same
+disk is that \`move\` is only used if the inode remains
+the same.
+.TP
 .B scan:restore:<disk_name>:<path>
-A file\'s inode has changed but not its date\-time and size,
-which suggests the file may be restored from backup.
+A file\'s inode has changed but not its directory, name,
+timestamp and size, which suggests the file may be restored
+from backup.
 The file won\'t be re\-hashed in \`sync\` as its precomputed hash
 is assumed to be correct.
 .PP
@@ -489,6 +499,10 @@ retaining the same inode (uint).
 .TP
 .B summary:copied:<count>
 Total number of new files created by copying an existing
+protected file to a new path (uint).
+.TP
+.B summary:relocated:<count>
+Total number of new files created by relocating an existing
 protected file to a new path (uint).
 .TP
 .B summary:restored:<count>

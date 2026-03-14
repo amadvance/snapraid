@@ -505,13 +505,19 @@ Commands
 		moved - Files moved to a different directory on the same disk.
 			They are identified by having the same name, size, timestamp,
 			and inode, but a different directory.
-		copied - Files copied on the same or a different disk. Note that if
-			they are truly moved to a different disk, they will also be
-			counted in `removed`.
-			They are identified by having the same name, size, and
-			timestamp. If the sub-second timestamp is zero,
-			the full path must match, not just the name.
-		restored - Files with a different inode but matching name, size, and timestamp.
+		copied - Files copied on the same or a different disk where the
+			original file still exists. They are identified by having
+			the same name, size, and timestamp. If the sub-second
+			timestamp is zero, the full path must match to be
+			identified, not just the name.
+		relocated - Files moved on the same or a different disk where
+			the original has disappeared. They are identified by
+			having the same name, size, and timestamp. If the
+			sub-second timestamp is zero, the full path must match
+			to be identified. Unlike 'moved' files on the same disk,
+			relocated files have a different inode.
+		restored - Files with a different inode but matching directory,
+			name, size, and timestamp.
 			These are usually files restored after being deleted.
 
 	If a `sync` is required, the process return code is 2, instead of the

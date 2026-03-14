@@ -30,13 +30,6 @@ struct snapraid_scan {
 	int is_diff; /**< If it's a diff command or a scanning */
 	int need_write; /**< If a state write is required */
 
-#if HAVE_THREAD
-	/**
-	 * Mutex for protecting the disk stampset table
-	 */
-	thread_mutex_t mutex;
-#endif
-
 	/**
 	 * Counters of changes.
 	 */
@@ -45,6 +38,7 @@ struct snapraid_scan {
 	unsigned count_restore; /**< Files with equal name, size and timestamp, but different inode. */
 	unsigned count_change; /**< Files with same name, but different size and/or timestamp. */
 	unsigned count_copy; /**< Files new, with same name size and timestamp of a file in a different disk. */
+	unsigned count_relocate; /**< Like copy, but with the original disappeared. */
 	unsigned count_insert; /**< Files new. */
 	unsigned count_remove; /**< Files removed. */
 
@@ -67,6 +61,7 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	scan->count_equal = 0;
 	scan->count_move = 0;
 	scan->count_copy = 0;
+	scan->count_relocate = 0;
 	scan->count_restore = 0;
 	scan->count_change = 0;
 	scan->count_remove = 0;
@@ -1058,15 +1053,38 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			/* if found, and it's a fully hashed file */
 			if (other_file && file_is_full_hashed_and_stable(scan->state, other_disk, other_file)) {
+				char path_other[PATH_MAX];
+				struct stat other_st;
+
+				/*
+				 * Protect the write as multiple threads may write the same FILE_IS_RELOCATED bit.
+				 *
+				 * The bit is always written as 1 and never read, so protection is likely unnecessary
+				 * but still valuable to avoid data race reports from checker tools
+				 */
+				stamp_lock(other_disk);
+				file_flag_set(other_file, FILE_IS_RELOCATED);
+				stamp_unlock(other_disk);
+
 				/* assume that the file is a copy, and reuse the hash */
 				file_copy(other_file, file);
 
-				/* revert old counter and use the copy one */
-				++scan->count_copy;
+				/* check if other file still exists */
+				pathprint(path_other, sizeof(path_other), "%s%s", other_disk->dir, other_file->sub);
+				if (lstat(path_other, &other_st) == 0) {
+					++scan->count_copy;
 
-				log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
-				if (is_diff) {
-					msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub, esc_buffer), fmt_term(disk, file->sub, esc_buffer_alt));
+					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
+					if (is_diff) {
+						msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub, esc_buffer), fmt_term(disk, file->sub, esc_buffer_alt));
+					}
+				} else {
+					++scan->count_relocate;
+
+					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
+					if (is_diff) {
+						msg_info("relocate %s -> %s\n", fmt_term(other_disk, other_file->sub, esc_buffer), fmt_term(disk, file->sub, esc_buffer_alt));
+					}
 				}
 
 				/* mark it as reported */
@@ -1700,11 +1718,13 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 			/* remove if not present */
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
-				++scan->count_remove;
+				if (!file_flag_has(file, FILE_IS_RELOCATED)) {
+					++scan->count_remove;
 
-				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				if (is_diff) {
-					msg_info("remove %s\n", fmt_term(disk, file->sub, esc_buffer));
+					log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+					if (is_diff) {
+						msg_info("remove %s\n", fmt_term(disk, file->sub, esc_buffer));
+					}
 				}
 
 				scan_file_remove(scan, file);
@@ -1969,6 +1989,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	total.count_equal = 0;
 	total.count_move = 0;
 	total.count_copy = 0;
+	total.count_relocate = 0;
 	total.count_restore = 0;
 	total.count_change = 0;
 	total.count_remove = 0;
@@ -1979,6 +2000,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		total.count_equal += scan->count_equal;
 		total.count_move += scan->count_move;
 		total.count_copy += scan->count_copy;
+		total.count_relocate += scan->count_relocate;
 		total.count_restore += scan->count_restore;
 		total.count_change += scan->count_change;
 		total.count_remove += scan->count_remove;
@@ -1998,6 +2020,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	msg("%8u updated\n", total.count_change);
 	msg("%8u moved\n", total.count_move);
 	msg("%8u copied\n", total.count_copy);
+	msg("%8u relocated\n", total.count_relocate);
 	msg("%8u restored\n", total.count_restore);
 
 	log_tag("summary:equal:%u\n", total.count_equal);
@@ -2006,6 +2029,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	log_tag("summary:updated:%u\n", total.count_change);
 	log_tag("summary:moved:%u\n", total.count_move);
 	log_tag("summary:copied:%u\n", total.count_copy);
+	log_tag("summary:relocated:%u\n", total.count_relocate);
 	log_tag("summary:restored:%u\n", total.count_restore);
 	log_tag("list:scan_end\n");
 
@@ -2013,7 +2037,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	state->removed_files = total.count_remove;
 	state->updated_files = total.count_change;
 
-	no_difference = !total.count_move && !total.count_copy && !total.count_restore
+	no_difference = !total.count_move && !total.count_copy && !total.count_relocate && !total.count_restore
 		&& !total.count_change && !total.count_remove && !total.count_insert;
 
 	if (is_diff) {

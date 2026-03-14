@@ -265,11 +265,21 @@ struct snapraid_block {
  */
 #define FILE_IS_MISSING 0x800
 
-#define FILE_IS_HARDLINK 0x1000 /**< If it's an hardlink. */
-#define FILE_IS_SYMLINK 0x2000 /**< If it's a file symlink. */
-#define FILE_IS_SYMDIR 0x4000 /**< If it's a dir symlink for Windows. Not yet supported. */
-#define FILE_IS_JUNCTION 0x8000 /**< If it's a junction for Windows. Not yet supported. */
-#define FILE_IS_LINK_MASK 0xF000 /**< Mask for link type. */
+/**
+ * During scan if the file is found missing and relocated to another place
+ *
+ * This is used to avoid to report it "removed".
+ *
+ * This specific bit is written using protection from the stamp_mutex during
+ * the multithread scan.
+ */
+#define FILE_IS_RELOCATED 0x1000
+
+#define FILE_IS_HARDLINK 0x10000 /**< If it's an hardlink. */
+#define FILE_IS_SYMLINK 0x20000 /**< If it's a file symlink. */
+#define FILE_IS_SYMDIR 0x40000 /**< If it's a dir symlink for Windows. Not yet supported. */
+#define FILE_IS_JUNCTION 0x80000 /**< If it's a junction for Windows. Not yet supported. */
+#define FILE_IS_LINK_MASK 0xF0000 /**< Mask for link type. */
 
 /**
  * File.
@@ -405,6 +415,10 @@ struct snapraid_disk {
 	 * Mutex for protecting the scan process.
 	 *
 	 * It's used during the scan process to protect the stampset to identify copy of files
+	 * and the FILE_IS_RELOCATED flag of files.
+	 *
+	 * Note that only the FILE_IS_RELOCATED single bit is protected.
+	 * Not the other bits.
 	 */
 	thread_mutex_t stamp_mutex;
 #endif

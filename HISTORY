@@ -5,6 +5,9 @@ SnapRAID HISTORY
 ==================
  * New 'extra' config option to define additional disks to monitor with the
    'probe' and 'smart' commands. This replaces the previous autodetection.
+ * Introduced the 'relocated' file state to unify the previous 'copied/removed'
+   logic. This new status specifically identifies files moved to a different
+   path or disk with a new inode where the original has disappeared.
  * Removed the UAC request for Windows executable.
 
 14.0rc2 08/03/2026
