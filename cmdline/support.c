@@ -2231,12 +2231,10 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			 * 233: Media_Wearout_Indicator (Intel)
 			 */
 			if (norm <= 100) {
-				switch (id) {
-				case 177 :
-				case 233 :
-				case 231 :
+				if (strcmp(id_name, "Wear_Leveling_Count") == 0
+					|| strcmp(id_name, "SSD_Life_Left") == 0
+					|| strcmp(id_name, "Media_Wearout_Indicator") == 0) {
 					smart[SMART_WEAR_LEVEL].raw = 100 - norm;
-					break;
 				}
 			}
 		}
