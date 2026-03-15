@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-03-01 15:35:05</td>
+            <td class="headerValue">2026-03-15 15:58:19</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -119,17 +119,17 @@
 <a name="57"><span class="lineNum">      57 </span>            : #define likely(a) tommy_likely(a)</a>
 <a name="58"><span class="lineNum">      58 </span>            : #define unlikely(a) tommy_unlikely(a)</a>
 <a name="59"><span class="lineNum">      59 </span>            : </a>
-<a name="60"><span class="lineNum">      60 </span><span class="lineCov">        385 : static void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out)</span></a>
+<a name="60"><span class="lineNum">      60 </span><span class="lineCov">        361 : static void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out)</span></a>
 <a name="61"><span class="lineNum">      61 </span>            : {</a>
-<a name="62"><span class="lineNum">      62 </span><span class="lineCov">        385 :         const uint8_t* p = bytes;</span></a>
-<a name="63"><span class="lineNum">      63 </span><span class="lineCov">        385 :         size_t q = len;</span></a>
+<a name="62"><span class="lineNum">      62 </span><span class="lineCov">        361 :         const uint8_t* p = bytes;</span></a>
+<a name="63"><span class="lineNum">      63 </span><span class="lineCov">        361 :         size_t q = len;</span></a>
 <a name="64"><span class="lineNum">      64 </span>            : </a>
 <a name="65"><span class="lineNum">      65 </span>            :         /* EXTENSION: This algo doesn't support shorter lengths */</a>
-<a name="66"><span class="lineNum">      66 </span><span class="lineCov">        385 :         assert(len &gt;= 32);</span></a>
+<a name="66"><span class="lineNum">      66 </span><span class="lineCov">        361 :         assert(len &gt;= 32);</span></a>
 <a name="67"><span class="lineNum">      67 </span>            : </a>
 <a name="68"><span class="lineNum">      68 </span>            :         uint64_t i, j, k;</a>
 <a name="69"><span class="lineNum">      69 </span>            : </a>
-<a name="70"><span class="lineNum">      70 </span><span class="lineCov">        385 :         uint64_t lo0, lo1, lo2, lo3, lo4, lo5 = MUSEAIR_CONSTANT[6];</span></a>
+<a name="70"><span class="lineNum">      70 </span><span class="lineCov">        361 :         uint64_t lo0, lo1, lo2, lo3, lo4, lo5 = MUSEAIR_CONSTANT[6];</span></a>
 <a name="71"><span class="lineNum">      71 </span>            :         uint64_t hi0, hi1, hi2, hi3, hi4, hi5;</a>
 <a name="72"><span class="lineNum">      72 </span>            : </a>
 <a name="73"><span class="lineNum">      73 </span>            :         /*</a>
@@ -140,65 +140,65 @@
 <a name="78"><span class="lineNum">      78 </span>            :          * uint64_t state[6] = {MUSEAIR_CONSTANT[0] + seed, MUSEAIR_CONSTANT[1] - seed, MUSEAIR_CONSTANT[2] ^ seed,</a>
 <a name="79"><span class="lineNum">      79 </span>            :          *                      MUSEAIR_CONSTANT[3] + seed, MUSEAIR_CONSTANT[4] - seed, MUSEAIR_CONSTANT[5] ^ seed};</a>
 <a name="80"><span class="lineNum">      80 </span>            :          */</a>
-<a name="81"><span class="lineNum">      81 </span><span class="lineCov">        385 :         uint64_t seed0 = util_read64(seed);</span></a>
-<a name="82"><span class="lineNum">      82 </span><span class="lineCov">        385 :         uint64_t seed1 = util_read64(seed + 8);</span></a>
-<a name="83"><span class="lineNum">      83 </span><span class="lineCov">        385 :         uint64_t state[6] = { MUSEAIR_CONSTANT[0] + seed0, MUSEAIR_CONSTANT[1] - seed1, MUSEAIR_CONSTANT[2] ^ seed0,</span></a>
-<a name="84"><span class="lineNum">      84 </span><span class="lineCov">        385 :                               MUSEAIR_CONSTANT[3] + seed1, MUSEAIR_CONSTANT[4] - seed0, MUSEAIR_CONSTANT[5] ^ seed1 };</span></a>
+<a name="81"><span class="lineNum">      81 </span><span class="lineCov">        361 :         uint64_t seed0 = util_read64(seed);</span></a>
+<a name="82"><span class="lineNum">      82 </span><span class="lineCov">        361 :         uint64_t seed1 = util_read64(seed + 8);</span></a>
+<a name="83"><span class="lineNum">      83 </span><span class="lineCov">        361 :         uint64_t state[6] = { MUSEAIR_CONSTANT[0] + seed0, MUSEAIR_CONSTANT[1] - seed1, MUSEAIR_CONSTANT[2] ^ seed0,</span></a>
+<a name="84"><span class="lineNum">      84 </span><span class="lineCov">        361 :                               MUSEAIR_CONSTANT[3] + seed1, MUSEAIR_CONSTANT[4] - seed0, MUSEAIR_CONSTANT[5] ^ seed1 };</span></a>
 <a name="85"><span class="lineNum">      85 </span>            : </a>
-<a name="86"><span class="lineNum">      86 </span><span class="lineCov">        385 :         if (unlikely(q &gt; u64x(12))) {</span></a>
+<a name="86"><span class="lineNum">      86 </span><span class="lineCov">        361 :         if (unlikely(q &gt; u64x(12))) {</span></a>
 <a name="87"><span class="lineNum">      87 </span>            :                 do {</a>
-<a name="88"><span class="lineNum">      88 </span><span class="lineCov">     437024 :                         state[0] ^= util_read64(p + u64x(0));</span></a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">     437024 :                         state[1] ^= util_read64(p + u64x(1));</span></a>
-<a name="90"><span class="lineNum">      90 </span><span class="lineCov">     437024 :                         mult64_128(lo0, hi0, state[0], state[1]);</span></a>
-<a name="91"><span class="lineNum">      91 </span><span class="lineCov">     437024 :                         state[0] = lo5 ^ hi0;</span></a>
+<a name="88"><span class="lineNum">      88 </span><span class="lineCov">     371504 :                         state[0] ^= util_read64(p + u64x(0));</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">     371504 :                         state[1] ^= util_read64(p + u64x(1));</span></a>
+<a name="90"><span class="lineNum">      90 </span><span class="lineCov">     371504 :                         mult64_128(lo0, hi0, state[0], state[1]);</span></a>
+<a name="91"><span class="lineNum">      91 </span><span class="lineCov">     371504 :                         state[0] = lo5 ^ hi0;</span></a>
 <a name="92"><span class="lineNum">      92 </span>            : </a>
-<a name="93"><span class="lineNum">      93 </span><span class="lineCov">     437024 :                         state[1] ^= util_read64(p + u64x(2));</span></a>
-<a name="94"><span class="lineNum">      94 </span><span class="lineCov">     437024 :                         state[2] ^= util_read64(p + u64x(3));</span></a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">     437024 :                         mult64_128(lo1, hi1, state[1], state[2]);</span></a>
-<a name="96"><span class="lineNum">      96 </span><span class="lineCov">     437024 :                         state[1] = lo0 ^ hi1;</span></a>
+<a name="93"><span class="lineNum">      93 </span><span class="lineCov">     371504 :                         state[1] ^= util_read64(p + u64x(2));</span></a>
+<a name="94"><span class="lineNum">      94 </span><span class="lineCov">     371504 :                         state[2] ^= util_read64(p + u64x(3));</span></a>
+<a name="95"><span class="lineNum">      95 </span><span class="lineCov">     371504 :                         mult64_128(lo1, hi1, state[1], state[2]);</span></a>
+<a name="96"><span class="lineNum">      96 </span><span class="lineCov">     371504 :                         state[1] = lo0 ^ hi1;</span></a>
 <a name="97"><span class="lineNum">      97 </span>            : </a>
-<a name="98"><span class="lineNum">      98 </span><span class="lineCov">     437024 :                         state[2] ^= util_read64(p + u64x(4));</span></a>
-<a name="99"><span class="lineNum">      99 </span><span class="lineCov">     437024 :                         state[3] ^= util_read64(p + u64x(5));</span></a>
-<a name="100"><span class="lineNum">     100 </span><span class="lineCov">     437024 :                         mult64_128(lo2, hi2, state[2], state[3]);</span></a>
-<a name="101"><span class="lineNum">     101 </span><span class="lineCov">     437024 :                         state[2] = lo1 ^ hi2;</span></a>
+<a name="98"><span class="lineNum">      98 </span><span class="lineCov">     371504 :                         state[2] ^= util_read64(p + u64x(4));</span></a>
+<a name="99"><span class="lineNum">      99 </span><span class="lineCov">     371504 :                         state[3] ^= util_read64(p + u64x(5));</span></a>
+<a name="100"><span class="lineNum">     100 </span><span class="lineCov">     371504 :                         mult64_128(lo2, hi2, state[2], state[3]);</span></a>
+<a name="101"><span class="lineNum">     101 </span><span class="lineCov">     371504 :                         state[2] = lo1 ^ hi2;</span></a>
 <a name="102"><span class="lineNum">     102 </span>            : </a>
-<a name="103"><span class="lineNum">     103 </span><span class="lineCov">     437024 :                         state[3] ^= util_read64(p + u64x(6));</span></a>
-<a name="104"><span class="lineNum">     104 </span><span class="lineCov">     437024 :                         state[4] ^= util_read64(p + u64x(7));</span></a>
-<a name="105"><span class="lineNum">     105 </span><span class="lineCov">     437024 :                         mult64_128(lo3, hi3, state[3], state[4]);</span></a>
-<a name="106"><span class="lineNum">     106 </span><span class="lineCov">     437024 :                         state[3] = lo2 ^ hi3;</span></a>
+<a name="103"><span class="lineNum">     103 </span><span class="lineCov">     371504 :                         state[3] ^= util_read64(p + u64x(6));</span></a>
+<a name="104"><span class="lineNum">     104 </span><span class="lineCov">     371504 :                         state[4] ^= util_read64(p + u64x(7));</span></a>
+<a name="105"><span class="lineNum">     105 </span><span class="lineCov">     371504 :                         mult64_128(lo3, hi3, state[3], state[4]);</span></a>
+<a name="106"><span class="lineNum">     106 </span><span class="lineCov">     371504 :                         state[3] = lo2 ^ hi3;</span></a>
 <a name="107"><span class="lineNum">     107 </span>            : </a>
-<a name="108"><span class="lineNum">     108 </span><span class="lineCov">     437024 :                         state[4] ^= util_read64(p + u64x(8));</span></a>
-<a name="109"><span class="lineNum">     109 </span><span class="lineCov">     437024 :                         state[5] ^= util_read64(p + u64x(9));</span></a>
-<a name="110"><span class="lineNum">     110 </span><span class="lineCov">     437024 :                         mult64_128(lo4, hi4, state[4], state[5]);</span></a>
-<a name="111"><span class="lineNum">     111 </span><span class="lineCov">     437024 :                         state[4] = lo3 ^ hi4;</span></a>
+<a name="108"><span class="lineNum">     108 </span><span class="lineCov">     371504 :                         state[4] ^= util_read64(p + u64x(8));</span></a>
+<a name="109"><span class="lineNum">     109 </span><span class="lineCov">     371504 :                         state[5] ^= util_read64(p + u64x(9));</span></a>
+<a name="110"><span class="lineNum">     110 </span><span class="lineCov">     371504 :                         mult64_128(lo4, hi4, state[4], state[5]);</span></a>
+<a name="111"><span class="lineNum">     111 </span><span class="lineCov">     371504 :                         state[4] = lo3 ^ hi4;</span></a>
 <a name="112"><span class="lineNum">     112 </span>            : </a>
-<a name="113"><span class="lineNum">     113 </span><span class="lineCov">     437024 :                         state[5] ^= util_read64(p + u64x(10));</span></a>
-<a name="114"><span class="lineNum">     114 </span><span class="lineCov">     437024 :                         state[0] ^= util_read64(p + u64x(11));</span></a>
-<a name="115"><span class="lineNum">     115 </span><span class="lineCov">     437024 :                         mult64_128(lo5, hi5, state[5], state[0]);</span></a>
-<a name="116"><span class="lineNum">     116 </span><span class="lineCov">     437024 :                         state[5] = lo4 ^ hi5;</span></a>
+<a name="113"><span class="lineNum">     113 </span><span class="lineCov">     371504 :                         state[5] ^= util_read64(p + u64x(10));</span></a>
+<a name="114"><span class="lineNum">     114 </span><span class="lineCov">     371504 :                         state[0] ^= util_read64(p + u64x(11));</span></a>
+<a name="115"><span class="lineNum">     115 </span><span class="lineCov">     371504 :                         mult64_128(lo5, hi5, state[5], state[0]);</span></a>
+<a name="116"><span class="lineNum">     116 </span><span class="lineCov">     371504 :                         state[5] = lo4 ^ hi5;</span></a>
 <a name="117"><span class="lineNum">     117 </span>            : </a>
-<a name="118"><span class="lineNum">     118 </span><span class="lineCov">     437024 :                         p += u64x(12);</span></a>
-<a name="119"><span class="lineNum">     119 </span><span class="lineCov">     437024 :                         q -= u64x(12);</span></a>
+<a name="118"><span class="lineNum">     118 </span><span class="lineCov">     371504 :                         p += u64x(12);</span></a>
+<a name="119"><span class="lineNum">     119 </span><span class="lineCov">     371504 :                         q -= u64x(12);</span></a>
 <a name="120"><span class="lineNum">     120 </span>            : </a>
-<a name="121"><span class="lineNum">     121 </span><span class="lineCov">     437024 :                 } while (likely(q &gt; u64x(12)));</span></a>
+<a name="121"><span class="lineNum">     121 </span><span class="lineCov">     371504 :                 } while (likely(q &gt; u64x(12)));</span></a>
 <a name="122"><span class="lineNum">     122 </span>            : </a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">        320 :                 state[0] ^= lo5;</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">        296 :                 state[0] ^= lo5;</span></a>
 <a name="124"><span class="lineNum">     124 </span>            :         }</a>
 <a name="125"><span class="lineNum">     125 </span>            : </a>
-<a name="126"><span class="lineNum">     126 </span><span class="lineCov">        385 :         lo0 = 0, lo1 = 0, lo2 = 0, lo3 = 0, lo4 = 0, lo5 = 0;</span></a>
-<a name="127"><span class="lineNum">     127 </span><span class="lineCov">        385 :         hi0 = 0, hi1 = 0, hi2 = 0, hi3 = 0, hi4 = 0, hi5 = 0;</span></a>
+<a name="126"><span class="lineNum">     126 </span><span class="lineCov">        361 :         lo0 = 0, lo1 = 0, lo2 = 0, lo3 = 0, lo4 = 0, lo5 = 0;</span></a>
+<a name="127"><span class="lineNum">     127 </span><span class="lineCov">        361 :         hi0 = 0, hi1 = 0, hi2 = 0, hi3 = 0, hi4 = 0, hi5 = 0;</span></a>
 <a name="128"><span class="lineNum">     128 </span>            : </a>
-<a name="129"><span class="lineNum">     129 </span><span class="lineCov">        385 :         if (likely(q &gt; u64x(4))) {</span></a>
-<a name="130"><span class="lineNum">     130 </span><span class="lineCov">        320 :                 state[0] ^= util_read64(p + u64x(0));</span></a>
-<a name="131"><span class="lineNum">     131 </span><span class="lineCov">        320 :                 state[1] ^= util_read64(p + u64x(1));</span></a>
-<a name="132"><span class="lineNum">     132 </span><span class="lineCov">        320 :                 mult64_128(lo0, hi0, state[0], state[1]);</span></a>
+<a name="129"><span class="lineNum">     129 </span><span class="lineCov">        361 :         if (likely(q &gt; u64x(4))) {</span></a>
+<a name="130"><span class="lineNum">     130 </span><span class="lineCov">        296 :                 state[0] ^= util_read64(p + u64x(0));</span></a>
+<a name="131"><span class="lineNum">     131 </span><span class="lineCov">        296 :                 state[1] ^= util_read64(p + u64x(1));</span></a>
+<a name="132"><span class="lineNum">     132 </span><span class="lineCov">        296 :                 mult64_128(lo0, hi0, state[0], state[1]);</span></a>
 <a name="133"><span class="lineNum">     133 </span>            : </a>
-<a name="134"><span class="lineNum">     134 </span><span class="lineCov">        320 :                 if (likely(q &gt; u64x(6))) {</span></a>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">        272 :                         state[1] ^= util_read64(p + u64x(2));</span></a>
-<a name="136"><span class="lineNum">     136 </span><span class="lineCov">        272 :                         state[2] ^= util_read64(p + u64x(3));</span></a>
-<a name="137"><span class="lineNum">     137 </span><span class="lineCov">        272 :                         mult64_128(lo1, hi1, state[1], state[2]);</span></a>
+<a name="134"><span class="lineNum">     134 </span><span class="lineCov">        296 :                 if (likely(q &gt; u64x(6))) {</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">        248 :                         state[1] ^= util_read64(p + u64x(2));</span></a>
+<a name="136"><span class="lineNum">     136 </span><span class="lineCov">        248 :                         state[2] ^= util_read64(p + u64x(3));</span></a>
+<a name="137"><span class="lineNum">     137 </span><span class="lineCov">        248 :                         mult64_128(lo1, hi1, state[1], state[2]);</span></a>
 <a name="138"><span class="lineNum">     138 </span>            : </a>
-<a name="139"><span class="lineNum">     139 </span><span class="lineCov">        272 :                         if (likely(q &gt; u64x(8))) {</span></a>
+<a name="139"><span class="lineNum">     139 </span><span class="lineCov">        248 :                         if (likely(q &gt; u64x(8))) {</span></a>
 <a name="140"><span class="lineNum">     140 </span><span class="lineCov">         64 :                                 state[2] ^= util_read64(p + u64x(4));</span></a>
 <a name="141"><span class="lineNum">     141 </span><span class="lineCov">         64 :                                 state[3] ^= util_read64(p + u64x(5));</span></a>
 <a name="142"><span class="lineNum">     142 </span><span class="lineCov">         64 :                                 mult64_128(lo2, hi2, state[2], state[3]);</span></a>
@@ -212,34 +212,34 @@
 <a name="150"><span class="lineNum">     150 </span>            :                 }</a>
 <a name="151"><span class="lineNum">     151 </span>            :         }</a>
 <a name="152"><span class="lineNum">     152 </span>            : </a>
-<a name="153"><span class="lineNum">     153 </span><span class="lineCov">        385 :         state[4] ^= util_read64(p + q - u64x(4));</span></a>
-<a name="154"><span class="lineNum">     154 </span><span class="lineCov">        385 :         state[5] ^= util_read64(p + q - u64x(3));</span></a>
-<a name="155"><span class="lineNum">     155 </span><span class="lineCov">        385 :         mult64_128(lo4, hi4, state[4], state[5]);</span></a>
+<a name="153"><span class="lineNum">     153 </span><span class="lineCov">        361 :         state[4] ^= util_read64(p + q - u64x(4));</span></a>
+<a name="154"><span class="lineNum">     154 </span><span class="lineCov">        361 :         state[5] ^= util_read64(p + q - u64x(3));</span></a>
+<a name="155"><span class="lineNum">     155 </span><span class="lineCov">        361 :         mult64_128(lo4, hi4, state[4], state[5]);</span></a>
 <a name="156"><span class="lineNum">     156 </span>            : </a>
-<a name="157"><span class="lineNum">     157 </span><span class="lineCov">        385 :         state[5] ^= util_read64(p + q - u64x(2));</span></a>
-<a name="158"><span class="lineNum">     158 </span><span class="lineCov">        385 :         state[0] ^= util_read64(p + q - u64x(1));</span></a>
-<a name="159"><span class="lineNum">     159 </span><span class="lineCov">        385 :         mult64_128(lo5, hi5, state[5], state[0]);</span></a>
+<a name="157"><span class="lineNum">     157 </span><span class="lineCov">        361 :         state[5] ^= util_read64(p + q - u64x(2));</span></a>
+<a name="158"><span class="lineNum">     158 </span><span class="lineCov">        361 :         state[0] ^= util_read64(p + q - u64x(1));</span></a>
+<a name="159"><span class="lineNum">     159 </span><span class="lineCov">        361 :         mult64_128(lo5, hi5, state[5], state[0]);</span></a>
 <a name="160"><span class="lineNum">     160 </span>            : </a>
-<a name="161"><span class="lineNum">     161 </span><span class="lineCov">        385 :         i = state[0] - state[1];</span></a>
-<a name="162"><span class="lineNum">     162 </span><span class="lineCov">        385 :         j = state[2] - state[3];</span></a>
-<a name="163"><span class="lineNum">     163 </span><span class="lineCov">        385 :         k = state[4] - state[5];</span></a>
+<a name="161"><span class="lineNum">     161 </span><span class="lineCov">        361 :         i = state[0] - state[1];</span></a>
+<a name="162"><span class="lineNum">     162 </span><span class="lineCov">        361 :         j = state[2] - state[3];</span></a>
+<a name="163"><span class="lineNum">     163 </span><span class="lineCov">        361 :         k = state[4] - state[5];</span></a>
 <a name="164"><span class="lineNum">     164 </span>            : </a>
-<a name="165"><span class="lineNum">     165 </span><span class="lineCov">        385 :         int rot = len &amp; 63;</span></a>
-<a name="166"><span class="lineNum">     166 </span><span class="lineCov">        385 :         i = util_rotl64(i, rot);</span></a>
-<a name="167"><span class="lineNum">     167 </span><span class="lineCov">        385 :         j = util_rotr64(j, rot);</span></a>
-<a name="168"><span class="lineNum">     168 </span><span class="lineCov">        385 :         k ^= len;</span></a>
+<a name="165"><span class="lineNum">     165 </span><span class="lineCov">        361 :         int rot = len &amp; 63;</span></a>
+<a name="166"><span class="lineNum">     166 </span><span class="lineCov">        361 :         i = util_rotl64(i, rot);</span></a>
+<a name="167"><span class="lineNum">     167 </span><span class="lineCov">        361 :         j = util_rotr64(j, rot);</span></a>
+<a name="168"><span class="lineNum">     168 </span><span class="lineCov">        361 :         k ^= len;</span></a>
 <a name="169"><span class="lineNum">     169 </span>            : </a>
-<a name="170"><span class="lineNum">     170 </span><span class="lineCov">        385 :         i += lo3 ^ hi3 ^ lo4 ^ hi4;</span></a>
-<a name="171"><span class="lineNum">     171 </span><span class="lineCov">        385 :         j += lo5 ^ hi5 ^ lo0 ^ hi0;</span></a>
-<a name="172"><span class="lineNum">     172 </span><span class="lineCov">        385 :         k += lo1 ^ hi1 ^ lo2 ^ hi2;</span></a>
+<a name="170"><span class="lineNum">     170 </span><span class="lineCov">        361 :         i += lo3 ^ hi3 ^ lo4 ^ hi4;</span></a>
+<a name="171"><span class="lineNum">     171 </span><span class="lineCov">        361 :         j += lo5 ^ hi5 ^ lo0 ^ hi0;</span></a>
+<a name="172"><span class="lineNum">     172 </span><span class="lineCov">        361 :         k += lo1 ^ hi1 ^ lo2 ^ hi2;</span></a>
 <a name="173"><span class="lineNum">     173 </span>            : </a>
-<a name="174"><span class="lineNum">     174 </span><span class="lineCov">        385 :         mult64_128(lo0, hi0, i, j);</span></a>
-<a name="175"><span class="lineNum">     175 </span><span class="lineCov">        385 :         mult64_128(lo1, hi1, j, k);</span></a>
-<a name="176"><span class="lineNum">     176 </span><span class="lineCov">        385 :         mult64_128(lo2, hi2, k, i);</span></a>
+<a name="174"><span class="lineNum">     174 </span><span class="lineCov">        361 :         mult64_128(lo0, hi0, i, j);</span></a>
+<a name="175"><span class="lineNum">     175 </span><span class="lineCov">        361 :         mult64_128(lo1, hi1, j, k);</span></a>
+<a name="176"><span class="lineNum">     176 </span><span class="lineCov">        361 :         mult64_128(lo2, hi2, k, i);</span></a>
 <a name="177"><span class="lineNum">     177 </span>            : </a>
-<a name="178"><span class="lineNum">     178 </span><span class="lineCov">        385 :         util_write64(out, lo0 ^ lo1 ^ hi2);</span></a>
-<a name="179"><span class="lineNum">     179 </span><span class="lineCov">        385 :         util_write64(out + 8, hi0 ^ hi1 ^ lo2);</span></a>
-<a name="180"><span class="lineNum">     180 </span><span class="lineCov">        385 : }</span></a>
+<a name="178"><span class="lineNum">     178 </span><span class="lineCov">        361 :         util_write64(out, lo0 ^ lo1 ^ hi2);</span></a>
+<a name="179"><span class="lineNum">     179 </span><span class="lineCov">        361 :         util_write64(out + 8, hi0 ^ hi1 ^ lo2);</span></a>
+<a name="180"><span class="lineNum">     180 </span><span class="lineCov">        361 : }</span></a>
 <a name="181"><span class="lineNum">     181 </span>            : </a>
 </pre>
       </td>

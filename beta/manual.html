@@ -708,19 +708,31 @@ and inode, but a different directory.
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Files copied on the same or a different disk. Note that if
-they are truly moved to a different disk, they will also be
-counted in <b>removed</b>.
-They are identified by having the same name, size, and
-timestamp. If the sub-second timestamp is zero,
-the full path must match, not just the name.
+Files copied on the same or a different disk where the
+original file still exists. They are identified by having
+the same name, size, and timestamp. If the sub-second
+timestamp is zero, the full path must match to be
+identified, not just the name.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Files moved on the same or a different disk where
+the original has disappeared. They are identified by
+having the same name, size, and timestamp. If the
+sub-second timestamp is zero, the full path must match
+to be identified. Unlike 'moved' files on the same disk,
+relocated files have a different inode.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Files with a different inode but matching name, size, and timestamp.
+Files with a different inode but matching directory,
+name, size, and timestamp.
 These are usually files restored after being deleted.
 </div>
 </div>
@@ -1527,6 +1539,17 @@ UUID of the disks.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Defines the name and mount point of additional disks to monitor
+with the <b>smart</b> and <b>probe</b> commands.
+</p><p>This is useful for monitoring disks that are not part of the
+array but are required for the system to function, such as
+the boot disk.
+</p><p>Note that such disks are not affected by the <b>up</b> and <b>down</b> commands.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Excludes all hidden files and directories.
@@ -1534,7 +1557,7 @@ In Unix, hidden files are those starting with <b>.</b>.
 In Windows, they are those with the hidden attribute.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Defines the file or directory patterns to exclude or include
@@ -1550,7 +1573,7 @@ specifications.
 </p><p>This option can be used multiple times.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Defines the basic block size in kibibytes for the parity.
@@ -1591,7 +1614,7 @@ a 4 TB disk, which allows about 460,000 files on each data disk without
 any wasted space.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Defines the hash size in bytes for the saved blocks.
@@ -1626,7 +1649,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Automatically saves the state when syncing or scrubbing after the
@@ -1635,7 +1658,7 @@ This option is useful to avoid restarting long <b>sync</b>
 commands from scratch if interrupted by a machine crash or any other event.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Sets the maximum allowed disk temperature in Celsius. When specified,
@@ -1664,7 +1687,7 @@ temperature measured at the start of the run as a fallback reference.
 To display the temperature of all disks, use the -A or --stats option.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Sets the standby time, in minutes, when the temperature limit is
@@ -1672,7 +1695,7 @@ reached. During this period, the disks remain spun down. The default
 is 5 minutes.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Defines the pooling directory where the virtual view of the disk
@@ -1680,7 +1703,7 @@ array is created using the <b>pool</b> command.
 </p><p>The directory must already exist.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Defines the Windows UNC path required to access the disks remotely.
@@ -1694,7 +1717,7 @@ file directory and name.
 </p><p>This option is required only for Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Defines custom smartctl options to obtain the SMART attributes for
@@ -1718,7 +1741,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignores the specified SMART attribute when computing the probability
@@ -1739,7 +1762,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
 </h2>
 <p>An example of a typical configuration for Unix is:

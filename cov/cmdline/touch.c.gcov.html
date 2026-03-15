@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-03-01 15:35:05</td>
+            <td class="headerValue">2026-03-15 15:58:19</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -143,7 +143,7 @@
 <a name="81"><span class="lineNum">      81 </span><span class="lineCov">         16 :                                 f = open(path, flags);</span></a>
 <a name="82"><span class="lineNum">      82 </span><span class="lineCov">         16 :                                 if (f == -1) {</span></a>
 <a name="83"><span class="lineNum">      83 </span>            :                                         /* LCOV_EXCL_START */</a>
-<a name="84"><span class="lineNum">      84 </span>            :                                         log_fatal(errno, &quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="84"><span class="lineNum">      84 </span>            :                                         log_error(errno, &quot;Error opening file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="85"><span class="lineNum">      85 </span>            :                                         continue;</a>
 <a name="86"><span class="lineNum">      86 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="87"><span class="lineNum">      87 </span>            :                                 }</a>
@@ -154,7 +154,7 @@
 <a name="92"><span class="lineNum">      92 </span><span class="lineCov">         16 :                                 if (ret == -1) {</span></a>
 <a name="93"><span class="lineNum">      93 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="94"><span class="lineNum">      94 </span>            :                                         close(f);</a>
-<a name="95"><span class="lineNum">      95 </span>            :                                         log_fatal(errno, &quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="95"><span class="lineNum">      95 </span>            :                                         log_error(errno, &quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="96"><span class="lineNum">      96 </span>            :                                         continue;</a>
 <a name="97"><span class="lineNum">      97 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="98"><span class="lineNum">      98 </span>            :                                 }</a>
@@ -164,7 +164,7 @@
 <a name="102"><span class="lineNum">     102 </span><span class="lineCov">         16 :                                 if (ret != 0) {</span></a>
 <a name="103"><span class="lineNum">     103 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="104"><span class="lineNum">     104 </span>            :                                         close(f);</a>
-<a name="105"><span class="lineNum">     105 </span>            :                                         log_fatal(errno, &quot;Error timing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="105"><span class="lineNum">     105 </span>            :                                         log_error(errno, &quot;Error timing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="106"><span class="lineNum">     106 </span>            :                                         continue;</a>
 <a name="107"><span class="lineNum">     107 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="108"><span class="lineNum">     108 </span>            :                                 }</a>
@@ -176,7 +176,7 @@
 <a name="114"><span class="lineNum">     114 </span><span class="lineCov">         16 :                                 if (ret == -1) {</span></a>
 <a name="115"><span class="lineNum">     115 </span>            :                                         /* LCOV_EXCL_START */</a>
 <a name="116"><span class="lineNum">     116 </span>            :                                         close(f);</a>
-<a name="117"><span class="lineNum">     117 </span>            :                                         log_fatal(errno, &quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="117"><span class="lineNum">     117 </span>            :                                         log_error(errno, &quot;Error accessing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="118"><span class="lineNum">     118 </span>            :                                         continue;</a>
 <a name="119"><span class="lineNum">     119 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="120"><span class="lineNum">     120 </span>            :                                 }</a>
@@ -185,7 +185,7 @@
 <a name="123"><span class="lineNum">     123 </span><span class="lineCov">         16 :                                 ret = close(f);</span></a>
 <a name="124"><span class="lineNum">     124 </span><span class="lineCov">         16 :                                 if (ret != 0) {</span></a>
 <a name="125"><span class="lineNum">     125 </span>            :                                         /* LCOV_EXCL_START */</a>
-<a name="126"><span class="lineNum">     126 </span>            :                                         log_fatal(errno, &quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
+<a name="126"><span class="lineNum">     126 </span>            :                                         log_error(errno, &quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));</a>
 <a name="127"><span class="lineNum">     127 </span>            :                                         continue;</a>
 <a name="128"><span class="lineNum">     128 </span>            :                                         /* LCOV_EXCL_STOP */</a>
 <a name="129"><span class="lineNum">     129 </span>            :                                 }</a>

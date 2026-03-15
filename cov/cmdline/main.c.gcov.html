@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-03-01 15:35:05</td>
+            <td class="headerValue">2026-03-15 15:58:19</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -381,27 +381,27 @@
 <a name="319"><span class="lineNum">     319 </span>            : }</a>
 <a name="320"><span class="lineNum">     320 </span>            : /* LCOV_EXCL_STOP */</a>
 <a name="321"><span class="lineNum">     321 </span>            : </a>
-<a name="322"><span class="lineNum">     322 </span><span class="lineCov">        301 : int main(int argc, char* argv[])</span></a>
+<a name="322"><span class="lineNum">     322 </span><span class="lineCov">        303 : int main(int argc, char* argv[])</span></a>
 <a name="323"><span class="lineNum">     323 </span>            : {</a>
 <a name="324"><span class="lineNum">     324 </span>            :         int mode;</a>
 <a name="325"><span class="lineNum">     325 </span>            :         int i, j;</a>
 <a name="326"><span class="lineNum">     326 </span>            :         int ret;</a>
 <a name="327"><span class="lineNum">     327 </span>            : </a>
-<a name="328"><span class="lineNum">     328 </span><span class="lineCov">        301 :         mode = MODE_DEFAULT;</span></a>
-<a name="329"><span class="lineNum">     329 </span><span class="lineCov">        301 :         j = 1;</span></a>
-<a name="330"><span class="lineNum">     330 </span><span class="lineCov">       4463 :         for (i = 1; i &lt; argc; ++i) {</span></a>
-<a name="331"><span class="lineNum">     331 </span><span class="lineCov">       4162 :                 if (strcmp(argv[i], &quot;-s&quot;) == 0 || strcmp(argv[i], &quot;--spin-down-on-error&quot;) == 0) {</span></a>
+<a name="328"><span class="lineNum">     328 </span><span class="lineCov">        303 :         mode = MODE_DEFAULT;</span></a>
+<a name="329"><span class="lineNum">     329 </span><span class="lineCov">        303 :         j = 1;</span></a>
+<a name="330"><span class="lineNum">     330 </span><span class="lineCov">       4467 :         for (i = 1; i &lt; argc; ++i) {</span></a>
+<a name="331"><span class="lineNum">     331 </span><span class="lineCov">       4164 :                 if (strcmp(argv[i], &quot;-s&quot;) == 0 || strcmp(argv[i], &quot;--spin-down-on-error&quot;) == 0) {</span></a>
 <a name="332"><span class="lineNum">     332 </span><span class="lineCov">          1 :                         mode = MODE_SPINDOWN;</span></a>
 <a name="333"><span class="lineNum">     333 </span>            :                 } else {</a>
-<a name="334"><span class="lineNum">     334 </span><span class="lineCov">       4161 :                         argv[j] = argv[i];</span></a>
-<a name="335"><span class="lineNum">     335 </span><span class="lineCov">       4161 :                         ++j;</span></a>
+<a name="334"><span class="lineNum">     334 </span><span class="lineCov">       4163 :                         argv[j] = argv[i];</span></a>
+<a name="335"><span class="lineNum">     335 </span><span class="lineCov">       4163 :                         ++j;</span></a>
 <a name="336"><span class="lineNum">     336 </span>            :                 }</a>
 <a name="337"><span class="lineNum">     337 </span>            :         }</a>
-<a name="338"><span class="lineNum">     338 </span><span class="lineCov">        301 :         argc = j;</span></a>
-<a name="339"><span class="lineNum">     339 </span><span class="lineCov">        301 :         argv[argc] = 0;</span></a>
+<a name="338"><span class="lineNum">     338 </span><span class="lineCov">        303 :         argc = j;</span></a>
+<a name="339"><span class="lineNum">     339 </span><span class="lineCov">        303 :         argv[argc] = 0;</span></a>
 <a name="340"><span class="lineNum">     340 </span>            : </a>
-<a name="341"><span class="lineNum">     341 </span><span class="lineCov">        301 :         if (mode == MODE_DEFAULT) {</span></a>
-<a name="342"><span class="lineNum">     342 </span><span class="lineCov">        300 :                 ret = snapraid_main(argc, argv);</span></a>
+<a name="341"><span class="lineNum">     341 </span><span class="lineCov">        303 :         if (mode == MODE_DEFAULT) {</span></a>
+<a name="342"><span class="lineNum">     342 </span><span class="lineCov">        302 :                 ret = snapraid_main(argc, argv);</span></a>
 <a name="343"><span class="lineNum">     343 </span>            :         } else {</a>
 <a name="344"><span class="lineNum">     344 </span>            :                 struct sigaction sa;</a>
 <a name="345"><span class="lineNum">     345 </span>            : </a>
@@ -499,7 +499,7 @@
 <a name="437"><span class="lineNum">     437 </span>            :                 }</a>
 <a name="438"><span class="lineNum">     438 </span>            :         }</a>
 <a name="439"><span class="lineNum">     439 </span>            : </a>
-<a name="440"><span class="lineNum">     440 </span><span class="lineCov">        268 :         return ret;</span></a>
+<a name="440"><span class="lineNum">     440 </span><span class="lineCov">        270 :         return ret;</span></a>
 <a name="441"><span class="lineNum">     441 </span>            : }</a>
 <a name="442"><span class="lineNum">     442 </span>            : #endif</a>
 <a name="443"><span class="lineNum">     443 </span>            : </a>

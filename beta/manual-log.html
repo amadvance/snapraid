@@ -942,8 +942,9 @@ This item will have its content data blocks re-hashed in a <b>sync</b>.
 <div class="manual-option-name">
 scan:move:&lt;disk_name&gt;:&lt;old_path&gt;:&lt;new_path&gt;
 </div><div class="manual-option-description">
-A file was moved on the same disk. This is an efficient operation
-that only updates the path metadata without re-hashing blocks.
+A file was moved to a different directory on the same disk.
+This is an efficient operation that only updates the path
+metadata without rehashing blocks.
 </div>
 </div>
 </div>
@@ -968,9 +969,11 @@ The new path to the file (escaped).
 <div class="manual-option-name">
 scan:copy:&lt;disk_name&gt;:&lt;path&gt;:&lt;source_disk&gt;:&lt;source_path&gt;
 </div><div class="manual-option-description">
-A new file was found to be a copy of a file from another disk.
-This is detected by matching file size and timestamp, and is an
-efficient operation that avoids re-hashing all blocks.
+A new file was found to be a copy of a file on the same or
+any other disk.
+This is detected by matching the file name,
+size, and timestamp, and is an efficient operation that avoids
+rehashing all blocks.
 </div>
 </div>
 </div>
@@ -993,10 +996,23 @@ The original file's location (escaped).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+scan:relocate:&lt;disk_name&gt;:&lt;path&gt;:&lt;source_disk&gt;:&lt;source_path&gt;
+</div><div class="manual-option-description">
+Like <b>copy</b>, but the original file has disappeared.
+The difference between <b>move</b> and <b>relocate</b> on the same
+disk is that <b>move</b> is only used if the inode remains
+the same.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 scan:restore:&lt;disk_name&gt;:&lt;path&gt;
 </div><div class="manual-option-description">
-A file's inode has changed but not its date-time and size,
-which suggests the file may be restored from backup.
+A file's inode has changed but not its directory, name,
+timestamp and size, which suggests the file may be restored
+from backup.
 The file won't be re-hashed in <b>sync</b> as its precomputed hash
 is assumed to be correct.
 </div>
@@ -1059,6 +1075,16 @@ retaining the same inode (uint).
 summary:copied:&lt;count&gt;
 </div><div class="manual-option-description">
 Total number of new files created by copying an existing
+protected file to a new path (uint).
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+summary:relocated:&lt;count&gt;
+</div><div class="manual-option-description">
+Total number of new files created by relocating an existing
 protected file to a new path (uint).
 </div>
 </div>

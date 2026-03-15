@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2026-03-01 15:35:05</td>
+            <td class="headerValue">2026-03-15 15:58:19</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">19</td>
@@ -94,104 +94,104 @@
 <a name="32"><span class="lineNum">      32 </span>            : /******************************************************************************/</a>
 <a name="33"><span class="lineNum">      33 </span>            : /* tree */</a>
 <a name="34"><span class="lineNum">      34 </span>            : </a>
-<a name="35"><span class="lineNum">      35 </span><span class="lineCov">       3503 : TOMMY_API void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp)</span></a>
+<a name="35"><span class="lineNum">      35 </span><span class="lineCov">       3543 : TOMMY_API void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp)</span></a>
 <a name="36"><span class="lineNum">      36 </span>            : {</a>
-<a name="37"><span class="lineNum">      37 </span><span class="lineCov">       3503 :         tree-&gt;root = 0;</span></a>
-<a name="38"><span class="lineNum">      38 </span><span class="lineCov">       3503 :         tree-&gt;count = 0;</span></a>
-<a name="39"><span class="lineNum">      39 </span><span class="lineCov">       3503 :         tree-&gt;cmp = cmp;</span></a>
-<a name="40"><span class="lineNum">      40 </span><span class="lineCov">       3503 : }</span></a>
+<a name="37"><span class="lineNum">      37 </span><span class="lineCov">       3543 :         tree-&gt;root = 0;</span></a>
+<a name="38"><span class="lineNum">      38 </span><span class="lineCov">       3543 :         tree-&gt;count = 0;</span></a>
+<a name="39"><span class="lineNum">      39 </span><span class="lineCov">       3543 :         tree-&gt;cmp = cmp;</span></a>
+<a name="40"><span class="lineNum">      40 </span><span class="lineCov">       3543 : }</span></a>
 <a name="41"><span class="lineNum">      41 </span>            : </a>
-<a name="42"><span class="lineNum">      42 </span><span class="lineCov">  118998899 : static tommy_ssize_t tommy_tree_delta(tommy_tree_node* root)</span></a>
+<a name="42"><span class="lineNum">      42 </span><span class="lineCov">  119009252 : static tommy_ssize_t tommy_tree_delta(tommy_tree_node* root)</span></a>
 <a name="43"><span class="lineNum">      43 </span>            : {</a>
-<a name="44"><span class="lineNum">      44 </span><span class="lineCov">  118998899 :         tommy_ssize_t left_height = root-&gt;prev ? root-&gt;prev-&gt;index : 0;</span></a>
-<a name="45"><span class="lineNum">      45 </span><span class="lineCov">  118998899 :         tommy_ssize_t right_height = root-&gt;next ? root-&gt;next-&gt;index : 0;</span></a>
+<a name="44"><span class="lineNum">      44 </span><span class="lineCov">  119009252 :         tommy_ssize_t left_height = root-&gt;prev ? root-&gt;prev-&gt;index : 0;</span></a>
+<a name="45"><span class="lineNum">      45 </span><span class="lineCov">  119009252 :         tommy_ssize_t right_height = root-&gt;next ? root-&gt;next-&gt;index : 0;</span></a>
 <a name="46"><span class="lineNum">      46 </span>            : </a>
-<a name="47"><span class="lineNum">      47 </span><span class="lineCov">  118998899 :         return left_height - right_height;</span></a>
+<a name="47"><span class="lineNum">      47 </span><span class="lineCov">  119009252 :         return left_height - right_height;</span></a>
 <a name="48"><span class="lineNum">      48 </span>            : }</a>
 <a name="49"><span class="lineNum">      49 </span>            : </a>
 <a name="50"><span class="lineNum">      50 </span>            : /* AVL tree operations */</a>
 <a name="51"><span class="lineNum">      51 </span>            : static tommy_tree_node* tommy_tree_balance(tommy_tree_node*);</a>
 <a name="52"><span class="lineNum">      52 </span>            : </a>
-<a name="53"><span class="lineNum">      53 </span><span class="lineCov">    7949278 : static tommy_tree_node* tommy_tree_rotate_left(tommy_tree_node* root)</span></a>
+<a name="53"><span class="lineNum">      53 </span><span class="lineCov">    7951362 : static tommy_tree_node* tommy_tree_rotate_left(tommy_tree_node* root)</span></a>
 <a name="54"><span class="lineNum">      54 </span>            : {</a>
-<a name="55"><span class="lineNum">      55 </span><span class="lineCov">    7949278 :         tommy_tree_node* next = root-&gt;next;</span></a>
+<a name="55"><span class="lineNum">      55 </span><span class="lineCov">    7951362 :         tommy_tree_node* next = root-&gt;next;</span></a>
 <a name="56"><span class="lineNum">      56 </span>            : </a>
-<a name="57"><span class="lineNum">      57 </span><span class="lineCov">    7949278 :         root-&gt;next = next-&gt;prev;</span></a>
+<a name="57"><span class="lineNum">      57 </span><span class="lineCov">    7951362 :         root-&gt;next = next-&gt;prev;</span></a>
 <a name="58"><span class="lineNum">      58 </span>            : </a>
-<a name="59"><span class="lineNum">      59 </span><span class="lineCov">    7949278 :         next-&gt;prev = tommy_tree_balance(root);</span></a>
+<a name="59"><span class="lineNum">      59 </span><span class="lineCov">    7951362 :         next-&gt;prev = tommy_tree_balance(root);</span></a>
 <a name="60"><span class="lineNum">      60 </span>            : </a>
-<a name="61"><span class="lineNum">      61 </span><span class="lineCov">    7949278 :         return tommy_tree_balance(next);</span></a>
+<a name="61"><span class="lineNum">      61 </span><span class="lineCov">    7951362 :         return tommy_tree_balance(next);</span></a>
 <a name="62"><span class="lineNum">      62 </span>            : }</a>
 <a name="63"><span class="lineNum">      63 </span>            : </a>
-<a name="64"><span class="lineNum">      64 </span><span class="lineCov">     186401 : static tommy_tree_node* tommy_tree_rotate_right(tommy_tree_node* root)</span></a>
+<a name="64"><span class="lineNum">      64 </span><span class="lineCov">     184325 : static tommy_tree_node* tommy_tree_rotate_right(tommy_tree_node* root)</span></a>
 <a name="65"><span class="lineNum">      65 </span>            : {</a>
-<a name="66"><span class="lineNum">      66 </span><span class="lineCov">     186401 :         tommy_tree_node* prev = root-&gt;prev;</span></a>
+<a name="66"><span class="lineNum">      66 </span><span class="lineCov">     184325 :         tommy_tree_node* prev = root-&gt;prev;</span></a>
 <a name="67"><span class="lineNum">      67 </span>            : </a>
-<a name="68"><span class="lineNum">      68 </span><span class="lineCov">     186401 :         root-&gt;prev = prev-&gt;next;</span></a>
+<a name="68"><span class="lineNum">      68 </span><span class="lineCov">     184325 :         root-&gt;prev = prev-&gt;next;</span></a>
 <a name="69"><span class="lineNum">      69 </span>            : </a>
-<a name="70"><span class="lineNum">      70 </span><span class="lineCov">     186401 :         prev-&gt;next = tommy_tree_balance(root);</span></a>
+<a name="70"><span class="lineNum">      70 </span><span class="lineCov">     184325 :         prev-&gt;next = tommy_tree_balance(root);</span></a>
 <a name="71"><span class="lineNum">      71 </span>            : </a>
-<a name="72"><span class="lineNum">      72 </span><span class="lineCov">     186401 :         return tommy_tree_balance(prev);</span></a>
+<a name="72"><span class="lineNum">      72 </span><span class="lineCov">     184325 :         return tommy_tree_balance(prev);</span></a>
 <a name="73"><span class="lineNum">      73 </span>            : }</a>
 <a name="74"><span class="lineNum">      74 </span>            : </a>
-<a name="75"><span class="lineNum">      75 </span><span class="lineCov">     180036 : static tommy_tree_node* tommy_tree_move_right(tommy_tree_node* root, tommy_tree_node* node)</span></a>
+<a name="75"><span class="lineNum">      75 </span><span class="lineCov">     178930 : static tommy_tree_node* tommy_tree_move_right(tommy_tree_node* root, tommy_tree_node* node)</span></a>
 <a name="76"><span class="lineNum">      76 </span>            : {</a>
-<a name="77"><span class="lineNum">      77 </span><span class="lineCov">     180036 :         if (!root)</span></a>
-<a name="78"><span class="lineNum">      78 </span><span class="lineCov">      76802 :                 return node;</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">     178930 :         if (!root)</span></a>
+<a name="78"><span class="lineNum">      78 </span><span class="lineCov">      76640 :                 return node;</span></a>
 <a name="79"><span class="lineNum">      79 </span>            : </a>
-<a name="80"><span class="lineNum">      80 </span><span class="lineCov">     103234 :         root-&gt;next = tommy_tree_move_right(root-&gt;next, node);</span></a>
+<a name="80"><span class="lineNum">      80 </span><span class="lineCov">     102290 :         root-&gt;next = tommy_tree_move_right(root-&gt;next, node);</span></a>
 <a name="81"><span class="lineNum">      81 </span>            : </a>
-<a name="82"><span class="lineNum">      82 </span><span class="lineCov">     103234 :         return tommy_tree_balance(root);</span></a>
+<a name="82"><span class="lineNum">      82 </span><span class="lineCov">     102290 :         return tommy_tree_balance(root);</span></a>
 <a name="83"><span class="lineNum">      83 </span>            : }</a>
 <a name="84"><span class="lineNum">      84 </span>            : </a>
-<a name="85"><span class="lineNum">      85 </span><span class="lineCov">  111032190 : static tommy_tree_node* tommy_tree_balance(tommy_tree_node* root)</span></a>
+<a name="85"><span class="lineNum">      85 </span><span class="lineCov">  111041265 : static tommy_tree_node* tommy_tree_balance(tommy_tree_node* root)</span></a>
 <a name="86"><span class="lineNum">      86 </span>            : {</a>
-<a name="87"><span class="lineNum">      87 </span><span class="lineCov">  111032190 :         tommy_ssize_t delta = tommy_tree_delta(root);</span></a>
+<a name="87"><span class="lineNum">      87 </span><span class="lineCov">  111041265 :         tommy_ssize_t delta = tommy_tree_delta(root);</span></a>
 <a name="88"><span class="lineNum">      88 </span>            : </a>
-<a name="89"><span class="lineNum">      89 </span><span class="lineCov">  111032190 :         if (delta &lt; -1) {</span></a>
-<a name="90"><span class="lineNum">      90 </span><span class="lineCov">    7826651 :                 if (tommy_tree_delta(root-&gt;next) &gt; 0)</span></a>
-<a name="91"><span class="lineNum">      91 </span><span class="lineCov">      46343 :                         root-&gt;next = tommy_tree_rotate_right(root-&gt;next);</span></a>
-<a name="92"><span class="lineNum">      92 </span><span class="lineCov">    7826651 :                 return tommy_tree_rotate_left(root);</span></a>
+<a name="89"><span class="lineNum">      89 </span><span class="lineCov">  111041265 :         if (delta &lt; -1) {</span></a>
+<a name="90"><span class="lineNum">      90 </span><span class="lineCov">    7828801 :                 if (tommy_tree_delta(root-&gt;next) &gt; 0)</span></a>
+<a name="91"><span class="lineNum">      91 </span><span class="lineCov">      45139 :                         root-&gt;next = tommy_tree_rotate_right(root-&gt;next);</span></a>
+<a name="92"><span class="lineNum">      92 </span><span class="lineCov">    7828801 :                 return tommy_tree_rotate_left(root);</span></a>
 <a name="93"><span class="lineNum">      93 </span>            :         }</a>
 <a name="94"><span class="lineNum">      94 </span>            : </a>
-<a name="95"><span class="lineNum">      95 </span><span class="lineCov">  103205539 :         if (delta &gt; 1) {</span></a>
-<a name="96"><span class="lineNum">      96 </span><span class="lineCov">     140058 :                 if (tommy_tree_delta(root-&gt;prev) &lt; 0)</span></a>
-<a name="97"><span class="lineNum">      97 </span><span class="lineCov">     122627 :                         root-&gt;prev = tommy_tree_rotate_left(root-&gt;prev);</span></a>
-<a name="98"><span class="lineNum">      98 </span><span class="lineCov">     140058 :                 return tommy_tree_rotate_right(root);</span></a>
+<a name="95"><span class="lineNum">      95 </span><span class="lineCov">  103212464 :         if (delta &gt; 1) {</span></a>
+<a name="96"><span class="lineNum">      96 </span><span class="lineCov">     139186 :                 if (tommy_tree_delta(root-&gt;prev) &lt; 0)</span></a>
+<a name="97"><span class="lineNum">      97 </span><span class="lineCov">     122561 :                         root-&gt;prev = tommy_tree_rotate_left(root-&gt;prev);</span></a>
+<a name="98"><span class="lineNum">      98 </span><span class="lineCov">     139186 :                 return tommy_tree_rotate_right(root);</span></a>
 <a name="99"><span class="lineNum">      99 </span>            :         }</a>
 <a name="100"><span class="lineNum">     100 </span>            : </a>
 <a name="101"><span class="lineNum">     101 </span>            :         /* recompute key */</a>
-<a name="102"><span class="lineNum">     102 </span><span class="lineCov">  103065481 :         root-&gt;index = 0;</span></a>
+<a name="102"><span class="lineNum">     102 </span><span class="lineCov">  103073278 :         root-&gt;index = 0;</span></a>
 <a name="103"><span class="lineNum">     103 </span>            : </a>
-<a name="104"><span class="lineNum">     104 </span><span class="lineCov">  103065481 :         if (root-&gt;prev &amp;&amp; root-&gt;prev-&gt;index &gt; root-&gt;index)</span></a>
-<a name="105"><span class="lineNum">     105 </span><span class="lineCov">   83311053 :                 root-&gt;index = root-&gt;prev-&gt;index;</span></a>
+<a name="104"><span class="lineNum">     104 </span><span class="lineCov">  103073278 :         if (root-&gt;prev &amp;&amp; root-&gt;prev-&gt;index &gt; root-&gt;index)</span></a>
+<a name="105"><span class="lineNum">     105 </span><span class="lineCov">   83313158 :                 root-&gt;index = root-&gt;prev-&gt;index;</span></a>
 <a name="106"><span class="lineNum">     106 </span>            : </a>
-<a name="107"><span class="lineNum">     107 </span><span class="lineCov">  103065481 :         if (root-&gt;next &amp;&amp; root-&gt;next-&gt;index &gt; root-&gt;index)</span></a>
-<a name="108"><span class="lineNum">     108 </span><span class="lineCov">   47468605 :                 root-&gt;index = root-&gt;next-&gt;index;</span></a>
+<a name="107"><span class="lineNum">     107 </span><span class="lineCov">  103073278 :         if (root-&gt;next &amp;&amp; root-&gt;next-&gt;index &gt; root-&gt;index)</span></a>
+<a name="108"><span class="lineNum">     108 </span><span class="lineCov">   47473770 :                 root-&gt;index = root-&gt;next-&gt;index;</span></a>
 <a name="109"><span class="lineNum">     109 </span>            : </a>
 <a name="110"><span class="lineNum">     110 </span>            :         /* count itself */</a>
-<a name="111"><span class="lineNum">     111 </span><span class="lineCov">  103065481 :         root-&gt;index += 1;</span></a>
+<a name="111"><span class="lineNum">     111 </span><span class="lineCov">  103073278 :         root-&gt;index += 1;</span></a>
 <a name="112"><span class="lineNum">     112 </span>            : </a>
-<a name="113"><span class="lineNum">     113 </span><span class="lineCov">  103065481 :         return root;</span></a>
+<a name="113"><span class="lineNum">     113 </span><span class="lineCov">  103073278 :         return root;</span></a>
 <a name="114"><span class="lineNum">     114 </span>            : }</a>
 <a name="115"><span class="lineNum">     115 </span>            : </a>
-<a name="116"><span class="lineNum">     116 </span><span class="lineCov">  101908803 : static tommy_tree_node* tommy_tree_insert_node(tommy_compare_func* cmp, tommy_tree_node* root, tommy_tree_node** let)</span></a>
+<a name="116"><span class="lineNum">     116 </span><span class="lineCov">  101920055 : static tommy_tree_node* tommy_tree_insert_node(tommy_compare_func* cmp, tommy_tree_node* root, tommy_tree_node** let)</span></a>
 <a name="117"><span class="lineNum">     117 </span>            : {</a>
 <a name="118"><span class="lineNum">     118 </span>            :         int c;</a>
 <a name="119"><span class="lineNum">     119 </span>            : </a>
-<a name="120"><span class="lineNum">     120 </span><span class="lineCov">  101908803 :         if (!root)</span></a>
-<a name="121"><span class="lineNum">     121 </span><span class="lineCov">    7939062 :                 return *let;</span></a>
+<a name="120"><span class="lineNum">     120 </span><span class="lineCov">  101920055 :         if (!root)</span></a>
+<a name="121"><span class="lineNum">     121 </span><span class="lineCov">    7939460 :                 return *let;</span></a>
 <a name="122"><span class="lineNum">     122 </span>            : </a>
-<a name="123"><span class="lineNum">     123 </span><span class="lineCov">   93969741 :         c = cmp((*let)-&gt;data, root-&gt;data);</span></a>
+<a name="123"><span class="lineNum">     123 </span><span class="lineCov">   93980595 :         c = cmp((*let)-&gt;data, root-&gt;data);</span></a>
 <a name="124"><span class="lineNum">     124 </span>            : </a>
-<a name="125"><span class="lineNum">     125 </span><span class="lineCov">   93969741 :         if (c &lt; 0) {</span></a>
-<a name="126"><span class="lineNum">     126 </span><span class="lineCov">    1723159 :                 root-&gt;prev = tommy_tree_insert_node(cmp, root-&gt;prev, let);</span></a>
-<a name="127"><span class="lineNum">     127 </span><span class="lineCov">    1723159 :                 return tommy_tree_balance(root);</span></a>
+<a name="125"><span class="lineNum">     125 </span><span class="lineCov">   93980595 :         if (c &lt; 0) {</span></a>
+<a name="126"><span class="lineNum">     126 </span><span class="lineCov">    1719825 :                 root-&gt;prev = tommy_tree_insert_node(cmp, root-&gt;prev, let);</span></a>
+<a name="127"><span class="lineNum">     127 </span><span class="lineCov">    1719825 :                 return tommy_tree_balance(root);</span></a>
 <a name="128"><span class="lineNum">     128 </span>            :         }</a>
 <a name="129"><span class="lineNum">     129 </span>            : </a>
-<a name="130"><span class="lineNum">     130 </span><span class="lineCov">   92246582 :         if (c &gt; 0) {</span></a>
-<a name="131"><span class="lineNum">     131 </span><span class="lineCov">   92246581 :                 root-&gt;next = tommy_tree_insert_node(cmp, root-&gt;next, let);</span></a>
-<a name="132"><span class="lineNum">     132 </span><span class="lineCov">   92246581 :                 return tommy_tree_balance(root);</span></a>
+<a name="130"><span class="lineNum">     130 </span><span class="lineCov">   92260770 :         if (c &gt; 0) {</span></a>
+<a name="131"><span class="lineNum">     131 </span><span class="lineCov">   92260769 :                 root-&gt;next = tommy_tree_insert_node(cmp, root-&gt;next, let);</span></a>
+<a name="132"><span class="lineNum">     132 </span><span class="lineCov">   92260769 :                 return tommy_tree_balance(root);</span></a>
 <a name="133"><span class="lineNum">     133 </span>            :         }</a>
 <a name="134"><span class="lineNum">     134 </span>            : </a>
 <a name="135"><span class="lineNum">     135 </span>            :         /* already present, set the return pointer */</a>
@@ -200,78 +200,78 @@
 <a name="138"><span class="lineNum">     138 </span><span class="lineCov">          1 :         return root;</span></a>
 <a name="139"><span class="lineNum">     139 </span>            : }</a>
 <a name="140"><span class="lineNum">     140 </span>            : </a>
-<a name="141"><span class="lineNum">     141 </span><span class="lineCov">    7939063 : TOMMY_API void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)</span></a>
+<a name="141"><span class="lineNum">     141 </span><span class="lineCov">    7939461 : TOMMY_API void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)</span></a>
 <a name="142"><span class="lineNum">     142 </span>            : {</a>
-<a name="143"><span class="lineNum">     143 </span><span class="lineCov">    7939063 :         tommy_tree_node* insert = node;</span></a>
+<a name="143"><span class="lineNum">     143 </span><span class="lineCov">    7939461 :         tommy_tree_node* insert = node;</span></a>
 <a name="144"><span class="lineNum">     144 </span>            : </a>
-<a name="145"><span class="lineNum">     145 </span><span class="lineCov">    7939063 :         insert-&gt;data = data;</span></a>
-<a name="146"><span class="lineNum">     146 </span><span class="lineCov">    7939063 :         insert-&gt;prev = 0;</span></a>
-<a name="147"><span class="lineNum">     147 </span><span class="lineCov">    7939063 :         insert-&gt;next = 0;</span></a>
-<a name="148"><span class="lineNum">     148 </span><span class="lineCov">    7939063 :         insert-&gt;index = 0;</span></a>
+<a name="145"><span class="lineNum">     145 </span><span class="lineCov">    7939461 :         insert-&gt;data = data;</span></a>
+<a name="146"><span class="lineNum">     146 </span><span class="lineCov">    7939461 :         insert-&gt;prev = 0;</span></a>
+<a name="147"><span class="lineNum">     147 </span><span class="lineCov">    7939461 :         insert-&gt;next = 0;</span></a>
+<a name="148"><span class="lineNum">     148 </span><span class="lineCov">    7939461 :         insert-&gt;index = 0;</span></a>
 <a name="149"><span class="lineNum">     149 </span>            : </a>
-<a name="150"><span class="lineNum">     150 </span><span class="lineCov">    7939063 :         tree-&gt;root = tommy_tree_insert_node(tree-&gt;cmp, tree-&gt;root, &amp;insert);</span></a>
+<a name="150"><span class="lineNum">     150 </span><span class="lineCov">    7939461 :         tree-&gt;root = tommy_tree_insert_node(tree-&gt;cmp, tree-&gt;root, &amp;insert);</span></a>
 <a name="151"><span class="lineNum">     151 </span>            : </a>
-<a name="152"><span class="lineNum">     152 </span><span class="lineCov">    7939063 :         if (insert == node)</span></a>
-<a name="153"><span class="lineNum">     153 </span><span class="lineCov">    7939062 :                 ++tree-&gt;count;</span></a>
+<a name="152"><span class="lineNum">     152 </span><span class="lineCov">    7939461 :         if (insert == node)</span></a>
+<a name="153"><span class="lineNum">     153 </span><span class="lineCov">    7939460 :                 ++tree-&gt;count;</span></a>
 <a name="154"><span class="lineNum">     154 </span>            : </a>
-<a name="155"><span class="lineNum">     155 </span><span class="lineCov">    7939063 :         return insert-&gt;data;</span></a>
+<a name="155"><span class="lineNum">     155 </span><span class="lineCov">    7939461 :         return insert-&gt;data;</span></a>
 <a name="156"><span class="lineNum">     156 </span>            : }</a>
 <a name="157"><span class="lineNum">     157 </span>            : </a>
-<a name="158"><span class="lineNum">     158 </span><span class="lineCov">     764788 : static tommy_tree_node* tommy_tree_remove_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data, tommy_tree_node** let)</span></a>
+<a name="158"><span class="lineNum">     158 </span><span class="lineCov">     763775 : static tommy_tree_node* tommy_tree_remove_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data, tommy_tree_node** let)</span></a>
 <a name="159"><span class="lineNum">     159 </span>            : {</a>
 <a name="160"><span class="lineNum">     160 </span>            :         int c;</a>
 <a name="161"><span class="lineNum">     161 </span>            : </a>
-<a name="162"><span class="lineNum">     162 </span><span class="lineCov">     764788 :         if (!root)</span></a>
+<a name="162"><span class="lineNum">     162 </span><span class="lineCov">     763775 :         if (!root)</span></a>
 <a name="163"><span class="lineNum">     163 </span><span class="lineCov">        128 :                 return 0;</span></a>
 <a name="164"><span class="lineNum">     164 </span>            : </a>
-<a name="165"><span class="lineNum">     165 </span><span class="lineCov">     764660 :         c = cmp(data, root-&gt;data);</span></a>
+<a name="165"><span class="lineNum">     165 </span><span class="lineCov">     763647 :         c = cmp(data, root-&gt;data);</span></a>
 <a name="166"><span class="lineNum">     166 </span>            : </a>
-<a name="167"><span class="lineNum">     167 </span><span class="lineCov">     764660 :         if (c &lt; 0) {</span></a>
-<a name="168"><span class="lineNum">     168 </span><span class="lineCov">     309500 :                 root-&gt;prev = tommy_tree_remove_node(cmp, root-&gt;prev, data, let);</span></a>
-<a name="169"><span class="lineNum">     169 </span><span class="lineCov">     309500 :                 return tommy_tree_balance(root);</span></a>
+<a name="167"><span class="lineNum">     167 </span><span class="lineCov">     763647 :         if (c &lt; 0) {</span></a>
+<a name="168"><span class="lineNum">     168 </span><span class="lineCov">     309129 :                 root-&gt;prev = tommy_tree_remove_node(cmp, root-&gt;prev, data, let);</span></a>
+<a name="169"><span class="lineNum">     169 </span><span class="lineCov">     309129 :                 return tommy_tree_balance(root);</span></a>
 <a name="170"><span class="lineNum">     170 </span>            :         }</a>
 <a name="171"><span class="lineNum">     171 </span>            : </a>
-<a name="172"><span class="lineNum">     172 </span><span class="lineCov">     455160 :         if (c &gt; 0) {</span></a>
-<a name="173"><span class="lineNum">     173 </span><span class="lineCov">     378358 :                 root-&gt;next = tommy_tree_remove_node(cmp, root-&gt;next, data, let);</span></a>
-<a name="174"><span class="lineNum">     174 </span><span class="lineCov">     378358 :                 return tommy_tree_balance(root);</span></a>
+<a name="172"><span class="lineNum">     172 </span><span class="lineCov">     454518 :         if (c &gt; 0) {</span></a>
+<a name="173"><span class="lineNum">     173 </span><span class="lineCov">     377878 :                 root-&gt;next = tommy_tree_remove_node(cmp, root-&gt;next, data, let);</span></a>
+<a name="174"><span class="lineNum">     174 </span><span class="lineCov">     377878 :                 return tommy_tree_balance(root);</span></a>
 <a name="175"><span class="lineNum">     175 </span>            :         }</a>
 <a name="176"><span class="lineNum">     176 </span>            : </a>
 <a name="177"><span class="lineNum">     177 </span>            :         /* found */</a>
-<a name="178"><span class="lineNum">     178 </span><span class="lineCov">      76802 :         *let = root;</span></a>
+<a name="178"><span class="lineNum">     178 </span><span class="lineCov">      76640 :         *let = root;</span></a>
 <a name="179"><span class="lineNum">     179 </span>            : </a>
-<a name="180"><span class="lineNum">     180 </span><span class="lineCov">      76802 :         return tommy_tree_move_right(root-&gt;prev, root-&gt;next);</span></a>
+<a name="180"><span class="lineNum">     180 </span><span class="lineCov">      76640 :         return tommy_tree_move_right(root-&gt;prev, root-&gt;next);</span></a>
 <a name="181"><span class="lineNum">     181 </span>            : }</a>
 <a name="182"><span class="lineNum">     182 </span>            : </a>
-<a name="183"><span class="lineNum">     183 </span><span class="lineCov">      76930 : TOMMY_API void* tommy_tree_remove(tommy_tree* tree, void* data)</span></a>
+<a name="183"><span class="lineNum">     183 </span><span class="lineCov">      76768 : TOMMY_API void* tommy_tree_remove(tommy_tree* tree, void* data)</span></a>
 <a name="184"><span class="lineNum">     184 </span>            : {</a>
-<a name="185"><span class="lineNum">     185 </span><span class="lineCov">      76930 :         tommy_tree_node* node = 0;</span></a>
+<a name="185"><span class="lineNum">     185 </span><span class="lineCov">      76768 :         tommy_tree_node* node = 0;</span></a>
 <a name="186"><span class="lineNum">     186 </span>            : </a>
-<a name="187"><span class="lineNum">     187 </span><span class="lineCov">      76930 :         tree-&gt;root = tommy_tree_remove_node(tree-&gt;cmp, tree-&gt;root, data, &amp;node);</span></a>
+<a name="187"><span class="lineNum">     187 </span><span class="lineCov">      76768 :         tree-&gt;root = tommy_tree_remove_node(tree-&gt;cmp, tree-&gt;root, data, &amp;node);</span></a>
 <a name="188"><span class="lineNum">     188 </span>            : </a>
-<a name="189"><span class="lineNum">     189 </span><span class="lineCov">      76930 :         if (!node)</span></a>
+<a name="189"><span class="lineNum">     189 </span><span class="lineCov">      76768 :         if (!node)</span></a>
 <a name="190"><span class="lineNum">     190 </span><span class="lineCov">        128 :                 return 0;</span></a>
 <a name="191"><span class="lineNum">     191 </span>            : </a>
-<a name="192"><span class="lineNum">     192 </span><span class="lineCov">      76802 :         --tree-&gt;count;</span></a>
+<a name="192"><span class="lineNum">     192 </span><span class="lineCov">      76640 :         --tree-&gt;count;</span></a>
 <a name="193"><span class="lineNum">     193 </span>            : </a>
-<a name="194"><span class="lineNum">     194 </span><span class="lineCov">      76802 :         return node-&gt;data;</span></a>
+<a name="194"><span class="lineNum">     194 </span><span class="lineCov">      76640 :         return node-&gt;data;</span></a>
 <a name="195"><span class="lineNum">     195 </span>            : }</a>
 <a name="196"><span class="lineNum">     196 </span>            : </a>
-<a name="197"><span class="lineNum">     197 </span><span class="lineCov">  192185055 : static tommy_tree_node* tommy_tree_search_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data)</span></a>
+<a name="197"><span class="lineNum">     197 </span><span class="lineCov">  191538520 : static tommy_tree_node* tommy_tree_search_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data)</span></a>
 <a name="198"><span class="lineNum">     198 </span>            : {</a>
 <a name="199"><span class="lineNum">     199 </span>            :         int c;</a>
 <a name="200"><span class="lineNum">     200 </span>            : </a>
-<a name="201"><span class="lineNum">     201 </span><span class="lineCov">  192185055 :         if (!root)</span></a>
-<a name="202"><span class="lineNum">     202 </span><span class="lineCov">    2136337 :                 return 0;</span></a>
+<a name="201"><span class="lineNum">     201 </span><span class="lineCov">  191538520 :         if (!root)</span></a>
+<a name="202"><span class="lineNum">     202 </span><span class="lineCov">    2133992 :                 return 0;</span></a>
 <a name="203"><span class="lineNum">     203 </span>            : </a>
-<a name="204"><span class="lineNum">     204 </span><span class="lineCov">  190048718 :         c = cmp(data, root-&gt;data);</span></a>
+<a name="204"><span class="lineNum">     204 </span><span class="lineCov">  189404528 :         c = cmp(data, root-&gt;data);</span></a>
 <a name="205"><span class="lineNum">     205 </span>            : </a>
-<a name="206"><span class="lineNum">     206 </span><span class="lineCov">  190048718 :         if (c &lt; 0)</span></a>
-<a name="207"><span class="lineNum">     207 </span><span class="lineCov">   70037663 :                 return tommy_tree_search_node(cmp, root-&gt;prev, data);</span></a>
+<a name="206"><span class="lineNum">     206 </span><span class="lineCov">  189404528 :         if (c &lt; 0)</span></a>
+<a name="207"><span class="lineNum">     207 </span><span class="lineCov">   69779458 :                 return tommy_tree_search_node(cmp, root-&gt;prev, data);</span></a>
 <a name="208"><span class="lineNum">     208 </span>            : </a>
-<a name="209"><span class="lineNum">     209 </span><span class="lineCov">  120011055 :         if (c &gt; 0)</span></a>
-<a name="210"><span class="lineNum">     210 </span><span class="lineCov">  104756738 :                 return tommy_tree_search_node(cmp, root-&gt;next, data);</span></a>
+<a name="209"><span class="lineNum">     209 </span><span class="lineCov">  119625070 :         if (c &gt; 0)</span></a>
+<a name="210"><span class="lineNum">     210 </span><span class="lineCov">  104426160 :                 return tommy_tree_search_node(cmp, root-&gt;next, data);</span></a>
 <a name="211"><span class="lineNum">     211 </span>            : </a>
-<a name="212"><span class="lineNum">     212 </span><span class="lineCov">   15254317 :         return root;</span></a>
+<a name="212"><span class="lineNum">     212 </span><span class="lineCov">   15198910 :         return root;</span></a>
 <a name="213"><span class="lineNum">     213 </span>            : }</a>
 <a name="214"><span class="lineNum">     214 </span>            : </a>
 <a name="215"><span class="lineNum">     215 </span><span class="lineCov">          2 : TOMMY_API void* tommy_tree_search(tommy_tree* tree, void* data)</span></a>
@@ -284,14 +284,14 @@
 <a name="222"><span class="lineNum">     222 </span><span class="lineCov">          1 :         return node-&gt;data;</span></a>
 <a name="223"><span class="lineNum">     223 </span>            : }</a>
 <a name="224"><span class="lineNum">     224 </span>            : </a>
-<a name="225"><span class="lineNum">     225 </span><span class="lineCov">   17390652 : TOMMY_API void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg)</span></a>
+<a name="225"><span class="lineNum">     225 </span><span class="lineCov">   17332900 : TOMMY_API void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg)</span></a>
 <a name="226"><span class="lineNum">     226 </span>            : {</a>
-<a name="227"><span class="lineNum">     227 </span><span class="lineCov">   17390652 :         tommy_tree_node* node = tommy_tree_search_node(cmp, tree-&gt;root, cmp_arg);</span></a>
+<a name="227"><span class="lineNum">     227 </span><span class="lineCov">   17332900 :         tommy_tree_node* node = tommy_tree_search_node(cmp, tree-&gt;root, cmp_arg);</span></a>
 <a name="228"><span class="lineNum">     228 </span>            : </a>
-<a name="229"><span class="lineNum">     229 </span><span class="lineCov">   17390652 :         if (!node)</span></a>
-<a name="230"><span class="lineNum">     230 </span><span class="lineCov">    2136336 :                 return 0;</span></a>
+<a name="229"><span class="lineNum">     229 </span><span class="lineCov">   17332900 :         if (!node)</span></a>
+<a name="230"><span class="lineNum">     230 </span><span class="lineCov">    2133991 :                 return 0;</span></a>
 <a name="231"><span class="lineNum">     231 </span>            : </a>
-<a name="232"><span class="lineNum">     232 </span><span class="lineCov">   15254316 :         return node-&gt;data;</span></a>
+<a name="232"><span class="lineNum">     232 </span><span class="lineCov">   15198909 :         return node-&gt;data;</span></a>
 <a name="233"><span class="lineNum">     233 </span>            : }</a>
 <a name="234"><span class="lineNum">     234 </span>            : </a>
 <a name="235"><span class="lineNum">     235 </span><span class="lineCov">        128 : TOMMY_API void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node)</span></a>
@@ -303,49 +303,49 @@
 <a name="241"><span class="lineNum">     241 </span><span class="lineCov">        128 :         return data;</span></a>
 <a name="242"><span class="lineNum">     242 </span>            : }</a>
 <a name="243"><span class="lineNum">     243 </span>            : </a>
-<a name="244"><span class="lineNum">     244 </span><span class="lineCov">    7773286 : static void tommy_tree_foreach_node(tommy_tree_node* root, tommy_foreach_func* func)</span></a>
+<a name="244"><span class="lineNum">     244 </span><span class="lineCov">    7773174 : static void tommy_tree_foreach_node(tommy_tree_node* root, tommy_foreach_func* func)</span></a>
 <a name="245"><span class="lineNum">     245 </span>            : {</a>
 <a name="246"><span class="lineNum">     246 </span>            :         tommy_tree_node* next;</a>
 <a name="247"><span class="lineNum">     247 </span>            : </a>
-<a name="248"><span class="lineNum">     248 </span><span class="lineCov">    7773286 :         if (!root)</span></a>
-<a name="249"><span class="lineNum">     249 </span><span class="lineCov">    3887489 :                 return;</span></a>
+<a name="248"><span class="lineNum">     248 </span><span class="lineCov">    7773174 :         if (!root)</span></a>
+<a name="249"><span class="lineNum">     249 </span><span class="lineCov">    3887443 :                 return;</span></a>
 <a name="250"><span class="lineNum">     250 </span>            : </a>
-<a name="251"><span class="lineNum">     251 </span><span class="lineCov">    3885797 :         tommy_tree_foreach_node(root-&gt;prev, func);</span></a>
+<a name="251"><span class="lineNum">     251 </span><span class="lineCov">    3885731 :         tommy_tree_foreach_node(root-&gt;prev, func);</span></a>
 <a name="252"><span class="lineNum">     252 </span>            : </a>
 <a name="253"><span class="lineNum">     253 </span>            :         /* make a copy in case func is free() */</a>
-<a name="254"><span class="lineNum">     254 </span><span class="lineCov">    3885797 :         next = root-&gt;next;</span></a>
+<a name="254"><span class="lineNum">     254 </span><span class="lineCov">    3885731 :         next = root-&gt;next;</span></a>
 <a name="255"><span class="lineNum">     255 </span>            : </a>
-<a name="256"><span class="lineNum">     256 </span><span class="lineCov">    3885797 :         func(root-&gt;data);</span></a>
+<a name="256"><span class="lineNum">     256 </span><span class="lineCov">    3885731 :         func(root-&gt;data);</span></a>
 <a name="257"><span class="lineNum">     257 </span>            : </a>
-<a name="258"><span class="lineNum">     258 </span><span class="lineCov">    3885797 :         tommy_tree_foreach_node(next, func);</span></a>
+<a name="258"><span class="lineNum">     258 </span><span class="lineCov">    3885731 :         tommy_tree_foreach_node(next, func);</span></a>
 <a name="259"><span class="lineNum">     259 </span>            : }</a>
 <a name="260"><span class="lineNum">     260 </span>            : </a>
-<a name="261"><span class="lineNum">     261 </span><span class="lineCov">       1692 : TOMMY_API void tommy_tree_foreach(tommy_tree* tree, tommy_foreach_func* func)</span></a>
+<a name="261"><span class="lineNum">     261 </span><span class="lineCov">       1712 : TOMMY_API void tommy_tree_foreach(tommy_tree* tree, tommy_foreach_func* func)</span></a>
 <a name="262"><span class="lineNum">     262 </span>            : {</a>
-<a name="263"><span class="lineNum">     263 </span><span class="lineCov">       1692 :         tommy_tree_foreach_node(tree-&gt;root, func);</span></a>
-<a name="264"><span class="lineNum">     264 </span><span class="lineCov">       1692 : }</span></a>
+<a name="263"><span class="lineNum">     263 </span><span class="lineCov">       1712 :         tommy_tree_foreach_node(tree-&gt;root, func);</span></a>
+<a name="264"><span class="lineNum">     264 </span><span class="lineCov">       1712 : }</span></a>
 <a name="265"><span class="lineNum">     265 </span>            : </a>
-<a name="266"><span class="lineNum">     266 </span><span class="lineCov">   28327581 : static void tommy_tree_foreach_arg_node(tommy_tree_node* root, tommy_foreach_arg_func* func, void* arg)</span></a>
+<a name="266"><span class="lineNum">     266 </span><span class="lineCov">   28259877 : static void tommy_tree_foreach_arg_node(tommy_tree_node* root, tommy_foreach_arg_func* func, void* arg)</span></a>
 <a name="267"><span class="lineNum">     267 </span>            : {</a>
 <a name="268"><span class="lineNum">     268 </span>            :         tommy_tree_node* next;</a>
 <a name="269"><span class="lineNum">     269 </span>            : </a>
-<a name="270"><span class="lineNum">     270 </span><span class="lineCov">   28327581 :         if (!root)</span></a>
-<a name="271"><span class="lineNum">     271 </span><span class="lineCov">   14167013 :                 return;</span></a>
+<a name="270"><span class="lineNum">     270 </span><span class="lineCov">   28259877 :         if (!root)</span></a>
+<a name="271"><span class="lineNum">     271 </span><span class="lineCov">   14133155 :                 return;</span></a>
 <a name="272"><span class="lineNum">     272 </span>            : </a>
-<a name="273"><span class="lineNum">     273 </span><span class="lineCov">   14160568 :         tommy_tree_foreach_arg_node(root-&gt;prev, func, arg);</span></a>
+<a name="273"><span class="lineNum">     273 </span><span class="lineCov">   14126722 :         tommy_tree_foreach_arg_node(root-&gt;prev, func, arg);</span></a>
 <a name="274"><span class="lineNum">     274 </span>            : </a>
 <a name="275"><span class="lineNum">     275 </span>            :         /* make a copy in case func is free() */</a>
-<a name="276"><span class="lineNum">     276 </span><span class="lineCov">   14160568 :         next = root-&gt;next;</span></a>
+<a name="276"><span class="lineNum">     276 </span><span class="lineCov">   14126722 :         next = root-&gt;next;</span></a>
 <a name="277"><span class="lineNum">     277 </span>            : </a>
-<a name="278"><span class="lineNum">     278 </span><span class="lineCov">   14160568 :         func(arg, root-&gt;data);</span></a>
+<a name="278"><span class="lineNum">     278 </span><span class="lineCov">   14126722 :         func(arg, root-&gt;data);</span></a>
 <a name="279"><span class="lineNum">     279 </span>            : </a>
-<a name="280"><span class="lineNum">     280 </span><span class="lineCov">   14160568 :         tommy_tree_foreach_arg_node(next, func, arg);</span></a>
+<a name="280"><span class="lineNum">     280 </span><span class="lineCov">   14126722 :         tommy_tree_foreach_arg_node(next, func, arg);</span></a>
 <a name="281"><span class="lineNum">     281 </span>            : }</a>
 <a name="282"><span class="lineNum">     282 </span>            : </a>
-<a name="283"><span class="lineNum">     283 </span><span class="lineCov">       6445 : TOMMY_API void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void* arg)</span></a>
+<a name="283"><span class="lineNum">     283 </span><span class="lineCov">       6433 : TOMMY_API void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void* arg)</span></a>
 <a name="284"><span class="lineNum">     284 </span>            : {</a>
-<a name="285"><span class="lineNum">     285 </span><span class="lineCov">       6445 :         tommy_tree_foreach_arg_node(tree-&gt;root, func, arg);</span></a>
-<a name="286"><span class="lineNum">     286 </span><span class="lineCov">       6445 : }</span></a>
+<a name="285"><span class="lineNum">     285 </span><span class="lineCov">       6433 :         tommy_tree_foreach_arg_node(tree-&gt;root, func, arg);</span></a>
+<a name="286"><span class="lineNum">     286 </span><span class="lineCov">       6433 : }</span></a>
 <a name="287"><span class="lineNum">     287 </span>            : </a>
 <a name="288"><span class="lineNum">     288 </span><span class="lineCov">          1 : TOMMY_API tommy_size_t tommy_tree_memory_usage(tommy_tree* tree)</span></a>
 <a name="289"><span class="lineNum">     289 </span>            : {</a>

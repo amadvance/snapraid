@@ -208,18 +208,22 @@ Prints the program version.
 Getting Started
 </h1>
 <p>The daemon acts as a management layer for the SnapRAID CLI. Therefore,
-SnapRAID must be installed and fully configured before starting the
-service. All interactions with the underlying parity array are handled
-through the standard SnapRAID binary.
-</p><p>During the installation process, a default configuration file is
-provisioned to enable the REST API and the Web UI. For users installing
-via binary packages, this file is typically placed at <b>/etc/snapraidd.conf</b>.
-If you are installing from source, it is recommended to run
-<b>./configure --sysconfdir=/etc</b> during the build process to ensure the
-configuration is placed in the standard <b>/etc</b> directory.
+SnapRAID CLI must be installed and fully configured before starting the
+service.
+</p><p>All <b>data</b>, <b>parity</b>, and <b>extra</b> disks defined in the SnapRAID CLI
+configuration file are considered part of the array and are managed
+by the daemon. All interactions with the underlying array are handled
+through the standard SnapRAID CLI binary.
+</p><p>During the installation process of the daemon, a default configuration
+file is provisioned to enable the REST API and the Web UI. For users
+installing via binary packages, this file is typically placed at
+<b>/etc/snapraidd.conf</b>. If you are installing from source, it is
+recommended to run <b>./configure --sysconfdir=/etc</b> during the build
+process to ensure theconfiguration is placed in the standard <b>/etc</b>
+directory.
 </p><p>Using this default configuration file, the UI is accessible locally
 via a web browser at the following address:
-</p><p><a href="http://127.0.0.1:7627">http://127.0.0.1:7627</a>
+</p><p><a href="http://localhost:7627">http://localhost:7627</a>
 <br>
 </p><p>The default port, 7627, was chosen as a mnemonic, representing the
 word "SNAP" as typed on a standard telephone keypad.
@@ -466,7 +470,7 @@ Bind to specific local addresses (e.g., 127.0.0.1:7627 or
 Port
 </div><div class="manual-tag-description">
 Providing only a port (e.g., 7627) binds to all available
-interfaces (0.0.0.0).
+IPv4 interfaces (0.0.0.0).
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -478,15 +482,17 @@ comma-separated list.
 </div>
 </div>
 </div>
-<p>If left unset, the daemon defaults to 127.0.0.1:7627.
+<p>If left unset, the daemon defaults to 127.0.0.1:7627,[::1]:7627
+retrying with only 127.0.0.1:7627 if it fails.
 </p><p>To export the service to a VPN like Tailscale or a local network, you
 should bind to all interfaces by specifying only the port number.
 </p><p>Examples:
 </p><pre>
-net_port=127.0.0.1:7627       - IPv4 localhost only (Recommended).
-net_port=7627                 - All IPv4 interfaces (Required for Tailscale/LAN).
-net_port=[::1]:7627           - IPv6 loopback only.
-net_port=127.0.0.1:7627,8080  - Listen on multiple ports on localhost.
+net_port=127.0.0.1:7627                - IPv4 loopback only (Recommended).
+net_port=[::1]:7627                    - IPv6 loopback only.
+net_port=7627                          - All IPv4 interfaces (Required for Tailscale/LAN).
+net_port=[::]:7627                     - All IPv6 interfaces.
+net_port=127.0.0.1:7627,127.0.0.1:8080 - Listen on multiple ports on loopback.
 </pre>
 </div>
 <div class="manual-section-level-3">
@@ -496,16 +502,16 @@ net_acl
 <p>Restricts API and dashboard access to specific client IP addresses or
 subnets using a comma-separated Access Control List (ACL).
 </p><p>The syntax uses + to allow and - to deny, supporting CIDR notation
-(e.g., /24). If any rules are defined, the daemon adopts a "deny by default"
-stance. The rules are processed sequentially, and the last matching rule
-determines the outcome.
-If unset, it defaults to +127.0.0.1.
+(e.g., /24). The rules are processed sequentially, and the last
+matching rule determines the outcome.
+If unset, it defaults to accept everything. If any rules are defined,
+the daemon adopts a "deny by default" stance.
 </p><p>To allow access via Tailscale or similar services, ensure you add the
 relevant network prefix (e.g., +100.0.0.0/8).
 </p><p>Examples:
 </p><pre>
 net_acl=+127.0.0.1,+::1          - Allow IPv4 and IPv6 loopback.
-net_acl=+100.0.0.0/8,+127.0.0.1  - Allow Tailscale and localhost.
+net_acl=+100.0.0.0/8,+127.0.0.1  - Allow Tailscale and loopback.
 net_acl=+192.168.1.0/24          - Allow local subnet only.
 </pre>
 </div>
@@ -675,31 +681,17 @@ maintenance_schedule
 </h3>
 <p>Defines the timing for the automated maintenance sequence, which
 consists of a sync, followed by a scrub, and concluding with a report.
+Multiple schedules can be specified by separating them with commas.
 If this option is unset, automated maintenance is disabled.
 </p><p>The format must be either "HH:MM" or "Day HH:MM".
 Hours are specified in a 24-hour format (00-23), and days are
 represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
+</p><p>Examples:
+"02:00" - Run every night at 2 AM.
+"Mon 03:00, Thu 04:00" - Run every Monday at 3 AM and Thursday at 4 AM.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-3-2" class="manual-title-level-3">
-scrub_percentage
-</h3>
-<p>Determines the portion of the array verified after a successful sync.
-You may use decimal points to specify fractions of a percent
-(e.g., 0.7 to verify 0.7% of the array).
-If missing or set to 0, the scrub phase is skipped entirely.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec6-3-3" class="manual-title-level-3">
-scrub_older_than
-</h3>
-<p>Specifies that only blocks older than the defined number of days
-should be scrubbed. This allows the daemon to focus verification on
-older data while skipping recently synced blocks.
-If missing or set to 0, no age-based filtering is applied.
-</p></div>
-<div class="manual-section-level-3">
-<h3 id="sec6-3-4" class="manual-title-level-3">
 sync_threshold_deletes
 </h3>
 <p>Sets the maximum number of deleted or missing files allowed before a
@@ -709,7 +701,7 @@ deletions. This safety check is enforced during automated maintenance
 schedules and tasks initiated through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-5" class="manual-title-level-3">
+<h3 id="sec6-3-3" class="manual-title-level-3">
 sync_threshold_updates
 </h3>
 <p>Sets the maximum number of modified or updated files allowed before a
@@ -719,7 +711,7 @@ of files have changed. This safety check is enforced during automated
 maintenance schedules and tasks initiated through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-6" class="manual-title-level-3">
+<h3 id="sec6-3-4" class="manual-title-level-3">
 sync_prehash
 </h3>
 <p>If set to 1, the sync command is executed with the --prehash option.
@@ -731,16 +723,50 @@ under critical system stress.
 If missing or set to 0, no pre-hashing is performed.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-7" class="manual-title-level-3">
-sync_force_zero
+<h3 id="sec6-3-5" class="manual-title-level-3">
+sync_prevent_truncations
 </h3>
-<p>If set to 1, the daemon allows a sync to proceed even if it detects
-files that have shrunk to zero size since the last run.
-By default (missing or 0), the daemon will halt the sync to protect
-against potential data corruption or accidental file clearing.
-This setting is particularly useful for detecting and acknowledging
-instances where files, accessed during a system crash, have been
-truncated to zero bytes by the filesystem.
+<p>If set to 1, the sync is halted to prevent overwriting
+parity with empty file data. This provides a safety
+barrier against truncated data, which may occurs
+during system crashes or filesystem errors.
+If this is missing or set to 0, the sync is allowed
+to proceed even if files have shrunk to zero size.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-3-6" class="manual-title-level-3">
+scrub_percentage
+</h3>
+<p>Determines the portion of the array verified after a successful sync.
+You may use decimal points to specify fractions of a percent
+(e.g., 0.7 to verify 0.7% of the array).
+If missing or set to 0, the scrub phase is skipped entirely.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-3-7" class="manual-title-level-3">
+scrub_older_than
+</h3>
+<p>Specifies that only blocks older than the defined number of days
+should be scrubbed. This allows the daemon to focus verification on
+older data while skipping recently synced blocks.
+If missing or set to 0, no age-based filtering is applied.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-3-8" class="manual-title-level-3">
+touch_zero_subseconds
+</h3>
+<p>If set to 1, a specific timestamp alignment pass is performed
+immediately before the sync during the maintenance window.
+If this is missing or set to 0, this pass is skipped.
+</p><p>Many filesystems or file-copying utilities may leave file
+timestamps with exactly zero nanoseconds. This lack of
+precision can cause the synchronization engine to misidentify
+moved or renamed files as entirely new content.
+</p><p>Setting this to 1 triggers the touch command to update these
+sub-second parts of the timestamps to a random value. This
+ensures high-resolution tracking is available to correctly
+identify relocated data without re-processing the underlying
+file blocks.
 </p></div>
 </div>
 <div class="manual-section-level-2">
