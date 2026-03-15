@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-14.0rc3 ?/03/2026
+14.0rc3 15/03/2026
 ==================
  * New 'extra' config option to define additional disks to monitor with the
    'probe' and 'smart' commands. This replaces the previous autodetection.
