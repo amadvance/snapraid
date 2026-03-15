@@ -808,6 +808,8 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 			*physical = offset + FILEPHY_REAL_OFFSET;
 		}
 
+		free(fiemap);
+
 		if (close(f) == -1)
 			return -1;
 		return 0;
