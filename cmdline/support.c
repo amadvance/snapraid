@@ -2172,14 +2172,18 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			char type[64] = { 0 };
 			char updated[64] = { 0 };
 			char when_failed[64] = { 0 };
-			uint64_t min, max;
-			int minmax;
+			uint64_t min, max, avg;
+			int format_minmax = 0;
+			int format_avg = 0;
 			int flags;
 
+			/* 194 Temperature_Celsius     0x0002   240   240   000    Old_age   Always       -       27 (Min/Max 16/60) */
 			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64 " (Min/Max %" SCNu64 "/%" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw, &min, &max) == 11) {
-				minmax = 1;
+				format_minmax = 1;
+				/*  3 Spin_Up_Time            0x0007   149   149   024    Pre-fail  Always       -       442 (Average 441) */
+			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64 " (Average %" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw, &avg) == 10) {
+				format_avg = 1;
 			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64, &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw) == 9) {
-				minmax = 0;
 			} else {
 				log_fatal(EEXTERNAL, "Invalid smartctl line '%s'.\n", s);
 				return -1;
@@ -2209,12 +2213,19 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 				flags |= SMART_ATTR_WHEN_FAILED_NEVER;
 
 			/* revert the min/max decoding done by smartctl */
-			if (minmax
+			if (format_minmax
 				&& raw <= 0xFFFFUL
 				&& min <= 0xFFFFUL
 				&& max <= 0xFFFFUL) {
 				raw |= min << 16;
 				raw |= max << 32;
+			}
+
+			/* revert the avg decoding done by smartctl */
+			if (format_avg
+				&& raw <= 0xFFFFUL
+				&& avg <= 0xFFFFUL) {
+				raw |= avg << 16;
 			}
 
 			smart[id].raw = raw;
