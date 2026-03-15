@@ -2359,7 +2359,7 @@ int ambient_temperature(void)
 			char label[128];
 			char* dash;
 			char* e;
-			int temp;
+			long temp;
 
 			if (strncmp(hwmon_entry->d_name, "temp", 4) != 0)
 				continue;
@@ -2398,7 +2398,7 @@ int ambient_temperature(void)
 				pathcpy(label, sizeof(label), hwmon_entry->d_name);
 			}
 
-			log_tag("thermal:ambient:device:%s:%s:%s:%s:%d\n", entry->d_name, name, hwmon_entry->d_name, label, temp);
+			log_tag("thermal:ambient:device:%s:%s:%s:%s:%ld\n", entry->d_name, name, hwmon_entry->d_name, label, temp);
 
 			/* check if temperature is in reasonable range */
 			if (temp < 15 || temp > 40)
@@ -2410,7 +2410,7 @@ int ambient_temperature(void)
 			/* check if label matches possible ambient labels */
 			for (int i = 0; AMBIENT_LABEL[i]; ++i) {
 				if (worddigitstr(label, AMBIENT_LABEL[i]) != 0) {
-					log_tag("thermal:ambient:candidate:%d\n", temp);
+					log_tag("thermal:ambient:candidate:%ld\n", temp);
 					if (lowest_temp == 0 || lowest_temp > temp)
 						lowest_temp = temp;
 					break;
@@ -2419,7 +2419,7 @@ int ambient_temperature(void)
 
 			/* accept also generic "temp1" */
 			if (strcmp(label, "temp1") == 0) {
-				log_tag("thermal:ambient:candidate:%d\n", temp);
+				log_tag("thermal:ambient:candidate:%ld\n", temp);
 				if (lowest_temp == 0 || lowest_temp > temp)
 					lowest_temp = temp;
 			}
