@@ -714,22 +714,36 @@ carimbo de data/hora e inode, mas um diretório diferente.
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Arquivos copiados no mesmo ou em um disco diferente.
-Observe que se eles forem realmente movidos para um disco
-diferente, eles também serão contados em <b>removed</b>.
+Arquivos copiados no mesmo disco ou em um disco
+diferente onde o arquivo original ainda existe.
 Eles são identificados por terem o mesmo nome, tamanho e
-carimbo de data/hora. Se o carimbo de data/hora sub-segundo
-for zero, o caminho completo deve corresponder, não apenas
+carimbo de data/hora.
+Se o carimbo de data/hora de subsegundos for zero, o caminho
+completo deve corresponder para ser identificado, não apenas
 o nome.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Arquivos movidos no mesmo disco ou em um disco
+diferente onde o original desapareceu.
+Eles são identificados por terem o mesmo nome, tamanho e
+carimbo de data/hora.
+Se o carimbo de data/hora de subsegundos for zero, o caminho
+completo deve corresponder para ser identificado.
+Ao contrário dos arquivos 'moved' no mesmo disco, os arquivos
+realocados têm um inode diferente.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Arquivos com um inode diferente, mas nome, tamanho e carimbo
-de data/hora correspondentes. Estes são geralmente arquivos
-restaurados após terem sido excluídos.
+Arquivos com um inode diferente, mas com diretório,
+nome, tamanho e carimbo de data/hora correspondentes.
+Geralmente são arquivos restaurados após serem excluídos.
 </div>
 </div>
 </div>
@@ -1554,6 +1568,18 @@ armazenado dos discos.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Define o nome e o ponto de montagem de discos adicionais para
+monitorar com os comandos <b>smart</b> e <b>probe</b>.
+</p><p>Isso é útil para monitorar discos que não fazem parte da matriz,
+mas que são necessários para o funcionamento do sistema, como o
+disco de inicialização.
+</p><p>Observe que tais discos não são afetados pelos comandos <b>up</b> e <b>down</b>
+porque se espera que estejam sempre girando.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Exclui todos os arquivos e diretórios ocultos.
@@ -1561,7 +1587,7 @@ No Unix, arquivos ocultos são aqueles que começam com <b>.</b>.
 No Windows, são aqueles com o atributo oculto.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Define os padrões de arquivo ou diretório a serem excluídos ou incluídos
@@ -1577,7 +1603,7 @@ especificações de padrão.
 </p><p>Esta opção pode ser usada várias vezes.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Define o tamanho básico do bloco em kibibytes para a paridade.
@@ -1620,7 +1646,7 @@ um disco de 4 TB, o que permite cerca de 460.000 arquivos em cada disco
 de dados sem qualquer espaço desperdiçado.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Define o tamanho do hash em bytes para os blocos salvos.
@@ -1655,7 +1681,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Salva automaticamente o estado ao sincronizar ou examinar após a
@@ -1664,7 +1690,7 @@ Esta opção é útil para evitar reiniciar longos comandos <b>sync</b>
 do zero se interrompidos por uma falha de máquina ou qualquer outro evento.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Define a temperatura máxima permitida do disco em Celsius. Quando especificado,
@@ -1695,7 +1721,7 @@ referência de fallback.
 Para exibir a temperatura de todos os discos, use a opção -A ou --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Define o tempo de espera (standby time), em minutos, quando o limite de
@@ -1703,7 +1729,7 @@ temperatura é atingido. Durante este período, os discos permanecem
 desligados. O padrão é 5 minutos.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Define o diretório de pooling onde a visualização virtual do array
@@ -1711,7 +1737,7 @@ de discos é criada usando o comando <b>pool</b>.
 </p><p>O diretório já deve existir.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Define o caminho UNC do Windows necessário para acessar os discos remotamente.
@@ -1725,7 +1751,7 @@ e finalmente adicionando o diretório e nome do arquivo.
 </p><p>Esta opção é necessária apenas para Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Define opções smartctl personalizadas para obter os atributos SMART para
@@ -1750,7 +1776,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignora o atributo SMART especificado ao calcular a probabilidade
@@ -1771,7 +1797,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Exemplos
 </h2>
 <p>Um exemplo de uma configuração típica para Unix é:

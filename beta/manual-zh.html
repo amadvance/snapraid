@@ -653,17 +653,27 @@ moved
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-在同一磁盘或不同磁盘上复制的文件。请注意，如果
-它们确实移动到了不同的磁盘，它们也会被计入 <b>removed</b> 中。
-它们通过具有相同的名称、大小和时间戳来识别。如果亚秒级时间戳为零，
-则必须匹配完整路径，而不仅仅是名称。
+在相同或不同磁盘上复制的文件，且原始文件仍然存在。
+它们通过具有相同的名称、大小和时间戳进行识别。
+如果亚秒级时间戳为零，则必须完整路径匹配才能识别，而不仅仅是名
+称。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+在相同或不同磁盘上移动的文件，且原始文件已消失。
+它们通过具有相同的名称、大小和时间戳进行识别。
+如果亚秒级时间戳为零，则必须完整路径匹配才能识别。
+与同一磁盘上的 'moved' 文件不同，重定位的文件具有不同的 inode。
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-inode 不同但名称、大小和时间戳匹配的文件。
+inode 不同但目录、名称、大小和时间戳匹配的文件。
 这些通常是删除后恢复的文件。
 </div>
 </div>
@@ -1394,6 +1404,15 @@ DIR 是磁盘在文件系统中的挂载点。
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>定义要通过 <b>smart</b> 和 <b>probe</b> 命令监控的额外磁盘的名称和挂载点。
+</p><p>这对于监控不属于阵列但系统运行所必需的磁盘（例如启动盘）非常有用。
+</p><p>请注意，此类磁盘不受 <b>up</b> 和 <b>down</b> 命令的影响，因为它们被预期始终处于
+旋转状态。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>排除所有隐藏文件和目录。
@@ -1401,7 +1420,7 @@ nohidden
 在 Windows 中，它们是具有隐藏属性的文件。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>定义要从同步过程中排除或包含的文件或目录模式。
@@ -1414,7 +1433,7 @@ exclude/include PATTERN
 </p><p>此选项可以多次使用。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>定义奇偶校验的基本块大小（以 KiB 为单位）。
@@ -1451,7 +1470,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 这允许每个数据磁盘上大约 460,000 个文件而不会浪费任何空间。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>定义保存块的散列大小（以字节为单位）。
@@ -1483,7 +1502,7 @@ RAM = $(8 * 4 * 10^{12}) * (1+8) / (512 * 2^{10}) = 0.51$ GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>在同步或 scrub 之后，处理指定数量的 GB 后，自动保存状态。
@@ -1491,7 +1510,7 @@ autosave SIZE_IN_GIGABYTES
 从头开始重新启动长时间的 <b>sync</b> 命令。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>设置允许的最高磁盘温度（摄氏度）。指定后，
@@ -1517,14 +1536,14 @@ SnapRAID 运行时会显示当前磁盘温度。
 要显示所有磁盘的温度，请使用 -A 或 --stats 选项。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>设置达到温度限制时的待机时间（以分钟为单位）。
 在此期间，磁盘保持停转状态。默认值为 5 分钟。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>定义 <b>pooling</b> 目录，其中使用 <b>pool</b> 命令创建磁盘
@@ -1532,7 +1551,7 @@ pool DIR
 </p><p>目录必须已经存在。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>定义远程访问磁盘所需的 Windows UNC 路径。
@@ -1545,7 +1564,7 @@ share UNC_DIR
 </p><p>此选项仅在 Windows 中需要。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>定义自定义 smartctl 选项以获取每个磁盘的 SMART 属性。
@@ -1569,7 +1588,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>在计算磁盘故障概率时忽略指定的 SMART 属性。
@@ -1588,7 +1607,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
 </h2>
 <p>Unix 的典型配置示例如下：

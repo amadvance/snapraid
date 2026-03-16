@@ -755,22 +755,37 @@ aber ein anderes Verzeichnis identifiziert.
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Auf dieselbe oder eine andere Festplatte kopierte
-Dateien. Beachten Sie, dass wenn sie tatsächlich auf eine
-andere Festplatte verschoben werden, sie auch unter <b>removed</b>
-gezählt werden. Sie werden durch denselben Namen, dieselbe
-Größe und denselben Zeitstempel identifiziert. Wenn der
-Untersekunden-Zeitstempel Null ist, muss der vollständige
-Pfad übereinstimmen, nicht nur der Name.
+Dateien, die auf dieselbe oder eine andere Festplatte
+kopiert wurden, wobei die Originaldatei noch vorhanden ist.
+Sie werden dadurch identifiziert, dass sie denselben Namen,
+dieselbe Größe und denselben Zeitstempel haben.
+Wenn der Subsekunden-Zeitstempel Null ist, muss der vollständige
+Pfad übereinstimmen, um identifiziert zu werden, nicht nur
+der Name.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Dateien, die auf dieselbe oder eine andere Festplatte
+verschoben wurden, wobei das Original verschwunden ist.
+Sie werden dadurch identifiziert, dass sie denselben Namen,
+dieselbe Größe und denselben Zeitstempel haben.
+Wenn der Subsekunden-Zeitstempel Null ist, muss der vollständige
+Pfad übereinstimmen, um identifiziert zu werden.
+Im Gegensatz zu 'moved' Dateien auf derselben Festplatte haben
+verschobene Dateien einen anderen Inode.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Dateien mit einer anderen Inode, aber übereinstimmendem
-Namen, Größe und Zeitstempel. Dies sind normalerweise
-Dateien, die nach dem Löschen wiederhergestellt wurden.
+Dateien mit einem anderen Inode, aber passendem
+Verzeichnis, Namen, Größe und Zeitstempel.
+Dies sind in der Regel Dateien, die nach dem Löschen
+wiederhergestellt wurden.
 </div>
 </div>
 </div>
@@ -1634,6 +1649,18 @@ mithilfe der gespeicherten UUID der Festplatten.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Definiert den Namen und Einhängepunkt zusätzlicher Festplatten, die mit den
+Befehlen <b>smart</b> und <b>probe</b> überwacht werden sollen.
+</p><p>Dies ist nützlich für die Überwachung von Festplatten, die nicht Teil des
+Arrays sind, aber für das Funktionieren des Systems erforderlich sind, wie
+z. B. die Boot-Festplatte.
+</p><p>Beachten Sie, dass solche Festplatten nicht von den Befehlen <b>up</b> und <b>down</b>
+betroffen sind, da von ihnen erwartet wird, dass sie sich immer drehen.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Schließt alle versteckten Dateien und Verzeichnisse aus.
@@ -1641,7 +1668,7 @@ Unter Unix sind versteckte Dateien solche, die mit <b>.</b> beginnen.
 Unter Windows sind es solche mit dem versteckten Attribut.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Definiert die Datei- oder Verzeichnismuster, die im <b>sync</b>-Vorgang
@@ -1658,7 +1685,7 @@ PATTERN.
 </p><p>Diese Option kann mehrmals verwendet werden.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Definiert die grundlegende Blockgröße in Kibibytes für die Parität.
@@ -1705,7 +1732,7 @@ für eine 4 TB Festplatte, was etwa 460.000 Dateien auf jeder
 Datenfestplatte ohne verschwendeten Platz ermöglicht.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Definiert die Hash-Größe in Bytes für die gespeicherten Blöcke.
@@ -1741,7 +1768,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Speichert den Zustand beim Synchronisieren oder Scrubben automatisch
@@ -1751,7 +1778,7 @@ von vorne gestartet werden müssen, wenn sie durch einen Maschinenabsturz
 oder ein anderes Ereignis unterbrochen werden.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Legt die maximal zulässige Festplattentemperatur in Celsius fest.
@@ -1785,7 +1812,7 @@ Festplatte an. Um die Temperatur aller Festplatten anzuzeigen,
 verwenden Sie die Option -A oder --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Legt die Standby-Zeit in Minuten fest, wenn der Temperaturgrenzwert
@@ -1793,7 +1820,7 @@ erreicht wird. Während dieser Zeit bleiben die Festplatten heruntergefahren.
 Der Standardwert ist 5 Minuten.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Definiert das Pooling-Verzeichnis, in dem die virtuelle Ansicht des
@@ -1801,7 +1828,7 @@ Festplatten-Arrays mithilfe des Befehls <b>pool</b> erstellt wird.
 </p><p>Das Verzeichnis muss bereits existieren.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Definiert den Windows UNC-Pfad, der für den Remote-Zugriff auf die
@@ -1817,7 +1844,7 @@ und schließlich das Dateiverzeichnis und der Name hinzugefügt werden.
 </p><p>Diese Option ist nur für Windows erforderlich.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Definiert benutzerdefinierte smartctl-Optionen, um die SMART-Attribute
@@ -1842,7 +1869,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignoriert das angegebene SMART-Attribut bei der Berechnung der
@@ -1865,7 +1892,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
 </h2>
 <p>Ein Beispiel für eine typische Konfiguration für Unix ist:

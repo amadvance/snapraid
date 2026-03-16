@@ -700,19 +700,35 @@ Sunt identificate având același nume, dimensiune, marcă temporală
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Fișiere copiate pe același disc sau pe un disc diferit. Rețineți că dacă
-sunt mutate cu adevărat pe un alt disc, vor fi, de asemenea,
-numărate în <b>removed</b>.
-Sunt identificate având același nume, dimensiune și
-marcă temporală. Dacă marca temporală sub-secundă este zero,
-întreaga cale trebuie să se potrivească, nu doar numele.
+Fișiere copiate pe același disc sau pe un disc diferit
+unde fișierul original încă există.
+Acestea sunt identificate prin faptul că au același nume,
+dimensiune și amprentă temporală.
+Dacă amprenta temporală sub-secundă este zero, calea completă
+trebuie să se potrivească pentru a fi identificate, nu doar
+numele.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Fișiere mutate pe același disc sau pe un disc diferit
+unde originalul a dispărut.
+Acestea sunt identificate prin faptul că au același nume,
+dimensiune și amprentă temporală.
+Dacă amprenta temporală sub-secundă este zero, calea completă
+trebuie să se potrivească pentru a fi identificate.
+Spre deosebire de fișierele 'moved' de pe același disc, fișierele
+relocate au un inod diferit.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Fișiere cu un inod diferit, dar nume, dimensiune și marcă temporală care se potrivesc.
+Fișiere cu un inod diferit, dar care se potrivesc ca
+director, nume, dimensiune și amprentă temporală.
 Acestea sunt de obicei fișiere restaurate după ce au fost șterse.
 </div>
 </div>
@@ -1522,6 +1538,18 @@ al discurilor.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Definește numele și punctul de montare al discurilor suplimentare
+care vor fi monitorizate cu comenzile <b>smart</b> și <b>probe</b>.
+</p><p>Acest lucru este util pentru monitorizarea discurilor care nu fac
+parte din matrice, dar sunt necesare pentru funcționarea
+sistemului, cum ar fi discul de pornire.
+</p><p>Rețineți că astfel de discuri nu sunt afectate de comenzile <b>up</b> și
+<b>down</b> deoarece se așteaptă ca acestea să se rotească mereu.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Exclude toate fișierele și directoarele ascunse.
@@ -1529,7 +1557,7 @@ nohidden
 În Windows, sunt cele cu atributul ascuns.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Definește modelele de fișiere sau directoare de exclus sau inclus
@@ -1545,7 +1573,7 @@ specificațiile modelului.
 </p><p>Această opțiune poate fi utilizată de mai multe ori.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Definește dimensiunea de bază a blocului în kibibytes pentru paritate.
@@ -1586,7 +1614,7 @@ un disc de 4 TB, ceea ce permite aproximativ 460.000 de fișiere pe fiecare disc
 niciun spațiu irosit.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Definește dimensiunea hash-ului în octeți pentru blocurile salvate.
@@ -1621,7 +1649,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Salvează automat starea la sincronizare sau verificare după
@@ -1630,7 +1658,7 @@ Această opțiune este utilă pentru a evita repornirea comenzilor <b>sync</b> l
 de la zero dacă sunt întrerupte de o cădere a mașinii sau de orice alt eveniment.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Setează temperatura maximă permisă a discului în Celsius. Când este specificată,
@@ -1659,7 +1687,7 @@ cea mai scăzută temperatură a discului măsurată la începutul rulării ca r
 Pentru a afișa temperatura tuturor discurilor, utilizați opțiunea -A sau --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Setează timpul de așteptare (standby), în minute, când limita de temperatură este
@@ -1667,7 +1695,7 @@ atinsă. În această perioadă, discurile rămân oprite. Valoarea implicită
 este 5 minute.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Definește directorul de pooling unde este creată vizualizarea virtuală a matricei
@@ -1675,7 +1703,7 @@ de discuri utilizând comanda <b>pool</b>.
 </p><p>Directorul trebuie să existe deja.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Definește calea UNC Windows necesară pentru a accesa discurile de la distanță.
@@ -1689,7 +1717,7 @@ directorul și numele fișierului.
 </p><p>Această opțiune este necesară doar pentru Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Definește opțiuni smartctl personalizate pentru a obține atributele SMART pentru
@@ -1713,7 +1741,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignoră atributul SMART specificat la calcularea probabilității
@@ -1734,7 +1762,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Exemple
 </h2>
 <p>Un exemplu de configurare tipică pentru Unix este:

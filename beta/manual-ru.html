@@ -705,19 +705,34 @@ moved
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Файлы, скопированные на тот же или другой диск. Обратите внимание, что если
-они действительно перемещены на другой диск, они также будут
-учтены в <b>removed</b>.
-Они идентифицируются как имеющие то же имя, размер и
-метку времени. Если метка времени с точностью до доли секунды равна нулю,
-полный путь должен совпадать, а не только имя.
+файлы, скопированные на тот же или другой диск, где
+исходный файл все еще существует.
+Они идентифицируются по совпадению имени, размера и метки
+времени.
+Если дробная часть метки времени равна нулю, для идентификации
+должен совпадать полный путь, а не только имя.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+файлы, перемещенные на тот же или другой диск, где
+оригинал исчез.
+Они идентифицируются по совпадению имени, размера и метки
+времени.
+Если дробная часть метки времени равна нулю, для идентификации
+должен совпадать полный путь.
+В отличие от файлов 'moved' на том же диске, перемещенные файлы
+имеют другой inode.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Файлы с другим inode, но совпадающими именем, размером и меткой времени.
+файлы с другим inode, но совпадающим каталогом,
+именем, размером и меткой времени.
 Обычно это файлы, восстановленные после удаления.
 </div>
 </div>
@@ -1524,6 +1539,18 @@ UUID дисков.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Определяет имя и точку монтирования дополнительных дисков для
+мониторинга с помощью команд <b>smart</b> и <b>probe</b>.
+</p><p>Это полезно для мониторинга дисков, которые не являются частью
+массива, но необходимы для функционирования системы, таких как
+загрузочный диск.
+</p><p>Обратите внимание, что такие диски не затрагиваются командами <b>up</b> и
+<b>down</b>, так как предполагается, что они всегда вращаются.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Исключает все скрытые файлы и каталоги.
@@ -1531,7 +1558,7 @@ nohidden
 В Windows — это те, у которых есть скрытый атрибут.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Определяет шаблоны файлов или каталогов для исключения или включения
@@ -1546,7 +1573,7 @@ exclude/include PATTERN
 </p><p>Эту опцию можно использовать несколько раз.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Определяет базовый размер блока в кибибайтах для четности.
@@ -1588,7 +1615,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 каких-либо потерь пространства.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Определяет размер хэша в байтах для сохраненных блоков.
@@ -1623,7 +1650,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Автоматически сохраняет состояние при синхронизации или проверке после
@@ -1632,7 +1659,7 @@ autosave SIZE_IN_GIGABYTES
 с нуля, если они были прерваны сбоем машины или любым другим событием.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Устанавливает максимально допустимую температуру диска в Цельсиях. Если указано,
@@ -1663,14 +1690,14 @@ SnapRAID периодически проверяет температуру вс
 Чтобы отобразить температуру всех дисков, используйте опцию -A или --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Устанавливает время ожидания, в минутах, когда достигается предел температуры.
 В течение этого периода диски остаются остановленными. По умолчанию — 5 минут.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Определяет каталог объединения (pooling), где создается виртуальное представление
@@ -1678,7 +1705,7 @@ pool DIR
 </p><p>Каталог должен уже существовать.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Определяет путь UNC Windows, необходимый для удаленного доступа к дискам.
@@ -1692,7 +1719,7 @@ share UNC_DIR
 </p><p>Эта опция требуется только для Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Определяет пользовательские опции smartctl для получения атрибутов SMART для
@@ -1717,7 +1744,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Игнорирует указанный атрибут SMART при вычислении вероятности
@@ -1738,7 +1765,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
 </h2>
 <p>Пример типичной конфигурации для Unix:

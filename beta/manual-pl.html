@@ -704,20 +704,36 @@ i inode, ale inny katalog.
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Pliki skopiowane na tym samym lub innym dysku. Zauważ, że jeśli
-zostały faktycznie przeniesione na inny dysk, zostaną również
-policzone w <b>removed</b>.
-Są one identyfikowane przez tę samą nazwę, rozmiar i
-znacznik czasu. Jeśli znacznik czasu z dokładnością do podsekundy wynosi zero,
-musi pasować pełna ścieżka, a nie tylko nazwa.
+Pliki skopiowane na ten sam lub inny dysk, gdzie
+oryginalny plik nadal istnieje.
+Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
+i znacznika czasu.
+Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
+musi być zgodna, aby plik został zidentyfikowany, a nie
+tylko nazwa.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Pliki przeniesione na ten sam lub inny dysk, gdzie
+oryginał zniknął.
+Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
+i znacznika czasu.
+Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
+musi być zgodna, aby plik został zidentyfikowany.
+W przeciwieństwie do plików 'moved' na tym samym dysku, pliki
+relokowane mają inny i-węzeł.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Pliki o innym inode, ale pasującej nazwie, rozmiarze i znaczniku czasu.
-Są to zazwyczaj pliki przywrócone po usunięciu.
+Pliki o innym i-węźle, ale pasującym katalogu,
+nazwie, rozmiarze i znaczniku czasu.
+Są to zazwyczaj pliki przywrócone po ich usunięciu.
 </div>
 </div>
 </div>
@@ -1522,6 +1538,18 @@ UUID dysków.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Definiuje nazwę i punkt montowania dodatkowych dysków do
+monitorowania za pomocą poleceń <b>smart</b> oraz <b>probe</b>.
+</p><p>Jest to przydatne do monitorowania dysków, które nie są częścią
+macierzy, ale są wymagane do funkcjonowania systemu, takich jak
+dysk rozruchowy.
+</p><p>Należy zauważyć, że polecenia <b>up</b> i <b>down</b> nie mają wpływu na takie
+dyski, ponieważ oczekuje się, że będą one zawsze w ruchu.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Wyklucza wszystkie ukryte pliki i katalogi.
@@ -1529,7 +1557,7 @@ W systemie Unix ukryte pliki to te zaczynające się od <b>.</b>.
 W systemie Windows są to te z atrybutem ukrycia.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Definiuje wzorce plików lub katalogów do wykluczenia lub włączenia
@@ -1544,7 +1572,7 @@ wzorców.
 </p><p>Ta opcja może być używana wielokrotnie.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Definiuje podstawowy rozmiar bloku w kibibajtach dla parzystości.
@@ -1585,7 +1613,7 @@ dysku 4 TB, co pozwala na około 460 000 plików na każdym dysku danych bez
 marnowania miejsca.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Definiuje rozmiar hasza w bajtach dla zapisanych bloków.
@@ -1620,7 +1648,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Automatycznie zapisuje stan podczas synchronizacji lub sprawdzania po przetworzeniu
@@ -1629,7 +1657,7 @@ Ta opcja jest przydatna, aby uniknąć ponownego uruchamiania długich poleceń 
 od zera, jeśli zostaną przerwane przez awarię maszyny lub inne zdarzenie.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Ustawia maksymalną dozwoloną temperaturę dysku w stopniach Celsjusza. Po określeniu,
@@ -1658,14 +1686,14 @@ wykorzystuje najniższą temperaturę dysku zmierzoną na początku uruchomienia
 Aby wyświetlić temperaturę wszystkich dysków, użyj opcji -A lub --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Ustawia czas gotowości, w minutach, po osiągnięciu limitu temperatury.
 W tym okresie dyski pozostają zatrzymane. Domyślnie jest to 5 minut.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Definiuje katalog puli, w którym tworzony jest wirtualny widok macierzy
@@ -1673,7 +1701,7 @@ dysków za pomocą polecenia <b>pool</b>.
 </p><p>Katalog musi już istnieć.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Definiuje ścieżkę UNC Windows wymaganą do zdalnego dostępu do dysków.
@@ -1687,7 +1715,7 @@ katalog i nazwę pliku.
 </p><p>Ta opcja jest wymagana tylko dla systemu Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Definiuje niestandardowe opcje smartctl do uzyskania atrybutów SMART dla
@@ -1711,7 +1739,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignoruje określony atrybut SMART podczas obliczania prawdopodobieństwa
@@ -1732,7 +1760,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
 </h2>
 <p>Przykład typowej konfiguracji dla systemu Unix:

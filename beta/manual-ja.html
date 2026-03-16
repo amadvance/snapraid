@@ -701,20 +701,35 @@ moved
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-同じディスクまたは異なるディスクにコピーされたファイル。
-異なるディスクに真に移動された場合、<b>removed</b> にも
-カウントされることに注意してください。
-同じ名前、サイズ、およびタイムスタンプを持つことで識別されます。
-サブ秒のタイムスタンプがゼロの場合、ファイル名だけでなく、
-フルパスが一致する必要があります。
+元のファイルがまだ存在する、同じディスクまたは別の
+ディスクにコピーされたファイル。
+これらは、同じ名前、サイズ、およびタイムスタンプを持つこと
+によって識別されます。
+サブ秒のタイムスタンプがゼロの場合、名前だけでなくフルパス
+が一致する必要があります。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+オリジナルが消失した、同じディスクまたは別のディ
+スクに移動されたファイル。
+これらは、同じ名前、サイズ、およびタイムスタンプを持つこと
+によって識別されます。
+サブ秒のタイムスタンプがゼロの場合、識別するにはフルパスが
+一致する必要があります。
+同じディスク上の 'moved' ファイルとは異なり、再配置された
+ファイルは異なる inode を持ちます。
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-inodeは異なるが、名前、サイズ、タイムスタンプが一致するファイル。
-これらは通常、削除後に復元されたファイルです。
+inode は異なるが、ディレクトリ、名前、サイズ、お
+よびタイムスタンプが一致するファイル。
+これらは通常、削除された後に復元されたファイルです。
 </div>
 </div>
 </div>
@@ -1495,6 +1510,17 @@ DIR はファイルシステム内のディスクの**マウントポイント**
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p><b>smart</b> および <b>probe</b> コマンドで監視する追加ディスクの名前とマウ
+ントポイントを定義します。
+</p><p>これは、ブートディスクなど、アレイの一部ではないがシステムの機能に必
+要なディスクを監視するのに役立ちます。
+</p><p>これらのディスクは常に回転していることが期待されるため、<b>up</b> およ
+び <b>down</b> コマンドの影響を受けないことに注意してください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>すべての隠しファイルとディレクトリを除外します。
@@ -1502,7 +1528,7 @@ Unixでは、隠しファイルは <b>.</b> で始まるファイルです。
 Windowsでは、隠し属性を持つファイルです。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>syncプロセスで除外または含めるファイルまたはディレクトリのパターンを定義します。
@@ -1515,7 +1541,7 @@ exclude/include PATTERN
 </p><p>このオプションは複数回使用できます。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>パリティの基本ブロックサイズをキビバイト単位で定義します。
@@ -1552,7 +1578,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 浪費スペースなしで各データディスクで約460,000ファイルが可能になります。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>保存されたブロックのハッシュサイズをバイト単位で定義します。
@@ -1583,7 +1609,7 @@ RAM = $(8 \cdot 4 \cdot 10^{12}) \cdot (1 + 8) / (512 \cdot 2^{10}) = 0.51 \text
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>処理された指定されたGB量後に、同期またはスクラビング時に状態を自動的に保存します。
@@ -1591,7 +1617,7 @@ autosave SIZE_IN_GIGABYTES
 長い <b>sync</b> コマンドを最初から再起動するのを避けるのに役立ちます。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>許容される最大ディスク温度を摂氏で設定します。指定されている場合、
@@ -1617,14 +1643,14 @@ SnapRAIDの動作には影響しません。プログラムの動作は、実際
 すべてのディスクの温度を表示するには、-A または --stats オプションを使用します。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>温度制限に達したときのスタンバイ時間（分単位）を設定します。この期間中、ディスクは
 スピンダウンしたままです。デフォルトは5分です。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
 </h2>
 <p><b>pool</b> コマンドを使用してディスクアレイの仮想ビューが作成されるプーリングディレクトリを
@@ -1632,7 +1658,7 @@ pool DIR
 </p><p>ディレクトリは既に存在している必要があります。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>ディスクにリモートでアクセスするために必要なWindows UNCパスを定義します。
@@ -1645,7 +1671,7 @@ share UNC_DIR
 </p><p>このオプションはWindowsでのみ必要です。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>各ディスクのSMART属性を取得するためのカスタムsmartctlオプションを定義します。
@@ -1669,7 +1695,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>ディスク障害の確率を計算するときに、指定されたSMART属性を無視します。
@@ -1689,7 +1715,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
 </h2>
 <p>Unixの一般的な構成の例は次のとおりです。

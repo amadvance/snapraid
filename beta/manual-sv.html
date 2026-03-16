@@ -707,19 +707,34 @@ och inode, men en annan katalog.
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Filer kopierade på samma eller en annan disk. Observera att om
-de verkligen flyttas till en annan disk, kommer de också att
-räknas i <b>removed</b>.
+Filer som kopierats på samma eller en annan disk där
+originalfilen fortfarande finns kvar.
 De identifieras genom att ha samma namn, storlek och
-tidsstämpel. Om undertidsstämpeln är noll,
-måste hela sökvägen matcha, inte bara namnet.
+tidsstämpel.
+Om tidsstämpeln för undersekunder är noll måste hela sökvägen
+matcha för att identifieras, inte bara namnet.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Filer som flyttats på samma eller en annan disk där
+originalet har försvunnit.
+De identifieras genom att ha samma namn, storlek och
+tidsstämpel.
+Om tidsstämpeln för undersekunder är noll måste hela sökvägen
+matcha för att identifieras.
+Till skillnad från 'moved' filer på samma disk har omlokaliserade
+filer en annan inode.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Filer med en annan inode men matchande namn, storlek och tidsstämpel.
+Filer med en annan inode men matchande katalog, namn,
+storlek och tidsstämpel.
 Dessa är vanligtvis filer som återställts efter att ha raderats.
 </div>
 </div>
@@ -1525,6 +1540,18 @@ UUID:n för diskarna.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Definierar namn och monteringspunkt för ytterligare diskar som ska
+övervakas med kommandona <b>smart</b> och <b>probe</b>.
+</p><p>Detta är användbart för att övervaka diskar som inte ingår i arrayen
+men som krävs för att systemet ska fungera, till exempel
+startdisken.
+</p><p>Observera att sådana diskar inte påverkas av kommandona <b>up</b> och
+<b>down</b> eftersom de förväntas alltid snurra.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Exkluderar alla dolda filer och kataloger.
@@ -1532,7 +1559,7 @@ I Unix är dolda filer de som börjar med <b>.</b>.
 I Windows är de de med det dolda attributet.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include MÖNSTER
 </h2>
 <p>Definierar fil- eller katalogmönstren att exkludera eller inkludera
@@ -1548,7 +1575,7 @@ specifikationer.
 </p><p>Detta alternativ kan användas flera gånger.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize STORLEK_I_KIBIBYTES
 </h2>
 <p>Definierar den grundläggande blockstorleken i kibibytes för pariteten.
@@ -1589,7 +1616,7 @@ en 4 TB-disk, vilket möjliggör cirka 460 000 filer på varje datadisk utan
 något bortkastat utrymme.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize STORLEK_I_BYTE
 </h2>
 <p>Definierar hash-storleken i byte för de sparade blocken.
@@ -1624,7 +1651,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave STORLEK_I_GIGABYTES
 </h2>
 <p>Sparar automatiskt tillståndet vid synkronisering eller skrubbning efter att den
@@ -1633,7 +1660,7 @@ Detta alternativ är användbart för att undvika att starta om långa <b>sync</
 kommandon från början om de avbryts av en maskinkrasch eller någon annan händelse.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATUR_CELSIUS
 </h2>
 <p>Anger den maximalt tillåtna disk-temperaturen i Celsius. När den specificeras,
@@ -1662,7 +1689,7 @@ temperaturen som mättes vid start av körningen som en reservreferens.
 För att visa temperaturen på alla diskar, använd alternativet -A eller --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TID_I_MINUTER
 </h2>
 <p>Anger standby-tiden, i minuter, när temperaturgränsen har
@@ -1670,7 +1697,7 @@ nåtts. Under denna period förblir diskarna nedsnurrade. Standard
 är 5 minuter.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool KATALOG
 </h2>
 <p>Definierar poolningskatalogen där den virtuella vyn av disk-
@@ -1678,7 +1705,7 @@ arrayen skapas med hjälp av kommandot <b>pool</b>.
 </p><p>Katalogen måste redan existera.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_KATALOG
 </h2>
 <p>Definierar Windows UNC-sökvägen som krävs för att få åtkomst till diskarna på distans.
@@ -1692,7 +1719,7 @@ katalog och namn.
 </p><p>Detta alternativ krävs endast för Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY ALTERNATIV...
 </h2>
 <p>Definierar anpassade smartctl-alternativ för att få SMART-attributen för
@@ -1716,7 +1743,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignorerar det specificerade SMART-attributet vid beräkning av sannolikheten
@@ -1737,7 +1764,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Exempel
 </h2>
 <p>Ett exempel på en typisk konfiguration för Unix är:

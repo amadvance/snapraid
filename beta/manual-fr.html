@@ -743,22 +743,36 @@ un répertoire différent.
 <div class="manual-tag-name">
 copied
 </div><div class="manual-tag-description">
-Fichiers copiés sur le même disque ou un disque différent.
-Notez que s'ils sont vraiment déplacés vers un autre
-disque, ils seront également comptés dans <b>removed</b>.
-Ils sont identifiés par le même nom, la même taille
-et le même horodatage. Si l'horodatage en sous-seconde
-est zéro, le chemin complet doit correspondre, pas seulement
-le nom.
+Fichiers copiés sur le même disque ou sur un disque
+différent où le fichier original existe toujours.
+Ils sont identifiés par le fait qu'ils ont le même nom, la même
+taille et le même horodatage.
+Si l'horodatage à la sous-seconde est nul, le chemin complet
+doit correspondre pour être identifié, pas seulement le nom.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Fichiers déplacés sur le même disque ou sur un disque
+différent où l'original a disparu.
+Ils sont identifiés par le fait qu'ils ont le même nom, la même
+taille et le même horodatage.
+Si l'horodatage à la sous-seconde est nul, le chemin complet
+doit correspondre pour être identifié.
+Contrairement aux fichiers 'moved' sur le même disque, les
+fichiers relocalisés ont un inode différent.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Fichiers avec un inode différent mais correspondant
-au nom, à la taille et à l'horodatage. Il s'agit
-généralement de fichiers restaurés après avoir été supprimés.
+Fichiers avec un inode différent mais dont le
+répertoire, le nom, la taille et l'horodatage correspondent.
+Il s'agit généralement de fichiers restaurés après avoir été
+supprimés.
 </div>
 </div>
 </div>
@@ -1618,6 +1632,18 @@ stocké des disques.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Définit le nom et le point de montage de disques supplémentaires à
+surveiller avec les commandes <b>smart</b> et <b>probe</b>.
+</p><p>Ceci est utile pour surveiller des disques qui ne font pas partie de
+la grappe mais qui sont nécessaires au fonctionnement du système,
+comme le disque de démarrage.
+</p><p>Notez que ces disques ne sont pas affectés par les commandes <b>up</b> et
+<b>down</b> car ils sont censés toujours être en rotation.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Exclut tous les fichiers et répertoires cachés.
@@ -1625,7 +1651,7 @@ Sous Unix, les fichiers cachés sont ceux commençant par <b>.</b>.
 Sous Windows, ce sont ceux avec l'attribut caché.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-7" class="manual-title-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include MOTIF
 </h2>
 <p>Définit les motifs de fichiers ou de répertoires à exclure ou à inclure
@@ -1641,7 +1667,7 @@ spécifications de motifs.
 </p><p>Cette option peut être utilisée plusieurs fois.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize TAILLE_EN_KIBIOCTETS
 </h2>
 <p>Définit la taille de bloc de base en kibioctets pour la parité.
@@ -1689,7 +1715,7 @@ pour un disque de 4 To, ce qui permet environ 460 000 fichiers sur
 chaque disque de données sans aucun espace gaspillé.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize TAILLE_EN_OCTETS
 </h2>
 <p>Définit la taille du hachage en octets pour les blocs enregistrés.
@@ -1725,7 +1751,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 Gio
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave TAILLE_EN_GIGAOCTETS
 </h2>
 <p>Enregistre automatiquement l'état lors de la synchronisation ou du
@@ -1735,7 +1761,7 @@ Cette option est utile pour éviter de redémarrer de longues commandes
 de la machine ou tout autre événement.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPÉRATURE_CELSIUS
 </h2>
 <p>Définit la température maximale autorisée du disque en Celsius.
@@ -1769,7 +1795,7 @@ Pour afficher la température de tous les disques, utilisez l'option
 -A ou --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TEMPS_EN_MINUTES
 </h2>
 <p>Définit le temps de veille, en minutes, lorsque la limite de température
@@ -1777,7 +1803,7 @@ est atteinte. Pendant cette période, les disques restent arrêtés.
 La valeur par défaut est de 5 minutes.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DOSSIER
 </h2>
 <p>Définit le répertoire de mise en commun où la vue virtuelle de la
@@ -1785,7 +1811,7 @@ baie de disques est créée à l'aide de la commande <b>pool</b>.
 </p><p>Le répertoire doit déjà exister.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share CHEMIN_UNC
 </h2>
 <p>Définit le chemin UNC Windows requis pour accéder aux disques à distance.
@@ -1800,7 +1826,7 @@ et en ajoutant enfin le répertoire et le nom du fichier.
 </p><p>Cette option est requise uniquement pour Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISQUE/PARITÉ OPTIONS...
 </h2>
 <p>Définit les options smartctl personnalisées pour obtenir les attributs
@@ -1826,7 +1852,7 @@ smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISQUE/PARITÉ ATTR [ATTR...]
 </h2>
 <p>Ignore l'attribut SMART spécifié lors du calcul de la probabilité
@@ -1848,7 +1874,7 @@ smartignore parity 197
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Exemples
 </h2>
 <p>Un exemple de configuration typique pour Unix est :
