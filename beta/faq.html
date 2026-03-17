@@ -745,7 +745,7 @@ No. SnapRAID is typically not CPU-bound; the limiting factor is disk read perfor
 A single-core CPU is usually sufficient.
 </p>
 <p>
-For example, in my system, I achieve a combined read speed of 400 MiB/s,
+For example, in my system, I achieve a combined read speed of 600 MiB/s,
 but SnapRAID can hash at 12,000 MiB/s on a single core.
 </p>
 </div>
@@ -1702,7 +1702,7 @@ Hash used to check the data blocks integrity:
 hash spooky2    6285   17813   20684
 
 RAID functions used for computing the parity with 'sync':
-     best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
+        best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
 gen1    avx2           24995   46562   62683                           77069
 gen2    avx2            8243   15879   25788   27292                   44907
 genz   avx2e            5509   10588   14485   13920                           25175
@@ -1712,7 +1712,7 @@ gen5   avx2e     746                                    7970    8828           1
 gen6   avx2e     630                                    6627    7516           14584
 
 RAID functions used for recovering with 'fix':
-     best    int8   ssse3    avx2
+        best    int8   ssse3    avx2
 rec1    avx2    1626    3949    4331
 rec2    avx2     709    1738    2231
 rec3    avx2     170     922    1414
