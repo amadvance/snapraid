@@ -370,7 +370,7 @@ nav a:hover, nav a.active {
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 0;
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
     font-family: var(--font-mono);
     overflow: hidden;
 }
