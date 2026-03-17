@@ -1,4 +1,34 @@
+// Theme Switcher Logic
+(function() {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    
+    if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
+        document.documentElement.classList.add('light-theme');
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Theme Switcher Event Listeners
+    const themeToggles = document.querySelectorAll('.theme-toggle');
+    
+    themeToggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            document.documentElement.classList.add('theme-transitioning');
+            document.documentElement.classList.toggle('light-theme');
+            
+            // Force reflow to apply styles immediately without transition
+            void document.documentElement.offsetHeight;
+            
+            setTimeout(() => {
+                document.documentElement.classList.remove('theme-transitioning');
+            }, 0);
+            
+            const isLight = document.documentElement.classList.contains('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        });
+    });
+
     // Generate TOC for FAQ page
     const faqTocList = document.getElementById('faq-toc-list');
     const faqContent = document.getElementById('faq-content');

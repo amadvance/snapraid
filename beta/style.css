@@ -24,6 +24,30 @@
     --c-slate-940:  hsl(228 78%  6%);
     --c-slate-945:  hsl(228 81%  6%);
 
+    --c-sky-50: #F0F9FF;
+    --c-sky-100: #DFF2FE;
+    --c-sky-200: #B8E6FE;
+    --c-sky-300: #74D4FF;
+    --c-sky-400: #21BCFF;
+    --c-sky-500: #34A6F4;
+    --c-sky-600: #2984D1;
+    --c-sky-700: #1C69A8;
+    --c-sky-800: #10598A;
+    --c-sky-900: #024A70;
+    --c-sky-950: #052F4A;
+
+    --c-blue-50: #EFF6FF;
+    --c-blue-100: #DBEAFE;
+    --c-blue-200: #BEDBFF;
+    --c-blue-300: #8EC5FF;
+    --c-blue-400: #51A2FF;
+    --c-blue-500: #2B7FFF;
+    --c-blue-600: #155DFC;
+    --c-blue-700: #1447E6;
+    --c-blue-800: #193CB8;
+    --c-blue-900: #1C398E;
+    --c-blue-950: #162456;
+
     --c-orange-50: #FFF7ED;
     --c-orange-100: #FFEDD4;
     --c-orange-200: #FFD6A7;
@@ -36,18 +60,27 @@
     --c-orange-900: #7E2A0C;
     --c-orange-950: #441306;
 
-    --bg-body: var(--c-slate-950);       /* Deep Slate */
-    --bg-surface: var(--c-slate-910);    /* Lighter Slate */
-    --bg-surface-hover: #1e293b;         /* Slate 800 */
-    --border-color: #1e293b;             /* Slate 800 */
-    
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-accent: #38bdf8;   /* Cyan/Blue mix */
+    --bg-body: var(--c-slate-950);
+    --bg-surface: var(--c-slate-910);
+    --bg-surface-hover: var(--c-slate-800);
+    --border-color: var(--c-slate-800);
 
-    --primary: #3b82f6;       /* Electric Blue */
-    --primary-hover: #2563eb;
-    --primary-glow: rgba(59, 130, 246, 0.5);
+    --header-bg: rgba(2, 6, 23, 0.9);
+    --overlay-bg: rgba(2, 6, 23, 0.85);
+    --bg-code: #000000;
+
+    --text-code: #e2e8f0;
+
+    --table-header-bg: rgba(255, 255, 255, 0.02);
+    --table-row-even-bg: rgba(255, 255, 255, 0.02);
+    
+    --text-primary: var(--c-slate-50);
+    --text-secondary: var(--c-slate-400);
+    --text-accent: var(--c-sky-400);
+
+    --primary: var(--c-blue-500);
+    --primary-hover: var(--c-blue-600);
+    --primary-glow: rgba(59, 130, 246, 0.5); /* --c-blue-500 */
     
     --success: #10b981;
     --warning: #f59e0b;
@@ -59,6 +92,30 @@
     --radius: 8px;
     --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: "SF Mono", "Segoe UI Mono", "Roboto Mono", monospace;
+}
+
+:root.light-theme {
+    --bg-body: var(--c-slate-100);
+    --bg-surface: #ffffff;
+    --bg-surface-hover: var(--c-slate-200);
+    --border-color: var(--c-slate-200);
+
+    --header-bg: rgba(248, 250, 252, 0.9);
+    --overlay-bg: rgba(248, 250, 252, 0.85);
+    --bg-code: var(--c-slate-200);
+
+    --text-code: var(--c-slate-900);
+
+    --table-header-bg: rgba(0, 0, 0, 0.05);
+    --table-row-even-bg: rgba(0, 0, 0, 0.02);
+    
+    --text-primary: var(--c-slate-900);
+    --text-secondary: var(--c-slate-600);
+    --text-accent: var(--c-sky-500);
+
+    --primary: var(--c-blue-600);
+    --primary-hover: var(--c-blue-700);
+    --primary-glow: rgba(37, 99, 235, 0.2); /* --c-blue-600 */
 }
 
 * {
@@ -91,6 +148,13 @@ body {
 .grid-3-cols { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .grid-4-cols { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+    transition: none !important;
+}
+
 /* --- Typography --- */
 h1, h2, h3, h4 {
     font-weight: 700;
@@ -114,7 +178,7 @@ code, pre {
 /* --- Header & Navigation --- */
 header {
     height: var(--header-height);
-    background: rgba(2, 6, 23, 0.9); /* Matches --c-slate-950 */
+    background: var(--header-bg);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
@@ -167,6 +231,41 @@ nav a:hover, nav a.active {
 
 .nav-cta:hover {
     background: var(--primary-hover);
+}
+
+.theme-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.theme-toggle:hover {
+    background: var(--bg-surface-hover);
+    color: var(--primary);
+}
+
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+.theme-toggle .sun-icon {
+    display: none;
+}
+
+:root.light-theme .theme-toggle .sun-icon {
+    display: block;
+}
+
+:root.light-theme .theme-toggle .moon-icon {
+    display: none;
 }
 
 /* --- Buttons --- */
@@ -357,7 +456,7 @@ nav a:hover, nav a.active {
 .data-table th {
     color: var(--text-accent);
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--table-header-bg);
 }
 
 .data-table tr:last-child td { border-bottom: none; }
@@ -498,7 +597,7 @@ nav a:hover, nav a.active {
 }
 
 .faq-answer tr:nth-child(even) td {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--table-row-even-bg);
 }
 
 .faq-answer a {
@@ -509,7 +608,7 @@ nav a:hover, nav a.active {
 /* --- Footer --- */
 footer {
     border-top: 1px solid var(--border-color);
-    padding: 4rem 0;
+    padding: 2rem 0;
     margin-top: 4rem;
     background: var(--bg-surface);
 }
@@ -551,6 +650,7 @@ footer {
     nav ul li { width: 100%; }
     nav a { display: block; padding: 0.5rem 0; }
     nav .nav-cta { text-align: center; }
+    nav .theme-toggle { justify-content: flex-start; padding: 0.5rem 0; }
     
     #menu-toggle:checked ~ ul { display: flex; }
     
@@ -677,8 +777,8 @@ footer {
 
 /* The Pre Tag */
 .manual-doc pre {
-    background: #000000;
-    color: #e2e8f0;
+    background: var(--bg-code);
+    color: var(--text-code);
     padding: 1.25rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
@@ -873,7 +973,7 @@ footer {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(2, 6, 23, 0.85); /* Slate 950 with opacity */
+    background: var(--overlay-bg);
     backdrop-filter: blur(8px);
     z-index: 2000;
     display: flex;
