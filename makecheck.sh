@@ -17,6 +17,30 @@ if ! $SOURCE/configure; then
 	exit 1
 fi
 
-if ! time make check; then
+if ! make -j4; then
+	exit 1
+fi
+
+if ! make check; then
+	exit 1
+fi
+
+if ! make distclean; then
+	exit 1
+fi
+
+if ! $SOURCE/configure --host=x86_64-w64-mingw32.static --build=`$SOURCE/config.guess`; then
+	exit 1
+fi
+
+if ! make -j4; then
+	exit 1
+fi
+
+if ! make check; then
+	exit 1
+fi
+
+if ! make distclean; then
 	exit 1
 fi
