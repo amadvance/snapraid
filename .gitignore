@@ -5,6 +5,7 @@
 *.txz
 *.deb
 *.rpm
+*.zst
 
 # backups
 *~
@@ -63,6 +64,7 @@ pkg/.SRCINFO
 *.dst
 *.epr
 *.geany
+session.conf
 
 # AFL
 makeafl.sh
