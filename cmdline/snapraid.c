@@ -906,7 +906,7 @@ int parse_option_size(const char* arg, uint64_t* out_size)
 	char* e;
 
 	/* parse the number part */
-	data_off_t size = strtoul(optarg, &e, 10);
+	data_off_t size = strtoul(arg, &e, 10);
 	if (!e || e == arg)
 		return -1;
 
@@ -1100,8 +1100,14 @@ int snapraid_main(int argc, char* argv[])
 				plan100 = SCRUB_FULL;
 			} else {
 				double plan_double = strtod(optarg, &e);
-				plan100 = plan_double * 100;
-				if (!e || *e || plan100 > 10000) {
+				if (!e || *e || !isfinite(plan_double) || plan_double < 0) {
+					/* LCOV_EXCL_START */
+					log_fatal(EUSER, "Invalid plan/percentage '%s'\n", optarg);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+				plan100 = (int)(plan_double * 100);
+				if (plan100 > 10000) {
 					/* LCOV_EXCL_START */
 					log_fatal(EUSER, "Invalid plan/percentage '%s'\n", optarg);
 					exit(EXIT_FAILURE);
