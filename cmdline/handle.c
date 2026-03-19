@@ -101,6 +101,10 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		close(handle->f);
+		handle->f = -1;
+		handle->file = 0;
+		handle->valid_size = 0;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -112,6 +116,10 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		close(handle->f);
+		handle->f = -1;
+		handle->file = 0;
+		handle->valid_size = 0;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -190,6 +198,10 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		out(errno, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		close(handle->f);
+		handle->f = -1;
+		handle->file = 0;
+		handle->valid_size = 0;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -201,6 +213,10 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		out(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		close(handle->f);
+		handle->f = -1;
+		handle->file = 0;
+		handle->valid_size = 0;
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}

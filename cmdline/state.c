@@ -2724,7 +2724,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Dir mapping index ouf of range!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Dir mapping index out of range!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
