@@ -1718,8 +1718,8 @@ Check your values with the -T option:
 </p>
 <pre>
 root@redstar:/root# snapraid -T
-snapraid v13.0 by Andrea Mazzoleni, http://www.snapraid.it
-Compiler gcc 15.2.0
+snapraid v14.0 by Andrea Mazzoleni, https://www.snapraid.it
+Compiler gcc 11.2.0
 CPU GenuineIntel, family 6, model 165, flags sse2 ssse3 crc32 avx2
 Memory is little-endian 64-bit
 Support nanosecond timestamps with futimens()
@@ -1730,34 +1730,34 @@ The reported values are the aggregate bandwidth of all data blocks in MB/s,
 not counting parity blocks.
 
 Memory write speed using the C memset() function:
-memset   61914
+  memset   61338
 
 CRC used to check the content file integrity:
-table    1866
-intel   12741
+   table    1665
+   intel   12488
 
 Hash used to check the data blocks integrity:
-     best murmur3 spooky2   metro
-hash spooky2    6285   17813   20684
+            best murmur3 spooky2   metro museair
+    hash spooky2    6172   18024   20752   29206
 
 RAID functions used for computing the parity with 'sync':
-        best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
-gen1    avx2           24995   46562   62683                           77069
-gen2    avx2            8243   15879   25788   27292                   44907
-genz   avx2e            5509   10588   14485   13920                           25175
-gen3   avx2e    1190                                   13201   14307           27268
-gen4   avx2e     914                                   10061   11006           21328
-gen5   avx2e     746                                    7970    8828           17040
-gen6   avx2e     630                                    6627    7516           14584
+            best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
+    gen1    avx2           19147   34378   62743                           78638
+    gen2    avx2            5303    9850   26288   26926                   45010
+    genz   avx2e            3086    4950   14319   13838                           25299
+    gen3   avx2e    1278                                   13042   14120           27155
+    gen4   avx2e     960                                    9895   11008           21764
+    gen5   avx2e     784                                    7960    8713           17174
+    gen6   avx2e     652                                    6502    7502           14638
 
 RAID functions used for recovering with 'fix':
-        best    int8   ssse3    avx2
-rec1    avx2    1626    3949    4331
-rec2    avx2     709    1738    2231
-rec3    avx2     170     922    1414
-rec4    avx2     110     614     981
-rec5    avx2      79     426     705
-rec6    avx2      58     316     539
+            best    int8   ssse3    avx2
+    rec1    avx2    1602    3942    4301
+    rec2    avx2     698    1731    2224
+    rec3    avx2     166     908    1391
+    rec4    avx2     108     607     973
+    rec5    avx2      76     421     694
+    rec6    avx2      57     313     532
 </pre>
 </div>
 </div>
