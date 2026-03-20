@@ -1677,9 +1677,7 @@ Why are SnapRAID sync and scrub faster than fix and check?
 Yes, fix and check are typically slower than sync and scrub in SnapRAID.
 </p>
 <p>
-The main reason is how each command accesses and processes the disks:
-</p>
-<p>
+The main reason is how each command accesses and processes the disks.
 sync and scrub use a multithreaded implementation, with one thread per data disk (plus handling for parity).
 This allows SnapRAID to read from multiple disks in parallel and squeeze out the maximum possible performance from your array.
 </p>
