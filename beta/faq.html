@@ -1667,6 +1667,41 @@ For a SnapRAID block size smaller than 256 KiB, use the default read-ahead size.
 </p>
 </div>
 </div>
+
+<div class="faq-item">
+<h3 class="faq-question" id="fixperf">
+Why are SnapRAID sync and scrub faster than fix and check?
+</h3>
+<div class="faq-answer">
+<p>
+Yes, fix and check are typically slower than sync and scrub in SnapRAID.
+</p>
+<p>
+The main reason is how each command accesses and processes the disks:
+</p>
+<p>
+sync and scrub use a multithreaded implementation, with one thread per data disk (plus handling for parity).
+This allows SnapRAID to read from multiple disks in parallel and squeeze out the maximum possible performance from your array.
+</p>
+<p>
+Something similar could be done for fix and check, but SnapRAID deliberately takes a more conservative approach here.
+When you run fix, you're usually in a recovery situation (bad blocks, missing data, failed disk, silent corruption detected during scrub/sync, etc.).
+</p>
+<p>
+Pushing the system (and potentially marginal/failing drives) to maximum I/O limits during an active repair isn't ideal.
+It could increase the risk of additional timeouts, errors, or stressing hardware that's already showing issues.
+Reliability and safe recovery take priority over raw speed.
+</p>
+<p>
+That said, there is still some parallelism in fix and check anyway: SnapRAID provides the operating system with the necessary hints (like read-ahead requests) to allow efficient prefetching of disk data, helping the OS optimize sequential reads where possible.
+</p>
+<p>
+In short: sync and scrub are optimized for speed while staying safe.
+fix and check are intentionally more cautious to protect your data when it matters most.
+</p>
+</div>
+</div>
+
 <div class="faq-item">
 <h3 class="faq-question" id="speed">
 How fast are the hash and parity computations?
