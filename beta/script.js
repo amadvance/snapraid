@@ -12,6 +12,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // Theme Switcher Event Listeners
     const themeToggles = document.querySelectorAll('.theme-toggle');
     
+    function updateThemeImages(isLight) {
+        const updateUrl = (url) => {
+            if (!url) return url;
+            const isTarget = url.includes('desk-') || url.includes('phone-');
+            if (!isTarget) return url;
+            
+            if (isLight) {
+                if (!url.includes('-light.png')) {
+                    return url.replace('.png', '-light.png');
+                }
+            } else {
+                if (url.includes('-light.png')) {
+                    return url.replace('-light.png', '.png');
+                }
+            }
+            return url;
+        };
+
+        document.querySelectorAll('img').forEach(img => {
+            const src = img.getAttribute('src');
+            if (src) {
+                const newSrc = updateUrl(src);
+                if (newSrc !== src) img.setAttribute('src', newSrc);
+            }
+        });
+
+        document.querySelectorAll('.ui-shot').forEach(shot => {
+            const largeSrc = shot.getAttribute('data-large');
+            if (largeSrc) {
+                const newSrc = updateUrl(largeSrc);
+                if (newSrc !== largeSrc) shot.setAttribute('data-large', newSrc);
+            }
+        });
+    }
+
+    // Initial call to set correct images based on current theme
+    updateThemeImages(document.documentElement.classList.contains('light-theme'));
+    
     themeToggles.forEach(toggle => {
         toggle.addEventListener('click', () => {
             document.documentElement.classList.add('theme-transitioning');
@@ -26,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const isLight = document.documentElement.classList.contains('light-theme');
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            updateThemeImages(isLight);
         });
     });
 
