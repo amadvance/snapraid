@@ -1,17 +1,17 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
-<meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">
-<meta name="author" content="Andrea Mazzoleni">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
-<link rel="stylesheet" type="text/css" href="style.css">
-<title>SnapRAID</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A backup program for disk arrays. It stores parity information of your data and it recovers from up to six disk failures">
+    <meta name="keywords" content="snapraid snapshot raid backup disk array redundancy parity">    
+    <title>SnapRAID CLI Manual</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/beta/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/beta/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/beta/favicon-16x16.png">
+    <link rel="manifest" href="/beta/site.webmanifest">
+    <script src="script.js"></script>
 
 <!-- Google Analytics 4 -->
 <!-- Google tag (gtag.js) -->
@@ -36,39 +36,86 @@
     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
-
 </script>
+
 </head>
 <body>
-<div id="header">
-<img src="index.jpg" width="1200" height="150" alt="Title">
-</div>
-<div id="menu">
-<a href="/">About</a>
-<a href="download">Download</a>
-<a href="design">Design</a>
-<a href="compare">Compare</a>
-<a href="faq">FAQ</a>
-<a href="manual">Manual</a>
-<a href="support">Support</a>
-<a href="authors">Authors</a>
-</div>
-<div id="main">
+    <header>
+        <div class="container nav-container">
+            <a href="index" class="logo">
+                <img src="android-chrome-192x192.png" width="32" height="32"/>
+                SnapRAID
+            </a>
+            <nav>
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></label>
+                <ul>
+                    <li><a href="index" >Home</a></li>
+                    <li><a href="ui" >UI & Daemon</a></li>
+                    <li><a href="howitworks" >How it Works</a></li>
+                    <li><a href="design" >Design</a></li>
+                    <li><a href="compare" >Compare</a></li>
+                    <li><a href="manual" class="active">Manual</a></li>
+                    <li><a href="faq" >FAQ</a></li>
+                    <li><a href="support" >Support</a></li>
+                    <li><a href="download" class="nav-cta">Download</a></li>
+                    <li>
+                        <button class="theme-toggle" aria-label="Toggle theme">
+                            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
 
+    <div class="container manual-layout">
 
-<p>
-Manual for <span class="bold">SnapRAID</span>. 
-There are also machine translation into <a href="manual-de">German</a>, <a href="manual-es">Spanish</a>, <a href="manual-fr">French</a>, <a href="manual-it">Italian</a>, <a href="manual-ja">Japanse</a>, <a href="manual-ko">Korean</a>, <a href="manual-pl">Polish</a>, <a href="manual-pt">Portuguese</a>, <a href="manual-ro">Romanian</a>, <a href="manual-ru">Russian</a>, <a href="manual-sv">Swedish</a>, <a href="manual-uk">Ukranian</a>, <a href="manual-zh">Simplified Chinese</a>.
-</p>
+        <aside class="manual-sidebar">
 
-<p>
-If you plan to write an interface for <span class="bold">SnapRAID</span>, be sure to also check the <a href="log">Log Tags Documentation</a>.
-</p>
+            <h4>Components</h4>
+            <select id="manual-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
+                <option value="manual">Command Line</option>
+                <option value="manual-daemon">Daemon</option>
+                <option value="manual-log">Log</option>
+            </select>
 
-<h2><a name="1">1</a> 
+            <h4>Languages</h4>
+            <select id="language-selector" style="width: 100%; padding: 5px; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 2rem;">
+                <option value="manual">English</option>
+                <option value="manual-de">German</option>
+                <option value="manual-es">Spanish</option>
+                <option value="manual-fr">French</option>
+                <option value="manual-it">Italian</option>
+                <option value="manual-ja">Japanse</option>
+                <option value="manual-ko">Korean</option>
+                <option value="manual-pl">Polish</option>
+                <option value="manual-pt">Portuguese</option>
+                <option value="manual-ro">Romanian</option>
+                <option value="manual-ru">Russian</option>
+                <option value="manual-sv">Swedish</option>
+                <option value="manual-uk">Ukranian</option>
+                <option value="manual-zh">Simplified Chinese</option>.
+
+            </select>
+
+            <h4>Contents</h4>
+            <ul id="manual-toc-list">
+                <!-- Populated by JavaScript -->
+            </ul>
+        </aside>
+
+
+        <main id="manual-container">
+            
+            <div class="manual-doc">
+
+<div class="manual-section-level-1">
+<h1 id="sec1" class="manual-title-level-1">
 Synopsis
-</h2>
+</h1>
 <pre>
 snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-f, --filter PATTERN] [-d, --filter-disk NAME]
@@ -77,23 +124,26 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-p, --plan PERC|bad|new|full]
 &nbsp;&nbsp;&nbsp;&nbsp;[-o, --older-than DAYS] [-l, --log FILE]
 &nbsp;&nbsp;&nbsp;&nbsp;[-s, --spin-down-on-error] [-w, --bw-limit RATE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-t, --tail]
 &nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
 &nbsp;&nbsp;&nbsp;&nbsp;[-U, --force-uuid] [-D, --force-device]
 &nbsp;&nbsp;&nbsp;&nbsp;[-N, --force-nocopy] [-F, --force-full]
-&nbsp;&nbsp;&nbsp;&nbsp;[-R, --force-realloc]
+&nbsp;&nbsp;&nbsp;&nbsp;[-R, --force-realloc] [-W, --force-realloc-tail]
 &nbsp;&nbsp;&nbsp;&nbsp;[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 &nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NUMBER]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
-&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </pre>
-<h2><a name="2">2</a> 
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec2" class="manual-title-level-1">
 Description
-</h2>
+</h1>
 <p>SnapRAID is a backup program designed for disk arrays, storing
 parity information for data recovery in the event of up to six
 disk failures.
@@ -133,14 +183,14 @@ power and reducing noise.
 </li>
 </ul>
 <p>For more information, please visit the official SnapRAID site:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-https://www.snapraid.it/
+</p><pre>
+<a href="https://www.snapraid.it/">https://www.snapraid.it/</a>
 </pre>
-</td></tr></table>
-<h2><a name="3">3</a> 
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec3" class="manual-title-level-1">
 Limitations
-</h2>
+</h1>
 <p>SnapRAID is a hybrid between a RAID and a backup program, aiming to combine
 the best benefits of both. However, it has some limitations that you should
 consider before using it.
@@ -178,11 +228,13 @@ Only file names, timestamps, symlinks, and hardlinks are saved.
 Permissions, ownership, and extended attributes are not saved.
 </li>
 </ul>
-<h2><a name="4">4</a> 
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec4" class="manual-title-level-1">
 Getting Started
-</h2>
+</h1>
 <p>To use SnapRAID, you need to first select one disk in your disk array
-to dedicate to `parity` information. With one disk for parity, you
+to dedicate to <b>parity</b> information. With one disk for parity, you
 will be able to recover from a single disk failure, similar to RAID5.
 </p><p>If you want to recover from more disk failures, similar to RAID6,
 you must reserve additional disks for parity. Each additional parity
@@ -190,34 +242,31 @@ disk allows recovery from one more disk failure.
 </p><p>As parity disks, you must pick the largest disks in the array,
 as the parity information may grow to the size of the largest data
 disk in the array.
-</p><p>These disks will be dedicated to storing the `parity` files.
+</p><p>These disks will be dedicated to storing the <b>parity</b> files.
 You should not store your data on them.
-</p><p>Then, you must define the `data` disks that you want to protect
+</p><p>Then, you must define the <b>data</b> disks that you want to protect
 with SnapRAID. The protection is more effective if these disks
 contain data that rarely changes. For this reason, it's better to
 NOT include the Windows C:\ disk or the Unix /home, /var, and /tmp
 directories.
-</p><p>The list of files is saved in the `content` files, usually
+</p><p>The list of files is saved in the <b>content</b> files, usually
 stored on the data, parity, or boot disks.
 This file contains the details of your backup, including all the
 checksums to verify its integrity.
-The `content` file is stored in multiple copies, and each copy must
+The <b>content</b> file is stored in multiple copies, and each copy must
 be on a different disk to ensure that, even in case of multiple
 disk failures, at least one copy is available.
 </p><p>For example, suppose you are interested in only one parity level
 of protection, and your disks are located at:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 /mnt/diskp &lt;- selected disk for parity
 /mnt/disk1 &lt;- first disk to protect
 /mnt/disk2 &lt;- second disk to protect
 /mnt/disk3 &lt;- third disk to protect
 </pre>
-</td></tr></table>
 <p>You must create the configuration file /etc/snapraid.conf with
 the following options:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 parity /mnt/diskp/snapraid.parity
 content /var/snapraid/snapraid.content
 content /mnt/disk1/snapraid.content
@@ -226,11 +275,9 @@ data d1 /mnt/disk1/
 data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 </pre>
-</td></tr></table>
 <p>If you are on Windows, you should use the Windows path format, with drive
 letters and backslashes instead of slashes.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 parity E:\snapraid.parity
 content C:\snapraid\snapraid.content
 content F:\array\snapraid.content
@@ -239,21 +286,16 @@ data d1 F:\array\
 data d2 G:\array\
 data d3 H:\array\
 </pre>
-</td></tr></table>
 <p>If you have many disks and run out of drive letters, you can mount
 disks directly in subfolders. See:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-https://www.google.com/search?q=Windows+mount+point
+</p><pre>
+<a href="https://www.google.com/search?q=Windows+mount+point">https://www.google.com/search?q=Windows+mount+point</a>
 </pre>
-</td></tr></table>
-<p>At this point, you are ready to run the `sync` command to build the
+<p>At this point, you are ready to run the <b>sync</b> command to build the
 parity information.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid sync
 </pre>
-</td></tr></table>
 <p>This process may take several hours the first time, depending on the size
 of the data already present on the disks. If the disks are empty,
 the process is immediate.
@@ -261,60 +303,53 @@ the process is immediate.
 will resume where it was interrupted.
 </p><p>When this command completes, your data is SAFE.
 </p><p>Now you can start using your array as you like and periodically
-update the parity information by running the `sync` command.
-</p><h3><a name="4.1">4.1</a> 
+update the parity information by running the <b>sync</b> command.
+</p><div class="manual-section-level-2">
+<h2 id="sec4-1" class="manual-title-level-2">
 Scrubbing
-</h3>
+</h2>
 <p>To periodically check the data and parity for errors, you can
-run the `scrub` command.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+run the <b>scrub</b> command.
+</p><pre>
 snapraid scrub
 </pre>
-</td></tr></table>
 <p>This command compares the data in your array with the hash computed
-during the `sync` command to verify integrity.
+during the <b>sync</b> command to verify integrity.
 </p><p>Each run of the command checks approximately 8% of the array, excluding data
 already scrubbed in the previous 10 days.
 You can use the -p, --plan option to specify a different amount
 and the -o, --older-than option to specify a different age in days.
 For example, to check 5% of the array for blocks older than 20 days, use:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid -p 5 -o 20 scrub
 </pre>
-</td></tr></table>
 <p>If silent or input/output errors are found during the process,
-the corresponding blocks are marked as bad in the `content` file
-and listed in the `status` command.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+the corresponding blocks are marked as bad in the <b>content</b> file
+and listed in the <b>status</b> command.
+</p><pre>
 snapraid status
 </pre>
-</td></tr></table>
-<p>To fix them, you can use the `fix` command, filtering for bad blocks with
+<p>To fix them, you can use the <b>fix</b> command, filtering for bad blocks with
 the -e, --filter-error option:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid -e fix
 </pre>
-</td></tr></table>
-<p>At the next `scrub`, the errors will disappear from the `status` report
+<p>At the next <b>scrub</b>, the errors will disappear from the <b>status</b> report
 if they are truly fixed. To make it faster, you can use -p bad to scrub
 only blocks marked as bad.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid -p bad scrub
 </pre>
-</td></tr></table>
-<p>Running `scrub` on an unsynced array may report errors caused by
-removed or modified files. These errors are reported in the `scrub`
+<p>Running <b>scrub</b> on an unsynced array may report errors caused by
+removed or modified files. These errors are reported in the <b>scrub</b>
 output, but the related blocks are not marked as bad.
-</p><h3><a name="4.2">4.2</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec4-2" class="manual-title-level-2">
 Pooling
-</h3>
+</h2>
 <p>Note: The pooling feature described below has been superseded by the
-mergefs tool, which is now the recommended option for Linux users in
+mergerfs tool, which is now the recommended option for Linux users in
 the SnapRAID community. Mergefs provides a more flexible and efficient
 way to pool multiple drives into a single unified mount point,
 allowing seamless access to files across your array without relying
@@ -322,36 +357,27 @@ on symbolic links. It integrates well with SnapRAID for parity
 protection and is commonly used in setups like OpenMediaVault (OMV)
 or custom NAS configurations.
 </p><p>To have all the files in your array shown in the same directory tree,
-you can enable the `pooling` feature. It creates a read-only virtual
+you can enable the <b>pooling</b> feature. It creates a read-only virtual
 view of all the files in your array using symbolic links.
-</p><p>You can configure the `pooling` directory in the configuration file with:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><p>You can configure the <b>pooling</b> directory in the configuration file with:
+</p><pre>
 pool /pool
 </pre>
-</td></tr></table>
 <p>or, if you are on Windows, with:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 pool C:\pool
 </pre>
-</td></tr></table>
-<p>and then run the `pool` command to create or update the virtual view.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+<p>and then run the <b>pool</b> command to create or update the virtual view.
+</p><pre>
 snapraid pool
 </pre>
-</td></tr></table>
 <p>If you are using a Unix platform and want to share this directory
 over the network to either Windows or Unix machines, you should add
 the following options to your /etc/samba/smb.conf:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 # In the global section of smb.conf
 unix extensions = no
 </pre>
-</td></tr></table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # In the share section of smb.conf
 [pool]
@@ -362,115 +388,101 @@ guest ok = yes
 wide links = yes
 follow symlinks = yes
 </pre>
-</td></tr></table>
 <p>In Windows, sharing symbolic links over a network requires clients to
 resolve them remotely. To enable this, besides sharing the pool directory,
 you must also share all the disks independently, using the disk names
 defined in the configuration file as share points. You must also specify
-in the `share` option of the configuration file the Windows UNC path that
+in the <b>share</b> option of the configuration file the Windows UNC path that
 remote clients need to use to access these shared disks.
-</p><p>For example, operating from a server named `darkstar`, you can use
+</p><p>For example, operating from a server named <b>darkstar</b>, you can use
 the options:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 data d1 F:\array\
 data d2 G:\array\
 data d3 H:\array\
 pool C:\pool
 share \\darkstar
 </pre>
-</td></tr></table>
 <p>and share the following directories over the network:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 \\darkstar\pool -&gt; C:\pool
 \\darkstar\d1 -&gt; F:\array
 \\darkstar\d2 -&gt; G:\array
 \\darkstar\d3 -&gt; H:\array
 </pre>
-</td></tr></table>
 <p>to allow remote clients to access all the files at \\darkstar\pool.
 </p><p>You may also need to configure remote clients to enable access to remote
 symlinks with the command:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 </pre>
-</td></tr></table>
-<h3><a name="4.3">4.3</a> 
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec4-3" class="manual-title-level-2">
 Undeleting
-</h3>
+</h2>
 <p>SnapRAID functions more like a backup program than a RAID system, and it
 can be used to restore or undelete files to their previous state using
 the -f, --filter option:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid fix -f FILE
 </pre>
-</td></tr></table>
 <p>or for a directory:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid fix -f DIR/
 </pre>
-</td></tr></table>
 <p>You can also use it to recover only accidentally deleted files inside
 a directory using the -m, --filter-missing option, which restores
 only missing files, leaving all others untouched.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid fix -m -f DIR/
 </pre>
-</td></tr></table>
 <p>Or to recover all the deleted files on all drives with:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid fix -m
 </pre>
-</td></tr></table>
-<h3><a name="4.4">4.4</a> 
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec4-4" class="manual-title-level-2">
 Recovering
-</h3>
+</h2>
 <p>The worst has happened, and you have lost one or more disks!
 </p><p>DO NOT PANIC! You will be able to recover them!
 </p><p>The first thing you must do is avoid further changes to your disk array.
 Disable any remote connections to it and any scheduled processes, including
 any scheduled SnapRAID nightly sync or scrub.
 </p><p>Then proceed with the following steps.
-</p><h4><a name="4.4.1">4.4.1</a> 
+</p><div class="manual-section-level-3">
+<h3 id="sec4-4-1" class="manual-title-level-3">
 STEP 1 -&gt; Reconfigure
-</h4>
+</h3>
 <p>You need some space to recover, ideally on additional
 spare disks, but an external USB disk or remote disk will suffice.
-</p><p>Modify the SnapRAID configuration file to make the `data` or `parity`
+</p><p>Modify the SnapRAID configuration file to make the <b>data</b> or <b>parity</b>
 option of the failed disk point to a location with enough empty
 space to recover the files.
-</p><p>For example, if disk `d1` has failed, change from:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><p>For example, if disk <b>d1</b> has failed, change from:
+</p><pre>
 data d1 /mnt/disk1/
 </pre>
-</td></tr></table>
 <p>to:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 data d1 /mnt/new_spare_disk/
 </pre>
-</td></tr></table>
-<p>If the disk to recover is a parity disk, update the appropriate `parity`
+<p>If the disk to recover is a parity disk, update the appropriate <b>parity</b>
 option.
 If you have multiple failed disks, update all their configuration options.
-</p><h4><a name="4.4.2">4.4.2</a> 
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-4-2" class="manual-title-level-3">
 STEP 2 -&gt; Fix
-</h4>
+</h3>
 <p>Run the fix command, storing the log in an external file with:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid -d NAME -l fix.log fix
 </pre>
-</td></tr></table>
-<p>Where NAME is the name of the disk, such as `d1` in our previous example.
-If the disk to recover is a parity disk, use the names `parity`, `2-parity`,
+<p>Where NAME is the name of the disk, such as <b>d1</b> in our previous example.
+If the disk to recover is a parity disk, use the names <b>parity</b>, <b>2-parity</b>,
 etc.
 If you have multiple failed disks, use multiple -d options to specify all
 of them.
@@ -478,226 +490,273 @@ of them.
 </p><p>Ensure you have a few gigabytes free to store the fix.log file.
 Run it from a disk with sufficient free space.
 </p><p>Now you have recovered all that is recoverable. If some files are partially
-or totally unrecoverable, they will be renamed by adding the `.unrecoverable`
+or totally unrecoverable, they will be renamed by adding the <b>.unrecoverable</b>
 extension.
 </p><p>You can find a detailed list of all unrecoverable blocks in the fix.log file
-by checking all lines starting with `unrecoverable:`.
+by checking all lines starting with <b>unrecoverable:</b>.
 </p><p>If you are not satisfied with the recovery, you can retry it as many
 times as you wish.
 </p><p>For example, if you have removed files from the array after the last
-`sync`, this may result in some files not being recovered.
-In this case, you can retry the `fix` using the -i, --import option,
+<b>sync</b>, this may result in some files not being recovered.
+In this case, you can retry the <b>fix</b> using the -i, --import option,
 specifying where these files are now to include them again in the
 recovery process.
 </p><p>If you are satisfied with the recovery, you can proceed further,
-but note that after syncing, you cannot retry the `fix` command
+but note that after syncing, you cannot retry the <b>fix</b> command
 anymore!
-</p><h4><a name="4.4.3">4.4.3</a> 
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-4-3" class="manual-title-level-3">
 STEP 3 -&gt; Check
-</h4>
-<p>As a cautious check, you can now run a `check` command to ensure that
+</h3>
+<p>As a cautious check, you can now run a <b>check</b> command to ensure that
 everything is correct on the recovered disk.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 snapraid -d NAME -a check
 </pre>
-</td></tr></table>
-<p>Where NAME is the name of the disk, such as `d1` in our previous example.
+<p>Where NAME is the name of the disk, such as <b>d1</b> in our previous example.
 </p><p>The -d and -a options tell SnapRAID to check only the specified disk
 and ignore all parity data.
 </p><p>This command will take a long time, but if you are not overly cautious,
 you can skip it.
-</p><h4><a name="4.4.4">4.4.4</a> 
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec4-4-4" class="manual-title-level-3">
 STEP 4 -&gt; Sync
-</h4>
-<p>Run the `sync` command to resynchronize the array with the new disk.
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</h3>
+<p>Run the <b>sync</b> command to resynchronize the array with the new disk.
+</p><pre>
 snapraid sync
 </pre>
-</td></tr></table>
 <p>If everything is recovered, this command is immediate.
-</p><h2><a name="5">5</a> 
+</p></div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec5" class="manual-title-level-1">
 Commands
-</h2>
+</h1>
 <p>SnapRAID provides a few simple commands that allow you to:
 </p><ul>
 <li>
-Print the status of the array -&gt; `status`
+Print the status of the array -&gt; <b>status</b>
 </li>
 <li>
-Control the disks -&gt; `smart`, `probe`, `up`, `down`
+Control the disks -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Make a backup/snapshot -&gt; `sync`
+Make a backup/snapshot -&gt; <b>sync</b>
 </li>
 <li>
-Periodically check data -&gt; `scrub`
+Periodically check data -&gt; <b>scrub</b>
 </li>
 <li>
-Restore the last backup/snapshot -&gt; `fix`.
+Restore the last backup/snapshot -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>Commands must be written in lowercase.
-</p><h3><a name="5.1">5.1</a> 
+</p><div class="manual-section-level-2">
+<h2 id="sec5-1" class="manual-title-level-2">
 status
-</h3>
+</h2>
 <p>Prints a summary of the state of the disk array.
 </p><p>It includes information about parity fragmentation, how old
 the blocks are without checking, and all recorded silent
 errors encountered while scrubbing.
 </p><p>The information presented refers to the latest time you
-ran `sync`. Later modifications are not taken into account.
+ran <b>sync</b>. Later modifications are not taken into account.
 </p><p>If bad blocks were detected, their block numbers are listed.
-To fix them, you can use the `fix -e` command.
+To fix them, you can use the <b>fix -e</b> command.
 </p><p>It also shows a graph representing the last time each block
-was scrubbed or synced. Scrubbed blocks are shown with '*',
-blocks synced but not yet scrubbed with 'o'.
+was scrubbed or synced. Scrubbed blocks are shown with <b>*</b>,
+blocks synced but not yet scrubbed with <b>o</b>.
 </p><p>Nothing is modified.
-</p><h3><a name="5.2">5.2</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-2" class="manual-title-level-2">
 smart
-</h3>
+</h2>
 <p>Prints a SMART report of all the disks in the system.
 </p><p>It includes an estimation of the probability of failure in the next
 year, allowing you to plan maintenance replacements of disks that show
 suspicious attributes.
 </p><p>This probability estimation is obtained by correlating the SMART attributes
 of the disks with the Backblaze data available at:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-https://www.backblaze.com/hard-drive-test-data.html
+</p><pre>
+<a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
-</td></tr></table>
-<p>If SMART reports that a disk is failing, `FAIL` or `PREFAIL` is printed
+<p>If SMART reports that a disk is failing, <b>FAIL</b> or <b>PREFAIL</b> is printed
 for that disk, and SnapRAID returns with an error.
 In this case, immediate replacement of the disk is highly recommended.
 </p><p>Other possible status strings are:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 logfail
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 In the past, some attributes were lower than
 the threshold.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 logerr
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 The device error log contains errors.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 selferr
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 The device self-test log contains errors.
-</td></tr>
-</table>
+</div>
+</div>
+</div>
 <p>If the -v, --verbose option is specified, a deeper statistical analysis
 is provided. This analysis can help you decide if you need more
 or less parity.
-</p><p>This command uses the `smartctl` tool and is equivalent to running
-`smartctl -a` on all devices.
+</p><p>This command uses the <b>smartctl</b> tool and is equivalent to running
+<b>smartctl -a</b> on all devices.
 </p><p>If your devices are not auto-detected correctly, you can specify
-a custom command using the `smartctl` option in the configuration
+a custom command using the <b>smartctl</b> option in the configuration
 file.
 </p><p>Nothing is modified.
-</p><h3><a name="5.3">5.3</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-3" class="manual-title-level-2">
 probe
-</h3>
+</h2>
 <p>Prints the POWER state of all disks in the system.
-</p><p>`Standby` means the disk is not spinning. `Active` means
+</p><p><b>Standby</b> means the disk is not spinning. <b>Active</b> means
 the disk is spinning.
-</p><p>This command uses the `smartctl` tool and is equivalent to running
-`smartctl -n standby -i` on all devices.
+</p><p>This command uses the <b>smartctl</b> tool and is equivalent to running
+<b>smartctl -n standby -i</b> on all devices.
 </p><p>If your devices are not auto-detected correctly, you can specify
-a custom command using the `smartctl` option in the configuration
+a custom command using the <b>smartctl</b> option in the configuration
 file.
 </p><p>Nothing is modified.
-</p><h3><a name="5.4">5.4</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-4" class="manual-title-level-2">
 up
-</h3>
+</h2>
 <p>Spins up all the disks of the array.
 </p><p>You can spin up only specific disks using the -d, --filter-disk option.
 </p><p>Spinning up all the disks at the same time requires a lot of power.
 Ensure that your power supply can sustain it.
 </p><p>Nothing is modified.
-</p><h3><a name="5.5">5.5</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-5" class="manual-title-level-2">
 down
-</h3>
+</h2>
 <p>Spins down all the disks of the array.
-</p><p>This command uses the `smartctl` tool and is equivalent to running
-`smartctl -s standby,now` on all devices.
+</p><p>This command uses the <b>smartctl</b> tool and is equivalent to running
+<b>smartctl -s standby,now</b> on all devices.
 </p><p>You can spin down only specific disks using the -d, --filter-disk
 option.
 </p><p>To automatically spin down on error, you can use the -s, --spin-down-on-error
-option with any other command, which is equivalent to running `down` manually
+option with any other command, which is equivalent to running <b>down</b> manually
 when an error occurs.
 </p><p>Nothing is modified.
-</p><h3><a name="5.6">5.6</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-6" class="manual-title-level-2">
 diff
-</h3>
-<p>Lists all the files modified since the last `sync` that need to have
+</h2>
+<p>Lists all the files modified since the last <b>sync</b> that need to have
 their parity data recomputed.
 </p><p>This command doesn't check the file data, but only the file timestamp,
 size, and inode.
 </p><p>After listing all changed files, a summary of the changes is
 presented, grouped by:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 equal
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 Files unchanged from before.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 added
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 Files added that were not present before.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 removed
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 Files removed.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 updated
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 Files with a different size or timestamp, meaning they
 were modified.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 moved
-</em></td><td width="90%">
+</div><div class="manual-tag-description">
 Files moved to a different directory on the same disk.
 They are identified by having the same name, size, timestamp,
 and inode, but a different directory.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 copied
-</em></td><td width="90%">
-Files copied on the same or a different disk. Note that if
-they are truly moved to a different disk, they will also be
-counted in `removed`.
-They are identified by having the same name, size, and
-timestamp. If the sub-second timestamp is zero,
-the full path must match, not just the name.
-</td></tr>
-<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+</div><div class="manual-tag-description">
+Files copied on the same or a different disk where the
+original file still exists. They are identified by having
+the same name, size, and timestamp. If the sub-second
+timestamp is zero, the full path must match to be
+identified, not just the name.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+relocated
+</div><div class="manual-tag-description">
+Files moved on the same or a different disk where
+the original has disappeared. They are identified by
+having the same name, size, and timestamp. If the
+sub-second timestamp is zero, the full path must match
+to be identified. Unlike 'moved' files on the same disk,
+relocated files have a different inode.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 restored
-</em></td><td width="90%">
-Files with a different inode but matching name, size, and timestamp.
+</div><div class="manual-tag-description">
+Files with a different inode but matching directory,
+name, size, and timestamp.
 These are usually files restored after being deleted.
-</td></tr>
-</table>
-<p>If a `sync` is required, the process return code is 2, instead of the
+</div>
+</div>
+</div>
+<p>If a <b>sync</b> is required, the process return code is 2, instead of the
 default 0. The return code 1 is used for a generic error condition.
 </p><p>Nothing is modified.
-</p><h3><a name="5.7">5.7</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-7" class="manual-title-level-2">
 sync
-</h3>
+</h2>
 <p>Updates the parity information. All modified files
 in the disk array are read, and the corresponding parity
 data is updated.
 </p><p>You can stop this process at any time by pressing Ctrl+C,
 without losing the work already done.
-At the next run, the `sync` process will resume where
+At the next run, the <b>sync</b> process will resume where
 it was interrupted.
 </p><p>If silent or input/output errors are found during the process,
 the corresponding blocks are marked as bad.
@@ -709,11 +768,13 @@ If the file is moved or renamed on the same disk, keeping the
 same inode, the parity is not recomputed.
 If the file is moved to another disk, the parity is recomputed,
 but the previously computed hash information is retained.
-</p><p>The `content` and `parity` files are modified if necessary.
+</p><p>The <b>content</b> and <b>parity</b> files are modified if necessary.
 The files in the array are NOT modified.
-</p><h3><a name="5.8">5.8</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-8" class="manual-title-level-2">
 scrub
-</h3>
+</h2>
 <p>Scrubs the array, checking for silent or input/output errors in data
 and parity disks.
 </p><p>Each invocation checks approximately 8% of the array, excluding
@@ -730,92 +791,104 @@ full - Scrub everything.
 option to define how old the block should be.
 The oldest blocks are scrubbed first, ensuring an optimal check.
 If you want to scrub only the just-synced blocks not yet scrubbed,
-use the `-p new` option.
-</p><p>To get details of the scrub status, use the `status` command.
+use the <b>-p new</b> option.
+</p><p>To get details of the scrub status, use the <b>status</b> command.
 </p><p>For any silent or input/output error found, the corresponding blocks
-are marked as bad in the `content` file.
-These bad blocks are listed in `status` and can be fixed with `fix -e`.
+are marked as bad in the <b>content</b> file.
+These bad blocks are listed in <b>status</b> and can be fixed with <b>fix -e</b>.
 After the fix, at the next scrub, they will be rechecked, and if found
 corrected, the bad mark will be removed.
-To scrub only the bad blocks, you can use the `scrub -p bad` command.
-</p><p>It's recommended to run `scrub` only on a synced array to avoid
+To scrub only the bad blocks, you can use the <b>scrub -p bad</b> command.
+</p><p>It's recommended to run <b>scrub</b> only on a synced array to avoid
 reported errors caused by unsynced data. These errors are recognized
 as not being silent errors, and the blocks are not marked as bad,
 but such errors are reported in the output of the command.
-</p><p>The `content` file is modified to update the time of the last check
+</p><p>The <b>content</b> file is modified to update the time of the last check
 for each block and to mark bad blocks.
-The `parity` files are NOT modified.
+The <b>parity</b> files are NOT modified.
 The files in the array are NOT modified.
-</p><h3><a name="5.9">5.9</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-9" class="manual-title-level-2">
 fix
-</h3>
+</h2>
 <p>Fixes all the files and the parity data.
 </p><p>All files and parity data are compared with the snapshot
-state saved in the last `sync`.
+state saved in the last <b>sync</b>.
 If a difference is found, it is reverted to the stored snapshot.
-</p><p>WARNING! The `fix` command does not differentiate between errors and
+</p><p>WARNING! The <b>fix</b> command does not differentiate between errors and
 intentional modifications. It unconditionally reverts the file state
-to the last `sync`.
+to the last <b>sync</b>.
 </p><p>If no other option is specified, the entire array is processed.
 Use the filter options to select a subset of files or disks to operate on.
-</p><p>To fix only the blocks marked bad during `sync` and `scrub`,
+</p><p>To fix only the blocks marked bad during <b>sync</b> and <b>scrub</b>,
 use the -e, --filter-error option.
 Unlike other filter options, this one applies fixes only to files that are
-unchanged since the latest `sync`.
+unchanged since the latest <b>sync</b>.
 </p><p>SnapRAID renames all files that cannot be fixed by adding the
-`.unrecoverable` extension.
+<b>.unrecoverable</b> extension.
 </p><p>Before fixing, the entire array is scanned to find any files moved
-since the last `sync` operation.
+since the last <b>sync</b> operation.
 These files are identified by their timestamp, ignoring their name
 and directory, and are used in the recovery process if necessary.
 If you moved some of them outside the array, you can use the -i, --import
 option to specify additional directories to scan.
 </p><p>Files are identified only by path, not by inode.
-</p><p>The `content` file is NOT modified.
-The `parity` files are modified if necessary.
+</p><p>The <b>content</b> file is NOT modified.
+The <b>parity</b> files are modified if necessary.
 The files in the array are modified if necessary.
-</p><h3><a name="5.10">5.10</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-10" class="manual-title-level-2">
 check
-</h3>
+</h2>
 <p>Verifies all the files and the parity data.
-</p><p>It works like `fix`, but it only simulates a recovery and no changes
+</p><p>It works like <b>fix</b>, but it only simulates a recovery and no changes
 are written to the array.
 </p><p>This command is primarily intended for manual verification,
 such as after a recovery process or in other special conditions.
-For periodic and scheduled checks, use `scrub`.
+For periodic and scheduled checks, use <b>scrub</b>.
 </p><p>If you use the -a, --audit-only option, only the file
 data is checked, and the parity data is ignored for a
 faster run.
 </p><p>Files are identified only by path, not by inode.
 </p><p>Nothing is modified.
-</p><h3><a name="5.11">5.11</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-11" class="manual-title-level-2">
 list
-</h3>
+</h2>
 <p>Lists all the files contained in the array at the time of the
-last `sync`.
+last <b>sync</b>.
 </p><p>With -v or --verbose, the subsecond time is also shown.
 </p><p>Nothing is modified.
-</p><h3><a name="5.12">5.12</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-12" class="manual-title-level-2">
 dup
-</h3>
+</h2>
 <p>Lists all duplicate files. Two files are assumed equal if their
 hashes match. The file data is not read; only the
 precomputed hashes are used.
 </p><p>Nothing is modified.
-</p><h3><a name="5.13">5.13</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-13" class="manual-title-level-2">
 pool
-</h3>
+</h2>
 <p>Creates or updates a virtual view of all
-the files in your disk array in the `pooling` directory.
+the files in your disk array in the <b>pooling</b> directory.
 </p><p>The files are not copied but linked using
 symbolic links.
 </p><p>When updating, all existing symbolic links and empty
 subdirectories are deleted and replaced with the new
 view of the array. Any other regular files are left in place.
 </p><p>Nothing is modified outside the pool directory.
-</p><h3><a name="5.14">5.14</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-14" class="manual-title-level-2">
 devices
-</h3>
+</h2>
 <p>Prints the low-level devices used by the array.
 </p><p>This command displays the device associations in the array
 and is mainly intended as a script interface.
@@ -826,9 +899,11 @@ The last column is the disk name in the array.
 array, but in some more complex configurations, you may have multiple
 low-level devices used by a single disk in the array.
 </p><p>Nothing is modified.
-</p><h3><a name="5.15">5.15</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-15" class="manual-title-level-2">
 touch
-</h3>
+</h2>
 <p>Sets an arbitrary sub-second timestamp for all files
 that have it set to zero.
 </p><p>This improves SnapRAID's ability to recognize moved
@@ -841,9 +916,11 @@ is zero, it is considered a copy only if the full path,
 size, and timestamp all match.
 </p><p>The second-precision timestamp is not modified,
 so all the dates and times of your files will be preserved.
-</p><h3><a name="5.16">5.16</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-16" class="manual-title-level-2">
 rehash
-</h3>
+</h2>
 <p>Schedules a rehash of the entire array.
 </p><p>This command changes the hash kind used, typically when upgrading
 from a 32-bit system to a 64-bit one, to switch from
@@ -851,123 +928,156 @@ MurmurHash3 to the faster SpookyHash.
 </p><p>If you are already using the optimal hash, this command
 does nothing and informs you that no action is needed.
 </p><p>The rehash is not performed immediately but takes place
-progressively during `sync` and `scrub`.
-</p><p>You can check the rehash state using `status`.
+progressively during <b>sync</b> and <b>scrub</b>.
+</p><p>You can check the rehash state using <b>status</b>.
 </p><p>During the rehash, SnapRAID maintains full functionality,
-with the only exception that `dup` cannot detect duplicated
+with the only exception that <b>dup</b> cannot detect duplicated
 files using a different hash.
-</p><h2><a name="6">6</a> 
-Options
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec5-17" class="manual-title-level-2">
+locate
 </h2>
+<p>Locate files stored in the parity disks. For each matching file, it
+prints its location within the parity file and the number of fragments
+it occupies.
+</p><p>You can use the -t, --tail option to restrict the operation to files
+occupying the specified tail portion of the parity.
+</p><p>If you want to reallocate these files, you can then use the
+-W, --force-realloc-tail option. Be aware that such files will
+not be protected by parity during the reallocation process.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec6" class="manual-title-level-1">
+Options
+</h1>
 <p>SnapRAID provides the following options:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -c, --conf CONFIG
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Selects the configuration file to use. If not specified, in Unix
-it uses the file `/usr/local/etc/snapraid.conf` if it exists,
-otherwise `/etc/snapraid.conf`.
-In Windows, it uses the file `snapraid.conf` in the same
-directory as `snapraid.exe`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+it uses the file <b>/usr/local/etc/snapraid.conf</b> if it exists,
+otherwise <b>/etc/snapraid.conf</b>.
+In Windows, it uses the file <b>snapraid.conf</b> in the same
+directory as <b>snapraid.exe</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -f, --filter PATTERN
-</strong></td></tr><tr><td>
-Filters the files to process in `check` and `fix`.
+</div><div class="manual-option-description">
+Filters the files to process in <b>check</b> and <b>fix</b>.
 Only the files matching the specified pattern are processed.
 This option can be used multiple times.
 See the PATTERN section for more details on
 pattern specifications.
 In Unix, ensure globbing characters are quoted if used.
-This option can be used only with `check` and `fix`.
-It cannot be used with `sync` and `scrub`, as they always
+This option can be used only with <b>check</b> and <b>fix</b>.
+It cannot be used with <b>sync</b> and <b>scrub</b>, as they always
 process the entire array.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -d, --filter-disk NAME
-</strong></td></tr><tr><td>
-Filters the disks to process in `check`, `fix`, `up`, and `down`.
+</div><div class="manual-option-description">
+Filters the disks to process in <b>check</b>, <b>fix</b>, <b>up</b>, and <b>down</b>.
 You must specify a disk name as defined in the configuration
 file.
-You can also specify parity disks with the names: `parity`, `2-parity`,
-`3-parity`, etc., to limit operations to a specific parity disk.
+You can also specify parity disks with the names: <b>parity</b>, <b>2-parity</b>,
+<b>3-parity</b>, etc., to limit operations to a specific parity disk.
 If you combine multiple --filter, --filter-disk, and --filter-missing options,
 only files matching all the filters are selected.
 This option can be used multiple times.
-This option can be used only with `check`, `fix`, `up`, and `down`.
-It cannot be used with `sync` and `scrub`, as they always
+This option can be used only with <b>check</b>, <b>fix</b>, <b>up</b>, and <b>down</b>.
+It cannot be used with <b>sync</b> and <b>scrub</b>, as they always
 process the entire array.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -m, --filter-missing
-</strong></td></tr><tr><td>
-Filters the files to process in `check` and `fix`.
+</div><div class="manual-option-description">
+Filters the files to process in <b>check</b> and <b>fix</b>.
 Only the files missing or deleted from the array are processed.
-When used with `fix`, this acts as an `undelete` command.
+When used with <b>fix</b>, this acts as an <b>undelete</b> command.
 If you combine multiple --filter, --filter-disk, and --filter-missing options,
 only files matching all the filters are selected.
-This option can be used only with `check` and `fix`.
-It cannot be used with `sync` and `scrub`, as they always
+This option can be used only with <b>check</b> and <b>fix</b>.
+It cannot be used with <b>sync</b> and <b>scrub</b>, as they always
 process the entire array.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -e, --filter-error
-</strong></td></tr><tr><td>
-Processes the files with errors in `check` and `fix`.
+</div><div class="manual-option-description">
+Processes the files with errors in <b>check</b> and <b>fix</b>.
 It processes only files that have blocks marked with silent
-or input/output errors during `sync` and `scrub`, as listed in `status`.
-This option can be used only with `check` and `fix`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+or input/output errors during <b>sync</b> and <b>scrub</b>, as listed in <b>status</b>.
+This option can be used only with <b>check</b> and <b>fix</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -p, --plan PERC|bad|new|full
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Selects the scrub plan. If PERC is a numeric value from 0 to 100,
 it is interpreted as the percentage of blocks to scrub.
 Instead of a percentage, you can specify a plan:
-`bad` scrubs bad blocks, `new` scrubs blocks not yet scrubbed,
-and `full` scrubs everything.
-This option can be used only with `scrub`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+<b>bad</b> scrubs bad blocks, <b>new</b> scrubs blocks not yet scrubbed,
+and <b>full</b> scrubs everything.
+This option can be used only with <b>scrub</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -o, --older-than DAYS
-</strong></td></tr><tr><td>
-Selects the oldest part of the array to process in `scrub`.
+</div><div class="manual-option-description">
+Selects the oldest part of the array to process in <b>scrub</b>.
 DAYS is the minimum age in days for a block to be scrubbed;
 the default is 10.
 Blocks marked as bad are always scrubbed regardless of this option.
-This option can be used only with `scrub`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>scrub</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -a, --audit-only
-</strong></td></tr><tr><td>
-In `check`, verifies the hash of the files without
+</div><div class="manual-option-description">
+In <b>check</b>, verifies the hash of the files without
 checking the parity data.
 If you are interested only in checking the file data, this
 option can significantly speed up the checking process.
-This option can be used only with `check`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>check</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -h, --pre-hash
-</strong></td></tr><tr><td>
-In `sync`, runs a preliminary hashing phase of all new data
+</div><div class="manual-option-description">
+In <b>sync</b>, runs a preliminary hashing phase of all new data
 for additional verification before the parity computation.
-Usually, in `sync`, no preliminary hashing is done, and the new
+Usually, in <b>sync</b>, no preliminary hashing is done, and the new
 data is hashed just before the parity computation when it is read
 for the first time.
 This process occurs when the system is under
@@ -975,52 +1085,73 @@ heavy load, with all disks spinning and a busy CPU.
 This is an extreme condition for the machine, and if it has a
 latent hardware problem, silent errors may go undetected
 because the data is not yet hashed.
-To avoid this risk, you can enable the `pre-hash` mode to have
+To avoid this risk, you can enable the <b>pre-hash</b> mode to have
 all the data read twice to ensure its integrity.
 This option also verifies files moved within the array
 to ensure the move operation was successful and, if necessary,
 allows you to run a fix operation before proceeding.
-This option can be used only with `sync`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -i, --import DIR
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Imports from the specified directory any files deleted
-from the array after the last `sync`.
-If you still have such files, they can be used by `check`
-and `fix` to improve the recovery process.
+from the array after the last <b>sync</b>.
+If you still have such files, they can be used by <b>check</b>
+and <b>fix</b> to improve the recovery process.
 The files are read, including in subdirectories, and are
 identified regardless of their name.
-This option can be used only with `check` and `fix`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>check</b> and <b>fix</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -s, --spin-down-on-error
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 On any error, spins down all managed disks before exiting with
 a non-zero status code. This prevents the drives from
 remaining active and spinning after an aborted operation,
 helping to avoid unnecessary heat buildup and power
 consumption. Use this option to ensure disks are safely
 stopped even when a command fails.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -w, --bw-limit RATE
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Applies a global bandwidth limit for all disks. The RATE is
 the number of bytes per second. You can specify a multiplier
-such as K, M, or G (e.g., --bw-limit 1G).
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+such as K, M, G, or T (e.g., --bw-limit 1G).
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-t, --tail SIZE
+</div><div class="manual-option-description">
+Limit file listing to those using no more than the specified
+tail size of the parity disks.
+You can use multipliers such as K, M, G, or T (e.g. --tail 1G).
+This option is only valid when used together with the <b>locate</b>
+command.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -A, --stats
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Enables an extended status view that shows additional information.
 The screen displays two graphs:
 The first graph shows the number of buffered stripes for each
@@ -1038,12 +1169,14 @@ All computations run in parallel with disk operations.
 Therefore, as long as there is measurable wait time for at
 least one disk, it indicates that the CPU is fast enough to
 keep up with the workload.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -Z, --force-zero
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Forces the insecure operation of syncing a file with zero
 size that was previously non-zero.
 If SnapRAID detects such a condition, it stops proceeding
@@ -1052,13 +1185,15 @@ This allows you to easily detect when, after a system crash,
 some accessed files were truncated.
 This is a possible condition in Linux with the ext3/ext4
 file systems.
-This option can be used only with `sync`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -E, --force-empty
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Forces the insecure operation of syncing a disk with all
 the original files missing.
 If SnapRAID detects that all the files originally present
@@ -1066,13 +1201,15 @@ on the disk are missing or rewritten, it stops proceeding
 unless you specify this option.
 This allows you to easily detect when a data file system is not
 mounted.
-This option can be used only with `sync`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -U, --force-uuid
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Forces the insecure operation of syncing, checking, and fixing
 with disks that have changed their UUID.
 If SnapRAID detects that some disks have changed UUID,
@@ -1082,28 +1219,32 @@ wrong mount points.
 It is, however, allowed to have a single UUID change with
 single parity, and more with multiple parity, because this is
 the normal case when replacing disks after a recovery.
-This option can be used only with `sync`, `check`, or
-`fix`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>sync</b>, <b>check</b>, or
+<b>fix</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -D, --force-device
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Forces the insecure operation of fixing with inaccessible disks
 or with disks on the same physical device.
 For example, if you lost two data disks and have a spare disk to recover
 only the first one, you can ignore the second inaccessible disk.
 Or, if you want to recover a disk in the free space left on an
 already used disk, sharing the same physical device.
-This option can be used only with `fix`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>fix</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -N, --force-nocopy
-</strong></td></tr><tr><td>
-In `sync`, `check`, and `fix`, disables the copy detection heuristic.
+</div><div class="manual-option-description">
+In <b>sync</b>, <b>check</b>, and <b>fix</b>, disables the copy detection heuristic.
 Without this option, SnapRAID assumes that files with the same
 attributes, such as name, size, and timestamp, are copies with the
 same data.
@@ -1113,93 +1254,133 @@ to detect silent errors or to recover missing files.
 In some rare cases, this behavior may result in false positives
 or a slow process due to many hash verifications, and this
 option allows you to resolve such issues.
-This option can be used only with `sync`, `check`, and `fix`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>sync</b>, <b>check</b>, and <b>fix</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -F, --force-full
-</strong></td></tr><tr><td>
-In `sync`, forces a full recomputation of the parity.
+</div><div class="manual-option-description">
+In <b>sync</b>, forces a full recomputation of the parity.
 This option can be used when you add a new parity level or if
 you reverted to an old content file using more recent parity data.
 Instead of recreating the parity from scratch, this allows
 you to reuse the hashes present in the content file to validate data
-and maintain data protection during the `sync` process using
+and maintain data protection during the <b>sync</b> process using
 the existing parity data.
-This option can be used only with `sync`.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+This option can be used only with <b>sync</b>.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -R, --force-realloc
-</strong></td></tr><tr><td>
-In `sync`, forces a full reallocation of files and rebuild of the parity.
+</div><div class="manual-option-description">
+In <b>sync</b>, forces a full reallocation of files and rebuild of the parity.
 This option can be used to completely reallocate all files,
 removing fragmentation, while reusing the hashes present in the content
 file to validate data.
-This option can be used only with `sync`.
+This option can be used only with <b>sync</b>.
 WARNING! This option is for experts only, and it is highly
 recommended not to use it.
-You DO NOT have data protection during the `sync` operation.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+You DO NOT have data protection during the <b>sync</b> operation.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-W, --force-realloc-tail SIZE
+</div><div class="manual-option-description">
+Works like -R, --force-realloc, but limited to the specified
+tail portion (last SIZE bytes) of each parity file.
+It forces reallocation (movement) of any file fragments/blocks
+currently stored in that tail section, allowing them to be
+placed anywhere in the parity file(s) where free space is
+available (including existing holes).
+The main purpose of this option is to shrink the on-disk size
+of the parity file. If the reallocation successfully clears
+the entire tail section (no blocks remain using it), the
+parity file is truncated, reclaiming the unused tail space.
+You can use multipliers such as K, M, G, or T (e.g.
+--force-realloc-tail 1G).
+You can use locate -t, --tail to know in advance the affected
+files.
+WARNING! This option is for experts only, and it is highly
+recommended not to use it.
+You DO NOT have data protection during the <b>sync</b> operation
+for the affected files.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -l, --log FILE
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Writes a detailed log to the specified file.
 If this option is not specified, unexpected errors are printed
 to the screen, potentially resulting in excessive output in case of
 many errors. When -l, --log is specified, only
 fatal errors that cause SnapRAID to stop are printed
 to the screen.
-If the path starts with '&gt;&gt;', the file is opened
-in append mode. Occurrences of '%D' and '%T' in the name are
+If the path starts with <b>&gt;&gt;</b>, the file is opened
+in append mode. Occurrences of <b>%D</b> and <b>%T</b> in the name are
 replaced with the date and time in the format YYYYMMDD and
 HHMMSS. In Windows batch files, you must double
-the '%' character, e.g., result-%%D.log. To use '&gt;&gt;', you must
-enclose the name in quotes, e.g., `"&gt;&gt;result.log"`.
+the <b>%</b> character, e.g., result-%%D.log. To use <b>&gt;&gt;</b>, you must
+enclose the name in quotes, e.g., <b>"&gt;&gt;result.log"</b>.
 To output the log to standard output or standard error,
-you can use `"&gt;&amp;1"` and `"&gt;&amp;2"`, respectively.
+you can use <b>"&gt;&amp;1"</b> and <b>"&gt;&amp;2"</b>, respectively.
 See the snapraid_log.txt file or man page for log tag descriptions.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -L, --error-limit NUMBER
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Sets a new error limit before stopping execution.
 By default, SnapRAID stops if it encounters more than 100
 input/output errors, indicating that a disk is likely failing.
-This option affects `sync` and `scrub`, which are allowed
+This option affects <b>sync</b> and <b>scrub</b>, which are allowed
 to continue after the first set of disk errors to try
 to complete their operations.
-However, `check` and `fix` always stop at the first error.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+However, <b>check</b> and <b>fix</b> always stop at the first error.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -S, --start BLKSTART
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Starts processing from the specified
 block number. This can be useful for retrying to check
 or fix specific blocks in case of a damaged disk.
 This option is mainly for advanced manual recovery.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -B, --count BLKCOUNT
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Processes only the specified number of blocks.
 This option is mainly for advanced manual recovery.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -C, --gen-conf CONTENT
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Generates a dummy configuration file from an existing
 content file.
 The configuration file is written to standard output
@@ -1207,57 +1388,69 @@ and does not overwrite an existing one.
 This configuration file also contains the information
 needed to reconstruct the disk mount points in case you
 lose the entire system.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -v, --verbose
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Prints more information to the screen.
 If specified once, it prints excluded files
 and additional statistics.
 This option has no effect on the log files.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -q, --quiet
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Prints less information to the screen.
 If specified once, it removes the progress bar; twice,
 the running operations; three times, the info
 messages; four times, the status messages.
 Fatal errors are always printed to the screen.
 This option has no effect on the log files.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -H, --help
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Prints a short help screen.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -V, --version
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Prints the program version.
-</td></tr>
-</table>
-<h2><a name="7">7</a> 
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec7" class="manual-title-level-1">
 Configuration
-</h2>
+</h1>
 <p>SnapRAID requires a configuration file to know where your disk array
 is located and where to store the parity information.
-</p><p>In Unix, it uses the file `/usr/local/etc/snapraid.conf` if it exists,
-otherwise `/etc/snapraid.conf`.
-In Windows, it uses the file `snapraid.conf` in the same
-directory as `snapraid.exe`.
+</p><p>In Unix, it uses the file <b>/usr/local/etc/snapraid.conf</b> if it exists,
+otherwise <b>/etc/snapraid.conf</b>.
+In Windows, it uses the file <b>snapraid.conf</b> in the same
+directory as <b>snapraid.exe</b>.
 </p><p>It must contain the following options (case-sensitive):
-</p><h3><a name="7.1">7.1</a> 
+</p><div class="manual-section-level-2">
+<h2 id="sec7-1" class="manual-title-level-2">
 parity FILE [,FILE] ...
-</h3>
+</h2>
 <p>Defines the files to use to store the parity information.
 The parity enables protection from a single disk
 failure, similar to RAID5.
@@ -1272,9 +1465,11 @@ they do not become fragmented, improving performance.
 </p><p>In Windows, 256 MB is left unused on each disk to avoid the
 warning about full disks.
 </p><p>This option is mandatory and can be used only once.
-</p><h3><a name="7.2">7.2</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-2" class="manual-title-level-2">
 (2,3,4,5,6)-parity FILE [,FILE] ...
-</h3>
+</h2>
 <p>Defines the files to use to store extra parity information.
 </p><p>For each parity level specified, one additional level of protection
 is enabled:
@@ -1297,39 +1492,45 @@ is enabled:
 </ul>
 <p>Each parity level requires the presence of all previous parity
 levels.
-</p><p>The same considerations as for the 'parity' option apply.
+</p><p>The same considerations as for the <b>parity</b> option apply.
 </p><p>These options are optional and can be used only once.
-</p><h3><a name="7.3">7.3</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-3" class="manual-title-level-2">
 z-parity FILE [,FILE] ...
-</h3>
+</h2>
 <p>Defines an alternate file and format to store triple parity.
-</p><p>This option is an alternative to '3-parity', primarily intended for
+</p><p>This option is an alternative to <b>3-parity</b>, primarily intended for
 low-end CPUs like ARM or AMD Phenom, Athlon, and Opteron that do not
 support the SSSE3 instruction set. In such cases, it provides
 better performance.
 </p><p>This format is similar to but faster than the one used by ZFS RAIDZ3.
 Like ZFS, it does not work beyond triple parity.
-</p><p>When using '3-parity', you will be warned if it is recommended to use
-the 'z-parity' format for performance improvement.
+</p><p>When using <b>3-parity</b>, you will be warned if it is recommended to use
+the <b>z-parity</b> format for performance improvement.
 </p><p>It is possible to convert from one format to another by adjusting
 the configuration file with the desired z-parity or 3-parity file
-and using 'fix' to recreate it.
-</p><h3><a name="7.4">7.4</a> 
+and using <b>fix</b> to recreate it.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-4" class="manual-title-level-2">
 content FILE
-</h3>
+</h2>
 <p>Defines the file to use to store the list and checksums of all the
 files present in your disk array.
 </p><p>It can be placed on a disk used for data, parity, or
 any other disk available.
 If you use a data disk, this file is automatically excluded
-from the `sync` process.
+from the <b>sync</b> process.
 </p><p>This option is mandatory and can be used multiple times to save
 multiple copies of the same file.
 </p><p>You must store at least one copy for each parity disk used
 plus one. Using additional copies does not hurt.
-</p><h3><a name="7.5">7.5</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-5" class="manual-title-level-2">
 data NAME DIR
-</h3>
+</h2>
 <p>Defines the name and mount point of the data disks in
 the array. NAME is used to identify the disk and must
 be unique. DIR is the mount point of the disk in the
@@ -1338,32 +1539,50 @@ file system.
 you keep the NAME fixed.
 </p><p>You should use one option for each data disk in the array.
 </p><p>You can rename a disk later by changing the NAME directly
-in the configuration file and then running a 'sync' command.
+in the configuration file and then running a <b>sync</b> command.
 In the case of renaming, the association is done using the stored
 UUID of the disks.
-</p><h3><a name="7.6">7.6</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-6" class="manual-title-level-2">
+extra NAME DIR
+</h2>
+<p>Defines the name and mount point of additional disks to monitor
+with the <b>smart</b> and <b>probe</b> commands.
+</p><p>This is useful for monitoring disks that are not part of the
+array but are required for the system to function, such as
+the boot disk.
+</p><p>Note that such disks are not affected by the <b>up</b> and <b>down</b> commands
+because they are expected to be always spinning.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-7" class="manual-title-level-2">
 nohidden
-</h3>
+</h2>
 <p>Excludes all hidden files and directories.
-In Unix, hidden files are those starting with `.`.
+In Unix, hidden files are those starting with <b>.</b>.
 In Windows, they are those with the hidden attribute.
-</p><h3><a name="7.7">7.7</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 exclude/include PATTERN
-</h3>
+</h2>
 <p>Defines the file or directory patterns to exclude or include
 in the sync process.
 All patterns are processed in the specified order.
-</p><p>If the first pattern that matches is an `exclude` one, the file
-is excluded. If it is an `include` one, the file is included.
+</p><p>If the first pattern that matches is an <b>exclude</b> one, the file
+is excluded. If it is an <b>include</b> one, the file is included.
 If no pattern matches, the file is excluded if the last pattern
-specified is an `include`, or included if the last pattern
-specified is an `exclude`.
+specified is an <b>include</b>, or included if the last pattern
+specified is an <b>exclude</b>.
 </p><p>See the PATTERN section for more details on pattern
 specifications.
 </p><p>This option can be used multiple times.
-</p><h3><a name="7.8">7.8</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
-</h3>
+</h2>
 <p>Defines the basic block size in kibibytes for the parity.
 One kibibyte is 1024 bytes.
 </p><p>The default blocksize is 256, which should work for most cases.
@@ -1383,7 +1602,7 @@ the amount of data on that data disk, not others.
 wasted for each file. For example, with 100,000 files and a 256 KiB
 block size, you will waste 12.8 GB of parity, which may result
 in 12.8 GB less space available on the data disk.
-</p><p>You can check the amount of wasted space on each disk using `status`.
+</p><p>You can check the amount of wasted space on each disk using <b>status</b>.
 This is the amount of space you must leave free on the data
 disks or use for files not included in the array.
 If this value is negative, it means you are close to filling
@@ -1394,17 +1613,17 @@ you have enough extra space to handle up to 100,000
 files on each data disk without any wasted space.
 </p><p>A trick to get a larger parity partition in Linux is to format it
 with the command:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 mkfs.ext4 -m 0 -T largefile4 DEVICE
 </pre>
-</td></tr></table>
 <p>This results in about 1.5% extra space, approximately 60 GB for
 a 4 TB disk, which allows about 460,000 files on each data disk without
 any wasted space.
-</p><h3><a name="7.9">7.9</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
-</h3>
+</h2>
 <p>Defines the hash size in bytes for the saved blocks.
 </p><p>The default hashsize is 16 bytes (128 bits), which should work
 for most cases.
@@ -1435,22 +1654,26 @@ RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 </p><pre>
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
-<h3><a name="7.10">7.10</a> 
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
-</h3>
+</h2>
 <p>Automatically saves the state when syncing or scrubbing after the
 specified amount of GB processed.
-This option is useful to avoid restarting long `sync`
+This option is useful to avoid restarting long <b>sync</b>
 commands from scratch if interrupted by a machine crash or any other event.
-</p><h3><a name="7.11">7.11</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
-</h3>
+</h2>
 <p>Sets the maximum allowed disk temperature in Celsius. When specified,
 SnapRAID periodically checks the temperature of all disks using the
 smartctl tool. The current disk temperatures are displayed while
 SnapRAID is operating. If any disk exceeds this limit, all operations
 stop, and the disks are spun down (put into standby) for the duration
-defined by the `temp_sleep` option. After the sleep period, operations
+defined by the <b>temp_sleep</b> option. After the sleep period, operations
 resume, potentially pausing again if the temperature limit is reached
 once more.
 </p><p>During operation, SnapRAID also analyzes the heating curve of each
@@ -1469,85 +1692,88 @@ sensors. If no system sensor can be accessed, it uses the lowest disk
 temperature measured at the start of the run as a fallback reference.
 </p><p>Normally, SnapRAID shows only the temperature of the hottest disk.
 To display the temperature of all disks, use the -A or --stats option.
-</p><h3><a name="7.12">7.12</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
-</h3>
+</h2>
 <p>Sets the standby time, in minutes, when the temperature limit is
 reached. During this period, the disks remain spun down. The default
 is 5 minutes.
-</p><h3><a name="7.13">7.13</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 pool DIR
-</h3>
+</h2>
 <p>Defines the pooling directory where the virtual view of the disk
-array is created using the `pool` command.
+array is created using the <b>pool</b> command.
 </p><p>The directory must already exist.
-</p><h3><a name="7.14">7.14</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 share UNC_DIR
-</h3>
+</h2>
 <p>Defines the Windows UNC path required to access the disks remotely.
 </p><p>If this option is specified, the symbolic links created in the pool
 directory use this UNC path to access the disks.
 Without this option, the symbolic links generated use only local paths,
 which does not allow sharing the pool directory over the network.
 </p><p>The symbolic links are formed using the specified UNC path, adding the
-disk name as specified in the `data` option, and finally adding the
+disk name as specified in the <b>data</b> option, and finally adding the
 file directory and name.
 </p><p>This option is required only for Windows.
-</p><h3><a name="7.15">7.15</a> 
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
-</h3>
+</h2>
 <p>Defines custom smartctl options to obtain the SMART attributes for
 each disk. This may be required for RAID controllers and some USB
 disks that cannot be auto-detected. The %s placeholder is replaced by
 the device name, but it is optional for fixed devices like RAID controllers.
-</p><p>DISK is the same disk name specified in the `data` option.
-PARITY is one of the parity names: `parity`, `2-parity`, `3-parity`,
-`4-parity`, `5-parity`, `6-parity`, or `z-parity`.
-</p><p>In the specified OPTIONS, the `%s` string is replaced by the
+</p><p>DISK is the same disk name specified in the <b>data</b> option.
+PARITY is one of the parity names: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+<b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b>, or <b>z-parity</b>.
+</p><p>In the specified OPTIONS, the <b>%s</b> string is replaced by the
 device name. For RAID controllers, the device is
-likely fixed, and you may not need to use `%s`.
+likely fixed, and you may not need to use <b>%s</b>.
 </p><p>Refer to the smartmontools documentation for possible options:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-https://www.smartmontools.org/wiki/Supported_RAID-Controllers
-https://www.smartmontools.org/wiki/Supported_USB-Devices
+</p><pre>
+<a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
+<a href="https://www.smartmontools.org/wiki/Supported_USB-Devices">https://www.smartmontools.org/wiki/Supported_USB-Devices</a>
 </pre>
-</td></tr></table>
 <p>For example:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 smartctl parity -d sat %s
 </pre>
-</td></tr></table>
-<h3><a name="7.16">7.16</a> 
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
-</h3>
+</h2>
 <p>Ignores the specified SMART attribute when computing the probability
 of disk failure. This option is useful if a disk reports unusual or
 misleading values for a particular attribute.
-</p><p>DISK is the same disk name specified in the `data` option.
-PARITY is one of the parity names: `parity`, `2-parity`, `3-parity`,
-`4-parity`, `5-parity`, `6-parity`, or `z-parity`.
+</p><p>DISK is the same disk name specified in the <b>data</b> option.
+PARITY is one of the parity names: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+<b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b>, or <b>z-parity</b>.
 The special value * can be used to ignore the attribute on all disks.
-</p><p>For example, to ignore the `Current Pending Sector Count` attribute on
+</p><p>For example, to ignore the <b>Current Pending Sector Count</b> attribute on
 all disks:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 smartignore * 197
 </pre>
-</td></tr></table>
 <p>To ignore it only on the first parity disk:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 smartignore parity 197
 </pre>
-</td></tr></table>
-<h3><a name="7.17">7.17</a> 
+</div>
+<div class="manual-section-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 Examples
-</h3>
+</h2>
 <p>An example of a typical configuration for Unix is:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 parity /mnt/diskp/snapraid.parity
 content /mnt/diskp/snapraid.content
 content /var/snapraid/snapraid.content
@@ -1561,10 +1787,8 @@ smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
 </pre>
-</td></tr></table>
 <p>An example of a typical configuration for Windows is:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 parity E:\snapraid.parity
 content E:\snapraid.content
 content C:\snapraid\snapraid.content
@@ -1579,173 +1803,262 @@ smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </pre>
-</td></tr></table>
-<h2><a name="8">8</a> 
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec8" class="manual-title-level-1">
 Pattern
-</h2>
+</h1>
 <p>Patterns are used to select a subset of files to exclude or include in
-the process.
+the process. Globbing characters can be used to match files and paths
+in a flexible way.
+</p><p>The question mark <b>?</b> matches any single character except the directory
+separator. This makes it useful for matching filenames with variable
+characters while keeping the pattern confined to a single directory level.
+</p><p>The single star <b>*</b> matches any sequence of characters, but like the
+question mark, it never crosses directory boundaries. It stops at the
+forward slash, making it suitable for matching within a single path
+component. This is the standard wildcard behavior familiar from shell
+globbing.
+</p><p>The double star <b>**</b> is more powerful, it matches any sequence of
+characters including directory separators. This allows patterns to match
+across multiple directory levels. When <b>**</b> appears embedded directly in
+a pattern, it can match zero or more characters including slashes between
+the surrounding literal text.
+</p><p>The most important use of <b>**</b> is in the special form <b>/**/</b>. This matches
+zero or more complete directory levels, making it possible to match files
+at any depth in a directory tree without knowing the exact path structure.
+For example, the pattern <b>src/**/main.js</b> matches <b>src/main.js</b> (skipping
+zero directories), <b>src/ui/main.js</b> (skipping one directory), and
+<b>src/ui/components/main.js</b> (skipping two directories).
+</p><p>Character classes using square brackets match a single character from a
+specified set or range. Like the other single character patterns, they do
+not match directory separators. Classes support ranges and negation using
+an exclamation mark.
+</p><p>The fundamental distinction to remember is that <b>*</b>, <b>?</b>, and character
+classes  all respect directory boundaries and only match within a single path
+component, while <b>**</b> is the only pattern that can match across directory
+separators.
 </p><p>There are four different types of patterns:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 FILE
-</strong></td></tr><tr><td>
-Selects any file named FILE. You can use any globbing
-characters like * and ?, and character classes like [a-z].
+</div><div class="manual-option-description">
+Selects any file named FILE.
 This pattern applies only to files, not directories.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 DIR/
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Selects any directory named DIR and everything inside.
-You can use any globbing characters like * and ?.
 This pattern applies only to directories, not files.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 /PATH/FILE
-</strong></td></tr><tr><td>
-Selects the exact specified file path. You can use any
-globbing characters like * and ?, but they never match a
-directory slash.
-This pattern applies only to files, not directories.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
+</div><div class="manual-option-description">
+Selects the exact specified file path. This pattern applies
+only to files, not directories.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 /PATH/DIR/
-</strong></td></tr><tr><td>
+</div><div class="manual-option-description">
 Selects the exact specified directory path and everything
-inside. You can use any globbing characters like * and ?, but
-they never match a directory slash.
-This pattern applies only to directories, not files.
-</td></tr>
-</table>
+inside.&nbsp;&nbsp;&nbsp;&nbsp;This pattern applies only to directories, not files.
+</div>
+</div>
+</div>
 <p>When you specify an absolute path starting with /, it is applied at
 the array root directory, not the local file system root directory.
 </p><p>In Windows, you can use the backslash \ instead of the forward slash /.
 Windows system directories, junctions, mount points, and other Windows
 special directories are treated as files, meaning that to exclude
 them, you must use a file rule, not a directory one.
-</p><p>If the file name contains a '*', '?', '[',
-or ']' character, you must escape it to avoid having it interpreted as a
-globbing character. In Unix, the escape character is '\'; in Windows, it is '^'.
+</p><p>If the file name contains a <b>*</b>, <b>?</b>, <b>[</b>,
+or <b>]</b> character, you must escape it to avoid having it interpreted as a
+globbing character. In Unix, the escape character is <b>\</b>; in Windows, it is <b>^</b>.
 When the pattern is on the command line, you must double the escape
 character to avoid having it interpreted by the command shell.
 </p><p>In the configuration file, you can use different strategies to filter
 the files to process.
-The simplest approach is to use only `exclude` rules to remove all the
+The simplest approach is to use only <b>exclude</b> rules to remove all the
 files and directories you do not want to process. For example:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-# Excludes any file named `*.unrecoverable`
+</p><pre>
+# Excludes any file named <b>*.unrecoverable</b>
 exclude *.unrecoverable
-# Excludes the root directory `/lost+found`
+# Excludes the root directory <b>/lost+found</b>
 exclude /lost+found/
-# Excludes any subdirectory named `tmp`
+# Excludes any subdirectory named <b>tmp</b>
 exclude tmp/
 </pre>
-</td></tr></table>
 <p>The opposite approach is to define only the files you want to process, using
-only `include` rules. For example:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+only <b>include</b> rules. For example:
+</p><pre>
 # Includes only some directories
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-</td></tr></table>
-<p>The final approach is to mix `exclude` and `include` rules. In this case,
+<p>The final approach is to mix <b>exclude</b> and <b>include</b> rules. In this case,
 the order of rules is important. Earlier rules take
 precedence over later ones.
-To simplify, you can list all the `exclude` rules first and then
-all the `include` rules. For example:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-# Excludes any file named `*.unrecoverable`
+To simplify, you can list all the <b>exclude</b> rules first and then
+all the <b>include</b> rules. For example:
+</p><pre>
+# Excludes any file named <b>*.unrecoverable</b>
 exclude *.unrecoverable
-# Excludes any subdirectory named `tmp`
+# Excludes any subdirectory named <b>tmp</b>
 exclude tmp/
 # Includes only some directories
 include /movies/
 include /musics/
 include /pictures/
 </pre>
-</td></tr></table>
-<p>On the command line, using the -f option, you can only use `include`
+<p>On the command line, using the -f option, you can only use <b>include</b>
 patterns. For example:
-</p><table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
+</p><pre>
 # Checks only the .mp3 files.
 # In Unix, use quotes to avoid globbing expansion by the shell.
 snapraid -f "*.mp3" check
 </pre>
-</td></tr></table>
 <p>In Unix, when using globbing characters on the command line, you must
 quote them to prevent the shell from expanding them.
-</p><h2><a name="9">9</a> 
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Ignore File
+</h1>
+<p>In addition to the global rules in the configuration file, you can
+place <b>.snapraidignore</b> files in any directory within the array to
+define decentralized exclusion rules.
+</p><p>Rules defined in <b>.snapraidignore</b> are applied after the rules in the
+configuration file. This means they have a higher priority and can be
+used to exclude files that were previously included by the global
+configuration. Effectively, if a local rule matches, the file is
+excluded regardless of the global include settings.
+</p><p>The pattern logic in <b>.snapraidignore</b> mirrors the global configuration
+but anchors patterns to the directory where the file is located:
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+FILE
+</div><div class="manual-option-description">
+Selects any file named FILE in this directory or below.
+This follows the same globbing rules as the global pattern.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+DIR/
+</div><div class="manual-option-description">
+Selects any directory named DIR and everything inside,
+residing in this directory or below.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+/PATH/FILE
+</div><div class="manual-option-description">
+Selects the exact specified file relative to the location
+of the <b>.snapraidignore</b> file.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+/PATH/DIR/
+</div><div class="manual-option-description">
+Selects the exact specified directory and everything inside,
+relative to the location of the <b>.snapraidignore</b> file.
+</div>
+</div>
+</div>
+<p>Unlike the global configuration, <b>.snapraidignore</b> files only support
+exclusion rules; you cannot use <b>include</b> patterns or negation (!).
+</p><p>For example, if you have a <b>.snapraidignore</b> in <b>/mnt/disk1/projects/</b>:
+</p><pre>
+# Excludes ONLY /mnt/disk1/projects/output.bin
+/output.bin
+# Excludes any directory named <b>build</b> inside projects/
+build/
+# Excludes any .tmp file inside projects/ or its subfolders
+*.tmp
+</pre>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
 Content
-</h2>
+</h1>
 <p>SnapRAID stores the list and checksums of your files in the content file.
 </p><p>It is a binary file that lists all the files present in your disk array,
 along with all the checksums to verify their integrity.
-</p><p>This file is read and written by the `sync` and `scrub` commands and
-read by the `fix`, `check`, and `status` commands.
-</p><h2><a name="10">10</a> 
+</p><p>This file is read and written by the <b>sync</b> and <b>scrub</b> commands and
+read by the <b>fix</b>, <b>check</b>, and <b>status</b> commands.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec11" class="manual-title-level-1">
 Parity
-</h2>
+</h1>
 <p>SnapRAID stores the parity information of your array in the parity
 files.
 </p><p>These are binary files containing the computed parity of all the
-blocks defined in the `content` file.
-</p><p>These files are read and written by the `sync` and `fix` commands and
-only read by the `scrub` and `check` commands.
-</p><h2><a name="11">11</a> 
+blocks defined in the <b>content</b> file.
+</p><p>These files are read and written by the <b>sync</b> and <b>fix</b> commands and
+only read by the <b>scrub</b> and <b>check</b> commands.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec12" class="manual-title-level-1">
 Encoding
-</h2>
+</h1>
 <p>SnapRAID in Unix ignores any encoding. It reads and stores the
 file names with the same encoding used by the file system.
 </p><p>In Windows, all names read from the file system are converted and
 processed in UTF-8 format.
 </p><p>To have file names printed correctly, you must set the Windows
-console to UTF-8 mode with the command `chcp 65001` and use
-a TrueType font like `Lucida Console` as the console font.
+console to UTF-8 mode with the command <b>chcp 65001</b> and use
+a TrueType font like <b>Lucida Console</b> as the console font.
 This affects only the printed file names; if you
 redirect the console output to a file, the resulting file is always
 in UTF-8 format.
-</p>
+</p></div>
 
-<p>
-</p>
 
-</div>
+            </div>
+        </main>
+    </div>
 
-<div id="footer">
-
-<div class="column">
-<span class="bold">Donate with</span>
-<br>
-<!--
-<a href="http://sourceforge.net/p/snapraid/donate/"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
--->
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=amadvance%40gmail%2ecom&lc=US&item_name=SnapRAID&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
-<!--
-<a href="https://coinkite.com/u/amadvance/"><img src="bitcoin.png" width="160" height="60" alt="BitCoin"></a>
--->
-</div>
-
-<div class="column">
-<span class="bold">Find other resources at</span>
-<br>
-<a href="https://github.com/amadvance/snapraid/"><img src="github.png" width="160" height="60" alt="GitHub"></a>
-<a href="http://sourceforge.net/projects/snapraid/"><img src="sourceforge.png" width="115" height="60" alt="SourceForge"></a>
-</div>
-
-</div>
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <div class="logo">
+                <img src="android-chrome-192x192.png" width="32" height="32"/>
+                SnapRAID
+                </div>
+                <p>Copyright &copy; 2026 Andrea Mazzoleni</p>
+                <p class="license">Distributed under GPL v3 License</p>
+            </div>
+            <div class="footer-col">
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
 
