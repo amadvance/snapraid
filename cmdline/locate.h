@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2026 Andrea Mazzoleni
- */
+// Copyright (C) 2026 Andrea Mazzoleni
 
 #ifndef __LOCATE_H
 #define __LOCATE_H

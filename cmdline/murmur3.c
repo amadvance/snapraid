@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2011 Andrea Mazzoleni
- */
+// Copyright (C) 2011 Andrea Mazzoleni
 
 /*
  * Derivative work from MurmorHash3.cpp revision r136

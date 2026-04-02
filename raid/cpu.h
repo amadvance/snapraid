@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/*
- * Copyright (C) 2013 Andrea Mazzoleni
- */
+// Copyright (C) 2013 Andrea Mazzoleni
 
 #ifndef __RAID_CPU_H
 #define __RAID_CPU_H
@@ -109,7 +107,7 @@ static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx,
 static inline int raid_cpu_has_sse2(void)
 {
 	/*
-	 * Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 * Intel 64 and IA-32 Architectures Software Developer's Manual
 	 * 325462-048US September 2013
 	 *
 	 * 11.6.2 Checking for SSE/SSE2 Support
@@ -128,7 +126,7 @@ static inline int raid_cpu_has_sse2(void)
 static inline int raid_cpu_has_ssse3(void)
 {
 	/*
-	 * Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 * Intel 64 and IA-32 Architectures Software Developer's Manual
 	 * 325462-048US September 2013
 	 *
 	 * 12.7.2 Checking for SSSE3 Support
@@ -145,7 +143,7 @@ static inline int raid_cpu_has_ssse3(void)
 static inline int raid_cpu_has_crc32(void)
 {
 	/*
-	 * Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 * Intel 64 and IA-32 Architectures Software Developer's Manual
 	 * 325462-048US September 2013
 	 *
 	 * 12.12.3 Checking for SSE4.2 Support

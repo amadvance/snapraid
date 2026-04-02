@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2013 Andrea Mazzoleni
- */
+// Copyright (C) 2013 Andrea Mazzoleni
 
 #ifndef __IMPORT_H
 #define __IMPORT_H

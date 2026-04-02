@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/*
- * Copyright (C) 2015 Andrea Mazzoleni
- */
+// Copyright (C) 2015 Andrea Mazzoleni
 
 #include "internal.h"
 #include "combo.h"

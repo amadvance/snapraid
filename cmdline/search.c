@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2014 Andrea Mazzoleni
- */
+// Copyright (C) 2014 Andrea Mazzoleni
 
 #include "portable.h"
 
