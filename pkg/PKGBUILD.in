@@ -6,7 +6,6 @@ pkgdesc="Disk array backup for many large rarely-changed files"
 arch=('x86_64')
 url="https://www.snapraid.it/"
 license=('GPL3')
-depends=('zlib' 'zstd' 'snapraid>=14.0' 'systemd')
 makedepends=('gcc' 'make')
 install="${pkgname}.install"
 source=("https://github.com/amadvance/@PACKAGE@/releases/download/v@PACKAGE_VERSION@/@PACKAGE@-@PACKAGE_VERSION@.tar.gz")
