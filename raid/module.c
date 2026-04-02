@@ -1,15 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2013 Andrea Mazzoleni
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 #include "internal.h"
@@ -470,4 +461,47 @@ bail:
 
 	return ret;
 }
+
+#ifdef __KERNEL__ /* to build the user mode test */
+static int speedtest = 1;
+
+static int __init raid_cauchy_init(void)
+{
+	int ret;
+
+	raid_init();
+
+	pr_info("raid: Using xor_blocks\n");
+#ifdef RAID_USE_RAID6_PQ
+	pr_info("raid: Using raid6\n");
+#endif
+
+	ret = raid_selftest();
+	if (ret != 0)
+		return ret;
+
+	pr_info("raid: Self test passed\n");
+
+	if (speedtest) {
+		pr_info("raid: Speed test\n");
+		raid_speedtest(0);
+		pr_info("raid: Speed test with optimized memory layout\n");
+		raid_speedtest(64); /* 64 is the typical cache line size */
+	}
+
+	return 0;
+}
+
+static void raid_cauchy_exit(void)
+{
+}
+
+subsys_initcall(raid_cauchy_init);
+module_exit(raid_cauchy_exit);
+module_param(speedtest, int, 0);
+MODULE_PARM_DESC(speedtest, "Runs a startup speed test");
+MODULE_AUTHOR("Andrea Mazzoleni <amadvance@gmail.com>");
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("RAID Cauchy functions");
+#endif
 
