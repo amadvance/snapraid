@@ -26,5 +26,5 @@ package() {
   install -Dm644 snapraid.conf.example "$pkgdir/usr/share/doc/$pkgname/snapraid.conf.example"
 
   # Arch Policy: License must also be in the license directory
-  install -Dm644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+  install -Dm644 LICENSES/GPL-3.0 "$pkgdir/usr/share/licenses/$pkgname/COPYING"
 }

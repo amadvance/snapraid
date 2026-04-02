@@ -99,8 +99,9 @@ for i in $( find $PKG/usr/man -type l ) ; do ln -s $( readlink $i ).gz $i.gz ; r
 
 mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION
 cp -a \
-  COPYING AUTHORS HISTORY README snapraid.conf.example \
+  AUTHORS HISTORY README snapraid.conf.example \
   $PKG/usr/doc/$PRGNAM-$VERSION
+cp -a LICENSES/GPL-3.0 $PKG/usr/doc/$PRGNAM-$VERSION/COPYING
 cat $CWD/$PRGNAM.SlackBuild > $PKG/usr/doc/$PRGNAM-$VERSION/$PRGNAM.SlackBuild
 
 mkdir -p $PKG/install

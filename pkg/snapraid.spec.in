@@ -29,7 +29,7 @@ rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 
 %files
-%license COPYING
+%license LICENSES/GPL-3.0
 %doc AUTHORS HISTORY README @PACKAGE@.conf.example
 %{_bindir}/@PACKAGE@
 %{_mandir}/man1/@PACKAGE@.1*

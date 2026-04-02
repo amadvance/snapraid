@@ -145,7 +145,8 @@ LIST_XML = doc/snapraid.xml doc/snapraid_log.xml $(patsubst %, doc/snapraid-%.xm
 
 EXTRA_DIST = \
 	autogen.sh autover.sh \
-	README AUTHORS HISTORY INSTALL COPYING TODO CHECK INSTALL.windows \
+	README AUTHORS HISTORY INSTALL TODO CHECK INSTALL.windows \
+	COPYING LICENSES/GPL-2.0 LICENSES/GPL-3.0 \
 	$(LIST_D) \
 	$(LIST_MAN) \
 	$(LIST_TXT) \
@@ -166,7 +167,6 @@ EXTRA_DIST = \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
 	tommyds/LICENSE \
-	raid/COPYING \
 	raid/test/Makefile \
 	raid/test/fulltest.c \
 	raid/test/selftest.c \
@@ -1222,7 +1222,7 @@ distwindows-x86: $(DISTWIN)
 	todos < README > tmp/readme.txt
 	todos < AUTHORS > tmp/authors.txt
 	todos < HISTORY > tmp/history.txt
-	todos < COPYING > tmp/copying.txt
+	todos < LICENSES/GPL-3.0 > tmp/copying.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
 	rm -r tmp
 
@@ -1235,6 +1235,6 @@ distwindows-x64: $(DISTWIN)
 	todos < README > tmp/readme.txt
 	todos < AUTHORS > tmp/authors.txt
 	todos < HISTORY > tmp/history.txt
-	todos < COPYING > tmp/copying.txt
+	todos < LICENSES/GPL-3.0 > tmp/copying.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp
