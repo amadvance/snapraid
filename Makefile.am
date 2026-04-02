@@ -146,7 +146,7 @@ LIST_XML = doc/snapraid.xml doc/snapraid_log.xml $(patsubst %, doc/snapraid-%.xm
 EXTRA_DIST = \
 	autogen.sh autover.sh \
 	README AUTHORS HISTORY INSTALL TODO CHECK INSTALL.windows \
-	COPYING LICENSES/GPL-2.0 LICENSES/GPL-3.0 \
+	COPYING LICENSES/GPL-2.0 LICENSES/GPL-3.0 LICENSES/BSD-2-Clause \
 	$(LIST_D) \
 	$(LIST_MAN) \
 	$(LIST_TXT) \
@@ -166,7 +166,6 @@ EXTRA_DIST = \
 	cmdline/resource.manifest \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
-	tommyds/LICENSE \
 	raid/test/Makefile \
 	raid/test/fulltest.c \
 	raid/test/selftest.c \
