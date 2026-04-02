@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2016 Andrea Mazzoleni
- */
+// Copyright (C) 2016 Andrea Mazzoleni
 
 #ifndef __IO_H
 #define __IO_H

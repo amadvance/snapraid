@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2025 Andrea Mazzoleni
- */
+// Copyright (C) 2025 Andrea Mazzoleni
 
 #ifndef __THERMAL_H
 #define __THERMAL_H

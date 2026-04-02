@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/*
- * Copyright (C) 2013 Andrea Mazzoleni
- */
+// Copyright (C) 2013 Andrea Mazzoleni
 
 #include <stdio.h>
 #include <stdint.h>

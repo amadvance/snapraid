@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2011 Andrea Mazzoleni
- */
+// Copyright (C) 2011 Andrea Mazzoleni
 
 #ifndef __STATE_H
 #define __STATE_H

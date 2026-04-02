@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/*
- * Copyright (C) 2019 Andrea Mazzoleni
- */
+// Copyright (C) 2019 Andrea Mazzoleni
 
 /*
  * Derivative work from MetroHash128::Hash
