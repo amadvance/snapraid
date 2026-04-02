@@ -50,7 +50,8 @@ make install DESTDIR="../${PKG_ROOT}"
 
 # Add example config and docs
 mkdir -p "../${PKG_ROOT}/usr/share/doc/@PACKAGE@"
-cp @PACKAGE@.conf.example COPYING AUTHORS HISTORY README "../${PKG_ROOT}/usr/share/doc/@PACKAGE@/"
+cp @PACKAGE@.conf.example AUTHORS HISTORY README "../${PKG_ROOT}/usr/share/doc/@PACKAGE@/"
+cp LICENSES/GPL-3.0 "../${PKG_ROOT}/usr/share/doc/@PACKAGE@/COPYING"
 
 cd ..
 
