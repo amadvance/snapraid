@@ -1,29 +1,5 @@
-/*
- * Copyright (c) 2010, Andrea Mazzoleni. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (C) 2010 Andrea Mazzoleni
 
 /** \file
  * Double linked list for collisions into hashtables.
@@ -224,6 +200,60 @@ tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, voi
 		tommy_list_insert_tail_not_empty(head, node);
 	else
 		tommy_list_insert_first(list, node);
+
+	node->data = data;
+}
+
+/**
+ * Inserts an element before the specified reference node.
+ * \param list The list.
+ * \param reference The reference node. The new node will be inserted before this node. The reference node must be in the list.
+ * \param node The node to insert.
+ * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
+ */
+tommy_inline void tommy_list_insert_before(tommy_list* list, tommy_node* reference, tommy_node* node, void* data)
+{
+	tommy_node* head = tommy_list_head(list);
+
+	/* if inserting before the head, update the list pointer */
+	if (head == reference) {
+		tommy_list_insert_head_not_empty(list, node);
+	} else {
+		/* insert in the "circular" prev list */
+		node->prev = reference->prev;
+		reference->prev = node;
+
+		/* insert in the "0 terminated" next list */
+		node->next = reference;
+		node->prev->next = node;
+	}
+
+	node->data = data;
+}
+
+/**
+ * Inserts an element after the specified reference node.
+ * \param list The list.
+ * \param reference The reference node. The new node will be inserted after this node. The reference node must be in the list.
+ * \param node The node to insert.
+ * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
+ */
+tommy_inline void tommy_list_insert_after(tommy_list* list, tommy_node* reference, tommy_node* node, void* data)
+{
+	tommy_node* head = tommy_list_head(list);
+
+	/* if inserting after the tail (reference->next == 0), handle specially */
+	if (reference->next == 0) {
+		tommy_list_insert_tail_not_empty(head, node);
+	} else {
+		/* insert in the "circular" prev list */
+		node->prev = reference;
+		reference->next->prev = node;
+
+		/* insert in the "0 terminated" next list */
+		node->next = reference->next;
+		reference->next = node;
+	}
 
 	node->data = data;
 }

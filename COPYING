@@ -1,4 +1,4 @@
-The snapraid project is provided under:
+The SnapRAID project is provided under:
 
 	SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -17,4 +17,12 @@ version according with:
 
 	LICENSES/GPL-2.0
 
-All contributions to the snapraid project are subject to this COPYING file.
+The TommyDS project is provided under:
+
+	SPDX-License-Identifier: BSD-2-Clause
+
+Being under the terms of the BSD 2 Clause version according with:
+
+	LICENSES/BSD-2-Clause
+
+All contributions to the SnapRAID project are subject to this COPYING file.
