@@ -849,10 +849,31 @@ not relate to array access or follow the <b>task-</b> naming convention.
 It is strongly recommended to implement a default handler to ignore
 unrecognized events
 </p><p>SECURITY REQUIREMENTS:
-* The path MUST be absolute (starting with /).
-* The script file MUST NOT be world-writable (recommended: 700 or 755).
-* The script owner MUST match the user running the daemon or be root.
-* The script MUST contain a valid shebang (e.g., #!/bin/sh).
+* The script path MUST be absolute (must start with /).
+* The script AND the directory containing the script MUST be owned by
+</p><p>the daemon's real UID, effective UID, or root (UID 0).
+</p><ul>
+<li>
+The script AND directory containing the script MUST NOT be
+group-writable, unless its group matches the daemon's GID/EGID
+or is root.
+</li>
+<li>
+The script AND directory containing the script MUST NOT be
+world-writable (S_IWOTH).
+</li>
+<li>
+The script MUST have at least one execute bit set (S_IXUSR, S_IXGRP, or S_IXOTH).
+</li>
+<li>
+The script MUST NOT have the setuid or setgid bits set (S_ISUID or S_ISGID).
+</li>
+<li>
+The script MUST NOT have multiple hard links (st_nlink == 1 only).
+</li>
+</ul>
+<p>If the execution fails, check your syslog (EventLog in Windows) to get
+the exact reason.
 </p><p>This remains inactive if no path is defined.
 </p></div>
 <div class="manual-section-level-3">
@@ -1024,9 +1045,13 @@ Push Notifications (ntfy.sh)
 It utilizes the --narrow flag to ensure the report is readable on mobile devices
 and maps SnapRAID status to ntfy titles, priorities, and emojis via placeholders.
 </p><pre>
-notify_result = curl --narrow -f --max-time 30 --retry 3 -H "Title: %s" -H "Priority: %n" -H "Tag: %t" -H "Email: your_email@example.com" --data-binary @- <a href="https://ntfy.sh/your_private_topic">https://ntfy.sh/your_private_topic</a>
+notify_result = curl --narrow -f --max-time 30 --retry 3 -H "Title: %s" -H "Priority: %n" -H "Tag: %t" --data-binary @- <a href="https://ntfy.sh/your_private_topic">https://ntfy.sh/your_private_topic</a>
 </pre>
-</div>
+<p>If you want to also send an email, you can add '-H "Email: your_email@example.com"'
+but you also need to authenticate by sending an authentication token. See:
+</p><p><a href="https://docs.ntfy.sh/publish/#authentication">https://docs.ntfy.sh/publish/#authentication</a>
+<br>
+</p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-6-3" class="manual-title-level-3">
 Local System Mail (mail)
