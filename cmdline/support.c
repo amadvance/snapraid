@@ -1357,7 +1357,7 @@ int advise_open(struct advise_struct* advise, int f)
 
 		/* advise noreuse access, this avoids to pollute the page cache */
 		/* supported from Linux Kernel 6.3 with this commit: https://github.com/torvalds/linux/commit/17e810229cb3068b692fa078bd9b3a6527e0866a */
-		ret = posix_fadvise(f, 0, 0, POSIX_FADV_NOREUSE);
+		ret = posix_fadvise_wrapper(f, 0, 0, POSIX_FADV_NOREUSE);
 		if (ret == ENOSYS) {
 			/* call is not supported */
 			ret = 0;
@@ -1370,8 +1370,8 @@ int advise_open(struct advise_struct* advise, int f)
 		}
 
 		/* advise sequential access, this doubles the read-ahead window size */
-		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
-		if (ret == ENOSYS) {
+		ret = posix_fadvise_wrapper(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret == ENOSYS || ret == ENOENT) {
 			/* call is not supported, like in armhf, see posix_fadvise manpage */
 			ret = 0;
 		}
@@ -1550,8 +1550,11 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 		}
 
 		/* flush the data from the cache */
-		ret = posix_fadvise(f, discard_offset, discard_size, POSIX_FADV_DONTNEED);
-		/* for POSIX_FADV_DONTNEED we don't allow failure with ENOSYS */
+		ret = posix_fadvise_wrapper(f, discard_offset, discard_size, POSIX_FADV_DONTNEED);
+		if (ret == ENOSYS) {
+			/* call is not supported */
+			ret = 0;
+		}
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			errno = ret; /* posix_fadvise return the error code */
@@ -1578,8 +1581,11 @@ int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off
 		int ret;
 
 		/* flush the data from the cache */
-		ret = posix_fadvise(f, offset, size, POSIX_FADV_DONTNEED);
-		/* for POSIX_FADV_DONTNEED we don't allow failure with ENOSYS */
+		ret = posix_fadvise_wrapper(f, offset, size, POSIX_FADV_DONTNEED);
+		if (ret == ENOSYS) {
+			/* call is not supported */
+			ret = 0;
+		}
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			errno = ret; /* posix_fadvise return the error code */

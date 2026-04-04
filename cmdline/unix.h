@@ -12,6 +12,11 @@
 #define O_BINARY 0 /**< Not used in Unix. */
 #define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
 
+
+#if HAVE_POSIX_FADVISE
+int posix_fadvise_wrapper(int fd, off_t offset, off_t len, int advice);
+#endif
+
 /**
  * If nanoseconds are not supported, we report the special STAT_NSEC_INVALID value,
  * to mark that it's undefined.
