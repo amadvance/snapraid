@@ -1,11 +1,27 @@
 SnapRAID HISTORY
 ================
 
+14.2 2026/04
+============
+ * Added a workaround for filesystems with a broken implementation of
+   posix_fadvise() that returns unexpected error codes.
+   This issue was specifically reported with the F2FS filesystem.
+   This change is primarily intended for package maintainers who need to run
+   "make check" on build servers that may use such filesystems.
+   No update is required if you have not encountered an error message about
+   failure to advise files.
+   Note that this error is surfacing only now because the 14.x branch includes
+   more extensive tests.
+
 14.1 2026/03
 ============
- * Fix include/exclude specification of directories.
- * Fix a build issue in Alpine distribution.
- * Fix abort condition if the Windows volume name cannot be converted to UTF-8.
+ * Fixed include/exclude specification for directories. This is a regression
+   bug in version 14.0. It is highly recommended to update.
+   If you are using version 14.0 with include/exclude directives, simply run
+   a new sync with this version to automatically resolve any potential issues.
+ * Fixed a build issue in Alpine distribution.
+ * Fixed abort condition if the Windows volume name cannot be converted to
+   UTF-8.
 
 14.0 2026/03
 ============
