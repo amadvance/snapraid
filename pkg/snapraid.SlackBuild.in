@@ -1,3 +1,4 @@
+#!/bin/bash
 
 # Slackware build script for @PACKAGE_NAME@
 
@@ -88,8 +89,7 @@ CXXFLAGS="$SLKCFLAGS" \
   --mandir=/usr/man \
   --docdir=/usr/doc/$PRGNAM-$VERSION \
   --disable-static \
-  --build=$ARCH-slackware-linux \
-  --with-init-type=bsd
+  --build=$ARCH-slackware-linux
 
 make -j
 make install DESTDIR=$PKG
