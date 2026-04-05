@@ -13,7 +13,7 @@ sha256sums=('@SHA256@')
 
 build() {
   cd "$pkgname-$pkgver"
-  ./configure --prefix=/usr --sysconfdir=/etc --with-init-type=none
+  ./configure --prefix=/usr --sysconfdir=/etc
   make
 }
 
