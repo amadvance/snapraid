@@ -359,14 +359,18 @@ problems identified during that specific operation.
 For example, an array in a CORRUPT state may still produce a PASSED
 result for a <b>probe</b> task if that operation encountered no specific
 errors.
+</p><p>In the PREFAIL or FAILING state, the <b>Maintenance</b> button in the Web
+UI is replaced with a <b>Refresh</b> button. This allows you to force the
+daemon to re-scan the state of the array (by re-reading the content
+file) after any manual fixes have been performed via the command line.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
 Configuration
 </h1>
-<p>The SnapRAID Daemon is configured via a plain-text .conf file,
-defaulting to $PREFIX/etc/snapraidd.conf and if not found to
-/etc/snapraidd.conf. The $PREFIX variable represents the installation
+<p>The SnapRAID Daemon is configured via a plain-text <b>.conf</b> file,
+defaulting to <b>$PREFIX/etc/snapraidd.conf</b> and if not found to
+<b>/etc/snapraidd.conf</b>. The $PREFIX variable represents the installation
 path chosen at build time (typically via the <b>--prefix</b> argument to
 the configure script).
 </p><p>This file governs the behavior of the automation engine, network
@@ -802,12 +806,15 @@ spindown_idle_minutes
 </h3>
 <p>Manages power consumption by automatically spinning down disks after
 the specified duration of inactivity.
+</p><p>Note that this applies only to <b>data</b> and <b>parity</b> disks configured in
+<b>snapraid.conf</b>. Any other disks, including <b>extra</b> disks, are not
+subject to spindown.
 </p><p>This timer monitors the global activity of the disks across the entire
 operating system. A disk will only be spun down if it has remained
 completely idle for the specified period. If any other application,
 service, or system process accesses the disk, the idle timer is reset.
-</p><p>If this option is unset, the daemon will not manage disk power states,
-relying instead on the OS or hardware controllers.
+</p><p>If set to 0 or left blank, the daemon will not manage disk power
+states, relying instead on the OS or hardware controllers.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-4-3" class="manual-title-level-3">
