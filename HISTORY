@@ -10,8 +10,7 @@ SnapRAID HISTORY
    "make check" on build servers that may use such filesystems.
    No update is required if you have not encountered an error message about
    failure to advise files.
-   Note that this error is surfacing only now because the 14.x branch includes
-   more extensive tests.
+ * Log the modification time of the content file in probe and other commmands.
 
 14.1 2026/03
 ============

@@ -218,6 +218,11 @@ void state_done(struct snapraid_state* state);
 void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk);
 
 /**
+ * Probe the state.
+ */
+void state_probe(struct snapraid_state* state);
+
+/**
  * Read the state.
  */
 void state_read(struct snapraid_state* state);

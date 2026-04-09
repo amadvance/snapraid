@@ -4194,6 +4194,39 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	*out_crc = crc;
 }
 
+void state_probe(struct snapraid_state* state)
+{
+	char path[PATH_MAX];
+	struct stat st;
+	tommy_node* node;
+
+	/* iterate over all the available content files and check the first one present */
+	node = tommy_list_head(&state->contentlist);
+	while (node) {
+		struct snapraid_content* content = node->data;
+
+		pathcpy(path, sizeof(path), content->content);
+
+		if (stat(path, &st) == 0) {
+			/* if found stop the search */
+			break;
+		}
+
+		/* next content file */
+		node = node->next;
+	}
+
+	/* if not found, assume empty */
+	if (!node)
+		return;
+
+	if (!state->no_conf) {
+		/* intentionally don't output the content path because it's not really read */
+		log_tag("content_info:probe_unixtime:%" PRId64 "\n", (int64_t)st.st_mtime);
+		log_flush();
+	}
+}
+
 void state_read(struct snapraid_state* state)
 {
 	STREAM* f;
@@ -4210,16 +4243,11 @@ void state_read(struct snapraid_state* state)
 		struct snapraid_content* content = node->data;
 		pathcpy(path, sizeof(path), content->content);
 
-		if (!state->no_conf) {
-			char esc_buffer[ESC_MAX];
-			log_tag("content:%s\n", esc_tag(path, esc_buffer));
-			log_flush();
-		}
 		msg_progress("Loading state from %s...\n", path);
 
 		f = sopen_read(path, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
 		if (f != 0) {
-			/* if opened stop the search */
+			/* if found stop the search */
 			break;
 		} else {
 			/* if it's real error of an existing file, abort */
@@ -4259,6 +4287,13 @@ void state_read(struct snapraid_state* state)
 		log_fatal(errno, "Error stating the content file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
+	}
+
+	if (!state->no_conf) {
+		char esc_buffer[ESC_MAX];
+		log_tag("content:%s\n", esc_tag(path, esc_buffer));
+		log_tag("content_info:read_unixtime:%" PRId64 "\n", (int64_t)st.st_mtime);
+		log_flush();
 	}
 
 	/* go further to check other content files */
@@ -4566,6 +4601,7 @@ static void state_rename_content(struct snapraid_state* state)
 void state_write(struct snapraid_state* state)
 {
 	uint32_t crc;
+	time_t now;
 
 	/* write all the content files */
 	state_write_content(state, &crc);
@@ -4575,6 +4611,10 @@ void state_write(struct snapraid_state* state)
 
 	/* rename the new files, over the old ones */
 	state_rename_content(state);
+
+	/* log the write time of the content file */
+	now = time(0);
+	log_tag("content_info:write_unixtime:%" PRId64 "\n", (int64_t)now);
 
 	state->need_write = 0; /* no write needed anymore */
 	state->checked_read = 0; /* what we wrote is not checked in read */
