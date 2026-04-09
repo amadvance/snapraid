@@ -1,0 +1,43 @@
+Source: snapraid
+Section: admin
+Homepage: https://github.com/amadvance/snapraid
+Priority: optional
+Standards-Version: 4.5.0
+Vcs-Git: https://salsa.debian.org/debian/snapraid.git
+Vcs-Browser: https://salsa.debian.org/debian/snapraid
+Maintainer: Mark <mark9000@fastmail.org>
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 13),
+
+Package: snapraid
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends},
+Pre-Depends: ${misc:Pre-Depends},
+Description: backup program for disk arrays
+ SnapRAID is a backup program for disk arrays. It stores parity
+ information of your data and it recovers from up to six disk
+ failures.
+ .
+ SnapRAID is mainly targeted for a home media center, where you
+ have a lot of big files that rarely change.
+ .
+ Beside the ability to recover from disk failures, the other
+ features of SnapRAID are:
+ .
+  * You can use disk already filled with files, without the need to
+    reformat them. You will access them like now.
+  * All your data is hashed to ensure data integrity and to avoid
+    silent corruption.
+  * If the failed disks are too many to allow a recovery,
+    you lose the data only on the failed disks.
+    All the data in the other disks is safe.
+  * If you accidentally delete some files in a disk, you can
+    recover them.
+  * The disks can have different sizes.
+  * You can add disks at any time.
+  * It doesn't lock-in your data. You can stop using SnapRAID at any
+    time without the need to reformat or move data.
+  * To access a file, only a single disk needs to spin, saving power and
+    producing less noise.
+ .
+ The official site of SnapRAID is: http://www.snapraid.it/
