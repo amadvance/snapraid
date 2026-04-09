@@ -103,9 +103,7 @@ const char* stat_desc(struct stat* st)
 	if (S_ISFIFO(st->st_mode))
 		return "fifo";
 	if (S_ISLNK(st->st_mode))
-		return "link";
-	if (S_ISLNK(st->st_mode))
-		return "symbolic-link";
+		return "symlink";
 	if (S_ISSOCK(st->st_mode))
 		return "socket";
 	return "unknown";
