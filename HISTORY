@@ -10,7 +10,8 @@ SnapRAID HISTORY
    "make check" on build servers that may use such filesystems.
    No update is required if you have not encountered an error message about
    failure to advise files.
- * Log the modification time of the content file in probe and other commmands.
+ * Log the modification time of the content file in probe and other commands.
+   This log entry is used by SnapRAID Daemon 1.6.
 
 14.1 2026/03
 ============
