@@ -1974,6 +1974,9 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_SMART) {
 		state_device(&state, DEVICE_SMART, 0);
 	} else if (operation == OPERATION_PROBE) {
+		/* probe also the content file */
+		state_probe(&state);
+
 		state_device(&state, DEVICE_PROBE, 0);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);

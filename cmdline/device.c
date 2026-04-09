@@ -820,7 +820,7 @@ void state_attr(struct snapraid_state* state, tommy_list* low)
 	}
 }
 
-static void state_probe(struct snapraid_state* state, tommy_list* low)
+static void state_probe_report(struct snapraid_state* state, tommy_list* low)
 {
 	tommy_node* i;
 	size_t device_pad;
@@ -1126,7 +1126,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);
 
 		if (operation == DEVICE_PROBE)
-			state_probe(state, &low);
+			state_probe_report(state, &low);
 
 		if (operation == DEVICE_UP)
 			state_attr(state, &low);
