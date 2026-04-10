@@ -7,7 +7,7 @@ version according with:
 
 	LICENSES/GPL-3.0
 
-The parity generation and verification code int the raid/ directory is
+The parity generation and verification code in the raid/ directory is
 provided under:
 
 	SPDX-License-Identifier: GPL-2.0-or-later
