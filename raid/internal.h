@@ -9,7 +9,7 @@
  *
  * It may happen that the assembler is too old to support
  * all instructions, even if the architecture supports them.
- * These defines allow to exclude from the build the not supported ones.
+ * These defines allow to exclude from the build the unsupported ones.
  *
  * If in your project you use a predefined assembler, you can define them
  * using fixed values, instead of using the HAVE_* defines.
@@ -112,9 +112,8 @@ static __always_inline void *__align_ptr(void *ptr, uintptr_t size)
 /*
  * Internal functions.
  *
- * These are intended to provide access for testing.
+ * These are intended to provide external access for testing.
  */
-int raid_selftest(void);
 void raid_gen_ref(int nd, int np, size_t size, void **vv);
 void raid_invert(uint8_t *M, uint8_t *V, int n);
 void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v);
@@ -161,30 +160,118 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
- * Internal naming.
+ * Functions for parity computation.
  *
- * These are intended to provide access for testing.
+ * These functions compute the parity blocks from the provided data.
+ *
+ * The number of parities to compute is implicit in the position in the
+ * forwarder vector. Position at index #i, computes (#i+1) parities.
+ *
+ * All these functions give the guarantee that parities are written
+ * in order. First parity P, then parity Q, and so on.
+ * This allows to specify the same memory buffer for multiple parities
+ * knowing that you'll get the latest written one.
+ * This characteristic is used by the raid_delta_gen() function to
+ * avoid to damage unused parities in recovering.
+ *
+ * @nd Number of data blocks
+ * @size Size of the blocks pointed by @vv. It must be a multiple of 64.
+ * @vv Vector of pointers to the blocks of data and parity.
+ *   It has (@nd + #parities) elements. The starting elements are the blocks
+ *   for data, following with the parity blocks.
+ *   Each block has @size bytes.
  */
-const char *raid_gen1_tag(void);
-const char *raid_gen2_tag(void);
-const char *raid_genz_tag(void);
-const char *raid_gen3_tag(void);
-const char *raid_gen4_tag(void);
-const char *raid_gen5_tag(void);
-const char *raid_gen6_tag(void);
-const char *raid_rec1_tag(void);
-const char *raid_rec2_tag(void);
-const char *raid_recX_tag(void);
+typedef void (raid_gen_fn)(int nd, size_t size, void **vv);
 
 /*
- * Internal forwarders.
+ * Functions for data recovery.
+ *
+ * These functions recover data blocks using the specified parity
+ * to recompute the missing data.
+ *
+ * Note that the format of vectors @id/@ip is different than raid_rec().
+ * For example, in the vector @ip the first parity is represented with the
+ * value 0 and not @nd.
+ *
+ * @nr Number of failed data blocks to recover.
+ * @id[] Vector of @nr indexes of the data blocks to recover.
+ *   The indexes start from 0. They must be in order.
+ * @ip[] Vector of @nr indexes of the parity blocks to use in the recovering.
+ *   The indexes start from 0. They must be in order.
+ * @nd Number of data blocks.
+ * @np Number of parity blocks.
+ * @size Size of the blocks pointed by @vv. It must be a multiple of 64.
+ * @vv Vector of pointers to the blocks of data and parity.
+ *   It has (@nd + @np) elements. The starting elements are the blocks
+ *   for data, following with the parity blocks.
+ *   Each block has @size bytes.
  */
-extern void (*raid_gen3_ptr)(int nd, size_t size, void **vv);
-extern void (*raid_genz_ptr)(int nd, size_t size, void **vv);
-extern void (*raid_gen_ptr[RAID_PARITY_MAX])(
-	int nd, size_t size, void **vv);
-extern void (*raid_rec_ptr[RAID_PARITY_MAX])(
-	int nr, int *id, int *ip, int nd, size_t size, void **vv);
+typedef void (raid_rec_fn)(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+
+/**
+ * Algorithm indexes
+ *
+ * To be used with the register and tag functions.
+ */
+#define RAID_ALGO_CAUCHY_PAR1 0
+#define RAID_ALGO_CAUCHY_PAR2 1
+#define RAID_ALGO_CAUCHY_PAR3 2
+#define RAID_ALGO_CAUCHY_PAR4 3
+#define RAID_ALGO_CAUCHY_PAR5 4
+#define RAID_ALGO_CAUCHY_PAR6 5
+#define RAID_ALGO_VANDERMONDE_PAR3 6
+#define RAID_ALGO_MAX 7
+
+/**
+ * Register functions for parity computation and data recovery.
+ *
+ * Each call overwrites the previous setting. Thus, call it from the
+ * slowest to the fastest.
+ *
+ * @na Algo code of the function. One of RAID_ALGO_*.
+ * @tag Descriptive short tag of the implementation, like "sse2", "avx2",...
+ * @fn Function to register.
+ */
+void raid_gen_register(int na, const char *tag, raid_gen_fn *fn);
+void raid_rec_register(int na, const char *tag, raid_rec_fn *fn);
+
+/**
+ * Set functions for data recovery.
+ *
+ * Intended only for testing the recovery function forcing a specific
+ * parity generation for the delta step.
+ *
+ * Each call overwrites the previous setting.
+ *
+ * @np Number of parities.
+ * @fn Function to register.
+ */
+void raid_gen_force(int np, raid_gen_fn *fn);
+
+/**
+ * Register all the functions based on integer variables.
+ */
+void raid_register_int(void);
+
+/**
+ * Register all the functions based on x86 intructions.
+ */
+void raid_register_x86(void);
+
+/*
+ * Tag functions.
+ *
+ * Given the specified algo code, return the tag of the registered function.
+ */
+const char *raid_gen_tag(int na);
+const char *raid_rec_tag(int na);
+
+/**
+ * Basic functionality self test.
+ *
+ * Returns 0 on success.
+ */
+int raid_selftest(void);
 
 /*
  * Tables.

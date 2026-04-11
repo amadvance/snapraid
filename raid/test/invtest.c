@@ -68,15 +68,15 @@ long long EXPECTED[RAID_PARITY_MAX] = {
 	327012476050LL
 };
 
-static __always_inline int test_sub_matrix(int nr, long long *total)
+static __always_inline int test_sub_matrix(int nr, int64_t *total)
 {
 	uint8_t M[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	int np = RAID_PARITY_MAX;
 	int nd = RAID_DATA_MAX;
 	int ip[RAID_PARITY_MAX];
 	int id[RAID_DATA_MAX];
-	long long count;
-	long long expected;
+	int64_t count;
+	int64_t expected;
 
 	printf("\n%ux%u\n", nr, nr);
 
@@ -119,7 +119,7 @@ static __always_inline int test_sub_matrix(int nr, long long *total)
 
 int test_all_sub_matrix(void)
 {
-	long long total;
+	int64_t total;
 
 	printf("Invert all square submatrices of the %dx%d Cauchy matrix\n",
 		RAID_PARITY_MAX, RAID_DATA_MAX);

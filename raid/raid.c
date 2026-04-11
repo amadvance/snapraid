@@ -86,7 +86,7 @@
  *   on top, and it remains MDS. This forms the code for m=4, with RAID-6 as
  *   a subset:
  *
- *     1    1    1    1    1    1 
+ *     1    1    1    1    1    1
  *     1    2    4    8   16   32
  *     1  245  210  196  154  113
  *     1  187  166  215  199    7
@@ -197,22 +197,6 @@
  */
 
 /**
- * Generator matrix currently used.
- */
-const uint8_t (*raid_gfgen)[256];
-
-void raid_mode(int mode)
-{
-	if (mode == RAID_MODE_VANDERMONDE) {
-		raid_gen_ptr[2] = raid_genz_ptr;
-		raid_gfgen = gfvandermonde;
-	} else {
-		raid_gen_ptr[2] = raid_gen3_ptr;
-		raid_gfgen = gfcauchy;
-	}
-}
-
-/**
  * Buffer filled with 0 used in recovering.
  */
 static void *raid_zero_block;
@@ -220,44 +204,6 @@ static void *raid_zero_block;
 void raid_zero(void *zero)
 {
 	raid_zero_block = zero;
-}
-
-/*
- * Forwarders for parity computation.
- *
- * These functions compute the parity blocks from the provided data.
- *
- * The number of parities to compute is implicit in the position in the
- * forwarder vector. Position at index #i, computes (#i+1) parities.
- *
- * All these functions give the guarantee that parities are written
- * in order. First parity P, then parity Q, and so on.
- * This allows to specify the same memory buffer for multiple parities
- * knowing that you'll get the latest written one.
- * This characteristic is used by the raid_delta_gen() function to
- * avoid to damage unused parities in recovering.
- *
- * @nd Number of data blocks
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
- * @v Vector of pointers to the blocks of data and parity.
- *   It has (@nd + #parities) elements. The starting elements are the blocks
- *   for data, following with the parity blocks.
- *   Each block has @size bytes.
- */
-void (*raid_gen_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
-void (*raid_gen3_ptr)(int nd, size_t size, void **vv);
-void (*raid_genz_ptr)(int nd, size_t size, void **vv);
-
-void raid_gen(int nd, int np, size_t size, void **v)
-{
-	/* enforce limit on size */
-	BUG_ON(size % 64 != 0);
-
-	/* enforce limit on number of failures */
-	BUG_ON(np < 1);
-	BUG_ON(np > RAID_PARITY_MAX);
-
-	raid_gen_ptr[np - 1](nd, size, v);
 }
 
 /**
@@ -493,122 +439,3 @@ void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 		qa[i] = Dy;
 	}
 }
-
-/*
- * Forwarders for data recovery.
- *
- * These functions recover data blocks using the specified parity
- * to recompute the missing data.
- *
- * Note that the format of vectors @id/@ip is different than raid_rec().
- * For example, in the vector @ip the first parity is represented with the
- * value 0 and not @nd.
- *
- * @nr Number of failed data blocks to recover.
- * @id[] Vector of @nr indexes of the data blocks to recover.
- *   The indexes start from 0. They must be in order.
- * @ip[] Vector of @nr indexes of the parity blocks to use in the recovering.
- *   The indexes start from 0. They must be in order.
- * @nd Number of data blocks.
- * @np Number of parity blocks.
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
- * @v Vector of pointers to the blocks of data and parity.
- *   It has (@nd + @np) elements. The starting elements are the blocks
- *   for data, following with the parity blocks.
- *   Each block has @size bytes.
- */
-void (*raid_rec_ptr[RAID_PARITY_MAX])(
-	int nr, int *id, int *ip, int nd, size_t size, void **vv);
-
-void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
-{
-	int nrd; /* number of data blocks to recover */
-	int nrp; /* number of parity blocks to recover */
-
-	/* enforce limit on size */
-	BUG_ON(size % 64 != 0);
-
-	/* enforce limit on number of failures */
-	BUG_ON(nr > np);
-	BUG_ON(np > RAID_PARITY_MAX);
-
-	/* enforce order in index vector */
-	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
-	BUG_ON(nr >= 3 && ir[1] >= ir[2]);
-	BUG_ON(nr >= 4 && ir[2] >= ir[3]);
-	BUG_ON(nr >= 5 && ir[3] >= ir[4]);
-	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
-
-	/* enforce limit on index vector */
-	BUG_ON(nr > 0 && ir[nr-1] >= nd + np);
-
-	/* count the number of data blocks to recover */
-	nrd = 0;
-	while (nrd < nr && ir[nrd] < nd)
-		++nrd;
-
-	/* all the remaining are parity */
-	nrp = nr - nrd;
-
-	/* enforce limit on number of failures */
-	BUG_ON(nrd > nd);
-	BUG_ON(nrp > np);
-
-	/* if failed data is present */
-	if (nrd != 0) {
-		int ip[RAID_PARITY_MAX];
-		int i, j, k;
-
-		/* setup the vector of parities to use */
-		for (i = 0, j = 0, k = 0; i < np; ++i) {
-			if (j < nrp && ir[nrd + j] == nd + i) {
-				/* this parity has to be recovered */
-				++j;
-			} else {
-				/* this parity is used for recovering */
-				ip[k] = i;
-				++k;
-			}
-		}
-
-		/* recover the nrd data blocks specified in ir[], */
-		/* using the first nrd parity in ip[] for recovering */
-		raid_rec_ptr[nrd - 1](nrd, ir, ip, nd, size, v);
-	}
-
-	/* recompute all the parities up to the last bad one */
-	if (nrp != 0)
-		raid_gen(nd, ir[nr - 1] - nd + 1, size, v);
-}
-
-void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
-{
-	/* enforce limit on size */
-	BUG_ON(size % 64 != 0);
-
-	/* enforce limit on number of failures */
-	BUG_ON(nr > nd);
-	BUG_ON(nr > RAID_PARITY_MAX);
-
-	/* enforce order in index vector for data */
-	BUG_ON(nr >= 2 && id[0] >= id[1]);
-	BUG_ON(nr >= 3 && id[1] >= id[2]);
-	BUG_ON(nr >= 4 && id[2] >= id[3]);
-	BUG_ON(nr >= 5 && id[3] >= id[4]);
-	BUG_ON(nr >= 6 && id[4] >= id[5]);
-
-	/* enforce limit on index vector for data */
-	BUG_ON(nr > 0 && id[nr-1] >= nd);
-
-	/* enforce order in index vector for parity */
-	BUG_ON(nr >= 2 && ip[0] >= ip[1]);
-	BUG_ON(nr >= 3 && ip[1] >= ip[2]);
-	BUG_ON(nr >= 4 && ip[2] >= ip[3]);
-	BUG_ON(nr >= 5 && ip[3] >= ip[4]);
-	BUG_ON(nr >= 6 && ip[4] >= ip[5]);
-
-	/* if failed data is present */
-	if (nr != 0)
-		raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
-}
-
