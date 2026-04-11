@@ -5,101 +5,246 @@
 #include "memory.h"
 #include "cpu.h"
 
+/**
+ * Forwarders for parity generation.
+ *
+ * Set by the raid_mode() call.
+ *
+ * Index 0 is for one parity, 1 for the two parities, and so on.
+ */
+static raid_gen_fn *raid_gen_ptr[RAID_PARITY_MAX];
+
+struct raid_gen_algo {
+	raid_gen_fn *gen;
+	const char *tag; /**< Hardware descriptive tag. */
+};
+
+/**
+ * Registered algorithms for parity generation.
+ *
+ * Set by the raid_gen_register() calls.
+ *
+ * Indexes are the RAID_ALGO_* constants
+ */
+static struct raid_gen_algo raid_gen_algo[RAID_ALGO_MAX];
+
+void raid_gen(int nd, int np, size_t size, void **v)
+{
+	/* enforce limit on size */
+	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of failures */
+	BUG_ON(np < 1);
+	BUG_ON(np > RAID_PARITY_MAX);
+
+	raid_gen_ptr[np - 1](nd, size, v);
+}
+
+/**
+ * Forwarders for data recovery.
+ *
+ * Set by the raid_mode() call.
+ *
+ * Index 0 is for one parity, 1 for the two parities, and so on.
+ */
+static raid_rec_fn *raid_rec_ptr[RAID_PARITY_MAX];
+
+struct raid_rec_algo {
+	raid_rec_fn *rec;
+	const char *tag;  /**< Hardware descriptive tag. */
+};
+
+/**
+ * Registered algorithms for data recovery.
+ *
+ * Set by the raid_rec_register() calls.
+ *
+ * Indexes are the RAID_ALGO_* constants
+ */
+static struct raid_rec_algo raid_rec_algo[RAID_PARITY_MAX];
+
+void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
+{
+	int nrd; /* number of data blocks to recover */
+	int nrp; /* number of parity blocks to recover */
+
+	/* enforce limit on size */
+	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of failures */
+	BUG_ON(nr > np);
+	BUG_ON(np > RAID_PARITY_MAX);
+
+	/* enforce order in index vector */
+	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
+	BUG_ON(nr >= 3 && ir[1] >= ir[2]);
+	BUG_ON(nr >= 4 && ir[2] >= ir[3]);
+	BUG_ON(nr >= 5 && ir[3] >= ir[4]);
+	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
+
+	/* enforce limit on index vector */
+	BUG_ON(nr > 0 && ir[nr - 1] >= nd + np);
+
+	/* count the number of data blocks to recover */
+	nrd = 0;
+	while (nrd < nr && ir[nrd] < nd)
+		++nrd;
+
+	/* all the remaining are parity */
+	nrp = nr - nrd;
+
+	/* enforce limit on number of failures */
+	BUG_ON(nrd > nd);
+	BUG_ON(nrp > np);
+
+	/* if failed data is present */
+	if (nrd != 0) {
+		int ip[RAID_PARITY_MAX];
+		int i, j, k;
+
+		/* setup the vector of parities to use */
+		for (i = 0, j = 0, k = 0; i < np; ++i) {
+			if (j < nrp && ir[nrd + j] == nd + i) {
+				/* this parity has to be recovered */
+				++j;
+			} else {
+				/* this parity is used for recovering */
+				ip[k] = i;
+				++k;
+			}
+		}
+
+		/* recover the nrd data blocks specified in ir[], */
+		/* using the first nrd parity in ip[] for recovering */
+		raid_rec_ptr[nrd - 1](nrd, ir, ip, nd, size, v);
+	}
+
+	/* recompute all the parities up to the last bad one */
+	if (nrp != 0)
+		raid_gen(nd, ir[nr - 1] - nd + 1, size, v);
+}
+
+void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
+{
+	/* enforce limit on size */
+	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of failures */
+	BUG_ON(nr > nd);
+	BUG_ON(nr > RAID_PARITY_MAX);
+
+	/* enforce order in index vector for data */
+	BUG_ON(nr >= 2 && id[0] >= id[1]);
+	BUG_ON(nr >= 3 && id[1] >= id[2]);
+	BUG_ON(nr >= 4 && id[2] >= id[3]);
+	BUG_ON(nr >= 5 && id[3] >= id[4]);
+	BUG_ON(nr >= 6 && id[4] >= id[5]);
+
+	/* enforce limit on index vector for data */
+	BUG_ON(nr > 0 && id[nr - 1] >= nd);
+
+	/* enforce order in index vector for parity */
+	BUG_ON(nr >= 2 && ip[0] >= ip[1]);
+	BUG_ON(nr >= 3 && ip[1] >= ip[2]);
+	BUG_ON(nr >= 4 && ip[2] >= ip[3]);
+	BUG_ON(nr >= 5 && ip[3] >= ip[4]);
+	BUG_ON(nr >= 6 && ip[4] >= ip[5]);
+
+	/* if failed data is present */
+	if (nr != 0)
+		raid_rec_algo[nr - 1].rec(nr, id, ip, nd, size, v);
+}
+
+const char *raid_gen_tag(int na)
+{
+	BUG_ON(na < 0 || na >= RAID_ALGO_MAX);
+
+	return raid_gen_algo[na].tag;
+}
+
+const char *raid_rec_tag(int na)
+{
+	/* there is no custom recover for vandermonde */
+	if (na == RAID_ALGO_VANDERMONDE_PAR3)
+		na = RAID_ALGO_CAUCHY_PAR3;
+
+	BUG_ON(na < 0 || na >= RAID_PARITY_MAX);
+
+	return raid_rec_algo[na].tag;
+}
+
+/**
+ * Generator matrix currently used.
+ */
+const uint8_t(*raid_gfgen)[256];
+
+void raid_mode(int mode)
+{
+	BUG_ON(mode != RAID_MODE_VANDERMONDE && mode != RAID_MODE_CAUCHY);
+
+	if (mode == RAID_MODE_VANDERMONDE) {
+		raid_gen_ptr[0] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR1].gen;
+		raid_gen_ptr[1] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR2].gen;
+		raid_gen_ptr[2] = raid_gen_algo[RAID_ALGO_VANDERMONDE_PAR3].gen;
+		raid_gen_ptr[3] = 0;
+		raid_gen_ptr[4] = 0;
+		raid_gen_ptr[5] = 0;
+		raid_rec_ptr[0] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR1].rec;
+		raid_rec_ptr[1] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR2].rec;
+		raid_rec_ptr[2] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR3].rec;
+		raid_rec_ptr[3] = 0;
+		raid_rec_ptr[4] = 0;
+		raid_rec_ptr[5] = 0;
+		raid_gfgen = gfvandermonde;
+	} else {
+		raid_gen_ptr[0] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR1].gen;
+		raid_gen_ptr[1] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR2].gen;
+		raid_gen_ptr[2] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR3].gen;
+		raid_gen_ptr[3] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR4].gen;
+		raid_gen_ptr[4] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR5].gen;
+		raid_gen_ptr[5] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR6].gen;
+		raid_rec_ptr[0] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR1].rec;
+		raid_rec_ptr[1] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR2].rec;
+		raid_rec_ptr[2] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR3].rec;
+		raid_rec_ptr[3] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR4].rec;
+		raid_rec_ptr[4] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR5].rec;
+		raid_rec_ptr[5] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR6].rec;
+		raid_gfgen = gfcauchy;
+	}
+}
+
+void raid_gen_force(int np, raid_gen_fn *fn)
+{
+	BUG_ON(np < 1 || np > RAID_PARITY_MAX);
+
+	raid_gen_ptr[np - 1] = fn;
+}
+
+void raid_gen_register(int na, const char *tag, raid_gen_fn *gen)
+{
+	BUG_ON(na < 0 || na >= RAID_ALGO_MAX);
+
+	raid_gen_algo[na].tag = tag;
+	raid_gen_algo[na].gen = gen;
+}
+
+void raid_rec_register(int na, const char *tag, raid_rec_fn *rec)
+{
+	BUG_ON(na < 0 || na >= RAID_PARITY_MAX);
+
+	raid_rec_algo[na].tag = tag;
+	raid_rec_algo[na].rec = rec;
+}
+
 /*
  * Initializes and selects the best algorithm.
  */
 void raid_init(void)
 {
-	raid_gen3_ptr = raid_gen3_int8;
-	raid_gen_ptr[3] = raid_gen4_int8;
-	raid_gen_ptr[4] = raid_gen5_int8;
-	raid_gen_ptr[5] = raid_gen6_int8;
-
-	if (sizeof(void *) == 4) {
-		raid_gen_ptr[0] = raid_gen1_int32;
-		raid_gen_ptr[1] = raid_gen2_int32;
-		raid_genz_ptr = raid_genz_int32;
-	} else {
-		raid_gen_ptr[0] = raid_gen1_int64;
-		raid_gen_ptr[1] = raid_gen2_int64;
-		raid_genz_ptr = raid_genz_int64;
-	}
-
-	raid_rec_ptr[0] = raid_rec1_int8;
-	raid_rec_ptr[1] = raid_rec2_int8;
-	raid_rec_ptr[2] = raid_recX_int8;
-	raid_rec_ptr[3] = raid_recX_int8;
-	raid_rec_ptr[4] = raid_recX_int8;
-	raid_rec_ptr[5] = raid_recX_int8;
-
-#ifdef CONFIG_X86
-#ifdef CONFIG_SSE2
-	if (raid_cpu_has_sse2()) {
-		raid_gen_ptr[0] = raid_gen1_sse2;
-#ifdef CONFIG_X86_64
-		if (raid_cpu_has_slowextendedreg()) {
-			raid_gen_ptr[1] = raid_gen2_sse2;
-		} else {
-			raid_gen_ptr[1] = raid_gen2_sse2ext;
-		}
-		/* note that raid_cpu_has_slowextendedreg() doesn't affect parz */
-		raid_genz_ptr = raid_genz_sse2ext;
-#else
-		raid_gen_ptr[1] = raid_gen2_sse2;
-		raid_genz_ptr = raid_genz_sse2;
+	raid_register_int();
+#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
+	raid_register_x86();
 #endif
-	}
-#endif
-
-#ifdef CONFIG_SSSE3
-	if (raid_cpu_has_ssse3()) {
-#ifdef CONFIG_X86_64
-		if (raid_cpu_has_slowextendedreg()) {
-			raid_gen3_ptr = raid_gen3_ssse3;
-			raid_gen_ptr[3] = raid_gen4_ssse3;
-			raid_gen_ptr[4] = raid_gen5_ssse3;
-			raid_gen_ptr[5] = raid_gen6_ssse3;
-		} else {
-			raid_gen3_ptr = raid_gen3_ssse3ext;
-			raid_gen_ptr[3] = raid_gen4_ssse3ext;
-			raid_gen_ptr[4] = raid_gen5_ssse3ext;
-			raid_gen_ptr[5] = raid_gen6_ssse3ext;
-		}
-#else
-		raid_gen3_ptr = raid_gen3_ssse3;
-		raid_gen_ptr[3] = raid_gen4_ssse3;
-		raid_gen_ptr[4] = raid_gen5_ssse3;
-		raid_gen_ptr[5] = raid_gen6_ssse3;
-#endif
-		raid_rec_ptr[0] = raid_rec1_ssse3;
-		raid_rec_ptr[1] = raid_rec2_ssse3;
-		raid_rec_ptr[2] = raid_recX_ssse3;
-		raid_rec_ptr[3] = raid_recX_ssse3;
-		raid_rec_ptr[4] = raid_recX_ssse3;
-		raid_rec_ptr[5] = raid_recX_ssse3;
-	}
-#endif
-
-#ifdef CONFIG_AVX2
-	if (raid_cpu_has_avx2()) {
-		raid_gen_ptr[0] = raid_gen1_avx2;
-		raid_gen_ptr[1] = raid_gen2_avx2;
-#ifdef CONFIG_X86_64
-		raid_gen3_ptr = raid_gen3_avx2ext;
-		raid_genz_ptr = raid_genz_avx2ext;
-		raid_gen_ptr[3] = raid_gen4_avx2ext;
-		raid_gen_ptr[4] = raid_gen5_avx2ext;
-		raid_gen_ptr[5] = raid_gen6_avx2ext;
-#endif
-		raid_rec_ptr[0] = raid_rec1_avx2;
-		raid_rec_ptr[1] = raid_rec2_avx2;
-		raid_rec_ptr[2] = raid_recX_avx2;
-		raid_rec_ptr[3] = raid_recX_avx2;
-		raid_rec_ptr[4] = raid_recX_avx2;
-		raid_rec_ptr[5] = raid_recX_avx2;
-	}
-#endif
-#endif /* CONFIG_X86 */
 
 	/* set the default mode */
 	raid_mode(RAID_MODE_CAUCHY);
@@ -292,9 +437,6 @@ static int raid_test_scan(int nr, int *ir, int nd, int np, size_t size, void **v
 	return 0;
 }
 
-/*
- * Basic functionality self test.
- */
 int raid_selftest(void)
 {
 	const int nd = TEST_COUNT;

@@ -543,3 +543,26 @@ void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	}
 }
 
+void raid_register_int(void)
+{
+	if (sizeof(void *) == 4) {
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int32", raid_gen1_int32);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int32", raid_gen2_int32);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int32", raid_genz_int32);
+	} else {
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int64", raid_gen1_int64);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int64", raid_genz_int64);
+	}
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_gen3_int8);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_gen4_int8);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_gen5_int8);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_gen6_int8);
+
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "int8", raid_rec1_int8);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "int8", raid_rec2_int8);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_recX_int8);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_recX_int8);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_recX_int8);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_recX_int8);
+}
