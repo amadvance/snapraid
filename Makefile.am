@@ -31,7 +31,6 @@ snapraid_SOURCES = \
 	raid/helper.c \
 	raid/memory.c \
 	raid/test.c \
-	raid/tag.c \
 	tommyds/tommy.c \
 	cmdline/main.c \
 	cmdline/snapraid.c \
