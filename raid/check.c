@@ -29,7 +29,7 @@
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nv - 1] + 1) elements. The starting elements are the
  *   blocks for data, following with the parity blocks.
- *   Each block has @size bytes. 
+ *   Each block has @size bytes.
  * @return 0 if the check is satisfied. -1 otherwise.
  */
 static int raid_validate(int nr, int *id, int nv, int *ip, int nd, size_t size, void **vv)
@@ -125,7 +125,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
 
 	/* enforce limit on index vector */
-	BUG_ON(nr > 0 && ir[nr-1] >= nd + np);
+	BUG_ON(nr > 0 && ir[nr - 1] >= nd + np);
 
 	/* count failed data disk */
 	rd = 0;
