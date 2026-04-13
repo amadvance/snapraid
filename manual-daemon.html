@@ -230,9 +230,10 @@ and <b>extra</b> disks and establishes the current state of the array.
 file is provisioned to enable the REST API and the Web UI. For users
 installing via binary packages, this file is typically placed at
 <b>/etc/snapraidd.conf</b>. If you are installing from source, it is
-recommended to run <b>./configure --sysconfdir=/etc</b> during the build
-process to ensure the configuration is placed in the standard <b>/etc</b>
-directory.
+recommended to run <b>./configure --prefix=/usr --sysconfdir=/etc</b>
+during the build process to ensure the program is installed in the
+standard <b>/usr</b> directory, and the configuration is placed in the
+standard <b>/etc</b> directory.
 </p><p>Using this default configuration file, the UI is accessible locally
 via a web browser at the following address:
 </p><p><a href="http://localhost:7627">http://localhost:7627</a>
