@@ -7,9 +7,9 @@ and unpack it with the following commands:
     tar xf snapraid-.tar.gz
     cd snapraid-*
 
-To configure and build SnapRAID, run:
+To configure the build environment and compile the binary, run:
 
-    ./configure
+    ./configure --prefix=/usr --sysconfdir=/etc
     make
 
 To run the application's correctness tests, execute:
