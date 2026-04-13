@@ -562,6 +562,13 @@ static inline void util_write64(void* ptr, uint64_t v)
  *  Overwrites B contents with C's high 64 bits.
  */
 #if defined(__x86_64__) || defined(_M_X64)
+/*
+ * This is intentionally placed before the __SIZEOF_INT128__ implementation.
+ *
+ * This implementation happens to generate more efficient code.
+ * While this likely depends only on the compiler, as long as it remains faster,
+ * we will keep it in this order.
+ */
 static inline void util_mum(uint64_t* A, uint64_t* B)
 {
 	uint64_t a = *A;
@@ -578,7 +585,38 @@ static inline void util_mum(uint64_t* A, uint64_t* B)
 	*A = low;
 	*B = high;
 }
+#elif defined(__SIZEOF_INT128__)
+static inline void util_mum(uint64_t* A, uint64_t* B)
+{
+	__uint128_t product = ((__uint128_t)*A) * ((__uint128_t)*B);
+	*A = (uint64_t)product;
+	*B = (uint64_t)(product >> 64);
+}
 #elif defined(__aarch64__) || defined(_M_ARM64)
+/*
+ * This is intentionally placed after the __SIZEOF_INT128__ implementation.
+ *
+ * Although the code looks correct, there is a report of this
+ * implementation failing the self-test on macOS (Darwin 25.4.0, arm64)
+ * with Apple clang 21.0.0 (clang-2100.0.123.102).
+ *
+ * See: https://github.com/amadvance/snapraid/issues/43
+ *
+ * Note that the implementation is the same of OpenSSL:
+ *
+ * #elif defined(__aarch64__) && defined(SIXTY_FOUR_BIT_LONG)
+ * #if defined(__GNUC__) && __GNUC__ >= 2
+ * #define BN_UMULT_HIGH(a, b) ({     \
+ *         register BN_ULONG ret;          \
+ *         asm ("umulh     %0,%1,%2"       \
+ *              : "=r"(ret)                \
+ *              : "r"(a), "r"(b));         \
+ *         ret; })
+ * #endif
+ * #endif
+ *
+ * See: https://github.com/openssl/openssl/blob/0463cbf185680e66a3a8960f10cd33001377d28e/crypto/bn/bn_local.h#L439
+ */
 static inline void util_mum(uint64_t* A, uint64_t* B)
 {
 	uint64_t a = *A;
@@ -592,13 +630,6 @@ static inline void util_mum(uint64_t* A, uint64_t* B)
 	);
 	*A = low;
 	*B = high;
-}
-#elif defined(__SIZEOF_INT128__)
-static inline void util_mum(uint64_t* A, uint64_t* B)
-{
-	__uint128_t product = ((__uint128_t)*A) * ((__uint128_t)*B);
-	*A = (uint64_t)product;
-	*B = (uint64_t)(product >> 64);
 }
 #else
 static inline void util_mum(uint64_t* A, uint64_t* B)

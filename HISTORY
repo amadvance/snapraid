@@ -1,6 +1,14 @@
 SnapRAID HISTORY
 ================
 
+14.3 2026/04
+============
+ * On ARM64 (AArch64), replaced the inline assembly implementation of
+   128-bit multiplication with a uint128_t based version.
+   This avoids potential miscompilations observed with aggressive
+   compiler optimizations (e.g. -O2/-O3) on some toolchains (Apple
+   Silicon), while still generating optimal code on modern compilers.
+
 14.2 2026/04
 ============
  * Added a workaround for filesystems with a broken implementation of
