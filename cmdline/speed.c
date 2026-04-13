@@ -126,13 +126,30 @@ void speed(int period, int nd, int size)
 			raid_cpu_has_slowextendedreg() ? " slowext" : ""
 		);
 	}
+#elif defined(__aarch64__) || defined(_M_ARM64)
+	printf("CPU 64-bit ARM (AArch64)\n");
+#elif defined(__arm__) || defined(_M_ARM)
+	printf("CPU 32-bit ARM\n");
+#elif defined(__powerpc64__)
+	printf("CPU 64-bit PowerPC\n");
+#elif defined(__powerpc__)
+	printf("CPU 32-bit PowerPC\n");
+#elif defined(__riscv)
+	printf("CPU RISC-V\n", 
+#elif defined(__s390x__)
+	printf("CPU 64-bit IBM Z / s390x\n");
 #else
-	printf("CPU is not a x86/x64\n");
+	printf("CPU of unknown architecture\n");
 #endif
 #if WORDS_BIGENDIAN
 	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
 #else
 	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
+#endif
+#if defined(__SIZEOF_INT128__)
+    printf("128-bit integers are supported\n");
+#else
+    printf("128-bit integers are not supported\n");
 #endif
 
 #if HAVE_FUTIMENS
