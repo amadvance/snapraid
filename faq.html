@@ -568,7 +568,7 @@ Result
 Any
 </td>
 <td>
-OK. You can generally use any file system you prefer, with some exceptions noted below. If in doubt, ext4 and XFS are always good choices.
+OK. You can generally use any file system you prefer, with some exceptions noted below. If in doubt, ext4 and XFS (and NTFS on Windows) are always good choices.
 </td>
 </tr>
 <tr>
@@ -596,7 +596,7 @@ ZFS is <a href ="https://www.reddit.com/r/unRAID/comments/1sktag4/xfs_vs_zfs_vs_
 FAT
 </td>
 <td>
-Uncertain. There are
+No. There are
 <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/455e8d63">
  reports
 </a>
@@ -642,7 +642,7 @@ OK if disks are not larger than 16 TB. The parity is stored in a single large fi
 XFS
 </td>
 <td>
-OK
+OK.
 </td>
 </tr>
 <tr>
@@ -652,6 +652,7 @@ Btrfs
 <td>
 OK. Ensure SnapRAID is built with the libblkid library for UUID support.
 You will be warned at each run if this is not the case.
+Anyway, keep in mind that the advanced functionalities of Btrfs are not really needed for a parity disk. ext4 or XFS are likely better choices.
 </td>
 </tr>
 <tr>
