@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const languageSelector = document.getElementById('language-selector');
     if (languageSelector) {
         // Automatically select the option matching the current file name
-        const currentFile = window.location.pathname.split('/').pop() || 'manual.html';
+        const currentFile = window.location.pathname.split('/').pop() || 'manual';
         const options = Array.from(languageSelector.options);
         const matchingOption = options.find(opt => opt.value === currentFile);
         if (matchingOption) {
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Manual Section Selector functionality
     const manualSelector = document.getElementById('manual-selector');
     if (manualSelector) {
-        const currentFile = window.location.pathname.split('/').pop() || 'manual.html';
+        const currentFile = window.location.pathname.split('/').pop() || 'manual';
         const options = Array.from(manualSelector.options);
         const matchingOption = options.find(opt => opt.value === currentFile);
         
@@ -266,8 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Default to first option (CLI) if current file doesn't match specific sections
             // This handles cases like manual-it.html where we want "CLI" selected
             if (currentFile.includes('manual') && !currentFile.includes('daemon') && !currentFile.includes('log')) {
-                 const cliOption = options.find(opt => opt.value === 'manual.html');
-                 if (cliOption) manualSelector.value = 'manual.html';
+                 const cliOption = options.find(opt => opt.value === 'manual');
+                 if (cliOption) manualSelector.value = 'manual';
             }
         }
 
