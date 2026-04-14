@@ -171,6 +171,10 @@ a { color: var(--primary); text-decoration: none; transition: 0.2s; }
 a:hover { color: var(--text-accent); }
 .accent-text { color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.875rem; }
 
+compact {
+   line-height: 1.0;
+}
+
 code, pre {
     font-family: var(--font-mono);
 }
