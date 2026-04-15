@@ -139,7 +139,7 @@ void speed(int period, int nd, int size)
 #elif defined(__powerpc__)
 	printf("CPU 32-bit PowerPC\n");
 #elif defined(__riscv)
-	printf("CPU RISC-V\n", 
+	printf("CPU RISC-V\n");
 #elif defined(__s390x__)
 	printf("CPU 64-bit IBM Z / s390x\n");
 #else
@@ -151,9 +151,9 @@ void speed(int period, int nd, int size)
 	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
 #endif
 #if defined(__SIZEOF_INT128__)
-    printf("128-bit integers are supported\n");
+	printf("128-bit integers are supported\n");
 #else
-    printf("128-bit integers are not supported\n");
+	printf("128-bit integers are not supported\n");
 #endif
 
 #if HAVE_FUTIMENS
@@ -739,7 +739,7 @@ void speed(int period, int nd, int size)
 
 	SPEED_START {
 		/* ensure to use same hardware in the delta step */
-		raid_gen_ptr[0] = sizeof(void *) == 8 ? raid_gen1_int64 : raid_gen1_int32;
+		raid_gen_ptr[0] = sizeof(void*) == 8 ? raid_gen1_int64 : raid_gen1_int32;
 		/* +1 to avoid GEN1 optimized case */
 		raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -783,7 +783,7 @@ void speed(int period, int nd, int size)
 
 	SPEED_START {
 		/* ensure to use same hardware in the delta step */
-		raid_gen_ptr[1] = sizeof(void *) == 8 ? raid_gen2_int64 : raid_gen2_int32;
+		raid_gen_ptr[1] = sizeof(void*) == 8 ? raid_gen2_int64 : raid_gen2_int32;
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -1027,3 +1027,4 @@ void speed(int period, int nd, int size)
 	free(v_alloc);
 	free(v);
 }
+
