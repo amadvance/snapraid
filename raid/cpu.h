@@ -85,7 +85,7 @@ static inline int raid_cpu_match_sse(uint32_t cpuid_1_ecx, uint32_t cpuid_1_edx)
 	return 1;
 }
 
-static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx, uint32_t xcr0)
+static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx, uint32_t cpuid_7_ecx, uint32_t xcr0)
 {
 	uint32_t reg[4];
 
@@ -99,6 +99,9 @@ static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx,
 
 	raid_cpuid(7, 0, reg);
 	if ((reg[1] & cpuid_7_ebx) != cpuid_7_ebx)
+		return 0;
+
+	if ((reg[2] & cpuid_7_ecx) != cpuid_7_ecx)
 		return 0;
 
 	return 1;
@@ -174,9 +177,10 @@ static inline int raid_cpu_has_avx2(void)
 	 * also detect support for AVX2 by checking CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5].
 	 */
 	return raid_cpu_match_avx(
-		(1 << 27) | (1 << 28), /* OSXSAVE and AVX */
-		1 << 5, /* AVX2 */
-		3 << 1); /* OS saves XMM and YMM registers */
+		(1 << 27) | (1 << 28), /* Leaf 1, ECX: XSAVE and AVX */
+		1 << 5, /* Leaf 7, EBX: AVX2 */
+		0, /* Leaf 7, ECX: */
+		3 << 1); /* XCR0: OS saves XMM and YMM registers */
 }
 
 static inline int raid_cpu_has_avx512bw(void)
@@ -196,9 +200,20 @@ static inline int raid_cpu_has_avx512bw(void)
 	/* note that intentionally we don't check for AVX and AVX2 */
 	/* because the documentation doesn't require that */
 	return raid_cpu_match_avx(
-		1 << 27, /* XSAVE/XGETBV */
-		(1 << 16) | (1 << 30), /* AVX512F and AVX512BW */
-		(3 << 1) | (7 << 5)); /* OS saves XMM, YMM and ZMM registers */
+		1 << 27, /* Leaf 1, ECX: XSAVE/XGETBV */
+		(1 << 16) | (1 << 30), /* Leaf 7, EBX: AVX512F and AVX512BW */
+		0, /* Leaf 7, ECX: */
+		(3 << 1) | (7 << 5)); /* XCR0: OS saves XMM, YMM and ZMM registers */
+}
+
+static inline int raid_cpu_has_avx512gfni(void)
+{
+	return raid_cpu_match_avx(
+		1 << 27, /* Leaf 1, ECX: XSAVE/XGETBV */
+		1 << 16,  /* Leaf 7, EBX: AVX512F (Foundation) */
+		1 << 8, /* Leaf 7, ECX: GFNI */
+		(3 << 1) | (7 << 5) /* XCR0: OS saves XMM, YMM and ZMM registers */
+	);
 }
 
 /**
