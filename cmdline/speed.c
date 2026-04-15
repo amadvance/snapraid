@@ -758,6 +758,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #ifdef CONFIG_AVX2
@@ -770,6 +771,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #endif
@@ -804,6 +806,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #ifdef CONFIG_AVX2
@@ -816,6 +819,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #endif
@@ -848,6 +852,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #ifdef CONFIG_AVX2
@@ -863,6 +868,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #endif
@@ -895,6 +901,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #ifdef CONFIG_AVX2
@@ -910,6 +917,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #endif
@@ -942,6 +950,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #ifdef CONFIG_AVX2
@@ -957,6 +966,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #endif
@@ -989,6 +999,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #ifdef CONFIG_AVX2
@@ -1004,6 +1015,7 @@ void speed(int period, int nd, int size)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 #endif
