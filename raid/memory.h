@@ -22,7 +22,7 @@
  * end.
  *
  * To avoid this effect, it's better if all the blocks are allocated
- * with a fixed displacement trying to reduce the cache addresses sharing.
+ * with a fixed displacement trying to reduce the cache address sharing.
  *
  * The selected displacement was chosen empirically with some speed tests
  * with 8/12/16/20/24 data buffers of 256 KB.
@@ -34,7 +34,7 @@
  *    gen2    6814 [MB/s]
  *    genz    3033 [MB/s]
  *
- * These are the results with displacement resulting in improvements
+ * These are the results with displacement, resulting in improvements
  * in the order of 20% or more:
  *
  *            sse2

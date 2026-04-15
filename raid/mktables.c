@@ -55,10 +55,10 @@ static void set_cauchy(uint8_t *matrix)
 	uint8_t inv_x, y;
 
 	/*
-	 * The first row of the generator matrix is formed by all 1.
+	 * The first row of the generator matrix is formed by all 1s.
 	 *
 	 * The generator matrix is an Extended Cauchy matrix built from
-	 * a Cauchy matrix adding at the top a row of all 1.
+	 * a Cauchy matrix by adding a row at the top of all 1s.
 	 *
 	 * Extending a Cauchy matrix in this way maintains the MDS property
 	 * of the matrix.
@@ -74,7 +74,7 @@ static void set_cauchy(uint8_t *matrix)
 		matrix[0 * DISK + i] = 1;
 
 	/*
-	 * Second row is formed with powers 2^i, and it's the first
+	 * The second row is formed with powers 2^i, and it's the first
 	 * row of the Cauchy matrix.
 	 *
 	 * Each element of the Cauchy matrix is in the form 1/(x_i + y_j)
@@ -111,7 +111,7 @@ static void set_cauchy(uint8_t *matrix)
 	}
 
 	/*
-	 * The rest of the Cauchy matrix is formed choosing for each row j
+	 * The rest of the Cauchy matrix is formed by choosing for each row j
 	 * a new y_j = 2^j and reusing the x_i already assigned in the first
 	 * row obtaining :
 	 *
@@ -145,7 +145,7 @@ static void set_cauchy(uint8_t *matrix)
 	}
 
 	/*
-	 * Finally we adjust the matrix multiplying each row for
+	 * Finally we adjust the matrix multiplying each row by
 	 * the inverse of the first element in the row.
 	 *
 	 * Also this operation maintains the MDS property of the matrix.
@@ -261,7 +261,7 @@ int main(void)
 	/* 1/a */
 	printf("const uint8_t __aligned(256) raid_gfinv[256] =\n");
 	printf("{\n");
-	printf("\t/* note that the first element is not significative */\n");
+	printf("\t/* note that the first element is not significant */\n");
 	for (i = 0; i < 256; ++i) {
 		if (i % 8 == 0)
 			printf("\t");
@@ -282,7 +282,7 @@ int main(void)
 
 	printf("/**\n");
 	printf(" * Power matrix used to generate parity.\n");
-	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", 3, DISK);
+	printf(" * This matrix is valid for up to %u parities with %u data disks.\n", 3, DISK);
 	printf(" *\n");
 	for (p = 0; p < 3; ++p) {
 		printf(" *");

@@ -363,7 +363,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 		} else {
 			/*
 			 * Unused parities are going to be rewritten with
-			 * not significative data, because we don't have
+			 * not significant data, because we don't have
 			 * functions able to compute only a subset of
 			 * parities.
 			 *

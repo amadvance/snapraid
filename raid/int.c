@@ -384,7 +384,7 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	(void)nr; /* unused, it's always 1 */
 
-	/* if it's RAID5 uses the faster function */
+	/* if it's RAID5, use the faster function */
 	if (ip[0] == 0) {
 		raid_rec1of1(id, nd, size, vv);
 		return;
@@ -441,7 +441,7 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	(void)nr; /* unused, it's always 2 */
 
-	/* if it's RAID6 recovering with P and Q uses the faster function */
+	/* if it's RAID6, recovering with P and Q uses the faster function */
 	if (ip[0] == 0 && ip[1] == 1) {
 		raid_rec2of2_int8(id, ip, nd, size, vv);
 		return;
@@ -489,7 +489,7 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  *
  * we solve inverting the coefficients matrix.
  *
- * Note that referring at previous equations you have:
+ * Note that referring to previous equations you have:
  * PD[0] = Pd, PD[1] = Qd, PD[2] = Rd, ...
  * D[0] = Dx, D[1] = Dy, D[2] = Dz, ...
  */

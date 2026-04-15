@@ -7,7 +7,7 @@
 /**
  * Tests insertion function.
  *
- * Test raid_insert() with all the possible combinations of elements to insert.
+ * Tests raid_insert() with all the possible combinations of elements to insert.
  *
  * Returns 0 on success.
  */
@@ -16,7 +16,7 @@ int raid_test_insert(void);
 /**
  * Tests sorting function.
  *
- * Test raid_sort() with all the possible combinations of elements to sort.
+ * Tests raid_sort() with all the possible combinations of elements to sort.
  *
  * Returns 0 on success.
  */

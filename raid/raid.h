@@ -83,7 +83,7 @@ void raid_zero(void *zero);
  *
  * @nd Number of data blocks.
  * @np Number of parities blocks to compute.
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks for
  *   data, following with the parity blocks.
@@ -119,7 +119,7 @@ void raid_gen(int nd, int np, size_t size, void **v);
  *   @nd + 1, just like positions in the @v vector.
  * @nd Number of data blocks.
  * @np Number of parity blocks.
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
@@ -139,7 +139,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  * @ip[] Vector of @nr indexes of the parity blocks to use for recovering.
  *   The indexes start from 0. They must be in order.
  * @nd Number of data blocks.
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nr - 1] + 1) elements. The starting elements are the
  *   blocks for data, following with the parity blocks.
@@ -166,7 +166,7 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
  *   @nd + 1, just like positions in the @v vector.
  * @nd Number of data blocks.
  * @np Number of parity blocks.
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
@@ -182,7 +182,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  * available redundancy.
  *
  * It uses a brute force method, and then the call can be expensive.
- * The expected execution time is proportional at the binomial coefficient
+ * The expected execution time is proportional to the binomial coefficient
  * @np + @nd choose @np - 1, usually written as:
  *
  * ( @np + @nd )
@@ -203,7 +203,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  *   @nd + 1, just like positions in the @v vector.
  * @nd Number of data blocks.
  * @np Number of parity blocks.
- * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.

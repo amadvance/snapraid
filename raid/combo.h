@@ -9,7 +9,7 @@
 /**
  * Get the first permutation with repetition of r of n elements.
  *
- * Typical use is with permutation_next() in the form :
+ * Typical use is with permutation_next() in the form:
  *
  * int i[R];
  * permutation_first(R, N, i);
@@ -17,7 +17,7 @@
  *    code using i[0], i[1], ..., i[R-1]
  * } while (permutation_next(R, N, i));
  *
- * It's equivalent at the code :
+ * It's equivalent to the code:
  *
  * for(i[0]=0;i[0]<N;++i[0])
  *     for(i[1]=0;i[1]<N;++i[1])
@@ -75,7 +75,7 @@ recurse:
 /**
  * Get the first combination without repetition of r of n elements.
  *
- * Typical use is with combination_next() in the form :
+ * Typical use is with combination_next() in the form:
  *
  * int i[R];
  * combination_first(R, N, i);
@@ -83,7 +83,7 @@ recurse:
  *    code using i[0], i[1], ..., i[R-1]
  * } while (combination_next(R, N, i));
  *
- * It's equivalent at the code :
+ * It's equivalent to the code:
  *
  * for(i[0]=0;i[0]<N-(R-1);++i[0])
  *     for(i[1]=i[0]+1;i[1]<N-(R-2);++i[1])
@@ -133,7 +133,7 @@ recurse:
 
 	/* initialize all the next positions, if any */
 	while (i < r) {
-		/* each position start at the next value of the previous one */
+		/* each position starts at the next value of the previous one */
 		c[i] = c[i - 1] + 1;
 		++i;
 	}

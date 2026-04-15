@@ -30,7 +30,7 @@ static inline void raid_xgetbv(uint32_t* reg)
 	asm volatile (
 	        /* uses a direct encoding of the XGETBV instruction as only recent */
 	        /* assemblers support it. */
-	        /* the next line is equivalent at: "xgetbv\n" */
+	        /* the next line is equivalent to: "xgetbv\n" */
 		".byte 0x0f, 0x01, 0xd0\n"
 		: "=a" (reg[0]), "=d" (reg[3])
 		: "c" (0)
@@ -114,7 +114,7 @@ static inline int raid_cpu_has_sse2(void)
 	 * Before an application attempts to use the SSE and/or SSE2 extensions, it should check
 	 * that they are present on the processor:
 	 * 1. Check that the processor supports the CPUID instruction. Bit 21 of the EFLAGS
-	 * register can be used to check processor's support the CPUID instruction.
+	 * register can be used to check if the processor supports the CPUID instruction.
 	 * 2. Check that the processor supports the SSE and/or SSE2 extensions (true if
 	 * CPUID.01H:EDX.SSE[bit 25] = 1 and/or CPUID.01H:EDX.SSE2[bit 26] = 1).
 	 */
@@ -266,7 +266,7 @@ static inline int raid_cpu_has_slowmult(void)
 
 /**
  * Check if the processor has a slow extended set of SSE registers.
- * If yes, it's better to limit the unroll to the firsrt 8 registers.
+ * If yes, it's better to limit the unrolling to the first 8 registers.
  */
 static inline int raid_cpu_has_slowextendedreg(void)
 {

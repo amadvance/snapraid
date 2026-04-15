@@ -326,7 +326,7 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
-		/* last disk without the by two multiplication */
+		/* last disk without the multiplication by two */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
