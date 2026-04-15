@@ -734,9 +734,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			/* +1 to avoid GEN1 optimized case */
-			raid_rec1_int8(1, id, ip + 1, nd, size, v);
+		/* +1 to avoid GEN1 optimized case */
+		raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -746,9 +745,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				/* +1 to avoid GEN1 optimized case */
-				raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
+			/* +1 to avoid GEN1 optimized case */
+			raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -757,9 +755,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				/* +1 to avoid GEN1 optimized case */
-				raid_rec1_avx2(1, id, ip + 1, nd, size, v);
+			/* +1 to avoid GEN1 optimized case */
+			raid_rec1_avx2(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -773,9 +770,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			/* +1 to avoid GEN2 optimized case */
-			raid_rec2_int8(2, id, ip + 1, nd, size, v);
+		/* +1 to avoid GEN2 optimized case */
+		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -785,9 +781,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				/* +1 to avoid GEN2 optimized case */
-				raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
+			/* +1 to avoid GEN2 optimized case */
+			raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -796,9 +791,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				/* +1 to avoid GEN1 optimized case */
-				raid_rec2_avx2(2, id, ip + 1, nd, size, v);
+			/* +1 to avoid GEN1 optimized case */
+			raid_rec2_avx2(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -812,8 +806,7 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			raid_recX_int8(3, id, ip, nd, size, v);
+		raid_recX_int8(3, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -823,8 +816,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_ssse3(3, id, ip, nd, size, v);
+			raid_recX_ssse3(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -833,8 +825,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_avx2(3, id, ip, nd, size, v);
+			raid_recX_avx2(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -848,8 +839,7 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			raid_recX_int8(4, id, ip, nd, size, v);
+		raid_recX_int8(4, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -859,8 +849,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_ssse3(4, id, ip, nd, size, v);
+			raid_recX_ssse3(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -869,8 +858,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_avx2(4, id, ip, nd, size, v);
+			raid_recX_avx2(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -884,8 +872,7 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			raid_recX_int8(5, id, ip, nd, size, v);
+		raid_recX_int8(5, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -895,8 +882,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_ssse3(5, id, ip, nd, size, v);
+			raid_recX_ssse3(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -905,8 +891,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_avx2(5, id, ip, nd, size, v);
+			raid_recX_avx2(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -920,8 +905,7 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			raid_recX_int8(6, id, ip, nd, size, v);
+		raid_recX_int8(6, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -931,8 +915,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_ssse3(6, id, ip, nd, size, v);
+			raid_recX_ssse3(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -941,8 +924,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				raid_recX_avx2(6, id, ip, nd, size, v);
+			raid_recX_avx2(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -957,4 +939,3 @@ void speed(int period, int nd, int size)
 	free(v_alloc);
 	free(v);
 }
-
