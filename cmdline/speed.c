@@ -71,7 +71,9 @@ void speed(int period, int nd, int size)
 	void** v;
 
 	if (nd < 0)
-		nd = 8;
+		nd = 8; /* default */
+	if (nd < 6)
+		nd = 6; /* minimum */
 	if (size < 0)
 		size = 256 * KIBI;
 	else
@@ -734,6 +736,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
+		/* ensure to use same hardware in the delta step */
+		raid_gen_ptr[0] = sizeof(void *) == 8 ? raid_gen1_int64 : raid_gen1_int32;
 		/* +1 to avoid GEN1 optimized case */
 		raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -745,6 +749,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_ptr[0] = raid_gen1_sse2;
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -755,6 +761,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_ptr[0] = raid_gen1_avx2;
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_avx2(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -770,6 +778,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
+		/* ensure to use same hardware in the delta step */
+		raid_gen_ptr[1] = sizeof(void *) == 8 ? raid_gen2_int64 : raid_gen2_int32;
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -781,6 +791,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[1] = raid_gen2_sse2ext;
+#else
+			raid_gen_ptr[1] = raid_gen2_sse2;
+#endif
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -791,6 +807,8 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_ptr[1] = raid_gen2_avx2;
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec2_avx2(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -806,6 +824,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
+		/* ensure to use same hardware in the delta step */
+		raid_gen_ptr[2] = raid_gen3_int8;
 		raid_recX_int8(3, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -816,6 +836,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[2] = raid_gen3_ssse3ext;
+#else
+			raid_gen_ptr[2] = raid_gen3_sse3;
+#endif
 			raid_recX_ssse3(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -825,6 +851,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[2] = raid_gen3_avx2ext;
+#else
+			raid_gen_ptr[2] = raid_gen3_ssse3;
+#endif
 			raid_recX_avx2(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -839,6 +871,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
+		/* ensure to use same hardware in the delta step */
+		raid_gen_ptr[3] = raid_gen4_int8;
 		raid_recX_int8(4, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -849,6 +883,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[3] = raid_gen4_ssse3ext;
+#else
+			raid_gen_ptr[3] = raid_gen4_sse3;
+#endif
 			raid_recX_ssse3(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -858,6 +898,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[3] = raid_gen4_avx2ext;
+#else
+			raid_gen_ptr[3] = raid_gen4_ssse3;
+#endif
 			raid_recX_avx2(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -872,6 +918,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
+		/* ensure to use same hardware in the delta step */
+		raid_gen_ptr[4] = raid_gen5_int8;
 		raid_recX_int8(5, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -882,6 +930,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[4] = raid_gen5_ssse3ext;
+#else
+			raid_gen_ptr[4] = raid_gen5_ssse3;
+#endif
 			raid_recX_ssse3(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -891,6 +945,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[4] = raid_gen5_avx2ext;
+#else
+			raid_gen_ptr[4] = raid_gen5_ssse3;
+#endif
 			raid_recX_avx2(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -905,6 +965,8 @@ void speed(int period, int nd, int size)
 	fflush(stdout);
 
 	SPEED_START {
+		/* ensure to use same hardware in the delta step */
+		raid_gen_ptr[5] = raid_gen6_int8;
 		raid_recX_int8(6, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -915,6 +977,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[5] = raid_gen6_ssse3ext;
+#else
+			raid_gen_ptr[5] = raid_gen6_ssse3;
+#endif
 			raid_recX_ssse3(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -924,6 +992,12 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+#ifdef CONFIG_X86_64
+			raid_gen_ptr[5] = raid_gen6_avx2ext;
+#else
+			raid_gen_ptr[5] = raid_gen6_ssse3;
+#endif
 			raid_recX_avx2(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
