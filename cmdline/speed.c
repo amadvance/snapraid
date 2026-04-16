@@ -846,7 +846,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_X86_64
 			raid_gen_ptr[2] = raid_gen3_ssse3ext;
 #else
-			raid_gen_ptr[2] = raid_gen3_sse3;
+			raid_gen_ptr[2] = raid_gen3_ssse3;
 #endif
 			raid_recX_ssse3(3, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -895,7 +895,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_X86_64
 			raid_gen_ptr[3] = raid_gen4_ssse3ext;
 #else
-			raid_gen_ptr[3] = raid_gen4_sse3;
+			raid_gen_ptr[3] = raid_gen4_ssse3;
 #endif
 			raid_recX_ssse3(4, id, ip, nd, size, v);
 		} SPEED_STOP
