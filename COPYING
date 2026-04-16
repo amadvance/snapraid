@@ -1,28 +1,11 @@
-The SnapRAID project is provided under:
+The SnapRAID project as a whole, including all its contributions and
+modifications to included libraries, is provided under the GPL-3.0-or-later
+License.
 
-	SPDX-License-Identifier: GPL-3.0-or-later
+The RAID library is provided under the GPL-2.0-or-later License.
 
-Being under the terms of the GNU General Public License version 3 or any later
-version according with:
+The TommyDS library is provided under the BSD-2-Clause License.
 
-	LICENSES/GPL-3.0
-
-The parity generation and verification code in the raid/ directory is
-provided under:
-
-	SPDX-License-Identifier: GPL-2.0-or-later
-
-Being under the terms of the GNU General Public License version 2 or any later
-version according with:
-
-	LICENSES/GPL-2.0
-
-The TommyDS project is provided under:
-
-	SPDX-License-Identifier: BSD-2-Clause
-
-Being under the terms of the BSD 2 Clause version according with:
-
-	LICENSES/BSD-2-Clause
+The full text for these licenses is available in the LICENSES/ directory.
 
 All contributions to the SnapRAID project are subject to this COPYING file.
