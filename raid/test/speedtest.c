@@ -137,6 +137,7 @@ void speed(void)
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx2e");
+	printf("%8s", "avx512");
 #endif
 #endif
 	printf("\n");
@@ -185,6 +186,18 @@ void speed(void)
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
 			raid_gen1_avx2(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX512BW
+	if (raid_cpu_has_avx512bw()) {
+		printf("%8s", "");
+
+		SPEED_START {
+			raid_gen1_avx512bw(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -244,6 +257,18 @@ void speed(void)
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
 			raid_gen2_avx2(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX512BW
+	if (raid_cpu_has_avx512bw()) {
+		printf("%8s", "");
+
+		SPEED_START {
+			raid_gen2_avx512bw(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -858,6 +883,10 @@ int main(void)
 		printf("Including x86 SSSE3 functions\n");
 	if (raid_cpu_has_avx2())
 		printf("Including x86 AVX2 functions\n");
+	if (raid_cpu_has_avx512bw())
+		printf("Including x86 AVX512bw functions\n");
+	if (raid_cpu_has_avx512gfni())
+		printf("Including x86 AVX512gfni functions\n");
 #endif
 #ifdef CONFIG_X86_64
 	printf("Including x64 extended SSE register set\n");

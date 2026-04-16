@@ -91,6 +91,42 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 }
 #endif
 
+#if defined(CONFIG_X86) && defined(CONFIG_AVX512BW)
+/*
+ * GEN1 (RAID5 with xor) AVX512BW implementation
+ *
+ * Note that in true AVX512F would suffice, but we don't want to add
+ * specific support for AVX512F because this would be the only function
+ * to benefit from that.
+ *
+ * Intentionally don't process more than 64 bytes because 64 is the typical
+ * cache block, and processing 128 bytes doesn't increase performance, and in
+ * some cases it even decreases it.
+ */
+void raid_gen1_avx512bw(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t**)vv;
+	uint8_t *p;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+
+	raid_avx_begin();
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[l][i]));
+		for (d = l - 1; d >= 0; --d) {
+			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (v[d][i]));
+		}
+		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
+	}
+
+	raid_avx_end();
+}
+#endif
+
 #if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 static const struct gfconst16 {
 	uint8_t poly[16];
@@ -208,6 +244,48 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
 		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (q[i]));
 		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
+	}
+
+	raid_avx_end();
+}
+#endif
+
+#if defined(CONFIG_X86) && defined(CONFIG_AVX512BW)
+/*
+ * GEN2 (RAID6 with powers of 2) AVX512BW implementation
+ */
+void raid_gen2_avx512bw(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t**)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	raid_avx_begin();
+
+	asm volatile ("vbroadcasti32x4 %0, %%zmm7" : : "m" (gfconst16.poly[0]));
+	asm volatile ("vpxorq %zmm6,%zmm6,%zmm6");
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[l][i]));
+		asm volatile ("vmovdqa64 %zmm0,%zmm2");
+		for (d = l - 1; d >= 0; --d) {
+			asm volatile ("vpcmpgtb %zmm2,%zmm6,%k1");
+			asm volatile ("vpaddb %zmm2,%zmm2,%zmm2");
+			asm volatile ("vmovdqu8 %zmm7,%zmm4{%k1}{z}");
+			asm volatile ("vpxorq %zmm4,%zmm2,%zmm2");
+
+			asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (v[d][i]));
+			asm volatile ("vpxorq %zmm4,%zmm0,%zmm0");
+			asm volatile ("vpxorq %zmm4,%zmm2,%zmm2");
+		}
+		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
+		asm volatile ("vmovntdq %%zmm2,%0" : "=m" (q[i]));
 	}
 
 	raid_avx_end();
@@ -2500,6 +2578,13 @@ void raid_register_x86(void)
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "avx2", raid_recX_avx2);
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "avx2", raid_recX_avx2);
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "avx2", raid_recX_avx2);
+	}
+#endif
+
+#ifdef CONFIG_AVX512BW
+	if (raid_cpu_has_avx512bw()) {
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "avx512bw", raid_gen1_avx512bw);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "avx512bw", raid_gen2_avx512bw);
 	}
 #endif
 }
