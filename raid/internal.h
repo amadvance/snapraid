@@ -43,6 +43,10 @@
 #define CONFIG_AVX2 1
 #endif
 
+#if HAVE_AVX512BW /* Enables AVX2512BW only if the assembler supports it */
+#define CONFIG_AVX512BW 1
+#endif
+
 #else /* if HAVE_CONFIG_H is not defined */
 
 /* Assume that assembly is always supported */
@@ -61,6 +65,7 @@
 #define CONFIG_SSE2 1
 #define CONFIG_SSSE3 1
 #define CONFIG_AVX2 1
+#define CONFIG_AVX512BW 1
 #endif
 #endif
 
@@ -123,11 +128,13 @@ void raid_gen1_int32(int nd, size_t size, void **vv);
 void raid_gen1_int64(int nd, size_t size, void **vv);
 void raid_gen1_sse2(int nd, size_t size, void **vv);
 void raid_gen1_avx2(int nd, size_t size, void **vv);
+void raid_gen1_avx512bw(int nd, size_t size, void **vv);
 void raid_gen2_int32(int nd, size_t size, void **vv);
 void raid_gen2_int64(int nd, size_t size, void **vv);
 void raid_gen2_sse2(int nd, size_t size, void **vv);
 void raid_gen2_avx2(int nd, size_t size, void **vv);
 void raid_gen2_sse2ext(int nd, size_t size, void **vv);
+void raid_gen2_avx512bw(int nd, size_t size, void **vv);
 void raid_genz_int32(int nd, size_t size, void **vv);
 void raid_genz_int64(int nd, size_t size, void **vv);
 void raid_genz_sse2(int nd, size_t size, void **vv);

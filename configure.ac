@@ -242,6 +242,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
 
+dnl Checks for AS supporting the AVX512BW instructions.
+AC_MSG_CHECKING([for avx512bw])
+asmavx512bw=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__)
+	void f(void* ptr)
+	{
+		asm volatile("vpshufb %0, %%zmm0, %%zmm1" : : "m" (ptr));
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_AVX512BW], [1], [Define to 1 if avx512bw is supported by the assembler.]) asmavx512bw=yes])
+AC_MSG_RESULT([$asmavx512bw])
+
 dnl AS_IF(HAVE_ASSEMBLY) closed here
 )
 
@@ -353,12 +369,14 @@ dnl p4p -> Pentium4 Prescott with SSE2
 dnl mrm -> Merom with SSSE3
 dnl nhm -> Nehalem with SSE4.2
 dnl hsw -> Haswell with AVX2
-dnl knl -> Knights Landing with AVX512
+dnl knl -> Knights Landing with AVX512F
+dnl skx -> Skylake Xeon with AVX512BW
 	[
 	TESTENV_SSE2="$SDE -chip-check-exe-only -p4p --"
 	TESTENV_SSSE3="$SDE -chip-check-exe-only -mrm --"
 	TESTENV_SSE42="$SDE -nhm --"
 	TESTENV_AVX2="$SDE -hsw --"
+	TESTENV_AVX512="$SDE -skx --"
 	EMULATOR=1
 	# Target CPU compatible with P4 Prescott
 	CFLAGS="$CFLAGS -march=athlon64"
@@ -402,6 +420,7 @@ AC_ARG_VAR([TESTENV_SSE2], [Test environment for SSE2])
 AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
 AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
+AC_ARG_VAR([TESTENV_AVX512], [Test environment for AVX512])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([pkg/snapraid.info pkg/control pkg/snapraid.spec pkg/.PKGINFO pkg/PKGBUILD pkg/.SRCINFO])
