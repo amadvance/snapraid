@@ -381,13 +381,14 @@ else
 if !HAVE_MEMORY_CHECKER
 if HAVE_EMULATOR
 	$(MSG) Speed
-# Run the self test in AVX2
-	$(TESTENV_AVX2) $(SNAPRAID) --test-skip-device -c $(CONF) status
+# Run the self test in AVX512
+	$(TESTENV_AVX512) $(SNAPRAID) --test-skip-device -c $(CONF) status
 # Run the speed test in different architectures
 	$(TESTENV_SSE2) $(SNAPRAID) --test-skip-device -T
 	$(TESTENV_SSSE3) $(SNAPRAID) --test-skip-device -T
 	$(TESTENV_SSE42) $(SNAPRAID) --test-skip-device -T
 	$(TESTENV_AVX2) $(SNAPRAID) --test-skip-device -T
+	$(TESTENV_AVX512) $(SNAPRAID) --test-skip-device -T
 else
 # Run the self test natively
 	$(TESTENV) $(SNAPRAID) --test-skip-device -c $(CONF) status
