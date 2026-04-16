@@ -73,9 +73,14 @@ sdecovtest:
 	$(SDE) -mrm -- ./selftest
 	$(SDE) -nhm -- ./selftest
 	$(SDE) -hsw -- ./selftest
-	$(SDE) -hsw -- ./speedtest
+	$(SDE) -skx -- ./selftest
+	$(SDE) -icl -- ./selftest
+	$(SDE) -icl -- ./speedtest
 	$(MAKE) lcov_capture
 	$(MAKE) lcov_html
+
+sde:
+	$(SDE) -icl -- ./speedtest
 
 lcov_reset:
 	lcov --directory . -z
