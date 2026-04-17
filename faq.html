@@ -993,6 +993,7 @@ Note: You must use a Google "App Password," not your primary account password.
 <pre>
 notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-from your_email@gmail.com
            --mail-rcpt your_email@gmail.com --upload-file -
+(the command must be entered as a single continuous line in your configuration file)
 </pre>
 </p>
 </li>
@@ -1027,6 +1028,7 @@ Ensure only SYSTEM and Administrators have NTFS read access to this file. Use th
 <pre>
 notify_result = curl.exe --netrc --url "smtps://smtp.gmail.com:465" --ssl-reqd 
            --mail-from "your_email@gmail.com" --mail-rcpt "your_email@gmail.com" --upload-file -
+(the command must be entered as a single continuous line in your configuration file)
 </pre>
 </p>
 <p>
@@ -1038,6 +1040,7 @@ If you cannot use a _netrec file, you can pass your Gmail credentials directly v
 <pre>
 notify_result = curl.exe --user "your_email@gmail.com:your-app-password" --url "smtps://smtp.gmail.com:465"
            --ssl-reqd --mail-from "your_email@gmail.com" --mail-rcpt "your_email@gmail.com" --upload-file -
+(the command must be entered as a single continuous line in your configuration file)
 </pre>
 </p>
 </div>
