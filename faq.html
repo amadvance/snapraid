@@ -955,6 +955,73 @@ using a drive letter, similar to Linux.
 </p>
 </div>
 </div>
+
+<div class="faq-item">
+<h3 class="faq-question" id="gmaillinux">
+How do I configure GMAIL email notifications on Linux?
+</h3>
+<div class="faq-answer">
+<p>
+To securely send notifications through Gmail on Linux, follow these steps:
+</p>
+<p>
+1. <strong>Create the file:</strong> Create a file named .netrc in the home directory of the user specified in notify_run_as_user.
+</p>
+<pre>
+machine smtp.gmail.com
+login your_email@gmail.com
+password your-16-char-app-password
+</pre>
+<p>
+Note: You must use a Google "App Password," not your primary account password.
+</p>
+<p>
+2. <strong>Set Permissions:</strong> Secure the file using chmod 600 ~/.netrc. If permissions are too open or the file is owned by the wrong user, curl will return Error 55.
+</p>
+<p>
+3. <strong>Configure the Command:</strong>
+</p>
+<pre>
+notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-from your_email@gmail.com --mail-rcpt your_email@gmail.com --upload-file -
+</pre>
+</div>
+</div>
+
+<div class="faq-item">
+<h3 class="faq-question" id="gmailwin">
+How do I configure GMAIL email notifications on Window?
+</h3>
+<div class="faq-answer">
+<p>
+To send notifications through Gmail from a Windows Service, you have two primary options:
+</p>
+<p>
+<strong>Option 1: Using a _netrc file (Recommended)</strong>
+<br>
+Place a file named _netrc (note the underscore) in the System Profile directory: C:\Windows\System32\config\systemprofile\_netrc.
+</p>
+<pre>
+machine smtp.gmail.com
+login your_email@gmail.com
+password your-16-char-app-password
+</pre>
+<p>
+Ensure only SYSTEM and Administrators have NTFS read access to this file. Use the following configuration:
+</p>
+<pre>
+notify_result = curl.exe --netrc --url "smtps://smtp.gmail.com:465" --ssl-reqd --mail-from "your_email@gmail.com" --mail-rcpt "your_email@gmail.com" --upload-file -
+</pre>
+<p>
+<strong>Option 2: Using Command Line Credentials</strong>
+<br>
+If you cannot use a file, you can pass your Gmail credentials directly via the --user flag. Note that this is less secure as the app password may be visible in process monitoring tools.
+</p>
+<pre>
+notify_result = curl.exe --user "your_email@gmail.com:your-app-password" --url "smtps://smtp.gmail.com:465" --ssl-reqd --mail-from "your_email@gmail.com" --mail-rcpt "your_email@gmail.com" --upload-file -
+</pre>
+</div>
+</div>
+
 </div>
 <div class="faq-section">
 <h2 id="use">
