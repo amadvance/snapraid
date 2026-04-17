@@ -967,7 +967,7 @@ To securely send notifications through Gmail from SnanRAID Daemon on Linux, foll
 <ul>
 <li>
 <p>
-<strong>Create the file:</strong> Create a file named .netrc in the home directory of the user specified in notify_run_as_user.
+<strong>Create the file:</strong> Create a file named .netrc in the home directory of the user specified in notify_run_as_user. It's root if notify_run_as_user is not set.
 </p>
 <p>
 <pre>
@@ -982,7 +982,7 @@ Note: You must use a Google "App Password," not your primary account password. Y
 </li>
 <li>
 <p>
-<strong>Set Permissions:</strong> Secure the file using chmod 600 ~/.netrc. If permissions are too open or the file is owned by the wrong user, curl will return Error 55.
+<strong>Set Permissions:</strong> Secure the file using <pre>chmod 600 .netrc</pre>. If permissions are too open or the file is owned by the wrong user, curl will return Error 55.
 </p>
 </li>
 <li>
