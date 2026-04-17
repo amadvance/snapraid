@@ -964,8 +964,10 @@ How do I configure GMAIL email notifications on Linux?
 <p>
 To securely send notifications through Gmail on Linux, follow these steps:
 </p>
+<ul>
+<li>
 <p>
-1. <strong>Create the file:</strong> Create a file named .netrc in the home directory of the user specified in notify_run_as_user.
+<strong>Create the file:</strong> Create a file named .netrc in the home directory of the user specified in notify_run_as_user.
 </p>
 <p>
 <pre>
@@ -977,11 +979,15 @@ password your-16-char-app-password
 <p>
 Note: You must use a Google "App Password," not your primary account password.
 </p>
+</li>
+<li>
 <p>
-2. <strong>Set Permissions:</strong> Secure the file using chmod 600 ~/.netrc. If permissions are too open or the file is owned by the wrong user, curl will return Error 55.
+<strong>Set Permissions:</strong> Secure the file using chmod 600 ~/.netrc. If permissions are too open or the file is owned by the wrong user, curl will return Error 55.
 </p>
+</li>
+<li>
 <p>
-3. <strong>Configure the Command:</strong>
+<strong>Configure the Command:</strong>
 </p>
 <p>
 <pre>
@@ -989,6 +995,8 @@ notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-
            --mail-rcpt your_email@gmail.com --upload-file -
 </pre>
 </p>
+</li>
+</ul>
 </div>
 </div>
 
