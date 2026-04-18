@@ -1,0 +1,104 @@
+SnapRAID Windows Smart Screen (Blue Box)
+========================================
+
+Windows uses a cloud-based reputation system to vet software. Because
+SnapRAID is a specialized Open Source project, it may not have the
+"global reputation" required to pass these automated checks silently.
+Consequently, when running SnapRAID or the SnapRAID Daemon, Windows
+SmartScreen may display a warning dialog (informally called a "Blue
+Box") or block execution entirely due to "Malicious binary reputation".
+
+Only expensive EV (Extended Validation) certificates can automatically
+bypass these reputation filters, making them generally unsuitable for
+free Open Source projects.
+
+
+OPTION 1: THE "RUN ANYWAY" METHOD
+---------------------------------
+
+When the SmartScreen dialog first appears, click "More info" and then
+select "Run anyway" to proceed.
+
+This dialog only appears for files downloaded from the internet.
+If Windows is blocking the file silently (e.g. you see an "Application
+Control policy" error rather than a dialog), skip to Option 2 or 3.
+
+"Run anyway" bypasses the check for that launch only. The prompt may
+reappear after the file is updated or replaced.
+
+
+OPTION 2: PERMANENTLY UNBLOCKING THE FILE
+-----------------------------------------
+
+If you would prefer to permanently "unblock" a specific file on your
+machine and prevent the prompt from appearing again, follow these steps:
+
+1. Right-click the executable or installer file (.exe) and select
+   Properties.
+
+2. Stay on the General tab (the default view).
+
+3. Look for the Security section at the very bottom of the window.
+
+4. Check the box labeled Unblock.
+
+5. Click Apply and then OK.
+
+Once unblocked, the file is treated as safe by your local system.
+
+This method removes the Mark of the Web flag that Windows applies to
+downloaded files. It is effective against SmartScreen prompts but
+will not help on managed machines where an Application Control policy
+(WDAC or AppLocker) is enforced by an administrator. If you do not see
+an Unblock checkbox, or the block persists after applying it, see the
+note at the end of this document.
+
+
+OPTION 3: ADDING A PATH EXCLUSION (RECOMMENDED FOR RECURRING BLOCKS)
+--------------------------------------------------------------------
+
+If Windows continues to block files within your SnapRAID folder, you
+can add a permanent folder exclusion to Microsoft Defender. Substitute
+the path below for wherever you keep your SnapRAID binaries (e.g.
+C:\snapraid).
+
+1. Open Windows Security by searching for it in the Start menu.
+
+2. Select Virus & threat protection.
+
+3. Under "Virus & threat protection settings," click Manage settings.
+
+4. Scroll down to the bottom and click Add or remove exclusions.
+
+5. Click + Add an exclusion and select Folder.
+
+6. Browse to and select your SnapRAID folder (e.g. C:\snapraid).
+
+7. Click Select Folder and confirm any administrator prompts.
+
+By excluding this path, Microsoft Defender will no longer subject files
+inside that folder to reputation-based blocks or SmartScreen warnings.
+
+This exclusion applies to Microsoft Defender Antivirus. It does not
+override Application Control policies (WDAC or AppLocker) enforced by
+an administrator. If blocks persist after adding the exclusion, see the
+note below.
+
+Only use this method if you are certain that you only place authentic
+SnapRAID files in that directory.
+
+
+MANAGED OR CORPORATE MACHINES
+-----------------------------
+
+If none of the above options resolve the issue, your machine is likely
+subject to an Application Control policy enforced by your organisation's
+IT department. These policies (implemented via Windows Defender
+Application Control or AppLocker) operate at the kernel level and
+cannot be overridden by end users.
+
+In this situation you will need to contact your IT administrator and
+ask them to whitelist the SnapRAID executable, either by file path, or
+by file hash. Providing them with the official download URL
+(https://www.snapraid.it) and the file hash may help them process the
+request.

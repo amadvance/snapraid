@@ -145,7 +145,7 @@ LIST_XML = doc/snapraid.xml doc/snapraid_log.xml $(patsubst %, doc/snapraid-%.xm
 
 EXTRA_DIST = \
 	autogen.sh autover.sh \
-	README AUTHORS HISTORY INSTALL TODO CHECK INSTALL.windows \
+	README AUTHORS HISTORY INSTALL BLUEBOX TODO CHECK INSTALL.windows \
 	COPYING LICENSES/GPL-2.0 LICENSES/GPL-3.0 LICENSES/BSD-2-Clause \
 	$(LIST_D) \
 	$(LIST_MAN) \
@@ -1221,6 +1221,7 @@ distwindows-x86: $(DISTWIN)
 	todos < README > tmp/readme.txt
 	todos < AUTHORS > tmp/authors.txt
 	todos < HISTORY > tmp/history.txt
+	todos < BLUEBOX > tmp/bluebox.txt
 	todos < LICENSES/GPL-3.0 > tmp/copying.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
 	rm -r tmp
@@ -1234,6 +1235,7 @@ distwindows-x64: $(DISTWIN)
 	todos < README > tmp/readme.txt
 	todos < AUTHORS > tmp/authors.txt
 	todos < HISTORY > tmp/history.txt
+	todos < BLUEBOX > tmp/bluebox.txt
 	todos < LICENSES/GPL-3.0 > tmp/copying.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp
