@@ -967,6 +967,12 @@ To securely send notifications through Gmail from SnapRAID Daemon on Linux, foll
 <ul>
 <li>
 <p>
+<strong>Generate an App Password</strong>
+Log into your Google Account, navigate to <b>Security</b> settings, and select <b>2-Step Verification</b>. Scroll to the bottom and select <b>App Passwords</b> to generate a unique 16-character code.
+</p>
+</li>
+<li>
+<p>
 <strong>Create the .netrc file</strong> Create a file named <b>.netrc</b> in the <b>/root/</b> directory ($HOME directory of the root user) with the following content:
 </p>
 <p>
@@ -980,7 +986,7 @@ password your-16-char-app-password-without-spaces
 Note: If <b>notify_run_as_user</b> is set, the directory to use is the user $HOME directory and not <b>/root/</b>.
 </p>
 <p>
-Note: You must use a Google <b>App Password</b>, not your primary account password. You can generate this in your Google Account security settings under <b>2-Step Verification</b> by scrolling to the bottom and selecting <b>App Passwords</b>.
+Note: You must use a Google <b>App Password</b>, not your primary account password.
 </p>
 </li>
 <li>
@@ -1023,6 +1029,12 @@ To securely send notifications through Gmail from SnapRAID Daemon on Windows, fo
 <ul>
 <li>
 <p>
+<strong>Generate an App Password</strong>
+Log into your Google Account, navigate to <b>Security</b> settings, and select <b>2-Step Verification</b>. Scroll to the bottom and select <b>App Passwords</b> to generate a unique 16-character code.
+</p>
+</li>
+<li>
+<p>
 <strong>Create the _netrc file</strong> Create a file named <b>_netrc</b> in the <b>C:\Windows\System32\config\systemprofile\</b> directory with the following content:
 </p>
 <p>
@@ -1033,7 +1045,7 @@ password your-16-char-app-password-without-spaces
 </pre>
 </p>
 <p>
-Note: You must use a Google <b>App Password</b>, not your primary account password. You can generate this in your Google Account security settings under <b>2-Step Verification</b> by scrolling to the bottom and selecting <b>App Passwords</b>.
+Note: You must use a Google <b>App Password</b>, not your primary account password.
 </p>
 </li>
 <li>
