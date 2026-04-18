@@ -967,27 +967,31 @@ To securely send notifications through Gmail from SnanRAID Daemon on Linux, foll
 <ul>
 <li>
 <p>
-<strong>Create the file:</strong> Create a file named .netrc in the home directory of the user specified in notify_run_as_user. It's root if notify_run_as_user is not set.
+<strong>Create the .netrc file</strong> Create a file named <b>.netrc</b> in <b>/root/</b> directory ($HOME directory of the root user) with the following content:
 </p>
 <p>
 <pre>
 machine smtp.gmail.com
 login your_email@gmail.com
-password your-16-char-app-password
+password your-16-char-app-password-without-spaces
 </pre>
 </p>
 <p>
-Note: You must use a Google "App Password," not your primary account password. You can generate this in your Google Account security settings under "2-Step Verification" by scrolling to the bottom and selecting "App Passwords."
+Note: If <b>notify_run_as_user</b> is set, the directory to use is the user $HOME directory and not <b>/root/</b>.
+</p>
+<p>
+Note: You must use a Google <b>App Password</b>, not your primary account password. You can generate this in your Google Account security settings under <b>2-Step Verification</b> by scrolling to the bottom and selecting <b>App Passwords</b>.
 </p>
 </li>
 <li>
 <p>
-<strong>Set Permissions:</strong> Secure the file using <pre>chmod 600 .netrc</pre>. If permissions are too open or the file is owned by the wrong user, curl will return Error 55.
+<strong>Set Permissions</strong> Secure the file using <b>chmod 600 .netrc</b> If permissions are too open or the file is owned by the wrong user, curl will return error 55.
 </p>
 </li>
 <li>
 <p>
-<strong>Configure the Command:</strong>
+<strong>Configure the Command</strong>
+In your <b>snapraidd.conf</b> use the following configuration:
 </p>
 <p>
 <pre>
@@ -1007,45 +1011,43 @@ How do I configure Gmail email notifications on Window?
 </h3>
 <div class="faq-answer">
 <p>
-To send notifications through Gmail from SnanRAID Daemon, you have two primary options:
+To securely send notifications through Gmail from SnanRAID Daemon on Window, follow these steps:
 </p>
+<ul>
+<li>
 <p>
-<strong>Option 1: Using a _netrc file (Recommended)</strong>
-<br>
-Place a file named _netrc (note the underscore) in the System Profile directory: C:\Windows\System32\config\systemprofile\_netrc.
+<strong>Create the _netrc file</strong> Create a file named <b>_netrc</b> in the <b>C:\Windows\System32\config\systemprofile\</b> directory with the following content:
 </p>
 <p>
 <pre>
 machine smtp.gmail.com
 login your_email@gmail.com
-password your-16-char-app-password
+password your-16-char-app-password-without-spaces
 </pre>
 </p>
 <p>
-Note: You must use a Google "App Password," not your primary account password. You can generate this in your Google Account security settings under "2-Step Verification" by scrolling to the bottom and selecting "App Passwords."
+Note: You must use a Google <b>App Password</b>, not your primary account password. You can generate this in your Google Account security settings under <b>2-Step Verification</b> by scrolling to the bottom and selecting <b>App Passwords</b>.
 </p>
+</li>
+<li>
 <p>
-Ensure only SYSTEM and Administrators have NTFS read access to this file. Use the following configuration:
+<strong>Set Permissions</strong> Ensure only System and Administrators have read access to this file.
+</p>
+</li>
+<li>
+<p>
+<strong>Configure the Command</strong>
+In your <b>snapraidd.conf</b> use the following configuration:
 </p>
 <p>
 <pre>
-notify_result = curl.exe --netrc --url "smtps://smtp.gmail.com:465" --ssl-reqd 
-           --mail-from "your_email@gmail.com" --mail-rcpt "your_email@gmail.com" --upload-file -
+notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd 
+           --mail-from your_email@gmail.com --mail-rcpt your_email@gmail.com --upload-file -
 (the command must be entered as a single continuous line in your configuration file)
 </pre>
 </p>
-<p>
-<strong>Option 2: Using Command Line Credentials</strong>
-<br>
-If you cannot use a _netrec file, you can pass your Gmail credentials directly via the --user flag. Note that this is less secure as the app password may be visible in process monitoring tools.
-</p>
-<p>
-<pre>
-notify_result = curl.exe --user "your_email@gmail.com:your-app-password" --url "smtps://smtp.gmail.com:465"
-           --ssl-reqd --mail-from "your_email@gmail.com" --mail-rcpt "your_email@gmail.com" --upload-file -
-(the command must be entered as a single continuous line in your configuration file)
-</pre>
-</p>
+</li>
+</ul>
 </div>
 </div>
 

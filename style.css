@@ -563,6 +563,12 @@ nav a:hover, nav a.active {
     padding-left: 0.5rem;
 }
 
+.faq-answer b {
+    font-weight: bold;
+    font-family: var(--font-mono);
+    color: var(--text-accent);
+}
+
 .faq-answer table {
     width: 100%;
     border-collapse: collapse;
