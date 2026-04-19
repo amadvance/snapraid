@@ -1,6 +1,13 @@
 SnapRAID HISTORY
 ================
 
+14.4 2026/04
+============
+ * Updated --gui-threshold-* logic to trigger on values equal to or greater
+   than the threshold (previously only "greater than"). This enables setting
+   the threshold to 1 to trigger it for a single case.
+   This change is required by SnapRAID Daemon 1.8.
+
 14.3 2026/04
 ============
  * On ARM64 (AArch64), replaced the inline assembly implementation of

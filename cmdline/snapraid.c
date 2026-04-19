@@ -1861,11 +1861,11 @@ int snapraid_main(int argc, char* argv[])
 
 		state_scan(&state);
 
-		if (opt.gui_threshold_removes != 0 && state.removed_files > opt.gui_threshold_removes) {
+		if (opt.gui_threshold_removes != 0 && state.removed_files >= opt.gui_threshold_removes) {
 			log_fatal(EUSER, "Too many files were removed (%u, limit is %u). Sync aborted.\n", state.removed_files, opt.gui_threshold_removes);
 			exit(EXIT_SYNC_NEEDED);
 		}
-		if (opt.gui_threshold_updates != 0 && state.updated_files > opt.gui_threshold_updates) {
+		if (opt.gui_threshold_updates != 0 && state.updated_files >= opt.gui_threshold_updates) {
 			log_fatal(EUSER, "Too many files were updated (%u, limit is %u). Sync aborted.\n", state.updated_files, opt.gui_threshold_updates);
 			exit(EXIT_SYNC_NEEDED);
 		}
