@@ -112,6 +112,7 @@ struct snapraid_option {
 struct snapraid_state {
 	struct snapraid_option opt; /**< Setup options. */
 	int mapped_device; /**< Devices were already mapped */
+	int snapshot; /**< Enable snapshot support */
 	int filter_hidden; /**< Filter out hidden files. */
 	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int need_write; /**< If the state is changed. */
@@ -419,6 +420,26 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
  * Report attributes into the log
  */
 void state_attr(struct snapraid_state* state, tommy_list* low);
+
+/**
+ * Create (or reuse existing) pending snapshots
+ */
+int state_snapshot_new(struct snapraid_state* state);
+
+/**
+ * Make the pending snapshots as stable
+ */
+int state_snapshot_commit(struct snapraid_state* state);
+
+/**
+ * Use the snapshots for reading only commands
+ */
+void state_snapshot_read(struct snapraid_state* state);
+
+/**
+ * Use the snapshots for the reading part (filtered out disks) of writing commands
+ */
+void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_disk);
 
 /****************************************************************************/
 /* misc */

@@ -1222,14 +1222,32 @@ the boot disk.
 Note that such disks are not affected by the `up` and `down` commands
 because they are expected to be always spinning.
 
-7.7 nohidden
+7.7 snapshot
+------------
+
+Enable the use of filesystem snapshots for the `sync`, `scrub`,
+`check`, and `fix` commands, provided the underlying filesystem
+supports it.
+
+This option applies exclusively to data disks formatted with the Btrfs
+filesystem. Parity disks, or data disks using other filesystems, will
+always use the live version of the filesystem.
+
+When enabled, SnapRAID ensures atomic and consistent operations by
+reading from a frozen point-in-time image. This prevents errors caused
+by file modifications during execution and ensures that deleted files
+remain available for parity-based recovery of other disks.
+
+See the SNAPSHOTS section for more details.
+
+7.8 nohidden
 ------------
 
 Excludes all hidden files and directories.
 In Unix, hidden files are those starting with `.`.
 In Windows, they are those with the hidden attribute.
 
-7.8 exclude/include PATTERN
+7.9 exclude/include PATTERN
 ---------------------------
 
 Defines the file or directory patterns to exclude or include
@@ -1247,8 +1265,8 @@ specifications.
 
 This option can be used multiple times.
 
-7.9 blocksize SIZE_IN_KIBIBYTES
--------------------------------
+7.10 blocksize SIZE_IN_KIBIBYTES
+--------------------------------
 
 Defines the basic block size in kibibytes for the parity.
 One kibibyte is 1024 bytes.
@@ -1295,7 +1313,7 @@ This results in about 1.5% extra space, approximately 60 GB for
 a 4 TB disk, which allows about 460,000 files on each data disk without
 any wasted space.
 
-7.10 hashsize SIZE_IN_BYTES
+7.11 hashsize SIZE_IN_BYTES
 ---------------------------
 
 Defines the hash size in bytes for the saved blocks.
@@ -1333,7 +1351,7 @@ Switching to both a hash size of 8 and a block size of 512, you get:
 
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 
-7.11 autosave SIZE_IN_GIGABYTES
+7.12 autosave SIZE_IN_GIGABYTES
 -------------------------------
 
 Automatically saves the state when syncing or scrubbing after the
@@ -1341,7 +1359,7 @@ specified amount of GB processed.
 This option is useful to avoid restarting long `sync`
 commands from scratch if interrupted by a machine crash or any other event.
 
-7.12 temp_limit TEMPERATURE_CELSIUS
+7.13 temp_limit TEMPERATURE_CELSIUS
 -----------------------------------
 
 Sets the maximum allowed disk temperature in Celsius. When specified,
@@ -1372,14 +1390,14 @@ temperature measured at the start of the run as a fallback reference.
 Normally, SnapRAID shows only the temperature of the hottest disk.
 To display the temperature of all disks, use the -A or --stats option.
 
-7.13 temp_sleep TIME_IN_MINUTES
+7.14 temp_sleep TIME_IN_MINUTES
 -------------------------------
 
 Sets the standby time, in minutes, when the temperature limit is
 reached. During this period, the disks remain spun down. The default
 is 5 minutes.
 
-7.14 pool DIR
+7.15 pool DIR
 -------------
 
 Defines the pooling directory where the virtual view of the disk
@@ -1387,7 +1405,7 @@ array is created using the `pool` command.
 
 The directory must already exist.
 
-7.15 share UNC_DIR
+7.16 share UNC_DIR
 ------------------
 
 Defines the Windows UNC path required to access the disks remotely.
@@ -1403,7 +1421,7 @@ file directory and name.
 
 This option is required only for Windows.
 
-7.16 smartctl DISK/PARITY OPTIONS...
+7.17 smartctl DISK/PARITY OPTIONS...
 ------------------------------------
 
 Defines custom smartctl options to obtain the SMART attributes for
@@ -1428,7 +1446,7 @@ For example:
 
     smartctl parity -d sat %s
 
-7.17 smartignore DISK/PARITY ATTR [ATTR...]
+7.18 smartignore DISK/PARITY ATTR [ATTR...]
 -------------------------------------------
 
 Ignores the specified SMART attribute when computing the probability
@@ -1449,7 +1467,7 @@ To ignore it only on the first parity disk:
 
     smartignore parity 197
 
-7.18 Examples
+7.19 Examples
 -------------
 
 An example of a typical configuration for Unix is:
@@ -1484,7 +1502,130 @@ An example of a typical configuration for Windows is:
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 
-8 PATTERN
+8 SNAPSHOTS
+===========
+
+If the snapshot option is enabled in the configuration, SnapRAID
+utilizes filesystem snapshot functionality to ensure atomic and
+consistent operations.
+
+The management of snapshots is completely automatic and transparent.
+You can continue to use SnapRAID exactly as before, with the
+additional protection provided by snapshots handled entirely in
+the background.
+
+This provides two primary benefits:
+
+Consistency - Files modified on the live filesystem during a long-running
+    sync or scrub will not cause parity mismatches or aborted
+    operations, as SnapRAID sees a frozen point-in-time image.
+Recovery - If a file is deleted from the live filesystem, it remains
+    preserved in the snapshot. If a disk failure occurs before the
+    next sync is run, SnapRAID uses the data preserved in the
+    snapshot to reconstruct the failed disk. Without snapshots,
+    a deleted file on a healthy disk results in missing data
+    blocks that may be required to fix other failed disks.
+
+Snapshots are created only for data disks and only if the underlying
+filesystem supports this functionality. Parity disks always use
+the live filesystem. At present, this is supported exclusively on Btrfs.
+
+You can mix data disks with different filesystems. Only those that
+support snapshots will utilize them, while other disks will continue
+to operate directly on the live filesystem.
+
+8.1 Command Behavior with Snapshots
+-----------------------------------
+
+The `sync` and `scrub` commands both operate exclusively on snapshots
+to ensure that all data operations are performed against a consistent,
+frozen state. By utilizing these snapshots, SnapRAID prevents false
+positives and parity mismatches that would otherwise be triggered
+by concurrent file modifications on the live filesystem.
+During a `sync`, the command uses a new snapshot created at the
+start of the process to capture the current state for parity computation.
+In contrast, the `scrub` command utilizes the last snapshot, the one
+created during the most recent sync, to maintain a reliable reference
+point that matches the existing parity.
+
+For the `check` and `fix` commands, the use of the last snapshot
+depends on whether specific disks are targeted using the
+-d, --filter-disk option.
+Any disk explicitly selected for checking or fixing will use
+the live filesystem. This allows `check` to verify the current state of
+your files and `fix` to physically restore data to the active disk.
+
+All other data disks not specified by the -d, --filter-disk option
+will be accessed via their snapshots. These disks act as stable
+references, providing the necessary data blocks to solve the parity
+equations without interference from live changes. If no -d option is
+provided, SnapRAID assumes the operation applies to the entire array,
+in this case, `check` and `fix` will use the live filesystems exclusively.
+
+All other commands operate exclusively on the live filesystem.
+
+8.2 Sync Safety
+---------------
+
+To ensure maximum data safety during a sync operation, it is
+recommended to place the .content files inside the same subvolume
+used for the data, ensuring they are also part of the snapshots.
+
+When a sync starts, SnapRAID immediately updates the .content file to
+reflect the current state of the filesystem. If you have deleted files
+on a disk, the new .content file loses the metadata for those
+deleted items and their relation to the parity.
+
+If a disk fails while a `sync` is running, the parity for that
+failed disk may still depend on the deleted files.
+Even if your snapshot physically contains the deleted files,
+the new .content file no longer knows how they relate to the
+parity blocks. This missing correlation can prevent a full recovery.
+
+Note that this specific risk only exists if a disk fails during
+an active sync. If a disk fails between syncs, the snapshot
+already contains data that is perfectly matched with the
+last successfully saved content file on the live filesystem,
+ensuring a successful recovery.
+
+By storing the .content file inside the snapshotted subvolume, the
+snapshot preserves an older version of the content file, and
+the metadata within it, alongside the corresponding version of
+the data.
+
+8.3 Snapshots Lifecycle
+-----------------------
+
+SnapRAID manages two specific snapshots within a hidden `.snapraid`
+directory at the root of each data subvolume:
+
+stable - The reference snapshot representing the state of the last
+    successfully completed `sync`. This snapshot contains the exact
+    data used to compute the parity and serves as the primary data
+    source for all `scrub`, `check`, and `fix` commands, provided
+    that a pending snapshot is not present.
+pending - A temporary snapshot created at the start of a sync operation.
+    Upon the successful completion of a sync, the previous stable
+    snapshot is deleted, and the pending snapshot is promoted to
+    stable.
+    During this promotion, if a content file is stored on the
+    same subvolume of the data, the final version of the content
+    file is cloned (via reflink) into the snapshot.
+    This ensures that the snapshot contains a metadata map that
+    is perfectly in	sync with the data blocks it preserves.
+    Once promoted, the stable snapshot is set to a read-only
+    state to ensure its integrity as a recovery reference.
+    If the sync fails or is interrupted, the pending snapshot is
+    preserved in its current state. This allows subsequent `scrub`,
+    `check`, and `fix` commands to function correctly by using the
+    exact filesystem state recorded in the live content file,
+    even if the parity is only partially synchronized.
+    When sync is restarted after the interruption, the existing
+    pending snapshot is deleted and a new one is created,
+    capturing the new state of the live filesystem.
+
+
+9 PATTERN
 =========
 
 Patterns are used to select a subset of files to exclude or include in
@@ -1602,8 +1743,8 @@ In Unix, when using globbing characters on the command line, you must
 quote them to prevent the shell from expanding them.
 
 
-9 IGNORE FILE
-=============
+10 IGNORE FILE
+==============
 
 In addition to the global rules in the configuration file, you can
 place `.snapraidignore` files in any directory within the array to
@@ -1647,7 +1788,7 @@ For example, if you have a `.snapraidignore` in `/mnt/disk1/projects/`:
     *.tmp
 
 
-10 CONTENT
+11 CONTENT
 ==========
 
 SnapRAID stores the list and checksums of your files in the content file.
@@ -1659,7 +1800,7 @@ This file is read and written by the `sync` and `scrub` commands and
 read by the `fix`, `check`, and `status` commands.
 
 
-11 PARITY
+12 PARITY
 =========
 
 SnapRAID stores the parity information of your array in the parity
@@ -1672,7 +1813,7 @@ These files are read and written by the `sync` and `fix` commands and
 only read by the `scrub` and `check` commands.
 
 
-12 ENCODING
+13 ENCODING
 ===========
 
 SnapRAID in Unix ignores any encoding. It reads and stores the
@@ -1689,7 +1830,7 @@ redirect the console output to a file, the resulting file is always
 in UTF-8 format.
 
 
-13 EXIT CODE
+14 EXIT CODE
 ============
 
 SnapRAID terminates with the following error codes:
@@ -1700,13 +1841,13 @@ SnapRAID terminates with the following error codes:
     needed.
 
 
-14 COPYRIGHT
+15 COPYRIGHT
 ============
 
 This file is Copyright (C) 2026 Andrea Mazzoleni
 
 
-15 SEE ALSO
+16 SEE ALSO
 ===========
 
 snapraid_log(1), snapraidd(1), rsync(1)

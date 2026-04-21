@@ -1375,6 +1375,224 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
+int fssnapshot(const char* path, char* root, size_t root_size)
+{
+#if HAVE_LINUX_DEVICE
+	struct statfs sfs;
+	struct stat st;
+	char current_path[PATH_MAX];
+
+	pathcpy(current_path, sizeof(current_path), path);
+
+	if (statfs(current_path, &sfs) != 0) {
+		log_error(errno, "Error stating filesystem '%s'. %s.\n", current_path, strerror(errno));
+		return -1;
+	}
+
+	/* only btrfs */
+	if (sfs.f_type != BTRFS_SUPER_MAGIC)
+		return -1;
+
+	/* walk up the directory tree to find the subvolume root (Inode 256) */
+	while (1) {
+		if (stat(current_path, &st) != 0) {
+			log_error(errno, "Error stating '%s'. %s.\n", current_path, strerror(errno));
+			return -1;
+		}
+
+		/* btrfs reserved inode 256 for subvolume roots */
+		if (st.st_ino == 256) {
+			/* copy the subvol root */
+			pathcpy(root, root_size, current_path);
+			return 0;
+		}
+
+		/* move to parent directory */
+		pathup(current_path);
+
+		if (current_path[0] == 0) {
+			log_error(ENOENT, "No subvolume root found for '%s'. %s.\n", path, strerror(errno));
+			return -1;
+		}
+	}
+#else
+	(void)path;
+	(void)root;
+	(void)root_size;
+	return -1;
+#endif
+}
+
+int fssnapshot_create(const char* source, const char* parent_dir, const char* name)
+{
+#if HAVE_LINUX_DEVICE
+	struct btrfs_ioctl_vol_args_v2 args;
+	int fd_source;
+	int fd_dest_parent;
+	int ret;
+
+	/* open the source subvolume to get a file descriptor */
+	fd_source = open(source, O_RDONLY | O_DIRECTORY);
+	if (fd_source < 0) {
+		return -1;
+	}
+
+	fd_dest_parent = open(parent_dir, O_RDONLY | O_DIRECTORY);
+	if (fd_dest_parent < 0) {
+		close(fd_source);
+		return -1;
+	}
+
+	memset(&args, 0, sizeof(args));
+	args.fd = fd_source;
+	args.flags = 0;
+	pathcpy(args.name, BTRFS_SUBVOL_NAME_MAX, name);
+
+	/* issue the snapshot command to the PARENT directory of the destination */
+	ret = ioctl(fd_dest_parent, BTRFS_IOC_SNAP_CREATE_V2, &args);
+
+	if (ret < 0) {
+		close(fd_source);
+		close(fd_dest_parent);
+		return -1;
+	}
+
+	close(fd_source);
+	close(fd_dest_parent);
+
+	return 0;
+#else
+	(void)source;
+	(void)parent_dir;
+	(void)name;
+	return -1;
+#endif
+}
+
+int fssnapshot_readonly(const char* parent_dir, const char* name)
+{
+#if HAVE_LINUX_DEVICE
+	char path[PATH_MAX];
+
+	pathcpy(path, sizeof(path), parent_dir);
+	pathcatc(path, sizeof(path), '/');
+	pathcat(path, sizeof(path), name);
+
+	int fd = open(path, O_RDONLY | O_DIRECTORY);
+	if (fd < 0)
+		return -1;
+
+	/* get existing flags to avoid overwriting other potential flags */
+	__u64 flags;
+	if (ioctl(fd, BTRFS_IOC_SUBVOL_GETFLAGS, &flags) < 0) {
+		close(fd);
+		return -1;
+	}
+
+	flags |= BTRFS_SUBVOL_RDONLY;
+
+	if (ioctl(fd, BTRFS_IOC_SUBVOL_SETFLAGS, &flags) < 0) {
+		close(fd);
+		return -1;
+	}
+
+	close(fd);
+	return 0;
+#else
+	(void)parent_dir;
+	(void)name;
+	return -1;
+#endif
+}
+
+int fssnapshot_delete(const char* parent_dir, const char* name)
+{
+#if HAVE_LINUX_DEVICE
+	struct btrfs_ioctl_vol_args args;
+	int fd_parent;
+	int ret;
+
+	fd_parent = open(parent_dir, O_RDONLY | O_DIRECTORY);
+	if (fd_parent < 0) {
+		return -1;
+	}
+
+	memset(&args, 0, sizeof(args));
+	pathcpy(args.name, BTRFS_PATH_NAME_MAX, name);
+
+	ret = ioctl(fd_parent, BTRFS_IOC_SNAP_DESTROY, &args);
+
+	if (ret < 0 && errno != ENOENT) {
+		close(fd_parent);
+		return -1;
+	}
+
+	close(fd_parent);
+	return 0;
+#else
+	(void)parent_dir;
+	(void)name;
+	return -1;
+#endif
+}
+
+int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* new_name)
+{
+#if HAVE_LINUX_DEVICE
+	char old_path[PATH_MAX];
+	char new_path[PATH_MAX];
+
+	pathcpy(old_path, sizeof(old_path), parent_dir);
+	pathcatc(old_path, sizeof(old_path), '/');
+	pathcat(old_path, sizeof(old_path), old_name);
+	pathcpy(new_path, sizeof(new_path), parent_dir);
+	pathcatc(new_path, sizeof(new_path), '/');
+	pathcat(new_path, sizeof(new_path), new_name);
+
+	if (rename(old_path, new_path) < 0)
+		return -1;
+
+	return 0;
+#else
+	(void)parent_dir;
+	(void)old_name;
+	(void)new_name;
+	return -1;
+#endif
+}
+
+int fssnapshot_clone(const char* source, const char* dest)
+{
+#if HAVE_LINUX_DEVICE
+	int fs, fd;
+
+	fs = open(source, O_RDONLY);
+	if (fs < 0)
+		return -1;
+
+	fd = open(dest, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd < 0) {
+		close(fs);
+		return 1;
+	}
+
+	/* perform the reflink copy */
+	if (ioctl(fd, FICLONE, fs) < 0) {
+		close(fd);
+		close(fs);
+		return -1;
+	}
+
+	close(fs);
+	close(fd);
+	return 0;
+#else
+	(void)source;
+	(void)dest;
+	return -1;
+#endif
+}
+
 uint64_t os_tick(void)
 {
 #if HAVE_MACH_ABSOLUTE_TIME
