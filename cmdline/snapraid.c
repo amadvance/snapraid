@@ -1840,6 +1840,11 @@ int snapraid_main(int argc, char* argv[])
 				state_write(&state);
 		}
 
+		ret = state_snapshot_new(&state);
+		if (ret != 0) {
+			exit(EXIT_FAILURE);
+		}
+
 		state_scan(&state);
 
 		if (opt.gui_threshold_removes != 0 && state.removed_files >= opt.gui_threshold_removes) {
@@ -1889,6 +1894,10 @@ int snapraid_main(int argc, char* argv[])
 			sleep(2);
 
 		ret = state_sync(&state, blockstart, blockcount);
+
+		/* commit the snapshot as stable */
+		if (ret == 0)
+			state_snapshot_commit(&state);
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
@@ -1933,6 +1942,8 @@ int snapraid_main(int argc, char* argv[])
 
 		/* intercept signals while operating */
 		signal_init();
+
+		state_snapshot_read(&state);
 
 		ret = state_scrub(&state, plan100, olderthan);
 	} else if (operation == OPERATION_REWRITE) {
@@ -2049,6 +2060,8 @@ int snapraid_main(int argc, char* argv[])
 
 		/* intercept signals while operating */
 		signal_init();
+
+		state_snapshot_write(&state, &filterlist_disk);
 
 		if (operation == OPERATION_CHECK) {
 			ret = state_check(&state, 0, blockstart, blockcount);

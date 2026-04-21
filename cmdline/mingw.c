@@ -2038,6 +2038,52 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
+int fssnapshot(const char* path, char* root, size_t root_size)
+{
+	(void)path;
+	(void)root;
+	(void)root_size;
+	return -1;
+}
+
+int fssnapshot_create(const char* source, const char* parent_dir, const char* name)
+{
+	(void)source;
+	(void)parent_dir;
+	(void)name;
+	return -1;
+}
+
+int fssnapshot_readonly(const char* parent_dir, const char* name)
+{
+	(void)parent_dir;
+	(void)name;
+	return -1;
+}
+
+int fssnapshot_delete(const char* parent_dir, const char* name)
+{
+	(void)parent_dir;
+	(void)name;
+	return -1;
+}
+
+int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* new_name)
+{
+	(void)parent_dir;
+	(void)old_name;
+	(void)new_name;
+	return -1;
+}
+
+int fssnapshot_clone(const char* source, const char* dest)
+{
+	(void)source;
+	(void)dest;
+	return -1;
+}
+
+
 /* ensure to call the real C strerror() */
 #undef strerror
 
