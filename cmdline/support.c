@@ -1165,6 +1165,25 @@ void pathcut(char* dst)
 		dst[0] = 0;
 }
 
+void pathup(char* dst)
+{
+	size_t len = strlen(dst);
+
+	if (len == 0)
+		return;
+
+	/* if ending with slash, remove it */
+	if (dst[len - 1] == '/')
+		--len;
+
+	/* search previous / */
+	while (len > 0 && dst[len - 1] != '/')
+		--len;
+
+	/* cut everything after the slash (if there are no more slash, return the empty string) */
+	dst[len] = 0;
+}
+
 int pathcmp(const char* a, const char* b)
 {
 #ifdef _WIN32
