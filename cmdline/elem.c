@@ -753,11 +753,15 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 	disk = malloc_nofail(sizeof(struct snapraid_disk));
 	pathcpy(disk->name, sizeof(disk->name), name);
-	pathimport(disk->dir, sizeof(disk->dir), dir);
+	pathimport(disk->mount_point, sizeof(disk->mount_point), dir);
 	pathcpy(disk->uuid, sizeof(disk->uuid), uuid);
 
 	/* ensure that the dir terminate with "/" if it isn't empty */
-	pathslash(disk->dir, sizeof(disk->dir));
+	pathslash(disk->mount_point, sizeof(disk->mount_point));
+
+	/* no snapshot by default */
+	disk->snapshot_root[0] = 0;
+	pathcpy(disk->dir, sizeof(disk->dir), disk->mount_point);
 
 #if HAVE_THREAD
 	disk->single_thread = 0;
@@ -1570,7 +1574,7 @@ const char* fmt_term(const struct snapraid_disk* disk, const char* str)
 		out[2] = str;
 		return esc_shell_multi(out, 3, esc_buf());
 	case FMT_PATH :
-		out[0] = disk->dir;
+		out[0] = disk->mount_point;
 		out[1] = str;
 		return esc_shell_multi(out, 2, esc_buf());
 	}

@@ -44,6 +44,26 @@ data d3 /mnt/disk3/
 # Format: "other DISK_NAME DISK_MOUNT_POINT"
 extra boot /
 
+# Enable the use of Btrfs snapshots for sync, scrub, check, and fix commands.
+#
+# When enabled, SnapRAID creates a read-only snapshot of your data at the
+# start of a 'sync'. This ensures a consistent, point-in-time view of your
+# files, preventing errors caused by concurrent file modifications.
+#
+# This significantly improves recovery: if a file is deleted from the live
+# filesystem, it remains preserved in the snapshot. This prevents the parity
+# from becoming "broken" for that block, ensuring you can still successfully
+# recover data if another disk fails.
+#
+# Only Btrfs is supported. Snapshots are stored in a hidden '.snapraid'
+# directory at the root of each data subvolume.
+#
+# Two snapshots are managed per disk:
+#   .snapraid/pending - The snapshot currently being processed.
+#   .snapraid/stable - The last successfully completed sync state.
+#
+#snapshot
+
 # Excludes hidden files and directories (uncomment to enable).
 #nohidden
 
@@ -56,6 +76,7 @@ extra boot /
 exclude *.unrecoverable
 exclude /tmp/
 exclude /lost+found/
+exclude .snapraid/
 
 # Defines the block size in kibi bytes (1024 bytes) (uncomment to enable).
 # WARNING: Changing this value is for experts only!
