@@ -125,6 +125,7 @@ void state_init(struct snapraid_state* state)
 
 	memset(&state->opt, 0, sizeof(state->opt));
 	state->mapped_device = 0;
+	state->snapshot = 0;
 	state->filter_hidden = 0;
 	state->autosave = 0;
 	state->need_write = 0;
@@ -294,7 +295,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 							log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
 					} else {
 						/* LCOV_EXCL_START */
-						log_fatal(ESOFT, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+						log_fatal(ESOFT, "Disks '%s' and '%s' are on the same device.\n", disk->mount_point, other->mount_point);
 #ifdef _WIN32
 						log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 						log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
@@ -321,10 +322,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 								/* and we DON'T mark the disk to be skipped */
 								/* because we want to use these disks */
 								if (!state->opt.no_warnings)
-									log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and %s '%s' are on the same device\n", disk->dir, lev_name(l), state->parity[l].split_map[s].path);
+									log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and %s '%s' are on the same device\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
 							} else {
 								/* LCOV_EXCL_START */
-								log_fatal(ESOFT, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].split_map[s].path);
+								log_fatal(ESOFT, "Disk '%s' and %s '%s' are on the same device.\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
 #ifdef _WIN32
 								log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 								log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
@@ -340,7 +341,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 			if (state->pool[0] != 0 && disk->device == state->pool_device) {
 				/* LCOV_EXCL_START */
-				log_fatal(ESOFT, "Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
+				log_fatal(ESOFT, "Disk '%s' and pool '%s' are on the same device.\n", disk->mount_point, state->pool);
 #ifdef _WIN32
 				log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 				log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
@@ -1323,6 +1324,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			state->thermal_cooldown_time = time * 60;
 		} else if (strcmp(tag, "nohidden") == 0) {
 			state->filter_hidden = 1;
+		} else if (strcmp(tag, "snapshot") == 0) {
+			state->snapshot = 1;
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter;
 
@@ -1477,7 +1480,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	log_tag("blocksize:%u\n", state->block_size);
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		log_tag("data:%s:%s:%s\n", esc_tag(disk->name), esc_tag(disk->dir), disk->uuid);
+		log_tag("data:%s:%s:%s\n", esc_tag(disk->name), esc_tag(disk->mount_point), disk->uuid);
 	}
 	for (i = state->extralist; i != 0; i = i->next) {
 		struct snapraid_extra* extra = i->data;
@@ -1803,10 +1806,10 @@ void state_refresh(struct snapraid_state* state)
 		if (disk->skip_access)
 			continue;
 
-		ret = fsinfo(disk->dir, 0, 0, &total_space, &free_space, disk->fstype, sizeof(disk->fstype), disk->fslabel, sizeof(disk->fslabel));
+		ret = fsinfo(disk->mount_point, 0, 0, &total_space, &free_space, disk->fstype, sizeof(disk->fstype), disk->fslabel, sizeof(disk->fslabel));
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal(errno, "Error accessing disk '%s' to retrieve file-system info. %s.\n", disk->dir, strerror(errno));
+			log_fatal(errno, "Error accessing disk '%s' to retrieve file-system info. %s.\n", disk->mount_point, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -5613,5 +5616,229 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 	}
 
 	sclose(f);
+}
+
+#define SNAPSHOT_CONTAINER ".snapraid"
+#define SNAPSHOT_PENDING "pending"
+#define SNAPSHOT_STABLE "stable"
+
+int state_snapshot_new(struct snapraid_state* state)
+{
+	if (!state->snapshot)
+		return 0;
+
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		char root[PATH_MAX];
+		char container[PATH_MAX];
+		int ret;
+
+		/* check if it supports snapshot */
+		if (fssnapshot(disk->mount_point, root, sizeof(root)) != 0)
+			continue;
+
+		size_t root_len = strlen(root);
+
+		pathcpy(container, sizeof(container), root);
+		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
+
+		/* create the snapshot container directory if not existing */
+		ret = mkdir(container, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+		if (ret != 0 && errno != EEXIST) {
+			log_error(errno, "Error creating '%s'. %s.\n", container, strerror(errno));
+			return -1;
+		}
+
+		/* delete a potential previous pending snapshot */
+		if (fssnapshot_delete(container, SNAPSHOT_PENDING) != 0) {
+			log_fatal(errno, "Failed to delete pending snapshot in '%s' \n", container);
+			return -1;
+		}
+
+		/* create a new snapshot */
+		if (fssnapshot_create(root, container, SNAPSHOT_PENDING) != 0) {
+			log_fatal(errno, "Failed to create pending snapshot '%s'\n", container);
+			return -1;
+		}
+
+		msg_progress("Created disk %s pending snapshot...\n", disk->name);
+
+		/* setup the snapshot in use */
+		pathcpy(disk->dir, sizeof(disk->dir), container);
+		pathcat(disk->dir, sizeof(disk->dir), "/" SNAPSHOT_PENDING "/");
+		pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+
+		/* store the snapshot root */
+		pathcpy(disk->snapshot_root, sizeof(disk->snapshot_root), root);
+	}
+
+	return 0;
+}
+
+int state_snapshot_commit(struct snapraid_state* state)
+{
+	if (!state->snapshot)
+		return 0;
+
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		char container[PATH_MAX];
+
+		/* check if it supports snapshot */
+		if (disk->snapshot_root[0] == 0)
+			continue;
+
+		size_t root_len = strlen(disk->snapshot_root);
+
+		pathcpy(container, sizeof(container), disk->snapshot_root);
+		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
+
+		/* for each content file */
+		for (tommy_node* j = state->contentlist; j != 0; j = j->next) {
+			struct snapraid_content* content = j->data;
+
+			/* check if the content file is in the subvolume */
+			if (strncmp(content->content, disk->snapshot_root, root_len) == 0) {
+				/* clone the just written content file into the snapshot */
+				char clone[PATH_MAX];
+
+				pathcpy(clone, sizeof(clone), container);
+				pathcat(clone, sizeof(clone), "/" SNAPSHOT_PENDING "/");
+				pathcat(clone, sizeof(clone), content->content + root_len);
+
+				if (fssnapshot_clone(content->content, clone) != 0) {
+					log_fatal(errno, "Failed to clone the content file '%s'\n", content->content);
+					return -1;
+				}
+			}
+		}
+
+		if (fssnapshot_readonly(container, SNAPSHOT_PENDING) != 0) {
+			log_fatal(errno, "Failed to make pending snapshot read-only in '%s'\n", container);
+			return -1;
+		}
+
+		/* delete a potential previous stable snapshot */
+		if (fssnapshot_delete(container, SNAPSHOT_STABLE) != 0) {
+			log_fatal(errno, "Failed to delete stable snapshot in '%s'\n", container);
+			return -1;
+		}
+
+		/* rename pending to stable */
+		if (fssnapshot_rename(container, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
+			log_fatal(errno, "Failed to rename snapshot in '%s'\n", container);
+			return -1;
+		}
+
+		msg_progress("Committed disk %s stable snapshot...\n", disk->name);
+	}
+
+	return 0;
+}
+
+static int is_dir(const char* path)
+{
+	struct stat st;
+
+	if (lstat(path, &st) != 0)
+		return 0;
+
+	return S_ISDIR(st.st_mode);
+}
+
+void state_snapshot_read(struct snapraid_state* state)
+{
+	if (!state->snapshot)
+		return;
+
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		char root[PATH_MAX];
+		char container[PATH_MAX];
+		char vol[PATH_MAX];
+
+		/* check if it supports snapshot */
+		if (fssnapshot(disk->mount_point, root, sizeof(root)) != 0)
+			continue;
+
+		size_t root_len = strlen(root);
+
+		pathcpy(container, sizeof(container), root);
+		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
+
+		pathcpy(vol, sizeof(vol), container);
+		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING);
+		if (is_dir(vol)) {
+			msg_progress("Using disk %s pending snapshot...\n", disk->name);
+			pathcpy(disk->dir, sizeof(disk->dir), vol);
+			pathcat(disk->dir, sizeof(disk->dir), "/");
+			pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+		} else {
+			pathcpy(vol, sizeof(vol), container);
+			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);
+			if (is_dir(vol)) {
+				msg_progress("Using disk %s stable snapshot...\n", disk->name);
+				pathcpy(disk->dir, sizeof(disk->dir), vol);
+				pathcat(disk->dir, sizeof(disk->dir), "/");
+				pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+			} else {
+				msg_progress("Using disk %s live filesystem...\n", disk->name);
+			}
+		}
+	}
+}
+
+void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_disk)
+{
+	if (!state->snapshot)
+		return;
+
+	/* if the filter disk is empty, all disks are potentially written */
+	if (tommy_list_empty(filterlist_disk)) {
+		msg_progress("Using live filesystems...\n");
+		return;
+	}
+
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		char root[PATH_MAX];
+		char container[PATH_MAX];
+		char vol[PATH_MAX];
+
+		/* check if it supports snapshot */
+		if (fssnapshot(disk->mount_point, root, sizeof(root)) != 0)
+			continue;
+
+		size_t root_len = strlen(root);
+
+		/* if the disk is filtered in, it could be written, then we cannot use the snapshot */
+		if (filter_path(filterlist_disk, 0, disk->name, 0) == 0) {
+			msg_progress("Using disk %s live filesystem...\n", disk->name);
+			continue;
+		}
+
+		pathcpy(container, sizeof(container), root);
+		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
+
+		pathcpy(vol, sizeof(vol), container);
+		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING);
+		if (is_dir(vol)) {
+			msg_progress("Using disk %s pending snapshot...\n", disk->name);
+			pathcpy(disk->dir, sizeof(disk->dir), vol);
+			pathcat(disk->dir, sizeof(disk->dir), "/");
+			pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+		} else {
+			pathcpy(vol, sizeof(vol), container);
+			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);
+			if (is_dir(vol)) {
+				msg_progress("Using disk %s stable snapshot...\n", disk->name);
+				pathcpy(disk->dir, sizeof(disk->dir), vol);
+				pathcat(disk->dir, sizeof(disk->dir), "/");
+				pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+			} else {
+				msg_progress("Using disk %s live filesystem...\n", disk->name);
+			}
+		}
+	}
 }
 

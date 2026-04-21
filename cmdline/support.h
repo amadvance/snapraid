@@ -361,6 +361,13 @@ void pathslash(char* dst, size_t size);
 void pathcut(char* dst);
 
 /**
+ * Given a string ending with slash, remove that ending slash and any char up to the previous slash.
+ *
+ * If there are not more slash, it returns the empty string.
+ */
+void pathup(char* dst);
+
+/**
  * Compare two paths.
  * In Windows it's case insensitive and assumes \ equal at /.
  */
