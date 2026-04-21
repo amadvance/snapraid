@@ -358,7 +358,9 @@ struct snapraid_extra {
  */
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
-	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
+	char mount_point[PATH_MAX]; /**< Configured mount point of the disk. It always terminates with /. */
+	char dir[PATH_MAX]; /**< Effective mount point of the disk. It could be either the real mount point or a snapshot. It always terminates with /. */
+	char snapshot_root[PATH_MAX]; /**< Subvolume root directory. It always terminates with /. Empty if not supported. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
