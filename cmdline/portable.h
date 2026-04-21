@@ -111,6 +111,10 @@
 #include <linux/fs.h>
 #endif
 
+#if HAVE_LINUX_BTRFS_H
+#include <linux/btrfs.h>
+#endif
+
 #if HAVE_LINUX_FIEMAP_H
 #include <linux/fiemap.h>
 #endif
@@ -357,6 +361,51 @@ int filephy(const char* path, uint64_t size, uint64_t* physical);
  * Return -1 on error, 0 on success.
  */
 int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size);
+
+/**
+ * Get the subvolume directory if the underline filesystem support it
+ * @param path Full path of the mount point to check. It must end with /
+ * @param root The full path of the subvolume root that contains the specified path. It will end with /.
+ */
+int fssnapshot(const char* path, char* root, size_t root_size);
+
+/**
+ * Creates a snapshot of a subvolume.
+ * @param source Path to the source subvolume.
+ * @param parent_dir Directory where the snapshot should be created.
+ * @param name Name of snapshot.
+ * @return 0 on success, -1 on failure.
+ */
+int fssnapshot_create(const char* source, const char* parent_dir, const char* name);
+
+
+/**
+ * Make a snapshot read-only
+ * @param parent_dir Directory where the snapshot is.
+ * @param name Name of snapshot.
+ * @return 0 on success, -1 on failure.
+ */
+int fssnapshot_readonly(const char* parent_dir, const char* name);
+
+/**
+ * Deletes a subvolume/snapshot.
+ * @param parent_dir Directory where the snapshot is.
+ * @param name Name of snapshot.
+ * @return 0 on success, -1 on failure.
+ */
+int fssnapshot_delete(const char* parent_dir, const char* name);
+
+/**
+ * Renames a subvolume.
+ * @return 0 on success, -1 on failure.
+ */
+int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* new_name);
+
+/**
+ * Clone a file between snapshots
+ * @return 0 on success, -1 on failure.
+ */
+int fssnapshot_clone(const char* source, const char* dest);
 
 /**
  * Log file.

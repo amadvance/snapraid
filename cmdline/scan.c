@@ -1006,7 +1006,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
-			log_error(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
+			log_error(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->mount_point, sub);
 			log_error(ESOFT, "It's possible that after a kernel crash this file was lost,\n");
 			log_error(ESOFT, "and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub));
 			if (!is_diff) {
@@ -1815,7 +1815,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					/* if verbose, print the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						log_error(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						log_error(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->mount_point, phy_file_last->sub, disk->mount_point, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1885,9 +1885,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			) {
 				if (!done) {
 					done = 1;
-					log_error(ESOFT, "WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
+					log_error(ESOFT, "WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->mount_point);
 				} else {
-					log_error(ESOFT, ", disk '%s' at dir '%s'", disk->name, disk->dir);
+					log_error(ESOFT, ", disk '%s' at dir '%s'", disk->name, disk->mount_point);
 				}
 
 				/* detect the special condition of all files missing */
