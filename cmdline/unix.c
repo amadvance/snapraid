@@ -28,6 +28,8 @@ int exit_success = 0;
 int exit_failure = 1;
 int exit_sync_needed = 2;
 
+#define BTRFS_SUPER_MAGIC 0x9123683E
+
 #if HAVE_POSIX_FADVISE
 /**
  * Wrapper around posix_fadvise() that handles ENOENT by converting it to
@@ -413,136 +415,13 @@ static int sysattr(const char* path, char* buf, size_t buf_size)
 }
 #endif
 
-/**
- * Get the device file from the device number.
- *
- * It uses /proc/self/mountinfo.
- *
- * Null devices (major==0) are resolved to the device indicated in mountinfo.
- */
-#if HAVE_LINUX_DEVICE
-static int devresolve_proc(uint64_t device, char* path, size_t path_size)
-{
-	FILE* f;
-	char match[32];
-
-	/* generate the matching string */
-	snprintf(match, sizeof(match), "%u:%u", major(device), minor(device));
-
-	f = fopen("/proc/self/mountinfo", "r");
-	if (!f) {
-		log_tag("resolve:proc:%u:%u: failed to open /proc/self/mountinfo\n", major(device), minor(device));
-		return -1;
-	}
-
-	/*
-	 * mountinfo format
-	 * 0 - mount ID
-	 * 1 - parent ID
-	 * 2 - major:minor
-	 * 3 - root
-	 * 4 - mount point
-	 * 5 - options
-	 * 6 - "-" (separator)
-	 * 7 - fs
-	 * 8 - mount source - /dev/device
-	 */
-
-	while (1) {
-		char buf[256];
-		char* first_map[8];
-		unsigned first_mac;
-		char* second_map[8];
-		unsigned second_mac;
-		char* s;
-		struct stat st;
-		char* separator;
-		char* majorminor;
-		char* mountpoint;
-		char* fs;
-		char* mountsource;
-
-		s = fgets(buf, sizeof(buf), f);
-		if (s == 0)
-			break;
-
-		/* find the separator position */
-		separator = strstr(s, " - ");
-		if (!separator)
-			continue;
-
-		/* skip the separator */
-		*separator = 0;
-		separator += 3;
-
-		/* split the line */
-		first_mac = strsplit(first_map, 8, s, " \t\r\n");
-		second_mac = strsplit(second_map, 8, separator, " \t\r\n");
-
-		/* if too short, it's the wrong line */
-		if (first_mac < 5)
-			continue;
-		if (second_mac < 2)
-			continue;
-
-		majorminor = first_map[2];
-		mountpoint = first_map[4];
-		fs = second_map[0];
-		mountsource = second_map[1];
-
-		/* compare major:minor from mountinfo */
-		if (strcmp(majorminor, match) == 0) {
-			/*
-			 * Accept only /dev/... mountsource
-			 *
-			 * This excludes ZFS that uses a bare label for mountsource, like "tank".
-			 *
-			 * 410 408 0:193 / /XXX rw,relatime shared:217 - zfs tank/system/data/var/lib/docker/XXX rw,xattr,noacl
-			 *
-			 * Also excludes AUTOFS unmounted devices that point to a fake filesystem
-			 * used to remount them at the first use.
-			 *
-			 * 97 25 0:42 / /XXX rw,relatime shared:76 - autofs /etc/auto.seed rw,fd=6,pgrp=952,timeout=30,minproto=5,maxproto=5,indirect
-			 */
-			if (strncmp(mountsource, "/dev/", 5) != 0) {
-				log_tag("resolve:proc:%u:%u: match skipped for not /dev/ mountsource for %s %s\n", major(device), minor(device), fs, mountsource);
-				continue;
-			}
-
-			pathcpy(path, path_size, mountsource);
-
-			log_tag("resolve:proc:%u:%u: found device %s matching device %s\n", major(device), minor(device), path, match);
-
-			fclose(f);
-			return 0;
-		}
-
-		/* get the device of the mount point */
-		/* in Btrfs it could be different than the one in mountinfo */
-		if (stat(mountpoint, &st) == 0 && st.st_dev == device) {
-			if (strncmp(mountsource, "/dev/", 5) != 0) {
-				log_tag("resolve:proc:%u:%u: match skipped for not /dev/ mountsource for %s %s\n", major(device), minor(device), fs, mountsource);
-				continue;
-			}
-
-			pathcpy(path, path_size, mountsource);
-
-			log_tag("resolve:proc:%u:%u: found device %s matching mountpoint %s\n", major(device), minor(device), path, mountpoint);
-
-			fclose(f);
-			return 0;
-		}
-	}
-
-	log_tag("resolve:proc:%u:%u: not found\n", major(device), minor(device));
-
-	fclose(f);
-	return -1;
-}
-#endif
+struct dev_struct {
+	uint64_t device; /**< Device ID. */
+	tommy_node node;
+};
 
 /**
- * Get the device of a virtual superblock.
+ * Get the devices of a virtual device.
  *
  * This is intended to resolve the case of Btrfs filesystems that
  * create a virtual superblock (major==0) not backed by any low
@@ -553,35 +432,68 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
  * https://bugzilla.redhat.com/show_bug.cgi?id=711881
  */
 #if HAVE_LINUX_DEVICE
-static int devdereference(uint64_t device, uint64_t* new_device)
+static int devdereference(uint64_t device, const char* dir, tommy_list* devlist)
 {
-	char path[PATH_MAX];
-	struct stat st;
+	if (major(device) == 0) {
+		struct statfs sfs;
 
-	/* use the proc interface to get the device containing the filesystem */
-	if (devresolve_proc(device, path, sizeof(path)) != 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
+		int fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+		if (fd < 0)
+			return -1;
+
+		if (fstatfs(fd, &sfs) != 0) {
+			close(fd);
+			return -1;
+		}
+
+		if (sfs.f_type != BTRFS_SUPER_MAGIC) {
+			close(fd);
+			return -1;
+		}
+
+		struct btrfs_ioctl_fs_info_args fs_info;
+		memset(&fs_info, 0, sizeof(fs_info));
+		if (ioctl(fd, BTRFS_IOC_FS_INFO, &fs_info) < 0) {
+			close(fd);
+			return -1;
+		}
+
+		if (fs_info.max_id == 0) {
+			close(fd);
+			return -1;
+		}
+
+		for (__u64 i = 1; i <= fs_info.max_id; ++i) {
+			struct btrfs_ioctl_dev_info_args dev_info;
+			memset(&dev_info, 0, sizeof(dev_info));
+			dev_info.devid = i;
+
+			if (ioctl(fd, BTRFS_IOC_DEV_INFO, &dev_info) != 0) {
+				close(fd);
+				return -1;
+			}
+
+			/* get major:minor, use stat on the path returned */
+			struct stat st;
+			if (stat((char*)dev_info.path, &st) != 0) {
+				close(fd);
+				return -1;
+			}
+
+			struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
+			dev->device = st.st_rdev;
+			tommy_list_insert_tail(devlist, &dev->node, dev);
+		}
+
+		close(fd);
+		return 0;
 	}
 
-	/* check the device */
-	if (stat(path, &st) != 0) {
-		/* LCOV_EXCL_START */
-		log_tag("dereference:%u:%u: failed to stat %s\n", major(device), minor(device), path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+	/* insert the device itself in the list */
+	struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
+	dev->device = device;
+	tommy_list_insert_tail(devlist, &dev->node, dev);
 
-	if (major(st.st_rdev) == 0) {
-		/* LCOV_EXCL_START */
-		log_tag("dereference:%u:%u: still null device %s -> %u:%u\n", major(device), minor(device), path, major(st.st_rdev), minor(st.st_rdev));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	*new_device = st.st_rdev;
-	log_tag("dereference:%u:%u: found %u:%u\n", major(device), minor(device), major(st.st_rdev), minor(st.st_rdev));
 	return 0;
 }
 #endif
@@ -966,45 +878,82 @@ bail:
 }
 #endif
 
-int devuuid(uint64_t device, const char* path, char* uuid, size_t uuid_size)
+#if HAVE_LINUX_DEVICE
+static int devuuid_btrfs(uint64_t device, const char* dir, char* uuid, size_t uuid_size)
 {
-	(void)path;
-	(void)device;
+	struct statfs sfs;
+
+	int fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (fd < 0)
+		return -1;
+
+	if (fstatfs(fd, &sfs) != 0) {
+		close(fd);
+		return -1;
+	}
+
+	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
+		close(fd);
+		return -1;
+	}
+
+	struct btrfs_ioctl_fs_info_args info;
+	memset(&info, 0, sizeof(info));
+	if (ioctl(fd, BTRFS_IOC_FS_INFO, &info) < 0) {
+		close(fd);
+		return -1;
+	}
+
+	snprintf(uuid, uuid_size,
+		"%02x%02x%02x%02x-"
+		"%02x%02x-"
+		"%02x%02x-"
+		"%02x%02x-"
+		"%02x%02x%02x%02x%02x%02x",
+		info.fsid[0], info.fsid[1], info.fsid[2], info.fsid[3],
+		info.fsid[4], info.fsid[5],
+		info.fsid[6], info.fsid[7],
+		info.fsid[8], info.fsid[9],
+		info.fsid[10], info.fsid[11], info.fsid[12], info.fsid[13], info.fsid[14], info.fsid[15]
+	);
+
+	log_tag("uuid:by-btrfs:%u:%u:%s: found %s\n", major(device), minor(device), uuid, dir);
+
+	close(fd);
+	return 0;
+}
+#endif
+
+int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid_size)
+{
+	(void)device_path;
+	(void)device_id;
 
 #ifdef __APPLE__
-	if (devuuid_darwin(path, uuid, uuid_size) == 0)
+	if (devuuid_darwin(device_path, uuid, uuid_size) == 0)
 		return 0;
 #endif
 
 #if HAVE_LINUX_DEVICE
-	/* if the major is the null device */
-	if (major(device) == 0) {
-		/* obtain the real device */
-		if (devdereference(device, &device) != 0) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
+	if (devuuid_btrfs(device_id, device_path, uuid, uuid_size) == 0)
+		return 0;
 #endif
 
-	/* first try with the /dev/disk/by-uuid version */
 #if HAVE_LINUX_DEVICE
-	if (devuuid_dev(device, uuid, uuid_size) == 0)
+	if (devuuid_dev(device_id, uuid, uuid_size) == 0)
 		return 0;
 #else
-	log_tag("uuid:by-uuid:%u:%u: by-uuid not supported\n", major(device), minor(device));
+	log_tag("uuid:by-uuid:%u:%u: by-uuid not supported\n", major(device_id), minor(device_id));
 #endif
 
-	/* fall back to blkid for other cases */
 #if HAVE_BLKID
-	if (devuuid_blkid(device, uuid, uuid_size) == 0)
+	if (devuuid_blkid(device_id, uuid, uuid_size) == 0)
 		return 0;
 #else
-	log_tag("uuid:blkid:%u:%u: blkid support not compiled in\n", major(device), minor(device));
+	log_tag("uuid:blkid:%u:%u: blkid support not compiled in\n", major(device_id), minor(device_id));
 #endif
 
-	log_tag("uuid:notfound:%u:%u:\n", major(device), minor(device));
+	log_tag("uuid:notfound:%u:%u:\n", major(device_id), minor(device_id));
 
 	/* not supported */
 	(void)uuid;
@@ -2381,7 +2330,6 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		uint64_t device = devinfo->device;
-		uint64_t access_stat;
 
 #if HAVE_SYNCFS
 		if (operation == DEVICE_DOWN) {
@@ -2394,41 +2342,55 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 		}
 #endif
 
-		/* if the major is the null device, find the real one */
-		if (major(device) == 0) {
-			/* obtain the real device */
-			if (devdereference(device, &device) != 0) {
+		tommy_list devlist;
+		tommy_list_init(&devlist);
+
+		/* obtain the real devices */
+		if (devdereference(device, devinfo->mount, &devlist) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Failed to dereference device '%u:%u' at '%s'.\n", major(device), minor(device), devinfo->mount);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		devinfo->file[0] = 0;
+		for (tommy_node* j = tommy_list_head(&devlist); j != 0; j = j->next) {
+			struct dev_struct* dev = j->data;
+			uint64_t access_stat;
+
+			/* retrieve access stat for the high level device */
+			if (devstat(dev->device, &access_stat) == 0) {
+				/* cumulate access stat in the first split */
+				if (devinfo->split)
+					devinfo->split->access_stat += access_stat;
+				else
+					devinfo->access_stat += access_stat;
+			}
+
+			/* get the device file */
+			char file[PATH_MAX];
+			if (devresolve(dev->device, file, sizeof(file)) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal(EEXTERNAL, "Failed to dereference device '%u:%u'.\n", major(device), minor(device));
+				log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(dev->device), minor(dev->device));
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* add to the list of device files */
+			if (devinfo->file[0] != 0)
+				pathcat(devinfo->file, sizeof(devinfo->file), ",");
+			pathcat(devinfo->file, sizeof(devinfo->file), file);
+
+			/* expand the tree of devices */
+			if (devtree(devinfo, dev->device, low) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EEXTERNAL, "Failed to expand device '%u:%u'.\n", major(dev->device), minor(dev->device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
 		}
 
-		/* retrieve access stat for the high level device */
-		if (devstat(device, &access_stat) == 0) {
-			/* cumulate access stat in the first split */
-			if (devinfo->split)
-				devinfo->split->access_stat += access_stat;
-			else
-				devinfo->access_stat += access_stat;
-		}
-
-		/* get the device file */
-		if (devresolve(device, devinfo->file, sizeof(devinfo->file)) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(device), minor(device));
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* expand the tree of devices */
-		if (devtree(devinfo, device, low) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to expand device '%u:%u'.\n", major(device), minor(device));
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
+		tommy_list_foreach(&devlist, free);
 	}
 #else
 	(void)high;

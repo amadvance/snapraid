@@ -322,7 +322,7 @@ static inline int hardlink(const char* a, const char* b)
  * Get the device UUID.
  * Return 0 on success.
  */
-int devuuid(uint64_t device, const char* path, char* uuid, size_t size);
+int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t size);
 
 /**
  * Physical offset not yet read.
