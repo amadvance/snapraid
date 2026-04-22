@@ -1899,14 +1899,14 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	return len;
 }
 
-int devuuid(uint64_t device, const char* path, char* uuid, size_t uuid_size)
+int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid_size)
 {
-	(void)path;
+	(void)device_path;
 
 	/* just use the volume serial number returned in the device parameter */
-	snprintf(uuid, uuid_size, "%08x", (unsigned)device);
+	snprintf(uuid, uuid_size, "%08x", (unsigned)device_id);
 
-	log_tag("uuid:windows:%u:%s:\n", (unsigned)device, uuid);
+	log_tag("uuid:windows:%u:%s:\n", (unsigned)device_id, uuid);
 
 	return 0;
 }
