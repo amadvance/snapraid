@@ -671,7 +671,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			char device[PATH_MAX];
 			char* split_map[SPLIT_MAX + 1];
 			unsigned split_mac;
-			char* slash;
 			uint64_t dev;
 			int skip_access;
 
@@ -717,16 +716,15 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 					/* get the device of the directory containing the parity file */
 					pathimport(device, sizeof(device), split_map[s]);
-					slash = strrchr(device, '/');
-					if (slash)
-						slash[1] = 0;
-					else
-						pathcpy(device, sizeof(device), ".");
+
+					/* use only the dir, as the parity file may not exist yet */
+					pathcut(device);
+
 					if (stat(device, &st) == 0) {
 						dev = st.st_dev;
 
 						/* read the uuid, if unsupported use an empty one */
-						if (devuuid(dev, split_map[s], uuid, sizeof(uuid)) != 0) {
+						if (devuuid(dev, device, uuid, sizeof(uuid)) != 0) {
 							*uuid = 0;
 						}
 					} else {
@@ -964,7 +962,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					dev = st.st_dev;
 
 					/* read the uuid, if unsupported use an empty one */
-					if (devuuid(dev, dir, uuid, sizeof(uuid)) != 0) {
+					if (devuuid(dev, device, uuid, sizeof(uuid)) != 0) {
 						*uuid = 0;
 					}
 
@@ -1065,7 +1063,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					dev = st.st_dev;
 
 					/* read the uuid, if unsupported use an empty one */
-					if (devuuid(dev, dir, uuid, sizeof(uuid)) != 0) {
+					if (devuuid(dev, device, uuid, sizeof(uuid)) != 0) {
 						*uuid = 0;
 					}
 
