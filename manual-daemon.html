@@ -711,21 +711,26 @@ represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
 <h3 id="sec6-3-2" class="manual-title-level-3">
 sync_threshold_deletes
 </h3>
-<p>Sets the maximum number of deleted or missing files allowed before a
-sync operation is automatically aborted. This serves as a safety
-mechanism to prevent accidental parity loss due to unintended mass
-deletions. This safety check is enforced during automated maintenance
-schedules and tasks initiated through the Web UI.
+<p>Sets the number of deleted or missing files that will trigger an automatic
+abort of a sync operation. The abort occurs when the number of deletions
+is equal to or greater than this value. This serves as a safety mechanism
+to prevent accidental parity loss; for example, setting this to 1 will
+abort the operation if any single file is deleted. This check is
+enforced during automated maintenance schedules and tasks initiated
+through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-3-3" class="manual-title-level-3">
 sync_threshold_updates
 </h3>
-<p>Sets the maximum number of modified or updated files allowed before a
-sync operation is aborted. Similar to the delete threshold, this
-prevents the parity from being overwritten if an unexpected number
-of files have changed. This safety check is enforced during automated
-maintenance schedules and tasks initiated through the Web UI.
+<p>Sets the number of modified or updated files that will trigger an
+automatic abort of a sync operation. The abort occurs when the number
+of updates is equal to or greater than this value. This prevents the
+parity from being overwritten if an unexpected number of files have
+changed. Similar to the delete threshold, setting this to 1 will abort
+the operation if any single file is modified. This check is enforced
+during automated maintenance schedules and tasks initiated through
+the Web UI.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-3-4" class="manual-title-level-3">
@@ -891,8 +896,11 @@ hook_run_as_user
 <p>Specifies the user account used to execute the hook_script.
 If this is missing or blank, the script is executed with the
 same privileges as the daemon process.
-</p><p>On Linux, <b>nobody</b> is the standard choice for maximum isolation.
-On Windows, <b>LocalService</b> is the preferred choice as it provides
+</p><p>On Linux, <b>nobody</b> is the standard choice for maximum isolation. Note that
+using <b>nobody</b> may prevent certain tools, such as Docker, from functioning
+correctly due to restricted permissions. Ensure you are aware of these
+limitations before applying this setting.
+</p><p>On Windows, <b>LocalService</b> is the preferred choice as it provides
 minimal local access while maintaining network capabilities.
 Alternatively, <b>NetworkService</b> can be used if the script specifically
 requires the computer's network identity to access remote resources.
@@ -940,7 +948,35 @@ high-level tasks or by a SMART telemetry change. The command is only
 executed if the task's result matches the <b>notify_result_level</b>.
 The daemon pipes a structured, plain-text task report directly into
 the command's stdin.
-</p><p>The daemon automatically chooses a wide (80-col) or narrow (32-col)
+</p><p>Examples of usage:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+ntfy.sh
+</div><div class="manual-tag-description">
+(Modern Push Notifications) Uses curl to send the report as
+a POST request that you can receive on your phone.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+mail
+</div><div class="manual-tag-description">
+(Local System Mail) Uses the standard Linux 'mail' utility.
+This is ideal if you have a local MTA (like Postfix or Exim) configured.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SMTP-over-SSL
+</div><div class="manual-tag-description">
+(Direct Delivery) Uses curl's built-in SMTP engine with
+the --netrc option. This is the most secure method for direct
+SMTP, as it keeps your login credentials out of persistent logs.
+</div>
+</div>
+</div>
+<p>The daemon automatically chooses a wide (80-col) or narrow (32-col)
 report based on the command and arguments used (e.g., presence of <b>mail</b>
 or <b>smtps</b> strings). Users can manually override this by adding --wide or
 --narrow to the command string. These tags are stripped before execution.
@@ -984,17 +1020,36 @@ compatibility with curl's SMTP engine.
 </p><p>When using curl for SMTP, it is recommended to use the --netrc flag.
 This allows curl to read credentials from a local file rather than
 exposing passwords in the command line or process list.
-</p><p>File format (~/.netrc):
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Linux
+</div><div class="manual-tag-description">
+Curl looks for <b>.netrc</b> in the HOME directory of the executing
+user. For a daemon running as root, place the file in: <b>/root/.netrc</b>
+The <b>.netrc</b> file MUST have 600 permissions and be owned by the
+executing user. Otherwise, curl will fail with error 55.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Windows
+</div><div class="manual-tag-description">
+Curl looks for '_netrc' in the user profile. For a Windows
+Service running as 'LocalSystem', place the file in:
+<b>C:\Windows\System32\config\systemprofile\_netrc</b>
+Ensure the <b>_netrc</b> file has permissions restricted to System and
+Administrators.
+</div>
+</div>
+</div>
+<p>File format (.netrc or _netrc):
 </p><pre>
 machine smtp.gmail.com
 login your_email@gmail.com
-password your-16-char-app-password
+password your-16-char-app-password-without-spaces
 </pre>
-<p>If <b>notify_run_as_user</b> is configured, ensure that user has a valid
-home directory containing a .netrc file with 600 permissions for SMTP
-authentication. Failure to do so may result in authentication errors
-(e.g., curl error 55).
-</p></div>
+</div>
 <div class="manual-section-level-3">
 <h3 id="sec6-5-5" class="manual-title-level-3">
 notify_result_level
@@ -1011,8 +1066,12 @@ notify_run_as_user
 <p>The user account used for notify_heartbeat, notify_result and mail
 notifications. If missing or left blank, the task runs with the
 daemon's current privileges.
-</p><p>On Linux, <b>nobody</b> is the standard choice for maximum isolation.
-On Windows, <b>LocalService</b> is the preferred choice as it provides
+</p><p>On Linux, <b>nobody</b> is the standard choice for maximum isolation. However,
+while sufficient for simple <b>curl</b> commands, it may cause failures for
+mailers (like sendmail or postfix) that require specific group memberships
+or access to mail queues. Verify that your notification tools can operate
+without a home directory or write access to system logs.
+</p><p>On Windows, <b>LocalService</b> is the preferred choice as it provides
 minimal local access while maintaining network capabilities.
 Alternatively, <b>NetworkService</b> can be used if the script specifically
 requires the computer's network identity to access remote resources.
