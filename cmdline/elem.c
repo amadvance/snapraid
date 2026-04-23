@@ -198,7 +198,7 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 			ret = filter->direction;
 		} else {
 			/* then try to match after all the / presents */
-			char* slash = strchr(path, '/');
+			const char* slash = strchr(path, '/');
 			while (slash) {
 				if (wnmatch_sub(filter->pattern, slash + 1, match_sub) == 0) {
 					ret = filter->direction;
