@@ -42,7 +42,6 @@
 #if HAVE_AVX2
 #define CONFIG_AVX2 1
 #endif
-
 #if HAVE_AVX512BW /* Enables AVX2512BW only if the assembler supports it */
 #define CONFIG_AVX512BW 1
 #endif
@@ -65,6 +64,8 @@
 #define CONFIG_SSE2 1
 #define CONFIG_SSSE3 1
 #define CONFIG_AVX2 1
+#endif
+#ifdef CONFIG_X86_64
 #define CONFIG_AVX512BW 1
 #endif
 #endif
@@ -144,18 +145,22 @@ void raid_gen3_int8(int nd, size_t size, void **vv);
 void raid_gen3_ssse3(int nd, size_t size, void **vv);
 void raid_gen3_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen3_avx2ext(int nd, size_t size, void **vv);
+void raid_gen3_avx512bw(int nd, size_t size, void **vv);
 void raid_gen4_int8(int nd, size_t size, void **vv);
 void raid_gen4_ssse3(int nd, size_t size, void **vv);
 void raid_gen4_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen4_avx2ext(int nd, size_t size, void **vv);
+void raid_gen4_avx512bw(int nd, size_t size, void **vv);
 void raid_gen5_int8(int nd, size_t size, void **vv);
 void raid_gen5_ssse3(int nd, size_t size, void **vv);
 void raid_gen5_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen5_avx2ext(int nd, size_t size, void **vv);
+void raid_gen5_avx512bw(int nd, size_t size, void **vv);
 void raid_gen6_int8(int nd, size_t size, void **vv);
 void raid_gen6_ssse3(int nd, size_t size, void **vv);
 void raid_gen6_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen6_avx2ext(int nd, size_t size, void **vv);
+void raid_gen6_avx512bw(int nd, size_t size, void **vv);
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -165,6 +170,9 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Functions for parity computation.
