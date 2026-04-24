@@ -183,6 +183,22 @@ static inline int raid_cpu_has_avx2(void)
 		3 << 1); /* XCR0: OS saves XMM and YMM registers */
 }
 
+static inline int raid_cpu_has_avx2gfni(void)
+{
+	/*
+	 * Detection of AVX2 + GFNI:
+	 * 1) Verify OSXSAVE and XGETBV (CPUID.1:ECX[27])
+	 * 2) Verify XCR0[2:1] = '11b' (XMM and YMM state enabled)
+	 * 3) Verify AVX2 support (CPUID.7.0:EBX[5])
+	 * 4) Verify GFNI support (CPUID.7.0:ECX[8])
+	 */
+	return raid_cpu_match_avx(
+		(1 << 27) | (1 << 28), /* Leaf 1, ECX: XSAVE and AVX */
+		1 << 5, /* Leaf 7, EBX: AVX2 */
+		1 << 8, /* Leaf 7, ECX: GFNI */
+		3 << 1); /* XCR0: OS saves XMM and YMM registers */
+}
+
 static inline int raid_cpu_has_avx512bw(void)
 {
 	/*
