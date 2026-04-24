@@ -18,6 +18,12 @@ SnapRAID HISTORY
    intelligently mixes live access for the disks being repaired with
    snapshot access for reference disks to maintain mathematical
    integrity across the array.
+ * Implemented AVX-512BW (Byte and Word) support for parity generation
+   and data recovery, optimizing performance on modern architectures
+   like Intel Sapphire Rapids and AMD Zen 4/5.
+   By scaling to 512-bit ZMM registers, the implementation now processes
+   64 bytes per iteration, effectively doubling the data width of the
+   previous AVX2 routines.
 
 14.8 2026/06
 ============
