@@ -80,6 +80,7 @@ sdecovtest:
 	$(MAKE) lcov_html
 
 sde:
+	$(SDE) -icl -- ./selftest
 	$(SDE) -icl -- ./speedtest
 
 lcov_reset:

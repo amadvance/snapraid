@@ -198,6 +198,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 				f[i][nf[i]++] = raid_rec1_avx2;
 #endif
 #endif
+#ifdef CONFIG_X86_64
+#ifdef CONFIG_AVX512BW
+			if (raid_cpu_has_avx512bw())
+				f[i][nf[i]++] = raid_rec1_avx512bw;
+#endif
+#endif
 		} else if (i == 1) {
 			f[i][nf[i]++] = raid_rec2_int8;
 #ifdef CONFIG_X86
@@ -210,6 +216,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 				f[i][nf[i]++] = raid_rec2_avx2;
 #endif
 #endif
+#ifdef CONFIG_X86_64
+#ifdef CONFIG_AVX512BW
+			if (raid_cpu_has_avx512bw())
+				f[i][nf[i]++] = raid_rec2_avx512bw;
+#endif
+#endif
 		} else {
 			f[i][nf[i]++] = raid_recX_int8;
 #ifdef CONFIG_X86
@@ -220,6 +232,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
 				f[i][nf[i]++] = raid_recX_avx2;
+#endif
+#endif
+#ifdef CONFIG_X86_64
+#ifdef CONFIG_AVX512BW
+			if (raid_cpu_has_avx512bw())
+				f[i][nf[i]++] = raid_recX_avx512bw;
 #endif
 #endif
 		}
@@ -356,10 +374,12 @@ int raid_test_par(int mode, int nd, size_t size)
 #endif
 
 #ifdef CONFIG_AVX512BW
+#ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512bw()) {
 		f[nf++] = raid_gen1_avx512bw;
 		f[nf++] = raid_gen2_avx512bw;
 	}
+#endif
 #endif
 #endif /* CONFIG_X86 */
 
@@ -395,6 +415,18 @@ int raid_test_par(int mode, int nd, size_t size)
 		}
 #endif
 #endif
+
+#ifdef CONFIG_AVX512BW
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx512bw()) {
+			f[nf++] = raid_gen3_avx512bw;
+			f[nf++] = raid_gen4_avx512bw;
+			f[nf++] = raid_gen5_avx512bw;
+			f[nf++] = raid_gen6_avx512bw;
+		}
+#endif
+#endif
+
 #endif /* CONFIG_X86 */
 	} else {
 		f[nf++] = raid_genz_int32;
