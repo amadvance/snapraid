@@ -271,23 +271,25 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 				/* otherwise it's a DELETED one */
 				assert(over_state == BLOCK_STATE_DELETED);
 
+				/*
+				 * In this cases we don't know if the old state is still the one
+				 * stored inside the parity, because after an aborted sync, the parity
+				 * may be or may be not have been updated with the data that it's now
+				 * deleted.
+				 *
+				 * We anyway keep the hash as the new sync will not assume it correct,
+				 * but the check/fix may be using it.
+				 *
+				 * For example:
+				 * - One file is deleted
+				 * - Sync aborted after updating the parity to the new state,
+				 *   but without saving the content file representing this new state.
+				 * - Another file is added again (exactly here)
+				 *   with the hash of DELETED block not representing the real parity state
+				 */
+
 				/* copy the past hash of the block */
 				memcpy(block->hash, over_block->hash, BLOCK_HASH_SIZE);
-
-				/* if we have not already cleared the past hash */
-				if (!state->clear_past_hash) {
-					/* in this case we don't know if the old state is still the one */
-					/* stored inside the parity, because after an aborted sync, the parity */
-					/* may be or may be not have been updated with the new data */
-					/* Then we reset the hash to a bogus value */
-					/* For example: */
-					/* - One file is deleted */
-					/* - Sync aborted after, updating the parity to the new state, */
-					/*   but without saving the content file representing this new state. */
-					/* - Another file is added again (exactly here) */
-					/*   with the hash of DELETED block not representing the real parity state */
-					hash_invalid_set(block->hash);
-				}
 			}
 		}
 
@@ -314,7 +316,6 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
  */
 static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
-	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	block_off_t i;
 
@@ -348,21 +349,23 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			/* we keep the hash making it an "old" hash, because the parity is still containing data for it */
 			break;
 		case BLOCK_STATE_CHG :
-			/* if we have not already cleared the past hash */
-			if (!state->clear_past_hash) {
-				/* in these cases we don't know if the old state is still the one */
-				/* stored inside the parity, because after an aborted sync, the parity */
-				/* may be or may be not have been updated with the data that it's now */
-				/* deleted. Then we reset the hash to a bogus value. */
-				/* For example: */
-				/* - One file is added */
-				/* - Sync aborted after updating the parity to the new state, */
-				/*   but without saving the content file representing this new state. */
-				/* - File is now deleted after the aborted sync */
-				/* - Sync again, deleting the blocks (exactly here) */
-				/*   with the hash of CHG block not representing the real parity state */
-				hash_invalid_set(block->hash);
-			}
+			/*
+			 * In this cases we don't know if the old state is still the one
+			 * stored inside the parity, because after an aborted sync, the parity
+			 * may be or may be not have been updated with the data that it's now
+			 * deleted.
+			 *
+			 * We anyway keep the hash as the new sync will not assume it correct,
+			 * but the check/fix may be using it.
+			 *
+			 * For example:
+			 * - One file is added
+			 * - Sync aborted after updating the parity to the new state,
+			 *   but without saving the content file representing this new state.
+			 * - File is now deleted after the aborted sync
+			 * - Sync again, deleting the blocks (exactly here)
+			 *   with the hash of CHG block not representing the real parity state
+			 */
 			break;
 		case BLOCK_STATE_REP :
 			/* we just don't know the old hash, and then we set it to invalid */

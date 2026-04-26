@@ -652,10 +652,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned waiting_mac;
 	bit_vect_t* block_enabled;
 
-	/* the sync process assumes that all the hashes are correct */
-	/* including the ones from CHG and DELETED blocks */
-	assert(state->clear_past_hash != 0);
-
 	/* get the present time */
 	now = time(0);
 
@@ -770,13 +766,16 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
 
-		/* if the parity requires to be updated */
-		/* It could happens that all the blocks are EMPTY/BLK and CHG but with the hash */
-		/* still matching because the specific CHG block was not modified. */
-		/* In such case, we can avoid to update parity, because it would be the same as before */
-		/* Note that CHG/DELETED blocks already present in the content file loaded */
-		/* have the hash cleared (::clear_past_hash flag), and then they won't never match the hash. */
-		/* We are treating only CHG blocks created at runtime. */
+		/*
+		 * If the parity requires to be updated
+		 *
+		 * It could happens that all the blocks are EMPTY/BLK and CHG but with the hash
+		 * still matching because the specific CHG block was not modified.
+		 * In such case, we can avoid to update parity, because it would be the same as before
+		 *
+		 * Note that if there is any CHG/DELETED blocks already present in the content
+		 * file loaded, meaning that there are unsynced_blocks, this optimization is disabled
+		 */
 		parity_needs_to_be_updated = state->opt.force_full || state->opt.force_parity_update;
 
 		/* if the parity is going to be updated */
@@ -960,15 +959,46 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* have "parity_needs_to_be_updated" already at 1 */
 					assert(block_state_get(block) == BLOCK_STATE_CHG);
 
-					/* if the hash represents the data unequivocally */
-					if (hash_is_unique(block->hash)) {
+					/*
+					 * When a sync is interrupted, the state of the parity is unknown becase
+					 * we don't know exactly where the process stopped.
+					 *
+					 * This means that the hash information of the OLD blocks stored in the
+					 * content file for CHG/DELETED blocks may be correct or not.
+					 *
+					 * The sync process uses the hash of CHG blocks to decide if the parity has to be
+					 * recomputed, avoiding the recomputation if the input data is the same as before.
+					 * But in case of an interrupted sync we cannot trust this data, so we
+					 * disable this optimization if there are unsynced blocks.
+					 *
+					 * Note that CHG blocks may be from reading the content file, or from
+					 * scanning the disk for really changed file, like with a different timestamp.
+					 *
+					 * An example for CHG blocks is:
+					 * - One file is added creating a CHG block with ZERO state
+					 * - Sync aborted after updating the parity to the new state,
+					 *   but without saving the content file representing this new BLK state.
+					 * - File is now deleted after the aborted sync
+					 * - Sync again, deleting the blocks over the CHG ones
+					 *   with the hash of CHG blocks not representing the real parity state
+					 *
+					 * An example for DELETED blocks is:
+					 * - One file is deleted creating DELETED blocks
+					 * - Sync aborted after, updating the parity to the new state,
+					 *   but without saving the content file representing this new EMPTY state.
+					 * - Another file is added again over the DELETE ones
+					 *   with the hash of DELETED blocks not representing the real parity state
+					 */
+
+					/* if the previous sync was completed and the hash represents the data unequivocally */
+					if (state->unsynced_blocks == 0 && hash_is_unique(block->hash)) {
 						/* check if the hash is changed */
 						if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 							/* the block is different, and we must update parity */
 							parity_needs_to_be_updated = 1;
 						}
 					} else {
-						/* if the hash is already invalid, we update parity */
+						/* if we don't know the hash, always update parity */
 						parity_needs_to_be_updated = 1;
 					}
 				}

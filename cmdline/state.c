@@ -165,7 +165,6 @@ void state_init(struct snapraid_state* state)
 	state->pool_device = 0;
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
-	state->clear_past_hash = 0;
 	state->no_conf = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		state->smartignore[i] = 0;
@@ -2350,26 +2349,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						hash_zero_set(block->hash);
 					}
 
-					/* if the block contains a hash of past data */
-					/* and we are clearing such indeterminate hashes */
-					if (state->clear_past_hash
-						&& block_has_past_hash(block)
-					) {
-						/* set the hash value to INVALID */
-						hash_invalid_set(block->hash);
-					}
-
 					/* if we are disabling the copy optimization */
 					/* we want also to clear any already previously stored information */
 					/* in other sync commands */
-					/* note that this is required only in sync, and we detect */
-					/* this using the clear_past_hash flag */
-					if (state->clear_past_hash
-						&& state->opt.force_nocopy
-						&& block_state_get(block) == BLOCK_STATE_REP
-					) {
+					if (state->opt.force_nocopy && block_state_get(block) == BLOCK_STATE_REP) {
 						/* set the hash value to INVALID */
 						hash_invalid_set(block->hash);
+
 						/* convert from REP to CHG block */
 						block_state_set(block, BLOCK_STATE_CHG);
 					}
@@ -2566,12 +2552,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							decoding_error(path, f);
 							os_abort();
 							/* LCOV_EXCL_STOP */
-						}
-
-						/* if we are clearing indeterminate hashes */
-						if (state->clear_past_hash) {
-							/* set the hash value to INVALID */
-							hash_invalid_set(block->hash);
 						}
 
 						/* insert the block in the block array */
@@ -4386,6 +4366,9 @@ void state_read(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	if (state->unsynced_blocks)
+		msg_progress("The latest sync was interrupted!\n");
 
 	/* update the mapping */
 	state_map(state);
