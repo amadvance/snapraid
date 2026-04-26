@@ -75,8 +75,8 @@ struct snapraid_filter {
  * The block has both the hash and the parity computed.
  * This is the normal state of a saved block.
  *
- * The block hash field IS set.
- * The parity for this disk is updated.
+ * The block hash is the hash of the CURRENT data.
+ * The parity for this block IS valid.
  */
 #define BLOCK_STATE_BLK 1
 
@@ -85,42 +85,33 @@ struct snapraid_filter {
  * This happens when a new block overwrites a just removed block, or an empty
  * space.
  *
- * The block hash field MAY be set and it represents the hash of the OLD data.
- * The hash may be also INVALID or ZERO.
+ * The block hash is the hash of the OLD data. Possible values are:
+ * - ZERO -> The OLD block was empty
+ * - INVALID -> The OLD block has an unknown hash
+ * - Otherwise ->  The OLD block has this hash
  *
- * If the OLD block was empty, the hash is set to the special ZERO value.
- * If the OLD block was lost, the hash is set to the special INVALID value.
+ * The parity for this block IS NOT valid, because it was computed with the old
+ * data referenced by the hash.
  *
- * The parity for this disk is not updated, but it contains the old data referenced by the hash.
- *
- * If the state is read from an incomplete sync, we don't really know if the hash is referring to the
- * data used to compute the parity, because the sync process was interrupted at an unknown point,
- * and the parity may or may not be updated.
- *
- * For this reason we clear all such hashes when reading the state from an incomplete sync before
- * starting a new sync, because sync is affected by such hashes, as sync updates the parity, only
- * if the new data read for CHG blocks has a mismatching hash.
- * Clearing is done setting the ::clear_past_hash flag before reading the state.
- * No clearing is done in other commands, as check and fix are instead able to work with unsynced
- * hashes, and scrub ignores CHG/DELETED blocks.
+ * If the state is read from an incomplete sync, we don't really know if the
+ * hash is referring to the data used to compute the parity, because the sync
+ * process was interrupted at an unknown point, and the parity may or may not
+ * be updated.
  */
 #define BLOCK_STATE_CHG 2
 
 /**
  * The block is new and hashed.
- * This happens when a new block overwrites a just removed block, or an empty space.
+ * This happens when a new but hashed block overwrites a just removed block,
+ * or an empty space.
+ *
+ * The block hash is the hash of the NEW data.
+ * The parity for this block IS NOT valid.
  *
  * Note that when the file copy heuristic is enabled, the REP blocks may be set
  * using this heuristic, meaning that the hash may be wrong.
- *
- * For this reason, when the ::force_nocopy flag is enabled in sync, we convert all the REP blocks
+ * For this reason, when the ::force_nocopy flag is enabled, we convert all the REP blocks
  * to CHG, invalidating the stored hash.
- * Clearing is done setting the ::clear_past_hash flag before reading the state.
- * No clearing is done in other commands, as they don't stop the process like in sync
- * when there is a false silent error.
- *
- * The block hash field IS set, and it represents the hash of the new data.
- * The parity for this disk is not updated.
  */
 #define BLOCK_STATE_REP 3
 
@@ -128,20 +119,17 @@ struct snapraid_filter {
  * This block is a deleted one.
  * This happens when a file is deleted.
  *
- * The block hash field IS set, and it represents the hash of the previous data,
- * but only if it's different by all 0.
- * The parity for this disk is not updated, but it contains the old data referenced by the hash.
+ * The block hash is the hash of the OLD data. Possible values are:
+ * - INVALID -> The OLD block has an unknown hash
+ * - Otherwise ->  The OLD block has this hash
  *
- * If the state is read from an incomplete sync, we don't really know if the hash is referring to the
- * data used to compute the parity, because the sync process was interrupted at an unknown point,
- * and the parity may or may not be updated.
+ * The parity for this block IS NOT valid, because it was computed with the old
+ * data referenced by the hash.
  *
- * As now the sync process is not affected by DELETED hash, so clearing won't be really needed,
- * but considering that we have to do it for CHG blocks, we do it also for DELETED ones,
- * clearing all the past hashes.
- * Clearing is done setting the ::clear_past_hash flag before reading the state.
- * No clearing is done in other commands, as check and fix are instead able to work with unsynced
- * hashes, and scrub ignores CHG/DELETED blocks.
+ * If the state is read from an incomplete sync, we don't really know if the
+ * hash is referring to the data used to compute the parity, because the sync
+ * process was interrupted at an unknown point, and the parity may or may not
+ * be updated.
  */
 #define BLOCK_STATE_DELETED 4
 
@@ -726,19 +714,6 @@ static inline int block_has_updated_hash(const struct snapraid_block* block)
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;
-}
-
-/**
- * Check if the specified block has a past hash,
- * i.e. the hash of the data that it's now overwritten or lost.
- *
- * Note that EMPTY / BLK / REP return 0.
- */
-static inline int block_has_past_hash(const struct snapraid_block* block)
-{
-	unsigned state = block_state_get(block);
-
-	return state == BLOCK_STATE_CHG || state == BLOCK_STATE_DELETED;
 }
 
 /**

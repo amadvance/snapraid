@@ -182,8 +182,6 @@ struct snapraid_state {
 	 */
 	uint64_t tick_last;
 
-	int clear_past_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
-
 	time_t progress_whole_start; /**< Initial start of the whole process. */
 	time_t progress_interruption; /**< Time of the start of the progress interruption. */
 	time_t progress_wasted; /**< Time wasted in interruptions. */
