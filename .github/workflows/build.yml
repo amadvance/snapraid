@@ -16,16 +16,14 @@ jobs:
       - run: brew install automake
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all
-      - run: make distcheck
+      - run: make all dist check
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all
-      - run: make distcheck
+      - run: make all dist check
   build-win:
     runs-on: windows-latest
     defaults:
@@ -40,6 +38,5 @@ jobs:
           install: mingw-w64-x86_64-gcc autoconf automake make
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all
-      - run: make distcheck
+      - run: make all dist check
 
