@@ -25,9 +25,11 @@ static __always_inline int raid_invert_fast(uint8_t *M, int n)
 	for (k = 0; k < n; ++k) {
 		uint8_t f;
 
-		/* the diagonal element cannot be 0 because */
-		/* we are inverting matrices with all the square */
-		/* submatrices not singular */
+		/*
+		 * The diagonal element cannot be 0 because
+		 * we are inverting matrices with all the square
+		 * submatrices not singular
+		 */
 		if (M[k * n + k] == 0)
 			return -1;
 
@@ -36,8 +38,10 @@ static __always_inline int raid_invert_fast(uint8_t *M, int n)
 		for (j = 0; j < n; ++j)
 			M[k * n + j] = mul(f, M[k * n + j]);
 
-		/* make all the elements over and under the diagonal */
-		/* to be zero */
+		/*
+		 * Make all the elements over and under the diagonal
+		 * to be zero
+		 */
 		for (i = 0; i < n; ++i) {
 			if (i == k)
 				continue;

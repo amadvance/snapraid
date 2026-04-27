@@ -28,9 +28,11 @@ static inline void raid_xgetbv(uint32_t* reg)
 {
 	/* get the value of the Extended Control Register ecx=0 */
 	asm volatile (
-	        /* uses a direct encoding of the XGETBV instruction as only recent */
-	        /* assemblers support it. */
-	        /* the next line is equivalent to: "xgetbv\n" */
+	        /*
+	         * Uses a direct encoding of the XGETBV instruction as only recent
+	         * assemblers support it.
+	         * the next line is equivalent to: "xgetbv\n"
+	         */
 		".byte 0x0f, 0x01, 0xd0\n"
 		: "=a" (reg[0]), "=d" (reg[3])
 		: "c" (0)
@@ -213,8 +215,10 @@ static inline int raid_cpu_has_avx512bw(void)
 	 * 3) Verify both CPUID.0x7.0:EBX.AVX512F[bit 16] = 1, CPUID.0x7.0:EBX.AVX512BW[bit 30] = 1.
 	 */
 
-	/* note that intentionally we don't check for AVX and AVX2 */
-	/* because the documentation doesn't require that */
+	/*
+	 * Note that intentionally we don't check for AVX and AVX2
+	 * because the documentation doesn't require that
+	 */
 	return raid_cpu_match_avx(
 		1 << 27, /* Leaf 1, ECX: XSAVE/XGETBV */
 		(1 << 16) | (1 << 30), /* Leaf 7, EBX: AVX512F and AVX512BW */

@@ -61,9 +61,11 @@ void raid_sort(int n, int *v)
 
 void raid_insert(int n, int *v, int i)
 {
-	/* we don't use binary search because this is intended */
-	/* for very small vectors and we want to optimize the case */
-	/* of elements inserted already in order */
+	/*
+	 * We don't use binary search because this is intended
+	 * for very small vectors and we want to optimize the case
+	 * of elements inserted already in order
+	 */
 
 	/* insert at the end */
 	v[n] = i;
