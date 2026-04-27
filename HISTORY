@@ -6,18 +6,14 @@ SnapRAID HISTORY
  * Added support for automated filesystem snapshots to ensure data
    consistency and improve recovery reliability. When the 'snapshot'
    option is enabled, SnapRAID manages a 'pending' snapshot at the start
-   of a sync and promotes it to a read-only 'stable' state upon
-   successful completion (currently supported on Btrfs).
-   This ensures that 'scrub', 'check', and 'fix' operations can use a
-   frozen point-in-time reference for data disks, eliminating mismatches
-   caused by concurrent live filesystem changes.
-   The implementation includes a "time-capsule" feature that reflinks
-   the .content file into the snapshot area, preserving the
-   metadata-to-parity correlation even if files are later deleted from
-   the live disk. During  targeted 'check' or 'fix' operations, SnapRAID
-   intelligently mixes live access for the disks being repaired with
-   snapshot access for reference disks to maintain mathematical
-   integrity across the array.
+   of a sync and promotes it to a 'stable' state upon  successful
+   completion (currently supported on Btrfs).
+   This ensures that 'scrub', 'check', and 'fix' operations utilize a
+   frozen point-in-time reference for data disks, eliminating
+   mismatches caused by concurrent live filesystem modifications.
+   The use of snapshots significantly improves recovery success by
+   preserving access to files that were updated or deleted after the
+   last parity computation.
  * Implemented AVX-512BW (Byte and Word) support for parity generation
    and data recovery, optimizing performance on modern architectures
    like Intel Sapphire Rapids and AMD Zen 4/5.
