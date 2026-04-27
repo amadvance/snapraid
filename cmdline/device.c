@@ -413,8 +413,10 @@ static double smart_afr(devinfo_t* devinfo)
 	}
 
 	if (smart[187].raw != SMART_UNASSIGNED) {
-		/* with some disks, only the lower 16 bits are significant */
-		/* See: http://web.archive.org/web/20130507072056/http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf */
+		/*
+		 * With some disks, only the lower 16 bits are significant
+		 * See: http://web.archive.org/web/20130507072056/http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf
+		 */
 		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187].raw & mask16);
 		if (afr < r)
 			afr = r;
@@ -430,8 +432,10 @@ static double smart_afr(devinfo_t* devinfo)
 		 */
 		strncmp(devinfo->model, "ST", 2) != 0 && smart[188].raw != SMART_UNASSIGNED
 	) {
-		/* with Seagate disks, there are three different 16 bits value reported */
-		/* the lowest one is the most significant */
+		/*
+		 * With Seagate disks, there are three different 16 bits value reported
+		 * the lowest one is the most significant
+		 */
 		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188].raw & mask16);
 		if (afr < r)
 			afr = r;
@@ -488,12 +492,16 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 	if (array_failure_rate == 0)
 		return 0;
 
-	/* get the Mean Time Between Failure of a single disk */
-	/* from the array failure rate */
+	/*
+	 * Get the Mean Time Between Failure of a single disk
+	 * from the array failure rate
+	 */
 	MTBF = n / array_failure_rate;
 
-	/* get the Mean Time Between Repair (the time that a failed disk is replaced) */
-	/* from the repair rate */
+	/*
+	 * Get the Mean Time Between Repair (the time that a failed disk is replaced)
+	 * from the repair rate
+	 */
 	MTTR = 1.0 / replace_rate;
 
 	/* use the approximated MTTDL equation */
@@ -697,8 +705,10 @@ static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* lo
 		if (flag & (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL))
 			make_it_fail = 1;
 
-		/* note that in older smartmontools, like 5.x, rotation rate is not present */
-		/* and then it could remain unassigned */
+		/*
+		 * Note that in older smartmontools, like 5.x, rotation rate is not present
+		 * and then it could remain unassigned
+		 */
 
 		if (flag & (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN)) {
 			/* if error running smartctl, skip AFR estimation */

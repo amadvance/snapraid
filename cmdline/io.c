@@ -287,8 +287,10 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 	while (1) {
 		unsigned next_index;
 
-		/* check if the worker has to exit */
-		/* even if there is work to do */
+		/*
+		 * Check if the worker has to exit
+		 * even if there is work to do
+		 */
 		if (io->done) {
 			thread_mutex_unlock(&io->io_mutex);
 			return 0;
@@ -378,8 +380,10 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 			return task;
 		}
 
-		/* check if the worker has to exit */
-		/* but only if there is no work to do */
+		/*
+		 * Check if the worker has to exit
+		 * but only if there is no work to do
+		 */
 		if (io->done) {
 			thread_mutex_unlock(&io->io_mutex);
 			return 0;
@@ -503,8 +507,10 @@ static void io_refresh_thread(struct snapraid_io* io)
 			worker->handle->disk->cached_blocks = cached;
 	}
 
-	/* for all writers, count the number of written blocks */
-	/* note that this is a kind of "opposite" of cached blocks */
+	/*
+	 * For all writers, count the number of written blocks
+	 * note that this is a kind of "opposite" of cached blocks
+	 */
 	for (i = 0; i < io->writer_max; ++i) {
 		unsigned begin, end, cached;
 		struct snapraid_worker* worker = &io->writer_map[i];
@@ -573,9 +579,11 @@ static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigne
 		unsigned* let;
 		unsigned busy_index;
 
-		/* get the index the IO is using */
-		/* we must ensure that this index has not a read in progress */
-		/* to avoid a concurrent access */
+		/*
+		 * Get the index the IO is using
+		 * we must ensure that this index has not a read in progress
+		 * to avoid a concurrent access
+		 */
 		busy_index = io->reader_index;
 
 		/* search for a worker that has already finished */
@@ -605,8 +613,10 @@ static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigne
 
 					task = &worker->task_map[io->reader_index];
 
-					/* mark the worker as processed */
-					/* setting the previous one to point at the next one */
+					/*
+					 * Mark the worker as processed
+					 * setting the previous one to point at the next one
+					 */
 					*let = io->reader_list[i + 1];
 
 					thread_mutex_unlock(&io->io_mutex);
@@ -661,11 +671,13 @@ static void io_parity_write_thread(struct snapraid_io* io, unsigned* pos, unsign
 		unsigned* let;
 		unsigned busy_index;
 
-		/* get the next index the IO is going to use */
-		/* we must ensure that this index has not a write in progress */
-		/* to avoid a concurrent access */
-		/* note that we are already sure that a write is not in progress */
-		/* at the index the IO is using at now */
+		/*
+		 * Get the next index the IO is going to use
+		 * we must ensure that this index has not a write in progress
+		 * to avoid a concurrent access
+		 * note that we are already sure that a write is not in progress
+		 * at the index the IO is using at now
+		 */
 		busy_index = (io->writer_index + 1) % io->io_max;
 
 		/* search for a worker that has already finished */
@@ -691,8 +703,10 @@ static void io_parity_write_thread(struct snapraid_io* io, unsigned* pos, unsign
 
 			/* if the worker has finished this index */
 			if (busy_index != worker->index) {
-				/* mark the worker as processed */
-				/* setting the previous one to point at the next one */
+				/*
+				 * Mark the worker as processed
+				 * setting the previous one to point at the next one
+				 */
 				*let = io->writer_list[i + 1];
 
 				thread_mutex_unlock(&io->io_mutex);
@@ -822,8 +836,10 @@ static void io_start_thread(struct snapraid_io* io,
 	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
 		io->writer_error[i] = 0;
 
-	/* setup the initial read pending tasks, except the latest one, */
-	/* the latest will be initialized at the fist io_read_next() call */
+	/*
+	 * Setup the initial read pending tasks, except the latest one,
+	 * the latest will be initialized at the fist io_read_next() call
+	 */
 	for (i = 0; i < io->io_max - 1; ++i) {
 		block_off_t blockcur = io_position_next(io);
 
@@ -920,8 +936,10 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 
 #if HAVE_THREAD
 	if (io_cache == 0) {
-		/* default is 16 MiB of cache */
-		/* this seems to be a good tradeoff between speed and memory usage */
+		/*
+		 * Default is 16 MiB of cache
+		 * this seems to be a good tradeoff between speed and memory usage
+		 */
 		io->io_max = 16 * 1024 * 1024 / state->block_size;
 		if (io->io_max < IO_MIN)
 			io->io_max = IO_MIN;

@@ -31,9 +31,11 @@ block_off_t parity_allocated_size(struct snapraid_state* state)
 		/* start from the declared size */
 		block_off_t block = fs_size(disk);
 
-		/* decrease the block until an allocated one, but part of a file */
-		/* we don't stop at deleted blocks, because we want to have them cleared */
-		/* if they are at the end of the parity */
+		/*
+		 * Decrease the block until an allocated one, but part of a file
+		 * we don't stop at deleted blocks, because we want to have them cleared
+		 * if they are at the end of the parity
+		 */
 		while (block > parity_block && !block_has_file(fs_par2block_find(disk, block - 1)))
 			--block;
 
@@ -384,8 +386,10 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	/* present size */
 	base = split->st.st_size;
 
-	/* truncate it to block size multiplier */
-	/* in case of damage the size may get wrong */
+	/*
+	 * Truncate it to block size multiplier
+	 * in case of damage the size may get wrong
+	 */
 	base &= ~block_mask;
 
 	/* size we have to increase */
@@ -432,8 +436,10 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	}
 #endif
 
-	/* shrink to the expected size to ensure to throw away any extra */
-	/* data allocated when the grow operation fails */
+	/*
+	 * Shrink to the expected size to ensure to throw away any extra
+	 * data allocated when the grow operation fails
+	 */
 	return parity_handle_shrink(split, base);
 }
 
@@ -528,8 +534,10 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		data_off_t run;
 
 		if (is_fixed) {
-			/* if the required size is smaller, we have to reduce also the file */
-			/* ignoring the previous size */
+			/*
+			 * If the required size is smaller, we have to reduce also the file
+			 * ignoring the previous size
+			 */
 			if (size <= split->size) {
 				/* mark it as not fixed anymore for the later check */
 				is_fixed = 0;
@@ -637,8 +645,10 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		split->size = parity->split_map[s].size;
 		split->limit_size = PARITY_LIMIT(limit_size, s, level);
 
-		/* open for read */
-		/* O_NOATIME: do not change access time */
+		/*
+		 * Open for read
+		 * O_NOATIME: do not change access time
+		 */
 		flags = O_RDONLY | O_BINARY | advise_flags(&split->advise);
 
 		split->f = open_noatime(split->path, flags);
@@ -712,9 +722,11 @@ int parity_sync(struct snapraid_parity_handle* handle)
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 
-		/* Ensure that data changes are written to disk. */
-		/* This is required to ensure that parity is more updated than content */
-		/* in case of a system crash. */
+		/*
+		 * Ensure that data changes are written to disk.
+		 * This is required to ensure that parity is more updated than content
+		 * in case of a system crash.
+		 */
 		ret = fsync(split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -766,9 +778,11 @@ int parity_close(struct snapraid_parity_handle* handle)
 		ret = close(split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			/* This is a serious error, as it may be the result of a failed write */
-			/* identified at later time. */
-			/* In a normal file-system (not NFS) it should never happen */
+			/*
+			 * This is a serious error, as it may be the result of a failed write
+			 * identified at later time.
+			 * In a normal file-system (not NFS) it should never happen
+			 */
 			log_fatal(errno, "Error closing parity file '%s'. %s.\n", split->path, strerror(errno));
 			f_ret = -1;
 			/* LCOV_EXCL_STOP */

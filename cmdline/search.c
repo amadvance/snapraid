@@ -192,11 +192,13 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &st);
 
-		/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-		/* at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined), */
-		/* because we use a directory reading method that doesn't read info about ReparsePoint. */
-		/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
-		/* of file is it, and lstat_sync() doesn't always work */
+		/*
+		 * If the st_mode field is missing, takes care to fill it using normal lstat()
+		 * at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined),
+		 * because we use a directory reading method that doesn't read info about ReparsePoint.
+		 * Note that here we cannot call here lstat_sync(), because we don't know what kind
+		 * of file is it, and lstat_sync() doesn't always work
+		 */
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */

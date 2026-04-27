@@ -287,9 +287,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				struct snapraid_disk* other = j->data;
 				if (disk->device == other->device) {
 					if (state->opt.force_device) {
-						/* note that we just ignore the issue */
-						/* and we DON'T mark the disk to be skipped */
-						/* because we want to use these disks */
+						/*
+						 * Note that we just ignore the issue
+						 * and we DON'T mark the disk to be skipped
+						 * because we want to use these disks
+						 */
 						if (!state->opt.no_warnings)
 							log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
 					} else {
@@ -317,9 +319,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					for (s = 0; s < state->parity[l].split_mac; ++s) {
 						if (disk->device == state->parity[l].split_map[s].device) {
 							if (state->opt.force_device) {
-								/* note that we just ignore the issue */
-								/* and we DON'T mark the disk to be skipped */
-								/* because we want to use these disks */
+								/*
+								 * Note that we just ignore the issue
+								 * and we DON'T mark the disk to be skipped
+								 * because we want to use these disks
+								 */
 								if (!state->opt.no_warnings)
 									log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and %s '%s' are on the same device\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
 							} else {
@@ -378,9 +382,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					for (t = 0; t < state->parity[j].split_mac; ++t) {
 						if (state->parity[l].split_map[s].device == state->parity[j].split_map[t].device) {
 							if (state->opt.force_device) {
-								/* note that we just ignore the issue */
-								/* and we DON'T mark the disk to be skipped */
-								/* because we want to use these disks */
+								/*
+								 * Note that we just ignore the issue
+								 * and we DON'T mark the disk to be skipped
+								 * because we want to use these disks
+								 */
 								if (!state->opt.no_warnings)
 									log_fatal(EUSER, "DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
 							} else {
@@ -1544,9 +1550,11 @@ static struct snapraid_disk* find_disk_by_uuid(struct snapraid_state* state, con
 	tommy_node* i;
 	struct snapraid_disk* found = 0;
 
-	/* special test case to find the first matching UUID */
-	/* when testing UUID are all equal or not supported */
-	/* and we should handle this case specifically */
+	/*
+	 * Special test case to find the first matching UUID
+	 * when testing UUID are all equal or not supported
+	 * and we should handle this case specifically
+	 */
 	if (state->opt.match_first_uuid)
 		return state->disklist->data;
 
@@ -1580,10 +1588,12 @@ static void state_map(struct snapraid_state* state)
 	unsigned diskcount;
 	unsigned l, s;
 
-	/* remove all the mapping without a disk */
-	/* this happens when a disk is removed from the configuration file */
-	/* From SnapRAID 4.0 mappings are automatically removed if a disk is not used */
-	/* when saving the content file, but we keep this code to import older content files. */
+	/*
+	 * Remove all the mapping without a disk
+	 * this happens when a disk is removed from the configuration file
+	 * From SnapRAID 4.0 mappings are automatically removed if a disk is not used
+	 * when saving the content file, but we keep this code to import older content files.
+	 */
 	for (i = state->maplist; i != 0; ) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
@@ -1600,8 +1610,10 @@ static void state_map(struct snapraid_state* state)
 		}
 	}
 
-	/* maps each unmapped disk present in the configuration file in the first available hole */
-	/* this happens when you add disks for the first time in the configuration file */
+	/*
+	 * Maps each unmapped disk present in the configuration file in the first available hole
+	 * this happens when you add disks for the first time in the configuration file
+	 */
 	hole = 0; /* first position to try */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
@@ -1684,8 +1696,10 @@ static void state_map(struct snapraid_state* state)
 					++uuid_mismatch;
 					log_error(ESOFT, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, disk->uuid);
 				} else {
-					/* no message here, because having a disk without */
-					/* UUID is the normal state of an empty disk */
+					/*
+					 * No message here, because having a disk without
+					 * UUID is the normal state of an empty disk
+					 */
 					disk->had_empty_uuid = 1;
 				}
 
@@ -1894,8 +1908,10 @@ void state_refresh(struct snapraid_state* state)
 	}
 
 
-	/* note what we don't set need_write = 1, because we don't want */
-	/* to update the content file only for the free space info. */
+	/*
+	 * Note what we don't set need_write = 1, because we don't want
+	 * to update the content file only for the free space info.
+	 */
 }
 
 /**
@@ -2349,9 +2365,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						hash_zero_set(block->hash);
 					}
 
-					/* if we are disabling the copy optimization */
-					/* we want also to clear any already previously stored information */
-					/* in other sync commands */
+					/*
+					 * If we are disabling the copy optimization
+					 * we want also to clear any already previously stored information
+					 * in other sync commands
+					 */
 					if (state->opt.force_nocopy && block_state_get(block) == BLOCK_STATE_REP) {
 						/* set the hash value to INVALID */
 						hash_invalid_set(block->hash);
@@ -2471,8 +2489,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							/* LCOV_EXCL_STOP */
 						}
 					} else {
-						/* extra info are accepted for backward compatibility */
-						/* they are discarded at the first write */
+						/*
+						 * Extra info are accepted for backward compatibility
+						 * they are discarded at the first write
+						 */
 					}
 
 					if (fs_is_block_unsynced(state, v_pos))
@@ -2956,8 +2976,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			tommy_array_set(&disk_mapping, mapping_max, disk);
 			++mapping_max;
 		} else if (c == 'P') {
-			/* from SnapRAID 7.0 the 'P' command includes the free space */
-			/* from SnapRAID 11.0 the 'P' command is deprecated by 'Q' */
+			/*
+			 * From SnapRAID 7.0 the 'P' command includes the free space
+			 * from SnapRAID 11.0 the 'P' command is deprecated by 'Q'
+			 */
 			char v_uuid[UUID_MAX];
 			uint32_t v_level;
 			uint32_t v_total_blocks;
@@ -3667,8 +3689,10 @@ static void* state_write_thread(void* arg)
 					++begin;
 				}
 			} else {
-				/* write the run of blocks without hash */
-				/* they can be either used or empty blocks */
+				/*
+				 * Write the run of blocks without hash
+				 * they can be either used or empty blocks
+				 */
 				sputc('O', f);
 
 				/* next begin position */
@@ -3784,8 +3808,10 @@ static void* state_write_thread(void* arg)
 	/* get the file crc */
 	crc = scrc(f);
 
-	/* compare the crc of the data written to file */
-	/* with the one of the data written to the stream */
+	/*
+	 * Compare the crc of the data written to file
+	 * with the one of the data written to the stream
+	 */
 	if (crc != scrc_stream(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal(ECONTENT, "CRC mismatch while writing the content stream.\n");
@@ -3861,8 +3887,10 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	/* check the file-system on all disks */
 	state_fscheck(state, "before write");
 
-	/* clear the info for unused blocks */
-	/* and get some other info */
+	/*
+	 * Clear the info for unused blocks
+	 * and get some other info
+	 */
 	info_oldest = 0; /* oldest time in info */
 	info_now = time(0); /* get the present time */
 	info_has_rehash = 0; /* if there is a rehash info */
@@ -4002,8 +4030,10 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		} else {
 			STREAM* f = context->f;
 
-			/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
-			/* than even in a system crash event we have one valid copy of the file. */
+			/*
+			 * Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure
+			 * than even in a system crash event we have one valid copy of the file.
+			 */
 			if (sflush(f) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(errno, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
@@ -4130,8 +4160,10 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
-	/* than even in a system crash event we have one valid copy of the file. */
+	/*
+	 * Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure
+	 * than even in a system crash event we have one valid copy of the file.
+	 */
 	if (sflush(f) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
@@ -4328,8 +4360,10 @@ void state_read(struct snapraid_state* state)
 		node = node->next;
 	}
 
-	/* start with a undefined default. */
-	/* it's for compatibility with version 1.0 where MD5 was implicit. */
+	/*
+	 * Start with a undefined default.
+	 * it's for compatibility with version 1.0 where MD5 was implicit.
+	 */
 	state->hash = HASH_UNDEFINED;
 
 	/* start with a zero seed, it was the default in old versions */
@@ -5152,14 +5186,18 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			/* number of past measures */
 			past = state->progress_tick;
 
-			/* drop the oldest ones, to promptly */
-			/* skip the startup phase */
+			/*
+			 * Drop the oldest ones, to promptly
+			 * skip the startup phase
+			 */
 			past -= past / 5;
 
 			/* check how much we can go in the past */
 			if (past >= PROGRESS_MAX - 1) {
-				/* the vector is filled, so we are already in position */
-				/* to get the possible oldest one */
+				/*
+				 * The vector is filled, so we are already in position
+				 * to get the possible oldest one
+				 */
 				oldest = state->progress_ptr + 1;
 			} else {
 				/* go backward the number of positions selected */

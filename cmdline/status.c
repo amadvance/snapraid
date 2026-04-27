@@ -176,18 +176,22 @@ int state_status(struct snapraid_state* state)
 		disk_block_max_by_space = disk_block_count + disk->free_blocks;
 		disk_block_max_by_parity = blockmax + parity_block_free;
 
-		/* the maximum usable space in a disk is limited by the smallest */
-		/* of the disk size and the parity size */
-		/* the wasted space is the space that we have to leave */
-		/* free on the data disk, when the parity is filled up */
+		/*
+		 * The maximum usable space in a disk is limited by the smallest
+		 * of the disk size and the parity size
+		 * the wasted space is the space that we have to leave
+		 * free on the data disk, when the parity is filled up
+		 */
 		if (disk_block_max_by_space < disk_block_max_by_parity) {
 			disk_block_max = disk_block_max_by_space;
 		} else {
 			disk_block_max = disk_block_max_by_parity;
 		}
 
-		/* wasted space is the difference of the two maximum size */
-		/* if negative, it's extra space available in parity */
+		/*
+		 * Wasted space is the difference of the two maximum size
+		 * if negative, it's extra space available in parity
+		 */
 		wasted = (int64_t)disk_block_max_by_space - (int64_t)disk_block_max_by_parity;
 		wasted *= state->block_size;
 
