@@ -964,8 +964,10 @@ int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid
 int filephy(const char* path, uint64_t size, uint64_t* physical)
 {
 #if HAVE_LINUX_FIEMAP_H
-	/* In Linux get the real physical address of the file */
-	/* Note that FIEMAP doesn't require root permission */
+	/*
+	 * In Linux get the real physical address of the file
+	 * Note that FIEMAP doesn't require root permission
+	 */
 	int f;
 	struct fiemap* fiemap;
 	size_t fiemap_size;
@@ -976,8 +978,10 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 		return -1;
 	}
 
-	/* first try with FIEMAP */
-	/* if works for ext2, ext3, ext4, xfs, btrfs */
+	/*
+	 * First try with FIEMAP
+	 * if works for ext2, ext3, ext4, xfs, btrfs
+	 */
 	fiemap_size = sizeof(struct fiemap) + sizeof(struct fiemap_extent);
 	fiemap = malloc_nofail(fiemap_size);
 	memset(fiemap, 0, fiemap_size);
@@ -998,8 +1002,10 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 			/* if the offset is unknown, we don't have an offset to report */
 			*physical = FILEPHY_WITHOUT_OFFSET;
 		} else if (offset == 0) {
-			/* 0 is the general fallback for file-systems when */
-			/* they don't have an offset to report */
+			/*
+			 * 0 is the general fallback for file-systems when
+			 * they don't have an offset to report
+			 */
 			*physical = FILEPHY_WITHOUT_OFFSET;
 		} else {
 			/* finally report the real offset */
@@ -1023,9 +1029,11 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 		return 0;
 	}
 
-	/* then try with FIBMAP */
-	/* it works for jfs, reiserfs, ntfs-3g */
-	/* in exfat it always returns 0, that it's anyway better than the fake inodes */
+	/*
+	 * Then try with FIBMAP
+	 * it works for jfs, reiserfs, ntfs-3g
+	 * in exfat it always returns 0, that it's anyway better than the fake inodes
+	 */
 	blknum = 0; /* first block */
 	if (ioctl(f, FIBMAP, &blknum) != -1) {
 		*physical = blknum + FILEPHY_REAL_OFFSET;
@@ -1034,22 +1042,26 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 		return 0;
 	}
 
-	/* otherwise don't use anything, and keep the directory traversal order */
-	/* at now this should happen only for vfat */
-	/* and it's surely better than using fake inodes */
+	/*
+	 * Otherwise don't use anything, and keep the directory traversal order
+	 * at now this should happen only for vfat
+	 * and it's surely better than using fake inodes
+	 */
 	*physical = FILEPHY_UNREPORTED_OFFSET;
 	if (close(f) == -1)
 		return -1;
 #else
-	/* In a generic Unix use a dummy value for all the files */
-	/* We don't want to risk to use the inode without knowing */
-	/* if it really improves performance. */
-	/* In this way we keep them in the directory traversal order */
-	/* that at least keeps files in the same directory together. */
-	/* Note also that in newer file-system with snapshot, like ZFS, */
-	/* the inode doesn't represent even more the disk position, because files */
-	/* are not overwritten in place, but rewritten in another location */
-	/* of the disk. */
+	/*
+	 * In a generic Unix use a dummy value for all the files
+	 * We don't want to risk to use the inode without knowing
+	 * if it really improves performance.
+	 * In this way we keep them in the directory traversal order
+	 * that at least keeps files in the same directory together.
+	 * Note also that in newer file-system with snapshot, like ZFS,
+	 * the inode doesn't represent even more the disk position, because files
+	 * are not overwritten in place, but rewritten in another location
+	 * of the disk.
+	 */
 	*physical = FILEPHY_UNREPORTED_OFFSET;
 
 	(void)path; /* not used here */
@@ -1267,8 +1279,10 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 			return -1;
 		}
 
-		/* if it doesn't exist, we assume a file */
-		/* and we check for the containing dir */
+		/*
+		 * If it doesn't exist, we assume a file
+		 * and we check for the containing dir
+		 */
 		if (strlen(path) + 1 > sizeof(dir)) {
 			errno = ENAMETOOLONG;
 			return -1;
@@ -1345,8 +1359,10 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	/* get the filesystem type directly from the struct (Mac OS X) */
 	ptype = st.f_fstypename;
 #elif HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
-	/* get the filesystem type from f_type (Linux) */
-	/* from: https://github.com/influxdata/gopsutil/blob/master/disk/disk_linux.go */
+	/*
+	 * Get the filesystem type from f_type (Linux)
+	 * from: https://github.com/influxdata/gopsutil/blob/master/disk/disk_linux.go
+	 */
 	for (int i = 0; FILESYSTEMS[i].id != 0; ++i) {
 		if (st.f_type == FILESYSTEMS[i].id) {
 			ptype = FILESYSTEMS[i].name;

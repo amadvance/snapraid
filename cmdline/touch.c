@@ -22,9 +22,11 @@ void state_touch(struct snapraid_state* state)
 		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 
-			/* if the file has a zero nanosecond timestamp */
-			/* note that symbolic links are not in the file list */
-			/* and then are not processed */
+			/*
+			 * If the file has a zero nanosecond timestamp
+			 * note that symbolic links are not in the file list
+			 * and then are not processed
+			 */
 			if (file->mtime_nsec == 0) {
 				char path[PATH_MAX];
 				struct stat st;
@@ -50,8 +52,10 @@ void state_touch(struct snapraid_state* state)
 					nsec = nano % 1000000000;
 				} while (nsec == 0);
 
-				/* O_BINARY: open as binary file (Windows only) */
-				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
+				/*
+				 * O_BINARY: open as binary file (Windows only)
+				 * O_NOFOLLOW: do not follow links to ensure to open the real file
+				 */
 				flags = O_BINARY | O_NOFOLLOW;
 #ifdef _WIN32
 				/* in Windows we must have write access at the file */
@@ -70,8 +74,10 @@ void state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* get the present timestamp, that may be different than the one */
-				/* in the content file */
+				/*
+				 * Get the present timestamp, that may be different than the one
+				 * in the content file
+				 */
 				ret = fstat(f, &st);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
@@ -91,9 +97,11 @@ void state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* uses fstat again to get the present timestamp */
-				/* this is needed because the value read */
-				/* may be different than the written one */
+				/*
+				 * Uses fstat again to get the present timestamp
+				 * this is needed because the value read
+				 * may be different than the written one
+				 */
 				ret = fstat(f, &st);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
@@ -112,10 +120,12 @@ void state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* set the same nanosecond value in the content file */
-				/* note that if the seconds value is already matching */
-				/* the file won't be synced because the content file will */
-				/* contain the new updated timestamp */
+				/*
+				 * Set the same nanosecond value in the content file
+				 * note that if the seconds value is already matching
+				 * the file won't be synced because the content file will
+				 * contain the new updated timestamp
+				 */
 				file->mtime_nsec = STAT_NSEC(&st);
 
 				/* state changed, we need to update it */
