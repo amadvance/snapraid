@@ -129,7 +129,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
-		entry->device = disk->device;
+		entry->device = disk->mount_device;
 		device_name_set(entry, disk->name, 0);
 		pathcpy(entry->mount, sizeof(entry->mount), disk->mount_point);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);

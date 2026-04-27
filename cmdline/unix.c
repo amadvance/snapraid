@@ -1461,7 +1461,7 @@ int fssnapshot_create(const char* source, const char* parent_dir, const char* na
 
 	memset(&args, 0, sizeof(args));
 	args.fd = fd_source;
-	args.flags = 0;
+	args.flags = BTRFS_SUBVOL_RDONLY;
 	pathcpy(args.name, BTRFS_SUBVOL_NAME_MAX, name);
 
 	/* issue the snapshot command to the PARENT directory of the destination */
@@ -1479,42 +1479,6 @@ int fssnapshot_create(const char* source, const char* parent_dir, const char* na
 	return 0;
 #else
 	(void)source;
-	(void)parent_dir;
-	(void)name;
-	return -1;
-#endif
-}
-
-int fssnapshot_readonly(const char* parent_dir, const char* name)
-{
-#if HAVE_LINUX_DEVICE
-	char path[PATH_MAX];
-
-	pathcpy(path, sizeof(path), parent_dir);
-	pathcatc(path, sizeof(path), '/');
-	pathcat(path, sizeof(path), name);
-
-	int fd = open(path, O_RDONLY | O_DIRECTORY);
-	if (fd < 0)
-		return -1;
-
-	/* get existing flags to avoid overwriting other potential flags */
-	__u64 flags;
-	if (ioctl(fd, BTRFS_IOC_SUBVOL_GETFLAGS, &flags) < 0) {
-		close(fd);
-		return -1;
-	}
-
-	flags |= BTRFS_SUBVOL_RDONLY;
-
-	if (ioctl(fd, BTRFS_IOC_SUBVOL_SETFLAGS, &flags) < 0) {
-		close(fd);
-		return -1;
-	}
-
-	close(fd);
-	return 0;
-#else
 	(void)parent_dir;
 	(void)name;
 	return -1;

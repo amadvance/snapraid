@@ -824,7 +824,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 		disk->smartignore[i] = 0;
 	disk->fstype[0] = 0;
 	disk->fslabel[0] = 0;
-	disk->device = dev;
+	disk->mount_device = dev;
+	disk->dir_device = dev;
 	disk->tick = 0;
 	disk->cached_blocks = 0;
 	disk->progress_file = 0;

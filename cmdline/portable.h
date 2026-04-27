@@ -378,15 +378,6 @@ int fssnapshot(const char* path, char* root, size_t root_size);
  */
 int fssnapshot_create(const char* source, const char* parent_dir, const char* name);
 
-
-/**
- * Make a snapshot read-only
- * @param parent_dir Directory where the snapshot is.
- * @param name Name of snapshot.
- * @return 0 on success, -1 on failure.
- */
-int fssnapshot_readonly(const char* parent_dir, const char* name);
-
 /**
  * Deletes a subvolume/snapshot.
  * @param parent_dir Directory where the snapshot is.
@@ -401,13 +392,7 @@ int fssnapshot_delete(const char* parent_dir, const char* name);
  */
 int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* new_name);
 
-/**
- * Clone a file between snapshots
- * @return 0 on success, -1 on failure.
- */
-int fssnapshot_clone(const char* source, const char* dest);
-
-/**
+/*
  * Log file.
  *
  * This stream if fully buffered.
