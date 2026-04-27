@@ -1156,9 +1156,10 @@ Configuration
 	always use the live version of the filesystem.
 
 	When enabled, SnapRAID ensures atomic and consistent operations by
-	reading from a frozen point-in-time image. This prevents errors caused
-	by file modifications during execution and ensures that deleted files
-	remain available for parity-based recovery of other disks.
+	reading from a frozen point-in-time image. This prevents errors
+	caused by file modifications during execution and ensures that
+	updated and deleted files remain available for parity-based
+	recovery of other disks.
 
 	See the SNAPSHOTS section for more details.
 
@@ -1414,12 +1415,13 @@ Snapshots
 	Consistency - Files modified on the live filesystem during a long-running
 		sync or scrub will not cause parity mismatches or aborted
 		operations, as SnapRAID sees a frozen point-in-time image.
-	Recovery - If a file is deleted from the live filesystem, it remains
-		preserved in the snapshot. If a disk failure occurs before the
-		next sync is run, SnapRAID uses the data preserved in the
-		snapshot to reconstruct the failed disk. Without snapshots,
-		a deleted file on a healthy disk results in missing data
-		blocks that may be required to fix other failed disks.
+	Recovery - If a file is updated or deleted from the live filesystem,
+		it remains preserved in the snapshot. If a disk failure occurs
+		before the next sync is run, SnapRAID uses the data preserved
+		in the snapshot to reconstruct the failed disk.
+		Without snapshots, an updated or deleted file on a healthy
+		disk results in missing data blocks that may be required to
+		fix other failed disks.
 
 	Snapshots are created only for data disks and only if the underlying
 	filesystem supports this functionality. Parity disks always use
@@ -1432,9 +1434,9 @@ Snapshots
   Command Behavior with Snapshots
 	The `sync` and `scrub` commands both operate exclusively on snapshots
 	to ensure that all data operations are performed against a consistent,
-	frozen state. By utilizing these snapshots, SnapRAID prevents false
-	positives and parity mismatches that would otherwise be triggered
-	by concurrent file modifications on the live filesystem.
+	frozen state. By utilizing these snapshots, SnapRAID prevents parity
+	mismatches that would otherwise be triggered by concurrent file
+	modifications on the live filesystem.
 	During a `sync`, the command uses a new snapshot created at the
 	start of the process to capture the current state for parity computation.
 	In contrast, the `scrub` command utilizes the last snapshot, the one
@@ -1457,61 +1459,38 @@ Snapshots
 
 	All other commands operate exclusively on the live filesystem.
 
-  Sync Safety
-	To ensure maximum data safety during a sync operation, it is
-	recommended to place the .content files inside the same subvolume
-	used for the data, ensuring they are also part of the snapshots.
+Snapshots Lifecycle
+	SnapRAID manages two specific snapshots, `stable` and `pending`,
+	within a hidden `.snapraid` directory at the root of each data
+	subvolume.
 
-	When a sync starts, SnapRAID immediately updates the .content file to
-	reflect the current state of the filesystem. If you have deleted files
-	on a disk, the new .content file loses the metadata for those
-	deleted items and their relation to the parity.
+	The `stable` snapshot represents the state of the last
+	successfully completed `sync`, containing the exact data used to
+	compute the current parity. It serves as the primary data source
+	for `scrub`, `check`, and `fix` commands.
 
-	If a disk fails while a `sync` is running, the parity for that
-	failed disk may still depend on the deleted files.
-	Even if your snapshot physically contains the deleted files,
-	the new .content file no longer knows how they relate to the
-	parity blocks. This missing correlation can prevent a full recovery.
+	The `pending` snapshot is a temporary image created at the start
+	of a `sync` to provide a frozen state for parity computation.
+	Upon successful completion of the operation, the previous stable
+	snapshot is deleted, and the pending snapshot is promoted to
+	take its place as the new stable reference.
 
-	Note that this specific risk only exists if a disk fails during
-	an active sync. If a disk fails between syncs, the snapshot
-	already contains data that is perfectly matched with the
-	last successfully saved content file on the live filesystem,
-	ensuring a successful recovery.
+	If a `sync` is interrupted, the `pending` snapshot is preserved.
+	Subsequent `scrub`, `check`, and `fix` commands will use this
+	pending snapshot as it matches the filesystem state recorded in
+	the .content file, even if the parity is only partially synchronized.
 
-	By storing the .content file inside the snapshotted subvolume, the
-	snapshot preserves an older version of the content file, and
-	the metadata within it, alongside the corresponding version of
-	the data.
+	In the event of a `sync` interruption, `check` and `fix` commands
+	can also read from the `stable` snapshot to retrieve data blocks
+	from files that were updated or deleted during the sync.
+	This is possible because the .content file retains metadata for
+	all modified or deleted files throughout the sync process.
+	This historical information is only cleared once a sync finishes
+	successfully and the final version of the .content file is saved.
 
-  Snapshots Lifecycle
-	SnapRAID manages two specific snapshots within a hidden `.snapraid`
-	directory at the root of each data subvolume:
-
-	stable - The reference snapshot representing the state of the last
-		successfully completed `sync`. This snapshot contains the exact
-		data used to compute the parity and serves as the primary data
-		source for all `scrub`, `check`, and `fix` commands, provided
-		that a pending snapshot is not present.
-	pending - A temporary snapshot created at the start of a sync operation.
-		Upon the successful completion of a sync, the previous stable
-		snapshot is deleted, and the pending snapshot is promoted to
-		stable.
-		During this promotion, if a content file is stored on the
-		same subvolume of the data, the final version of the content
-		file is cloned (via reflink) into the snapshot.
-		This ensures that the snapshot contains a metadata map that
-		is perfectly in	sync with the data blocks it preserves.
-		Once promoted, the stable snapshot is set to a read-only
-		state to ensure its integrity as a recovery reference.
-		If the sync fails or is interrupted, the pending snapshot is
-		preserved in its current state. This allows subsequent `scrub`,
-		`check`, and `fix` commands to function correctly by using the
-		exact filesystem state recorded in the live content file,
-		even if the parity is only partially synchronized.
-		When sync is restarted after the interruption, the existing
-		pending snapshot is deleted and a new one is created,
-		capturing the new state of the live filesystem.
+	If a `sync` is restarted after an interruption, the existing
+	pending snapshot is deleted and a new one is created to
+	capture the current state of the live filesystem.
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in

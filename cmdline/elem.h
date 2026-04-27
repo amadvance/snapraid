@@ -390,7 +390,8 @@ struct snapraid_disk {
 	char fstype[FSINFO_MAX]; /**< Filesystem type */
 	char fslabel[FSINFO_MAX]; /**< Filesystem label */
 
-	uint64_t device; /**< Device identifier. */
+	uint64_t mount_device; /**< Device identifier of the mount_point. */
+	uint64_t dir_device; /**< Device identifier of the effective dir. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
 
