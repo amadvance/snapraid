@@ -500,8 +500,10 @@ void msg_info(const char* format, ...)
 
 	lock_msg();
 
-	/* don't output in stdlog as these messages */
-	/* are always paired with a msg_tag() call */
+	/*
+	 * Don't output in stdlog as these messages
+	 * are always paired with a msg_tag() call
+	 */
 
 	if (msg_level >= MSG_INFO) {
 		va_start(ap, format);
@@ -547,9 +549,11 @@ void msg_bar(const char* format, ...)
 
 	lock_msg();
 
-	/* don't output in stdlog as these messages */
-	/* are intended for screen only */
-	/* also don't flush stdout as they are intended to be partial messages */
+	/*
+	 * Don't output in stdlog as these messages
+	 * are intended for screen only
+	 * also don't flush stdout as they are intended to be partial messages
+	 */
 
 	if (msg_level >= MSG_BAR) {
 		va_start(ap, format);
@@ -1080,8 +1084,10 @@ void pathimport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/* convert the Windows dir separator '\' to C '/', */
-	/* and the Windows escaping char '^' to the fnmatch '\' */
+	/*
+	 * Convert the Windows dir separator '\' to C '/',
+	 * and the Windows escaping char '^' to the fnmatch '\'
+	 */
 	while (*dst) {
 		switch (*dst) {
 		case '\\' :
@@ -1429,8 +1435,10 @@ int advise_open(struct advise_struct* advise, int f)
 	) {
 		int ret;
 
-		/* advise noreuse access, this avoids to pollute the page cache */
-		/* supported from Linux Kernel 6.3 with this commit: https://github.com/torvalds/linux/commit/17e810229cb3068b692fa078bd9b3a6527e0866a */
+		/*
+		 * Advise noreuse access, this avoids to pollute the page cache
+		 * supported from Linux Kernel 6.3 with this commit: https://github.com/torvalds/linux/commit/17e810229cb3068b692fa078bd9b3a6527e0866a
+		 */
 		ret = posix_fadvise_wrapper(f, 0, 0, POSIX_FADV_NOREUSE);
 		if (ret == ENOSYS) {
 			/* call is not supported */
@@ -1861,12 +1869,14 @@ void* malloc_nofail(size_t size)
 	}
 
 #ifndef CHECKER /* Don't preinitialize when running for valgrind */
-	/* Here we preinitialize the memory to ensure that the OS is really allocating it */
-	/* and not only reserving the addressable space. */
-	/* Otherwise we are risking that the OOM (Out Of Memory) killer in Linux will kill the process. */
-	/* Filling the memory doesn't ensure to disable OOM, but it increase a lot the chances to */
-	/* get a real error from malloc() instead than a process killed. */
-	/* Note that calloc() doesn't have the same effect. */
+	/*
+	 * Here we preinitialize the memory to ensure that the OS is really allocating it
+	 * and not only reserving the addressable space.
+	 * Otherwise we are risking that the OOM (Out Of Memory) killer in Linux will kill the process.
+	 * Filling the memory doesn't ensure to disable OOM, but it increase a lot the chances to
+	 * get a real error from malloc() instead than a process killed.
+	 * Note that calloc() doesn't have the same effect.
+	 */
 	memset(ptr, 0xA5, size);
 #endif
 
@@ -2569,16 +2579,20 @@ int thread_cond_signal_outside = 0;
 void thread_cond_signal_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (thread_cond_signal_outside) {
-		/* without the thread checker unlock before signaling, */
-		/* this reduces the number of context switches */
+		/*
+		 * Without the thread checker unlock before signaling,
+		 * this reduces the number of context switches
+		 */
 		thread_mutex_unlock(mutex);
 	}
 
 	thread_cond_signal(cond);
 
 	if (!thread_cond_signal_outside) {
-		/* with the thread checker unlock after signaling */
-		/* to make explicit the condition and mutex relation */
+		/*
+		 * With the thread checker unlock after signaling
+		 * to make explicit the condition and mutex relation
+		 */
 		thread_mutex_unlock(mutex);
 	}
 }
@@ -2586,16 +2600,20 @@ void thread_cond_signal_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex)
 void thread_cond_broadcast_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (thread_cond_signal_outside) {
-		/* without the thread checker unlock before signaling, */
-		/* this reduces the number of context switches */
+		/*
+		 * Without the thread checker unlock before signaling,
+		 * this reduces the number of context switches
+		 */
 		thread_mutex_unlock(mutex);
 	}
 
 	thread_cond_broadcast(cond);
 
 	if (!thread_cond_signal_outside) {
-		/* with the thread checker unlock after signaling */
-		/* to make explicit the condition and mutex relation */
+		/*
+		 * With the thread checker unlock after signaling
+		 * to make explicit the condition and mutex relation
+		 */
 		thread_mutex_unlock(mutex);
 	}
 }

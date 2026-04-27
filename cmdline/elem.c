@@ -274,8 +274,10 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 		}
 	}
 
-	/* directories are always included by default, otherwise we cannot apply rules */
-	/* to the contained files */
+	/*
+	 * Directories are always included by default, otherwise we cannot apply rules
+	 * to the contained files
+	 */
 	if (is_def_include)
 		return 0;
 
@@ -897,8 +899,10 @@ int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 {
 	struct extent_disk_empty arg = { blockmax };
 
-	/* if there is an element, it's not empty */
-	/* even if links and dirs have no block allocation */
+	/*
+	 * If there is an element, it's not empty
+	 * even if links and dirs have no block allocation
+	 */
 	if (!tommy_list_empty(&disk->filelist))
 		return 0;
 	if (!tommy_list_empty(&disk->linklist))

@@ -60,8 +60,10 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 		ret = handle_close(handle);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			/* This one is really an unexpected error, because we are only reading */
-			/* and closing a descriptor should never fail */
+			/*
+			 * This one is really an unexpected error, because we are only reading
+			 * and closing a descriptor should never fail
+			 */
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
@@ -437,8 +439,10 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 		blockmax = blockstart + blockcount;
 	}
 
-	/* open the file for reading */
-	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
+	/*
+	 * Open the file for reading
+	 * it may fail if the file doesn't exist, in this case we continue to dry the files
+	 */
 	for (l = 0; l < state->level; ++l) {
 		ret = parity_open(&parity_handle[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 		if (ret == -1) {
