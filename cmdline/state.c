@@ -2157,10 +2157,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'y' for hash size.
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'Q' for multi parity file.
 	 *    The previous 'P' entry is now deprecated, but supported for importing.
+	 *  - SNAPCNT4/SnapRAID 15.0 Adds entry 'd' for dealloc file.
 	 */
 	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0
 		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0
 		&& memcmp(buffer, "SNAPCNT3\n\3\0\0", 12) != 0
+		&& memcmp(buffer, "SNAPCNT4\n\3\0\0", 12) != 0
 	) {
 		/* LCOV_EXCL_START */
 		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
@@ -2594,6 +2596,105 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
+			}
+		} else if (c == 'd') {
+			/* dealloc */
+			uint32_t v_count;
+			uint32_t v_pos;
+			struct snapraid_disk* disk;
+			uint32_t mapping;
+
+			ret = sgetb32(f, &mapping);
+			if (ret < 0 || mapping >= mapping_max) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Dealloc mapping index out of range\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			disk = tommy_array_get(&disk_mapping, mapping);
+
+			ret = sgetb32(f, &v_count);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			log_tag("content_info:dealloc:%s:%u\n", esc_tag(disk->name), v_count);
+
+			for (v_pos = 0; v_pos < v_count; ++v_pos) {
+				char sub[PATH_MAX];
+				uint64_t v_size;
+				uint64_t v_mtime_sec;
+				uint32_t v_mtime_nsec;
+
+				ret = sgetbs(f, sub, sizeof(sub));
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+				if (!*sub) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Null dealloc!\n");
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetb64(f, &v_size);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetb64(f, &v_mtime_sec);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetb32(f, &v_mtime_nsec);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* STAT_NSEC_INVALID is encoded as 0 */
+				if (v_mtime_nsec == 0)
+					v_mtime_nsec = STAT_NSEC_INVALID;
+				else
+					--v_mtime_nsec;
+
+				/* allocate the file */
+				struct snapraid_dealloc* dealloc = dealloc_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec);
+
+				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
+
+				/* read all hashes */
+				for (block_off_t k = 0; k < dealloc->blockmax; ++k) {
+					unsigned char* hash = dealloc->blockhash + k * BLOCK_HASH_SIZE;
+
+					ret = sread(f, hash, BLOCK_HASH_SIZE);
+					if (ret < 0) {
+						/* LCOV_EXCL_START */
+						decoding_error(path, f);
+						os_abort();
+						/* LCOV_EXCL_STOP */
+					}
+				}
+
+				/* insert the dealloc in the dealloc containers */
+				tommy_list_insert_tail(&disk->dealloclist, &dealloc->nodelist, dealloc);
 			}
 		} else if (c == 's') {
 			/* symlink */
@@ -3358,9 +3459,22 @@ static void* state_write_thread(void* arg)
 	count_unscrubbed = 0;
 	tommy_hashdyn_init(&bucket_hash);
 
-	/* force version 3 a we want to always store the parity size */
+	/*
+	 * Force at least version 3 a we want to always store the parity size
+	 *
+	 * If there is a dealloc list, force version 4
+	 */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		if (!tommy_list_empty(&disk->dealloclist))
+			break;
+	}
+
 	/* write header */
-	swrite("SNAPCNT3\n\3\0\0", 12, f);
+	if (i == 0)
+		swrite("SNAPCNT3\n\3\0\0", 12, f);
+	else
+		swrite("SNAPCNT4\n\3\0\0", 12, f);
 
 	/* write block size and block max */
 	sputc('z', f);
@@ -3705,6 +3819,49 @@ static void* state_write_thread(void* arg)
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
+		}
+
+		/* deallocated files of the disk */
+		if (!tommy_list_empty(&disk->dealloclist)) {
+			sputc('d', f);
+			sputb32(disk->mapping_idx, f);
+
+			uint32_t v_count = tommy_list_count(&disk->dealloclist);
+
+			sputb32(v_count, f);
+			log_tag("content_info:dealloc:%s:%u\n", esc_tag(disk->name), v_count);
+
+			/* for each file */
+			for (j = tommy_list_head(&disk->dealloclist); j != 0; j = j->next) {
+				struct snapraid_dealloc* dealloc = j->data;
+				sputbs(dealloc->sub, f);
+				sputb64(dealloc->size, f);
+				sputb64(dealloc->mtime_sec, f);
+
+				/* encode STAT_NSEC_INVALID as 0 */
+				if (dealloc->mtime_nsec == STAT_NSEC_INVALID)
+					sputb32(0, f);
+				else
+					sputb32(dealloc->mtime_nsec + 1, f);
+
+				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
+
+				/* write all hashes */
+				for (block_off_t k = 0; k < dealloc->blockmax; ++k) {
+					unsigned char* hash = dealloc->blockhash + k * BLOCK_HASH_SIZE;
+
+					swrite(hash, BLOCK_HASH_SIZE, f);
+				}
+			}
+
+			if (serror(f)) {
+				/* LCOV_EXCL_START */
+				log_fatal(errno, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+		} else {
+			log_tag("content_info:dealloc:%s:0\n", esc_tag(disk->name));
 		}
 	}
 
@@ -4648,6 +4805,20 @@ void state_write(struct snapraid_state* state)
 	state->need_write = 0; /* no write needed anymore */
 	state->checked_read = 0; /* what we wrote is not checked in read */
 	state->written = 1;
+}
+
+void state_commit(struct snapraid_state* state)
+{
+	tommy_node* i;
+
+	/* for each disk */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		/* clear the dealloc list */
+		tommy_list_foreach(&disk->dealloclist, (tommy_foreach_func*)dealloc_free);
+		tommy_list_init(&disk->dealloclist);
+	}
 }
 
 void state_skip(struct snapraid_state* state)
@@ -5840,6 +6011,22 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 			pathcpy(disk->dir, sizeof(disk->dir), vol);
 			pathcat(disk->dir, sizeof(disk->dir), "/");
 			pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+
+			/* if there is a dealloc list */
+			if (!tommy_list_empty(&disk->dealloclist)) {
+				pathcpy(vol, sizeof(vol), container);
+				pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);
+
+				/* if there is a previous snapshot */
+				if (is_dir(vol)) {
+					pathcat(vol, sizeof(vol), "/");
+					pathcat(vol, sizeof(vol), disk->mount_point + root_len);
+
+					msg_progress("Importing disk %s stable snapshot deallocated files...\n", disk->name);
+
+					state_dealloc(state, vol, &disk->dealloclist);
+				}
+			}
 		} else {
 			pathcpy(vol, sizeof(vol), container);
 			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);

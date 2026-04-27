@@ -748,6 +748,55 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, dir->sub);
 }
 
+struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec)
+{
+	struct snapraid_dealloc* dealloc;
+
+	dealloc = malloc_nofail(sizeof(struct snapraid_dealloc));
+	dealloc->sub = strdup_nofail(sub);
+	dealloc->size = size;
+	dealloc->mtime_sec = mtime_sec;
+	dealloc->mtime_nsec = mtime_nsec;
+	dealloc->blockmax = (size + block_size - 1) / block_size;
+	dealloc->blockhash = malloc_nofail(dealloc->blockmax * BLOCK_HASH_SIZE);
+
+	return dealloc;
+}
+
+void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file)
+{
+	assert(dealloc->blockmax == file->blockmax);
+
+	/* for all the blocks of the file */
+	for (block_off_t i = 0; i < dealloc->blockmax; ++i) {
+		struct snapraid_block* block = fs_file2block_get(file, i);
+		unsigned char* hash = dealloc->blockhash + i * BLOCK_HASH_SIZE;
+
+		unsigned state = block_state_get(block);
+		switch (state) {
+		case BLOCK_STATE_BLK :
+		case BLOCK_STATE_REP :
+			memcpy(hash, block->hash, BLOCK_HASH_SIZE);
+			break;
+		case BLOCK_STATE_CHG :
+			hash_invalid_set(hash);
+			break;
+		default :
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Internal inconsistency: State for dealloc block %u state %u\n", i, state);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+}
+
+void dealloc_free(struct snapraid_dealloc* dealloc)
+{
+	free(dealloc->sub);
+	free(dealloc->blockhash);
+	free(dealloc);
+}
+
 struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip_access)
 {
 	struct snapraid_disk* disk;
@@ -799,6 +848,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_hashdyn_init(&disk->linkset);
 	tommy_list_init(&disk->dirlist);
 	tommy_hashdyn_init(&disk->dirset);
+	tommy_list_init(&disk->dealloclist);
 	tommy_tree_init(&disk->fs_parity, extent_parity_compare);
 	tommy_tree_init(&disk->fs_file, extent_file_compare);
 	disk->fs_last = 0;
@@ -818,6 +868,7 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_hashdyn_done(&disk->linkset);
 	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
 	tommy_hashdyn_done(&disk->dirset);
+	tommy_list_foreach(&disk->dealloclist, (tommy_foreach_func*)dealloc_free);
 
 #if HAVE_THREAD
 	thread_mutex_destroy(&disk->fs_mutex);
