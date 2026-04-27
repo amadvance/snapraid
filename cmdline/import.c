@@ -55,6 +55,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
 	file->blockimp = malloc_nofail(file->blockmax * sizeof(struct snapraid_import_block));
+	file->is_runtime = 1;
 
 	buffer = malloc_nofail(block_size);
 
@@ -126,6 +127,52 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	free(buffer);
 }
 
+static void import_dealloc(struct snapraid_state* state, const char* dir, struct snapraid_dealloc* dealloc)
+{
+	char path[PATH_MAX];
+	struct snapraid_import_file* file;
+	block_off_t i;
+	data_off_t offset;
+	data_off_t size;
+	unsigned block_size = state->block_size;
+
+	pathcpy(path, sizeof(path), dir);
+	pathcat(path, sizeof(path), dealloc->sub);
+	size = dealloc->size;
+
+	file = malloc_nofail(sizeof(struct snapraid_import_file));
+	file->path = strdup_nofail(path);
+	file->size = size;
+	file->blockmax = (size + block_size - 1) / block_size;
+	file->blockimp = malloc_nofail(file->blockmax * sizeof(struct snapraid_import_block));
+	file->is_runtime = 0;
+
+	offset = 0;
+	for (i = 0; i < file->blockmax; ++i) {
+		struct snapraid_import_block* block = &file->blockimp[i];
+		unsigned read_size = block_size;
+		if (read_size > size)
+			read_size = size;
+
+		block->file = file;
+		block->offset = offset;
+		block->size = read_size;
+
+		memcpy(block->hash, dealloc->blockhash + i * BLOCK_HASH_SIZE, BLOCK_HASH_SIZE);
+		hash_invalid_set(block->prevhash);
+
+		/* do not insert invalid hashes */
+		if (!hash_is_invalid(block->hash))
+			tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
+		/* do not insert prevhash */
+
+		offset += read_size;
+		size -= read_size;
+	}
+
+	tommy_list_insert_tail(&state->importlist, &file->nodelist, file);
+}
+
 void import_file_free(struct snapraid_import_file* file)
 {
 	free(file->path);
@@ -157,6 +204,12 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
+		/* if no file, just skip it */
+		if (errno == ENOENT && !block->file->is_runtime) {
+			log_error(EUSER, "WARNING! Unexpected missing deallocated file '%s'.\n", path);
+			return -1;
+		}
+
 		/* LCOV_EXCL_START */
 		if (errno == ENOENT) {
 			log_fatal(errno, "DANGER! file '%s' disappeared.\n", path);
@@ -196,6 +249,12 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 		memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
 
 	if (memcmp(buffer_hash, hash, BLOCK_HASH_SIZE) != 0) {
+		/* if hash mismatch, skip it */
+		if (!block->file->is_runtime) {
+			log_error(EUSER, "WARNING! Unexpected hash mismatch from deallocated file '%s'.\n", path);
+			return -1;
+		}
+
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "Mismatch in data reading file '%s'.\n", path);
 		log_fatal(EUSER, "Please don't change imported files while running.\n");
@@ -308,5 +367,22 @@ void state_import(struct snapraid_state* state, const char* dir)
 	pathslash(path, sizeof(path));
 
 	import_dir(state, path);
+}
+
+void state_dealloc(struct snapraid_state* state, const char* dir, tommy_list* dealloclist)
+{
+	/* snapshot should be enabled */
+	if (!state->snapshot)
+		return;
+
+	/* the hash must be full */
+	if (BLOCK_HASH_SIZE != HASH_MAX)
+		return;
+
+	for (tommy_node* i = tommy_list_head(dealloclist); i != 0; i = i->next) {
+		struct snapraid_dealloc* dealloc = i->data;
+
+		import_dealloc(state, dir, dealloc);
+	}
 }
 

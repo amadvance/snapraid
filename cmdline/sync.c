@@ -1428,6 +1428,9 @@ end:
 		/* LCOV_EXCL_STOP */
 	}
 
+	/* now the parity is fully written, no need to keep deallocated files */
+	state_commit(state);
+
 	/* save the new state if required */
 	if (!state->opt.kill_after_sync) {
 		if ((state->need_write || state->opt.force_content_write))

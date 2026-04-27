@@ -51,6 +51,7 @@ int state_status(struct snapraid_state* state)
 	uint64_t file_size;
 	uint64_t file_block_count;
 	uint64_t file_block_free;
+	unsigned dealloc_count;
 	block_off_t parity_block_free;
 	uint64_t all_wasted;
 	int free_not_zero;
@@ -84,6 +85,7 @@ int state_status(struct snapraid_state* state)
 	printf("            Files  Fragments  GB      GB      GB\n");
 
 	/* count fragments */
+	dealloc_count = 0;
 	file_count = 0;
 	file_size = 0;
 	file_block_count = 0;
@@ -109,6 +111,8 @@ int state_status(struct snapraid_state* state)
 		uint64_t disk_used_bytes;
 		uint64_t disk_free_bytes;
 		int64_t wasted;
+
+		dealloc_count += tommy_list_count(&disk->dealloclist);
 
 		/* for each file in the disk */
 		node = disk->filelist;
@@ -377,6 +381,16 @@ int state_status(struct snapraid_state* state)
 	if (state->unsynced_blocks) {
 		printf("WARNING! The array is NOT fully synced.\n");
 		printf("You have a sync in progress at %u%%.\n", muldiv(blockmax - state->unsynced_blocks, 100, blockmax));
+		if (dealloc_count) {
+			printf("WARNING! There are %u files updated or deleted from the array that may reduce the recovery probability until the next sync.\n", dealloc_count);
+			for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
+				struct snapraid_disk* disk = node_disk->data;
+				for (tommy_node* node = tommy_list_head(&disk->dealloclist); node != 0; node = node->next) {
+					struct snapraid_dealloc* dealloc = node->data;
+					msg_verbose("\t%s\n", fmt_term(disk, dealloc->sub));
+				}
+			}
+		}
 	} else {
 		printf("No sync is in progress.\n");
 	}

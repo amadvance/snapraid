@@ -309,6 +309,21 @@ struct snapraid_dir {
 };
 
 /**
+ * Deallocated file.
+ */
+struct snapraid_dealloc {
+	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	data_off_t size; /**< Size of the file. */
+	int64_t mtime_sec; /**< Modification time. */
+	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or STAT_NSEC_INVALID if not present. */
+	block_off_t blockmax; /**< Number of blocks. */
+	unsigned char* blockhash; /**< Hash of all blocks. */
+
+	/* nodes for data structures */
+	tommy_node nodelist;
+};
+
+/**
  * Chunk.
  *
  * A extent represents a fragment of a file mapped into the parity.
@@ -321,7 +336,6 @@ struct snapraid_extent {
 	tommy_tree_node parity_node; /**< Tree sorted by <parity_pos>. */
 	tommy_tree_node file_node; /**< Tree sorter by <file,file_pos>. */
 };
-
 
 /**
  * Other disk.
@@ -346,9 +360,30 @@ struct snapraid_extra {
  */
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
-	char mount_point[PATH_MAX]; /**< Configured mount point of the disk. It always terminates with /. */
-	char dir[PATH_MAX]; /**< Effective mount point of the disk. It could be either the real mount point or a snapshot. It always terminates with /. */
-	char snapshot_root[PATH_MAX]; /**< Subvolume root directory. It always terminates with /. Empty if not supported. */
+
+	/**
+	 * Configured mount point of the disk.
+	 *
+	 * It always terminates with /
+	 */
+	char mount_point[PATH_MAX];
+
+	/**
+	 * Effective mount point of the disk.
+	 *
+	 * It could be either the real mount point or a snapshot.
+	 * It always terminates with /
+	 */
+	char dir[PATH_MAX];
+
+	/**
+	 * Subvolumes root directory.
+	 *
+	 * Empty if disabled.
+	 * It always terminates with /
+	 */
+	char snapshot_root[PATH_MAX];
+
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
@@ -439,6 +474,7 @@ struct snapraid_disk {
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
 	tommy_list dirlist; /**< List of all the empty dirs. */
 	tommy_hashdyn dirset; /**< Hashtable by name of all the empty dirs. */
+	tommy_list dealloclist; /**< List of all the deallocs. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -1005,6 +1041,21 @@ static inline tommy_uint32_t dir_name_hash(const char* name)
 {
 	return tommy_hash_u32(0, name, strlen(name));
 }
+
+/**
+ * Allocate a dealloc.
+ */
+struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec);
+
+/**
+ * Deallocate a dealloc.
+ */
+void dealloc_free(struct snapraid_dealloc* dealloc);
+
+/**
+ * Import file hash in the dealloc.
+ */
+void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file);
 
 /**
  * Allocate a disk.
