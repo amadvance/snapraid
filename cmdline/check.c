@@ -115,17 +115,21 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 		}
 	}
 
-	/* if nothing checked, we reject it */
-	/* note that we are excluding this case at upper level */
-	/* but checking again doesn't hurt */
+	/*
+	 * If nothing checked, we reject it
+	 * note that we are excluding this case at upper level
+	 * but checking again doesn't hurt
+	 */
 	if (!hash_checked) {
 		/* LCOV_EXCL_START */
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if we checked something, and no block failed the check */
-	/* recompute all the redundancy information */
+	/*
+	 * If we checked something, and no block failed the check
+	 * recompute all the redundancy information
+	 */
 	raid_gen(diskmax, state->level, state->block_size, buffer);
 	return 1;
 }
@@ -184,8 +188,10 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	for (i = 0; i < failed_count; ++i)
 		id[i] = failed[failed_map[i]].index;
 
-	/* check if there is at least a failed block that can be checked for correctness using the hash */
-	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
+	/*
+	 * Check if there is at least a failed block that can be checked for correctness using the hash
+	 * if there isn't, we have to sacrifice a parity block to check that the result is correct
+	 */
 	has_hash = 0;
 	for (i = 0; i < failed_count; ++i) {
 		/* if we are expected to recover this block */
@@ -196,8 +202,10 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			has_hash = 1;
 	}
 
-	/* if we don't have a hash, but we have an extra parity */
-	/* (strictly-less failures than number of parities) */
+	/*
+	 * If we don't have a hash, but we have an extra parity
+	 * (strictly-less failures than number of parities)
+	 */
 	if (!has_hash && failed_count < n) {
 		/* number of parity to use, one more to check the recovering */
 		unsigned r = failed_count + 1;
@@ -236,8 +244,10 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		} while (combination_next(r, n, ip));
 	}
 
-	/* if we have a hash, and enough parities */
-	/* (less-or-equal failures than number of parities) */
+	/*
+	 * If we have a hash, and enough parities
+	 * (less-or-equal failures than number of parities)
+	 */
 	if (has_hash && failed_count <= n) {
 		/* number of parities to use equal to the number of failures */
 		unsigned r = failed_count;
@@ -343,21 +353,27 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		}
 	}
 
-	/* Here we have to try two different strategies to recover, because in case the 'sync' */
-	/* process is aborted, we don't know if the parity data is really updated just like after 'sync', */
-	/* or if it still represents the state before the 'sync'. */
+	/*
+	 * Here we have to try two different strategies to recover, because in case the 'sync'
+	 * process is aborted, we don't know if the parity data is really updated just like after 'sync',
+	 * or if it still represents the state before the 'sync'.
+	 */
 
-	/* Note that if the 'sync' ends normally, we don't have any DELETED, REP and CHG blocks */
-	/* and the two strategies are identical */
+	/*
+	 * Note that if the 'sync' ends normally, we don't have any DELETED, REP and CHG blocks
+	 * and the two strategies are identical
+	 */
 
-	/* As first, we assume that the parity IS updated for the current state */
-	/* and that we are going to recover the state after the last 'sync'. */
-	/* In this case, parity contains info from BLK, REP and CHG blocks, */
-	/* but not for DELETED. */
-	/* We need to put in the recovering process only the bad blocks, because all the */
-	/* others already contains the correct data read from disk, and the parity is correctly computed for them. */
-	/* We are interested to recover BLK, REP and CHG blocks if they are marked as bad, */
-	/* but we are not interested in DELETED ones. */
+	/*
+	 * As first, we assume that the parity IS updated for the current state
+	 * and that we are going to recover the state after the last 'sync'.
+	 * In this case, parity contains info from BLK, REP and CHG blocks,
+	 * but not for DELETED.
+	 * We need to put in the recovering process only the bad blocks, because all the
+	 * others already contains the correct data read from disk, and the parity is correctly computed for them.
+	 * We are interested to recover BLK, REP and CHG blocks if they are marked as bad,
+	 * but we are not interested in DELETED ones.
+	 */
 
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
@@ -397,17 +413,21 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 	if (ret == 0) {
-		/* reprocess the CHG blocks, for which we don't have a hash to check */
-		/* if they were BAD we have to use some heuristics to ensure that we have recovered  */
-		/* the state after the sync. If unsure, we assume the worst case */
+		/*
+		 * Reprocess the CHG blocks, for which we don't have a hash to check
+		 * if they were BAD we have to use some heuristics to ensure that we have recovered
+		 * the state after the sync. If unsure, we assume the worst case
+		 */
 
 		for (j = 0; j < failed_count; ++j) {
 			/* we take care only of BAD blocks we have to write back */
 			if (failed[j].is_bad) {
 				unsigned block_state = block_state_get(failed[j].block);
 
-				/* BLK and REP blocks are always OK, because at this point */
-				/* we have already checked their hash */
+				/*
+				 * BLK and REP blocks are always OK, because at this point
+				 * we have already checked their hash
+				 */
 				if (block_state != BLOCK_STATE_CHG) {
 					assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);
 					continue;
@@ -415,20 +435,24 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 				/* for CHG blocks we have to 'guess' if they are correct or not */
 
-				/* if the hash is invalid we cannot check the result */
-				/* this could happen if we have lost this information */
-				/* after an aborted sync */
+				/*
+				 * If the hash is invalid we cannot check the result
+				 * this could happen if we have lost this information
+				 * after an aborted sync
+				 */
 				if (hash_is_invalid(failed[j].block->hash)) {
 					/* it may contain garbage */
 					failed[j].is_outofdate = 1;
 
 					log_tag("repair:hash_unknown:%u: Unknown hash\n", j);
 				} else if (hash_is_zero(failed[j].block->hash)) {
-					/* if the block is not filled with 0, we are sure to have */
-					/* restored it to the state after the 'sync' */
-					/* instead, if the block is filled with 0, it could be either that the */
-					/* block after the sync is really filled by 0, or that */
-					/* we restored the block before the 'sync'. */
+					/*
+					 * If the block is not filled with 0, we are sure to have
+					 * restored it to the state after the 'sync'
+					 * instead, if the block is filled with 0, it could be either that the
+					 * block after the sync is really filled by 0, or that
+					 * we restored the block before the 'sync'.
+					 */
 					if (memcmp(buffer[failed[j].index], buffer_zero, state->block_size) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
@@ -436,11 +460,13 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						log_tag("repair_hash_unknown:%u: Maybe old zero\n", j);
 					}
 				} else {
-					/* if the hash is different than the previous one, we are sure to have */
-					/* restored it to the state after the 'sync' */
-					/* instead, if the hash matches, it could be either that the */
-					/* block after the sync has this hash, or that */
-					/* we restored the block before the 'sync'. */
+					/*
+					 * If the hash is different than the previous one, we are sure to have
+					 * restored it to the state after the 'sync'
+					 * instead, if the hash matches, it could be either that the
+					 * block after the sync has this hash, or that
+					 * we restored the block before the 'sync'.
+					 */
 					unsigned pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
 					if (blockcmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index], buffer_zero) == 0) {
 						/* it may contain garbage */
@@ -462,14 +488,16 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	else
 		log_tag("recover_sync:%u:%u: Failed with %d attempts\n", pos, n, ret);
 
-	/* Now assume that the parity IS NOT updated at the current state, */
-	/* but still represent the state before the last 'sync' process. */
-	/* In this case, parity contains info from BLK, REP (old version), CHG (old version) and DELETED blocks, */
-	/* but not for REP (new version) and CHG (new version). */
-	/* We are interested to recover BLK ones marked as bad, */
-	/* but we are not interested to recover CHG (new version) and REP (new version) blocks, */
-	/* even if marked as bad, because we don't have parity for them and it's just impossible, */
-	/* and we are not interested to recover DELETED ones. */
+	/*
+	 * Now assume that the parity IS NOT updated at the current state,
+	 * but still represent the state before the last 'sync' process.
+	 * In this case, parity contains info from BLK, REP (old version), CHG (old version) and DELETED blocks,
+	 * but not for REP (new version) and CHG (new version).
+	 * We are interested to recover BLK ones marked as bad,
+	 * but we are not interested to recover CHG (new version) and REP (new version) blocks,
+	 * even if marked as bad, because we don't have parity for them and it's just impossible,
+	 * and we are not interested to recover DELETED ones.
+	 */
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
 	something_unsynced = 0; /* keep track if we have some unsynced info to process */
@@ -480,49 +508,63 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			|| block_state == BLOCK_STATE_CHG
 			|| block_state == BLOCK_STATE_REP
 		) {
-			/* If the block is CHG, REP or DELETED, we don't have the original content of block, */
-			/* and we must try to recover it. */
-			/* This applies to CHG and REP blocks even if they are not marked bad, */
-			/* because the parity is computed with old content, and not with the new one. */
-			/* Note that this recovering is done just to make it possible to recover any other BLK one, */
-			/* we are not really interested in DELETED, CHG (old version) and REP (old version). */
+			/*
+			 * If the block is CHG, REP or DELETED, we don't have the original content of block,
+			 * and we must try to recover it.
+			 * This applies to CHG and REP blocks even if they are not marked bad,
+			 * because the parity is computed with old content, and not with the new one.
+			 * Note that this recovering is done just to make it possible to recover any other BLK one,
+			 * we are not really interested in DELETED, CHG (old version) and REP (old version).
+			 */
 			something_unsynced = 1;
 
 			if (block_state == BLOCK_STATE_CHG
 				&& hash_is_zero(failed[j].block->hash)
 			) {
-				/* If the block was a ZERO block, restore it to the original 0 as before the 'sync' */
-				/* We do this to just allow recovering of other BLK ones */
+				/*
+				 * If the block was a ZERO block, restore it to the original 0 as before the 'sync'
+				 * We do this to just allow recovering of other BLK ones
+				 */
 
 				memset(buffer[failed[j].index], 0, state->block_size);
-				/* note that from now the buffer is definitely lost */
-				/* we can do this only because it's the last retry of recovering */
+				/*
+				 * Note that from now the buffer is definitely lost
+				 * we can do this only because it's the last retry of recovering
+				 */
 
 				/* try to fetch the old block using the old hash for CHG and DELETED blocks */
 			} else if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_DELETED)
 				&& hash_is_unique(failed[j].block->hash)
 				&& state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0) {
 
-				/* note that from now the buffer is definitely lost */
-				/* we can do this only because it's the last retry of recovering */
+				/*
+				 * Note that from now the buffer is definitely lost
+				 * we can do this only because it's the last retry of recovering
+				 */
 			} else {
 				/* otherwise try to recover it */
 				failed_map[n] = j;
 				++n;
 
-				/* note that we don't set something_to_recover, because we are */
-				/* not really interested to recover *only* old blocks. */
+				/*
+				 * Note that we don't set something_to_recover, because we are
+				 * not really interested to recover *only* old blocks.
+				 */
 			}
 
-			/* avoid using the hash of this block to verify the recovering */
-			/* this applies to REP blocks because we are going to recover the old state */
-			/* and the REP hash represents the new one */
-			/* it also applies to CHG and DELETE blocks because we want to have */
-			/* a successful recovering only if a BLK one is matching */
+			/*
+			 * Avoid using the hash of this block to verify the recovering
+			 * this applies to REP blocks because we are going to recover the old state
+			 * and the REP hash represents the new one
+			 * it also applies to CHG and DELETE blocks because we want to have
+			 * a successful recovering only if a BLK one is matching
+			 */
 			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
-			/* If the block is bad we don't know its content, and we try to recover it */
-			/* At this point, we can have only BLK ones */
+			/*
+			 * If the block is bad we don't know its content, and we try to recover it
+			 * At this point, we can have only BLK ones
+			 */
 
 			assert(block_state == BLOCK_STATE_BLK);
 
@@ -535,14 +577,18 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		}
 	}
 
-	/* if nothing to fix, we just don't try */
-	/* if nothing unsynced we also don't retry, because it's the same try as before */
+	/*
+	 * If nothing to fix, we just don't try
+	 * if nothing unsynced we also don't retry, because it's the same try as before
+	 */
 	if (something_to_recover && something_unsynced) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
-			/* reprocess the REP and CHG blocks, for which we have recovered an old state */
-			/* that we don't want to save into disk */
-			/* we have already marked them, but we redo it for logging */
+			/*
+			 * Reprocess the REP and CHG blocks, for which we have recovered an old state
+			 * that we don't want to save into disk
+			 * we have already marked them, but we redo it for logging
+			 */
 
 			for (j = 0; j < failed_count; ++j) {
 				/* we take care only of BAD blocks we have to write back */
@@ -552,8 +598,10 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					if (block_state == BLOCK_STATE_CHG
 						|| block_state == BLOCK_STATE_REP
 					) {
-						/* mark that we have restored an old state */
-						/* and we don't want to write it to the disk */
+						/*
+						 * Mark that we have restored an old state
+						 * and we don't want to write it to the disk
+						 */
 						failed[j].is_outofdate = 1;
 
 						log_tag("repair_hash_unknown:%u: Surely old data\n", j);
@@ -599,8 +647,11 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 {
 	unsigned j;
 	int ret;
-	/* for all the files print the final status, and do the final time fix */
-	/* we also ensure to close files after processing the last block */
+
+	/*
+	 * For all the files print the final status, and do the final time fix
+	 * we also ensure to close files after processing the last block
+	 */
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_block* block;
 		struct snapraid_disk* disk;
@@ -638,8 +689,10 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 
 		/* finish the fix process if it's the last block of the files */
 		if (fix) {
-			/* mark that we finished with this file */
-			/* to identify later any NOT finished ones */
+			/*
+			 * Mark that we finished with this file
+			 * to identify later any NOT finished ones
+			 */
 			file_flag_set(file, FILE_IS_FINISHED);
 
 			/* if the file is damaged, meaning that a fix failed */
@@ -686,8 +739,10 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				goto close_and_continue;
 			}
 
-			/* if the file is closed or different than the one expected, reopen it */
-			/* a different open file could happen when filtering for bad blocks */
+			/*
+			 * If the file is closed or different than the one expected, reopen it
+			 * a different open file could happen when filtering for bad blocks
+			 */
 			if (handle[j].file != file) {
 				/* keep a pointer at the file we are going to close for error reporting */
 				struct snapraid_file* report = handle[j].file;
@@ -700,8 +755,10 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* reopen it as readonly, as to set the mtime readonly access it's enough */
-				/* we know that the file exists because it has the FILE_IS_FIXED tag */
+				/*
+				 * Reopen it as readonly, as to set the mtime readonly access it's enough
+				 * we know that the file exists because it has the FILE_IS_FIXED tag
+				 */
 				ret = handle_open(&handle[j], file, state->file_mode, log_error, log_error); /* output a message for missing files */
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
@@ -720,14 +777,16 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			/* search for the corresponding inode */
 			collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
-			/* if the inode is already in the database and it refers to a different file name, */
-			/* we can fix the file time ONLY if the time and size allow to differentiate */
-			/* between the two files */
-
-			/* for example, suppose we delete a bunch of files with all the same size and time, */
-			/* when recreating them the inodes may be reused in a different order, */
-			/* and at the next sync some files may have matching inode/size/time even if different name */
-			/* not allowing sync to detect that the file is changed and not renamed */
+			/*
+			 * If the inode is already in the database and it refers to a different file name,
+			 * we can fix the file time ONLY if the time and size allow to differentiate
+			 * between the two files
+			 *
+			 * For example, suppose we delete a bunch of files with all the same size and time,
+			 * when recreating them the inodes may be reused in a different order,
+			 * and at the next sync some files may have matching inode/size/time even if different name
+			 * not allowing sync to detect that the file is changed and not renamed
+			 */
 			if (!collide_file /* if not in the database, there is no collision */
 				|| strcmp(collide_file->sub, file->sub) == 0 /* if the name is the same, it's the right collision */
 				|| collide_file->size != file->size /* if the size is different, the collision is identified */
@@ -750,8 +809,10 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				log_tag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, esc_tag(file->sub), esc_tag(collide_file->sub));
 			}
 		} else {
-			/* we are not fixing, but only checking */
-			/* print just the final status */
+			/*
+			 * We are not fixing, but only checking
+			 * print just the final status
+			 */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
 				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub));
 				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub));
@@ -768,12 +829,16 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 		}
 
 close_and_continue:
-		/* if the opened file is the correct one, close it */
-		/* in case of excluded and fragmented files it's possible */
-		/* that the opened file is not the current one */
+		/*
+		 * If the opened file is the correct one, close it
+		 * in case of excluded and fragmented files it's possible
+		 * that the opened file is not the current one
+		 */
 		if (handle[j].file == file) {
-			/* ensure to close the file just after finishing with it */
-			/* to avoid keeping it open without any possible use */
+			/*
+			 * Ensure to close the file just after finishing with it
+			 * to avoid keeping it open without any possible use
+			 */
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
@@ -848,8 +913,10 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 
 		block = fs_par2block_find(handle[j].disk, i);
 
-		/* try to recover all files, even the ones without hash */
-		/* because in some cases we can recover also them */
+		/*
+		 * Try to recover all files, even the ones without hash
+		 * because in some cases we can recover also them
+		 */
 		if (block_has_file(block)) {
 			struct snapraid_file* file = fs_par2file_get(handle[j].disk, i, 0);
 			if (!file_flag_has(file, FILE_IS_EXCLUDED)) { /* only if the file is not filtered out */
@@ -958,11 +1025,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			continue;
 		}
 
-		/* If we have valid parity, and it makes sense to check its content. */
-		/* If we already know that the parity is invalid, we just read the file */
-		/* but we don't report parity errors */
-		/* Note that with auditonly, we anyway skip the full parity check, */
-		/* because we also don't read it at all */
+		/*
+		 * If we have valid parity, and it makes sense to check its content.
+		 * If we already know that the parity is invalid, we just read the file
+		 * but we don't report parity errors
+		 * Note that with auditonly, we anyway skip the full parity check,
+		 * because we also don't read it at all
+		 */
 		valid_parity = 1;
 
 		/* If the parity is used by at least one file */
@@ -1008,8 +1077,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			/* if the parity is not valid */
 			if (block_has_invalid_parity(block)) {
-				/* mark the parity as invalid, and don't try to check/fix it */
-				/* because it will be recomputed at the next sync */
+				/*
+				 * Mark the parity as invalid, and don't try to check/fix it
+				 * because it will be recomputed at the next sync
+				 */
 				valid_parity = 0;
 				/* follow */
 			}
@@ -1019,8 +1090,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
 
-				/* store it in the failed set, because potentially */
-				/* the parity may be still computed with the previous content */
+				/*
+				 * Store it in the failed set, because potentially
+				 * the parity may be still computed with the previous content
+				 */
 				failed[failed_count].is_bad = 0; /* note that is_bad==0 <=> file==0 */
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
@@ -1041,9 +1114,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			/* if we are only hashing, we can skip excluded files and don't even read them */
 			if (state->opt.auditonly && file_flag_has(file, FILE_IS_EXCLUDED)) {
-				/* use an empty block */
-				/* in true, this is unnecessary, because we are not checking any parity */
-				/* but we keep it for completeness */
+				/*
+				 * Use an empty block
+				 * in true, this is unnecessary, because we are not checking any parity
+				 * but we keep it for completeness
+				 */
 				memset(buffer[j], 0, state->block_size);
 				continue;
 			}
@@ -1081,8 +1156,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 					/* check if the file was just created */
 					if (handle[j].created != 0) {
-						/* if fragmented, it may be reopened, so remember that the file */
-						/* was originally missing */
+						/*
+						 * If fragmented, it may be reopened, so remember that the file
+						 * was originally missing
+						 */
 						file_flag_set(file, FILE_IS_CREATED);
 					}
 				} else {
@@ -1113,9 +1190,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							++soft_error;
 						}
 
-						/* mark the file as missing, to avoid to retry to open it again */
-						/* note that this can be done only if we are not fixing it */
-						/* otherwise, it could be recreated */
+						/*
+						 * Mark the file as missing, to avoid to retry to open it again
+						 * note that this can be done only if we are not fixing it
+						 * otherwise, it could be recreated
+						 */
 						file_flag_set(file, FILE_IS_MISSING);
 						continue;
 					}
@@ -1164,9 +1243,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				}
 
-				/* mark the file as opened at least one time */
-				/* this is used to avoid to check the unsynced and size */
-				/* more than one time, in case the file is reopened later */
+				/*
+				 * Mark the file as opened at least one time
+				 * this is used to avoid to check the unsynced and size
+				 * more than one time, in case the file is reopened later
+				 */
 				file_flag_set(file, FILE_IS_OPENED);
 			}
 
@@ -1207,12 +1288,16 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			countsize += read_size;
 
-			/* always insert CHG blocks, the repair functions needs all of them */
-			/* because the parity may be still referring at the old state */
-			/* and the repair must be aware of it */
+			/*
+			 * Always insert CHG blocks, the repair functions needs all of them
+			 * because the parity may be still referring at the old state
+			 * and the repair must be aware of it
+			 */
 			if (block_state == BLOCK_STATE_CHG) {
-				/* we DO NOT mark them as bad to avoid to overwrite them with wrong data. */
-				/* if we don't have a hash, we always assume the first read of the block correct. */
+				/*
+				 * We DO NOT mark them as bad to avoid to overwrite them with wrong data.
+				 * if we don't have a hash, we always assume the first read of the block correct.
+				 */
 				failed[failed_count].is_bad = 0; /* we assume the CHG block correct */
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
@@ -1254,9 +1339,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				continue;
 			}
 
-			/* always insert REP blocks, the repair functions needs all of them */
-			/* because the parity may be still referring at the old state */
-			/* and the repair must be aware of it */
+			/*
+			 * Always insert REP blocks, the repair functions needs all of them
+			 * because the parity may be still referring at the old state
+			 * and the repair must be aware of it
+			 */
 			if (block_state == BLOCK_STATE_REP) {
 				failed[failed_count].is_bad = 0; /* it's not bad */
 				failed[failed_count].is_outofdate = 0;
@@ -1325,9 +1412,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 				}
 			} else {
-				/* now counts partial recovers */
-				/* note that this could happen only when we have an incomplete 'sync' */
-				/* and that we have recovered is the state before the 'sync' */
+				/*
+				 * Now counts partial recovers
+				 * note that this could happen only when we have an incomplete 'sync'
+				 * and that we have recovered is the state before the 'sync'
+				 */
 				int partial_recover_error = 0;
 
 				/* print a list of all the errors in files */
@@ -1401,8 +1490,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							continue;
 						}
 
-						/* mark the file as containing some fixes */
-						/* note that it could be also marked as damaged in other iterations */
+						/*
+						 * Mark the file as containing some fixes
+						 * note that it could be also marked as damaged in other iterations
+						 */
 						file_flag_set(failed[j].file, FILE_IS_FIXED);
 
 						log_tag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
@@ -1447,8 +1538,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						}
 					}
 				} else {
-					/* if we are not fixing, we just set the FIXED flag */
-					/* meaning that we could fix this file if we try */
+					/*
+					 * If we are not fixing, we just set the FIXED flag
+					 * meaning that we could fix this file if we try
+					 */
 					for (j = 0; j < failed_count; ++j) {
 						if (failed[j].is_bad) {
 							file_flag_set(failed[j].file, FILE_IS_FIXED);
@@ -1457,8 +1550,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 			}
 		} else {
-			/* if we are not checking, we just set the DAMAGED flag */
-			/* to report that the file is damaged, and we don't know if we can fix it */
+			/*
+			 * If we are not checking, we just set the DAMAGED flag
+			 * to report that the file is damaged, and we don't know if we can fix it
+			 */
 			for (j = 0; j < failed_count; ++j) {
 				if (failed[j].is_bad) {
 					file_flag_set(failed[j].file, FILE_IS_DAMAGED);
@@ -1578,8 +1673,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* create it */
-				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
+				/*
+				 * Create it
+				 * O_NOFOLLOW: do not follow links to ensure to open the real file
+				 */
 				f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
@@ -1684,11 +1781,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (errno == ENOENT) {
 						unrecoverable = 1;
 						if (fix) {
-							/* if the target doesn't exist, it's unrecoverable */
-							/* because we cannot create an hardlink of a file that */
-							/* doesn't exists */
-							/* but in check, we can assume that fixing will recover */
-							/* such missing file, so we assume a less drastic error */
+							/*
+							 * If the target doesn't exist, it's unrecoverable
+							 * because we cannot create an hardlink of a file that
+							 * doesn't exists
+							 * but in check, we can assume that fixing will recover
+							 * such missing file, so we assume a less drastic error
+							 */
 							++unrecoverable_error;
 						}
 					}
@@ -1914,8 +2013,10 @@ bail:
 		}
 	}
 
-	/* remove all the files created from scratch that have not finished the processing */
-	/* it happens only when aborting pressing Ctrl+C or other reason. */
+	/*
+	 * Remove all the files created from scratch that have not finished the processing
+	 * it happens only when aborting pressing Ctrl+C or other reason.
+	 */
 	if (fix) {
 		/* for each disk */
 		for (i = 0; i < diskmax; ++i) {
@@ -1947,9 +2048,11 @@ bail:
 					continue;
 				}
 
-				/* if the file was originally missing, and processing not yet finished */
-				/* we have to throw it away  to ensure that at the next run we will retry */
-				/* to fix it, in case we select to undelete missing files */
+				/*
+				 * If the file was originally missing, and processing not yet finished
+				 * we have to throw it away  to ensure that at the next run we will retry
+				 * to fix it, in case we select to undelete missing files
+				 */
 				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
 				ret = remove(path);
@@ -2097,8 +2200,10 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	}
 
 	if (fix) {
-		/* if fixing, create the file and open for writing */
-		/* if it fails, we cannot continue */
+		/*
+		 * If fixing, create the file and open for writing
+		 * if it fails, we cannot continue
+		 */
 		for (l = 0; l < state->level; ++l) {
 			/* skip parity disks that are not accessible */
 			if (state->parity[l].skip_access) {
@@ -2144,8 +2249,10 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			}
 		}
 	} else if (!state->opt.auditonly) {
-		/* if checking, open the file for reading */
-		/* it may fail if the file doesn't exist, in this case we continue to check the files */
+		/*
+		 * If checking, open the file for reading
+		 * it may fail if the file doesn't exist, in this case we continue to check the files
+		 */
 		for (l = 0; l < state->level; ++l) {
 			parity_ptr[l] = &parity[l];
 			ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);

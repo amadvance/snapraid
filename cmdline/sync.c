@@ -133,8 +133,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					/* This one is really an unexpected error, because we are only reading */
-					/* and closing a descriptor should never fail */
+					/*
+					 * This one is really an unexpected error, because we are only reading
+					 * and closing a descriptor should never fail
+					 */
 					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping at block %u\n", blockcur);
@@ -156,8 +158,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					log_error_errno(errno, disk->name);
 
 					++soft_error;
-					/* if the file is missing, it means that it was removed during sync */
-					/* this isn't a serious error, so we skip this block, and continue with others */
+					/*
+					 * If the file is missing, it means that it was removed during sync
+					 * this isn't a serious error, so we skip this block, and continue with others
+					 */
 					continue;
 				}
 
@@ -204,8 +208,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 				++soft_error;
 
-				/* if the file is changed, it means that it was modified during sync */
-				/* this isn't a serious error, so we skip this block, and continue with others */
+				/*
+				 * If the file is changed, it means that it was modified during sync
+				 * this isn't a serious error, so we skip this block, and continue with others
+				 */
 				continue;
 			}
 
@@ -295,8 +301,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			ret = handle_close(&handle[j]);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
-				/* This one is really an unexpected error, because we are only reading */
-				/* and closing a descriptor should never fail */
+				/*
+				 * This one is really an unexpected error, because we are only reading
+				 * and closing a descriptor should never fail
+				 */
 				log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(report->sub), strerror(errno));
 				log_fatal_errno(errno, disk->name);
 				log_fatal(errno, "Stopping at block %u\n", blockmax);
@@ -315,8 +323,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 end:
 	state_progress_end(state, countpos, countmax, countsize, "Nothing to hash.\n");
 
-	/* note that at this point no io_error is possible */
-	/* because at the first one we bail out */
+	/*
+	 * Note that at this point no io_error is possible
+	 * because at the first one we bail out
+	 */
 	assert(io_error == 0);
 
 	if (soft_error || io_error || silent_error) {
@@ -471,8 +481,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	/* get the block */
 	task->block = fs_par2block_find(disk, blockcur);
 
-	/* if the block has no file, meaning that it's EMPTY or DELETED, */
-	/* it doesn't participate in the new parity computation */
+	/*
+	 * If the block has no file, meaning that it's EMPTY or DELETED,
+	 * it doesn't participate in the new parity computation
+	 */
 	if (!block_has_file(task->block)) {
 		/* use an empty block */
 		memset(buffer, 0, state->block_size);
@@ -490,8 +502,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		ret = handle_close(handle);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			/* This one is really an unexpected error, because we are only reading */
-			/* and closing a descriptor should never fail */
+			/*
+			 * This one is really an unexpected error, because we are only reading
+			 * and closing a descriptor should never fail
+			 */
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
@@ -512,8 +526,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		if (errno == ENOENT) {
 			log_error_errno(errno, disk->name);
 
-			/* if the file is missing, it means that it was removed during sync */
-			/* this isn't a serious error, so we skip this block, and continue with others */
+			/*
+			 * If the file is missing, it means that it was removed during sync
+			 * this isn't a serious error, so we skip this block, and continue with others
+			 */
 			task->state = TASK_STATE_ERROR_CONTINUE;
 			return;
 		}
@@ -557,8 +573,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		}
 		log_error_errno(ENOENT, disk->name); /* same message for ENOENT */
 
-		/* if the file is changed, it means that it was modified during sync */
-		/* this isn't a serious error, so we skip this block, and continue with others */
+		/*
+		 * If the file is changed, it means that it was modified during sync
+		 * this isn't a serious error, so we skip this block, and continue with others
+		 */
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
 	}
@@ -701,9 +719,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		++countmax;
 	}
 
-	/* compute the autosave size for all disk, even if not read */
-	/* this makes sense because the speed should be almost the same */
-	/* if the disks are read in parallel */
+	/*
+	 * Compute the autosave size for all disk, even if not read
+	 * this makes sense because the speed should be almost the same
+	 * if the disks are read in parallel
+	 */
 	autosavelimit = state->autosave / (diskmax * state->block_size);
 	autosavemissing = countmax; /* blocks to do */
 	autosavedone = 0; /* blocks done */
@@ -781,8 +801,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* if the parity is going to be updated */
 		parity_going_to_be_updated = 0;
 
-		/* if the block is marked as bad, we force the parity update */
-		/* because the bad block may be the result of a wrong parity */
+		/*
+		 * If the block is marked as bad, we force the parity update
+		 * because the bad block may be the result of a wrong parity
+		 */
 		if (info_get_bad(info))
 			parity_needs_to_be_updated = 1;
 
@@ -825,26 +847,34 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* get the state of the block */
 			block_state = block_state_get(block);
 
-			/* if the block has invalid parity, */
-			/* we have to take care of it in case of recover */
+			/*
+			 * If the block has invalid parity,
+			 * we have to take care of it in case of recover
+			 */
 			if (block_has_invalid_parity(block)) {
-				/* store it in the failed set, because */
-				/* the parity may be still computed with the previous content */
+				/*
+				 * Store it in the failed set, because
+				 * the parity may be still computed with the previous content
+				 */
 				failed[failed_count].index = diskcur;
 				failed[failed_count].size = state->block_size;
 				failed[failed_count].block = block;
 				++failed_count;
 
-				/* if the block has invalid parity, we have to update the parity */
-				/* to include this block change */
-				/* This also apply to CHG blocks, but we are going to handle */
-				/* later this case to do the updates only if really needed */
+				/*
+				 * If the block has invalid parity, we have to update the parity
+				 * to include this block change
+				 * This also apply to CHG blocks, but we are going to handle
+				 * later this case to do the updates only if really needed
+				 */
 				if (block_state != BLOCK_STATE_CHG)
 					parity_needs_to_be_updated = 1;
 
-				/* note that DELETE blocks are skipped in the next check */
-				/* and we have to store them in the failed blocks */
-				/* before skipping */
+				/*
+				 * Note that DELETE blocks are skipped in the next check
+				 * and we have to store them in the failed blocks
+				 * before skipping
+				 */
 
 				/* follow */
 			}
@@ -928,8 +958,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 						++soft_error;
 
-						/* if the file is changed, it means that it was modified during sync */
-						/* this isn't a serious error, so we skip this block, and continue with others */
+						/*
+						 * If the file is changed, it means that it was modified during sync
+						 * this isn't a serious error, so we skip this block, and continue with others
+						 */
 						error_on_this_block = 1;
 						continue;
 					} else { /* otherwise it's a BLK with silent error */
@@ -943,9 +975,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						failed[failed_count].block = block;
 						++failed_count;
 
-						/* silent errors are very rare, and are not a signal that a disk */
-						/* is going to fail. So, we just continue marking the block as bad */
-						/* just like in scrub */
+						/*
+						 * Silent errors are very rare, and are not a signal that a disk
+						 * is going to fail. So, we just continue marking the block as bad
+						 * just like in scrub
+						 */
 						++silent_error;
 						silent_error_on_this_block = 1;
 						continue;
@@ -954,9 +988,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			} else {
 				/* if until now the parity doesn't need to be updated */
 				if (!parity_needs_to_be_updated) {
-					/* for sure it's a CHG block, because EMPTY are processed before with "continue" */
-					/* and BLK and REP have "block_has_updated_hash()" as 1, and all the others */
-					/* have "parity_needs_to_be_updated" already at 1 */
+					/*
+					 * For sure it's a CHG block, because EMPTY are processed before with "continue"
+					 * and BLK and REP have "block_has_updated_hash()" as 1, and all the others
+					 * have "parity_needs_to_be_updated" already at 1
+					 */
 					assert(block_state_get(block) == BLOCK_STATE_CHG);
 
 					/*
@@ -1003,25 +1039,33 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					}
 				}
 
-				/* copy the hash in the block, but doesn't mark the block as hashed */
-				/* this allow in case of skipped block to do not save the failed computation */
+				/*
+				 * Copy the hash in the block, but doesn't mark the block as hashed
+				 * this allow in case of skipped block to do not save the failed computation
+				 */
 				memcpy(block->hash, hash, BLOCK_HASH_SIZE);
 
-				/* note that in case of rehash, this is the wrong hash, */
-				/* but it will be overwritten later */
+				/*
+				 * Note that in case of rehash, this is the wrong hash,
+				 * but it will be overwritten later
+				 */
 			}
 		}
 
-		/* if we have only silent errors we can try to fix them on-the-fly */
-		/* note the fix is not written to disk, but used only to */
-		/* compute the new parity */
+		/*
+		 * If we have only silent errors we can try to fix them on-the-fly
+		 * note the fix is not written to disk, but used only to
+		 * compute the new parity
+		 */
 		if (!error_on_this_block && !io_error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
 			int something_to_recover = 0;
 
-			/* sort the failed vector */
-			/* because with threads it may be in any order */
-			/* but RAID requires the indexes to be sorted */
+			/*
+			 * Sort the failed vector
+			 * because with threads it may be in any order
+			 * but RAID requires the indexes to be sorted
+			 */
 			qsort(failed, failed_count, sizeof(failed[0]), failed_compare_by_index);
 
 			/* setup the blocks to recover */
@@ -1035,15 +1079,19 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				if (block_state == BLOCK_STATE_BLK)
 					something_to_recover = 1;
 
-				/* save a copy of the content just read */
-				/* that it's going to be overwritten by the recovering function */
+				/*
+				 * Save a copy of the content just read
+				 * that it's going to be overwritten by the recovering function
+				 */
 				memcpy(block_copy, block_buffer, state->block_size);
 
 				if (block_state == BLOCK_STATE_CHG
 					&& hash_is_zero(failed[j].block->hash)
 				) {
-					/* if the block was filled with 0, restore this state */
-					/* and avoid to recover it */
+					/*
+					 * If the block was filled with 0, restore this state
+					 * and avoid to recover it
+					 */
 					memset(block_buffer, 0, state->block_size);
 				} else {
 					/* if we have too many failures, we cannot recover */
@@ -1060,9 +1108,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* until now is misc */
 				state_usage_misc(state);
 
-				/* read the parity */
-				/* we are sure that parity exists because */
-				/* we have at least one BLK block */
+				/*
+				 * Read the parity
+				 * we are sure that parity exists because
+				 * we have at least one BLK block
+				 */
 				for (l = 0; l < state->level; ++l) {
 					ret = parity_read(&parity_handle[l], blockcur, buffer[diskmax + l], state->block_size, log_error);
 					if (ret == -1) {
@@ -1095,10 +1145,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* if no error in parity read */
 				if (!io_error_on_this_block) {
-					/* try to fix the data */
-					/* note that this is a simple fix algorithm, that doesn't take into */
-					/* account the case of a wrong parity */
-					/* only 'fix' supports the most advanced fixing */
+					/*
+					 * Try to fix the data
+					 * note that this is a simple fix algorithm, that doesn't take into
+					 * account the case of a wrong parity
+					 * only 'fix' supports the most advanced fixing
+					 */
 					raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
 
 					/* until now is raid */
@@ -1134,9 +1186,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 							if (size < state->block_size)
 								memset(block_buffer + size, 0, state->block_size - size);
 						} else {
-							/* otherwise restore the content */
-							/* because we are not interested in the old state */
-							/* that it's recovered for CHG, REP and DELETED blocks */
+							/*
+							 * Otherwise restore the content
+							 * because we are not interested in the old state
+							 * that it's recovered for CHG, REP and DELETED blocks
+							 */
 							memcpy(block_buffer, block_copy, state->block_size);
 						}
 					}
@@ -1189,11 +1243,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				block_state_set(block, BLOCK_STATE_BLK);
 			}
 
-			/* we update the info block only if we really have updated the parity */
-			/* because otherwise the time/justsynced info would be misleading as we didn't */
-			/* wrote the parity at this time */
-			/* we also update the info block only if no silent error was found */
-			/* because has no sense to refresh the time for data that we know bad */
+			/*
+			 * We update the info block only if we really have updated the parity
+			 * because otherwise the time/justsynced info would be misleading as we didn't
+			 * wrote the parity at this time
+			 * we also update the info block only if no silent error was found
+			 * because has no sense to refresh the time for data that we know bad
+			 */
 			if (parity_needs_to_be_updated
 				&& !silent_error_on_this_block
 			) {
@@ -1206,24 +1262,30 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					}
 				}
 
-				/* update the time info of the block */
-				/* we are also clearing any previous bad and rehash flag */
+				/*
+				 * Update the time info of the block
+				 * we are also clearing any previous bad and rehash flag
+				 */
 				info_set(&state->infoarr, blockcur, info_make(now, 0, 0, 1));
 			}
 		}
 
-		/* if a silent (even if corrected) or input/output error was found */
-		/* mark the block as bad to have check/fix to handle it */
-		/* because our correction is in memory only and not yet written */
+		/*
+		 * If a silent (even if corrected) or input/output error was found
+		 * mark the block as bad to have check/fix to handle it
+		 * because our correction is in memory only and not yet written
+		 */
 		if (silent_error_on_this_block || io_error_on_this_block) {
 			/* set the error status keeping the other info */
 			info_set(&state->infoarr, blockcur, info_set_bad(info));
 		}
 
-		/* finally schedule parity write */
-		/* Note that the calls to io_parity_write() are mandatory */
-		/* even if the parity doesn't need to be updated */
-		/* This because we want to keep track of the time usage */
+		/*
+		 * Finally schedule parity write
+		 * Note that the calls to io_parity_write() are mandatory
+		 * even if the parity doesn't need to be updated
+		 * This because we want to keep track of the time usage
+		 */
 		state_usage_misc(state);
 
 		/* write start */
@@ -1327,8 +1389,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			msg_progress("Autosaving...\n");
 
-			/* before writing the new content file we ensure that */
-			/* the parity is really written flushing the disk cache */
+			/*
+			 * Before writing the new content file we ensure that
+			 * the parity is really written flushing the disk cache
+			 */
 			ret = state_flush(state, &io, parity_handle, blockcur);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
@@ -1351,8 +1415,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 end:
 	state_progress_end(state, countpos, countmax, countsize, "Nothing to sync.\n");
 
-	/* before returning we ensure that */
-	/* the parity is really written flushing the disk cache */
+	/*
+	 * Before returning we ensure that
+	 * the parity is really written flushing the disk cache
+	 */
 	ret = state_flush(state, &io, parity_handle, blockcur);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
@@ -1558,9 +1624,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		for (l = 0; l < state->level; ++l) {
 			int is_modified;
 
-			/* change the size of the parity file, truncating or extending it */
-			/* from this point all the DELETED blocks after the end of the parity are invalid */
-			/* and they are automatically removed when we save the new content file */
+			/*
+			 * Change the size of the parity file, truncating or extending it
+			 * from this point all the DELETED blocks after the end of the parity are invalid
+			 * and they are automatically removed when we save the new content file
+			 */
 			ret = parity_chsize(&parity_handle[l], &state->parity[l], &is_modified, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
