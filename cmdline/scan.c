@@ -264,8 +264,10 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 
 			/* if the block is an empty one */
 			if (over_state == BLOCK_STATE_EMPTY) {
-				/* the block was empty and filled with zeros */
-				/* set the hash to the special ZERO value */
+				/*
+				 * The block was empty and filled with zeros
+				 * set the hash to the special ZERO value
+				 */
 				hash_zero_set(block->hash);
 			} else {
 				/* otherwise it's a DELETED one */
@@ -325,10 +327,12 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	/* state changed */
 	scan->need_write = 1;
 
-	/* here we are supposed to adjust the ::first_free_block position */
-	/* with the parity position we are deleting */
-	/* but we also know that we do only delayed insert, after all the deletion, */
-	/* so at this point ::first_free_block is always at 0, and we don't need to update it */
+	/*
+	 * Here we are supposed to adjust the ::first_free_block position
+	 * with the parity position we are deleting
+	 * but we also know that we do only delayed insert, after all the deletion,
+	 * so at this point ::first_free_block is always at 0, and we don't need to update it
+	 */
 	if (disk->first_free_block != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Internal inconsistency for first free position at '%u' deallocating file '%s'\n", disk->first_free_block, file->sub);
@@ -341,8 +345,10 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 		struct snapraid_block* block = fs_file2block_get(file, i);
 		unsigned block_state;
 
-		/* in case we scan after an aborted sync, */
-		/* we could get also intermediate states */
+		/*
+		 * In case we scan after an aborted sync,
+		 * we could get also intermediate states
+		 */
 		block_state = block_state_get(block);
 		switch (block_state) {
 		case BLOCK_STATE_BLK :
@@ -603,9 +609,11 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			log_fatal(ESOFT, "DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_ino, (uint64_t)synced_st.st_ino, sub);
 			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
-			/* at this point, it's too late to change inode */
-			/* and having inconsistent inodes may result to internal failures */
-			/* so, it's better to abort */
+			/*
+			 * At this point, it's too late to change inode
+			 * and having inconsistent inodes may result to internal failures
+			 * so, it's better to abort
+			 */
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -729,8 +737,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	 */
 	int has_past_inodes = !disk->has_volatile_inodes && !disk->has_different_uuid && !disk->has_unsupported_uuid;
 
-	/* always search with the new inode, in the all new inodes found until now, */
-	/* with the eventual presence of also the past inodes */
+	/*
+	 * Always search with the new inode, in the all new inodes found until now,
+	 * with the eventual presence of also the past inodes
+	 */
 	uint64_t inode = st->st_ino;
 
 	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
@@ -741,9 +751,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
 			&& (file->mtime_nsec == STAT_NSEC(st)
-		        /* always accept the stored value if it's STAT_NSEC_INVALID */
-		        /* it happens when upgrading from an old version of SnapRAID */
-		        /* not yet supporting the nanosecond field */
+		        /*
+		         * Always accept the stored value if it's STAT_NSEC_INVALID
+		         * it happens when upgrading from an old version of SnapRAID
+		         * not yet supporting the nanosecond field
+		         */
 			|| file->mtime_nsec == STAT_NSEC_INVALID
 			)
 		) {
@@ -765,8 +777,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
-			/* update the nanoseconds mtime only if different */
-			/* to avoid unneeded updates */
+			/*
+			 * Update the nanoseconds mtime only if different
+			 * to avoid unneeded updates
+			 */
 			if (file->mtime_nsec == STAT_NSEC_INVALID
 				&& STAT_NSEC(st) != file->mtime_nsec
 			) {
@@ -851,18 +865,22 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* assume a previously used inode, it's the worst case */
-		/* and we handle it removing the duplicate stored inode. */
-		/* If the file is found by name later, it will have the inode restored, */
-		/* otherwise, it will get removed */
+		/*
+		 * Assume a previously used inode, it's the worst case
+		 * and we handle it removing the duplicate stored inode.
+		 * If the file is found by name later, it will have the inode restored,
+		 * otherwise, it will get removed
+		 */
 
 		/* remove from the inode set */
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 
-		/* clear the inode */
-		/* this is not really needed for correct functionality */
-		/* because we are going to set FILE_IS_WITHOUT_INODE */
-		/* but it's easier for debugging to have invalid inodes set to 0 */
+		/*
+		 * Clear the inode
+		 * this is not really needed for correct functionality
+		 * because we are going to set FILE_IS_WITHOUT_INODE
+		 * but it's easier for debugging to have invalid inodes set to 0
+		 */
 		file->inode = 0;
 
 		/* mark as missing inode */
@@ -914,17 +932,21 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
 			&& (file->mtime_nsec == STAT_NSEC(st)
-		        /* always accept the stored value if it's STAT_NSEC_INVALID */
-		        /* it happens when upgrading from an old version of SnapRAID */
-		        /* not yet supporting the nanosecond field */
+		        /*
+		         * Always accept the stored value if it's STAT_NSEC_INVALID
+		         * it happens when upgrading from an old version of SnapRAID
+		         * not yet supporting the nanosecond field
+		         */
 			|| file->mtime_nsec == STAT_NSEC_INVALID
 			)
 		) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
-			/* update the nano seconds mtime only if different */
-			/* to avoid unneeded updates */
+			/*
+			 * Update the nano seconds mtime only if different
+			 * to avoid unneeded updates
+			 */
 			if (file->mtime_nsec == STAT_NSEC_INVALID
 				&& STAT_NSEC(st) != STAT_NSEC_INVALID
 			) {
@@ -936,11 +958,13 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			/* if when processing the disk we used the past inodes values */
 			if (has_past_inodes) {
-				/* if persistent inodes are supported, we are sure that the inode number */
-				/* is now different, because otherwise the file would have been found */
-				/* when searching by inode. */
-				/* if the inode is different, it means a rewritten file with the same path */
-				/* like when restoring a backup that restores also the timestamp */
+				/*
+				 * If persistent inodes are supported, we are sure that the inode number
+				 * is now different, because otherwise the file would have been found
+				 * when searching by inode.
+				 * if the inode is different, it means a rewritten file with the same path
+				 * like when restoring a backup that restores also the timestamp
+				 */
 				++scan->count_restore;
 
 				log_tag("scan:restore:%s:%s\n", disk->name, esc_tag(sub));
@@ -960,9 +984,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* we have to save the new inode */
 				scan->need_write = 1;
 			} else {
-				/* otherwise it's the case of not persistent inode, where doesn't */
-				/* matter if the inode is different or equal, because they have no */
-				/* meaning, and then we don't even save them */
+				/*
+				 * Otherwise it's the case of not persistent inode, where doesn't
+				 * matter if the inode is different or equal, because they have no
+				 * meaning, and then we don't even save them
+				 */
 				++scan->count_equal;
 
 				if (state->opt.gui_verbose) {
@@ -997,15 +1023,19 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		file_already_present_mtime_nsec = 0;
 	}
 
-	/* refresh the info, to ensure that they are synced, */
-	/* note that we refresh only the info of the new or modified files */
-	/* because this is slow operation */
+	/*
+	 * Refresh the info, to ensure that they are synced,
+	 * note that we refresh only the info of the new or modified files
+	 * because this is slow operation
+	 */
 	scan_file_refresh(scan, sub, st, &physical);
 
 #ifndef _WIN32
-	/* do a safety check to ensure that the common ext4 case of zeroing */
-	/* the size of a file after a crash doesn't propagate to the backup */
-	/* this check is specific for Linux, so we disable it on Windows */
+	/*
+	 * Do a safety check to ensure that the common ext4 case of zeroing
+	 * the size of a file after a crash doesn't propagate to the backup
+	 * this check is specific for Linux, so we disable it on Windows
+	 */
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
@@ -1030,11 +1060,13 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
 
-	/* if copy detection is enabled */
-	/* note that the copy detection is tried also for updated files */
-	/* this makes sense because it may happen to have two different copies */
-	/* of the same file, and we move the right one over the wrong one */
-	/* in such case we have a "copy" over an "update" */
+	/*
+	 * If copy detection is enabled
+	 * note that the copy detection is tried also for updated files
+	 * this makes sense because it may happen to have two different copies
+	 * of the same file, and we move the right one over the wrong one
+	 * in such case we have a "copy" over an "update"
+	 */
 	if (!state->opt.force_nocopy) {
 		tommy_uint32_t hash = file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec);
 
@@ -1044,8 +1076,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			struct snapraid_file* other_file;
 
 			stamp_lock(other_disk);
-			/* if the nanosecond part of the time stamp is valid, search */
-			/* for name and stamp, otherwise for path and stamp */
+			/*
+			 * If the nanosecond part of the time stamp is valid, search
+			 * for name and stamp, otherwise for path and stamp
+			 */
 			if (file->mtime_nsec != 0 && file->mtime_nsec != STAT_NSEC_INVALID)
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_namestamp_compare, file, hash);
 			else
@@ -1098,8 +1132,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		}
 	}
 
-	/* if not yet reported, do it now */
-	/* we postpone this to avoid to print two times the copied files */
+	/*
+	 * If not yet reported, do it now
+	 * we postpone this to avoid to print two times the copied files
+	 */
 	if (!is_file_reported) {
 		if (is_file_already_present) {
 			++scan->count_change;
@@ -1389,15 +1425,19 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 	}
 
 	if (state->opt.force_order == SORT_ALPHA) {
-		/* if requested sort alphabetically */
-		/* this is mainly done for testing to ensure to always */
-		/* process in the same way in different platforms */
+		/*
+		 * If requested sort alphabetically
+		 * this is mainly done for testing to ensure to always
+		 * process in the same way in different platforms
+		 */
 		tommy_list_sort(&list, dd_name_compare);
 	}
 #if HAVE_STRUCT_DIRENT_D_INO
 	else if (!disk->has_volatile_inodes) {
-		/* if inodes are persistent */
-		/* sort the list of dir entries by inodes */
+		/*
+		 * If inodes are persistent
+		 * sort the list of dir entries by inodes
+		 */
 		tommy_list_sort(&list, dd_ino_compare);
 	}
 	/* otherwise just keep the insertion order */
@@ -1439,11 +1479,13 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			st = DSTAT(path_next, dd, &st_buf);
 
 #if HAVE_STRUCT_DIRENT_D_STAT
-			/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-			/* at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined), */
-			/* because we use a directory reading method that doesn't read info about ReparsePoint. */
-			/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
-			/* of file is it, and lstat_sync() doesn't always work */
+			/*
+			 * If the st_mode field is missing, takes care to fill it using normal lstat()
+			 * at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined),
+			 * because we use a directory reading method that doesn't read info about ReparsePoint.
+			 * Note that here we cannot call here lstat_sync(), because we don't know what kind
+			 * of file is it, and lstat_sync() doesn't always work
+			 */
 			if (st->st_mode == 0) {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
@@ -1474,8 +1516,10 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 					st = DSTAT(path_next, dd, &st_buf);
 
 #if HAVE_LSTAT_SYNC
-				/* if the st_ino field is missing, takes care to fill it using the extended lstat() */
-				/* this can happen only in Windows */
+				/*
+				 * If the st_ino field is missing, takes care to fill it using the extended lstat()
+				 * this can happen only in Windows
+				 */
 				if (st->st_ino == 0 || st->st_nlink == 0) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
@@ -1625,10 +1669,12 @@ static void* scan_disk(void* arg)
 
 	/* if inodes or UUID are not persistent/changed/unsupported */
 	if (disk->has_volatile_inodes || disk->has_different_uuid || disk->has_unsupported_uuid) {
-		/* remove all the inodes from the inode collection */
-		/* if they are not persistent, all of them could be changed now */
-		/* and we don't want to find false matching ones */
-		/* see scan_file() for more details */
+		/*
+		 * Remove all the inodes from the inode collection
+		 * if they are not persistent, all of them could be changed now
+		 * and we don't want to find false matching ones
+		 * See scan_file() for more details
+		 */
 		tommy_node* node = disk->filelist;
 		while (node) {
 			struct snapraid_file* file = node->data;
@@ -1709,9 +1755,11 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 #endif
 
-	/* we split the search in two phases because to detect files */
-	/* moved from one disk to another we have to start deletion */
-	/* only when all disks have all the new files found */
+	/*
+	 * We split the search in two phases because to detect files
+	 * moved from one disk to another we have to start deletion
+	 * only when all disks have all the new files found
+	 */
 
 	/* now process all the new and deleted files */
 	for (i = scanlist; i != 0; i = i->next) {
@@ -1781,9 +1829,11 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			}
 		}
 
-		/* sort the files before inserting them */
-		/* we use a stable sort to ensure that if the reported physical offset/inode */
-		/* are always 0, we keep at least the directory order */
+		/*
+		 * Sort the files before inserting them
+		 * we use a stable sort to ensure that if the reported physical offset/inode
+		 * are always 0, we keep at least the directory order
+		 */
 		switch (state->opt.force_order) {
 		case SORT_PHYSICAL :
 			tommy_list_sort(&scan->file_insert_list, file_physical_compare);
@@ -1799,9 +1849,11 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			break;
 		}
 
-		/* insert all the new files, we insert them only after the deletion */
-		/* to reuse the just freed space */
-		/* also check if the physical offset reported are fakes or not */
+		/*
+		 * Insert all the new files, we insert them only after the deletion
+		 * to reuse the just freed space
+		 * also check if the physical offset reported are fakes or not
+		 */
 		node = scan->file_insert_list;
 		phy_dup = 0;
 		phy_last = FILEPHY_UNREAD_OFFSET;
@@ -1815,8 +1867,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				        /* files without offset are expected to have duplicates */
 					&& phy_last != FILEPHY_WITHOUT_OFFSET
 				) {
-					/* if verbose, print the list of duplicates real offsets */
-					/* other cases are for offsets not supported, so we don't need to report them file by file */
+					/*
+					 * If verbose, print the list of duplicates real offsets
+					 * other cases are for offsets not supported, so we don't need to report them file by file
+					 */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
 						log_error(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->mount_point, phy_file_last->sub, disk->mount_point, file->sub, phy_last);
 					}
@@ -1833,8 +1887,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			scan_file_allocate(scan, file);
 		}
 
-		/* mark the disk without reliable physical offset if it has duplicates */
-		/* here it should never happen because we already sorted out hardlinks */
+		/*
+		 * Mark the disk without reliable physical offset if it has duplicates
+		 * here it should never happen because we already sorted out hardlinks
+		 */
 		if (state->opt.force_order == SORT_PHYSICAL && phy_dup > 0) {
 			disk->has_unreliable_physical = 1;
 		}
@@ -1962,10 +2018,12 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
-		/* don't print the message if the UUID changed because before */
-		/* it was no set. */
-		/* this is the normal condition for an empty disk because it */
-		/* isn't stored */
+		/*
+		 * Don't print the message if the UUID changed because before
+		 * it was no set.
+		 * This is the normal condition for an empty disk because it
+		 * isn't stored
+		 */
 		if (disk->has_different_uuid && !disk->had_empty_uuid) {
 			if (!done) {
 				done = 1;

@@ -227,10 +227,12 @@ void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint
 			struct snapraid_file* file = entry->file;
 			struct snapraid_disk* disk = entry->disk;
 
-			/* reallocate the full file, not only the part of in the free zone */
-			/* this is required because the files blocks have to be in order in */
-			/* in the parity file. */
-			/* not reallocating the file head will prevent the reallocation of the file tail */
+			/*
+			 * Reallocate the full file, not only the part of in the free zone
+			 * this is required because the files blocks have to be in order in
+			 * in the parity file.
+			 * not reallocating the file head will prevent the reallocation of the file tail
+			 */
 			for (block_off_t f = 0; f < file->blockmax; ++f) {
 				block_off_t parity_pos = fs_file2par_find(disk, file, f);
 

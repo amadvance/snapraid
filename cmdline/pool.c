@@ -95,8 +95,10 @@ static int clean_dir(const char* dir)
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &st);
 
-		/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-		/* at now this can happen only in Windows */
+		/*
+		 * If the st_mode field is missing, takes care to fill it using normal lstat()
+		 * at now this can happen only in Windows
+		 */
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
@@ -126,9 +128,11 @@ static int clean_dir(const char* dir)
 				if (ret < 0) {
 #ifdef _WIN32
 					if (errno == EACCES) {
-						/* in Windows just ignore EACCES errors removing directories */
-						/* because it could happen that the directory is in use */
-						/* and it cannot be removed */
+						/*
+						 * In Windows just ignore EACCES errors removing directories
+						 * because it could happen that the directory is in use
+						 * and it cannot be removed
+						 */
 						log_fatal(errno, "Directory '%s' not removed because it's in use.\n", path_next);
 						full = 1;
 					} else
@@ -207,8 +211,10 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &st);
 
-		/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-		/* at now this can happen only in Windows */
+		/*
+		 * If the st_mode field is missing, takes care to fill it using normal lstat()
+		 * at now this can happen only in Windows
+		 */
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
