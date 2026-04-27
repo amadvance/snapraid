@@ -1036,15 +1036,19 @@ int snapraid_main(int argc, char* argv[])
 			opt.expected_missing = 1;
 			break;
 		case 'e' :
-			/* when processing only error, we filter files */
-			/* and we apply fixes only to synced ones */
+			/*
+			 * When processing only error, we filter files
+			 * and we apply fixes only to synced ones
+			 */
 			filter_error = 1;
 			opt.badfileonly = 1;
 			opt.syncedonly = 1;
 			break;
 		case 'b' :
-			/* when processing only block with error, we filter both files and blocks */
-			/* and we apply fixes only to synced ones */
+			/*
+			 * When processing only block with error, we filter both files and blocks
+			 * and we apply fixes only to synced ones
+			 */
 			filter_error = 1;
 			opt.badfileonly = 1;
 			opt.badblockonly = 1;
@@ -1635,8 +1639,10 @@ int snapraid_main(int argc, char* argv[])
 		}
 	}
 
-	/* errors must be always fixed on all disks */
-	/* because we don't keep the information on what disk is the error */
+	/*
+	 * Errors must be always fixed on all disks
+	 * because we don't keep the information on what disk is the error
+	 */
 	if (filter_error != 0 && !tommy_list_empty(&filterlist_disk)) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You cannot use -e, --filter-error and -d, --filter-disk simultaneously\n");
@@ -1798,8 +1804,10 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_SYNC) {
 		state_read(&state);
 
-		/* mark the files that have to be reallocated */
-		/* it will happen in inside scan_file_keep() called in state_scan() */
+		/*
+		 * Mark the files that have to be reallocated
+		 * it will happen in inside scan_file_keep() called in state_scan()
+		 */
 		if (state.opt.force_realloc)
 			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
 
@@ -1853,13 +1861,15 @@ int snapraid_main(int argc, char* argv[])
 		}
 #endif
 
-		/* waits some time to ensure that any concurrent modification done at the files, */
-		/* using the same mtime read by the scan process, will be read by sync. */
-		/* Note that any later modification done, potentially not read by sync, will have */
-		/* a different mtime, and it will be synchronized at the next sync. */
-		/* The worst case is the FAT file-system with a two seconds resolution for mtime. */
-		/* If you don't use FAT, the wait is not needed, because most file-systems have now */
-		/* at least microseconds resolution, but better to be safe. */
+		/*
+		 * Waits some time to ensure that any concurrent modification done at the files,
+		 * using the same mtime read by the scan process, will be read by sync.
+		 * Note that any later modification done, potentially not read by sync, will have
+		 * a different mtime, and it will be synchronized at the next sync.
+		 * The worst case is the FAT file-system with a two seconds resolution for mtime.
+		 * If you don't use FAT, the wait is not needed, because most file-systems have now
+		 * at least microseconds resolution, but better to be safe.
+		 */
 		if (!opt.skip_self)
 			sleep(2);
 
