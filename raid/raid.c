@@ -230,9 +230,11 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 	for (k = 0; k < n; ++k) {
 		uint8_t f;
 
-		/* the diagonal element cannot be 0 because */
-		/* we are inverting matrices with all the square */
-		/* submatrices not singular */
+		/*
+		 * The diagonal element cannot be 0 because
+		 * we are inverting matrices with all the square
+		 * submatrices not singular
+		 */
 		BUG_ON(M[k * n + k] == 0);
 
 		/* make the diagonal element to be 1 */
@@ -242,8 +244,10 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 			V[k * n + j] = mul(f, V[k * n + j]);
 		}
 
-		/* make all the elements over and under the diagonal */
-		/* to be zero */
+		/*
+		 * Make all the elements over and under the diagonal
+		 * to be zero
+		 */
 		for (i = 0; i < n; ++i) {
 			if (i == k)
 				continue;
@@ -270,8 +274,10 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	int np;
 	void *latest;
 
-	/* total number of parities we are going to process */
-	/* they are both the used and the unused ones */
+	/*
+	 * Total number of parities we are going to process
+	 * they are both the used and the unused ones
+	 */
 	np = ip[nr - 1] + 1;
 
 	/* latest missing data block */
@@ -291,8 +297,10 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 			 * to point to the "zero" buffer.
 			 */
 
-			/* the latest parity to use ends the for loop and */
-			/* then it cannot happen to process more of them */
+			/*
+			 * The latest parity to use ends the for loop and
+			 * then it cannot happen to process more of them
+			 */
 			BUG_ON(j >= nr);
 
 			/* buffer for missing data blocks */
@@ -332,8 +340,10 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	/* all the parities have to be processed */
 	BUG_ON(j != nr);
 
-	/* recompute the parity, note that np may be smaller than the */
-	/* total number of parities available */
+	/*
+	 * Recompute the parity, note that np may be smaller than the
+	 * total number of parities available
+	 */
 	raid_gen(nd, np, size, v);
 
 	/* restore data buffers as before */
@@ -361,8 +371,10 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v)
 	void *p;
 	void *pa;
 
-	/* for PAR1 we can directly compute the missing block */
-	/* and we don't need to use the zero buffer */
+	/*
+	 * For PAR1 we can directly compute the missing block
+	 * and we don't need to use the zero buffer
+	 */
 	p = v[nd];
 	pa = v[id[0]];
 
