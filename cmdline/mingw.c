@@ -2053,13 +2053,6 @@ int fssnapshot_create(const char* source, const char* parent_dir, const char* na
 	return -1;
 }
 
-int fssnapshot_readonly(const char* parent_dir, const char* name)
-{
-	(void)parent_dir;
-	(void)name;
-	return -1;
-}
-
 int fssnapshot_delete(const char* parent_dir, const char* name)
 {
 	(void)parent_dir;
@@ -2074,14 +2067,6 @@ int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* 
 	(void)new_name;
 	return -1;
 }
-
-int fssnapshot_clone(const char* source, const char* dest)
-{
-	(void)source;
-	(void)dest;
-	return -1;
-}
-
 
 /* ensure to call the real C strerror() */
 #undef strerror
