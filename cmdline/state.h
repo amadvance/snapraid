@@ -232,6 +232,11 @@ void state_read(struct snapraid_state* state);
 void state_write(struct snapraid_state* state);
 
 /**
+ * Signal that we reached a stable state with all parity computed.
+ */
+void state_commit(struct snapraid_state* state);
+
+/**
  * Diff all the disks.
  */
 int state_diff(struct snapraid_state* state);
