@@ -1594,7 +1594,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				 * In Unix don't follow mount points in different devices
 				 * in Windows we are already skipping them reporting them as special files
 				 */
-				if ((uint64_t)st->st_dev != disk->device) {
+				if ((uint64_t)st->st_dev != disk->dir_device) {
 					log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
 					log_error(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
