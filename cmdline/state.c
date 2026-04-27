@@ -272,7 +272,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				continue;
 
 #ifdef _WIN32
-			if (disk->device == 0) {
+			if (disk->dir_device == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(ESOFT, "Disk '%s' has a zero serial number.\n", disk->dir);
 				log_fatal(ESOFT, "This is not necessarily wrong, but for using SnapRAID\n");
@@ -285,7 +285,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 			for (j = i->next; j != 0; j = j->next) {
 				struct snapraid_disk* other = j->data;
-				if (disk->device == other->device) {
+				if (disk->mount_device == other->mount_device) {
 					if (state->opt.force_device) {
 						/*
 						 * Note that we just ignore the issue
@@ -298,7 +298,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						/* LCOV_EXCL_START */
 						log_fatal(ESOFT, "Disks '%s' and '%s' are on the same device.\n", disk->mount_point, other->mount_point);
 #ifdef _WIN32
-						log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
+						log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->dir_device);
 						log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 						log_fatal(ESOFT, "to change one of the disk serial.\n");
 #endif
@@ -317,7 +317,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			if (!state->opt.skip_parity_access) {
 				for (l = 0; l < state->level; ++l) {
 					for (s = 0; s < state->parity[l].split_mac; ++s) {
-						if (disk->device == state->parity[l].split_map[s].device) {
+						if (disk->mount_device == state->parity[l].split_map[s].device) {
 							if (state->opt.force_device) {
 								/*
 								 * Note that we just ignore the issue
@@ -330,7 +330,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 								/* LCOV_EXCL_START */
 								log_fatal(ESOFT, "Disk '%s' and %s '%s' are on the same device.\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
 #ifdef _WIN32
-								log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
+								log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->dir_device);
 								log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 								log_fatal(ESOFT, "to change one of the disk serial.\n");
 #endif
@@ -342,11 +342,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				}
 			}
 
-			if (state->pool[0] != 0 && disk->device == state->pool_device) {
+			if (state->pool[0] != 0 && disk->mount_device == state->pool_device) {
 				/* LCOV_EXCL_START */
 				log_fatal(ESOFT, "Disk '%s' and pool '%s' are on the same device.\n", disk->mount_point, state->pool);
 #ifdef _WIN32
-				log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
+				log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->dir_device);
 				log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 				log_fatal(ESOFT, "to change one of the disk serial.\n");
 #endif
@@ -4559,7 +4559,7 @@ void state_read(struct snapraid_state* state)
 	}
 
 	if (state->unsynced_blocks)
-		msg_progress("The latest sync was interrupted!\n");
+		msg_progress("WARNING! The latest sync was interrupted!\n");
 
 	/* update the mapping */
 	state_map(state);
@@ -5814,6 +5814,24 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 #define SNAPSHOT_PENDING "pending"
 #define SNAPSHOT_STABLE "stable"
 
+static int state_snapshot_dir(const char* dir, struct snapraid_disk* disk)
+{
+	struct stat st;
+
+	if (lstat(dir, &st) != 0)
+		return -1;
+
+	if (!S_ISDIR(st.st_mode))
+		return -1;
+
+	if (disk) {
+		pathcpy(disk->dir, sizeof(disk->dir), dir);
+		disk->dir_device = st.st_dev;
+	}
+
+	return 0;
+}
+
 int state_snapshot_new(struct snapraid_state* state)
 {
 	if (!state->snapshot)
@@ -5823,6 +5841,7 @@ int state_snapshot_new(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 		char root[PATH_MAX];
 		char container[PATH_MAX];
+		char vol[PATH_MAX];
 		int ret;
 
 		/* check if it supports snapshot */
@@ -5843,22 +5862,27 @@ int state_snapshot_new(struct snapraid_state* state)
 
 		/* delete a potential previous pending snapshot */
 		if (fssnapshot_delete(container, SNAPSHOT_PENDING) != 0) {
-			log_fatal(errno, "Failed to delete pending snapshot in '%s' \n", container);
+			log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
 
 		/* create a new snapshot */
 		if (fssnapshot_create(root, container, SNAPSHOT_PENDING) != 0) {
-			log_fatal(errno, "Failed to create pending snapshot '%s'\n", container);
+			log_fatal(errno, "Failed to create pending snapshot '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
 
 		msg_progress("Created disk %s pending snapshot...\n", disk->name);
 
 		/* setup the snapshot in use */
-		pathcpy(disk->dir, sizeof(disk->dir), container);
-		pathcat(disk->dir, sizeof(disk->dir), "/" SNAPSHOT_PENDING "/");
-		pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
+		pathcpy(vol, sizeof(vol), container);
+		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING "/");
+		pathcat(vol, sizeof(vol), disk->mount_point + root_len);
+
+		if (state_snapshot_dir(vol, disk) != 0) {
+			log_error(errno, "Error stating snapshot dir '%s'. %s.\n", vol, strerror(errno));
+			return -1;
+		}
 
 		/* store the snapshot root */
 		pathcpy(disk->snapshot_root, sizeof(disk->snapshot_root), root);
@@ -5880,45 +5904,18 @@ int state_snapshot_commit(struct snapraid_state* state)
 		if (disk->snapshot_root[0] == 0)
 			continue;
 
-		size_t root_len = strlen(disk->snapshot_root);
-
 		pathcpy(container, sizeof(container), disk->snapshot_root);
 		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
 
-		/* for each content file */
-		for (tommy_node* j = state->contentlist; j != 0; j = j->next) {
-			struct snapraid_content* content = j->data;
-
-			/* check if the content file is in the subvolume */
-			if (strncmp(content->content, disk->snapshot_root, root_len) == 0) {
-				/* clone the just written content file into the snapshot */
-				char clone[PATH_MAX];
-
-				pathcpy(clone, sizeof(clone), container);
-				pathcat(clone, sizeof(clone), "/" SNAPSHOT_PENDING "/");
-				pathcat(clone, sizeof(clone), content->content + root_len);
-
-				if (fssnapshot_clone(content->content, clone) != 0) {
-					log_fatal(errno, "Failed to clone the content file '%s'\n", content->content);
-					return -1;
-				}
-			}
-		}
-
-		if (fssnapshot_readonly(container, SNAPSHOT_PENDING) != 0) {
-			log_fatal(errno, "Failed to make pending snapshot read-only in '%s'\n", container);
-			return -1;
-		}
-
 		/* delete a potential previous stable snapshot */
 		if (fssnapshot_delete(container, SNAPSHOT_STABLE) != 0) {
-			log_fatal(errno, "Failed to delete stable snapshot in '%s'\n", container);
+			log_fatal(errno, "Failed to delete stable snapshot in '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
 
 		/* rename pending to stable */
 		if (fssnapshot_rename(container, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
-			log_fatal(errno, "Failed to rename snapshot in '%s'\n", container);
+			log_fatal(errno, "Failed to rename snapshot in '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
 
@@ -5926,16 +5923,6 @@ int state_snapshot_commit(struct snapraid_state* state)
 	}
 
 	return 0;
-}
-
-static int is_dir(const char* path)
-{
-	struct stat st;
-
-	if (lstat(path, &st) != 0)
-		return 0;
-
-	return S_ISDIR(st.st_mode);
 }
 
 void state_snapshot_read(struct snapraid_state* state)
@@ -5959,21 +5946,18 @@ void state_snapshot_read(struct snapraid_state* state)
 		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
 
 		pathcpy(vol, sizeof(vol), container);
-		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING);
-		if (is_dir(vol)) {
+		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING "/");
+		pathcat(vol, sizeof(vol), disk->mount_point + root_len);
+		if (state_snapshot_dir(vol, disk) == 0) {
 			msg_progress("Using disk %s pending snapshot...\n", disk->name);
-			pathcpy(disk->dir, sizeof(disk->dir), vol);
-			pathcat(disk->dir, sizeof(disk->dir), "/");
-			pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
 		} else {
 			pathcpy(vol, sizeof(vol), container);
-			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);
-			if (is_dir(vol)) {
+			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE "/");
+			pathcat(vol, sizeof(vol), disk->mount_point + root_len);
+			if (state_snapshot_dir(vol, disk) == 0) {
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
-				pathcpy(disk->dir, sizeof(disk->dir), vol);
-				pathcat(disk->dir, sizeof(disk->dir), "/");
-				pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
 			} else {
+				/* fallback to standard mount point */
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
@@ -6013,37 +5997,32 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
 
 		pathcpy(vol, sizeof(vol), container);
-		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING);
-		if (is_dir(vol)) {
+		pathcat(vol, sizeof(vol), "/" SNAPSHOT_PENDING "/");
+		pathcat(vol, sizeof(vol), disk->mount_point + root_len);
+		if (state_snapshot_dir(vol, disk) == 0) {
 			msg_progress("Using disk %s pending snapshot...\n", disk->name);
-			pathcpy(disk->dir, sizeof(disk->dir), vol);
-			pathcat(disk->dir, sizeof(disk->dir), "/");
-			pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
 
 			/* if there is a dealloc list */
 			if (!tommy_list_empty(&disk->dealloclist)) {
 				pathcpy(vol, sizeof(vol), container);
-				pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);
+				pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE "/");
+				pathcat(vol, sizeof(vol), disk->mount_point + root_len);
 
 				/* if there is a previous snapshot */
-				if (is_dir(vol)) {
-					pathcat(vol, sizeof(vol), "/");
-					pathcat(vol, sizeof(vol), disk->mount_point + root_len);
-
-					msg_progress("Importing disk %s stable snapshot deallocated files...\n", disk->name);
+				if (state_snapshot_dir(vol, 0) == 0) {
+					msg_progress("Importing disk %s stable snapshot %" PRIu64 " deallocated files...\n", disk->name, tommy_list_count(&disk->dealloclist));
 
 					state_dealloc(state, vol, &disk->dealloclist);
 				}
 			}
 		} else {
 			pathcpy(vol, sizeof(vol), container);
-			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE);
-			if (is_dir(vol)) {
+			pathcat(vol, sizeof(vol), "/" SNAPSHOT_STABLE "/");
+			pathcat(vol, sizeof(vol), disk->mount_point + root_len);
+			if (state_snapshot_dir(vol, disk) == 0) {
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
-				pathcpy(disk->dir, sizeof(disk->dir), vol);
-				pathcat(disk->dir, sizeof(disk->dir), "/");
-				pathcat(disk->dir, sizeof(disk->dir), disk->mount_point + root_len);
 			} else {
+				/* fallback to standard mount point */
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
