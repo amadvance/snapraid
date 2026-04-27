@@ -35,6 +35,7 @@ struct snapraid_import_file {
 	struct snapraid_import_block* blockimp; /**< All the blocks of the file. */
 	block_off_t blockmax; /**< Number of blocks. */
 	char* path; /**< Full path of the file. */
+	int is_runtime; /**< If the hash was obtained at runtime */
 
 	/* nodes for data structures */
 	tommy_node nodelist;
@@ -55,6 +56,11 @@ int state_import_fetch(struct snapraid_state* state, int prevhash, struct snapra
  * Import files from the specified directory.
  */
 void state_import(struct snapraid_state* state, const char* dir);
+
+/**
+ * Import files from the dealloc list.
+ */
+void state_dealloc(struct snapraid_state* state, const char* dir, tommy_list* dealloclist);
 
 #endif
 
