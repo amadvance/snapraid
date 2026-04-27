@@ -114,8 +114,10 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 			}
 		}
 
-		/* recover the nrd data blocks specified in ir[], */
-		/* using the first nrd parity in ip[] for recovering */
+		/*
+		 * Recover the nrd data blocks specified in ir[],
+		 * using the first nrd parity in ip[] for recovering
+		 */
 		raid_rec_ptr[nrd - 1](nrd, ir, ip, nd, size, v);
 	}
 
@@ -571,9 +573,11 @@ int raid_selftest(void)
 			ir[np / 2 + i] = nd + i;
 		}
 		for (i = 0; i < np - 1; ++i) {
-			/* make blocks bad */
-			/* we cannot fill them with 0, because the original */
-			/* data may be already filled with 0 */
+			/*
+			 * Make blocks bad
+			 * we cannot fill them with 0, because the original
+			 * data may be already filled with 0
+			 */
 			memset(v[ir[i]], 0x55, size);
 		}
 
