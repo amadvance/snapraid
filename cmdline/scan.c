@@ -650,7 +650,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
  *
  * File is then deleted.
  */
-static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* file)
+static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* file, int keep_track)
 {
 	struct snapraid_disk* disk = scan->disk;
 
@@ -658,6 +658,20 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
+
+	/*
+	 * Keep track of the removed file (that won't be added later)
+	 *
+	 * This allows to record from where the parity was computed.
+	 */
+	if (keep_track) {
+		struct snapraid_dealloc* dealloc = dealloc_alloc(scan->state->block_size, file->sub, file->size, file->mtime_sec, file->mtime_nsec);
+
+		dealloc_import(dealloc, file);
+
+		/* insert the dealloc in the dealloc containers */
+		tommy_list_insert_tail(&disk->dealloclist, &dealloc->nodelist, dealloc);
+	}
 
 	stamp_lock(disk);
 	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
@@ -687,7 +701,7 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 		struct snapraid_file* copy = file_dup(file);
 
 		/* remove the file */
-		scan_file_remove(scan, file);
+		scan_file_remove(scan, file, 0);
 
 		/* reinsert the copy in the delayed list */
 		scan_file_insert(scan, copy);
@@ -1021,7 +1035,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		is_original_file_size_different_than_zero = file->size != 0;
 
 		/* remove it, and continue to insert it again */
-		scan_file_remove(scan, file);
+		scan_file_remove(scan, file, 1);
 
 		/* and continue to insert it again */
 	} else {
@@ -1797,7 +1811,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					}
 				}
 
-				scan_file_remove(scan, file);
+				scan_file_remove(scan, file, 1);
 			}
 		}
 
