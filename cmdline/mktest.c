@@ -148,12 +148,14 @@ void cmd_generate_file(const char* path, int size)
 
 	data = malloc(size);
 
-	/* We don't write zero bytes because we want to test */
-	/* the recovering of new files, after an aborted sync */
-	/* If the files contains full blocks at zero */
-	/* this is an impossible condition to recover */
-	/* because we cannot differentiate between an unused block */
-	/* and a file filled with 0 */
+	/*
+	 * We don't write zero bytes because we want to test
+	 * the recovering of new files, after an aborted sync
+	 * If the files contains full blocks at zero
+	 * this is an impossible condition to recover
+	 * because we cannot differentiate between an unused block
+	 * and a file filled with 0
+	 */
 	rndnz_range(data, size);
 
 	f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
@@ -351,8 +353,10 @@ void cmd_damage(const char* path, int size)
 {
 	struct stat st;
 
-	/* here a 0 size means to change nothing */
-	/* as also the timestamp should not be changed */
+	/*
+	 * Here a 0 size means to change nothing
+	 * as also the timestamp should not be changed
+	 */
 	if (!size)
 		return;
 

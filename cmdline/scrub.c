@@ -79,8 +79,10 @@ static int block_is_enabled(struct snapraid_plan* plan, block_off_t* countlast, 
 		return 0;
 	}
 
-	/* if the time is less than the limit, always include */
-	/* otherwise, check if we reached the last limit count */
+	/*
+	 * If the time is less than the limit, always include
+	 * otherwise, check if we reached the last limit count
+	 */
 	if (blocktime == plan->timelimit) {
 		/* if we reached the count limit */
 		if (*countlast >= plan->lastlimit) {
@@ -132,8 +134,10 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 		ret = handle_close(handle);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			/* This one is really an unexpected error, because we are only reading */
-			/* and closing a descriptor should never fail */
+			/*
+			 * This one is really an unexpected error, because we are only reading
+			 * and closing a descriptor should never fail
+			 */
 			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
@@ -175,9 +179,11 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 		/* follow */
 	}
 
-	/* note that we intentionally don't abort if the file has different attributes */
-	/* from the last sync, as we are expected to return errors if running */
-	/* in an unsynced array. This is just like the check command. */
+	/*
+	 * Note that we intentionally don't abort if the file has different attributes
+	 * from the last sync, as we are expected to return errors if running
+	 * in an unsynced array. This is just like the check command.
+	 */
 
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, 0);
 	if (task->read_size == -1) {
@@ -288,9 +294,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		++countmax;
 	}
 
-	/* compute the autosave size for all disk, even if not read */
-	/* this makes sense because the speed should be almost the same */
-	/* if the disks are read in parallel */
+	/*
+	 * Compute the autosave size for all disk, even if not read
+	 * this makes sense because the speed should be almost the same
+	 * if the disks are read in parallel
+	 */
 	autosavelimit = state->autosave / (diskmax * state->block_size);
 	autosavemissing = countmax; /* blocks to do */
 	autosavedone = 0; /* blocks done */
@@ -340,8 +348,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		silent_error_on_this_block = 0;
 		io_error_on_this_block = 0;
 
-		/* if all the blocks at this address are synced */
-		/* if not, parity is not even checked */
+		/*
+		 * If all the blocks at this address are synced
+		 * if not, parity is not even checked
+		 */
 		block_is_unsynced = 0;
 
 		/* get block specific info */
@@ -362,8 +372,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			block_off_t file_pos;
 			unsigned diskcur;
 
-			/* if the file on this disk is synced */
-			/* if not, silent errors are assumed as expected error */
+			/*
+			 * If the file on this disk is synced
+			 * if not, silent errors are assumed as expected error
+			 */
 			file_is_unsynced = 0;
 
 			/* until now is misc */
@@ -586,8 +598,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* set the error status keeping other info */
 			info_set(&state->infoarr, blockcur, info_set_bad(info));
 		} else if (error_on_this_block) {
-			/* do nothing, as this is a generic error */
-			/* likely caused by a not synced array */
+			/*
+			 * Do nothing, as this is a generic error
+			 * likely caused by a not synced array
+			 */
 		} else {
 			/* if rehash is needed */
 			if (rehash) {
@@ -598,8 +612,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			/* update the time info of the block */
-			/* and clear any other flag */
+			/*
+			 * Update the time info of the block
+			 * and clear any other flag
+			 */
 			info_set(&state->infoarr, blockcur, info_make(now, 0, 0, 0));
 		}
 

@@ -33,9 +33,11 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	/* initial values, changed later if required */
 	handle->created = 0;
 
-	/* flags for opening */
-	/* O_BINARY: open as binary file (Windows only) */
-	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
+	/*
+	 * Flags for opening
+	 * O_BINARY: open as binary file (Windows only)
+	 * O_NOFOLLOW: do not follow links to ensure to open the real file
+	 */
 	flags = O_BINARY | O_NOFOLLOW | advise_flags(&handle->advise);
 
 	/* open for read write */
@@ -144,9 +146,11 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	/* for sure not created */
 	handle->created = 0;
 
-	/* flags for opening */
-	/* O_BINARY: open as binary file (Windows only) */
-	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
+	/*
+	 * Flags for opening
+	 * O_BINARY: open as binary file (Windows only)
+	 * O_NOFOLLOW: do not follow links to ensure to open the real file
+	 */
 	flags = O_BINARY | O_NOFOLLOW | advise_flags(&handle->advise);
 
 	/* open for read */
