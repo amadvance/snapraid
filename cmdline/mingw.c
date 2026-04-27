@@ -161,8 +161,10 @@ void os_init(int opt)
 	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 
-	/* set the thread execution level to avoid sleep */
-	/* first try for Windows 7 */
+	/*
+	 * Set the thread execution level to avoid sleep
+	 * first try for Windows 7
+	 */
 	if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
 		/* retry with the XP variant */
 		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
@@ -348,13 +350,17 @@ static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_requ
 
 	dst = conv_buf;
 
-	/* note that we always check for both / and \ because the path is blindly */
-	/* converted to unix format by path_import() */
+	/*
+	 * Note that we always check for both / and \ because the path is blindly
+	 * converted to unix format by path_import()
+	 */
 
 	if (only_if_required && strlen(src) < 260 - 12) {
-		/* it's a short path */
-		/* 260 is the MAX_PATH, note that it includes the space for the terminating NUL */
-		/* 12 is an additional space for filename, required when creating directory */
+		/*
+		 * It's a short path
+		 * 260 is the MAX_PATH, note that it includes the space for the terminating NUL
+		 * 12 is an additional space for filename, required when creating directory
+		 */
 
 		/* do nothing */
 	} else if (is_slash(src[0]) && is_slash(src[1]) && (src[2] == '?' || src[2] == '.') && is_slash(src[3])) {
@@ -400,10 +406,12 @@ static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_requ
 		os_abort();
 	}
 
-	/* convert any / to \ */
-	/* note that in UTF-16, it's not possible to have '/' used as part */
-	/* of a pair of codes representing a single UNICODE char */
-	/* See: http://en.wikipedia.org/wiki/UTF-16 */
+	/*
+	 * Convert any / to \
+	 * note that in UTF-16, it's not possible to have '/' used as part
+	 * of a pair of codes representing a single UNICODE char
+	 * See: http://en.wikipedia.org/wiki/UTF-16
+	 */
 	while (*dst) {
 		if (*dst == L'/')
 			*dst = L'\\';
@@ -571,9 +579,11 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 {
 	int64_t mtime;
 
-	/* The FILE_ID_BOTH_DIR_INFO doesn't have the ReparseTag information */
-	/* we could use instead FILE_ID_EXTD_DIR_INFO, but it's available only */
-	/* from Windows Server 2012 */
+	/*
+	 * The FILE_ID_BOTH_DIR_INFO doesn't have the ReparseTag information
+	 * we could use instead FILE_ID_EXTD_DIR_INFO, but it's available only
+	 * from Windows Server 2012
+	 */
 	windows_attr2stat(stream->FileAttributes, 0, st);
 
 	st->st_size = stream->EndOfFile.QuadPart;
@@ -694,9 +704,11 @@ static void windows_errno(DWORD error)
 {
 	switch (error) {
 	case ERROR_INVALID_HANDLE :
-		/* we check for a bad handle calling _get_osfhandle() */
-		/* and in such case we return EBADF */
-		/* Other cases are here identified with EINVAL */
+		/*
+		 * We check for a bad handle calling _get_osfhandle()
+		 * and in such case we return EBADF
+		 * Other cases are here identified with EINVAL
+		 */
 		errno = EINVAL;
 		break;
 	case ERROR_HANDLE_EOF : /* in ReadFile() over the end of the file */
@@ -866,13 +878,17 @@ static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
 	if (!ret) {
 		DWORD error = GetLastError();
 		if (error == ERROR_MORE_DATA) {
-			/* we ignore ERROR_MODE_DATA because we are interested only at the first entry */
-			/* and this is the expected error if the files has more entries */
+			/*
+			 * We ignore ERROR_MODE_DATA because we are interested only at the first entry
+			 * and this is the expected error if the files has more entries
+			 */
 		} else if (error == ERROR_HANDLE_EOF) {
-			/* if the file is small, it can be stored in the Master File Table (MFT) */
-			/* and then it doesn't have a physical address */
-			/* In such case we report a specific fake address, to report this special condition */
-			/* that it's different from the 0 offset reported by the underline file system */
+			/*
+			 * If the file is small, it can be stored in the Master File Table (MFT)
+			 * and then it doesn't have a physical address
+			 * In such case we report a specific fake address, to report this special condition
+			 * that it's different from the 0 offset reported by the underline file system
+			 */
 			*physical = FILEPHY_WITHOUT_OFFSET;
 			return TRUE;
 		} else if (error == ERROR_NOT_SUPPORTED) {
@@ -1649,8 +1665,10 @@ static windows_dir* windows_opendir_stream(const char* dir)
 		return 0;
 	}
 
-	/* get dir information for the VolumeSerialNumber */
-	/* this value is used for all the files in the dir */
+	/*
+	 * Get dir information for the VolumeSerialNumber
+	 * this value is used for all the files in the dir
+	 */
 	if (!GetFileInformationByHandle(dirstream->h, &dirstream->info)) {
 		DWORD error = GetLastError();
 		CloseHandle(dirstream->h);
@@ -1789,10 +1807,12 @@ int windows_symlink(const char* existing, const char* file)
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
 
-	/* We must convert to the extended-length \\?\ format if the path is too long */
-	/* otherwise the link creation fails. */
-	/* But we don't want to always convert it, to avoid to recreate */
-	/* user symlinks different than they were before */
+	/*
+	 * We must convert to the extended-length \\?\ format if the path is too long
+	 * otherwise the link creation fails.
+	 * But we don't want to always convert it, to avoid to recreate
+	 * user symlinks different than they were before
+	 */
 	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing),
 		SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
 	) {
@@ -1971,8 +1991,10 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 				return -1;
 			}
 
-			/* if it doesn't exist, we assume a file */
-			/* and we check for the containing dir */
+			/*
+			 * If it doesn't exist, we assume a file
+			 * and we check for the containing dir
+			 */
 			attr = 0;
 		}
 
@@ -1994,8 +2016,10 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 				slash[1] = 0;
 		}
 
-		/* get the free space of the directory */
-		/* note that it must be a directory */
+		/*
+		 * Get the free space of the directory
+		 * note that it must be a directory
+		 */
 		if (!GetDiskFreeSpaceExW(convert(conv_buf, dir), 0, &total_bytes, &total_free_bytes)) {
 			windows_errno(GetLastError());
 			return -1;
@@ -2383,8 +2407,10 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 		return -1;
 	}
 
-	/* remove the final slash, otherwise CreateFile() opens the file-system */
-	/* and not the volume */
+	/*
+	 * Remove the final slash, otherwise CreateFile() opens the file-system
+	 * and not the volume
+	 */
 	i = 0;
 	while (volume_guid[i] != 0)
 		++i;
