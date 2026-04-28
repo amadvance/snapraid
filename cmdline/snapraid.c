@@ -659,6 +659,7 @@ void log_close(const char* file)
 #define OPT_TEST_SPEED_PERIOD 307
 #define OPT_TEST_SPEED_DISKS_NUMBER 308
 #define OPT_TEST_SPEED_BLOCKS_SIZE 309
+#define OPT_TEST_KILL_BEFORE_SYNC 310
 
 
 #if HAVE_GETOPT_LONG
@@ -713,6 +714,9 @@ static struct option long_options[] = {
 
 	/* After syncing, do not write the new content file */
 	{ "test-kill-after-sync", 0, 0, OPT_TEST_KILL_AFTER_SYNC },
+
+	/* Do not execure syncing after writing the new initial content file */
+	{ "test-kill-before-sync", 0, 0, OPT_TEST_KILL_BEFORE_SYNC },
 
 	/* Exit with failure if after check/fix there ARE NOT unrecoverable errors. */
 	{ "test-expect-unrecoverable", 0, 0, OPT_TEST_EXPECT_UNRECOVERABLE },
@@ -1266,6 +1270,9 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case OPT_TEST_KILL_AFTER_SYNC :
 			opt.kill_after_sync = 1;
+			break;
+		case OPT_TEST_KILL_BEFORE_SYNC :
+			opt.kill_before_sync = 1;
 			break;
 		case OPT_TEST_EXPECT_UNRECOVERABLE :
 			opt.expect_unrecoverable = 1;

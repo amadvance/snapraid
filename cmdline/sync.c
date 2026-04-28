@@ -1431,13 +1431,14 @@ end:
 	/* now the parity is fully written, no need to keep deallocated files */
 	state_commit(state);
 
-	/* save the new state if required */
-	if (!state->opt.kill_after_sync) {
-		if ((state->need_write || state->opt.force_content_write))
-			state_write(state);
-	} else {
-		log_fatal(EUSER, "WARNING! Skipped writing state due to --test-kill-after-sync option.\n");
+	if (state->opt.kill_after_sync) {
+		log_fatal(EUSER, "WARNING! Killing due --test-kill-after-sync option.\n");
+		exit(EXIT_SUCCESS);
 	}
+
+	/* save the new state if required */
+	if ((state->need_write || state->opt.force_content_write))
+		state_write(state);
 
 	state_usage_print(state);
 
@@ -1675,6 +1676,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 				state_write(state);
 		} else {
 			log_fatal(EUSER, "WARNING! Skipped state write for --test-skip-content-write option.\n");
+		}
+
+		if (state->opt.kill_before_sync) {
+			log_fatal(EUSER, "WARNING! Killing due --test-kill-before-sync option.\n");
+			exit(EXIT_SUCCESS);
 		}
 
 		/* skip degenerated cases of empty parity, or skipping all */
