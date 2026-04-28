@@ -154,6 +154,7 @@ EXTRA_DIST = \
 	$(LIST_D) \
 	$(LIST_MAN) \
 	$(LIST_TXT) \
+	test/test-btrfs.conf \
 	test/test-par1.conf \
 	test/test-par2.conf \
 	test/test-par3.conf \
@@ -266,6 +267,9 @@ CHECKFLAGS_VERBOSE = $(CHECKFLAGS_ALPHA) -v --gui
 # Quiet options
 CHECKFLAGS = $(CHECKFLAGS_ALPHA) -q -q -q
 
+# Btrfs with no parity limit
+CHECKFLAGS_BTRFS = --test-skip-device --test-skip-self --test-io-advise-none --test-force-order-alpha -q -q -q
+
 # Number of files to create
 if !HAVE_MEMORY_CHECKER
 if HAVE_POSIX
@@ -296,48 +300,101 @@ PARZ = $(srcdir)/test/test-parz.conf
 PAR4 = $(srcdir)/test/test-par4.conf
 PAR5 = $(srcdir)/test/test-par5.conf
 PAR6 = $(srcdir)/test/test-par6.conf
+BTRFS = $(srcdir)/test/test-btrfs.conf
 MSG = @echo =====
 SNAPRAID = ./checker$(EXEEXT)
 
-fastcheck: mktest
+setupcheck:
 	rm -rf bench
 	rm -f test.log
 	mkdir bench
-	mkdir bench/disk1
-	mkdir bench/disk2
-	mkdir bench/disk3
-	mkdir bench/disk4
-	mkdir bench/disk5
-	mkdir bench/disk6
-	mkdir bench/pool
-	$(MSG) Stream
-	$(TESTENV) $(SNAPRAID) --test-skip-device -H
-	$(TESTENV) $(SNAPRAID) --test-skip-device -V
-	$(TESTENV) $(SNAPRAID) test
-	$(MSG) Create some files
-	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
-	echo DUP > bench/disk1/DUP1
-	echo DUP > bench/disk1/DUP2
-	echo -n > bench/disk1/ZERO
-	$(MSG) Some commands with a not empty array
-	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_COMMON) -c $(CONF) --test-expect-need-sync diff > output.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_COMMON) -c $(CONF) sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup -l test.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) list -l test.log > output.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-rewrite
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) read
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) status -l test.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -a check
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) test-dry
-	$(MSG) Regression test completed with SUCCESS!
-	$(MSG) Please ignore any error message printed above, they are expected!
-	$(MSG) Everything OK
 
-check-local:
-	rm -rf bench
-	rm -f test.log
-	mkdir bench
+# Not included in main check because it requires root permissions
+btrfscheck: mktest checker setupcheck
+	sudo $(MAKE) btrfscheck_run; \
+	status=$$?; \
+	sudo $(MAKE) btrfscheck_cleanup; \
+	exit $$status
+
+btrfscheck_run:
+	mkdir bench/btrfs1
+	mkdir bench/btrfs2
+	mkdir bench/btrfs3
+	$(MSG) Create storages
+	dd bs=1048576 count=32 if=/dev/zero of=bench/btrfs1.img
+	dd bs=1048576 count=32 if=/dev/zero of=bench/btrfs2.img
+	dd bs=1048576 count=32 if=/dev/zero of=bench/btrfs3.img
+	/sbin/mkfs.btrfs --mixed bench/btrfs1.img
+	/sbin/mkfs.btrfs --mixed bench/btrfs2.img
+	/sbin/mkfs.btrfs --mixed bench/btrfs3.img
+	mount -o loop bench/btrfs1.img bench/btrfs1
+	mount -o loop bench/btrfs2.img bench/btrfs2
+	mount -o loop bench/btrfs3.img bench/btrfs3
+	$(MSG) Create some files
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 btrfs 3 $(CHECKCOUNT) $(CHECKSIZE)
+	$(MSG) Basic
+# Setup
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) scrub -p full
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check -d btrfs1
+# Recover test
+	$(MSG) Recover with file deletions from two disk with ONLY one parity OUTSIDE SYNC
+	rm -rf bench/btrfs1/a
+	rm -rf bench/btrfs2/a
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs1 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs2 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --force-full
+# Recover test
+	$(MSG) Recover with file deletions from two disk with ONLY one parity aborted BEFORE SYNC
+# Changes (including deletion) on disk1
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/btrfs1/a/* bench/btrfs1/b/*
+# Sync aborted BEFORE
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-before-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) status
+# Destroy disk2
+	rm -rf bench/btrfs2/a bench/btrfs2/b
+# Recover disk2 (disk1 is intentionally deleted, so nothing to recover)
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs2 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --force-full
+# Recover test
+	$(MSG) Recover with file deletions from two disk with ONLY one parity aborted AFTER SYNC
+# Changes (including deletion) on disk1
+	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/btrfs1/a/* bench/btrfs1/b/*
+# Sync aborted AFTER
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-after-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) status
+# Destroy disk2
+	rm -rf bench/btrfs2/a bench/btrfs2/b
+# Recover disk2 (disk1 is intentionally deleted, so nothing to recover)
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs2 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --force-full
+# Sync recover
+	$(MSG) Sync recover aborted AFTER
+# Change files in disk3
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/btrfs3/a/*
+# Sync abort and sync retry
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-after-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+# Sync recover
+	$(MSG) Sync recover aborted BEFORE
+# Change files in disk3
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/btrfs3/a/*
+# Sync abort and sync retry
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-before-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+
+btrfscheck_cleanup:
+	$(MSG) Unmount storages
+	umount bench/btrfs1
+	umount bench/btrfs2
+	umount bench/btrfs3
+
+check-local: setupcheck
 	mkdir bench/disk1
 	mkdir bench/disk2
 	mkdir bench/disk3
@@ -350,7 +407,7 @@ check-local:
 if HAVE_THREAD_CHECKER
 #### THREAD TEST ####
 	$(MSG) Create some files
-	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 disk 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(MSG) Some commands that use threads
 # First sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
@@ -492,7 +549,7 @@ endif
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 #### NOT EMPTY ####
 	$(MSG) Create some files
-	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 disk 6 $(CHECKCOUNT) $(CHECKSIZE)
 	echo DUP > bench/disk1/DUP1
 	echo DUP > bench/disk1/DUP2
 	echo -n > bench/disk1/ZERO
@@ -567,7 +624,7 @@ endif
 	rm bench/disk4/a/8*
 	rm bench/disk5/a/8*
 	rm bench/disk6/a/8*
-	$(TESTENV) ./mktest$(EXEEXT) generate 2 6 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 2 disk 6 $(CHECKCOUNT) $(CHECKSIZE)
 	mkdir bench/disk1/empty1
 	mkdir bench/disk2/empty2
 	mkdir bench/disk3/empty3a
@@ -792,7 +849,7 @@ endif
 	rm bench/disk2/a/2*
 	rm bench/disk3/a/3*
 	rm bench/disk4/a/4*
-	$(TESTENV) ./mktest$(EXEEXT) generate 3 6 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 3 disk 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Move some files, sync and check
@@ -915,7 +972,7 @@ endif
 	rm bench/disk4/a/6*
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -B 10 sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check -l test.log
-	$(TESTENV) ./mktest$(EXEEXT) generate 4 6 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 4 disk 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -B 100 sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -B 1000 sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check -l test.log
