@@ -210,12 +210,12 @@ void cmd_generate_symlink(const char* path, const char* linkto)
 /**
  * Create a file or a symlink with a random name.
  */
-void cmd_generate(int disk, int size)
+void cmd_generate(const char* tag, int disk, int size)
 {
 	char path[PATH_MAX];
 	char* file;
 
-	snprintf(path, sizeof(path), "bench/disk%d/", disk);
+	snprintf(path, sizeof(path), "bench/%s%d/", tag, disk);
 	file = path + strlen(path);
 
 	/* add a directory */
@@ -627,9 +627,9 @@ void help(void)
 {
 	printf("Test for " PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 	printf("Usage:\n");
-	printf("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
-	printf("\tmktest damage SEED NUM SIZE FILE\n");
-	printf("\tmktest write SEED NUM SIZE FILE\n");
+	printf("\tmktest generate SEED DISK_TAG DISK_NUM FILE_NUM FILE_SIZE\n");
+	printf("\tmktest damage SEED COUNT SIZE FILE\n");
+	printf("\tmktest write SEED COUNT SIZE FILE\n");
 	printf("\tmktest change SEED SIZE FILE\n");
 	printf("\tmktest append SEED SIZE FILE\n");
 	printf("\tmktest truncate SEED SIZE FILE\n");
@@ -648,8 +648,9 @@ int main(int argc, char* argv[])
 
 	if (strcmp(argv[1], "generate") == 0) {
 		int disk, file, size;
+		const char* tag;
 
-		if (argc != 6) {
+		if (argc != 7) {
 			/* LCOV_EXCL_START */
 			help();
 			exit(EXIT_FAILURE);
@@ -657,20 +658,21 @@ int main(int argc, char* argv[])
 		}
 
 		seed = atoi(argv[2]);
-		disk = atoi(argv[3]);
-		file = atoi(argv[4]);
-		size = atoi(argv[5]);
+		tag = argv[3];
+		disk = atoi(argv[4]);
+		file = atoi(argv[5]);
+		size = atoi(argv[6]);
 
 		for (i = 0; i < disk; ++i) {
 			for (j = 0; j < file; ++j) {
 				if (j == 0)
 					/* create at least a big one */
-					cmd_generate(i + 1, size);
+					cmd_generate(tag, i + 1, size);
 				else if (j == 1)
 					/* create at least an empty one */
-					cmd_generate(i + 1, 0);
+					cmd_generate(tag, i + 1, 0);
 				else
-					cmd_generate(i + 1, rnd(size));
+					cmd_generate(tag, i + 1, rnd(size));
 			}
 		}
 	} else if (strcmp(argv[1], "write") == 0) {

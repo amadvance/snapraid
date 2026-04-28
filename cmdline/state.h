@@ -86,6 +86,7 @@ struct snapraid_option {
 	int skip_disk_access; /**< Skip the data disk access for commands that don't need it. */
 	int skip_content_access; /**< Skip the content access for commands that don't need it. */
 	int kill_after_sync; /**< Kill the process after sync without saving the final state. */
+	int kill_before_sync; /**< Kill the process before sync after saving the initial state. */
 	int force_murmur3; /**< Force Murmur3 choice. */
 	int force_spooky2; /**< Force Spooky2 choice. */
 	int force_order; /**< Force sorting order. One of the SORT_* defines. */
