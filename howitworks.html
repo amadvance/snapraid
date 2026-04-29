@@ -97,25 +97,25 @@
                         <div style="display: flex; justify-content: center; gap: 1rem; align-items: center;">
                             <div style="text-align: center;">
                                 <div style="color: var(--text-secondary); font-size: 0.8rem;">Disk 1</div>
-                                <div style="font-size: 1.5rem; font-weight: bold;">10</div>
+                                <div style="font-size: 1.5rem; font-weight: bold;">5</div>
                             </div>
                             <div style="color: var(--text-secondary);">+</div>
                             <div style="text-align: center;">
                                 <div style="color: var(--text-secondary); font-size: 0.8rem;">Disk 2</div>
-                                <div style="font-size: 1.5rem; font-weight: bold;">15</div>
+                                <div style="font-size: 1.5rem; font-weight: bold;">3</div>
                             </div>
                             <div style="color: var(--text-secondary);">=</div>
                             <div style="text-align: center;">
                                 <div style="color: var(--text-accent); font-size: 0.8rem;">Parity</div>
-                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-accent);">25</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-accent);">8</div>
                             </div>
                         </div>
                     </div>
 
                     <p>
                         If <strong>Disk 1</strong> is destroyed, the system solves the remaining equation: 
-                        <code style="background: var(--table-header-bg);; padding: 2px 5px; border-radius: 4px;">[?] + 15 = 25</code>. 
-                        The system identifies the missing value (10) and restores it to a new disk.
+                        <code style="background: var(--table-header-bg);; padding: 2px 5px; border-radius: 4px;">[?] + 3 = 8</code>. 
+                        The system identifies the missing value (5) and restores it to a new disk.
                     </p>
                 </div>
 
@@ -131,7 +131,7 @@
                     </p>
                     <div style="border-left: 3px solid var(--warning); padding-left: 1rem; margin-top: 1.5rem;">
                         <p style="margin-bottom: 0; font-size: 0.9rem;">
-                            <strong>Limitation:</strong> Single parity can only solve for one unknown variable. If two disks fail simultaneously, the mathematical equation becomes unsolvable (e.g., <code style="font-size: 0.85rem;">X + Y = 25</code> has too many possibilities).
+                            <strong>Limitation:</strong> Single parity can only solve for one unknown variable. If two disks fail simultaneously, the mathematical equation becomes unsolvable (e.g., <code style="font-size: 0.85rem;">X + Y = 8</code> has too many possibilities).
                         </p>
                     </div>
                 </div>
