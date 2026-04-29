@@ -388,9 +388,9 @@ Commands
 
 	* Print the status of the array -> `status`
 	* Control the disks -> `smart`, `probe`, `up`, `down`
-	* Make a backup/snapshot -> `sync`
+	* Make a backup/recovery point -> `sync`
 	* Periodically check data -> `scrub`
-	* Restore the last backup/snapshot -> `fix`.
+	* Restore the last backup/recovery point -> `fix`.
 
 	Commands must be written in lowercase.
 
@@ -594,9 +594,9 @@ Commands
   fix
 	Fixes all the files and the parity data.
 
-	All files and parity data are compared with the snapshot
-	state saved in the last `sync`.
-	If a difference is found, it is reverted to the stored snapshot.
+	All files and parity data are compared with the state saved in
+	the last `sync`.
+	If a difference is found, it is reverted to the stored state.
 
 	WARNING! The `fix` command does not differentiate between errors and
 	intentional modifications. It unconditionally reverts the file state
@@ -1148,20 +1148,31 @@ Configuration
 
   snapshot
 	Enable the use of filesystem snapshots for the `sync`, `scrub`,
-	`check`, and `fix` commands, provided the underlying filesystem
-	supports it.
+	`check`, and `fix` commands.
+
+	When enabled, SnapRAID creates a read-only snapshot of your data at the
+	start of a 'sync'. This ensures a consistent, point-in-time view of your
+	files, preventing errors caused by concurrent file modifications.
 
 	This option applies exclusively to data disks formatted with the Btrfs
 	filesystem. Parity disks, or data disks using other filesystems, will
 	always use the live version of the filesystem.
 
-	When enabled, SnapRAID ensures atomic and consistent operations by
-	reading from a frozen point-in-time image. This prevents errors
-	caused by file modifications during execution and ensures that
-	updated and deleted files remain available for parity-based
-	recovery of other disks.
+	This significantly improves recovery: if a file is deleted from the live
+	filesystem, it remains preserved in the snapshot. This prevents the parity
+	from becoming "broken" for that block, ensuring you can still successfully
+	recover data if another disk fails.
 
-	See the SNAPSHOTS section for more details.
+	Only Btrfs is supported. Snapshots are stored in a hidden '.snapraid'
+	directory at the root of the Btrfs subvolume containing your data.
+	SnapRAID will automatically detect the subvolume root for each data path.
+
+	Snapshot creation and deletion require administrative privileges.
+	Ensure SnapRAID is run with the necessary permissions (e.g., sudo) when
+	this option is enabled.
+
+	See the SNAPSHOTSsection for a detailed explanation of the snapshot
+	lifecycle.
 
   nohidden
 	Excludes all hidden files and directories.
@@ -1419,6 +1430,15 @@ Snapshots
 		it remains preserved in the snapshot. If a disk failure occurs
 		before the next sync is run, SnapRAID uses the data preserved
 		in the snapshot to reconstruct the failed disk.
+
+		In case of a disk failure during an active sync process,
+		SnapRAID  is also able to read automatically from both the
+		snapshot of the previous parity computation and the current one.
+		This maximizes the  probability of a full recovery by
+		providing access to the exact data blocks required to solve
+		the parity equations, even if those blocks were modified
+		or deleted between syncs.
+
 		Without snapshots, an updated or deleted file on a healthy
 		disk results in missing data blocks that may be required to
 		fix other failed disks.
@@ -1430,6 +1450,10 @@ Snapshots
 	You can mix data disks with different filesystems. Only those that
 	support snapshots will utilize them, while other disks will continue
 	to operate directly on the live filesystem.
+
+	Snapshot creation and deletion require administrative privileges.
+	Ensure SnapRAID is run with the necessary permissions (e.g., sudo)
+	when snapshots are enabled.
 
   Command Behavior with Snapshots
 	The `sync` and `scrub` commands both operate exclusively on snapshots
@@ -1446,16 +1470,20 @@ Snapshots
 	For the `check` and `fix` commands, the use of the last snapshot
 	depends on whether specific disks are targeted using the
 	-d, --filter-disk option.
-	Any disk explicitly selected for checking or fixing will use
-	the live filesystem. This allows `check` to verify the current state of
-	your files and `fix` to physically restore data to the active disk.
 
-	All other data disks not specified by the -d, --filter-disk option
-	will be accessed via their snapshots. These disks act as stable
-	references, providing the necessary data blocks to solve the parity
-	equations without interference from live changes. If no -d option is
-	provided, SnapRAID assumes the operation applies to the entire array,
-	in this case, `check` and `fix` will use the live filesystems exclusively.
+	A disk explicitly selected via -d (the "target" of the operation)
+	always uses the live filesystem. For `fix`, this allows restoring
+	data to the active disk replacement. For `check`, it allows simulating
+	the `fix` operation under the same conditions.
+
+	All other data disks (the "reference" disks) will be accessed via
+	their snapshots. This ensures that even if you are modifying files
+	on your healthy disks while a recovery is in progress, SnapRAID
+	has a stable, frozen reference to solve the parity equations.
+
+	If no -d option is provided, SnapRAID assumes the operation applies
+	to the entire array, in this case, `check` and `fix` will use the
+	live filesystems exclusively.
 
 	All other commands operate exclusively on the live filesystem.
 
