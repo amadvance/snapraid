@@ -21,16 +21,16 @@
 #define __USE_MINGW_ANSI_STDIO 1
 
 /**
- * Define the MSVCRT version targeting Windows Vista.
+ * Define the MSVCRT version targeting Windows 7.
  */
-#define __MSVCRT_VERSION__ 0x0600
+#define __MSVCRT_VERSION__ 0x0601
 
 /**
- * Include Windows Vista headers.
+ * Include Windows 7 headers.
  *
  * Like for InitializeCriticalSection().
  */
-#define _WIN32_WINNT 0x600
+#define _WIN32_WINNT 0x601
 
 /**
  * Undef as it clashes with windows.h declarations
