@@ -170,7 +170,8 @@ EXTRA_DIST = \
 	cmdline/resource.rc \
 	cmdline/resource.manifest \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
-	acinclude.m4 \
+	m4/ax_pthread.m4 \
+	m4/m4_ax_check_compile_flag.m4 \
 	raid/test/Makefile \
 	raid/test/fulltest.c \
 	raid/test/selftest.c \
