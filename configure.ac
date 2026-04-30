@@ -3,13 +3,18 @@ AC_PREREQ([2.65])
 dnl Get version number from git
 m4_define([git_revision], m4_esyscmd_s([./autover.sh]))
 AC_INIT([SnapRAID CLI], [git_revision], [], [snapraid], [https://www.snapraid.it])
+AC_CANONICAL_HOST
+AC_CANONICAL_BUILD
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
 AC_CONFIG_SRCDIR([cmdline/snapraid.c])
 AC_CONFIG_HEADERS([config.h])
-AC_CANONICAL_HOST
 
 dnl Enables as many system-specific extensions as reasonably possible
 AC_USE_SYSTEM_EXTENSIONS
+
+dnl Macro directory
+AC_CONFIG_MACRO_DIRS([m4])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -31,16 +36,19 @@ if test "x$is_windows" = "xyes"; then
 fi
 
 dnl Options to improve stacktrace (some disabled as no crash reported by years)
-AC_CHECK_CC_OPT([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-pointer", [])
-# AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
-# AC_CHECK_CC_OPT([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
-# AC_CHECK_CC_OPT([-fno-optimize-sibling-calls], CFLAGS="$CFLAGS -fno-optimize-sibling-calls", [])
-AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
+AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-pointer", [])
+# AX_CHECK_COMPILE_FLAG([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
+# AX_CHECK_COMPILE_FLAG([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
+# AX_CHECK_COMPILE_FLAG([-fno-optimize-sibling-calls], CFLAGS="$CFLAGS -fno-optimize-sibling-calls", [])
+AX_CHECK_COMPILE_FLAG([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
 # This the new default for gcc 10
-AC_CHECK_CC_OPT([-fno-common], CFLAGS="$CFLAGS -fno-common", [])
+AX_CHECK_COMPILE_FLAG([-fno-common], CFLAGS="$CFLAGS -fno-common", [])
 
 dnl Checks for system.
 AC_SYS_LARGEFILE
+
+dnl Checks for architecture
+AC_C_BIGENDIAN
 
 dnl Checks for header files.
 AC_HEADER_ASSERT
@@ -91,8 +99,6 @@ AC_CHECK_FUNCS([mach_absolute_time])
 AC_CHECK_FUNCS([backtrace backtrace_symbols])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
-AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", CFLAGS="$CFLAGS -D_REENTRANT")
-AC_CHECK_FUNCS([pthread_create])
 AC_SEARCH_LIBS([exp], [m])
 AC_CHECK_FUNCS([eaccess faccessat])
 
@@ -141,6 +147,24 @@ AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [[
 #endif
 ]])
 
+dnl Checks for libraries
+have_pthreads=no
+AS_IF([test "x$is_windows" = "xyes"], [
+	AC_MSG_NOTICE([Windows native threads support enabled])
+], [
+    AC_CHECK_HEADERS([pthread.h])
+    AX_PTHREAD([
+        thread_model="pthreads"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        AC_DEFINE([HAVE_PTHREAD], [1], [Define to 1 if POSIX threads are available])
+        AC_MSG_NOTICE([POSIX threads support enabled])
+    ], [
+        AC_MSG_WARN([Single-threaded version])
+    ])
+])
+AM_CONDITIONAL([HAVE_PTHREAD], [test "x$have_pthreads" = "xyes"])
+
 dnl Checks for libblkid
 AC_ARG_WITH([blkid],
     AS_HELP_STRING([--without-blkid], [Ignore presence of blkid and disable it]))
@@ -156,9 +180,6 @@ AS_IF([test "x$have_blkid" = "xyes"],
 		[AC_MSG_ERROR([blkid requested but not found])
 	])
 ])
-
-dnl Checks for architecture
-AC_C_BIGENDIAN
 
 dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
