@@ -61,7 +61,7 @@ size_t direct_size(void);
 #include <pthread.h>
 #endif
 
-#if HAVE_PTHREAD_CREATE
+#if HAVE_PTHREAD
 #define HAVE_THREAD 1
 typedef pthread_t thread_id_t;
 typedef pthread_mutex_t thread_mutex_t;
