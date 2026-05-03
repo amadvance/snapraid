@@ -11,7 +11,7 @@
 /****************************************************************************/
 /* snapraid */
 
-int BLOCK_HASH_SIZE = HASH_MAX;
+size_t BLOCK_HASH_SIZE = HASH_MAX;
 
 struct snapraid_content* content_alloc(const char* path, uint64_t dev)
 {

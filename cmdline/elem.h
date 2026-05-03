@@ -138,7 +138,7 @@ struct snapraid_filter {
  *
  * At max HASH_MAX.
  */
-extern int BLOCK_HASH_SIZE;
+extern size_t BLOCK_HASH_SIZE;
 
 /**
  * Block of a file.
@@ -646,7 +646,7 @@ int filter_content(tommy_list* contentlist, const char* path);
  */
 static inline int hash_is_invalid(const unsigned char* hash)
 {
-	int i;
+	size_t i;
 
 	/* if the hash is reduced, we cannot grant that it's a specific kind of hash */
 	if (BLOCK_HASH_SIZE != HASH_MAX)
@@ -668,7 +668,7 @@ static inline int hash_is_invalid(const unsigned char* hash)
  */
 static inline int hash_is_zero(const unsigned char* hash)
 {
-	int i;
+	size_t i;
 
 	/* if the hash is reduced, we cannot grant that it's a specific kind of hash */
 	if (BLOCK_HASH_SIZE != HASH_MAX)

@@ -2964,7 +2964,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				BLOCK_HASH_SIZE = hash_size;
 			}
 
-			if ((int)hash_size != BLOCK_HASH_SIZE) {
+			if (hash_size != BLOCK_HASH_SIZE) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal(EUSER, "Mismatching 'hashsize' specification in the content file!\n");
@@ -5651,7 +5651,7 @@ void generate_configuration(const char* path)
 	printf("blocksize %u\n", state.block_size / KIBI);
 	printf("\n");
 	printf("# Use this hashsize\n");
-	printf("hashsize %u\n", BLOCK_HASH_SIZE);
+	printf("hashsize %zu\n", BLOCK_HASH_SIZE);
 	printf("\n");
 	for (l = 0; l < state.level; ++l) {
 		printf("# Set the correct path for the %s files\n", lev_name(l));
