@@ -1334,7 +1334,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
+				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%zu\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 				++silent_error;
 				continue;
 			}
