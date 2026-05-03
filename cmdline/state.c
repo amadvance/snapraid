@@ -5845,7 +5845,7 @@ int state_snapshot_new(struct snapraid_state* state)
 		int ret;
 
 		/* check if it supports snapshot */
-		if (fssnapshot(disk->mount_point, root, sizeof(root)) != 0)
+		if (fssnapshot(disk->mount_point, root, sizeof(root), &disk->snapshot_magic) != 0)
 			continue;
 
 		size_t root_len = strlen(root);
@@ -5861,13 +5861,13 @@ int state_snapshot_new(struct snapraid_state* state)
 		}
 
 		/* delete a potential previous pending snapshot */
-		if (fssnapshot_delete(container, SNAPSHOT_PENDING) != 0) {
+		if (fssnapshot_delete(disk->snapshot_magic, container, SNAPSHOT_PENDING) != 0) {
 			log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
 
 		/* create a new snapshot */
-		if (fssnapshot_create(root, container, SNAPSHOT_PENDING) != 0) {
+		if (fssnapshot_create(disk->snapshot_magic, root, container, SNAPSHOT_PENDING) != 0) {
 			log_fatal(errno, "Failed to create pending snapshot '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
@@ -5908,13 +5908,13 @@ int state_snapshot_commit(struct snapraid_state* state)
 		pathcat(container, sizeof(container), SNAPSHOT_CONTAINER);
 
 		/* delete a potential previous stable snapshot */
-		if (fssnapshot_delete(container, SNAPSHOT_STABLE) != 0) {
+		if (fssnapshot_delete(disk->snapshot_magic, container, SNAPSHOT_STABLE) != 0) {
 			log_fatal(errno, "Failed to delete stable snapshot in '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
 
 		/* rename pending to stable */
-		if (fssnapshot_rename(container, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
+		if (fssnapshot_rename(disk->snapshot_magic, container, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
 			log_fatal(errno, "Failed to rename snapshot in '%s'. %s.\n", container, strerror(errno));
 			return -1;
 		}
@@ -5937,7 +5937,7 @@ void state_snapshot_read(struct snapraid_state* state)
 		char vol[PATH_MAX];
 
 		/* check if it supports snapshot */
-		if (fssnapshot(disk->mount_point, root, sizeof(root)) != 0)
+		if (fssnapshot(disk->mount_point, root, sizeof(root), &disk->snapshot_magic) != 0)
 			continue;
 
 		size_t root_len = strlen(root);
@@ -5982,7 +5982,7 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 		char vol[PATH_MAX];
 
 		/* check if it supports snapshot */
-		if (fssnapshot(disk->mount_point, root, sizeof(root)) != 0)
+		if (fssnapshot(disk->mount_point, root, sizeof(root), &disk->snapshot_magic) != 0)
 			continue;
 
 		size_t root_len = strlen(root);
