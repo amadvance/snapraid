@@ -29,6 +29,7 @@ int exit_failure = 1;
 int exit_sync_needed = 2;
 
 #define BTRFS_SUPER_MAGIC 0x9123683E
+#define BCACHEFS_SUPER_MAGIC 0xCA451A4E
 
 #if HAVE_POSIX_FADVISE
 /**
@@ -125,6 +126,7 @@ const char* stat_desc(struct stat* st)
 	return "unknown";
 }
 
+#if HAVE_LINUX_DEVICE
 static const char* smartctl_paths[] = {
 	/* Linux & BSD */
 	"/usr/sbin/smartctl",
@@ -132,22 +134,24 @@ static const char* smartctl_paths[] = {
 	"/usr/local/sbin/smartctl",
 	"/usr/bin/smartctl",
 	"/usr/local/bin/smartctl",
+#ifdef __APPLE__
 	/* macOS (Intel & Apple Silicon) */
 	"/opt/homebrew/sbin/smartctl",
+#endif
 	0
 };
 
-const char* find_smartctl(void)
+static const char* find_smartctl(void)
 {
-	int i;
-
-	for (i = 0; smartctl_paths[i]; ++i) {
-		if (eaccess(smartctl_paths[i], X_OK) == 0)
+	for (int i = 0; smartctl_paths[i]; ++i) {
+		if (eaccess(smartctl_paths[i], X_OK) == 0) {
 			return smartctl_paths[i];
+		}
 	}
 
 	return 0;
 }
+#endif
 
 /**
  * Read a file from sys
@@ -986,6 +990,66 @@ static int devuuid_btrfs(uint64_t device, const char* dir, char* uuid, size_t uu
 }
 #endif
 
+#if HAVE_LINUX_DEVICE
+struct bch_ioctl_query_uuid {
+	__u8 uuid[16];
+};
+
+#define BCH_IOCTL_QUERY_UUID    _IOR(0xbc, 1, struct bch_ioctl_query_uuid)
+
+static int devuuid_bcachefs(uint64_t device, const char* dir, char* uuid, size_t uuid_size)
+{
+	struct statfs sfs;
+
+	int fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (fd < 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP*/
+	}
+
+	if (fstatfs(fd, &sfs) != 0) {
+		/* LCOV_EXCL_START */
+		close(fd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (sfs.f_type != BCACHEFS_SUPER_MAGIC) {
+		close(fd);
+		return -1;
+	}
+
+	struct bch_ioctl_query_uuid info;
+	memset(&info, 0, sizeof(info));
+	if (ioctl(fd, BCH_IOCTL_QUERY_UUID, &info) < 0) {
+		/* LCOV_EXCL_START */
+		close(fd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	close(fd);
+
+	snprintf(uuid, uuid_size,
+		"%02x%02x%02x%02x-"
+		"%02x%02x-"
+		"%02x%02x-"
+		"%02x%02x-"
+		"%02x%02x%02x%02x%02x%02x",
+		info.uuid[0], info.uuid[1], info.uuid[2], info.uuid[3],
+		info.uuid[4], info.uuid[5],
+		info.uuid[6], info.uuid[7],
+		info.uuid[8], info.uuid[9],
+		info.uuid[10], info.uuid[11], info.uuid[12], info.uuid[13], info.uuid[14], info.uuid[15]
+	);
+
+	log_tag("uuid:by-bcachefs:%u:%u:%s: found %s\n", major(device), minor(device), uuid, dir);
+
+	return 0;
+}
+#endif
+
 int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid_size)
 {
 	(void)device_path;
@@ -998,6 +1062,11 @@ int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid
 
 #if HAVE_LINUX_DEVICE
 	if (devuuid_btrfs(device_id, device_path, uuid, uuid_size) == 0)
+		return 0;
+#endif
+
+#if HAVE_LINUX_DEVICE
+	if (devuuid_bcachefs(device_id, device_path, uuid, uuid_size) == 0)
 		return 0;
 #endif
 
@@ -1142,7 +1211,6 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 #define BEFS_SUPER_MAGIC 0x42465331
 #define BFS_MAGIC 0x1BADFACE
 #define BINFMTFS_MAGIC 0x42494e4d
-#define BTRFS_SUPER_MAGIC 0x9123683E
 #define CGROUP_SUPER_MAGIC 0x27e0eb
 #define CIFS_MAGIC_NUMBER 0xFF534D42
 #define CODA_SUPER_MAGIC 0x73757245
@@ -1246,6 +1314,7 @@ struct filesystem_entry {
 	{ BFS_MAGIC, "bfs", 0 },
 	{ BINFMTFS_MAGIC, "binfmt_misc", 0 },
 	{ BTRFS_SUPER_MAGIC, "btrfs", 0 },
+	{ BCACHEFS_SUPER_MAGIC, "bcachefs", 0 },
 	{ CEPH_SUPER_MAGIC, "ceph", 1 },
 	{ CGROUP_SUPER_MAGIC, "cgroupfs", 0 },
 	{ CIFS_MAGIC_NUMBER, "cifs", 1 },
@@ -1465,12 +1534,40 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
-int fssnapshot(const char* path, char* root, size_t root_size)
+#if HAVE_LINUX_DEVICE
+static const char* const bcachefs_paths[] = {
+	"/usr/sbin/bcachefs",
+	"/sbin/bcachefs",
+	"/usr/local/sbin/bcachefs",
+	"/usr/bin/bcachefs",
+	"/bin/bcachefs",
+	"/usr/local/bin/bcachefs",
+#ifdef __APPLE__
+	/* macOS (Intel & Apple Silicon) */
+	"/opt/homebrew/sbin/bcachefs",
+#endif
+	0
+};
+
+static const char* find_bcachefs(void)
+{
+	for (int i = 0; bcachefs_paths[i]; ++i) {
+		if (access(bcachefs_paths[i], X_OK) == 0) {
+			return bcachefs_paths[i];
+		}
+	}
+
+	return 0;
+}
+#endif
+
+int fssnapshot(const char* path, char* root, size_t root_size, uint32_t* magic)
 {
 #if HAVE_LINUX_DEVICE
 	struct statfs sfs;
 	struct stat st;
 	char current_path[PATH_MAX];
+	uint64_t root_inode;
 
 	pathcpy(current_path, sizeof(current_path), path);
 
@@ -1481,9 +1578,15 @@ int fssnapshot(const char* path, char* root, size_t root_size)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* only btrfs */
-	if (sfs.f_type != BTRFS_SUPER_MAGIC)
+	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
+		/* btrfs reserved inode 256 for subvolume roots */
+		root_inode = 256;
+	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
+		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
+		root_inode = 4096;
+	} else {
 		return -1;
+	}
 
 	/* walk up the directory tree to find the subvolume root (Inode 256) */
 	while (1) {
@@ -1494,10 +1597,10 @@ int fssnapshot(const char* path, char* root, size_t root_size)
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* btrfs reserved inode 256 for subvolume roots */
-		if (st.st_ino == 256) {
+		if (st.st_ino == root_inode) {
 			/* copy the subvol root */
 			pathcpy(root, root_size, current_path);
+			*magic = sfs.f_type;
 			return 0;
 		}
 
@@ -1515,13 +1618,14 @@ int fssnapshot(const char* path, char* root, size_t root_size)
 	(void)path;
 	(void)root;
 	(void)root_size;
+	(void)magic;
 	return -1;
 #endif
 }
 
-int fssnapshot_create(const char* source, const char* parent_dir, const char* name)
-{
 #if HAVE_LINUX_DEVICE
+int fssnapshot_btrfs_create(const char* source, const char* parent_dir, const char* name)
+{
 	struct btrfs_ioctl_vol_args_v2 args;
 	int fd_source;
 	int fd_dest_parent;
@@ -1562,7 +1666,53 @@ int fssnapshot_create(const char* source, const char* parent_dir, const char* na
 	close(fd_dest_parent);
 
 	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_bcachefs_create(const char* source, const char* parent_dir, const char* name)
+{
+	char dst_path[PATH_MAX];
+	char cmd[PATH_MAX * 3 + 64];
+	const char* bcachefs;
+	int ret;
+
+	bcachefs = find_bcachefs();
+	if (!bcachefs) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathcpy(dst_path, sizeof(dst_path), parent_dir);
+	pathcatc(dst_path, sizeof(dst_path), '/');
+	pathcat(dst_path, sizeof(dst_path), name);
+
+	snprintf(cmd, sizeof(cmd), "%s subvolume snapshot -r %s %s", bcachefs, source, dst_path);
+
+	ret = system(cmd);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
+int fssnapshot_create(uint32_t magic, const char* source, const char* parent_dir, const char* name)
+{
+#if HAVE_LINUX_DEVICE
+	if (magic == BTRFS_SUPER_MAGIC) {
+		return fssnapshot_btrfs_create(source, parent_dir, name);
+	} else if (magic == BCACHEFS_SUPER_MAGIC) {
+		return fssnapshot_bcachefs_create(source, parent_dir, name);
+	} else {
+		return -1;
+	}
 #else
+	(void)magic;
 	(void)source;
 	(void)parent_dir;
 	(void)name;
@@ -1570,9 +1720,9 @@ int fssnapshot_create(const char* source, const char* parent_dir, const char* na
 #endif
 }
 
-int fssnapshot_delete(const char* parent_dir, const char* name)
-{
 #if HAVE_LINUX_DEVICE
+int fssnapshot_btrfs_delete(const char* parent_dir, const char* name)
+{
 	struct btrfs_ioctl_vol_args args;
 	int fd_parent;
 	int ret;
@@ -1588,7 +1738,6 @@ int fssnapshot_delete(const char* parent_dir, const char* name)
 	pathcpy(args.name, BTRFS_PATH_NAME_MAX, name);
 
 	ret = ioctl(fd_parent, BTRFS_IOC_SNAP_DESTROY, &args);
-
 	if (ret < 0 && errno != ENOENT) {
 		/* LCOV_EXCL_START */
 		close(fd_parent);
@@ -1598,16 +1747,70 @@ int fssnapshot_delete(const char* parent_dir, const char* name)
 
 	close(fd_parent);
 	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_bcachefs_delete(const char* parent_dir, const char* name)
+{
+	char target_path[PATH_MAX];
+	char cmd[PATH_MAX + 64];
+	const char* bcachefs;
+	int ret;
+
+	bcachefs = find_bcachefs();
+	if (!bcachefs) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathcpy(target_path, sizeof(target_path), parent_dir);
+	pathcatc(target_path, sizeof(target_path), '/');
+	pathcat(target_path, sizeof(target_path), name);
+
+	if (access(target_path, F_OK) < 0) {
+		if (errno == ENOENT)
+			return 0;
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	snprintf(cmd, sizeof(cmd), "%s subvolume delete %s", bcachefs, target_path);
+
+	ret = system(cmd);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
+int fssnapshot_delete(uint32_t magic, const char* parent_dir, const char* name)
+{
+#if HAVE_LINUX_DEVICE
+	if (magic == BTRFS_SUPER_MAGIC) {
+		return fssnapshot_btrfs_delete(parent_dir, name);
+	} else if (magic == BCACHEFS_SUPER_MAGIC) {
+		return fssnapshot_bcachefs_delete(parent_dir, name);
+	} else {
+		return -1;
+	}
 #else
+	(void)magic;
 	(void)parent_dir;
 	(void)name;
 	return -1;
 #endif
 }
 
-int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* new_name)
-{
 #if HAVE_LINUX_DEVICE
+static int fssnapshot_btrfs_rename(const char* parent_dir, const char* old_name, const char* new_name)
+{
 	char old_path[PATH_MAX];
 	char new_path[PATH_MAX];
 
@@ -1625,7 +1828,46 @@ int fssnapshot_rename(const char* parent_dir, const char* old_name, const char* 
 	}
 
 	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_bcachefs_rename(const char* parent_dir, const char* old_name, const char* new_name)
+{
+	char old_path[PATH_MAX];
+
+	pathcpy(old_path, sizeof(old_path), parent_dir);
+	pathcatc(old_path, sizeof(old_path), '/');
+	pathcat(old_path, sizeof(old_path), old_name);
+
+	if (fssnapshot_bcachefs_create(old_path, parent_dir, new_name) != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (fssnapshot_bcachefs_delete(parent_dir, old_name) != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
+int fssnapshot_rename(uint32_t magic, const char* parent_dir, const char* old_name, const char* new_name)
+{
+#if HAVE_LINUX_DEVICE
+	if (magic == BTRFS_SUPER_MAGIC) {
+		return fssnapshot_btrfs_rename(parent_dir, old_name, new_name);
+	} else if (magic == BCACHEFS_SUPER_MAGIC) {
+		return fssnapshot_bcachefs_rename(parent_dir, old_name, new_name);
+	} else {
+		return -1;
+	}
 #else
+	(void)magic;
 	(void)parent_dir;
 	(void)old_name;
 	(void)new_name;

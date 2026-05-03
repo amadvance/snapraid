@@ -154,7 +154,7 @@ EXTRA_DIST = \
 	$(LIST_D) \
 	$(LIST_MAN) \
 	$(LIST_TXT) \
-	test/test-btrfs.conf \
+	test/test-snap.conf \
 	test/test-par1.conf \
 	test/test-par2.conf \
 	test/test-par3.conf \
@@ -269,8 +269,8 @@ CHECKFLAGS_VERBOSE = $(CHECKFLAGS_ALPHA) -v --gui
 # Quiet options
 CHECKFLAGS = $(CHECKFLAGS_ALPHA) -q -q -q
 
-# Btrfs with no parity limit
-CHECKFLAGS_BTRFS = --test-skip-device --test-skip-self --test-io-advise-none --test-force-order-alpha -q -q -q
+# Snapshots with no parity limit
+CHECKFLAGS_SNAP = --test-skip-device --test-skip-self --test-io-advise-none --test-force-order-alpha -q -q -q
 
 # Number of files to create
 if !HAVE_MEMORY_CHECKER
@@ -302,7 +302,7 @@ PARZ = $(srcdir)/test/test-parz.conf
 PAR4 = $(srcdir)/test/test-par4.conf
 PAR5 = $(srcdir)/test/test-par5.conf
 PAR6 = $(srcdir)/test/test-par6.conf
-BTRFS = $(srcdir)/test/test-btrfs.conf
+SNAP = $(srcdir)/test/test-snap.conf
 MSG = @echo =====
 SNAPRAID = ./checker$(EXEEXT)
 
@@ -312,89 +312,89 @@ setupcheck:
 	mkdir bench
 
 # Not included in main check because it requires root permissions
-btrfscheck: mktest checker setupcheck
-	sudo $(MAKE) btrfscheck_run; \
+snapcheck: mktest checker setupcheck
+	sudo $(MAKE) snapcheck_run; \
 	status=$$?; \
-	sudo $(MAKE) btrfscheck_cleanup; \
+	sudo $(MAKE) snapcheck_cleanup; \
 	exit $$status
 
-btrfscheck_run:
-	mkdir bench/btrfs1
-	mkdir bench/btrfs2
-	mkdir bench/btrfs3
+snapcheck_run:
+	mkdir bench/snap1
+	mkdir bench/snap2
+	mkdir bench/snap3
 	$(MSG) Create storages
-	dd bs=1048576 count=32 if=/dev/zero of=bench/btrfs1.img
-	dd bs=1048576 count=32 if=/dev/zero of=bench/btrfs2.img
-	dd bs=1048576 count=32 if=/dev/zero of=bench/btrfs3.img
-	/sbin/mkfs.btrfs --mixed bench/btrfs1.img
-	/sbin/mkfs.btrfs --mixed bench/btrfs2.img
-	/sbin/mkfs.btrfs --mixed bench/btrfs3.img
-	mount -o loop bench/btrfs1.img bench/btrfs1
-	mount -o loop bench/btrfs2.img bench/btrfs2
-	mount -o loop bench/btrfs3.img bench/btrfs3
+	dd bs=1048576 count=32 if=/dev/zero of=bench/snap1.img
+	dd bs=1048576 count=32 if=/dev/zero of=bench/snap2.img
+	dd bs=1048576 count=32 if=/dev/zero of=bench/snap3.img
+	/sbin/mkfs.btrfs --mixed bench/snap1.img
+	/sbin/mkfs.btrfs --mixed bench/snap2.img
+	/sbin/mkfs.btrfs --mixed bench/snap3.img
+	mount -o loop bench/snap1.img bench/snap1
+	mount -o loop bench/snap2.img bench/snap2
+	mount -o loop bench/snap3.img bench/snap3
 	$(MSG) Create some files
-	$(TESTENV) ./mktest$(EXEEXT) generate 1 btrfs 3 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 snap 3 $(CHECKCOUNT) $(CHECKSIZE)
 	$(MSG) Basic
 # Setup
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) scrub -p full
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check -d btrfs1
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) scrub -p full
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check -d snap1
 # Recover test
 	$(MSG) Recover with file deletions from two disk with ONLY one parity OUTSIDE SYNC
-	rm -rf bench/btrfs1/a
-	rm -rf bench/btrfs2/a
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs1 -l test.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs2 -l test.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --force-full
+	rm -rf bench/snap1/a
+	rm -rf bench/snap2/a
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) fix -d snap1 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) fix -d snap2 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --force-full
 # Recover test
 	$(MSG) Recover with file deletions from two disk with ONLY one parity aborted BEFORE SYNC
 # Changes (including deletion) on disk1
-	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/btrfs1/a/* bench/btrfs1/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/snap1/a/* bench/snap1/b/*
 # Sync aborted BEFORE
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-before-sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) status
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-before-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) status
 # Destroy disk2
-	rm -rf bench/btrfs2/a bench/btrfs2/b
+	rm -rf bench/snap2/a bench/snap2/b
 # Recover disk2 (disk1 is intentionally deleted, so nothing to recover)
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs2 -l test.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --force-full
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) fix -d snap2 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --force-full
 # Recover test
 	$(MSG) Recover with file deletions from two disk with ONLY one parity aborted AFTER SYNC
 # Changes (including deletion) on disk1
-	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/btrfs1/a/* bench/btrfs1/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/snap1/a/* bench/snap1/b/*
 # Sync aborted AFTER
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-after-sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) status
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-after-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) status
 # Destroy disk2
-	rm -rf bench/btrfs2/a bench/btrfs2/b
+	rm -rf bench/snap2/a bench/snap2/b
 # Recover disk2 (disk1 is intentionally deleted, so nothing to recover)
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) fix -d btrfs2 -l test.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --force-full
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) fix -d snap2 -l test.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --force-full
 # Sync recover
 	$(MSG) Sync recover aborted AFTER
 # Change files in disk3
-	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/btrfs3/a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/snap3/a/*
 # Sync abort and sync retry
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-after-sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-after-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
 # Sync recover
 	$(MSG) Sync recover aborted BEFORE
 # Change files in disk3
-	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/btrfs3/a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/snap3/a/*
 # Sync abort and sync retry
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync --test-kill-before-sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) sync
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_BTRFS) -c $(BTRFS) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-before-sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
 
-btrfscheck_cleanup:
+snapcheck_cleanup:
 	$(MSG) Unmount storages
-	umount bench/btrfs1
-	umount bench/btrfs2
-	umount bench/btrfs3
+	umount bench/snap1
+	umount bench/snap2
+	umount bench/snap3
 
 check-local: setupcheck
 	mkdir bench/disk1
