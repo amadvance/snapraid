@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v5
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all btrfscheck
+      - run: make all snapcheck
       - run: make distcheck
   build-win:
     runs-on: windows-latest

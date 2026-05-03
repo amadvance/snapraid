@@ -50,18 +50,18 @@ extra boot /
 # start of a 'sync'. This ensures a consistent, point-in-time view of your
 # files, preventing errors caused by concurrent file modifications.
 #
-# This option applies exclusively to data disks formatted with the Btrfs
-# filesystem. Parity disks, or data disks using other filesystems, will
-# always use the live version of the filesystem.
+# This option applies exclusively to data disks formatted with the
+# Btrfs or Bcachefs filesystems. Parity disks, or data disks using
+# other filesystems, will always use the live version of the filesystem.
 #
 # This significantly improves recovery: if a file is deleted from the live
 # filesystem, it remains preserved in the snapshot. This prevents the parity
 # from becoming "broken" for that block, ensuring you can still successfully
 # recover data if another disk fails.
 #
-# Only Btrfs is supported. Snapshots are stored in a hidden '.snapraid'
-# directory at the root of the Btrfs subvolume containing your data.
-# SnapRAID will automatically detect the subvolume root for each data path.
+# Snapshots are stored in a hidden '.snapraid' directory at the root
+# of the subvolume containing your data. SnapRAID will automatically
+# detect the subvolume root for each data path.
 #
 # Snapshot creation and deletion require administrative privileges.
 # Ensure SnapRAID is run with the necessary permissions (e.g., sudo) when
