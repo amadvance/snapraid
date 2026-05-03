@@ -46,6 +46,7 @@
 #ifdef __MINGW32__
 #if defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO == 1
 #define attribute_printf gnu_printf /* GNU format */
+#define printf __mingw_printf
 #else
 #define attribute_printf ms_printf /* MSVCRT format */
 #endif
