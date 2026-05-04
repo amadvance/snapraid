@@ -9,7 +9,7 @@ make distclean
 # Reconfigure (with force) to get the latest revision from git
 autoreconf -f
 
-if ! ./configure.windows-x86; then
+if ! ./configure.windows-x86 --enable-warning-as-error; then
 	exit 1
 fi
 
@@ -21,7 +21,7 @@ if ! make distwindows-x86 distclean; then
 	exit 1
 fi
 
-if ! ./configure.windows-x64; then
+if ! ./configure.windows-x64 --enable-warning-as-error; then
 	exit 1
 fi
 
@@ -33,7 +33,7 @@ if ! make distwindows-x64 distclean; then
 	exit 1
 fi
 
-if ! ./configure ; then
+if ! ./configure --enable-warning-as-error; then
 	exit 1
 fi
 
