@@ -8,7 +8,7 @@ SnapRAID HISTORY
    consistency and improve recovery reliability. When the 'snapshot'
    option is enabled, SnapRAID manages a 'pending' snapshot at the start
    of a sync and promotes it to a 'stable' state upon  successful
-   completion (currently supported on Btrfs and Bcachefs).
+   completion (currently supported on Btrfs, Bcachefs, and ZFS).
    This ensures that 'scrub', 'check', and 'fix' operations utilize a
    frozen point-in-time reference for data disks, eliminating
    mismatches caused by concurrent live filesystem modifications.
