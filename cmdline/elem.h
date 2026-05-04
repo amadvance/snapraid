@@ -377,13 +377,9 @@ struct snapraid_disk {
 	char dir[PATH_MAX];
 
 	/**
-	 * Subvolumes root directory.
-	 *
-	 * Empty if disabled.
-	 * It always terminates with /
+	 * Snapshot context
 	 */
-	char snapshot_root[PATH_MAX];
-	uint32_t snapshot_magic; /**< Magic number of the snapshot filesystem */
+	struct fssnapshot_struct fss;
 
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */

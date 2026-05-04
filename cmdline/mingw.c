@@ -2037,36 +2037,30 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
-int fssnapshot(const char* path, char* root, size_t root_size, uint32_t* magic)
+int fssnapshot(const char* path, struct fssnapshot_struct* fss)
 {
 	(void)path;
-	(void)root;
-	(void)root_size;
-	(void)magic;
+	(void)fss;
 	return -1;
 }
 
-int fssnapshot_create(uint32_t magic, const char* source, const char* parent_dir, const char* name)
+int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
 {
-	(void)magic;
-	(void)source;
-	(void)parent_dir;
+	(void)fss;
 	(void)name;
 	return -1;
 }
 
-int fssnapshot_delete(uint32_t magic, const char* parent_dir, const char* name)
+int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 {
-	(void)magic;
-	(void)parent_dir;
+	(void)fss;
 	(void)name;
 	return -1;
 }
 
-int fssnapshot_rename(uint32_t magic, const char* parent_dir, const char* old_name, const char* new_name)
+int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
 {
-	(void)magic;
-	(void)parent_dir;
+	(void)fss;
 	(void)old_name;
 	(void)new_name;
 	return -1;
