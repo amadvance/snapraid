@@ -811,8 +811,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	pathslash(disk->mount_point, sizeof(disk->mount_point));
 
 	/* no snapshot by default */
-	disk->snapshot_root[0] = 0;
-	disk->snapshot_magic = 0;
+	memset(&disk->fss, 0, sizeof(disk->fss));
 	pathcpy(disk->dir, sizeof(disk->dir), disk->mount_point);
 
 #if HAVE_THREAD
