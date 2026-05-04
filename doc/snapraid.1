@@ -1435,7 +1435,7 @@ start of a \'sync\'. This ensures a consistent, point\-in\-time view of your
 files, preventing errors caused by concurrent file modifications.
 .PP
 This option applies exclusively to data disks formatted with the
-Btrfs or Bcachefs filesystems. Parity disks, or data disks using
+Btrfs, Bcachefs or ZFS filesystems. Parity disks, or data disks using
 other filesystems, will always use the live version of the filesystem.
 .PP
 This significantly improves recovery: if a file is deleted from the live
@@ -1443,15 +1443,11 @@ filesystem, it remains preserved in the snapshot. This prevents the parity
 from becoming \[dq]broken\[dq] for that block, ensuring you can still successfully
 recover data if another disk fails.
 .PP
-Snapshots are stored in a hidden \'.snapraid\' directory at the root
-of the subvolume containing your data. SnapRAID will automatically
-detect the subvolume root for each data path.
-.PP
 Snapshot creation and deletion require administrative privileges.
 Ensure SnapRAID is run with the necessary permissions (e.g., sudo) when
 this option is enabled.
 .PP
-See the SNAPSHOTSsection for a detailed explanation of the snapshot
+See the SNAPSHOTS section for a detailed explanation of the snapshot
 lifecycle.
 .SS nohidden 
 Excludes all hidden files and directories.
@@ -1835,7 +1831,7 @@ Snapshots are created only for data disks and only if the underlying
 filesystem supports this functionality. Parity disks always use
 the live filesystem.
 .PP
-At present, this is supported exclusively on Btrfs and Bcachefs.
+At present, this is supported exclusively on Btrfs, Bcachefs, and ZFS.
 .PP
 You can mix data disks with different filesystems. Only those that
 support snapshots will utilize them, while other disks will continue
@@ -1877,8 +1873,9 @@ live filesystems exclusively.
 All other commands operate exclusively on the live filesystem.
 .SH SNAPSHOTS LIFECYCLE 
 SnapRAID manages two specific snapshots, \`stable\` and \`pending\`,
-within a hidden \`.snapraid\` directory at the root of each data
-subvolume.
+within a hidden directory at the root of each data subvolume.
+In Btrfs an Bcachefs it\'s used the \`.snapraid/\` directory, in ZFS
+the standard \`.zfs/snapshot/\`.
 .PP
 The \`stable\` snapshot represents the state of the last
 successfully completed \`sync\`, containing the exact data used to
