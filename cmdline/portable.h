@@ -364,38 +364,74 @@ int filephy(const char* path, uint64_t size, uint64_t* physical);
 int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size);
 
 /**
- * Get the subvolume directory if the underline filesystem support it
- * @param path Full path of the mount point to check. It must end with /
- * @param root Set the full path of the subvolume root that contains the specified path. It will end with /.
- * @param magic Set the magic number of the filesystem
+ * Snapshots context
  */
-int fssnapshot(const char* path, char* root, size_t root_size, uint32_t* magic);
+struct fssnapshot_struct {
+	/**
+	 * Filesystem magic number
+	 * 0 if no snapshot support
+	 */
+	uint32_t magic;
+
+	/**
+	 * Root directory of the volume/dataset mountpoint.
+	 * It ALWAYS terminates with /
+	 * - Btrfs/Bcachefs: subvolume root
+	 * - ZFS: dataset mountpoint
+	 */
+	char root_dir[PATH_MAX];
+
+	/**
+	 * Directory where snapshots are accessible as subdirectories.
+	 * It ALWAYS terminates with /
+	 * - Btrfs/Bcachefs: real directory (e.g. <root>/.snapraid/)
+	 * - ZFS: virtual directory (e.g. <root>/.zfs/snapshot/)
+	 */
+	char snapshot_dir[PATH_MAX];
+
+	/*
+	 * Dataset name (ZFS only, e.g. "pool/data").
+	 * Empty string for filesystems where not applicable.
+	 */
+	char dataset[PATH_MAX];
+};
 
 /**
- * Creates a snapshot of a subvolume
- * @param magic The magic number of the filesystem.
- * @param source Path to the source subvolume.
- * @param parent_dir Directory where the snapshot should be created.
- * @param name Name of snapshot.
- * @return 0 on success, -1 on failure.
+ * Initialize snapshot context from an arbitrary path.
+ *
+ * @param path Full path inside the filesystem (must end with '/')
+ * @param fss Output snapshot context
+ * @return 0 on success, -1 on failure
  */
-int fssnapshot_create(uint32_t magic, const char* source, const char* parent_dir, const char* name);
+int fssnapshot(const char* path, struct fssnapshot_struct* fss);
 
 /**
- * Deletes a subvolume/snapshot.
- * @param magic The magic number of the filesystem.
- * @param parent_dir Directory where the snapshot is.
- * @param name Name of snapshot.
- * @return 0 on success, -1 on failure.
+ * Create a snapshot of the filesystem root/dataset.
+ *
+ * @param fss  Snapshot context
+ * @param name Snapshot name
+ * @return 0 on success, -1 on failure
  */
-int fssnapshot_delete(uint32_t magic, const char* parent_dir, const char* name);
+int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name);
 
 /**
- * Renames a subvolume.
- * @param magic The magic number of the filesystem.
- * @return 0 on success, -1 on failure.
+ * Delete a snapshot.
+ *
+ * @param fss  Snapshot context
+ * @param name Snapshot name
+ * @return 0 on success, -1 on failure
  */
-int fssnapshot_rename(uint32_t magic, const char* parent_dir, const char* old_name, const char* new_name);
+int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name);
+
+/**
+ * Rename a snapshot.
+ *
+ * @param fss       Snapshot context
+ * @param old_name  Existing snapshot name
+ * @param new_name  New snapshot name
+ * @return 0 on success, -1 on failure
+ */
+int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name);
 
 /*
  * Log file.
