@@ -399,16 +399,26 @@ struct fssnapshot_struct {
 /**
  * Initialize snapshot context from an arbitrary path.
  *
- * @param path Full path inside the filesystem (must end with '/')
+ * @param dir Full path inside the filesystem (must end with '/')
  * @param fss Output snapshot context
  * @return 0 on success, -1 on failure
  */
-int fssnapshot(const char* path, struct fssnapshot_struct* fss);
+int fssnapshot(const char* dir, struct fssnapshot_struct* fss);
+
+/**
+ * Stat the snapshot directory.
+ *
+ * @param fss Snapshot context
+ * @param name Snapshot name
+ * @param st Set the stat info
+ * @return 0 on success, -1 on failure
+ */
+int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat* st);
 
 /**
  * Create a snapshot of the filesystem root/dataset.
  *
- * @param fss  Snapshot context
+ * @param fss Snapshot context
  * @param name Snapshot name
  * @return 0 on success, -1 on failure
  */
@@ -426,9 +436,9 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name);
 /**
  * Rename a snapshot.
  *
- * @param fss       Snapshot context
- * @param old_name  Existing snapshot name
- * @param new_name  New snapshot name
+ * @param fss Snapshot context
+ * @param old_name Existing snapshot name
+ * @param new_name New snapshot name
  * @return 0 on success, -1 on failure
  */
 int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name);
