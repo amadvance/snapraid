@@ -30,6 +30,84 @@ int exit_sync_needed = 2;
 
 #define BTRFS_SUPER_MAGIC 0x9123683E
 #define BCACHEFS_SUPER_MAGIC 0xCA451A4E
+#define ZFS_SUPER_MAGIC 0x2FC12FC1
+
+#if HAVE_LINUX_DEVICE
+static const char* const bcachefs_paths[] = {
+	"/usr/sbin/bcachefs",
+	"/sbin/bcachefs",
+	"/usr/local/sbin/bcachefs",
+	"/usr/bin/bcachefs",
+	"/bin/bcachefs",
+	"/usr/local/bin/bcachefs",
+#ifdef __APPLE__
+	/* macOS (Intel & Apple Silicon) */
+	"/opt/homebrew/sbin/bcachefs",
+#endif
+	0
+};
+
+static const char* find_bcachefs(void)
+{
+	for (int i = 0; bcachefs_paths[i]; ++i) {
+		if (access(bcachefs_paths[i], X_OK) == 0) {
+			return bcachefs_paths[i];
+		}
+	}
+
+	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static const char* const zfs_paths[] = {
+	"/usr/sbin/zfs",
+	"/sbin/zfs",
+	"/usr/local/sbin/zfs",
+	"/usr/bin/zfs",
+	"/bin/zfs",
+	"/usr/local/bin/zfs",
+#ifdef __APPLE__
+	/* macOS (Intel & Apple Silicon) */
+	"/opt/homebrew/sbin/zfs",
+#endif
+	0
+};
+
+static const char* find_zfs(void)
+{
+	for (int i = 0; zfs_paths[i]; ++i) {
+		if (access(zfs_paths[i], X_OK) == 0) {
+			return zfs_paths[i];
+		}
+	}
+	return 0;
+}
+
+static const char* const zpool_paths[] = {
+	"/usr/sbin/zpool",
+	"/sbin/zpool",
+	"/usr/local/sbin/zpool",
+	"/usr/bin/zpool",
+	"/bin/zpool",
+	"/usr/local/bin/zpool",
+#ifdef __APPLE__
+	/* macOS (Intel & Apple Silicon) */
+	"/opt/homebrew/sbin/zpool",
+#endif
+	0
+};
+
+static const char* find_zpool(void)
+{
+	for (int i = 0; zpool_paths[i]; ++i) {
+		if (access(zpool_paths[i], X_OK) == 0) {
+			return zpool_paths[i];
+		}
+	}
+	return 0;
+}
+#endif
 
 #if HAVE_POSIX_FADVISE
 /**
@@ -448,10 +526,313 @@ struct dev_struct {
 	tommy_node node;
 };
 
+#if HAVE_LINUX_DEVICE
+static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_list* devlist)
+{
+	struct btrfs_ioctl_fs_info_args fs_info;
+	memset(&fs_info, 0, sizeof(fs_info));
+	if (ioctl(fd, BTRFS_IOC_FS_INFO, &fs_info) < 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (fs_info.max_id == 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	for (__u64 i = 1; i <= fs_info.max_id; ++i) {
+		struct btrfs_ioctl_dev_info_args dev_info;
+		memset(&dev_info, 0, sizeof(dev_info));
+		dev_info.devid = i;
+
+		if (ioctl(fd, BTRFS_IOC_DEV_INFO, &dev_info) != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* get major:minor, use stat on the path returned */
+		struct stat st;
+		if (stat((char*)dev_info.path, &st) != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
+		dev->device = st.st_rdev;
+		tommy_list_insert_tail(devlist, &dev->node, dev);
+
+		log_tag("dereference:btrfs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
+	}
+
+	return 0;
+}
+
+static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list* devlist)
+{
+	char resolved[PATH_MAX];
+	char device_list[PATH_MAX * 8];
+
+	if (realpath(dir, resolved) == 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	FILE* fd = fopen("/proc/self/mountinfo", "r");
+	if (!fd) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/*
+	 * mountinfo format
+	 * 0 - mount ID
+	 * 1 - parent ID
+	 * 2 - major:minor
+	 * 3 - root
+	 * 4 - mount point
+	 * 5 - options
+	 * 6 - "-" (separator)
+	 * 7 - fs
+	 * 8 - mount source - /dev/device
+	 */
+	size_t best_len = 0;
+	while (1) {
+		char buf[PATH_MAX * 2 + 64];
+		char* id_map[8];
+		unsigned id_mac;
+		char* fs_map[8];
+		unsigned fs_mac;
+
+		char* s = fgets(buf, sizeof(buf), fd);
+		if (s == 0)
+			break;
+
+		/* find the separator position */
+		char* separator = strstr(s, " - ");
+		if (!separator)
+			continue;
+
+		/* skip the separator */
+		*separator = 0;
+		separator += 3;
+
+		/* split the line */
+		id_mac = strsplit(id_map, 8, s, " \t\n");
+		fs_mac = strsplit(fs_map, 8, separator, " \t\n");
+
+		/* if too short, it's the wrong line */
+		if (id_mac < 5)
+			continue;
+		if (fs_mac < 2)
+			continue;
+
+		/* mount point must contain the directory */
+		const char* mp = id_map[4];
+		size_t mp_len = strlen(mp);
+		if (strncmp(resolved, mp, mp_len) != 0)
+			continue;
+		if (mp_len > 1 && resolved[mp_len] != '/' && resolved[mp_len] != 0)
+			continue;
+
+		/* it should be bcachefs */
+		const char* fs = fs_map[0];
+		if (strcmp(fs, "bcachefs") != 0)
+			continue;
+
+		/* keep the longest (innermost) match */
+		if (mp_len > best_len) {
+			best_len = mp_len;
+			pathcpy(device_list, sizeof(device_list), fs_map[1]);
+		}
+	}
+
+	fclose(fd);
+
+	if (best_len == 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* split the device list */
+	char* dev_map[64];
+	unsigned dev_mac = strsplit(dev_map, 64, device_list, ":");
+	for (unsigned i = 0; i < dev_mac; ++i) {
+		/* get major:minor, use stat on the path returned */
+		struct stat st;
+		if (stat(dev_map[i], &st) != 0)
+			continue;
+
+		struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
+		dev->device = st.st_rdev;
+		tommy_list_insert_tail(devlist, &dev->node, dev);
+
+		log_tag("dereference:bcachefs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
+	}
+
+	return 0;
+}
+
+static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char* uuid, size_t uuid_size, char* mount_point, size_t mount_point_size)
+{
+	char resolved[PATH_MAX];
+	char cmd[PATH_MAX * 2 + 64];
+
+	const char* zfs = find_zfs();
+	if (!zfs) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (realpath(dir, resolved) == 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* list all ZFS filesystems in one shot */
+	snprintf(cmd, sizeof(cmd), "%s list -H -o name,guid,mountpoint -t filesystem 2>/dev/null", zfs);
+
+	FILE* fp = popen(cmd, "r");
+	if (!fp) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	size_t best_len = 0;
+	while (1) {
+		char buf[PATH_MAX * 2 + 64];
+		char* map[3];
+		unsigned mac;
+
+		char* s = fgets(buf, sizeof(buf), fp);
+		if (s == 0)
+			break;
+
+		/* split the line */
+		mac = strsplit(map, 3, s, " \t\n");
+
+		if (mac < 3)
+			continue;
+
+		const char* mp = map[2];
+		size_t mp_len = strlen(mp);
+		if (strncmp(resolved, mp, mp_len) != 0)
+			continue;
+		if (mp_len > 1 && resolved[mp_len] != '/' && resolved[mp_len] != 0)
+			continue;
+
+		/* keep the longest (innermost) match */
+		if (mp_len > best_len) {
+			best_len = mp_len;
+			if (dataset)
+				pathcpy(dataset, dataset_size, map[0]);
+			if (uuid)
+				pathcpy(uuid, uuid_size, map[1]);
+			if (mount_point)
+				pathcpy(mount_point, mount_point_size, map[2]);
+		}
+	}
+
+	pclose(fp);
+
+	if (best_len == 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
+static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devlist)
+{
+	char pool[PATH_MAX];
+	char cmd[PATH_MAX * 2 + 64];
+
+	const char* zpool = find_zpool();
+	if (!zpool) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (extract_zfs(dir, pool, sizeof(pool), 0, 0, 0, 0) != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* extract pool name */
+	char* slash = strchr(pool, '/');
+	if (slash)
+		*slash = 0;
+
+	snprintf(cmd, sizeof(cmd), "%s status -P %s 2>/dev/null", zpool, pool);
+
+	FILE* fp = popen(cmd, "r");
+	if (!fp) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	size_t count = 0;
+	while (1) {
+		char buf[PATH_MAX * 2 + 64];
+
+		char* s = fgets(buf, sizeof(buf), fp);
+		if (s == 0)
+			break;
+
+		char* file = strstr(s, "/dev/");
+		if (!file)
+			continue;
+
+		size_t i = 0;
+		while (file[i] != 0 && file[i] != ' ' && file[i] != '\t' && file[i] != '\n')
+			++i;
+		file[i] = 0;
+
+		struct stat st;
+		if (stat(file, &st) != 0)
+			continue;
+
+		if (!S_ISBLK(st.st_mode))
+			continue;
+
+		struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
+		dev->device = st.st_rdev;
+		tommy_list_insert_tail(devlist, &dev->node, dev);
+
+		log_tag("dereference:zfs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
+		++count;
+	}
+
+	pclose(fp);
+
+	if (count == 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
 /**
  * Get the devices of a virtual device.
  *
- * This is intended to resolve the case of Btrfs filesystems that
+ * This is intended to resolve the case of Btrfs/ZFS filesystems that
  * create a virtual superblock (major==0) not backed by any low
  * level device.
  *
@@ -459,85 +840,40 @@ struct dev_struct {
  * Bug 711881 - too funny btrfs st_dev numbers
  * https://bugzilla.redhat.com/show_bug.cgi?id=711881
  */
-#if HAVE_LINUX_DEVICE
 static int devdereference(uint64_t device, const char* dir, tommy_list* devlist)
 {
-	if (major(device) == 0) {
-		struct statfs sfs;
-
-		int fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-		if (fd < 0) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (fstatfs(fd, &sfs) != 0) {
-			/* LCOV_EXCL_START */
-			close(fd);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (sfs.f_type != BTRFS_SUPER_MAGIC) {
-			/* LCOV_EXCL_START */
-			close(fd);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		struct btrfs_ioctl_fs_info_args fs_info;
-		memset(&fs_info, 0, sizeof(fs_info));
-		if (ioctl(fd, BTRFS_IOC_FS_INFO, &fs_info) < 0) {
-			/* LCOV_EXCL_START */
-			close(fd);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (fs_info.max_id == 0) {
-			/* LCOV_EXCL_START */
-			close(fd);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		for (__u64 i = 1; i <= fs_info.max_id; ++i) {
-			struct btrfs_ioctl_dev_info_args dev_info;
-			memset(&dev_info, 0, sizeof(dev_info));
-			dev_info.devid = i;
-
-			if (ioctl(fd, BTRFS_IOC_DEV_INFO, &dev_info) != 0) {
-				/* LCOV_EXCL_START */
-				close(fd);
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* get major:minor, use stat on the path returned */
-			struct stat st;
-			if (stat((char*)dev_info.path, &st) != 0) {
-				/* LCOV_EXCL_START */
-				close(fd);
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
-			dev->device = st.st_rdev;
-			tommy_list_insert_tail(devlist, &dev->node, dev);
-		}
-
-		close(fd);
-		return 0;
+	struct statfs sfs;
+	int fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (fd < 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
-	/* insert the device itself in the list */
-	struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
-	dev->device = device;
-	tommy_list_insert_tail(devlist, &dev->node, dev);
+	if (fstatfs(fd, &sfs) != 0) {
+		/* LCOV_EXCL_START */
+		close(fd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	return 0;
+	int ret;
+	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
+		ret = devdereference_btrfs(device, dir, fd, devlist);
+	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
+		ret = devdereference_bcachefs(device, dir, devlist);
+	} else if (sfs.f_type == ZFS_SUPER_MAGIC) {
+		ret = devdereference_zfs(device, dir, devlist);
+	} else {
+		/* insert the device itself in the list */
+		struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
+		dev->device = device;
+		tommy_list_insert_tail(devlist, &dev->node, dev);
+		ret = 0;
+	}
+
+	close(fd);
+	return ret;
 }
 #endif
 
@@ -1050,6 +1386,18 @@ static int devuuid_bcachefs(uint64_t device, const char* dir, char* uuid, size_t
 }
 #endif
 
+#if HAVE_LINUX_DEVICE
+int devuuid_zfs(uint64_t device, const char* dir, char* uuid, size_t uuid_size)
+{
+	if (extract_zfs(dir, 0, 0, uuid, uuid_size, 0, 0) != 0)
+		return -1;
+
+	log_tag("uuid:by-zfs:%u:%u:%s: found %s\n", major(device), minor(device), uuid, dir);
+
+	return 0;
+}
+#endif
+
 int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid_size)
 {
 	(void)device_path;
@@ -1067,6 +1415,11 @@ int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid
 
 #if HAVE_LINUX_DEVICE
 	if (devuuid_bcachefs(device_id, device_path, uuid, uuid_size) == 0)
+		return 0;
+#endif
+
+#if HAVE_LINUX_DEVICE
+	if (devuuid_zfs(device_id, device_path, uuid, uuid_size) == 0)
 		return 0;
 #endif
 
@@ -1298,7 +1651,6 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 #define UFS_BYTESWAPPED_SUPER_MAGIC 0x54190100
 #define VMHGFS_SUPER_MAGIC 0xBACBACBC
 #define VZFS_SUPER_MAGIC 0x565A4653
-#define ZFS_SUPER_MAGIC 0x2FC12FC1
 
 struct filesystem_entry {
 	unsigned id;
@@ -1534,64 +1886,18 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
-#if HAVE_LINUX_DEVICE
-static const char* const bcachefs_paths[] = {
-	"/usr/sbin/bcachefs",
-	"/sbin/bcachefs",
-	"/usr/local/sbin/bcachefs",
-	"/usr/bin/bcachefs",
-	"/bin/bcachefs",
-	"/usr/local/bin/bcachefs",
-#ifdef __APPLE__
-	/* macOS (Intel & Apple Silicon) */
-	"/opt/homebrew/sbin/bcachefs",
-#endif
-	0
-};
-
-static const char* find_bcachefs(void)
-{
-	for (int i = 0; bcachefs_paths[i]; ++i) {
-		if (access(bcachefs_paths[i], X_OK) == 0) {
-			return bcachefs_paths[i];
-		}
-	}
-
-	return 0;
-}
-#endif
-
 #define SNAPSHOT_CONTAINER ".snapraid"
 
-int fssnapshot(const char* path, struct fssnapshot_struct* fss)
-{
 #if HAVE_LINUX_DEVICE
-	struct statfs sfs;
-	struct stat st;
+static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inode, struct fssnapshot_struct* fss)
+{
 	char current_path[PATH_MAX];
-	uint64_t root_inode;
 
 	pathcpy(current_path, sizeof(current_path), path);
 
-	if (statfs(current_path, &sfs) != 0) {
-		/* LCOV_EXCL_START */
-		log_error(errno, "Error stating filesystem '%s'. %s.\n", current_path, strerror(errno));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
-		/* btrfs reserved inode 256 for subvolume roots */
-		root_inode = 256;
-	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
-		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
-		root_inode = 4096;
-	} else {
-		return -1;
-	}
-
 	/* walk up the directory tree to find the subvolume root (Inode 256) */
 	while (1) {
+		struct stat st;
 		if (stat(current_path, &st) != 0) {
 			/* LCOV_EXCL_START */
 			log_error(errno, "Error stating '%s'. %s.\n", current_path, strerror(errno));
@@ -1601,6 +1907,7 @@ int fssnapshot(const char* path, struct fssnapshot_struct* fss)
 
 		if (st.st_ino == root_inode) {
 			/* copy the subvol root */
+			pathcpy(fss->root_dir, sizeof(fss->root_dir), current_path);
 			pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), current_path);
 			pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), SNAPSHOT_CONTAINER "/");
 
@@ -1611,8 +1918,7 @@ int fssnapshot(const char* path, struct fssnapshot_struct* fss)
 				return -1;
 			}
 
-			pathcpy(fss->root_dir, sizeof(fss->root_dir), current_path);
-			fss->magic = sfs.f_type;
+			fss->magic = magic;
 			return 0;
 		}
 
@@ -1626,10 +1932,160 @@ int fssnapshot(const char* path, struct fssnapshot_struct* fss)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_zfs(const char* dir, uint32_t magic, struct fssnapshot_struct* fss)
+{
+	if (extract_zfs(dir, fss->dataset, sizeof(fss->dataset), 0, 0, fss->root_dir, sizeof(fss->root_dir)) != 0)
+		return -1;
+
+	pathslash(fss->root_dir, sizeof(fss->root_dir));
+	pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), fss->root_dir);
+	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), ".zfs/snapshot/");
+
+	/* ensure ZFS snapshot directory is visible */
+	if (access(fss->snapshot_dir, R_OK | X_OK) != 0) {
+		log_error(errno, "ZFS snapshot directory not accessible: '%s'. %s.\n", fss->snapshot_dir, strerror(errno));
+		return -1;
+	}
+
+	fss->magic = magic;
+	return 0;
+}
+#endif
+
+int fssnapshot(const char* path, struct fssnapshot_struct* fss)
+{
+#if HAVE_LINUX_DEVICE
+	struct statfs sfs;
+
+	if (statfs(path, &sfs) != 0) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Error stating filesystem '%s'. %s.\n", path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
+		/* btrfs reserved inode 256 for subvolume roots */
+		return fssnapshot_inode(path, sfs.f_type, 256, fss);
+	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
+		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
+		return fssnapshot_inode(path, sfs.f_type, 4096, fss);
+	} else if (sfs.f_type == ZFS_SUPER_MAGIC) {
+		return fssnapshot_zfs(path, sfs.f_type, fss);
+	} else {
+		return -1;
+	}
 #else
 	(void)path;
 	(void)fss;
 	return -1;
+#endif
+}
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_stat_fs(const struct fssnapshot_struct* fss, const char* name, struct stat* st)
+{
+	char target_path[PATH_MAX];
+
+	pathcpy(target_path, sizeof(target_path), fss->snapshot_dir);
+	pathcat(target_path, sizeof(target_path), name);
+
+	if (stat(target_path, st) != 0)
+		return -1;
+
+	/* it must be a directory */
+	if (!S_ISDIR(st->st_mode))
+		return -1;
+
+	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_stat_zfs(const struct fssnapshot_struct* fss, const char* name, struct stat* st)
+{
+	char target_path[PATH_MAX];
+
+	pathcpy(target_path, sizeof(target_path), fss->snapshot_dir);
+	pathcat(target_path, sizeof(target_path), name);
+
+	/*
+	 * Ensure to get into into the snapshot
+	 *
+	 * This is required by ZFS, otherwise we get a different st_dev
+	 */
+	pathcat(target_path, sizeof(target_path), "/.");
+
+	if (stat(target_path, st) != 0)
+		return -1;
+
+	/* it must be a directory */
+	if (!S_ISDIR(st->st_mode))
+		return -1;
+
+	/**
+	 * When verifying if a ZFS snapshot has been successfully deleted, a direct
+	 * path lookup (stat, access, open) is unreliable. A directory listing
+	 * (readdir) of the .zfs/snapshot directory must be used instead.
+	 *
+	 * On Linux, the Virtual File System (VFS) maintains a 'dentry cache'
+	 * (dcache). If a snapshot path was accessed recently, the kernel caches
+	 * the directory entry in RAM. When ZFS destroys the snapshot, the kernel
+	 * dcache is not always immediately synchronized. Consequently, stat()
+	 * may hit the stale cache and report the snapshot still exists.
+	 *
+	 * Unlike stat(), a directory listing (ls/readdir) forces the kernel to
+	 * query the ZFS module for the current set of valid entries, bypassing
+	 * the stale dcache for a "ground truth" check.
+	 *
+	 * This behavior can be confirmed by forcing the kernel to purge its
+	 * dcache manually using the following command:
+	 *     sync; echo 2 > /proc/sys/vm/drop_caches
+	 *
+	 * After dropping caches, stat() will correctly return ENOENT. To avoid
+	 * requiring root privileges or impacting system performance with
+	 * drop_caches, always use readdir() for existence checks in this context.
+	 */
+	DIR* d = opendir(fss->snapshot_dir);
+	if (!d) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	while (1) {
+		struct dirent* entry = readdir(d);
+		if (!entry)
+			break;
+
+		if (strcmp(entry->d_name, name) == 0) {
+			closedir(d);
+			return 0;
+		}
+	}
+
+	closedir(d);
+	return -1;
+}
+#endif
+
+int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat* st)
+{
+#if HAVE_LINUX_DEVICE
+	if (fss->magic == ZFS_SUPER_MAGIC) {
+		return fssnapshot_stat_zfs(fss, name, st);
+	} else {
+		return fssnapshot_stat_fs(fss, name, st);
+	}
+#else
+	(void)fss;
+	(void)name;
+	(void)st;
+	return 0;
 #endif
 }
 
@@ -1682,22 +2138,47 @@ int fssnapshot_btrfs_create(const struct fssnapshot_struct* fss, const char* nam
 #if HAVE_LINUX_DEVICE
 static int fssnapshot_bcachefs_create(const struct fssnapshot_struct* fss, const char* name)
 {
-	char dst_path[PATH_MAX];
+	char target_path[PATH_MAX];
 	char cmd[PATH_MAX * 3 + 64];
-	const char* bcachefs;
 	int ret;
 
-	bcachefs = find_bcachefs();
+	const char* bcachefs = find_bcachefs();
 	if (!bcachefs) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	pathcpy(dst_path, sizeof(dst_path), fss->snapshot_dir);
-	pathcat(dst_path, sizeof(dst_path), name);
+	pathcpy(target_path, sizeof(target_path), fss->snapshot_dir);
+	pathcat(target_path, sizeof(target_path), name);
 
-	snprintf(cmd, sizeof(cmd), "%s subvolume snapshot -r %s %s", bcachefs, fss->root_dir, dst_path);
+	snprintf(cmd, sizeof(cmd), "%s subvolume snapshot -r %s %s", bcachefs, fss->root_dir, target_path);
+
+	ret = system(cmd);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_zfs_create(const struct fssnapshot_struct* fss, const char* name)
+{
+	char cmd[PATH_MAX * 2 + 64];
+	int ret;
+
+	const char* zfs = find_zfs();
+	if (!zfs) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	snprintf(cmd, sizeof(cmd), "%s snapshot %s@%s", zfs, fss->dataset, name);
 
 	ret = system(cmd);
 	if (ret != 0) {
@@ -1717,6 +2198,8 @@ int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
 		return fssnapshot_btrfs_create(fss, name);
 	} else if (fss->magic == BCACHEFS_SUPER_MAGIC) {
 		return fssnapshot_bcachefs_create(fss, name);
+	} else if (fss->magic == ZFS_SUPER_MAGIC) {
+		return fssnapshot_zfs_create(fss, name);
 	} else {
 		return -1;
 	}
@@ -1745,7 +2228,7 @@ int fssnapshot_btrfs_delete(const struct fssnapshot_struct* fss, const char* nam
 	pathcpy(args.name, BTRFS_PATH_NAME_MAX, name);
 
 	ret = ioctl(fd_parent, BTRFS_IOC_SNAP_DESTROY, &args);
-	if (ret < 0 && errno != ENOENT) {
+	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		close(fd_parent);
 		return -1;
@@ -1761,11 +2244,10 @@ int fssnapshot_btrfs_delete(const struct fssnapshot_struct* fss, const char* nam
 static int fssnapshot_bcachefs_delete(const struct fssnapshot_struct* fss, const char* name)
 {
 	char target_path[PATH_MAX];
-	char cmd[PATH_MAX + 64];
-	const char* bcachefs;
+	char cmd[PATH_MAX * 2 + 64];
 	int ret;
 
-	bcachefs = find_bcachefs();
+	const char* bcachefs = find_bcachefs();
 	if (!bcachefs) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -1775,15 +2257,33 @@ static int fssnapshot_bcachefs_delete(const struct fssnapshot_struct* fss, const
 	pathcpy(target_path, sizeof(target_path), fss->snapshot_dir);
 	pathcat(target_path, sizeof(target_path), name);
 
-	if (access(target_path, F_OK) < 0) {
-		if (errno == ENOENT)
-			return 0;
+	snprintf(cmd, sizeof(cmd), "%s subvolume delete %s", bcachefs, target_path);
+
+	ret = system(cmd);
+	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	snprintf(cmd, sizeof(cmd), "%s subvolume delete %s", bcachefs, target_path);
+	return 0;
+}
+#endif
+
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_zfs_delete(const struct fssnapshot_struct* fss, const char* name)
+{
+	char cmd[PATH_MAX * 2 + 64];
+	int ret;
+
+	const char* zfs = find_zfs();
+	if (!zfs) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	snprintf(cmd, sizeof(cmd), "%s destroy %s@%s", zfs, fss->dataset, name);
 
 	ret = system(cmd);
 	if (ret != 0) {
@@ -1803,6 +2303,8 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 		return fssnapshot_btrfs_delete(fss, name);
 	} else if (fss->magic == BCACHEFS_SUPER_MAGIC) {
 		return fssnapshot_bcachefs_delete(fss, name);
+	} else if (fss->magic == ZFS_SUPER_MAGIC) {
+		return fssnapshot_zfs_delete(fss, name);
 	} else {
 		return -1;
 	}
@@ -1853,6 +2355,32 @@ static int fssnapshot_bcachefs_rename(const struct fssnapshot_struct* fss, const
 }
 #endif
 
+#if HAVE_LINUX_DEVICE
+static int fssnapshot_zfs_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
+{
+	char cmd[PATH_MAX * 2 + 64];
+	int ret;
+
+	const char* zfs = find_zfs();
+	if (!zfs) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	snprintf(cmd, sizeof(cmd), "%s rename %s@%s %s@%s", zfs, fss->dataset, old_name, fss->dataset, new_name);
+
+	ret = system(cmd);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
 int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
 {
 #if HAVE_LINUX_DEVICE
@@ -1860,6 +2388,8 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 		return fssnapshot_btrfs_rename(fss, old_name, new_name);
 	} else if (fss->magic == BCACHEFS_SUPER_MAGIC) {
 		return fssnapshot_bcachefs_rename(fss, old_name, new_name);
+	} else if (fss->magic == ZFS_SUPER_MAGIC) {
+		return fssnapshot_zfs_rename(fss, old_name, new_name);
 	} else {
 		return -1;
 	}

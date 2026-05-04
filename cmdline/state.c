@@ -5806,18 +5806,22 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 #define SNAPSHOT_PENDING "pending"
 #define SNAPSHOT_STABLE "stable"
 
-static int state_snapshot_dir(const char* dir, struct snapraid_disk* disk)
+static int state_snapshot_dir(struct fssnapshot_struct* fss, const char* name, const char* dir, struct snapraid_disk* disk)
 {
 	struct stat st;
 
-	if (lstat(dir, &st) != 0)
-		return -1;
-
-	if (!S_ISDIR(st.st_mode))
+	/* fail if it doesn't exists at high level */
+	if (fssnapshot_stat(fss, name, &st) != 0)
 		return -1;
 
 	if (disk) {
-		pathcpy(disk->dir, sizeof(disk->dir), dir);
+		char vol[PATH_MAX];
+		pathcpy(vol, sizeof(vol), fss->snapshot_dir);
+		pathcat(vol, sizeof(vol), name);
+		pathcatc(vol, sizeof(vol), '/');
+		pathcat(vol, sizeof(vol), dir);
+
+		pathcpy(disk->dir, sizeof(disk->dir), vol);
 		disk->dir_device = st.st_dev;
 	}
 
@@ -5839,9 +5843,11 @@ int state_snapshot_new(struct snapraid_state* state)
 		size_t root_len = strlen(disk->fss.root_dir);
 
 		/* delete a potential previous pending snapshot */
-		if (fssnapshot_delete(&disk->fss, SNAPSHOT_PENDING) != 0) {
-			log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-			return -1;
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, 0, 0) == 0) {
+			if (fssnapshot_delete(&disk->fss, SNAPSHOT_PENDING) != 0) {
+				log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+				return -1;
+			}
 		}
 
 		/* create a new snapshot */
@@ -5853,13 +5859,8 @@ int state_snapshot_new(struct snapraid_state* state)
 		msg_progress("Created disk %s pending snapshot...\n", disk->name);
 
 		/* setup the snapshot in use */
-		char vol[PATH_MAX];
-		pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-		pathcat(vol, sizeof(vol), SNAPSHOT_PENDING "/");
-		pathcat(vol, sizeof(vol), disk->mount_point + root_len);
-
-		if (state_snapshot_dir(vol, disk) != 0) {
-			log_error(errno, "Error stating snapshot dir '%s'. %s.\n", vol, strerror(errno));
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk->mount_point + root_len, disk) != 0) {
+			log_error(errno, "Error stating pending snapshot '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
 			return -1;
 		}
 	}
@@ -5880,9 +5881,11 @@ int state_snapshot_commit(struct snapraid_state* state)
 			continue;
 
 		/* delete a potential previous stable snapshot */
-		if (fssnapshot_delete(&disk->fss, SNAPSHOT_STABLE) != 0) {
-			log_fatal(errno, "Failed to delete stable snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-			return -1;
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, 0, 0) == 0) {
+			if (fssnapshot_delete(&disk->fss, SNAPSHOT_STABLE) != 0) {
+				log_fatal(errno, "Failed to delete stable snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+				return -1;
+			}
 		}
 
 		/* rename pending to stable */
@@ -5904,7 +5907,6 @@ void state_snapshot_read(struct snapraid_state* state)
 
 	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		char vol[PATH_MAX];
 
 		/* check if it supports snapshot */
 		if (fssnapshot(disk->mount_point, &disk->fss) != 0)
@@ -5912,16 +5914,10 @@ void state_snapshot_read(struct snapraid_state* state)
 
 		size_t root_len = strlen(disk->fss.root_dir);
 
-		pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-		pathcat(vol, sizeof(vol), SNAPSHOT_PENDING "/");
-		pathcat(vol, sizeof(vol), disk->mount_point + root_len);
-		if (state_snapshot_dir(vol, disk) == 0) {
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk->mount_point + root_len, disk) == 0) {
 			msg_progress("Using disk %s pending snapshot...\n", disk->name);
 		} else {
-			pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-			pathcat(vol, sizeof(vol), SNAPSHOT_STABLE "/");
-			pathcat(vol, sizeof(vol), disk->mount_point + root_len);
-			if (state_snapshot_dir(vol, disk) == 0) {
+			if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, disk->mount_point + root_len, disk) == 0) {
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
 			} else {
 				/* fallback to standard mount point */
@@ -5944,7 +5940,6 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 
 	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		char vol[PATH_MAX];
 
 		/* check if it supports snapshot */
 		if (fssnapshot(disk->mount_point, &disk->fss) != 0)
@@ -5958,30 +5953,26 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 			continue;
 		}
 
-		pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-		pathcat(vol, sizeof(vol), SNAPSHOT_PENDING "/");
-		pathcat(vol, sizeof(vol), disk->mount_point + root_len);
-		if (state_snapshot_dir(vol, disk) == 0) {
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk->mount_point + root_len, disk) == 0) {
 			msg_progress("Using disk %s pending snapshot...\n", disk->name);
 
 			/* if there is a dealloc list */
 			if (!tommy_list_empty(&disk->dealloclist)) {
-				pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-				pathcat(vol, sizeof(vol), SNAPSHOT_STABLE "/");
-				pathcat(vol, sizeof(vol), disk->mount_point + root_len);
 
 				/* if there is a previous snapshot */
-				if (state_snapshot_dir(vol, 0) == 0) {
-					msg_progress("Importing disk %s stable snapshot %" PRIu64 " deallocated files...\n", disk->name, tommy_list_count(&disk->dealloclist));
+				if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, disk->mount_point + root_len, 0) == 0) {
+					msg_progress("Importing disk %s stable snapshot %" PRIu64 " deallocated files...\n", disk->name, (uint64_t)tommy_list_count(&disk->dealloclist));
 
+					/* set where to find deallocated files */
+					char vol[PATH_MAX];
+					pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
+					pathcat(vol, sizeof(vol), SNAPSHOT_STABLE "/");
+					pathcat(vol, sizeof(vol), disk->mount_point + root_len);
 					state_dealloc(state, vol, &disk->dealloclist);
 				}
 			}
 		} else {
-			pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-			pathcat(vol, sizeof(vol), SNAPSHOT_STABLE "/");
-			pathcat(vol, sizeof(vol), disk->mount_point + root_len);
-			if (state_snapshot_dir(vol, disk) == 0) {
+			if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, disk->mount_point + root_len, disk) == 0) {
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
 			} else {
 				/* fallback to standard mount point */
