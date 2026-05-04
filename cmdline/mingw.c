@@ -2044,6 +2044,14 @@ int fssnapshot(const char* path, struct fssnapshot_struct* fss)
 	return -1;
 }
 
+int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat* st)
+{
+	(void)fss;
+	(void)name;
+	(void)st;
+	return 0;
+}
+
 int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
 {
 	(void)fss;
