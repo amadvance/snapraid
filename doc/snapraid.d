@@ -1553,7 +1553,7 @@ Pattern
 	an exclamation mark.
 
 	The fundamental distinction to remember is that `*`, `?`, and character
-	classes  all respect directory boundaries and only match within a single path
+	classes all respect directory boundaries and only match within a single path
 	component, while `**` is the only pattern that can match across directory
 	separators.
 
@@ -1583,9 +1583,9 @@ Pattern
 	special directories are treated as files, meaning that to exclude
 	them, you must use a file rule, not a directory one.
 
-	If the file name contains a `*`, `?`, `[`,
-	or `]` character, you must escape it to avoid having it interpreted as a
-	globbing character. In Unix, the escape character is `\`; in Windows, it is `^`.
+	If the file name contains a `*`, `?`, `[`, or `]` character, you must
+	escape it to avoid having it interpreted as a globbing character.
+	In Unix, the escape character is `\`; in Windows, it is `^`.
 	When the pattern is on the command line, you must double the escape
 	character to avoid having it interpreted by the command shell.
 
