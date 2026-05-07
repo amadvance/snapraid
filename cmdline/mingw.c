@@ -76,7 +76,7 @@ static HMODULE dll_advapi32;
  *
  * Or empty or terminating with '\'.
  */
-static WCHAR exedir[MAX_PATH];
+static WCHAR exedir[PATH_MAX];
 
 /**
  * Set the executable dir.
@@ -86,8 +86,8 @@ static void exedir_init(void)
 	DWORD size;
 	WCHAR* slash;
 
-	size = GetModuleFileNameW(0, exedir, MAX_PATH);
-	if (size == 0 || size == MAX_PATH) {
+	size = GetModuleFileNameW(0, exedir, PATH_MAX);
+	if (size == 0 || size == PATH_MAX) {
 		/* use empty dir */
 		exedir[0] = 0;
 		return;
@@ -1202,7 +1202,7 @@ static int windows_vsync(const wchar_t* volume)
 static int windows_async(void)
 {
 	HANDLE h;
-	wchar_t volume[MAX_PATH];
+	wchar_t volume[PATH_MAX];
 	DWORD error = 0;
 	DWORD count = 0;
 	DWORD success = 0;
@@ -2032,14 +2032,14 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	}
 
 	if (fstype && fslabel) {
-		wchar_t volume_root[MAX_PATH];
-		wchar_t fs_name[MAX_PATH];
-		wchar_t vol_name[MAX_PATH];
+		wchar_t volume_root[PATH_MAX];
+		wchar_t fs_name[PATH_MAX];
+		wchar_t vol_name[PATH_MAX];
 
 		fstype[0] = 0;
 		fslabel[0] = 0;
-		if (GetVolumePathNameW(convert(conv_buf, path), volume_root, MAX_PATH)) {
-			if (GetVolumeInformationW(volume_root, vol_name, MAX_PATH, 0, 0, 0, fs_name, MAX_PATH)) {
+		if (GetVolumePathNameW(convert(conv_buf, path), volume_root, PATH_MAX)) {
+			if (GetVolumeInformationW(volume_root, vol_name, PATH_MAX, 0, 0, 0, fs_name, PATH_MAX)) {
 				char u8[CONV_MAX];
 				size_t len;
 				char* ret;
@@ -2381,8 +2381,8 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 {
 	wchar_t conv_buf_mount[CONV_MAX];
 	char conv_buf_volume_guid[CONV_MAX];
-	WCHAR volume_mount[MAX_PATH];
-	WCHAR volume_guid[MAX_PATH];
+	WCHAR volume_mount[PATH_MAX];
+	WCHAR volume_guid[PATH_MAX];
 	DWORD i;
 	char* p;
 
@@ -2564,7 +2564,7 @@ static int devstat(uint64_t device, const char* name, const char* wfile, uint64_
 static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	char conv_buf[CONV_MAX];
-	WCHAR cmd[MAX_PATH + 128];
+	WCHAR cmd[PATH_MAX + 128];
 	char file[128];
 	FILE* f;
 	int ret;
@@ -2834,7 +2834,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	char conv_buf[CONV_MAX];
-	WCHAR cmd[MAX_PATH + 128];
+	WCHAR cmd[PATH_MAX + 128];
 	char file[128];
 	FILE* f;
 	int ret;
@@ -2925,7 +2925,7 @@ retry:
 static int devdown(uint64_t device, const char* name, const char* smartctl)
 {
 	char conv_buf[CONV_MAX];
-	WCHAR cmd[MAX_PATH + 128];
+	WCHAR cmd[PATH_MAX + 128];
 	char file[128];
 	FILE* f;
 	int ret;
