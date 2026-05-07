@@ -2053,43 +2053,6 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
-int fssnapshot(const char* path, struct fssnapshot_struct* fss)
-{
-	(void)path;
-	(void)fss;
-	return -1;
-}
-
-int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat* st)
-{
-	(void)fss;
-	(void)name;
-	(void)st;
-	return 0;
-}
-
-int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
-{
-	(void)fss;
-	(void)name;
-	return -1;
-}
-
-int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
-{
-	(void)fss;
-	(void)name;
-	return -1;
-}
-
-int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
-{
-	(void)fss;
-	(void)old_name;
-	(void)new_name;
-	return -1;
-}
-
 /* ensure to call the real C strerror() */
 #undef strerror
 
@@ -2311,6 +2274,412 @@ size_t windows_direct_size(void)
 	 * "because the case where the sector size is larger than the page size is rare."
 	 */
 	return si.dwPageSize;
+}
+
+#define WINDOWS_NTFS_MAGIC  0x5346544E   /* 'N','T','F','S' */
+
+#define PS_CMD_MAX 4096
+
+#define SNAPSHOT_GUID ".guid"
+
+/*
+ * PowerShell helper
+ *
+ * Runs a PowerShell one-liner via _popen() and captures the first line
+ * of stdout into `out` as UTF-8.
+ * `out` may be NULL when output is not needed.
+ *
+ * The caller builds `command` as a string using snprintf().
+ * Any embedded path literals must use single quotes so they survive
+ * the outer double-quote wrapping passed to cmd.exe.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+static int windows_ps(const char* ps_command, char* out, size_t out_size)
+{
+	char cmd[PS_CMD_MAX];
+	FILE* fp;
+	int ret;
+
+	ret = snprintf(cmd, sizeof(cmd), "powershell.exe -NoProfile -NonInteractive -Command \"%s\" 2>nul", ps_command);
+	if (ret < 0 || ret >= (int)sizeof(cmd)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	fp = _popen(cmd, "r");
+	if (!fp) {
+		windows_errno(GetLastError());
+		log_error(errno, "Failed to run PowerShell command '%s' (from popen).\n", cmd);
+		return -1;
+	}
+
+	if (out && out_size > 0) {
+		/* get the first line */
+		if (!fgets(out, (int)out_size, fp)) {
+			out[0] = 0;
+		} else {
+			/* trim spaces and newlines */
+			strtrim(out);
+		}
+	}
+
+	ret = _pclose(fp);
+	if (ret == -1) {
+		errno = EINVAL;
+		log_error(errno, "Failed to run PowerShell command '%s' (from pclose).\n", cmd);
+		return -1;
+	}
+	if (ret != 0) {
+		errno = EINVAL;
+		log_error(errno, "PowerShell command '%s' failed with '%d' (from pclose).\n", cmd, ret);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int windows_read_guid(const char* guid_link, char* guid, size_t guid_size)
+{
+	int len = windows_readlink(guid_link, guid, guid_size);
+	if (len < 0 && errno == ENOENT) {
+		guid[0] = 0;
+		return 0;
+	}
+	if (len < 0) {
+		log_error(errno, "Error readlink '%s'. %s.\n", guid_link, strerror(errno));
+		return -1;
+	}
+
+	if ((size_t)len >= guid_size) {
+		errno = ENAMETOOLONG;
+		log_error(errno, "GUID too long in '%s'.\n", guid_link);
+		return -1;
+	}
+
+	guid[len] = 0;
+	return 0;
+}
+
+static int windows_rebuild_link(const struct fssnapshot_struct* fss, const char* name)
+{
+	char cmd[PS_CMD_MAX];
+	char device_path[PATH_MAX];
+	char target_path[PATH_MAX];
+	char link_path[PATH_MAX];
+	char guid_link[PATH_MAX];
+	char guid[PATH_MAX];
+
+	pathcpy(guid_link, sizeof(guid_link), fss->snapshot_dir);
+	pathcat(guid_link, sizeof(guid_link), name);
+	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
+
+	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
+	pathcat(link_path, sizeof(link_path), name);
+
+	int ret = windows_read_guid(guid_link, guid, sizeof(guid));
+	if (ret != 0) {
+		return -1;
+	}
+
+	/* if no GUID, assume it absent */
+	if (guid[0] == 0) {
+		/* remove stale links */
+		windows_rmdir(link_path);
+		return 0;
+	}
+
+	snprintf(cmd, sizeof(cmd),
+		"(Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'}).DeviceObject",
+		guid);
+
+	if (windows_ps(cmd, device_path, sizeof(device_path)) != 0) {
+		log_error(errno, "Error getting DeviceObject from GUID '%s'. %s.\n", guid, strerror(errno));
+		return -1;
+	}
+
+	/* if no device path, assume snapshot absent */
+	if (device_path[0] == 0) {
+		/* remove stale links */
+		windows_rmdir(guid_link);
+		windows_rmdir(link_path);
+		return 0;
+	}
+
+	pathimport(target_path, sizeof(target_path), device_path);
+	pathslash(target_path, sizeof(target_path));
+
+	/* remove stale link if present */
+	windows_rmdir(link_path);
+
+	if (windows_symlink_directory(target_path, link_path) != 0) {
+		log_error(errno, "Error creating symlink '%s'. %s.\n", link_path, strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
+int fssnapshot(const char* dir, struct fssnapshot_struct* fss)
+{
+	wchar_t conv_buf_vol[CONV_MAX];
+	char conv_buf_root[CONV_MAX];
+	wchar_t volume_root[PATH_MAX];
+	wchar_t volume_name[PATH_MAX];
+	wchar_t fs_name[32];
+	uint32_t magic;
+
+	/*
+	 * GetVolumePathNameW() accepts any path: file, directory, or deep
+	 * subdirectory, and resolves it to the volume root (e.g. L"C:\").
+	 * The result always carries a trailing backslash.
+	 *
+	 * Use convert_if_required() to avoid the automatic addition of \\?\
+	 * made by convert() that is propagated in the resulting volume_root
+	 */
+	if (!GetVolumePathNameW(convert_if_required(conv_buf_vol, dir), volume_root, PATH_MAX)) {
+		windows_errno(GetLastError());
+		log_error(errno, "Error getting VolumeRoot from '%s'. %s.\n", dir, strerror(errno));
+		return -1;
+	}
+
+	if (!GetVolumeInformationW(volume_root, 0, 0, 0, 0, 0, fs_name, 32)) {
+		windows_errno(GetLastError());
+		log_error(errno, "Error getting information of VolumeRoot '%s'. %s.\n", u16tou8(conv_buf_root, volume_root), strerror(errno));
+		return -1;
+	}
+	if (wcscmp(fs_name, L"NTFS") == 0)
+		magic = WINDOWS_NTFS_MAGIC;
+	else
+		return -1; /* support only NTFS */
+
+	/*
+	 * Obtain the canonical volume name: \\?\Volume{GUID}\
+	 *
+	 * GetVolumePathNameW() may return a drive letter path ("C:\") or a
+	 * directory mount point ("D:\Mount\").  Neither is guaranteed to be
+	 * accepted by Win32_ShadowCopy.Create() on volumes without a drive
+	 * letter.  GetVolumeNameForVolumeMountPointW() always returns the
+	 * stable kernel-form GUID path that VSS requires, regardless of how
+	 * many (or how few) mount points the volume has.
+	 *
+	 * We store it in fss->dataset.
+	 */
+	if (!GetVolumeNameForVolumeMountPointW(volume_root, volume_name, PATH_MAX)) {
+		windows_errno(GetLastError());
+		log_error(errno, "Error getting VolumeName of VolumeRoot '%s'. %s.\n", u16tou8(conv_buf_root, volume_root), strerror(errno));
+		return -1;
+	}
+
+	/* don't use pathimport for dataset to keep backslashes */
+	pathcpy(fss->dataset, sizeof(fss->dataset), u16tou8(conv_buf_root, volume_name));
+
+	/* use pathimport to convert backslashes to slashes */
+	pathimport(fss->root_dir, sizeof(fss->root_dir), u16tou8(conv_buf_root, volume_root));
+
+	/* the returned root_dir should match the start of the passed dir */
+	if (pathncmp(fss->root_dir, dir, strlen(fss->root_dir)) != 0) {
+		errno = EINVAL;
+		log_error(errno, "Not matching VolumeRoot '%s' for '%s'.\n", fss->root_dir, dir);
+		return -1;
+	}
+
+	pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), fss->root_dir);
+	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), SNAPSHOT_CONTAINER "/");
+
+	if (windows_mkdir(fss->snapshot_dir) != 0 && errno != EEXIST) {
+		log_error(errno, "Error creating directory '%s'. %s.\n", fss->snapshot_dir, strerror(errno));
+		return -1;
+	}
+
+	/* refresh the links, after reboots they gets invalidated */
+	if (windows_rebuild_link(fss, SNAPSHOT_PENDING) != 0) {
+		return -1;
+	}
+
+	if (windows_rebuild_link(fss, SNAPSHOT_STABLE) != 0) {
+		return -1;
+	}
+
+	fss->magic = magic;
+
+	return 0;
+}
+
+int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat* st)
+{
+	char link_path[PATH_MAX];
+
+	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
+	pathcat(link_path, sizeof(link_path), name);
+
+	/* use lstat because we want to check the link */
+	if (windows_lstat(link_path, st) != 0)
+		return -1;
+
+	/* it must be a link to a directory */
+	if (!S_ISLNKDIR(st->st_mode))
+		return -1;
+
+	return 0;
+}
+
+int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
+{
+	char cmd[PS_CMD_MAX];
+	char device_path[PATH_MAX];
+	char target_path[PATH_MAX];
+	char link_path[PATH_MAX];
+	char guid_link[PATH_MAX];
+	char out[PATH_MAX];
+
+	/* create VSS shadow copy and capture the system-assigned GUID */
+	snprintf(cmd, sizeof(cmd),
+		"$r = (Get-WmiObject -List Win32_ShadowCopy).Create('%s', 'ClientAccessible'); "
+		"if ($r.ReturnValue -eq 0) { "
+		"Write-Output ('ID_' + $r.ShadowID); "
+		"} else { "
+		"Write-Output ('0x{0:X8}' -f $r.ReturnValue); "
+		"}",
+		fss->dataset);
+	if (windows_ps(cmd, out, sizeof(out)) != 0) {
+		log_error(errno, "Error creating snapshot of VolumeName '%s'. %s.\n", fss->dataset, strerror(errno));
+		return -1;
+	}
+	if (strncmp(out, "ID_", 3) != 0) {
+		errno = ENODATA;
+		log_error(errno, "VSS snapshot creation of '%s' failed with error %s.\n", fss->dataset, out);
+		return -1;
+	}
+
+	const char* guid = out + 3;
+
+	/* resolve the shadow copy's device object path */
+	snprintf(cmd, sizeof(cmd), "(Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'}).DeviceObject", guid);
+	if (windows_ps(cmd, device_path, sizeof(device_path)) != 0) {
+		log_error(errno, "Error getting the snapshot DeviceObject from GUID '%s'. %s.\n", guid, strerror(errno));
+		goto bail_and_delete;
+	}
+	if (device_path[0] == 0) {
+		errno = ENODATA;
+		log_error(errno, "Empty snapshot DeviceObject of GUID '%s'. %s.\n", guid, strerror(errno));
+		goto bail_and_delete;
+	}
+
+	/* use pathimport to convert backslashes to slashes */
+	pathimport(target_path, sizeof(target_path), device_path);
+
+	/* the ending slash is required, otherwise the link won't work */
+	pathslash(target_path, sizeof(target_path));
+
+	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
+	pathcat(link_path, sizeof(link_path), name);
+
+	int ret = windows_symlink_directory(target_path, link_path);
+	if (ret != 0) {
+		log_error(errno, "Error creating symlink '%s'. %s.\n", link_path, strerror(errno));
+		goto bail_and_delete;
+	}
+
+	pathcpy(guid_link, sizeof(guid_link), fss->snapshot_dir);
+	pathcat(guid_link, sizeof(guid_link), name);
+	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
+
+	/* store GUID persistently as symlink target */
+	ret = windows_symlink_directory(guid, guid_link);
+	if (ret != 0) {
+		log_error(errno, "Error creating GUID symlink '%s'. %s.\n", guid_link, strerror(errno));
+		windows_rmdir(link_path);
+		goto bail_and_delete;
+	}
+
+	return 0;
+
+bail_and_delete:
+	/* destroy the shadow copy we just created */
+	snprintf(cmd, sizeof(cmd), "Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'} | Remove-WmiObject", guid);
+	windows_ps(cmd, 0, 0);
+	return -1;
+}
+
+int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
+{
+	char link_path[PATH_MAX];
+	char guid[PATH_MAX];
+	char cmd[PS_CMD_MAX];
+	char guid_link[PATH_MAX];
+
+	pathcpy(guid_link, sizeof(guid_link), fss->snapshot_dir);
+	pathcat(guid_link, sizeof(guid_link), name);
+	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
+
+	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
+	pathcat(link_path, sizeof(link_path), name);
+
+	if (windows_read_guid(guid_link, guid, sizeof(guid)) != 0)
+		return -1;
+
+	/* if the GUID link is gone, assume everything is gone */
+	if (guid[0] == 0) {
+		/* remove as not valid anymore */
+		windows_rmdir(link_path);
+		return 0;
+	}
+
+	/* destroy the VSS shadow copy */
+	snprintf(cmd, sizeof(cmd), "Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'} | Remove-WmiObject", guid);
+	int ret = windows_ps(cmd, 0, 0);
+	if (ret != 0) {
+		log_error(errno, "Error destroy the snapshot from GUID '%s'. %s.\n", guid, strerror(errno));
+		/* remove as not valid anymore */
+		windows_rmdir(link_path);
+		return -1;
+	}
+
+	/* remove live symlink if present */
+	windows_rmdir(link_path);
+
+	/* remove persistent GUID symlink */
+	if (windows_rmdir(guid_link) != 0) {
+		log_error(errno, "Error rmdir '%s'. %s.\n", guid_link, strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
+int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
+{
+	char old_link[PATH_MAX];
+	char new_link[PATH_MAX];
+	char old_guid[PATH_MAX];
+	char new_guid[PATH_MAX];
+
+	pathcpy(old_link, sizeof(old_link), fss->snapshot_dir);
+	pathcat(old_link, sizeof(old_link), old_name);
+	pathcpy(new_link, sizeof(new_link), fss->snapshot_dir);
+	pathcat(new_link, sizeof(new_link), new_name);
+
+	pathcpy(old_guid, sizeof(old_guid), fss->snapshot_dir);
+	pathcat(old_guid, sizeof(old_guid), old_name);
+	pathcat(old_guid, sizeof(old_guid), SNAPSHOT_GUID);
+	pathcpy(new_guid, sizeof(new_guid), fss->snapshot_dir);
+	pathcat(new_guid, sizeof(new_guid), new_name);
+	pathcat(new_guid, sizeof(new_guid), SNAPSHOT_GUID);
+
+	if (windows_rename(old_link, new_link) != 0) {
+		log_error(errno, "Error renaming  '%s' to '%s'. %s.\n", old_link, new_link, strerror(errno));
+		return -1;
+	}
+
+	if (windows_rename(old_guid, new_guid) != 0) {
+		log_error(errno, "Error renaming  '%s' to '%s'. %s.\n", old_guid, new_guid, strerror(errno));
+		/* try to restore */
+		windows_rename(new_link, old_link);
+		return -1;
+	}
+
+	return 0;
 }
 
 uint64_t os_tick(void)
