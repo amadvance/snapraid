@@ -5810,9 +5810,6 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 	sclose(f);
 }
 
-#define SNAPSHOT_PENDING "pending"
-#define SNAPSHOT_STABLE "stable"
-
 static int state_snapshot_dir(struct fssnapshot_struct* fss, const char* name, const char* dir, struct snapraid_disk* disk)
 {
 	struct stat st;

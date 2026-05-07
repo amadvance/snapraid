@@ -5,10 +5,12 @@ SnapRAID HISTORY
 15.0 WIP
 ========
  * Added support for automated filesystem snapshots to ensure data
-   consistency and improve recovery reliability. When the 'snapshot'
-   option is enabled, SnapRAID manages a 'pending' snapshot at the start
-   of a sync and promotes it to a 'stable' state upon  successful
-   completion (currently supported on Btrfs, Bcachefs, and ZFS).
+   consistency and improve recovery reliability.
+   When the 'snapshot' option is enabled, SnapRAID transparently manages
+   filesystem snapshots during operations, requiring no changes to the
+   existing user workflow or file management.
+   Supported on Btrfs, Bcachefs, and ZFS in Linux, and on NTFS in
+   Windows.
    This ensures that 'scrub', 'check', and 'fix' operations utilize a
    frozen point-in-time reference for data disks, eliminating
    mismatches caused by concurrent live filesystem modifications.
