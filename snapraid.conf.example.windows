@@ -44,6 +44,34 @@ data d3 M:\array\
 # Format: "other DISK_NAME DISK_MOUNT_POINT"
 extra boot C:\
 
+# Enable the use of filesystem snapshots for sync, scrub, check, and fix
+# commands.
+#
+# When enabled, SnapRAID creates a read-only snapshot of your data at the
+# start of a 'sync'. This ensures a consistent, point-in-time view of your
+# files, preventing errors caused by concurrent file modifications.
+#
+# This option applies exclusively to data disks formatted with the
+# NTFS filesystem. Parity disks, or data disks using other filesystems,
+# will always use the live version of the filesystem.
+#
+# This significantly improves recovery: if a file is deleted from the live
+# filesystem, it remains preserved in the snapshot. This prevents the parity
+# from becoming "broken" for that block, ensuring you can still successfully
+# recover data if another disk fails.
+#
+# Snapshots are stored in a hidden '.snapraid' directory at the root
+# of the subvolume containing your data. SnapRAID will automatically
+# detect the subvolume root for each data path.
+#
+# Snapshot creation and deletion require administrative privileges.
+# Ensure SnapRAID is run with the necessary permissions when this option
+# is enabled.
+#
+# See the 'Snapshots' section in the snapraid.txt documentation for a
+# detailed explanation of the snapshot lifecycle.
+#snapshot
+
 # Excludes hidden files and directories (uncomment to enable).
 #nohidden
 

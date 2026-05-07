@@ -1155,8 +1155,9 @@ Configuration
 	files, preventing errors caused by concurrent file modifications.
 
 	This option applies exclusively to data disks formatted with the
-	Btrfs, Bcachefs or ZFS filesystems. Parity disks, or data disks using
-	other filesystems, will always use the live version of the filesystem.
+	Btrfs, Bcachefs or ZFS filesystems in Linux and NTFS in Windows.
+	Parity disks, or data disks using other filesystems, will always use
+	the live version of the filesystem.
 
 	This significantly improves recovery: if a file is deleted from the live
 	filesystem, it remains preserved in the snapshot. This prevents the parity
@@ -1443,7 +1444,8 @@ Snapshots
 	filesystem supports this functionality. Parity disks always use
 	the live filesystem.
 
-	At present, this is supported exclusively on Btrfs, Bcachefs, and ZFS.
+	At present, this is supported on Btrfs, Bcachefs, and ZFS in Linux
+	and on NTFS in Windows.
 
 	You can mix data disks with different filesystems. Only those that
 	support snapshots will utilize them, while other disks will continue

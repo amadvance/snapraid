@@ -364,6 +364,17 @@ int filephy(const char* path, uint64_t size, uint64_t* physical);
 int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size);
 
 /**
+ * Where snapshot are accessible
+ */
+#define SNAPSHOT_CONTAINER ".snapraid"
+
+/**
+ * Snapshots names
+ */
+#define SNAPSHOT_PENDING "pending"
+#define SNAPSHOT_STABLE "stable"
+
+/**
  * Snapshots context
  */
 struct fssnapshot_struct {
@@ -390,7 +401,8 @@ struct fssnapshot_struct {
 	char snapshot_dir[PATH_MAX];
 
 	/*
-	 * Dataset name (ZFS only, e.g. "pool/data").
+	 * Dataset name for ZFS (e.g. "pool/data")
+	 * or VolumeName in Windows.
 	 * Empty string for filesystems where not applicable.
 	 */
 	char dataset[PATH_MAX];
