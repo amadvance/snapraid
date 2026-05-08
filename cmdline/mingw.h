@@ -342,6 +342,12 @@ int windows_readlink(const char* file, char* buffer, size_t size);
 int windows_symlink(const char* existing, const char* file);
 
 /**
+ * Like symlink().
+ * Return ENOSYS if symlinks are not supported.
+ */
+int windows_symlink_directory(const char* existing, const char* file);
+
+/**
  * Like link().
  */
 int windows_link(const char* existing, const char* file);
