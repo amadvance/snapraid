@@ -1777,7 +1777,7 @@ int windows_link(const char* existing, const char* file)
 #define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE 0x2
 #endif
 
-int windows_symlink(const char* existing, const char* file)
+static int windows_symlink_flags(const char* existing, const char* file, DWORD flags)
 {
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
@@ -1789,7 +1789,7 @@ int windows_symlink(const char* existing, const char* file)
 	 * user symlinks different than they were before
 	 */
 	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing),
-		SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
+		flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
 	) {
 		DWORD error = GetLastError();
 		if (GetLastError() != ERROR_INVALID_PARAMETER) {
@@ -1798,13 +1798,23 @@ int windows_symlink(const char* existing, const char* file)
 		}
 
 		/* retry without the new flag SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */
-		if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), 0)) {
+		if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), flags)) {
 			windows_errno(GetLastError());
 			return -1;
 		}
 	}
 
 	return 0;
+}
+
+int windows_symlink(const char* existing, const char* file)
+{
+	return windows_symlink_flags(existing, file, 0);
+}
+
+int windows_symlink_directory(const char* existing, const char* file)
+{
+	return windows_symlink_flags(existing, file, SYMBOLIC_LINK_FLAG_DIRECTORY);
 }
 
 /* Adds missing definitions in MingW winnt.h */
