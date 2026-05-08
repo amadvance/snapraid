@@ -1916,6 +1916,12 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 
 	memcpy(buffer, name, len);
 
+	/* convert any \ to / */
+	for (size_t i = 0; i < len; ++i) {
+		if (buffer[i] == '\\')
+			buffer[i] = '/';
+	}
+
 	return len;
 }
 
