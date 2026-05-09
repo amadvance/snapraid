@@ -5,8 +5,6 @@
 
 #include "support.h"
 
-volatile int global_interrupt = 0;
-
 /****************************************************************************/
 /* random */
 
