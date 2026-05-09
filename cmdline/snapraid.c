@@ -887,35 +887,6 @@ int parse_option_size(const char* arg, uint64_t* out_size)
 	return 0;
 }
 
-volatile int global_interrupt = 0;
-
-/* LCOV_EXCL_START */
-void signal_handler(int signum)
-{
-	/* report the request of interruption with the signal received */
-	global_interrupt = signum;
-}
-/* LCOV_EXCL_STOP */
-
-void signal_init(void)
-{
-#if HAVE_SIGACTION
-	struct sigaction sa;
-
-	sa.sa_handler = signal_handler;
-	sigemptyset(&sa.sa_mask);
-
-	/* use the SA_RESTART to automatically restart interrupted system calls */
-	sa.sa_flags = SA_RESTART;
-
-	sigaction(SIGHUP, &sa, 0);
-	sigaction(SIGTERM, &sa, 0);
-	sigaction(SIGINT, &sa, 0);
-#else
-	signal(SIGINT, signal_handler);
-#endif
-}
-
 #define OPERATION_DIFF 0
 #define OPERATION_SYNC 1
 #define OPERATION_CHECK 2
@@ -1854,7 +1825,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		signal_init();
+		os_signal_init();
 
 #if HAVE_CHECKER
 		/* run a test command if required */
@@ -1905,7 +1876,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		signal_init();
+		os_signal_init();
 
 		ret = state_dry(&state, blockstart, blockcount);
 	} else if (operation == OPERATION_REHASH) {
@@ -1921,7 +1892,7 @@ int snapraid_main(int argc, char* argv[])
 		 * The signal protection is meant only for saving the content file,
 		 * or an early stop of long operations.
 		 */
-		signal_init();
+		os_signal_init();
 
 		/* save the new state if required */
 		if (state.need_write)
@@ -1935,7 +1906,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		signal_init();
+		os_signal_init();
 
 		state_snapshot_read(&state);
 
@@ -1944,7 +1915,7 @@ int snapraid_main(int argc, char* argv[])
 		state_read(&state);
 
 		/* intercept signals while operating */
-		signal_init();
+		os_signal_init();
 
 		state_write(&state);
 
@@ -1970,7 +1941,7 @@ int snapraid_main(int argc, char* argv[])
 		 * The signal protection is meant only for saving the content file,
 		 * or an early stop of long operations.
 		 */
-		signal_init();
+		os_signal_init();
 
 		if (state.need_write)
 			state_write(&state);
@@ -2059,7 +2030,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		signal_init();
+		os_signal_init();
 
 		state_snapshot_write(&state, &filterlist_disk);
 
@@ -2106,19 +2077,19 @@ int snapraid_main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (global_interrupt) {
+	if (os_global_interrupt()) {
 		/* LCOV_EXCL_START */
 #ifdef _WIN32
 		exit(STATUS_CONTROL_C_EXIT);
 #else
 		/* restore default handler */
-		signal(global_interrupt, SIG_DFL);
+		signal(os_global_interrupt(), SIG_DFL);
 
 		/* raise the signal again*/
-		raise(global_interrupt);
+		raise(os_global_interrupt());
 
 		/* if raise() didn't terminate */
-		_exit(128 + global_interrupt);
+		_exit(128 + os_global_interrupt());
 #endif
 		/* LCOV_EXCL_STOP */
 	}
