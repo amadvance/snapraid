@@ -7,6 +7,31 @@
 
 #include "support.h"
 
+/****************************************************************************/
+/* signal */
+
+volatile int global_interrupt = 0;
+
+int os_global_interrupt(void)
+{
+	return global_interrupt;
+}
+
+static void signal_handler(int signum)
+{
+	/* report the request of interruption with the signal received */
+	global_interrupt = signum;
+}
+
+void os_signal_init(void)
+{
+	signal(SIGTERM, signal_handler);
+	signal(SIGINT, signal_handler);
+}
+
+/****************************************************************************/
+/* os */
+
 /**
  * Exit codes.
  */
