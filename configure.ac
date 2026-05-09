@@ -60,6 +60,26 @@ AC_CHECK_HEADERS([pthread.h math.h])
 AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/sysmacros.h sys/mkdev.h sys/mount.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h linux/btrfs.h mach/mach_time.h execinfo.h])
 
+# Check for the close_range(...,CLOSE_RANGE_CLOEXEC)
+AC_CHECK_HEADERS([linux/close_range.h])
+AC_CHECK_FUNCS([close_range])
+AC_MSG_CHECKING([for CLOSE_RANGE_CLOEXEC])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([[
+        #ifdef HAVE_LINUX_CLOSE_RANGE_H
+        #include <linux/close_range.h>
+        #endif
+        #include <unistd.h>
+    ]], [[
+        unsigned int flags = CLOSE_RANGE_CLOEXEC;
+    ]])
+], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_CLOSE_RANGE_CLOEXEC], [1], [Define if CLOSE_RANGE_CLOEXEC is available])
+], [
+    AC_MSG_RESULT([no])
+])
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -99,6 +119,7 @@ AC_CHECK_FUNCS([mach_absolute_time])
 AC_CHECK_FUNCS([backtrace backtrace_symbols])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
+AC_CHECK_FUNCS([fexecve pipe2])
 AC_SEARCH_LIBS([exp], [m])
 AC_CHECK_FUNCS([eaccess faccessat])
 
