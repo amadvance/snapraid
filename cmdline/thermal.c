@@ -328,7 +328,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		sleep_time -= 30;
 	}
 
-	if (!global_interrupt) { /* don't wake-up if we are interrupting */
+	if (!os_global_interrupt()) { /* don't wake-up if we are interrupting */
 		log_tag("thermal:spinup\n");
 
 		/* spinup */
