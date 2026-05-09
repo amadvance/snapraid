@@ -22,9 +22,254 @@ int eaccess(const char* pathname, int mode)
 #endif
 
 /****************************************************************************/
+/* signal */
+
+volatile int global_interrupt = 0;
+
+int os_global_interrupt(void)
+{
+	return global_interrupt;
+}
+
+/* LCOV_EXCL_START */
+static void signal_handler(int signum)
+{
+	/* report the request of interruption with the signal received */
+	global_interrupt = signum;
+}
+/* LCOV_EXCL_STOP */
+
+void os_signal_restore_after_fork(void)
+{
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_DFL;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+
+	sigaction(SIGTERM, &sa, 0);
+	sigaction(SIGINT, &sa, 0);
+	sigaction(SIGHUP, &sa, 0);
+	/* do not restore SIGPIPE */
+
+	/* ensure signals are unblocked */
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, NULL); /* cannot use pthread_sigmask after fork */
+}
+
+void os_signal_init(void)
+{
+	struct sigaction sa;
+
+	sa.sa_handler = signal_handler;
+	sigemptyset(&sa.sa_mask);
+
+	/* use the SA_RESTART to automatically restart interrupted system calls */
+	sa.sa_flags = SA_RESTART;
+
+	sigaction(SIGHUP, &sa, 0);
+	sigaction(SIGTERM, &sa, 0);
+	sigaction(SIGINT, &sa, 0);
+
+	sa.sa_handler = SIG_IGN; /* ignore the signal */
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGPIPE, &sa, 0);
+}
+
+/****************************************************************************/
 /* exec */
 
 #if HAVE_LINUX_DEVICE
+/*
+ * Securely verify and open an executable file.
+ *
+ * Performs a series of security checks on the file at @exec_path before
+ * returning an open file descriptor suitable for use with fexecve(2), or
+ * falling back to execve(2) on systems that lack it.
+ *
+ * Security model:
+ *   - @exec_path must be absolute.
+ *   - The path is resolved via realpath(3) to canonicalize it and eliminate
+ *     symlinks before any further checks are performed.
+ *   - The parent directory is opened with O_PATH | O_NOFOLLOW to pin its
+ *     inode, and the file is opened with openat(2) relative to that pinned
+ *     descriptor. This closes the TOCTOU window between path resolution
+ *     and file open.
+ *   - Both the parent directory and the file must be owned by root or the
+ *     daemon's real/effective UID, must not be world-writable, and must not
+ *     be group-writable by a group other than the daemon's real/effective GID.
+ *   - The file must be a regular file with at least one execute bit set.
+ *   - The setuid and setgid bits must not be set.
+ *   - The file must not have more than one hard link, to prevent an attacker
+ *     from linking a controlled file into a trusted directory.
+ *   - On systems with fexecve(2) support, the returned fd is opened without
+ *     O_CLOEXEC so it can be passed directly to fexecve(2). On other systems
+ *     O_CLOEXEC is set and execve(2) must be used with @resolved_path.
+ *
+ * @exec_path     Absolute path to the executable to verify.
+ * @resolved_path Caller-allocated buffer of at least PATH_MAX bytes. On
+ *                success, filled with the canonicalized path from realpath(3).
+ *
+ * Returns an open file descriptor (>= 0) on success. The caller is
+ * responsible for closing it. Returns -1 on any verification failure;
+ * the specific reason is emitted via log_error(...).
+ */
+static int verify_executable(const char* exec_path, char* resolved_path)
+{
+	struct stat st;
+	uid_t process_uid, process_euid;
+	gid_t process_gid, process_egid;
+
+	process_uid = getuid();
+	process_euid = geteuid();
+	process_gid = getgid();
+	process_egid = getegid();
+
+	/* verify path is absolute */
+	if (exec_path[0] != '/') {
+		log_error(EINVAL, "Path %s must be absolute", exec_path);
+		return -1;
+	}
+
+	/* resolve the path to prevent symlink attacks */
+	if (!realpath(exec_path, resolved_path)) {
+		log_error(errno, "Failed to resolve %s. %s.", exec_path, strerror(errno));
+		return -1;
+	}
+
+	char* last_slash = strrchr(resolved_path, '/');
+	if (last_slash == 0) {
+		log_error(EINVAL, "Relative execution of %s not allowed", resolved_path);
+		return -1;
+	}
+	if (last_slash == resolved_path) {
+		log_error(EINVAL, "Root dir execution of %s not allowed", resolved_path);
+		return -1;
+	}
+
+	const char* exec_name = last_slash + 1;
+	if (exec_name[0] == 0) {
+		log_error(EINVAL, "No executable name in %s", exec_path);
+		return -1;
+	}
+
+	char dir_path[PATH_MAX];
+	size_t dir_len = last_slash - resolved_path;
+	memcpy(dir_path, resolved_path, dir_len);
+	dir_path[dir_len] = 0;
+
+	int dir_fd = open(dir_path, O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+	if (dir_fd < 0) {
+		log_error(errno, "Failed to open directory %s. %s.", dir_path, strerror(errno));
+		return -1;
+	}
+
+	if (fstat(dir_fd, &st) != 0) {
+		log_error(errno, "Failed to stat directory %s. %s.", dir_path, strerror(errno));
+		close(dir_fd);
+		return -1;
+	}
+
+	/* directory must be owned by root or the daemon's real user */
+	if (st.st_uid != process_uid && st.st_uid != process_euid && st.st_uid != 0) {
+		log_error(EINVAL, "Directory %s owner must match the daemon owner or be root", dir_path);
+		close(dir_fd);
+		return -1;
+	}
+
+	/* directory must be not group-writable unless group matches daemon */
+	if ((st.st_mode & S_IWGRP) && st.st_gid != process_gid && st.st_gid != process_egid && st.st_gid != 0) {
+		log_error(EINVAL, "Directory %s must be not group-writable unless group matches daemon owner or root", dir_path);
+		close(dir_fd);
+		return -1;
+	}
+
+	/* directory must be not world-writable */
+	if (st.st_mode & S_IWOTH) {
+		log_error(EINVAL, "Directory %s must be not world-writable", dir_path);
+		close(dir_fd);
+		return -1;
+	}
+
+	/*
+	 * Open the executable
+	 * O_NOFOLLOW prevents following symlinks to mitigate redirection attacks
+	 */
+	int fd = openat(dir_fd, exec_name, O_RDONLY | O_NOFOLLOW
+#if !HAVE_FEXECVE
+			| O_CLOEXEC /* with fexecve cannot use O_CLOEXEC (Close on Exec) */
+#endif
+	);
+	if (fd < 0) {
+		log_error(errno, "Failed to open %s. %s.", resolved_path, strerror(errno));
+		close(dir_fd);
+		return -1;
+	}
+
+	close(dir_fd);
+
+	/* get the file handle (TOCTOU Protection) */
+	if (fstat(fd, &st) == -1) {
+		log_error(errno, "Failed to stat %s. %s.", resolved_path, strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	/* ensure it's a regular file */
+	if (!S_ISREG(st.st_mode)) {
+		log_error(EINVAL, "File %s is not a regular file", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	/* ensure it has execute permissions */
+	if (!(st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))) {
+		log_error(EINVAL, "File %s is not an executable", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	/* must be owned by root or the daemon's real user */
+	if (st.st_uid != process_uid && st.st_uid != process_euid && st.st_uid != 0) {
+		log_error(EINVAL, "File %s owner must match the daemon owner or be root", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	/* must be not group-writable unless group matches daemon */
+	if ((st.st_mode & S_IWGRP) && st.st_gid != process_gid && st.st_gid != process_egid && st.st_gid != 0) {
+		log_error(EINVAL, "File %s must be not group-writable unless group matches daemon owner or root", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	/* must be not world-writable */
+	if (st.st_mode & S_IWOTH) {
+		log_error(EINVAL, "File %s must be not world-writable", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	/* must be not setuid / setgid */
+	if (st.st_mode & (S_ISUID | S_ISGID)) {
+		log_error(EINVAL, "File %s has setuid/setgid bits set", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	/* verify the file has not been hardlinked multiple times */
+	if (st.st_nlink > 1) {
+		log_error(EINVAL, "File %s has multiple hard links", resolved_path);
+		close(fd);
+		return -1;
+	}
+
+	return fd;
+}
+
 /**
  * Validates a string for shell metacharacters.
  * Returns -1 if dangerous characters are detected, 0 otherwise.
@@ -65,7 +310,6 @@ static int validate_exec_input(const char* str)
 	return 0;
 }
 
-
 /*
  * Scrubbed environment
  * Only provide the bare essentials.
@@ -82,40 +326,264 @@ static char* const envp_scrubbed[] = {
 	NULL
 };
 
-/**
- * Executes a command with arguments.
- * @param args A NULL-terminated array of strings. args[0] is the executable.
- * @return The exit status of the command, or -1 on fork/wait failure.
- */
-static int systemv(const char* args[])
+static int pipe_cloexec(int pipefd[2])
 {
-	pid_t pid = fork();
-
-	if (pid < 0) {
-		/* LCOV_EXCL_START */
+#ifdef HAVE_PIPE2
+	return pipe2(pipefd, O_CLOEXEC);
+#else
+	if (pipe(pipefd) < 0)
 		return -1;
-		/* LCOV_EXCL_STOP */
+
+	for (int i = 0; i < 2; i++) {
+		int flags = fcntl(pipefd[i], F_GETFD);
+		if (flags < 0)
+			goto bail;
+
+		if (fcntl(pipefd[i], F_SETFD, flags | FD_CLOEXEC) < 0)
+			goto bail;
+	}
+
+	return 0;
+
+bail:
+	close(pipefd[0]);
+	close(pipefd[1]);
+	return -1;
+#endif
+}
+
+/*
+ * and execute a verified executable, capturing stdout.
+ *
+ * Spawns @argv[0] in a new process with stdout connected to a pipe whose
+ * read end is returned in @stdout_fd. stdin and stderr are redirected to
+ * /dev/null. Use this when the child's error output needs to be read and
+ * processed by the daemon.
+ *
+ * The child is placed in its own process group (setpgid) to isolate it
+ * from signals sent to the daemon's process group. The daemon can terminate
+ * the child and all its descendants with kill(-pid, SIGTERM).
+ *
+ * The pipe is created with O_CLOEXEC on both ends. The write end is closed
+ * in the parent after fork. The read end's buffer is reduced to 4096 bytes
+ * to improve read responsiveness on low-volume output.
+ *
+ * @argv       NULL-terminated argument vector. argv[0] must be the absolute
+ *             path to the executable.
+ * @stdout_fd  On success, set to the read end of the stdout pipe. The caller
+ *             is responsible for closing it when done.
+ *
+ * Returns the child PID on success, or -1 on failure.
+ */
+pid_t os_spawn_stdout(const char** argv, int* stdout_fd)
+{
+	char resolved_path[PATH_MAX];
+	int out_pipe[2];
+	pid_t pid;
+
+	int fd = verify_executable(argv[0], resolved_path);
+	if (fd < 0) {
+		return -1;
+	}
+
+	if (pipe_cloexec(out_pipe) < 0) {
+		close(fd);
+		return -1;
+	}
+
+	pid = fork();
+	if (pid < 0) {
+		close(out_pipe[0]);
+		close(out_pipe[1]);
+		close(fd);
+		return -1;
 	}
 
 	if (pid == 0) {
+		/* child process */
+
+		/*
+		 * Create a new process group for the child.
+		 * This isolates the child from signals sent to the daemon's process group
+		 * and allows the daemon to kill this process and all its future children
+		 * (the entire group) using kill(-pid, SIGTERM).
+		 */
+		setpgid(0, 0);
+
+		/* io sandboxing */
+		int null_fd = open("/dev/null", O_RDWR | O_CLOEXEC);
+		if (null_fd < 0)
+			_exit(126);
+
+		/* stdin  -> /dev/null */
+		/* stdout -> pipe      */
+		/* stderr -> /dev/null */
+		if (dup2(null_fd, STDIN_FILENO) < 0
+			|| dup2(out_pipe[1], STDOUT_FILENO) < 0
+			|| dup2(null_fd, STDERR_FILENO) < 0)
+			_exit(126);
+
+		close(out_pipe[0]);
+		close(out_pipe[1]);
+
+		/* if the fd we opened is not one of the standard ones, close it */
+		if (null_fd > STDERR_FILENO)
+			close(null_fd);
+
 #if defined(CLOSE_RANGE_CLOEXEC) && defined(HAVE_CLOSE_RANGE)
-		/* set all fd to be closed on exec as extra safety measure */
-		close_range(3, ~0U, CLOSE_RANGE_CLOEXEC);
+		/*
+		 * Set all fd to be closed on exec as extra safety measure
+		 *
+		 * fallback: if it fails, we assume to be still safe, as all fds and
+		 * sockets should be already created with CLOEXEC.
+		 */
+		close_range(3, fd - 1, CLOSE_RANGE_CLOEXEC);
+		close_range(fd + 1, ~0U, CLOSE_RANGE_CLOEXEC);
 #endif
 
-		/* child process */
-		execve(args[0], (char* const*)args, envp_scrubbed);
-		_exit(EXIT_FAILURE);
+		/* restore and unblock signals */
+		os_signal_restore_after_fork();
+
+		/* use the resolved path for execution */
+		argv[0] = resolved_path;
+
+		/*
+		 * Direct Execution via File Descriptor
+		 * The kernel uses the shebang in the FD to find the interpreter.
+		 */
+#if HAVE_FEXECVE
+		fexecve(fd, (char**)argv, envp_scrubbed);
+#else
+		/* fallback: unfortunately must use the path */
+		execve(resolved_path, (char**)argv, envp_scrubbed);
+#endif
+		_exit(127);
 	}
 
-	/* parent process */
-	int status;
-	pid_t ret;
+	/* parent */
+	close(fd);
+
+	/* set the pipe buffer to the minimum to improve responsiveness */
+	if (fcntl(out_pipe[0], F_SETPIPE_SZ, 4096) == -1) {
+		log_error(errno, "Failed to set pipe size. %s.", strerror(errno));
+		/* log non-fatal error or ignore */
+	}
+
+	close(out_pipe[1]);
+
+	*stdout_fd = out_pipe[0];
+	return pid;
+}
+
+int os_wait(pid_t pid, int* status)
+{
+	int ret;
+
 	do {
-		ret = waitpid(pid, &status, 0);
+		ret = waitpid(pid, status, 0);
 	} while (ret == -1 && errno == EINTR);
+
+	return ret;
+}
+
+/*
+ * Fork and execute a verified executable, discarding all I/O.
+ *
+ * Spawns @argv[0] in a new process with stdin, stdout and stderr all
+ * redirected to /dev/null. Use this for fire-and-forget tasks where the
+ * child's output is not needed.
+ *
+ * The child is placed in its own process group (setpgid) to isolate it
+ * from signals sent to the daemon's process group.
+ *
+ * @argv  NULL-terminated argument vector. argv[0] must be the absolute path
+ *        to the executable.
+ *
+ * Returns the child execit status on success, or -1 on failure.
+ */
+int os_spawn_and_wait(const char** argv)
+{
+	char resolved_path[PATH_MAX];
+	pid_t pid;
+
+	int fd = verify_executable(argv[0], resolved_path);
+	if (fd < 0)
+		return -1;
+
+	pid = fork();
+	if (pid < 0) {
+		log_error(errno, "Fork failed. %s.", strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	if (pid == 0) {
+		/* child process */
+		/*
+		 * Create a new process group for the child.
+		 * This isolates the child from signals sent to the daemon's process group
+		 * and allows the daemon to kill this process and all its future children
+		 * (the entire group) using kill(-pid, SIGTERM).
+		 */
+		setpgid(0, 0);
+
+		/* io sandboxing */
+		int null_fd = open("/dev/null", O_RDWR | O_CLOEXEC);
+		if (null_fd < 0)
+			_exit(126);
+
+		/* stdin  -> /dev/null */
+		/* stdout -> /dev/null */
+		/* stderr -> /dev/null */
+		if (dup2(null_fd, STDIN_FILENO) < 0
+			|| dup2(null_fd, STDOUT_FILENO) < 0
+			|| dup2(null_fd, STDERR_FILENO) < 0)
+			_exit(126);
+
+		/* if the fd we opened is not one of the standard ones, close it */
+		if (null_fd > STDERR_FILENO)
+			close(null_fd);
+
+#if defined(CLOSE_RANGE_CLOEXEC) && defined(HAVE_CLOSE_RANGE)
+		/*
+		 * Mark all remaining open fds (>= 3) as close-on-exec as an
+		 * extra safety measure against leaking inherited fds into the
+		 * child executable.
+		 * Note: if fd == 3, the first range (3, fd-1) = (3, 2) is
+		 * intentionally invalid and will fail harmlessly; fd itself
+		 * is preserved for fexecve.
+		 */
+		close_range(3, fd - 1, CLOSE_RANGE_CLOEXEC);
+		close_range(fd + 1, ~0U, CLOSE_RANGE_CLOEXEC);
+#endif
+
+		/* restore and unblock signals */
+		os_signal_restore_after_fork();
+
+		/* use the resolved path for execution */
+		argv[0] = resolved_path;
+
+		/*
+		 * Direct Execution via File Descriptor
+		 * The kernel uses the shebang in the FD to find the interpreter.
+		 */
+#if HAVE_FEXECVE
+		fexecve(fd, (char**)argv, envp_scrubbed);
+#else
+		/* fallback: unfortunately must use the path */
+		execve(resolved_path, (char**)argv, envp_scrubbed);
+#endif
+		_exit(127);
+	}
+
+	/* parent */
+	close(fd);
+
+	int status;
+	int ret = os_wait(pid, &status);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		log_error(errno, "Wait %s failed. %s.", resolved_path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -123,7 +591,7 @@ static int systemv(const char* args[])
 	if (WIFEXITED(status)) {
 		return WEXITSTATUS(status);
 	} else if (WIFSIGNALED(status)) {
-		return -WTERMSIG(status);
+		return 128 + WTERMSIG(status);
 	}
 
 	return -1;
@@ -2282,7 +2750,7 @@ static int fssnapshot_bcachefs_create(const struct fssnapshot_struct* fss, const
 		0
 	};
 
-	ret = systemv(argv);
+	ret = os_spawn_and_wait(argv);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -2321,7 +2789,7 @@ static int fssnapshot_zfs_create(const struct fssnapshot_struct* fss, const char
 		0
 	};
 
-	ret = systemv(argv);
+	ret = os_spawn_and_wait(argv);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -2411,7 +2879,7 @@ static int fssnapshot_bcachefs_delete(const struct fssnapshot_struct* fss, const
 		0,
 	};
 
-	ret = systemv(argv);
+	ret = os_spawn_and_wait(argv);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -2450,7 +2918,7 @@ static int fssnapshot_zfs_delete(const struct fssnapshot_struct* fss, const char
 		0
 	};
 
-	ret = systemv(argv);
+	ret = os_spawn_and_wait(argv);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -2551,8 +3019,7 @@ static int fssnapshot_zfs_rename(const struct fssnapshot_struct* fss, const char
 		0
 	};
 
-
-	ret = systemv(argv);
+	ret = os_spawn_and_wait(argv);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
