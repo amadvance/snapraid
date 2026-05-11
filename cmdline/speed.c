@@ -286,6 +286,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx2e");
 	printf("%8s", "avx512");
+	printf("%8s", "gfni");
 #endif
 #endif
 	printf("\n");
@@ -342,6 +343,7 @@ void speed(int period, int nd, int size)
 #endif
 #ifdef CONFIG_X86_64
 	printf("%8s", "");
+#endif
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -351,7 +353,6 @@ void speed(int period, int nd, int size)
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
-#endif
 #endif
 #endif
 	printf("\n");
@@ -414,6 +415,7 @@ void speed(int period, int nd, int size)
 #endif
 #ifdef CONFIG_X86_64
 	printf("%8s", "");
+#endif
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -424,6 +426,15 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen2_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");
@@ -560,6 +571,16 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen3_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 #endif
 	printf("\n");
@@ -629,6 +650,16 @@ void speed(int period, int nd, int size)
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen4_avx512bw(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen4_avx512gfni(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -710,6 +741,16 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen5_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 #endif
 	printf("\n");
@@ -785,6 +826,16 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen6_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 #endif
 	printf("\n");
@@ -800,6 +851,7 @@ void speed(int period, int nd, int size)
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx512");
+	printf("%8s", "gfni");
 #endif
 #endif
 	printf("\n");
@@ -845,7 +897,6 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -859,6 +910,18 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_force(1, raid_gen1_avx512bw); /* there is no raid_gen1_avx512gfni */
+			/* +1 to avoid GEN1 optimized case */
+			raid_rec1_avx512gfni(1, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");
@@ -908,7 +971,6 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -922,6 +984,18 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_force(2, raid_gen2_avx512gfni);
+			/* +1 to avoid GEN2 optimized case */
+			raid_rec2_avx512gfni(2, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");
@@ -972,7 +1046,6 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -986,6 +1059,18 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_force(3, raid_gen3_avx512gfni);
+			/* +1 to avoid GEN1 optimized case */
+			raid_recX_avx512gfni(3, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");
@@ -1037,7 +1122,6 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -1051,6 +1135,18 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_force(4, raid_gen4_avx512gfni);
+			/* +1 to avoid GEN1 optimized case */
+			raid_recX_avx512gfni(4, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");
@@ -1101,7 +1197,6 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -1115,6 +1210,18 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_force(5, raid_gen5_avx512gfni);
+			/* +1 to avoid GEN1 optimized case */
+			raid_recX_avx512gfni(5, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");
@@ -1165,7 +1272,6 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -1179,6 +1285,18 @@ void speed(int period, int nd, int size)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			/* ensure to use same hardware in the delta step */
+			raid_gen_force(6, raid_gen6_avx512gfni);
+			/* +1 to avoid GEN1 optimized case */
+			raid_recX_avx512gfni(6, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 #endif
 	printf("\n");

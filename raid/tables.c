@@ -8749,7 +8749,7 @@ const uint8_t __aligned(256) raid_gfexp[256] =
 
 const uint8_t __aligned(256) raid_gfinv[256] =
 {
-	/* note that the first element is not significative */
+	/* note that the first element is not significant */
 	0x00, 0x01, 0x8e, 0xf4, 0x47, 0xa7, 0x7a, 0xba,
 	0xad, 0x9d, 0xdd, 0x98, 0x3d, 0xaa, 0x5d, 0x96,
 	0xd8, 0x72, 0xc0, 0x58, 0xe0, 0x3e, 0x4c, 0x66,
@@ -8786,7 +8786,7 @@ const uint8_t __aligned(256) raid_gfinv[256] =
 
 /**
  * Power matrix used to generate parity.
- * This matrix is valid for up to 3 parity with 251 data disks.
+ * This matrix is valid for up to 3 parities with 251 data disks.
  *
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75 ea c9 8f 03 06 0c 18 30 60 c0 9d 27 4e 9c 25 4a 94 35 6a d4 b5 77 ee c1 9f 23 46 8c 05 0a 14 28 50 a0 5d ba 69 d2 b9 6f de a1 5f be 61 c2 99 2f 5e bc 65 ca 89 0f 1e 3c 78 f0 fd e7 d3 bb 6b d6 b1 7f fe e1 df a3 5b b6 71 e2 d9 af 43 86 11 22 44 88 0d 1a 34 68 d0 bd 67 ce 81 1f 3e 7c f8 ed c7 93 3b 76 ec c5 97 33 66 cc 85 17 2e 5c b8 6d da a9 4f 9e 21 42 84 15 2a 54 a8 4d 9a 29 52 a4 55 aa 49 92 39 72 e4 d5 b7 73 e6 d1 bf 63 c6 91 3f 7e fc e5 d7 b3 7b f6 f1 ff e3 db ab 4b 96 31 62 c4 95 37 6e dc a5 57 ae 41 82 19 32 64 c8 8d 07 0e 1c 38 70 e0 dd a7 53 a6 51 a2 59 b2 79 f2 f9 ef c3 9b 2b 56 ac 45 8a 09 12 24 48 90 3d 7a f4 f5 f7 f3 fb eb cb 8b 0b 16 2c 58 b0 7d fa e9 cf 83 1b 36 6c
