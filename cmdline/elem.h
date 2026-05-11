@@ -632,7 +632,13 @@ int filter_emptydir(tommy_list* filterlist, struct snapraid_filter** reason, con
  * Filter a path if it's a content file.
  * Return !=0 if should be excluded.
  */
-int filter_content(tommy_list* contentlist, const char* path);
+int filter_content(tommy_list* contentlist, const char* mount_point, size_t mount_point_len, const char* sub, size_t sub_len, const char* name);
+
+/**
+ * Filter a path that is in a snapshot
+ * Return !=0 if should be excluded.
+ */
+int filter_snapshot(const char* sub, const char* name);
 
 /**
  * Check if the specified hash is invalid.
