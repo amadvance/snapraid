@@ -288,7 +288,7 @@ dnl Checks for AS supporting the AVX512BW instructions.
 AC_MSG_CHECKING([for avx512bw])
 asmavx512bw=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__x86_64__)
 	void f(void* ptr)
 	{
 		asm volatile("vpshufb %0, %%zmm0, %%zmm1" : : "m" (ptr));
@@ -299,6 +299,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]])],
 [AC_DEFINE([HAVE_AVX512BW], [1], [Define to 1 if avx512bw is supported by the assembler.]) asmavx512bw=yes])
 AC_MSG_RESULT([$asmavx512bw])
+
+dnl Checks for AS supporting the AVX512GFNI instructions.
+AC_MSG_CHECKING([for avx512gfni])
+asmavx512gfni=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__x86_64__)
+	void f(void* ptr)
+	{
+		asm volatile ("vgf2p8mulb %0, %%zmm2, %%zmm2" : : "m" (ptr));
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_AVX512GFNI], [1], [Define to 1 if avx512gfni is supported by the assembler.]) asmavx512gfni=yes])
+AC_MSG_RESULT([$asmavx512gfni])
 
 dnl AS_IF(HAVE_ASSEMBLY) closed here
 )

@@ -26,6 +26,7 @@ snapraid_SOURCES = \
 	raid/tables.c \
 	raid/int.c \
 	raid/x86.c \
+	raid/gfni.c \
 	raid/intz.c \
 	raid/x86z.c \
 	raid/helper.c \

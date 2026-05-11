@@ -247,6 +247,9 @@ void raid_init(void)
 #if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 	raid_register_x86();
 #endif
+#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
+	raid_register_avx512gfni();
+#endif
 
 	/* set the default mode */
 	raid_mode(RAID_MODE_CAUCHY);

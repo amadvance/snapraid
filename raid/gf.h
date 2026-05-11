@@ -71,7 +71,39 @@ static __always_inline uint8_t A(int p, int d)
 #define v_64(p) (*(uint64_t *)&(p))
 
 /*
- * Multiply each byte of a uint32 by 2 in the GF(2^8).
+ * Polynomial-dependent XOR masks for GF(2^8) multiply and divide by 2.
+ *
+ * RAID_POLY_32 and RAID_POLY_64 are RAID_POLY repeated in every byte
+ * of a uint32/uint64, used as the conditional XOR in the multiply-by-2
+ * path: when the MSB of a byte is set before the left shift, the
+ * reducing polynomial is XORed in to reduce the result back into the
+ * field.
+ *
+ * RAID_INV2_32 and RAID_INV2_64 are the GF(2^8) inverse of 2 (i.e.
+ * 2^{-1} mod RAID_POLY) repeated in every byte, used in the
+ * divide-by-2 path. The inverse depends on the polynomial:
+ *
+ *   RAID_POLY = 0x1d  ->  2^{-1} = 0x8e  (standard RAID)
+ *   RAID_POLY = 0x1b  ->  2^{-1} = 0x8d  (AES polynomial)
+ *
+ * Both are computed from RAID_POLY via the macro RAID_INV2_BYTE:
+ * in GF(2^8), 2^{-1} is the value x such that 2*x = 1, which for
+ * any polynomial of the form x^8 + ... + 1 resolves to:
+ *
+ *   2^{-1} = (RAID_POLY >> 1) | 0x80
+ *
+ * since right-shifting the polynomial by 1 and setting the MSB gives
+ * the unique solution in both cases.
+ */
+#define RAID_INV2_BYTE (((RAID_POLY) >> 1) | 0x80)
+
+#define RAID_POLY_32 ((uint32_t)RAID_POLY * 0x01010101U)
+#define RAID_POLY_64 ((uint64_t)RAID_POLY * 0x0101010101010101ULL)
+#define RAID_INV2_32 ((uint32_t)RAID_INV2_BYTE * 0x01010101U)
+#define RAID_INV2_64 ((uint64_t)RAID_INV2_BYTE * 0x0101010101010101ULL)
+
+/*
+ * Multiply each byte of a uint32 by 2 in GF(2^8).
  */
 static __always_inline uint32_t x2_32(uint32_t v)
 {
@@ -79,12 +111,12 @@ static __always_inline uint32_t x2_32(uint32_t v)
 
 	mask = (mask << 1) - (mask >> 7);
 	v = (v << 1) & 0xfefefefeU;
-	v ^= mask & 0x1d1d1d1dU;
+	v ^= mask & RAID_POLY_32;
 	return v;
 }
 
 /*
- * Multiply each byte of a uint64 by 2 in the GF(2^8).
+ * Multiply each byte of a uint64 by 2 in GF(2^8).
  */
 static __always_inline uint64_t x2_64(uint64_t v)
 {
@@ -92,12 +124,12 @@ static __always_inline uint64_t x2_64(uint64_t v)
 
 	mask = (mask << 1) - (mask >> 7);
 	v = (v << 1) & 0xfefefefefefefefeULL;
-	v ^= mask & 0x1d1d1d1d1d1d1d1dULL;
+	v ^= mask & RAID_POLY_64;
 	return v;
 }
 
 /*
- * Divide each byte of a uint32 by 2 in the GF(2^8).
+ * Divide each byte of a uint32 by 2 in GF(2^8).
  */
 static __always_inline uint32_t d2_32(uint32_t v)
 {
@@ -105,12 +137,12 @@ static __always_inline uint32_t d2_32(uint32_t v)
 
 	mask = (mask << 8) - mask;
 	v = (v >> 1) & 0x7f7f7f7fU;
-	v ^= mask & 0x8e8e8e8eU;
+	v ^= mask & RAID_INV2_32;
 	return v;
 }
 
 /*
- * Divide each byte of a uint64 by 2 in the GF(2^8).
+ * Divide each byte of a uint64 by 2 in GF(2^8).
  */
 static __always_inline uint64_t d2_64(uint64_t v)
 {
@@ -118,9 +150,8 @@ static __always_inline uint64_t d2_64(uint64_t v)
 
 	mask = (mask << 8) - mask;
 	v = (v >> 1) & 0x7f7f7f7f7f7f7f7fULL;
-	v ^= mask & 0x8e8e8e8e8e8e8e8eULL;
+	v ^= mask & RAID_INV2_64;
 	return v;
 }
 
 #endif
-
