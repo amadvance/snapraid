@@ -138,6 +138,9 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 {
 	DIR* d;
 
+	size_t mount_point_len = disk != 0 ? strlen(disk->mount_point) : 0;
+	size_t sub_len = strlen(sub);
+
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
@@ -183,8 +186,14 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		}
 
 		/* exclude content files even before calling lstat() */
-		if (disk != 0 && filter_content(&state->contentlist, path_next) != 0) {
+		if (disk != 0 && filter_content(&state->contentlist, disk->mount_point, mount_point_len, sub, sub_len, name) != 0) {
 			msg_verbose("Excluding content '%s'\n", path_next);
+			continue;
+		}
+
+		/* exclude snapshot container even before calling lstat() */
+		if (disk != 0 && filter_snapshot(sub, name) != 0) {
+			msg_verbose("Excluding snapshots directory '%s'\n", path_next);
 			continue;
 		}
 
