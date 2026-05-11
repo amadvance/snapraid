@@ -385,7 +385,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 #define SNAPSHOT_PENDING "pending"
 #define SNAPSHOT_STABLE "stable"
 
-/**
+/*
  * Snapshots context
  */
 struct fssnapshot_struct {

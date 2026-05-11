@@ -84,7 +84,6 @@ extra boot /
 exclude *.unrecoverable
 exclude /tmp/
 exclude /lost+found/
-exclude .snapraid/
 
 # Defines the block size in kibi bytes (1024 bytes) (uncomment to enable).
 # WARNING: Changing this value is for experts only!
