@@ -374,6 +374,12 @@ void pathup(char* dst);
 int pathcmp(const char* a, const char* b);
 
 /**
+ * Compare two paths up to n chars.
+ * In Windows it's case insensitive and assumes \ equal at /.
+ */
+int pathncmp(const char* a, const char* b, size_t n);
+
+/**
  * Check if the root is matching the start of the specified path.
  *
  * The root MUST end with a /.

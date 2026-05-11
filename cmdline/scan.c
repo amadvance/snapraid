@@ -1329,9 +1329,11 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 	DIR* d;
 	tommy_list list;
 	tommy_node* node;
+	size_t mount_point_len;
 	size_t path_len;
 	size_t sub_len;
 
+	mount_point_len = strlen(disk->mount_point);
 	path_len = strlen(path_next);
 	sub_len = strlen(sub_next);
 
@@ -1404,8 +1406,14 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		}
 
 		/* exclude content files even before calling lstat() */
-		if (filter_content(&state->contentlist, path_next) != 0) {
+		if (filter_content(&state->contentlist, disk->mount_point, mount_point_len, sub_next, sub_len, name) != 0) {
 			msg_verbose("Excluding content '%s'\n", path_next);
+			continue;
+		}
+
+		/* exclude snapshot container even before calling lstat() */
+		if (filter_snapshot(sub_next, name) != 0) {
+			msg_verbose("Excluding snapshots directory '%s'\n", path_next);
 			continue;
 		}
 
