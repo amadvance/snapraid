@@ -349,27 +349,50 @@ int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapr
 	return 1;
 }
 
-int filter_content(tommy_list* contentlist, const char* path)
+int filter_content(tommy_list* contentlist, const char* mount_point, size_t mount_point_len, const char* sub, size_t sub_len, const char* name)
 {
 	tommy_node* i;
 
+	size_t name_len = strlen(name);
+
 	for (i = tommy_list_head(contentlist); i != 0; i = i->next) {
 		struct snapraid_content* content = i->data;
-		char tmp[PATH_MAX];
 
-		if (pathcmp(content->content, path) == 0)
+		/* if the mount point doesn't match, it's a different disk */
+		if (pathncmp(content->content, mount_point, mount_point_len) != 0)
+			continue;
+
+		/* if the sub dir doesn't match, it's a different dir */
+		if (pathncmp(content->content + mount_point_len, sub, sub_len) != 0)
+			continue;
+
+		/* if the name doesn't match, it's a different name */
+		if (pathncmp(content->content + mount_point_len + sub_len, name, name_len) != 0)
+			continue;
+
+		/* remaining part */
+		const char* postfix = content->content + mount_point_len + sub_len + name_len;
+
+		/* if it's an exact match */
+		if (*postfix == 0)
 			return -1;
 
 		/* exclude also the ".tmp" copy used to save it */
-		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (pathcmp(tmp, path) == 0)
+		if (pathcmp(postfix, ".tmp") == 0)
 			return -1;
 
 		/* exclude also the ".lock" file */
-		pathprint(tmp, sizeof(tmp), "%s.lock", content->content);
-		if (pathcmp(tmp, path) == 0)
+		if (pathcmp(postfix, ".lock") == 0)
 			return -1;
 	}
+
+	return 0;
+}
+
+int filter_snapshot(const char* sub, const char* name)
+{
+	if (*sub == 0 && pathcmp(name, SNAPSHOT_CONTAINER) == 0)
+		return -1;
 
 	return 0;
 }

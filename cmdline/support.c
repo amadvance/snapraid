@@ -1193,17 +1193,58 @@ void pathup(char* dst)
 int pathcmp(const char* a, const char* b)
 {
 #ifdef _WIN32
-	char ai[PATH_MAX];
-	char bi[PATH_MAX];
+	while (1) {
+		char ca = *a++;
+		char cb = *b++;
 
-	/* import to convert \ to / */
-	pathimport(ai, sizeof(ai), a);
-	pathimport(bi, sizeof(bi), b);
+		if (ca == '/')
+			ca = '\\';
 
-	/* case insensitive compare in Windows */
-	return stricmp(ai, bi);
+		if (cb == '/')
+			cb = '\\';
+
+		int la = tolower((unsigned char)ca);
+		int lb = tolower((unsigned char)cb);
+
+		if (la != lb)
+			return la - lb;
+
+		if (la == 0)
+			return 0;
+	}
 #else
 	return strcmp(a, b);
+#endif
+}
+
+int pathncmp(const char* a, const char* b, size_t n)
+{
+#ifdef _WIN32
+	while (n > 0) {
+		char ca = *a++;
+		char cb = *b++;
+
+		if (ca == '/')
+			ca = '\\';
+
+		if (cb == '/')
+			cb = '\\';
+
+		int la = tolower((unsigned char)ca);
+		int lb = tolower((unsigned char)cb);
+
+		if (la != lb)
+			return la - lb;
+
+		if (la == '\0')
+			return 0;
+
+		--n;
+	}
+
+	return 0;
+#else
+	return strncmp(a, b, n);
 #endif
 }
 
