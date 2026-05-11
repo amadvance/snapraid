@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "raid.h" /* for RAID_POLY */
+
 /**
  * Multiplication a*b in GF(2^8).
  */
@@ -18,7 +20,7 @@ static uint8_t gfmul(uint8_t a, uint8_t b)
 
 		if ((a & 0x80) != 0) {
 			a <<= 1;
-			a ^= 0x1d;
+			a ^= RAID_POLY;
 		} else {
 			a <<= 1;
 		}
@@ -213,9 +215,7 @@ int main(void)
 	uint8_t matrix[PARITY * 256];
 
 	printf("// SPDX-License-Identifier: GPL-2.0-or-later\n");
-	printf("/*\n");
-	printf(" * Copyright (C) 2013 Andrea Mazzoleni\n");
-	printf(" */\n");
+	printf("// Copyright (C) 2013 Andrea Mazzoleni\n");
 	printf("\n");
 
 	printf("#include \"internal.h\"\n");
