@@ -138,6 +138,7 @@ void speed(void)
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx2e");
 	printf("%8s", "avx512");
+	printf("%8s", "gfni");
 #endif
 #endif
 	printf("\n");
@@ -192,10 +193,11 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_X86_64
+	printf("%8s", "");
+#endif
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
-		printf("%8s", "");
-
 		SPEED_START {
 			raid_gen1_avx512bw(nd, size, v);
 		} SPEED_STOP
@@ -263,12 +265,23 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_X86_64
+	printf("%8s", "");
+#endif
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
-		printf("%8s", "");
-
 		SPEED_START {
 			raid_gen2_avx512bw(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen2_avx512gfni(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -410,6 +423,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen3_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 #endif
 	printf("\n");
@@ -479,6 +502,16 @@ void speed(void)
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen4_avx512bw(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen4_avx512gfni(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -560,6 +593,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen5_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 #endif
 	printf("\n");
@@ -635,6 +678,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen6_avx512gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 #endif
 	printf("\n");
@@ -650,6 +703,7 @@ void speed(void)
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx512");
+	printf("%8s", "gfni");
 #endif
 #endif
 	printf("\n");
@@ -693,7 +747,6 @@ void speed(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -706,6 +759,17 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen_force(1, raid_gen1_avx512bw); /* there is no raid_gen1_avx512gfni */
+			/* +1 to avoid GEN1 optimized case */
+			raid_rec1_avx512gfni(1, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 	printf("\n");
 
@@ -752,7 +816,6 @@ void speed(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
@@ -765,6 +828,17 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen_force(2, raid_gen2_avx512gfni);
+			/* +1 to avoid GEN2 optimized case */
+			raid_rec2_avx512gfni(2, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 	printf("\n");
 
@@ -808,8 +882,7 @@ void speed(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX2
+#ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen_force(3, raid_gen3_avx512bw);
@@ -820,6 +893,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen_force(3, raid_gen3_avx512gfni);
+			raid_recX_avx512gfni(3, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 	printf("\n");
 
@@ -867,8 +950,7 @@ void speed(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX2
+#ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen_force(4, raid_gen4_avx512bw);
@@ -879,6 +961,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen_force(4, raid_gen4_avx512gfni);
+			raid_recX_avx512gfni(4, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 	printf("\n");
 
@@ -926,8 +1018,7 @@ void speed(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX2
+#ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen_force(5, raid_gen5_avx512bw);
@@ -938,6 +1029,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen_force(5, raid_gen5_avx512gfni);
+			raid_recX_avx512gfni(5, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 	printf("\n");
 
@@ -985,8 +1086,7 @@ void speed(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX2
+#ifdef CONFIG_AVX512BW
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen_force(6, raid_gen6_avx512bw);
@@ -997,6 +1097,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		SPEED_START {
+			raid_gen_force(6, raid_gen6_avx512gfni);
+			raid_recX_avx512gfni(6, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 #endif
 	printf("\n");
 	printf("\n");
@@ -1019,7 +1129,9 @@ int main(void)
 	if (raid_cpu_has_avx2())
 		printf("Including x86 AVX2 functions\n");
 	if (raid_cpu_has_avx512bw())
-		printf("Including x86 AVX512bw functions\n");
+		printf("Including x86 AVX512BW functions\n");
+	if (raid_cpu_has_avx512gfni())
+		printf("Including x86 AVX512GFNI functions\n");
 #endif
 #ifdef CONFIG_X86_64
 	printf("Including x64 extended SSE register set\n");

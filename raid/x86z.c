@@ -2,21 +2,22 @@
 // Copyright (C) 2013 Andrea Mazzoleni
 
 #include "internal.h"
+#include "gf.h"
 
 #if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 static const struct gfzconst16 {
 	uint8_t poly[16];
 	uint8_t half[16];
 	uint8_t low7[16];
-} gfzconst16 __aligned(64) =
+} gfzconst16 __aligned(16) =
 {
 	{
-		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
-		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d
+		RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY,
+		RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY
 	},
 	{
-		0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e,
-		0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e
+		RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE,
+		RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE
 	},
 	{
 		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
@@ -187,9 +188,9 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 
 	raid_avx_begin();
 
-	asm volatile ("vbroadcasti128 %0,%%ymm7" : : "m" (gfzconst16.poly[0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (gfzconst16.half[0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm11" : : "m" (gfzconst16.low7[0]));
+	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfzconst16.poly[0]));
+	asm volatile ("vpbroadcastb %0,%%ymm3" : : "m" (gfzconst16.half[0]));
+	asm volatile ("vpbroadcastb %0,%%ymm11" : : "m" (gfzconst16.low7[0]));
 	asm volatile ("vpxor %ymm15,%ymm15,%ymm15");
 
 	for (i = 0; i < size; i += 64) {
