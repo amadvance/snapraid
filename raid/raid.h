@@ -4,6 +4,47 @@
 #ifndef __RAID_H
 #define __RAID_H
 
+/*
+ * GF(2^8) reducing polynomial selection.
+ *
+ * RAID parity computation operates in GF(2^8), a finite field where
+ * arithmetic is performed modulo an irreducible polynomial of degree 8.
+ * The choice of polynomial affects both correctness and performance:
+ * all tables, coefficients, and parity data are tied to a specific
+ * polynomial and cannot be mixed.
+ *
+ * Two polynomials are supported:
+ *
+ * 0x1d  (x^8 + x^4 + x^3 + x^2 + 1)  -- Standard RAID polynomial
+ *
+ *   The polynomial used by the original RAID-6 specification and the
+ *   Linux kernel RAID implementation. Choosing this polynomial ensures
+ *   on-disk compatibility with existing RAID arrays and interchange with
+ *   other RAID implementations. Use this when reading or writing data
+ *   that may be accessed by other software or hardware RAID controllers.
+ *
+ * 0x1b  (x^8 + x^4 + x^3 + x + 1)    -- AES polynomial (USE_RAID_AES)
+ *
+ *   The polynomial used by the AES encryption standard. Choosing this
+ *   polynomial enables the use of the Intel GFNI (Galois Field New
+ *   Instructions) extension, specifically the vgf2p8mulb instruction,
+ *   which performs GF(2^8) multiplication natively in hardware using
+ *   exactly this polynomial. This eliminates the nibble-split pshufb
+ *   multiply sequence (vpsrlw + vpandq + 2x vpshufb + vpxorq) and the
+ *   conditional multiply-by-2 sequence (vpcmpgtb + vpmovm2b + vpaddb +
+ *   vpandq + vpxorq) used in the AVX-512BW path, replacing each with a
+ *   single vgf2p8mulb instruction. On CPUs supporting GFNI (Ice Lake and
+ *   later), this yields a significant throughput improvement. The
+ *   trade-off is that parity data is not compatible with arrays using
+ *   the standard 0x1d polynomial, so this option requires that all
+ *   data be generated and recovered using the same polynomial choice.
+ */
+#ifdef USE_RAID_AES
+#define RAID_POLY 0x1b
+#else
+#define RAID_POLY 0x1d
+#endif
+
 /**
  * RAID mode supporting up to 6 parities.
  *
@@ -215,4 +256,3 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
 int raid_scan(int *ir, int nd, int np, size_t size, void **v);
 
 #endif
-

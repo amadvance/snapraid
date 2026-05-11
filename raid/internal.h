@@ -32,7 +32,7 @@
 #endif
 #endif
 
-/* Enables SSE2, SSSE3, AVX2 only if the assembler supports it */
+/* Enables SSE2, SSSE3, AVX2, AVX512BW, GFNI only if the assembler supports it */
 #if HAVE_SSE2
 #define CONFIG_SSE2 1
 #endif
@@ -42,8 +42,11 @@
 #if HAVE_AVX2
 #define CONFIG_AVX2 1
 #endif
-#if HAVE_AVX512BW /* Enables AVX2512BW only if the assembler supports it */
+#if HAVE_AVX512BW
 #define CONFIG_AVX512BW 1
+#endif
+#if HAVE_AVX512GFNI
+#define CONFIG_AVX512GFNI 1
 #endif
 
 #else /* if HAVE_CONFIG_H is not defined */
@@ -67,6 +70,7 @@
 #endif
 #ifdef CONFIG_X86_64
 #define CONFIG_AVX512BW 1
+#define CONFIG_AVX512GFNI 1
 #endif
 #endif
 
@@ -136,6 +140,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv);
 void raid_gen2_avx2(int nd, size_t size, void **vv);
 void raid_gen2_sse2ext(int nd, size_t size, void **vv);
 void raid_gen2_avx512bw(int nd, size_t size, void **vv);
+void raid_gen2_avx512gfni(int nd, size_t size, void **vv);
 void raid_genz_int32(int nd, size_t size, void **vv);
 void raid_genz_int64(int nd, size_t size, void **vv);
 void raid_genz_sse2(int nd, size_t size, void **vv);
@@ -146,21 +151,25 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv);
 void raid_gen3_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen3_avx2ext(int nd, size_t size, void **vv);
 void raid_gen3_avx512bw(int nd, size_t size, void **vv);
+void raid_gen3_avx512gfni(int nd, size_t size, void **vv);
 void raid_gen4_int8(int nd, size_t size, void **vv);
 void raid_gen4_ssse3(int nd, size_t size, void **vv);
 void raid_gen4_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen4_avx2ext(int nd, size_t size, void **vv);
 void raid_gen4_avx512bw(int nd, size_t size, void **vv);
+void raid_gen4_avx512gfni(int nd, size_t size, void **vv);
 void raid_gen5_int8(int nd, size_t size, void **vv);
 void raid_gen5_ssse3(int nd, size_t size, void **vv);
 void raid_gen5_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen5_avx2ext(int nd, size_t size, void **vv);
 void raid_gen5_avx512bw(int nd, size_t size, void **vv);
+void raid_gen5_avx512gfni(int nd, size_t size, void **vv);
 void raid_gen6_int8(int nd, size_t size, void **vv);
 void raid_gen6_ssse3(int nd, size_t size, void **vv);
 void raid_gen6_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen6_avx2ext(int nd, size_t size, void **vv);
 void raid_gen6_avx512bw(int nd, size_t size, void **vv);
+void raid_gen6_avx512gfni(int nd, size_t size, void **vv);
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -173,6 +182,9 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec1_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Functions for parity computation.
@@ -273,6 +285,11 @@ void raid_register_int(void);
  */
 void raid_register_x86(void);
 
+/**
+ * Register all the functions based on GFNI intructions.
+ */
+void raid_register_avx512gfni(void);
+
 /*
  * Tag functions.
  *
@@ -298,6 +315,7 @@ extern const uint8_t raid_gfvandermonde[3][256] __aligned(256);
 extern const uint8_t raid_gfcauchy[6][256] __aligned(256);
 extern const uint8_t raid_gfcauchypshufb[251][4][2][16] __aligned(256);
 extern const uint8_t raid_gfmulpshufb[256][2][16] __aligned(256);
+extern const uint8_t raid_gfcauchycoeff[251][4][16] __aligned(256);
 extern const uint8_t (*raid_gfgen)[256];
 #define gfmul raid_gfmul
 #define gfexp raid_gfexp
@@ -306,6 +324,7 @@ extern const uint8_t (*raid_gfgen)[256];
 #define gfcauchy raid_gfcauchy
 #define gfgenpshufb raid_gfcauchypshufb
 #define gfmulpshufb raid_gfmulpshufb
+#define gfgencoeff raid_gfcauchycoeff
 #define gfgen raid_gfgen
 
 /*
