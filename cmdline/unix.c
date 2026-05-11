@@ -2490,8 +2490,6 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	return 0;
 }
 
-#define SNAPSHOT_CONTAINER ".snapraid"
-
 #if HAVE_LINUX_DEVICE
 static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inode, struct fssnapshot_struct* fss)
 {
