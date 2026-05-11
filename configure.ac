@@ -456,6 +456,32 @@ AC_ARG_ENABLE([warning],
 	],
 	[])
 
+# WITH_TOOL(NAME, BINARY, DESCRIPTION)
+# Adds --with-NAME=PATH option. Defines NAME_PATH if given.
+AC_DEFUN([WITH_TOOL], [
+    AC_ARG_WITH([$1],
+        [AS_HELP_STRING([--with-$1=PATH],
+            [absolute path to the $2 executable ($3)])],
+        [
+            AS_CASE([$withval],
+                [/*], [],
+                [AC_MSG_ERROR([--with-$1 requires an absolute path (got '$withval')])])
+            AS_IF([test ! -x "$withval"],
+                [AC_MSG_WARN([$2 not found or not executable at '$withval'])])
+            AC_DEFINE_UNQUOTED(m4_toupper([$1_PATH]), ["$withval"], 
+                [Absolute path to $2, set at configure time.])
+            AC_MSG_NOTICE([$2: $withval])
+        ],
+        [
+            AC_MSG_NOTICE([$2: use runtime discovery])
+        ])
+])
+
+WITH_TOOL([smartctl], [smartctl],  [S.M.A.R.T. monitoring])
+WITH_TOOL([zfs], [zfs], [ZFS pool management])
+WITH_TOOL([zpool], [zpool], [ZFS pool status])
+WITH_TOOL([bcachefs], [bcachefs], [Bcachefs management])
+
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_ARG_VAR([FAILENV], [Test environment for failing tests])
 AC_ARG_VAR([TESTENV_SSE2], [Test environment for SSE2])
