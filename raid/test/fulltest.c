@@ -39,6 +39,8 @@ int main(void)
 		printf("Including x86 AVX2 functions\n");
 	if (raid_cpu_has_avx512bw())
 		printf("Including x86 AVX512BW functions\n");
+	if (raid_cpu_has_avx512gfni())
+		printf("Including x86 AVX512GFNI functions\n");
 #endif
 #ifdef CONFIG_X86_64
 	printf("Including x64 extended SSE register set\n");
