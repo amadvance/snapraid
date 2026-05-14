@@ -56,17 +56,25 @@ Limitations
 	the best benefits of both. However, it has some limitations that you should
 	consider before using it.
 
-	The main limitation is that if a disk fails and you haven't recently synced,
-	you may not be able to fully recover.
-	More specifically, you may be unable to recover up to the size of
-	the changed or deleted files since the last sync operation.
-	This occurs even if the changed or deleted files are not on the
-	failed disk. This is why SnapRAID is better suited for
-	data that rarely changes.
+	The main limitation is that if a disk fails, you can only recover data up to
+	the state of the last `sync` operation. Any data added or modifications made
+	since the last sync that are located on the failed disk will be lost.
+	Consequently, SnapRAID is primarily suited for data that rarely changes.
 
-	On the other hand, newly added files don't prevent recovery of already
-	existing files. You will only lose the recently added files if they
-	are on the failed disk.
+	For data that already existed at the last sync, recovery reliability depends
+	on whether the `snapshot` option is used:
+
+	* With snapshot support (available on Btrfs, ZFS, Bcachefs, and NTFS),
+		SnapRAID can automatically maintain a frozen reference of your data disks.
+		This ensures that even if you modify or delete files on your live
+		filesystem during or after a sync, the recovery process remains
+		consistent and reliable.
+
+	* Without snapshot support, deleting or changing files after a `sync`
+		can prevent the full recovery of other failed disks. This occurs
+		because the parity no longer matches the modified files, even if
+		those files are not on the failed disk. On the other hand, newly added
+		files don't prevent recovery of already	existing files.
 
 	Other SnapRAID limitations are:
 
@@ -1154,15 +1162,15 @@ Configuration
 	start of a 'sync'. This ensures a consistent, point-in-time view of your
 	files, preventing errors caused by concurrent file modifications.
 
-	This option applies exclusively to data disks formatted with the
-	Btrfs, Bcachefs or ZFS filesystems in Linux and NTFS in Windows.
-	Parity disks, or data disks using other filesystems, will always use
-	the live version of the filesystem.
-
 	This significantly improves recovery: if a file is deleted from the live
 	filesystem, it remains preserved in the snapshot. This prevents the parity
 	from becoming "broken" for that block, ensuring you can still successfully
 	recover data if another disk fails.
+
+	This option applies exclusively to data disks formatted with the
+	Btrfs, Bcachefs or ZFS filesystems in Linux and NTFS in Windows.
+	Parity disks, or data disks using other filesystems, will always use
+	the live version of the filesystem.
 
 	Snapshot creation and deletion require administrative privileges.
 	Ensure SnapRAID is run with the necessary permissions (e.g., sudo) when
@@ -1431,7 +1439,7 @@ Snapshots
 		In case of a disk failure during an active sync process,
 		SnapRAID  is also able to read automatically from both the
 		snapshot of the previous parity computation and the current one.
-		This maximizes the  probability of a full recovery by
+		This maximizes the probability of a full recovery by
 		providing access to the exact data blocks required to solve
 		the parity equations, even if those blocks were modified
 		or deleted between syncs.
@@ -1490,8 +1498,8 @@ Snapshots
 Snapshots Lifecycle
 	SnapRAID manages two specific snapshots, `stable` and `pending`,
 	within a hidden directory at the root of each data subvolume.
-	In Btrfs an Bcachefs it's used the `.snapraid/` directory, in ZFS
-	the standard `.zfs/snapshot/`.
+	In Btrfs, Bcachefs, and NTFS it's used the `.snapraid/` directory,
+	in ZFS the standard `.zfs/snapshot/`.
 
 	The `stable` snapshot represents the state of the last
 	successfully completed `sync`, containing the exact data used to
@@ -1500,8 +1508,8 @@ Snapshots Lifecycle
 
 	The `pending` snapshot is a temporary image created at the start
 	of a `sync` to provide a frozen state for parity computation.
-	Upon successful completion of the operation, the previous stable
-	snapshot is deleted, and the pending snapshot is promoted to
+	Upon successful completion of the operation, the previous `stable`
+	snapshot is deleted, and the `pending` snapshot is promoted to
 	take its place as the new stable reference.
 
 	If a `sync` is interrupted, the `pending` snapshot is preserved.
@@ -1510,7 +1518,7 @@ Snapshots Lifecycle
 	the .content file, even if the parity is only partially synchronized.
 
 	In the event of a `sync` interruption, `check` and `fix` commands
-	can also read from the `stable` snapshot to retrieve data blocks
+	also read from the `stable` snapshot to retrieve data blocks
 	from files that were updated or deleted during the sync.
 	This is possible because the .content file retains metadata for
 	all modified or deleted files throughout the sync process.
