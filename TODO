@@ -13,13 +13,6 @@ This is the list of TODO items for SnapRAID.
 https://github.com/linuxhw/SMART
 https://github.com/linuxhw/EnterpriseDrive
 
-* Implement the use Shadow Copy in Windows for creating snapshots.
-See Jens's Windows script at:
-http://sourceforge.net/p/snapraid/discussion/1677233/thread/a1707211/
-https://sourceforge.net/p/snapraid/discussion/1677233/thread/5c9e670c/
-Note that a difference between Windows and Unix is that in Windows old snapshots
-are automatically deleted.
-
 * A "dependents" output option to [--test-fmt file|disk|path|dependents] for LIST.
 Example, snapraid LIST --test-fmt dependents >FileList_with_dependents.txt
 The goal is a filelist that, for every file, includes full paths to the dependent files
@@ -59,9 +52,6 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a1683dd9/?limi
 
 * Add markdown support for output
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/661cce8b/
-
-* Add ZFS support for SMART and UUID.
-See latest messages at: https://sourceforge.net/p/snapraid/discussion/1677233/thread/42defa3b/
 
 * Change all the paths printed in the terminal as relative and not absolute.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/648955ec/ (Leifi in diff)
