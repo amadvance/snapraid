@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+14.5 2026/05
+============
+ * Support importing data from smartctl even when the disk reports
+   incomplete information for attributes (e.g. missing norm, worst, or
+   threshold values).
+
 14.4 2026/04
 ============
  * Updated --gui-threshold-* logic to trigger on values equal to or greater

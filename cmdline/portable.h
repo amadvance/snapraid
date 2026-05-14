@@ -498,10 +498,10 @@ int randomize(void* ptr, size_t size);
 
 struct smart_attr {
 	char name[128]; /**< SMART attribute name. */
-	uint64_t raw; /**< SMART attributes raw. */
-	uint64_t norm; /**< SMART attributes normalized. */
-	uint64_t worst; /**< SMART attributes worst. */
-	uint64_t thresh; /**< SMART attributes threshold. */
+	uint64_t raw; /**< SMART attributes raw. It can be SMART_UNASSIGNED. */
+	uint64_t norm; /**< SMART attributes normalized. It can be SMART_UNASSIGNED even if raw is not. */
+	uint64_t worst; /**< SMART attributes worst. It can be SMART_UNASSIGNED even if raw/norm is not. */
+	uint64_t thresh; /**< SMART attributes threshold. It can be SMART_UNASSIGNED even if raw/norm/worst is not. */
 	int flags; /**< SMART_ATTR_* flags */
 };
 

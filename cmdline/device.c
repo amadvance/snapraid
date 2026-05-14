@@ -575,7 +575,18 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 			else if (attr->flags & SMART_ATTR_WHEN_FAILED_NEVER)
 				when_failed = "never";
 
-			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%s:%s:%s:%s\n", devinfo->file, devinfo->name, j, attr->raw, attr->raw, attr->norm, attr->worst, attr->thresh, attr->name, type, updated, when_failed);
+			char norm[64] = { 0 };
+			char worst[64] = { 0 };
+			char thresh[64] = { 0 };
+
+			if (attr->norm != SMART_UNASSIGNED)
+				snprintf(norm, sizeof(norm), "%" PRIu64, attr->norm);
+			if (attr->worst != SMART_UNASSIGNED)
+				snprintf(worst, sizeof(worst), "%" PRIu64, attr->worst);
+			if (attr->thresh != SMART_UNASSIGNED)
+				snprintf(thresh, sizeof(thresh), "%" PRIu64, attr->thresh);
+
+			log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 ":%s:%s:%s:%s:%s:%s:%s\n", devinfo->file, devinfo->name, j, attr->raw, attr->raw, norm, worst, thresh, attr->name, type, updated, when_failed);
 		}
 	}
 

@@ -1934,8 +1934,12 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 	*model = 0;
 	*inter = 0;
 	memset(smart, 0, sizeof(struct smart_attr) * SMART_COUNT);
-	for (i = 0; i < SMART_COUNT; ++i)
+	for (i = 0; i < SMART_COUNT; ++i) {
 		smart[i].raw = SMART_UNASSIGNED;
+		smart[i].norm = SMART_UNASSIGNED;
+		smart[i].worst = SMART_UNASSIGNED;
+		smart[i].thresh = SMART_UNASSIGNED;
+	}
 	for (i = 0; i < INFO_COUNT; ++i)
 		info[i] = SMART_UNASSIGNED;
 
@@ -1945,9 +1949,6 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 		char buf[256];
 		unsigned id;
 		uint64_t raw;
-		uint64_t norm;
-		uint64_t worst;
-		uint64_t thresh;
 		char* s;
 
 		s = fgets(buf, sizeof(buf), f);
@@ -2164,18 +2165,23 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			char type[64] = { 0 };
 			char updated[64] = { 0 };
 			char when_failed[64] = { 0 };
+			char norm[64] = { 0 };
+			char worst[64] = { 0 };
+			char thresh[64] = { 0 };
 			uint64_t min, max, avg;
 			int format_minmax = 0;
 			int format_avg = 0;
 			int flags;
+			unsigned long v;
+			char* e;
 
 			/* 194 Temperature_Celsius     0x0002   240   240   000    Old_age   Always       -       27 (Min/Max 16/60) */
-			if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64 " (Min/Max %" SCNu64 "/%" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw, &min, &max) == 11) {
+			if (sscanf(s, "%u %127s %*s %63s %63s %63s %63s %63s %63s %" SCNu64 " (Min/Max %" SCNu64 "/%" SCNu64 ")", &id, id_name, norm, worst, thresh, type, updated, when_failed, &raw, &min, &max) == 11) {
 				format_minmax = 1;
 				/*  3 Spin_Up_Time            0x0007   149   149   024    Pre-fail  Always       -       442 (Average 441) */
-			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64 " (Average %" SCNu64 ")", &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw, &avg) == 10) {
+			} else if (sscanf(s, "%u %127s %*s %63s %63s %63s %63s %63s %63s %" SCNu64 " (Average %" SCNu64 ")", &id, id_name, norm, worst, thresh, type, updated, when_failed, &raw, &avg) == 10) {
 				format_avg = 1;
-			} else if (sscanf(s, "%u %127s %*s %" SCNu64 " %" SCNu64 " %" SCNu64 " %63s %63s %63s %" SCNu64, &id, id_name, &norm, &worst, &thresh, type, updated, when_failed, &raw) == 9) {
+			} else if (sscanf(s, "%u %127s %*s %63s %63s %63s %63s %63s %63s %" SCNu64, &id, id_name, norm, worst, thresh, type, updated, when_failed, &raw) == 9) {
 			} else {
 				log_fatal(EEXTERNAL, "Invalid smartctl line '%s'.\n", s);
 				return -1;
@@ -2221,9 +2227,28 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			}
 
 			smart[id].raw = raw;
-			smart[id].norm = norm;
-			smart[id].worst = worst;
-			smart[id].thresh = thresh;
+
+			v = strtoul(norm, &e, 10);
+			if (e != norm || *e == 0) {
+				smart[id].norm = v;
+			} else {
+				smart[id].norm = SMART_UNASSIGNED;
+			}
+
+			v = strtoul(worst, &e, 10);
+			if (e != worst || *e == 0) {
+				smart[id].worst = v;
+			} else {
+				smart[id].worst = SMART_UNASSIGNED;
+			}
+
+			v = strtoul(thresh, &e, 10);
+			if (e != thresh || *e == 0) {
+				smart[id].thresh = v;
+			} else {
+				smart[id].thresh = SMART_UNASSIGNED;
+			}
+
 			smart[id].flags = flags;
 			pathcpy(smart[id].name, sizeof(smart[id].name), id_name);
 
@@ -2233,11 +2258,11 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 			 * 231: SSD_Life_Left (Kingston/WD)
 			 * 233: Media_Wearout_Indicator (Intel)
 			 */
-			if (norm <= 100) {
+			if (smart[id].norm != SMART_UNASSIGNED && smart[id].norm <= 100) {
 				if (strcmp(id_name, "Wear_Leveling_Count") == 0
 					|| strcmp(id_name, "SSD_Life_Left") == 0
 					|| strcmp(id_name, "Media_Wearout_Indicator") == 0) {
-					smart[SMART_WEAR_LEVEL].raw = 100 - norm;
+					smart[SMART_WEAR_LEVEL].raw = 100 - smart[id].norm;
 				}
 			}
 		}
