@@ -426,7 +426,16 @@ struct fssnapshot_struct {
  * @param fss Output snapshot context
  * @return 0 on success, -1 on failure
  */
-int fssnapshot(const char* dir, struct fssnapshot_struct* fss);
+int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss);
+
+/**
+ * Unmount the snapshots.
+ *
+ * Required in Windows to remove the temporary symlinks.
+ *
+ * @param fss Snapshot context
+ */
+void fssnapshot_unmount(const struct fssnapshot_struct* fss);
 
 /**
  * Stat the snapshot directory.

@@ -1861,8 +1861,10 @@ int snapraid_main(int argc, char* argv[])
 		ret = state_sync(&state, blockstart, blockcount);
 
 		/* commit the snapshot as stable */
-		if (ret == 0)
+		if (ret == 0) {
 			state_snapshot_commit(&state);
+			state_snapshot_cleanup(&state);
+		}
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
@@ -1911,6 +1913,10 @@ int snapraid_main(int argc, char* argv[])
 		state_snapshot_read(&state);
 
 		ret = state_scrub(&state, plan100, olderthan);
+
+		if (ret == 0) {
+			state_snapshot_cleanup(&state);
+		}
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
 
@@ -2042,6 +2048,10 @@ int snapraid_main(int argc, char* argv[])
 			/* rescan if requested by the GUI */
 			if (opt.gui_rescan_after)
 				state_scan(&state);
+		}
+
+		if (ret == 0) {
+			state_snapshot_cleanup(&state);
 		}
 	} else {
 		/* LCOV_EXCL_START */
