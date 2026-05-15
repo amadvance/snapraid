@@ -4217,8 +4217,8 @@ void os_abort(void)
 	}
 #endif
 
-	printf("Please report this error to the SnapRAID Forum:\n");
-	printf("https://sourceforge.net/p/snapraid/discussion/1677233/\n");
+	printf("Please report this error to the SnapRAID Issues:\n");
+	printf("https://github.com/amadvance/snapraid/issues\n");
 
 	abort();
 }
