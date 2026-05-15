@@ -2470,7 +2470,20 @@ static int windows_rebuild_link(const struct fssnapshot_struct* fss, const char*
 	return 0;
 }
 
-int fssnapshot(const char* dir, struct fssnapshot_struct* fss)
+static int windows_delete_link(const struct fssnapshot_struct* fss, const char* name)
+{
+	char link_path[PATH_MAX];
+
+	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
+	pathcat(link_path, sizeof(link_path), name);
+
+	/* remove link if present */
+	windows_rmdir(link_path);
+
+	return 0;
+}
+
+int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 {
 	wchar_t conv_buf_vol[CONV_MAX];
 	char conv_buf_root[CONV_MAX];
@@ -2562,6 +2575,7 @@ int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat
 
 	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
 	pathcat(link_path, sizeof(link_path), name);
+	pathcat(link_path, sizeof(link_path), SNAPSHOT_GUID); /* we check the GUID as it's the one that matter */
 
 	/* use lstat because we want to check the link */
 	if (windows_lstat(link_path, st) != 0)
@@ -2625,6 +2639,9 @@ int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
 	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
 	pathcat(link_path, sizeof(link_path), name);
 
+	/* remove potential stale link */
+	windows_rmdir(link_path);
+
 	int ret = windows_symlink_directory(target_path, link_path);
 	if (ret != 0) {
 		log_error(errno, "Error creating symlink '%s'. %s.\n", link_path, strerror(errno));
@@ -2654,7 +2671,6 @@ bail_and_delete:
 
 int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 {
-	char link_path[PATH_MAX];
 	char guid[PATH_MAX];
 	char cmd[PS_CMD_MAX];
 	char guid_link[PATH_MAX];
@@ -2663,16 +2679,13 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 	pathcat(guid_link, sizeof(guid_link), name);
 	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
 
-	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
-	pathcat(link_path, sizeof(link_path), name);
-
 	if (windows_read_guid(guid_link, guid, sizeof(guid)) != 0)
 		return -1;
 
 	/* if the GUID link is gone, assume everything is gone */
 	if (guid[0] == 0) {
 		/* remove as not valid anymore */
-		windows_rmdir(link_path);
+		windows_delete_link(fss, name);
 		return 0;
 	}
 
@@ -2682,12 +2695,12 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 	if (ret != 0) {
 		log_error(errno, "Error destroy the snapshot from GUID '%s'. %s.\n", guid, strerror(errno));
 		/* remove as not valid anymore */
-		windows_rmdir(link_path);
+		windows_delete_link(fss, name);
 		return -1;
 	}
 
 	/* remove live symlink if present */
-	windows_rmdir(link_path);
+	windows_delete_link(fss, name);
 
 	/* remove persistent GUID symlink */
 	if (windows_rmdir(guid_link) != 0) {
@@ -2700,15 +2713,8 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 
 int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
 {
-	char old_link[PATH_MAX];
-	char new_link[PATH_MAX];
 	char old_guid[PATH_MAX];
 	char new_guid[PATH_MAX];
-
-	pathcpy(old_link, sizeof(old_link), fss->snapshot_dir);
-	pathcat(old_link, sizeof(old_link), old_name);
-	pathcpy(new_link, sizeof(new_link), fss->snapshot_dir);
-	pathcat(new_link, sizeof(new_link), new_name);
 
 	pathcpy(old_guid, sizeof(old_guid), fss->snapshot_dir);
 	pathcat(old_guid, sizeof(old_guid), old_name);
@@ -2717,19 +2723,31 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 	pathcat(new_guid, sizeof(new_guid), new_name);
 	pathcat(new_guid, sizeof(new_guid), SNAPSHOT_GUID);
 
-	if (windows_rename(old_link, new_link) != 0) {
-		log_error(errno, "Error renaming  '%s' to '%s'. %s.\n", old_link, new_link, strerror(errno));
-		return -1;
-	}
-
 	if (windows_rename(old_guid, new_guid) != 0) {
 		log_error(errno, "Error renaming  '%s' to '%s'. %s.\n", old_guid, new_guid, strerror(errno));
-		/* try to restore */
-		windows_rename(new_link, old_link);
 		return -1;
 	}
 
+	/* the rename is the latest operation, and then we don't care about the links, we just remove both */
+	windows_delete_link(fss, old_name);
+	windows_delete_link(fss, new_name);
+
 	return 0;
+}
+
+void fssnapshot_unmount(const struct fssnapshot_struct* fss)
+{
+	/*
+	 * Remove symlinks on exit to prevent "Dangling Links."
+	 * Since \Device\HarddiskVolumeShadowCopyN paths are reassigned by the kernel
+	 * at boot, a stale link would either point to a non-existent device or,
+	 * worse, a different disk's snapshot.
+	 *
+	 * Deleting the link ensures system hygiene and prevents users from seeing
+	 * "Location not available" errors or incorrect data after a reboot.
+	 */
+	windows_delete_link(fss, SNAPSHOT_PENDING);
+	windows_delete_link(fss, SNAPSHOT_STABLE);
 }
 
 uint64_t os_tick(void)

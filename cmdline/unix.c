@@ -2558,7 +2558,7 @@ static int fssnapshot_zfs(const char* dir, uint32_t magic, struct fssnapshot_str
 }
 #endif
 
-int fssnapshot(const char* path, struct fssnapshot_struct* fss)
+int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 {
 #if HAVE_LINUX_DEVICE
 	struct statfs sfs;
@@ -3067,6 +3067,11 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 	(void)new_name;
 	return -1;
 #endif
+}
+
+void fssnapshot_unmount(const struct fssnapshot_struct* fss)
+{
+	(void)fss;
 }
 
 uint64_t os_tick(void)

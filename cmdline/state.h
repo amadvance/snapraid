@@ -445,6 +445,13 @@ void state_snapshot_read(struct snapraid_state* state);
  */
 void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_disk);
 
+/**
+ * Cleanup snapshots
+ *
+ * Required only in Windows.
+ */
+void state_snapshot_cleanup(struct snapraid_state* state);
+
 /****************************************************************************/
 /* misc */
 
