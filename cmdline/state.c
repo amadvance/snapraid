@@ -5841,7 +5841,7 @@ int state_snapshot_new(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* check if it supports snapshot */
-		if (fssnapshot(disk->mount_point, &disk->fss) != 0)
+		if (fssnapshot_mount(disk->mount_point, &disk->fss) != 0)
 			continue;
 
 		size_t root_len = strlen(disk->fss.root_dir);
@@ -5913,7 +5913,7 @@ void state_snapshot_read(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* check if it supports snapshot */
-		if (fssnapshot(disk->mount_point, &disk->fss) != 0)
+		if (fssnapshot_mount(disk->mount_point, &disk->fss) != 0)
 			continue;
 
 		size_t root_len = strlen(disk->fss.root_dir);
@@ -5946,7 +5946,7 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 		struct snapraid_disk* disk = i->data;
 
 		/* check if it supports snapshot */
-		if (fssnapshot(disk->mount_point, &disk->fss) != 0)
+		if (fssnapshot_mount(disk->mount_point, &disk->fss) != 0)
 			continue;
 
 		size_t root_len = strlen(disk->fss.root_dir);
@@ -5983,6 +5983,19 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
+	}
+}
+
+void state_snapshot_cleanup(struct snapraid_state* state)
+{
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		/* check if it supports snapshot */
+		if (disk->fss.magic == 0)
+			continue;
+
+		fssnapshot_unmount(&disk->fss);
 	}
 }
 
