@@ -240,6 +240,17 @@
 #define HAVE_LOCKFILE 1
 #endif
 
+/*
+ * Flags for open()
+ */
+#ifndef O_PATH
+#ifdef O_SEARCH
+#define O_PATH O_SEARCH /* macOS */
+#else
+#define O_PATH O_RDONLY /* POSIX */
+#endif
+#endif
+
 /**
  * Includes specific support for Windows or Linux.
  */
@@ -305,6 +316,71 @@ void os_abort(void) __noreturn;
  * Clear the screen.
  */
 void os_clear(void);
+
+/**
+ * Opaque handle tracking a process execution stream and its process ID.
+ *
+ * This structure encapsulates a standard buffered I/O stream tied to the
+ * redirected standard output of a child process spawned via os_popen().
+ */
+#ifdef __MINGW32__
+#define OS_FILE FILE
+#else
+typedef struct OS_FILE {
+	FILE* fp; /**< Standard I/O buffered stream wrapper. */
+	pid_t pid; /**< Process ID of the child process. */
+} OS_FILE;
+#endif
+
+/**
+ * Spawns a child process and opens a buffered stream to read its stdout.
+ *
+ * This function acts as a safer alternative to standard popen(), accepting an
+ * explicit argument vector rather than evaluating a shell command string.
+ *
+ * The child process is completely isolated in its own process group (via setpgid)
+ * with its stdin and stderr redirected to /dev/null. The underlying pipe is
+ * created with O_CLOEXEC set to prevent leakage across concurrent forks.
+ *
+ * @param argv  A NULL-terminated array of strings representing the argument vector.
+ *              argv[0] must contain the absolute path to the verified executable.
+ * @param extra_args A mutable string containing additional arguments separated by
+ *                   spaces, or NULL if no extra arguments are needed.
+ * @return A pointer to an initialized OS_FILE structure on success, or NULL on failure.
+ *         On failure, errno is set appropriately.
+ */
+OS_FILE* os_popen(const char** argv, char* extra_args);
+
+/**
+ * Reads a line from an OS execution stream.
+ *
+ * Reads characters from the specified stream into the buffer string until
+ * (size - 1) characters are read, a newline character is read and transferred,
+ * or an end-of-file (EOF) condition is encountered. A terminating null
+ * character is appended.
+ *
+ * @param s Pointer to an array of chars where the string read is stored.
+ * @param size Maximum number of characters to be read (including the null character).
+ * @param stream Pointer to the OS_FILE tracking context.
+ *
+ * @return On success, returns the buffer pointer @p s. If EOF is reached or a read
+ *         error occurs before any characters are read, returns NULL.
+ */
+char* os_fgets(char* s, int size, OS_FILE* stream);
+
+/**
+ * Closes an execution stream and reaps the associated child process.
+ *
+ * Closes the underlying buffered standard I/O stream, releases the allocated
+ * tracking context container, and blocks until the associated child process
+ * terminates to prevent the creation of zombie processes.
+ *
+ * @param stream  Pointer to the active OS_FILE context to close and free.
+ *
+ * @return The termination status of the child process on success, or -1 on failure.
+ *         On failure, errno is set appropriately.
+ */
+int os_pclose(OS_FILE* stream);
 
 /****************************************************************************/
 /* app */
