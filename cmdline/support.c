@@ -886,7 +886,7 @@ unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* d
 	/* skip initial delimiters */
 	str += strspn(str, delimiters);
 
-	while (*str != 0 || mac == split_max) {
+	while (*str != 0 && mac < split_max) {
 		/* start of the token */
 		split_map[mac] = str;
 		++mac;
