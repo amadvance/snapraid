@@ -82,7 +82,6 @@ void os_signal_init(void)
 /****************************************************************************/
 /* exec */
 
-#if HAVE_LINUX_DEVICE
 /*
  * Securely verify and open an executable file.
  *
@@ -271,33 +270,10 @@ static int verify_executable(const char* exec_path, char* resolved_path)
 }
 
 /**
- * Validates a string for shell metacharacters.
- * Returns -1 if dangerous characters are detected, 0 otherwise.
- */
-static int validate_shell_input(const char* str)
-{
-	/*
-	 * Define characters that can be used to inject commands or alter logic
-	 * Includes: ; | & $ > < ` ' " ( ) [ * ? \ ~ and whitespace
-	 */
-	const char* danger_chars = ";|&$><`'\"()[]*?\\~\r\n ";
-
-	/* check for any of the forbidden characters */
-	if (strpbrk(str, danger_chars) != 0)
-		return -1;
-
-	/* check if the string starts with a hyphen to prevent flag injection */
-	if (str[0] == '-')
-		return -1;
-
-	return 0;
-}
-
-/**
  * Validates a string for exec.
  * Returns -1 if dangerous characters are detected, 0 otherwise.
  */
-static int validate_exec_input(const char* str)
+int validate_exec_input(const char* str)
 {
 	/* reject paths trying to go up levels */
 	if (strstr(str, "..") != 0)
@@ -353,7 +329,7 @@ bail:
 }
 
 /*
- * and execute a verified executable, capturing stdout.
+ * Fork and execute a verified executable, capturing stdout.
  *
  * Spawns @argv[0] in a new process with stdout connected to a pipe whose
  * read end is returned in @stdout_fd. stdin and stderr are redirected to
@@ -375,7 +351,7 @@ bail:
  *
  * Returns the child PID on success, or -1 on failure.
  */
-pid_t os_spawn_stdout(const char** argv, int* stdout_fd)
+static pid_t os_spawn_stdout(const char** argv, int* stdout_fd)
 {
 	char resolved_path[PATH_MAX];
 	int out_pipe[2];
@@ -463,11 +439,13 @@ pid_t os_spawn_stdout(const char** argv, int* stdout_fd)
 	/* parent */
 	close(fd);
 
+#ifdef F_SETPIPE_SZ /* not available on macOS */
 	/* set the pipe buffer to the minimum to improve responsiveness */
 	if (fcntl(out_pipe[0], F_SETPIPE_SZ, 4096) == -1) {
 		log_error(errno, "Failed to set pipe size. %s.", strerror(errno));
 		/* log non-fatal error or ignore */
 	}
+#endif
 
 	close(out_pipe[1]);
 
@@ -475,7 +453,7 @@ pid_t os_spawn_stdout(const char** argv, int* stdout_fd)
 	return pid;
 }
 
-int os_wait(pid_t pid, int* status)
+static int os_wait(pid_t pid, int* status)
 {
 	int ret;
 
@@ -596,7 +574,77 @@ int os_spawn_and_wait(const char** argv)
 
 	return -1;
 }
-#endif
+
+#define ARGV_MAX 64
+
+OS_FILE* os_popen(const char** argv, char* extra_args)
+{
+	const char* combined_argv[ARGV_MAX];
+
+	unsigned argc = 0;
+	while (argv[argc] && argc < ARGV_MAX) {
+		combined_argv[argc] = argv[argc];
+		++argc;
+	}
+
+	if (extra_args)
+		argc += argsplit(combined_argv + argc, ARGV_MAX - argc, extra_args);
+
+	if (argc >= ARGV_MAX) {
+		errno = E2BIG;
+		return NULL;
+	}
+
+	combined_argv[argc] = 0;
+
+	int stdout_fd = -1;
+	pid_t pid = os_spawn_stdout(combined_argv, &stdout_fd);
+	if (pid < 0) {
+		return 0;
+	}
+
+	FILE* fp = fdopen(stdout_fd, "r");
+	if (!fp) {
+		/* LCOV_EXCL_START */
+		int saved_errno = errno;
+		close(stdout_fd);
+		int status;
+		os_wait(pid, &status);
+		errno = saved_errno;
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	OS_FILE* os_file = malloc_nofail(sizeof(OS_FILE));
+
+	os_file->fp = fp;
+	os_file->pid = pid;
+
+	return os_file;
+}
+
+char* os_fgets(char* s, int size, OS_FILE* stream)
+{
+	return fgets(s, size, stream->fp);
+}
+
+int os_pclose(OS_FILE* stream)
+{
+	/* leep handles locally to free container block immediately */
+	FILE* fp = stream->fp;
+	pid_t pid = stream->pid;
+	free(stream);
+
+	/* close buffered stream, releasing the underlying fd */
+	fclose(fp);
+
+	int status = 0;
+	if (os_wait(pid, &status) < 0) {
+		return -1;
+	}
+
+	return status;
+}
 
 /**
  * Exit codes.
@@ -1281,7 +1329,6 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char* uuid, size_t uuid_size, char* mount_point, size_t mount_point_size)
 {
 	char resolved[PATH_MAX];
-	char cmd[PATH_MAX * 2 + 64];
 
 	const char* zfs = find_zfs();
 	if (!zfs) {
@@ -1297,9 +1344,18 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 	}
 
 	/* list all ZFS filesystems in one shot */
-	snprintf(cmd, sizeof(cmd), "%s list -H -o name,guid,mountpoint -t filesystem 2>/dev/null", zfs);
+	const char* argv[] = {
+		zfs,
+		"list",
+		"-H",
+		"-o",
+		"name,guid,mountpoint",
+		"-t",
+		"filesystem",
+		0
+	};
 
-	FILE* fp = popen(cmd, "r");
+	OS_FILE* fp = os_popen(argv, 0);
 	if (!fp) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -1312,7 +1368,7 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 		char* map[3];
 		unsigned mac;
 
-		char* s = fgets(buf, sizeof(buf), fp);
+		char* s = os_fgets(buf, sizeof(buf), fp);
 		if (s == 0)
 			break;
 
@@ -1341,7 +1397,7 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 		}
 	}
 
-	pclose(fp);
+	os_pclose(fp);
 
 	if (best_len == 0) {
 		/* LCOV_EXCL_START */
@@ -1355,7 +1411,6 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devlist)
 {
 	char pool[PATH_MAX];
-	char cmd[PATH_MAX * 2 + 64];
 
 	const char* zpool = find_zpool();
 	if (!zpool) {
@@ -1375,15 +1430,15 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 	if (slash)
 		*slash = 0;
 
-	if (validate_shell_input(pool) != 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+	const char* argv[] = {
+		zpool,
+		"status",
+		"-P",
+		pool,
+		0
+	};
 
-	snprintf(cmd, sizeof(cmd), "%s status -P %s 2>/dev/null", zpool, pool);
-
-	FILE* fp = popen(cmd, "r");
+	OS_FILE* fp = os_popen(argv, 0);
 	if (!fp) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -1394,7 +1449,7 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 	while (1) {
 		char buf[PATH_MAX * 2 + 64];
 
-		char* s = fgets(buf, sizeof(buf), fp);
+		char* s = os_fgets(buf, sizeof(buf), fp);
 		if (s == 0)
 			break;
 
@@ -1422,7 +1477,7 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		++count;
 	}
 
-	pclose(fp);
+	os_pclose(fp);
 
 	if (count == 0) {
 		/* LCOV_EXCL_START */
@@ -3393,9 +3448,9 @@ static int devstat(dev_t device, uint64_t* count)
 #if HAVE_LINUX_DEVICE
 static int devsmart(dev_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
-	char cmd[PATH_MAX + 64];
+	char extra_args[PATH_MAX];
 	char file[PATH_MAX];
-	FILE* f;
+	OS_FILE* f;
 	int ret;
 	const char* x;
 
@@ -3415,48 +3470,51 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, struct
 	}
 
 	/* if there is a custom smartctl command */
+	const char* args = "-a";
 	if (smartctl[0]) {
-		char option[PATH_MAX];
-		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "%s -a %s", x, option);
+		pathprint(extra_args, sizeof(extra_args), smartctl, file);
+		const char* argv[] = {
+			x,
+			"-a",
+			0
+		};
+		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
+		f = os_popen(argv, extra_args);
 	} else {
-		snprintf(cmd, sizeof(cmd), "%s -a %s", x, file);
+		pathprint(extra_args, sizeof(extra_args), "%s", file);
+		const char* argv[] = {
+			x,
+			"-a",
+			file,
+			0
+		};
+		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
+		f = os_popen(argv, 0);
 	}
-
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
-
-	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (from popen).\n", cmd);
+		log_tag("device:%s:%s:spawn\n", file, name);
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, args, extra_args);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interface) != 0) {
 		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
+		os_pclose(f);
+		log_tag("device:%s:%s:spawn\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pclose(f);
+	ret = os_pclose(f);
 
 	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (not exited).\n", cmd);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (WEXITSTATUS(ret) == 127) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (from sh).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, args, extra_args);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3543,9 +3601,9 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 #if HAVE_LINUX_DEVICE
 static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
-	char cmd[PATH_MAX + 64];
+	char extra_args[PATH_MAX];
 	char file[PATH_MAX];
-	FILE* f;
+	OS_FILE* f;
 	int ret;
 	const char* x;
 
@@ -3565,48 +3623,55 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	}
 
 	/* if there is a custom smartctl command */
+	const char* args = "-n standby,3 -a";
 	if (smartctl[0]) {
-		char option[PATH_MAX];
-		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -a %s", x, option);
+		pathprint(extra_args, sizeof(extra_args), smartctl, file);
+		const char* argv[] = {
+			x,
+			"-n",
+			"standby,3",
+			"-a",
+			0
+		};
+		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
+		f = os_popen(argv, extra_args);
 	} else {
-		snprintf(cmd, sizeof(cmd), "%s -n standby,3 -a %s", x, file);
+		pathprint(extra_args, sizeof(extra_args), "%s", file);
+		const char* argv[] = {
+			x,
+			"-n",
+			"standby,3",
+			"-a",
+			file,
+			0
+		};
+		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
+		f = os_popen(argv, 0);
 	}
-
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
-
-	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (from popen).\n", cmd);
+		log_tag("device:%s:%s:spawn\n", file, name);
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, args, extra_args);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interface) != 0) {
 		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
+		os_pclose(f);
+		log_tag("device:%s:%s:spawn\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pclose(f);
+	ret = os_pclose(f);
 
 	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (not exited).\n", cmd);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (WEXITSTATUS(ret) == 127) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (from sh).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, args, extra_args);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3633,9 +3698,9 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 #if HAVE_LINUX_DEVICE
 static int devdown(dev_t device, const char* name, const char* smartctl)
 {
-	char cmd[PATH_MAX + 64];
+	char extra_args[PATH_MAX];
 	char file[PATH_MAX];
-	FILE* f;
+	OS_FILE* f;
 	int ret;
 	const char* x;
 
@@ -3655,55 +3720,61 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	}
 
 	/* if there is a custom smartctl command */
+	const char* args = "-s standby,now";
 	if (smartctl[0]) {
-		char option[PATH_MAX];
-		snprintf(option, sizeof(option), smartctl, file);
-		snprintf(cmd, sizeof(cmd), "%s -s standby,now %s", x, option);
+		pathprint(extra_args, sizeof(extra_args), smartctl, file);
+		const char* argv[] = {
+			x,
+			"-s",
+			"standby,now",
+			0
+		};
+		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
+		f = os_popen(argv, extra_args);
 	} else {
-		snprintf(cmd, sizeof(cmd), "%s -s standby,now %s", x, file);
+		pathprint(extra_args, sizeof(extra_args), "%s", file);
+		const char* argv[] = {
+			x,
+			"-s",
+			"standby,now",
+			file,
+			0
+		};
+		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
+		f = os_popen(argv, 0);
 	}
-
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, cmd);
-
-	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (from popen).\n", cmd);
+		log_tag("device:%s:%s:spawn\n", file, name);
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, args, extra_args);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (smartctl_flush(f, file, name) != 0) {
 		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
+		os_pclose(f);
+		log_tag("device:%s:%s:spawn\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pclose(f);
+	ret = os_pclose(f);
 
 	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (not exited).\n", cmd);
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, args, extra_args);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
-	if (WEXITSTATUS(ret) == 127) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s' (from sh).\n", cmd);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
-		log_fatal(EEXTERNAL, "Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
+		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' with return code %xh.\n", x, args, extra_args, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}

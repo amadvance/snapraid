@@ -32,6 +32,11 @@ void os_signal_init(void)
 /****************************************************************************/
 /* os */
 
+char* os_fgets(char* s, int size, OS_FILE* stream)
+{
+	return fgets(s, size, stream);
+}
+
 /**
  * Exit codes.
  */
