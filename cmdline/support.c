@@ -963,6 +963,107 @@ unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* d
 	return mac;
 }
 
+unsigned argsplit(const char** split_map, unsigned split_max, char* str)
+{
+	unsigned mac = 0;
+
+	/* skip leading whitespace */
+	while (*str != 0 && isspace((unsigned char)*str))
+		++str;
+
+	while (*str != 0 && mac < split_max) {
+		char* dst = str;
+		split_map[mac++] = dst;
+
+#ifdef _WIN32
+		/*
+		 * cmd.exe rules:
+		 *   Unquoted: '^' escapes next char; '"' opens a quoted block.
+		 *   Quoted:   '"' closes the block; '^' is an ordinary character.
+		 */
+		int quoted = 0;
+
+		while (*str != 0 && (quoted || !isspace((unsigned char)*str))) {
+			if (quoted) {
+				if (*str == '"') {
+					quoted = 0;
+					++str;
+				} else {
+					*dst++ = *str++;
+				}
+			} else {
+				if (*str == '^' && *(str + 1) != 0) {
+					++str;
+					*dst++ = *str++;
+				} else if (*str == '"') {
+					quoted = 1;
+					++str;
+				} else {
+					*dst++ = *str++;
+				}
+			}
+		}
+
+#else
+		/*
+		 * bash rules:
+		 *   Single-quoted block: everything literal, no exceptions.
+		 *   Double-quoted block: '\' only escapes $, `, ", '\', newline;
+		 *                        other backslashes are copied verbatim.
+		 *   Unquoted '\': always escapes the immediately following char.
+		 */
+
+		/* set of characters that '\' can escape inside double quotes */
+		static const char dq_escapable[] = "$`\"\\\n";
+
+		while (*str != 0 && !isspace((unsigned char)*str)) {
+
+			if (*str == '\'') {
+				/* single-quoted block: truly everything is literal */
+				++str;
+				while (*str != 0 && *str != '\'')
+					*dst++ = *str++;
+				if (*str == '\'')
+					++str;
+
+			} else if (*str == '"') {
+				/* double-quoted block */
+				++str;
+				while (*str != 0 && *str != '"') {
+					if (*str == '\\' && strchr(dq_escapable, *(str + 1))) {
+						++str;
+					}
+					*dst++ = *str++;
+				}
+				if (*str == '"')
+					++str;
+
+			} else if (*str == '\\') {
+				/* unquoted backslash: next character always literal */
+				++str;
+				if (*str != 0)
+					*dst++ = *str++;
+
+			} else {
+				*dst++ = *str++;
+			}
+		}
+#endif
+
+		if (*str != 0)
+			++str; /* step past the delimiter */
+
+		/* skip whitespace before the next token */
+		while (*str != 0 && isspace((unsigned char)*str))
+			++str;
+
+		/* null-terminate after str has already moved on */
+		*dst = 0;
+	}
+
+	return mac;
+}
+
 char* strtrim(char* str)
 {
 	char* begin;
@@ -1009,7 +1110,7 @@ char* worddigitstr(const char* haystack, const char* needle)
 		/* left boundary */
 		if (s == haystack || isspace((unsigned char)s[-1]) || isdigit((unsigned char)s[-1])) {
 			/* right boundary */
-			if (s[len] == '\0' || isspace((unsigned char)s[len]) || isdigit((unsigned char)s[len])) {
+			if (s[len] == 0 || isspace((unsigned char)s[len]) || isdigit((unsigned char)s[len])) {
 				return (char*)s;
 			}
 		}
@@ -1236,7 +1337,7 @@ int pathncmp(const char* a, const char* b, size_t n)
 		if (la != lb)
 			return la - lb;
 
-		if (la == '\0')
+		if (la == 0)
 			return 0;
 
 		--n;
@@ -2087,7 +2188,7 @@ int snumber(const char* str, const char* prefix, uint64_t* value)
 	return 1;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
+int smartctl_attribute(OS_FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	unsigned i;
 	int inside;
@@ -2135,7 +2236,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 		uint64_t raw;
 		char* s;
 
-		s = fgets(buf, sizeof(buf), f);
+		s = os_fgets(buf, sizeof(buf), f);
 		if (s == 0)
 			break;
 
@@ -2455,14 +2556,14 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 	return 0;
 }
 
-int smartctl_flush(FILE* f, const char* file, const char* name)
+int smartctl_flush(OS_FILE* f, const char* file, const char* name)
 {
 	/* read the file */
 	while (1) {
 		char buf[256];
 		char* s;
 
-		s = fgets(buf, sizeof(buf), f);
+		s = os_fgets(buf, sizeof(buf), f);
 		if (s == 0)
 			break;
 
