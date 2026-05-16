@@ -276,11 +276,69 @@ static inline const char* esc_shell(const char* str, char* buffer)
 char* strpolish(char* s);
 
 /**
- * Split a string in multiple tokens separated by delimiters.
+ * Split a string into tokens in-place.
  *
- * Multiple delimiters are grouped together.
+ * Scans @str for tokens separated by any character in @delimiters,
+ * null-terminates each token by overwriting its trailing delimiter,
+ * and stores a pointer to each token's start in @split_map.
+ *
+ * Leading and consecutive delimiters are silently skipped, so the
+ * output never contains empty tokens.
+ *
+ * The input string is modified in-place; @split_map entries point
+ * directly into @str and are only valid for its lifetime.
+ *
+ * \param split_map Output array receiving pointers to each token.
+ * \param split_max Capacity of @split_map; at most this many tokens are stored.
+ * \param str Input string to tokenise (modified in-place).
+ * \param delimiters Null-terminated set of delimiter characters.
+ * \return Number of tokens stored in @split_map.
+ *
+ * Example:
+ *   char  buf[] = "  one,two,,three  ";
+ *   char* map[8];
+ *   unsigned n = strsplit(map, 8, buf, " ,");
+ *   // n == 3, map[] == { "one", "two", "three" }
  */
-unsigned strsplit(char** split_map, unsigned split_max, char* line, const char* delimiters);
+unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* delimiters);
+
+/**
+ * Split a command-line string into an argument vector,
+ * applying the quoting rules of the platform's native shell.
+ *
+ * The input string is modified in-place: quotes and escape characters
+ * are stripped and each token is null-terminated. Whitespace is the
+ * implicit token delimiter on both platforms.
+ *
+ * bash quoting (Linux / macOS):
+ *   'single quotes'  - Everything literal; no escapes processed inside.
+ *   "double quotes"  - '\' only escapes $, `, ", '\', and newline;
+ *                      all other backslashes are kept as-is.
+ *   \x (unquoted)    - Next character taken literally (even whitespace).
+ *
+ * cmd.exe quoting (Windows):
+ *   "double quotes"  - Toggle quoted mode; inside, '^' is NOT special.
+ *   ^x (unquoted)    - Next character taken literally.
+ *   Single quotes and '\' carry no special meaning in either mode.
+ *
+ * \param split_map Output array receiving pointers to each argument.
+ * \param split_max Capacity of @split_map; at most this many tokens are stored.
+ * \param str Input command-line string (modified in-place).
+ * \return Number of arguments stored in @split_map.
+ *
+ * Example (bash):
+ *   char  buf[] = "one 'two three' \"say \\\"hi\\\"\" back\\slash";
+ *   char* map[8];
+ *   unsigned n = argsplit(map, 8, buf);
+ *   // n==4, map[] == { "one", "two three", "say \"hi\"", "backslash" }
+ *
+ * Example (cmd.exe):
+ *   char  buf[] = "one \"two three\" ^&safe ^\"quoted^\"";
+ *   char* map[8];
+ *   unsigned n = argsplit(map, 8, buf);
+ *   // n==4, map[] == { "one", "two three", "&safe", "\"quoted\"" }
+ */
+unsigned argsplit(const char** split_map, unsigned split_max, char* str);
 
 /**
  * Trim spaces from the start and the end
@@ -476,12 +534,12 @@ void malloc_fail(size_t size);
  * Read smartctl attributes from a stream.
  * Return 0 on success.
  */
-int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf);
+int smartctl_attribute(OS_FILE* f, const char* file, const char* name, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf);
 
 /**
  * Flush smartctl output from a stream.
  */
-int smartctl_flush(FILE* f, const char* file, const char* name);
+int smartctl_flush(OS_FILE* f, const char* file, const char* name);
 
 /**
  * Extract the temperature from the SMART info.
