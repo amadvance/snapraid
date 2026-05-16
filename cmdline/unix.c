@@ -198,7 +198,10 @@ static int verify_executable(const char* exec_path, char* resolved_path)
 	 * Open the executable
 	 * O_NOFOLLOW prevents following symlinks to mitigate redirection attacks
 	 */
-	int fd = openat(dir_fd, exec_name, O_RDONLY | O_NOFOLLOW
+	int fd = openat(dir_fd, exec_name, O_RDONLY
+#if !HAVE_SYMLINK_TOOLS
+			| O_NOFOLLOW
+#endif
 #if !HAVE_FEXECVE
 			| O_CLOEXEC /* with fexecve cannot use O_CLOEXEC (Close on Exec) */
 #endif
