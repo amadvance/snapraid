@@ -2588,6 +2588,7 @@ int ambient_temperature(void)
 			continue;
 
 		while ((hwmon_entry = readdir(hwmon_dir)) != NULL) {
+			char hwmon_name[PATH_MAX];
 			char value[128];
 			char name[128];
 			char label[128];
@@ -2598,7 +2599,10 @@ int ambient_temperature(void)
 			if (strncmp(hwmon_entry->d_name, "temp", 4) != 0)
 				continue;
 
-			dash = strrchr(hwmon_entry->d_name, '_');
+			/* make a copy to allow modifications in place */
+			pathcpy(hwmon_name, sizeof(hwmon_name), hwmon_entry->d_name);
+
+			dash = strrchr(hwmon_name, '_');
 			if (dash == 0)
 				continue;
 
@@ -2606,7 +2610,7 @@ int ambient_temperature(void)
 				continue;
 
 			/* read the temperature */
-			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s", entry->d_name, hwmon_entry->d_name);
+			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s", entry->d_name, hwmon_name);
 
 			if (sysattr(path, value, sizeof(value)) != 0)
 				continue;
@@ -2626,13 +2630,13 @@ int ambient_temperature(void)
 			}
 
 			/* read the corresponding label file */
-			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s_label", entry->d_name, hwmon_entry->d_name);
+			pathprint(path, sizeof(path), "/sys/class/hwmon/%s/%s_label", entry->d_name, hwmon_name);
 			if (sysattr(path, label, sizeof(label)) != 0) {
 				/* fallback to using the temp* name (e.g., temp1, temp2) */
-				pathcpy(label, sizeof(label), hwmon_entry->d_name);
+				pathcpy(label, sizeof(label), hwmon_name);
 			}
 
-			log_tag("thermal:ambient:device:%s:%s:%s:%s:%ld\n", entry->d_name, name, hwmon_entry->d_name, label, temp);
+			log_tag("thermal:ambient:device:%s:%s:%s:%s:%ld\n", entry->d_name, name, hwmon_name, label, temp);
 
 			/* check if temperature is in reasonable range */
 			if (temp < 15 || temp > 40)
