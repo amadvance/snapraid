@@ -4,12 +4,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "raid.h" /* for RAID_POLY */
-
 /**
  * Multiplication a*b in GF(2^8).
  */
-static uint8_t gfmul(uint8_t a, uint8_t b)
+static uint8_t gfmul(uint8_t poly, uint8_t a, uint8_t b)
 {
 	uint8_t v;
 
@@ -20,7 +18,7 @@ static uint8_t gfmul(uint8_t a, uint8_t b)
 
 		if ((a & 0x80) != 0) {
 			a <<= 1;
-			a ^= RAID_POLY;
+			a ^= poly;
 		} else {
 			a <<= 1;
 		}
@@ -51,7 +49,7 @@ uint8_t gfinv[256];
 /**
  * Setup the Cauchy matrix used to generate the parity.
  */
-static void set_cauchy(uint8_t *matrix)
+static void set_cauchy(uint8_t poly, uint8_t *matrix)
 {
 	int i, j;
 	uint8_t inv_x, y;
@@ -109,7 +107,7 @@ static void set_cauchy(uint8_t *matrix)
 	inv_x = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[1 * DISK + i] = inv_x;
-		inv_x = gfmul(2, inv_x);
+		inv_x = gfmul(poly, 2, inv_x);
 	}
 
 	/*
@@ -140,10 +138,10 @@ static void set_cauchy(uint8_t *matrix)
 			uint8_t x = gfinv[inv_x];
 
 			matrix[(j + 2) * DISK + i] = gfinv[y ^ x];
-			inv_x = gfmul(2, inv_x);
+			inv_x = gfmul(poly, 2, inv_x);
 		}
 
-		y = gfmul(2, y);
+		y = gfmul(poly, 2, y);
 	}
 
 	/*
@@ -163,17 +161,18 @@ static void set_cauchy(uint8_t *matrix)
 		uint8_t f = gfinv[matrix[(j + 2) * DISK]];
 
 		for (i = 0; i < DISK; ++i)
-			matrix[(j + 2) * DISK + i] = gfmul(matrix[(j + 2) * DISK + i], f);
+			matrix[(j + 2) * DISK + i] = gfmul(poly, matrix[(j + 2) * DISK + i], f);
 	}
 }
 
 /**
  * Setup the Power matrix used to generate the parity.
  */
-static void set_power(uint8_t *matrix)
+static void set_power(uint8_t poly, uint8_t *matrix)
 {
 	unsigned i;
 	uint8_t v;
+	uint8_t div_by_2 = (((poly) >> 1) | 0x80);
 
 	v = 1;
 	for (i = 0; i < DISK; ++i)
@@ -182,13 +181,13 @@ static void set_power(uint8_t *matrix)
 	v = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[1 * DISK + i] = v;
-		v = gfmul(2, v);
+		v = gfmul(poly, 2, v);
 	}
 
 	v = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[2 * DISK + i] = v;
-		v = gfmul(0x8e, v);
+		v = gfmul(poly, div_by_2, v);
 	}
 }
 
@@ -208,18 +207,11 @@ static unsigned np(unsigned v)
 	return v;
 }
 
-int main(void)
+void tables(uint8_t poly)
 {
 	uint8_t v;
 	int i, j, k, p;
 	uint8_t matrix[PARITY * 256];
-
-	printf("// SPDX-License-Identifier: GPL-2.0-or-later\n");
-	printf("// Copyright (C) 2013 Andrea Mazzoleni\n");
-	printf("\n");
-
-	printf("#include \"internal.h\"\n");
-	printf("\n");
 
 	/* a*b */
 	printf("const uint8_t __aligned(256) raid_gfmul[256][256] =\n");
@@ -229,7 +221,7 @@ int main(void)
 		for (j = 0; j < 256; ++j) {
 			if (j % 8 == 0)
 				printf("\t\t");
-			v = gfmul(i, j);
+			v = gfmul(poly, i, j);
 			if (v == 1)
 				gfinv[i] = j;
 			printf("0x%02x,", (unsigned)v);
@@ -250,7 +242,7 @@ int main(void)
 		if (i % 8 == 0)
 			printf("\t");
 		printf("0x%02x,", v);
-		v = gfmul(v, 2);
+		v = gfmul(poly, v, 2);
 		if (i % 8 == 7)
 			printf("\n");
 		else
@@ -278,7 +270,7 @@ int main(void)
 	printf("};\n\n");
 
 	/* power matrix */
-	set_power(matrix);
+	set_power(poly, matrix);
 
 	printf("/**\n");
 	printf(" * Power matrix used to generate parity.\n");
@@ -311,7 +303,7 @@ int main(void)
 	printf("};\n\n");
 
 	/* cauchy matrix */
-	set_cauchy(matrix);
+	set_cauchy(poly, matrix);
 
 	printf("/**\n");
 	printf(" * Cauchy matrix used to generate parity.\n");
@@ -359,9 +351,9 @@ int main(void)
 			for (j = 0; j < 2; ++j) {
 				printf("\t\t\t{ ");
 				for (k = 0; k < 16; ++k) {
-					v = gfmul(matrix[p * DISK + i], k);
+					v = gfmul(poly, matrix[p * DISK + i], k);
 					if (j == 1)
-						v = gfmul(v, 16);
+						v = gfmul(poly, v, 16);
 					printf("0x%02x", (unsigned)v);
 					if (k != 15)
 						printf(", ");
@@ -389,9 +381,9 @@ int main(void)
 		for (j = 0; j < 2; ++j) {
 			printf("\t\t{ ");
 			for (k = 0; k < 16; ++k) {
-				v = gfmul(i, k);
+				v = gfmul(poly, i, k);
 				if (j == 1)
-					v = gfmul(v, 16);
+					v = gfmul(poly, v, 16);
 				printf("0x%02x", (unsigned)v);
 				if (k != 15)
 					printf(", ");
@@ -402,7 +394,24 @@ int main(void)
 	}
 	printf("};\n");
 	printf("#endif\n\n");
+}
+
+int main(void)
+{
+	printf("// SPDX-License-Identifier: GPL-2.0-or-later\n");
+	printf("// Copyright (C) 2013 Andrea Mazzoleni\n");
+	printf("\n");
+
+	printf("#include \"internal.h\"\n");
+	printf("\n");
+
+	printf("#ifdef USE_RAID_AES\n");
+	printf("/* Tables with the AES Polynomial 0x1b */\n");
+	tables(0x1b);
+	printf("#else\n");
+	printf("/* Tables with the RAID Polynomial 0x1d */\n");
+	tables(0x1d);
+	printf("#endif\n");
 
 	return 0;
 }
-
