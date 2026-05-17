@@ -1630,11 +1630,8 @@ static windows_dir* windows_opendir_stream(const char* dir)
 static struct windows_dirent* windows_readdir_stream(windows_dir* dirstream)
 {
 	if (dirstream->state == DIR_STATE_EMPTY) {
-		if (windows_next_stream(dirstream) != 0) {
-			free(dirstream->buffer);
-			free(dirstream);
+		if (windows_next_stream(dirstream) != 0)
 			return 0;
-		}
 	}
 
 	if (dirstream->state == DIR_STATE_FILLED) {
