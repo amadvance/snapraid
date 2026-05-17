@@ -2354,6 +2354,7 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 		if (error != ERROR_MORE_DATA) {
 			CloseHandle(h);
 			windows_errno(error);
+			return -1;
 		}
 
 		/* more than one extends, allocate more space */
@@ -2367,6 +2368,7 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 	if (!ret) {
 		DWORD error = GetLastError();
 		CloseHandle(h);
+		free(vde_alloc);
 		windows_errno(error);
 		return -1;
 	}
@@ -2390,6 +2392,7 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 
 	if (!CloseHandle(h)) {
 		windows_errno(GetLastError());
+		free(vde_alloc);
 		return -1;
 	}
 
@@ -2966,6 +2969,7 @@ static int devup(uint64_t device, const char* name, const char* wfile)
 	if (!ReadFile(h, buffer, dg.BytesPerSector, &bytes, NULL)) {
 		DWORD error = GetLastError();
 		CloseHandle(h);
+		VirtualFree(buffer, 0, MEM_RELEASE);
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
@@ -2973,12 +2977,14 @@ static int devup(uint64_t device, const char* name, const char* wfile)
 
 	if (!CloseHandle(h)) {
 		DWORD error = GetLastError();
+		CloseHandle(h);
 		VirtualFree(buffer, 0, MEM_RELEASE);
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
+	CloseHandle(h);
 	VirtualFree(buffer, 0, MEM_RELEASE);
 
 	log_tag("attr:%s:%s:power:up\n", file, name);
@@ -3424,11 +3430,14 @@ int windows_join(thread_id_t thread, void** retval)
 
 	if (WaitForSingleObject(context->h, INFINITE) != WAIT_OBJECT_0) {
 		windows_errno(GetLastError());
+		CloseHandle(context->h);
+		free(context);
 		return -1;
 	}
 
 	if (!CloseHandle(context->h)) {
 		windows_errno(GetLastError());
+		free(context);
 		return -1;
 	}
 
