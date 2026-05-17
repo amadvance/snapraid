@@ -29,7 +29,7 @@ OBJS = raid.o check.o int.o intz.o x86.o x86z.o gfni.o tables.o memory.o test.o 
 %.o: ../%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: fulltest speedtest selftest invtest
+all: fulltest speedtest selftest invtest mktables
 
 fulltest: $(OBJS) fulltest.o
 	$(CC) $(CFLAGS) -o fulltest $^
