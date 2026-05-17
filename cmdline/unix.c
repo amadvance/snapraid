@@ -246,7 +246,7 @@ static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
  *    [+3]  DESIGNATOR LENGTH = N  (bytes that follow in this descriptor)
  *    [+4 … +4+N-1]  DESIGNATOR (binary for NAA)
  *
- * ── NAA subtypes (top nibble of designator byte 0) ───────────────────────
+ * NAA subtypes (top nibble of designator byte 0)
  *
  *    0x1  NAA IEEE Extended          →  8 bytes
  *    0x2  NAA Locally Assigned       →  8 bytes
@@ -331,7 +331,7 @@ static int sysattr_vpd_pg83(const char* path, char* dst, size_t dst_size)
 
 		switch (naa) {
 		case 0x1 : /* IEEE Extended */
-		case 0x2 : /* lLocally Assigned */
+		case 0x2 : /* Locally Assigned */
 		case 0x3 : /* IEEE Registered */
 		case 0x5 : /* IEEE Registered */
 			expected = 8;
@@ -347,17 +347,12 @@ static int sysattr_vpd_pg83(const char* path, char* dst, size_t dst_size)
 		if (id_len != expected)
 			goto next;
 
-		/*
-		 * Format as "naa:<hex>".
-		 * Each byte → 2 hex digits; prefix "naa:" is 4 chars; +1 for NUL.
-		 * Maximum: "naa:" + 32 hex digits (16 bytes) + NUL = 37 bytes.
-		 */
-		if (dst_size < 4 + id_len * 2 + 1)
-			return -1;   /* caller's buffer too small */
+		if (dst_size < id_len * 2 + 1)
+			return -1;
 
 		for (size_t i = 0; i < id_len; i++)
 			snprintf(dst + i * 2, 3, "%02x", desc[4 + i]);
-		dst[4 + id_len * 2] = '\0';
+		dst[id_len * 2] = 0;
 
 		return 0;
 
