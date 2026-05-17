@@ -749,6 +749,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 	int dir_fd = dirfd(d);
 	if (dir_fd == -1) {
 		log_tag("uuid:by-uuid:%u:%u: dirfd(/dev/disk/by-uuid) failed, %s\n", major(device), minor(device), strerror(errno));
+		closedir(d);
 		return -1;
 	}
 
