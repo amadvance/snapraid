@@ -1242,7 +1242,11 @@ In Windows, use the command:
 robocopy F:\from_dir T:\to_dir /e /copyall
 </pre></p>
 <p>
-Update the SnapRAID configuration to point to the new mount point, then run a "diff" command to ensure everything is correct:
+Once the copy is complete, you can safely remove or disconnect the old disk.
+</p>
+<p>
+Next, update the SnapRAID configuration file (snapraid.conf) to point the data choice to the new disk's mount point or drive letter.
+Then, run a diff command to ensure everything is correct:
 </p>
 <p><pre>
 snapraid diff
