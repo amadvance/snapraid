@@ -1236,15 +1236,19 @@ Otherwise, copy all files to the new disk, maintaining the same directory struct
 <p>
 In Linux, use the command:
 </p>
+<p>
 <pre>
 cp -av /from_dir/. /to_dir
 </pre>
+</p>
 <p>
 In Windows, use the command:
 </p>
+<p>
 <pre>
 robocopy F:\from_dir T:\to_dir /e /copyall
 </pre>
+</p>
 <p>
 Update the SnapRAID configuration to point to the new mount point, then run a "diff" command to ensure everything is correct:
 </p>
@@ -2002,10 +2006,12 @@ Excel modifies .xls files upon opening, even without saving, to store the name o
 This allows it to warn if another user tries to open the file simultaneously.
 Excel restores the original timestamp, but SnapRAID detects the modification, reporting a data error:
 </p>
+<p>
 <pre>
 Data change at file '/xxx/xxx.xls' at position '0'
 WARNING! Unexpected data modification of a file without parity!
 </pre>
+</p>
 <p>
 To work around this, see
 <a href="https://superuser.com/questions/664549/how-to-prevent-excel-from-modifying-the-file-on-exit">
