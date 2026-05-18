@@ -6,13 +6,18 @@ SnapRAID HISTORY
  * Support importing data from smartctl even when the disk reports
    incomplete information for attributes (e.g. missing norm, worst, or
    threshold values).
+ * Log errors while SnapRAID scans the list of all files on a disk, so
+   that the SnapRAID Daemon becomes aware of any I/O errors.
+ * Fixed importing of the disk serial number from the SCSI Device
+   Identification VPD page (also known as VPD Page 83h).
+ * Various security improvements and memory leak fixes.
 
 14.4 2026/04
 ============
- * Updated --gui-threshold-* logic to trigger on values equal to or greater
-   than the threshold (previously only "greater than"). This enables setting
-   the threshold to 1 to trigger it for a single case.
-   This change is required by SnapRAID Daemon 1.8.
+ * Updated --gui-threshold-* logic to trigger on values equal to or
+   greater than the threshold (previously only "greater than").
+   This enables setting the threshold to 1 to trigger it for a single
+   case. This change is required by SnapRAID Daemon 1.8.
 
 14.3 2026/04
 ============
