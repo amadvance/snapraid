@@ -1252,9 +1252,11 @@ robocopy F:\from_dir T:\to_dir /e /copyall
 <p>
 Update the SnapRAID configuration to point to the new mount point, then run a "diff" command to ensure everything is correct:
 </p>
+<p>
 <pre>
 snapraid diff
 </pre>
+</p>
 <p>
 If "diff" reports "added" or "removed" files, you may have copied files with a different directory structure.
 Correct this until "diff" reports only "equal", "restored", or "copied" files.
@@ -1262,15 +1264,19 @@ Correct this until "diff" reports only "equal", "restored", or "copied" files.
 <p>
 To verify that files were copied correctly, run a "check" audit command on the replaced disk to verify checksums:
 </p>
+<p>
 <pre>
 snapraid check -a -d DISK_NAME
 </pre>
+</p>
 <p>
 Finally, run "sync" to update the SnapRAID state. This command will complete almost immediately:
 </p>
+<p>
 <pre>
 snapraid sync
 </pre>
+</p>
 </div>
 </div>
 <div class="faq-item">
