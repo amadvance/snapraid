@@ -249,13 +249,16 @@ void os_clear(void)
  */
 static wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
 {
-	int ret;
-
-	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_buf, CONV_MAX);
-
+	/* flags at 0 forces the API to never fail on malformed UTF-8 sequences */
+	int ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_buf, CONV_MAX);
 	if (ret <= 0) {
-		log_fatal(EINTERNAL, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
-		exit(EXIT_FAILURE);
+		DWORD error = GetLastError();
+		if (error == ERROR_INSUFFICIENT_BUFFER) {
+			log_fatal(EINTERNAL, "Path too long converting '%s' from UTF-8 to UTF-16\n", src);
+		} else {
+			log_fatal(EINTERNAL, "Error %u converting '%s' from UTF-8 to UTF-16\n", (unsigned)error, src);
+		}
+		os_abort();
 	}
 
 	return conv_buf;
@@ -266,9 +269,8 @@ static wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
  */
 static char* u16tou8ex_may_fail(char* conv_buf, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
-	int ret;
-
-	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
+	/* WC_ERR_INVALID_CHARS forces the API to fail on malformed UTF-16 sequences */
+	int ret = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
 	if (ret <= 0)
 		return 0;
 
@@ -279,20 +281,26 @@ static char* u16tou8ex_may_fail(char* conv_buf, const wchar_t* src, size_t numbe
 
 static char* u16tou8ex(char* conv_buf, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
-	char* ret = u16tou8ex_may_fail(conv_buf, src, number_of_wchar, result_length_without_terminator);
-
-	if (!ret) {
-		log_fatal(EINTERNAL, "Error converting from UTF-16 to UTF-8 pointer %p with len %u\n", src, (unsigned)number_of_wchar);
-		if (src != 0) {
-			for (size_t i = 0; i < number_of_wchar; ++i) {
-				log_fatal(EINTERNAL, "%4u: %04x\n", (unsigned)i, src[i]);
+	/* flags at 0 forces the API to never fail on malformed UTF-16 sequences */
+	int ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
+	if (ret <= 0) {
+		DWORD error = GetLastError();
+		if (error == ERROR_INSUFFICIENT_BUFFER) {
+			log_fatal(EINTERNAL, "Path too long converting from UTF-16 to UTF-8 with len %u\n", (unsigned)number_of_wchar);
+		} else {
+			log_fatal(EINTERNAL, "Error %u converting from UTF-16 to UTF-8 with len %u\n", (unsigned)error, (unsigned)number_of_wchar);
+			if (src != 0) {
+				for (size_t i = 0; i < number_of_wchar; ++i) {
+					log_fatal(EINTERNAL, "%4u: %04x\n", (unsigned)i, src[i]);
+				}
 			}
 		}
-
 		os_abort();
 	}
 
-	return ret;
+	*result_length_without_terminator = ret;
+
+	return conv_buf;
 }
 
 static char* u16tou8(char* conv_buf, const wchar_t* src)
@@ -376,10 +384,14 @@ static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_requ
 	count = dst - conv_buf;
 
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, CONV_MAX - count);
-
 	if (ret <= 0) {
-		log_fatal(EINTERNAL, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
-		exit(EXIT_FAILURE);
+		DWORD error = GetLastError();
+		if (error == ERROR_INSUFFICIENT_BUFFER) {
+			log_fatal(EINTERNAL, "Path too long converting '%s' from UTF-8 to UTF-16\n", src);
+		} else {
+			log_fatal(EINTERNAL, "Error %u converting '%s' from UTF-8 to UTF-16\n", (unsigned)error, src);
+		}
+		os_abort();
 	}
 
 	/* convert any / to \ */
