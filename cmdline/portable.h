@@ -240,6 +240,24 @@
 #define HAVE_LOCKFILE 1
 #endif
 
+#ifdef HAVE_LINUX_CLOSE_RANGE_H
+#include <linux/close_range.h>
+#endif
+
+/* implement close_range for glibc 2.33 or earlier */
+#if defined(__linux__) && !defined(HAVE_CLOSE_RANGE)
+#include <sys/syscall.h>
+#ifndef __NR_close_range
+#define __NR_close_range 436
+#endif
+#define close_range close_range_impl
+static inline int close_range_impl(unsigned int first, unsigned int last, unsigned int flags)
+{
+	return syscall(__NR_close_range, first, last, flags);
+}
+#define HAVE_CLOSE_RANGE 1
+#endif
+
 /*
  * Flags for open()
  */
