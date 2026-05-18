@@ -709,7 +709,9 @@ In Linux, to maximize space for the parity file system, format it with the
 </em>
 options, like:
 </p>
-<pre>mkfs.ext4 -m 0 -T largefile4 DEVICE</pre>
+<p><pre>
+mkfs.ext4 -m 0 -T largefile4 DEVICE
+</pre></p>
 <p>
 On an 8 TB disk, this can save about 400 GB. It is also expected to be as fast as, or faster than, the default.
 </p>
@@ -842,7 +844,8 @@ Google's Failure trends in a large disk drive population
 ,
 which found:
 </p>
-<pre>After the first reallocation, drives are
+<p><pre>
+After the first reallocation, drives are
 over 14 times more likely to fail within
 60 days than drives without reallocation
 counts.</pre>
@@ -852,7 +855,8 @@ are 16 times more likely to fail within
 counts.</pre>
 <pre>After the first offline reallocation, drives have over
 21 times higher chances of failure within 60 days than
-drives without offline reallocations.</pre>
+drives without offline reallocations.
+</pre></p>
 <p>
 These findings recommend replacing a disk after the first error in the SMART attributes
 <b>
@@ -926,7 +930,7 @@ How do I configure SAMBA to share the pool directory?
 To configure SAMBA to share the pool directory (e.g., /pool), add the following options to
 your /etc/samba/smb.conf:
 </p>
-<pre>
+<p><pre>
 # In the global section of smb.conf
 unix extensions = no
 
@@ -937,7 +941,7 @@ path = /pool
 read only = yes
 guest ok = yes
 wide links = yes
-</pre>
+</pre></p>
 </div>
 </div>
 <div class="faq-item">
@@ -975,13 +979,11 @@ Log into your Google Account, navigate to <b>Security</b> settings, and select <
 <p>
 <strong>Create the .netrc file</strong> Create a file named <b>.netrc</b> in the <b>/root/</b> directory ($HOME directory of the root user) with the following content:
 </p>
-<p>
-<pre>
+<p><pre>
 machine smtp.gmail.com
 login your_email@gmail.com
 password your-16-char-app-password-without-spaces
-</pre>
-</p>
+</pre></p>
 <p>
 Note: If <b>notify_run_as_user</b> is set, the directory to use is the user $HOME directory and not <b>/root/</b>.
 </p>
@@ -999,13 +1001,11 @@ Note: You must use a Google <b>App Password</b>, not your primary account passwo
 <strong>Configure the Command</strong>
 In your <b>snapraidd.conf</b> use the following configuration:
 </p>
-<p>
-<pre>
+<p><pre>
 notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd --mail-from your_email@gmail.com
            --mail-rcpt your_email@gmail.com --upload-file -
 (the command must be entered as a single continuous line in your configuration file)
-</pre>
-</p>
+</pre></p>
 </li>
 <li>
 <p>
@@ -1037,13 +1037,11 @@ Log into your Google Account, navigate to <b>Security</b> settings, and select <
 <p>
 <strong>Create the _netrc file</strong> Create a file named <b>_netrc</b> in the <b>C:\Windows\System32\config\systemprofile\</b> directory with the following content:
 </p>
-<p>
-<pre>
+<p><pre>
 machine smtp.gmail.com
 login your_email@gmail.com
 password your-16-char-app-password-without-spaces
-</pre>
-</p>
+</pre></p>
 <p>
 Note: You must use a Google <b>App Password</b>, not your primary account password.
 </p>
@@ -1058,13 +1056,11 @@ Note: You must use a Google <b>App Password</b>, not your primary account passwo
 <strong>Configure the Command</strong>
 In your <b>snapraidd.conf</b> use the following configuration:
 </p>
-<p>
-<pre>
+<p><pre>
 notify_result = curl --netrc --url smtps://smtp.gmail.com:465 --ssl-reqd 
            --mail-from your_email@gmail.com --mail-rcpt your_email@gmail.com --upload-file -
 (the command must be entered as a single continuous line in your configuration file)
-</pre>
-</p>
+</pre></p>
 </li>
 <li>
 <p>
@@ -1140,9 +1136,9 @@ How can I add a data disk to an existing array?
 To add a new data disk to the array, add the new "disk" option in the configuration file,
 then run a "sync" command:
 </p>
-<pre>
+<p><pre>
 snapraid sync
-</pre>
+</pre></p>
 <p>
 If the disk is empty, the "sync" command will complete immediately.
 </p>
@@ -1165,9 +1161,9 @@ Remove any "content" option pointing to that disk from the configuration file.
 </li>
 <li>
 Run a "sync" command with the "-E, --force-empty" option:
-<pre>
+<p><pre>
 snapraid sync -E
-</pre>
+</pre></p>
 The "-E" option allows SnapRAID to proceed even when detecting an empty disk.
 </li>
 <li>
@@ -1188,9 +1184,9 @@ How can I add or remove a parity disk in an existing array?
 To add a new parity level, add the appropriate "N-parity" option in the configuration file, then run the "sync" command
 with the "-F, --force-full" option:
 </p>
-<pre>
+<p><pre>
 snapraid -F sync
-</pre>
+</pre></p>
 <p>
 The "-F" option instructs SnapRAID to recompute the full parity.
 </p>
@@ -1215,9 +1211,9 @@ How can I verify a single data disk?
 The "scrub" command verifies the entire array and cannot be limited to a single data disk.
 To verify only one data disk, use the "check" audit command with the disk specified:
 </p>
-<pre>
+<p><pre>
 snapraid check -a -d DISK_NAME
-</pre>
+</pre></p>
 <p>
 This command verifies the checksums of all files on the specified disk.
 Other data and parity disks are not read or verified.
@@ -1236,27 +1232,21 @@ Otherwise, copy all files to the new disk, maintaining the same directory struct
 <p>
 In Linux, use the command:
 </p>
-<p>
-<pre>
+<p><pre>
 cp -av /from_dir/. /to_dir
-</pre>
-</p>
+</pre></p>
 <p>
 In Windows, use the command:
 </p>
-<p>
-<pre>
+<p><pre>
 robocopy F:\from_dir T:\to_dir /e /copyall
-</pre>
-</p>
+</pre></p>
 <p>
 Update the SnapRAID configuration to point to the new mount point, then run a "diff" command to ensure everything is correct:
 </p>
-<p>
-<pre>
+<p><pre>
 snapraid diff
-</pre>
-</p>
+</pre></p>
 <p>
 If "diff" reports "added" or "removed" files, you may have copied files with a different directory structure.
 Correct this until "diff" reports only "equal", "restored", or "copied" files.
@@ -1264,19 +1254,15 @@ Correct this until "diff" reports only "equal", "restored", or "copied" files.
 <p>
 To verify that files were copied correctly, run a "check" audit command on the replaced disk to verify checksums:
 </p>
-<p>
-<pre>
+<p><pre>
 snapraid check -a -d DISK_NAME
-</pre>
-</p>
+</pre></p>
 <p>
 Finally, run "sync" to update the SnapRAID state. This command will complete almost immediately:
 </p>
-<p>
-<pre>
+<p><pre>
 snapraid sync
-</pre>
-</p>
+</pre></p>
 </div>
 </div>
 <div class="faq-item">
@@ -1287,18 +1273,18 @@ How can I replace a parity disk?
 <p>
 If the disk is still accessible, ensure the array is synced by running:
 </p>
-<pre>
+<p><pre>
 snapraid sync
-</pre>
+</pre></p>
 <p>
 Copy the parity file to the new disk and update the parity location in the configuration file.
 </p>
 <p>
 Run "sync" again to make SnapRAID recognize the new disk. This command will complete almost immediately:
 </p>
-<pre>
+<p><pre>
 snapraid sync
-</pre>
+</pre></p>
 <p>
 In Linux, a good copy command is
 <a href="https://www.gnu.org/software/ddrescue/">
@@ -1306,9 +1292,9 @@ ddrescue
 </a>
 . For example:
 </p>
-<pre>
+<p><pre>
 ddrescue /OLD_DISK/parity /NEW_DISK/parity /tmp/copy.log
-</pre>
+</pre></p>
 <p>
 This copies the parity file from the old to the new location, continuing despite errors.
 To retry problematic sections, repeat the same command.
@@ -1319,9 +1305,9 @@ A partial parity file is still useful, as it allows recovery using the valid par
 <p>
 If the parity file is partially damaged or lost, use the "fix" command with the -d option to recreate it, targeting only the affected parity:
 </p>
-<pre>
+<p><pre>
 snapraid fix -d PARITY_NAME
-</pre>
+</pre></p>
 </div>
 </div>
 <div class="faq-item">
@@ -1482,12 +1468,12 @@ Using the "autosave" configuration option saves intermediate content files durin
 What are "data errors" in "sync", and how do I fix them?
 </h3>
 <div class="faq-answer">
-<pre>
+<p><pre>
 Syncing...
 309505: Data error for file d4/data/index.db at position 40960
 WARNING! Unexpected data error in a data disk! The block is now marked as bad!
 Try with 'snapraid -e fix' to recover!
-</pre>
+</pre></p>
 <p>
 Data errors occur when SnapRAID detects that a file’s content has changed without an updated write timestamp.
 This should not happen and may indicate a silent disk error or a file system issue, such as an improper shutdown.
@@ -1496,9 +1482,9 @@ This should not happen and may indicate a silent disk error or a file system iss
 If a data error is found, the "sync" process continues, marking erroneous blocks as bad.
 These can be fixed with the "-e fix" command, which typically takes only a few seconds:
 </p>
-<pre>
+<p><pre>
 snapraid -e fix
-</pre>
+</pre></p>
 <p>
 If errors occur in multiple files, check for hardware issues.
 Test your PC’s memory with a tool like
@@ -1518,12 +1504,12 @@ MSDN WriteFile()
 </a>
 :
 </p>
-<pre>
+<p><pre>
 When writing to a file, the last write time is not fully updated until
 all handles used for writing have been closed. Therefore, to ensure an
 accurate last write time, close the file handle immediately after writing
 to the file.
-</pre>
+</pre></p>
 <p>
 For memory-mapped files in Windows, the program must manually update the timestamp,
 as Windows does not do so automatically.
@@ -1533,11 +1519,11 @@ MSDN CreateFileMapping()
 </a>
 :
 </p>
-<pre>
+<p><pre>
 When modifying a file through a mapped view, the last modification timestamp
 may not be updated automatically. If required, the caller should use SetFileTime
 to set the timestamp.
-</pre>
+</pre></p>
 <p>
 To avoid these issues in Windows, run "sync" when no programs are accessing files in the array.
 </p>
@@ -1551,9 +1537,9 @@ How can I store all messages from a check or fix command in a file?
 <p>
 Use the "-l" option to generate a log file:
 </p>
-<pre>
+<p><pre>
 snapraid check -l mylog.log
-</pre>
+</pre></p>
 <p>
 These log files can be large, potentially several GB. If too large for your editor,
 use
@@ -1574,9 +1560,9 @@ Use the "-C, --gen-conf" command to generate a template configuration file
 compatible with your content file.
 Manual adjustments are needed to set disk mount points, but comments in the file provide guidance:
 </p>
-<pre>
+<p><pre>
 snapraid -C snapraid.content &gt; snapraid.conf.new
-</pre>
+</pre></p>
 </div>
 </div>
 </div>
@@ -1636,12 +1622,12 @@ An Analysis of Data Corruption in the Storage Stack
 </a>
 :
 </p>
-<pre>
+<p><pre>
 A significant number (8% on average) of corruptions
 are detected during RAID reconstruction, creating the
 possibility of data loss. In this case, protection against
 double disk failures is necessary to prevent data loss.
-</pre>
+</pre></p>
 </div>
 </div>
 <div class="faq-item">
@@ -1723,10 +1709,10 @@ What does the notice about zero sub-second timestamps mean?
 <p>
 In the 'status' command, you may see:
 </p>
-<pre>
+<p><pre>
 You have XXXXX files with zero sub-second timestamp.
 Run the 'touch' command to set it to a non-zero value.
-</pre>
+</pre></p>
 <p>
 This indicates that some files have timestamps rounded to the nearest second,
 even though your file system supports sub-second precision.
@@ -1788,9 +1774,9 @@ If using a larger block size, set the read-ahead size to at least half the SnapR
 <p>
 For example, with a SnapRAID block size of 512 KiB, configure a read-ahead size of 256 KiB for sdX using:
 </p>
-<pre>
+<p><pre>
 echo 256 &gt; /sys/block/sdX/queue/read_ahead_kb
-</pre>
+</pre></p>
 <p>
 For a SnapRAID block size smaller than 256 KiB, use the default read-ahead size.
 </p>
@@ -1845,7 +1831,7 @@ See 'z-parity' in the manual for details.
 The following results are from a Intel Core i7-10700 CPU @ 2.90GHz.
 Check your values with the -T option:
 </p>
-<pre>
+<p><pre>
 root@redstar:/root# snapraid -T
 snapraid v14.0 by Andrea Mazzoleni, https://www.snapraid.it
 Compiler gcc 11.2.0
@@ -1887,7 +1873,7 @@ RAID functions used for recovering with 'fix':
     rec4    avx2     108     607     973
     rec5    avx2      76     421     694
     rec6    avx2      57     313     532
-</pre>
+</pre></p>
 </div>
 </div>
 </div>
@@ -1947,9 +1933,9 @@ This is likely due to insufficient free memory, causing the Linux out-of-memory 
 to terminate SnapRAID for using too much memory.
 Check available memory with:
 </p>
-<pre>
+<p><pre>
 free -m
-</pre>
+</pre></p>
 <p>
 If memory is low, install more memory in the machine.
 </p>
@@ -1970,9 +1956,9 @@ Alternatively, move files mentioned in the output to another data disk to reduce
 <p>
 In Linux, you can reformat the parity disk to increase available space using:
 </p>
-<pre>
+<p><pre>
 mkfs.ext4 -m 0 -T largefile4 DEVICE
-</pre>
+</pre></p>
 <p>
 The '-T largefile4' and '-m 0' options provide more space for the parity file.
 </p>
@@ -2012,12 +1998,10 @@ Excel modifies .xls files upon opening, even without saving, to store the name o
 This allows it to warn if another user tries to open the file simultaneously.
 Excel restores the original timestamp, but SnapRAID detects the modification, reporting a data error:
 </p>
-<p>
-<pre>
+<p><pre>
 Data change at file '/xxx/xxx.xls' at position '0'
 WARNING! Unexpected data modification of a file without parity!
-</pre>
-</p>
+</pre></p>
 <p>
 To work around this, see
 <a href="https://superuser.com/questions/664549/how-to-prevent-excel-from-modifying-the-file-on-exit">
