@@ -310,9 +310,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				}
 			}
 
-			/* skip data disks that are not accessible */
-			if (disk->skip_access)
-				continue;
+
 
 			if (!state->opt.skip_parity_access) {
 				for (l = 0; l < state->level; ++l) {
@@ -1802,6 +1800,9 @@ void state_refresh(struct snapraid_state* state)
 			/* LCOV_EXCL_STOP */
 		}
 
+		if (disk->skip_access)
+			continue;
+
 		ret = fsinfo(disk->dir, 0, 0, &total_space, &free_space, disk->fstype, sizeof(disk->fstype), disk->fslabel, sizeof(disk->fslabel));
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -1827,6 +1828,9 @@ void state_refresh(struct snapraid_state* state)
 		/* set the new free blocks */
 		state->parity[l].total_blocks = 0;
 		state->parity[l].free_blocks = 0;
+
+		if (state->parity[l].skip_access)
+			continue;
 
 		for (s = 0; s < state->parity[l].split_mac; ++s) {
 			struct snapraid_split* split = &state->parity[l].split_map[s];
