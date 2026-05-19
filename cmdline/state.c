@@ -722,10 +722,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					pathimport(device, sizeof(device), split_map[s]);
 					slash = strrchr(device, '/');
 					if (slash)
-						*slash = 0;
+						slash[1] = 0;
 					else
 						pathcpy(device, sizeof(device), ".");
-
 					if (stat(device, &st) == 0) {
 						dev = st.st_dev;
 
@@ -875,7 +874,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			pathimport(device, sizeof(device), buffer);
 			slash = strrchr(device, '/');
 			if (slash)
-				*(slash + 1) = 0;
+				slash[1] = 0;
 			else
 				pathcpy(device, sizeof(device), ".");
 			if (stat(device, &st) == 0) {
