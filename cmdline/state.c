@@ -3088,6 +3088,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (v_split_mac > SPLIT_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ECONTENT, "Too many splits '%u' in the content file!\n", v_split_mac);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			if (v_level >= LEV_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
