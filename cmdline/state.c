@@ -5255,7 +5255,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				str_cpu[0] = 0;
 			}
 			if (out_temperature) {
-				snprintf(str_temp, sizeof(str_eta), "%u", out_temperature);
+				snprintf(str_temp, sizeof(str_temp), "%u", out_temperature);
 			} else {
 				str_temp[0] = 0;
 			}
