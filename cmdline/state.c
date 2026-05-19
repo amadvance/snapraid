@@ -4548,9 +4548,9 @@ static void state_rename_content(struct snapraid_state* state)
 
 		pathcpy(dir, sizeof(dir), content->content);
 
-		slash = strrchr(tmp, '/');
+		slash = strrchr(dir, '/');
 		if (slash)
-			*slash = 0;
+			slash[1] = 0;
 		else
 			pathcpy(dir, sizeof(dir), ".");
 
