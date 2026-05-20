@@ -1175,6 +1175,8 @@ struct dev_struct {
 #if HAVE_LINUX_DEVICE
 static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_list* devlist)
 {
+	int found = 0;
+
 	struct btrfs_ioctl_fs_info_args fs_info;
 	memset(&fs_info, 0, sizeof(fs_info));
 	if (ioctl(fd, BTRFS_IOC_FS_INFO, &fs_info) < 0) {
@@ -1196,7 +1198,11 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 
 		if (ioctl(fd, BTRFS_IOC_DEV_INFO, &dev_info) != 0) {
 			/* LCOV_EXCL_START */
-			return -1;
+			/* btrfs device IDs (devid) are not guaranteed to be contiguous */
+			if (errno == ENODEV || errno == ENOENT)
+				continue; /* this is the expected error on missing id */
+			log_error(errno, "Ioctl BTRFS_IOC_DEV_INFO failed. %s.", strerror(errno));
+			continue;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -1212,8 +1218,14 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 		dev->device = st.st_rdev;
 		tommy_list_insert_tail(devlist, &dev->node, dev);
 
+		++found;
+
 		log_tag("dereference:btrfs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
 	}
+
+	/* something has to be found */
+	if (found == 0)
+		return -1;
 
 	return 0;
 }
