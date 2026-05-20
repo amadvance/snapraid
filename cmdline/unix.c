@@ -2101,7 +2101,8 @@ static int devup(dev_t device, const char* name)
 	}
 
 	/* select a random offset */
-	offset = (random_u64() % (size / 4096)) * 4096;
+	uint64_t blocks = size / 4096;
+	offset = blocks > 0 ? (random_u64() % blocks) * 4096 : 0;
 
 #if HAVE_POSIX_FADVISE
 	/* clear cache */
