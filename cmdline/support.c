@@ -871,7 +871,7 @@ char* strpolish(char* s)
 	char* i = s;
 
 	while (*i) {
-		if (isspace(*i) || !isprint(*i))
+		if (isspace((unsigned char)*i) || !isprint((unsigned char)*i))
 			*i = ' ';
 		++i;
 	}
@@ -1180,7 +1180,7 @@ int mkancestor(const char* file)
 
 #ifdef _WIN32
 	/* if it's a drive specification like "C:" */
-	if (isalpha(dir[0]) && dir[1] == ':' && dir[2] == 0) {
+	if (isalpha((unsigned char)dir[0]) && dir[1] == ':' && dir[2] == 0) {
 		/* nothing more to do */
 		return 0;
 	}
@@ -1799,9 +1799,9 @@ char* strdup_nofail(const char* str)
 static int smatch(const char* str, const char* pattern)
 {
 	while (*pattern) {
-		if (isspace(*pattern)) {
+		if (isspace((unsigned char)*pattern)) {
 			++pattern;
-			while (isspace(*str))
+			while (isspace((unsigned char)*str))
 				++str;
 		} else if (*pattern == *str) {
 			++pattern;
@@ -1961,7 +1961,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, struct smart
 		log_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 
 		/* skip initial spaces */
-		while (isspace(*s))
+		while (isspace((unsigned char)*s))
 			++s;
 
 		if (*s == 0) {

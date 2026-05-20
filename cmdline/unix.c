@@ -609,7 +609,7 @@ static int tagread(const char* path, const char* tag, char* value, size_t value_
 
 		/* start with a space */
 		if (p != buf) {
-			if (!isspace(*p))
+			if (!isspace((unsigned char)*p))
 				continue;
 			++p;
 		}
@@ -636,7 +636,7 @@ static int tagread(const char* path, const char* tag, char* value, size_t value_
 
 	/* terminate at the first space */
 	e = i;
-	while (*e != 0 && !isspace(*e))
+	while (*e != 0 && !isspace((unsigned char)*e))
 		++e;
 	*e = 0;
 
@@ -1533,7 +1533,7 @@ static dev_t devread(const char* path)
 	}
 
 	mi = strtoul(e + 1, &e, 10);
-	if (*e != 0 && !isspace(*e)) {
+	if (*e != 0 && !isspace((unsigned char)*e)) {
 		/* LCOV_EXCL_START */
 		log_fatal(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
@@ -1675,17 +1675,17 @@ static int devstat(dev_t device, uint64_t* count)
 		unsigned long long v;
 
 		/* skip spaces */
-		while (*i && isspace(*i))
+		while (*i && isspace((unsigned char)*i))
 			++i;
 
 		/* read digits */
 		n = i;
-		while (*i && isdigit(*i))
+		while (*i && isdigit((unsigned char)*i))
 			++i;
 
 		if (i == n) /* if no digit, abort */
 			break;
-		if (*i == 0 || !isspace(*i)) /* if no space, abort */
+		if (*i == 0 || !isspace((unsigned char)*i)) /* if no space, abort */
 			break;
 		*i++ = 0; /* put a terminator */
 
@@ -2617,7 +2617,7 @@ int ambient_temperature(void)
 				continue;
 
 			temp = strtol(value, &e, 10) / 1000;
-			if (*e != 0 && !isspace(*e))
+			if (*e != 0 && !isspace((unsigned char)*e))
 				continue;
 
 			/* cut the file name at "_input" */
