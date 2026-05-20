@@ -2989,14 +2989,12 @@ static int devup(uint64_t device, const char* name, const char* wfile)
 
 	if (!CloseHandle(h)) {
 		DWORD error = GetLastError();
-		CloseHandle(h);
 		VirtualFree(buffer, 0, MEM_RELEASE);
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return -1;
 	}
 
-	CloseHandle(h);
 	VirtualFree(buffer, 0, MEM_RELEASE);
 
 	log_tag("attr:%s:%s:power:up\n", file, name);
