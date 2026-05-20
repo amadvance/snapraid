@@ -86,12 +86,18 @@ static uint64_t random_state = 1;
 
 void random_seed(uint64_t seed)
 {
+	lock_random();
 	random_state = seed;
+	unlock_random();
 }
 
 void random_reseed(void)
 {
-	random_state = os_tick();
+	uint64_t seed = os_tick();
+
+	lock_random();
+	random_state = seed;
+	unlock_random();
 }
 
 unsigned char random_u8(void)
