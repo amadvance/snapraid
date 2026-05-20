@@ -277,6 +277,8 @@ static void vmsg(FILE* out, const char* format, va_list ap)
 
 	if (dup[0]) {
 		written = vfprintf(out, dup, ap);
+		if (written < 0) /* ignore errors */
+			written = 0;
 	}
 
 	switch (control) {
