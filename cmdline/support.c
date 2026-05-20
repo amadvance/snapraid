@@ -1209,7 +1209,8 @@ int mkancestor(const char* file)
 	}
 
 	/* create it */
-	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
+	int ret = mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+	if (ret != 0 && errno != EEXIST) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;

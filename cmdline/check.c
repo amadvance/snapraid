@@ -1880,7 +1880,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* create it */
 				ret = mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-				if (ret != 0) {
+				if (ret != 0 && errno != EEXIST) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating directory '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
 					log_tag("dir_%s:%u:%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
