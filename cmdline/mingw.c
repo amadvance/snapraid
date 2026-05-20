@@ -2394,6 +2394,41 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 	return 0;
 }
 
+/**
+ * Validates a GUID string of the form:
+ *   xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ * Does NOT accept braced forms like {xxxxxxxx-...}.
+ *
+ * Returns true if valid, false otherwise.
+ */
+int windows_guid_is_valid(const char* guid, int len)
+{
+	if (!guid || len != 38)
+		return -1;
+
+	if (guid[0] != '{' || guid[37] != '}')
+		return -1;
+
+	const char* inner = guid + 1;
+
+	for (int i = 0; i < 36; ++i) {
+		if (i == 8 || i == 13 || i == 18 || i == 23) {
+			if (inner[i] != '-')
+				return -1;
+		} else {
+			char c = inner[i];
+			int is_digit = (c >= '0' && c <= '9');
+			int is_upper_hex = (c >= 'A' && c <= 'F');
+			int is_lower_hex = (c >= 'a' && c <= 'f');
+
+			if (!is_digit && !is_upper_hex && !is_lower_hex)
+				return -1;
+		}
+	}
+
+	return 0;
+}
+
 static int windows_read_guid(const char* guid_link, char* guid, size_t guid_size)
 {
 	int len = windows_readlink(guid_link, guid, guid_size);
@@ -2413,6 +2448,11 @@ static int windows_read_guid(const char* guid_link, char* guid, size_t guid_size
 	}
 
 	guid[len] = 0;
+
+	/* validate that the GUID contains only safe characters: [A-Za-z0-9-{}] */
+	if (windows_guid_is_valid(guid, len) != 0)
+		return -1;
+
 	return 0;
 }
 
