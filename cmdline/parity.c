@@ -763,6 +763,8 @@ int parity_close(struct snapraid_parity_handle* handle)
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 
+		advise_close(&split->advise, split->f);
+
 		ret = close(split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */

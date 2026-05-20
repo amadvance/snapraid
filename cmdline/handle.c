@@ -196,10 +196,12 @@ int handle_close(struct snapraid_handle* handle)
 
 	/* close if open */
 	if (handle->f != -1) {
+		advise_close(&handle->advise, handle->f);
+
 		ret = close(handle->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal(errno, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+			log_fatal(errno, "Error closing file '%s'. %s.\n", handle->path, strerror(errno));
 
 			/* invalidate for error */
 			handle->file = 0;

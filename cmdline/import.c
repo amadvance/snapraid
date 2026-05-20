@@ -111,6 +111,8 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		size -= read_size;
 	}
 
+	advise_close(&advise, f);
+
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */

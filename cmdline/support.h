@@ -419,6 +419,7 @@ int advise_flags(struct advise_struct* advise);
 int advise_open(struct advise_struct* advise, int f);
 int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
 int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
+void advise_close(struct advise_struct* advise, int f);
 
 /****************************************************************************/
 /* memory */
