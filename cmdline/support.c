@@ -2386,7 +2386,7 @@ void thread_mutex_init(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_init(mutex, 0) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_mutex_init().\n");
+		fprintf(stderr, "Failed call to pthread_mutex_init().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2396,7 +2396,7 @@ void thread_mutex_destroy(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_destroy(mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_mutex_destroy().\n");
+		fprintf(stderr, "Failed call to thread_mutex_destroy().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2406,7 +2406,7 @@ void thread_mutex_lock(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_lock(mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_mutex_lock().\n");
+		fprintf(stderr, "Failed call to pthread_mutex_lock().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2416,7 +2416,7 @@ void thread_mutex_unlock(thread_mutex_t* mutex)
 {
 	if (pthread_mutex_unlock(mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_mutex_unlock().\n");
+		fprintf(stderr, "Failed call to pthread_mutex_unlock().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2426,7 +2426,7 @@ void thread_cond_init(thread_cond_t* cond)
 {
 	if (pthread_cond_init(cond, 0) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_cond_init().\n");
+		fprintf(stderr, "Failed call to pthread_cond_init().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2436,7 +2436,7 @@ void thread_cond_destroy(thread_cond_t* cond)
 {
 	if (pthread_cond_destroy(cond) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_cond_destroy().\n");
+		fprintf(stderr, "Failed call to pthread_cond_destroy().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2446,7 +2446,7 @@ void thread_cond_signal(thread_cond_t* cond)
 {
 	if (pthread_cond_signal(cond) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_cond_signal().\n");
+		fprintf(stderr, "Failed call to pthread_cond_signal().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2456,7 +2456,7 @@ void thread_cond_broadcast(thread_cond_t* cond)
 {
 	if (pthread_cond_broadcast(cond) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_cond_broadcast().\n");
+		fprintf(stderr, "Failed call to pthread_cond_broadcast().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2466,7 +2466,7 @@ void thread_cond_wait(thread_cond_t* cond, thread_mutex_t* mutex)
 {
 	if (pthread_cond_wait(cond, mutex) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed call to pthread_cond_wait().\n");
+		fprintf(stderr, "Failed call to pthread_cond_wait().\n"); /* cannot use log_fatal() because it needs locks */
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
