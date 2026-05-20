@@ -1097,7 +1097,7 @@ void pathslash(char* dst, size_t size)
 	size_t len = strlen(dst);
 
 	if (len > 0 && dst[len - 1] != '/') {
-		if (len + 2 >= size) {
+		if (len + 2 > size) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Path too long '%s/'\n", dst);
 			os_abort();
