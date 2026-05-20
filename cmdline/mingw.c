@@ -3344,17 +3344,21 @@ int windows_key_create(windows_key_t* key, void (*destructor)(void*))
 	return 0;
 }
 
-int windows_key_delete(windows_key_t key)
+int windows_key_delete(windows_key_t void_key)
 {
-	struct windows_key_context* context = key;
+	struct windows_key_context* key = void_key;
 
-	/* remove from the list of destructors */
-	if (context->func)
-		tommy_list_remove_existing(&windows_key_list, &context->node);
+	/* use the destructor for the local variable and remove from the list of destructors */
+	if (key->func) {
+		void* value = windows_getspecific(key);
+		if (value)
+			key->func(value);
+		tommy_list_remove_existing(&windows_key_list, &key->node);
+	}
 
-	TlsFree(context->key);
+	TlsFree(key->key);
 
-	free(context);
+	free(key);
 
 	return 0;
 }
