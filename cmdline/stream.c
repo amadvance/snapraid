@@ -183,10 +183,13 @@ int sclose(STREAM* s)
 	}
 
 	for (i = 0; i < s->handle_size; ++i) {
-		if (close(s->handle[i].f) != 0) {
-			/* LCOV_EXCL_START */
-			fail = 1;
-			/* LCOV_EXCL_STOP */
+		/* if open failed, there is nothing to close */
+		if (s->handle[i].f != -1) {
+			if (close(s->handle[i].f) != 0) {
+				/* LCOV_EXCL_START */
+				fail = 1;
+				/* LCOV_EXCL_STOP */
+			}
 		}
 	}
 
