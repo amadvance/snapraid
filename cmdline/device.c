@@ -952,8 +952,6 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		devinfo_t* entry;
 		int j;
 
-		++count;
-
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
 		/* fake device number */
@@ -981,7 +979,7 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		pathprint(entry->interf, sizeof(entry->interf), "FAKE_%s", devinfo->interf);
 		pathprint(entry->file, sizeof(entry->file), "FAKE_%s", devinfo->file);
 		pathcpy(entry->name, sizeof(entry->name), devinfo->name);
-		entry->info[INFO_SIZE] = count * TERA;
+		entry->info[INFO_SIZE] = (count + 1) * TERA;
 		entry->info[INFO_ROTATION_RATE] = 7200;
 		entry->smart[SMART_ERROR_MEDIUM].raw = 0;
 		entry->smart[SMART_ERROR_PROTOCOL].raw = 0;
@@ -1001,6 +999,8 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 		}
 
 		entry->power = POWER_ACTIVE;
+
+		++count;
 	}
 
 	return 0;
