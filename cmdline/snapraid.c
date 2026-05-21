@@ -1103,7 +1103,8 @@ int snapraid_main(int argc, char* argv[])
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
-				plan100 = plan_double * 100;
+				/* +0.5 avoids floating point precision error of strtod, like "0.7" -> 0.6999... -> 0.6 */
+				plan100 = plan_double * 100 + 0.5;
 			}
 			break;
 		case 'o' :
