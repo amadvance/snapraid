@@ -286,7 +286,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (!count) {
-		log_fatal(EUSER, "The array is empty.\n");
+		printf("The array is empty.\n");
 		return 0;
 	}
 
