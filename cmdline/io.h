@@ -360,19 +360,40 @@ struct snapraid_io {
 	struct snapraid_bw bw;
 };
 
+typedef enum {
+	IO_OP_NONE = 0, /**< Disk is not accessed. */
+	IO_OP_READ = 1, /**< Disk is read. */
+	IO_OP_WRITE = 2 /**< Disk is written. */
+} io_op_t;
+
 /**
- * Initialize the InputOutput workers.
+ * Initialize the InputOutput workers with granular directions.
  *
+ * \param io The InputOutput context to initialize.
+ * \param state The global program state.
  * \param io_cache The number of IO buffers for read-ahead and write-behind. 0 for default.
  * \param buffer_max The number of data/parity buffers to allocate.
+ * \param handle_map The map of data disk handles.
+ * \param handle_max The total number of data disk handles.
+ * \param data_ops Granular operations for each data disk, or NULL for implicit defaults.
+ * \param data_reader Callback function pointer for data read tasks.
+ * \param data_writer Callback function pointer for data write tasks.
+ * \param parity_handle_map The map of parity disk handles.
+ * \param parity_handle_max The total number of parity levels/handles.
+ * \param parity_ops Granular operations for each parity level, or NULL for implicit defaults.
+ * \param parity_reader Callback function pointer for parity read tasks.
+ * \param parity_writer Callback function pointer for parity write tasks.
  */
 void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	unsigned io_cache, unsigned buffer_max,
-	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
+	const io_op_t* data_ops,
+	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
+	void (*data_writer)(struct snapraid_worker*, struct snapraid_task*),
+	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max,
+	const io_op_t* parity_ops,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
-	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
-	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max);
+	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*));
 
 /**
  * Deinitialize the InputOutput workers.
