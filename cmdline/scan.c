@@ -308,8 +308,11 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
  * Delete the specified file from the parity.
  *
  * Note that the parity remains allocated, but the blocks and the file are marked as DELETED.
- * The file is then inserted in the deleted set, and it should not be deallocated,
- * as the parity still references it.
+ *
+ * The file pointer remain in memory and it's inserted in the deleted set.
+ *
+ * It should not be deallocated, as the parity still references it, and other threads
+ * in the scanning process may reference it when searching for a copy in the "stampset".
  */
 static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
@@ -1061,8 +1064,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/*
 				 * Protect the write as multiple threads may write the same FILE_IS_RELOCATED bit.
 				 *
-				 * The bit is always written as 1 and never read, so protection is likely unnecessary
-				 * but still valuable to avoid data race reports from checker tools
+				 * Note that this flag is written in the "shared" portion of the flags,
+				 * intended exactly to avoid data race from multiple threads using
+				 * the stamp_lock() protection.
 				 */
 				stamp_lock(other_disk);
 				file_flag_set(other_file, FILE_IS_RELOCATED);
@@ -1737,6 +1741,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 			/* remove if not present */
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
+				/* here we are in mono-thread context, no need to use the stamp_lock() to read FILE_IS_RELOCATED */
 				if (!file_flag_has(file, FILE_IS_RELOCATED)) {
 					++scan->count_remove;
 
