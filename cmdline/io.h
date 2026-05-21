@@ -294,8 +294,8 @@ struct snapraid_io {
 	 * To get the next element to process we use i = list[i + 1].
 	 * The end is when i == reader_max.
 	 */
-	unsigned char* reader_list;
-	unsigned char* writer_list;
+	unsigned* reader_list;
+	unsigned* writer_list;
 
 	/**
 	 * Exit condition for all threads.

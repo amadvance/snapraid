@@ -570,7 +570,7 @@ static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigne
 	thread_mutex_lock(&io->io_mutex);
 
 	while (1) {
-		unsigned char* let;
+		unsigned* let;
 		unsigned busy_index;
 
 		/* get the index the IO is using */
@@ -658,7 +658,7 @@ static void io_parity_write_thread(struct snapraid_io* io, unsigned* pos, unsign
 	thread_mutex_lock(&io->io_mutex);
 
 	while (1) {
-		unsigned char* let;
+		unsigned* let;
 		unsigned busy_index;
 
 		/* get the next index the IO is going to use */
@@ -952,9 +952,9 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	}
 
 	io->reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io->reader_max);
-	io->reader_list = malloc_nofail(io->reader_max + 1);
+	io->reader_list = malloc_nofail(sizeof(unsigned) * (io->reader_max + 1));
 	io->writer_map = malloc_nofail(sizeof(struct snapraid_worker) * io->writer_max);
-	io->writer_list = malloc_nofail(io->writer_max + 1);
+	io->writer_list = malloc_nofail(sizeof(unsigned) * (io->writer_max + 1));
 
 	io->data_base = 0;
 	io->data_count = handle_max;
