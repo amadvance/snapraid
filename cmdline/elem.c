@@ -1371,6 +1371,12 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 
 	/* if it's at the start of the extent, shrink the extent */
 	if (parity_pos == extent->parity_pos) {
+		/*
+		 * Note that modifying parity_pos and file_pos in-place is safe
+		 * because extents never overlap. Shrinking the start of the extent
+		 * keeps the relative sorted order of all nodes completely unchanged,
+		 * preserving the tree invariants without delete/insert overhead.
+		 */
 		++extent->parity_pos;
 		++extent->file_pos;
 		--extent->count;
