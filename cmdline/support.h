@@ -425,7 +425,7 @@ void advise_close(struct advise_struct* advise, int f);
 /* memory */
 
 /**
- * Return the size of the allocated memory.
+ * Return the size of the cumulative allocated memory.
  */
 size_t malloc_counter_get(void);
 

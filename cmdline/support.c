@@ -1699,7 +1699,7 @@ void advise_close(struct advise_struct* advise, int f)
 /* memory */
 
 /**
- * Total amount of memory allocated.
+ * Cumulative amount of memory allocated.
  */
 static size_t mcounter;
 
