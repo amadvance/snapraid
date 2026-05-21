@@ -45,12 +45,6 @@ int exit_sync_needed = 2;
 static BOOLEAN(WINAPI * ptr_RtlGenRandom)(PVOID, ULONG);
 
 /**
- * Direct access to GetTickCount64().
- * This function is available only from Windows Vista.
- */
-static ULONGLONG(WINAPI * ptr_GetTickCount64)(void);
-
-/**
  * Description of the last error.
  * It's stored in the thread local storage.
  */
@@ -166,9 +160,6 @@ void os_init(int opt)
 
 	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
-
-	/* get pointer to ptr_GetTickCount64 */
-	ptr_GetTickCount64 = (void*)GetProcAddress(kernel32, "GetTickCount64");
 
 	/* set the thread execution level to avoid sleep */
 	/* first try for Windows 7 */
@@ -2278,11 +2269,7 @@ uint64_t os_tick(void)
 
 uint64_t os_tick_ms(void)
 {
-	/* GetTickCount64() isn't supported in Windows XP */
-	if (ptr_GetTickCount64 != 0)
-		return ptr_GetTickCount64();
-
-	return GetTickCount();
+	return GetTickCount64();
 }
 
 int randomize(void* void_ptr, size_t size)
