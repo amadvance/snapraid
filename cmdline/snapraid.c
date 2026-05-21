@@ -800,8 +800,10 @@ static struct option long_options[] = {
 	/* Exit generic need sync */
 	{ "test-expect-need-sync", 0, 0, OPT_TEST_EXPECT_NEED_SYNC },
 
+#if HAVE_CHECKER
 	/* Run some command after loading the state and before the command */
 	{ "test-run", 1, 0, OPT_TEST_RUN },
+#endif
 
 	/* Use the FindFirst/Next approach in Windows to list files */
 	{ "test-force-scan-winfind", 0, 0, OPT_TEST_FORCE_SCAN_WINFIND },
@@ -987,7 +989,9 @@ int snapraid_main(int argc, char* argv[])
 	const char* log_file;
 	int lock;
 	const char* gen_conf;
+#if HAVE_CHECKER
 	const char* run;
+#endif
 	int speedtest;
 	int speed_test_period;
 	int speed_test_disks_number;
@@ -1024,7 +1028,9 @@ int snapraid_main(int argc, char* argv[])
 	lock = 0;
 	gen_conf = 0;
 	speedtest = 0;
+#if HAVE_CHECKER
 	run = 0;
+#endif
 
 	opterr = 0;
 	while ((c =
@@ -1357,9 +1363,11 @@ int snapraid_main(int argc, char* argv[])
 			exit_success = 1;
 			exit_sync_needed = 0;
 			break;
+#if HAVE_CHECKER
 		case OPT_TEST_RUN :
 			run = optarg;
 			break;
+#endif
 		case OPT_TEST_FORCE_SCAN_WINFIND :
 			opt.force_scan_winfind = 1;
 			break;
@@ -1878,16 +1886,24 @@ int snapraid_main(int argc, char* argv[])
 		/* intercept signals while operating */
 		signal_init();
 
+#if HAVE_CHECKER
 		/* run a test command if required */
 		if (run != 0) {
-			ret = system(run); /* ignore error */
-			if (ret != 0) {
+			ret = system(run);
+			if (ret == -1) {
 				/* LCOV_EXCL_START */
-				log_fatal(errno, "Error executing command '%s'.\n", run);
+				log_fatal(errno, "Failed to run '%s'.\n", run);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EEXTERNAL, "Failed to run '%s' with return code %xh.\n", run, ret);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 		}
+#endif
 
 		/* waits some time to ensure that any concurrent modification done at the files, */
 		/* using the same mtime read by the scan process, will be read by sync. */
