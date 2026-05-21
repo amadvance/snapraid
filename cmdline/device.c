@@ -1006,7 +1006,7 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 	return 0;
 }
 
-void state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk)
+int state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk)
 {
 	tommy_node* i;
 	unsigned j;
@@ -1150,5 +1150,7 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 
 	tommy_list_foreach(&high, free);
 	tommy_list_foreach(&low, free);
+
+	return ret;
 }
 

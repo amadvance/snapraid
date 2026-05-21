@@ -1951,18 +1951,38 @@ int snapraid_main(int argc, char* argv[])
 
 		state_write(&state);
 	} else if (operation == OPERATION_SPINUP) {
-		state_device(&state, DEVICE_UP, &filterlist_disk);
+		ret = state_device(&state, DEVICE_UP, &filterlist_disk);
+#if HAVE_CHECKER
+		if (ret < 0)
+			ret = 0; /* ignore errors in test environment */
+#endif
 	} else if (operation == OPERATION_SPINDOWN) {
-		state_device(&state, DEVICE_DOWN, &filterlist_disk);
+		ret = state_device(&state, DEVICE_DOWN, &filterlist_disk);
+#if HAVE_CHECKER
+		if (ret < 0)
+			ret = 0; /* ignore errors in test environment */
+#endif
 	} else if (operation == OPERATION_DEVICES) {
-		state_device(&state, DEVICE_LIST, 0);
+		ret = state_device(&state, DEVICE_LIST, 0);
+#if HAVE_CHECKER
+		if (ret < 0)
+			ret = 0; /* ignore errors in test environment */
+#endif
 	} else if (operation == OPERATION_SMART) {
-		state_device(&state, DEVICE_SMART, 0);
+		ret = state_device(&state, DEVICE_SMART, 0);
+#if HAVE_CHECKER
+		if (ret < 0)
+			ret = 0; /* ignore errors in test environment */
+#endif
 	} else if (operation == OPERATION_PROBE) {
 		/* probe also the content file */
 		state_probe(&state);
 
-		state_device(&state, DEVICE_PROBE, 0);
+		ret = state_device(&state, DEVICE_PROBE, 0);
+#if HAVE_CHECKER
+		if (ret < 0)
+			ret = 0; /* ignore errors in test environment */
+#endif
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 
