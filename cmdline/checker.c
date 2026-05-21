@@ -5,4 +5,3 @@
 #define HAVE_CHECKER 1
 
 #include "snapraid.c"
-
