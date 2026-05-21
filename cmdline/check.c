@@ -173,6 +173,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	n = state->level;
 	error = 0;
 
+	/* if failures exceed parity level, recovery is impossible */
+	if (failed_count > n) {
+		log_tag("recover_strategy_error:%u: Impossible to recover from %u failures with %u parity\n",
+			pos, failed_count, n);
+		return -1;
+	}
+
 	/* setup vector of failed disk indexes */
 	for (i = 0; i < failed_count; ++i)
 		id[i] = failed[failed_map[i]].index;
