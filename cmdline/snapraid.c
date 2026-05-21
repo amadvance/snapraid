@@ -894,7 +894,7 @@ int parse_option_size(const char* arg, uint64_t* out_size)
 	char* e;
 
 	/* parse the number part */
-	data_off_t size = strtoul(arg, &e, 10);
+	uint64_t size = strtoull(arg, &e, 10);
 	if (e == arg)
 		return -1;
 
