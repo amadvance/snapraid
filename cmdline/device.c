@@ -531,8 +531,10 @@ static void state_smart_ignore(struct snapraid_state* state, devinfo_t* devinfo)
 {
 	/* clear attributes to ignore */
 	for (int i = 0; i < SMART_IGNORE_MAX; ++i) {
-		devinfo->smart[state->smartignore[i]].raw = SMART_UNASSIGNED;
-		devinfo->smart[devinfo->smartignore[i]].raw = SMART_UNASSIGNED;
+		if (state->smartignore[i] < 256)
+			devinfo->smart[state->smartignore[i]].raw = SMART_UNASSIGNED;
+		if (devinfo->smartignore[i] < 256)
+			devinfo->smart[devinfo->smartignore[i]].raw = SMART_UNASSIGNED;
 	}
 }
 

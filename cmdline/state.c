@@ -1267,7 +1267,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 				if (!e || *e) {
 					/* LCOV_EXCL_START */
-					log_fatal(EUSER, "Invalid 'smartignore' specification in '%s' at line %u\n", path, line);
+					log_fatal(EUSER, "Invalid 'smartignore' specification in '%s' at line %u. It should be a number.\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				if (smart[si] < 1 || smart[si] >= 256) {
+					/* LCOV_EXCL_START */
+					log_fatal(EUSER, "Invalid 'smartignore' specification in '%s' at line %u. It should be between 1 and 255.\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
