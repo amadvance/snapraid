@@ -110,6 +110,21 @@ static void exedir_init(void)
 	slash[1] = 0;
 }
 
+void os_default_conf(char* conf, size_t conf_size, const char* argv0)
+{
+	char* slash;
+
+	pathimport(conf, conf_size, argv0);
+
+	slash = strrchr(conf, '/');
+	if (slash) {
+		slash[1] = 0;
+		pathcat(conf, conf_size, PACKAGE ".conf");
+	} else {
+		pathcpy(conf, conf_size, PACKAGE ".conf");
+	}
+}
+
 void os_init(int opt)
 {
 	HMODULE ntdll, kernel32;

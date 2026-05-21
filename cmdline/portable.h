@@ -248,6 +248,11 @@
 /* os */
 
 /**
+ * Default paths.
+ */
+void os_default_conf(char* dst, size_t dst_size, const char* argv0);
+
+/**
  * Get the os_tick counter value.
  *
  * Note that the frequency is unspecified, because the time measure

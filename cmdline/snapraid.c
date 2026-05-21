@@ -594,38 +594,6 @@ void log_close(const char* file)
 }
 
 /****************************************************************************/
-/* config */
-
-void config(char* conf, size_t conf_size, const char* argv0)
-{
-#ifdef _WIN32
-	char* slash;
-
-	pathimport(conf, conf_size, argv0);
-
-	slash = strrchr(conf, '/');
-	if (slash) {
-		slash[1] = 0;
-		pathcat(conf, conf_size, PACKAGE ".conf");
-	} else {
-		pathcpy(conf, conf_size, PACKAGE ".conf");
-	}
-#else
-	(void)argv0;
-
-#ifdef SYSCONFDIR
-	/* if it exists, give precedence at sysconfdir, usually /usr/local/etc */
-	if (access(SYSCONFDIR "/" PACKAGE ".conf", F_OK) == 0) {
-		pathcpy(conf, conf_size, SYSCONFDIR "/" PACKAGE ".conf");
-	} else /* otherwise fallback to plain /etc */
-#endif
-	{
-		pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
-	}
-#endif
-}
-
-/****************************************************************************/
 /* main */
 
 /**
@@ -1008,7 +976,7 @@ int snapraid_main(int argc, char* argv[])
 	lock_init();
 
 	/* defaults */
-	config(conf, sizeof(conf), argv[0]);
+	os_default_conf(conf, sizeof(conf), argv[0]);
 	memset(&opt, 0, sizeof(opt));
 	opt.io_error_limit = 100;
 	blockstart = 0;

@@ -7,6 +7,20 @@
 
 #include "support.h"
 
+/****************************************************************************/
+/* access */
+
+#if !HAVE_EACCESS
+/**
+ * Check effective user's permissions for a file.
+ * Conceptually identical to access(), but uses the effective UID/GID.
+ */
+int eaccess(const char* pathname, int mode)
+{
+	return faccessat(AT_FDCWD, pathname, mode, AT_EACCESS);
+}
+#endif
+
 /**
  * Exit codes.
  */
@@ -126,7 +140,7 @@ const char* find_smartctl(void)
 	int i;
 
 	for (i = 0; smartctl_paths[i]; ++i) {
-		if (access(smartctl_paths[i], X_OK) == 0)
+		if (eaccess(smartctl_paths[i], X_OK) == 0)
 			return smartctl_paths[i];
 	}
 
@@ -1597,7 +1611,7 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
 
 		/* check if it's a real device */
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/device", major(device), minor(device));
-		if (access(path, F_OK) != 0) {
+		if (eaccess(path, F_OK) != 0) {
 			/* get the parent device */
 			pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/../dev", major(device), minor(device));
 
@@ -2434,6 +2448,21 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	return device_thread(low, func);
 }
 
+void os_default_conf(char* conf, size_t conf_size, const char* argv0)
+{
+	(void)argv0;
+
+#ifdef SYSCONFDIR
+	/* if it exists, give precedence at sysconfdir, usually /usr/local/etc */
+	if (eaccess(SYSCONFDIR "/" PACKAGE ".conf", F_OK) == 0) {
+		pathcpy(conf, conf_size, SYSCONFDIR "/" PACKAGE ".conf");
+	} else /* otherwise fallback to plain /etc */
+#endif
+	{
+		pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
+	}
+}
+
 void os_init(int opt)
 {
 #if HAVE_BLKID
@@ -2700,7 +2729,7 @@ int devmap(void)
 
 		/* verify it has a hardware device link (excludes virtual disks) */
 		pathprint(path, sizeof(path), "/sys/block/%s/device", dd->d_name);
-		if (access(path, F_OK) != 0)
+		if (eaccess(path, F_OK) != 0)
 			continue;
 
 		/* device/serial */

@@ -94,6 +94,7 @@ AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", CFLAGS="$CFLAGS -D_REENTRANT")
 AC_CHECK_FUNCS([pthread_create])
 AC_SEARCH_LIBS([exp], [m])
+AC_CHECK_FUNCS([eaccess faccessat])
 
 dnl Checks for statfs for linux avoiding to include sys/mount.h that is required only in darwin
 dnl In glibc since 7eae6a91e9b1670330c9f15730082c91c0b1d570, milestone 2.36, sys/mount.h defines fsconfig_command which conflicts with linux/mount.h
