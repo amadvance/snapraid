@@ -261,10 +261,6 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 						log_error(EDATA, "Try removing the file from the array and rerun the 'sync' command!\n");
 					}
 
-					/* block sync to allow a recovery before overwriting */
-					/* the parity needed to make such recovery */
-					*skip_sync = 1; /* avoid to run the next sync */
-
 					++silent_error;
 					continue;
 				}
@@ -288,7 +284,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			/* progress */
 			if (state_progress(state, 0, blockcur, countpos, countmax, countsize)) {
 				/* LCOV_EXCL_START */
-				*skip_sync = 1; /* avoid to run the next sync */
+				*skip_sync = 1; /* avoid to run the next sync due user interruption */
 				break;
 				/* LCOV_EXCL_STOP */
 			}
@@ -343,9 +339,6 @@ end:
 	goto finish;
 
 bail:
-	/* on bail, don't run the next sync */
-	*skip_sync = 1;
-
 	/* close files left open */
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_file* file = handle[j].file;
@@ -1527,7 +1520,8 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			++process_error;
-			/* continue, in case also doing the sync if ::skip_sync is not set */
+			/* on any error do NOT proceeed with the sync */
+			skip_sync = 1;
 			/* LCOV_EXCL_STOP */
 		}
 	}
