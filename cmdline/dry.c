@@ -167,7 +167,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	buffermax = diskmax + 2 * state->level;
 
 	/* initialize the io threads */
-	io_init(&io, state, state->opt.io_cache, buffermax, dry_data_reader, handle, diskmax, dry_parity_reader, 0, parity_handle, state->level);
+	io_init(&io, state, state->opt.io_cache, buffermax, handle, diskmax, 0, dry_data_reader, 0, parity_handle, state->level, 0, dry_parity_reader, 0);
 
 	/* possibly waiting disks */
 	waiting_mac = diskmax > RAID_PARITY_MAX ? diskmax : RAID_PARITY_MAX;

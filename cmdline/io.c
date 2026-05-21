@@ -911,15 +911,24 @@ static void io_stop_thread(struct snapraid_io* io)
 
 void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	unsigned io_cache, unsigned buffer_max,
-	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
+	const io_op_t* data_ops,
+	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
+	void (*data_writer)(struct snapraid_worker*, struct snapraid_task*),
+	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max,
+	const io_op_t* parity_ops,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
-	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
-	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
+	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*))
 {
 	unsigned i;
 	size_t allocated_size;
 	size_t block_size = state->block_size;
+	unsigned readers_count = 0;
+	unsigned writers_count = 0;
+	unsigned r_idx = 0;
+	unsigned w_idx = 0;
+	io_op_t data_op_default = IO_OP_NONE;
+	io_op_t parity_op_default = IO_OP_NONE;
 
 	io->state = state;
 
@@ -971,13 +980,38 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 
 	msg_progress("Using %u MiB of memory for %u cached blocks.\n", (unsigned)(allocated_size / MEBI), io->io_max);
 
-	if (parity_writer) {
-		io->reader_max = handle_max;
-		io->writer_max = parity_handle_max;
-	} else {
-		io->reader_max = handle_max + parity_handle_max;
-		io->writer_max = 0;
+	/* resolve implicit fallback directions if ops are NULL */
+	if (data_reader && !data_writer) {
+		data_op_default = IO_OP_READ;
 	}
+	if (!data_reader && data_writer) {
+		data_op_default = IO_OP_WRITE;
+	}
+	if (parity_reader && !parity_writer) {
+		parity_op_default = IO_OP_READ;
+	}
+	if (!parity_reader && parity_writer) {
+		parity_op_default = IO_OP_WRITE;
+	}
+
+	/* count reader and writer workers */
+	for (i = 0; i < handle_max; ++i) {
+		io_op_t op = data_ops ? data_ops[i] : data_op_default;
+		if (op == IO_OP_READ)
+			readers_count++;
+		if (op == IO_OP_WRITE)
+			writers_count++;
+	}
+	for (i = 0; i < parity_handle_max; ++i) {
+		io_op_t op = parity_ops ? parity_ops[i] : parity_op_default;
+		if (op == IO_OP_READ)
+			readers_count++;
+		if (op == IO_OP_WRITE)
+			writers_count++;
+	}
+
+	io->reader_max = readers_count;
+	io->writer_max = writers_count;
 
 	io->reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io->reader_max);
 	io->reader_list = malloc_nofail(sizeof(unsigned) * (io->reader_max + 1));
@@ -985,46 +1019,67 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	io->writer_list = malloc_nofail(sizeof(unsigned) * (io->writer_max + 1));
 
 	io->data_base = 0;
-	io->data_count = handle_max;
-	io->parity_base = handle_max;
-	io->parity_count = parity_handle_max;
+	io->data_count = 0;
+	for (i = 0; i < handle_max; ++i) {
+		io_op_t op = data_ops ? data_ops[i] : data_op_default;
+		if (op == IO_OP_READ)
+			io->data_count++;
+	}
 
-	for (i = 0; i < io->reader_max; ++i) {
-		struct snapraid_worker* worker = &io->reader_map[i];
+	io->parity_base = io->data_count;
+	io->parity_count = 0;
+	for (i = 0; i < parity_handle_max; ++i) {
+		io_op_t op = parity_ops ? parity_ops[i] : parity_op_default;
+		if (op == IO_OP_READ)
+			io->parity_count++;
+	}
 
-		worker->io = io;
-
-		if (i < handle_max) {
-			/* it's a data read */
+	/* configure reader map workers */
+	for (i = 0; i < handle_max; ++i) {
+		io_op_t op = data_ops ? data_ops[i] : data_op_default;
+		if (op == IO_OP_READ) {
+			struct snapraid_worker* worker = &io->reader_map[r_idx++];
+			worker->io = io;
 			worker->handle = &handle_map[i];
 			worker->parity_handle = 0;
 			worker->func = data_reader;
-
-			/* data read is put in lower buffer index */
-			worker->buffer_skew = 0;
-		} else {
-			/* it's a parity read */
+			worker->buffer_skew = i - (r_idx - 1);
+		}
+	}
+	for (i = 0; i < parity_handle_max; ++i) {
+		io_op_t op = parity_ops ? parity_ops[i] : parity_op_default;
+		if (op == IO_OP_READ) {
+			struct snapraid_worker* worker = &io->reader_map[r_idx++];
+			worker->io = io;
 			worker->handle = 0;
-			worker->parity_handle = &parity_handle_map[i - handle_max];
+			worker->parity_handle = &parity_handle_map[i];
 			worker->func = parity_reader;
-
-			/* parity read is put after data and computed parity */
-			worker->buffer_skew = parity_handle_max;
+			worker->buffer_skew = (handle_max + parity_handle_max + i) - (r_idx - 1);
 		}
 	}
 
-	for (i = 0; i < io->writer_max; ++i) {
-		struct snapraid_worker* worker = &io->writer_map[i];
-
-		worker->io = io;
-
-		/* it's a parity write */
-		worker->handle = 0;
-		worker->parity_handle = &parity_handle_map[i];
-		worker->func = parity_writer;
-
-		/* parity to write is put after data */
-		worker->buffer_skew = handle_max;
+	/* configure writer map workers */
+	for (i = 0; i < handle_max; ++i) {
+		io_op_t op = data_ops ? data_ops[i] : data_op_default;
+		if (op == IO_OP_WRITE) {
+			struct snapraid_worker* worker = &io->writer_map[w_idx++];
+			worker->io = io;
+			worker->handle = &handle_map[i];
+			worker->parity_handle = 0;
+			worker->func = data_writer;
+			worker->buffer_skew = i - (w_idx - 1);
+		}
+	}
+	for (i = 0; i < parity_handle_max; ++i) {
+		io_op_t op = parity_ops ? parity_ops[i] : parity_op_default;
+		if (op == IO_OP_WRITE) {
+			struct snapraid_worker* worker = &io->writer_map[w_idx++];
+			worker->io = io;
+			worker->handle = 0;
+			worker->parity_handle = &parity_handle_map[i];
+			worker->func = parity_writer;
+			worker->buffer_skew = (handle_max + i) - (w_idx - 1);
+		}
 	}
 
 #if HAVE_THREAD
