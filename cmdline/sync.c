@@ -729,6 +729,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	countsize = 0;
 	countpos = 0;
+	blockcur = blockstart;
 
 	msg_progress("Syncing...\n");
 

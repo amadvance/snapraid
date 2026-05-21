@@ -303,6 +303,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	countsize = 0;
 	countpos = 0;
+	blockcur = blockstart;
 
 	msg_progress("Scrubbing...\n");
 

@@ -184,6 +184,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	countmax = blockmax - blockstart;
 	countsize = 0;
 	countpos = 0;
+	blockcur = blockstart;
 
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, 0);
