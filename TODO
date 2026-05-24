@@ -5,6 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* If UUID is unsupported, return a fake one ? This will allow to
+  differentiate between the empty one with the case of access to a
+  disk skipped.
+
 * Integration with MergeFS ?
 
 * Evaluate use of syscall getdents64() instead of readdir(): https://linux.die.net/man/2/getdents64
