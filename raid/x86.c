@@ -208,9 +208,20 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[l][i]));
-		for (d = l - 1; d >= 0; --d) {
-			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (v[d][i]));
+        
+		for (d = l - 1; d >= 1; d -= 2) {
+			asm volatile (
+				"vmovdqa64 %0,%%zmm1\n\t"
+				"vpternlogq $0x96,%1,%%zmm1,%%zmm0"
+				:
+				: "m" (v[d][i]), "m" (v[d-1][i])
+			);
 		}
+        
+		if (d == 0) {
+			asm volatile ("vpxorq %0, %%zmm0,%%zmm0" : : "m" (v[0][i]));
+		}
+
 		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
 	}
 
