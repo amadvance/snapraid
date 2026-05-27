@@ -31,6 +31,15 @@ static int ipow(int n, int r)
 	return v;
 }
 
+static void meminc(void *dst, size_t size)
+{
+	size_t i;
+	unsigned char *p = dst;
+
+	for (i = 0; i < size; ++i)
+		++p[i];
+}
+
 int raid_test_combo(void)
 {
 	int r;
@@ -132,10 +141,11 @@ int raid_test_sort(void)
 	return 0;
 }
 
+#define test_setup(i) f[i - 1][nf[i - 1]++]
+
 int raid_test_rec(int mode, int nd, size_t size)
 {
-	void (*f[RAID_PARITY_MAX][128])(
-		int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
+	void (*f[RAID_PARITY_MAX][32])(int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
 	void **data;
@@ -183,91 +193,94 @@ int raid_test_rec(int mode, int nd, size_t size)
 	/* fill with pseudo-random data with the arbitrary seed "1" */
 	raid_mrand_vector(1, nd, size, v);
 
-	/* setup recov functions */
-	for (i = 0; i < np; ++i) {
+	/* counters of functions for each parity level */
+	for (i = 0; i < np; ++i)
 		nf[i] = 0;
-		if (i == 0) {
-			f[i][nf[i]++] = raid_rec1_int8;
+
+	/* setup recov functions */
+	for (i = 1; i <= np; ++i) {
+		if (i == 1) {
+			test_setup(i) = raid_rec1_int8;
 #ifdef CONFIG_X86
 #ifdef CONFIG_SSSE3
 			if (raid_cpu_has_ssse3())
-				f[i][nf[i]++] = raid_rec1_ssse3;
+				test_setup(i) = raid_rec1_ssse3;
 #endif
 #ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
-				f[i][nf[i]++] = raid_rec1_avx2;
+				test_setup(i) = raid_rec1_avx2;
 #endif
 #endif
 #ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
-				f[i][nf[i]++] = raid_rec1_avx512bw;
+				test_setup(i) = raid_rec1_avx512bw;
 #endif
 #endif
 #ifdef USE_RAID_AES
 #ifdef CONFIG_AVX2GFNI
 			if (raid_cpu_has_avx2gfni())
-				f[i][nf[i]++] = raid_rec1_avx2gfni;
+				test_setup(i) = raid_rec1_avx2gfni;
 #endif
 #ifdef CONFIG_AVX512GFNI
 			if (raid_cpu_has_avx512gfni())
-				f[i][nf[i]++] = raid_rec1_avx512gfni;
+				test_setup(i) = raid_rec1_avx512gfni;
 #endif
 #endif
-		} else if (i == 1) {
-			f[i][nf[i]++] = raid_rec2_int8;
+		} else if (i == 2) {
+			test_setup(i) = raid_rec2_int8;
 #ifdef CONFIG_X86
 #ifdef CONFIG_SSSE3
 			if (raid_cpu_has_ssse3())
-				f[i][nf[i]++] = raid_rec2_ssse3;
+				test_setup(i) = raid_rec2_ssse3;
 #endif
 #ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
-				f[i][nf[i]++] = raid_rec2_avx2;
+				test_setup(i) = raid_rec2_avx2;
 #endif
 #endif
 #ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
-				f[i][nf[i]++] = raid_rec2_avx512bw;
+				test_setup(i) = raid_rec2_avx512bw;
 #endif
 #endif
 #ifdef USE_RAID_AES
 #ifdef CONFIG_AVX2GFNI
 			if (raid_cpu_has_avx2gfni())
-				f[i][nf[i]++] = raid_rec2_avx2gfni;
+				test_setup(i) = raid_rec2_avx2gfni;
 #endif
 #ifdef CONFIG_AVX512GFNI
 			if (raid_cpu_has_avx512gfni())
-				f[i][nf[i]++] = raid_rec2_avx512gfni;
+				test_setup(i) = raid_rec2_avx512gfni;
 #endif
 #endif
 		} else {
-			f[i][nf[i]++] = raid_recX_int8;
+			test_setup(i) = raid_recX_int8;
 #ifdef CONFIG_X86
 #ifdef CONFIG_SSSE3
 			if (raid_cpu_has_ssse3())
-				f[i][nf[i]++] = raid_recX_ssse3;
+				test_setup(i) = raid_recX_ssse3;
 #endif
 #ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
-				f[i][nf[i]++] = raid_recX_avx2;
+				test_setup(i) = raid_recX_avx2;
 #endif
 #endif
 #ifdef CONFIG_X86_64
 #ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
-				f[i][nf[i]++] = raid_recX_avx512bw;
+				test_setup(i) = raid_recX_avx512bw;
 #endif
 #endif
 #ifdef USE_RAID_AES
 #ifdef CONFIG_AVX2GFNI
 			if (raid_cpu_has_avx2gfni())
-				f[i][nf[i]++] = raid_recX_avx2gfni;
+				test_setup(i) = raid_recX_avx2gfni;
 #endif
 #ifdef CONFIG_AVX512GFNI
 			if (raid_cpu_has_avx512gfni())
-				f[i][nf[i]++] = raid_recX_avx512gfni;
+				test_setup(i) = raid_recX_avx512gfni;
 #endif
 #endif
 		}
@@ -337,12 +350,12 @@ bail:
 
 int raid_test_par(int mode, int nd, size_t size)
 {
-	void (*f[128])(int nd, size_t size, void **vbuf);
+	void (*f[RAID_PARITY_MAX][32])(int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
 	int nv;
-	int i, j;
-	int nf;
+	int i, j, k;
+	int nf[RAID_PARITY_MAX];
 	int np;
 
 	raid_mode(mode);
@@ -377,72 +390,74 @@ int raid_test_par(int mode, int nd, size_t size)
 	for (i = 0; i < np; ++i)
 		memcpy(v[nd + np + i], v[nd + i], size);
 
-	/* load all the available functions */
-	nf = 0;
+	/* counters of functions for each parity level */
+	for (i = 0; i < np; ++i)
+		nf[i] = 0;
 
-	f[nf++] = raid_gen1_int32;
-	f[nf++] = raid_gen1_int64;
-	f[nf++] = raid_gen2_int32;
-	f[nf++] = raid_gen2_int64;
+	/* setup all the available functions */
+	test_setup(1) = raid_gen1_int32;
+	test_setup(1) = raid_gen1_int64;
+	test_setup(2) = raid_gen2_int32;
+	test_setup(2) = raid_gen2_int64;
 
 #ifdef CONFIG_X86
 #ifdef CONFIG_SSE2
 	if (raid_cpu_has_sse2()) {
-		f[nf++] = raid_gen1_sse2;
-		f[nf++] = raid_gen2_sse2;
+		test_setup(1) = raid_gen1_sse2;
+		test_setup(2) = raid_gen2_sse2;
 #ifdef CONFIG_X86_64
-		f[nf++] = raid_gen2_sse2ext;
+		test_setup(2) = raid_gen2_sse2ext;
 #endif
 	}
 #endif
 
 #ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
-		f[nf++] = raid_gen1_avx2;
-		f[nf++] = raid_gen2_avx2;
+		test_setup(1) = raid_gen1_avx2;
+		test_setup(2) = raid_gen2_avx2;
 	}
 #endif
 
 #ifdef CONFIG_AVX512BW
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512bw()) {
-		f[nf++] = raid_gen1_avx512bw;
-		f[nf++] = raid_gen2_avx512bw;
+		test_setup(1) = raid_gen1_avx512bw;
+		test_setup(2) = raid_gen2_avx512bw;
 	}
 #endif
 #endif
 #ifdef USE_RAID_AES
 #ifdef CONFIG_AVX2GFNI
 	if (raid_cpu_has_avx2gfni()) {
-		f[nf++] = raid_gen2_avx2gfni;
+		test_setup(2) = raid_gen2_avx2gfni;
 	}
 #endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
-		f[nf++] = raid_gen2_avx512gfni;
+		test_setup(2) = raid_gen2_avx512gfni;
 	}
 #endif
 #endif
 #endif /* CONFIG_X86 */
 
 	if (mode == RAID_MODE_CAUCHY) {
-		f[nf++] = raid_gen3_int8;
-		f[nf++] = raid_gen4_int8;
-		f[nf++] = raid_gen5_int8;
-		f[nf++] = raid_gen6_int8;
+		test_setup(3) = raid_gen3_int8;
+		test_setup(4) = raid_gen4_int8;
+		test_setup(5) = raid_gen5_int8;
+		test_setup(6) = raid_gen6_int8;
 
 #ifdef CONFIG_X86
 #ifdef CONFIG_SSSE3
 		if (raid_cpu_has_ssse3()) {
-			f[nf++] = raid_gen3_ssse3;
-			f[nf++] = raid_gen4_ssse3;
-			f[nf++] = raid_gen5_ssse3;
-			f[nf++] = raid_gen6_ssse3;
+			test_setup(3) = raid_gen3_ssse3;
+			test_setup(4) = raid_gen4_ssse3;
+			test_setup(5) = raid_gen5_ssse3;
+			test_setup(6) = raid_gen6_ssse3;
 #ifdef CONFIG_X86_64
-			f[nf++] = raid_gen3_ssse3ext;
-			f[nf++] = raid_gen4_ssse3ext;
-			f[nf++] = raid_gen5_ssse3ext;
-			f[nf++] = raid_gen6_ssse3ext;
+			test_setup(3) = raid_gen3_ssse3ext;
+			test_setup(4) = raid_gen4_ssse3ext;
+			test_setup(5) = raid_gen5_ssse3ext;
+			test_setup(6) = raid_gen6_ssse3ext;
 #endif
 		}
 #endif
@@ -450,10 +465,10 @@ int raid_test_par(int mode, int nd, size_t size)
 #ifdef CONFIG_AVX2
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx2()) {
-			f[nf++] = raid_gen3_avx2ext;
-			f[nf++] = raid_gen4_avx2ext;
-			f[nf++] = raid_gen5_avx2ext;
-			f[nf++] = raid_gen6_avx2ext;
+			test_setup(3) = raid_gen3_avx2ext;
+			test_setup(4) = raid_gen4_avx2ext;
+			test_setup(5) = raid_gen5_avx2ext;
+			test_setup(6) = raid_gen6_avx2ext;
 		}
 #endif
 #endif
@@ -461,43 +476,43 @@ int raid_test_par(int mode, int nd, size_t size)
 #ifdef CONFIG_AVX512BW
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx512bw()) {
-			f[nf++] = raid_gen3_avx512bw;
-			f[nf++] = raid_gen4_avx512bw;
-			f[nf++] = raid_gen5_avx512bw;
-			f[nf++] = raid_gen6_avx512bw;
+			test_setup(3) = raid_gen3_avx512bw;
+			test_setup(4) = raid_gen4_avx512bw;
+			test_setup(5) = raid_gen5_avx512bw;
+			test_setup(6) = raid_gen6_avx512bw;
 		}
 #endif
 #endif
 #ifdef USE_RAID_AES
 #ifdef CONFIG_AVX2GFNI
 		if (raid_cpu_has_avx2gfni()) {
-			f[nf++] = raid_gen3_avx2gfni;
-			f[nf++] = raid_gen4_avx2gfni;
-			f[nf++] = raid_gen5_avx2gfni;
-			f[nf++] = raid_gen6_avx2gfni;
+			test_setup(3) = raid_gen3_avx2gfni;
+			test_setup(4) = raid_gen4_avx2gfni;
+			test_setup(5) = raid_gen5_avx2gfni;
+			test_setup(6) = raid_gen6_avx2gfni;
 		}
 #endif
 #ifdef CONFIG_AVX512GFNI
 		if (raid_cpu_has_avx512gfni()) {
-			f[nf++] = raid_gen3_avx512gfni;
-			f[nf++] = raid_gen4_avx512gfni;
-			f[nf++] = raid_gen5_avx512gfni;
-			f[nf++] = raid_gen6_avx512gfni;
+			test_setup(3) = raid_gen3_avx512gfni;
+			test_setup(4) = raid_gen4_avx512gfni;
+			test_setup(5) = raid_gen5_avx512gfni;
+			test_setup(6) = raid_gen6_avx512gfni;
 		}
 #endif
 #endif
 
 #endif /* CONFIG_X86 */
 	} else {
-		f[nf++] = raid_genz_int32;
-		f[nf++] = raid_genz_int64;
+		test_setup(3) = raid_genz_int32;
+		test_setup(3) = raid_genz_int64;
 
 #ifdef CONFIG_X86
 #ifdef CONFIG_SSE2
 		if (raid_cpu_has_sse2()) {
-			f[nf++] = raid_genz_sse2;
+			test_setup(3) = raid_genz_sse2;
 #ifdef CONFIG_X86_64
-			f[nf++] = raid_genz_sse2ext;
+			test_setup(3) = raid_genz_sse2ext;
 #endif
 		}
 #endif
@@ -505,23 +520,29 @@ int raid_test_par(int mode, int nd, size_t size)
 #ifdef CONFIG_AVX2
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx2())
-			f[nf++] = raid_genz_avx2ext;
+			test_setup(3) = raid_genz_avx2ext;
 #endif
 #endif
 #endif /* CONFIG_X86 */
 	}
 
 	/* check all the functions */
-	for (j = 0; j < nf; ++j) {
-		/* compute parity */
-		f[j](nd, size, v);
+	for (k = 0; k < np; ++k) {
+		for (j = 0; j < nf[k]; ++j) {
+			/* change the buffers incrementing all values */
+			for (i = 0; i <= k; ++i)
+				meminc(v[nd + i], size);
 
-		/* check it */
-		for (i = 0; i < np; ++i) {
-			if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {
-				/* LCOV_EXCL_START */
-				goto bail;
-				/* LCOV_EXCL_STOP */
+			/* compute parity */
+			f[k][j](nd, size, v);
+
+			/* check it */
+			for (i = 0; i < np; ++i) {
+				if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {
+					/* LCOV_EXCL_START */
+					goto bail;
+					/* LCOV_EXCL_STOP */
+				}
 			}
 		}
 	}
@@ -537,4 +558,3 @@ bail:
 	return -1;
 	/* LCOV_EXCL_STOP */
 }
-
