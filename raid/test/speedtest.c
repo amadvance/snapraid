@@ -137,8 +137,15 @@ void speed(void)
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx2e");
+#ifdef CONFIG_AVX512BW
 	printf("%8s", "avx512");
+#endif
+#ifdef CONFIG_AVX2GFNI
+	printf("%8s", "gfni");
+#endif
+#ifdef CONFIG_AVX512GFNI
 	printf("%8s", "gfni512");
+#endif
 #endif
 #endif
 	printf("\n");
@@ -272,6 +279,16 @@ void speed(void)
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen2_avx512bw(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen2_avx2gfni(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -423,6 +440,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen3_avx2gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
@@ -502,6 +529,16 @@ void speed(void)
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
 			raid_gen4_avx512bw(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen4_avx2gfni(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -593,6 +630,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen5_avx2gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
@@ -678,6 +725,16 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen6_avx2gfni(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
@@ -702,8 +759,15 @@ void speed(void)
 	printf("%8s", "ssse3");
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
+#ifdef CONFIG_AVX512BW
 	printf("%8s", "avx512");
+#endif
+#ifdef CONFIG_AVX2GFNI
+	printf("%8s", "gfni");
+#endif
+#ifdef CONFIG_AVX512GFNI
 	printf("%8s", "gfni512");
+#endif
 #endif
 #endif
 	printf("\n");
@@ -753,6 +817,18 @@ void speed(void)
 			raid_gen_force(1, raid_gen1_avx512bw);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_avx512bw(1, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen_force(1, raid_gen1_avx2);
+			/* +1 to avoid GEN1 optimized case */
+			raid_rec1_avx2gfni(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -828,6 +904,18 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen_force(2, raid_gen2_avx2gfni);
+			/* +1 to avoid GEN2 optimized case */
+			raid_rec2_avx2gfni(2, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
@@ -887,6 +975,17 @@ void speed(void)
 		SPEED_START {
 			raid_gen_force(3, raid_gen3_avx512bw);
 			raid_recX_avx512bw(3, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen_force(3, raid_gen3_avx2gfni);
+			raid_recX_avx2gfni(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -961,6 +1060,17 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen_force(4, raid_gen4_avx2gfni);
+			raid_recX_avx2gfni(4, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
@@ -1023,6 +1133,17 @@ void speed(void)
 		SPEED_START {
 			raid_gen_force(5, raid_gen5_avx512bw);
 			raid_recX_avx512bw(5, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen_force(5, raid_gen5_avx2gfni);
+			raid_recX_avx2gfni(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -1097,6 +1218,17 @@ void speed(void)
 		fflush(stdout);
 	}
 #endif
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		SPEED_START {
+			raid_gen_force(6, raid_gen6_avx2gfni);
+			raid_recX_avx2gfni(6, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
@@ -1130,6 +1262,12 @@ int main(void)
 		printf("Including x86 AVX2\n");
 	if (raid_cpu_has_avx512bw())
 		printf("Including x86 AVX512BW\n");
+	if (raid_cpu_has_avx2gfni())
+#ifdef USE_RAID_AES
+		printf("Including x86 AVX2GFNI\n");
+#else
+		printf("Including x86 AVX2GFNI (Performance reference only. Polynomial mismatch prevents use)\n");
+#endif
 	if (raid_cpu_has_avx512gfni())
 #ifdef USE_RAID_AES
 		printf("Including x86 AVX512GFNI\n");
