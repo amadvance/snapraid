@@ -398,7 +398,7 @@ uint32_t CRC32C_3[256] = {
 	0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842
 };
 
-#if HAVE_SSE42
+#if CONFIG_X86
 int crc_x86;
 #endif
 
@@ -413,7 +413,7 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 	return crc;
 }
 
-#if HAVE_SSE42
+#if CONFIG_X86
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 	crc ^= CRC_IV;
@@ -431,7 +431,7 @@ uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
 void crc32c_init(void)
 {
 	crc32c = crc32c_gen;
-#if HAVE_SSE42
+#if CONFIG_X86
 	if (raid_cpu_has_crc32()) {
 		crc_x86 = 1;
 		crc32c = crc32c_x86;
