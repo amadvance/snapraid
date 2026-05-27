@@ -37,6 +37,7 @@ int main(void)
 		printf("Including x86 SSSE3\n");
 	if (raid_cpu_has_avx2())
 		printf("Including x86 AVX2\n");
+#ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512bw())
 		printf("Including x86 AVX512BW\n");
 	if (raid_cpu_has_avx2gfni())
@@ -52,8 +53,6 @@ int main(void)
 		printf("Excluding x86 AVX512GFNI due polynomial mismatch\n");
 #endif
 #endif
-#ifdef CONFIG_X86_64
-	printf("Including x64 extended SSE register set\n");
 #endif
 
 	printf("\nPlease wait about 60 seconds...\n\n");

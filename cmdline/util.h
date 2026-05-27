@@ -62,7 +62,7 @@ extern uint32_t CRC32C_3[256];
 /**
  * If the CPU support the CRC instructions.
  */
-#if HAVE_SSE42
+#if CONFIG_X86
 extern int crc_x86;
 #endif
 
@@ -71,7 +71,7 @@ extern int crc_x86;
  */
 static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)
 {
-#if HAVE_SSE42
+#if CONFIG_X86
 	if (tommy_likely(crc_x86)) {
 		asm ("crc32b %1, %0\n" : "+r" (crc) : "m" (c));
 		return crc;
@@ -104,7 +104,7 @@ static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, 
 /**
  * Compute the CRC-32 (Castagnoli) without the IV.
  */
-#if HAVE_SSE42
+#if CONFIG_X86
 static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 #ifdef CONFIG_X86_64
@@ -137,7 +137,7 @@ static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, 
  */
 static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
-#if HAVE_SSE42
+#if CONFIG_X86
 	if (tommy_likely(crc_x86)) {
 		return crc32c_x86_plain(crc, ptr, size);
 	}
