@@ -39,6 +39,12 @@ int main(void)
 		printf("Including x86 AVX2\n");
 	if (raid_cpu_has_avx512bw())
 		printf("Including x86 AVX512BW\n");
+	if (raid_cpu_has_avx2gfni())
+#ifdef USE_RAID_AES
+		printf("Including x86 AVX2GFNI\n");
+#else
+		printf("Excluding x86 AVX2GFNI due polynomial mismatch\n");
+#endif
 	if (raid_cpu_has_avx512gfni())
 #ifdef USE_RAID_AES
 		printf("Including x86 AVX512GFNI\n");
@@ -73,18 +79,13 @@ int main(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	printf("Test Cauchy parity generation with %u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_par(RAID_MODE_CAUCHY, RAID_DATA_MAX, TEST_SIZE) != 0) {
-		/* LCOV_EXCL_START */
-		goto bail;
-		/* LCOV_EXCL_STOP */
-	}
-
-	printf("Test Cauchy parity generation with 1 data disk...\n");
-	if (raid_test_par(RAID_MODE_CAUCHY, 1, TEST_SIZE) != 0) {
-		/* LCOV_EXCL_START */
-		goto bail;
-		/* LCOV_EXCL_STOP */
+	printf("Test Cauchy parity generation with 1-%u data disks...\n", RAID_DATA_MAX);
+	for (int i = 1; i <= RAID_DATA_MAX; ++i) {
+		if (raid_test_par(RAID_MODE_CAUCHY, i, TEST_SIZE) != 0) {
+			/* LCOV_EXCL_START */
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	printf("Test Cauchy recovering with all combinations of %u data and 6 parity blocks...\n", TEST_COUNT);
