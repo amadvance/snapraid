@@ -48,6 +48,9 @@
 #if HAVE_AVX512GFNI
 #define CONFIG_AVX512GFNI 1
 #endif
+#if HAVE_AVX2GFNI
+#define CONFIG_AVX2GFNI 1
+#endif
 
 #else /* if HAVE_CONFIG_H is not defined */
 
@@ -71,6 +74,7 @@
 #ifdef CONFIG_X86_64
 #define CONFIG_AVX512BW 1
 #define CONFIG_AVX512GFNI 1
+#define CONFIG_AVX2GFNI 1
 #endif
 #endif
 
@@ -140,6 +144,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv);
 void raid_gen2_avx2(int nd, size_t size, void **vv);
 void raid_gen2_sse2ext(int nd, size_t size, void **vv);
 void raid_gen2_avx512bw(int nd, size_t size, void **vv);
+void raid_gen2_avx2gfni(int nd, size_t size, void **vv);
 void raid_gen2_avx512gfni(int nd, size_t size, void **vv);
 void raid_genz_int32(int nd, size_t size, void **vv);
 void raid_genz_int64(int nd, size_t size, void **vv);
@@ -151,24 +156,28 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv);
 void raid_gen3_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen3_avx2ext(int nd, size_t size, void **vv);
 void raid_gen3_avx512bw(int nd, size_t size, void **vv);
+void raid_gen3_avx2gfni(int nd, size_t size, void **vv);
 void raid_gen3_avx512gfni(int nd, size_t size, void **vv);
 void raid_gen4_int8(int nd, size_t size, void **vv);
 void raid_gen4_ssse3(int nd, size_t size, void **vv);
 void raid_gen4_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen4_avx2ext(int nd, size_t size, void **vv);
 void raid_gen4_avx512bw(int nd, size_t size, void **vv);
+void raid_gen4_avx2gfni(int nd, size_t size, void **vv);
 void raid_gen4_avx512gfni(int nd, size_t size, void **vv);
 void raid_gen5_int8(int nd, size_t size, void **vv);
 void raid_gen5_ssse3(int nd, size_t size, void **vv);
 void raid_gen5_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen5_avx2ext(int nd, size_t size, void **vv);
 void raid_gen5_avx512bw(int nd, size_t size, void **vv);
+void raid_gen5_avx2gfni(int nd, size_t size, void **vv);
 void raid_gen5_avx512gfni(int nd, size_t size, void **vv);
 void raid_gen6_int8(int nd, size_t size, void **vv);
 void raid_gen6_ssse3(int nd, size_t size, void **vv);
 void raid_gen6_ssse3ext(int nd, size_t size, void **vv);
 void raid_gen6_avx2ext(int nd, size_t size, void **vv);
 void raid_gen6_avx512bw(int nd, size_t size, void **vv);
+void raid_gen6_avx2gfni(int nd, size_t size, void **vv);
 void raid_gen6_avx512gfni(int nd, size_t size, void **vv);
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -182,6 +191,9 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec1_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec1_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -288,6 +300,7 @@ void raid_register_x86(void);
 /**
  * Register all the functions based on GFNI intructions.
  */
+void raid_register_avx2gfni(void);
 void raid_register_avx512gfni(void);
 
 /*

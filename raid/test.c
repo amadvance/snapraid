@@ -134,7 +134,7 @@ int raid_test_sort(void)
 
 int raid_test_rec(int mode, int nd, size_t size)
 {
-	void (*f[RAID_PARITY_MAX][4])(
+	void (*f[RAID_PARITY_MAX][128])(
 		int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
@@ -204,6 +204,16 @@ int raid_test_rec(int mode, int nd, size_t size)
 				f[i][nf[i]++] = raid_rec1_avx512bw;
 #endif
 #endif
+#ifdef USE_RAID_AES
+#ifdef CONFIG_AVX2GFNI
+			if (raid_cpu_has_avx2gfni())
+				f[i][nf[i]++] = raid_rec1_avx2gfni;
+#endif
+#ifdef CONFIG_AVX512GFNI
+			if (raid_cpu_has_avx512gfni())
+				f[i][nf[i]++] = raid_rec1_avx512gfni;
+#endif
+#endif
 		} else if (i == 1) {
 			f[i][nf[i]++] = raid_rec2_int8;
 #ifdef CONFIG_X86
@@ -222,6 +232,16 @@ int raid_test_rec(int mode, int nd, size_t size)
 				f[i][nf[i]++] = raid_rec2_avx512bw;
 #endif
 #endif
+#ifdef USE_RAID_AES
+#ifdef CONFIG_AVX2GFNI
+			if (raid_cpu_has_avx2gfni())
+				f[i][nf[i]++] = raid_rec2_avx2gfni;
+#endif
+#ifdef CONFIG_AVX512GFNI
+			if (raid_cpu_has_avx512gfni())
+				f[i][nf[i]++] = raid_rec2_avx512gfni;
+#endif
+#endif
 		} else {
 			f[i][nf[i]++] = raid_recX_int8;
 #ifdef CONFIG_X86
@@ -238,6 +258,16 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
 				f[i][nf[i]++] = raid_recX_avx512bw;
+#endif
+#endif
+#ifdef USE_RAID_AES
+#ifdef CONFIG_AVX2GFNI
+			if (raid_cpu_has_avx2gfni())
+				f[i][nf[i]++] = raid_recX_avx2gfni;
+#endif
+#ifdef CONFIG_AVX512GFNI
+			if (raid_cpu_has_avx512gfni())
+				f[i][nf[i]++] = raid_recX_avx512gfni;
 #endif
 #endif
 		}
@@ -307,7 +337,7 @@ bail:
 
 int raid_test_par(int mode, int nd, size_t size)
 {
-	void (*f[64])(int nd, size_t size, void **vbuf);
+	void (*f[128])(int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
 	int nv;
@@ -381,6 +411,18 @@ int raid_test_par(int mode, int nd, size_t size)
 	}
 #endif
 #endif
+#ifdef USE_RAID_AES
+#ifdef CONFIG_AVX2GFNI
+	if (raid_cpu_has_avx2gfni()) {
+		f[nf++] = raid_gen2_avx2gfni;
+	}
+#endif
+#ifdef CONFIG_AVX512GFNI
+	if (raid_cpu_has_avx512gfni()) {
+		f[nf++] = raid_gen2_avx512gfni;
+	}
+#endif
+#endif
 #endif /* CONFIG_X86 */
 
 	if (mode == RAID_MODE_CAUCHY) {
@@ -423,6 +465,24 @@ int raid_test_par(int mode, int nd, size_t size)
 			f[nf++] = raid_gen4_avx512bw;
 			f[nf++] = raid_gen5_avx512bw;
 			f[nf++] = raid_gen6_avx512bw;
+		}
+#endif
+#endif
+#ifdef USE_RAID_AES
+#ifdef CONFIG_AVX2GFNI
+		if (raid_cpu_has_avx2gfni()) {
+			f[nf++] = raid_gen3_avx2gfni;
+			f[nf++] = raid_gen4_avx2gfni;
+			f[nf++] = raid_gen5_avx2gfni;
+			f[nf++] = raid_gen6_avx2gfni;
+		}
+#endif
+#ifdef CONFIG_AVX512GFNI
+		if (raid_cpu_has_avx512gfni()) {
+			f[nf++] = raid_gen3_avx512gfni;
+			f[nf++] = raid_gen4_avx512gfni;
+			f[nf++] = raid_gen5_avx512gfni;
+			f[nf++] = raid_gen6_avx512gfni;
 		}
 #endif
 #endif
