@@ -79,7 +79,7 @@ void speed(int period, int nd, int size)
 	else
 		size *= KIBI;
 	if (period < 1)
-		period = 1;
+		period = 1000;
 
 	delta = period >= 1000 ? 10 : 1;
 
