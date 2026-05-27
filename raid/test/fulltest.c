@@ -32,15 +32,19 @@ int main(void)
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2())
-		printf("Including x86 SSE2 functions\n");
+		printf("Including x86 SSE2\n");
 	if (raid_cpu_has_ssse3())
-		printf("Including x86 SSSE3 functions\n");
+		printf("Including x86 SSSE3\n");
 	if (raid_cpu_has_avx2())
-		printf("Including x86 AVX2 functions\n");
+		printf("Including x86 AVX2\n");
 	if (raid_cpu_has_avx512bw())
-		printf("Including x86 AVX512BW functions\n");
+		printf("Including x86 AVX512BW\n");
 	if (raid_cpu_has_avx512gfni())
-		printf("Including x86 AVX512GFNI functions\n");
+#ifdef USE_RAID_AES
+		printf("Including x86 AVX512GFNI\n");
+#else
+		printf("Excluding x86 AVX512GFNI due polynomial mismatch\n");
+#endif
 #endif
 #ifdef CONFIG_X86_64
 	printf("Including x64 extended SSE register set\n");
