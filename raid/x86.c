@@ -5,6 +5,8 @@
 #include "gf.h"
 #include "cpu.h"
 
+#ifdef CONFIG_X86
+
 /* ================================================================
  * Optimizations notes
  * ================================================================
@@ -118,7 +120,6 @@
  *   Q = Q ^ D_0;
  */
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 /*
  * GEN1 (RAID5 with xor) SSE2 implementation
  */
@@ -153,9 +154,7 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_AVX2)
 /*
  * GEN1 (RAID5 with xor) AVX2 implementation
  */
@@ -184,9 +183,8 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * GEN1 (RAID5 with xor) AVX512BW implementation
  *
@@ -229,7 +227,6 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 static const struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
@@ -243,9 +240,7 @@ static const struct gfconst16 {
 		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
 	},
 };
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 /*
  * GEN2 (RAID6 with powers of 2) SSE2 implementation
  */
@@ -299,9 +294,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_AVX2)
 /*
  * GEN2 (RAID6 with powers of 2) AVX2 implementation
  */
@@ -353,9 +346,8 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * GEN2 (RAID6 with powers of 2) AVX512BW implementation
  */
@@ -399,7 +391,7 @@ void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_SSE2)
+#ifdef CONFIG_X86_64
 /*
  * GEN2 (RAID6 with powers of 2) SSE2 implementation
  *
@@ -480,7 +472,6 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
  */
@@ -575,9 +566,8 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_SSSE3)
+#ifdef CONFIG_X86_64
 /*
  * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
  *
@@ -718,7 +708,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2)
+#ifdef CONFIG_X86_64
 /*
  * GEN3 (triple parity with Cauchy matrix) AVX2 implementation
  *
@@ -851,7 +841,7 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * GEN3 (triple parity with Cauchy matrix) AVX512BW implementation
  */
@@ -947,7 +937,6 @@ void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
  */
@@ -1061,9 +1050,8 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_SSSE3)
+#ifdef CONFIG_X86_64
 /*
  * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
  *
@@ -1236,7 +1224,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2)
+#ifdef CONFIG_X86_64
 /*
  * GEN4 (quad parity with Cauchy matrix) AVX2 implementation
  *
@@ -1397,7 +1385,7 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * GEN4 (quad parity with Cauchy matrix) AVX512BW implementation
  */
@@ -1510,7 +1498,6 @@ void raid_gen4_avx512bw(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
  */
@@ -1645,9 +1632,8 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_SSSE3)
+#ifdef CONFIG_X86_64
 /*
  * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
  *
@@ -1780,7 +1766,7 @@ void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2)
+#ifdef CONFIG_X86_64
 /*
  * GEN5 (penta parity with Cauchy matrix) AVX2 implementation
  *
@@ -1910,7 +1896,7 @@ void raid_gen5_avx2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * GEN5 (penta parity with Cauchy matrix) AVX512BW implementation
  */
@@ -2040,7 +2026,6 @@ void raid_gen5_avx512bw(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
  */
@@ -2196,9 +2181,8 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_SSSE3)
+#ifdef CONFIG_X86_64
 /*
  * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
  *
@@ -2348,7 +2332,7 @@ void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2)
+#ifdef CONFIG_X86_64
 /*
  * GEN6 (hexa parity with Cauchy matrix) AVX2 implementation
  *
@@ -2506,7 +2490,7 @@ void raid_gen6_avx2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * GEN6 (hexa parity with Cauchy matrix) AVX512BW implementation
  */
@@ -2665,7 +2649,6 @@ void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * RAID recovering for one disk SSSE3 implementation
  */
@@ -2722,9 +2705,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * RAID recovering for two disks SSSE3 implementation
  */
@@ -2828,9 +2809,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSSE3)
 /*
  * RAID recovering SSSE3 implementation
  */
@@ -2904,9 +2883,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_AVX2)
 /*
  * RAID recovering for one disk AVX2 implementation
  */
@@ -2960,9 +2937,7 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_AVX2)
 /*
  * RAID recovering for two disks AVX2 implementation
  */
@@ -3058,9 +3033,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_AVX2)
 /*
  * RAID recovering AVX2 implementation
  */
@@ -3133,9 +3106,8 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * RAID recovering for one disk AVX512BW implementation
  */
@@ -3184,7 +3156,7 @@ void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * RAID recovering for two disks AVX512BW implementation
  */
@@ -3274,7 +3246,7 @@ void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512BW)
+#ifdef CONFIG_X86_64
 /*
  * RAID recovering AVX512BW implementation
  */
@@ -3345,10 +3317,8 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 }
 #endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 void raid_register_x86(void)
 {
-#ifdef CONFIG_SSE2
 	if (raid_cpu_has_sse2()) {
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "sse2", raid_gen1_sse2);
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "sse2", raid_gen2_sse2);
@@ -3361,9 +3331,7 @@ void raid_register_x86(void)
 		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "sse2", raid_genz_sse2);
 #endif
 	}
-#endif
 
-#ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3", raid_gen3_ssse3);
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3", raid_gen4_ssse3);
@@ -3385,9 +3353,7 @@ void raid_register_x86(void)
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "ssse3", raid_recX_ssse3);
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "ssse3", raid_recX_ssse3);
 	}
-#endif
 
-#ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "avx2", raid_gen1_avx2);
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "avx2", raid_gen2_avx2);
@@ -3406,9 +3372,7 @@ void raid_register_x86(void)
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "avx2", raid_recX_avx2);
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "avx2", raid_recX_avx2);
 	}
-#endif
 
-#ifdef CONFIG_AVX512BW
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512bw()) {
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "avx512", raid_gen1_avx512bw);
@@ -3428,6 +3392,6 @@ void raid_register_x86(void)
 		}
 	}
 #endif
-#endif
 }
-#endif
+
+#endif /* CONFIG_X86 */
