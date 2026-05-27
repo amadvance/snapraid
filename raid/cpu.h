@@ -10,7 +10,7 @@ static inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg
 {
 	asm volatile (
 #if defined(__i386__) && defined(__PIC__)
-	        /* allow compilation in PIC mode saving ebx */
+		/* allow compilation in PIC mode saving ebx */
 		"xchgl %%ebx, %1\n"
 		"cpuid\n"
 		"xchgl %%ebx, %1\n"
@@ -24,15 +24,15 @@ static inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg
 	);
 }
 
-static inline void raid_xgetbv(uint32_t* reg)
+static inline void raid_xgetbv(uint32_t *reg)
 {
 	/* get the value of the Extended Control Register ecx=0 */
 	asm volatile (
-	        /*
-	         * Uses a direct encoding of the XGETBV instruction as only recent
-	         * assemblers support it.
-	         * the next line is equivalent to: "xgetbv\n"
-	         */
+		/*
+		 * Uses a direct encoding of the XGETBV instruction as only recent
+		 * assemblers support it.
+		 * the next line is equivalent to: "xgetbv\n"
+		 */
 		".byte 0x0f, 0x01, 0xd0\n"
 		: "=a" (reg[0]), "=d" (reg[3])
 		: "c" (0)
@@ -48,9 +48,9 @@ static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model
 
 	raid_cpuid(0, 0, reg);
 
-	((uint32_t*)vendor)[0] = reg[1];
-	((uint32_t*)vendor)[1] = reg[3];
-	((uint32_t*)vendor)[2] = reg[2];
+	((uint32_t *)vendor)[0] = reg[1];
+	((uint32_t *)vendor)[1] = reg[3];
+	((uint32_t *)vendor)[2] = reg[2];
 	vendor[12] = 0;
 
 	raid_cpuid(1, 0, reg);
@@ -303,7 +303,7 @@ static inline int raid_cpu_has_slowmult(void)
  * Check if the processor has a slow extended set of SSE registers.
  * If yes, it's better to limit the unrolling to the first 8 registers.
  */
-static inline int raid_cpu_has_slowextendedreg(void)
+static inline int raid_cpu_has_slow_extendedreg(void)
 {
 	char vendor[CPU_VENDOR_MAX];
 	unsigned family;
@@ -349,7 +349,94 @@ static inline int raid_cpu_has_slowextendedreg(void)
 
 	return 0;
 }
+
+/*
+ * Check if the processor has a "slow" AVX-512 implementation where a highly
+ * optimized AVX-2 path will outperform the native AVX-512 path for this
+ * specific parity kernel, which is dominated by vpshufb (AVX-512BW).
+ *
+ * Three distinct hardware conditions cause this:
+ *
+ * 1. Narrow Shuffle Port + Frequency Offset (Intel Skylake-X / Cannon Lake):
+ *    The shuffle execution port (port 5) on these cores is only 256-bit wide.
+ *    vpshufb zmm therefore decomposes into 2 µops through the same port,
+ *    delivering identical bytes-per-cycle throughput as vpshufb ymm, there
+ *    is zero computational gain from the wider register. On top of this, any
+ *    active 512-bit instruction triggers a core frequency downclocking license
+ *    (100-400 MHz under sustained load). The result is measurably worse
+ *    throughput than AVX-2 for this workload.
+ *    Note: Ice Lake, Tiger Lake, and Rocket Lake are intentionally excluded,
+ *    their port 5 is natively 512-bit wide (1 µop, genuine 2× vpshufb
+ *    throughput), which outweighs their smaller frequency offsets.
+ *
+ * 2. Double-Pumped 256-bit Datapath (AMD Zen 4, Zen 5 mobile):
+ *    These processors execute all AVX-512 instructions, including vpshufb zmm,
+ *    internally as two sequential 256-bit operations. This doubles the µop
+ *    count and execution cycles for no gain in output bytes, making the
+ *    AVX-512 path strictly slower than AVX-2.
+ */
+static inline int raid_cpu_has_slow_avx512(void)
+{
+	char vendor[CPU_VENDOR_MAX];
+	unsigned family;
+	unsigned model;
+
+	raid_cpu_info(vendor, &family, &model);
+
+	if (strcmp(vendor, "AuthenticAMD") == 0) {
+		/*
+		 * Zen 4 (Family 0x19): ALL models use a double-pumped 256-bit
+		 * datapath for AVX-512, desktop, mobile, and server alike.
+		 */
+		if (family == 25)
+			return 1;
+
+		/*
+		 * Zen 5 (Family 0x1A):
+		 *   True 512-bit: Granite Ridge desktop (0x44), Turin server (0x00–0x0F)
+		 *   256-bit mobile: Strix Point / Strix Halo (0x20–0x2F),
+		 *   256-bit mobile: Krackan Point and variants (0x60–0x6F)
+		 *
+		 * CAUTION: if AMD places a future desktop/server SKU in 0x20–0x2F,
+		 * this becomes a false positive. Re-validate against AMD's PPR on
+		 * each new family 0x1A product.
+		 */
+		if (family == 26) {
+			if ((model >= 0x20 && model <= 0x2F) /* Strix Point / Strix Halo */
+				|| (model >= 0x60 && model <= 0x6F)) /* Krackan Point and variants */
+				return 1;
+		}
+	}
+
+	if (strcmp(vendor, "GenuineIntel") == 0) {
+		/*
+		 * Skylake-X / Cascade Lake (0x55) and Cannon Lake (0x66).
+		 *
+		 * These have TWO compounding problems for vpshufb-heavy parity:
+		 *
+		 * 1. Port 5 (the shuffle port) is only 256-bit wide on these cores.
+		 *    vpshufb zmm decomposes into 2 µops through the same port,
+		 *    yielding identical bytes-per-cycle as vpshufb ymm.
+		 *    There is zero throughput gain from the wider register.
+		 *
+		 * 2. Executing AVX-512 instructions triggers a frequency downclocking
+		 *    "license" (L0/L1 levels), reducing core frequency by 100-400 MHz
+		 *    under sustained 512-bit load.
+		 *
+		 * Ice Lake (0x7E, 0x6A, 0x6C), Tiger Lake (0x8C, 0x8D), and
+		 * Rocket Lake (0xA7) are intentionally NOT listed: their port 5
+		 * is natively 512-bit wide (1 µop, 2× throughput for vpshufb zmm),
+		 * which outweighs their smaller frequency offsets.
+		 */
+		if (family == 6) {
+			if (model == 0x55 /* Skylake-X, Cascade Lake  */
+				|| model == 0x66) /* Cannon Lake (rare) */
+				return 1;
+		}
+	}
+
+	return 0;
+}
 #endif
 
 #endif
-
