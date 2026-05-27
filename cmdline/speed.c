@@ -119,7 +119,7 @@ void speed(int period, int nd, int size)
 
 		raid_cpu_info(vendor, &family, &model);
 
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s%s\n", vendor, family, model,
+		printf("CPU %s, family %u, model %u (%xh), flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model, model,
 			raid_cpu_has_sse2() ? " sse2" : "",
 			raid_cpu_has_ssse3() ? " ssse3" : "",
 			raid_cpu_has_crc32() ? " crc32" : "",
@@ -128,7 +128,8 @@ void speed(int period, int nd, int size)
 			raid_cpu_has_avx512bw() ? " avx512bw" : "",
 			raid_cpu_has_avx512gfni() ? " avx512gfni" : "",
 			raid_cpu_has_slowmult() ? " slowmult" : "",
-			raid_cpu_has_slowextendedreg() ? " slowext" : ""
+			raid_cpu_has_slow_extendedreg() ? " slowext" : "",
+			raid_cpu_has_slow_avx512() ? " slowavx512" : ""
 		);
 	}
 #elif defined(__aarch64__) || defined(_M_ARM64)
@@ -286,7 +287,7 @@ void speed(int period, int nd, int size)
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx2e");
 	printf("%8s", "avx512");
-	printf("%8s", "gfni");
+	printf("%8s", "gfni512");
 #endif
 #endif
 	printf("\n");
@@ -851,7 +852,7 @@ void speed(int period, int nd, int size)
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx512");
-	printf("%8s", "gfni");
+	printf("%8s", "gfni512");
 #endif
 #endif
 	printf("\n");
