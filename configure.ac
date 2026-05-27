@@ -284,6 +284,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
 
+dnl Checks for AS supporting the AVX2FFNI instructions.
+AC_MSG_CHECKING([for avx2gfni])
+asmavx2gfni=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__x86_64__)
+	void f(void* ptr)
+	{
+		asm volatile ("vgf2p8mulb %0, %%ymm2, %%ymm2" : : "m" (ptr));
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_AVX2GFNI], [1], [Define to 1 if avx2gfni is supported by the assembler.]) asmavx2gfni=yes])
+AC_MSG_RESULT([$asmavx2gfni])
+
 dnl Checks for AS supporting the AVX512BW instructions.
 AC_MSG_CHECKING([for avx512bw])
 asmavx512bw=no
