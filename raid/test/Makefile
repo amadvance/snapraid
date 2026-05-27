@@ -92,6 +92,7 @@ sdecovtest:
 	$(SDE) -nhm -- ./selftest
 	$(SDE) -hsw -- ./selftest
 	$(SDE) -skx -- ./selftest
+	$(SDE) -clx -- ./selftest # For slow AVX-512 detection
 	$(SDE) -icl -- ./selftest
 	$(SDE) -icl -- ./speedtest
 	$(MAKE) lcov_capture
@@ -100,6 +101,7 @@ sdecovtest:
 # Use this target to run a complete test on Ice Lake simulator
 sde:
 	$(SDE) -icl -- ./selftest
+	$(SDE) -clx -- ./speedtest
 	$(SDE) -icl -- ./speedtest
 	$(SDE) -icl -- ./fulltest
 
