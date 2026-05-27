@@ -514,18 +514,20 @@ void raid_register_avx512gfni(void)
 {
 #if defined(USE_RAID_AES)
 	if (raid_cpu_has_avx512gfni()) {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni", raid_gen2_avx512gfni);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni", raid_gen3_avx512gfni);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "gfni", raid_gen4_avx512gfni);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "gfni", raid_gen5_avx512gfni);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "gfni", raid_gen6_avx512gfni);
+		if (!raid_cpu_has_slow_avx512()) {
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni512", raid_gen2_avx512gfni);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni512", raid_gen3_avx512gfni);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "gfni512", raid_gen4_avx512gfni);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "gfni512", raid_gen5_avx512gfni);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "gfni512", raid_gen6_avx512gfni);
 
-		raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "gfni", raid_rec1_avx512gfni);
-		raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "gfni", raid_rec2_avx512gfni);
-		raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "gfni", raid_recX_avx512gfni);
-		raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "gfni", raid_recX_avx512gfni);
-		raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "gfni", raid_recX_avx512gfni);
-		raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "gfni", raid_recX_avx512gfni);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "gfni512", raid_rec1_avx512gfni);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "gfni512", raid_rec2_avx512gfni);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "gfni512", raid_recX_avx512gfni);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "gfni512", raid_recX_avx512gfni);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "gfni512", raid_recX_avx512gfni);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "gfni512", raid_recX_avx512gfni);
+		}
 	}
 #endif
 }

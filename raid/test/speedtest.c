@@ -138,7 +138,7 @@ void speed(void)
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx2e");
 	printf("%8s", "avx512");
-	printf("%8s", "gfni");
+	printf("%8s", "gfni512");
 #endif
 #endif
 	printf("\n");
@@ -703,7 +703,7 @@ void speed(void)
 	printf("%8s", "avx2");
 #ifdef CONFIG_X86_64
 	printf("%8s", "avx512");
-	printf("%8s", "gfni");
+	printf("%8s", "gfni512");
 #endif
 #endif
 	printf("\n");
