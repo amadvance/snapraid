@@ -4,7 +4,8 @@
 #include "internal.h"
 #include "gf.h"
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
+#ifdef CONFIG_X86
+
 static const struct gfzconst16 {
 	uint8_t poly[16];
 	uint8_t half[16];
@@ -24,9 +25,7 @@ static const struct gfzconst16 {
 		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
 	}
 };
-#endif
 
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 /*
  * GENz (triple parity with powers of 2^-1) SSE2 implementation
  */
@@ -82,9 +81,8 @@ void raid_genz_sse2(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_SSE2)
+#ifdef CONFIG_X86_64
 /*
  * GENz (triple parity with powers of 2^-1) SSE2 implementation
  *
@@ -166,7 +164,7 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2)
+#ifdef CONFIG_X86_64
 /*
  * GENz (triple parity with powers of 2^-1) AVX2 implementation
  *
@@ -243,3 +241,4 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 }
 #endif
 
+#endif /* CONFIG_X86 */

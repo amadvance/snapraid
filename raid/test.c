@@ -202,85 +202,55 @@ int raid_test_rec(int mode, int nd, size_t size)
 		if (i == 1) {
 			test_setup(i) = raid_rec1_int8;
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSSE3
 			if (raid_cpu_has_ssse3())
 				test_setup(i) = raid_rec1_ssse3;
-#endif
-#ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
 				test_setup(i) = raid_rec1_avx2;
-#endif
-#endif
 #ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
 				test_setup(i) = raid_rec1_avx512bw;
-#endif
-#endif
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX2GFNI
 			if (raid_cpu_has_avx2gfni())
 				test_setup(i) = raid_rec1_avx2gfni;
-#endif
-#ifdef CONFIG_AVX512GFNI
 			if (raid_cpu_has_avx512gfni())
 				test_setup(i) = raid_rec1_avx512gfni;
+#endif
 #endif
 #endif
 		} else if (i == 2) {
 			test_setup(i) = raid_rec2_int8;
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSSE3
 			if (raid_cpu_has_ssse3())
 				test_setup(i) = raid_rec2_ssse3;
-#endif
-#ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
 				test_setup(i) = raid_rec2_avx2;
-#endif
-#endif
 #ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
 				test_setup(i) = raid_rec2_avx512bw;
-#endif
-#endif
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX2GFNI
 			if (raid_cpu_has_avx2gfni())
 				test_setup(i) = raid_rec2_avx2gfni;
-#endif
-#ifdef CONFIG_AVX512GFNI
 			if (raid_cpu_has_avx512gfni())
 				test_setup(i) = raid_rec2_avx512gfni;
+#endif
 #endif
 #endif
 		} else {
 			test_setup(i) = raid_recX_int8;
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSSE3
 			if (raid_cpu_has_ssse3())
 				test_setup(i) = raid_recX_ssse3;
-#endif
-#ifdef CONFIG_AVX2
 			if (raid_cpu_has_avx2())
 				test_setup(i) = raid_recX_avx2;
-#endif
-#endif
 #ifdef CONFIG_X86_64
-#ifdef CONFIG_AVX512BW
 			if (raid_cpu_has_avx512bw())
 				test_setup(i) = raid_recX_avx512bw;
-#endif
-#endif
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX2GFNI
 			if (raid_cpu_has_avx2gfni())
 				test_setup(i) = raid_recX_avx2gfni;
-#endif
-#ifdef CONFIG_AVX512GFNI
 			if (raid_cpu_has_avx512gfni())
 				test_setup(i) = raid_recX_avx512gfni;
+#endif
 #endif
 #endif
 		}
@@ -401,7 +371,6 @@ int raid_test_par(int mode, int nd, size_t size)
 	test_setup(2) = raid_gen2_int64;
 
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSE2
 	if (raid_cpu_has_sse2()) {
 		test_setup(1) = raid_gen1_sse2;
 		test_setup(2) = raid_gen2_sse2;
@@ -409,36 +378,25 @@ int raid_test_par(int mode, int nd, size_t size)
 		test_setup(2) = raid_gen2_sse2ext;
 #endif
 	}
-#endif
-
-#ifdef CONFIG_AVX2
 	if (raid_cpu_has_avx2()) {
 		test_setup(1) = raid_gen1_avx2;
 		test_setup(2) = raid_gen2_avx2;
 	}
-#endif
-
-#ifdef CONFIG_AVX512BW
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512bw()) {
 		test_setup(1) = raid_gen1_avx512bw;
 		test_setup(2) = raid_gen2_avx512bw;
 	}
-#endif
-#endif
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX2GFNI
 	if (raid_cpu_has_avx2gfni()) {
 		test_setup(2) = raid_gen2_avx2gfni;
 	}
-#endif
-#ifdef CONFIG_AVX512GFNI
 	if (raid_cpu_has_avx512gfni()) {
 		test_setup(2) = raid_gen2_avx512gfni;
 	}
 #endif
 #endif
-#endif /* CONFIG_X86 */
+#endif
 
 	if (mode == RAID_MODE_CAUCHY) {
 		test_setup(3) = raid_gen3_int8;
@@ -447,7 +405,6 @@ int raid_test_par(int mode, int nd, size_t size)
 		test_setup(6) = raid_gen6_int8;
 
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSSE3
 		if (raid_cpu_has_ssse3()) {
 			test_setup(3) = raid_gen3_ssse3;
 			test_setup(4) = raid_gen4_ssse3;
@@ -460,9 +417,6 @@ int raid_test_par(int mode, int nd, size_t size)
 			test_setup(6) = raid_gen6_ssse3ext;
 #endif
 		}
-#endif
-
-#ifdef CONFIG_AVX2
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx2()) {
 			test_setup(3) = raid_gen3_avx2ext;
@@ -470,29 +424,19 @@ int raid_test_par(int mode, int nd, size_t size)
 			test_setup(5) = raid_gen5_avx2ext;
 			test_setup(6) = raid_gen6_avx2ext;
 		}
-#endif
-#endif
-
-#ifdef CONFIG_AVX512BW
-#ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx512bw()) {
 			test_setup(3) = raid_gen3_avx512bw;
 			test_setup(4) = raid_gen4_avx512bw;
 			test_setup(5) = raid_gen5_avx512bw;
 			test_setup(6) = raid_gen6_avx512bw;
 		}
-#endif
-#endif
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX2GFNI
 		if (raid_cpu_has_avx2gfni()) {
 			test_setup(3) = raid_gen3_avx2gfni;
 			test_setup(4) = raid_gen4_avx2gfni;
 			test_setup(5) = raid_gen5_avx2gfni;
 			test_setup(6) = raid_gen6_avx2gfni;
 		}
-#endif
-#ifdef CONFIG_AVX512GFNI
 		if (raid_cpu_has_avx512gfni()) {
 			test_setup(3) = raid_gen3_avx512gfni;
 			test_setup(4) = raid_gen4_avx512gfni;
@@ -501,29 +445,23 @@ int raid_test_par(int mode, int nd, size_t size)
 		}
 #endif
 #endif
-
-#endif /* CONFIG_X86 */
+#endif
 	} else {
 		test_setup(3) = raid_genz_int32;
 		test_setup(3) = raid_genz_int64;
 
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSE2
 		if (raid_cpu_has_sse2()) {
 			test_setup(3) = raid_genz_sse2;
 #ifdef CONFIG_X86_64
 			test_setup(3) = raid_genz_sse2ext;
 #endif
 		}
-#endif
-
-#ifdef CONFIG_AVX2
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx2())
 			test_setup(3) = raid_genz_avx2ext;
 #endif
 #endif
-#endif /* CONFIG_X86 */
 	}
 
 	/* check all the functions */
