@@ -101,7 +101,6 @@ sdecovtest:
 # Use this target to run a complete test on Ice Lake simulator
 sde:
 	$(SDE) -icl -- ./selftest
-	$(SDE) -clx -- ./speedtest
 	$(SDE) -icl -- ./speedtest
 	$(SDE) -icl -- ./fulltest
 
