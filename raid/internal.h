@@ -4,22 +4,15 @@
 #ifndef __RAID_INTERNAL_H
 #define __RAID_INTERNAL_H
 
-/*
- * Supported instruction sets.
- *
- * It may happen that the assembler is too old to support
- * all instructions, even if the architecture supports them.
- * These defines allow to exclude from the build the unsupported ones.
- *
- * If in your project you use a predefined assembler, you can define them
- * using fixed values, instead of using the HAVE_* defines.
- */
 #if HAVE_CONFIG_H
-
 /* Includes the project configuration for HAVE_* defines */
 #include "config.h"
+#else
+/* Assume that assembly is always supported */
+#define HAVE_ASSEMBLY 1
+#endif
 
-/* If the compiler supports assembly */
+/* If the platforms supports assembly */
 #if HAVE_ASSEMBLY
 /* Autodetect from the compiler */
 #if defined(__i386__)
@@ -29,52 +22,6 @@
 #if defined(__x86_64__)
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1
-#endif
-#endif
-
-/* Enables SSE2, SSSE3, AVX2, AVX512BW, GFNI only if the assembler supports it */
-#if HAVE_SSE2
-#define CONFIG_SSE2 1
-#endif
-#if HAVE_SSSE3
-#define CONFIG_SSSE3 1
-#endif
-#if HAVE_AVX2
-#define CONFIG_AVX2 1
-#endif
-#if HAVE_AVX512BW
-#define CONFIG_AVX512BW 1
-#endif
-#if HAVE_AVX512GFNI
-#define CONFIG_AVX512GFNI 1
-#endif
-#if HAVE_AVX2GFNI
-#define CONFIG_AVX2GFNI 1
-#endif
-
-#else /* if HAVE_CONFIG_H is not defined */
-
-/* Assume that assembly is always supported */
-#if defined(__i386__)
-#define CONFIG_X86 1
-#define CONFIG_X86_32 1
-#endif
-
-#if defined(__x86_64__)
-#define CONFIG_X86 1
-#define CONFIG_X86_64 1
-#endif
-
-/* Assumes that the assembler supports everything */
-#ifdef CONFIG_X86
-#define CONFIG_SSE2 1
-#define CONFIG_SSSE3 1
-#define CONFIG_AVX2 1
-#endif
-#ifdef CONFIG_X86_64
-#define CONFIG_AVX512BW 1
-#define CONFIG_AVX512GFNI 1
-#define CONFIG_AVX2GFNI 1
 #endif
 #endif
 
@@ -344,7 +291,6 @@ extern const uint8_t (*raid_gfgen)[256];
  * Assembler blocks.
  */
 #ifdef CONFIG_X86
-#ifdef CONFIG_SSE2
 static __always_inline void raid_sse_begin(void)
 {
 }
@@ -363,10 +309,16 @@ static __always_inline void raid_sse_end(void)
 	 * Clobbers registers used in the asm code
 	 * this is required because in the Windows ABI,
 	 * registers xmm6-xmm15 should be kept by the callee.
-	 * this clobber list force the compiler to save any
-	 * register that needs to be saved
-	 * we check for __SSE2_ because we require that the
-	 * compiler supports SSE2 registers in the clobber list
+	 *
+	 * This clobber list forces the compiler to save any
+	 * register that needs to be saved.
+	 *
+	 * We check for __SSE2__ because we require that the
+	 * compiler supports SSE2 registers in the clobber list.
+	 * If the compiler doesn't support SSE2 registers, we can
+	 * clobber them freely.
+	 *
+	 * Registers ymm and zmm don't have this requirement.
 	 */
 #ifdef __SSE2__
 	asm volatile ("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
@@ -377,9 +329,7 @@ static __always_inline void raid_sse_end(void)
 #endif
 #endif
 }
-#endif
 
-#ifdef CONFIG_AVX2
 static __always_inline void raid_avx_begin(void)
 {
 	raid_sse_begin();
@@ -396,7 +346,6 @@ static __always_inline void raid_avx_end(void)
 	 */
 	asm volatile ("vzeroupper" : : : "memory");
 }
-#endif
 #endif /* CONFIG_X86 */
 
 #endif

@@ -244,13 +244,11 @@ void raid_rec_register(int na, const char *tag, raid_rec_fn *rec)
 void raid_init(void)
 {
 	raid_register_int();
-#if defined(CONFIG_X86) && defined(CONFIG_SSE2)
+#ifdef CONFIG_X86
 	raid_register_x86();
 #endif
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
+#ifdef CONFIG_X86_64
 	raid_register_avx2gfni();
-#endif
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 	raid_register_avx512gfni();
 #endif
 

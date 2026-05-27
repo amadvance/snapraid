@@ -5,7 +5,8 @@
 #include "gf.h"
 #include "cpu.h"
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
+#ifdef CONFIG_X86_64
+
 /*
  * GEN2 (RAID6 with powers of 2) AVX2 GFNI implementation
  */
@@ -47,9 +48,7 @@ void raid_gen2_avx2gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * GEN2 (RAID6 with powers of 2) GFNI implementation
  */
@@ -83,9 +82,7 @@ void raid_gen2_avx512gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * GEN3 (triple parity with Cauchy matrix) AVX2 GFNI implementation
  */
@@ -164,9 +161,7 @@ void raid_gen3_avx2gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * GEN3 (triple parity with Cauchy matrix) GFNI implementation
  */
@@ -227,9 +222,7 @@ void raid_gen3_avx512gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * GEN4 (quad parity with Cauchy matrix) AVX2 GFNI implementation
  */
@@ -322,9 +315,7 @@ void raid_gen4_avx2gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * GEN4 (quad parity with Cauchy matrix) GFNI implementation
  */
@@ -393,9 +384,7 @@ void raid_gen4_avx512gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * GEN5 (penta parity with Cauchy matrix) AVX2 GFNI implementation
  */
@@ -504,9 +493,7 @@ void raid_gen5_avx2gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * GEN5 (penta parity with Cauchy matrix) GFNI implementation
  */
@@ -583,9 +570,7 @@ void raid_gen5_avx512gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * GEN6 (hexa parity with Cauchy matrix) AVX2 GFNI implementation
  */
@@ -709,9 +694,7 @@ void raid_gen6_avx2gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * GEN6 (hexa parity with Cauchy matrix) GFNI implementation
  */
@@ -796,9 +779,7 @@ void raid_gen6_avx512gfni(int nd, size_t size, void **vv)
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * RAID recovering for one disk AVX2 GFNI implementation
  */
@@ -847,9 +828,7 @@ void raid_rec1_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * RAID recovering for one disk GFNI implementation
  */
@@ -889,9 +868,7 @@ void raid_rec1_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * RAID recovering for two disks AVX2 GFNI implementation
  */
@@ -968,9 +945,7 @@ void raid_rec2_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * RAID recovering for two disks GFNI implementation
  */
@@ -1034,9 +1009,7 @@ void raid_rec2_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX2GFNI)
 /*
  * RAID recovering AVX2 GFNI implementation
  */
@@ -1106,9 +1079,7 @@ void raid_recX_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	raid_avx_end();
 }
-#endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_AVX512GFNI)
 /*
  * RAID recovering GFNI implementation
  */
@@ -1163,13 +1134,10 @@ void raid_recX_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **
 
 	raid_avx_end();
 }
-#endif
 
 void raid_register_avx2gfni(void)
 {
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX2GFNI
-#ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2gfni()) {
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni", raid_gen2_avx2gfni);
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni", raid_gen3_avx2gfni);
@@ -1185,15 +1153,11 @@ void raid_register_avx2gfni(void)
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "gfni", raid_recX_avx2gfni);
 	}
 #endif
-#endif
-#endif
 }
 
 void raid_register_avx512gfni(void)
 {
 #ifdef USE_RAID_AES
-#ifdef CONFIG_AVX512GFNI
-#ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512gfni()) {
 		if (!raid_cpu_has_slow_avx512()) {
 			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni512", raid_gen2_avx512gfni);
@@ -1211,6 +1175,6 @@ void raid_register_avx512gfni(void)
 		}
 	}
 #endif
-#endif
-#endif
 }
+
+#endif /* CONFIG_X86_64 */
