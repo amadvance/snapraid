@@ -191,22 +191,6 @@ static void set_power(uint8_t poly, uint8_t *matrix)
 	}
 }
 
-/**
- * Next power of 2.
- */
-static unsigned np(unsigned v)
-{
-	--v;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	++v;
-
-	return v;
-}
-
 void tables(uint8_t poly)
 {
 	uint8_t v;
@@ -342,11 +326,11 @@ void tables(uint8_t poly)
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
 	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
 	printf(" */\n");
-	printf("const uint8_t __aligned(256) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
+	printf("const uint8_t __aligned(256) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, PARITY);
 	printf("{\n");
 	for (i = 0; i < DISK; ++i) {
 		printf("\t{\n");
-		for (p = 2; p < PARITY; ++p) {
+		for (p = 0; p < PARITY; ++p) {
 			printf("\t\t{\n");
 			for (j = 0; j < 2; ++j) {
 				printf("\t\t\t{ ");
