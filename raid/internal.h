@@ -273,7 +273,7 @@ extern const uint8_t raid_gfexp[256] __aligned(256);
 extern const uint8_t raid_gfinv[256] __aligned(256);
 extern const uint8_t raid_gfvandermonde[3][256] __aligned(256);
 extern const uint8_t raid_gfcauchy[6][256] __aligned(256);
-extern const uint8_t raid_gfcauchypshufb[251][6][2][16] __aligned(256);
+extern const uint8_t raid_gfcauchypshufb[251][5][2][16] __aligned(256);
 extern const uint8_t raid_gfmulpshufb[256][2][16] __aligned(256);
 extern const uint8_t raid_gfcauchycoeff[251][4][16] __aligned(256);
 extern const uint8_t (*raid_gfgen)[256];
