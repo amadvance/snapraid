@@ -353,7 +353,7 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
  */
 void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -365,26 +365,38 @@ void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 
 	raid_avx_begin();
 
-	asm volatile ("vpbroadcastb %0, %%zmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("vpxorq %zmm6,%zmm6,%zmm6");
+	/* generic case with at least two data disks */
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa64 %zmm0,%zmm1");
-		for (d = l - 1; d >= 0; --d) {
-			/* scale by 2 before adding the current disk so the first (last processed) disk with factor 1 avoids doubling */
-			asm volatile ("vpcmpgtb %zmm1,%zmm6,%k1");
-			asm volatile ("vpmovm2b %k1,%zmm11");
-			asm volatile ("vpaddb %zmm1,%zmm1,%zmm1");
-			asm volatile ("vpandq %zmm14,%zmm11,%zmm11");
-			asm volatile ("vpxorq %zmm11,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
 
-			asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (v[d][i]));
-			asm volatile ("vpxorq %zmm4,%zmm0,%zmm0");
-			asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
+		for (d = l; d > 0; --d) {
+			asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[d][i]));
+
+			asm volatile ("vpxorq    %zmm10,%zmm0,%zmm0");
+
+			asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
+			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
+			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
+
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][1][1][0]));
+			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
+			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
+			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
 		}
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (q[i]));
+
+		/* first disk with all coefficients at 1 */
+		asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[0][i]));
+
+		asm volatile ("vpxorq    %zmm10,%zmm0,%zmm0");
+		asm volatile ("vpxorq    %zmm10,%zmm1,%zmm1");
+
+		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (p[i]));
+		asm volatile ("vmovntdq  %%zmm1,%0" : "=m" (q[i]));
 	}
 
 	raid_avx_end();
@@ -869,56 +881,34 @@ void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	/* generic case with at least two data disks */
-	asm volatile ("vpxorq %zmm6,%zmm6,%zmm6");
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk */
-		asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
 
-		asm volatile ("vmovdqa64 %zmm10,%zmm0");
-
-		asm volatile ("vmovdqa64 %zmm10,%zmm1");
-		asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-		asm volatile ("vpmovm2b  %k1,%zmm11");
-		asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-		asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-		asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
-		asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-		asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-		asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfgenpshufb[l][2][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][2][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm2,%zmm2");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[d][i]));
 
 			asm volatile ("vpxorq    %zmm10,%zmm0,%zmm0");
 
-			asm volatile ("vpxorq    %zmm10,%zmm1,%zmm1");
-			asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-			asm volatile ("vpmovm2b  %k1,%zmm11");
-			asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-			asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-			asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
 			asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-			asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-			asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
+			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
+			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][2][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (gfgenpshufb[d][2][1][0]));
 			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
 			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
+			asm volatile ("vpshufb   %zmm10,%zmm14,%zmm14");
+			asm volatile ("vpshufb   %zmm11,%zmm15,%zmm15");
+			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -1415,69 +1405,41 @@ void raid_gen4_avx512bw(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	/* generic case with at least two data disks */
-	asm volatile ("vpxorq %zmm6,%zmm6,%zmm6");
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk */
-		asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
+		asm volatile ("vpxorq %zmm3,%zmm3,%zmm3");
 
-		asm volatile ("vmovdqa64 %zmm10,%zmm0");
-
-		asm volatile ("vmovdqa64 %zmm10,%zmm1");
-		asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-		asm volatile ("vpmovm2b  %k1,%zmm11");
-		asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-		asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-		asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
-		asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-		asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-		asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfgenpshufb[l][2][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][2][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm2,%zmm2");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (gfgenpshufb[l][3][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][3][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm3,%zmm3");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm3,%zmm3");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[d][i]));
 
 			asm volatile ("vpxorq    %zmm10,%zmm0,%zmm0");
 
-			asm volatile ("vpxorq    %zmm10,%zmm1,%zmm1");
-			asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-			asm volatile ("vpmovm2b  %k1,%zmm11");
-			asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-			asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-			asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
 			asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-			asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-			asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
+			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
+			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][2][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (gfgenpshufb[d][3][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (gfgenpshufb[d][3][1][0]));
 			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
 			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][3][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][3][1][0]));
-			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
-			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm13,%zmm3,%zmm3");
+			asm volatile ("vpshufb   %zmm10,%zmm14,%zmm14");
+			asm volatile ("vpshufb   %zmm11,%zmm15,%zmm15");
+			asm volatile ("vpshufb   %zmm10,%zmm16,%zmm16");
+			asm volatile ("vpshufb   %zmm11,%zmm17,%zmm17");
+			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm16,%zmm3,%zmm3");
+			asm volatile ("vpxorq    %zmm17,%zmm3,%zmm3");
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -1928,82 +1890,48 @@ void raid_gen5_avx512bw(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	/* generic case with at least two data disks */
-	asm volatile ("vpxorq %zmm6,%zmm6,%zmm6");
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk */
-		asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
+		asm volatile ("vpxorq %zmm3,%zmm3,%zmm3");
+		asm volatile ("vpxorq %zmm4,%zmm4,%zmm4");
 
-		asm volatile ("vmovdqa64 %zmm10,%zmm0");
-
-		asm volatile ("vmovdqa64 %zmm10,%zmm1");
-		asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-		asm volatile ("vpmovm2b  %k1,%zmm11");
-		asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-		asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-		asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
-		asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-		asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-		asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfgenpshufb[l][2][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][2][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm2,%zmm2");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (gfgenpshufb[l][3][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][3][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm3,%zmm3");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm3,%zmm3");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm4" : : "m" (gfgenpshufb[l][4][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][4][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm4,%zmm4");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm4,%zmm4");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[d][i]));
 
 			asm volatile ("vpxorq    %zmm10,%zmm0,%zmm0");
 
-			asm volatile ("vpxorq    %zmm10,%zmm1,%zmm1");
-			asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-			asm volatile ("vpmovm2b  %k1,%zmm11");
-			asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-			asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-			asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
 			asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-			asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-			asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
+			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
+			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][2][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (gfgenpshufb[d][3][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (gfgenpshufb[d][3][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (gfgenpshufb[d][4][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (gfgenpshufb[d][4][1][0]));
 			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
 			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][3][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][3][1][0]));
-			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
-			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm13,%zmm3,%zmm3");
-
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][4][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][4][1][0]));
-			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
-			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm4,%zmm4");
-			asm volatile ("vpxorq    %zmm13,%zmm4,%zmm4");
+			asm volatile ("vpshufb   %zmm10,%zmm14,%zmm14");
+			asm volatile ("vpshufb   %zmm11,%zmm15,%zmm15");
+			asm volatile ("vpshufb   %zmm10,%zmm16,%zmm16");
+			asm volatile ("vpshufb   %zmm11,%zmm17,%zmm17");
+			asm volatile ("vpshufb   %zmm10,%zmm18,%zmm18");
+			asm volatile ("vpshufb   %zmm11,%zmm19,%zmm19");
+			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm16,%zmm3,%zmm3");
+			asm volatile ("vpxorq    %zmm17,%zmm3,%zmm3");
+			asm volatile ("vpxorq    %zmm18,%zmm4,%zmm4");
+			asm volatile ("vpxorq    %zmm19,%zmm4,%zmm4");
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -2523,108 +2451,57 @@ void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 
 	raid_avx_begin();
 
-	/*
-	 * Register mapping:
-	 * 
-	 * 0,1,2,3,4,5 PARITY
-	 * 6 ZERO
-         * 10,11 MUL BY 2
-	 * 12,13 PSHUFB
-	 * 14 POLY
-	 * 15 LOW4
-	 */
-
 	/* generic case with at least two data disks */
-	asm volatile ("vpxorq %zmm6,%zmm6,%zmm6");
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[l][i]));
-
-		asm volatile ("vmovdqa64 %zmm10,%zmm0");
-
-		asm volatile ("vmovdqa64 %zmm10,%zmm1");
-		asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-		asm volatile ("vpmovm2b  %k1,%zmm11");
-		asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-		asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-		asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
-		asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-		asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-		asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfgenpshufb[l][2][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][2][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm2,%zmm2");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (gfgenpshufb[l][3][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][3][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm3,%zmm3");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm3,%zmm3");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm4" : : "m" (gfgenpshufb[l][4][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][4][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm4,%zmm4");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm4,%zmm4");
-
-		asm volatile ("vbroadcasti32x4 %0,%%zmm5" : : "m" (gfgenpshufb[l][5][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[l][5][1][0]));
-		asm volatile ("vpshufb   %zmm10,%zmm5,%zmm5");
-		asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-		asm volatile ("vpxorq    %zmm13,%zmm5,%zmm5");
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
+		asm volatile ("vpxorq %zmm3,%zmm3,%zmm3");
+		asm volatile ("vpxorq %zmm4,%zmm4,%zmm4");
+		asm volatile ("vpxorq %zmm5,%zmm5,%zmm5");
 
 		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm10" : : "m" (v[d][i]));
 
 			asm volatile ("vpxorq    %zmm10,%zmm0,%zmm0");
 
-			asm volatile ("vpxorq    %zmm10,%zmm1,%zmm1");
-			asm volatile ("vpcmpgtb  %zmm1,%zmm6,%k1");
-			asm volatile ("vpmovm2b  %k1,%zmm11");
-			asm volatile ("vpaddb    %zmm1,%zmm1,%zmm1");
-			asm volatile ("vpandq    %zmm14,%zmm11,%zmm11");
-			asm volatile ("vpxorq    %zmm11,%zmm1,%zmm1");
-
-
 			asm volatile ("vpsrlw    $4,%zmm10,%zmm11");
-			asm volatile ("vpandq    %zmm15,%zmm10,%zmm10");
-			asm volatile ("vpandq    %zmm15,%zmm11,%zmm11");
+			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
+			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][2][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (gfgenpshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (gfgenpshufb[d][3][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (gfgenpshufb[d][3][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (gfgenpshufb[d][4][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (gfgenpshufb[d][4][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (gfgenpshufb[d][5][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (gfgenpshufb[d][5][1][0]));
 			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
 			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
-
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][3][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][3][1][0]));
-			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
-			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm13,%zmm3,%zmm3");
-
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][4][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][4][1][0]));
-			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
-			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm4,%zmm4");
-			asm volatile ("vpxorq    %zmm13,%zmm4,%zmm4");
-
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][5][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][5][1][0]));
-			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
-			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
-			asm volatile ("vpxorq    %zmm12,%zmm5,%zmm5");
-			asm volatile ("vpxorq    %zmm13,%zmm5,%zmm5");
+			asm volatile ("vpshufb   %zmm10,%zmm14,%zmm14");
+			asm volatile ("vpshufb   %zmm11,%zmm15,%zmm15");
+			asm volatile ("vpshufb   %zmm10,%zmm16,%zmm16");
+			asm volatile ("vpshufb   %zmm11,%zmm17,%zmm17");
+			asm volatile ("vpshufb   %zmm10,%zmm18,%zmm18");
+			asm volatile ("vpshufb   %zmm11,%zmm19,%zmm19");
+			asm volatile ("vpshufb   %zmm10,%zmm20,%zmm20");
+			asm volatile ("vpshufb   %zmm11,%zmm21,%zmm21");
+			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
+			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
+			asm volatile ("vpxorq    %zmm16,%zmm3,%zmm3");
+			asm volatile ("vpxorq    %zmm17,%zmm3,%zmm3");
+			asm volatile ("vpxorq    %zmm18,%zmm4,%zmm4");
+			asm volatile ("vpxorq    %zmm19,%zmm4,%zmm4");
+			asm volatile ("vpxorq    %zmm20,%zmm5,%zmm5");
+			asm volatile ("vpxorq    %zmm21,%zmm5,%zmm5");
 		}
 
 		/* first disk with all coefficients at 1 */
