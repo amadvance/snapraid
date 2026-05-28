@@ -324,13 +324,13 @@ void tables(uint8_t poly)
 	printf(" * PSHUFB tables for the Cauchy matrix.\n");
 	printf(" *\n");
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
-	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
+	printf(" * Where DISK is from 0 to %u, PARITY from 1 to %u, LH from 0 to 1.\n", DISK - 1, PARITY);
 	printf(" */\n");
-	printf("const uint8_t __aligned(256) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, PARITY);
+	printf("const uint8_t __aligned(256) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, PARITY - 1);
 	printf("{\n");
 	for (i = 0; i < DISK; ++i) {
 		printf("\t{\n");
-		for (p = 0; p < PARITY; ++p) {
+		for (p = 1; p < PARITY; ++p) {
 			printf("\t\t{\n");
 			for (j = 0; j < 2; ++j) {
 				printf("\t\t\t{ ");
