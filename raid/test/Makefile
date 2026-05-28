@@ -32,7 +32,7 @@ CC = gcc
 LD = ld
 CFLAGS = -I.. -Wall -Wextra -g
 ifeq ($(COVERAGE),)
-CFLAGS += -O2
+CFLAGS += -O2 -DUSE_RAID_AES
 else
 CFLAGS += -O0 --coverage -DCOVERAGE=1 -DNDEBUG=1
 endif
@@ -99,10 +99,13 @@ sdecovtest:
 	$(MAKE) lcov_html
 
 # Use this target to run a complete test on Ice Lake simulator
-sde:
+sdetest:
 	$(SDE) -icl -- ./selftest
-	$(SDE) -icl -- ./speedtest
 	$(SDE) -icl -- ./fulltest
+
+# Use this target to run a speed test on Ice Lake simulator
+sdespeed:
+	$(SDE) -icl -- ./speedtest
 
 lcov_reset:
 	lcov --directory . -z
