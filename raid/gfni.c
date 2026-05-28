@@ -104,22 +104,14 @@ void raid_gen3_avx2gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[l][i + 32]));
+		asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
+		asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
+		asm volatile ("vpxor %ymm2,%ymm2,%ymm2");
+		asm volatile ("vpxor %ymm3,%ymm3,%ymm3");
+		asm volatile ("vpxor %ymm4,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 
-		asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vpbroadcastb %0,%%ymm9" : : "m" (gfcauchy[2][l]));
-
-		asm volatile ("vmovdqa  %ymm6,%ymm0");
-		asm volatile ("vmovdqa  %ymm7,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm8,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm8,%ymm3");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm9,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm9,%ymm5");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[d][i + 32]));
 
@@ -183,27 +175,20 @@ void raid_gen3_avx512gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
 
-		asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (gfcauchy[2][l]));
-
-		asm volatile ("vmovdqa64  %zmm6,%zmm0");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm1");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm2");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[d][i]));
 
 			asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][d]));
 			asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (gfcauchy[2][d]));
 
-			asm volatile ("vpxorq     %zmm6,%zmm0,%zmm0");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm12");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm13");
 
+			asm volatile ("vpxorq    %zmm6,%zmm0,%zmm0");
 			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
 			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
 		}
@@ -245,25 +230,16 @@ void raid_gen4_avx2gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa %0,%%ymm8" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm9" : : "m" (v[l][i + 32]));
+		asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
+		asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
+		asm volatile ("vpxor %ymm2,%ymm2,%ymm2");
+		asm volatile ("vpxor %ymm3,%ymm3,%ymm3");
+		asm volatile ("vpxor %ymm4,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
+		asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
+		asm volatile ("vpxor %ymm7,%ymm7,%ymm7");
 
-		asm volatile ("vpbroadcastb %0,%%ymm10" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vpbroadcastb %0,%%ymm11" : : "m" (gfcauchy[2][l]));
-		asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (gfcauchy[3][l]));
-
-		asm volatile ("vmovdqa  %ymm8,%ymm0");
-		asm volatile ("vmovdqa  %ymm9,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm8,%ymm10,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm9,%ymm10,%ymm3");
-		asm volatile ("vgf2p8mulb %ymm8,%ymm11,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm9,%ymm11,%ymm5");
-		asm volatile ("vgf2p8mulb %ymm8,%ymm12,%ymm6");
-		asm volatile ("vgf2p8mulb %ymm9,%ymm12,%ymm7");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm8" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm9" : : "m" (v[d][i + 32]));
 
@@ -338,31 +314,23 @@ void raid_gen4_avx512gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
+		asm volatile ("vpxorq %zmm3,%zmm3,%zmm3");
 
-		asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (gfcauchy[2][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (gfcauchy[3][l]));
-
-		asm volatile ("vmovdqa64  %zmm6,%zmm0");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm1");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm2");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm9,%zmm3");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[d][i]));
 
 			asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][d]));
 			asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (gfcauchy[2][d]));
 			asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (gfcauchy[3][d]));
 
-			asm volatile ("vpxorq     %zmm6,%zmm0,%zmm0");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm12");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm13");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm9,%zmm14");
 
+			asm volatile ("vpxorq    %zmm6,%zmm0,%zmm0");
 			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
 			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
 			asm volatile ("vpxorq    %zmm14,%zmm3,%zmm3");
@@ -408,31 +376,18 @@ void raid_gen5_avx2gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm11" : : "m" (v[l][i + 32]));
+		asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
+		asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
+		asm volatile ("vpxor %ymm2,%ymm2,%ymm2");
+		asm volatile ("vpxor %ymm3,%ymm3,%ymm3");
+		asm volatile ("vpxor %ymm4,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
+		asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
+		asm volatile ("vpxor %ymm7,%ymm7,%ymm7");
+		asm volatile ("vpxor %ymm8,%ymm8,%ymm8");
+		asm volatile ("vpxor %ymm9,%ymm9,%ymm9");
 
-		asm volatile ("vmovdqa  %ymm10,%ymm0");
-		asm volatile ("vmovdqa  %ymm11,%ymm1");
-
-		asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vgf2p8mulb %ymm10,%ymm12,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm11,%ymm12,%ymm3");
-
-		asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (gfcauchy[2][l]));
-		asm volatile ("vgf2p8mulb %ymm10,%ymm12,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm11,%ymm12,%ymm5");
-
-		asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (gfcauchy[3][l]));
-		asm volatile ("vgf2p8mulb %ymm10,%ymm12,%ymm6");
-		asm volatile ("vgf2p8mulb %ymm11,%ymm12,%ymm7");
-
-		asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (gfcauchy[4][l]));
-		asm volatile ("vgf2p8mulb %ymm10,%ymm12,%ymm8");
-		asm volatile ("vgf2p8mulb %ymm11,%ymm12,%ymm9");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm11" : : "m" (v[d][i + 32]));
 
@@ -517,22 +472,13 @@ void raid_gen5_avx512gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
+		asm volatile ("vpxorq %zmm3,%zmm3,%zmm3");
+		asm volatile ("vpxorq %zmm4,%zmm4,%zmm4");
 
-		asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (gfcauchy[2][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (gfcauchy[3][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (gfcauchy[4][l]));
-
-		asm volatile ("vmovdqa64  %zmm6,%zmm0");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm1");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm2");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm9,%zmm3");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm10,%zmm4");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[d][i]));
 
 			asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][d]));
@@ -540,12 +486,12 @@ void raid_gen5_avx512gfni(int nd, size_t size, void **vv)
 			asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (gfcauchy[3][d]));
 			asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (gfcauchy[4][d]));
 
-			asm volatile ("vpxorq     %zmm6,%zmm0,%zmm0");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm12");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm13");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm9,%zmm14");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm10,%zmm15");
 
+			asm volatile ("vpxorq    %zmm6,%zmm0,%zmm0");
 			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
 			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
 			asm volatile ("vpxorq    %zmm14,%zmm3,%zmm3");
@@ -595,35 +541,20 @@ void raid_gen6_avx2gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[l][i + 32]));
+		asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
+		asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
+		asm volatile ("vpxor %ymm2,%ymm2,%ymm2");
+		asm volatile ("vpxor %ymm3,%ymm3,%ymm3");
+		asm volatile ("vpxor %ymm4,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
+		asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
+		asm volatile ("vpxor %ymm7,%ymm7,%ymm7");
+		asm volatile ("vpxor %ymm8,%ymm8,%ymm8");
+		asm volatile ("vpxor %ymm9,%ymm9,%ymm9");
+		asm volatile ("vpxor %ymm10,%ymm10,%ymm10");
+		asm volatile ("vpxor %ymm11,%ymm11,%ymm11");
 
-		asm volatile ("vmovdqa  %ymm12,%ymm0");
-		asm volatile ("vmovdqa  %ymm13,%ymm1");
-
-		asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm3");
-
-		asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (gfcauchy[2][l]));
-		asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm5");
-
-		asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (gfcauchy[3][l]));
-		asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm6");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm7");
-
-		asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (gfcauchy[4][l]));
-		asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm8");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm9");
-
-		asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (gfcauchy[5][l]));
-		asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm10");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm11");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[d][i + 32]));
 
@@ -719,24 +650,14 @@ void raid_gen6_avx512gfni(int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
-		/* last disk without the by two multiplication */
-		asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[l][i]));
+		asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
+		asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
+		asm volatile ("vpxorq %zmm2,%zmm2,%zmm2");
+		asm volatile ("vpxorq %zmm3,%zmm3,%zmm3");
+		asm volatile ("vpxorq %zmm4,%zmm4,%zmm4");
+		asm volatile ("vpxorq %zmm5,%zmm5,%zmm5");
 
-		asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (gfcauchy[2][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (gfcauchy[3][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (gfcauchy[4][l]));
-		asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (gfcauchy[5][l]));
-
-		asm volatile ("vmovdqa64  %zmm6,%zmm0");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm1");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm2");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm9,%zmm3");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm10,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm6,%zmm11,%zmm5");
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		for (d = l; d > 0; --d) {
 			asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[d][i]));
 
 			asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfcauchy[1][d]));
@@ -745,13 +666,13 @@ void raid_gen6_avx512gfni(int nd, size_t size, void **vv)
 			asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (gfcauchy[4][d]));
 			asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (gfcauchy[5][d]));
 
-			asm volatile ("vpxorq     %zmm6,%zmm0,%zmm0");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm12");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm8,%zmm13");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm9,%zmm14");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm10,%zmm15");
 			asm volatile ("vgf2p8mulb %zmm6,%zmm11,%zmm16");
 
+			asm volatile ("vpxorq    %zmm6,%zmm0,%zmm0");
 			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
 			asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
 			asm volatile ("vpxorq    %zmm14,%zmm3,%zmm3");
