@@ -365,7 +365,6 @@ void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 
 	raid_avx_begin();
 
-	/* generic case with at least two data disks */
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
@@ -871,16 +870,8 @@ void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 	q = v[nd + 1];
 	r = v[nd + 2];
 
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
-	/* generic case with at least two data disks */
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
@@ -1395,16 +1386,8 @@ void raid_gen4_avx512bw(int nd, size_t size, void **vv)
 	r = v[nd + 2];
 	s = v[nd + 3];
 
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
-	/* generic case with at least two data disks */
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
@@ -1880,16 +1863,8 @@ void raid_gen5_avx512bw(int nd, size_t size, void **vv)
 	s = v[nd + 3];
 	t = v[nd + 4];
 
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 5; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
-	/* generic case with at least two data disks */
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
@@ -2442,16 +2417,8 @@ void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 	t = v[nd + 4];
 	u = v[nd + 5];
 
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 6; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
-	/* generic case with at least two data disks */
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {

@@ -95,12 +95,6 @@ void raid_gen3_avx2gfni(int nd, size_t size, void **vv)
 	int d, l = nd - 1;
 	size_t i;
 
-	if (l == 0) {
-		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
@@ -166,12 +160,6 @@ void raid_gen3_avx512gfni(int nd, size_t size, void **vv)
 	int d, l = nd - 1;
 	size_t i;
 
-	if (l == 0) {
-		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
@@ -220,12 +208,6 @@ void raid_gen4_avx2gfni(int nd, size_t size, void **vv)
 	uint8_t *s = v[nd + 3];
 	int d, l = nd - 1;
 	size_t i;
-
-	if (l == 0) {
-		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
 
 	raid_avx_begin();
 
@@ -305,12 +287,6 @@ void raid_gen4_avx512gfni(int nd, size_t size, void **vv)
 	int d, l = nd - 1;
 	size_t i;
 
-	if (l == 0) {
-		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
@@ -366,12 +342,6 @@ void raid_gen5_avx2gfni(int nd, size_t size, void **vv)
 	uint8_t *t = v[nd + 4];
 	int d, l = nd - 1;
 	size_t i;
-
-	if (l == 0) {
-		for (i = 0; i < 5; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
 
 	raid_avx_begin();
 
@@ -463,12 +433,6 @@ void raid_gen5_avx512gfni(int nd, size_t size, void **vv)
 	int d, l = nd - 1;
 	size_t i;
 
-	if (l == 0) {
-		for (i = 0; i < 5; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
 	raid_avx_begin();
 
 	for (i = 0; i < size; i += 64) {
@@ -531,12 +495,6 @@ void raid_gen6_avx2gfni(int nd, size_t size, void **vv)
 	uint8_t *u = v[nd + 5];
 	int d, l = nd - 1;
 	size_t i;
-
-	if (l == 0) {
-		for (i = 0; i < 6; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
 
 	raid_avx_begin();
 
@@ -640,12 +598,6 @@ void raid_gen6_avx512gfni(int nd, size_t size, void **vv)
 	uint8_t *u = v[nd + 5];
 	int d, l = nd - 1;
 	size_t i;
-
-	if (l == 0) {
-		for (i = 0; i < 6; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
 
 	raid_avx_begin();
 
