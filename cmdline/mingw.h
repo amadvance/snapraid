@@ -393,6 +393,7 @@ typedef void* windows_key_t;
 #define thread_id_t windows_thread_t
 #define thread_mutex_t windows_mutex_t
 #define thread_cond_t windows_cond_t
+#define thread_key_t windows_key_t
 #define pthread_mutex_init windows_mutex_init
 #define pthread_mutex_destroy windows_mutex_destroy
 #define pthread_mutex_lock windows_mutex_lock
@@ -404,6 +405,10 @@ typedef void* windows_key_t;
 #define pthread_cond_wait windows_cond_wait
 #define pthread_create windows_create
 #define pthread_join windows_join
+#define pthread_key_create windows_key_create
+#define pthread_key_delete windows_key_delete
+#define pthread_getspecific windows_getspecific
+#define pthread_setspecific windows_setspecific
 
 /**
  * Like the pthread_* equivalent.

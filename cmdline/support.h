@@ -241,15 +241,19 @@ void printp(double v, size_t pad);
 /* string */
 
 #define ESC_MAX (PATH_MAX * 2 + 1)
+#define ESC_POOL_MAX 8
 
 /**
  * Escape a string for the log.
  *
- * \param buffer Preallocated buffer of ESC_MAX size.
- *
  * Chars ':', '\n', '\r' and '\' are escaped to '\d', '\\n', '\\r' and '\\'.
  */
-const char* esc_tag(const char* str, char* buffer);
+const char* esc_tag(const char* str);
+
+/**
+ * Get a dynamically allocated buffer of ESC_MAX size from a circular pool.
+ */
+char* esc_buf(void);
 
 /**
  * Escape a string for the shell.
@@ -502,6 +506,10 @@ void thread_cond_broadcast_and_unlock(thread_cond_t* cond, thread_mutex_t* mutex
 void thread_create(thread_id_t* thread, void* (*func)(void*), void* arg);
 void thread_join(thread_id_t thread, void** retval);
 void thread_yield(void);
+int thread_key_create(thread_key_t* key, void (*destructor)(void*));
+int thread_key_delete(thread_key_t key);
+void* thread_getspecific(thread_key_t key);
+int thread_setspecific(thread_key_t key, void* value);
 #endif
 
 /****************************************************************************/

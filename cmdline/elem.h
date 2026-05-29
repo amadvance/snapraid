@@ -1314,12 +1314,12 @@ extern int FMT_MODE;
 /**
  * Format a file path for poll reference
  */
-const char* fmt_poll(const struct snapraid_disk* disk, const char* str, char* buffer);
+const char* fmt_poll(const struct snapraid_disk* disk, const char* str);
 
 /**
  * Format a path name for terminal reference
  */
-const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* buffer);
+const char* fmt_term(const struct snapraid_disk* disk, const char* str);
 
 /**
  * Format a size adding suffix K/M/G/T

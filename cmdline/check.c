@@ -293,8 +293,6 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	int n;
 	int something_to_recover;
 	int something_unsynced;
-	char esc_buffer[ESC_MAX];
-
 	error = 0;
 
 	/* if nothing failed, just recompute the parity */
@@ -339,7 +337,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			struct snapraid_file* file = failed[j].file;
 			block_off_t file_pos = failed[j].file_pos;
 
-			log_tag("repair_entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk->name, esc_tag(file->sub, esc_buffer), file_pos);
+			log_tag("repair_entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk->name, esc_tag(file->sub), file_pos);
 		} else {
 			log_tag("repair_entry:%u:%s:%s:%s:\n", j, desc, hash, data);
 		}
@@ -601,9 +599,6 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 {
 	unsigned j;
 	int ret;
-	char esc_buffer[ESC_MAX];
-	char esc_buffer_alt[ESC_MAX];
-
 	/* for all the files print the final status, and do the final time fix */
 	/* we also ensure to close files after processing the last block */
 	for (j = 0; j < diskmax; ++j) {
@@ -661,7 +656,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					ret = handle_close(&handle[j]);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+						log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						return -1;
 						/* LCOV_EXCL_STOP */
@@ -672,14 +667,14 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("%s:%u:%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 
-				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
+				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub));
+				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub));
 
 				/* and do not set the time if damaged */
 				goto close_and_continue;
@@ -699,7 +694,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_close(&handle[j]);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -710,15 +705,15 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_open(&handle[j], file, state->file_mode, log_error, log_error); /* output a message for missing files */
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 			}
 
-			log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-			msg_info("recovered %s\n", fmt_term(disk, file->sub, esc_buffer));
+			log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub));
+			msg_info("recovered %s\n", fmt_term(disk, file->sub));
 
 			inode = handle[j].st.st_ino;
 
@@ -743,7 +738,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_utime(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 
 					/* mark the file as damaged */
@@ -752,22 +747,22 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					/* LCOV_EXCL_STOP */
 				}
 			} else {
-				log_tag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, esc_tag(file->sub, esc_buffer), esc_tag(collide_file->sub, esc_buffer_alt));
+				log_tag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, esc_tag(file->sub), esc_tag(collide_file->sub));
 			}
 		} else {
 			/* we are not fixing, but only checking */
 			/* print just the final status */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
-				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
+				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub));
+				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub));
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
-				log_tag("status:recoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("recoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
+				log_tag("status:recoverable:%s:%s\n", disk->name, esc_tag(file->sub));
+				msg_info("recoverable %s\n", fmt_term(disk, file->sub));
 			} else {
 				/* we don't use msg_verbose() because it also goes into the log */
 				if (msg_level >= MSG_VERBOSE) {
-					log_tag("status:correct:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					msg_info("correct %s\n", fmt_term(disk, file->sub, esc_buffer));
+					log_tag("status:correct:%s:%s\n", disk->name, esc_tag(file->sub));
+					msg_info("correct %s\n", fmt_term(disk, file->sub));
 				}
 			}
 		}
@@ -782,7 +777,7 @@ close_and_continue:
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+				log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 				log_fatal_errno(errno, disk->name);
 				return -1;
 				/* LCOV_EXCL_STOP */
@@ -887,8 +882,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	struct failed_struct* failed;
 	unsigned* failed_map;
 	unsigned l;
-	char esc_buffer[ESC_MAX];
-	char esc_buffer_alt[ESC_MAX];
 	bit_vect_t* block_enabled;
 	struct snapraid_bw bw;
 
@@ -1062,7 +1055,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping at block %u\n", i);
 
@@ -1077,7 +1070,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					ret = handle_create(&handle[j], file, state->file_mode);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
-						log_tag("%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+						log_tag("%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping at block %u\n", i);
 
@@ -1112,7 +1105,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						log_tag("%s:%u:%s:%s: Open error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
+						log_tag("%s:%u:%s:%s: Open error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
 
 						if (is_hw(errno)) {
 							++io_error;
@@ -1150,14 +1143,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					&& handle[j].st.st_size > file->size
 				) {
 					log_error(ESOFT, "File '%s' is larger than expected.\n", handle[j].path);
-					log_tag("error:%u:%s:%s: Size error\n", i, disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("error:%u:%s:%s: Size error\n", i, disk->name, esc_tag(file->sub));
 					++soft_error;
 
 					if (fix) {
 						ret = handle_truncate(&handle[j], file);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
-							log_tag("%s:%u:%s:%s: Truncate error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+							log_tag("%s:%u:%s:%s: Truncate error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 							log_fatal_errno(errno, disk->name);
 							log_fatal(errno, "Stopping at block %u\n", i);
 
@@ -1166,7 +1159,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* LCOV_EXCL_STOP */
 						}
 
-						log_tag("fixed:%u:%s:%s: Fixed size\n", i, disk->name, esc_tag(file->sub, esc_buffer));
+						log_tag("fixed:%u:%s:%s: Fixed size\n", i, disk->name, esc_tag(file->sub));
 						++recovered_error;
 					}
 				}
@@ -1197,7 +1190,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
+				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
 
 				if (is_hw(errno)) {
 					++io_error;
@@ -1256,7 +1249,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
+				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 				++silent_error;
 				continue;
 			}
@@ -1323,7 +1316,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
-						log_tag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub, esc_buffer), failed[j].file_pos);
+						log_tag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 				}
 
 				/* keep track of damaged files */
@@ -1341,7 +1334,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						log_tag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub, esc_buffer), failed[j].file_pos);
+						log_tag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 					}
 				}
 				if (partial_recover_error != 0) {
@@ -1389,7 +1382,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
-							log_tag("%s:%u:%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub, esc_buffer), strerror(errno));
+							log_tag("%s:%u:%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
 							log_fatal_errno(errno, failed[j].disk->name);
 							log_fatal(errno, "Stopping at block %u\n", i);
 
@@ -1412,7 +1405,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* note that it could be also marked as damaged in other iterations */
 						file_flag_set(failed[j].file, FILE_IS_FIXED);
 
-						log_tag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub, esc_buffer), failed[j].file_pos);
+						log_tag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 						++recovered_error;
 					}
 
@@ -1547,7 +1540,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				unsuccessful = 1;
 
 				log_error(errno, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
-				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub, esc_buffer));
+				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub));
 
 				if (is_hw(errno)) {
 					++io_error;
@@ -1558,13 +1551,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				unsuccessful = 1;
 
 				log_error(ESOFT, "Error stating empty file '%s' for not regular file.\n", path);
-				log_tag("empty_error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub, esc_buffer));
+				log_tag("empty_error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub));
 				++soft_error;
 			} else if (st.st_size != 0) {
 				unsuccessful = 1;
 
 				log_error(ESOFT, "Error stating empty file '%s' for not empty file.\n", path);
-				log_tag("empty_error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub, esc_buffer), (uint64_t)st.st_size);
+				log_tag("empty_error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc_tag(file->sub), (uint64_t)st.st_size);
 				++soft_error;
 			}
 
@@ -1576,7 +1569,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("empty_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1591,7 +1584,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("empty_%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1605,7 +1598,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error timing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("empty_%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1621,7 +1614,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error closing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("empty_%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1630,11 +1623,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				log_tag("empty_fixed:%s:%s: Fixed empty file\n", disk->name, esc_tag(file->sub, esc_buffer));
+				log_tag("empty_fixed:%s:%s: Fixed empty file\n", disk->name, esc_tag(file->sub));
 				++recovered_error;
 
-				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("recovered %s\n", fmt_term(disk, file->sub, esc_buffer));
+				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub));
+				msg_info("recovered %s\n", fmt_term(disk, file->sub));
 			}
 		}
 
@@ -1667,7 +1660,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccessful = 1;
 
 					log_error(errno, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
-					log_tag("hardlink_%s:%s:%s:%s: Hardlink stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
+					log_tag("hardlink_%s:%s:%s:%s: Hardlink stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), esc_tag(slink->linkto), strerror(errno));
 
 					if (is_hw(errno)) {
 						++io_error;
@@ -1678,7 +1671,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccessful = 1;
 
 					log_error(ESOFT, "Error stating hardlink '%s' for not regular file.\n", path);
-					log_tag("hardlink_error:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
 				}
 
@@ -1701,7 +1694,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 
 					log_error(errno, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
-					log_tag("hardlink_%s:%s:%s:%s: Hardlink to stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt), strerror(errno));
+					log_tag("hardlink_%s:%s:%s:%s: Hardlink to stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), esc_tag(slink->linkto), strerror(errno));
 
 					if (is_hw(errno)) {
 						++io_error;
@@ -1712,13 +1705,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccessful = 1;
 
 					log_error(ESOFT, "Error stating hardlink-to '%s' for not regular file.\n", path);
-					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
 				} else if (!unsuccessful && st.st_ino != stto.st_ino) {
 					unsuccessful = 1;
 
 					log_error(ESOFT, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
-					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
 				}
 			} else {
@@ -1729,7 +1722,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccessful = 1;
 
 					log_error(errno, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
-					log_tag("symlink_%s:%s:%s: Symlink read error. %s.\n", es(errno), disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
+					log_tag("symlink_%s:%s:%s: Symlink read error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), strerror(errno));
 
 					if (is_hw(errno)) {
 						++io_error;
@@ -1740,7 +1733,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccessful = 1;
 
 					log_error(ESOFT, "Error reading symlink '%s'. Symlink too long.\n", path);
-					log_tag("symlink_error:%s:%s: Symlink too long\n", disk->name, esc_tag(slink->sub, esc_buffer));
+					log_tag("symlink_error:%s:%s: Symlink too long\n", disk->name, esc_tag(slink->sub));
 					++soft_error;
 				} else {
 					linkto[ret] = 0;
@@ -1748,7 +1741,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (strcmp(linkto, slink->linkto) != 0) {
 						unsuccessful = 1;
 
-						log_tag("symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, esc_tag(slink->sub, esc_buffer), linkto, slink->linkto);
+						log_tag("symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, esc_tag(slink->sub), linkto, slink->linkto);
 						++soft_error;
 					}
 				}
@@ -1762,7 +1755,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
-					log_tag("%slink_%s:%u:%s:%s: Create ancestor error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
+					log_tag("%slink_%s:%u:%s:%s: Create ancestor error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1776,7 +1769,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0 && errno != ENOENT) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error removing '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
-					log_tag("%slink_%s:%u:%s:%s: Remove error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
+					log_tag("%slink_%s:%u:%s:%s: Remove error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1791,7 +1784,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
-						log_tag("hardlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
+						log_tag("hardlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping\n");
 
@@ -1800,14 +1793,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					log_tag("hardlink_fixed:%s:%s: Fixed hardlink error\n", disk->name, esc_tag(slink->sub, esc_buffer));
+					log_tag("hardlink_fixed:%s:%s: Fixed hardlink error\n", disk->name, esc_tag(slink->sub));
 					++recovered_error;
 				} else {
 					ret = symlink(slink->linkto, path);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error writing symlink '%s' to '%s'. %s.\n", path, slink->linkto, strerror(errno));
-						log_tag("symlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub, esc_buffer), strerror(errno));
+						log_tag("symlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping\n");
 
@@ -1816,12 +1809,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					log_tag("symlink_fixed:%s:%s: Fixed symlink error\n", disk->name, esc_tag(slink->sub, esc_buffer));
+					log_tag("symlink_fixed:%s:%s: Fixed symlink error\n", disk->name, esc_tag(slink->sub));
 					++recovered_error;
 				}
 
-				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
-				msg_info("recovered %s\n", fmt_term(disk, slink->sub, esc_buffer));
+				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(slink->sub));
+				msg_info("recovered %s\n", fmt_term(disk, slink->sub));
 			}
 		}
 
@@ -1849,7 +1842,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				unsuccessful = 1;
 
 				log_error(errno, "Error stating dir '%s'. %s.\n", path, strerror(errno));
-				log_tag("dir_%s:%s:%s: Dir stat error. %s.\n", es(errno), disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
+				log_tag("dir_%s:%s:%s: Dir stat error. %s.\n", es(errno), disk->name, esc_tag(dir->sub), strerror(errno));
 
 				if (is_hw(errno)) {
 					++io_error;
@@ -1859,7 +1852,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			} else if (!S_ISDIR(st.st_mode)) {
 				unsuccessful = 1;
 
-				log_tag("dir_error:%s:%s: Dir error for not directory\n", disk->name, esc_tag(dir->sub, esc_buffer));
+				log_tag("dir_error:%s:%s: Dir error for not directory\n", disk->name, esc_tag(dir->sub));
 				++soft_error;
 			}
 
@@ -1869,7 +1862,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
-					log_tag("dir_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
+					log_tag("dir_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1883,7 +1876,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0 && errno != EEXIST) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating directory '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
-					log_tag("dir_%s:%u:%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub, esc_buffer), strerror(errno));
+					log_tag("dir_%s:%u:%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1892,11 +1885,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				log_tag("dir_fixed:%s:%s: Fixed dir error\n", disk->name, esc_tag(dir->sub, esc_buffer));
+				log_tag("dir_fixed:%s:%s: Fixed dir error\n", disk->name, esc_tag(dir->sub));
 				++recovered_error;
 
-				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(dir->sub, esc_buffer));
-				msg_info("recovered %s\n", fmt_term(disk, dir->sub, esc_buffer));
+				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(dir->sub));
+				msg_info("recovered %s\n", fmt_term(disk, dir->sub));
 			}
 		}
 	}
@@ -1912,7 +1905,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			++unrecoverable_error;
@@ -1963,7 +1956,7 @@ bail:
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error removing '%s'. %s.\n", path, strerror(errno));
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 
 					++unrecoverable_error;

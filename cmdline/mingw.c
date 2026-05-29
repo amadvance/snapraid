@@ -3225,13 +3225,11 @@ int devmap(void)
 		h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
 		if (h == INVALID_HANDLE_VALUE)
 			continue;
-
-		char esc_buffer[ESC_MAX];
 		char serial[SMART_MAX];
 		serial[0] = 0;
 		devattr_property(h, serial, 0, 0);
 		if (serial[0]) {
-			log_tag("map:/dev/pd%d:%s\n", i, esc_tag(serial, esc_buffer));
+			log_tag("map:/dev/pd%d:%s\n", i, esc_tag(serial));
 		}
 
 		CloseHandle(h);

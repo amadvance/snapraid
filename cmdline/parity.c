@@ -75,8 +75,6 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	tommy_node* i;
 	block_off_t blockalloc;
 	int found = 0;
-	char esc_buffer[ESC_MAX];
-
 	/* don't report if everything is outside or if the file is not accessible */
 	if (size == 0) {
 		return;
@@ -97,7 +95,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 				block_off_t parity_pos = fs_file2par_get(disk, file, file->blockmax - 1);
 				if (parity_pos >= blockalloc) {
 					found = 1;
-					log_tag("outofparity:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("outofparity:%s:%s\n", disk->name, esc_tag(file->sub));
 					log_fatal(ESOFT, "outofparity %s%s\n", disk->dir, file->sub);
 				}
 			}

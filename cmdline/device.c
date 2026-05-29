@@ -510,17 +510,15 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 
 static void state_info_log(devinfo_t* devinfo)
 {
-	char esc_buffer[ESC_MAX];
-
 	log_tag("info:%s:%s\n", devinfo->file, devinfo->name);
 	if (devinfo->serial[0])
-		log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->serial, esc_buffer));
+		log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->serial));
 	if (devinfo->family[0])
-		log_tag("attr:%s:%s:family:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->family, esc_buffer));
+		log_tag("attr:%s:%s:family:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->family));
 	if (devinfo->model[0])
-		log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->model, esc_buffer));
+		log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->model));
 	if (devinfo->interf[0])
-		log_tag("attr:%s:%s:interface:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->interf, esc_buffer));
+		log_tag("attr:%s:%s:interface:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->interf));
 	if (devinfo->info[INFO_SIZE] != SMART_UNASSIGNED)
 		log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_SIZE]);
 	if (devinfo->info[INFO_ROTATION_RATE] != SMART_UNASSIGNED)

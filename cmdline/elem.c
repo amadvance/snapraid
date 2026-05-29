@@ -1547,32 +1547,32 @@ int FMT_MODE = FMT_FILE;
 /**
  * Format a file path for poll reference
  */
-const char* fmt_poll(const struct snapraid_disk* disk, const char* str, char* buffer)
+const char* fmt_poll(const struct snapraid_disk* disk, const char* str)
 {
 	(void)disk;
-	return esc_shell(str, buffer);
+	return esc_shell(str, esc_buf());
 }
 
 /**
  * Format a path name for terminal reference
  */
-const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* buffer)
+const char* fmt_term(const struct snapraid_disk* disk, const char* str)
 {
 	const char* out[3];
 
 	switch (FMT_MODE) {
 	case FMT_FILE :
 	default :
-		return esc_shell(str, buffer);
+		return esc_shell(str, esc_buf());
 	case FMT_DISK :
 		out[0] = disk->name;
 		out[1] = ":";
 		out[2] = str;
-		return esc_shell_multi(out, 3, buffer);
+		return esc_shell_multi(out, 3, esc_buf());
 	case FMT_PATH :
 		out[0] = disk->dir;
 		out[1] = str;
-		return esc_shell_multi(out, 2, buffer);
+		return esc_shell_multi(out, 2, esc_buf());
 	}
 }
 

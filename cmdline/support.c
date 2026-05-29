@@ -6,6 +6,45 @@
 #include "support.h"
 
 /****************************************************************************/
+/* esc */
+
+struct esc_thread_pool {
+	char pool[ESC_POOL_MAX][ESC_MAX];
+	unsigned idx;
+};
+
+#if HAVE_THREAD
+static thread_key_t esc_key;
+
+static void esc_pool_free(void* ptr)
+{
+	free(ptr);
+}
+#else
+static struct esc_thread_pool esc_single_pool;
+#endif
+
+char* esc_buf(void)
+{
+	struct esc_thread_pool* tp;
+
+#if HAVE_THREAD
+	tp = thread_getspecific(esc_key);
+	if (!tp) {
+		tp = calloc_nofail(1, sizeof(*tp));
+		thread_setspecific(esc_key, tp);
+	}
+#else
+	tp = &esc_single_pool;
+#endif
+
+	char* buffer = tp->pool[tp->idx];
+	tp->idx = (tp->idx + 1) % ESC_POOL_MAX;
+
+	return buffer;
+}
+
+/****************************************************************************/
 /* lock */
 
 /**
@@ -59,7 +98,6 @@ void unlock_random(void)
 #endif
 }
 
-
 void lock_init(void)
 {
 #if HAVE_THREAD
@@ -67,12 +105,19 @@ void lock_init(void)
 	thread_mutex_init(&msg_lock);
 	thread_mutex_init(&memory_lock);
 	thread_mutex_init(&random_lock);
+	thread_key_create(&esc_key, esc_pool_free);
 #endif
 }
 
 void lock_done(void)
 {
 #if HAVE_THREAD
+	void* tp = thread_getspecific(esc_key);
+	if (tp) {
+		esc_pool_free(tp);
+		thread_setspecific(esc_key, NULL);
+	}
+	thread_key_delete(esc_key);
 	thread_mutex_destroy(&msg_lock);
 	thread_mutex_destroy(&memory_lock);
 	thread_mutex_destroy(&random_lock);
@@ -637,8 +682,9 @@ void printp(double v, size_t pad)
 		*p++ = (c); \
 	} while (0)
 
-const char* esc_tag(const char* str, char* buffer)
+const char* esc_tag(const char* str)
 {
+	char* buffer = esc_buf();
 	char* begin = buffer;
 	char* end = begin + ESC_MAX;
 	char* p = begin;
@@ -2564,6 +2610,26 @@ void thread_yield(void)
 #endif
 }
 #endif
+
+int thread_key_create(thread_key_t* key, void (*destructor)(void*))
+{
+	return pthread_key_create(key, destructor);
+}
+
+int thread_key_delete(thread_key_t key)
+{
+	return pthread_key_delete(key);
+}
+
+void* thread_getspecific(thread_key_t key)
+{
+	return pthread_getspecific(key);
+}
+
+int thread_setspecific(thread_key_t key, void* value)
+{
+	return pthread_setspecific(key, value);
+}
 
 /****************************************************************************/
 /* wnmatch */

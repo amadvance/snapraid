@@ -46,12 +46,11 @@ static int parity_entry_compare(const void* void_a, const void* void_b)
 
 static void dump_entry(void* void_entry)
 {
-	char esc_buffer[ESC_MAX];
 	struct snapraid_parity_entry* entry = void_entry;
 	printf("%12" PRIu64 " ", entry->low * (uint64_t)entry->block_size);
 	printf("%12" PRIu64 " ", (entry->high - entry->low + 1) * (uint64_t)entry->block_size);
 	printf("%8u ", entry->fragments);
-	printf("%s\n", fmt_term(entry->disk, entry->file->sub, esc_buffer));
+	printf("%s\n", fmt_term(entry->disk, entry->file->sub));
 }
 
 static void add_size_to_sum(void* arg, void* void_entry)

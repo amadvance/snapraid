@@ -103,8 +103,6 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	block_off_t blockcur = task->position;
 	unsigned char* buffer = task->buffer;
 	int ret;
-	char esc_buffer[ESC_MAX];
-
 	/* if the disk position is not used */
 	if (!disk) {
 		/* use an empty block */
@@ -136,7 +134,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			/* LCOV_EXCL_START */
 			/* This one is really an unexpected error, because we are only reading */
 			/* and closing a descriptor should never fail */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %u\n", blockcur);
 
@@ -152,7 +150,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 
 	ret = handle_open(handle, task->file, state->file_mode, log_error, 0); /* for missing file don't output a message */
 	if (ret == -1) {
-		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
+		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, disk->name);
@@ -183,7 +181,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
 	if (task->read_size == -1) {
-		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
+		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_error_errno(errno, disk->name);
@@ -255,7 +253,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	unsigned l;
 	unsigned* waiting_map;
 	unsigned waiting_mac;
-	char esc_buffer[ESC_MAX];
 	bit_vect_t* block_enabled;
 
 	/* maps the disks to handles */
@@ -476,11 +473,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
-						log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
+						log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++soft_error;
 						error_on_this_block = 1;
 					} else {
-						log_tag("error_data:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff, BLOCK_HASH_SIZE * 8);
+						log_tag("error_data:%u:%s:%s: Data error at position %u, diff hash bits %u/%u\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 						log_error(EDATA, "Data error in file '%s' at position '%u', diff hash bits %u/%u\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
@@ -706,7 +703,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			if (is_hw(errno)) {

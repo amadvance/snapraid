@@ -66,6 +66,7 @@ size_t direct_size(void);
 typedef pthread_t thread_id_t;
 typedef pthread_mutex_t thread_mutex_t;
 typedef pthread_cond_t thread_cond_t;
+typedef pthread_key_t thread_key_t;
 #endif
 
 #endif

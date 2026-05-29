@@ -18,9 +18,6 @@ void state_list(struct snapraid_state* state)
 	unsigned file_count;
 	data_off_t file_size;
 	unsigned link_count;
-	char esc_buffer[ESC_MAX];
-	char esc_buffer_alt[ESC_MAX];
-
 	file_count = 0;
 	file_size = 0;
 	link_count = 0;
@@ -48,7 +45,7 @@ void state_list(struct snapraid_state* state)
 			file_size += file->size;
 
 			if (state->opt.gui_verbose)
-				log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIu64 "\n", disk->name, esc_tag(file->sub, esc_buffer), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
+				log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIu64 "\n", disk->name, esc_tag(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
 #if HAVE_LOCALTIME_R
@@ -64,7 +61,7 @@ void state_list(struct snapraid_state* state)
 					printf(":%02u.%09u", tm->tm_sec, file->mtime_nsec);
 				printf(" ");
 			}
-			printf("%s\n", fmt_term(disk, file->sub, esc_buffer));
+			printf("%s\n", fmt_term(disk, file->sub));
 		}
 
 		/* sort by name */
@@ -88,13 +85,13 @@ void state_list(struct snapraid_state* state)
 			++link_count;
 
 			if (state->opt.gui_verbose)
-				log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc_tag(slink->sub, esc_buffer), esc_tag(slink->linkto, esc_buffer_alt));
+				log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 
 			printf("%12s ", type);
 			printf("                 ");
 			if (msg_level >= MSG_VERBOSE)
 				printf("             ");
-			printf("%s -> %s\n", fmt_term(disk, slink->sub, esc_buffer), fmt_term(disk, slink->linkto, esc_buffer_alt));
+			printf("%s -> %s\n", fmt_term(disk, slink->sub), fmt_term(disk, slink->linkto));
 		}
 	}
 

@@ -2710,7 +2710,6 @@ int ambient_temperature(void)
 int devmap(void)
 {
 #if HAVE_LINUX_DEVICE
-	char esc_buffer[ESC_MAX];
 	char path[PATH_MAX];
 	DIR* d = opendir("/sys/block");
 	if (!d)
@@ -2735,49 +2734,49 @@ int devmap(void)
 		/* device/serial */
 		pathprint(path, sizeof(path), "/sys/block/%s/device/serial", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* device/vpd_pg80 */
 		pathprint(path, sizeof(path), "/sys/block/%s/device/vpd_pg80", dd->d_name);
 		if (sysattr_vpd_pg80(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* device/vpd_pg83 */
 		pathprint(path, sizeof(path), "/sys/block/%s/device/vpd_pg83", dd->d_name);
 		if (sysattr_vpd_pg83(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:naa.%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:naa.%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* device/WWN */
 		pathprint(path, sizeof(path), "/sys/block/%s/device/wwn", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* device/WWID */
 		pathprint(path, sizeof(path), "/sys/block/%s/device/wwid", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* WWN */
 		pathprint(path, sizeof(path), "/sys/block/%s/wwn", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* WWID */
 		pathprint(path, sizeof(path), "/sys/block/%s/wwid", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 
 		/* uuid */
 		pathprint(path, sizeof(path), "/sys/block/%s/uuid", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
-			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf, esc_buffer));
+			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
 		}
 	}
 

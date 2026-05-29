@@ -106,15 +106,15 @@ void test(int argc, char* argv[])
 	assert(worddigitstr("needle2string", "needle") != 0);
 	assert(worddigitstr("needle", "needle") != 0);
 
-	assert(strcmp(esc_tag("simple", buffer), "simple") == 0);
-	assert(strcmp(esc_tag("line1\nline2", buffer), "line1\\nline2") == 0);
-	assert(strcmp(esc_tag("line1\rline2", buffer), "line1\\rline2") == 0);
-	assert(strcmp(esc_tag("key:value", buffer), "key\\dvalue") == 0);
-	assert(strcmp(esc_tag("C:\\path\\file", buffer), "C\\d\\\\path\\\\file") == 0);
-	assert(strcmp(esc_tag("A\nB\rC:D\\E", buffer), "A\\nB\\rC\\dD\\\\E") == 0);
-	assert(strcmp(esc_tag("endwith\\", buffer), "endwith\\\\") == 0);
-	assert(strcmp(esc_tag("", buffer), "") == 0);
-	assert(strcmp(esc_tag("\n\r:\\\\", buffer), "\\n\\r\\d\\\\\\\\") == 0);
+	assert(strcmp(esc_tag("simple"), "simple") == 0);
+	assert(strcmp(esc_tag("line1\nline2"), "line1\\nline2") == 0);
+	assert(strcmp(esc_tag("line1\rline2"), "line1\\rline2") == 0);
+	assert(strcmp(esc_tag("key:value"), "key\\dvalue") == 0);
+	assert(strcmp(esc_tag("C:\\path\\file"), "C\\d\\\\path\\\\file") == 0);
+	assert(strcmp(esc_tag("A\nB\rC:D\\E"), "A\\nB\\rC\\dD\\\\E") == 0);
+	assert(strcmp(esc_tag("endwith\\"), "endwith\\\\") == 0);
+	assert(strcmp(esc_tag(""), "") == 0);
+	assert(strcmp(esc_tag("\n\r:\\\\"), "\\n\\r\\d\\\\\\\\") == 0);
 
 	for (i = 2; i < argc; ++i) {
 		printf("argv[%d]\n", i);
@@ -935,7 +935,6 @@ void signal_init(void)
 
 int snapraid_main(int argc, char* argv[])
 {
-	char esc_buffer[ESC_MAX];
 	int c;
 	struct snapraid_option opt;
 	char conf[PATH_MAX];
@@ -1750,7 +1749,7 @@ int snapraid_main(int argc, char* argv[])
 	}
 	log_tag("command:%s\n", command);
 	for (i = 0; i < argc; ++i)
-		log_tag("argv:%u:%s\n", i, esc_tag(argv[i], esc_buffer));
+		log_tag("argv:%u:%s\n", i, esc_tag(argv[i]));
 	log_flush();
 
 	if (!opt.skip_self)

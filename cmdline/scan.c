@@ -142,8 +142,6 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	struct snapraid_link* slink;
-	char esc_buffer[ESC_MAX];
-
 	/* check if the link already exists */
 	slink = tommy_hashdyn_search(&disk->linkset, link_name_compare_to_arg, sub, link_name_hash(sub));
 	if (slink) {
@@ -164,7 +162,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			++scan->count_equal;
 
 			if (state->opt.gui_verbose) {
-				log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
+				log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(slink->sub));
 			}
 		} else {
 			/* it's an update */
@@ -174,9 +172,9 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			++scan->count_change;
 
-			log_tag("scan:update:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
+			log_tag("scan:update:%s:%s\n", disk->name, esc_tag(slink->sub));
 			if (is_diff) {
-				msg_info("update %s\n", fmt_term(disk, slink->sub, esc_buffer));
+				msg_info("update %s\n", fmt_term(disk, slink->sub));
 			}
 
 			/* update it */
@@ -191,9 +189,9 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* create the new link */
 		++scan->count_insert;
 
-		log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
+		log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub));
 		if (is_diff) {
-			msg_info("add %s\n", fmt_term(disk, sub, esc_buffer));
+			msg_info("add %s\n", fmt_term(disk, sub));
 		}
 
 		/* and continue to insert it */
@@ -390,7 +388,6 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 
 static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
-	char esc_buffer[ESC_MAX];
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
@@ -404,7 +401,7 @@ static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapra
 
 		if (filephy(path_next, file->size, &file->physical) != 0) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: File physycal offset error. %s.\n", es(errno), 0, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: File physycal offset error. %s.\n", es(errno), 0, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal(errno, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -525,7 +522,6 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struct stat* st, uint64_t* physical)
 {
 #if HAVE_LSTAT_SYNC
-	char esc_buffer[ESC_MAX];
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
@@ -547,7 +543,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (lstat_sync(path_next, &synced_st, physical) != 0) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 			log_fatal(errno, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -570,7 +566,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			 * Why is the file size reported incorrectly for files that are still being written to?
 			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
 			 */
-			log_tag("%s:%u:%s:%s: Uncached time change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub, esc_buffer));
+			log_tag("%s:%u:%s:%s: Uncached time change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
 			log_fatal(ESOFT, "WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
 				(uint64_t)st->st_mtime, (uint32_t)st->st_mtimensec, (uint64_t)synced_st.st_mtime, (uint32_t)synced_st.st_mtimensec, sub);
 			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
@@ -581,7 +577,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (st->st_size != synced_st.st_size) {
 #ifndef _WIN32
-			log_tag("%s:%u:%s:%s: Uncached size change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub, esc_buffer));
+			log_tag("%s:%u:%s:%s: Uncached size change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
 			log_fatal(ESOFT, "WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_size, (uint64_t)synced_st.st_size, sub);
 			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
@@ -591,7 +587,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (st->st_nlink != synced_st.st_nlink) {
 #ifndef _WIN32
-			log_tag("%s:%u:%s:%s: Uncached nlink change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub, esc_buffer));
+			log_tag("%s:%u:%s:%s: Uncached nlink change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
 			log_fatal(ESOFT, "WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
 				(uint32_t)st->st_nlink, (uint32_t)synced_st.st_nlink, sub);
 			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
@@ -600,7 +596,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 		}
 
 		if (st->st_ino != synced_st.st_ino) {
-			log_tag("%s:%u:%s:%s: Uncached inode change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub, esc_buffer));
+			log_tag("%s:%u:%s:%s: Uncached inode change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
 			log_fatal(ESOFT, "DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_ino, (uint64_t)synced_st.st_ino, sub);
 			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
@@ -702,9 +698,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	int64_t file_already_present_mtime_sec;
 	int file_already_present_mtime_nsec;
 	int is_file_reported;
-	char esc_buffer[ESC_MAX];
-	char esc_buffer_alt[ESC_MAX];
-
 	/*
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
 	 * to detect moved files.
@@ -784,9 +777,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* if the path is different, it means a moved file with the same inode */
 				++scan->count_move;
 
-				log_tag("scan:move:%s:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer), esc_tag(sub, esc_buffer_alt));
+				log_tag("scan:move:%s:%s:%s\n", disk->name, esc_tag(file->sub), esc_tag(sub));
 				if (is_diff) {
-					msg_info("move %s -> %s\n", fmt_term(disk, file->sub, esc_buffer), fmt_term(disk, sub, esc_buffer_alt));
+					msg_info("move %s -> %s\n", fmt_term(disk, file->sub), fmt_term(disk, sub));
 				}
 
 				/* remove from the name set */
@@ -805,7 +798,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui_verbose) {
-					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub));
 				}
 			}
 
@@ -947,9 +940,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* like when restoring a backup that restores also the timestamp */
 				++scan->count_restore;
 
-				log_tag("scan:restore:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
+				log_tag("scan:restore:%s:%s\n", disk->name, esc_tag(sub));
 				if (is_diff) {
-					msg_info("restore %s\n", fmt_term(disk, sub, esc_buffer));
+					msg_info("restore %s\n", fmt_term(disk, sub));
 				}
 
 				/* remove from the inode set */
@@ -970,7 +963,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui_verbose) {
-					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub));
 				}
 			}
 
@@ -1015,7 +1008,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* LCOV_EXCL_START */
 			log_fatal(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
 			log_fatal(ESOFT, "It's possible that after a kernel crash this file was lost,\n");
-			log_fatal(ESOFT, "and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub, esc_buffer));
+			log_fatal(ESOFT, "and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub));
 			if (!is_diff) {
 				log_fatal(ESOFT, "If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
 				exit(EXIT_FAILURE);
@@ -1080,16 +1073,16 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				if (lstat(path_other, &other_st) == 0) {
 					++scan->count_copy;
 
-					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
+					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub), disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub, esc_buffer), fmt_term(disk, file->sub, esc_buffer_alt));
+						msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub), fmt_term(disk, file->sub));
 					}
 				} else {
 					++scan->count_relocate;
 
-					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
+					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub), disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("relocate %s -> %s\n", fmt_term(other_disk, other_file->sub, esc_buffer), fmt_term(disk, file->sub, esc_buffer_alt));
+						msg_info("relocate %s -> %s\n", fmt_term(other_disk, other_file->sub), fmt_term(disk, file->sub));
 					}
 				}
 
@@ -1108,20 +1101,20 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (is_file_already_present) {
 			++scan->count_change;
 
-			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc_tag(sub, esc_buffer),
+			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc_tag(sub),
 				file_already_present_size, file_already_present_mtime_sec, file_already_present_mtime_nsec,
 				file->size, file->mtime_sec, file->mtime_nsec
 			);
 
 			if (is_diff) {
-				msg_info("update %s\n", fmt_term(disk, sub, esc_buffer));
+				msg_info("update %s\n", fmt_term(disk, sub));
 			}
 		} else {
 			++scan->count_insert;
 
-			log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
+			log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub));
 			if (is_diff) {
-				msg_info("add %s\n", fmt_term(disk, sub, esc_buffer));
+				msg_info("add %s\n", fmt_term(disk, sub));
 			}
 		}
 	}
@@ -1253,10 +1246,9 @@ struct stat* dstat(struct dirent_sorted* dd)
 #define DSTAT(file, dd, buf) dstat(disk, file, buf)
 struct stat* dstat(struct snapraid_disk* disk, const char* file, struct stat* st)
 {
-	char esc_buffer[ESC_MAX];
 	if (lstat(file, st) != 0) {
 		/* LCOV_EXCL_START */
-		log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(file, esc_buffer), strerror(errno));
+		log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(file), strerror(errno));
 		log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -1271,7 +1263,6 @@ struct stat* dstat(struct snapraid_disk* disk, const char* file, struct stat* st
  */
 static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* path_next, char* sub_next, char* tmp)
 {
-	char esc_buffer[ESC_MAX];
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	int processed = 0;
@@ -1289,7 +1280,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 	d = opendir(path_next);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		log_tag("%s:%u:%s:%s: Open dir error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+		log_tag("%s:%u:%s:%s: Open dir error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 		log_fatal(errno, "Error opening directory '%s'. %s.\n", path_next, strerror(errno));
 		if (level == 0)
 			log_fatal(errno, "If this is the disk mount point, remember to create it manually\n");
@@ -1320,7 +1311,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			/* restore removing additions */
 			path_next[path_len] = 0;
 			sub_next[sub_len] = 0;
-			log_tag("%s:%u:%s:%s: Read dir error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+			log_tag("%s:%u:%s:%s: Read dir error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 			log_fatal(errno, "Error reading directory '%s'. %s.\n", path_next, strerror(errno));
 			log_fatal(errno, "You can exclude it in the config file with: exclude /%s\n", sub_next);
 			exit(EXIT_FAILURE);
@@ -1340,7 +1331,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		/* check for not supported file names */
 		if (name[0] == 0) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Unsupported name error.\n", es(ESOFT), 0, disk->name, esc_tag(path_next, esc_buffer));
+			log_tag("%s:%u:%s:%s: Unsupported name error.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
 			log_fatal(ESOFT, "Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -1388,7 +1379,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		/* LCOV_EXCL_START */
 		/* restore removing additions */
 		path_next[path_len] = 0;
-		log_tag("%s:%u:%s:%s: Close dir error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+		log_tag("%s:%u:%s:%s: Close dir error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 		log_fatal(errno, "Error closing directory '%s'. %s.\n", path_next, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -1453,7 +1444,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			if (st->st_mode == 0) {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 					log_fatal(errno, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -1485,7 +1476,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				if (st->st_ino == 0 || st->st_nlink == 0) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
-						log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+						log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 						log_fatal(errno, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
@@ -1506,14 +1497,14 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				ret = readlink(path_next, tmp, PATH_MAX);
 				if (ret >= PATH_MAX) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Readlink error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Readlink error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 					log_fatal(EINTERNAL, "Error in readlink file '%s'. Symlink too long.\n", path_next);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Readlink error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next, esc_buffer), strerror(errno));
+					log_tag("%s:%u:%s:%s: Readlink error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
 					log_fatal(errno, "Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -1543,7 +1534,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				 * in Windows we are already skipping them reporting them as special files
 				 */
 				if ((uint64_t)st->st_dev != disk->device) {
-					log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next, esc_buffer));
+					log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
 					log_fatal(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
@@ -1570,7 +1561,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
-				log_tag("%s:%u:%s:%s: Ignoring special file.\n", es(ESOFT), 0, disk->name, esc_tag(path_next, esc_buffer));
+				log_tag("%s:%u:%s:%s: Ignoring special file.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
 				log_fatal(ESOFT, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
@@ -1606,7 +1597,6 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 
 static void* scan_disk(void* arg)
 {
-	char esc_buffer[ESC_MAX];
 	struct snapraid_scan* scan = arg;
 	struct snapraid_disk* disk = scan->disk;
 	int ret;
@@ -1618,7 +1608,7 @@ static void* scan_disk(void* arg)
 	ret = fsinfo(disk->dir, &has_persistent_inodes, &has_syncronized_hardlinks, 0, 0, 0, 0, 0, 0);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		log_tag("%s:%u:%s:%s: Filesystem info error. %s.\n", es(errno), 0, disk->name, esc_tag(disk->dir, esc_buffer), strerror(errno));
+		log_tag("%s:%u:%s:%s: Filesystem info error. %s.\n", es(errno), 0, disk->name, esc_tag(disk->dir), strerror(errno));
 		log_fatal(errno, "Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -1672,8 +1662,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	msg_ptr* msg;
 	struct snapraid_scan total;
 	int no_difference;
-	char esc_buffer[ESC_MAX];
-
 	tommy_list_init(&scanlist);
 
 	if (is_diff)
@@ -1745,9 +1733,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				if (!file_flag_has(file, FILE_IS_RELOCATED)) {
 					++scan->count_remove;
 
-					log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
+					log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("remove %s\n", fmt_term(disk, file->sub, esc_buffer));
+						msg_info("remove %s\n", fmt_term(disk, file->sub));
 					}
 				}
 
@@ -1767,9 +1755,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (!link_flag_has(slink, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
+				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(slink->sub));
 				if (is_diff) {
-					msg_info("remove %s\n", fmt_term(disk, slink->sub, esc_buffer));
+					msg_info("remove %s\n", fmt_term(disk, slink->sub));
 				}
 
 				scan_link_remove(scan, slink);
