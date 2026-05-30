@@ -406,6 +406,15 @@ AC_ARG_ENABLE([symlink-tools],
 		])
 	])
 
+# Enable support for hardlinked tool paths
+AC_ARG_ENABLE([hardlink-tools],
+	[AS_HELP_STRING([--enable-hardlink-tools], [allow paths specified with --with-* options to be hard links])],
+	[
+		AS_IF([test "x$enableval" = "xyes"], [
+			AC_DEFINE([HAVE_HARDLINK_TOOLS], [1], [Define to 1 if paths specified with --with-* options are allowed to be hardlinks.])
+		])
+	])
+
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_ARG_VAR([FAILENV], [Test environment for failing tests])
 AC_ARG_VAR([TESTENV_SSE2], [Test environment for SSE2])

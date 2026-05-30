@@ -34,8 +34,9 @@ SnapRAID HISTORY
    build time. When not specified, the existing runtime discovery
    behaviour is preserved. Primarily intended for NixOS and other
    non-FHS systems.
- * Added --enable-symlink-tools configure option to allow the validation
-   logic to accept symbolic links for the specified --with-* paths.
+ * Added --enable-symlink-tools and --enable-hardlink-tools configure
+   options to allow the validation logic to accept symbolic and hard
+   links for the specified --with-* paths.
 
 14.6 2026/06
 ============
