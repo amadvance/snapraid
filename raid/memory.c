@@ -28,16 +28,29 @@ void *raid_malloc_align(size_t size, size_t align_size, void **freeptr)
 
 void *raid_malloc(size_t size, void **freeptr)
 {
-    return raid_malloc_align(size, RAID_MALLOC_ALIGN, freeptr);
+	return raid_malloc_align(size, RAID_MALLOC_ALIGN, freeptr);
 }
 
-void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, size_t displacement_size, void **freeptr)
+unsigned raid_optimal_displacement(int n)
+{
+	if (n <= 8)
+		return 24 * 64;
+	if (n <= 16)
+		return 28 * 64;
+	if (n <= 32)
+		return 30 * 64;
+	return 33 * 64;
+}
+
+void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, ssize_t displacement_size, void **freeptr)
 {
 	void **v;
 	unsigned char *va;
 	int i;
 
 	BUG_ON(n <= 0 || nd < 0);
+
+	(void)nd;
 
 	v = malloc(n * sizeof(void *));
 	if (!v) {
@@ -64,7 +77,7 @@ void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, s
 
 void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 {
-    return raid_malloc_vector_align(nd, n, size, RAID_MALLOC_ALIGN, RAID_MALLOC_DISPLACEMENT, freeptr);
+	return raid_malloc_vector_align(nd, n, size, RAID_MALLOC_ALIGN, raid_optimal_displacement(n), freeptr);
 }
 
 void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
@@ -131,4 +144,3 @@ int raid_mtest_vector(int n, size_t size, void **vv)
 
 	return 0;
 }
-
