@@ -59,17 +59,6 @@ void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, s
 		va += size + displacement_size;
 	}
 
-	/*
-	 * Reverse order of the data blocks
-	 * because they are usually accessed from the last one
-	 */
-	for (i = 0; i < nd / 2; ++i) {
-		void *ptr = v[i];
-
-		v[i] = v[nd - 1 - i];
-		v[nd - 1 - i] = ptr;
-	}
-
 	return v;
 }
 
