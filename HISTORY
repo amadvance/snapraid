@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+14.6 2026/06
+============
+ * Fix stack overflow in deep directory trees on platforms with a small
+   stack like Alpine.
+
 14.5 2026/05
 ============
  * Support importing data from smartctl even when the disk reports
