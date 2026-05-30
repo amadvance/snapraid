@@ -100,7 +100,7 @@ void speed(void)
 	}
 
 	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
-	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", RAID_MALLOC_DISPLACEMENT);
+	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", raid_optimal_displacement(nv));
 	printf("The reported values are the aggregate bandwidth of all data blocks in MiB/s,\n");
 	printf("not counting parity blocks.\n");
 	printf("\n");
