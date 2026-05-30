@@ -262,12 +262,14 @@ static int verify_executable(const char* exec_path, char* resolved_path)
 		return -1;
 	}
 
+#if !HAVE_HARDLINK_TOOLS
 	/* verify the file has not been hardlinked multiple times */
 	if (st.st_nlink > 1) {
 		log_error(EINVAL, "File %s has multiple hard links", resolved_path);
 		close(fd);
 		return -1;
 	}
+#endif
 
 	return fd;
 }
