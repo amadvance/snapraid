@@ -569,7 +569,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 
 		if (is_hw(errno)) {
-			log_error_errno(errno, disk->name);
+			log_fatal_errno(errno, disk->name);
 			/* continue until the error limit is reached */
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 		} else {
@@ -604,7 +604,7 @@ static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_t
 		log_tag("parity_%s:%u:%s: Write error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 
 		if (is_hw(errno)) {
-			log_error_errno(errno, lev_config_name(level));
+			log_fatal_errno(errno, lev_config_name(level));
 			/* continue until the error limit is reached */
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 		} else {
@@ -1039,7 +1039,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						/* LCOV_EXCL_START */
 						log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(l), strerror(errno));
 						if (is_hw(errno)) {
-							log_error_errno(errno, lev_config_name(l));
+							log_fatal_errno(errno, lev_config_name(l));
 							if (io_error >= state->opt.io_error_limit) {
 								log_fatal(errno, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_config_name(l));
 								log_fatal(errno, "Stopping at block %u\n", blockcur);

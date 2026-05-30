@@ -445,7 +445,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			for (j = i->next; j != 0; j = j->next) {
 				struct snapraid_content* other = j->data;
 				if (content->device == other->device) {
-					log_fatal(ESOFT, "WARNING! Content files on the same disk: '%s' and '%s'.\n", content->content, other->content);
+					log_error(ESOFT, "WARNING! Content files on the same disk: '%s' and '%s'.\n", content->content, other->content);
 					break;
 				}
 			}
@@ -471,11 +471,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #endif
 	if (state->raid_mode == RAID_MODE_CAUCHY && !state->opt.no_warnings) {
 		if (state->level == 3) {
-			log_fatal(ESOFT, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
-			log_fatal(ESOFT, "WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
+			log_error(ESOFT, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
+			log_error(ESOFT, "WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
 		} else if (state->level > 3) {
-			log_fatal(ESOFT, "WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
-			log_fatal(ESOFT, "WARNING! It's recommended to reduce the parity levels to triple parity.\n");
+			log_error(ESOFT, "WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
+			log_error(ESOFT, "WARNING! It's recommended to reduce the parity levels to triple parity.\n");
 		}
 	}
 
@@ -1682,7 +1682,7 @@ static void state_map(struct snapraid_state* state)
 				if (map->uuid[0] != 0) {
 					/* count the number of uuid change */
 					++uuid_mismatch;
-					log_fatal(ESOFT, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, disk->uuid);
+					log_error(ESOFT, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, disk->uuid);
 				} else {
 					/* no message here, because having a disk without */
 					/* UUID is the normal state of an empty disk */
@@ -1718,7 +1718,7 @@ static void state_map(struct snapraid_state* state)
 					if (state->parity[l].split_map[s].uuid[0] != 0) {
 						/* count the number of uuid change */
 						++uuid_mismatch;
-						log_fatal(ESOFT, "UUID change for parity '%s/%u' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].uuid, uuid);
+						log_error(ESOFT, "UUID change for parity '%s/%u' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].uuid, uuid);
 					}
 
 					/* update the uuid */
@@ -2948,7 +2948,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* search by UUID if renamed */
 				disk = find_disk_by_uuid(state, uuid);
 				if (disk) {
-					log_fatal(EUSER, "WARNING! Renaming disk '%s' to '%s'\n", buffer, disk->name);
+					log_error(EUSER, "WARNING! Renaming disk '%s' to '%s'\n", buffer, disk->name);
 
 					/* write the new state with the new name */
 					state->need_write = 1;
@@ -3169,7 +3169,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						}
 
 						/* otherwise we can drop it */
-						log_fatal(EUSER, "WARNING! Dropping from '%s' unused split '%u'\n", lev_config_name(v_level), s);
+						log_error(EUSER, "WARNING! Dropping from '%s' unused split '%u'\n", lev_config_name(v_level), s);
 					} else {
 						char parity_name[64];
 
@@ -4271,7 +4271,7 @@ void state_read(struct snapraid_state* state)
 
 			/* otherwise continue */
 			if (node->next) {
-				log_fatal(errno, "WARNING! Content file '%s' not found, attempting with another copy...\n", path);
+				log_error(errno, "WARNING! Content file '%s' not found, attempting with another copy...\n", path);
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;
@@ -4284,7 +4284,7 @@ void state_read(struct snapraid_state* state)
 
 	/* if not found, assume empty */
 	if (!f) {
-		log_fatal(EUSER, "No content file found. Assuming empty.\n");
+		log_error(EUSER, "No content file found. Assuming empty.\n");
 
 		/* create the initial mapping */
 		state_map(state);
@@ -4328,8 +4328,8 @@ void state_read(struct snapraid_state* state)
 		} else {
 			/* if the size is different */
 			if (other_st.st_size != st.st_size) {
-				log_fatal(ECONTENT, "WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
-				log_fatal(ECONTENT, "Likely one of the two is broken!\n");
+				log_error(ECONTENT, "WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
+				log_error(ECONTENT, "Likely one of the two is broken!\n");
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;

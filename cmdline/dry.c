@@ -97,7 +97,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
-			log_error_errno(errno, disk->name);
+			log_fatal_errno(errno, disk->name);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 			/* LCOV_EXCL_STOP */
@@ -129,7 +129,7 @@ static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_ta
 		log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
-			log_error_errno(errno, lev_config_name(level));
+			log_fatal_errno(errno, lev_config_name(level));
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 			/* LCOV_EXCL_STOP */
