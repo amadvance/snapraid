@@ -567,9 +567,9 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
 			 */
 			log_tag("%s:%u:%s:%s: Uncached time change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_fatal(ESOFT, "WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
+			log_error(ESOFT, "WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
 				(uint64_t)st->st_mtime, (uint32_t)st->st_mtimensec, (uint64_t)synced_st.st_mtime, (uint32_t)synced_st.st_mtimensec, sub);
-			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
+			log_error(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_mtime = synced_st.st_mtime;
 			st->st_mtimensec = synced_st.st_mtimensec;
@@ -578,9 +578,9 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 		if (st->st_size != synced_st.st_size) {
 #ifndef _WIN32
 			log_tag("%s:%u:%s:%s: Uncached size change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_fatal(ESOFT, "WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
+			log_error(ESOFT, "WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_size, (uint64_t)synced_st.st_size, sub);
-			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
+			log_error(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_size = synced_st.st_size;
 		}
@@ -588,9 +588,9 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 		if (st->st_nlink != synced_st.st_nlink) {
 #ifndef _WIN32
 			log_tag("%s:%u:%s:%s: Uncached nlink change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_fatal(ESOFT, "WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
+			log_error(ESOFT, "WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
 				(uint32_t)st->st_nlink, (uint32_t)synced_st.st_nlink, sub);
-			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
+			log_error(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_nlink = synced_st.st_nlink;
 		}
@@ -1006,9 +1006,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
-			log_fatal(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
-			log_fatal(ESOFT, "It's possible that after a kernel crash this file was lost,\n");
-			log_fatal(ESOFT, "and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub));
+			log_error(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
+			log_error(ESOFT, "It's possible that after a kernel crash this file was lost,\n");
+			log_error(ESOFT, "and you can use 'snapraid fix -f /%s' to recover it.\n", fmt_poll(disk, sub));
 			if (!is_diff) {
 				log_fatal(ESOFT, "If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
 				exit(EXIT_FAILURE);
@@ -1510,7 +1510,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 					/* LCOV_EXCL_STOP */
 				}
 				if (ret == 0)
-					log_fatal(ESOFT, "WARNING! Empty symbolic link '%s'.\n", path_next);
+					log_error(ESOFT, "WARNING! Empty symbolic link '%s'.\n", path_next);
 
 				/* readlink doesn't put the final 0 */
 				tmp[ret] = 0;
@@ -1535,7 +1535,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				 */
 				if ((uint64_t)st->st_dev != disk->device) {
 					log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
-					log_fatal(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+					log_error(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
 				{
@@ -1562,7 +1562,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 					st = DSTAT(path_next, dd, &st_buf);
 
 				log_tag("%s:%u:%s:%s: Ignoring special file.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
-				log_fatal(ESOFT, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
+				log_error(ESOFT, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
@@ -1815,7 +1815,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					/* if verbose, print the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						log_fatal(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						log_error(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1885,9 +1885,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			) {
 				if (!done) {
 					done = 1;
-					log_fatal(ESOFT, "WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
+					log_error(ESOFT, "WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
 				} else {
-					log_fatal(ESOFT, ", disk '%s' at dir '%s'", disk->name, disk->dir);
+					log_error(ESOFT, ", disk '%s' at dir '%s'", disk->name, disk->dir);
 				}
 
 				/* detect the special condition of all files missing */
@@ -1902,12 +1902,12 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (done) {
 			log_fatal(ESOFT, "\nare now missing or have been rewritten!\n");
 			if (all_rewritten) {
-				log_fatal(ESOFT, "This could occur when restoring a disk from a backup\n");
-				log_fatal(ESOFT, "program that is not setting correctly the timestamps.\n");
+				log_error(ESOFT, "This could occur when restoring a disk from a backup\n");
+				log_error(ESOFT, "program that is not setting correctly the timestamps.\n");
 			}
 			if (all_missing) {
-				log_fatal(ESOFT, "This could occur when some disks are not mounted\n");
-				log_fatal(ESOFT, "in the expected directory.\n");
+				log_error(ESOFT, "This could occur when some disks are not mounted\n");
+				log_error(ESOFT, "in the expected directory.\n");
 			}
 			if (!is_diff) {
 				log_fatal(ESOFT, "If you want to '%s' anyway, use 'snapraid --force-empty %s'.\n", state->command, state->command);
@@ -1925,14 +1925,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (disk->has_unreliable_physical) {
 				if (!done) {
 					done = 1;
-					log_fatal(ESOFT, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
+					log_error(ESOFT, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
 				} else {
-					log_fatal(ESOFT, ", '%s'", disk->name);
+					log_error(ESOFT, ", '%s'", disk->name);
 				}
 			}
 		}
 		if (done) {
-			log_fatal(ESOFT, ". The order of files won't be optimal.\n");
+			log_error(ESOFT, ". The order of files won't be optimal.\n");
 		}
 	}
 
@@ -1944,14 +1944,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_volatile_inodes) {
 			if (!done) {
 				done = 1;
-				log_fatal(ESOFT, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
+				log_error(ESOFT, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
 			} else {
-				log_fatal(ESOFT, ", '%s'", disk->name);
+				log_error(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_fatal(ESOFT, ". Inodes are not used to detect move operations.\n");
+		log_error(ESOFT, ". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with changed UUID */
@@ -1966,14 +1966,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_different_uuid && !disk->had_empty_uuid) {
 			if (!done) {
 				done = 1;
-				log_fatal(ESOFT, "WARNING! UUID is changed for disks: '%s'", disk->name);
+				log_error(ESOFT, "WARNING! UUID is changed for disks: '%s'", disk->name);
 			} else {
-				log_fatal(ESOFT, ", '%s'", disk->name);
+				log_error(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_fatal(ESOFT, ". Inodes are not used to detect move operations.\n");
+		log_error(ESOFT, ". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with unsupported UUID */
@@ -1984,17 +1984,17 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_unsupported_uuid) {
 			if (!done) {
 				done = 1;
-				log_fatal(ESOFT, "WARNING! UUID is unsupported for disks: '%s'", disk->name);
+				log_error(ESOFT, "WARNING! UUID is unsupported for disks: '%s'", disk->name);
 			} else {
-				log_fatal(ESOFT, ", '%s'", disk->name);
+				log_error(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_fatal(ESOFT, ". Not using inodes to detect move operations.\n");
+		log_error(ESOFT, ". Not using inodes to detect move operations.\n");
 #if defined(_linux) && !HAVE_BLKID
-		log_fatal(ESOFT, "The 'blkid' library is not linked in SnapRAID!\n");
-		log_fatal(ESOFT, "Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
+		log_error(ESOFT, "The 'blkid' library is not linked in SnapRAID!\n");
+		log_error(ESOFT, "Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
 #endif
 	}
 

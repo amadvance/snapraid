@@ -5,6 +5,9 @@ SnapRAID HISTORY
 ============
  * Fix stack overflow in deep directory trees on platforms with a small
    stack like Alpine.
+ * Do not log "fatal" error messages unless execution is stopped early. 
+   This ensures SnapRAID Daemon correctly identifies the alert level of 
+   each message (e.g., treating non-terminating issues as warnings).
 
 14.5 2026/05
 ============

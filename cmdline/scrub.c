@@ -184,7 +184,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
-			log_error_errno(errno, disk->name);
+			log_fatal_errno(errno, disk->name);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 			/* LCOV_EXCL_STOP */
@@ -216,7 +216,7 @@ static void scrub_parity_reader(struct snapraid_worker* worker, struct snapraid_
 		log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
-			log_error_errno(errno, lev_config_name(level));
+			log_fatal_errno(errno, lev_config_name(level));
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 			/* LCOV_EXCL_STOP */
@@ -570,6 +570,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						error_on_this_block = 1;
 					} else {
 						log_tag("parity_error_data:%u:%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
+						log_error(EDATA, "Data error in parity '%s' at position '%u', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
 						log_error(EDATA, "Data error in parity '%s' at position '%u', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;

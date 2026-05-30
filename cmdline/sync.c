@@ -569,7 +569,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 
 		if (is_hw(errno)) {
-			log_error_errno(errno, disk->name);
+			log_fatal_errno(errno, disk->name);
 			/* continue until the error limit is reached */
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 		} else {
@@ -604,7 +604,7 @@ static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_t
 		log_tag("parity_%s:%u:%s: Write error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 
 		if (is_hw(errno)) {
-			log_error_errno(errno, lev_config_name(level));
+			log_fatal_errno(errno, lev_config_name(level));
 			/* continue until the error limit is reached */
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 		} else {
