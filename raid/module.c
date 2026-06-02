@@ -459,7 +459,7 @@ int raid_selftest(void)
 	/* ensure to have enough space for data */
 	BUG_ON(nd * size > 65536);
 
-	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	v = raid_malloc_vector(nv, size, &v_alloc);
 	if (!v) {
 		/* LCOV_EXCL_START */
 		return -1;
