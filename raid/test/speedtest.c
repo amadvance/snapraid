@@ -83,7 +83,7 @@ void speed(void)
 
 	nv = nd + RAID_PARITY_MAX + 1;
 
-	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	v = raid_malloc_vector(nv, size, &v_alloc);
 
 	/* initialize disks with fixed data */
 	for (i = 0; i < nd; ++i)

@@ -82,14 +82,13 @@ void *raid_malloc_align(size_t size, size_t align_size, void **freeptr);
  * Use an alignment suitable for the raid functions.
  * Returns a vector of @n pointers, each one pointing to a block of
  * the specified @size.
- * The first @nd elements are reversed in order.
  */
-void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr);
+void **raid_malloc_vector(int n, size_t size, void **freeptr);
 
 /**
  * Arbitrary aligned vector allocation.
  */
-void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, ssize_t displacement_size, void **freeptr);
+void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, void **freeptr);
 
 /**
  * Fills the memory vector with pseudo-random data based on the specified seed.

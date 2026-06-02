@@ -686,7 +686,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	io_init(&io, state, state->opt.io_cache, buffermax, handle, diskmax, 0, sync_data_reader, 0, parity_handle, state->level, 0, 0, sync_parity_writer);
 
 	/* allocate the copy buffer */
-	copy = malloc_nofail_vector_align(diskmax, diskmax, state->block_size, &copy_alloc);
+	copy = malloc_nofail_vector_align(diskmax, state->block_size, &copy_alloc);
 
 	/* allocate and fill the zero buffer */
 	zero = malloc_nofail_align(state->block_size, &zero_alloc);
