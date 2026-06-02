@@ -118,15 +118,13 @@ static const unsigned STRIDE_NOISE[16] = {
 	1, 4, 0, 7, 3, 6, 2, 5
 };
 
-void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, ssize_t displacement_size, void **freeptr)
+void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, void **freeptr)
 {
 	void **v;
 	unsigned char *va;
 	int i;
 
-	BUG_ON(n <= 0 || nd < 0);
-
-	(void)nd;
+	BUG_ON(n <= 0);
 
 	v = malloc(n * sizeof(void *));
 	if (!v) {
@@ -165,9 +163,9 @@ void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, s
 	return v;
 }
 
-void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
+void **raid_malloc_vector(int n, size_t size, void **freeptr)
 {
-	return raid_malloc_vector_align(nd, n, size, RAID_MALLOC_ALIGN, raid_optimal_displacement(n), freeptr);
+	return raid_malloc_vector_align(n, size, RAID_MALLOC_ALIGN, raid_optimal_displacement(n), freeptr);
 }
 
 void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
