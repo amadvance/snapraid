@@ -171,7 +171,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 
 	nv = nd + np * 2 + 2;
 
-	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	v = raid_malloc_vector(nv, size, &v_alloc);
 	if (!v) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -336,7 +336,7 @@ int raid_test_par(int mode, int nd, size_t size)
 
 	nv = nd + np * 2;
 
-	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	v = raid_malloc_vector(nv, size, &v_alloc);
 	if (!v) {
 		/* LCOV_EXCL_START */
 		return -1;

@@ -85,7 +85,7 @@ void speed(int period, int nd, int size)
 
 	nv = nd + RAID_PARITY_MAX + 1;
 
-	v = malloc_nofail_vector_align(nd, nv, size, &v_alloc);
+	v = malloc_nofail_vector_align(nv, size, &v_alloc);
 
 	/* initialize disks with fixed data */
 	for (i = 0; i < nd; ++i)

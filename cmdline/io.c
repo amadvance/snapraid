@@ -970,9 +970,9 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	allocated_size = 0;
 	for (i = 0; i < io->io_max; ++i) {
 		if (state->file_mode != ADVISE_DIRECT)
-			io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, block_size, &io->buffer_alloc_map[i]);
+			io->buffer_map[i] = malloc_nofail_vector_align(buffer_max, block_size, &io->buffer_alloc_map[i]);
 		else
-			io->buffer_map[i] = malloc_nofail_vector_direct(handle_max, buffer_max, block_size, &io->buffer_alloc_map[i]);
+			io->buffer_map[i] = malloc_nofail_vector_direct(buffer_max, block_size, &io->buffer_alloc_map[i]);
 		if (!state->opt.skip_self)
 			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
 		allocated_size += block_size * buffer_max;
