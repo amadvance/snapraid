@@ -1578,13 +1578,13 @@ const char* fmt_term(const struct snapraid_disk* disk, const char* str)
 
 const char* fmt_size(uint64_t size, char* buffer, size_t buffer_size)
 {
-	if (size >= 10UL * TERA)
+	if (size >= 10ULL * TERA)
 		snprintf(buffer, buffer_size, "%" PRIu64 " T", size / TERA);
-	else if (size >= 10UL * GIGA)
+	else if (size >= 10ULL * GIGA)
 		snprintf(buffer, buffer_size, "%" PRIu64 " G", size / GIGA);
-	else if (size >= 10UL * MEGA)
+	else if (size >= 10 * MEGA)
 		snprintf(buffer, buffer_size, "%" PRIu64 " M", size / MEGA);
-	else if (size >= 10UL * KILO)
+	else if (size >= 10 * KILO)
 		snprintf(buffer, buffer_size, "%" PRIu64 " k", size / KILO);
 	else
 		snprintf(buffer, buffer_size, "%" PRIu64 " ", size);
