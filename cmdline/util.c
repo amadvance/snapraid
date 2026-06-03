@@ -402,7 +402,7 @@ uint32_t CRC32C_3[256] = {
 int crc_x86;
 #endif
 
-uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
+uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 	crc ^= CRC_IV;
 
@@ -414,7 +414,7 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 }
 
 #if CONFIG_X86
-uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
+uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 	crc ^= CRC_IV;
 
@@ -426,7 +426,7 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 }
 #endif
 
-uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, size_t size);
 
 void crc32c_init(void)
 {

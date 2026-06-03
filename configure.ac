@@ -207,6 +207,7 @@ AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
 AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 AC_CHECK_CC_OPT([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
 AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
+AC_CHECK_CC_OPT([-Wshorten-64-to-32], CFLAGS="$CFLAGS -Wshorten-64-to-32", [])
 
 dnl Disable warning about zero-length-bounds raised by gcc 10 on linux kernel header on the fm_extents field
 AC_CHECK_CC_OPT([-Wno-zero-length-bounds], CFLAGS="$CFLAGS -Wno-zero-length-bounds", [])

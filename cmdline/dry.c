@@ -209,7 +209,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_task* task;
-			int read_size;
+			ssize_t read_size;
 			struct snapraid_block* block;
 			struct snapraid_disk* disk;
 			unsigned diskcur;

@@ -37,7 +37,7 @@ struct search_file_compare_arg {
 	const struct snapraid_file* file;
 	unsigned char* buffer;
 	data_off_t offset;
-	unsigned read_size;
+	size_t read_size;
 	int prevhash;
 };
 

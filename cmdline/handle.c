@@ -224,11 +224,11 @@ int handle_close(struct snapraid_handle* handle)
 	return 0;
 }
 
-int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out_missing)
+ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out_missing)
 {
 	ssize_t read_ret;
 	data_off_t offset;
-	unsigned read_size;
+	size_t read_size;
 	unsigned count;
 	int ret;
 
@@ -300,8 +300,8 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 {
 	ssize_t write_ret;
 	data_off_t offset;
-	unsigned write_size;
-	unsigned count;
+	ssize_t write_size;
+	ssize_t count;
 	int ret;
 
 	offset = file_pos * (data_off_t)block_size;

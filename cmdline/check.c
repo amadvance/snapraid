@@ -61,7 +61,7 @@ struct failed_struct {
  * Check if a block hash matches the specified buffer.
  * Return ==0 if equal
  */
-static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned pos_size, unsigned char* buffer, unsigned char* buffer_zero)
+static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, size_t pos_size, unsigned char* buffer, unsigned char* buffer_zero)
 {
 	unsigned char hash[HASH_MAX];
 
@@ -105,7 +105,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 			&& block_has_updated_hash(failed[failed_map[j]].block)
 		) {
 			/* if a hash doesn't match, fail the check */
-			unsigned pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state->block_size);
+			size_t pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state->block_size);
 			if (blockcmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {
 				log_tag("repair_hash_error:%u: Hash mismatch\n", failed_map[j]);
 				return 0;
@@ -157,7 +157,7 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
  * Return <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity is computed in the buffer variable.
  */
-static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
+static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
 	unsigned i, n;
 	int error;
@@ -179,7 +179,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 	/* if failures exceed parity level, recovery is impossible */
 	if (failed_count > n) {
-		log_tag("recover_strategy_error:%u: Impossible to recover from %u failures with %u parity\n",
+		log_tag("recover_strategy_error:%" PRIu64 ": Impossible to recover from %u failures with %u parity\n",
 			pos, failed_count, n);
 		return -1;
 	}
@@ -233,7 +233,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				return 0;
 
 			/* log */
-			log_tag("recover_parity_error:%u:", pos);
+			log_tag("recover_parity_error:%" PRIu64 ":", pos);
 			for (i = 0; i < r; ++i) {
 				if (i != 0)
 					log_tag(",");
@@ -275,7 +275,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				return 0;
 
 			/* log */
-			log_tag("recover_hash_error:%u:", pos);
+			log_tag("recover_hash_error:%" PRIu64 ":", pos);
 			for (i = 0; i < r; ++i) {
 				if (i != 0)
 					log_tag("/");
@@ -290,12 +290,12 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	if (error)
 		return error;
 
-	log_tag("recover_strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n",
+	log_tag("recover_strategy_error:%" PRIu64 ": No strategy to recover from %u failures with %u parity %s hash\n",
 		pos, failed_count, n, has_hash ? "with" : "without");
 	return -1;
 }
 
-static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
+static int repair(struct snapraid_state* state, int rehash, block_off_t pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
 	int ret;
 	int error;
@@ -404,7 +404,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	/* if nothing to fix */
 	if (!something_to_recover) {
-		log_tag("recover_sync:%u:%u: Skipped for already recovered\n", pos, n);
+		log_tag("recover_sync:%" PRIu64 ":%u: Skipped for already recovered\n", pos, n);
 
 		/* recompute only the parity */
 		raid_gen(diskmax, state->level, state->block_size, buffer);
@@ -467,7 +467,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					 * block after the sync has this hash, or that
 					 * we restored the block before the 'sync'.
 					 */
-					unsigned pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
+					size_t pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
 					if (blockcmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index], buffer_zero) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
@@ -484,9 +484,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		error += ret;
 
 	if (ret < 0)
-		log_tag("recover_sync:%u:%u: Failed with no attempts\n", pos, n);
+		log_tag("recover_sync:%" PRIu64 ":%u: Failed with no attempts\n", pos, n);
 	else
-		log_tag("recover_sync:%u:%u: Failed with %d attempts\n", pos, n, ret);
+		log_tag("recover_sync:%" PRIu64 ":%u: Failed with %d attempts\n", pos, n, ret);
 
 	/*
 	 * Now assume that the parity IS NOT updated at the current state,
@@ -615,11 +615,11 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			error += ret;
 
 		if (ret < 0)
-			log_tag("recover_unsync:%u:%u: Failed with no attempts\n", pos, n);
+			log_tag("recover_unsync:%" PRIu64 ":%u: Failed with no attempts\n", pos, n);
 		else
-			log_tag("recover_unsync:%u:%u: Failed with %d attempts\n", pos, n, ret);
+			log_tag("recover_unsync:%" PRIu64 ":%u: Failed with %d attempts\n", pos, n, ret);
 	} else {
-		log_tag("recover_unsync:%u:%u: Skipped for%s%s\n", pos, n,
+		log_tag("recover_unsync:%" PRIu64 ":%u: Skipped for%s%s\n", pos, n,
 			!something_to_recover ? " nothing to recover" : "",
 			!something_unsynced ? " nothing unsynced" : ""
 		);
@@ -643,7 +643,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
  * In such case, the check/fix command won't report any information of the
  * files partially checked.
  */
-static int file_post(struct snapraid_state* state, int fix, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
+static int file_post(struct snapraid_state* state, int fix, block_off_t i, struct snapraid_handle* handle, unsigned diskmax)
 {
 	unsigned j;
 	int ret;
@@ -709,7 +709,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					ret = handle_close(&handle[j]);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+						log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						return -1;
 						/* LCOV_EXCL_STOP */
@@ -720,7 +720,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("%s:%u:%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -749,7 +749,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_close(&handle[j]);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -762,7 +762,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_open(&handle[j], file, state->file_mode, 0);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -797,7 +797,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_utime(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 
 					/* mark the file as damaged */
@@ -842,7 +842,7 @@ close_and_continue:
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+				log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 				log_fatal_errno(errno, disk->name);
 				return -1;
 				/* LCOV_EXCL_STOP */
@@ -937,7 +937,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	void* buffer_alloc;
 	void** buffer;
 	unsigned buffermax;
-	int ret;
+	ssize_t ret;
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
@@ -1048,7 +1048,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
-			int read_size;
+			ssize_t read_size;
 			unsigned char hash[HASH_MAX];
 			struct snapraid_disk* disk;
 			struct snapraid_block* block;

@@ -135,12 +135,12 @@ struct snapraid_state {
 	unsigned besthash; /**< Best hash suggested. */
 	const char* command; /**< Command running. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for all devices. */
-	uint32_t rehash_blocks; /**< Blocks marked rehash */
-	uint32_t bad_blocks; /**< Blocks marked bad */
-	uint32_t unsynced_blocks; /**< If the parity is invalid, and a sync is needed. */
-	uint32_t unscrubbed_blocks; /**< Blocks never scrubbed */
-	uint32_t removed_files; /**< Files removed. Updated in scan */
-	uint32_t updated_files; /**< Files updated. Updated in scan */
+	uint64_t rehash_blocks; /**< Blocks marked rehash */
+	uint64_t bad_blocks; /**< Blocks marked bad */
+	uint64_t unsynced_blocks; /**< If the parity is invalid, and a sync is needed. */
+	uint64_t unscrubbed_blocks; /**< Blocks never scrubbed */
+	uint64_t removed_files; /**< Files removed. Updated in scan */
+	uint64_t updated_files; /**< Files updated. Updated in scan */
 
 	tommy_list contentlist; /**< List of content files. */
 	tommy_list disklist; /**< List of all the data disks. */

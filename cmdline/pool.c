@@ -236,7 +236,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 		if (S_ISLNK(st.st_mode)) {
 			struct snapraid_pool* pool;
 			char linkto[PATH_MAX];
-			int ret;
+			ssize_t ret;
 
 			ret = readlink(path_next, linkto, sizeof(linkto));
 			if (ret < 0 || ret >= PATH_MAX) {
