@@ -702,7 +702,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 
 				/* reopen it as readonly, as to set the mtime readonly access it's enough */
 				/* we know that the file exists because it has the FILE_IS_FIXED tag */
-				ret = handle_open(&handle[j], file, state->file_mode, log_error, log_error); /* output a message for missing files */
+				ret = handle_open(&handle[j], file, state->file_mode, 0);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
@@ -1088,7 +1088,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				} else {
 					/* open the file only for reading */
 					if (!file_flag_has(file, FILE_IS_MISSING)) {
-						ret = handle_open(&handle[j], file, state->file_mode, log_error, state->opt.expected_missing ? log_expected : 0);
+						ret = handle_open(&handle[j], file, state->file_mode, state->opt.expected_missing ? log_expected : 0);
 					} else {
 						errno = ENOENT;
 						ret = -1; /* if the file is missing, we cannot open it */
@@ -1176,7 +1176,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				errno = ENOENT;
 				read_size = -1;
 			} else {
-				read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size, log_error, state->opt.expected_missing ? log_expected : 0);
+				read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size, state->opt.expected_missing ? log_expected : 0);
 			}
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
@@ -1288,7 +1288,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* read the parity */
 			for (l = 0; l < state->level; ++l) {
 				if (parity[l]) {
-					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, log_error);
+					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size);
 					if (ret == -1) {
 						log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
 

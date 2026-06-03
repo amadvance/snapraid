@@ -149,7 +149,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				}
 			}
 
-			ret = handle_open(&handle[j], file, state->file_mode, log_error, log_error); /* output a message for missing files */
+			ret = handle_open(&handle[j], file, state->file_mode, 0);
 			if (ret == -1) {
 				log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
 				if (errno == ENOENT) {
@@ -209,7 +209,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				continue;
 			}
 
-			read_size = handle_read(&handle[j], file_pos, buffer, state->block_size, log_fatal, 0);
+			read_size = handle_read(&handle[j], file_pos, buffer, state->block_size, 0);
 			if (read_size == -1) {
 				/* LCOV_EXCL_START */
 				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
@@ -506,7 +506,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		}
 	}
 
-	ret = handle_open(handle, task->file, state->file_mode, log_error, log_error); /* output a message for missing files */
+	ret = handle_open(handle, task->file, state->file_mode, 0);
 	if (ret == -1) {
 		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), strerror(errno));
 		if (errno == ENOENT) {
@@ -563,7 +563,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		return;
 	}
 
-	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
+	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, 0);
 	if (task->read_size == -1) {
 		/* LCOV_EXCL_START */
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
@@ -1034,7 +1034,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* we are sure that parity exists because */
 				/* we have at least one BLK block */
 				for (l = 0; l < state->level; ++l) {
-					ret = parity_read(&parity_handle[l], blockcur, buffer[diskmax + l], state->block_size, log_error);
+					ret = parity_read(&parity_handle[l], blockcur, buffer[diskmax + l], state->block_size);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(l), strerror(errno));

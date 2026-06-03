@@ -117,7 +117,7 @@ int parity_close(struct snapraid_parity_handle* handle);
 /**
  * Read a block from the parity file.
  */
-int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out);
+int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 /**
  * Write a block in the parity file.

@@ -862,7 +862,7 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	return 0;
 }
 
-int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out)
+int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -876,7 +876,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	if (!split) {
 		/* LCOV_EXCL_START */
 		errno = ENXIO;
-		out(errno, "Reading parity data outside range at extra offset %" PRIu64 ".\n", offset);
+		log_error(errno, "Reading parity data outside range at extra offset %" PRIu64 ".\n", offset);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -885,7 +885,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	if (offset >= split->valid_size) {
 		/* LCOV_EXCL_START */
 		errno = ENXIO;
-		out(errno, "Reading over the end from parity file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
+		log_error(errno, "Reading over the end from parity file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -898,7 +898,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret == -1) {
 			/* LCOV_EXCL_START */
-			out(errno, "Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
+			log_error(errno, "Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -906,7 +906,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 			/* LCOV_EXCL_START */
 			if (errno == 0)
 				errno = ENXIO;
-			out(errno, "Unexpected end of parity file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
+			log_error(errno, "Unexpected end of parity file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -917,7 +917,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	ret = advise_read(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		out(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+		log_error(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}

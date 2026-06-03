@@ -148,7 +148,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 		}
 	}
 
-	ret = handle_open(handle, task->file, state->file_mode, log_error, 0); /* for missing file don't output a message */
+	ret = handle_open(handle, task->file, state->file_mode, 0);
 	if (ret == -1) {
 		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), strerror(errno));
 		if (is_hw(errno)) {
@@ -179,7 +179,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	/* from the last sync, as we are expected to return errors if running */
 	/* in an unsynced array. This is just like the check command. */
 
-	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
+	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, 0);
 	if (task->read_size == -1) {
 		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 		if (is_hw(errno)) {
@@ -211,7 +211,7 @@ static void scrub_parity_reader(struct snapraid_worker* worker, struct snapraid_
 	int ret;
 
 	/* read the parity */
-	ret = parity_read(parity_handle, blockcur, buffer, state->block_size, log_error);
+	ret = parity_read(parity_handle, blockcur, buffer, state->block_size);
 	if (ret == -1) {
 		log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 		if (is_hw(errno)) {
