@@ -379,7 +379,7 @@ int sgetc_uncached(STREAM* s)
 	return *s->pos++;
 }
 
-int sgettok(STREAM* f, char* str, int size)
+ssize_t sgettok(STREAM* f, char* str, int size)
 {
 	char* i = str;
 	char* send = str + size;
@@ -416,7 +416,7 @@ int sgettok(STREAM* f, char* str, int size)
 	return i - str;
 }
 
-int sread(STREAM* f, void* void_data, unsigned size)
+int sread(STREAM* f, void* void_data, size_t size)
 {
 	unsigned char* data = void_data;
 
@@ -447,7 +447,7 @@ int sread(STREAM* f, void* void_data, unsigned size)
 	return 0;
 }
 
-int sgetline(STREAM* f, char* str, int size)
+ssize_t sgetline(STREAM* f, char* str, int size)
 {
 	char* i = str;
 	char* send = str + size;
@@ -515,9 +515,9 @@ int sgetline(STREAM* f, char* str, int size)
 	return i - str;
 }
 
-int sgetlasttok(STREAM* f, char* str, int size)
+ssize_t sgetlasttok(STREAM* f, char* str, int size)
 {
-	int ret;
+	ssize_t ret;
 
 	ret = sgetline(f, str, size);
 	if (ret < 0) {
@@ -669,17 +669,17 @@ int sgetble32(STREAM* f, uint32_t* value)
 	return 0;
 }
 
-int sgetbs(STREAM* f, char* str, int size)
+int sgetbs(STREAM* f, char* str, size_t size)
 {
-	uint32_t len;
+	uint64_t len;
 
-	if (sgetb32(f, &len) < 0) {
+	if (sgetb64(f, &len) < 0) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (len + 1 > (uint32_t)size) {
+	if (len + 1 > size) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -687,10 +687,10 @@ int sgetbs(STREAM* f, char* str, int size)
 
 	str[len] = 0;
 
-	return sread(f, str, (int)len);
+	return sread(f, str, len);
 }
 
-int swrite(const void* void_data, unsigned size, STREAM* f)
+int swrite(const void* void_data, size_t size, STREAM* f)
 {
 	const unsigned char* data = void_data;
 
@@ -787,7 +787,7 @@ int sputbs(const char* str, STREAM* f)
 {
 	size_t len = strlen(str);
 
-	if (sputb32(len, f) != 0) {
+	if (sputb64(len, f) != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */

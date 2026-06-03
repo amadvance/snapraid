@@ -358,6 +358,16 @@ char* strlwr(char* s);
  */
 char* worddigitstr(const char* haystack, const char* needle);
 
+/**
+ * Convert a string to an integer, with the same semantics as strtol.
+ */
+int strtoi(const char* nptr, char** endptr, int base);
+
+/**
+ * Convert a string to an unsigned integer, with the same semantics as strtoul.
+ */
+unsigned strtou(const char* nptr, char** endptr, int base);
+
 /****************************************************************************/
 /* path */
 

@@ -19,7 +19,9 @@ unsigned day_ago(time_t ref, time_t now)
 	if (now < ref)
 		return 0;
 
-	return (now - ref) / (24 * 3600);
+	now -= ref;
+
+	return (unsigned)(now / (24 * 3600));
 }
 
 #define GRAPH_COLUMN 70
@@ -324,9 +326,9 @@ int state_status(struct snapraid_state* state)
 
 	/* output scrub history as structured data */
 	log_tag("scrub_graph_range:%u:%u\n", GRAPH_COLUMN, barmax);
-	for (i = 0; i < GRAPH_COLUMN; ++i) {
-		unsigned days_ago = dayoldest - (dayoldest - daynewest) * i / (GRAPH_COLUMN - 1);
-		log_tag("scrub_graph_bar:%" PRIu64 ":%u:%u:%u\n", i, days_ago, bar_scrubbed[i], bar_new[i]);
+	for (l = 0; l < GRAPH_COLUMN; ++l) {
+		unsigned days_ago = dayoldest - (dayoldest - daynewest) * l / (GRAPH_COLUMN - 1);
+		log_tag("scrub_graph_bar:%u:%u:%u:%u\n", l, days_ago, bar_scrubbed[l], bar_new[l]);
 	}
 
 	printf("\n\n");
@@ -419,7 +421,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (state->bad_blocks) {
-		printf("DANGER! In the array there are %u errors!\n\n", state->bad_blocks);
+		printf("DANGER! In the array there are %" PRIu64 " errors!\n\n", state->bad_blocks);
 
 		block_off_t bad_range;
 		block_off_t bad_count;

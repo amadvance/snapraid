@@ -62,7 +62,7 @@ struct snapraid_task {
 	struct snapraid_block* block;
 	struct snapraid_file* file;
 	block_off_t file_pos;
-	int read_size; /**< Size of the data read. */
+	ssize_t read_size; /**< Size of the data read. */
 	int is_timestamp_different; /**< Report if file has a changed timestamp. */
 };
 

@@ -1561,7 +1561,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		} else if (type == 1) { /* LNK */
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
 				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
-				int ret;
+				ssize_t ret;
 
 				ret = readlink(path_next, tmp, PATH_MAX);
 				if (ret >= PATH_MAX) {

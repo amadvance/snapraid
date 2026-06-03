@@ -27,7 +27,9 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 
 	if (eta > elapsed) {
 		eta -= elapsed;
-		usleep(eta * 1000);
+		if (eta > 1000)
+			eta = 1000;
+		usleep((unsigned)eta * 1000);
 	}
 }
 
