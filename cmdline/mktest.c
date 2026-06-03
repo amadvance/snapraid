@@ -13,14 +13,14 @@
  */
 unsigned long long seed = 0;
 
-unsigned rnd(unsigned max)
+size_t rnd(size_t max)
 {
 	seed = seed * 6364136223846793005LL + 1442695040888963407LL;
 
 	return (seed >> 32) % max;
 }
 
-unsigned rndnz(unsigned max)
+size_t rndnz(size_t max)
 {
 	if (max <= 1)
 		return 1;
@@ -28,17 +28,17 @@ unsigned rndnz(unsigned max)
 		return rnd(max - 1) + 1;
 }
 
-void rndnz_range(unsigned char* data, int size)
+void rndnz_range(unsigned char* data, ssize_t size)
 {
-	int i;
+	ssize_t i;
 
 	for (i = 0; i < size; ++i)
 		data[i] = rndnz(256);
 }
 
-void rndnz_damage(unsigned char* data, int size)
+void rndnz_damage(unsigned char* data, ssize_t size)
 {
-	int i;
+	ssize_t i;
 
 	/* corrupt ensuring always different data */
 	for (i = 0; i < size; ++i) {
@@ -57,7 +57,7 @@ char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
 
 void rnd_name(char* file)
 {
-	int l = 1 + rnd(20);
+	ssize_t l = 1 + rnd(20);
 
 	while (l) {
 		*file++ = CHARSET[rnd(CHARSET_LEN)];
@@ -126,7 +126,7 @@ int fallback(int f, struct stat* st)
  * Create a file with random content.
  * - If the file exists it's rewritten, but avoiding to truncating it to 0.
  */
-void cmd_generate_file(const char* path, int size)
+void cmd_generate_file(const char* path, ssize_t size)
 {
 	unsigned char* data;
 	int f;
@@ -208,7 +208,7 @@ void cmd_generate_symlink(const char* path, const char* linkto)
 /**
  * Create a file or a symlink with a random name.
  */
-void cmd_generate(const char* tag, int disk, int size)
+void cmd_generate(const char* tag, int disk, ssize_t size)
 {
 	char path[PATH_MAX];
 	char* file;
@@ -276,7 +276,7 @@ void cmd_generate(const char* tag, int disk, int size)
  * - The written data may be equal or not at the already existing one.
  * - If it's a symlink nothing is done.
  */
-void cmd_write(const char* path, int size)
+void cmd_write(const char* path, ssize_t size)
 {
 	struct stat st;
 
@@ -347,7 +347,7 @@ void cmd_write(const char* path, int size)
  * - The file timestamp is NOT modified.
  * - If it's a symlink nothing is done.
  */
-void cmd_damage(const char* path, int size)
+void cmd_damage(const char* path, ssize_t size)
 {
 	struct stat st;
 
@@ -446,7 +446,7 @@ void cmd_damage(const char* path, int size)
  * - The file must exist.
  * - If it's a symlink nothing is done.
  */
-void cmd_append(const char* path, int size)
+void cmd_append(const char* path, ssize_t size)
 {
 	struct stat st;
 
@@ -497,7 +497,7 @@ void cmd_append(const char* path, int size)
  * - The file is NEVER truncated to 0.
  * - If it's a symlink nothing is done.
  */
-void cmd_truncate(const char* path, int size)
+void cmd_truncate(const char* path, ssize_t size)
 {
 	struct stat st;
 
@@ -565,7 +565,7 @@ void cmd_delete(const char* path)
  * Change a file. Or deleted/truncated/append/created.
  * - The file must exist.
  */
-void cmd_change(const char* path, int size)
+void cmd_change(const char* path, ssize_t size)
 {
 	struct stat st;
 
@@ -605,7 +605,7 @@ void cmd_change(const char* path, int size)
 			cmd_generate_symlink(path, linkto);
 		}
 	} else if (S_ISREG(st.st_mode)) {
-		int r;
+		size_t r;
 
 		r = rnd(4);
 
