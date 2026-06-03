@@ -5297,9 +5297,10 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 	if (global_interrupt) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
-			log_fatal(EUSER, "\n");
-			log_fatal(EUSER, "Stopping for interruption at block %u\n", blockpos);
+			msg_bar("\n");
+			msg_flush();
 		}
+		log_fatal(EUSER, "Stopping for interruption at block %u\n", blockpos);
 		log_tag("sigint:%u: SIGINT received\n", blockpos);
 		log_flush();
 		return 1;
