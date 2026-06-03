@@ -37,6 +37,8 @@ SnapRAID HISTORY
  * Added --enable-symlink-tools and --enable-hardlink-tools configure
    options to allow the validation logic to accept symbolic and hard
    links for the specified --with-* paths.
+ * Removed the 512 TiB limitation on hard disk size (when using the
+   default 128 KiB blocks).
 
 14.6 2026/06
 ============

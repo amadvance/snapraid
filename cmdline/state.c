@@ -2104,14 +2104,14 @@ static void decoding_error(const char* path, STREAM* f)
 static void state_read_content(struct snapraid_state* state, const char* path, STREAM* f)
 {
 	block_off_t blockmax;
-	unsigned count_file;
-	unsigned count_hardlink;
-	unsigned count_symlink;
-	unsigned count_dir;
-	unsigned count_bad;
-	unsigned count_rehash;
-	unsigned count_unsynced;
-	unsigned count_unscrubbed;
+	uint64_t count_file;
+	uint64_t count_hardlink;
+	uint64_t count_symlink;
+	uint64_t count_dir;
+	uint64_t count_bad;
+	uint64_t count_rehash;
+	uint64_t count_unsynced;
+	uint64_t count_unscrubbed;
 	int crc_checked;
 	char buffer[PATH_MAX];
 	int ret;
@@ -2290,12 +2290,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			v_idx = 0;
 			while (v_idx < file->blockmax) {
 				block_off_t v_pos;
-				uint32_t v_count;
+				block_off_t v_count;
 
 				/* get the "subcommand */
 				c = sgetc(f);
 
-				ret = sgetb32(f, &v_pos);
+				ret = sgetb64(f, &v_pos);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -2303,7 +2303,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				ret = sgetb32(f, &v_count);
+				ret = sgetb64(f, &v_count);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -2322,7 +2322,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Block size %u/%u!\n", blockmax, v_pos + v_count);
+					log_fatal(EINTERNAL, "Internal inconsistency: Block size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2395,7 +2395,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else if (c == 'i') {
 			/* "inf" command */
 			snapraid_info info;
-			uint32_t v_pos;
+			block_off_t v_pos;
 			uint64_t v_oldest;
 
 			ret = sgetb64(f, &v_oldest);
@@ -2413,9 +2413,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				int justsynced;
 				uint64_t t64;
 				uint32_t flag;
-				uint32_t v_count;
+				block_off_t v_count;
 
-				ret = sgetb32(f, &v_count);
+				ret = sgetb64(f, &v_count);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -2426,7 +2426,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Info size %u/%u!\n", blockmax, v_pos + v_count);
+					log_fatal(EINTERNAL, "Internal inconsistency: Info size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2507,7 +2507,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 		} else if (c == 'h') {
 			/* hole */
-			uint32_t v_pos;
+			block_off_t v_pos;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
 
@@ -2523,11 +2523,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 			v_pos = 0;
 			while (v_pos < blockmax) {
-				uint32_t v_idx;
-				uint32_t v_count;
+				block_off_t v_idx;
+				block_off_t v_count;
 				struct snapraid_file* deleted;
 
-				ret = sgetb32(f, &v_count);
+				ret = sgetb64(f, &v_count);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -2538,7 +2538,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Hole size %u/%u!\n", blockmax, v_pos + v_count);
+					log_fatal(EINTERNAL, "Internal inconsistency: Hole size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2599,8 +2599,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 		} else if (c == 'd') {
 			/* dealloc */
-			uint32_t v_count;
-			uint32_t v_pos;
+			block_off_t v_count;
+			block_off_t v_pos;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
 
@@ -2614,7 +2614,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
 
-			ret = sgetb32(f, &v_count);
+			ret = sgetb64(f, &v_count);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2622,7 +2622,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			log_tag("content_info:dealloc:%s:%u\n", esc_tag(disk->name), v_count);
+			log_tag("content_info:dealloc:%s:%" PRIu64 "\n", esc_tag(disk->name), v_count);
 
 			for (v_pos = 0; v_pos < v_count; ++v_pos) {
 				char sub[PATH_MAX];
@@ -2973,7 +2973,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'x') {
-			ret = sgetb32(f, &blockmax);
+			ret = sgetb64(f, &blockmax);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2983,9 +2983,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else if (c == 'm' || c == 'M') {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
-			uint32_t v_pos;
-			uint32_t v_total_blocks;
-			uint32_t v_free_blocks;
+			uint32_t v_idx;
+			block_off_t v_total_blocks;
+			block_off_t v_free_blocks;
 			struct snapraid_disk* disk;
 
 			ret = sgetbs(f, buffer, sizeof(buffer));
@@ -2996,7 +2996,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetb32(f, &v_pos);
+			ret = sgetb32(f, &v_idx);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -3006,7 +3006,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 			/* from SnapRAID 7.0 the 'M' command includes the free space */
 			if (c == 'M') {
-				ret = sgetb32(f, &v_total_blocks);
+				ret = sgetb64(f, &v_total_blocks);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -3014,7 +3014,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				ret = sgetb32(f, &v_free_blocks);
+				ret = sgetb64(f, &v_free_blocks);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -3068,7 +3068,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			map = map_alloc(disk->name, v_pos, v_total_blocks, v_free_blocks, uuid);
+			map = map_alloc(disk->name, v_idx, v_total_blocks, v_free_blocks, uuid);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
 
@@ -3083,8 +3083,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			 */
 			char v_uuid[UUID_MAX];
 			uint32_t v_level;
-			uint32_t v_total_blocks;
-			uint32_t v_free_blocks;
+			block_off_t v_total_blocks;
+			block_off_t v_free_blocks;
 
 			ret = sgetb32(f, &v_level);
 			if (ret < 0) {
@@ -3094,7 +3094,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetb32(f, &v_total_blocks);
+			ret = sgetb64(f, &v_total_blocks);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -3102,7 +3102,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetb32(f, &v_free_blocks);
+			ret = sgetb64(f, &v_free_blocks);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -3156,8 +3156,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else if (c == 'Q') {
 			/* from SnapRAID 11.0 the 'Q' command include size info and multi file support  */
 			uint32_t v_level;
-			uint32_t v_total_blocks;
-			uint32_t v_free_blocks;
+			block_off_t v_total_blocks;
+			block_off_t v_free_blocks;
 			uint32_t v_split_mac;
 			unsigned s;
 
@@ -3169,7 +3169,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetb32(f, &v_total_blocks);
+			ret = sgetb64(f, &v_total_blocks);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -3177,7 +3177,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetb32(f, &v_free_blocks);
+			ret = sgetb64(f, &v_free_blocks);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -3362,7 +3362,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Parity size %u/%u in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
+		log_fatal(EINTERNAL, "Internal inconsistency: Parity size %" PRIu64 "/%" PRIu64 " in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
 		if (state->opt.skip_content_check) {
 			log_fatal(ECONTENT, "Overriding.\n");
 			blockmax = parity_allocated_size(state);
@@ -3372,21 +3372,21 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_verbose("%8u files\n", count_file);
-	msg_verbose("%8u hardlinks\n", count_hardlink);
-	msg_verbose("%8u symlinks\n", count_symlink);
-	msg_verbose("%8u empty dirs\n", count_dir);
+	msg_verbose("%8" PRIu64 " files\n", count_file);
+	msg_verbose("%8" PRIu64 " hardlinks\n", count_hardlink);
+	msg_verbose("%8" PRIu64 " symlinks\n", count_symlink);
+	msg_verbose("%8" PRIu64 " empty dirs\n", count_dir);
 
-	log_tag("content_info:file:%u\n", count_file);
-	log_tag("content_info:hardlink:%u\n", count_hardlink);
-	log_tag("content_info:symlink:%u\n", count_symlink);
-	log_tag("content_info:dir_empty:%u\n", count_dir);
+	log_tag("content_info:file:%" PRIu64 "\n", count_file);
+	log_tag("content_info:hardlink:%" PRIu64 "\n", count_hardlink);
+	log_tag("content_info:symlink:%" PRIu64 "\n", count_symlink);
+	log_tag("content_info:dir_empty:%" PRIu64 "\n", count_dir);
 
-	log_tag("content_info:block:%u\n", blockmax);
-	log_tag("content_info:block_bad:%u\n", count_bad);
-	log_tag("content_info:block_rehash:%u\n", count_rehash);
-	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
-	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
+	log_tag("content_info:block:%" PRIu64 "\n", blockmax);
+	log_tag("content_info:block_bad:%" PRIu64 "\n", count_bad);
+	log_tag("content_info:block_rehash:%" PRIu64 "\n", count_rehash);
+	log_tag("content_info:block_unsynced:%" PRIu64 "\n", count_unsynced);
+	log_tag("content_info:block_unscrubbed:%" PRIu64 "\n", count_unscrubbed);
 
 	/* store the blocks counters */
 	state->rehash_blocks = count_rehash;
@@ -3414,14 +3414,14 @@ struct state_write_thread_context {
 
 	/* output (required to postpone the output to the terminal after the latest write) */
 	uint32_t crc;
-	unsigned count_file;
-	unsigned count_hardlink;
-	unsigned count_symlink;
-	unsigned count_dir;
-	unsigned count_bad;
-	unsigned count_rehash;
-	unsigned count_unsynced;
-	unsigned count_unscrubbed;
+	uint64_t count_file;
+	uint64_t count_hardlink;
+	uint64_t count_symlink;
+	uint64_t count_dir;
+	uint64_t count_bad;
+	uint64_t count_rehash;
+	uint64_t count_unsynced;
+	uint64_t count_unscrubbed;
 };
 
 static void* state_write_thread(void* arg)
@@ -3435,14 +3435,14 @@ static void* state_write_thread(void* arg)
 	STREAM* f = context->f;
 	uint32_t crc;
 	uint64_t t64;
-	unsigned count_file;
-	unsigned count_hardlink;
-	unsigned count_symlink;
-	unsigned count_dir;
-	unsigned count_bad;
-	unsigned count_rehash;
-	unsigned count_unsynced;
-	unsigned count_unscrubbed;
+	uint64_t count_file;
+	uint64_t count_hardlink;
+	uint64_t count_symlink;
+	uint64_t count_dir;
+	uint64_t count_bad;
+	uint64_t count_rehash;
+	uint64_t count_unsynced;
+	uint64_t count_unscrubbed;
 	tommy_node* i;
 	block_off_t idx;
 	block_off_t begin;
@@ -3480,7 +3480,7 @@ static void* state_write_thread(void* arg)
 	sputc('z', f);
 	sputb32(state->block_size, f);
 	sputc('x', f);
-	sputb32(blockmax, f);
+	sputb64(blockmax, f);
 
 	/* hash size */
 	sputc('y', f);
@@ -3560,8 +3560,8 @@ static void* state_write_thread(void* arg)
 			sputc('M', f);
 			sputbs(map->name, f);
 			sputb32(map->position, f);
-			sputb32(map->total_blocks, f);
-			sputb32(map->free_blocks, f);
+			sputb64(map->total_blocks, f);
+			sputb64(map->free_blocks, f);
 			sputbs(map->uuid, f);
 			if (context->first) {
 				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
@@ -3585,8 +3585,8 @@ static void* state_write_thread(void* arg)
 	for (l = 0; l < state->level; ++l) {
 		sputc('Q', f);
 		sputb32(l, f);
-		sputb32(state->parity[l].total_blocks, f);
-		sputb32(state->parity[l].free_blocks, f);
+		sputb64(state->parity[l].total_blocks, f);
+		sputb64(state->parity[l].free_blocks, f);
 		if (context->first) {
 			log_tag("content_parity:%s:%" PRIi64 ":%" PRIi64 "\n",
 				lev_config_name(l),
@@ -3664,7 +3664,7 @@ static void* state_write_thread(void* arg)
 			while (begin < file->blockmax) {
 				unsigned v_state = block_state_get(fs_file2block_get(file, begin));
 				block_off_t v_pos = fs_file2par_get(disk, file, begin);
-				uint32_t v_count;
+				block_off_t v_count;
 
 				block_off_t end;
 
@@ -3690,15 +3690,15 @@ static void* state_write_thread(void* arg)
 					break;
 				default :
 					/* LCOV_EXCL_START */
-					log_fatal(EINTERNAL, "Internal inconsistency: State for block %u state %u\n", v_pos, v_state);
+					log_fatal(EINTERNAL, "Internal inconsistency: State for block %" PRIu64 " state %u\n", v_pos, v_state);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
-				sputb32(v_pos, f);
+				sputb64(v_pos, f);
 
 				v_count = end - begin;
-				sputb32(v_count, f);
+				sputb64(v_count, f);
 
 				/* write hashes */
 				for (idx = begin; idx < end; ++idx) {
@@ -3788,7 +3788,7 @@ static void* state_write_thread(void* arg)
 				++end;
 			}
 
-			sputb32(end - begin, f);
+			sputb64(end - begin, f);
 
 			if (is_deleted) {
 				/* write the run of deleted blocks with hash */
@@ -3826,10 +3826,10 @@ static void* state_write_thread(void* arg)
 			sputc('d', f);
 			sputb32(disk->mapping_idx, f);
 
-			uint32_t v_count = tommy_list_count(&disk->dealloclist);
+			block_off_t v_count = tommy_list_count(&disk->dealloclist);
 
-			sputb32(v_count, f);
-			log_tag("content_info:dealloc:%s:%u\n", esc_tag(disk->name), v_count);
+			sputb64(v_count, f);
+			log_tag("content_info:dealloc:%s:%" PRIu64 "\n", esc_tag(disk->name), v_count);
 
 			/* for each file */
 			for (j = tommy_list_head(&disk->dealloclist); j != 0; j = j->next) {
@@ -3895,7 +3895,7 @@ static void* state_write_thread(void* arg)
 		}
 
 		count = end - begin;
-		sputb32(count, f);
+		sputb64(count, f);
 
 		/* if there is info */
 		if (info) {
@@ -4029,14 +4029,14 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	int mapping_idx;
 	block_off_t idx;
 	uint32_t crc;
-	unsigned count_file;
-	unsigned count_hardlink;
-	unsigned count_symlink;
-	unsigned count_dir;
-	unsigned count_bad;
-	unsigned count_rehash;
-	unsigned count_unsynced;
-	unsigned count_unscrubbed;
+	block_off_t count_file;
+	block_off_t count_hardlink;
+	block_off_t count_symlink;
+	block_off_t count_dir;
+	block_off_t count_bad;
+	block_off_t count_rehash;
+	block_off_t count_unsynced;
+	block_off_t count_unscrubbed;
 
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
@@ -4350,21 +4350,21 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	free(context);
 #endif
 
-	msg_verbose("%8u files\n", count_file);
-	msg_verbose("%8u hardlinks\n", count_hardlink);
-	msg_verbose("%8u symlinks\n", count_symlink);
-	msg_verbose("%8u empty dirs\n", count_dir);
+	msg_verbose("%8" PRIu64 " files\n", count_file);
+	msg_verbose("%8" PRIu64 " hardlinks\n", count_hardlink);
+	msg_verbose("%8" PRIu64 " symlinks\n", count_symlink);
+	msg_verbose("%8" PRIu64 " empty dirs\n", count_dir);
 
-	log_tag("content_info:file:%u\n", count_file);
-	log_tag("content_info:hardlink:%u\n", count_hardlink);
-	log_tag("content_info:symlink:%u\n", count_symlink);
-	log_tag("content_info:dir_empty:%u\n", count_dir);
+	log_tag("content_info:file:%" PRIu64 "\n", count_file);
+	log_tag("content_info:hardlink:%" PRIu64 "\n", count_hardlink);
+	log_tag("content_info:symlink:%" PRIu64 "\n", count_symlink);
+	log_tag("content_info:dir_empty:%" PRIu64 "\n", count_dir);
 
-	log_tag("content_info:block:%u\n", blockmax);
-	log_tag("content_info:block_bad:%u\n", count_bad);
-	log_tag("content_info:block_rehash:%u\n", count_rehash);
-	log_tag("content_info:block_unsynced:%u\n", count_unsynced);
-	log_tag("content_info:block_unscrubbed:%u\n", count_unscrubbed);
+	log_tag("content_info:block:%" PRIu64 "\n", blockmax);
+	log_tag("content_info:block_bad:%" PRIu64 "\n", count_bad);
+	log_tag("content_info:block_rehash:%" PRIu64 "\n", count_rehash);
+	log_tag("content_info:block_unsynced:%" PRIu64 "\n", count_unsynced);
+	log_tag("content_info:block_unscrubbed:%" PRIu64 "\n", count_unscrubbed);
 
 	/* store the blocks counters */
 	state->rehash_blocks = count_rehash;
@@ -4950,7 +4950,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	time_t now;
 
 	if (state->opt.gui) {
-		log_tag("run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
+		log_tag("run:begin:%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n", blockstart, blockmax, countmax);
 		log_flush();
 	}
 
@@ -5456,7 +5456,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			} else {
 				str_steady[0] = 0;
 			}
-			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%s:%s:%s:%" PRIu64 ":%s:%s\n", blockpos, countpos, countsize, out_perc, str_eta, str_size_speed, str_cpu, (uint64_t)elapsed, str_temp, str_steady);
+			log_tag("run:pos:%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%u:%s:%s:%s:%" PRIu64 ":%s:%s\n", blockpos, countpos, countsize, out_perc, str_eta, str_size_speed, str_cpu, (uint64_t)elapsed, str_temp, str_steady);
 			log_flush();
 		} else {
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
@@ -5493,8 +5493,8 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			msg_bar("\n");
 			msg_flush();
 		}
-		log_fatal(EUSER, "Stopping for interruption at block %u\n", blockpos);
-		log_tag("sigint:%u: SIGINT received\n", blockpos);
+		log_fatal(EUSER, "Stopping for interruption at block %" PRIu64 "\n", blockpos);
+		log_tag("sigint:%" PRIu64 ": SIGINT received\n", blockpos);
 		log_flush();
 		return 1;
 		/* LCOV_EXCL_STOP */
@@ -5721,7 +5721,7 @@ int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct sna
 		int ret = parity_sync(&parity_handle[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("parity_error_io:%u:%s: Sync error. %s.\n", blockcur, lev_config_name(l), strerror(errno));
+			log_tag("parity_error_io:%" PRIu64 ":%s: Sync error. %s.\n", blockcur, lev_config_name(l), strerror(errno));
 			log_fatal(errno, "DANGER! Unexpected input/output error in disk %s. It isn't possible to continue.\n", lev_config_name(l));
 			return -1;
 			/* LCOV_EXCL_STOP */
