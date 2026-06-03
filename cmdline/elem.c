@@ -655,13 +655,13 @@ struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_fil
 
 	if (count == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Allocating empty extent for file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
+		log_fatal(EINTERNAL, "Internal inconsistency: Allocating empty extent for file '%s' at position '%" PRIu64 "/%" PRIu64 "'\n", file->sub, file_pos, file->blockmax);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 	if (count > file->blockmax || file_pos > file->blockmax - count) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Allocating overflowing extent for file '%s' at position '%u:%u/%u'\n", file->sub, file_pos, count, file->blockmax);
+		log_fatal(EINTERNAL, "Internal inconsistency: Allocating overflowing extent for file '%s' at position '%" PRIu64 ":%" PRIu64 "/%" PRIu64 "'\n", file->sub, file_pos, count, file->blockmax);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -806,7 +806,7 @@ void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Internal inconsistency: State for dealloc block %u state %u\n", i, state);
+			log_fatal(EINTERNAL, "Internal inconsistency: State for dealloc block %" PRIu64 " state %u\n", i, state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1056,7 +1056,7 @@ static void extent_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 
 	if (obj->count == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Parity count zero for file '%s' at '%u'\n",
+		log_fatal(EINTERNAL, "Internal inconsistency: Parity count zero for file '%s' at '%" PRIu64 "'\n",
 			obj->file->sub, obj->parity_pos);
 		++arg->result;
 		return;
@@ -1070,7 +1070,7 @@ static void extent_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 	/* check the order */
 	if (prev->parity_pos >= obj->parity_pos) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Parity order for files '%s' at '%u:%u' and '%s' at '%u:%u'\n",
+		log_fatal(EINTERNAL, "Internal inconsistency: Parity order for files '%s' at '%" PRIu64 ":%" PRIu64 "' and '%s' at '%" PRIu64 ":%" PRIu64 "'\n",
 			prev->file->sub, prev->parity_pos, prev->count, obj->file->sub, obj->parity_pos, obj->count);
 		++arg->result;
 		return;
@@ -1080,7 +1080,7 @@ static void extent_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 	/* check that the extents don't overlap */
 	if (obj->parity_pos - prev->parity_pos < prev->count) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Parity overlap for files '%s' at '%u:%u' and '%s' at '%u:%u'\n",
+		log_fatal(EINTERNAL, "Internal inconsistency: Parity overlap for files '%s' at '%" PRIu64 ":%" PRIu64 "' and '%s' at '%" PRIu64 ":%" PRIu64 "'\n",
 			prev->file->sub, prev->parity_pos, prev->count, obj->file->sub, obj->parity_pos, obj->count);
 		++arg->result;
 		return;
@@ -1106,7 +1106,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 
 	if (obj->count == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: File count zero for file '%s' at '%u'\n",
+		log_fatal(EINTERNAL, "Internal inconsistency: File count zero for file '%s' at '%" PRIu64 "'\n",
 			obj->file->sub, obj->file_pos);
 		++arg->result;
 		return;
@@ -1122,7 +1122,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 				/* check that the extent doesn't overflow the file */
 				if (prev->count > prev->file->blockmax || prev->file_pos > prev->file->blockmax - prev->count) {
 					/* LCOV_EXCL_START */
-					log_fatal(EINTERNAL, "Internal inconsistency: Delete end for file '%s' at '%u:%u' overflowing size '%u'\n",
+					log_fatal(EINTERNAL, "Internal inconsistency: Delete end for file '%s' at '%" PRIu64 ":%" PRIu64 "' overflowing size '%" PRIu64 "'\n",
 						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
 					++arg->result;
 					return;
@@ -1132,7 +1132,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 				/* check that the extent ends the file */
 				if (prev->file_pos + prev->count != prev->file->blockmax) {
 					/* LCOV_EXCL_START */
-					log_fatal(EINTERNAL, "Internal inconsistency: File end for file '%s' at '%u:%u' instead of size '%u'\n",
+					log_fatal(EINTERNAL, "Internal inconsistency: File end for file '%s' at '%" PRIu64 ":%" PRIu64 "' instead of size '%" PRIu64 "'\n",
 						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
 					++arg->result;
 					return;
@@ -1145,7 +1145,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 			/* check that the extent doesn't overflow the file */
 			if (obj->count > obj->file->blockmax || obj->file_pos > obj->file->blockmax - obj->count) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: Delete start for file '%s' at '%u:%u' overflowing size '%u'\n",
+				log_fatal(EINTERNAL, "Internal inconsistency: Delete start for file '%s' at '%" PRIu64 ":%" PRIu64 "' overflowing size '%" PRIu64 "'\n",
 					obj->file->sub, obj->file_pos, obj->count, obj->file->blockmax);
 				++arg->result;
 				return;
@@ -1155,7 +1155,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 			/* check that the extent starts the file */
 			if (obj->file_pos != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: File start for file '%s' at '%u:%u'\n",
+				log_fatal(EINTERNAL, "Internal inconsistency: File start for file '%s' at '%" PRIu64 ":%" PRIu64 "'\n",
 					obj->file->sub, obj->file_pos, obj->count);
 				++arg->result;
 				return;
@@ -1166,7 +1166,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 		/* check the order */
 		if (prev->file_pos >= obj->file_pos) {
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Internal inconsistency: File order for file '%s' at '%u:%u' and at '%u:%u'\n",
+			log_fatal(EINTERNAL, "Internal inconsistency: File order for file '%s' at '%" PRIu64 ":%" PRIu64 "' and at '%" PRIu64 ":%" PRIu64 "'\n",
 				prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
 			++arg->result;
 			return;
@@ -1177,7 +1177,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 			/* check that the extents don't overlap */
 			if (obj->file_pos - prev->file_pos < prev->count) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: Delete sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
+				log_fatal(EINTERNAL, "Internal inconsistency: Delete sequence for file '%s' at '%" PRIu64 ":%" PRIu64 "' and at '%" PRIu64 ":%" PRIu64 "'\n",
 					prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
 				++arg->result;
 				return;
@@ -1187,7 +1187,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 			/* check that the extents are sequential */
 			if (prev->file_pos + prev->count != obj->file_pos) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: File sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
+				log_fatal(EINTERNAL, "Internal inconsistency: File sequence for file '%s' at '%" PRIu64 ":%" PRIu64 "' and at '%" PRIu64 ":%" PRIu64 "'\n",
 					prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
 				++arg->result;
 				return;
@@ -1385,7 +1385,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 			/* check if the position will go outside the limit */
 			if (extent->parity_pos + extent->count == POS_NULL) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: Parity position overflow allocating file '%s' at position '%u/%u' with count '%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->count, disk->name);
+				log_fatal(EINTERNAL, "Internal inconsistency: Parity position overflow allocating file '%s' at position '%" PRIu64 "/%" PRIu64 "' with count '%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->count, disk->name);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -1393,7 +1393,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 			/* ensure that we are extending the extent at the end */
 			if (file_pos != extent->file_pos + extent->count) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: Allocating file '%s' at position '%u/%u' in the middle of extent '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->file_pos, extent->count, disk->name);
+				log_fatal(EINTERNAL, "Internal inconsistency: Allocating file '%s' at position '%" PRIu64 "/%" PRIu64 "' in the middle of extent '%" PRIu64 ":%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->file_pos, extent->count, disk->name);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -1415,7 +1415,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 
 	if (parity_extent != extent || file_extent != extent) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Allocating file '%s' at position '%u/%u' for existing extent '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->file_pos, extent->count, disk->name);
+		log_fatal(EINTERNAL, "Internal inconsistency: Allocating file '%s' at position '%" PRIu64 "/%" PRIu64 "' for existing extent '%" PRIu64 ":%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->file_pos, extent->count, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1439,7 +1439,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	extent = fs_par2extent_get_unlock(disk, &disk->fs_last, parity_pos);
 	if (!extent) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Deallocating parity position '%u' for not existing extent in disk '%s'\n", parity_pos, disk->name);
+		log_fatal(EINTERNAL, "Internal inconsistency: Deallocating parity position '%" PRIu64 "' for not existing extent in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1500,7 +1500,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 
 	if (parity_extent != second_extent || file_extent != second_extent) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Deallocating parity position '%u' for splitting extent '%u:%u' in disk '%s'\n", parity_pos, second_extent->file_pos, second_extent->count, disk->name);
+		log_fatal(EINTERNAL, "Internal inconsistency: Deallocating parity position '%" PRIu64 "' for splitting extent '%" PRIu64 ":%" PRIu64 "' in disk '%s'\n", parity_pos, second_extent->file_pos, second_extent->count, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1515,7 +1515,7 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
 {
 	if (file_pos >= file->blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Dereferencing file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
+		log_fatal(EINTERNAL, "Internal inconsistency: Dereferencing file '%s' at position '%" PRIu64 "/%" PRIu64 "'\n", file->sub, file_pos, file->blockmax);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1620,10 +1620,10 @@ void bucket_to_list(tommy_hashdyn* bucket_hash, tommy_list* bucket_list, block_o
 	for (tommy_node* i = tommy_list_head(bucket_list); i != 0; i = i->next) {
 		struct snapraid_bucket* entry = i->data;
 		count += entry->count_scrubbed + entry->count_justsynced;
-		log_tag("bucket:entry:%" PRIu64 ":%u:%u\n", (uint64_t)entry->time_at, entry->count_scrubbed, entry->count_justsynced);
+		log_tag("bucket:entry:%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n", (uint64_t)entry->time_at, entry->count_scrubbed, entry->count_justsynced);
 	}
 
-	log_tag("bucket:block_count:%u\n", count);
+	log_tag("bucket:block_count:%" PRIu64 "\n", count);
 
 	log_tag("list:bucket_end\n");
 

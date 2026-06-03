@@ -65,19 +65,19 @@ int state_status(struct snapraid_state* state)
 	blockmax = parity_allocated_size(state);
 
 	log_tag("summary:block_size:%u\n", state->block_size);
-	log_tag("summary:parity_block_count:%u\n", blockmax);
+	log_tag("summary:parity_block_count:%" PRIu64 "\n", blockmax);
 
 	/* get the minimum parity free space */
 	parity_block_free = state->parity[0].free_blocks;
 	for (l = 0; l < state->level; ++l) {
-		log_tag("summary:parity_block_total:%s:%u\n", lev_config_name(l), state->parity[l].total_blocks);
-		log_tag("summary:parity_block_free:%s:%u\n", lev_config_name(l), state->parity[l].free_blocks);
+		log_tag("summary:parity_block_total:%s:%" PRIu64 "\n", lev_config_name(l), state->parity[l].total_blocks);
+		log_tag("summary:parity_block_free:%s:%" PRIu64 "\n", lev_config_name(l), state->parity[l].free_blocks);
 		if (state->parity[l].free_blocks < parity_block_free)
 			parity_block_free = state->parity[l].free_blocks;
 		if (state->parity[l].free_blocks != 0)
 			free_not_zero = 1;
 	}
-	log_tag("summary:parity_block_free_min:%u\n", parity_block_free);
+	log_tag("summary:parity_block_free_min:%" PRIu64 "\n", parity_block_free);
 
 	printf("SnapRAID status report:\n");
 	printf("\n");
@@ -224,17 +224,17 @@ int state_status(struct snapraid_state* state)
 		printf(" %s\n", disk->name);
 
 		log_tag("summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
-		log_tag("summary:disk_block_count:%s:%u\n", disk->name, disk_block_count);
+		log_tag("summary:disk_block_count:%s:%" PRIu64 "\n", disk->name, disk_block_count);
 		log_tag("summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
 		log_tag("summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
 		log_tag("summary:disk_zerosubsecond_file_count:%s:%u\n", disk->name, disk_file_zerosubsecond);
 		log_tag("summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
-		log_tag("summary:disk_block_allocated:%s:%u\n", disk->name, disk_block_latest_used + 1);
-		log_tag("summary:disk_block_total:%s:%u\n", disk->name, disk->total_blocks);
-		log_tag("summary:disk_block_free:%s:%u\n", disk->name, disk->free_blocks);
-		log_tag("summary:disk_block_max_by_space:%s:%u\n", disk->name, disk_block_max_by_space);
-		log_tag("summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
-		log_tag("summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
+		log_tag("summary:disk_block_allocated:%s:%" PRIu64 "\n", disk->name, disk_block_latest_used + 1);
+		log_tag("summary:disk_block_total:%s:%" PRIu64 "\n", disk->name, disk->total_blocks);
+		log_tag("summary:disk_block_free:%s:%" PRIu64 "\n", disk->name, disk->free_blocks);
+		log_tag("summary:disk_block_max_by_space:%s:%" PRIu64 "\n", disk->name, disk_block_max_by_space);
+		log_tag("summary:disk_block_max_by_parity:%s:%" PRIu64 "\n", disk->name, disk_block_max_by_parity);
+		log_tag("summary:disk_block_max:%s:%" PRIu64 "\n", disk->name, disk_block_max);
 		log_tag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
 
 		disk_used_bytes = disk_block_count * (uint64_t)state->block_size;
@@ -326,7 +326,7 @@ int state_status(struct snapraid_state* state)
 	log_tag("scrub_graph_range:%u:%u\n", GRAPH_COLUMN, barmax);
 	for (i = 0; i < GRAPH_COLUMN; ++i) {
 		unsigned days_ago = dayoldest - (dayoldest - daynewest) * i / (GRAPH_COLUMN - 1);
-		log_tag("scrub_graph_bar:%u:%u:%u:%u\n", i, days_ago, bar_scrubbed[i], bar_new[i]);
+		log_tag("scrub_graph_bar:%" PRIu64 ":%u:%u:%u\n", i, days_ago, bar_scrubbed[i], bar_new[i]);
 	}
 
 	printf("\n\n");
@@ -334,11 +334,11 @@ int state_status(struct snapraid_state* state)
 	/* print the graph */
 	for (y = 0; y < GRAPH_ROW; ++y) {
 		if (y == 0)
-			printf("%3u%%|", barmax * 100 / count);
+			printf("%3" PRIu64 "%%|", barmax * 100 / count);
 		else if (y == GRAPH_ROW - 1)
 			printf("  0%%|");
 		else if (y == GRAPH_ROW / 2)
-			printf("%3u%%|", barmax * 50 / count);
+			printf("%3" PRIu64 "%%|", barmax * 50 / count);
 		else
 			printf("    |");
 		for (x = 0; x < GRAPH_COLUMN; ++x) {
@@ -451,9 +451,9 @@ int state_status(struct snapraid_state* state)
 				/* break the range */
 				if (range_count) {
 					if (range_count == 1) {
-						printf(" %u", range_start);
+						printf(" %" PRIu64 "", range_start);
 					} else {
-						printf(" %u-%u", range_start, range_start + range_count - 1);
+						printf(" %" PRIu64 "-%" PRIu64 "", range_start, range_start + range_count - 1);
 					}
 					bad_count += range_count;
 					++bad_range;
@@ -462,7 +462,7 @@ int state_status(struct snapraid_state* state)
 			}
 
 			if (bad_range > 100) {
-				printf(" and %u more...", state->bad_blocks - bad_count);
+				printf(" and %" PRIu64 " more...", state->bad_blocks - bad_count);
 				break;
 			}
 		}
