@@ -1055,7 +1055,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'o' :
-			olderthan = strtoul(optarg, &e, 10);
+			olderthan = strtou(optarg, &e, 10);
 			if (e == optarg || *e || olderthan > 1000) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid number of days '%s'\n", optarg);
@@ -1097,7 +1097,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'L' :
-			opt.io_error_limit = strtoul(optarg, &e, 0);
+			opt.io_error_limit = strtou(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid error limit number '%s'\n", optarg);
@@ -1202,7 +1202,7 @@ int snapraid_main(int argc, char* argv[])
 			opt.gui_touch_before = 1;
 			break;
 		case OPT_GUI_THRESHOLD_REMOVES :
-			opt.gui_threshold_removes = strtoul(optarg, &e, 0);
+			opt.gui_threshold_removes = strtou(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid threshold '%s'\n", optarg);
@@ -1211,7 +1211,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case OPT_GUI_THRESHOLD_UPDATES :
-			opt.gui_threshold_updates = strtoul(optarg, &e, 0);
+			opt.gui_threshold_updates = strtou(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid threshold '%s'\n", optarg);
@@ -1811,11 +1811,11 @@ int snapraid_main(int argc, char* argv[])
 		state_scan(&state);
 
 		if (opt.gui_threshold_removes != 0 && state.removed_files >= opt.gui_threshold_removes) {
-			log_fatal(EUSER, "Too many files were removed (%u, limit is %u). Sync aborted.\n", state.removed_files, opt.gui_threshold_removes);
+			log_fatal(EUSER, "Too many files were removed (%" PRIu64 ", limit is %u). Sync aborted.\n", state.removed_files, opt.gui_threshold_removes);
 			exit(EXIT_SYNC_NEEDED);
 		}
 		if (opt.gui_threshold_updates != 0 && state.updated_files >= opt.gui_threshold_updates) {
-			log_fatal(EUSER, "Too many files were updated (%u, limit is %u). Sync aborted.\n", state.updated_files, opt.gui_threshold_updates);
+			log_fatal(EUSER, "Too many files were updated (%" PRIu64 ", limit is %u). Sync aborted.\n", state.updated_files, opt.gui_threshold_updates);
 			exit(EXIT_SYNC_NEEDED);
 		}
 

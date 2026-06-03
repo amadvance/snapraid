@@ -312,7 +312,7 @@ int msg_line_curr = 0; /**< Current line width on stdout */
 static void vmsg(FILE* out, const char* format, va_list ap)
 {
 	char* dup = strdup_nofail(format);
-	int len = strlen(dup);
+	ssize_t len = strlen(dup);
 	int written = 0;
 	char control = 0;
 
@@ -1117,6 +1117,86 @@ char* worddigitstr(const char* haystack, const char* needle)
 	}
 
 	return NULL;
+}
+
+int strtoi(const char* nptr, char** endptr, int base)
+{
+	long val;
+	int save_errno = errno;
+
+	errno = 0;
+	val = strtol(nptr, endptr, base);
+
+	if (errno == ERANGE) {
+		return val > 0 ? INT_MAX : INT_MIN;
+	}
+
+	if (val > INT_MAX) {
+		errno = ERANGE;
+		return INT_MAX;
+	}
+
+	if (val < INT_MIN) {
+		errno = ERANGE;
+		return INT_MIN;
+	}
+
+	if (errno == 0) {
+		errno = save_errno;
+	}
+
+	return (int)val;
+}
+
+unsigned strtou(const char* nptr, char** endptr, int base)
+{
+	const char* p = nptr;
+	char* end;
+	unsigned long val;
+	int neg = 0;
+	int save_errno = errno;
+
+	while (isspace((unsigned char)*p)) {
+		++p;
+	}
+
+	if (*p == '-') {
+		neg = 1;
+		++p;
+	} else if (*p == '+') {
+		++p;
+	}
+
+	errno = 0;
+	val = strtoul(p, &end, base);
+
+	if (end == p) {
+		/* no conversion was performed */
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		errno = save_errno;
+		return 0;
+	}
+
+	if (endptr) {
+		*endptr = end;
+	}
+
+	if (errno == ERANGE || val > UINT_MAX) {
+		errno = ERANGE;
+		return UINT_MAX;
+	}
+
+	if (errno == 0) {
+		errno = save_errno;
+	}
+
+	if (neg) {
+		return (unsigned)-val;
+	}
+
+	return (unsigned)val;
 }
 
 /****************************************************************************/
@@ -2592,7 +2672,7 @@ int smart_temp(devinfo_t* devinfo)
 	if (t > 100)
 		return -1;
 
-	return t;
+	return (int)t;
 }
 
 /****************************************************************************/

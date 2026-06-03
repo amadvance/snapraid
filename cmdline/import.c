@@ -44,7 +44,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	block_off_t i;
 	data_off_t offset;
 	void* buffer;
-	int ret;
+	ssize_t ret;
 	int f;
 	int flags;
 	unsigned block_size = state->block_size;
@@ -82,7 +82,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	offset = 0;
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_import_block* block = &file->blockimp[i];
-		unsigned read_size = block_size;
+		size_t read_size = block_size;
 		if (read_size > size)
 			read_size = size;
 
@@ -150,7 +150,7 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 	offset = 0;
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_import_block* block = &file->blockimp[i];
-		unsigned read_size = block_size;
+		ssize_t read_size = block_size;
 		if (read_size > size)
 			read_size = size;
 
@@ -183,11 +183,11 @@ void import_file_free(struct snapraid_import_file* file)
 int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)
 {
 	struct snapraid_import_block* block;
-	int ret;
+	ssize_t ret;
 	int f;
 	const unsigned char* hash = missing_block->hash;
 	unsigned block_size = state->block_size;
-	unsigned read_size;
+	size_t read_size;
 	unsigned char buffer_hash[HASH_MAX];
 	const char* path;
 

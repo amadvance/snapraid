@@ -363,7 +363,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_task* task;
-			int read_size;
+			ssize_t read_size;
 			unsigned char hash[HASH_MAX];
 			struct snapraid_block* block;
 			int file_is_unsynced;
@@ -756,7 +756,7 @@ bail:
 /**
  * Return a * b / c approximated to the upper value.
  */
-static uint32_t md(uint32_t a, uint32_t b, uint32_t c)
+static uint64_t md(uint64_t a, uint32_t b, uint32_t c)
 {
 	uint64_t v = a;
 

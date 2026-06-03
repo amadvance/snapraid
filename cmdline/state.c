@@ -590,7 +590,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	while (1) {
 		char tag[PATH_MAX];
 		char buffer[PATH_MAX];
-		int ret;
+		ssize_t ret;
 		int c;
 		unsigned level;
 
@@ -1264,7 +1264,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					/* LCOV_EXCL_STOP */
 				}
 
-				smart[si] = strtoul(buffer, &e, 0);
+				smart[si] = strtou(buffer, &e, 0);
 
 				if (!e || *e) {
 					/* LCOV_EXCL_START */
@@ -1585,7 +1585,7 @@ static void state_map(struct snapraid_state* state)
 	unsigned hole;
 	tommy_node* i;
 	unsigned uuid_mismatch;
-	unsigned diskcount;
+	size_t diskcount;
 	unsigned l, s;
 
 	/*
@@ -1780,15 +1780,15 @@ static void state_map(struct snapraid_state* state)
 	if (!state->opt.no_warnings) {
 		/* LCOV_EXCL_START */
 		if (diskcount >= 36 && state->level < 6) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use six parity levels.\n", diskcount);
+			log_error(EUSER, "WARNING! For %zu disks, it's recommended to use six parity levels.\n", diskcount);
 		} else if (diskcount >= 29 && state->level < 5) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use five parity levels.\n", diskcount);
+			log_error(EUSER, "WARNING! For %zu disks, it's recommended to use five parity levels.\n", diskcount);
 		} else if (diskcount >= 22 && state->level < 4) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use four parity levels.\n", diskcount);
+			log_error(EUSER, "WARNING! For %zu disks, it's recommended to use four parity levels.\n", diskcount);
 		} else if (diskcount >= 15 && state->level < 3) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use three parity levels.\n", diskcount);
+			log_error(EUSER, "WARNING! For %zu disks, it's recommended to use three parity levels.\n", diskcount);
 		} else if (diskcount >= 5 && state->level < 2) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use two parity levels.\n", diskcount);
+			log_error(EUSER, "WARNING! For %zu disks, it's recommended to use two parity levels.\n", diskcount);
 		}
 		/* LCOV_EXCL_STOP */
 	}
@@ -2941,9 +2941,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'y') {
-			uint32_t hash_size;
+			uint64_t hash_size;
 
-			ret = sgetb32(f, &hash_size);
+			ret = sgetb64(f, &hash_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2968,7 +2968,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal(EUSER, "Mismatching 'hashsize' specification in the content file!\n");
-				log_fatal(EUSER, "Please restore the 'hashsize' value in the configuration file to '%u'\n", hash_size);
+				log_fatal(EUSER, "Please restore the 'hashsize' value in the configuration file to '%" PRIu64 "'\n", hash_size);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3484,7 +3484,7 @@ static void* state_write_thread(void* arg)
 
 	/* hash size */
 	sputc('y', f);
-	sputb32(BLOCK_HASH_SIZE, f);
+	sputb64(BLOCK_HASH_SIZE, f);
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
@@ -5002,13 +5002,13 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		time_t now;
 		time_t elapsed;
 
-		unsigned countsize_MB = (countsize + MEGA - 1) / MEGA;
+		data_off_t countsize_MB = (countsize + MEGA - 1) / MEGA;
 
 		now = time(0);
 
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
-		msg_bar("%u%% completed, %u MB accessed", muldiv(countpos, 100, countmax), countsize_MB);
+		msg_bar("%u%% completed, %" PRIu64 " MB accessed", muldiv(countpos, 100, countmax), countsize_MB);
 
 		msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 
@@ -5099,7 +5099,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 {
 	uint64_t v;
 	uint64_t tick_total;
-	unsigned bar;
+	size_t bar;
 	tommy_node* i;
 	unsigned l;
 	size_t pad;
@@ -5754,7 +5754,7 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 	line = 1;
 	while (1) {
 		char buffer[PATH_MAX];
-		int ret;
+		ssize_t ret;
 		int c;
 
 		/* skip initial spaces */
