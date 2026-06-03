@@ -883,11 +883,11 @@ static const char* find_smartctl(void)
  * Return -1 on error, otherwise the size of data read
  */
 #if HAVE_LINUX_DEVICE
-static int sysread(const char* path, char* buf, size_t buf_size)
+static ssize_t sysread(const char* path, char* buf, size_t buf_size)
 {
 	int f;
 	int ret;
-	int len;
+	ssize_t len;
 
 	f = open(path, O_RDONLY);
 	if (f == -1) {
@@ -924,7 +924,7 @@ static int sysread(const char* path, char* buf, size_t buf_size)
 static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
 {
 	unsigned char buf[512];
-	int ret = sysread(path, (char*)buf, sizeof(buf));
+	ssize_t ret = sysread(path, (char*)buf, sizeof(buf));
 
 	/* need at least the header */
 	if (ret < 4) {
@@ -1025,7 +1025,7 @@ static int sysattr_vpd_pg83(const char* path, char* dst, size_t dst_size)
 {
 	unsigned char buf[4096];
 
-	int ret = sysread(path, (char*)buf, sizeof(buf));
+	ssize_t ret = sysread(path, (char*)buf, sizeof(buf));
 	if (ret < 4) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -1144,7 +1144,7 @@ next:
 #if HAVE_LINUX_DEVICE
 static int sysattr(const char* path, char* buf, size_t buf_size)
 {
-	int len;
+	ssize_t len;
 
 	len = sysread(path, buf, buf_size);
 	if (len < 0) {
@@ -1555,7 +1555,7 @@ static int devdereference(uint64_t device, const char* dir, tommy_list* devlist)
 #if HAVE_LINUX_DEVICE
 static int tagread(const char* path, const char* tag, char* value, size_t value_size)
 {
-	int ret;
+	ssize_t ret;
 	char buf[512];
 	size_t tag_len;
 	char* i;
@@ -1704,7 +1704,7 @@ static blkid_cache cache = 0;
 #if HAVE_LINUX_DEVICE
 static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 {
-	int ret;
+	ssize_t ret;
 	DIR* d;
 	struct dirent* dd;
 	struct stat st;
@@ -2639,12 +2639,12 @@ int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 
 	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
 		/* btrfs reserved inode 256 for subvolume roots */
-		return fssnapshot_inode(path, sfs.f_type, 256, fss);
+		return fssnapshot_inode(path, BTRFS_SUPER_MAGIC, 256, fss);
 	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
 		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
-		return fssnapshot_inode(path, sfs.f_type, 4096, fss);
+		return fssnapshot_inode(path, BCACHEFS_SUPER_MAGIC, 4096, fss);
 	} else if (sfs.f_type == ZFS_SUPER_MAGIC) {
-		return fssnapshot_zfs(path, sfs.f_type, fss);
+		return fssnapshot_zfs(path, ZFS_SUPER_MAGIC, fss);
 	} else {
 		return -1;
 	}
@@ -3228,7 +3228,7 @@ static dev_t devread(const char* path)
 {
 	int f;
 	int ret;
-	int len;
+	ssize_t len;
 	char buf[64];
 	char* e;
 	unsigned ma;
@@ -3268,7 +3268,7 @@ static dev_t devread(const char* path)
 
 	buf[len] = 0;
 
-	ma = strtoul(buf, &e, 10);
+	ma = strtou(buf, &e, 10);
 	if (*e != ':') {
 		/* LCOV_EXCL_START */
 		log_fatal(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
@@ -3276,7 +3276,7 @@ static dev_t devread(const char* path)
 		/* LCOV_EXCL_STOP */
 	}
 
-	mi = strtoul(e + 1, &e, 10);
+	mi = strtou(e + 1, &e, 10);
 	if (*e != 0 && !isspace((unsigned char)*e)) {
 		/* LCOV_EXCL_START */
 		log_fatal(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
@@ -3387,7 +3387,7 @@ static int devstat(dev_t device, uint64_t* count)
 	char path[PATH_MAX];
 	char buf[512];
 	int token;
-	int ret;
+	ssize_t ret;
 	char* i;
 
 	*count = 0;
@@ -3546,7 +3546,7 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 {
 	char path[PATH_MAX];
 	char buf[512];
-	int ret;
+	ssize_t ret;
 
 	(void)family; /* not available, smartctl uses an internal database to get it */
 
@@ -3822,7 +3822,7 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, int
 static int devup(dev_t device, const char* name)
 {
 	char file[PATH_MAX];
-	int ret;
+	ssize_t ret;
 	int f;
 	void* buf;
 	uint64_t size;
@@ -4257,7 +4257,7 @@ void os_abort(void)
 #if HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS
 	void* stack[32];
 	char** messages;
-	size_t size;
+	unsigned size;
 	unsigned i;
 #endif
 
@@ -4392,7 +4392,7 @@ int ambient_temperature(void)
 			char label[128];
 			char* dash;
 			char* e;
-			long temp;
+			int temp;
 
 			if (strncmp(hwmon_entry->d_name, "temp", 4) != 0)
 				continue;
@@ -4419,7 +4419,7 @@ int ambient_temperature(void)
 				/* LCOV_EXCL_STOP */
 			}
 
-			temp = strtol(value, &e, 10) / 1000;
+			temp = strtoi(value, &e, 10) / 1000;
 			if (*e != 0 && !isspace((unsigned char)*e)) {
 				/* LCOV_EXCL_START */
 				continue;
@@ -4447,7 +4447,7 @@ int ambient_temperature(void)
 				/* LCOV_EXCL_STOP */
 			}
 
-			log_tag("thermal:ambient:device:%s:%s:%s:%s:%ld\n", entry->d_name, name, hwmon_name, label, temp);
+			log_tag("thermal:ambient:device:%s:%s:%s:%s:%d\n", entry->d_name, name, hwmon_name, label, temp);
 
 			/* check if temperature is in reasonable range */
 			if (temp < 15 || temp > 40)
@@ -4459,7 +4459,7 @@ int ambient_temperature(void)
 			/* check if label matches possible ambient labels */
 			for (int i = 0; AMBIENT_LABEL[i]; ++i) {
 				if (worddigitstr(label, AMBIENT_LABEL[i]) != 0) {
-					log_tag("thermal:ambient:candidate:%ld\n", temp);
+					log_tag("thermal:ambient:candidate:%d\n", temp);
 					if (lowest_temp == 0 || lowest_temp > temp)
 						lowest_temp = temp;
 					break;
@@ -4468,7 +4468,7 @@ int ambient_temperature(void)
 
 			/* accept also generic "temp1" */
 			if (strcmp(label, "temp1") == 0) {
-				log_tag("thermal:ambient:candidate:%ld\n", temp);
+				log_tag("thermal:ambient:candidate:%d\n", temp);
 				if (lowest_temp == 0 || lowest_temp > temp)
 					lowest_temp = temp;
 			}

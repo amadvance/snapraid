@@ -253,7 +253,7 @@
 #define close_range close_range_impl
 static inline int close_range_impl(unsigned int first, unsigned int last, unsigned int flags)
 {
-	return syscall(__NR_close_range, first, last, flags);
+	return (int)syscall(__NR_close_range, first, last, flags);
 }
 #define HAVE_CLOSE_RANGE 1
 #endif

@@ -16,7 +16,7 @@
  */
 struct snapraid_import_block {
 	struct snapraid_import_file* file; /**< Back pointer to the file owning this block. */
-	unsigned size; /**< Size of the block. */
+	size_t size; /**< Size of the block. */
 	data_off_t offset; /**< Position of the block in the file. */
 	unsigned char hash[HASH_MAX]; /**< Hash of the block. */
 	unsigned char prevhash[HASH_MAX]; /**< Previous hash of the block. Valid only if we are in rehash state. */

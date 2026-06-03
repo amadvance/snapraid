@@ -99,7 +99,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			snapraid_info info;
 			int rehash;
 			struct snapraid_block* block;
-			int read_size;
+			ssize_t read_size;
 			unsigned char hash[HASH_MAX];
 			unsigned block_state;
 			struct snapraid_file* file;
@@ -397,7 +397,7 @@ struct snapraid_plan {
  */
 struct failed_struct {
 	unsigned index; /**< Index of the failed block. */
-	unsigned size; /**< Size of the block. */
+	size_t size; /**< Size of the block. */
 
 	struct snapraid_block* block; /**< The failed block, or BLOCK_DELETED for a deleted block */
 };
@@ -811,7 +811,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_task* task;
-			int read_size;
+			ssize_t read_size;
 			unsigned char hash[HASH_MAX];
 			struct snapraid_block* block;
 			unsigned block_state;
@@ -1164,7 +1164,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						unsigned block_state = block_state_get(failed[j].block);
 
 						if (block_state == BLOCK_STATE_BLK) {
-							unsigned size = failed[j].size;
+							size_t size = failed[j].size;
 
 							/* compute the hash of the recovered block */
 							if (rehash) {

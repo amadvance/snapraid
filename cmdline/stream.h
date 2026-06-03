@@ -152,7 +152,7 @@ uint32_t scrc_stream(STREAM* s);
 /**
  * Check if the buffer has enough data loaded.
  */
-static inline int sptrlookup(STREAM* s, int size)
+static inline int sptrlookup(STREAM* s, ssize_t size)
 {
 	return s->pos + size <= s->end;
 }
@@ -243,7 +243,7 @@ static inline void sungetc(int c, STREAM* s)
  * Read a fixed amount of chars.
  * Return 0 on success, or -1 on error.
  */
-int sread(STREAM* f, void* void_data, unsigned size);
+int sread(STREAM* f, void* void_data, size_t size);
 
 /**
  * Get a char from a stream, ignoring one '\r'.
@@ -283,19 +283,19 @@ static inline int sgetspace(STREAM* f)
  * Stop at the first ' ', '\t', '\n' or EOF.
  * Return <0 if the buffer is too small, or the number of chars read.
  */
-int sgettok(STREAM* f, char* str, int size);
+ssize_t sgettok(STREAM* f, char* str, int size);
 
 /**
  * Read until the end of line.
  * Stop at the first '\n' or EOF. Note that '\n' is left in the stream.
  * Return <0 if the buffer is too small, or the number of chars read.
  */
-int sgetline(STREAM* f, char* str, int size);
+ssize_t sgetline(STREAM* f, char* str, int size);
 
 /**
  * Like sgetline() but remove ' ' and '\t' at the end.
  */
-int sgetlasttok(STREAM* f, char* str, int size);
+ssize_t sgetlasttok(STREAM* f, char* str, int size);
 
 /**
  * Read a 32 bit number.
@@ -329,7 +329,7 @@ int sgetble32(STREAM* f, uint32_t* value);
  * Read a binary string.
  * Return -1 on error or if the buffer is too small, or the number of chars read.
  */
-int sgetbs(STREAM* f, char* str, int size);
+int sgetbs(STREAM* f, char* str, size_t size);
 
 /****************************************************************************/
 /* put */
@@ -377,7 +377,7 @@ static inline int sputeol(STREAM* s)
  * Write a sized string.
  * Return 0 on success or -1 on error.
  */
-int swrite(const void* data, unsigned size, STREAM* f);
+int swrite(const void* data, size_t size, STREAM* f);
 
 /****************************************************************************/
 /* binary put */

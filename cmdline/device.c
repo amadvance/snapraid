@@ -472,9 +472,9 @@ static double poisson_prob_at_least_one_failure(double rate)
  * Probability of having data loss in a RAID system with the specified ::redundancy
  * supposing the specified ::array_failure_rate, and ::replace_rate.
  */
-static double raid_prob_of_one_or_more_failures(double array_failure_rate, double replace_rate, unsigned n, unsigned redundancy)
+static double raid_prob_of_one_or_more_failures(double array_failure_rate, double replace_rate, size_t n, size_t redundancy)
 {
-	unsigned i;
+	size_t i;
 	double MTBF;
 	double MTTR;
 	double MTTDL;
@@ -603,7 +603,7 @@ static void state_smart_log(devinfo_t* devinfo, double afr)
 		log_tag("attr:%s:%s:temperature:%d\n", devinfo->file, devinfo->name, temp);
 }
 
-static void state_smart(struct snapraid_state* state, unsigned n, tommy_list* low)
+static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 {
 	tommy_node* i;
 	unsigned j;

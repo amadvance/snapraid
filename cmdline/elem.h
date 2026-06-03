@@ -875,7 +875,7 @@ int file_block_is_last(struct snapraid_file* file, block_off_t file_pos);
  * Get the size in bytes of the block.
  * If it's the last block of a file it could be less than block_size.
  */
-unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size);
+size_t file_block_size(struct snapraid_file* file, block_off_t file_pos, size_t block_size);
 
 /**
  * Compare a file with an inode.
@@ -931,7 +931,7 @@ static inline tommy_uint32_t file_path_hash(const char* sub)
  */
 static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)
 {
-	return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32(mtime_sec ^ tommy_inthash_u32(mtime_nsec)));
+	return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32((tommy_uint32_t)mtime_sec ^ tommy_inthash_u32(mtime_nsec)));
 }
 
 /**

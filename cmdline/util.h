@@ -83,7 +83,7 @@ static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)
 /**
  * Compute the CRC-32 (Castagnoli) without the IV.
  */
-static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
+static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 	while (size >= 4) {
 		crc ^= ptr[0] | (uint32_t)ptr[1] << 8 | (uint32_t)ptr[2] << 16 | (uint32_t)ptr[3] << 24;
@@ -105,7 +105,7 @@ static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, 
  * Compute the CRC-32 (Castagnoli) without the IV.
  */
 #if CONFIG_X86
-static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
+static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 #ifdef CONFIG_X86_64
 	uint64_t crc64 = crc;
@@ -114,7 +114,7 @@ static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, 
 		ptr += 8;
 		size -= 8;
 	}
-	crc = crc64;
+	crc = (uint32_t)crc64;
 #else
 	while (size >= 4) {
 		asm ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
@@ -135,7 +135,7 @@ static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, 
 /**
  * Compute CRC-32 (Castagnoli) without the IV.
  */
-static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
+static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 #if CONFIG_X86
 	if (tommy_likely(crc_x86)) {
@@ -148,13 +148,13 @@ static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsi
 /**
  * Compute the CRC-32 (Castagnoli)
  */
-extern uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+extern uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, size_t size);
 
 /**
  * Internal entry points for testing.
  */
-uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
-uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
+uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, size_t size);
+uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size);
 
 /**
  * Initialize the CRC-32 (Castagnoli) support.

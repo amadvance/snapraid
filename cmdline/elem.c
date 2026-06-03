@@ -511,11 +511,11 @@ const char* file_name(const struct snapraid_file* file)
 	return r;
 }
 
-unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size)
+size_t file_block_size(struct snapraid_file* file, block_off_t file_pos, size_t block_size)
 {
 	/* if it's the last block */
 	if (file_pos + 1 == file->blockmax) {
-		unsigned block_remainder;
+		size_t block_remainder;
 		if (file->size == 0)
 			return 0;
 		block_remainder = file->size % block_size;
