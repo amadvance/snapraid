@@ -49,7 +49,7 @@ static void dump_entry(void* void_entry)
 	struct snapraid_parity_entry* entry = void_entry;
 	printf("%12" PRIu64 " ", entry->low * (uint64_t)entry->block_size);
 	printf("%12" PRIu64 " ", (entry->high - entry->low + 1) * (uint64_t)entry->block_size);
-	printf("%8u ", entry->fragments);
+	printf("%8" PRIu64 " ", entry->fragments);
 	printf("%s\n", fmt_term(entry->disk, entry->file->sub));
 }
 

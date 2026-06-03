@@ -270,11 +270,11 @@ struct snapraid_file {
 	uint64_t physical; /**< Physical offset of the file. */
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
-	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or STAT_NSEC_INVALID if not present. */
 	block_off_t blockmax; /**< Number of blocks. */
+	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or STAT_NSEC_INVALID if not present. */
 	uint16_t flag; /**< FILE_IS_* flags. */
 	uint16_t shared_flag; /**< FILE_IS_RELOCATED flag. Keep it separated as it's accessed by multiple threads */
-	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
 
 	/* nodes for data structures */
 	tommy_node nodelist;
@@ -1141,7 +1141,7 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 	ret = fs_par2file_find(disk, parity_pos, file_pos);
 	if (ret == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Deresolving parity to file at position '%u' in disk '%s'\n", parity_pos, disk->name);
+		log_fatal(EINTERNAL, "Internal inconsistency: Deresolving parity to file at position '%" PRIu64 "' in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1165,7 +1165,7 @@ static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct sna
 	ret = fs_file2par_find(disk, file, file_pos);
 	if (ret == POS_NULL) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
+		log_fatal(EINTERNAL, "Internal inconsistency: Resolving file '%s' at position '%" PRIu64 "/%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -1189,7 +1189,7 @@ static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk
 	ret = fs_par2block_find(disk, parity_pos);
 	if (ret == BLOCK_NULL) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Deresolving parity to block at position '%u' in disk '%s'\n", parity_pos, disk->name);
+		log_fatal(EINTERNAL, "Internal inconsistency: Deresolving parity to block at position '%" PRIu64 "' in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}

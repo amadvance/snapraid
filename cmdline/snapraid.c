@@ -1079,7 +1079,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'S' :
-			blockstart = strtoul(optarg, &e, 0);
+			blockstart = strtoull(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid start position '%s'\n", optarg);
@@ -1088,7 +1088,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'B' :
-			blockcount = strtoul(optarg, &e, 0);
+			blockcount = strtoull(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid count number '%s'\n", optarg);

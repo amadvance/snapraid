@@ -34,6 +34,8 @@ SnapRAID HISTORY
    build time. When not specified, the existing runtime discovery
    behaviour is preserved. Primarily intended for NixOS and other
    non-FHS systems.
+ * Removed the 512 TiB limitation on hard disk size (when using the
+   default 128 KiB blocks).
 
 14.7 2026/06
 ============

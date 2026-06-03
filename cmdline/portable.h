@@ -410,9 +410,8 @@ int os_pclose(OS_FILE* stream);
 
 /**
  * Basic block position type.
- * With 32 bits and 128k blocks you can address 256 TB.
  */
-typedef uint32_t block_off_t;
+typedef uint64_t block_off_t;
 
 /**
  * Basic data position type.
