@@ -347,7 +347,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			struct snapraid_file* file = failed[j].file;
 			block_off_t file_pos = failed[j].file_pos;
 
-			log_tag("repair_entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk->name, esc_tag(file->sub), file_pos);
+			log_tag("repair_entry:%u:%s:%s:%s:%s:%s:%" PRIu64 ":\n", j, desc, hash, data, disk->name, esc_tag(file->sub), file_pos);
 		} else {
 			log_tag("repair_entry:%u:%s:%s:%s:\n", j, desc, hash, data);
 		}
@@ -1130,9 +1130,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
-					log_fatal(errno, "Stopping at block %u\n", i);
+					log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 					++unrecoverable_error;
 					goto bail;
@@ -1145,9 +1145,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					ret = handle_create(&handle[j], file, state->file_mode);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
-						log_tag("%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+						log_tag("%s:%" PRIu64 ":%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
-						log_fatal(errno, "Stopping at block %u\n", i);
+						log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 						++unrecoverable_error;
 						goto bail;
@@ -1182,7 +1182,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						log_tag("%s:%u:%s:%s: Open error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
+						log_tag("%s:%" PRIu64 ":%s:%s: Open error at position %" PRIu64 ". %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
 
 						if (is_hw(errno)) {
 							++io_error;
@@ -1222,23 +1222,23 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					&& handle[j].st.st_size > file->size
 				) {
 					log_error(ESOFT, "File '%s' is larger than expected.\n", handle[j].path);
-					log_tag("error:%u:%s:%s: Size error\n", i, disk->name, esc_tag(file->sub));
+					log_tag("error:%" PRIu64 ":%s:%s: Size error\n", i, disk->name, esc_tag(file->sub));
 					++soft_error;
 
 					if (fix) {
 						ret = handle_truncate(&handle[j], file);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
-							log_tag("%s:%u:%s:%s: Truncate error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+							log_tag("%s:%" PRIu64 ":%s:%s: Truncate error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 							log_fatal_errno(errno, disk->name);
-							log_fatal(errno, "Stopping at block %u\n", i);
+							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 							++unrecoverable_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */
 						}
 
-						log_tag("fixed:%u:%s:%s: Fixed size\n", i, disk->name, esc_tag(file->sub));
+						log_tag("fixed:%" PRIu64 ":%s:%s: Fixed size\n", i, disk->name, esc_tag(file->sub));
 						++recovered_error;
 					}
 				}
@@ -1271,7 +1271,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
+				log_tag("%s:%" PRIu64 ":%s:%s: Read error at position %" PRIu64 ". %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
 
 				if (is_hw(errno)) {
 					++io_error;
@@ -1334,7 +1334,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%zu\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
+				log_tag("error:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 				++silent_error;
 				continue;
 			}
@@ -1377,7 +1377,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (parity[l]) {
 					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size);
 					if (ret == -1) {
-						log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
+						log_tag("parity_%s:%" PRIu64 ":%s: Read error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
 
 						buffer_recov[l] = 0; /* no parity to use */
 
@@ -1403,7 +1403,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
-						log_tag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
+						log_tag("unrecoverable:%" PRIu64 ":%s:%s: Unrecoverable error at position %" PRIu64 "\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 				}
 
 				/* keep track of damaged files */
@@ -1423,7 +1423,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						log_tag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
+						log_tag("unrecoverable:%" PRIu64 ":%s:%s: Unrecoverable unsynced error at position %" PRIu64 "\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 					}
 				}
 				if (partial_recover_error != 0) {
@@ -1449,7 +1449,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* mark that the read parity is wrong, setting ptr to 0 */
 							buffer_recov[l] = 0;
 
-							log_tag("parity_error:%u:%s: Data error, diff parity bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
+							log_tag("parity_error:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
 							++silent_error;
 						}
 					}
@@ -1471,9 +1471,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
-							log_tag("%s:%u:%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
+							log_tag("%s:%" PRIu64 ":%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
 							log_fatal_errno(errno, failed[j].disk->name);
-							log_fatal(errno, "Stopping at block %u\n", i);
+							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 							/* mark the file as damaged */
 							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
@@ -1496,7 +1496,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						 */
 						file_flag_set(failed[j].file, FILE_IS_FIXED);
 
-						log_tag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
+						log_tag("fixed:%" PRIu64 ":%s:%s: Fixed data error at position %" PRIu64 "\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 						++recovered_error;
 					}
 
@@ -1523,16 +1523,16 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 								if (ret == -1) {
 									/* LCOV_EXCL_START */
-									log_tag("%s:%u:%s: Write error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
+									log_tag("%s:%" PRIu64 ":%s: Write error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
 									log_fatal_errno(errno, lev_config_name(l));
-									log_fatal(errno, "Stopping at block %u\n", i);
+									log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 									++unrecoverable_error;
 									goto bail;
 									/* LCOV_EXCL_STOP */
 								}
 
-								log_tag("parity_fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
+								log_tag("parity_fixed:%" PRIu64 ":%s: Fixed data error\n", i, lev_config_name(l));
 								++recovered_error;
 							}
 						}
@@ -1565,7 +1565,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		ret = file_post(state, fix, i, handle, diskmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_fatal(errno, "Stopping at block %u\n", i);
+			log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 			++unrecoverable_error;
 			goto bail;
@@ -1664,7 +1664,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%" PRIu64 ":%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1681,7 +1681,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%" PRIu64 ":%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1695,7 +1695,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error timing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%" PRIu64 ":%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1711,7 +1711,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error closing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%u:%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1854,7 +1854,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
-					log_tag("%slink_%s:%u:%s:%s: Create ancestor error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+					log_tag("%slink_%s:%" PRIu64 ":%s:%s: Create ancestor error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1868,7 +1868,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0 && errno != ENOENT) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error removing '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
-					log_tag("%slink_%s:%u:%s:%s: Remove error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+					log_tag("%slink_%s:%" PRIu64 ":%s:%s: Remove error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1883,7 +1883,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
-						log_tag("hardlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+						log_tag("hardlink_%s:%" PRIu64 ":%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping\n");
 
@@ -1899,7 +1899,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error writing symlink '%s' to '%s'. %s.\n", path, slink->linkto, strerror(errno));
-						log_tag("symlink_%s:%u:%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+						log_tag("symlink_%s:%" PRIu64 ":%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping\n");
 
@@ -1961,7 +1961,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
-					log_tag("dir_%s:%u:%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
+					log_tag("dir_%s:%" PRIu64 ":%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -1975,7 +1975,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0 && errno != EEXIST) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating directory '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
-					log_tag("dir_%s:%u:%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
+					log_tag("dir_%s:%" PRIu64 ":%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2004,7 +2004,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
+			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			++unrecoverable_error;
@@ -2059,7 +2059,7 @@ bail:
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error removing '%s'. %s.\n", path, strerror(errno));
-					log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 
 					++unrecoverable_error;
@@ -2189,7 +2189,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal(EUSER, "Error in the specified starting block %u. It's larger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal(EUSER, "Error in the specified starting block %" PRIu64 ". It's larger than the parity size %" PRIu64 ".\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2218,7 +2218,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				/* open for reading, and ignore error */
 				ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 				if (ret == -1) {
-					log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+					log_tag("parity_%s:%" PRIu64 ":%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 					if (is_hw(errno)) {
 						log_fatal_errno(errno, lev_config_name(l));
 						exit(EXIT_FAILURE);
@@ -2257,7 +2257,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			parity_ptr[l] = &parity[l];
 			ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 			if (ret == -1) {
-				log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+				log_tag("parity_%s:%" PRIu64 ":%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 				if (is_hw(errno)) {
 					log_fatal_errno(errno, lev_config_name(l));
 					exit(EXIT_FAILURE);
@@ -2296,7 +2296,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				ret = parity_truncate(parity_ptr[l]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_tag("parity_%s:%u:%s: Truncate error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+					log_tag("parity_%s:%" PRIu64 ":%s: Truncate error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 					log_fatal_errno(errno, lev_config_name(l));
 
 					++process_error;
@@ -2308,7 +2308,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			ret = parity_close(parity_ptr[l]);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
-				log_tag("parity_%s:%u:%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+				log_tag("parity_%s:%" PRIu64 ":%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 				log_fatal_errno(errno, lev_config_name(l));
 
 				++process_error;
