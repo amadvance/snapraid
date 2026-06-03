@@ -415,8 +415,7 @@ int main(int argc, char* argv[])
 				/* ignore sigpipe to allow spindown even if the terminal is closed */
 				signal(SIGPIPE, SIG_IGN);
 
-				/* sync all disks */
-				printf("Flush...\n");
+				/* in *nix DO NOT CALL sync() because we use syncfs() in all single disks befode the down command */
 
 				snapraid_main(2, spindown_argv);
 			}
