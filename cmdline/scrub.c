@@ -138,9 +138,9 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			 * This one is really an unexpected error, because we are only reading
 			 * and closing a descriptor should never fail
 			 */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
+			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
-			log_fatal(errno, "Stopping at block %u\n", blockcur);
+			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 
 			if (is_hw(errno)) {
 				task->state = TASK_STATE_IOERROR;
@@ -154,11 +154,11 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 
 	ret = handle_open(handle, task->file, state->file_mode, 0);
 	if (ret == -1) {
-		log_tag("%s:%u:%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), strerror(errno));
+		log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, disk->name);
-			log_fatal(errno, "Stopping at block %u\n", blockcur);
+			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 			task->state = TASK_STATE_IOERROR;
 			return;
 			/* LCOV_EXCL_STOP */
@@ -187,7 +187,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, 0);
 	if (task->read_size == -1) {
-		log_tag("%s:%u:%s:%s: Read error at position %u. %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
+		log_tag("%s:%" PRIu64 ":%s:%s: Read error at position %" PRIu64 ". %s.\n", es(errno), blockcur, disk->name, esc_tag(task->file->sub), task->file_pos, strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, disk->name);
@@ -219,7 +219,7 @@ static void scrub_parity_reader(struct snapraid_worker* worker, struct snapraid_
 	/* read the parity */
 	ret = parity_read(parity_handle, blockcur, buffer, state->block_size);
 	if (ret == -1) {
-		log_tag("parity_%s:%u:%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
+		log_tag("parity_%s:%" PRIu64 ":%s: Read error. %s.\n", es(errno), blockcur, lev_config_name(level), strerror(errno));
 		if (is_hw(errno)) {
 			/* LCOV_EXCL_START */
 			log_fatal_errno(errno, lev_config_name(level));
@@ -446,7 +446,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
 					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
-					log_fatal(EIO, "Stopping at block %u\n", blockcur);
+					log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
@@ -485,12 +485,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
-						log_tag("error:%u:%s:%s: Data error at position %u, diff hash bits %u/%zu\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
+						log_tag("error:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++soft_error;
 						error_on_this_block = 1;
 					} else {
-						log_tag("error_data:%u:%s:%s: Data error at position %u, diff hash bits %u/%zu\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
-						log_error(EDATA, "Data error in file '%s' at position '%u', diff hash bits %u/%zu\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
+						log_tag("error_data:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
+						log_error(EDATA, "Data error in file '%s' at position '%" PRIu64 "', diff hash bits %u/%zu\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -544,7 +544,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (io_error >= state->opt.io_error_limit) {
 					/* LCOV_EXCL_START */
 					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_name(levcur));
-					log_fatal(EIO, "Stopping at block %u\n", blockcur);
+					log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
@@ -577,13 +577,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
-						log_tag("parity_error:%u:%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
+						log_tag("parity_error:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
 						++soft_error;
 						error_on_this_block = 1;
 					} else {
-						log_tag("parity_error_data:%u:%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
-						log_error(EDATA, "Data error in parity '%s' at position '%u', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
-						log_error(EDATA, "Data error in parity '%s' at position '%u', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
+						log_tag("parity_error_data:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
+						log_error(EDATA, "Data error in parity '%s' at position '%" PRIu64 "', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
+						log_error(EDATA, "Data error in parity '%s' at position '%" PRIu64 "', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -720,7 +720,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
+			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			if (is_hw(errno)) {
@@ -897,9 +897,9 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 			ps.lastlimit = 0;
 		}
 
-		log_tag("count_limit:%u\n", countlimit);
+		log_tag("count_limit:%" PRIu64 "\n", countlimit);
 		log_tag("time_limit:%" PRIu64 "\n", (uint64_t)ps.timelimit);
-		log_tag("last_limit:%u\n", ps.lastlimit);
+		log_tag("last_limit:%" PRIu64 "\n", ps.lastlimit);
 	} else {
 		/* avoid compiler warnings */
 		ps.timelimit = 0;
@@ -911,7 +911,7 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 		ret = parity_open(&parity_handle[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+			log_tag("parity_%s:%" PRIu64 ":%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 			log_fatal_errno(errno, lev_config_name(l));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -930,7 +930,7 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 		ret = parity_close(&parity_handle[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("parity_%s:%u:%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+			log_tag("parity_%s:%" PRIu64 ":%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
 			log_fatal_errno(errno, lev_config_name(l));
 
 			++process_error;
