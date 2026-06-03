@@ -335,7 +335,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	 */
 	if (disk->first_free_block != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency for first free position at '%u' deallocating file '%s'\n", disk->first_free_block, file->sub);
+		log_fatal(EINTERNAL, "Internal inconsistency for first free position at '%" PRIu64 "' deallocating file '%s'\n", disk->first_free_block, file->sub);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -379,7 +379,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Internal inconsistency in file '%s' deallocating block '%u:%u' state %u\n", file->sub, i, file->blockmax, block_state);
+			log_fatal(EINTERNAL, "Internal inconsistency in file '%s' deallocating block '%" PRIu64 ":%" PRIu64 "' state %u\n", file->sub, i, file->blockmax, block_state);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
