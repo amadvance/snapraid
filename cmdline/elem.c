@@ -634,7 +634,7 @@ struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_fil
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
-	if (file_pos + count > file->blockmax) {
+	if (count > file->blockmax || file_pos > file->blockmax - count) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Internal inconsistency: Allocating overflowing extent for file '%s' at position '%u:%u/%u'\n", file->sub, file_pos, count, file->blockmax);
 		os_abort();
@@ -995,7 +995,7 @@ static void extent_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 	}
 
 	/* check that the extents don't overlap */
-	if (prev->parity_pos + prev->count > obj->parity_pos) {
+	if (obj->parity_pos - prev->parity_pos < prev->count) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Internal inconsistency: Parity overlap for files '%s' at '%u:%u' and '%s' at '%u:%u'\n",
 			prev->file->sub, prev->parity_pos, prev->count, obj->file->sub, obj->parity_pos, obj->count);
@@ -1037,7 +1037,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 		if (prev != 0) {
 			if (file_flag_has(prev->file, FILE_IS_DELETED)) {
 				/* check that the extent doesn't overflow the file */
-				if (prev->file_pos + prev->count > prev->file->blockmax) {
+				if (prev->count > prev->file->blockmax || prev->file_pos > prev->file->blockmax - prev->count) {
 					/* LCOV_EXCL_START */
 					log_fatal(EINTERNAL, "Internal inconsistency: Delete end for file '%s' at '%u:%u' overflowing size '%u'\n",
 						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
@@ -1060,7 +1060,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 
 		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
 			/* check that the extent doesn't overflow the file */
-			if (obj->file_pos + obj->count > obj->file->blockmax) {
+			if (obj->count > obj->file->blockmax || obj->file_pos > obj->file->blockmax - obj->count) {
 				/* LCOV_EXCL_START */
 				log_fatal(EINTERNAL, "Internal inconsistency: Delete start for file '%s' at '%u:%u' overflowing size '%u'\n",
 					obj->file->sub, obj->file_pos, obj->count, obj->file->blockmax);
@@ -1092,7 +1092,7 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 
 		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
 			/* check that the extents don't overlap */
-			if (prev->file_pos + prev->count > obj->file_pos) {
+			if (obj->file_pos - prev->file_pos < prev->count) {
 				/* LCOV_EXCL_START */
 				log_fatal(EINTERNAL, "Internal inconsistency: Delete sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
 					prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
@@ -1153,7 +1153,7 @@ static int extent_parity_inside_compare_unlock(const void* void_a, const void* v
 
 	if (arg_a->parity_pos < arg_b->parity_pos)
 		return -1;
-	if (arg_a->parity_pos >= arg_b->parity_pos + arg_b->count)
+	if (arg_a->parity_pos - arg_b->parity_pos >= arg_b->count)
 		return 1;
 
 	return 0;
@@ -1171,7 +1171,7 @@ static struct snapraid_extent* fs_par2extent_get_unlock(struct snapraid_disk* di
 	/* check if the last accessed extent matches */
 	if (*fs_last
 		&& parity_pos >= (*fs_last)->parity_pos
-		&& parity_pos < (*fs_last)->parity_pos + (*fs_last)->count
+		&& parity_pos - (*fs_last)->parity_pos < (*fs_last)->count
 	) {
 		extent = *fs_last;
 	} else {
@@ -1208,7 +1208,7 @@ static int extent_file_inside_compare_unlock(const void* void_a, const void* voi
 
 	if (arg_a->file_pos < arg_b->file_pos)
 		return -1;
-	if (arg_a->file_pos >= arg_b->file_pos + arg_b->count)
+	if (arg_a->file_pos - arg_b->file_pos >= arg_b->count)
 		return 1;
 
 	return 0;
@@ -1227,7 +1227,7 @@ static struct snapraid_extent* fs_file2extent_get_unlock(struct snapraid_disk* d
 	if (*fs_last
 		&& file == (*fs_last)->file
 		&& file_pos >= (*fs_last)->file_pos
-		&& file_pos < (*fs_last)->file_pos + (*fs_last)->count
+		&& file_pos - (*fs_last)->file_pos < (*fs_last)->count
 	) {
 		extent = *fs_last;
 	} else {
@@ -1299,6 +1299,14 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 		extent = fs_file2extent_get_unlock(disk, &disk->fs_last, file, file_pos - 1);
 
 		if (extent != 0 && parity_pos == extent->parity_pos + extent->count) {
+			/* check if the position will go outside the limit */
+			if (extent->parity_pos + extent->count == POS_NULL) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Internal inconsistency: Parity position overflow allocating file '%s' at position '%u/%u' with count '%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->count, disk->name);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* ensure that we are extending the extent at the end */
 			if (file_pos != extent->file_pos + extent->count) {
 				/* LCOV_EXCL_START */

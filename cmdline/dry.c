@@ -433,7 +433,7 @@ int state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t 
 	}
 
 	/* adjust the number of block to process */
-	if (blockcount != 0 && blockstart + blockcount < blockmax) {
+	if (blockcount != 0 && blockcount < blockmax - blockstart) {
 		blockmax = blockstart + blockcount;
 	}
 

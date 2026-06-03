@@ -2293,7 +2293,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (v_idx + v_count > file->blockmax) {
+				if (v_count > file->blockmax || v_idx > file->blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal(EINTERNAL, "Internal inconsistency: Block number out of range\n");
@@ -2301,12 +2301,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (v_pos + v_count > blockmax) {
+				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal(EINTERNAL, "Internal inconsistency: Block size %u/%u!\n", blockmax, v_pos + v_count);
 					os_abort();
-					/* LCOV_EXCL_START */
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* fill the blocks in the run */
@@ -2416,7 +2416,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (v_pos + v_count > blockmax) {
+				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal(EINTERNAL, "Internal inconsistency: Info size %u/%u!\n", blockmax, v_pos + v_count);
@@ -2526,7 +2526,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (v_pos + v_count > blockmax) {
+				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal(EINTERNAL, "Internal inconsistency: Hole size %u/%u!\n", blockmax, v_pos + v_count);

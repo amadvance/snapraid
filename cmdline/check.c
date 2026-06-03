@@ -2092,7 +2092,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	}
 
 	/* adjust the number of block to process */
-	if (blockcount != 0 && blockstart + blockcount < blockmax) {
+	if (blockcount != 0 && blockcount < blockmax - blockstart) {
 		blockmax = blockstart + blockcount;
 	}
 
