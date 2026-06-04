@@ -217,6 +217,9 @@ int raid_test_rec(int mode, int nd, size_t size)
 #endif
 #endif
 #endif
+#ifdef CONFIG_NEON
+			test_setup(i) = raid_rec1_neon;
+#endif
 		} else if (i == 2) {
 			test_setup(i) = raid_rec2_int8;
 #ifdef CONFIG_X86
@@ -235,6 +238,9 @@ int raid_test_rec(int mode, int nd, size_t size)
 #endif
 #endif
 #endif
+#ifdef CONFIG_NEON
+			test_setup(i) = raid_rec2_neon;
+#endif
 		} else {
 			test_setup(i) = raid_recX_int8;
 #ifdef CONFIG_X86
@@ -252,6 +258,9 @@ int raid_test_rec(int mode, int nd, size_t size)
 				test_setup(i) = raid_recX_avx512gfni;
 #endif
 #endif
+#endif
+#ifdef CONFIG_NEON
+			test_setup(i) = raid_recX_neon;
 #endif
 		}
 	}
@@ -370,6 +379,11 @@ int raid_test_par(int mode, int nd, size_t size)
 	test_setup(2) = raid_gen2_int32;
 	test_setup(2) = raid_gen2_int64;
 
+#ifdef CONFIG_NEON
+	test_setup(1) = raid_gen1_neon;
+	test_setup(2) = raid_gen2_neon;
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		test_setup(1) = raid_gen1_sse2;
@@ -403,6 +417,13 @@ int raid_test_par(int mode, int nd, size_t size)
 		test_setup(4) = raid_gen4_int8;
 		test_setup(5) = raid_gen5_int8;
 		test_setup(6) = raid_gen6_int8;
+
+#ifdef CONFIG_NEON
+		test_setup(3) = raid_gen3_neon;
+		test_setup(4) = raid_gen4_neon;
+		test_setup(5) = raid_gen5_neon;
+		test_setup(6) = raid_gen6_neon;
+#endif
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_ssse3()) {
@@ -449,6 +470,10 @@ int raid_test_par(int mode, int nd, size_t size)
 	} else {
 		test_setup(3) = raid_genz_int32;
 		test_setup(3) = raid_genz_int64;
+
+#ifdef CONFIG_NEON
+		test_setup(3) = raid_genz_neon;
+#endif
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_sse2()) {
