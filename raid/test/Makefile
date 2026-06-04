@@ -36,7 +36,7 @@ CFLAGS += -O2 -DUSE_RAID_AES
 else
 CFLAGS += -O0 --coverage -DCOVERAGE=1 -DNDEBUG=1
 endif
-OBJS = raid.o check.o int.o intz.o x86.o x86z.o gfni.o tables.o memory.o test.o helper.o module.o
+OBJS = raid.o check.o int.o intz.o x86.o x86z.o gfni.o neon.o tables.o memory.o test.o helper.o module.o
 
 %.o: ../%.c
 	$(CC) $(CFLAGS) -c -o $@ $<

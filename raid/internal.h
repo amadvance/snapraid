@@ -23,7 +23,13 @@
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1
 #endif
+#if defined(__arm__) || defined(__aarch64__)
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define CONFIG_NEON 1
 #endif
+#endif
+#endif
+
 
 /*
  * Includes anything required for compatibility.
@@ -144,6 +150,16 @@ void raid_recX_avx2gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv
 void raid_rec1_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_gen1_neon(int nd, size_t size, void **vv);
+void raid_gen2_neon(int nd, size_t size, void **vv);
+void raid_genz_neon(int nd, size_t size, void **vv);
+void raid_gen3_neon(int nd, size_t size, void **vv);
+void raid_gen4_neon(int nd, size_t size, void **vv);
+void raid_gen5_neon(int nd, size_t size, void **vv);
+void raid_gen6_neon(int nd, size_t size, void **vv);
+void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Functions for parity computation.
@@ -348,5 +364,23 @@ static __always_inline void raid_avx_end(void)
 }
 #endif /* CONFIG_X86 */
 
+#ifdef CONFIG_NEON
+static __always_inline void raid_neon_begin(void)
+{
+}
+
+static __always_inline void raid_neon_end(void)
+{
+	asm volatile ("" : : : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+	asm volatile ("" : : : "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
+	asm volatile ("" : : : "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+	asm volatile ("" : : : "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+}
+
+void raid_register_neon(void);
 #endif
+
+#endif
+
+
 

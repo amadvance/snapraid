@@ -16,7 +16,8 @@ jobs:
       - run: brew install automake
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all dist check
+      - run: cd raid/test && make all test
+      - run: make all dist check     
   build-linux:
     runs-on: ubuntu-latest
     steps:
