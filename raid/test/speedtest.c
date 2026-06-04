@@ -125,6 +125,9 @@ void speed(void)
 	printf("%8s", "int8");
 	printf("%8s", "int32");
 	printf("%8s", "int64");
+#ifdef CONFIG_NEON
+	printf("%8s", "neon");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "sse2");
@@ -178,6 +181,15 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen1_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -241,6 +253,15 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen2_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -327,6 +348,15 @@ void speed(void)
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_genz_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
@@ -380,6 +410,15 @@ void speed(void)
 
 	printf("%8s", "");
 	printf("%8s", "");
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen3_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -459,6 +498,15 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen4_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
@@ -536,6 +584,15 @@ void speed(void)
 
 	printf("%8s", "");
 	printf("%8s", "");
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen5_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -615,6 +672,15 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen6_neon(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
@@ -684,6 +750,9 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
+#ifdef CONFIG_NEON
+	printf("%8s", "neon");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3())
 		printf("%8s", "ssse3");
@@ -712,6 +781,17 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen_force(1, raid_gen1_neon);
+		/* +1 to avoid GEN1 optimized case */
+		raid_rec1_neon(1, id, ip + 1, nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
@@ -781,6 +861,17 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen_force(2, raid_gen2_neon);
+		/* +1 to avoid GEN2 optimized case */
+		raid_rec2_neon(2, id, ip + 1, nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
@@ -854,6 +945,16 @@ void speed(void)
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen_force(3, raid_gen3_neon);
+		raid_recX_neon(3, id, ip, nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
@@ -920,6 +1021,16 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen_force(4, raid_gen4_neon);
+		raid_recX_neon(4, id, ip, nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
@@ -992,6 +1103,16 @@ void speed(void)
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen_force(5, raid_gen5_neon);
+		raid_recX_neon(5, id, ip, nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
@@ -1063,6 +1184,16 @@ void speed(void)
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_gen_force(6, raid_gen6_neon);
+		raid_recX_neon(6, id, ip, nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
@@ -1133,6 +1264,9 @@ int main(void)
 
 	raid_init();
 
+#ifdef CONFIG_NEON
+	printf("Including ARM NEON\n");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2())
 		printf("Including x86 SSE2\n");

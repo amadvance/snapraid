@@ -9119,7 +9119,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 	},
 };
 
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
 /**
  * PSHUFB tables for the Cauchy matrix.
  *
@@ -14653,7 +14653,7 @@ const uint8_t __aligned(256) raid_gfcauchypshufb[251][5][2][16] =
 };
 #endif
 
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
 /**
  * PSHUFB tables for generic multiplication.
  *
@@ -24805,7 +24805,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 	},
 };
 
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
 /**
  * PSHUFB tables for the Cauchy matrix.
  *
@@ -30339,7 +30339,7 @@ const uint8_t __aligned(256) raid_gfcauchypshufb[251][5][2][16] =
 };
 #endif
 
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
 /**
  * PSHUFB tables for generic multiplication.
  *
