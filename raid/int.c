@@ -60,6 +60,36 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 	}
 }
 
+#if CONFIG_VEC128
+/*
+ * GEN1 (RAID5 with xor) 128bit C implementation
+ */
+void raid_gen1_vec128(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	int d, l;
+	size_t i;
+
+	uvec128_t p0;
+	uvec128_t p1;
+
+	l = nd - 1;
+	p = v[nd];
+
+	for (i = 0; i < size; i += 32) {
+		p0 = v_128(v[l][i]);
+		p1 = v_128(v[l][i + 16]);
+		for (d = l - 1; d >= 0; --d) {
+			p0 ^= v_128(v[d][i]);
+			p1 ^= v_128(v[d][i + 16]);
+		}
+		v_128(p[i]) = p0;
+		v_128(p[i + 16]) = p1;
+	}
+}
+#endif
+
 /*
  * GEN2 (RAID6 with powers of 2) 32bit C implementation
  */
@@ -141,6 +171,50 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 		v_64(q[i + 8]) = q1;
 	}
 }
+
+#if CONFIG_VEC128
+/*
+ * GEN2 (RAID6 with powers of 2) 128bit C implementation
+ */
+void raid_gen2_vec128(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	uvec128_t d0, d1;
+	uvec128_t p0, p1;
+	uvec128_t q0, q1;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	for (i = 0; i < size; i += 32) {
+		p0 = q0 = v_128(v[l][i]);
+		p1 = q1 = v_128(v[l][i + 16]);
+		for (d = l - 1; d >= 0; --d) {
+			d0 = v_128(v[d][i]);
+			d1 = v_128(v[d][i + 16]);
+
+			p0 ^= d0;
+			p1 ^= d1;
+
+			q0 = x2_128(q0);
+			q1 = x2_128(q1);
+
+			q0 ^= d0;
+			q1 ^= d1;
+		}
+		v_128(p[i]) = p0;
+		v_128(p[i + 16]) = p1;
+		v_128(q[i]) = q0;
+		v_128(q[i + 16]) = q1;
+	}
+}
+#endif
 
 /*
  * GEN3 (triple parity with Cauchy matrix) 8bit C implementation
@@ -554,6 +628,11 @@ void raid_register_int(void)
 		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64);
 		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int64", raid_genz_int64);
 	}
+#if CONFIG_VEC128
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "vec128", raid_gen1_vec128);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "vec128", raid_gen2_vec128);
+	raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "vec128", raid_genz_vec128);
+#endif
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_gen3_int8);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_gen4_int8);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_gen5_int8);

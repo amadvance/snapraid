@@ -106,3 +106,61 @@ void raid_genz_int64(int nd, size_t size, void **vv)
 	}
 }
 
+#if CONFIG_VEC128
+/*
+ * GENz (triple parity with powers of 2^-1) 128bit C implementation
+ */
+void raid_genz_vec128(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
+	int d, l;
+	size_t i;
+
+	uvec128_t d0, d1;
+	uvec128_t p0, p1;
+	uvec128_t q0, q1;
+	uvec128_t r0, r1;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+	r = v[nd + 2];
+
+	for (i = 0; i < size; i += 32) {
+		r0 = q0 = p0 = v_128(v[l][i]);
+		r1 = q1 = p1 = v_128(v[l][i + 16]);
+		for (d = l - 1; d >= 0; --d) {
+			d0 = v_128(v[d][i]);
+			d1 = v_128(v[d][i + 16]);
+
+			p0 ^= d0;
+			p1 ^= d1;
+
+			q0 = x2_128(q0);
+			q1 = x2_128(q1);
+
+			q0 ^= d0;
+			q1 ^= d1;
+
+			r0 = d2_128(r0);
+			r1 = d2_128(r1);
+
+			r0 ^= d0;
+			r1 ^= d1;
+		}
+		v_128(p[i]) = p0;
+		v_128(p[i + 16]) = p1;
+
+		v_128(q[i]) = q0;
+		v_128(q[i + 16]) = q1;
+
+		v_128(r[i]) = r0;
+		v_128(r[i + 16]) = r1;
+	}
+}
+#endif
+
+

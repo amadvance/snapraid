@@ -30,9 +30,9 @@ SDE = sde64
 endif
 CC = gcc
 LD = ld
-CFLAGS = -I.. -Wall -Wextra -g
+CFLAGS = -I.. -Wall -Wextra -g -DUSE_RAID_AES
 ifeq ($(COVERAGE),)
-CFLAGS += -O2 -DUSE_RAID_AES
+CFLAGS += -O2
 else
 CFLAGS += -O0 --coverage -DCOVERAGE=1 -DNDEBUG=1
 endif

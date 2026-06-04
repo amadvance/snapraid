@@ -30,6 +30,9 @@ int main(void)
 
 	raid_init();
 
+#ifdef CONFIG_VEC128
+	printf("Including 128-bit vectors\n");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2())
 		printf("Including x86 SSE2\n");

@@ -125,6 +125,9 @@ void speed(void)
 	printf("%8s", "int8");
 	printf("%8s", "int32");
 	printf("%8s", "int64");
+#if CONFIG_VEC128
+	printf("%8s", "vec128");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "sse2");
@@ -178,6 +181,15 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#if CONFIG_VEC128
+	SPEED_START {
+		raid_gen1_vec128(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -241,6 +253,15 @@ void speed(void)
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
+
+#if CONFIG_VEC128
+	SPEED_START {
+		raid_gen2_vec128(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -327,6 +348,15 @@ void speed(void)
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
+#if CONFIG_VEC128
+	SPEED_START {
+		raid_genz_vec128(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
@@ -380,6 +410,9 @@ void speed(void)
 
 	printf("%8s", "");
 	printf("%8s", "");
+#if CONFIG_VEC128
+	printf("%8s", "");
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -458,6 +491,9 @@ void speed(void)
 
 	printf("%8s", "");
 	printf("%8s", "");
+#if CONFIG_VEC128
+	printf("%8s", "");
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -536,6 +572,9 @@ void speed(void)
 
 	printf("%8s", "");
 	printf("%8s", "");
+#if CONFIG_VEC128
+	printf("%8s", "");
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -614,6 +653,9 @@ void speed(void)
 
 	printf("%8s", "");
 	printf("%8s", "");
+#if CONFIG_VEC128
+	printf("%8s", "");
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -705,7 +747,11 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
+#if CONFIG_VEC128
+		raid_gen_force(1, raid_gen1_vec128);
+#else
 		raid_gen_force(1, sizeof(void *) == 8 ? raid_gen1_int64 : raid_gen1_int32);
+#endif
 		/* +1 to avoid GEN1 optimized case */
 		raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -774,7 +820,11 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
+#if CONFIG_VEC128
+		raid_gen_force(2, raid_gen2_vec128);
+#else
 		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64 : raid_gen2_int32);
+#endif
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -1133,6 +1183,9 @@ int main(void)
 
 	raid_init();
 
+#ifdef CONFIG_VEC128
+	printf("Including 128-bit vectors\n");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2())
 		printf("Including x86 SSE2\n");

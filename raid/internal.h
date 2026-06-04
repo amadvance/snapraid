@@ -12,9 +12,26 @@
 #define HAVE_ASSEMBLY 1
 #endif
 
-/* If the platforms supports assembly */
+/**
+ * Enable C-base SIMD-accelerated vector optimizations on:
+ * - x86/x64 (SSE2)
+ * - ARM (NEON)
+ * - RISC-V (Vector Extension)
+ */
+#if defined(__SSE2__) || defined(__ARM_NEON) || defined(__riscv_vector)
+#if defined(__has_attribute)
+#if __has_attribute(__vector_size__)
+#define CONFIG_VEC128 1
+#endif
+#endif
+#endif
+
+/**
+ * Enable Assembly-base SIMD-accelerated vector optimizations on:
+ * - x86_32 (32 bit)
+ * - x86_64 (64 bit)
+ */
 #if HAVE_ASSEMBLY
-/* Autodetect from the compiler */
 #if defined(__i386__)
 #define CONFIG_X86 1
 #define CONFIG_X86_32 1
@@ -82,11 +99,13 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v);
 void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv);
 void raid_gen1_int32(int nd, size_t size, void **vv);
 void raid_gen1_int64(int nd, size_t size, void **vv);
+void raid_gen1_vec128(int nd, size_t size, void **vv);
 void raid_gen1_sse2(int nd, size_t size, void **vv);
 void raid_gen1_avx2(int nd, size_t size, void **vv);
 void raid_gen1_avx512bw(int nd, size_t size, void **vv);
 void raid_gen2_int32(int nd, size_t size, void **vv);
 void raid_gen2_int64(int nd, size_t size, void **vv);
+void raid_gen2_vec128(int nd, size_t size, void **vv);
 void raid_gen2_sse2(int nd, size_t size, void **vv);
 void raid_gen2_avx2(int nd, size_t size, void **vv);
 void raid_gen2_sse2ext(int nd, size_t size, void **vv);
@@ -95,6 +114,7 @@ void raid_gen2_avx2gfni(int nd, size_t size, void **vv);
 void raid_gen2_avx512gfni(int nd, size_t size, void **vv);
 void raid_genz_int32(int nd, size_t size, void **vv);
 void raid_genz_int64(int nd, size_t size, void **vv);
+void raid_genz_vec128(int nd, size_t size, void **vv);
 void raid_genz_sse2(int nd, size_t size, void **vv);
 void raid_genz_sse2ext(int nd, size_t size, void **vv);
 void raid_genz_avx2ext(int nd, size_t size, void **vv);

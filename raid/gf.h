@@ -70,6 +70,14 @@ static __always_inline uint8_t A(int p, int d)
  */
 #define v_64(p) (*(uint64_t *)&(p))
 
+#if CONFIG_VEC128
+/*
+ * Dereference as uvec128_t
+ */
+typedef uint64_t uvec128_t __attribute__ ((__vector_size__ (16)));
+#define v_128(p) (*(uvec128_t *)&(p))
+#endif
+
 /*
  * Polynomial-dependent XOR masks for GF(2^8) multiply and divide by 2.
  *
@@ -153,5 +161,36 @@ static __always_inline uint64_t d2_64(uint64_t v)
 	v ^= mask & RAID_INV2_64;
 	return v;
 }
+
+#if CONFIG_VEC128
+#define RAID_POLY_128 ((uvec128_t){ RAID_POLY_64, RAID_POLY_64 })
+#define RAID_INV2_128 ((uvec128_t){ RAID_INV2_64, RAID_INV2_64 })
+
+/*
+ * Multiply each byte of a uint128 by 2 in GF(2^8).
+ */
+static __always_inline uvec128_t x2_128(uvec128_t v)
+{
+	uvec128_t mask = v & ((uvec128_t){ 0x8080808080808080ULL, 0x8080808080808080ULL });
+
+	mask = (mask << 1) - (mask >> 7);
+	v = (v << 1) & ((uvec128_t){ 0xfefefefefefefefeULL, 0xfefefefefefefefeULL });
+	v ^= mask & RAID_POLY_128;
+	return v;
+}
+
+/*
+ * Divide each byte of a uint128 by 2 in GF(2^8).
+ */
+static __always_inline uvec128_t d2_128(uvec128_t v)
+{
+	uvec128_t mask = v & ((uvec128_t){ 0x0101010101010101ULL, 0x0101010101010101ULL });
+
+	mask = (mask << 8) - mask;
+	v = (v >> 1) & ((uvec128_t){ 0x7f7f7f7f7f7f7f7fULL, 0x7f7f7f7f7f7f7f7fULL });
+	v ^= mask & RAID_INV2_128;
+	return v;
+}
+#endif
 
 #endif

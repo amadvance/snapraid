@@ -65,16 +65,30 @@
 #define __noreturn __attribute__((noreturn))
 #endif
 
+/**
+ * Enable C-based SIMD-accelerated vector optimizations on:
+ * - x86/x64 (SSE2)
+ * - ARM (NEON)
+ * - RISC-V (Vector Extension)
+ */
+#if defined(__SSE2__) || defined(__ARM_NEON) || defined(__riscv_vector)
+#if defined(__has_attribute)
+#if __has_attribute(__vector_size__)
+#define CONFIG_VEC128 1
+#endif
+#endif
+#endif
 
 /**
- * Architecture for inline assembly.
+ * Enable Assembly-based SIMD-accelerated vector optimizations on:
+ * - x86_32 (32 bit)
+ * - x86_64 (64 bit)
  */
 #if HAVE_ASSEMBLY
 #if defined(__i386__)
 #define CONFIG_X86 1
 #define CONFIG_X86_32 1
 #endif
-
 #if defined(__x86_64__)
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1

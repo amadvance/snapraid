@@ -367,8 +367,14 @@ int raid_test_par(int mode, int nd, size_t size)
 	/* setup all the available functions */
 	test_setup(1) = raid_gen1_int32;
 	test_setup(1) = raid_gen1_int64;
+#if CONFIG_VEC128
+	test_setup(1) = raid_gen1_vec128;
+#endif
 	test_setup(2) = raid_gen2_int32;
 	test_setup(2) = raid_gen2_int64;
+#if CONFIG_VEC128
+	test_setup(2) = raid_gen2_vec128;
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -449,6 +455,9 @@ int raid_test_par(int mode, int nd, size_t size)
 	} else {
 		test_setup(3) = raid_genz_int32;
 		test_setup(3) = raid_genz_int64;
+#if CONFIG_VEC128
+		test_setup(3) = raid_genz_vec128;
+#endif
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_sse2()) {
