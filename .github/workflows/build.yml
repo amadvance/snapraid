@@ -16,7 +16,12 @@ jobs:
       - run: brew install automake
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all dist check
+      - run: make all
+      - run: objdump -d raid/int.o | grep -A 100 "raid_gen1_int64"
+      - run: objdump -d raid/int.o | grep -A 100 "raid_gen2_int64"
+      - run: objdump -d raid/int.o | grep -A 100 "raid_gen1_vec128"
+      - run: objdump -d raid/int.o | grep -A 100 "raid_gen2_vec128"
+      - run: make dist check
   build-linux:
     runs-on: ubuntu-latest
     steps:
