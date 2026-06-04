@@ -18,6 +18,10 @@ AC_CONFIG_MACRO_DIRS([m4])
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_CC_C99
+AS_IF([test "x$ac_cv_prog_cc_c99" = "xno"], [
+    AC_MSG_ERROR([A C99-compliant compiler is required to build this package.])
+])
 AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind],[])
 AC_CHECK_PROG([WINE],[wine64],[wine64],[])
 AC_CHECK_PROG([SDE],[sde64],[sde64],[])
