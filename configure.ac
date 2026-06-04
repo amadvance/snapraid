@@ -24,6 +24,22 @@ AC_CHECK_PROG([SDE],[sde64],[sde64],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
+# Compile a quick test program using a syntax unique to C99 and newer
+AC_MSG_CHECKING([if compiler supports C99 or newer features])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([[]], [[
+        int x = 0;
+        x++;
+        int y = x;
+        int array[y];
+    ]])
+], [
+    AC_MSG_RESULT([yes])
+], [
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([A C99-compliant compiler or newer is required to build this package.])
+])
+
 # Check if we are targeting Windows
 is_windows=no
 AS_CASE([$host_os], [mingw*|msys*|cygwin*], [is_windows=yes])
