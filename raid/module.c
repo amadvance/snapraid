@@ -251,6 +251,9 @@ void raid_init(void)
 	raid_register_avx2gfni();
 	raid_register_avx512gfni();
 #endif
+#ifdef CONFIG_NEON
+	raid_register_neon();
+#endif
 
 	/* set the default mode */
 	raid_mode(RAID_MODE_CAUCHY);

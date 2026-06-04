@@ -23,6 +23,9 @@ SnapRAID HISTORY
    By scaling to 512-bit ZMM registers, the implementation now processes
    64 bytes per iteration, effectively doubling the data width of the
    previous AVX2 routines.
+ * Implemented AArch64 (ARM64) NEON support for parity generation and
+   data recovery, significantly improving performance on ARM-based
+   platforms.
  * Improved the chances of a successful recovery after an interrupted 
    sync. This is achieved by removing the sync optimization of not
    recomputing the parity if the input data matches the expected hash.
