@@ -899,10 +899,8 @@ void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 			asm volatile ("vpshufb   %zmm11,%zmm13,%zmm13");
 			asm volatile ("vpshufb   %zmm10,%zmm14,%zmm14");
 			asm volatile ("vpshufb   %zmm11,%zmm15,%zmm15");
-			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
+			asm volatile ("vpternlogq $0x96,%zmm12,%zmm13,%zmm1");
+			asm volatile ("vpternlogq $0x96,%zmm14,%zmm15,%zmm2");
 		}
 
 		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (p[i]));
@@ -1413,12 +1411,9 @@ void raid_gen4_avx512bw(int nd, size_t size, void **vv)
 			asm volatile ("vpshufb   %zmm11,%zmm15,%zmm15");
 			asm volatile ("vpshufb   %zmm10,%zmm16,%zmm16");
 			asm volatile ("vpshufb   %zmm11,%zmm17,%zmm17");
-			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm16,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm17,%zmm3,%zmm3");
+			asm volatile ("vpternlogq $0x96,%zmm12,%zmm13,%zmm1");
+			asm volatile ("vpternlogq $0x96,%zmm14,%zmm15,%zmm2");
+			asm volatile ("vpternlogq $0x96,%zmm16,%zmm17,%zmm3");
 		}
 
 		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (p[i]));
@@ -1887,14 +1882,10 @@ void raid_gen5_avx512bw(int nd, size_t size, void **vv)
 			asm volatile ("vpshufb   %zmm11,%zmm17,%zmm17");
 			asm volatile ("vpshufb   %zmm10,%zmm18,%zmm18");
 			asm volatile ("vpshufb   %zmm11,%zmm19,%zmm19");
-			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm16,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm17,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm18,%zmm4,%zmm4");
-			asm volatile ("vpxorq    %zmm19,%zmm4,%zmm4");
+			asm volatile ("vpternlogq $0x96,%zmm12,%zmm13,%zmm1");
+			asm volatile ("vpternlogq $0x96,%zmm14,%zmm15,%zmm2");
+			asm volatile ("vpternlogq $0x96,%zmm16,%zmm17,%zmm3");
+			asm volatile ("vpternlogq $0x96,%zmm18,%zmm19,%zmm4");
 		}
 
 		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (p[i]));
@@ -2437,16 +2428,11 @@ void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 			asm volatile ("vpshufb   %zmm11,%zmm19,%zmm19");
 			asm volatile ("vpshufb   %zmm10,%zmm20,%zmm20");
 			asm volatile ("vpshufb   %zmm11,%zmm21,%zmm21");
-			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm13,%zmm1,%zmm1");
-			asm volatile ("vpxorq    %zmm14,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm15,%zmm2,%zmm2");
-			asm volatile ("vpxorq    %zmm16,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm17,%zmm3,%zmm3");
-			asm volatile ("vpxorq    %zmm18,%zmm4,%zmm4");
-			asm volatile ("vpxorq    %zmm19,%zmm4,%zmm4");
-			asm volatile ("vpxorq    %zmm20,%zmm5,%zmm5");
-			asm volatile ("vpxorq    %zmm21,%zmm5,%zmm5");
+			asm volatile ("vpternlogq $0x96,%zmm12,%zmm13,%zmm1");
+			asm volatile ("vpternlogq $0x96,%zmm14,%zmm15,%zmm2");
+			asm volatile ("vpternlogq $0x96,%zmm16,%zmm17,%zmm3");
+			asm volatile ("vpternlogq $0x96,%zmm18,%zmm19,%zmm4");
+			asm volatile ("vpternlogq $0x96,%zmm20,%zmm21,%zmm5");
 		}
 
 		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (p[i]));
