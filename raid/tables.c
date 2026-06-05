@@ -2,6 +2,26 @@
 // Copyright (C) 2013 Andrea Mazzoleni
 
 #include "internal.h"
+#include "gf.h"
+
+const struct gfconst16 gfconst16 __aligned(16) = {
+	{
+		RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY,
+		RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY
+	},
+	{
+		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
+	},
+	{
+		RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE,
+		RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE
+	},
+	{
+		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
+	}
+};
 
 #ifdef USE_RAID_AES
 /* Tables with the AES Polynomial 0x1b */

@@ -59,25 +59,6 @@ void raid_gen1_neon(int nd, size_t size, void **vv)
 	raid_neon_end();
 }
 
-static const struct gfconst16 {
-	uint8_t poly[16];
-	uint8_t low4[16];
-	uint8_t half[16];
-} gfconst16 __aligned(16) = {
-	{
-		RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY,
-		RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY, RAID_POLY
-	},
-	{
-		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
-		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
-	},
-	{
-		RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE,
-		RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE, RAID_INV2_BYTE
-	}
-};
-
 /*
  * GEN2 (RAID6 with powers of 2) NEON implementation
  */
@@ -244,26 +225,20 @@ void raid_genz_neon(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN3 (triple parity with Cauchy matrix) NEON implementation
+ * GENX NEON implementation
  */
-void raid_gen3_neon(int nd, size_t size, void **vv)
+static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int np)
 {
 	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *q;
-	uint8_t *r;
-	int d, l;
 	size_t i;
+	int d, l;
 
 	l = nd - 1;
-	p = v[nd];
-	q = v[nd + 1];
-	r = v[nd + 2];
 
 	/* special case with only one data disk */
 	if (l == 0) {
-		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
+		for (d = 0; d < np; ++d)
+			memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
@@ -288,207 +263,90 @@ void raid_gen3_neon(int nd, size_t size, void **vv)
 			: "m" (v[l][i]), "m" (v[l][i + 16])
 		);
 
-		asm volatile (
-			"ldr q24, %0\n"
-			"ldr q25, %1\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v8.16b, {v24.16b}, v16.16b\n"
-			"tbl v20.16b, {v25.16b}, v17.16b\n"
-			"eor v8.16b, v8.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v9.16b, {v24.16b}, v16.16b\n"
-			"tbl v20.16b, {v25.16b}, v17.16b\n"
-			"eor v9.16b, v9.16b, v20.16b\n"
-			:
-			: "m" (gfgenpshufb[l][1][0][0]), "m" (gfgenpshufb[l][1][1][0])
-		);
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		if (np >= 3) {
 			asm volatile (
-				/* double Q0-Q1 */
-				"sshr v16.16b, v2.16b, #7\n"
-				"shl v2.16b, v2.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v2.16b, v2.16b, v16.16b\n"
-
-				"sshr v16.16b, v3.16b, #7\n"
-				"shl v3.16b, v3.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v3.16b, v3.16b, v16.16b\n"
-
-				/* load disk data and XOR into P and Q */
-				"ldr q12, %0\n"
-				"ldr q13, %1\n"
-				"eor v0.16b, v0.16b, v12.16b\n"
-				"eor v1.16b, v1.16b, v13.16b\n"
-				"eor v2.16b, v2.16b, v12.16b\n"
-				"eor v3.16b, v3.16b, v13.16b\n"
-
-				/* load R tables */
-				"ldr q24, %2\n"
-				"ldr q25, %3\n"
-
-				/* cauchy multiply v12-v13 and XOR into R */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
+				"ushr v17.16b, v0.16b, #4\n"
+				"and v16.16b, v0.16b, v28.16b\n"
 				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
+
+				"ushr v19.16b, v1.16b, #4\n"
+				"and v18.16b, v1.16b, v28.16b\n"
+				"and v19.16b, v19.16b, v28.16b\n"
+			);
+
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v4.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v4.16b, v4.16b, v20.16b\n"
+
+				"tbl v5.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v5.16b, v5.16b, v20.16b\n"
+				:
+				: "m" (gfgenpshufb[l][1][0][0]), "m" (gfgenpshufb[l][1][1][0])
+			);
+		}
+		if (np >= 4) {
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v6.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v6.16b, v6.16b, v20.16b\n"
+
+				"tbl v7.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v7.16b, v7.16b, v20.16b\n"
+				:
+				: "m" (gfgenpshufb[l][2][0][0]), "m" (gfgenpshufb[l][2][1][0])
+			);
+		}
+		if (np >= 5) {
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v8.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
 				"eor v8.16b, v8.16b, v20.16b\n"
 
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
+				"tbl v9.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v9.16b, v9.16b, v20.16b\n"
 				:
-				: "m" (v[d][i]), "m" (v[d][i + 16]),
-				  "m" (gfgenpshufb[d][1][0][0]), "m" (gfgenpshufb[d][1][1][0])
+				: "m" (gfgenpshufb[l][3][0][0]), "m" (gfgenpshufb[l][3][1][0])
+			);
+		}
+		if (np >= 6) {
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v10.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v10.16b, v10.16b, v20.16b\n"
+
+				"tbl v11.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v11.16b, v11.16b, v20.16b\n"
+				:
+				: "m" (gfgenpshufb[l][4][0][0]), "m" (gfgenpshufb[l][4][1][0])
 			);
 		}
 
-		/* first disk with all coefficients at 1 */
-		asm volatile (
-			/* double Q0-Q1 */
-			"sshr v16.16b, v2.16b, #7\n"
-			"shl v2.16b, v2.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v2.16b, v2.16b, v16.16b\n"
-
-			"sshr v16.16b, v3.16b, #7\n"
-			"shl v3.16b, v3.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v3.16b, v3.16b, v16.16b\n"
-
-			/* load disk 0 data and XOR into P, Q, R */
-			"ldr q12, %0\n"
-			"ldr q13, %1\n"
-			"eor v0.16b, v0.16b, v12.16b\n"
-			"eor v1.16b, v1.16b, v13.16b\n"
-			"eor v2.16b, v2.16b, v12.16b\n"
-			"eor v3.16b, v3.16b, v13.16b\n"
-			"eor v8.16b, v8.16b, v12.16b\n"
-			"eor v9.16b, v9.16b, v13.16b\n"
-			:
-			: "m" (v[0][i]), "m" (v[0][i + 16])
-		);
-
-		asm volatile (
-			"str q0, %0\n"
-			"str q1, %1\n"
-			"str q2, %2\n"
-			"str q3, %3\n"
-			"str q8, %4\n"
-			"str q9, %5\n"
-			: "=m" (p[i]), "=m" (p[i + 16]),
-			  "=m" (q[i]), "=m" (q[i + 16]),
-			  "=m" (r[i]), "=m" (r[i + 16])
-		);
-	}
-
-	raid_neon_end();
-}
-
-/*
- * GEN4 (quad parity with Cauchy matrix) NEON implementation
- */
-void raid_gen4_neon(int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *q;
-	uint8_t *r;
-	uint8_t *s;
-	int d, l;
-	size_t i;
-
-	l = nd - 1;
-	p = v[nd];
-	q = v[nd + 1];
-	r = v[nd + 2];
-	s = v[nd + 3];
-
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
-	raid_neon_begin();
-
-	/* generic case with at least two data disks */
-	asm volatile (
-		"ldr q29, %0\n"
-		"ldr q28, %1\n"
-		:
-		: "m" (gfconst16.poly[0]), "m" (gfconst16.low4[0])
-	);
-
-	for (i = 0; i < size; i += 32) {
-		/* last disk without the multiplication by two */
-		asm volatile (
-			"ldr q0, %0\n"
-			"ldr q1, %1\n"
-			"mov v2.16b, v0.16b\n"
-			"mov v3.16b, v1.16b\n"
-			:
-			: "m" (v[l][i]), "m" (v[l][i + 16])
-		);
-
-		asm volatile (
-			"ldr q24, %0\n"
-			"ldr q25, %1\n"
-			"ldr q26, %2\n"
-			"ldr q27, %3\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v4.16b, {v24.16b}, v16.16b\n"
-			"tbl v20.16b, {v25.16b}, v17.16b\n"
-			"eor v4.16b, v4.16b, v20.16b\n"
-			"tbl v6.16b, {v26.16b}, v16.16b\n"
-			"tbl v20.16b, {v27.16b}, v17.16b\n"
-			"eor v6.16b, v6.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v5.16b, {v24.16b}, v16.16b\n"
-			"tbl v20.16b, {v25.16b}, v17.16b\n"
-			"eor v5.16b, v5.16b, v20.16b\n"
-			"tbl v7.16b, {v26.16b}, v16.16b\n"
-			"tbl v20.16b, {v27.16b}, v17.16b\n"
-			"eor v7.16b, v7.16b, v20.16b\n"
-			:
-			: "m" (gfgenpshufb[l][1][0][0]), "m" (gfgenpshufb[l][1][1][0]),
-			  "m" (gfgenpshufb[l][2][0][0]), "m" (gfgenpshufb[l][2][1][0])
-		);
-
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
 			asm volatile (
 				/* double Q0-Q1 */
-				"sshr v16.16b, v2.16b, #7\n"
+				"sshr v20.16b, v2.16b, #7\n"
 				"shl v2.16b, v2.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v2.16b, v2.16b, v16.16b\n"
+				"and v20.16b, v20.16b, v29.16b\n"
+				"eor v2.16b, v2.16b, v20.16b\n"
 
-				"sshr v16.16b, v3.16b, #7\n"
+				"sshr v20.16b, v3.16b, #7\n"
 				"shl v3.16b, v3.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v3.16b, v3.16b, v16.16b\n"
+				"and v20.16b, v20.16b, v29.16b\n"
+				"eor v3.16b, v3.16b, v20.16b\n"
 
 				/* load data */
 				"ldr q12, %0\n"
@@ -497,58 +355,102 @@ void raid_gen4_neon(int nd, size_t size, void **vv)
 				"eor v1.16b, v1.16b, v13.16b\n"
 				"eor v2.16b, v2.16b, v12.16b\n"
 				"eor v3.16b, v3.16b, v13.16b\n"
-
-				/* load tables for R and S */
-				"ldr q24, %2\n"
-				"ldr q25, %3\n"
-				"ldr q26, %4\n"
-				"ldr q27, %5\n"
-
-				/* multiply and XOR into R and S */
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v4.16b, v4.16b, v20.16b\n"
-				"tbl v20.16b, {v26.16b}, v16.16b\n"
-				"tbl v21.16b, {v27.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v6.16b, v6.16b, v20.16b\n"
-
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v5.16b, v5.16b, v20.16b\n"
-				"tbl v20.16b, {v26.16b}, v16.16b\n"
-				"tbl v21.16b, {v27.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v7.16b, v7.16b, v20.16b\n"
 				:
-				: "m" (v[d][i]), "m" (v[d][i + 16]),
-				  "m" (gfgenpshufb[d][1][0][0]), "m" (gfgenpshufb[d][1][1][0]),
-				  "m" (gfgenpshufb[d][2][0][0]), "m" (gfgenpshufb[d][2][1][0])
+				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
+
+			if (np >= 3) {
+				asm volatile (
+					"ushr v17.16b, v12.16b, #4\n"
+					"and v16.16b, v12.16b, v28.16b\n"
+					"and v17.16b, v17.16b, v28.16b\n"
+
+					"ushr v19.16b, v13.16b, #4\n"
+					"and v18.16b, v13.16b, v28.16b\n"
+					"and v19.16b, v19.16b, v28.16b\n"
+				);
+
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v4.16b, v4.16b, v20.16b\n"
+
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v5.16b, v5.16b, v20.16b\n"
+					:
+					: "m" (gfgenpshufb[d][1][0][0]), "m" (gfgenpshufb[d][1][1][0])
+				);
+			}
+			if (np >= 4) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v6.16b, v6.16b, v20.16b\n"
+
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v7.16b, v7.16b, v20.16b\n"
+					:
+					: "m" (gfgenpshufb[d][2][0][0]), "m" (gfgenpshufb[d][2][1][0])
+				);
+			}
+			if (np >= 5) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v8.16b, v8.16b, v20.16b\n"
+
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v9.16b, v9.16b, v20.16b\n"
+					:
+					: "m" (gfgenpshufb[d][3][0][0]), "m" (gfgenpshufb[d][3][1][0])
+				);
+			}
+			if (np >= 6) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v10.16b, v10.16b, v20.16b\n"
+
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v11.16b, v11.16b, v20.16b\n"
+					:
+					: "m" (gfgenpshufb[d][4][0][0]), "m" (gfgenpshufb[d][4][1][0])
+				);
+			}
 		}
 
 		/* first disk with all coefficients at 1 */
 		asm volatile (
 			/* double Q0-Q1 */
-			"sshr v16.16b, v2.16b, #7\n"
+			"sshr v20.16b, v2.16b, #7\n"
 			"shl v2.16b, v2.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v2.16b, v2.16b, v16.16b\n"
+			"and v20.16b, v20.16b, v29.16b\n"
+			"eor v2.16b, v2.16b, v20.16b\n"
 
-			"sshr v16.16b, v3.16b, #7\n"
+			"sshr v20.16b, v3.16b, #7\n"
 			"shl v3.16b, v3.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v3.16b, v3.16b, v16.16b\n"
+			"and v20.16b, v20.16b, v29.16b\n"
+			"eor v3.16b, v3.16b, v20.16b\n"
 
 			/* load disk 0 data and XOR */
 			"ldr q12, %0\n"
@@ -557,31 +459,91 @@ void raid_gen4_neon(int nd, size_t size, void **vv)
 			"eor v1.16b, v1.16b, v13.16b\n"
 			"eor v2.16b, v2.16b, v12.16b\n"
 			"eor v3.16b, v3.16b, v13.16b\n"
-			"eor v4.16b, v4.16b, v12.16b\n"
-			"eor v5.16b, v5.16b, v13.16b\n"
-			"eor v6.16b, v6.16b, v12.16b\n"
-			"eor v7.16b, v7.16b, v13.16b\n"
 			:
 			: "m" (v[0][i]), "m" (v[0][i + 16])
 		);
+
+		if (np >= 3) {
+			asm volatile (
+				"eor v4.16b, v4.16b, v12.16b\n"
+				"eor v5.16b, v5.16b, v13.16b\n"
+			);
+		}
+		if (np >= 4) {
+			asm volatile (
+				"eor v6.16b, v6.16b, v12.16b\n"
+				"eor v7.16b, v7.16b, v13.16b\n"
+			);
+		}
+		if (np >= 5) {
+			asm volatile (
+				"eor v8.16b, v8.16b, v12.16b\n"
+				"eor v9.16b, v9.16b, v13.16b\n"
+			);
+		}
+		if (np >= 6) {
+			asm volatile (
+				"eor v10.16b, v10.16b, v12.16b\n"
+				"eor v11.16b, v11.16b, v13.16b\n"
+			);
+		}
 
 		asm volatile (
 			"str q0, %0\n"
 			"str q1, %1\n"
 			"str q2, %2\n"
 			"str q3, %3\n"
-			"str q4, %4\n"
-			"str q5, %5\n"
-			"str q6, %6\n"
-			"str q7, %7\n"
-			: "=m" (p[i]), "=m" (p[i + 16]),
-			  "=m" (q[i]), "=m" (q[i + 16]),
-			  "=m" (r[i]), "=m" (r[i + 16]),
-			  "=m" (s[i]), "=m" (s[i + 16])
+			: "=m" (v[nd][i]), "=m" (v[nd][i + 16]),
+			  "=m" (v[nd + 1][i]), "=m" (v[nd + 1][i + 16])
 		);
+
+		if (np >= 3) {
+			asm volatile (
+				"str q4, %0\n"
+				"str q5, %1\n"
+				: "=m" (v[nd + 2][i]), "=m" (v[nd + 2][i + 16])
+			);
+		}
+		if (np >= 4) {
+			asm volatile (
+				"str q6, %0\n"
+				"str q7, %1\n"
+				: "=m" (v[nd + 3][i]), "=m" (v[nd + 3][i + 16])
+			);
+		}
+		if (np >= 5) {
+			asm volatile (
+				"str q8, %0\n"
+				"str q9, %1\n"
+				: "=m" (v[nd + 4][i]), "=m" (v[nd + 4][i + 16])
+			);
+		}
+		if (np >= 6) {
+			asm volatile (
+				"str q10, %0\n"
+				"str q11, %1\n"
+				: "=m" (v[nd + 5][i]), "=m" (v[nd + 5][i + 16])
+			);
+		}
 	}
 
 	raid_neon_end();
+}
+
+/*
+ * GEN3 (triple parity with Cauchy matrix) NEON implementation
+ */
+void raid_gen3_neon(int nd, size_t size, void **vv)
+{
+	raid_genX_neon(nd, size, vv, 3);
+}
+
+/*
+ * GEN4 (quad parity with Cauchy matrix) NEON implementation
+ */
+void raid_gen4_neon(int nd, size_t size, void **vv)
+{
+	raid_genX_neon(nd, size, vv, 4);
 }
 
 /*
@@ -589,254 +551,7 @@ void raid_gen4_neon(int nd, size_t size, void **vv)
  */
 void raid_gen5_neon(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *q;
-	uint8_t *r;
-	uint8_t *s;
-	uint8_t *t;
-	int d, l;
-	size_t i;
-
-	l = nd - 1;
-	p = v[nd];
-	q = v[nd + 1];
-	r = v[nd + 2];
-	s = v[nd + 3];
-	t = v[nd + 4];
-
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 5; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
-	raid_neon_begin();
-
-	/* generic case with at least two data disks */
-	asm volatile (
-		"ldr q29, %0\n"
-		"ldr q28, %1\n"
-		:
-		: "m" (gfconst16.poly[0]), "m" (gfconst16.low4[0])
-	);
-
-	for (i = 0; i < size; i += 32) {
-		/* last disk without the multiplication by two */
-		asm volatile (
-			"ldr q0, %0\n"
-			"ldr q1, %1\n"
-			"mov v2.16b, v0.16b\n"
-			"mov v3.16b, v1.16b\n"
-			:
-			: "m" (v[l][i]), "m" (v[l][i + 16])
-		);
-
-		asm volatile (
-			/* initialize R, S, T */
-			/* table load Q (actually index 1 in gfgenpshufb is R) */
-			"ldr q22, %0\n"
-			"ldr q23, %1\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v4.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v4.16b, v4.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v5.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v5.16b, v5.16b, v20.16b\n"
-
-			/* table load S (index 2) */
-			"ldr q22, %2\n"
-			"ldr q23, %3\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v6.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v6.16b, v6.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v7.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v7.16b, v7.16b, v20.16b\n"
-
-			/* table load T (index 3) */
-			"ldr q22, %4\n"
-			"ldr q23, %5\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v8.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v8.16b, v8.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v9.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v9.16b, v9.16b, v20.16b\n"
-			:
-			: "m" (gfgenpshufb[l][1][0][0]), "m" (gfgenpshufb[l][1][1][0]),
-			  "m" (gfgenpshufb[l][2][0][0]), "m" (gfgenpshufb[l][2][1][0]),
-			  "m" (gfgenpshufb[l][3][0][0]), "m" (gfgenpshufb[l][3][1][0])
-		);
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
-			asm volatile (
-				/* double Q0-Q1 */
-				"sshr v16.16b, v2.16b, #7\n"
-				"shl v2.16b, v2.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v2.16b, v2.16b, v16.16b\n"
-
-				"sshr v16.16b, v3.16b, #7\n"
-				"shl v3.16b, v3.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v3.16b, v3.16b, v16.16b\n"
-
-				/* load data */
-				"ldr q12, %0\n"
-				"ldr q13, %1\n"
-				"eor v0.16b, v0.16b, v12.16b\n"
-				"eor v1.16b, v1.16b, v13.16b\n"
-				"eor v2.16b, v2.16b, v12.16b\n"
-				"eor v3.16b, v3.16b, v13.16b\n"
-				:
-				: "m" (v[d][i]), "m" (v[d][i + 16])
-			);
-
-			/* multiply and XOR into R, S, T */
-			asm volatile (
-				/* load tables for R */
-				"ldr q24, %0\n"
-				"ldr q25, %1\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v4.16b, v4.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v5.16b, v5.16b, v20.16b\n"
-
-				/* load tables for S */
-				"ldr q24, %2\n"
-				"ldr q25, %3\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v6.16b, v6.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v7.16b, v7.16b, v20.16b\n"
-
-				/* load tables for T */
-				"ldr q24, %4\n"
-				"ldr q25, %5\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v8.16b, v8.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v9.16b, v9.16b, v20.16b\n"
-				:
-				: "m" (gfgenpshufb[d][1][0][0]), "m" (gfgenpshufb[d][1][1][0]),
-				  "m" (gfgenpshufb[d][2][0][0]), "m" (gfgenpshufb[d][2][1][0]),
-				  "m" (gfgenpshufb[d][3][0][0]), "m" (gfgenpshufb[d][3][1][0])
-			);
-		}
-
-		/* first disk with all coefficients at 1 */
-		asm volatile (
-			/* double Q0-Q1 */
-			"sshr v16.16b, v2.16b, #7\n"
-			"shl v2.16b, v2.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v2.16b, v2.16b, v16.16b\n"
-
-			"sshr v16.16b, v3.16b, #7\n"
-			"shl v3.16b, v3.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v3.16b, v3.16b, v16.16b\n"
-
-			/* load disk 0 data and XOR into P, Q, R, S, T */
-			"ldr q12, %0\n"
-			"ldr q13, %1\n"
-			"eor v0.16b, v0.16b, v12.16b\n"
-			"eor v1.16b, v1.16b, v13.16b\n"
-			"eor v2.16b, v2.16b, v12.16b\n"
-			"eor v3.16b, v3.16b, v13.16b\n"
-			"eor v4.16b, v4.16b, v12.16b\n"
-			"eor v5.16b, v5.16b, v13.16b\n"
-			"eor v6.16b, v6.16b, v12.16b\n"
-			"eor v7.16b, v7.16b, v13.16b\n"
-			"eor v8.16b, v8.16b, v12.16b\n"
-			"eor v9.16b, v9.16b, v13.16b\n"
-			:
-			: "m" (v[0][i]), "m" (v[0][i + 16])
-		);
-
-		asm volatile (
-			"str q0, %0\n"
-			"str q1, %1\n"
-			"str q2, %2\n"
-			"str q3, %3\n"
-			"str q4, %4\n"
-			"str q5, %5\n"
-			"str q6, %6\n"
-			"str q7, %7\n"
-			"str q8, %8\n"
-			"str q9, %9\n"
-			: "=m" (p[i]), "=m" (p[i + 16]),
-			  "=m" (q[i]), "=m" (q[i + 16]),
-			  "=m" (r[i]), "=m" (r[i + 16]),
-			  "=m" (s[i]), "=m" (s[i + 16]),
-			  "=m" (t[i]), "=m" (t[i + 16])
-		);
-	}
-
-	raid_neon_end();
+	raid_genX_neon(nd, size, vv, 5);
 }
 
 /*
@@ -844,301 +559,7 @@ void raid_gen5_neon(int nd, size_t size, void **vv)
  */
 void raid_gen6_neon(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *q;
-	uint8_t *r;
-	uint8_t *s;
-	uint8_t *t;
-	uint8_t *u;
-	int d, l;
-	size_t i;
-
-	l = nd - 1;
-	p = v[nd];
-	q = v[nd + 1];
-	r = v[nd + 2];
-	s = v[nd + 3];
-	t = v[nd + 4];
-	u = v[nd + 5];
-
-	/* special case with only one data disk */
-	if (l == 0) {
-		for (i = 0; i < 6; ++i)
-			memcpy(v[1 + i], v[0], size);
-		return;
-	}
-
-	raid_neon_begin();
-
-	/* generic case with at least two data disks */
-	asm volatile (
-		"ldr q29, %0\n"
-		"ldr q28, %1\n"
-		:
-		: "m" (gfconst16.poly[0]), "m" (gfconst16.low4[0])
-	);
-
-	for (i = 0; i < size; i += 32) {
-		/* last disk without the multiplication by two */
-		asm volatile (
-			"ldr q0, %0\n"
-			"ldr q1, %1\n"
-			"mov v2.16b, v0.16b\n"
-			"mov v3.16b, v1.16b\n"
-			:
-			: "m" (v[l][i]), "m" (v[l][i + 16])
-		);
-
-		asm volatile (
-			/* initialize R, S, T, U */
-			/* table load Q (actually index 1 in gfgenpshufb is R) */
-			"ldr q22, %0\n"
-			"ldr q23, %1\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v4.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v4.16b, v4.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v5.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v5.16b, v5.16b, v20.16b\n"
-
-			/* table load S (index 2) */
-			"ldr q22, %2\n"
-			"ldr q23, %3\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v6.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v6.16b, v6.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v7.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v7.16b, v7.16b, v20.16b\n"
-
-			/* table load T (index 3) */
-			"ldr q22, %4\n"
-			"ldr q23, %5\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v8.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v8.16b, v8.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v9.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v9.16b, v9.16b, v20.16b\n"
-
-			/* table load U (index 4) */
-			"ldr q22, %6\n"
-			"ldr q23, %7\n"
-			/* chunk 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v10.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v10.16b, v10.16b, v20.16b\n"
-			/* chunk 1 */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v11.16b, {v22.16b}, v16.16b\n"
-			"tbl v20.16b, {v23.16b}, v17.16b\n"
-			"eor v11.16b, v11.16b, v20.16b\n"
-			:
-			: "m" (gfgenpshufb[l][1][0][0]), "m" (gfgenpshufb[l][1][1][0]),
-			  "m" (gfgenpshufb[l][2][0][0]), "m" (gfgenpshufb[l][2][1][0]),
-			  "m" (gfgenpshufb[l][3][0][0]), "m" (gfgenpshufb[l][3][1][0]),
-			  "m" (gfgenpshufb[l][4][0][0]), "m" (gfgenpshufb[l][4][1][0])
-		);
-
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
-			asm volatile (
-				/* double Q0-Q1 */
-				"sshr v16.16b, v2.16b, #7\n"
-				"shl v2.16b, v2.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v2.16b, v2.16b, v16.16b\n"
-
-				"sshr v16.16b, v3.16b, #7\n"
-				"shl v3.16b, v3.16b, #1\n"
-				"and v16.16b, v16.16b, v29.16b\n"
-				"eor v3.16b, v3.16b, v16.16b\n"
-
-				/* load data */
-				"ldr q12, %0\n"
-				"ldr q13, %1\n"
-				"eor v0.16b, v0.16b, v12.16b\n"
-				"eor v1.16b, v1.16b, v13.16b\n"
-				"eor v2.16b, v2.16b, v12.16b\n"
-				"eor v3.16b, v3.16b, v13.16b\n"
-				:
-				: "m" (v[d][i]), "m" (v[d][i + 16])
-			);
-
-			/* multiply and XOR into R, S, T, U */
-			asm volatile (
-				/* load tables for R */
-				"ldr q24, %0\n"
-				"ldr q25, %1\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v4.16b, v4.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v5.16b, v5.16b, v20.16b\n"
-
-				/* load tables for S */
-				"ldr q24, %2\n"
-				"ldr q25, %3\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v6.16b, v6.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v7.16b, v7.16b, v20.16b\n"
-
-				/* load tables for T */
-				"ldr q24, %4\n"
-				"ldr q25, %5\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v8.16b, v8.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v9.16b, v9.16b, v20.16b\n"
-
-				/* load tables for U */
-				"ldr q24, %6\n"
-				"ldr q25, %7\n"
-				/* chunk 0 */
-				"ushr v17.16b, v12.16b, #4\n"
-				"and v16.16b, v12.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v10.16b, v10.16b, v20.16b\n"
-				/* chunk 1 */
-				"ushr v17.16b, v13.16b, #4\n"
-				"and v16.16b, v13.16b, v28.16b\n"
-				"and v17.16b, v17.16b, v28.16b\n"
-				"tbl v20.16b, {v24.16b}, v16.16b\n"
-				"tbl v21.16b, {v25.16b}, v17.16b\n"
-				"eor v20.16b, v20.16b, v21.16b\n"
-				"eor v11.16b, v11.16b, v20.16b\n"
-				:
-				: "m" (gfgenpshufb[d][1][0][0]), "m" (gfgenpshufb[d][1][1][0]),
-				  "m" (gfgenpshufb[d][2][0][0]), "m" (gfgenpshufb[d][2][1][0]),
-				  "m" (gfgenpshufb[d][3][0][0]), "m" (gfgenpshufb[d][3][1][0]),
-				  "m" (gfgenpshufb[d][4][0][0]), "m" (gfgenpshufb[d][4][1][0])
-			);
-		}
-
-		/* first disk with all coefficients at 1 */
-		asm volatile (
-			/* double Q0-Q1 */
-			"sshr v16.16b, v2.16b, #7\n"
-			"shl v2.16b, v2.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v2.16b, v2.16b, v16.16b\n"
-
-			"sshr v16.16b, v3.16b, #7\n"
-			"shl v3.16b, v3.16b, #1\n"
-			"and v16.16b, v16.16b, v29.16b\n"
-			"eor v3.16b, v3.16b, v16.16b\n"
-
-			/* load disk 0 data and XOR into P, Q, R, S, T, U */
-			"ldr q12, %0\n"
-			"ldr q13, %1\n"
-			"eor v0.16b, v0.16b, v12.16b\n"
-			"eor v1.16b, v1.16b, v13.16b\n"
-			"eor v2.16b, v2.16b, v12.16b\n"
-			"eor v3.16b, v3.16b, v13.16b\n"
-			"eor v4.16b, v4.16b, v12.16b\n"
-			"eor v5.16b, v5.16b, v13.16b\n"
-			"eor v6.16b, v6.16b, v12.16b\n"
-			"eor v7.16b, v7.16b, v13.16b\n"
-			"eor v8.16b, v8.16b, v12.16b\n"
-			"eor v9.16b, v9.16b, v13.16b\n"
-			"eor v10.16b, v10.16b, v12.16b\n"
-			"eor v11.16b, v11.16b, v13.16b\n"
-			:
-			: "m" (v[0][i]), "m" (v[0][i + 16])
-		);
-
-		asm volatile (
-			"str q0, %0\n"
-			"str q1, %1\n"
-			"str q2, %2\n"
-			"str q3, %3\n"
-			"str q4, %4\n"
-			"str q5, %5\n"
-			"str q6, %6\n"
-			"str q7, %7\n"
-			"str q8, %8\n"
-			"str q9, %9\n"
-			"str q10, %10\n"
-			"str q11, %11\n"
-			: "=m" (p[i]), "=m" (p[i + 16]),
-			  "=m" (q[i]), "=m" (q[i + 16]),
-			  "=m" (r[i]), "=m" (r[i + 16]),
-			  "=m" (s[i]), "=m" (s[i + 16]),
-			  "=m" (t[i]), "=m" (t[i + 16]),
-			  "=m" (u[i]), "=m" (u[i + 16])
-		);
-	}
-
-	raid_neon_end();
+	raid_genX_neon(nd, size, vv, 6);
 }
 
 /*
