@@ -245,7 +245,10 @@ void raid_init(void)
 {
 	raid_register_int();
 #ifdef CONFIG_X86
-	raid_register_x86();
+	raid_register_sse2();
+	raid_register_ssse3();
+	raid_register_avx2();
+	raid_register_avx512();
 #endif
 #ifdef CONFIG_X86_64
 	raid_register_avx2gfni();

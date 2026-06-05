@@ -258,7 +258,10 @@ void raid_register_int(void);
 /**
  * Register all the functions based on x86 intructions.
  */
-void raid_register_x86(void);
+void raid_register_sse2(void);
+void raid_register_ssse3(void);
+void raid_register_avx2(void);
+void raid_register_avx512(void);
 
 /**
  * Register all the functions based on GFNI intructions.
@@ -280,6 +283,16 @@ const char *raid_rec_tag(int na);
  * Returns 0 on success.
  */
 int raid_selftest(void);
+
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+struct gfconst16 {
+	uint8_t poly[16];
+	uint8_t low4[16];
+	uint8_t half[16];
+	uint8_t low7[16];
+};
+extern const struct gfconst16 gfconst16;
+#endif
 
 /*
  * Tables.
