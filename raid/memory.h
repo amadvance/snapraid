@@ -20,7 +20,8 @@
  * map to the exact same sets in the L1 Data Cache. If these blocks are
  * accessed in parallel during SIMD parity generation, the memory streams
  * will constantly evict each other, resulting in severe cache thrashing.
- * * Furthermore, if buffers are separated by exact multiples of 4096 bytes,
+ *
+ * Furthermore, if buffers are separated by exact multiples of 4096 bytes,
  * modern CPUs suffer a "4K Aliasing" penalty. The memory disambiguation unit
  * misidentifies the lower 12-bits of the addresses as a match, attempting
  * invalid Store-to-Load Forwarding which results in a ~20-cycle pipeline flush.
