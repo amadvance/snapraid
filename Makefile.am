@@ -25,11 +25,12 @@ snapraid_SOURCES = \
 	raid/module.c \
 	raid/tables.c \
 	raid/int.c \
-	raid/x86.c \
+	raid/sse2.c \
+	raid/ssse3.c \
+	raid/avx2.c \
+	raid/avx512.c \
 	raid/gfni.c \
 	raid/neon.c \
-	raid/intz.c \
-	raid/x86z.c \
 	raid/helper.c \
 	raid/memory.c \
 	raid/test.c \
