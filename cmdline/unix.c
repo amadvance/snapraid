@@ -1167,6 +1167,184 @@ static int sysattr(const char* path, char* buf, size_t buf_size)
 }
 #endif
 
+/******************************************************************************/
+/* cpu */
+
+#if HAVE_LINUX_DEVICE
+static long long syslong(const char* path)
+{
+	char buf[32];
+	if (sysattr(path, buf, sizeof(buf)) != 0)
+		return -1;
+	char* end;
+	long long v = strtoll(buf, &end, 10);
+	if (end == buf)
+		return -1;
+
+	return v;
+}
+
+static unsigned long long syshex(const char* path)
+{
+	char buf[1152]; /* enough for 1024 CPUs */
+	if (sysattr(path, buf, sizeof(buf)) != 0)
+		return 0;
+
+	unsigned long long v = 0;
+	for (char* p = buf; *p != 0 && *p != '\n'; ++p) {
+		if (*p == ',')
+			continue;
+
+		v <<= 4;
+		if (*p >= '0' && *p <= '9')
+			v |= *p - '0';
+		else if (*p >= 'a' && *p <= 'f')
+			v |= *p - 'a' + 10;
+		else if (*p >= 'A' && *p <= 'F')
+			v |= *p - 'A' + 10;
+		else
+			break; /* hit unexpected character */
+	}
+
+	return v;
+}
+
+static int cpu_is_online(int i)
+{
+	char path[256];
+	snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/online", i);
+	long long v = syslong(path);
+	if (v < 0)
+		return 1; /* cpu0 has no "online" knob — always on */
+	return v;
+}
+
+/*
+ * Returns 1 if the specified cpu is the lowest-numbered logical CPU in its
+ * physical core's SMT sibling set.
+ *
+ * thread_siblings is a hex bitmask where bit N = logical cpu N.
+ * The lowest set bit identifies the primary sibling.
+ * Safe for up to 64 logical CPUs (fits in unsigned long).
+ */
+static int cpu_is_primary_sibling(int i)
+{
+	char path[256];
+	snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/topology/thread_siblings", i);
+	unsigned long long mask = syshex(path);
+	if (mask == 0) /* assume primary */
+		return 1;
+	return __builtin_ctzll(mask) == i;
+}
+
+#define CPUS_MAX 64
+
+/**
+ * os_get_optimal_cpu() – returns the logical CPU index of the "fastest"
+ * core using a three-tier strategy:
+ *
+ *  Tier 1 – ACPI CPPC preferred-core ranking (hardware-binned quality)
+ *  Tier 2 – cpufreq max-frequency (P-core vs E-core discrimination)
+ *  Tier 3 – SMT topology isolation (primary sibling only)
+ */
+int os_get_optimal_cpu(void)
+{
+	char path[256];
+
+	int num_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	if (num_cpus <= 0)
+		return -1;
+	if (num_cpus > CPUS_MAX)
+		num_cpus = CPUS_MAX;
+
+	/* ACPI CPPC: highest_perf with nominal_perf tiebreaker */
+	long long max_highest = -1;
+	long long max_nominal = -1;
+	int best_cppc = -1;
+	for (int i = 0; i < num_cpus; ++i) {
+		if (!cpu_is_online(i))
+			continue;
+
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/acpi_cppc/highest_perf", i);
+		long long hp = syslong(path);
+		if (hp < 0)
+			continue;
+
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/acpi_cppc/nominal_perf", i);
+		long long np = syslong(path);
+		/* np may be missing */
+
+		/* tiebreaker priority: highest_perf > nominal_perf > non-CPU0 */
+		int better = (hp > max_highest)
+			|| (hp == max_highest && np > max_nominal)
+			|| (hp == max_highest && np == max_nominal && best_cppc == 0);
+		if (better) {
+			max_highest = hp;
+			max_nominal = np;
+			best_cppc = i;
+		}
+	}
+
+	if (best_cppc >= 0)
+		return best_cppc;
+
+	/* max frequency, then SMT isolation */
+
+	/* find the global maximum frequency among online CPUs */
+	long long global_max_freq = -1;
+	for (int i = 0; i < num_cpus; ++i) {
+		if (!cpu_is_online(i))
+			continue;
+
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i);
+		long long freq = syslong(path);
+		if (freq < 0)
+			continue;
+
+		if (freq > global_max_freq)
+			global_max_freq = freq;
+	}
+
+	/* first online CPU at max freq that is a primary sibling, preferring non-CPU0 */
+	int best_isolated = -1;   /* primary sibling, not CPU 0 */
+	int best_any = -1;        /* any matching CPU, not CPU 0 */
+	int best_c0 = -1;         /* CPU 0 fallback (always a primary sibling) */
+
+	for (int i = 0; i < num_cpus; ++i) {
+		if (!cpu_is_online(i))
+			continue;
+
+		if (global_max_freq != -1) {
+			snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i);
+			if (syslong(path) != global_max_freq)
+				continue;
+		}
+
+		if (i == 0) {
+			best_c0 = 0;
+		} else {
+			if (best_isolated == -1 && cpu_is_primary_sibling(i))
+				best_isolated = i;
+			if (best_any == -1)
+				best_any = i;
+		}
+	}
+
+	/* prefer non-CPU0, fall back to CPU0 only if no alternative exists */
+	if (best_isolated != -1)
+		return best_isolated;
+	if (best_any != -1)
+		return best_any;
+	if (best_c0 != -1)
+		return best_c0;
+
+	return -1;
+}
+#endif
+
+/******************************************************************************/
+/* dev */
+
 struct dev_struct {
 	uint64_t device; /**< Device ID. */
 	tommy_node node;
