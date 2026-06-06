@@ -45,7 +45,7 @@ unsigned raid_optimal_displacement(int n)
 /*
  * The 4096 bytes represents a full 64-set * 64-byte L1 cache cycle.
  */
-#define L1_WRAP_SIZE 4096
+#define RAID_WRAP_SIZE 4096
 
 /*
  * PREFETCHER MITIGATION VIA PAGE-OFFSET RANDOMIZATION (WAY-SHIFTING)
@@ -118,7 +118,7 @@ static const unsigned STRIDE_NOISE[16] = {
 	1, 4, 0, 7, 3, 6, 2, 5
 };
 
-void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, void **freeptr)
+void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, ssize_t wrap_size, void **freeptr)
 {
 	void **v;
 	unsigned char *va;
@@ -136,10 +136,10 @@ void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t d
 	/*
 	 * The allocated buffer must safely hold the disk chunks, the L1 fixed displacement,
 	 * and the variable STRIDE_NOISE. Because the maximum noise multiplier in the array
-	 * is 7, reserving 8 * L1_WRAP_SIZE per disk guarantees the pointer will never overflow
+	 * is 7, reserving 8 * RAID_WRAP_SIZE per disk guarantees the pointer will never overflow
 	 * the allocated memory block.
 	 */
-	va = raid_malloc_align(n * (size + displacement_size + 8 * L1_WRAP_SIZE), align_size, freeptr);
+	va = raid_malloc_align(n * (size + displacement_size + 8 * wrap_size), align_size, freeptr);
 	if (!va) {
 		/* LCOV_EXCL_START */
 		free(v);
@@ -157,7 +157,7 @@ void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t d
 		va += displacement_size;
 
 		/* inject the variable noise multiplier to blind the stride prefetcher */
-		va += STRIDE_NOISE[i % 16] * L1_WRAP_SIZE;
+		va += STRIDE_NOISE[i % 16] * wrap_size;
 	}
 
 	return v;
@@ -165,7 +165,7 @@ void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t d
 
 void **raid_malloc_vector(int n, size_t size, void **freeptr)
 {
-	return raid_malloc_vector_align(n, size, RAID_MALLOC_ALIGN, raid_optimal_displacement(n), freeptr);
+	return raid_malloc_vector_align(n, size, RAID_MALLOC_ALIGN, raid_optimal_displacement(n), RAID_WRAP_SIZE, freeptr);
 }
 
 void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
