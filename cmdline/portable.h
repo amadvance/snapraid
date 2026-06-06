@@ -400,6 +400,11 @@ char* os_fgets(char* s, int size, OS_FILE* stream);
  */
 int os_pclose(OS_FILE* stream);
 
+/**
+ * Get the optimal CPU for the speed test
+ */
+int os_get_optimal_cpu(void);
+
 /****************************************************************************/
 /* app */
 
