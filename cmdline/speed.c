@@ -27,11 +27,13 @@ static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
 /**
  * Start time measurement.
  */
+/* INDENT-OFF */
 #define SPEED_START \
 	count = 0; \
 	gettimeofday(&start, 0); \
 	do { \
 		for (i = 0; i < delta; ++i)
+/* INDENT-ON */
 
 /**
  * Stop time measurement.
@@ -51,130 +53,16 @@ static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
  * This is required to avoid optimizing compilers
  * to remove code without side effects.
  */
-static unsigned side_effect;
+unsigned side_effect;
 
-void speed(int period, int nd, int size)
+void speed_mem(int nd, void** v, int size, int delta, int period)
 {
 	struct timeval start;
 	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
 	int i, j;
-	unsigned char digest[HASH_MAX];
-	unsigned char seed[HASH_MAX];
-	int id[RAID_PARITY_MAX];
-	int ip[RAID_PARITY_MAX];
 	int count;
-	int delta;
-	int nv;
-	void* v_alloc;
-	void** v;
-
-	if (nd < 0)
-		nd = 8; /* default */
-	if (nd < 6)
-		nd = 6; /* minimum */
-	if (size < 0)
-		size = 256 * KIBI;
-	else
-		size *= KIBI;
-	if (period < 1)
-		period = 1000;
-
-	delta = period >= 1000 ? 10 : 1;
-
-	nv = nd + RAID_PARITY_MAX + 1;
-
-	v = malloc_nofail_vector_align(nv, size, &v_alloc);
-
-	/* initialize disks with fixed data */
-	for (i = 0; i < nd; ++i)
-		memset(v[i], i, size);
-
-	/* zero buffer */
-	memset(v[nd + RAID_PARITY_MAX], 0, size);
-	raid_zero(v[nd + RAID_PARITY_MAX]);
-
-	/* hash seed */
-	for (i = 0; i < HASH_MAX; ++i)
-		seed[i] = i;
-
-	/* basic disks and parity mapping */
-	for (i = 0; i < RAID_PARITY_MAX; ++i) {
-		id[i] = i;
-		ip[i] = i;
-	}
-
-	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
-
-#ifdef __GNUC__
-	printf("Compiler gcc " __VERSION__ "\n");
-#endif
-
-#ifdef CONFIG_X86
-	{
-		char vendor[CPU_VENDOR_MAX];
-		unsigned family;
-		unsigned model;
-
-		raid_cpu_info(vendor, &family, &model);
-
-		printf("CPU %s, family %u, model %u (%xh), flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model, model,
-			raid_cpu_has_sse2() ? " sse2" : "",
-			raid_cpu_has_ssse3() ? " ssse3" : "",
-			raid_cpu_has_crc32() ? " crc32" : "",
-			raid_cpu_has_avx2() ? " avx2" : "",
-			raid_cpu_has_avx2gfni() ? " avx2gfni" : "",
-			raid_cpu_has_avx512bw() ? " avx512bw" : "",
-			raid_cpu_has_avx512gfni() ? " avx512gfni" : "",
-			raid_cpu_has_slowmult() ? " slowmult" : "",
-			raid_cpu_has_slow_extendedreg() ? " slowext" : "",
-			raid_cpu_has_slow_avx512() ? " slowavx512" : ""
-		);
-	}
-#elif defined(__aarch64__) || defined(_M_ARM64)
-	printf("CPU 64-bit ARM (AArch64)\n");
-#elif defined(__arm__) || defined(_M_ARM)
-	printf("CPU 32-bit ARM\n");
-#elif defined(__powerpc64__)
-	printf("CPU 64-bit PowerPC\n");
-#elif defined(__powerpc__)
-	printf("CPU 32-bit PowerPC\n");
-#elif defined(__riscv)
-	printf("CPU RISC-V\n");
-#elif defined(__s390x__)
-	printf("CPU 64-bit IBM Z / s390x\n");
-#else
-	printf("CPU of unknown architecture\n");
-#endif
-#if WORDS_BIGENDIAN
-	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
-#else
-	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
-#endif
-#if defined(__SIZEOF_INT128__)
-	printf("128-bit integers are supported\n");
-#else
-	printf("128-bit integers are not supported\n");
-#endif
-
-#if HAVE_FUTIMENS
-	printf("Support nanosecond timestamps with futimens()\n");
-#elif HAVE_FUTIMES
-	printf("Support nanosecond timestamps with futimes()\n");
-#elif HAVE_FUTIMESAT
-	printf("Support nanosecond timestamps with futimesat()\n");
-#else
-	printf("Does not support nanosecond timestamps\n");
-#endif
-
-	printf("\n");
-
-	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / KIBI);
-	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", raid_optimal_displacement(nv));
-	printf("The reported values are the aggregate bandwidth of all data blocks in MB/s,\n");
-	printf("not counting parity blocks.\n");
-	printf("\n");
 
 	printf("Memory write speed using the C memset() function:\n");
 	printf("%8s", "memset");
@@ -188,6 +76,16 @@ void speed(int period, int nd, int size)
 	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
+}
+
+void speed_crc(int nd, void** v, int size, int delta, int period)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i, j;
+	int count;
 
 	/* crc table */
 	printf("CRC used to check the content file integrity:\n");
@@ -218,6 +116,22 @@ void speed(int period, int nd, int size)
 #endif
 	printf("\n");
 	printf("\n");
+}
+
+void speed_hash(int nd, void** v, int size, int delta, int period)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i, j;
+	int count;
+	unsigned char digest[HASH_MAX];
+	unsigned char seed[HASH_MAX];
+
+	/* hash seed */
+	for (i = 0; i < HASH_MAX; ++i)
+		seed[i] = i;
 
 	/* hash table */
 	printf("Hash used to check the data blocks integrity:\n");
@@ -266,9 +180,19 @@ void speed(int period, int nd, int size)
 	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
+}
+
+void speed_gen(int nd, void** v, int size, int delta, int period, const char* msg)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i;
+	int count;
 
 	/* RAID table */
-	printf("RAID functions used for computing the parity with 'sync':\n");
+	printf("RAID functions used for computing the parity with 'sync'%s:\n", msg);
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
@@ -895,6 +819,24 @@ void speed(int period, int nd, int size)
 #endif
 	printf("\n");
 	printf("\n");
+}
+
+void speed_rec(int nd, void** v, int size, int delta, int period)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i;
+	int count;
+	int id[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
+
+	/* basic disks and parity mapping */
+	for (i = 0; i < RAID_PARITY_MAX; ++i) {
+		id[i] = i;
+		ip[i] = i;
+	}
 
 	/* recover table */
 	printf("RAID functions used for recovering with 'fix':\n");
@@ -1455,10 +1397,130 @@ void speed(int period, int nd, int size)
 #endif
 	printf("\n");
 	printf("\n");
+}
+
+void speed(int period, int nd, int size)
+{
+	int i;
+	int delta;
+	int nv;
+	void* v_alloc;
+	void** v;
+	void* v_direct_alloc;
+	void** v_direct;
+
+	if (nd < 0)
+		nd = 8; /* default */
+	if (nd < 6)
+		nd = 6; /* minimum */
+	if (size < 0)
+		size = 256 * KIBI;
+	else
+		size *= KIBI;
+	if (period < 1)
+		period = 1000;
+
+	delta = period >= 1000 ? 10 : 1;
+
+	nv = nd + RAID_PARITY_MAX + 1;
+
+	v = malloc_nofail_vector_align(nv, size, &v_alloc);
+	v_direct = raid_malloc_vector_align(nv, size, RAID_MALLOC_ALIGN, 0, 0, &v_direct_alloc);
+
+	/* initialize disks with fixed data */
+	for (i = 0; i < nd; ++i) {
+		memset(v[i], i, size);
+		memset(v_direct[i], i, size);
+	}
+
+	/* zero buffer */
+	memset(v[nd + RAID_PARITY_MAX], 0, size);
+	memset(v_direct[nd + RAID_PARITY_MAX], 0, size);
+	raid_zero(v[nd + RAID_PARITY_MAX]);
+
+	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+
+#ifdef __GNUC__
+	printf("Compiler gcc " __VERSION__ "\n");
+#endif
+
+#ifdef CONFIG_X86
+	{
+		char vendor[CPU_VENDOR_MAX];
+		unsigned family;
+		unsigned model;
+
+		raid_cpu_info(vendor, &family, &model);
+
+		printf("CPU %s, family %u, model %u (%xh), flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model, model,
+			raid_cpu_has_sse2() ? " sse2" : "",
+			raid_cpu_has_ssse3() ? " ssse3" : "",
+			raid_cpu_has_crc32() ? " crc32" : "",
+			raid_cpu_has_avx2() ? " avx2" : "",
+			raid_cpu_has_avx2gfni() ? " avx2gfni" : "",
+			raid_cpu_has_avx512bw() ? " avx512bw" : "",
+			raid_cpu_has_avx512gfni() ? " avx512gfni" : "",
+			raid_cpu_has_slowmult() ? " slowmult" : "",
+			raid_cpu_has_slow_extendedreg() ? " slowext" : "",
+			raid_cpu_has_slow_avx512() ? " slowavx512" : ""
+		);
+	}
+#elif defined(__aarch64__) || defined(_M_ARM64)
+	printf("CPU 64-bit ARM (AArch64)\n");
+#elif defined(__arm__) || defined(_M_ARM)
+	printf("CPU 32-bit ARM\n");
+#elif defined(__powerpc64__)
+	printf("CPU 64-bit PowerPC\n");
+#elif defined(__powerpc__)
+	printf("CPU 32-bit PowerPC\n");
+#elif defined(__riscv)
+	printf("CPU RISC-V\n");
+#elif defined(__s390x__)
+	printf("CPU 64-bit IBM Z / s390x\n");
+#else
+	printf("CPU of unknown architecture\n");
+#endif
+#if WORDS_BIGENDIAN
+	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
+#else
+	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
+#endif
+#if defined(__SIZEOF_INT128__)
+	printf("128-bit integers are supported\n");
+#else
+	printf("128-bit integers are not supported\n");
+#endif
+
+#if HAVE_FUTIMENS
+	printf("Support nanosecond timestamps with futimens()\n");
+#elif HAVE_FUTIMES
+	printf("Support nanosecond timestamps with futimes()\n");
+#elif HAVE_FUTIMESAT
+	printf("Support nanosecond timestamps with futimesat()\n");
+#else
+	printf("Does not support nanosecond timestamps\n");
+#endif
+
+	printf("\n");
+
+	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / KIBI);
+	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", raid_optimal_displacement(nv));
+	printf("The reported values are the aggregate bandwidth of all data blocks in MB/s,\n");
+	printf("not counting parity blocks.\n");
+	printf("\n");
+
+	speed_mem(nd, v, size, delta, period);
+	speed_crc(nd, v, size, delta, period);
+	speed_hash(nd, v, size, delta, period);
+	speed_gen(nd, v, size, delta, period, "");
+	speed_gen(nd, v_direct, size, delta, period, " (without displacement)");
+	speed_rec(nd, v, size, delta, period);
 
 	printf("If the 'best' expectations are wrong, please report it in the SnapRAID forum\n\n");
 
 	free(v_alloc);
 	free(v);
+	free(v_direct_alloc);
+	free(v_direct);
 }
 
