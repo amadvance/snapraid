@@ -108,6 +108,10 @@
 #include <sys/file.h>
 #endif
 
+#if HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif
+
 #if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif

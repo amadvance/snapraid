@@ -1436,6 +1436,116 @@ void speed_affinity(void)
 #endif
 }
 
+#if defined(__aarch64__) && defined(__APPLE__)
+static int check_cpu_feature(const char* name)
+{
+	int value = 0;
+	size_t len = sizeof(value);
+
+	if (sysctlbyname(name, &value, &len, NULL, 0) == 0) {
+		return value;
+	}
+
+	return 0;
+}
+
+static const char* decode_cpufamily(uint32_t family)
+{
+	switch (family) {
+	case 0xe81e7ef6 : return "Monsoon/Mistral (A11)";
+	case 0x07d34b9f : return "Vortex/Tempest (A12)";
+	case 0x462504d2 : return "Lightning/Thunder (A13)";
+	case 0x1b588bb3 : return "Firestorm/Icestorm (M1/A14)";
+	case 0xda33d83d : return "Blizzard/Avalanche (M2/A15)";
+	case 0x8765edea : return "Everest/Sawtooth (M3/A16)";
+	case 0xfa33415e : return "Ibiza (M4/A17)";
+	case 0 : return "Unavailable";
+	default : return "Unknown";
+	}
+}
+
+void print_apple(void)
+{
+	char brand[128] = "Unknown Apple Silicon";
+	size_t len = sizeof(brand);
+	if (sysctlbyname("machdep.cpu.brand_string", &brand, &len, NULL, 0) != 0) {
+		sysctlbyname("hw.model", &brand, &len, NULL, 0);
+	}
+
+	uint32_t family = 0;
+	len = sizeof(uint32_t);
+	sysctlbyname("hw.cpufamily", &family, &len, NULL, 0);
+
+	int has_aes = check_cpu_feature("hw.optional.arm.FEAT_AES");
+	int has_dotprod = check_cpu_feature("hw.optional.arm.FEAT_DotProd");
+	int has_sha3 = check_cpu_feature("hw.optional.arm.FEAT_SHA3");
+	int has_sve = check_cpu_feature("hw.optional.arm.FEAT_SVE");
+	int has_sme = check_cpu_feature("hw.optional.arm.FEAT_SME");
+
+	printf("CPU %s, family %s (0x%08x), flags%s%s%s%s%s\n",
+		brand, decode_cpufamily(family), family,
+		has_aes ? " aes" : "",
+		has_dotprod ? " dotprod" : "",
+		has_sha3 ? " sha3" : "",
+		has_sve ? " sve" : "",
+		has_sme ? " sme" : ""
+	);
+
+	unsigned long l1_d_bytes = 0;
+	unsigned long l2_bytes = 0;
+	unsigned long l3_bytes = 0;
+
+	len = sizeof(unsigned long);
+	sysctlbyname("hw.l1dcachesize", &l1_d_bytes, &len, 0, 0);
+	len = sizeof(unsigned long);
+	sysctlbyname("hw.l2cachesize", &l2_bytes, &len, 0, 0);
+	len = sizeof(unsigned long);
+	sysctlbyname("hw.l3cachesize", &l3_bytes, &len, 0, 0);
+
+	printf("Cache L1 Data %lu KB, L2 %lu KB", l1_d_bytes / 1024, l2_bytes / 1024);
+	if (l3_bytes > 0) {
+		printf(", L3 %lu KB", l3_bytes / 1024);
+	}
+	printf("\n");
+}
+#endif
+
+#ifdef CONFIG_X86
+void print_intel(void)
+{
+	char vendor[CPU_VENDOR_MAX];
+	unsigned family;
+	unsigned model;
+
+	raid_cpu_info(vendor, &family, &model);
+
+	printf("CPU %s, family %u, model %u (0x%x), flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model, model,
+		raid_cpu_has_sse2() ? " sse2" : "",
+		raid_cpu_has_ssse3() ? " ssse3" : "",
+		raid_cpu_has_crc32() ? " crc32" : "",
+		raid_cpu_has_avx2() ? " avx2" : "",
+		raid_cpu_has_avx2gfni() ? " avx2gfni" : "",
+		raid_cpu_has_avx512bw() ? " avx512bw" : "",
+		raid_cpu_has_avx512gfni() ? " avx512gfni" : "",
+		raid_cpu_has_slowmult() ? " slowmult" : "",
+		raid_cpu_has_slow_extendedreg() ? " slowext" : "",
+		raid_cpu_has_avx512bw() && raid_cpu_has_slow_avx512() ? " slowavx512" : ""
+	);
+
+#ifdef __linux__
+	long l1_d_bytes = sysconf(_SC_LEVEL1_DCACHE_SIZE);
+	long l2_bytes = sysconf(_SC_LEVEL2_CACHE_SIZE);
+	long l3_bytes = sysconf(_SC_LEVEL3_CACHE_SIZE);
+
+	printf("Cache L1 Data %lu KB, L2 %lu KB", l1_d_bytes / 1024, l2_bytes / 1024);
+	if (l3_bytes > 0) {
+		printf(", L3 %lu KB", l3_bytes / 1024);
+	}
+	printf("\n");
+#endif
+}
+#endif
+
 void speed(int period, int nd, int size)
 {
 	int i;
@@ -1482,30 +1592,21 @@ void speed(int period, int nd, int size)
 #endif
 
 #ifdef CONFIG_X86
-	{
-		char vendor[CPU_VENDOR_MAX];
-		unsigned family;
-		unsigned model;
-
-		raid_cpu_info(vendor, &family, &model);
-
-		printf("CPU %s, family %u, model %u (%xh), flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model, model,
-			raid_cpu_has_sse2() ? " sse2" : "",
-			raid_cpu_has_ssse3() ? " ssse3" : "",
-			raid_cpu_has_crc32() ? " crc32" : "",
-			raid_cpu_has_avx2() ? " avx2" : "",
-			raid_cpu_has_avx2gfni() ? " avx2gfni" : "",
-			raid_cpu_has_avx512bw() ? " avx512bw" : "",
-			raid_cpu_has_avx512gfni() ? " avx512gfni" : "",
-			raid_cpu_has_slowmult() ? " slowmult" : "",
-			raid_cpu_has_slow_extendedreg() ? " slowext" : "",
-			raid_cpu_has_slow_avx512() ? " slowavx512" : ""
-		);
-	}
-#elif defined(__aarch64__) || defined(_M_ARM64)
+	print_intel();
+#elif defined(__aarch64__) && defined(__APPLE__)
+	print_apple();
+#elif defined(__aarch64__)
+#if defined(CONFIG_NEON)
+	printf("CPU 64-bit ARM (AArch64), flags neon\n");
+#else
 	printf("CPU 64-bit ARM (AArch64)\n");
-#elif defined(__arm__) || defined(_M_ARM)
+#endif
+#elif defined(__arm__)
+#if defined(CONFIG_NEON)
+	printf("CPU 32-bit ARM, flags neon\n");
+#else
 	printf("CPU 32-bit ARM\n");
+#endif
 #elif defined(__powerpc64__)
 	printf("CPU 64-bit PowerPC\n");
 #elif defined(__powerpc__)
