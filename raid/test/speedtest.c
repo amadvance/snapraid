@@ -60,50 +60,18 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 #define SPEED_STOP \
 		count += delta; \
 		gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < TEST_PERIOD); \
+	} while (diffgettimeofday(&start, &stop) < period); \
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
 
-void speed(void)
+void speed_mem(int nd, void **v, int size, int delta, int period)
 {
 	struct timeval start;
 	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
 	int i, j;
-	int id[RAID_PARITY_MAX];
-	int ip[RAID_PARITY_MAX];
 	int count;
-	int delta = TEST_DELTA;
-	int size = TEST_SIZE;
-	int nd = TEST_COUNT;
-	int nv;
-	void *v_alloc;
-	void **v;
-
-	nv = nd + RAID_PARITY_MAX + 1;
-
-	v = raid_malloc_vector(nv, size, &v_alloc);
-
-	/* initialize disks with fixed data */
-	for (i = 0; i < nd; ++i)
-		memset(v[i], i, size);
-
-	/* zero buffer */
-	memset(v[nd + RAID_PARITY_MAX], 0, size);
-	raid_zero(v[nd + RAID_PARITY_MAX]);
-
-	/* basic disks and parity mapping */
-	for (i = 0; i < RAID_PARITY_MAX; ++i) {
-		id[i] = i;
-		ip[i] = i;
-	}
-
-	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
-	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", raid_optimal_displacement(nv));
-	printf("The reported values are the aggregate bandwidth of all data blocks in MiB/s,\n");
-	printf("not counting parity blocks.\n");
-	printf("\n");
 
 	printf("Memory write speed using the C memset() function:\n");
 	printf("%8s", "memset");
@@ -117,9 +85,19 @@ void speed(void)
 	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
+}
+
+void speed_gen(int nd, void **v, int size, int delta, int period, const char* msg)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i;
+	int count;
 
 	/* RAID table */
-	printf("RAID functions used for computing the parity:\n");
+	printf("RAID functions used for computing the parity%s:\n", msg);
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
@@ -744,6 +722,24 @@ void speed(void)
 #endif
 	printf("\n");
 	printf("\n");
+}
+
+void speed_rec(int nd, void **v, int size, int delta, int period)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i;
+	int id[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
+	int count;
+
+	/* basic disks and parity mapping */
+	for (i = 0; i < RAID_PARITY_MAX; ++i) {
+		id[i] = i;
+		ip[i] = i;
+	}
 
 	/* recover table */
 	printf("RAID functions used for recovering:\n");
@@ -1253,9 +1249,52 @@ void speed(void)
 #endif
 	printf("\n");
 	printf("\n");
+}
+
+void speed(void)
+{
+	int nd = TEST_COUNT;
+	int nv;
+	void *v_alloc;
+	void **v;
+	void *v_direct_alloc;
+	void **v_direct;
+	int i;
+	int size = TEST_SIZE;
+	int delta = TEST_DELTA;
+	int period = TEST_PERIOD;
+
+	nv = nd + RAID_PARITY_MAX + 1;
+
+	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
+	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", raid_optimal_displacement(nv));
+	printf("The reported values are the aggregate bandwidth of all data blocks in MiB/s,\n");
+	printf("not counting parity blocks.\n");
+	printf("\n");
+
+	v = raid_malloc_vector(nv, size, &v_alloc);
+	v_direct = raid_malloc_vector_align(nv, size, RAID_MALLOC_ALIGN, 0, 0, &v_direct_alloc);
+
+	/* initialize disks with fixed data */
+	for (i = 0; i < nd; ++i) {
+		memset(v[i], i, size);
+		memset(v_direct[i], i, size);
+	}
+
+	/* zero buffer */
+	memset(v[nd + RAID_PARITY_MAX], 0, size);
+	memset(v_direct[nd + RAID_PARITY_MAX], 0, size);
+	raid_zero(v[nd + RAID_PARITY_MAX]);
+	
+	speed_mem(nd, v, size, delta, period);
+	speed_gen(nd, v, size, delta, period, "");
+	speed_gen(nd, v_direct, size, delta, period, " (without displacement)");
+	speed_rec(nd, v, size, delta, period);
 
 	free(v_alloc);
 	free(v);
+	free(v_direct_alloc);
+	free(v_direct);
 }
 
 int main(void)
