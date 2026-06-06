@@ -63,7 +63,7 @@ void** malloc_nofail_vector_direct(int n, size_t size, void** freeptr)
 {
 	void* ptr;
 
-	ptr = raid_malloc_vector_align(n, size, direct_size(), 0, freeptr);
+	ptr = raid_malloc_vector_align(n, size, direct_size(), 0, 0, freeptr);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
