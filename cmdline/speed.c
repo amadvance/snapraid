@@ -112,9 +112,9 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
+		printf("\n");
 	}
 #endif
-	printf("\n");
 	printf("\n");
 }
 
@@ -1399,6 +1399,29 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	printf("\n");
 }
 
+void speed_affinity(void)
+{
+#if HAVE_LINUX_DEVICE
+	int num_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	if (num_cpus <= 0)
+		return;
+
+	printf("Machine has %d cores\n", num_cpus);
+
+	int cpu = os_get_optimal_cpu();
+	if (cpu <= 0)
+		return;
+
+	cpu_set_t mask;
+	CPU_ZERO(&mask);
+	CPU_SET(cpu, &mask);
+
+	if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) == 0) {
+		printf("Running on core %d\n", cpu);
+	}
+#endif
+}
+
 void speed(int period, int nd, int size)
 {
 	int i;
@@ -1480,6 +1503,7 @@ void speed(int period, int nd, int size)
 #else
 	printf("CPU of unknown architecture\n");
 #endif
+	speed_affinity();
 #if WORDS_BIGENDIAN
 	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
 #else
