@@ -101,11 +101,11 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 
-	printf("%8s", "intel");
-	fflush(stdout);
-
 #if CONFIG_X86
 	if (raid_cpu_has_crc32()) {
+		printf("%8s", "intel");
+		fflush(stdout);
+
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
 				side_effect += crc32c_x86(0, v[j], size);
@@ -115,6 +115,20 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 		printf("\n");
 	}
 #endif
+
+#if CONFIG_ARM_CRC
+	printf("%8s", "arm");
+	fflush(stdout);
+
+	SPEED_START {
+		for (j = 0; j < nd; ++j)
+			side_effect += crc32c_arm64(0, v[j], size);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	printf("\n");
+#endif
+
 	printf("\n");
 }
 
