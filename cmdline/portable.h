@@ -79,6 +79,10 @@
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1
 #endif
+
+#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32)
+#define CONFIG_ARM_CRC 1
+#endif
 #endif
 
 /**
