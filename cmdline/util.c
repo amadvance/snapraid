@@ -426,6 +426,19 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size)
 }
 #endif
 
+#if CONFIG_ARM_CRC
+uint32_t crc32c_arm64(uint32_t crc, const unsigned char* ptr, size_t size)
+{
+	crc ^= CRC_IV;
+
+	crc = crc32c_arm64_plain(crc, ptr, size);
+
+	crc ^= CRC_IV;
+
+	return crc;
+}
+#endif
+
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, size_t size);
 
 void crc32c_init(void)
