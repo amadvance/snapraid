@@ -77,7 +77,12 @@ static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)
 		return crc;
 	}
 #endif
+#if CONFIG_ARM_CRC
+	asm ("crc32cb %w0, %w0, %w1\n" : "+r" (crc) : "r" (c));
+	return crc;
+#else
 	return CRC32C_0[(crc ^ c) & 0xff] ^ (crc >> 8);
+#endif
 }
 
 /**
@@ -132,6 +137,33 @@ static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, 
 }
 #endif
 
+#if CONFIG_ARM_CRC
+static inline uint32_t crc32c_arm64_plain(uint32_t crc, const unsigned char* ptr, size_t size)
+{
+	while (size >= 8) {
+		uint64_t val;
+		__builtin_memcpy(&val, ptr, 8);
+		asm ("crc32cx %w0, %w0, %x1\n" : "+r" (crc) : "r" (val));
+		ptr += 8;
+		size -= 8;
+	}
+	if (size >= 4) {
+		uint32_t val;
+		__builtin_memcpy(&val, ptr, 4);
+		asm ("crc32cw %w0, %w0, %w1\n" : "+r" (crc) : "r" (val));
+		ptr += 4;
+		size -= 4;
+	}
+	while (size) {
+		asm ("crc32cb %w0, %w0, %w1\n" : "+r" (crc) : "r" (*ptr));
+		++ptr;
+		--size;
+	}
+
+	return crc;
+}
+#endif
+
 /**
  * Compute CRC-32 (Castagnoli) without the IV.
  */
@@ -142,7 +174,11 @@ static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, size
 		return crc32c_x86_plain(crc, ptr, size);
 	}
 #endif
+#if CONFIG_ARM_CRC
+	return crc32c_arm64_plain(crc, ptr, size);
+#else
 	return crc32c_gen_plain(crc, ptr, size);
+#endif
 }
 
 /**
@@ -155,6 +191,7 @@ extern uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, size_t size);
  */
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, size_t size);
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size);
+uint32_t crc32c_arm64(uint32_t crc, const unsigned char* ptr, size_t size);
 
 /**
  * Initialize the CRC-32 (Castagnoli) support.
