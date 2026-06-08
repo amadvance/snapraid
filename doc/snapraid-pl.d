@@ -50,22 +50,30 @@ Description
 
 		:https://www.snapraid.it/
 
-Limitations
-	SnapRAID to hybryda programu RAID i programu do tworzenia kopii zapasowych,
-	której celem jest połączenie najlepszych zalet obu. Ma jednak pewne
-	ograniczenia, które należy wziąć pod uwagę przed jego użyciem.
+Ograniczenia
+	SnapRAID jest hybrydą pomiędzy RAID a programem do tworzenia kopii zapasowych, mającą na celu połączenie
+	najlepszych zalet obu tych rozwiązań. Posiada jednak pewne ograniczenia, które należy
+	wziąć pod uwagę przed jego użyciem.
 
-	Głównym ograniczeniem jest to, że jeśli dysk ulegnie awarii, a Ty nie wykonałeś
-	niedawno synchronizacji, możesz nie być w stanie w pełni odzyskać danych.
-	Dokładniej, możesz nie być w stanie odzyskać danych o wielkości
-	zmienionych lub usuniętych plików od czasu ostatniej operacji synchronizacji.
-	Dzieje się tak, nawet jeśli zmienione lub usunięte pliki nie znajdują się na
-	uszkodzonym dysku. Dlatego SnapRAID jest lepiej dostosowany do
-	danych, które rzadko się zmieniają.
+	Głównym ograniczeniem jest to, że w przypadku awarii dysku można odzyskać dane tylko do
+	stanu z momentu ostatniej operacji `sync` (synchronizacji). Wszelkie dane dodane lub modyfikacje dokonane
+	od ostatniej synchronizacji, które znajdują się na uszkodzonym dysku, zostaną utracone.
 
-	Z drugiej strony, nowo dodane pliki nie uniemożliwiają odzyskania już
-	istniejących plików. Stracisz tylko ostatnio dodane pliki, jeśli
-	znajdują się one na uszkodzonym dysku.
+	W związku z tym SnapRAID nadaje się głównie do danych, które rzadko się zmieniają.
+
+	W przypadku danych, które już istniały podczas ostatniej synchronizacji, niezawodność odzyskiwania zależy
+	od tego, czy użyto opcji `snapshot` (migawki):
+
+	* Z obsługą migawek (dostępną w systemach plików Btrfs, ZFS, Bcachefs i NTFS),
+		SnapRAID może automatycznie utrzymywać zamrożony stan dysków z danymi.
+		Zapewnia to, że nawet jeśli zmodyfikujesz lub usuniesz pliki w aktywnym systemie plików
+		w trakcie lub po synchronizacji, proces odzyskiwania pozostanie spójny i niezawodny.
+
+	* Bez obsługi migawek, usunięcie lub zmiana plików po operacji `sync`
+		może uniemożliwić pełne odzyskanie danych z innych uszkodzonych dysków. Dzieje się tak,
+		ponieważ parzystość nie odpowiada już zmodyfikowanym plikom, nawet jeśli
+		pliki te nie znajdują się na uszkodzonym dysku. Z drugiej strony, nowo dodane
+		pliki nie uniemożliwiają odzyskania już istniejących plików.
 
 	Inne ograniczenia SnapRAID to:
 
@@ -383,16 +391,16 @@ Getting Started
 
 	Jeśli wszystko zostanie odzyskane, to polecenie jest natychmiastowe.
 
-Commands
+Polecenia
 	SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 
-	* Wyświetlenie statusu macierzy -> `status`
+	* Wyświetlenie stanu macierzy -> `status`
 	* Kontrolę dysków -> `smart`, `probe`, `up`, `down`
-	* Wykonanie kopii zapasowej/migawki -> `sync`
+	* Utworzenie punktu kopii zapasowej/przywracania -> `sync`
 	* Okresowe sprawdzanie danych -> `scrub`
-	* Przywrócenie ostatniej kopii zapasowej/migawki -> `fix`.
+	* Przywrócenie ostatniego punktu kopii zapasowej/przywracania -> `fix`.
 
-	Polecenia muszą być zapisane małymi literami.
+	Polecenia muszą być wpisywane małymi literami.
 
   status
 	Wyświetla podsumowanie stanu macierzy dysków.
@@ -593,15 +601,14 @@ Commands
 	Pliki w macierzy NIE są modyfikowane.
 
   fix
-	Naprawia wszystkie pliki i dane parzystości.
+	Naprawia wszystkie pliki oraz dane parzystości.
 
-	Wszystkie pliki i dane parzystości są porównywane ze stanem migawki
-	zapisanym w ostatniej `sync`.
-	Jeśli zostanie znaleziona różnica, jest ona przywracana do zapisanego stanu migawki.
+	Wszystkie pliki i dane parzystości są porównywane ze stanem zapisanym podczas
+	ostatniej operacji `sync`. W przypadku znalezienia różnicy, następuje przywrócenie stanu zapisanego.
 
-	OSTRZEŻENIE! Polecenie `fix` nie rozróżnia błędów od
-	celowych modyfikacji. Bezwarunkowo przywraca stan pliku
-	do ostatniej `sync`.
+	UWAGA!
+	Polecenie `fix` nie odróżnia błędów od celowych modyfikacji.
+	Bezwzględnie przywraca stan plików do momentu ostatniej operacji `sync`.
 
 	Jeśli nie określono żadnej innej opcji, przetwarzana jest cała macierz.
 	Użyj opcji filtra, aby wybrać podzbiór plików lub dysków do operacji.
@@ -1146,6 +1153,30 @@ Configuration
 	Należy zauważyć, że polecenia `up` i `down` nie mają wpływu na takie
 	dyski, ponieważ oczekuje się, że będą one zawsze w ruchu.
 
+  snapshot
+	Włącza używanie migawek systemu plików dla poleceń `sync`, `scrub`,
+	`check` oraz `fix`.
+
+	Po włączeniu, SnapRAID tworzy migawkę danych w trybie tylko do odczytu na
+	początku operacji 'sync'. Zapewnia to spójny obraz plików z danego momentu,
+	zapobiegając błędom wywołanym przez jednoczesne modyfikacje plików.
+
+	To znacznie usprawnia odzyskiwanie danych: jeśli plik zostanie usunięty z aktywnego systemu
+	plików, pozostaje zachowany w migawce. Zapobiega to sytuacji, w której parzystość staje się "uszkodzona"
+	dla tego bloku, zapewniając możliwość pomyślnego odzyskania danych,
+	jeśli ulegnie awarii inny dysk.
+
+	Opcja ta dotyczy wyłącznie dysków z danymi sformatowanych w systemach plików
+	Btrfs, Bcachefs lub ZFS w systemie Linux oraz NTFS w systemie Windows.
+	Dyski parzystości lub dyski z danymi korzystające z innych systemów plików będą zawsze używać
+	aktywnej wersji systemu plików.
+
+	Tworzenie i usuwanie migawek wymaga uprawnień administratora.
+	Upewnij się, że SnapRAID jest uruchamiany z wymaganymi uprawnieniami (np. sudo), gdy
+	opcja ta jest włączona.
+
+	Szczegółowe wyjaśnienie cyklu życia migawek znajduje się w sekcji SNAPSHOTS.
+
   nohidden
 	Wyklucza wszystkie ukryte pliki i katalogi.
 	W systemie Unix ukryte pliki to te zaczynające się od `.`.
@@ -1380,6 +1411,117 @@ Configuration
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+
+Snapshots (Migawki)
+	Jeśli opcja snapshot jest włączona w konfiguracji, SnapRAID
+	wykorzystuje funkcjonalność migawek systemu plików w celu zapewnienia operacji atomowych
+	i spójnych.
+
+	Zarządzanie migawkami jest całkowicie automatyczne i przejrzyste.
+	Możesz nadal używać SnapRAID dokładnie tak jak dotychczas, z dodatkową
+	ochroną zapewnianą przez migawki, która jest realizowana w całości w
+	tle.
+
+	Zapewnia to dwie główne korzyści:
+
+	Spójność - Pliki zmodyfikowane w aktywnym systemie plików podczas długotrwałej
+		operacji sync lub scrub nie spowodują niezgodności parzystości ani przerwania
+		operacji, ponieważ SnapRAID widzi zamrożony obraz z danego momentu.
+	Odzyskiwanie - Jeśli plik zostanie zaktualizowany lub usunięty z aktywnego systemu plików,
+		pozostaje zachowany w migawce. Jeśli awaria dysku nastąpi
+		przed uruchomieniem kolejnej operacji sync, SnapRAID użyje danych zachowanych
+		w migawce do odbudowania uszkodzonego dysku.
+
+		W przypadku awarii dysku podczas aktywnego procesu sync,
+		SnapRAID jest również w stanie automatycznie czytać zarówno z migawki
+		poprzedniego obliczenia parzystości, jak i z bieżącej.
+		Maksymalizuje to prawdopodobieństwo pełnego odzyskania danych poprzez
+		zapewnienie dostępu do dokładnych bloków danych wymaganych do rozwiązania
+		równań parzystości, nawet jeśli bloki te zostały zmodyfikowane
+		lub usunięte pomiędzy operacjami sync.
+
+		Bez migawek, zaktualizowany lub usunięty plik na sprawnym dysku
+		skutkuje brakiem bloków danych, które mogą być wymagane do
+		naprawy innych uszkodzonych dysków.
+
+	Migawki są tworzone tylko dla dysków z danymi i tylko wtedy, gdy bazowy
+	system plików obsługuje tę funkcjonalność. Dyski parzystości zawsze używają
+	aktywnego systemu plików.
+	Obecnie jest to obsługiwane w systemach Btrfs, Bcachefs i ZFS w systemie Linux
+	oraz NTFS w systemie Windows.
+
+	Można mieszać dyski z danymi o różnych systemach plików. Tylko te, które
+	obsługują migawki, będą z nich korzystać, podczas gdy inne dyski będą nadal
+	działać bezpośrednio na aktywnym systemie plików.
+
+	Tworzenie i usuwanie migawek wymaga uprawnień administratora.
+	Upewnij się, że SnapRAID jest uruchamiany z wymaganymi uprawnieniami (np. sudo),
+	gdy migawki są włączone.
+
+  Zachowanie poleceń przy użyciu migawek
+	Polecenia `sync` oraz `scrub` działają wyłącznie na migawkach,
+	aby zapewnić, że wszystkie operacje na danych są wykonywane na spójnym,
+	zamrożonym stanie. Poprzez wykorzystanie tych migawek, SnapRAID zapobiega niezgodnościom
+	parzystości, które w przeciwnym razie zostałyby wywołane przez jednoczesne modyfikacje plików w aktywnym systemie plików.
+	Podczas operacji `sync` polecenie używa nowej migawki utworzonej na
+	początku procesu, aby uchwycić bieżący stan do obliczenia parzystości.
+	W przeciwieństwie do tego, polecenie `scrub` wykorzystuje ostatnią migawkę, tę
+	utworzoną podczas najnowszej synchronizacji, aby utrzymać wiarygodny punkt odniesienia
+	odpowiadający istniejącej parzystości.
+
+	W przypadku poleceń `check` oraz `fix`, użycie ostatniej migawki
+	zależy od tego, czy konkretne dyski są wskazywane za pomocą opcji
+	-d, --filter-disk.
+
+	Dysk jawnie wybrany za pomocą opcji -d ("cel" operacji)
+	zawsze używa aktywnego systemu plików. Dla `fix` pozwala to na przywrócenie
+	danych na aktywny dysk zamienny. Dla `check` pozwala to na symulację
+	operacji `fix` w tych samych warunkach.
+
+	Wszystkie inne dyski z danymi (dyski "referencyjne") będą dostępne za pośrednictwem
+	swoich migawek. Zapewnia to, że nawet jeśli modyfikujesz pliki
+	na sprawnych dyskach podczas trwania odzyskiwania danych, SnapRAID
+	posiada stabilny, zamrożony punkt odniesienia do rozwiązania równań parzystości.
+
+	Jeśli nie podano opcji -d, SnapRAID zakłada, że operacja dotyczy
+	całej macierzy. W takim przypadku `check` oraz `fix` będą używać wyłącznie
+	aktywnych systemów plików.
+
+	Wszystkie inne polecenia działają wyłącznie na aktywnym systemie plików.
+
+Cykl życia migawek
+	SnapRAID zarządza dwoma określonymi migawkami, `stable` (stabilną) oraz `pending` (oczekującą),
+	w ukrytym katalogu w katalogu głównym każdego podwolumenu danych.
+	W systemach Btrfs, Bcachefs i NTFS używany jest katalog `.snapraid/`,
+	w systemie ZFS standardowy `.zfs/snapshot/`.
+
+	Migawka `stable` reprezentuje stan ostatniej
+	pomyślnie zakończonej operacji `sync`, zawierając dokładne dane użyte do
+	obliczenia bieżącej parzystości. Służy ona jako główne źródło danych
+	dla poleceń `scrub`, `check` i `fix`.
+
+	Migawka `pending` to tymczasowy obraz tworzony na początku
+	operacji `sync` w celu zapewnienia zamrożonego stanu do obliczenia parzystości.
+	Po pomyślnym zakończeniu operacji poprzednia migawka `stable`
+	jest usuwana, a migawka `pending` zostaje podniesiona do rangi
+	nowej stabilnej referencji.
+
+	Jeśli operacja `sync` zostanie przerwana, migawka `pending` zostaje zachowana.
+	Kolejne polecenia `scrub`, `check` i `fix` będą używać tej oczekującej migawki,
+	ponieważ odpowiada ona stanowi systemu plików zapisanemu w pliku .content,
+	nawet jeśli parzystość jest zsynchronizowana tylko częściowo.
+
+	W przypadku przerwania operacji `sync`, polecenia `check` i `fix`
+	odczytują dane również z migawki `stable`, aby pobrać bloki danych
+	z plików, które zostały zaktualizowane lub usunięte podczas synchronizacji.
+	Jest to możliwe, ponieważ plik .content zachowuje metadane dla
+	wszystkich zmodyfikowanych lub usuniętych plików przez cały proces sync.
+	Te informacje historyczne są czyszczone dopiero po pomyślnym zakończeniu operacji sync
+	i zapisaniu ostatecznej wersji pliku .content.
+
+	Jeśli operacja `sync` zostanie zrestartowana po przerwaniu, istniejąca
+	oczekująca (pending) migawka jest usuwana, a tworzona jest nowa, aby
+	uchwycić bieżący stan aktywnego systemu plików.
 
 Pattern
 	Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub
