@@ -52,21 +52,29 @@ Descrição
 		:https://www.snapraid.it/
 
 Limitações
-	SnapRAID é um híbrido entre um programa RAID e um programa de backup,
-	visando combinar os melhores benefícios de ambos. No entanto, ele tem
-	algumas limitações que você deve considerar antes de usá-lo.
+	O SnapRAID é um híbrido entre um RAID e un programa de backup, com o objetivo de combinar
+	os melhores benefícios de ambos. No entanto, possui algumas limitações que deve
+	considerar antes de o utilizar.
 
-	A principal limitação é que, se um disco falhar e você não tiver
-	sincronizado recentemente, talvez não consiga recuperar totalmente.
-	Mais especificamente, você pode não conseguir recuperar até o tamanho dos
-	arquivos alterados ou excluídos desde a última operação de sincronização.
-	Isso ocorre mesmo que os arquivos alterados ou excluídos não estejam no
-	disco com falha. É por isso que o SnapRAID é mais adequado para
-	dados que raramente mudam.
+	A principal limitação é que, se um disco falhar, apenas poderá recuperar dados até ao
+	estado da última operação de sincronização (`sync`). Quaisquer dados adicionados ou modificações feitas
+	desde a última sincronização que estejam localizados no disco com falha serão perdidos.
 
-	Por outro lado, arquivos recém-adicionados não impedem a recuperação de
-	arquivos já existentes. Você perderá apenas os arquivos adicionados
-	recentemente se estiverem no disco com falha.
+	Consequentemente, o SnapRAID é adequado principalmente para dados que raramente mudam.
+
+	Para dados que já existiam na última sincronização, a fiabilidade da recuperação depende
+	de a opção `snapshot` ser ou não utilizada:
+
+	* Com suporte a instantâneos (disponível em Btrfs, ZFS, Bcachefs e NTFS),
+		o SnapRAID pode manter automaticamente uma referência congelada dos seus discos de dados.
+		Isto garante que, mesmo que modifique ou elimine ficheiros no seu sistema de ficheiros ativo
+		durante ou após uma sincronização, o processo de recuperação permanece consistente e fiável.
+
+	* Sem suporte a instantâneos, eliminar ou alterar ficheiros após um `sync`
+		pode impedir a recuperação total de outros discos com falha. Isto ocorre
+		porque a paridade já não corresponde aos ficheiros modificados, mesmo que
+		esses ficheiros não estejam no disco com falha. Por outro lado, ficheiros adicionados recentemente
+		não impedem a recuperação de ficheiros já existentes.
 
 	Outras limitações do SnapRAID são:
 
@@ -391,13 +399,13 @@ Primeiros Passos
 	Se tudo for recuperado, este comando é imediato.
 
 Comandos
-	SnapRAID fornece alguns comandos simples que permitem a você:
+	O SnapRAID fornece alguns comandos simples que lhe permitem:
 
-	* Imprimir o status do array -> `status`
+	* Imprimir o estado da matriz -> `status`
 	* Controlar os discos -> `smart`, `probe`, `up`, `down`
-	* Fazer um backup/snapshot -> `sync`
+	* Criar um ponto de backup/recuperação -> `sync`
 	* Verificar periodicamente os dados -> `scrub`
-	* Restaurar o último backup/snapshot -> `fix`.
+	* Restaurar o último ponto de backup/recuperação -> `fix`.
 
 	Os comandos devem ser escritos em letras minúsculas.
 
@@ -608,15 +616,14 @@ Comandos
 	Os arquivos no array NÃO são modificados.
 
   fix
-	Corrige todos os arquivos e os dados de paridade.
+	Corrige todos os ficheiros e os dados de paridade.
 
-	Todos os arquivos e dados de paridade são comparados com o estado de
-	snapshot salvo na última `sync`.
-	Se uma diferença for encontrada, ela é revertida para o snapshot armazenado.
+	Todos os ficheiros e dados de paridade são comparados com o estado guardado no
+	último `sync`. Se for encontrada uma diferença, esta é revertida para o estado armazenado.
 
-	ATENÇÃO! O comando `fix` não diferencia entre erros e modificações
-	intencionais. Ele reverte incondicionalmente o estado do arquivo
-	para a última `sync`.
+	AVISO!
+	O comando `fix` não diferencia erros de modificações intencionais.
+	Reverte incondicionalmente o estado do ficheiro para o do último `sync`.
 
 	Se nenhuma outra opção for especificada, todo o array é processado.
 	Use as opções de filtro para selecionar um subconjunto de arquivos ou
@@ -1176,6 +1183,31 @@ Configuração
 	Observe que tais discos não são afetados pelos comandos `up` e `down`
 	porque se espera que estejam sempre girando.
 
+  snapshot
+	Ativa o uso de instantâneos (snapshots) do sistema de ficheiros para os comandos `sync`, `scrub`,
+	`check` e `fix`.
+
+	Quando ativado, o SnapRAID cria um instantâneo de leitura exclusiva dos seus dados no
+	início de um 'sync'. Isto garante uma visão consistente e num ponto específico no tempo dos seus
+	ficheiros, prevenindo erros causados por modificações concorrentes de ficheiros.
+
+	Isto melhora significativamente a recuperação: se um ficheiro for eliminado do sistema de ficheiros ativo,
+	ele permanece preservado no instantâneo. Isto evita que a paridade fique "corrompida"
+	para esse bloco, garantindo que ainda pode recuperar os dados com sucesso
+	se outro disco falhar.
+
+	Esta opção aplica-se exclusivamente a discos de dados formatados com os sistemas de
+	ficheiros Btrfs, Bcachefs ou ZFS em Linux e NTFS em Windows.
+	Discos de paridade, ou discos de dados que utilizem outros sistemas de ficheiros, usarão sempre
+	a versão ativa do sistema de ficheiros.
+
+	A criação e eliminação de instantâneos requerem privilégios administrativos.
+	Garanta que o SnapRAID é executado com as permissões necessárias (ex: sudo) quando
+	esta opção estiver ativada.
+
+	Consulte a secção SNAPSHOTS para uma explicação detalhada do ciclo de vida
+	dos instantâneos.
+
   nohidden
 	Exclui todos os arquivos e diretórios ocultos.
 	No Unix, arquivos ocultos são aqueles que começam com `.`.
@@ -1417,6 +1449,117 @@ Configuração
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+
+Snapshots (Instantâneos)
+	Se a opção de instantâneo estiver ativada na configuração, o SnapRAID
+	utiliza a funcionalidade de instantâneos do sistema de ficheiros para garantir operações atómicas
+	e consistentes.
+
+	A gestão de instantâneos é completamente automática e transparente.
+	Pode continuar a utilizar o SnapRAID exatamente como antes, com a
+	proteção adicional fornecida por instantâneos geridos inteiramente em
+	segundo plano.
+
+	Isto proporciona dois benefícios principais:
+
+	Consistência - Ficheiros modificados no sistema de ficheiros ativo durante um sync ou scrub de
+		longa duração não causarão divergências de paridade ou operações abortadas,
+		pois o SnapRAID vê uma imagem congelada no tempo.
+	Recuperação - Se um ficheiro for atualizado ou eliminado do sistema de ficheiros ativo,
+		ele permanece preservado no instantâneo. Se ocorrer uma falha de disco
+		antes de o próximo sync ser executado, o SnapRAID utiliza os dados preservados
+		no instantâneo para reconstruir o disco com falha.
+
+		Em caso de falha de um disco durante um processo de sync ativo,
+		o SnapRAID também é capaz de ler automaticamente tanto do instantâneo
+		da computação de paridade anterior quanto da atual.
+		Isto maximiza a probabilidade de uma recuperação completa ao
+		fornecer acesso aos blocos de dados exatos necessários para resolver
+		as equações de paridade, mesmo que esses blocos tenham sido modificados
+		ou eliminados entre os syncs.
+
+		Sem instantâneos, um ficheiro atualizado ou eliminado num disco saudável
+		resulta na falta de blocos de dados que podem ser necessários para
+		reparar outros discos com falha.
+
+	Os instantâneos são criados apenas para discos de dados e apenas se o sistema de ficheiros
+	subjacente suportar esta funcionalidade. Os discos de paridade usam sempre
+	o sistema de ficheiros ativo.
+	Atualmente, isto é suportado em Btrfs, Bcachefs e ZFS em Linux
+	e em NTFS em Windows.
+
+	Pode misturar discos de dados com sistemas de ficheiros diferentes. Apenas aqueles que
+	suportam instantâneos os utilizarão, enquanto os outros discos continuarão
+	a operar diretamente no sistema de ficheiros ativo.
+
+	A criação e eliminação de instantâneos requerem privilégios administrativos.
+	Garanta que o SnapRAID é executado com as permissões necessárias (ex: sudo)
+	quando os instantâneos estão ativados.
+
+  Comportamento dos Comandos com Instantâneos
+	Os comandos `sync` e `scrub` operam ambos exclusivamente em instantâneos
+	para garantir que todas as operações de dados sejam realizadas contra um estado consistente
+	e congelado. Ao utilizar estes instantâneos, o SnapRAID previne divergências de paridade
+	que, de outra forma, seriam despoletadas por modificações concorrentes de ficheiros no sistema de ficheiros ativo.
+	Durante um `sync`, o comando usa um novo instantâneo criado no
+	início do processo para capturar o estado atual para a computação da paridade.
+	Em contraste, o comando `scrub` utiliza o último instantâneo, aquele
+	criado durante o sync mais recente, para manter um ponto de referência confiável
+	que corresponda à paridade existente.
+
+	Para os comandos `check` e `fix`, o uso do último instantâneo
+	depende de discos específicos serem ou não alvo da operação utilizando a opção
+	-d, --filter-disk.
+
+	Um disco explicitamente selecionado via -d (o "alvo" da operação)
+	usa sempre o sistema de ficheiros ativo. Para `fix`, isto permite restaurar
+	dados para a substituição do disco ativo. Para `check`, permite simular
+	a operação `fix` sob as mesmas condições.
+
+	Todos os outros discos de dados (os discos de "referência") serão acedidos através dos
+	seus instantâneos. Isto garante que, mesmo que esteja a modificar ficheiros
+	nos seus discos saudáveis enquanto uma recuperação está em curso, o SnapRAID
+	tem uma referência estável e congelada para resolver as equações de paridade.
+
+	Se nenhuma opção -d for fornecida, o SnapRAID assume que a operação se aplica
+	a toda a matriz, neste caso, `check` e `fix` usarão os sistemas
+	de ficheiros ativos exclusivamente.
+
+	Todos os outros comandos operam exclusivamente no sistema de ficheiros ativo.
+
+Ciclo de Vida dos Instantâneos
+	O SnapRAID gere dois instantâneos específicos, `stable` (estável) e `pending` (pendente),
+	dentro de um diretório oculto na raiz de cada subvolume de dados.
+	Em Btrfs, Bcachefs e NTFS é utilizado o diretório `.snapraid/`,
+	em ZFS o padrão `.zfs/snapshot/`.
+
+	O instantâneo `stable` representa o estado do último
+	`sync` concluído com sucesso, contendo os dados exatos utilizados para
+	computar a paridade atual. Serve como a principal fonte de dados
+	para os comandos `scrub`, `check` e `fix`.
+
+	O instantâneo `pending` é uma imagem temporária criada ao início
+	de um `sync` para fornecer um estado congelado para a computação da paridade.
+	Após a conclusão bem-sucedida da operação, o instantâneo `stable` anterior
+	é eliminado, e o instantâneo `pending` é promovido para
+	tomar o seu lugar como a nova referência estável.
+
+	Se um `sync` for interrompido, o instantâneo `pending` é preservado.
+	Os comandos subsequentes `scrub`, `check` e `fix` utilizarão este
+	instantâneo pendente, pois ele corresponde ao estado do sistema de ficheiros registado no
+	ficheiro .content, mesmo que a paridade esteja apenas parcialmente sincronizada.
+
+	No caso de uma interrupção do `sync`, os comandos `check` e `fix`
+	também leem do instantâneo `stable` para recuperar blocos de dados
+	de ficheiros que foram atualizados ou eliminados durante o sync.
+	Isto é possível porque o ficheiro .content retém metadados para
+	todos os ficheiros modificados ou eliminados ao longo do processo de sync.
+	Esta informação histórica só é limpa quando um sync termina
+	com sucesso e a versão final do ficheiro .content é guardada.
+
+	Se um `sync` for reiniciado após uma interrupção, o instantâneo pending existente
+	é eliminado e um novo é criado para
+	capturar o estado atual do sistema de ficheiros ativo.
 
 Padrão (Pattern)
 	Os padrões fornecem uma maneira flexível de filtrar arquivos para inclusão ou
