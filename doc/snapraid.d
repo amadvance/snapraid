@@ -59,6 +59,7 @@ Limitations
 	The main limitation is that if a disk fails, you can only recover data up to
 	the state of the last `sync` operation. Any data added or modifications made
 	since the last sync that are located on the failed disk will be lost.
+
 	Consequently, SnapRAID is primarily suited for data that rarely changes.
 
 	For data that already existed at the last sync, recovery reliability depends

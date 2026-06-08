@@ -118,21 +118,33 @@ https://www.snapraid.it/
 .PD
 .RE
 .SH BEGRäNSNINGAR 
-SnapRAID är en hybrid mellan ett RAID\- och ett säkerhetskopieringsprogram,
-som syftar till att kombinera de bästa fördelarna med båda. Den har dock
-vissa begränsningar som du bör överväga innan du använder den.
+SnapRAID är en hybrid mellan en RAID och ett backupprogram, med målet att kombinera
+de bästa fördelarna med båda. Det har dock vissa begränsningar som du bör
+överväga innan du använder det.
 .PP
-Huvudbegränsningen är att om en disk misslyckas och du inte nyligen har
-synkat, kanske du inte kan återställa fullständigt.
-Mer specifikt, kanske du inte kan återställa upp till storleken på
-de ändrade eller raderade filerna sedan den senaste synkroniseringsoperationen.
-Detta inträffar även om de ändrade eller raderade filerna inte finns på
-den felaktiga disken. Det är därför SnapRAID passar bättre för
-data som sällan ändras.
+Den huvudsakliga begränsningen är att om en disk havererar kan du endast återställa data fram till
+tillståndet för den senaste \`sync\`\-iseringen. Data som lagts till eller modifieringar som gjorts
+sedan den senaste synkroniseringen och som är placerade på den felaktiga disken kommer att gå förlorade.
 .PP
-Å andra sidan förhindrar nyligen tillagda filer inte återställning av redan
-befintliga filer. Du kommer bara att förlora de nyligen tillagda filerna om de
-finns på den felaktiga disken.
+Följaktligen är SnapRAID främst lämpat för data som sällan ändras.
+.PP
+För data som redan existerade vid den senaste synkroniseringen beror återställningens tillförlitlighet
+på om alternativet \`snapshot\` (ögonblicksbild) används:
+.PD 0
+.IP \(bu
+Med stöd för ögonblicksbilder (tillgängligt på Btrfs, ZFS, Bcachefs och NTFS)
+kan SnapRAID automatiskt upprätthålla en frusen referens av dina datadiskar.
+Detta säkerställer att även om du ändrar eller tar bort filer på ditt aktiva filsystem
+under eller efter en synkronisering, förblir återställningsprocessen konsekvent och tillförlitlig.
+.PD
+.PD 0
+.IP \(bu
+Utan stöd för ögonblicksbilder kan borttagning eller ändring av filer efter en \`sync\`
+förhindra fullständig återställning av andra felaktiga diskar. Detta inträffar
+eftersom pariteten inte längre matchar de modifierade filerna, även om
+dessa filer inte finns på den havererade disken. Å andra sidan förhindrar inte nyinkomna
+filer återställning av redan existerande filer.
+.PD
 .PP
 Andra SnapRAID\-begränsningar är:
 .PD 0
@@ -644,21 +656,21 @@ snapraid sync
 .PP
 Om allt är återställt är detta kommando omedelbart.
 .SH KOMMANDON 
-SnapRAID tillhandahåller några enkla kommandon som låter dig:
+SnapRAID tillhandahåller några enkla kommandon som gör att du kan:
 .PD 0
 .IP \(bu
-Skriva ut statusen för arrayen \-> \`status\`
+Skriva ut arrayens status \-> \`status\`
 .IP \(bu
 Kontrollera diskarna \-> \`smart\`, \`probe\`, \`up\`, \`down\`
 .IP \(bu
-Göra en säkerhetskopia/ögonblicksbild \-> \`sync\`
+Skapa en backup\-/återställningspunkt \-> \`sync\`
 .IP \(bu
 Periodiskt kontrollera data \-> \`scrub\`
 .IP \(bu
-Återställa den senaste säkerhetskopian/ögonblicksbilden \-> \`fix\`.
+Återställa den senaste backup\-/återställningspunkten \-> \`fix\`.
 .PD
 .PP
-Kommandon måste skrivas med gemener.
+Kommandon måste skrivas med gemener (små bokstäver).
 .SS status 
 Skriver ut en sammanfattning av tillståndet för disk\-arrayen.
 .PP
@@ -886,15 +898,14 @@ för varje block och för att markera dåliga block.
 \`parity\`\-filerna modifieras INTE.
 Filerna i arrayen modifieras INTE.
 .SS fix 
-Fixar alla filer och paritetsdata.
+Lagar alla filer och paritetsdata.
 .PP
-Alla filer och paritetsdata jämförs med ögonblicksbilds\-
-tillståndet som sparades i den senaste \`sync\`.
-Om en skillnad hittas, återställs den till det lagrade ögonblicksbildstillståndet.
+Alla filer och paritetsdata jämförs med det tillstånd som sparades i
+den senaste \`sync\`\-iseringen. Om en skillnad hittas återställs den till det sparade tillståndet.
 .PP
-VARNING! Kommandot \`fix\` skiljer inte mellan fel och
-avsiktliga modifieringar. Det återställer ovillkorligen filtillståndet
-till den senaste \`sync\`.
+VARNING!
+Kommandot \`fix\` skiljer inte mellan fel och avsiktliga modifieringar.
+Det återställer villkorslöst filtillståndet till den senaste \`sync\`\-iseringen.
 .PP
 Om inget annat alternativ specificeras, behandlas hela arrayen.
 Använd filteralternativen för att välja en delmängd av filer eller diskar att arbeta med.
@@ -1428,6 +1439,29 @@ startdisken.
 .PP
 Observera att sådana diskar inte påverkas av kommandona \`up\` och
 \`down\` eftersom de förväntas alltid snurra.
+.SS snapshot 
+Aktiverar användningen av filsystemets ögonblicksbilder för kommandona \`sync\`, \`scrub\`,
+\`check\` och \`fix\`.
+.PP
+När det är aktiverat skapar SnapRAID en skrivskyddad ögonblicksbild av dina data vid
+början av en \'sync\'. Detta säkerställer en konsekvent tidpunktsvy av dina
+filer, vilket förhindrar fel som orsakas av samtidiga filändringar.
+.PP
+Detta förbättrar återställningen avsevärt: om en fil tas bort från det aktiva filsystemet
+förblir den bevarad i ögonblicksbilden. Detta förhindrar att pariteten blir \[dq]trasig\[dq]
+för det blocket, vilket säkerställer att du fortfarande kan återställa data framgångsrikt
+om en annan disk havererar.
+.PP
+Detta alternativ gäller uteslutande datadiskar formaterade med filsystemen
+Btrfs, Bcachefs eller ZFS i Linux och NTFS i Windows.
+Paritetsdiskar, eller datadiskar som använder andra filsystem, kommer alltid att använda
+den aktiva versionen av filsystemet.
+.PP
+Att skapa och ta bort ögonblicksbilder kräver administratörsbehörighet.
+Se till att SnapRAID körs med nödvändiga rättigheter (t.ex. sudo) när
+detta alternativ är aktiverat.
+.PP
+Se avsnittet SNAPSHOTS för en detaljerad förklaring av ögonblicksbildens livscykel.
 .SS nohidden 
 Exkluderar alla dolda filer och kataloger.
 I Unix är dolda filer de som börjar med \`.\`.
@@ -1761,6 +1795,125 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD 0
 .PD
 .RE
+.SH SNAPSHOTS (ÖGONBLICKSBILDER) 
+Om alternativet för ögonblicksbilder är aktiverat i konfigurationen använder SnapRAID
+filsystemets funktionalitet för ögonblicksbilder för att säkerställa atomära och
+konsekventa operationer.
+.PP
+Hanteringen av ögonblicksbilder är helt automatisk och transparent.
+Du kan fortsätta att använda SnapRAID exakt som tidigare, med det
+ytterligare skydd som ögonblicksbilder ger, helt hanterat i
+bakgrunden.
+.PP
+Detta ger två huvudsakliga fördelar:
+.RS 0
+.PD 0
+.HP 4
+.I Konsistens
+Filer som ändras på det aktiva filsystemet under en långvarig
+sync eller scrub kommer inte att orsaka paritetsfel eller avbrutna
+operationer, eftersom SnapRAID ser en frusen tidpunktsbild.
+.HP 4
+.I Återställning
+Om en fil uppdateras eller tas bort från det aktiva filsystemet
+förblir den bevarad i ögonblicksbilden. Om ett diskhaveri inträffar
+innan nästa sync körs, använder SnapRAID den data som bevarats
+i ögonblicksbilden för att rekonstruera den felaktiga disken.
+.PD
+.PP
+.RS 4
+.PD 0
+I händelse av ett diskhaveri under en aktiv synkroniseringsprocess
+kan SnapRAID också läsa automatiskt från både ögonblicksbilden
+av den föregående paritetsberäkningen och den aktuella.
+Detta maximerar sannolikheten för en fullständig återställning genom att
+ge tillgång till de exakta datablock som krävs för att lösa paritetsekvationerna,
+även om dessa block modifierades eller togs bort mellan synkroniseringar.
+.PD
+.PP
+.PD 0
+Utan ögonblicksbilder leder en uppdaterad eller borttagen fil på en frisk disk
+till saknade datablock som kan krävas för att laga andra felaktiga diskar.
+.PD
+.RE
+.RE
+.PP
+Ögonblicksbilder skapas endast för datadiskar och endast om det underliggande
+filsystemet stöder denna funktionalitet. Paritetsdiskar använder alltid
+det aktiva filsystemet.
+För närvarande stöds detta på Btrfs, Bcachefs och ZFS i Linux
+och på NTFS i Windows.
+.PP
+Du kan blanda datadiskar med olika filsystem. Endast de som
+stöder ögonblicksbilder kommer att använda dem, medan andra diskar kommer att fortsätta
+att fungera direkt på det aktiva filsystemet.
+.PP
+Att skapa och ta bort ögonblicksbilder kräver administratörsbehörighet.
+Se till att SnapRAID körs med nödvändiga rättigheter (t.ex. sudo)
+när ögonblicksbilder är aktiverade.
+.SS Kommandobeteende med ögonblicksbilder 
+Kommandona \`sync\` och \`scrub\` arbetar båda uteslutande på ögonblicksbilder
+för att säkerställa att alla dataoperationer utförs mot ett konsekvent,
+fruset tillstånd. Genom att använda dessa ögonblicksbilder förhindrar SnapRAID paritetsfel
+som annars skulle utlösas av samtidiga filändringar på det aktiva filsystemet.
+Under en \`sync\` använder kommandot en ny ögonblicksbild som skapas vid
+början av processen för att fånga det aktuella tillståndet för paritetsberäkning.
+I motsats till detta använder kommandot \`scrub\` den senaste ögonblicksbilden, den som
+skapades under den senaste synkroniseringen, för att upprätthålla en tillförlitlig referenspunkt
+som matchar den befintliga pariteten.
+.PP
+För kommandona \`check\` och \`fix\` beror användningen av den senaste ögonblicksbilden
+på om specifika diskar är måltavla med alternativet
+\-d, \-\-filter\-disk.
+.PP
+En disk som uttryckligen valts via \-d (operationens \[dq]mål\[dq])
+använder alltid det aktiva filsystemet. För \`fix\` tillåter detta återställning
+av data till den aktiva ersättningsdisken. För \`check\` tillåter det att simulera
+\`fix\`\-operationen under samma förhållanden.
+.PP
+Alla andra datadiskar (\[dq]referensdiskarna\[dq]) kommer att nås via
+sina ögonblicksbilder. Detta säkerställer att även om du ändrar filer
+på dina friska diskar medan en återställning pågår, har SnapRAID
+en stabil, frusen referens för att lösa paritetsekvationerna.
+.PP
+Om inget \-d\-alternativ anges antar SnapRAID kraschat att operationen gäller
+hela arrayen, i detta fall kommer \`check\` och \`fix\` att använda de
+aktiva filsystemen uteslutande.
+.PP
+Alla andra kommandon fungerar uteslutande på det aktiva filsystemet.
+.SH LIVSCYKEL FöR öGONBLICKSBILDER 
+SnapRAID hanterar två specifika ögonblicksbilder, \`stable\` och \`pending\`,
+inom en dold katalog i roten av varje datavolym.
+I Btrfs, Bcachefs och NTFS används katalogen \`.snapraid/\`,
+i ZFS standardkatalogen \`.zfs/snapshot/\`.
+.PP
+Ögonblicksbilden \`stable\` representerar tillståndet för den senaste
+framgångsrikt slutförda \`sync\`\-iseringen, och innehåller exakt den data som användes för
+att beräkna den aktuella pariteten. Den fungerar som den primära datakällan
+för kommandona \`scrub\`, \`check\` och \`fix\`.
+.PP
+Ögonblicksbilden \`pending\` är en tillfällig bild som skapas i början
+av en \`sync\` för att tillhandahålla ett fruset tillstånd för paritetsberäkning.
+Efter framgångsrik slutförande av operationen raderas den föregående \`stable\`
+ögonblicksbilden, och \`pending\`\-ögonblicksbilden upphöjs till
+att ta dess plats som den nya stabila referensen.
+.PP
+Om en \`sync\` avbryts bevaras ögonblicksbilden \`pending\`.
+Efterföljande \`scrub\`\-, \`check\`\- och \`fix\`\-kommandon kommer att använda denna
+vilande ögonblicksbild eftersom den matchar filsystemets tillstånd som registrerats i
+.content\-filen, även om pariteten endast är delvis synkroniserad.
+.PP
+I händelse av ett avbrott i en \`sync\` läser kommandona \`check\` och \`fix\`
+också från ögonblicksbilden \`stable\` för att hämta datablock
+från filer som uppdaterades eller togs bort under synkroniseringen.
+Detta är möjligt eftersom .content\-filen behåller metadata för
+alla modifierade eller borttagna filer under hela synkroniseringsprocessen.
+Denna historiska information rensas först när en sync slutförts
+framgångsrikt och den slutliga versionen av .content\-filen sparats.
+.PP
+Om en \`sync\` startas om efter ett avbrott raderas den befintliga
+vilande (pending) ögonblicksbilden och en ny skapas för att
+fånga det aktuella tillståndet för det aktiva filsystemet.
 .SH MöNSTER (PATTERN) 
 Mönster ger ett flexibelt sätt att filtrera filer för inkludering eller
 exkludering. Genom att använda jokertecken kan du definiera regler som
