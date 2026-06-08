@@ -62,21 +62,29 @@ För mer information, besök den officiella SnapRAID-webbplatsen:
 3 BEGRäNSNINGAR
 ===============
 
-SnapRAID är en hybrid mellan ett RAID- och ett säkerhetskopieringsprogram,
-som syftar till att kombinera de bästa fördelarna med båda. Den har dock
-vissa begränsningar som du bör överväga innan du använder den.
+SnapRAID är en hybrid mellan en RAID och ett backupprogram, med målet att kombinera
+de bästa fördelarna med båda. Det har dock vissa begränsningar som du bör
+överväga innan du använder det.
 
-Huvudbegränsningen är att om en disk misslyckas och du inte nyligen har
-synkat, kanske du inte kan återställa fullständigt.
-Mer specifikt, kanske du inte kan återställa upp till storleken på
-de ändrade eller raderade filerna sedan den senaste synkroniseringsoperationen.
-Detta inträffar även om de ändrade eller raderade filerna inte finns på
-den felaktiga disken. Det är därför SnapRAID passar bättre för
-data som sällan ändras.
+Den huvudsakliga begränsningen är att om en disk havererar kan du endast återställa data fram till
+tillståndet för den senaste `sync`-iseringen. Data som lagts till eller modifieringar som gjorts
+sedan den senaste synkroniseringen och som är placerade på den felaktiga disken kommer att gå förlorade.
 
-Å andra sidan förhindrar nyligen tillagda filer inte återställning av redan
-befintliga filer. Du kommer bara att förlora de nyligen tillagda filerna om de
-finns på den felaktiga disken.
+Följaktligen är SnapRAID främst lämpat för data som sällan ändras.
+
+För data som redan existerade vid den senaste synkroniseringen beror återställningens tillförlitlighet
+på om alternativet `snapshot` (ögonblicksbild) används:
+
+* Med stöd för ögonblicksbilder (tillgängligt på Btrfs, ZFS, Bcachefs och NTFS)
+  kan SnapRAID automatiskt upprätthålla en frusen referens av dina datadiskar.
+  Detta säkerställer att även om du ändrar eller tar bort filer på ditt aktiva filsystem
+  under eller efter en synkronisering, förblir återställningsprocessen konsekvent och tillförlitlig.
+
+* Utan stöd för ögonblicksbilder kan borttagning eller ändring av filer efter en `sync`
+  förhindra fullständig återställning av andra felaktiga diskar. Detta inträffar
+  eftersom pariteten inte längre matchar de modifierade filerna, även om
+  dessa filer inte finns på den havererade disken. Å andra sidan förhindrar inte nyinkomna
+  filer återställning av redan existerande filer.
 
 Andra SnapRAID-begränsningar är:
 
@@ -408,15 +416,15 @@ Om allt är återställt är detta kommando omedelbart.
 5 KOMMANDON
 ===========
 
-SnapRAID tillhandahåller några enkla kommandon som låter dig:
+SnapRAID tillhandahåller några enkla kommandon som gör att du kan:
 
-* Skriva ut statusen för arrayen -> `status`
+* Skriva ut arrayens status -> `status`
 * Kontrollera diskarna -> `smart`, `probe`, `up`, `down`
-* Göra en säkerhetskopia/ögonblicksbild -> `sync`
+* Skapa en backup-/återställningspunkt -> `sync`
 * Periodiskt kontrollera data -> `scrub`
-* Återställa den senaste säkerhetskopian/ögonblicksbilden -> `fix`.
+* Återställa den senaste backup-/återställningspunkten -> `fix`.
 
-Kommandon måste skrivas med gemener.
+Kommandon måste skrivas med gemener (små bokstäver).
 
 5.1 status
 ----------
@@ -637,15 +645,14 @@ Filerna i arrayen modifieras INTE.
 5.9 fix
 -------
 
-Fixar alla filer och paritetsdata.
+Lagar alla filer och paritetsdata.
 
-Alla filer och paritetsdata jämförs med ögonblicksbilds-
-tillståndet som sparades i den senaste `sync`.
-Om en skillnad hittas, återställs den till det lagrade ögonblicksbildstillståndet.
+Alla filer och paritetsdata jämförs med det tillstånd som sparades i
+den senaste `sync`-iseringen. Om en skillnad hittas återställs den till det sparade tillståndet.
 
-VARNING! Kommandot `fix` skiljer inte mellan fel och
-avsiktliga modifieringar. Det återställer ovillkorligen filtillståndet
-till den senaste `sync`.
+VARNING!
+Kommandot `fix` skiljer inte mellan fel och avsiktliga modifieringar.
+Det återställer villkorslöst filtillståndet till den senaste `sync`-iseringen.
 
 Om inget annat alternativ specificeras, behandlas hela arrayen.
 Använd filteralternativen för att välja en delmängd av filer eller diskar att arbeta med.
@@ -1224,14 +1231,40 @@ startdisken.
 Observera att sådana diskar inte påverkas av kommandona `up` och
 `down` eftersom de förväntas alltid snurra.
 
-7.7 nohidden
+7.7 snapshot
+------------
+
+Aktiverar användningen av filsystemets ögonblicksbilder för kommandona `sync`, `scrub`,
+`check` och `fix`.
+
+När det är aktiverat skapar SnapRAID en skrivskyddad ögonblicksbild av dina data vid
+början av en 'sync'. Detta säkerställer en konsekvent tidpunktsvy av dina
+filer, vilket förhindrar fel som orsakas av samtidiga filändringar.
+
+Detta förbättrar återställningen avsevärt: om en fil tas bort från det aktiva filsystemet
+förblir den bevarad i ögonblicksbilden. Detta förhindrar att pariteten blir "trasig"
+för det blocket, vilket säkerställer att du fortfarande kan återställa data framgångsrikt
+om en annan disk havererar.
+
+Detta alternativ gäller uteslutande datadiskar formaterade med filsystemen
+Btrfs, Bcachefs eller ZFS i Linux och NTFS i Windows.
+Paritetsdiskar, eller datadiskar som använder andra filsystem, kommer alltid att använda
+den aktiva versionen av filsystemet.
+
+Att skapa och ta bort ögonblicksbilder kräver administratörsbehörighet.
+Se till att SnapRAID körs med nödvändiga rättigheter (t.ex. sudo) när
+detta alternativ är aktiverat.
+
+Se avsnittet SNAPSHOTS för en detaljerad förklaring av ögonblicksbildens livscykel.
+
+7.8 nohidden
 ------------
 
 Exkluderar alla dolda filer och kataloger.
 I Unix är dolda filer de som börjar med `.`.
 I Windows är de de med det dolda attributet.
 
-7.8 exclude/include MÖNSTER
+7.9 exclude/include MÖNSTER
 ---------------------------
 
 Definierar fil- eller katalogmönstren att exkludera eller inkludera
@@ -1249,8 +1282,8 @@ specifikationer.
 
 Detta alternativ kan användas flera gånger.
 
-7.9 blocksize STORLEK_I_KIBIBYTES
----------------------------------
+7.10 blocksize STORLEK_I_KIBIBYTES
+----------------------------------
 
 Definierar den grundläggande blockstorleken i kibibytes för pariteten.
 En kibibyte är 1024 byte.
@@ -1297,7 +1330,7 @@ Detta resulterar i cirka 1,5% extra utrymme, ungefär 60 GB för
 en 4 TB-disk, vilket möjliggör cirka 460 000 filer på varje datadisk utan
 något bortkastat utrymme.
 
-7.10 hashsize STORLEK_I_BYTE
+7.11 hashsize STORLEK_I_BYTE
 ----------------------------
 
 Definierar hash-storleken i byte för de sparade blocken.
@@ -1335,7 +1368,7 @@ Om du byter till både en hash-storlek på 8 och en blockstorlek på 512 får du
 
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 
-7.11 autosave STORLEK_I_GIGABYTES
+7.12 autosave STORLEK_I_GIGABYTES
 ---------------------------------
 
 Sparar automatiskt tillståndet vid synkronisering eller skrubbning efter att den
@@ -1343,7 +1376,7 @@ specificerade mängden GB har behandlats.
 Detta alternativ är användbart för att undvika att starta om långa `sync`-
 kommandon från början om de avbryts av en maskinkrasch eller någon annan händelse.
 
-7.12 temp_limit TEMPERATUR_CELSIUS
+7.13 temp_limit TEMPERATUR_CELSIUS
 ----------------------------------
 
 Anger den maximalt tillåtna disk-temperaturen i Celsius. När den specificeras,
@@ -1374,14 +1407,14 @@ temperaturen som mättes vid start av körningen som en reservreferens.
 Normalt visar SnapRAID endast temperaturen på den hetaste disken.
 För att visa temperaturen på alla diskar, använd alternativet -A eller --stats.
 
-7.13 temp_sleep TID_I_MINUTER
+7.14 temp_sleep TID_I_MINUTER
 -----------------------------
 
 Anger standby-tiden, i minuter, när temperaturgränsen har
 nåtts. Under denna period förblir diskarna nedsnurrade. Standard
 är 5 minuter.
 
-7.14 pool KATALOG
+7.15 pool KATALOG
 -----------------
 
 Definierar poolningskatalogen där den virtuella vyn av disk-
@@ -1389,7 +1422,7 @@ arrayen skapas med hjälp av kommandot `pool`.
 
 Katalogen måste redan existera.
 
-7.15 share UNC_KATALOG
+7.16 share UNC_KATALOG
 ----------------------
 
 Definierar Windows UNC-sökvägen som krävs för att få åtkomst till diskarna på distans.
@@ -1405,7 +1438,7 @@ katalog och namn.
 
 Detta alternativ krävs endast för Windows.
 
-7.16 smartctl DISK/PARITY ALTERNATIV...
+7.17 smartctl DISK/PARITY ALTERNATIV...
 ---------------------------------------
 
 Definierar anpassade smartctl-alternativ för att få SMART-attributen för
@@ -1430,7 +1463,7 @@ Till exempel:
 
     smartctl parity -d sat %s
 
-7.17 smartignore DISK/PARITY ATTR [ATTR...]
+7.18 smartignore DISK/PARITY ATTR [ATTR...]
 -------------------------------------------
 
 Ignorerar det specificerade SMART-attributet vid beräkning av sannolikheten
@@ -1451,7 +1484,7 @@ För att ignorera det endast på den första paritetsdisken:
 
     smartignore parity 197
 
-7.18 Exempel
+7.19 Exempel
 ------------
 
 Ett exempel på en typisk konfiguration för Unix är:
@@ -1486,8 +1519,125 @@ Ett exempel på en typisk konfiguration för Windows är:
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 
-8 MöNSTER (PATTERN)
-===================
+8 SNAPSHOTS (ÖGONBLICKSBILDER)
+==============================
+
+Om alternativet för ögonblicksbilder är aktiverat i konfigurationen använder SnapRAID
+filsystemets funktionalitet för ögonblicksbilder för att säkerställa atomära och
+konsekventa operationer.
+
+Hanteringen av ögonblicksbilder är helt automatisk och transparent.
+Du kan fortsätta att använda SnapRAID exakt som tidigare, med det
+ytterligare skydd som ögonblicksbilder ger, helt hanterat i
+bakgrunden.
+
+Detta ger två huvudsakliga fördelar:
+
+Konsistens - Filer som ändras på det aktiva filsystemet under en långvarig
+    sync eller scrub kommer inte att orsaka paritetsfel eller avbrutna
+    operationer, eftersom SnapRAID ser en frusen tidpunktsbild.
+Återställning - Om en fil uppdateras eller tas bort från det aktiva filsystemet
+    förblir den bevarad i ögonblicksbilden. Om ett diskhaveri inträffar
+    innan nästa sync körs, använder SnapRAID den data som bevarats
+    i ögonblicksbilden för att rekonstruera den felaktiga disken.
+
+    I händelse av ett diskhaveri under en aktiv synkroniseringsprocess
+    kan SnapRAID också läsa automatiskt från både ögonblicksbilden
+    av den föregående paritetsberäkningen och den aktuella.
+    Detta maximerar sannolikheten för en fullständig återställning genom att
+    ge tillgång till de exakta datablock som krävs för att lösa paritetsekvationerna,
+    även om dessa block modifierades eller togs bort mellan synkroniseringar.
+
+    Utan ögonblicksbilder leder en uppdaterad eller borttagen fil på en frisk disk
+    till saknade datablock som kan krävas för att laga andra felaktiga diskar.
+
+Ögonblicksbilder skapas endast för datadiskar och endast om det underliggande
+filsystemet stöder denna funktionalitet. Paritetsdiskar använder alltid
+det aktiva filsystemet.
+För närvarande stöds detta på Btrfs, Bcachefs och ZFS i Linux
+och på NTFS i Windows.
+
+Du kan blanda datadiskar med olika filsystem. Endast de som
+stöder ögonblicksbilder kommer att använda dem, medan andra diskar kommer att fortsätta
+att fungera direkt på det aktiva filsystemet.
+
+Att skapa och ta bort ögonblicksbilder kräver administratörsbehörighet.
+Se till att SnapRAID körs med nödvändiga rättigheter (t.ex. sudo)
+när ögonblicksbilder är aktiverade.
+
+8.1 Kommandobeteende med ögonblicksbilder
+-----------------------------------------
+
+Kommandona `sync` och `scrub` arbetar båda uteslutande på ögonblicksbilder
+för att säkerställa att alla dataoperationer utförs mot ett konsekvent,
+fruset tillstånd. Genom att använda dessa ögonblicksbilder förhindrar SnapRAID paritetsfel
+som annars skulle utlösas av samtidiga filändringar på det aktiva filsystemet.
+Under en `sync` använder kommandot en ny ögonblicksbild som skapas vid
+början av processen för att fånga det aktuella tillståndet för paritetsberäkning.
+I motsats till detta använder kommandot `scrub` den senaste ögonblicksbilden, den som
+skapades under den senaste synkroniseringen, för att upprätthålla en tillförlitlig referenspunkt
+som matchar den befintliga pariteten.
+
+För kommandona `check` och `fix` beror användningen av den senaste ögonblicksbilden
+på om specifika diskar är måltavla med alternativet
+-d, --filter-disk.
+
+En disk som uttryckligen valts via -d (operationens "mål")
+använder alltid det aktiva filsystemet. För `fix` tillåter detta återställning
+av data till den aktiva ersättningsdisken. För `check` tillåter det att simulera
+`fix`-operationen under samma förhållanden.
+
+Alla andra datadiskar ("referensdiskarna") kommer att nås via
+sina ögonblicksbilder. Detta säkerställer att även om du ändrar filer
+på dina friska diskar medan en återställning pågår, har SnapRAID
+en stabil, frusen referens för att lösa paritetsekvationerna.
+
+Om inget -d-alternativ anges antar SnapRAID kraschat att operationen gäller
+hela arrayen, i detta fall kommer `check` och `fix` att använda de
+aktiva filsystemen uteslutande.
+
+Alla andra kommandon fungerar uteslutande på det aktiva filsystemet.
+
+
+9 LIVSCYKEL FöR öGONBLICKSBILDER
+================================
+
+SnapRAID hanterar två specifika ögonblicksbilder, `stable` och `pending`,
+inom en dold katalog i roten av varje datavolym.
+I Btrfs, Bcachefs och NTFS används katalogen `.snapraid/`,
+i ZFS standardkatalogen `.zfs/snapshot/`.
+
+Ögonblicksbilden `stable` representerar tillståndet för den senaste
+framgångsrikt slutförda `sync`-iseringen, och innehåller exakt den data som användes för
+att beräkna den aktuella pariteten. Den fungerar som den primära datakällan
+för kommandona `scrub`, `check` och `fix`.
+
+Ögonblicksbilden `pending` är en tillfällig bild som skapas i början
+av en `sync` för att tillhandahålla ett fruset tillstånd för paritetsberäkning.
+Efter framgångsrik slutförande av operationen raderas den föregående `stable`
+ögonblicksbilden, och `pending`-ögonblicksbilden upphöjs till
+att ta dess plats som den nya stabila referensen.
+
+Om en `sync` avbryts bevaras ögonblicksbilden `pending`.
+Efterföljande `scrub`-, `check`- och `fix`-kommandon kommer att använda denna
+vilande ögonblicksbild eftersom den matchar filsystemets tillstånd som registrerats i
+.content-filen, även om pariteten endast är delvis synkroniserad.
+
+I händelse av ett avbrott i en `sync` läser kommandona `check` och `fix`
+också från ögonblicksbilden `stable` för att hämta datablock
+från filer som uppdaterades eller togs bort under synkroniseringen.
+Detta är möjligt eftersom .content-filen behåller metadata för
+alla modifierade eller borttagna filer under hela synkroniseringsprocessen.
+Denna historiska information rensas först när en sync slutförts
+framgångsrikt och den slutliga versionen av .content-filen sparats.
+
+Om en `sync` startas om efter ett avbrott raderas den befintliga
+vilande (pending) ögonblicksbilden och en ny skapas för att
+fånga det aktuella tillståndet för det aktiva filsystemet.
+
+
+10 MöNSTER (PATTERN)
+====================
 
 Mönster ger ett flexibelt sätt att filtrera filer för inkludering eller
 exkludering. Genom att använda jokertecken kan du definiera regler som
@@ -1605,8 +1755,8 @@ I Unix, när du använder globbing-tecken på kommandoraden, måste du
 citattecken dem för att förhindra att skalet expanderar dem.
 
 
-9 IGNORERA FILER (IGNORE FILE)
-==============================
+11 IGNORERA FILER (IGNORE FILE)
+===============================
 
 Utöver de globala reglerna i konfigurationsfilen kan du placera
 `.snapraidignore`-filer i vilken katalog som helst i arrayen för att definiera
@@ -1650,7 +1800,7 @@ Till exempel, om du har en `.snapraidignore` i `/mnt/disk1/projects/`:
     *.tmp
 
 
-10 INNEHåLL (CONTENT)
+12 INNEHåLL (CONTENT)
 =====================
 
 SnapRAID lagrar listan och checksummorna för dina filer i content-filen.
@@ -1662,7 +1812,7 @@ Denna fil läses och skrivs av kommandona `sync` och `scrub` och
 läses av kommandona `fix`, `check` och `status`.
 
 
-11 PARITET (PARITY)
+13 PARITET (PARITY)
 ===================
 
 SnapRAID lagrar paritetsinformationen för din array i parity-
@@ -1675,7 +1825,7 @@ Dessa filer läses och skrivs av kommandona `sync` och `fix` och
 läses endast av kommandona `scrub` och `check`.
 
 
-12 KODNING
+14 KODNING
 ==========
 
 SnapRAID i Unix ignorerar all kodning. Det läser och lagrar
@@ -1692,13 +1842,13 @@ omdirigerar konsolutdata till en fil, är den resulterande filen alltid
 i UTF-8-format.
 
 
-13 UPPHOVSRäTT (COPYRIGHT)
+15 UPPHOVSRäTT (COPYRIGHT)
 ==========================
 
 Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
 
-14 SE ÄVEN (SEE ALSO)
+16 SE ÄVEN (SEE ALSO)
 =====================
 
 snapraid_log(1), snapraidd(1)

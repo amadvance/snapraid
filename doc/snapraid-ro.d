@@ -52,21 +52,29 @@ Descriere
 		:https://www.snapraid.it/
 
 Limitări
-	SnapRAID este un hibrid între un program RAID și unul de backup, care urmărește să combine
-	cele mai bune beneficii ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
+	SnapRAID este un hibrid între un RAID și un program de backup, având ca scop combinarea
+	celor mai bune avantaje ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
 	să le luați în considerare înainte de a-l utiliza.
 
-	Principala limitare este că, dacă un disc se defectează și nu ați făcut recent o sincronizare,
-	este posibil să nu puteți recupera complet.
-	Mai exact, este posibil să nu puteți recupera până la dimensiunea
-	fișierelor modificate sau șterse de la ultima operațiune de sincronizare.
-	Acest lucru se întâmplă chiar dacă fișierele modificate sau șterse nu sunt pe
-	discul defect. Acesta este motivul pentru care SnapRAID este mai potrivit pentru
-	date care se schimbă rar.
+	Principala limitare este că, dacă un disc se defectează, puteți recupera datele doar până la
+	starea ultimei operațiuni de `sync`. Orice date adăugate sau modificări efectuate
+	de la ultima sincronizare care se află pe discul defect vor fi pierdute.
 
-	Pe de altă parte, fișierele nou adăugate nu împiedică recuperarea fișierelor
-	deja existente. Veți pierde doar fișierele adăugate recent dacă acestea
-	se află pe discul defect.
+	Prin urmare, SnapRAID este potrivit în principal pentru date care se modifică rar.
+
+	Pentru datele care existau deja la ultima sincronizare, fiabilitatea recuperării depinde
+	de utilizarea sau nu a opțiunii `snapshot`:
+
+	* Cu suport pentru snapshot (disponibil pe Btrfs, ZFS, Bcachefs și NTFS),
+		SnapRAID poate menține automat o referință înghețată a discurilor de date.
+		Acest lucru asigură că, chiar dacă modificați sau ștergeți fișiere pe sistemul de fișiere live
+		în timpul sau după un sync, procesul de recuperare rămâne consistent și de încredere.
+
+	* Fără suport pentru snapshot, ștergerea sau modificarea fișierelor după un `sync`
+		poate împiedica recuperarea completă a altor discuri defecte. Acest lucru se întâmplă
+		deoarece paritatea nu mai corespunde cu fișierele modificate, chiar dacă
+		acele fișiere nu se află pe discul defect. Pe de altă parte, fișierele nou adăugate
+		nu împiedică recuperarea fișierelor deja existente.
 
 	Alte limitări ale SnapRAID sunt:
 
@@ -382,11 +390,11 @@ Noțiuni de Bază
 Comenzi
 	SnapRAID oferă câteva comenzi simple care vă permit să:
 
-	* Tipăriți starea matricei -> `status`
+	* Afișați starea matricei -> `status`
 	* Controlați discurile -> `smart`, `probe`, `up`, `down`
-	* Faceți un backup/snapshot -> `sync`
+	* Creați un punct de backup/recuperare -> `sync`
 	* Verificați periodic datele -> `scrub`
-	* Restaurați ultimul backup/snapshot -> `fix`.
+	* Restaurați ultimul punct de backup/recuperare -> `fix`.
 
 	Comenzile trebuie scrise cu litere mici.
 
@@ -591,13 +599,12 @@ Comenzi
   fix
 	Repară toate fișierele și datele de paritate.
 
-	Toate fișierele și datele de paritate sunt comparate cu starea snapshot-ului
-	salvată la ultima `sync`.
-	Dacă se găsește o diferență, este readusă la snapshot-ul stocat.
+	Toate fișierele și datele de paritate sunt comparate cu starea salvată în
+	ultimul `sync`. Dacă se găsește o diferență, aceasta este readusă la starea stocată.
 
-	ATENȚIE! Comanda `fix` nu face diferența între erori și
-	modificări intenționate. Ea revine necondiționat la starea fișierului
-	de la ultima `sync`.
+	AVERTISMENT!
+	Comanda `fix` nu face diferența între erori și modificări intenționate.
+	Ea revine necondiționat la starea fișierelor de la ultimul `sync`.
 
 	Dacă nu este specificată nicio altă opțiune, întreaga matrice este procesată.
 	Utilizați opțiunile de filtrare pentru a selecta un subset de fișiere sau discuri de operat.
@@ -1146,6 +1153,31 @@ Configurare
 	Rețineți că astfel de discuri nu sunt afectate de comenzile `up` și
 	`down` deoarece se așteaptă ca acestea să se rotească mereu.
 
+  snapshot
+	Activează utilizarea snapshot-urilor sistemului de fișiere pentru comenzile `sync`, `scrub`,
+	`check` și `fix`.
+
+	Când este activată, SnapRAID creează un snapshot read-only al datelor dvs. la
+	începutul unui 'sync'. Acest lucru asigură o vizualizare consistentă, la un anumit moment în timp, a
+	fișierelor dvs., prevenind erorile cauzate de modificările concurente ale fișierelor.
+
+	Acest lucru îmbunătățește semnificativ recuperarea: dacă un fișier este șters din sistemul de fișiere live,
+	el rămâne păstrat în snapshot. Acest lucru previne ca paritatea să devină „ruptă”
+	pentru acel bloc, asigurându-vă că puteți recupera cu succes datele
+	dacă un alt disc se defectează.
+
+	Această opțiune se aplică exclusiv discurilor de date formatate cu sistemele de
+	fișiere Btrfs, Bcachefs sau ZFS în Linux și NTFS în Windows.
+	Discurile de paritate, sau discurile de date care utilizează alte sisteme de fișiere, vor folosi întotdeauna
+	versiunea live a sistemului de fișiere.
+
+	Crearea și ștergerea snapshot-urilor necesită privilegii administrative.
+	Asigurați-vă că SnapRAID este rulat cu permisiunile necesare (de exemplu, sudo) când
+	această opțiune este activată.
+
+	Consultați secțiunea SNAPSHOTS pentru o explicație detaliată a ciclului de viață
+	al snapshot-urilor.
+
   nohidden
 	Exclude toate fișierele și directoarele ascunse.
 	În Unix, fișierele ascunse sunt cele care încep cu `.`.
@@ -1382,6 +1414,117 @@ Configurare
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
+
+Snapshots
+	Dacă opțiunea snapshot este activată în configurație, SnapRAID
+	utilizează funcționalitatea de snapshot a sistemului de fișiere pentru a asigura operațiuni atomice
+	și consistente.
+
+	Gestionarea snapshot-urilor este complet automată și transparentă.
+	Puteți continua să utilizați SnapRAID exact ca înainte, cu protecția
+	suplimentară oferită de snapshot-uri gestionate în întregime în
+	background.
+
+	Acest lucru oferă două avantaje principale:
+
+	Consistență - Fișierele modificate pe sistemul de fișiere live în timpul unui sync sau scrub
+		de lungă durată nu vor cauza nepotriviri de paritate sau operațiuni abandonate,
+		deoarece SnapRAID vede o imagine înghețată la un anumit moment în timp.
+	Recuperare - Dacă un fișier este actualizat sau șters din sistemul de fișiere live,
+		el rămâne păstrat în snapshot. Dacă se produce o defecțiune a discului
+		înainte de rularea următorului sync, SnapRAID utilizează datele păstrate
+		în snapshot pentru a reconstrui discul defect.
+
+		În cazul unei defecțiuni a discului în timpul unui proces de sync activ,
+		SnapRAID este, de asemenea, capabil să citească automat atât din snapshot-ul
+		calculului anterior de paritate, cât și din cel curent.
+		Acest lucru maximizează probabilitatea unei recuperări complete prin
+		oferirea accesului la blocurile exacte de date necesare pentru a rezolva
+		ecuațiile de paritate, chiar dacă acele blocuri au fost modificate
+		sau șterse între sync-uri.
+
+		Fără snapshot-uri, un fișier actualizat sau șters pe un disc sănătos
+		are ca rezultat lipsa unor blocuri de date care pot fi necesare pentru
+		a repara alte discuri defecte.
+
+	Snapshot-urile sunt create doar pentru discurile de date și numai dacă sistemul de fișiere
+	subiacent acceptă această funcționalitate. Discurile de paritate folosesc întotdeauna
+	sistemul de fișiere live.
+	În prezent, acest lucru este acceptat pe Btrfs, Bcachefs și ZFS în Linux
+	și pe NTFS în Windows.
+
+	Puteți amesteca discuri de date cu sisteme de fișiere diferite. Doar cele care
+	acceptă snapshot-uri le vor utiliza, în timp ce celelalte discuri vor continua
+	să funcționeze direct pe sistemul de fișiere live.
+
+	Crearea și ștergerea snapshot-urilor necesită privilegii administrative.
+	Asigurați-vă că SnapRAID este rulat cu permisiunile necesare (de exemplu, sudo)
+	atunci când snapshot-urile sunt activate.
+
+  Comportamentul comenzilor cu snapshot-uri
+	Comenzile `sync` și `scrub` operează ambele exclusiv pe snapshot-uri
+	pentru a se asigura că toate operațiunile de date sunt efectuate în raport cu o stare consistentă
+	și înghețată. Prin utilizarea acestor snapshot-uri, SnapRAID previne neconcordanțele de paritate
+	care altfel ar fi declanșate de modificările concurente ale fișierelor pe sistemul de fișiere live.
+	În timpul unui `sync`, comanda folosește un snapshot nou creat la
+	începutul procesului pentru a captura starea curentă pentru calculul parității.
+	În schimb, comanda `scrub` utilizează ultimul snapshot, cel
+	creat în timpul celui mai recent sync, pentru a menține un punct de referință de încredere
+	care se potrivește cu paritatea existentă.
+
+	Pentru comenzile `check` și `fix`, utilizarea ultimului snapshot
+	depinde dacă anumite discuri sunt vizate folosind opțiunea
+	-d, --filter-disk.
+
+	Un disc selectat în mod explicit prin -d („ținta” operațiunii)
+	folosește întotdeauna sistemul de fișiere live. Pentru `fix`, acest lucru permite restaurarea
+	datelor pe discul de înlocuire activ. Pentru `check`, permite simularea
+	operațiunii `fix` în aceleași condiții.
+
+	Toate celelalte discuri de date (discurile de „referință”) vor fi accesate prin intermediul
+	snapshot-urilor lor. Acest lucru asigură că, chiar dacă modificați fișiere
+	pe discurile sănătoase în timp ce o recuperare este în curs, SnapRAID
+	are o referință stabilă, înghețată pentru a rezolva ecuațiile de paritate.
+
+	Dacă nu este furnizată nicio opțiune -d, SnapRAID presupune că operațiunea se aplică
+	întregii matrice, caz în care `check` și `fix` vor folosi exclusiv
+	sistemele de fișiere live.
+
+	Toate celelalte comenzi operează exclusiv pe sistemul de fișiere live.
+
+Ciclul de viață al snapshot-urilor
+	SnapRAID gestionează două snapshot-uri specifice, `stable` și `pending`,
+	într-un director ascuns la rădăcina fiecărui subvolum de date.
+	În Btrfs, Bcachefs și NTFS se folosește directorul `.snapraid/`,
+	în ZFS cel standard `.zfs/snapshot/`.
+
+	Snapshot-ul `stable` reprezintă starea ultimului
+	`sync` finalizat cu succes, conținând datele exacte utilizate pentru
+	a calcula paritatea curentă. Acesta servește ca sursă principală de date
+	pentru comenzile `scrub`, `check` și `fix`.
+
+	Snapshot-ul `pending` este o imagine temporară creată la începutul
+	unui `sync` pentru a oferi o stare înghețată pentru calculul parității.
+	După finalizarea cu succes a operațiunii, snapshot-ul `stable` anterior
+	este șters, iar snapshot-ul `pending` este promovat pentru
+	a-i lua locul ca nouă referință stabilă.
+
+	Dacă un `sync` este întrerupt, snapshot-ul `pending` este păstrat.
+	Comenzile ulterioare `scrub`, `check` și `fix` vor folosi acest
+	snapshot în așteptare, deoarece se potrivește cu starea sistemului de fișiere înregistrată în
+	fișierul .content, chiar dacă paritatea este sincronizată doar parțial.
+
+	În cazul unei întreruperi a `sync`, comenzile `check` și `fix`
+	citesc, de asemenea, din snapshot-ul `stable` pentru a recupera blocurile de date
+	din fișierele care au fost actualizate sau șterse în timpul sync-ului.
+	Acest lucru este posibil deoarece fișierul .content păstrează metadatele pentru
+	toate fișierele modificate sau șterse pe parcursul procesului de sync.
+	Aceste informații istorice sunt șterse numai după ce un sync se termină
+	cu succes și versiunea finală a fișierului .content este salvată.
+
+	Dacă un `sync` este repornit după o întrerupere, snapshot-ul pending existent
+	este șters și se creează unul nou pentru
+	a captura starea curentă a sistemului de fișiere live.
 
 Model (Pattern)
 	Modelele oferă o modalitate flexibilă de a filtra fișierele pentru includere sau
