@@ -63,6 +63,22 @@ void state_touch(struct snapraid_state* state)
 
 				/* open it */
 				f = open(path, flags);
+#ifdef _WIN32
+				if (f == -1) {
+					/* LCOV_EXCL_START */
+					if (errno == EACCES) {
+						int attributes = windows_get_file_attributes(path);
+						if (attributes != -1 && (attributes & FILE_ATTRIBUTE_READONLY) != 0) {
+							/* remove read only attribute */
+							if (windows_set_file_attributes(path, attributes & ~FILE_ATTRIBUTE_READONLY) == 0) {
+								f = open(path, flags);
+								windows_set_file_attributes(path, attributes);
+							}
+						}
+					}
+					/* LCOV_EXCL_STOP */
+				}
+#endif
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					log_error(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));

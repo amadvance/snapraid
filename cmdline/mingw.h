@@ -381,6 +381,16 @@ ssize_t windows_pwrite(int f, const void* buffer, size_t size, off_t offset);
  */
 size_t windows_direct_size(void);
 
+/**
+ * Like GetFileAttributes()
+ */
+int windows_get_file_attributes(const char* file);
+
+/**
+ * Like SetFileAttributes()
+ */
+int windows_set_file_attributes(const char* file, int attributes);
+
 /****************************************************************************/
 /* thread */
 

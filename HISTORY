@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+14.7 2026/06
+============
+ * Fix the 'touch' command on Windows for files with the read-only
+   attribute. The read-only attribute is temporarily removed and 
+   then restored. No need to update if you are not on Windows.
+
 14.6 2026/06
 ============
  * Fix stack overflow in deep directory trees on platforms with a small

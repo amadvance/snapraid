@@ -766,6 +766,31 @@ int windows_fstat(int fd, struct windows_stat* st)
 	return windows_info2stat(&info, &tag, st);
 }
 
+int windows_get_file_attributes(const char* file)
+{
+	wchar_t conv_buf[CONV_MAX];
+
+	DWORD ret = GetFileAttributesW(convert(conv_buf, file));
+	if (ret == INVALID_FILE_ATTRIBUTES) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return ret;
+}
+
+int windows_set_file_attributes(const char* file, int attributes)
+{
+	wchar_t conv_buf[CONV_MAX];
+
+	if (!SetFileAttributesW(convert(conv_buf, file), attributes)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
 int windows_lstat(const char* file, struct windows_stat* st)
 {
 	wchar_t conv_buf[CONV_MAX];
