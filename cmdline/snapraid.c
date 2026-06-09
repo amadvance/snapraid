@@ -1903,10 +1903,17 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_REHASH) {
 		state_read(&state);
 
-		/* intercept signals while operating */
-		signal_init();
-
 		state_rehash(&state);
+
+		/*
+		 * Intercept signals while operating
+		 *
+		 * Intentionally do this after the touch operation.
+		 *
+		 * The signal protection is meant only for saving the content file,
+		 * or an early stop of long operations.
+		 */
+		signal_init();
 
 		/* save the new state if required */
 		if (state.need_write)
@@ -1945,10 +1952,18 @@ int snapraid_main(int argc, char* argv[])
 
 		state_touch(&state);
 
-		/* intercept signals while operating */
+		/*
+		 * Intercept signals while operating
+		 *
+		 * Intentionally do this after the touch operation.
+		 *
+		 * The signal protection is meant only for saving the content file,
+		 * or an early stop of long operations.
+		 */
 		signal_init();
 
-		state_write(&state);
+		if (state.need_write)
+			state_write(&state);
 	} else if (operation == OPERATION_SPINUP) {
 		ret = state_device(&state, DEVICE_UP, &filterlist_disk);
 #if HAVE_CHECKER

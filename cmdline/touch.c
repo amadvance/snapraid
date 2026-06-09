@@ -11,6 +11,8 @@
 void state_touch(struct snapraid_state* state)
 {
 	tommy_node* i;
+	unsigned counter = 0;
+
 	msg_progress("Setting sub-second timestamps...\n");
 
 	/* for all disks */
@@ -72,7 +74,9 @@ void state_touch(struct snapraid_state* state)
 							/* remove read only attribute */
 							if (windows_set_file_attributes(path, attributes & ~FILE_ATTRIBUTE_READONLY) == 0) {
 								f = open(path, flags);
-								windows_set_file_attributes(path, attributes);
+								if (windows_set_file_attributes(path, attributes) != 0) {
+									log_error(errno, "Error restoring read-only attribute for '%s'. %s.\n", path, strerror(errno));
+								}
 							}
 						}
 					}
@@ -139,8 +143,13 @@ void state_touch(struct snapraid_state* state)
 
 				log_tag("touch:%s:%s: %" PRIu64 ".%d\n", disk->name, esc_tag(file->sub), (uint64_t)st.st_mtime, STAT_NSEC(&st));
 				msg_info("touch %s\n", fmt_term(disk, file->sub));
+
+				++counter;
 			}
 		}
 	}
+
+	msg_status("\n");
+	msg_status("%8u touched files\n", counter);
 }
 
