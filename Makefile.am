@@ -203,12 +203,13 @@ clean-local:
 	rm -f lcov.info
 	rm -f gmon.out
 	rm -f makeslackware.sh makeslackdist.sh pkg/snapraid.SlackBuild pkg/snapraid.info makedeb.sh pkg/control makerpm.sh pkg/snapraid.spec
-	rm -f pkg/snapraid-*.txz pkg/snapraid_*.deb pkg/snapraid-*.rpm
 
 maintainer-clean-local:
 	rm -f $(LIST_MAN)
 	rm -f $(LIST_TXT)
 	rm -f $(LIST_XML)
+	rm -f snapraid-*.txz snapraid_*.deb snapraid-*.rpm snapraid-*.tar.zst snapraid-*.zip snapraid-*.tar.gz
+	rm -f snapraid.src.tar.gz snapraid.tar.gz
 
 # Install localized manpages
 install-data-hook:
