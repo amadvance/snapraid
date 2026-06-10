@@ -825,5 +825,4 @@ void raid_register_neon(void)
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_recX_neon);
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_recX_neon);
 }
-
-#endif /* CONFIG_NEON */
+#endif
