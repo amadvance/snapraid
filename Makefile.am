@@ -680,7 +680,7 @@ endif
 	$(MSG) Silently corrupt some files, scrub and fix filtering for error. Test scrub patterns.
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 1 bench/disk1/a/*
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable --test-force-scrub-at 100000 scrub
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable -p full scrub
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) fix -e
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --percentage bad scrub
