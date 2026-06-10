@@ -394,6 +394,3 @@ void raid_register_neon(void);
 #endif
 
 #endif
-
-
-

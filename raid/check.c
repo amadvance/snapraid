@@ -171,4 +171,3 @@ int raid_scan(int *ir, int nd, int np, size_t size, void **v)
 	/* no solution found */
 	return -1;
 }
-
