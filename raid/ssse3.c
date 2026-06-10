@@ -1274,5 +1274,4 @@ void raid_register_ssse3(void)
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "ssse3", raid_recX_ssse3);
 	}
 }
-
-#endif /* CONFIG_X86 */
+#endif
