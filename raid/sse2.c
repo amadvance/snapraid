@@ -426,5 +426,4 @@ void raid_register_sse2(void)
 #endif
 	}
 }
-
-#endif /* CONFIG_X86 */
+#endif

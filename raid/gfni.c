@@ -674,5 +674,4 @@ void raid_register_avx512gfni(void)
 	}
 #endif
 }
-
-#endif /* CONFIG_X86_64 */
+#endif
