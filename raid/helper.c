@@ -82,4 +82,3 @@ void raid_insert(int n, int *v, int i)
 		--n;
 	}
 }
-
