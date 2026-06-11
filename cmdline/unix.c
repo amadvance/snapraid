@@ -3368,7 +3368,7 @@ uint64_t os_tick_ms(void)
 	return tv.tv_sec * 1000ULL + tv.tv_usec / 1000;
 }
 
-int randomize(void* ptr, size_t size)
+int os_randomize(void* ptr, size_t size)
 {
 	int f;
 	ssize_t ret;
