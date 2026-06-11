@@ -44,7 +44,7 @@ void state_touch(struct snapraid_state* state)
 					uint32_t nano;
 
 					/* get a random nanosecond value */
-					if (randomize(&nano, sizeof(nano)) != 0) {
+					if (os_randomize(&nano, sizeof(nano)) != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Failed to retrieve random values.\n");
 						exit(EXIT_FAILURE);

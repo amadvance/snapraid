@@ -2831,7 +2831,7 @@ uint64_t os_tick_ms(void)
 	return GetTickCount64();
 }
 
-int randomize(void* void_ptr, size_t size)
+int os_randomize(void* void_ptr, size_t size)
 {
 	size_t i;
 	unsigned char* ptr = void_ptr;

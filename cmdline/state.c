@@ -1470,7 +1470,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	state->hash = state->besthash;
 
 	/* by default use a random hash seed */
-	if (randomize(state->hashseed, HASH_MAX) != 0) {
+	if (os_randomize(state->hashseed, HASH_MAX) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Failed to retrieve random values.\n");
 		exit(EXIT_FAILURE);
