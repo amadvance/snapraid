@@ -44,7 +44,7 @@ void state_rehash(struct snapraid_state* state)
 
 	/* set the new hash and seed */
 	state->hash = state->besthash;
-	if (randomize(state->hashseed, HASH_MAX) != 0) {
+	if (os_randomize(state->hashseed, HASH_MAX) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Failed to get random values.\n");
 		exit(EXIT_FAILURE);
