@@ -413,6 +413,11 @@ int os_pclose(OS_FILE* stream);
  */
 int os_get_optimal_cpu(void);
 
+/**
+ * Fill memory with pseudo-random values
+ */
+int os_randomize(void* ptr, size_t size);
+
 /****************************************************************************/
 /* app */
 
@@ -601,11 +606,6 @@ extern int exit_sync_needed;
 #define EXIT_SUCCESS exit_success
 #define EXIT_FAILURE exit_failure
 #define EXIT_SYNC_NEEDED exit_sync_needed
-
-/**
- * Fill memory with pseudo-random values.
- */
-int randomize(void* ptr, size_t size);
 
 /**
  * Standard SMART attributes.
