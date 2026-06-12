@@ -4,6 +4,9 @@
 #ifndef __SUPPORT_H
 #define __SUPPORT_H
 
+#include "os.h"
+#include "app.h"
+
 /****************************************************************************/
 /* lock */
 

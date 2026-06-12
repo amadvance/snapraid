@@ -65,7 +65,9 @@ snapraid_SOURCES = \
 	cmdline/search.c \
 	cmdline/thermal.c \
 	cmdline/mingw.c \
-	cmdline/unix.c
+	cmdline/mingwapp.c \
+	cmdline/unix.c \
+	cmdline/unixapp.c
 
 noinst_HEADERS = \
 	raid/raid.h \
@@ -114,18 +116,24 @@ noinst_HEADERS = \
 	cmdline/search.h \
 	cmdline/thermal.h \
 	cmdline/mingw.h \
-	cmdline/unix.h
+	cmdline/unix.h \
+	cmdline/os.h \
+	cmdline/app.h
 
 mktest_SOURCES = \
 	cmdline/mktest.c \
 	cmdline/mingw.c \
+	cmdline/mingwapp.c \
 	cmdline/unix.c \
+	cmdline/unixapp.c \
 	cmdline/support.c
 
 mkstream_SOURCES = \
 	cmdline/mkstream.c \
 	cmdline/mingw.c \
+	cmdline/mingwapp.c \
 	cmdline/unix.c \
+	cmdline/unixapp.c \
 	cmdline/support.c \
 	cmdline/util.c \
 	cmdline/stream.c \
