@@ -5,44 +5,12 @@
 
 #ifdef __MINGW32__ /* Only for MingW */
 
+#include "os.h"
+#include "app.h" /* for app_global_interrupt() */
 #include "support.h"
 
 /****************************************************************************/
-/* signal */
-
-volatile int global_interrupt = 0;
-
-int os_global_interrupt(void)
-{
-	return global_interrupt;
-}
-
-static void signal_handler(int signum)
-{
-	/* report the request of interruption with the signal received */
-	global_interrupt = signum;
-}
-
-void os_signal_init(void)
-{
-	signal(SIGTERM, signal_handler);
-	signal(SIGINT, signal_handler);
-}
-
-/****************************************************************************/
-/* os */
-
-char* os_fgets(char* s, int size, OS_FILE* stream)
-{
-	return fgets(s, size, stream);
-}
-
-/**
- * Exit codes.
- */
-int exit_success = 0;
-int exit_failure = 1;
-int exit_sync_needed = 2;
+/* global */
 
 /* Add missing Windows declaration */
 
@@ -108,184 +76,23 @@ static HMODULE dll_advapi32;
  */
 static WCHAR exedir[PATH_MAX];
 
-/**
- * Set the executable dir.
- */
-static void exedir_init(void)
+/****************************************************************************/
+/* signal */
+
+void os_signal_init(void (*handler_term)(int sig), void (*handler_hup)(int sig))
 {
-	DWORD size;
-	WCHAR* slash;
+	{
+		(void)handler_hup;
 
-	size = GetModuleFileNameW(0, exedir, PATH_MAX);
-	if (size == 0 || size == PATH_MAX) {
-		/* use empty dir */
-		exedir[0] = 0;
-		return;
-	}
-
-	slash = wcsrchr(exedir, L'\\');
-	if (!slash) {
-		/* use empty dir */
-		exedir[0] = 0;
-		return;
-	}
-
-	/* cut exe name */
-	slash[1] = 0;
-}
-
-void os_default_conf(char* conf, size_t conf_size, const char* argv0)
-{
-	char* slash;
-
-	pathimport(conf, conf_size, argv0);
-
-	slash = strrchr(conf, '/');
-	if (slash) {
-		slash[1] = 0;
-		pathcat(conf, conf_size, PACKAGE ".conf");
-	} else {
-		pathcpy(conf, conf_size, PACKAGE ".conf");
+		signal(SIGTERM, handler_term);
+		signal(SIGINT, handler_term);
 	}
 }
 
-void os_init(int opt)
-{
-	HMODULE ntdll, kernel32;
+/****************************************************************************/
+/* convert */
 
-	is_scan_winfind = opt != 0;
-
-	/* initialize the thread local storage for strerror(), using free() as destructor */
-	if (windows_key_create(&last_error, free) != 0) {
-		log_fatal(EEXTERNAL, "Error calling windows_key_create().\n");
-		exit(EXIT_FAILURE);
-	}
-
-	tick_last = 0;
-	if (windows_mutex_init(&tick_lock, 0) != 0) {
-		log_fatal(EEXTERNAL, "Error calling windows_mutex_init().\n");
-		exit(EXIT_FAILURE);
-	}
-
-	ntdll = GetModuleHandle("NTDLL.DLL");
-	if (!ntdll) {
-		log_fatal(EEXTERNAL, "Error loading the NTDLL module.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	kernel32 = GetModuleHandle("KERNEL32.DLL");
-	if (!kernel32) {
-		log_fatal(EEXTERNAL, "Error loading the KERNEL32 module.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
-	if (!dll_advapi32) {
-		log_fatal(EEXTERNAL, "Error loading the ADVAPI32 module.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	/* check for Wine presence */
-	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
-
-	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
-	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
-
-	/*
-	 * Set the thread execution level to avoid sleep
-	 * first try for Windows 7
-	 */
-	if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
-		/* retry with the XP variant */
-		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
-	}
-
-	exedir_init();
-
-	/*
-	 * Set LC_ALL=C to make child ignoring the locale when printing info
-	 *
-	 * Note anyway that in Windows this trick doesn't work because the
-	 * Windows locale is used with priority.
-	 */
-	_wputenv_s(L"LC_ALL", L"C");
-}
-
-void os_done(void)
-{
-	/* delete the thread local storage for strerror() */
-	windows_key_delete(last_error);
-
-	windows_mutex_destroy(&tick_lock);
-
-	/* restore the normal execution level */
-	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
-
-	FreeLibrary(dll_advapi32);
-}
-
-void os_abort(void)
-{
-	void* stack[32];
-	size_t size;
-	unsigned i;
-
-	printf("Stacktrace of " PACKAGE " v" VERSION);
-	printf(", mingw");
-#ifdef __GNUC__
-	printf(", gcc " __VERSION__);
-#endif
-	printf(", %d-bit", (int)sizeof(void*) * 8);
-	printf(", PATH_MAX=%d", PATH_MAX);
-	printf("\n");
-
-	/* get stackstrace, but without symbols */
-	size = CaptureStackBackTrace(0, 32, stack, NULL);
-
-	for (i = 0; i < size; ++i)
-		printf("[bt] %02u: %p\n", i, stack[i]);
-
-	printf("Please report this error to the SnapRAID Issues:\n");
-	printf("https://github.com/amadvance/snapraid/issues\n");
-
-	/* use exit() and not abort to avoid the Windows abort dialog */
-	exit(EXIT_FAILURE);
-}
-
-void os_clear(void)
-{
-	HANDLE console;
-	CONSOLE_SCREEN_BUFFER_INFO screen;
-	COORD coord;
-	DWORD written;
-
-	/* get the console */
-	console = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (console == INVALID_HANDLE_VALUE)
-		return;
-
-	/* get the screen size */
-	if (!GetConsoleScreenBufferInfo(console, &screen))
-		return;
-
-	/* fill the screen with spaces */
-	coord.X = 0;
-	coord.Y = 0;
-	FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, coord, &written);
-
-	/* set the cursor at the top left corner */
-	SetConsoleCursorPosition(console, coord);
-}
-
-/**
- * Size in chars of conversion buffers for u8to16() and u16to8().
- */
-#define CONV_MAX PATH_MAX
-
-/**
- * Convert a generic string from UTF8 to UTF16.
- */
-static wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
+wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
 {
 	/* flags at 0 forces the API to never fail on malformed UTF-8 sequences */
 	int ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_buf, CONV_MAX);
@@ -341,7 +148,7 @@ static char* u16tou8ex(char* conv_buf, const wchar_t* src, size_t number_of_wcha
 	return conv_buf;
 }
 
-static char* u16tou8(char* conv_buf, const wchar_t* src)
+char* u16tou8(char* conv_buf, const wchar_t* src)
 {
 	size_t len;
 
@@ -357,22 +164,7 @@ static int is_slash(char c)
 	return c == '/' || c == '\\';
 }
 
-/**
- * Convert a path to the Windows format.
- *
- * If only_is_required is 1, the extended-length format is used only if required.
- *
- * The exact operation done is:
- * - If it's a '\\?\' or '\\.\' path, convert any '/' to '\'.
- * - If it's a disk designator path, like 'D:\' or 'D:/', it prepends '\\?\' to the path and convert any '/' to '\'.
- * - If it's a UNC path, like ''\\server'', it prepends '\\?\UNC\' to the path and convert any '/' to '\'.
- * - Otherwise, only the UTF conversion is done. In this case Windows imposes a limit of 260 chars, and automatically convert any '/' to '\'.
- *
- * For more details see:
- * Naming Files, Paths, and Namespaces
- * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
- */
-static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required)
+wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required)
 {
 	int ret;
 	wchar_t* dst;
@@ -451,8 +243,18 @@ static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_requ
 	return conv_buf;
 }
 
-#define convert(buf, a) convert_arg(buf, a, 0)
-#define convert_if_required(buf, a) convert_arg(buf, a, 1)
+/****************************************************************************/
+/* windows */
+
+const wchar_t* windows_exedir(void)
+{
+	return exedir;
+}
+
+int windows_is_wine(void)
+{
+	return is_wine;
+}
 
 static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpFileAttributeTagInfo, DWORD dwFileAttributes)
 {
@@ -476,13 +278,13 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 	if ((FileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 		st->st_desc = "device";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {         /* Offline */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "offline";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Temporary */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) {         /* Temporary */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "temporary";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {         /* Reparse point */
 		switch (ReparseTag) {
 		/* if we don't have the ReparseTag information */
 		case 0 :
@@ -523,7 +325,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 			st->st_desc = "reparse-point";
 			break;
 		}
-	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) {         /* System */
 		if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			st->st_mode = S_IFCHR;
 			st->st_desc = "system-directory";
@@ -727,10 +529,7 @@ static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const F
 	return windows_stream2stat(info, stream, &dirent->d_stat);
 }
 
-/**
- * Convert Windows error to errno.
- */
-static void windows_errno(DWORD error)
+void windows_errno(DWORD error)
 {
 	switch (error) {
 	case ERROR_INVALID_HANDLE :
@@ -741,20 +540,20 @@ static void windows_errno(DWORD error)
 		 */
 		errno = EINVAL;
 		break;
-	case ERROR_HANDLE_EOF : /* in ReadFile() over the end of the file */
+	case ERROR_HANDLE_EOF :         /* in ReadFile() over the end of the file */
 		errno = EINVAL;
 		break;
 	case ERROR_FILE_NOT_FOUND :
-	case ERROR_PATH_NOT_FOUND : /* in GetFileAttributeW() if internal path not found */
+	case ERROR_PATH_NOT_FOUND :         /* in GetFileAttributeW() if internal path not found */
 		errno = ENOENT;
 		break;
-	case ERROR_ACCESS_DENIED : /* in CreateDirectoryW() if dir is scheduled for deletion */
-	case ERROR_CURRENT_DIRECTORY : /* in RemoveDirectoryW() if removing the current directory */
-	case ERROR_SHARING_VIOLATION : /* in RemoveDirectoryW() if in use */
-	case ERROR_WRITE_PROTECT : /* when dealing with read-only media/snapshot and trying to write to them */
+	case ERROR_ACCESS_DENIED :         /* in CreateDirectoryW() if dir is scheduled for deletion */
+	case ERROR_CURRENT_DIRECTORY :         /* in RemoveDirectoryW() if removing the current directory */
+	case ERROR_SHARING_VIOLATION :         /* in RemoveDirectoryW() if in use */
+	case ERROR_WRITE_PROTECT :         /* when dealing with read-only media/snapshot and trying to write to them */
 		errno = EACCES;
 		break;
-	case ERROR_ALREADY_EXISTS : /* in CreateDirectoryW() if already exists */
+	case ERROR_ALREADY_EXISTS :         /* in CreateDirectoryW() if already exists */
 		errno = EEXIST;
 		break;
 	case ERROR_DISK_FULL :
@@ -766,14 +565,14 @@ static void windows_errno(DWORD error)
 	case ERROR_NOT_ENOUGH_MEMORY :
 		errno = ENOMEM;
 		break;
-	case ERROR_NOT_SUPPORTED : /* in CreateSymlinkW() if not present in kernel32 */
+	case ERROR_NOT_SUPPORTED :         /* in CreateSymlinkW() if not present in kernel32 */
 		errno = ENOSYS;
 		break;
-	case ERROR_PRIVILEGE_NOT_HELD : /* in CreateSymlinkW() if no SeCreateSymbolicLinkPrivilige permission */
+	case ERROR_PRIVILEGE_NOT_HELD :         /* in CreateSymlinkW() if no SeCreateSymbolicLinkPrivilige permission */
 		errno = EPERM;
 		break;
-	case ERROR_IO_DEVICE : /* in ReadFile() and WriteFile() */
-	case ERROR_CRC : /* in ReadFile() */
+	case ERROR_IO_DEVICE :         /* in ReadFile() and WriteFile() */
+	case ERROR_CRC :         /* in ReadFile() */
 		errno = EIO;
 		break;
 	default :
@@ -1794,7 +1593,7 @@ const char* windows_stat_desc(struct stat* st)
 unsigned windows_sleep(unsigned seconds)
 {
 	while (seconds) {
-		if (global_interrupt) /* SIGINT should stop the sleep */
+		if (app_global_interrupt())         /* SIGINT should stop the sleep */
 			break;
 		Sleep(1000);
 		--seconds;
@@ -1963,18 +1762,6 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	}
 
 	return len;
-}
-
-int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid_size)
-{
-	(void)device_path;
-
-	/* just use the volume serial number returned in the device parameter */
-	snprintf(uuid, uuid_size, "%08x", (unsigned)device_id);
-
-	log_tag("uuid:windows:%u:%s:\n", (unsigned)device_id, uuid);
-
-	return 0;
 }
 
 int filephy(const char* file, uint64_t size, uint64_t* physical)
@@ -2559,7 +2346,7 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	if (wcscmp(fs_name, L"NTFS") == 0)
 		magic = WINDOWS_NTFS_MAGIC;
 	else
-		return -1; /* support only NTFS */
+		return -1;         /* support only NTFS */
 
 	/*
 	 * Obtain the canonical volume name: \\?\Volume{GUID}\
@@ -2620,7 +2407,7 @@ int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat
 
 	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
 	pathcat(link_path, sizeof(link_path), name);
-	pathcat(link_path, sizeof(link_path), SNAPSHOT_GUID); /* we check the GUID as it's the one that matter */
+	pathcat(link_path, sizeof(link_path), SNAPSHOT_GUID);         /* we check the GUID as it's the one that matter */
 
 	/* use lstat because we want to check the link */
 	if (windows_lstat(link_path, st) != 0)
@@ -2793,1015 +2580,6 @@ void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 	 */
 	windows_delete_link(fss, SNAPSHOT_PENDING);
 	windows_delete_link(fss, SNAPSHOT_STABLE);
-}
-
-uint64_t os_tick(void)
-{
-	LARGE_INTEGER t;
-	uint64_t r;
-
-	/*
-	 * Ensure to return a strict monotone os_tick counter.
-	 *
-	 * We had reports of invalid stats due faulty High Precision Event Timer.
-	 * See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a2122fd6/
-	 */
-	windows_mutex_lock(&tick_lock);
-
-	/*
-	 * MSDN 'QueryPerformanceCounter'
-	 * "On systems that run Windows XP or later, the function"
-	 * "will always succeed and will thus never return zero."
-	 */
-	r = 0;
-	if (QueryPerformanceCounter(&t))
-		r = t.QuadPart;
-
-	if (r < tick_last)
-		r = tick_last;
-	tick_last = r;
-
-	windows_mutex_unlock(&tick_lock);
-
-	return r;
-}
-
-uint64_t os_tick_ms(void)
-{
-	return GetTickCount64();
-}
-
-int os_randomize(void* void_ptr, size_t size)
-{
-	size_t i;
-	unsigned char* ptr = void_ptr;
-
-	/* try RtlGenRandom */
-	if (ptr_RtlGenRandom != 0 && ptr_RtlGenRandom(ptr, size) != 0)
-		return 0;
-
-	/* fallback to standard rand */
-	for (i = 0; i < size; ++i)
-		ptr[i] = random_u8();
-
-	return 0;
-}
-
-/**
- * Get the device file from a path inside the device.
- */
-static int devresolve(const char* mount, char* file, size_t file_size, char* wfile, size_t wfile_size)
-{
-	wchar_t conv_buf_mount[CONV_MAX];
-	char conv_buf_volume_guid[CONV_MAX];
-	WCHAR volume_mount[PATH_MAX];
-	WCHAR volume_guid[PATH_MAX];
-	DWORD i;
-	char* p;
-
-	/* get the volume mount point from the disk path */
-	if (!GetVolumePathNameW(convert(conv_buf_mount, mount), volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	/* get the volume GUID path from the mount point */
-	if (!GetVolumeNameForVolumeMountPointW(volume_mount, volume_guid, sizeof(volume_guid) / sizeof(WCHAR))) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	/*
-	 * Remove the final slash, otherwise CreateFile() opens the file-system
-	 * and not the volume
-	 */
-	i = 0;
-	while (volume_guid[i] != 0)
-		++i;
-	if (i != 0 && volume_guid[i - 1] == '\\')
-		volume_guid[i - 1] = 0;
-
-	pathcpy(wfile, wfile_size, u16tou8(conv_buf_volume_guid, volume_guid));
-
-	/* get the GUID start { */
-	p = strchr(wfile, '{');
-	if (!p)
-		p = wfile;
-	else
-		++p;
-
-	pathprint(file, file_size, "/dev/vol%s", p);
-
-	/* cut GUID end } */
-	p = strrchr(file, '}');
-	if (p)
-		*p = 0;
-
-	return 0;
-}
-
-/**
- * Read a device tree filling the specified list of disk_t entries.
- */
-static int devtree(devinfo_t* parent, tommy_list* list)
-{
-	wchar_t conv_buf[CONV_MAX];
-	HANDLE h;
-	unsigned char vde_buffer[sizeof(VOLUME_DISK_EXTENTS)];
-	VOLUME_DISK_EXTENTS* vde = (VOLUME_DISK_EXTENTS*)&vde_buffer;
-	unsigned vde_size = sizeof(vde_buffer);
-	void* vde_alloc = 0;
-	BOOL ret;
-	DWORD n;
-	DWORD i;
-
-	/* open the volume */
-	h = CreateFileW(convert(conv_buf, parent->wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	/* get the physical extents of the volume */
-	ret = DeviceIoControl(h, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, vde, vde_size, &n, 0);
-	if (!ret) {
-		DWORD error = GetLastError();
-		if (error != ERROR_MORE_DATA) {
-			CloseHandle(h);
-			windows_errno(error);
-			return -1;
-		}
-
-		/* more than one extends, allocate more space */
-		vde_size = sizeof(VOLUME_DISK_EXTENTS) + vde->NumberOfDiskExtents * sizeof(DISK_EXTENT);
-		vde_alloc = malloc_nofail(vde_size);
-		vde = vde_alloc;
-
-		/* retry with more space */
-		ret = DeviceIoControl(h, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, vde, vde_size, &n, 0);
-	}
-	if (!ret) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		free(vde_alloc);
-		windows_errno(error);
-		return -1;
-	}
-
-	for (i = 0; i < vde->NumberOfDiskExtents; ++i) {
-		devinfo_t* devinfo;
-
-		devinfo = calloc_nofail(1, sizeof(devinfo_t));
-
-		pathcpy(devinfo->name, sizeof(devinfo->name), parent->name);
-		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), parent->smartctl);
-		memcpy(devinfo->smartignore, parent->smartignore, sizeof(devinfo->smartignore));
-		devinfo->device = vde->Extents[i].DiskNumber;
-		pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
-		pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
-		devinfo->parent = parent;
-
-		/* insert in the list */
-		tommy_list_insert_tail(list, &devinfo->node, devinfo);
-	}
-
-	if (!CloseHandle(h)) {
-		windows_errno(GetLastError());
-		free(vde_alloc);
-		return -1;
-	}
-
-	free(vde_alloc);
-
-	return 0;
-}
-
-/**
- * Compute disk usage by aggregating access statistics.
- *
- * On many Windows versions, these raw disk performance counters are disabled by default to save overhead.
- *
- * If DeviceIoControl call with IOCTL_DISK_PERFORMANCE returns zeros or fails, the counters are likely disabled.
- *
- * Run the following command from an elevated command prompt:
- *
- *   diskperf -y
- *
- * This change usually requires a reboot to take effect at the driver level.
- */
-static int devstat(uint64_t device, const char* name, const char* wfile, uint64_t* count)
-{
-	wchar_t conv_buf[CONV_MAX];
-	HANDLE h;
-	BOOL ret;
-	DISK_PERFORMANCE ds;
-	DWORD bytes;
-	char file[128];
-
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		DWORD error = GetLastError();
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	bytes = 0;
-	ret = DeviceIoControl(h, IOCTL_DISK_PERFORMANCE, NULL, 0, &ds, sizeof(ds), &bytes, NULL);
-	if (!ret) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	if (!CloseHandle(h)) {
-		DWORD error = GetLastError();
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	*count = ds.ReadCount + ds.WriteCount;
-
-	return 0;
-}
-
-/**
- * Get SMART attributes.
- */
-static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
-{
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + 128];
-	char file[128];
-	FILE* f;
-	int ret;
-	int count;
-
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	/* if there is a custom smartctl command */
-	if (smartctl[0]) {
-		char option[128];
-		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", exedir, option);
-	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", exedir, file);
-	}
-
-	count = 0;
-
-retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
-
-	f = _wpopen(cmd, L"rt");
-	if (!f) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, inter) != 0) {
-		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	ret = pclose(f);
-
-	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
-
-	if (ret == -1) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* if first try without custom smartctl command */
-	if (count == 0 && smartctl[0] == 0) {
-		/*
-		 * Handle some common cases in Windows.
-		 *
-		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
-		 * stage, returning with error 2, or even with error 0, and with no info at all.
-		 * We detect this condition checking the PowerOnHours, Size and RotationRate attributes.
-		 *
-		 * In such conditions we retry using the "sat" type, that often allows to proceed.
-		 *
-		 * Note that getting error 4 is instead very common, even with full info gathering.
-		 */
-		if ((ret == 0 || ret == 2)
-			&& smart[SMART_POWER_ON_HOURS].raw == SMART_UNASSIGNED
-			&& info[INFO_SIZE] == SMART_UNASSIGNED
-			&& info[INFO_ROTATION_RATE] == SMART_UNASSIGNED
-		) {
-			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a -d sat %s", exedir, file);
-
-			++count;
-			goto retry;
-		}
-	}
-
-	/* store the smartctl return value */
-	smart[SMART_FLAGS].raw = ret;
-
-	return 0;
-}
-
-static int serial_descriptor(PSTORAGE_DEVICE_DESCRIPTOR descriptor, size_t size, char* output, size_t output_size)
-{
-	if (descriptor->SerialNumberOffset == 0
-		|| descriptor->SerialNumberOffset == (DWORD)-1
-		|| descriptor->SerialNumberOffset >= size)
-		return -1;
-
-	const char* raw = (const char*)descriptor + descriptor->SerialNumberOffset;
-	size_t len = 0;
-
-	/* find the length, not assuming a 0 ending */
-	while (descriptor->SerialNumberOffset + len < size && raw[len] != 0)
-		++len;
-
-	if (len < 6) /* a serial cannot be so short */
-		return -1;
-
-	if (len + 1 > output_size)
-		return -1;
-
-	/* all must be printable */
-	for (size_t i = 0; i < len; ++i) {
-		if (!isprint((unsigned char)raw[i]))
-			return -1;
-	}
-
-	memcpy(output, raw, len);
-	output[len] = 0;
-
-	strtrim(output);
-
-	return 0;
-}
-
-static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
-{
-	STORAGE_PROPERTY_QUERY query = { 0 };
-	STORAGE_DESCRIPTOR_HEADER header = { 0 };
-	DWORD bytes;
-
-	query.PropertyId = StorageDeviceProperty;
-	query.QueryType = PropertyStandardQuery;
-	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &header, sizeof(header), &bytes, 0))
-		return;
-	if (header.Size == 0)
-		return;
-
-	/* allocate buffer and query full descriptor */
-	BYTE* buffer = malloc(header.Size);
-	if (!buffer)
-		return;
-
-	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), buffer, header.Size, &bytes, 0)) {
-		free(buffer);
-		return;
-	}
-
-	STORAGE_DEVICE_DESCRIPTOR* desc = (STORAGE_DEVICE_DESCRIPTOR*)buffer;
-
-	/* extract strings (offsets are from start of descriptor) */
-	if (model && *model == 0 && desc->ProductIdOffset) {
-		snprintf(model, SMART_MAX, "%s", (char*)(buffer + desc->ProductIdOffset));
-		strtrim(model);
-	}
-
-	if (serial && *serial == 0) {
-		/*
-		 * This is the RAW serial, maybe HEX encoded, maybe BYTES SWAPPED,
-		 * but we don't care because we just need any identifier.
-		 *
-		 * If smartctl was not able to read it, we now accept anything.
-		 */
-		serial_descriptor(desc, bytes, serial, SMART_MAX);
-	}
-
-#define BusTypeVirtual            0x0E
-#define BusTypeFileBackedVirtual  0x0F
-#define BusTypeSpaces             0x10
-#define BusTypeNvme               0x11
-#define BusTypeSCM                0x12
-#define BusTypeUfs                0x13
-#define BusTypeNvmeof             0x14
-
-	/* always override interface as more detailed than smartctl */
-	const char* type = 0;
-	switch ((int)desc->BusType) { /* cast to int to avoid warnings about enum unlisted */
-	case BusTypeScsi : type = "SCSI"; break;
-	case BusTypeAtapi : type = "ATAPI"; break;
-	case BusTypeAta : type = "ATA"; break;
-	case BusType1394 : type = "FireWire"; break;
-	case BusTypeSsa : type = "SSA"; break;
-	case BusTypeFibre : type = "Fibre"; break;
-	case BusTypeUsb : type = "USB"; break;
-	case BusTypeRAID : type = "RAID"; break;
-	case BusTypeiScsi : type = "iSCSI"; break;
-	case BusTypeSas : type = "SAS"; break;
-	case BusTypeSata : type = "SATA"; break;
-	case BusTypeSd : type = "SD"; break;
-	case BusTypeMmc : type = "MMC"; break;
-	case BusTypeVirtual : type = "Virtual"; break;
-	case BusTypeFileBackedVirtual : type = "Virtual"; break;
-	case BusTypeSpaces : type = "Storage Spaces"; break;
-	case BusTypeNvme : type = "NVMe"; break;
-	case BusTypeSCM : type = "SCM"; break;
-	case BusTypeUfs : type = "UFS"; break;
-	case BusTypeNvmeof : type = "NVMe"; break;
-	default :
-	}
-	if (inter && type)
-		snprintf(inter, SMART_MAX, "%s", type);
-
-	free(buffer);
-}
-
-static void devattr_size(HANDLE h, uint64_t* size)
-{
-	DISK_GEOMETRY_EX geom = { 0 };
-	DWORD bytes;
-	if (!DeviceIoControl(h, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, &geom, sizeof(geom), &bytes, 0))
-		return;
-
-	*size = geom.DiskSize.QuadPart;
-}
-
-static void devattr_rotational(HANDLE h, uint64_t* rotational)
-{
-	STORAGE_PROPERTY_QUERY query = { 0 };
-	DEVICE_SEEK_PENALTY_DESCRIPTOR desc = { 0 };
-	DWORD bytes;
-
-	query.PropertyId = StorageDeviceSeekPenaltyProperty;
-	query.QueryType = PropertyStandardQuery;
-	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &desc, sizeof(desc), &bytes, 0))
-		return;
-	if (bytes < sizeof(desc))
-		return;
-	if (desc.Version != sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR) || desc.Size != sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR))
-		return;
-
-	*rotational = desc.IncursSeekPenalty ? 1 : 0;
-}
-
-/**
- * Get device attributes.
- */
-static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* family, char* model, char* interf)
-{
-	HANDLE h;
-	wchar_t conv_buf[CONV_MAX];
-	char file[128];
-
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	(void)family; /* not available, smartctl uses an internal database to get it */
-
-	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		DWORD error = GetLastError();
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return;
-	}
-
-	if (info[INFO_SIZE] == SMART_UNASSIGNED)
-		devattr_size(h, &info[INFO_SIZE]);
-
-	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED)
-		devattr_rotational(h, &info[INFO_ROTATION_RATE]);
-
-	if (*model == 0 || *serial == 0)
-		devattr_property(h, serial, model, interf);
-
-	if (!CloseHandle(h)) {
-		DWORD error = GetLastError();
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return;
-	}
-}
-
-/**
- * Get POWER state
- */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
-{
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + 128];
-	char file[128];
-	FILE* f;
-	int ret;
-	int count;
-
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	/* if there is a custom smartctl command */
-	if (smartctl[0]) {
-		char option[128];
-		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a %s", exedir, option);
-	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a %s", exedir, file);
-	}
-
-	count = 0;
-
-retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
-
-	f = _wpopen(cmd, L"rt");
-	if (!f) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interf) != 0) {
-		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	ret = pclose(f);
-
-	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
-
-	if (ret == -1) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* if first try without custom smartctl command */
-	if (count == 0 && smartctl[0] == 0) {
-		/*
-		 * Handle some common cases in Windows.
-		 *
-		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
-		 * stage, returning with error 2.
-		 *
-		 * In such conditions we retry using the "sat" type, that often allows to proceed.
-		 */
-		if (ret == 2) {
-			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a -d sat %s", exedir, file);
-
-			++count;
-			goto retry;
-		}
-	}
-
-	if (ret == 3) {
-		log_tag("attr:%s:%s:power:standby\n", file, name);
-		*power = POWER_STANDBY;
-	} else {
-		log_tag("attr:%s:%s:power:active\n", file, name);
-		*power = POWER_ACTIVE;
-
-		/* store the smartctl return value */
-		if (smart)
-			smart[SMART_FLAGS].raw = ret;
-	}
-
-	return 0;
-}
-
-/**
- * Spin down a specific device.
- */
-static int devdown(uint64_t device, const char* name, const char* smartctl)
-{
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + 128];
-	char file[128];
-	FILE* f;
-	int ret;
-	int count;
-
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	/* if there is a custom smartctl command */
-	if (smartctl[0]) {
-		char option[128];
-		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", exedir, option);
-	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", exedir, file);
-	}
-
-	count = 0;
-
-retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
-
-	f = _wpopen(cmd, L"rt");
-	if (!f) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (smartctl_flush(f, file, name) != 0) {
-		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	ret = pclose(f);
-
-	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
-
-	if (ret == -1) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* if first try without custom smartctl command */
-	if (count == 0 && smartctl[0] == 0) {
-		/*
-		 * Handle some common cases in Windows.
-		 *
-		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
-		 * stage, returning with error 2.
-		 *
-		 * In such conditions we retry using the "sat" type, that often allows to proceed.
-		 */
-		if (ret == 2) {
-			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now -d sat %s", exedir, file);
-
-			++count;
-			goto retry;
-		}
-	}
-
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:exit:%d\n", file, name, ret);
-		log_fatal(errno, "Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	log_tag("attr:%s:%s:power:down\n", file, name);
-
-	return 0;
-}
-
-/**
- * Spin down a specific device if it's up
- */
-static int devdownifup(uint64_t device, const char* name, const char* smartctl, int* power)
-{
-	*power = POWER_UNKNOWN;
-
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0, 0) != 0)
-		return -1;
-
-	if (*power == POWER_ACTIVE)
-		return devdown(device, name, smartctl);
-
-	return 0;
-}
-
-/**
- * Spin up a device.
- */
-static int devup(uint64_t device, const char* name, const char* wfile)
-{
-	wchar_t conv_buf[CONV_MAX];
-	HANDLE h;
-	BOOL ret;
-	DISK_GEOMETRY dg;
-	DWORD bytes;
-	void* buffer;
-	char file[128];
-
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		DWORD error = GetLastError();
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	bytes = 0;
-	ret = DeviceIoControl(h, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &dg, sizeof(dg), &bytes, NULL);
-	if (!ret) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	buffer = VirtualAlloc(NULL, dg.BytesPerSector, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	if (!buffer) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	bytes = 0;
-	if (!ReadFile(h, buffer, dg.BytesPerSector, &bytes, NULL)) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		VirtualFree(buffer, 0, MEM_RELEASE);
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	if (!CloseHandle(h)) {
-		DWORD error = GetLastError();
-		VirtualFree(buffer, 0, MEM_RELEASE);
-		windows_errno(error);
-		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return -1;
-	}
-
-	VirtualFree(buffer, 0, MEM_RELEASE);
-
-	log_tag("attr:%s:%s:power:up\n", file, name);
-
-	return 0;
-}
-
-/**
- * Thread for spinning up.
- */
-static void* thread_spinup(void* arg)
-{
-	devinfo_t* devinfo = arg;
-	uint64_t start;
-
-	start = os_tick_ms();
-
-	if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
-
-	/* after the spin up, get SMART info */
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/*
-	 * Retrieve some attributes directly from the system.
-	 *
-	 * smartctl intentionally skips queries on devices in standby mode
-	 * to prevent accidentally spinning them up.
-	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
-
-	return 0;
-}
-
-/**
- * Thread for spinning down.
- */
-static void* thread_spindown(void* arg)
-{
-	devinfo_t* devinfo = arg;
-	uint64_t start;
-
-	start = os_tick_ms();
-
-	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
-
-	return 0;
-}
-
-/**
- * Thread for spinning down.
- */
-static void* thread_spindownifup(void* arg)
-{
-	devinfo_t* devinfo = arg;
-	uint64_t start;
-	int power;
-
-	start = os_tick_ms();
-
-	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, &power) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (power == POWER_ACTIVE)
-		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
-
-	return 0;
-}
-
-/**
- * Thread for getting smart info.
- */
-static void* thread_smart(void* arg)
-{
-	devinfo_t* devinfo = arg;
-
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/*
-	 * Retrieve some attributes directly from the system.
-	 *
-	 * smartctl intentionally skips queries on devices in standby mode
-	 * to prevent accidentally spinning them up.
-	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
-
-	return 0;
-}
-
-/**
- * Thread for getting power info.
- */
-static void* thread_probe(void* arg)
-{
-	devinfo_t* devinfo = arg;
-
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/*
-	 * Retrieve some attributes directly from the system.
-	 *
-	 * smartctl intentionally skips queries on devices in standby mode
-	 * to prevent accidentally spinning them up.
-	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
-
-	return 0;
-}
-
-static int device_thread(tommy_list* list, void* (*func)(void* arg))
-{
-	int fail = 0;
-	tommy_node* i;
-
-	/* starts all threads */
-	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		devinfo_t* devinfo = i->data;
-
-		thread_create(&devinfo->thread, func, devinfo);
-	}
-
-	/* joins all threads */
-	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		devinfo_t* devinfo = i->data;
-		void* retval;
-
-		thread_join(devinfo->thread, &retval);
-
-		if (retval != 0)
-			++fail;
-	}
-
-	if (fail != 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	return 0;
-}
-
-int devquery(tommy_list* high, tommy_list* low, int operation)
-{
-	tommy_node* i;
-	void* (*func)(void* arg) = 0;
-
-	/* for each device */
-	for (i = tommy_list_head(high); i != 0; i = i->next) {
-		devinfo_t* devinfo = i->data;
-		uint64_t access_stat;
-
-		if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to resolve path '%s'.\n", devinfo->mount);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* retrieve access stat for the high level device */
-		if (devstat(devinfo->device, devinfo->name, devinfo->wfile, &access_stat) == 0) {
-			/* cumulate access stat in the first split */
-			if (devinfo->split)
-				devinfo->split->access_stat += access_stat;
-			else
-				devinfo->access_stat += access_stat;
-		}
-
-		/* expand the tree of devices */
-		if (devtree(devinfo, low) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to expand device '%s'.\n", devinfo->file);
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
-	switch (operation) {
-	case DEVICE_UP : func = thread_spinup; break;
-	case DEVICE_DOWN : func = thread_spindown; break;
-	case DEVICE_SMART : func = thread_smart; break;
-	case DEVICE_PROBE : func = thread_probe; break;
-	case DEVICE_DOWNIFUP : func = thread_spindownifup; break;
-	}
-
-	if (!func)
-		return 0;
-
-	return device_thread(low, func);
-}
-
-int devmap(void)
-{
-	for (int i = 0; i < 32; i++) {
-		char wfile[PATH_MAX];
-		wchar_t conv_buf[CONV_MAX];
-		pathprint(wfile, sizeof(wfile), "\\\\.\\PhysicalDrive%d", i);
-		HANDLE h;
-
-		/* open the volume */
-		h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-		if (h == INVALID_HANDLE_VALUE) {
-			DWORD error = GetLastError();
-			if (error != ERROR_FILE_NOT_FOUND)
-				log_tag("enumeration:/dev/pd%d::error:%lu\n", i, error);
-			continue;
-		}
-
-		char serial[SMART_MAX];
-		serial[0] = 0;
-		devattr_property(h, serial, 0, 0);
-		if (serial[0]) {
-			log_tag("map:/dev/pd%d:%s\n", i, esc_tag(serial));
-		}
-
-		CloseHandle(h);
-	}
-
-	return 0;
 }
 
 /****************************************************************************/
@@ -4028,9 +2806,210 @@ int windows_join(thread_id_t thread, void** retval)
 	return 0;
 }
 
-int ambient_temperature(void)
+/****************************************************************************/
+/* os */
+
+char* os_fgets(char* s, int size, OS_FILE* stream)
 {
+	return fgets(s, size, stream);
+}
+
+void os_clear(void)
+{
+	HANDLE console;
+	CONSOLE_SCREEN_BUFFER_INFO screen;
+	COORD coord;
+	DWORD written;
+
+	/* get the console */
+	console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (console == INVALID_HANDLE_VALUE)
+		return;
+
+	/* get the screen size */
+	if (!GetConsoleScreenBufferInfo(console, &screen))
+		return;
+
+	/* fill the screen with spaces */
+	coord.X = 0;
+	coord.Y = 0;
+	FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, coord, &written);
+
+	/* set the cursor at the top left corner */
+	SetConsoleCursorPosition(console, coord);
+}
+
+uint64_t os_tick(void)
+{
+	LARGE_INTEGER t;
+	uint64_t r;
+
+	/*
+	 * Ensure to return a strict monotone os_tick counter.
+	 *
+	 * We had reports of invalid stats due faulty High Precision Event Timer.
+	 * See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a2122fd6/
+	 */
+	windows_mutex_lock(&tick_lock);
+
+	/*
+	 * MSDN 'QueryPerformanceCounter'
+	 * "On systems that run Windows XP or later, the function"
+	 * "will always succeed and will thus never return zero."
+	 */
+	r = 0;
+	if (QueryPerformanceCounter(&t))
+		r = t.QuadPart;
+
+	if (r < tick_last)
+		r = tick_last;
+	tick_last = r;
+
+	windows_mutex_unlock(&tick_lock);
+
+	return r;
+}
+
+uint64_t os_tick_ms(void)
+{
+	return GetTickCount64();
+}
+
+int os_randomize(void* void_ptr, size_t size)
+{
+	size_t i;
+	unsigned char* ptr = void_ptr;
+
+	/* try RtlGenRandom */
+	if (ptr_RtlGenRandom != 0 && ptr_RtlGenRandom(ptr, size) != 0)
+		return 0;
+
+	/* fallback to standard rand */
+	for (i = 0; i < size; ++i)
+		ptr[i] = random_u8();
+
 	return 0;
+}
+
+void os_abort(void)
+{
+	void* stack[32];
+	size_t size;
+	unsigned i;
+
+	printf("Stacktrace of " PACKAGE " v" VERSION);
+	printf(", mingw");
+#ifdef __GNUC__
+	printf(", gcc " __VERSION__);
+#endif
+	printf(", %d-bit", (int)sizeof(void*) * 8);
+	printf(", PATH_MAX=%d", PATH_MAX);
+	printf("\n");
+
+	/* get stackstrace, but without symbols */
+	size = CaptureStackBackTrace(0, 32, stack, NULL);
+
+	for (i = 0; i < size; ++i)
+		printf("[bt] %02u: %p\n", i, stack[i]);
+
+	printf("Please report this error to the SnapRAID Issues:\n");
+	printf("https://github.com/amadvance/snapraid/issues\n");
+
+	/* use exit() and not abort to avoid the Windows abort dialog */
+	exit(EXIT_FAILURE);
+}
+
+/**
+ * Set the executable dir.
+ */
+static void exedir_init(void)
+{
+	DWORD size;
+	WCHAR* slash;
+
+	size = GetModuleFileNameW(0, exedir, PATH_MAX);
+	if (size == 0 || size == PATH_MAX) {
+		/* use empty dir */
+		exedir[0] = 0;
+		return;
+	}
+
+	slash = wcsrchr(exedir, L'\\');
+	if (!slash) {
+		/* use empty dir */
+		exedir[0] = 0;
+		return;
+	}
+
+	/* cut exe name */
+	slash[1] = 0;
+}
+
+void os_init(int opt)
+{
+	HMODULE ntdll, kernel32;
+
+	is_scan_winfind = opt != 0;
+
+	/* initialize the thread local storage for strerror(), using free() as destructor */
+	if (windows_key_create(&last_error, free) != 0) {
+		log_fatal(EEXTERNAL, "Error calling windows_key_create().\n");
+		exit(EXIT_FAILURE);
+	}
+
+	tick_last = 0;
+	if (windows_mutex_init(&tick_lock, 0) != 0) {
+		log_fatal(EEXTERNAL, "Error calling windows_mutex_init().\n");
+		exit(EXIT_FAILURE);
+	}
+
+	ntdll = GetModuleHandle("NTDLL.DLL");
+	if (!ntdll) {
+		log_fatal(EEXTERNAL, "Error loading the NTDLL module.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	kernel32 = GetModuleHandle("KERNEL32.DLL");
+	if (!kernel32) {
+		log_fatal(EEXTERNAL, "Error loading the KERNEL32 module.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
+	if (!dll_advapi32) {
+		log_fatal(EEXTERNAL, "Error loading the ADVAPI32 module.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* check for Wine presence */
+	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
+
+	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
+	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
+
+	/*
+	 * Set the thread execution level to avoid sleep
+	 * first try for Windows 7
+	 */
+	if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
+		/* retry with the XP variant */
+		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
+	}
+
+	exedir_init();
+}
+
+void os_done(void)
+{
+	/* delete the thread local storage for strerror() */
+	windows_key_delete(last_error);
+
+	windows_mutex_destroy(&tick_lock);
+
+	/* restore the normal execution level */
+	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
+
+	FreeLibrary(dll_advapi32);
 }
 
 #endif
