@@ -12,6 +12,41 @@
 #define strncasecmp _strnicmp
 
 /****************************************************************************/
+/* conversion */
+
+/**
+ * Size in chars of conversion buffers for u8to16() and u16to8().
+ */
+#define CONV_MAX PATH_MAX
+
+/**
+ * Convert a path to the Windows format.
+ *
+ * If only_is_required is 1, the extended-length format is used only if required.
+ *
+ * The exact operation done is:
+ * - If it's a '\\?\' or '\\.\' path, convert any '/' to '\'.
+ * - If it's a disk designator path, like 'D:\' or 'D:/', it prepends '\\?\' to the path and convert any '/' to '\'.
+ * - If it's a UNC path, like ''\\server'', it prepends '\\?\UNC\' to the path and convert any '/' to '\'.
+ * - Otherwise, only the UTF conversion is done. In this case Windows imposes a limit of 260 chars, and automatically convert any '/' to '\'.
+ *
+ * For more details see:
+ * Naming Files, Paths, and Namespaces
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
+ */
+wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required);
+
+#define convert(buf, a) convert_arg(buf, a, 0)
+#define convert_if_required(buf, a) convert_arg(buf, a, 1)
+
+char* u16tou8(char* conv_buf, const wchar_t* src);
+
+/**
+ * Convert a generic string from UTF8 to UTF16.
+ */
+wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
+
+/****************************************************************************/
 /* file */
 
 /**
@@ -389,6 +424,23 @@ int windows_get_file_attributes(const char* file);
  * Like SetFileAttributes()
  */
 int windows_set_file_attributes(const char* file, int attributes);
+
+/**
+ * Convert Windows error to errno.
+ */
+void windows_errno(DWORD error);
+
+/**
+ * Return the executable directory.
+ *
+ * Ends with \
+ */
+const wchar_t* windows_exedir(void);
+
+/**
+ * Return if we are in the Wine environment.
+ */
+int windows_is_wine(void);
 
 /****************************************************************************/
 /* thread */
