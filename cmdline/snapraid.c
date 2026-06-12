@@ -3,6 +3,7 @@
 
 #include "portable.h"
 
+#include "os.h"
 #include "snapraid.h"
 #include "support.h"
 #include "elem.h"
@@ -951,7 +952,7 @@ int snapraid_main(int argc, char* argv[])
 	lock_init();
 
 	/* defaults */
-	os_default_conf(conf, sizeof(conf), argv[0]);
+	app_default_conf(conf, sizeof(conf), argv[0]);
 	memset(&opt, 0, sizeof(opt));
 	opt.io_error_limit = 100;
 	blockstart = 0;
@@ -1413,18 +1414,21 @@ int snapraid_main(int argc, char* argv[])
 	}
 
 	os_init(opt.force_scan_winfind);
+	app_init();
 	raid_init();
 	crc32c_init();
 	random_reseed();
 
 	if (speedtest != 0) {
 		speed(speed_test_period, speed_test_disks_number, speed_test_blocks_size);
+		app_done();
 		os_done();
 		exit(EXIT_SUCCESS);
 	}
 
 	if (gen_conf != 0) {
 		generate_configuration(gen_conf);
+		app_done();
 		os_done();
 		exit(EXIT_SUCCESS);
 	}
@@ -1820,7 +1824,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 #if HAVE_CHECKER
 		/* run a test command if required */
@@ -1873,7 +1877,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 		ret = state_dry(&state, blockstart, blockcount);
 	} else if (operation == OPERATION_REHASH) {
@@ -1889,7 +1893,7 @@ int snapraid_main(int argc, char* argv[])
 		 * The signal protection is meant only for saving the content file,
 		 * or an early stop of long operations.
 		 */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 		/* save the new state if required */
 		if (state.need_write)
@@ -1903,7 +1907,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 		state_snapshot_read(&state);
 
@@ -1916,7 +1920,7 @@ int snapraid_main(int argc, char* argv[])
 		state_read(&state);
 
 		/* intercept signals while operating */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 		state_write(&state);
 
@@ -1942,7 +1946,7 @@ int snapraid_main(int argc, char* argv[])
 		 * The signal protection is meant only for saving the content file,
 		 * or an early stop of long operations.
 		 */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 		if (state.need_write)
 			state_write(&state);
@@ -2031,7 +2035,7 @@ int snapraid_main(int argc, char* argv[])
 		memory();
 
 		/* intercept signals while operating */
-		os_signal_init();
+		os_signal_init(app_signal_handler, app_signal_handler);
 
 		state_snapshot_write(&state, &filterlist_disk);
 
@@ -2073,6 +2077,7 @@ int snapraid_main(int argc, char* argv[])
 	tommy_list_foreach(&filterlist_file, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
 
+	app_done();
 	os_done();
 	lock_done();
 
@@ -2082,19 +2087,19 @@ int snapraid_main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (os_global_interrupt()) {
+	if (app_global_interrupt()) {
 		/* LCOV_EXCL_START */
 #ifdef _WIN32
 		exit(STATUS_CONTROL_C_EXIT);
 #else
 		/* restore default handler */
-		signal(os_global_interrupt(), SIG_DFL);
+		signal(app_global_interrupt(), SIG_DFL);
 
 		/* raise the signal again*/
-		raise(os_global_interrupt());
+		raise(app_global_interrupt());
 
 		/* if raise() didn't terminate */
-		_exit(128 + os_global_interrupt());
+		_exit(128 + app_global_interrupt());
 #endif
 		/* LCOV_EXCL_STOP */
 	}
