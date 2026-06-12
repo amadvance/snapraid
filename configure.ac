@@ -7,7 +7,7 @@ AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
-AC_CONFIG_SRCDIR([cmdline/snapraid.c])
+AC_CONFIG_SRCDIR([cmdline/portable.h])
 AC_CONFIG_HEADERS([config.h])
 
 dnl Enables as many system-specific extensions as reasonably possible
