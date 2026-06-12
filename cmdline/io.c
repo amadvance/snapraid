@@ -767,7 +767,7 @@ static void* io_reader_thread(void* arg)
 
 		if (task->state != TASK_STATE_READY) {
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Internal inconsistency: Unexpected state %d in reader for task at position %u in worker %u\n", task->state, task->position, worker->index);
+			log_fatal(EINTERNAL, "Internal inconsistency: Unexpected state %d in reader for task at position %" PRIu64 " in worker %u\n", task->state, task->position, worker->index);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -802,7 +802,7 @@ static void* io_writer_thread(void* arg)
 
 		if (task->state != TASK_STATE_READY) {
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Internal inconsistency: Unexpected state %d in writer for task at position %u in worker %u\n", task->state, task->position, worker->index);
+			log_fatal(EINTERNAL, "Internal inconsistency: Unexpected state %d in writer for task at position %" PRIu64 " in worker %u\n", task->state, task->position, worker->index);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
