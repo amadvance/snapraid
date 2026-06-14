@@ -410,7 +410,6 @@ static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
 #define BusTypeUfs                0x13
 #define BusTypeNvmeof             0x14
 
-	/* always override interface as more detailed than smartctl */
 	const char* type = 0;
 	switch ((int)desc->BusType) { /* cast to int to avoid warnings about enum unlisted */
 	case BusTypeScsi : type = "SCSI"; break;
@@ -435,7 +434,7 @@ static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
 	case BusTypeNvmeof : type = "NVMe"; break;
 	default :
 	}
-	if (inter && type)
+	if (inter && type) /* always override interface as more detailed than smartctl */
 		snprintf(inter, SMART_MAX, "%s", type);
 
 	free(buffer);
@@ -483,7 +482,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 	(void)family; /* not available, smartctl uses an internal database to get it */
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
+	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		windows_errno(error);
@@ -494,11 +493,16 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 	if (info[INFO_SIZE] == SMART_UNASSIGNED)
 		devattr_size(h, &info[INFO_SIZE]);
 
+	if (*model == 0 || *serial == 0 || *interf == 0)
+		devattr_property(h, serial, model, interf);
+
+	/* set NVMe as not rotational */
+	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED && strcasecmp(interf, "nvme") == 0)
+		info[INFO_ROTATION_RATE] = 0;
+
+	/* set SSD as not rotational */
 	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED)
 		devattr_rotational(h, &info[INFO_ROTATION_RATE]);
-
-	if (*model == 0 || *serial == 0)
-		devattr_property(h, serial, model, interf);
 
 	if (!CloseHandle(h)) {
 		DWORD error = GetLastError();
@@ -506,6 +510,54 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
 		return;
 	}
+}
+
+/**
+ * Check if the device needs power management (it's a rotational one)
+ */
+static int devpower(uint64_t device, const char* name, const char* wfile)
+{
+	HANDLE h;
+	wchar_t conv_buf[CONV_MAX];
+	char file[128];
+	uint64_t rotational;
+	char interf[SMART_MAX];
+
+	rotational = SMART_UNASSIGNED;
+	interf[0] = 0;
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
+
+	/* open the volume */
+	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return 0; /* assume not rotational */
+	}
+
+	/* get the interface */
+	devattr_property(h, 0, 0, interf);
+
+	/* set NVMe as not rotational */
+	if (strcasecmp(interf, "nvme") == 0)
+		rotational = 0;
+
+	/* set SSD as not rotational */
+	if (rotational == SMART_UNASSIGNED)
+		devattr_rotational(h, &rotational);
+
+	if (!CloseHandle(h)) {
+		DWORD error = GetLastError();
+		windows_errno(error);
+		log_tag("device:%s:%s:error:%lu\n", file, name, error);
+		return 0; /* assume not rotational */
+	}
+
+	if (rotational == SMART_UNASSIGNED)
+		return 0; /* assume not rotational */
+
+	return rotational != 0;
 }
 
 /**
@@ -780,6 +832,10 @@ static void* thread_spinup(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 
+	/* skip not rotational devices */
+	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
+		return (void*)-1;
+
 	start = os_tick_ms();
 
 	if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
@@ -815,6 +871,10 @@ static void* thread_spindown(void* arg)
 {
 	devinfo_t* devinfo = arg;
 	uint64_t start;
+
+	/* skip not rotational devices */
+	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
+		return (void*)-1;
 
 	start = os_tick_ms();
 
@@ -990,9 +1050,14 @@ int devmap(void)
 		HANDLE h;
 
 		/* open the volume */
-		h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
-		if (h == INVALID_HANDLE_VALUE)
+		h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+		if (h == INVALID_HANDLE_VALUE) {
+			DWORD error = GetLastError();
+			if (error != ERROR_FILE_NOT_FOUND)
+				log_tag("enumeration:/dev/pd%d::error:%lu\n", i, error);
 			continue;
+		}
+
 		char serial[SMART_MAX];
 		serial[0] = 0;
 		devattr_property(h, serial, 0, 0);
