@@ -2485,6 +2485,7 @@ int smartctl_attribute(OS_FILE* f, const char* file, const char* name, struct sm
  */
 		} else if (smatch(s, "NVMe Version:") == 0) {
 			strcpy(inter, "NVMe");
+			info[INFO_ROTATION_RATE] = 0;
 			/* special entries */
 		} else if (snumber(s, "Media and Data Integrity Errors:", &raw) == 1) {
 			smart[SMART_ERROR_MEDIUM].raw = raw;
