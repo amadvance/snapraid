@@ -3219,6 +3219,34 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, int
 #endif
 
 /**
+ * Check if the device needs power management (it's a rotational one)
+ */
+#if HAVE_LINUX_DEVICE
+static int devpower(dev_t device)
+{
+	char path[PATH_MAX];
+	char buf[512];
+	uint64_t rotational;
+
+	rotational = SMART_UNASSIGNED;
+
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/queue/rotational", major(device), minor(device));
+	if (sysattr(path, buf, sizeof(buf)) == 0) {
+		char* e;
+		uint64_t v;
+		v = strtoul(buf, &e, 10);
+		if (*e == 0)
+			rotational = v;
+	}
+
+	if (rotational == SMART_UNASSIGNED)
+		return 0; /* assume not rotational */
+
+	return rotational != 0;
+}
+#endif
+
+/**
  * Spin up a specific device.
  */
 #if HAVE_LINUX_DEVICE
@@ -3329,6 +3357,10 @@ static void* thread_spinup(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 
+	/* skip not rotational devices */
+	if (devpower(devinfo->device) == 0)
+		return (void*)-1;
+
 	start = os_tick_ms();
 
 	if (devup(devinfo->device, devinfo->name) != 0) {
@@ -3369,6 +3401,10 @@ static void* thread_spindown(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 	uint64_t start;
+
+	/* skip not rotational devices */
+	if (devpower(devinfo->device) == 0)
+		return (void*)-1;
 
 	start = os_tick_ms();
 
