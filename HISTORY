@@ -32,6 +32,8 @@ SnapRAID HISTORY
    will be slower, this change preserves hash data in the content file
    to ensure a better fix during disk failures and allows the --import
    option to remain functional even after an incomplete sync.
+ * Skip spin-up and spin-down operations for non-rotational devices
+   (like SSDs and NVMe drives) on Linux and Windows.
  * Added --with-smartctl, --with-zfs, --with-zpool, --with-bcachefs
    configure options to allow pinning the absolute path of each tool at
    build time. When not specified, the existing runtime discovery
