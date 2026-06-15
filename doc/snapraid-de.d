@@ -1465,6 +1465,9 @@ Configuration
 	Gerätenamen ersetzt. Bei RAID-Controllern ist das Gerät
 	wahrscheinlich fest, und Sie müssen `%s` möglicherweise nicht verwenden.
 
+	Sie können auch eine benutzerdefinierte Info-Optionszeichenfolge mit dem
+	Tag `[info: ...]` angeben, um die Standardoption `-a` zu ersetzen.
+
 	Weitere mögliche Optionen finden Sie in der smartmontools-Dokumentation:
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1472,6 +1475,7 @@ Configuration
 
 	Zum Beispiel:
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1506,7 +1510,7 @@ Configuration
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0

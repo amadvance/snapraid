@@ -839,7 +839,7 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 		0
 	};
 
-	OS_FILE* fp = os_popen(argv, 0);
+	OS_FILE* fp = os_popen(argv);
 	if (!fp) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -922,7 +922,7 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		0
 	};
 
-	OS_FILE* fp = os_popen(argv, 0);
+	OS_FILE* fp = os_popen(argv);
 	if (!fp) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -2769,6 +2769,7 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
 		devinfo->device = device;
 		pathcpy(devinfo->name, sizeof(devinfo->name), parent->name);
 		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), parent->smartctl);
+		pathcpy(devinfo->smartctl_info, sizeof(devinfo->smartctl_info), parent->smartctl_info);
 		memcpy(devinfo->smartignore, parent->smartignore, sizeof(devinfo->smartignore));
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
 		devinfo->parent = parent;
@@ -2858,16 +2859,21 @@ static int devstat(dev_t device, uint64_t* count)
 #endif
 
 /**
+ * Max number of arguments supported.
+ */
+#define ARGS_MAX 64
+
+/**
  * Get SMART attributes.
  */
 #if HAVE_LINUX_DEVICE
-static int devsmart(dev_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
+static int devsmart(dev_t device, const char* name, const char* smartctl, const char* smartctl_info, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
-	char extra_args[PATH_MAX];
 	char file[PATH_MAX];
 	OS_FILE* f;
 	int ret;
 	const char* x;
+	const char* info_opts = smartctl_info[0] ? smartctl_info : "-a";
 
 	x = find_smartctl();
 	if (!x) {
@@ -2884,32 +2890,33 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, struct
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if there is a custom smartctl command */
-	const char* args = "-a";
+	const char* argv[ARGS_MAX];
+	unsigned argc = 0;
+	argv[argc++] = x;
+
+	char info_buf[SMART_MAX];
+	pathcpy(info_buf, sizeof(info_buf), info_opts);
+	argc += argsplit(argv + argc, ARGS_MAX - argc - 1, info_buf);
+
+	char extra_args[PATH_MAX];
 	if (smartctl[0]) {
 		pathprint(extra_args, sizeof(extra_args), smartctl, file);
-		const char* argv[] = {
-			x,
-			"-a",
-			0
-		};
-		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
-		f = os_popen(argv, extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc - 1, extra_args);
+		log_tag("smartctl:%s:%s:run: %s [info: %s] %s\n", file, name, x, info_opts, extra_args);
 	} else {
-		pathprint(extra_args, sizeof(extra_args), "%s", file);
-		const char* argv[] = {
-			x,
-			"-a",
-			file,
-			0
-		};
-		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
-		f = os_popen(argv, 0);
+		argv[argc++] = file;
+		log_tag("smartctl:%s:%s:run: %s [info: %s] %s\n", file, name, x, info_opts, file);
 	}
+	argv[argc++] = 0;
+
+	f = os_popen(argv);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:spawn\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, args, extra_args);
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, info_opts, extra_args);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2929,7 +2936,10 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, struct
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, args, extra_args);
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, info_opts, extra_args);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3014,13 +3024,13 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
  * Get POWER state.
  */
 #if HAVE_LINUX_DEVICE
-static int devprobe(dev_t device, const char* name, const char* smartctl, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
+static int devprobe(dev_t device, const char* name, const char* smartctl, const char* smartctl_info, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interface)
 {
-	char extra_args[PATH_MAX];
 	char file[PATH_MAX];
 	OS_FILE* f;
 	int ret;
 	const char* x;
+	const char* info_opts = smartctl_info[0] ? smartctl_info : "-a";
 
 	x = find_smartctl();
 	if (!x) {
@@ -3037,36 +3047,35 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if there is a custom smartctl command */
-	const char* args = "-n standby,3 -a";
+	const char* argv[ARGS_MAX];
+	unsigned argc = 0;
+	argv[argc++] = x;
+	argv[argc++] = "-n";
+	argv[argc++] = "standby,3";
+
+	char info_buf[SMART_MAX];
+	pathcpy(info_buf, sizeof(info_buf), info_opts);
+	argc += argsplit(argv + argc, ARGS_MAX - argc - 1, info_buf);
+
+	char extra_args[PATH_MAX];
 	if (smartctl[0]) {
 		pathprint(extra_args, sizeof(extra_args), smartctl, file);
-		const char* argv[] = {
-			x,
-			"-n",
-			"standby,3",
-			"-a",
-			0
-		};
-		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
-		f = os_popen(argv, extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc - 1, extra_args);
+		log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] %s\n", file, name, x, info_opts, extra_args);
 	} else {
-		pathprint(extra_args, sizeof(extra_args), "%s", file);
-		const char* argv[] = {
-			x,
-			"-n",
-			"standby,3",
-			"-a",
-			file,
-			0
-		};
-		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
-		f = os_popen(argv, 0);
+		argv[argc++] = file;
+		log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] %s\n", file, name, x, info_opts, file);
 	}
+	argv[argc++] = 0;
+
+	f = os_popen(argv);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:spawn\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, args, extra_args);
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", x, info_opts, extra_args);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", x, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3086,7 +3095,10 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, int* p
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, args, extra_args);
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", x, info_opts, extra_args);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", x, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3134,34 +3146,30 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if there is a custom smartctl command */
-	const char* args = "-s standby,now";
+	const char* argv[ARGS_MAX];
+	unsigned argc = 0;
+	argv[argc++] = x;
+	argv[argc++] = "-s";
+	argv[argc++] = "standby,now";
+
 	if (smartctl[0]) {
 		pathprint(extra_args, sizeof(extra_args), smartctl, file);
-		const char* argv[] = {
-			x,
-			"-s",
-			"standby,now",
-			0
-		};
-		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
-		f = os_popen(argv, extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc - 1, extra_args);
+		log_tag("smartctl:%s:%s:run: %s -s standby,now %s\n", file, name, x, extra_args);
 	} else {
-		pathprint(extra_args, sizeof(extra_args), "%s", file);
-		const char* argv[] = {
-			x,
-			"-s",
-			"standby,now",
-			file,
-			0
-		};
-		log_tag("smartctl:%s:%s:run: %s %s %s\n", file, name, x, args, extra_args);
-		f = os_popen(argv, 0);
+		argv[argc++] = file;
+		log_tag("smartctl:%s:%s:run: %s -s standby,now %s\n", file, name, x, file);
 	}
+	argv[argc++] = 0;
+
+	f = os_popen(argv);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:spawn\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s'.\n", x, args, extra_args);
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", x, extra_args);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", x, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3181,7 +3189,10 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' (not exited).\n", x, args, extra_args);
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", x, extra_args);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", x, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3189,7 +3200,10 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
-		log_fatal(EEXTERNAL, "Failed to run '%s %s %s' with return code %xh.\n", x, args, extra_args, WEXITSTATUS(ret));
+		if (smartctl[0])
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", x, extra_args, WEXITSTATUS(ret));
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", x, file, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -3204,11 +3218,11 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
  * Spin down a specific device if it's up.
  */
 #if HAVE_LINUX_DEVICE
-static int devdownifup(dev_t device, const char* name, const char* smartctl, int* power)
+static int devdownifup(dev_t device, const char* name, const char* smartctl, const char* smartctl_info, int* power)
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0, 0) != 0)
+	if (devprobe(device, name, smartctl, smartctl_info, power, 0, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -3372,7 +3386,7 @@ static void* thread_spinup(void* arg)
 	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	/* after the spin up, get SMART info */
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -3435,7 +3449,7 @@ static void* thread_spindownifup(void* arg)
 
 	start = os_tick_ms();
 
-	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, &power) != 0) {
+	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &power) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -3459,7 +3473,7 @@ static void* thread_smart(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -3488,7 +3502,7 @@ static void* thread_probe(void* arg)
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

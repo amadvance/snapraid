@@ -42,6 +42,11 @@ SnapRAID HISTORY
    non-FHS systems.
  * Removed the 512 TiB limitation on hard disk size (when using the
    default 128 KiB blocks).
+ * Added support for a custom info options tag `[info: ...]` in the
+   `smartctl` configuration option. This allows replacing the default
+   `-a` command line argument used to retrieve SMART attributes with a
+   customized set of arguments, enabling better support for RAID
+   controllers and USB enclosures.
 
 14.9 2026/07
 ============

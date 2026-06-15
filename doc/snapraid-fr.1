@@ -1747,6 +1747,10 @@ Dans les OPTIONS spécifiées, la chaîne \`%s\` est remplacée par le
 nom du périphérique. Pour les contrôleurs RAID, le périphérique est
 probablement fixe, et vous n\'aurez peut\-être pas besoin d\'utiliser \`%s\`.
 .PP
+Vous pouvez également spécifier une chaîne d\'options d\'information
+personnalisée à l\'aide de la balise \`[info: ...]\` pour remplacer
+l\'option \`\-a\` par défaut.
+.PP
 Consultez la documentation smartmontools pour les options possibles :
 .PP
 .RS 4
@@ -1762,6 +1766,10 @@ https://www.smartmontools.org/wiki/Supported_USB\-Devices
 Par exemple :
 .PP
 .RS 4
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
+.PD 0
+.PP
+.PD
 smartctl parity \-d sat %s
 .PD 0
 .PD
@@ -1829,7 +1837,7 @@ exclude /tmp/
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
@@ -1885,7 +1893,7 @@ exclude \\System Volume Information
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
