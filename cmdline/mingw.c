@@ -2834,7 +2834,7 @@ retry:
 		 */
 		if (ret == 2) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a -d sat %s", exedir, file);
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a -d sat %s", exedir, file);
 
 			++count;
 			goto retry;
