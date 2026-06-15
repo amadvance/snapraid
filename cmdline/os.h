@@ -87,12 +87,10 @@ typedef struct OS_FILE {
  *
  * @param argv  A NULL-terminated array of strings representing the argument vector.
  *              argv[0] must contain the absolute path to the verified executable.
- * @param extra_args A mutable string containing additional arguments separated by
- *                   spaces, or NULL if no extra arguments are needed.
  * @return A pointer to an initialized OS_FILE structure on success, or NULL on failure.
  *         On failure, errno is set appropriately.
  */
-OS_FILE* os_popen(const char** argv, char* extra_args);
+OS_FILE* os_popen(const char** argv);
 
 /**
  * Reads a line from an OS execution stream.

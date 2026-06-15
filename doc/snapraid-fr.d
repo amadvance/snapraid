@@ -1464,6 +1464,10 @@ Configuration
 	nom du périphérique. Pour les contrôleurs RAID, le périphérique est
 	probablement fixe, et vous n'aurez peut-être pas besoin d'utiliser `%s`.
 
+	Vous pouvez également spécifier une chaîne d'options d'information
+	personnalisée à l'aide de la balise `[info: ...]` pour remplacer
+	l'option `-a` par défaut.
+
 	Consultez la documentation smartmontools pour les options possibles :
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1471,6 +1475,7 @@ Configuration
 
 	Par exemple :
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISQUE/PARITÉ ATTR [ATTR...]
@@ -1504,7 +1509,7 @@ Configuration
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1520,7 +1525,7 @@ Configuration
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0

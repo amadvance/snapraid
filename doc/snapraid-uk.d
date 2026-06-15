@@ -1514,6 +1514,9 @@ Name{number}
 	ймовірно фіксований, і вам може не знадобитися
 	використовувати `%s`.
 
+	Ви також можете вказати користувацький рядок параметрів інформації за допомогою
+	тега `[info: ...]`, щоб замінити параметр за замовчуванням `-a`.
+
 	Зверніться до документації smartmontools
 	для можливих опцій:
 
@@ -1522,6 +1525,7 @@ Name{number}
 
 	Наприклад:
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1557,7 +1561,7 @@ Name{number}
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1573,7 +1577,7 @@ Name{number}
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0

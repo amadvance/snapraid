@@ -460,5 +460,10 @@ void state_snapshot_cleanup(struct snapraid_state* state);
  */
 void generate_configuration(const char* content);
 
+/**
+ * Parse smartctl command.
+ */
+int parse_smartctl(const char* custom, char* smartctl, size_t smartctl_size, char* smartctl_info, size_t smartctl_info_size);
+
 #endif
 

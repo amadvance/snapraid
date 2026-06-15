@@ -1811,6 +1811,9 @@ PARITY — це одне з імен парності: \`parity\`,
 ймовірно фіксований, і вам може не знадобитися
 використовувати \`%s\`.
 .PP
+Ви також можете вказати користувацький рядок параметрів інформації за допомогою
+тега \`[info: ...]\`, щоб замінити параметр за замовчуванням \`\-a\`.
+.PP
 Зверніться до документації smartmontools
 для можливих опцій:
 .PP
@@ -1827,6 +1830,10 @@ https://www.smartmontools.org/wiki/Supported_USB\-Devices
 Наприклад:
 .PP
 .RS 4
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
+.PD 0
+.PP
+.PD
 smartctl parity \-d sat %s
 .PD 0
 .PD
@@ -1896,7 +1903,7 @@ exclude /tmp/
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
@@ -1952,7 +1959,7 @@ exclude \\System Volume Information
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD

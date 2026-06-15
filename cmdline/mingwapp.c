@@ -241,10 +241,10 @@ static int devstat(uint64_t device, const char* name, const char* wfile, uint64_
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* smartctl, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
+static int devsmart(uint64_t device, const char* name, const char* smartctl, const char* smartctl_info, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
 	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + 128];
+	WCHAR cmd[PATH_MAX + SMART_MAX];
 	char file[128];
 	FILE* f;
 	int ret;
@@ -252,13 +252,15 @@ static int devsmart(uint64_t device, const char* name, const char* smartctl, str
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
+	const char* info_opts = smartctl_info[0] ? smartctl_info : "-a";
+
 	/* if there is a custom smartctl command */
 	if (smartctl[0]) {
-		char option[128];
+		char option[SMART_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", windows_exedir(), option);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", windows_exedir(), file);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, file);
 	}
 
 	count = 0;
@@ -314,7 +316,7 @@ retry:
 			&& info[INFO_ROTATION_RATE] == SMART_UNASSIGNED
 		) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a -d sat %s", windows_exedir(), file);
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" %s -d sat %s", windows_exedir(), info_opts, file);
 
 			++count;
 			goto retry;
@@ -563,10 +565,10 @@ static int devpower(uint64_t device, const char* name, const char* wfile)
 /**
  * Get POWER state
  */
-static int devprobe(uint64_t device, const char* name, const char* smartctl, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
+static int devprobe(uint64_t device, const char* name, const char* smartctl, const char* smartctl_info, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + 128];
+	WCHAR cmd[PATH_MAX + SMART_MAX];
 	char file[128];
 	FILE* f;
 	int ret;
@@ -574,13 +576,15 @@ static int devprobe(uint64_t device, const char* name, const char* smartctl, int
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
+	const char* info_opts = smartctl_info[0] ? smartctl_info : "-a";
+
 	/* if there is a custom smartctl command */
 	if (smartctl[0]) {
-		char option[128];
+		char option[SMART_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a %s", windows_exedir(), option);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a %s", windows_exedir(), file);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, file);
 	}
 
 	count = 0;
@@ -629,7 +633,7 @@ retry:
 		 */
 		if (ret == 2) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 -a -d sat %s", windows_exedir(), file);
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 %s -d sat %s", windows_exedir(), info_opts, file);
 
 			++count;
 			goto retry;
@@ -657,7 +661,7 @@ retry:
 static int devdown(uint64_t device, const char* name, const char* smartctl)
 {
 	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + 128];
+	WCHAR cmd[PATH_MAX + SMART_MAX];
 	char file[128];
 	FILE* f;
 	int ret;
@@ -667,7 +671,7 @@ static int devdown(uint64_t device, const char* name, const char* smartctl)
 
 	/* if there is a custom smartctl command */
 	if (smartctl[0]) {
-		char option[128];
+		char option[SMART_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), option);
 	} else {
@@ -743,11 +747,11 @@ retry:
 /**
  * Spin down a specific device if it's up
  */
-static int devdownifup(uint64_t device, const char* name, const char* smartctl, int* power)
+static int devdownifup(uint64_t device, const char* name, const char* smartctl, const char* smartctl_info, int* power)
 {
 	*power = POWER_UNKNOWN;
 
-	if (devprobe(device, name, smartctl, power, 0, 0, 0, 0, 0, 0) != 0)
+	if (devprobe(device, name, smartctl, smartctl_info, power, 0, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
 	if (*power == POWER_ACTIVE)
@@ -847,7 +851,7 @@ static void* thread_spinup(void* arg)
 	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	/* after the spin up, get SMART info */
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -900,7 +904,7 @@ static void* thread_spindownifup(void* arg)
 
 	start = os_tick_ms();
 
-	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, &power) != 0) {
+	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &power) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -919,7 +923,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -943,7 +947,7 @@ static void* thread_probe(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
+	if (devprobe(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

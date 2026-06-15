@@ -1440,6 +1440,10 @@ Configurazione
 	nome del dispositivo. Per i controller RAID, il dispositivo è
 	probabilmente fisso e potrebbe non essere necessario utilizzare `%s`.
 
+	È inoltre possibile specificare una stringa di opzioni di informazioni
+	personalizzate tramite il tag `[info: ...]` per sostituire l'opzione
+	`-a` predefinita.
+
 	Fare riferimento alla documentazione di smartmontools per le possibili
 	opzioni:
 
@@ -1448,6 +1452,7 @@ Configurazione
 
 	Ad esempio:
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1481,7 +1486,7 @@ Configurazione
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1497,7 +1502,7 @@ Configurazione
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0

@@ -1305,6 +1305,9 @@ Configuration
 	RAID 컨트롤러의 경우 장치가 고정되어 있을 가능성이 높으므로
 	`%s`를 사용할 필요가 없을 수 있습니다.
 
+	기본 `-a` 옵션을 대체하기 위해 `[info: ...]` 태그를 사용하여
+	사용자 정의 정보 옵션 문자열을 지정할 수도 있습니다.
+
 	가능한 옵션은 smartmontools 설명서를 참조하십시오:
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1312,6 +1315,7 @@ Configuration
 
 	예:
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1344,7 +1348,7 @@ Configuration
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1360,7 +1364,7 @@ Configuration
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
