@@ -1643,6 +1643,9 @@ PARITY — это одно из имен четности: \`parity\`, \`2\-pari
 именем устройства. Для контроллеров RAID устройство,
 вероятно, фиксировано, и вам может не потребоваться использовать \`%s\`.
 .PP
+Вы также можете указать пользовательскую строку параметров информации с помощью
+тега \`[info: ...]\`, чтобы заменить параметр по умолчанию \`\-a\`.
+.PP
 Возможные опции см. в документации smartmontools:
 .PP
 .RS 4
@@ -1658,6 +1661,10 @@ https://www.smartmontools.org/wiki/Supported_USB\-Devices
 Например:
 .PP
 .RS 4
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
+.PD 0
+.PP
+.PD
 smartctl parity \-d sat %s
 .PD 0
 .PD
@@ -1724,7 +1731,7 @@ exclude /tmp/
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
@@ -1780,7 +1787,7 @@ exclude \\System Volume Information
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD

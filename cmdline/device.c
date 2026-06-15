@@ -1051,6 +1051,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 		device_name_set(entry, disk->name, 0);
 		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
+		pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), disk->smartctl_info);
 		memcpy(entry->smartignore, disk->smartignore, sizeof(entry->smartignore));
 
 		tommy_list_insert_tail(&high, &entry->node, entry);
@@ -1078,6 +1079,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 			device_name_set(entry, lev_config_name(j), s);
 			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
+			pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), state->parity[j].smartctl_info);
 			memcpy(entry->smartignore, state->parity[j].smartignore, sizeof(entry->smartignore));
 			pathcut(entry->mount); /* remove the parity file */
 
@@ -1109,7 +1111,8 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 			device_name_set(entry, extra->name, 0);
 			pathcpy(entry->mount, sizeof(entry->mount), extra->dir);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), extra->smartctl);
-			memcpy(entry->smartignore, extra->smartignore, sizeof(extra->smartignore));
+			pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), extra->smartctl_info);
+			memcpy(entry->smartignore, extra->smartignore, sizeof(entry->smartignore));
 
 			tommy_list_insert_tail(&high, &entry->node, entry);
 		}
