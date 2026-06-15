@@ -841,6 +841,97 @@ static void test_wnmatch(void)
 	}
 }
 
+static void test_parse_smartctl(void)
+{
+	char smartctl[SMART_MAX];
+	char smartctl_info[SMART_MAX];
+
+	/* empty default case */
+	if (parse_smartctl("smartctl d1 %s", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl empty test 1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (strcmp(smartctl, "smartctl d1 %s") != 0 || smartctl_info[0] != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl empty test 2\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (parse_smartctl("smartctl d1 /dev/sda", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl empty test 3\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (strcmp(smartctl, "smartctl d1 /dev/sda") != 0 || smartctl_info[0] != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl empty test 4\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* basic default case */
+	if (parse_smartctl("smartctl d1 -d sat %s", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl basic test 1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (strcmp(smartctl, "smartctl d1 -d sat %s") != 0 || smartctl_info[0] != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl basic test 2\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* case with [info: xxx] tag */
+	if (parse_smartctl("smartctl d1 [info: -H -i -A] -d sat %s", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl info test 1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (strcmp(smartctl, "smartctl d1  -d sat %s") != 0 || strcmp(smartctl_info, "-H -i -A") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl info test 2\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* case with spaces in tag */
+	if (parse_smartctl("smartctl d2 [info:  -H -I ] -d sat", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl space test 1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (strcmp(smartctl, "smartctl d2  -d sat") != 0 || strcmp(smartctl_info, "-H -I") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl space test 2\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* invalid case: multiple info tags */
+	if (parse_smartctl("smartctl [info: -H] [info: -i] %s", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl multiple tags test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* invalid case: missing closing bracket */
+	if (parse_smartctl("smartctl [info: -H %s", smartctl, sizeof(smartctl), smartctl_info, sizeof(smartctl_info)) == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed parse_smartctl missing bracket test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
 void selftest(void)
 {
 	log_tag("selftest:\n");
@@ -866,6 +957,7 @@ void selftest(void)
 	test_crc32c();
 	test_tommy();
 	test_wnmatch();
+	test_parse_smartctl();
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed SELF test\n");

@@ -843,6 +843,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 #endif
 
 	disk->smartctl[0] = 0;
+	disk->smartctl_info[0] = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		disk->smartignore[i] = 0;
 	disk->fstype[0] = 0;
@@ -915,6 +916,7 @@ struct snapraid_extra* extra_alloc(const char* name, const char* dir, uint64_t d
 	pathslash(extra->dir, sizeof(extra->dir));
 
 	extra->smartctl[0] = 0;
+	extra->smartctl_info[0] = 0;
 	for (i = 0; i < SMART_IGNORE_MAX; ++i)
 		extra->smartignore[i] = 0;
 	extra->fstype[0] = 0;

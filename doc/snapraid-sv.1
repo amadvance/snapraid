@@ -1642,6 +1642,9 @@ I de specificerade ALTERNATIVEN ersätts strängen \`%s\` med
 enhetens namn. För RAID\-kontroller är enheten
 sannolikt fixerad, och du kanske inte behöver använda \`%s\`.
 .PP
+Du kan också specificera en anpassad sträng för informationsalternativ med
+hjälp av taggen \`[info: ...]\` för att ersätta standardalternativet \`\-a\`.
+.PP
 Se smartmontools dokumentation för möjliga alternativ:
 .PP
 .RS 4
@@ -1657,6 +1660,10 @@ https://www.smartmontools.org/wiki/Supported_USB\-Devices
 Till exempel:
 .PP
 .RS 4
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
+.PD 0
+.PP
+.PD
 smartctl parity \-d sat %s
 .PD 0
 .PD
@@ -1723,7 +1730,7 @@ exclude /tmp/
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
@@ -1779,7 +1786,7 @@ exclude \\System Volume Information
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD

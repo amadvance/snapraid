@@ -1450,6 +1450,9 @@ W określonych OPCJACH ciąg `%s` jest zastępowany
 nazwą urządzenia. W przypadku kontrolerów RAID, urządzenie jest
 prawdopodobnie stałe i może nie być konieczne użycie `%s`.
 
+Możesz również określić niestandardowy ciąg opcji informacyjnych za pomocą
+znacznika `[info: ...]`, aby zastąpić domyślną opcję `-a`.
+
 Zapoznaj się z dokumentacją smartmontools, aby uzyskać możliwe opcje:
 
     https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1457,6 +1460,7 @@ Zapoznaj się z dokumentacją smartmontools, aby uzyskać możliwe opcje:
 
 Na przykład:
 
+    smartctl d1 [info: -H -i -c -A] -d sat %s
     smartctl parity -d sat %s
 
 7.18 smartignore DISK/PARITY ATTR [ATTR...]
@@ -1493,7 +1497,7 @@ Przykład typowej konfiguracji dla systemu Unix:
     data d3 /mnt/disk3/
     exclude /lost+found/
     exclude /tmp/
-    smartctl d1 -d sat %s
+    smartctl d1 [info: -H -i -c -A] -d sat %s
     smartctl d2 -d usbjmicron %s
     smartctl parity -d areca,1/1 /dev/sg0
     smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1509,7 +1513,7 @@ Przykład typowej konfiguracji dla systemu Windows:
     exclude Thumbs.db
     exclude \$RECYCLE.BIN
     exclude \System Volume Information
-    smartctl d1 -d sat %s
+    smartctl d1 [info: -H -i -c -A] -d sat %s
     smartctl d2 -d usbjmicron %s
     smartctl parity -d areca,1/1 /dev/arcmsr0
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0

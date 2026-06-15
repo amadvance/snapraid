@@ -1591,6 +1591,9 @@ PARITY는 \`parity\`, \`2\-parity\`, \`3\-parity\`, \`4\-parity\`, \`5\-parity\`
 RAID 컨트롤러의 경우 장치가 고정되어 있을 가능성이 높으므로
 \`%s\`를 사용할 필요가 없을 수 있습니다.
 .PP
+기본 \`\-a\` 옵션을 대체하기 위해 \`[info: ...]\` 태그를 사용하여
+사용자 정의 정보 옵션 문자열을 지정할 수도 있습니다.
+.PP
 가능한 옵션은 smartmontools 설명서를 참조하십시오:
 .PP
 .RS 4
@@ -1606,6 +1609,10 @@ https://www.smartmontools.org/wiki/Supported_USB\-Devices
 예:
 .PP
 .RS 4
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
+.PD 0
+.PP
+.PD
 smartctl parity \-d sat %s
 .PD 0
 .PD
@@ -1672,7 +1679,7 @@ exclude /tmp/
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
@@ -1728,7 +1735,7 @@ exclude \\System Volume Information
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD

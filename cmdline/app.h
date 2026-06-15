@@ -289,7 +289,7 @@ extern int exit_sync_needed;
 /**
  * SMART max attribute length.
  */
-#define SMART_MAX 64
+#define SMART_MAX 128
 
 /**
  * Value for unassigned SMART attribute.
@@ -330,7 +330,8 @@ struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
 	char name[PATH_MAX]; /**< Name of the disk combined with the split index if any */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
-	char smartctl[PATH_MAX]; /**< Options for smartctl. */
+	char smartctl[SMART_MAX]; /**< Custom option for smartctl. Empty means auto. */
+	char smartctl_info[SMART_MAX]; /* Info options for smartctl. Empty means -a. */
 	int smartignore[SMART_IGNORE_MAX]; /**< Attribues to ignore */
 	char file[PATH_MAX]; /**< File device. */
 #ifdef _WIN32
