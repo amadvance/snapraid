@@ -1190,6 +1190,8 @@ Configuration
 	对于 RAID 控制器，设备可能是固定的，
 	您可能不需要使用 `%s`。
 
+	您还可以使用 `[info: ...]` 标记指定自定义信息选项字符串，以替换默认的 `-a` 选项。
+
 	请参阅 smartmontools 文档以了解可能的选项：
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1197,6 +1199,7 @@ Configuration
 
 	例如：
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1227,7 +1230,7 @@ Configuration
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1243,7 +1246,7 @@ Configuration
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0

@@ -598,30 +598,10 @@ int os_spawn_and_wait(const char** argv)
 	return -1;
 }
 
-#define ARGV_MAX 64
-
-OS_FILE* os_popen(const char** argv, char* extra_args)
+OS_FILE* os_popen(const char** argv)
 {
-	const char* combined_argv[ARGV_MAX];
-
-	unsigned argc = 0;
-	while (argv[argc] && argc < ARGV_MAX) {
-		combined_argv[argc] = argv[argc];
-		++argc;
-	}
-
-	if (extra_args)
-		argc += argsplit(combined_argv + argc, ARGV_MAX - argc, extra_args);
-
-	if (argc >= ARGV_MAX) {
-		errno = E2BIG;
-		return NULL;
-	}
-
-	combined_argv[argc] = 0;
-
 	int stdout_fd = -1;
-	pid_t pid = os_spawn_stdout(combined_argv, &stdout_fd);
+	pid_t pid = os_spawn_stdout(argv, &stdout_fd);
 	if (pid < 0) {
 		return 0;
 	}

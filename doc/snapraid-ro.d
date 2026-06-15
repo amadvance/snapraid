@@ -1355,6 +1355,9 @@ Configurare
 	numele dispozitivului. Pentru controlerele RAID, dispozitivul este
 	probabil fix și este posibil să nu fie nevoie să utilizați `%s`.
 
+	De asemenea, puteți specifica un șir de opțiuni de informații personalizate
+	utilizând eticheta `[info: ...]` pentru a înlocui opțiunea implicită `-a`.
+
 	Consultați documentația smartmontools pentru opțiuni posibile:
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1362,6 +1365,7 @@ Configurare
 
 	De exemplu:
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1394,7 +1398,7 @@ Configurare
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1410,7 +1414,7 @@ Configurare
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0

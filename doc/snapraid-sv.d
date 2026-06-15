@@ -1356,6 +1356,9 @@ Konfiguration
 	enhetens namn. För RAID-kontroller är enheten
 	sannolikt fixerad, och du kanske inte behöver använda `%s`.
 
+	Du kan också specificera en anpassad sträng för informationsalternativ med
+	hjälp av taggen `[info: ...]` för att ersätta standardalternativet `-a`.
+
 	Se smartmontools dokumentation för möjliga alternativ:
 
 		:https://www.smartmontools.org/wiki/Supported_RAID-Controllers
@@ -1363,6 +1366,7 @@ Konfiguration
 
 	Till exempel:
 
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
   smartignore DISK/PARITY ATTR [ATTR...]
@@ -1395,7 +1399,7 @@ Konfiguration
 		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
 		:smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1411,7 +1415,7 @@ Konfiguration
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
-		:smartctl d1 -d sat %s
+		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0

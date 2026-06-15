@@ -1641,6 +1641,9 @@ PARITY este unul dintre numele de paritate: \`parity\`, \`2\-parity\`, \`3\-pari
 numele dispozitivului. Pentru controlerele RAID, dispozitivul este
 probabil fix și este posibil să nu fie nevoie să utilizați \`%s\`.
 .PP
+De asemenea, puteți specifica un șir de opțiuni de informații personalizate
+utilizând eticheta \`[info: ...]\` pentru a înlocui opțiunea implicită \`\-a\`.
+.PP
 Consultați documentația smartmontools pentru opțiuni posibile:
 .PP
 .RS 4
@@ -1656,6 +1659,10 @@ https://www.smartmontools.org/wiki/Supported_USB\-Devices
 De exemplu:
 .PP
 .RS 4
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
+.PD 0
+.PP
+.PD
 smartctl parity \-d sat %s
 .PD 0
 .PD
@@ -1722,7 +1729,7 @@ exclude /tmp/
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD
@@ -1778,7 +1785,7 @@ exclude \\System Volume Information
 .PD 0
 .PP
 .PD
-smartctl d1 \-d sat %s
+smartctl d1 [info: \-H \-i \-c \-A] \-d sat %s
 .PD 0
 .PP
 .PD

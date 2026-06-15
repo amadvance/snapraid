@@ -145,6 +145,7 @@ void state_init(struct snapraid_state* state)
 			state->parity[l].split_map[s].device = 0;
 		}
 		state->parity[l].smartctl[0] = 0;
+		state->parity[l].smartctl_info[0] = 0;
 		for (i = 0; i < SMART_IGNORE_MAX; ++i)
 			state->parity[l].smartignore[i] = 0;
 		state->parity[l].total_blocks = 0;
@@ -517,15 +518,75 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 }
 
 /**
- * Validate the smartctl command.
+ * Parse the smartctl command.
  *
- * It must contains only one %s string, and not other % chars.
+ * It extracts the optional [info: xxx] tag, validates, and returns
+ * the cleaned smartctl command and smartctl_info options.
  */
-static int validate_smartctl(const char* custom)
+int parse_smartctl(const char* custom, char* smartctl, size_t smartctl_size, char* smartctl_info, size_t smartctl_info_size)
 {
-	const char* s = custom;
+	const char* s;
+	const char* info_start = 0;
+	size_t info_len = 0;
+	size_t smartctl_len = 0;
 	int arg = 0;
 
+	/* initialize output buffers */
+	smartctl[0] = 0;
+	smartctl_info[0] = 0;
+
+	/* look for "[info:" */
+	s = custom;
+	while (*s) {
+		if (strncmp(s, "[info:", 6) == 0) {
+			if (info_start) {
+				/* multiple info tags not allowed */
+				return -1;
+			}
+
+			info_start = s;
+			s += 6;
+
+			/* skip spaces inside bracket */
+			while (isspace((unsigned char)*s))
+				++s;
+
+			/* find matching ']' */
+			const char* val_start = s;
+			while (*s && *s != ']')
+				++s;
+			if (*s != ']') {
+				/* missing closing bracket */
+				return -1;
+			}
+
+			/* trim trailing spaces inside bracket */
+			const char* val_end = s;
+			while (val_end > val_start && isspace((unsigned char)val_end[-1]))
+				--val_end;
+			info_len = val_end - val_start;
+			if (info_len >= smartctl_info_size) {
+				/* info string too long */
+				return -1;
+			}
+
+			memcpy(smartctl_info, val_start, info_len);
+			smartctl_info[info_len] = 0;
+			++s; /* skip ']' */
+		} else {
+			if (smartctl_len + 1 >= smartctl_size) {
+				return -1;
+			}
+			smartctl[smartctl_len++] = *s++;
+		}
+	}
+	smartctl[smartctl_len] = 0;
+
+	/* trim extra spaces from the smartctl options */
+	strtrim(smartctl);
+
+	/* validate the cleaned smartctl command */
+	s = smartctl;
 	while (*s) {
 		if (s[0] == '%' && s[1] == 's') {
 			if (arg) {
@@ -534,12 +595,23 @@ static int validate_smartctl(const char* custom)
 				/* LCOV_EXCL_STOP */
 			}
 			arg = 1;
+			++s;
 		} else if (s[0] == '%') {
 			/* LCOV_EXCL_START */
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
+		++s;
+	}
 
+	/* validate the smartctl_info command */
+	s = smartctl_info;
+	while (*s) {
+		if (s[0] == '%') {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		++s;
 	}
 
@@ -1094,6 +1166,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			tommy_list_insert_tail(&state->extralist, &extra->node, extra);
 		} else if (strcmp(tag, "smartctl") == 0) {
 			char custom[PATH_MAX];
+			char parsed_smartctl[SMART_MAX];
+			char parsed_smartctl_info[SMART_MAX];
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -1127,7 +1201,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (validate_smartctl(custom) != 0) {
+			if (parse_smartctl(custom, parsed_smartctl, sizeof(parsed_smartctl), parsed_smartctl_info, sizeof(parsed_smartctl_info)) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid 'smartctl' option in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -1143,7 +1217,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					/* LCOV_EXCL_STOP */
 				}
 
-				pathcpy(state->parity[level].smartctl, sizeof(state->parity[level].smartctl), custom);
+				pathcpy(state->parity[level].smartctl, sizeof(state->parity[level].smartctl), parsed_smartctl);
+				pathcpy(state->parity[level].smartctl_info, sizeof(state->parity[level].smartctl_info), parsed_smartctl_info);
 			} else {
 				/* search the disk */
 				struct snapraid_disk* found_disk = 0;
@@ -1170,7 +1245,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						/* LCOV_EXCL_STOP */
 					}
 
-					pathcpy(found_disk->smartctl, sizeof(found_disk->smartctl), custom);
+					pathcpy(found_disk->smartctl, sizeof(found_disk->smartctl), parsed_smartctl);
+					pathcpy(found_disk->smartctl_info, sizeof(found_disk->smartctl_info), parsed_smartctl_info);
 				} else if (found_extra) {
 					if (found_extra->smartctl[0] != 0) {
 						/* LCOV_EXCL_START */
@@ -1179,7 +1255,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						/* LCOV_EXCL_STOP */
 					}
 
-					pathcpy(found_extra->smartctl, sizeof(found_extra->smartctl), custom);
+					pathcpy(found_extra->smartctl, sizeof(found_extra->smartctl), parsed_smartctl);
+					pathcpy(found_extra->smartctl_info, sizeof(found_extra->smartctl_info), parsed_smartctl_info);
 				} else {
 					/* LCOV_EXCL_START */
 					log_fatal(EUSER, "Unknown 'smartctl' name '%s' at line %u\n", buffer, line);
