@@ -674,7 +674,7 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 			if (errno == ENODEV || errno == ENOENT)
 				continue; /* this is the expected error on missing id */
 			log_error(errno, "Ioctl BTRFS_IOC_DEV_INFO failed. %s.", strerror(errno));
-			continue;
+			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 
