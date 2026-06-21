@@ -92,7 +92,7 @@ Limitations
 		et les liens matériels sont sauvegardés. Les permissions, la
 		propriété et les attributs étendus ne sont pas sauvegardés.
 
-Démarrer
+Démarrer (Getting Started)
 	Pour utiliser SnapRAID, vous devez d'abord sélectionner un disque
 	dans votre baie de disques pour le dédier aux informations de `parité`.
 	Avec un disque pour la parité, vous pourrez récupérer d'une
@@ -326,7 +326,7 @@ Démarrer
 
 		:snapraid fix -m
 
-  Récupération
+  Récupération (Recovering)
 	Le pire est arrivé, et vous avez perdu un ou plusieurs disques !
 
 	NE PANIQUEZ PAS ! Vous pourrez les récupérer !
@@ -420,7 +420,7 @@ Démarrer
 
 	Si tout est récupéré, cette commande est immédiate.
 
-Commandes
+Commandes (Commands)
 	SnapRAID fournit quelques commandes simples qui vous permettent de :
 
 	* Afficher l'état de la grappe -> `status`
@@ -1607,7 +1607,7 @@ Snapshots
 
 	Toutes les autres commandes fonctionnent exclusivement sur le système de fichiers actif.
 
-Cycle de vie des instantanés
+Cycle de vie des instantanés (Snapshots Lifecycle)
 	SnapRAID gère deux instantanés spécifiques, `stable` et `pending`,
 	dans un répertoire caché à la racine de chaque sous-volume de données.
 	Dans Btrfs, Bcachefs et NTFS, le répertoire `.snapraid/` est utilisé,
@@ -1765,7 +1765,7 @@ Motif (Pattern)
 	ligne de commande, vous devez les mettre entre guillemets pour empêcher
 	le shell de les développer.
 
-Ignorer des Fichiers (Ignore Files)
+Ignorer des Fichiers (Ignore File)
 	En plus des règles globales du fichier de configuration, vous pouvez
 	placer des fichiers `.snapraidignore` dans n'importe quel répertoire de la grappe
 	pour définir des règles d'exclusion décentralisées.
@@ -1830,7 +1830,7 @@ Parité (Parity)
 	Ces fichiers sont lus et écrits par les commandes `sync` et `fix` et
 	lus uniquement par les commandes `scrub` et `check`.
 
-Encodage
+Encodage (Encoding)
 	SnapRAID sous Unix ignore tout encodage. Il lit et stocke les
 	noms de fichiers avec le même encodage utilisé par le système
 	de fichiers.

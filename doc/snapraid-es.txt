@@ -3,8 +3,8 @@
                      =====================================
 
 
-1 SYNOPSIS
-==========
+1 SINOPSIS (SYNOPSIS)
+=====================
 
 snapraid [-c, --conf CONFIG]
 	[-f, --filter PATTERN] [-d, --filter-disk NAME]
@@ -28,8 +28,8 @@ snapraid [-c, --conf CONFIG]
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
 
-2 DESCRIPTION
-=============
+2 DESCRIPCIóN (DESCRIPTION)
+===========================
 
 SnapRAID es un programa de copia de seguridad diseñado para arrays
 de discos, que almacena información de paridad para la recuperación
@@ -60,8 +60,8 @@ Para más información, visite el sitio oficial de SnapRAID:
     https://www.snapraid.it/
 
 
-3 LIMITACIONES
-==============
+3 LIMITACIONES (LIMITATIONS)
+============================
 
 SnapRAID es un híbrido entre un RAID y un programa de copia de seguridad, con el objetivo di combinar
 los mejores beneficios de ambos. Sin embargo, tiene algunas limitaciones que debería
@@ -103,8 +103,8 @@ Otras limitaciones de SnapRAID son:
   extendidos no se guardan.
 
 
-4 GETTING STARTED
-=================
+4 PRIMEROS PASOS (GETTING STARTED)
+==================================
 
 Para usar SnapRAID, primero debe seleccionar un disco en su array de
 discos para dedicarlo a la información de `parity` (paridad). Con un
@@ -188,8 +188,8 @@ Cuando este comando se complete, sus datos estarán SEGUROS.
 Ahora puede comenzar a usar su array como desee y periódicamente
 actualizar la información de paridad ejecutando el comando `sync`.
 
-4.1 Scrubbing
--------------
+4.1 Limpieza (Scrubbing)
+------------------------
 
 Para verificar periódicamente los datos y la paridad en busca de
 errores, puede ejecutar el comando `scrub` (fregar/limpiar).
@@ -230,8 +230,8 @@ causados por archivos eliminados o modificados. Estos errores se
 informan en la salida de `scrub`, pero los bloques relacionados no
 se marcan como defectuosos.
 
-4.2 Pooling
------------
+4.2 Agrupación (Pooling)
+------------------------
 
 Nota: La función de pooling descrita a continuación ha sido
 sustituida por la herramienta mergerfs, que ahora es la opción
@@ -310,8 +310,8 @@ el acceso a enlaces simbólicos remotos con el comando:
 
     fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-4.3 Undeleting
---------------
+4.3 Restauración (Undeleting)
+-----------------------------
 
 SnapRAID funciona más como un programa de copia de seguridad que como
 un sistema RAID, y se puede usar para restaurar o recuperar archivos
@@ -334,8 +334,8 @@ O para recuperar todos los archivos eliminados en todas las unidades con:
 
     snapraid fix -m
 
-4.4 Recovering
---------------
+4.4 Recuperación (Recovering)
+-----------------------------
 
 Ha sucedido lo peor, ¡y ha perdido uno o más discos!
 
@@ -429,8 +429,8 @@ Ejecute el comando `sync` para resincronizar el array con el nuevo disco.
 Si todo se recupera, este comando es inmediato.
 
 
-5 COMMANDS
-==========
+5 COMANDOS (COMMANDS)
+=====================
 
 SnapRAID proporciona unos pocos comandos simples que le permiten:
 
@@ -834,8 +834,8 @@ Tenga en cuenta que dichos archivos no estarán protegidos por la paridad durant
 el proceso de reasignación.
 
 
-6 OPTIONS
-=========
+6 OPCIONES (OPTIONS)
+====================
 
 SnapRAID proporciona las siguientes opciones:
 
@@ -1159,8 +1159,8 @@ SnapRAID proporciona las siguientes opciones:
         Imprime la versión del programa.
 
 
-7 CONFIGURATION
-===============
+7 CONFIGURACIóN (CONFIGURATION)
+===============================
 
 SnapRAID requiere un archivo de configuración para saber dónde se
 encuentra su array de discos y dónde almacenar la información de paridad.
@@ -1598,8 +1598,8 @@ Un ejemplo de una configuración típica para Windows es:
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 
-8 SNAPSHOTS
-===========
+8 INSTANTáNEAS (SNAPSHOTS)
+==========================
 
 Si la opción de instantánea está habilitada en la configuración, SnapRAID
 utiliza la funcionalidad de instantáneas del sistema de archivos para garantizar operaciones atómicas
@@ -1680,8 +1680,8 @@ de archivos activos exclusivamente.
 Todos los demás comandos funcionan exclusivamente en el sistema de archivos activo.
 
 
-9 CICLO DE VIDA DE LAS INSTANTáNEAS
-===================================
+9 CICLO DE VIDA DE LAS INSTANTáNEAS (SNAPSHOTS LIFECYCLE)
+=========================================================
 
 SnapRAID gestiona dos instantáneas específicas, `stable` y `pending`,
 dentro de un directorio oculto en la raíz de cada subvolumen de datos.
@@ -1717,8 +1717,8 @@ se elimina y se crea una nueva para
 capturar el estado actual del sistema de archivos activo.
 
 
-10 PATTERN
-==========
+10 PATRONES (PATTERN)
+=====================
 
 Los patrones proporcionan una forma flexible de filtrar archivos para su inclusión o
 exclusión. Al usar caracteres de globbing, puede definir reglas que coincidan con
@@ -1840,8 +1840,8 @@ En Unix, al usar caracteres globbing en la línea de comandos, debe
 ponerlos entre comillas para evitar que el shell los expanda.
 
 
-11 IGNORAR ARCHIVOS
-===================
+11 IGNORAR ARCHIVOS (IGNORE FILE)
+=================================
 
 Además de las reglas globales en el archivo de configuración, puedes
 colocar archivos `.snapraidignore` en cualquier directorio dentro del array
@@ -1885,8 +1885,8 @@ Por ejemplo, si tienes un `.snapraidignore` en `/mnt/disk1/projects/`:
     *.tmp
 
 
-12 CONTENT
-==========
+12 CONTENIDO (CONTENT)
+======================
 
 SnapRAID almacena la lista y las sumas de comprobación de sus
 archivos en el archivo de contenido.
@@ -1901,8 +1901,8 @@ El archivo de contenido es leído y escrito por los comandos `sync`,
 ignorado por los comandos `smart`, `probe`, `up`, `down` y `devices`.
 
 
-13 PARITY
-=========
+13 PARIDAD (PARITY)
+===================
 
 SnapRAID almacena la información de paridad de su array en los
 archivos de paridad.
@@ -1914,8 +1914,8 @@ Estos archivos son leídos y escritos por los comandos `sync` y `fix`
 y solo leídos por los comandos `scrub` y `check`.
 
 
-14 ENCODING
-===========
+14 CODIFICACIóN (ENCODING)
+==========================
 
 SnapRAID en Unix ignora cualquier codificación. Lee y almacena los
 nombres de archivo con la misma codificación utilizada por el sistema
@@ -1938,7 +1938,7 @@ el archivo resultante siempre está en formato UTF-8.
 Este archivo es Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 SEE ALSO
-===========
+16 VéASE TAMBIéN (SEE ALSO)
+===========================
 
 snapraid_log(1), snapraidd(1)

@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - SnapRAID Backup para Arrays de Disco
 
-Sinopse
+Sinopse (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Sinopse
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Descrição
+Descrição (Description)
 	SnapRAID é um programa de backup projetado para arrays de disco,
 	armazenando informações de paridade para recuperação de dados no
 	caso de até seis falhas de disco.
@@ -51,7 +51,7 @@ Descrição
 
 		:https://www.snapraid.it/
 
-Limitações
+Limitações (Limitations)
 	O SnapRAID é um híbrido entre um RAID e un programa de backup, com o objetivo de combinar
 	os melhores benefícios de ambos. No entanto, possui algumas limitações que deve
 	considerar antes de o utilizar.
@@ -90,7 +90,7 @@ Limitações
 	* Apenas nomes de arquivos, carimbos de data/hora, symlinks e hardlinks
 		são salvos. Permissões, propriedade e atributos estendidos não são salvos.
 
-Primeiros Passos
+Primeiros Passos (Getting Started)
 	Para usar o SnapRAID, você precisa primeiro selecionar um disco em seu array
 	de discos para dedicar às informações de `parity` (paridade). Com um
 	disco para paridade, você poderá recuperar de uma única falha de disco,
@@ -173,7 +173,7 @@ Primeiros Passos
 	Agora você pode começar a usar seu array como quiser e periodicamente
 	atualizar as informações de paridade executando o comando `sync`.
 
-  Scrubbing
+  Scrubbing (Scrubbing)
 	Para verificar periodicamente os dados e a paridade em busca de erros,
 	você pode executar o comando `scrub`.
 
@@ -212,7 +212,7 @@ Primeiros Passos
 	arquivos removidos ou modificados. Esses erros são relatados na saída de `scrub`,
 	mas os blocos relacionados não são marcados como ruins.
 
-  Pooling
+  Pooling (Pooling)
 	Nota: O recurso de pooling descrito abaixo foi substituído pela ferramenta
 	mergerfs, que agora é a opção recomendada para usuários Linux na comunidade
 	SnapRAID. Mergefs oferece uma maneira mais flexível e eficiente de agrupar
@@ -308,7 +308,7 @@ Primeiros Passos
 
 		:snapraid fix -m
 
-  Recuperando
+  Recuperação (Recovering)
 	O pior aconteceu e você perdeu um ou mais discos!
 
 	NÃO ENTRE EM PÂNICO! Você será capaz de recuperá-los!
@@ -398,7 +398,7 @@ Primeiros Passos
 
 	Se tudo for recuperado, este comando é imediato.
 
-Comandos
+Comandos (Commands)
 	O SnapRAID fornece alguns comandos simples que lhe permitem:
 
 	* Imprimir o estado da matriz -> `status`
@@ -763,7 +763,7 @@ Comandos
 	Esteja ciente de que tais arquivos não estarão protegidos pela paridade durante
 	o processo de realocação.
 
-Opções
+Opções (Options)
 	SnapRAID fornece as seguintes opções:
 
 	-c, --conf CONFIG
@@ -1072,7 +1072,7 @@ Opções
 	-V, --version
 		Imprime a versão do programa.
 
-Configuração
+Configuração (Configuration)
 	SnapRAID requer um arquivo de configuração para saber onde seu array
 	de discos está localizado e onde armazenar as informações de paridade.
 
@@ -1454,7 +1454,7 @@ Configuração
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots (Instantâneos)
+Instantâneos (Snapshots)
 	Se a opção de instantâneo estiver ativada na configuração, o SnapRAID
 	utiliza a funcionalidade de instantâneos do sistema de ficheiros para garantir operações atómicas
 	e consistentes.
@@ -1531,7 +1531,7 @@ Snapshots (Instantâneos)
 
 	Todos os outros comandos operam exclusivamente no sistema de ficheiros ativo.
 
-Ciclo de Vida dos Instantâneos
+Ciclo de Vida dos Instantâneos (Snapshots Lifecycle)
 	O SnapRAID gere dois instantâneos específicos, `stable` (estável) e `pending` (pendente),
 	dentro de um diretório oculto na raiz de cada subvolume de dados.
 	Em Btrfs, Bcachefs e NTFS é utilizado o diretório `.snapraid/`,

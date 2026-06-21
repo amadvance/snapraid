@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - 磁盘阵列的 SnapRAID 备份
 
-Synopsis
+概要 (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Synopsis
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Description
+描述 (Description)
 	SnapRAID 是一款专为磁盘阵列设计的备份程序，它存储奇偶校验信息，
 	以在最多六个磁盘发生故障时进行数据恢复。
 
@@ -43,7 +43,7 @@ Description
 
 		:https://www.snapraid.it/
 
-限制
+限制 (Limitations)
 	SnapRAID 是 RAID 和备份程序之间的混合体，旨在结合两者的最佳优势。
 	但是，在使用它之前，您应该考虑它的一些限制。
 
@@ -78,7 +78,7 @@ Description
 	* 仅保存文件名、时间戳、符号链接和硬链接。
 		不保存权限、所有权和扩展属性。
 
-Getting Started
+入门 (Getting Started)
 	要使用 SnapRAID，您需要首先选择磁盘阵列中的一个磁盘专用于
 	`parity`（奇偶校验）信息。使用一个奇偶校验磁盘，
 	您将能够从单磁盘故障中恢复，类似于 RAID5。
@@ -148,7 +148,7 @@ Getting Started
 
 	现在您可以开始随意使用您的阵列，并定期运行 `sync` 命令更新奇偶校验信息。
 
-  Scrubbing
+  数据洗刷 (Scrubbing)
 	要定期检查数据和奇偶校验的错误，您可以运行 `scrub` 命令。
 
 		:snapraid scrub
@@ -181,7 +181,7 @@ Getting Started
 	在未同步的阵列上运行 `scrub` 可能会报告由已删除或已修改文件引起的错误。
 	这些错误会在 `scrub` 输出中报告，但相关块不会被标记为坏块。
 
-  Pooling
+  合并池 (Pooling)
 	注意：下面描述的 pooling 功能已被 mergerfs 工具取代，
 	mergerfs 现在是 SnapRAID 社区推荐的 Linux 用户选项。
 	Mergefs 提供了一种更灵活、更高效的方式，将多个驱动器汇集到一个
@@ -247,7 +247,7 @@ Getting Started
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Undeleting
+  取消删除 (Undeleting)
 	SnapRAID 的功能更像一个备份程序而不是 RAID 系统，
 	它可以使用 -f, --filter 选项来恢复或取消删除文件到其以前的状态：
 
@@ -266,7 +266,7 @@ Getting Started
 
 		:snapraid fix -m
 
-  Recovering
+  数据恢复 (Recovering)
 	最糟糕的情况发生了，您丢失了一个或多个磁盘！
 
 	**不要惊慌！** 您将能够恢复它们！
@@ -344,7 +344,7 @@ Getting Started
 
 	如果所有内容都已恢复，此命令是即时的。
 
-命令
+命令 (Commands)
 	SnapRAID 提供了几个简单的命令，允许您：
 
 	* 打印阵列的状态 -> `status`
@@ -658,7 +658,7 @@ Getting Started
 	如果您想重新分配这些文件，可以使用 -W, --force-realloc-tail 选项。
 	请注意，在重新分配过程中，此类文件将不受校验保护。
 
-Options
+选项 (Options)
 	SnapRAID 提供以下选项：
 
 	-c, --conf CONFIG
@@ -914,7 +914,7 @@ Options
 	-V, --version
 		打印程序版本。
 
-Configuration
+配置 (Configuration)
 	SnapRAID 需要一个配置文件来了解您的磁盘阵列
 	位于何处以及在哪里存储奇偶校验信息。
 
@@ -1251,7 +1251,7 @@ Configuration
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots (快照)
+快照 (Snapshots)
 	如果配置中启用了快照选项，SnapRAID 将
 	利用文件系统快照功能来确保原子操作和一致操作。
 
@@ -1309,7 +1309,7 @@ Snapshots (快照)
 
 	所有其他命令完全在实时文件系统上运行。
 
-快照生命周期
+快照生命周期 (Snapshots Lifecycle)
 	SnapRAID 在每个数据子卷根目录下的隐藏目录中管理两个特定的快照：
 	`stable`（稳定）和 `pending`（待定）。
 	在 Btrfs、Bcachefs 和 NTFS 中使用 `.snapraid/` 目录，
@@ -1337,7 +1337,7 @@ Snapshots (快照)
 	如果 `sync` 在中断后重新启动，现有的 pending 快照将被删除，
 	并创建一个新快照以捕获实时文件系统的当前状态。
 
-Pattern
+模式 (Pattern)
 	模式提供了一种灵活的方法来过滤要包含或排除的文件。通过使用通配符（globbing），
 	您可以定义匹配特定文件名或整个目录结构的规则，而无需手动列出每个路径。
 
@@ -1439,7 +1439,7 @@ Pattern
 	在 Unix 中，在命令行上使用 globbing 字符时，必须
 	引用它们以防止 shell 扩展它们。
 
-Ignore File
+忽略文件 (Ignore File)
 	除了配置文件中的全局规则外，您还可以在阵列内的任何目录中放置
 	`.snapraidignore` 文件，以定义分散的排除规则。
 
@@ -1477,7 +1477,7 @@ Ignore File
 		:# 排除 projects/ 或其子文件夹中任何 .tmp 文件
 		:*.tmp
 
-Content
+内容 (Content)
 	SnapRAID 将文件列表和校验和存储在 content 文件中。
 
 	它是一个二进制文件，列出了磁盘阵列中存在的所有文件，
@@ -1488,7 +1488,7 @@ Content
 	`pool` 命令读取，并被 `smart`、`probe`、`up`、`down` 和 `devices`
 	命令完全忽略。
 
-Parity
+奇偶校验 (Parity)
 	SnapRAID 将阵列的奇偶校验信息存储在 parity 文件中。
 
 	这些是二进制文件，包含 `content` 文件中定义的所有
@@ -1497,7 +1497,7 @@ Parity
 	这些文件由 `sync` 和 `fix` 命令读取和写入，
 	并且仅由 `scrub` 和 `check` 命令读取。
 
-Encoding
+编码 (Encoding)
 	SnapRAID 在 Unix 中忽略任何编码。它读取并存储
 	文件系统使用的相同编码的文件名。
 
@@ -1510,8 +1510,8 @@ Encoding
 	您将控制台输出重定向到文件，则生成的文件始终
 	采用 UTF-8 格式。
 
-Copyright
+版权 (Copyright)
 	此文件版权所有 (C) 2025 Andrea Mazzoleni
 
-See Also
+参见 (See Also)
 	snapraid_log(1), snapraidd(1)

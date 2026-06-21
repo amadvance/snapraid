@@ -28,8 +28,8 @@ snapraid [-c, --conf CONFIG]
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
 
-2 BESKRIVNING
-=============
+2 BESKRIVNING (DESCRIPTION)
+===========================
 
 SnapRAID är ett säkerhetskopieringsprogram designat för disk-arrayer,
 som lagrar paritetsinformation för dataåterställning vid upp till sex
@@ -59,8 +59,8 @@ För mer information, besök den officiella SnapRAID-webbplatsen:
     https://www.snapraid.it/
 
 
-3 BEGRäNSNINGAR
-===============
+3 BEGRäNSNINGAR (LIMITATIONS)
+=============================
 
 SnapRAID är en hybrid mellan en RAID och ett backupprogram, med målet att kombinera
 de bästa fördelarna med båda. Det har dock vissa begränsningar som du bör
@@ -101,8 +101,8 @@ Andra SnapRAID-begränsningar är:
   Behörigheter, ägarskap och utökade attribut sparas inte.
 
 
-4 KOM IGåNG
-===========
+4 KOM IGåNG (GETTING STARTED)
+=============================
 
 För att använda SnapRAID måste du först välja en disk i din disk-array
 som ska dediceras till `parity`-information. Med en disk för paritet,
@@ -225,8 +225,8 @@ Att köra `scrub` på en osynkad array kan rapportera fel orsakade av
 borttagna eller modifierade filer. Dessa fel rapporteras i `scrub`-
 utdata, men de relaterade blocken markeras inte som dåliga.
 
-4.2 Poolning
-------------
+4.2 Poolning (Pooling)
+----------------------
 
 Obs: Poolningsfunktionen som beskrivs nedan har ersatts av verktyget
 mergerfs, som nu är det rekommenderade alternativet för Linux-användare i
@@ -322,8 +322,8 @@ Eller för att återställa alla raderade filer på alla enheter med:
 
     snapraid fix -m
 
-4.4 Återställning
------------------
+4.4 Återställning (Recovering)
+------------------------------
 
 Det värsta har hänt, och du har förlorat en eller flera diskar!
 
@@ -413,8 +413,8 @@ Kör kommandot `sync` för att synkronisera arrayen igen med den nya disken.
 Om allt är återställt är detta kommando omedelbart.
 
 
-5 KOMMANDON
-===========
+5 KOMMANDON (COMMANDS)
+======================
 
 SnapRAID tillhandahåller några enkla kommandon som gör att du kan:
 
@@ -805,8 +805,8 @@ Var medveten om att sådana filer inte skyddas av paritet under
 omallokeringsprocessen.
 
 
-6 ALTERNATIV
-============
+6 ALTERNATIV (OPTIONS)
+======================
 
 SnapRAID tillhandahåller följande alternativ:
 
@@ -1107,8 +1107,8 @@ SnapRAID tillhandahåller följande alternativ:
         Skriver ut programversionen.
 
 
-7 KONFIGURATION
-===============
+7 KONFIGURATION (CONFIGURATION)
+===============================
 
 SnapRAID kräver en konfigurationsfil för att veta var din disk-array
 finns och var paritetsinformationen ska lagras.
@@ -1523,7 +1523,7 @@ Ett exempel på en typisk konfiguration för Windows är:
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 
-8 SNAPSHOTS (ÖGONBLICKSBILDER)
+8 ÖGONBLICKSBILDER (SNAPSHOTS)
 ==============================
 
 Om alternativet för ögonblicksbilder är aktiverat i konfigurationen använder SnapRAID
@@ -1603,8 +1603,8 @@ aktiva filsystemen uteslutande.
 Alla andra kommandon fungerar uteslutande på det aktiva filsystemet.
 
 
-9 LIVSCYKEL FöR öGONBLICKSBILDER
-================================
+9 LIVSCYKEL FöR öGONBLICKSBILDER (SNAPSHOTS LIFECYCLE)
+======================================================
 
 SnapRAID hanterar två specifika ögonblicksbilder, `stable` och `pending`,
 inom en dold katalog i roten av varje datavolym.
@@ -1831,8 +1831,8 @@ Dessa filer läses och skrivs av kommandona `sync` och `fix` och
 läses endast av kommandona `scrub` och `check`.
 
 
-14 KODNING
-==========
+14 KODNING (ENCODING)
+=====================
 
 SnapRAID i Unix ignorerar all kodning. Det läser och lagrar
 filnamnen med samma kodning som används av filsystemet.
@@ -1854,7 +1854,7 @@ i UTF-8-format.
 Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 SE ÄVEN (SEE ALSO)
+16 SE äVEN (SEE ALSO)
 =====================
 
 snapraid_log(1), snapraidd(1)

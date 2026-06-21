@@ -3,8 +3,8 @@
                  ==============================================
 
 
-1 SYNOPSIS
-==========
+1 SKłADNIA (SYNOPSIS)
+=====================
 
 snapraid [-c, --conf CONFIG]
 	[-f, --filter PATTERN] [-d, --filter-disk NAME]
@@ -28,8 +28,8 @@ snapraid [-c, --conf CONFIG]
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
 
-2 DESCRIPTION
-=============
+2 OPIS (DESCRIPTION)
+====================
 
 SnapRAID to program do tworzenia kopii zapasowych przeznaczony
 dla macierzy dyskowych, przechowujący informacje parzystości
@@ -58,8 +58,8 @@ Więcej informacji można znaleźć na oficjalnej stronie SnapRAID:
     https://www.snapraid.it/
 
 
-3 OGRANICZENIA
-==============
+3 OGRANICZENIA (LIMITATIONS)
+============================
 
 SnapRAID jest hybrydą pomiędzy RAID a programem do tworzenia kopii zapasowych, mającą na celu połączenie
 najlepszych zalet obu tych rozwiązań. Posiada jednak pewne ograniczenia, które należy
@@ -101,8 +101,8 @@ Inne ograniczenia SnapRAID to:
   Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
 
 
-4 GETTING STARTED
-=================
+4 PIERWSZE KROKI (GETTING STARTED)
+==================================
 
 Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
 dysków, który zostanie przeznaczony na informacje o `parzystości`. Z jednym dyskiem
@@ -186,8 +186,8 @@ Kiedy to polecenie się zakończy, Twoje dane są BEZPIECZNE.
 Teraz możesz zacząć używać swojej macierzy, jak chcesz, i okresowo
 aktualizować informacje o parzystości, uruchamiając polecenie `sync`.
 
-4.1 Scrubbing
--------------
+4.1 Scrubbing (Scrubbing)
+-------------------------
 
 Aby okresowo sprawdzać dane i parzystość pod kątem błędów, możesz
 uruchomić polecenie `scrub`.
@@ -226,8 +226,8 @@ Uruchomienie `scrub` na niezsynchronizowanej macierzy może zgłosić błędy
 spowodowane usuniętymi lub zmodyfikowanymi plikami. Błędy te są zgłaszane
 w wyniku `scrub`, ale powiązane bloki nie są oznaczane jako złe.
 
-4.2 Pooling
------------
+4.2 Pooling (Pooling)
+---------------------
 
 Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
 narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
@@ -300,8 +300,8 @@ do zdalnych dowiązań symbolicznych za pomocą polecenia:
 
     fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-4.3 Undeleting
---------------
+4.3 Cofanie usuwania (Undeleting)
+---------------------------------
 
 SnapRAID działa bardziej jak program do tworzenia kopii zapasowych niż system RAID
 i może być użyty do przywrócenia lub odzyskania usuniętych plików do ich poprzedniego
@@ -323,8 +323,8 @@ Lub aby odzyskać wszystkie usunięte pliki na wszystkich dyskach za pomocą:
 
     snapraid fix -m
 
-4.4 Recovering
---------------
+4.4 Odzyskiwanie (Recovering)
+-----------------------------
 
 Najgorsze się wydarzyło i straciłeś jeden lub więcej dysków!
 
@@ -413,8 +413,8 @@ Uruchom polecenie `sync`, aby ponownie zsynchronizować macierz z nowym dyskiem.
 Jeśli wszystko zostanie odzyskane, to polecenie jest natychmiastowe.
 
 
-5 POLECENIA
-===========
+5 POLECENIA (COMMANDS)
+======================
 
 SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 
@@ -804,8 +804,8 @@ Pamiętaj, że takie pliki nie będą chronione przez parzystość podczas proce
 realokacji.
 
 
-6 OPTIONS
-=========
+6 OPCJE (OPTIONS)
+=================
 
 SnapRAID udostępnia następujące opcje:
 
@@ -1105,8 +1105,8 @@ SnapRAID udostępnia następujące opcje:
         Wyświetla wersję programu.
 
 
-7 CONFIGURATION
-===============
+7 KONFIGURACJA (CONFIGURATION)
+==============================
 
 SnapRAID wymaga pliku konfiguracyjnego, aby wiedzieć, gdzie znajduje się Twoja macierz
 dysków i gdzie przechowywać informacje o parzystości.
@@ -1519,7 +1519,7 @@ Przykład typowej konfiguracji dla systemu Windows:
     smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 
-8 SNAPSHOTS (MIGAWKI)
+8 MIGAWKI (SNAPSHOTS)
 =====================
 
 Jeśli opcja snapshot jest włączona w konfiguracji, SnapRAID
@@ -1601,8 +1601,8 @@ aktywnych systemów plików.
 Wszystkie inne polecenia działają wyłącznie na aktywnym systemie plików.
 
 
-9 CYKL żYCIA MIGAWEK
-====================
+9 CYKL żYCIA MIGAWEK (SNAPSHOTS LIFECYCLE)
+==========================================
 
 SnapRAID zarządza dwoma określonymi migawkami, `stable` (stabilną) oraz `pending` (oczekującą),
 w ukrytym katalogu w katalogu głównym każdego podwolumenu danych.
@@ -1638,8 +1638,8 @@ oczekująca (pending) migawka jest usuwana, a tworzona jest nowa, aby
 uchwycić bieżący stan aktywnego systemu plików.
 
 
-10 PATTERN
-==========
+10 WZORCE (PATTERN)
+===================
 
 Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub
 wykluczenia. Używając znaków globbingowych, można zdefiniować reguły, które
@@ -1757,8 +1757,8 @@ W systemie Unix, używając znaków globbing w wierszu poleceń, musisz
 je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
 
 
-11 IGNORE FILE
-==============
+11 PLIK IGNOROWANIA (IGNORE FILE)
+=================================
 
 Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
 `.snapraidignore` w dowolnym katalogu w macierzy, aby zdefiniować
@@ -1802,8 +1802,8 @@ Na przykład, jeśli masz `.snapraidignore` w `/mnt/disk1/projects/`:
     *.tmp
 
 
-12 CONTENT
-==========
+12 ZAWARTOść (CONTENT)
+======================
 
 SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 
@@ -1817,8 +1817,8 @@ całkowicie ignorowany przez polecenia `smart`, `probe`, `up`, `down`
 i `devices`.
 
 
-13 PARITY
-=========
+13 PARZYSTOść (PARITY)
+======================
 
 SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
 parzystości.
@@ -1830,8 +1830,8 @@ Pliki te są odczytywane i zapisywane przez polecenia `sync` i `fix`
 oraz tylko odczytywane przez polecenia `scrub` i `check`.
 
 
-14 ENCODING
-===========
+14 KODOWANIE (ENCODING)
+=======================
 
 SnapRAID w systemie Unix ignoruje wszelkie kodowanie. Odczytuje i przechowuje
 nazwy plików z tym samym kodowaniem używanym przez system plików.
@@ -1847,13 +1847,13 @@ przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 w formacie UTF-8.
 
 
-15 COPYRIGHT
-============
+15 PRAWA AUTORSKIE (COPYRIGHT)
+==============================
 
 Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 
 
-16 SEE ALSO
-===========
+16 ZOBACZ RóWNIEż (SEE ALSO)
+============================
 
 snapraid_log(1), snapraidd(1)
