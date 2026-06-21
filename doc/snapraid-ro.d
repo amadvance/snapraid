@@ -1694,8 +1694,10 @@ Conținut (Content)
 	Este un fișier binar care listează toate fișierele prezente în matricea dvs. de discuri,
 	împreună cu toate sumele de control pentru a le verifica integritatea.
 
-	Acest fișier este citit și scris de comenzile `sync` și `scrub` și
-	citit de comenzile `fix`, `check` și `status`.
+	Fișierul de conținut este citit și scris de comenzile `sync`, `scrub`,
+	`touch` și `rehash`. Este citit de comenzile `status`, `diff`, `check`,
+	`fix`, `list`, `dup`, `locate` și `pool`, și este complet ignorat
+	de comenzile `smart`, `probe`, `up`, `down` și `devices`.
 
 Paritate (Parity)
 	SnapRAID stochează informațiile de paritate ale matricei dvs. în fișierele de paritate.

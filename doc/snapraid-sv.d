@@ -1693,8 +1693,10 @@ Innehåll (Content)
 	Det är en binär fil som listar alla filer som finns i din disk-array,
 	tillsammans med alla checksummor för att verifiera deras integritet.
 
-	Denna fil läses och skrivs av kommandona `sync` och `scrub` och
-	läses av kommandona `fix`, `check` och `status`.
+	Content-filen läses och skrivs av kommandona `sync`, `scrub`, `touch`
+	och `rehash`. Den läses av kommandona `status`, `diff`, `check`, `fix`,
+	`list`, `dup`, `locate` och `pool`, och den ignoreras helt av
+	kommandona `smart`, `probe`, `up`, `down` och `devices`.
 
 Paritet (Parity)
 	SnapRAID lagrar paritetsinformationen för din array i parity-

@@ -1697,8 +1697,10 @@ Content
 	It is a binary file that lists all the files present in your disk array,
 	along with all the checksums to verify their integrity.
 
-	This file is read and written by the `sync` and `scrub` commands and
-	read by the `fix`, `check`, and `status` commands.
+	The content file is read and written by the `sync`, `scrub`, `touch`, and
+	`rehash` commands. It is read by the `status`, `diff`, `check`, `fix`,
+	`list`, `dup`, `locate`, and `pool` commands, and it is completely
+	ignored by the `smart`, `probe`, `up`, `down`, and `devices` commands.
 
 Parity
 	SnapRAID stores the parity information of your array in the parity

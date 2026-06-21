@@ -1788,8 +1788,10 @@ Content
 	È un file binario che elenca tutti i file presenti nell'array di dischi,
 	insieme a tutti i checksum per verificarne l'integrità.
 
-	Questo file viene letto e scritto dai comandi `sync` e `scrub` e
-	letto dai comandi `fix`, `check` e `status`.
+	Il file di contenuto viene letto e scritto dai comandi `sync`, `scrub`,
+	`touch` e `rehash`. Viene letto dai comandi `status`, `diff`, `check`,
+	`fix`, `list`, `dup`, `locate` e `pool`, e viene completamente ignorato
+	dai comandi `smart`, `probe`, `up`, `down` e `devices`.
 
 Parity
 	SnapRAID memorizza le informazioni di parità dell'array nei file di

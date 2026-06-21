@@ -1926,8 +1926,11 @@ Es ist eine Binärdatei, die alle im Festplatten-Array vorhandenen
 Dateien auflistet, zusammen mit allen Prüfsummen zur Überprüfung
 ihrer Integrität.
 
-Diese Datei wird von den Befehlen `sync` und `scrub` gelesen und
-geschrieben und von den Befehlen `fix`, `check` und `status` gelesen.
+Die Content-Datei wird von den Befehlen `sync`, `scrub`, `touch` und
+`rehash` gelesen und geschrieben. Sie wird von den Befehlen `status`,
+`diff`, `check`, `fix`, `list`, `dup`, `locate` und `pool` gelesen und
+von den Befehlen `smart`, `probe`, `up`, `down` und `devices` vollständig
+ignoriert.
 
 
 13 PARITY
