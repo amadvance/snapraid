@@ -2092,8 +2092,10 @@ SnapRAID는 content 파일에 파일 목록과 체크섬을 저장합니다.
 이것은 디스크 어레이에 있는 모든 파일의 목록과 무결성을 확인하기 위한
 모든 체크섬을 나열하는 이진 파일입니다.
 .PP
-이 파일은 \`sync\` 및 \`scrub\` 명령에 의해 읽고 쓰여지며,
-\`fix\`, \`check\`, 및 \`status\` 명령에 의해 읽혀집니다.
+content 파일은 \`sync\`, \`scrub\`, \`touch\` 및 \`rehash\` 명령에 의해
+읽고 쓰여집니다. 이것은 \`status\`, \`diff\`, \`check\`, \`fix\`, \`list\`,
+\`dup\`, \`locate\` 및 \`pool\` 명령에 의해 읽혀지며, \`smart\`, \`probe\`,
+\`up\`, \`down\` 및 \`devices\` 명령에 의해 완전히 무시됩니다.
 .SH PARITY 
 SnapRAID는 패리티 파일에 어레이의 패리티 정보를 저장합니다.
 .PP

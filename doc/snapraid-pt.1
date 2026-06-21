@@ -2205,8 +2205,10 @@ SnapRAID armazena a lista e os checksums de seus arquivos no arquivo content.
 É um arquivo binário que lista todos os arquivos presentes em seu array
 de discos, juntamente com todos os checksums para verificar sua integridade.
 .PP
-Este arquivo é lido e escrito pelos comandos \`sync\` e \`scrub\` e
-lido pelos comandos \`fix\`, \`check\` e \`status\`.
+O arquivo content é lido e escrito pelos comandos \`sync\`, \`scrub\`,
+\`touch\` e \`rehash\`. É lido pelos comandos \`status\`, \`diff\`, \`check\`,
+\`fix\`, \`list\`, \`dup\`, \`locate\` e \`pool\`, e é completamente ignorado
+pelos comandos \`smart\`, \`probe\`, \`up\`, \`down\` e \`devices\`.
 .SH PARIDADE (PARITY) 
 SnapRAID armazena as informações de paridade do seu array nos arquivos parity.
 .PP
