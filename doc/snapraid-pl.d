@@ -1451,6 +1451,7 @@ Migawki (Snapshots)
 	Migawki są tworzone tylko dla dysków z danymi i tylko wtedy, gdy bazowy
 	system plików obsługuje tę funkcjonalność. Dyski parzystości zawsze używają
 	aktywnego systemu plików.
+
 	Obecnie jest to obsługiwane w systemach Btrfs, Bcachefs i ZFS w systemie Linux
 	oraz NTFS w systemie Windows.
 
@@ -1729,4 +1730,4 @@ Prawa autorskie (Copyright)
 	Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 
 Zobacz również (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

@@ -1530,6 +1530,7 @@ Instantáneas (Snapshots)
 	Las instantáneas se crean solo para discos de datos y solo si el sistema de archivos
 	subyacente admite esta funcionalidad. Los discos de paridad siempre usan
 	el sistema de archivos activo.
+
 	Actualmente, esto es compatible con Btrfs, Bcachefs y ZFS en Linux
 	y con NTFS en Windows.
 
@@ -1814,4 +1815,4 @@ Copyright
 	Este archivo es Copyright (C) 2025 Andrea Mazzoleni
 
 Véase también (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

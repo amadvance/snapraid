@@ -1396,6 +1396,7 @@ Name{number}
 
 	스냅샷은 데이터 디스크에 대해서만 생성되며, 기본 파일시스템이 이 기능을 지원하는 경우에만
 	생성됩니다. 파리티 디스크는 항상 라이브 파일시스템을 사용합니다.
+
 	현재 이는 Linux의 Btrfs, Bcachefs, ZFS 및 Windows의 NTFS에서 지원됩니다.
 
 	서로 다른 파일시스템을 가진 데이터 디스크를 혼합할 수 있습니다. 스냅샷을 지원하는 디스크만
@@ -1651,4 +1652,4 @@ Name{number}
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
 참고 (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)
