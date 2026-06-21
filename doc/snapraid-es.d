@@ -1806,6 +1806,10 @@ Codificación (Encoding)
 	archivo impresos; si redirige la salida de la consola a un archivo,
 	el archivo resultante siempre está en formato UTF-8.
 
+Traducción (Translation)
+	Este documento es una traducción automática del manual en inglés.
+	Consulte el manual en inglés para obtener la versión oficial.
+
 Copyright
 	Este archivo es Copyright (C) 2025 Andrea Mazzoleni
 

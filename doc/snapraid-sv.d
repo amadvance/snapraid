@@ -1722,6 +1722,10 @@ Kodning (Encoding)
 	omdirigerar konsolutdata till en fil, är den resulterande filen alltid
 	i UTF-8-format.
 
+Översättning (Translation)
+	Detta dokument är en automatisk översättning av den engelska manualen.
+	Se den engelska manualen för den officiella versionen.
+
 Upphovsrätt (Copyright)
 	Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
