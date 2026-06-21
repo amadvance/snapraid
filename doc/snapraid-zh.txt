@@ -1602,8 +1602,10 @@ SnapRAID 将文件列表和校验和存储在 content 文件中。
 它是一个二进制文件，列出了磁盘阵列中存在的所有文件，
 以及用于验证其完整性的所有校验和。
 
-此文件由 `sync` 和 `scrub` 命令读取和写入，并由
-`fix`、`check` 和 `status` 命令读取。
+content 文件由 `sync`、`scrub`、`touch` 和 `rehash` 命令读取和写入。
+它由 `status`、`diff`、`check`、`fix`、`list`、`dup`、`locate` 和
+`pool` 命令读取，并被 `smart`、`probe`、`up`、`down` 和 `devices`
+命令完全忽略。
 
 
 13 PARITY

@@ -1776,8 +1776,10 @@ Content
 	su array de discos, junto con todas las sumas de comprobación para
 	verificar su integridad.
 
-	Este archivo es leído y escrito por los comandos `sync` y `scrub`
-	y leído por los comandos `fix`, `check` y `status`.
+	El archivo de contenido es leído y escrito por los comandos `sync`,
+	`scrub`, `touch` y `rehash`. Es leído por los comandos `status`, `diff`,
+	`check`, `fix`, `list`, `dup`, `locate` y `pool`, y es completamente
+	ignorado por los comandos `smart`, `probe`, `up`, `down` y `devices`.
 
 Parity
 	SnapRAID almacena la información de paridad de su array en los

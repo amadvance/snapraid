@@ -1729,8 +1729,10 @@ Conteúdo (Content)
 	É um arquivo binário que lista todos os arquivos presentes em seu array
 	de discos, juntamente com todos os checksums para verificar sua integridade.
 
-	Este arquivo é lido e escrito pelos comandos `sync` e `scrub` e
-	lido pelos comandos `fix`, `check` e `status`.
+	O arquivo content é lido e escrito pelos comandos `sync`, `scrub`,
+	`touch` e `rehash`. É lido pelos comandos `status`, `diff`, `check`,
+	`fix`, `list`, `dup`, `locate` e `pool`, e é completamente ignorado
+	pelos comandos `smart`, `probe`, `up`, `down` e `devices`.
 
 Paridade (Parity)
 	SnapRAID armazena as informações de paridade do seu array nos arquivos parity.
