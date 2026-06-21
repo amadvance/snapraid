@@ -1556,6 +1556,7 @@ Odzyskiwanie - Jeśli plik zostanie zaktualizowany lub usunięty z aktywnego sys
 Migawki są tworzone tylko dla dysków z danymi i tylko wtedy, gdy bazowy
 system plików obsługuje tę funkcjonalność. Dyski parzystości zawsze używają
 aktywnego systemu plików.
+
 Obecnie jest to obsługiwane w systemach Btrfs, Bcachefs i ZFS w systemie Linux
 oraz NTFS w systemie Windows.
 
@@ -1863,4 +1864,4 @@ Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 17 ZOBACZ RóWNIEż (SEE ALSO)
 ============================
 
-snapraid_log(1), snapraidd(1)
+snapraid_log(1), snapraidd(1), rsync(1)

@@ -1565,6 +1565,7 @@ Snapshots
 	Les instantanés sont créés uniquement pour les disques de données et uniquement si le système de fichiers
 	sous-jacent prend en charge cette fonctionnalité. Les disques de parité utilisent toujours
 	le système de fichiers actif.
+
 	Actuellement, cela est pris en charge sur Btrfs, Bcachefs et ZFS sous Linux
 	et sur NTFS sous Windows.
 
@@ -1854,4 +1855,4 @@ Droits d'auteur (Copyright)
 	Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
 
 Voir aussi (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)
