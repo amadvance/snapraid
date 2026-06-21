@@ -1349,6 +1349,7 @@ Name{number}
 
 	スナップショットはデータディスクに対してのみ、かつ基礎となるファイルシステムがその機能をサポートして
 	いる場合にのみ作成されます。パリティディスクは常にライブファイルシステムを使用します。
+
 	現在、これはLinuxのBtrfs、Bcachefs、ZFS、およびWindowsのNTFSでサポートされています。
 
 	異なるファイルシステムを持つデータディスクを混在させることができます。スナップショットをサポートして
@@ -1602,4 +1603,4 @@ Name{number}
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
 関連項目 (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

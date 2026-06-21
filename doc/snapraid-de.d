@@ -1563,6 +1563,7 @@ Snapshots
 	Snapshots werden nur für Datenträger erstellt und nur dann, wenn das zugrunde liegende
 	Dateisystem diese Funktionalität unterstützt. Paritätsfestplatten verwenden immer
 	das Live-Dateisystem.
+
 	Derzeit wird dies auf Btrfs, Bcachefs und ZFS unter Linux
 	und auf NTFS unter Windows unterstützt.
 
@@ -1846,4 +1847,4 @@ Copyright
 	Diese Datei ist Copyright (C) 2025 Andrea Mazzoleni
 
 Siehe auch (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

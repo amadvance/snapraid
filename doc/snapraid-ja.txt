@@ -1454,6 +1454,7 @@ Windowsの一般的な構成の例は次のとおりです。
 
 スナップショットはデータディスクに対してのみ、かつ基礎となるファイルシステムがその機能をサポートして
 いる場合にのみ作成されます。パリティディスクは常にライブファイルシステムを使用します。
+
 現在、これはLinuxのBtrfs、Bcachefs、ZFS、およびWindowsのNTFSでサポートされています。
 
 異なるファイルシステムを持つデータディスクを混在させることができます。スナップショットをサポートして
@@ -1736,4 +1737,4 @@ This file is Copyright (C) 2025 Andrea Mazzoleni
 17 関連項目 (SEE ALSO)
 ==================
 
-snapraid_log(1), snapraidd(1)
+snapraid_log(1), snapraidd(1), rsync(1)
