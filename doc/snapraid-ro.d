@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - SnapRAID Backup pentru Matrici de Discuri
 
-Sintaxă
+Sintaxă (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Sintaxă
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Descriere
+Descriere (Description)
 	SnapRAID este un program de backup conceput pentru matrici de discuri, care stochează
 	informații de paritate pentru recuperarea datelor în cazul a până la șase
 	defecte de disc.
@@ -51,7 +51,7 @@ Descriere
 
 		:https://www.snapraid.it/
 
-Limitări
+Limitări (Limitations)
 	SnapRAID este un hibrid între un RAID și un program de backup, având ca scop combinarea
 	celor mai bune avantaje ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
 	să le luați în considerare înainte de a-l utiliza.
@@ -90,7 +90,7 @@ Limitări
 	* Sunt salvate doar numele fișierelor, mărcile temporale, symlink-urile și hardlink-urile.
 		Permisiunile, proprietarul și atributele extinse nu sunt salvate.
 
-Noțiuni de Bază
+Noțiuni de Bază (Getting Started)
 	Pentru a utiliza SnapRAID, trebuie mai întâi să selectați un disc în matricea dvs. de discuri
 	pentru a-l dedica informațiilor de `paritate`. Cu un singur disc pentru paritate, veți
 	putea recupera dintr-o singură defecțiune de disc, similar cu RAID5.
@@ -171,7 +171,7 @@ Noțiuni de Bază
 	Acum puteți începe să utilizați matricea după cum doriți și
 	să actualizați periodic informațiile de paritate rulând comanda `sync`.
 
-  Scrubbing (Verificare)
+  Verificare (Scrubbing)
 	Pentru a verifica periodic datele și paritatea pentru erori, puteți
 	rula comanda `scrub`.
 
@@ -209,7 +209,7 @@ Noțiuni de Bază
 	fișiere eliminate sau modificate. Aceste erori sunt raportate în ieșirea `scrub`,
 	dar blocurile aferente nu sunt marcate ca defecte.
 
-  Pooling (Agregare)
+  Agregare (Pooling)
 	Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
 	mergerfs, care este acum opțiunea recomandată pentru utilizatorii Linux în
 	comunitatea SnapRAID. Mergefs oferă o modalitate mai flexibilă și eficientă
@@ -280,7 +280,7 @@ Noțiuni de Bază
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Undeleting (Anulare Ștergere)
+  Anulare ștergere (Undeleting)
 	SnapRAID funcționează mai mult ca un program de backup decât un sistem RAID și poate
 	fi folosit pentru a restaura sau anula ștergerea fișierelor la starea lor anterioară utilizând
 	opțiunea -f, --filter:
@@ -301,7 +301,7 @@ Noțiuni de Bază
 
 		:snapraid fix -m
 
-  Recuperare
+  Recuperare (Recovering)
 	Cel mai rău s-a întâmplat și ați pierdut unul sau mai multe discuri!
 
 	NU INTRAȚI ÎN PANICĂ! Veți putea să le recuperați!
@@ -387,7 +387,7 @@ Noțiuni de Bază
 
 	Dacă totul este recuperat, această comandă este imediată.
 
-Comenzi
+Comenzi (Commands)
 	SnapRAID oferă câteva comenzi simple care vă permit să:
 
 	* Afișați starea matricei -> `status`
@@ -741,7 +741,7 @@ Comenzi
 	Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul procesului
 	de realocare.
 
-Opțiuni
+Opțiuni (Options)
 	SnapRAID oferă următoarele opțiuni:
 
 	-c, --conf CONFIG
@@ -1043,7 +1043,7 @@ Opțiuni
 	-V, --version
 		Tipărește versiunea programului.
 
-Configurare
+Configurare (Configuration)
 	SnapRAID necesită un fișier de configurare pentru a ști unde se află matricea dvs. de discuri
 	și unde să stocheze informațiile de paritate.
 
@@ -1496,7 +1496,7 @@ Snapshots
 
 	Toate celelalte comenzi operează exclusiv pe sistemul de fișiere live.
 
-Ciclul de viață al snapshot-urilor
+Ciclul de viață al snapshot-urilor (Snapshots Lifecycle)
 	SnapRAID gestionează două snapshot-uri specifice, `stable` și `pending`,
 	într-un director ascuns la rădăcina fiecărui subvolum de date.
 	În Btrfs, Bcachefs și NTFS se folosește directorul `.snapraid/`,

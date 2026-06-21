@@ -77,7 +77,7 @@ snapraid [\-c, \-\-conf CONFIG]
 snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PD
-.SH DESCRIPTION 
+.SH BESCHREIBUNG (DESCRIPTION) 
 SnapRAID ist ein Sicherungsprogramm, das für Festplatten\-Arrays
 entwickelt wurde und Paritätsinformationen zur Datenwiederherstellung
 bei Ausfall von bis zu sechs Festplatten speichert.
@@ -117,7 +117,7 @@ https://www.snapraid.it/
 .PD 0
 .PD
 .RE
-.SH EINSCHRäNKUNGEN 
+.SH EINSCHRäNKUNGEN (LIMITATIONS) 
 SnapRAID ist ein Hybrid aus RAID und einem Backup\-Programm mit dem Ziel, die
 besten Vorteile von beiden zu kombinieren. Es hat jedoch einige Einschränkungen, die Sie
 vor der Verwendung berücksichtigen sollten.
@@ -167,7 +167,7 @@ Nur Dateinamen, Zeitstempel, symbolische Links (symlinks) und
 Hardlinks werden gespeichert. Berechtigungen, Eigentümerschaft
 und erweiterte Attribute werden nicht gespeichert.
 .PD
-.SH GETTING STARTED 
+.SH ERSTE SCHRITTE (GETTING STARTED) 
 Um SnapRAID zu verwenden, müssen Sie zuerst eine Festplatte in Ihrem
 Festplatten\-Array auswählen, die für \`parity\`\-Informationen
 reserviert wird. Mit einer Festplatte für Parität können Sie von
@@ -317,7 +317,7 @@ Wenn dieser Befehl abgeschlossen ist, sind Ihre Daten SICHER.
 .PP
 Jetzt können Sie Ihr Array nach Belieben verwenden und die Paritätsinformationen
 regelmäßig durch Ausführen des \`sync\`\-Befehls aktualisieren.
-.SS Scrubbing 
+.SS Scrubben (Scrubbing) 
 Um die Daten und die Parität regelmäßig auf Fehler zu überprüfen,
 können Sie den Befehl \`scrub\` ausführen.
 .PP
@@ -381,7 +381,7 @@ kann Fehler melden, die durch entfernte oder geänderte Dateien
 verursacht wurden. Diese Fehler werden in der \`scrub\`\-Ausgabe
 gemeldet, aber die zugehörigen Blöcke werden nicht als fehlerhaft
 markiert.
-.SS Pooling 
+.SS Zusammenführen (Pooling) 
 Hinweis: Die unten beschriebene Pooling\-Funktion wurde durch das
 Tool mergerfs ersetzt, das jetzt die empfohlene Option für Linux\-Benutzer
 in der SnapRAID\-Community ist. Mergefs bietet eine flexiblere
@@ -538,7 +538,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 .PD 0
 .PD
 .RE
-.SS Undeleting 
+.SS Wiederherstellen (Undeleting) 
 SnapRAID funktioniert eher wie ein Sicherungsprogramm als ein RAID\-System
 und kann verwendet werden, um Dateien in ihren vorherigen Zustand
 wiederherzustellen oder das Löschen rückgängig zu machen, indem die
@@ -576,7 +576,7 @@ snapraid fix \-m
 .PD 0
 .PD
 .RE
-.SS Recovering 
+.SS Wiederherstellung (Recovering) 
 Das Schlimmste ist passiert, und Sie haben eine oder mehrere Festplatten
 verloren!
 .PP
@@ -691,7 +691,7 @@ snapraid sync
 .RE
 .PP
 Wenn alles wiederhergestellt ist, ist dieser Befehl sofort.
-.SH BEFEHLE 
+.SH BEFEHLE (COMMANDS) 
 SnapRAID bietet ein paar einfache Befehle, mit denen Sie:
 .PD 0
 .IP \(bu
@@ -1111,7 +1111,7 @@ Wenn Sie diese Dateien neu zuweisen möchten, können Sie die Option
 \-W, \-\-force\-realloc\-tail verwenden.
 Beachten Sie, dass solche Dateien während des Neuzuweisungsprozesses
 nicht durch die Parität geschützt sind.
-.SH OPTIONS 
+.SH OPTIONEN (OPTIONS) 
 SnapRAID bietet die folgenden Optionen:
 .TP
 .B \-c, \-\-conf CONFIG
@@ -1427,7 +1427,7 @@ Gibt eine kurze Hilfeanzeige aus.
 .TP
 .B \-V, \-\-version
 Gibt die Programmversion aus.
-.SH CONFIGURATION 
+.SH KONFIGURATION (CONFIGURATION) 
 SnapRAID benötigt eine Konfigurationsdatei, um zu wissen, wo sich
 Ihr Festplatten\-Array befindet und wo die Paritätsinformationen
 gespeichert werden sollen.
@@ -2007,7 +2007,7 @@ Wenn keine Option \-d angegeben ist, nimmt SnapRAID an, dass die Operation für 
 In diesem Fall verwenden \`check\` und \`fix\` ausschließlich die Live\-Dateisysteme.
 .PP
 Alle anderen Befehle arbeiten ausschließlich auf dem Live\-Dateisystem.
-.SH LEBENSZYKLUS VON SNAPSHOTS 
+.SH LEBENSZYKLUS VON SNAPSHOTS (SNAPSHOTS LIFECYCLE) 
 SnapRAID verwaltet zwei spezifische Snapshots, \`stable\` und \`pending\`,
 in einem versteckten Verzeichnis im Stammverzeichnis jedes Daten\-Subvolumes.
 Unter Btrfs, Bcachefs und NTFS wird das Verzeichnis \`.snapraid/\` verwendet,
@@ -2039,7 +2039,7 @@ und die endgültige Version der .content\-Datei gespeichert wurde.
 Wenn ein \`sync\` nach einer Unterbrechung neu gestartet wird, wird der vorhandene
 ausstehende (pending) Snapshot gelöscht und ein neuer erstellt, um den
 aktuellen Zustand des Live\-Dateisystems zu erfassen.
-.SH PATTERN 
+.SH MUSTER (PATTERN) 
 Muster bieten eine flexible Möglichkeit, Dateien für die Einbeziehung oder
 den Ausschluss zu filtern. Durch die Verwendung von Globbing\-Zeichen können Sie Regeln definieren,
 die mit bestimmten Dateinamen oder ganzen Verzeichnisstrukturen übereinstimmen, ohne
@@ -2226,7 +2226,7 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 Unter Unix müssen Sie Globbing\-Zeichen in der Befehlszeile in
 Anführungszeichen setzen, um zu verhindern, dass die Shell sie erweitert.
-.SH DATEIEN IGNORIEREN 
+.SH DATEIEN IGNORIEREN (IGNORE FILE) 
 Zusätzlich zu den globalen Regeln in der Konfigurationsdatei können Sie
 \`.snapraidignore\`\-Dateien in jedem Verzeichnis innerhalb des Arrays platzieren,
 um dezentrale Ausschlussregeln zu definieren.
@@ -2286,7 +2286,7 @@ build/
 .PD 0
 .PD
 .RE
-.SH CONTENT 
+.SH INHALT (CONTENT) 
 SnapRAID speichert die Liste und Prüfsummen Ihrer Dateien in der
 Content\-Datei.
 .PP
@@ -2299,7 +2299,7 @@ Die Content\-Datei wird von den Befehlen \`sync\`, \`scrub\`, \`touch\` und
 \`diff\`, \`check\`, \`fix\`, \`list\`, \`dup\`, \`locate\` und \`pool\` gelesen und
 von den Befehlen \`smart\`, \`probe\`, \`up\`, \`down\` und \`devices\` vollständig
 ignoriert.
-.SH PARITY 
+.SH PARITäT (PARITY) 
 SnapRAID speichert die Paritätsinformationen Ihres Arrays in den
 Paritätsdateien.
 .PP
@@ -2308,7 +2308,7 @@ Dies sind Binärdateien, die die berechnete Parität aller in der
 .PP
 Diese Dateien werden von den Befehlen \`sync\` und \`fix\` gelesen
 und geschrieben und nur von den Befehlen \`scrub\` und \`check\` gelesen.
-.SH ENCODING 
+.SH KODIERUNG (ENCODING) 
 SnapRAID ignoriert unter Unix jede Kodierung. Es liest und speichert
 die Dateinamen mit derselben Kodierung, die vom Dateisystem
 verwendet wird.
@@ -2324,5 +2324,5 @@ die Konsolenausgabe in eine Datei umleiten, ist die resultierende
 Datei immer im UTF\-8\-Format.
 .SH COPYRIGHT 
 Diese Datei ist Copyright (C) 2025 Andrea Mazzoleni
-.SH SEE ALSO 
+.SH SIEHE AUCH (SEE ALSO) 
 snapraid_log(1), snapraidd(1)
