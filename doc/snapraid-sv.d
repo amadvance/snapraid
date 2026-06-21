@@ -1453,6 +1453,7 @@ Konfiguration (Configuration)
 	Ögonblicksbilder skapas endast för datadiskar och endast om det underliggande
 	filsystemet stöder denna funktionalitet. Paritetsdiskar använder alltid
 	det aktiva filsystemet.
+
 	För närvarande stöds detta på Btrfs, Bcachefs och ZFS i Linux
 	och på NTFS i Windows.
 
@@ -1489,7 +1490,7 @@ Konfiguration (Configuration)
 	på dina friska diskar medan en återställning pågår, har SnapRAID
 	en stabil, frusen referens för att lösa paritetsekvationerna.
 
-	Om inget -d-alternativ anges antar SnapRAID kraschat att operationen gäller
+	Om inget -d-alternativ anges antar SnapRAID att operationen gäller
 	hela arrayen, i detta fall kommer `check` och `fix` att använda de
 	aktiva filsystemen uteslutande.
 
@@ -1730,4 +1731,4 @@ Upphovsrätt (Copyright)
 	Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
 Se även (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

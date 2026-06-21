@@ -1542,6 +1542,7 @@ Snapshots
 	Gli snapshot vengono creati solo per i dischi dati e solo se il file system
 	sottostante supporta questa funzionalità. I dischi di parità usano sempre
 	il file system live.
+
 	Attualmente, questo è supportato su Btrfs, Bcachefs e ZFS in Linux
 	e su NTFS in Windows.
 
@@ -1573,7 +1574,7 @@ Snapshots
 	i dati sul disco sostitutivo attivo. Per `check`, consente di simulare
 	l'operazione `fix` nelle stesse condizioni.
 
-	Tutti gli altri dischi dati (i dischi di "riferimento") verranno cercati tramite
+	Tutti gli altri dischi dati (i dischi di "riferimento") verranno acceduti tramite
 	i loro snapshot. Ciò garantisce che anche se si stanno modificando file
 	sui dischi integri mentre è in corso un recupero, SnapRAID
 	ha un riferimento stabile e congelato per risolvere le equazioni di parità.
@@ -1826,4 +1827,4 @@ Copyright
 	Questo file è Copyright (C) 2025 Andrea Mazzoleni
 
 Vedi anche (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

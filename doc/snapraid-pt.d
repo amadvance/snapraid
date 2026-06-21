@@ -1489,6 +1489,7 @@ Instantâneos (Snapshots)
 	Os instantâneos são criados apenas para discos de dados e apenas se o sistema de ficheiros
 	subjacente suportar esta funcionalidade. Os discos de paridade usam sempre
 	o sistema de ficheiros ativo.
+
 	Atualmente, isto é suportado em Btrfs, Bcachefs e ZFS em Linux
 	e em NTFS em Windows.
 
@@ -1765,4 +1766,4 @@ Direitos Autorais (Copyright)
 	Este arquivo é Copyright (C) 2025 Andrea Mazzoleni
 
 Veja Também (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)

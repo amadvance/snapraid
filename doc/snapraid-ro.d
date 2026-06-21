@@ -1454,6 +1454,7 @@ Snapshots
 	Snapshot-urile sunt create doar pentru discurile de date și numai dacă sistemul de fișiere
 	subiacent acceptă această funcționalitate. Discurile de paritate folosesc întotdeauna
 	sistemul de fișiere live.
+
 	În prezent, acest lucru este acceptat pe Btrfs, Bcachefs și ZFS în Linux
 	și pe NTFS în Windows.
 
@@ -1730,4 +1731,4 @@ Drept de Autor (Copyright)
 	Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
 
 Vezi și (See Also)
-	snapraid_log(1), snapraidd(1)
+	snapraid_log(1), snapraidd(1), rsync(1)
