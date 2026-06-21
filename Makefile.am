@@ -1282,6 +1282,10 @@ endif
 
 web: $(LIST_XML)
 
+# All docs
+
+doc: $(LIST_MAN) $(LIST_TXT)
+
 # Windows distribution
 
 DISTWIN = \
