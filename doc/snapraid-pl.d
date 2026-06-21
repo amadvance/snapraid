@@ -1691,8 +1691,11 @@ Content
 	Jest to plik binarny, który zawiera listę wszystkich plików obecnych w Twojej macierzy dysków,
 	wraz ze wszystkimi sumami kontrolnymi w celu weryfikacji ich integralności.
 
-	Ten plik jest odczytywany i zapisywany przez polecenia `sync` i `scrub`
-	oraz odczytywany przez polecenia `fix`, `check` i `status`.
+	Plik zawartości jest odczytywany i zapisywany przez polecenia `sync`,
+	`scrub`, `touch` i `rehash`. Jest odczytywany przez polecenia `status`,
+	`diff`, `check`, `fix`, `list`, `dup`, `locate` i `pool`, oraz jest
+	całkowicie ignorowany przez polecenia `smart`, `probe`, `up`, `down`
+	i `devices`.
 
 Parity
 	SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
