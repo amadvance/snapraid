@@ -1818,6 +1818,10 @@ Codifica (Encoding)
 	reindirizza l'output della console a un file, il file risultante è
 	sempre in formato UTF-8.
 
+Traduzione (Translation)
+	Questo documento è una traduzione automatica del manuale in inglese.
+	Fare riferimento al manuale in inglese per la versione ufficiale.
+
 Copyright
 	Questo file è Copyright (C) 2025 Andrea Mazzoleni
 

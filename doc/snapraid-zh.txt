@@ -1636,13 +1636,20 @@ SnapRAID 在 Unix 中忽略任何编码。它读取并存储
 采用 UTF-8 格式。
 
 
-15 版权 (COPYRIGHT)
+15 翻译 (TRANSLATION)
+===================
+
+本文档是英文手册的自动翻译。
+请参阅英文手册以获取权威版本。
+
+
+16 版权 (COPYRIGHT)
 =================
 
 此文件版权所有 (C) 2025 Andrea Mazzoleni
 
 
-16 参见 (SEE ALSO)
+17 参见 (SEE ALSO)
 ================
 
 snapraid_log(1), snapraidd(1)

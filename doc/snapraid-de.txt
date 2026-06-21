@@ -1964,13 +1964,20 @@ die Konsolenausgabe in eine Datei umleiten, ist die resultierende
 Datei immer im UTF-8-Format.
 
 
-15 COPYRIGHT
+15 ÜBERSETZUNG (TRANSLATION)
+============================
+
+Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
+Die maßgebliche Version finden Sie im englischen Handbuch.
+
+
+16 COPYRIGHT
 ============
 
 Diese Datei ist Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 SIEHE AUCH (SEE ALSO)
+17 SIEHE AUCH (SEE ALSO)
 ========================
 
 snapraid_log(1), snapraidd(1)

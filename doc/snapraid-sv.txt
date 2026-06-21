@@ -1848,13 +1848,20 @@ omdirigerar konsolutdata till en fil, är den resulterande filen alltid
 i UTF-8-format.
 
 
-15 UPPHOVSRäTT (COPYRIGHT)
+15 ÖVERSäTTNING (TRANSLATION)
+=============================
+
+Detta dokument är en automatisk översättning av den engelska manualen.
+Se den engelska manualen för den officiella versionen.
+
+
+16 UPPHOVSRäTT (COPYRIGHT)
 ==========================
 
 Denna fil är Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 SE äVEN (SEE ALSO)
+17 SE äVEN (SEE ALSO)
 =====================
 
 snapraid_log(1), snapraidd(1)
