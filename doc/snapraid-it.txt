@@ -1944,13 +1944,20 @@ reindirizza l'output della console a un file, il file risultante è
 sempre in formato UTF-8.
 
 
-15 COPYRIGHT
+15 TRADUZIONE (TRANSLATION)
+===========================
+
+Questo documento è una traduzione automatica del manuale in inglese.
+Fare riferimento al manuale in inglese per la versione ufficiale.
+
+
+16 COPYRIGHT
 ============
 
 Questo file è Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 VEDI ANCHE (SEE ALSO)
+17 VEDI ANCHE (SEE ALSO)
 ========================
 
 snapraid_log(1), snapraidd(1)

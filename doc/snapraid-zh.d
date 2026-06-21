@@ -1510,6 +1510,10 @@ Name{number}
 	您将控制台输出重定向到文件，则生成的文件始终
 	采用 UTF-8 格式。
 
+翻译 (Translation)
+	本文档是英文手册的自动翻译。
+	请参阅英文手册以获取权威版本。
+
 版权 (Copyright)
 	此文件版权所有 (C) 2025 Andrea Mazzoleni
 
