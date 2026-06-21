@@ -103,8 +103,8 @@ Les autres limitations de SnapRAID sont :
   propriété et les attributs étendus ne sont pas sauvegardés.
 
 
-4 DéMARRER
-==========
+4 DéMARRER (GETTING STARTED)
+============================
 
 Pour utiliser SnapRAID, vous devez d'abord sélectionner un disque
 dans votre baie de disques pour le dédier aux informations de `parité`.
@@ -345,8 +345,8 @@ lecteurs avec :
 
     snapraid fix -m
 
-4.4 Récupération
-----------------
+4.4 Récupération (Recovering)
+-----------------------------
 
 Le pire est arrivé, et vous avez perdu un ou plusieurs disques !
 
@@ -442,8 +442,8 @@ disque.
 Si tout est récupéré, cette commande est immédiate.
 
 
-5 COMMANDES
-===========
+5 COMMANDES (COMMANDS)
+======================
 
 SnapRAID fournit quelques commandes simples qui vous permettent de :
 
@@ -1715,8 +1715,8 @@ les systèmes de fichiers actifs.
 Toutes les autres commandes fonctionnent exclusivement sur le système de fichiers actif.
 
 
-9 CYCLE DE VIE DES INSTANTANéS
-==============================
+9 CYCLE DE VIE DES INSTANTANéS (SNAPSHOTS LIFECYCLE)
+====================================================
 
 SnapRAID gère deux instantanés spécifiques, `stable` et `pending`,
 dans un répertoire caché à la racine de chaque sous-volume de données.
@@ -1879,8 +1879,8 @@ ligne de commande, vous devez les mettre entre guillemets pour empêcher
 le shell de les développer.
 
 
-11 IGNORER DES FICHIERS (IGNORE FILES)
-======================================
+11 IGNORER DES FICHIERS (IGNORE FILE)
+=====================================
 
 En plus des règles globales du fichier de configuration, vous pouvez
 placer des fichiers `.snapraidignore` dans n'importe quel répertoire de la grappe
@@ -1953,8 +1953,8 @@ Ces fichiers sont lus et écrits par les commandes `sync` et `fix` et
 lus uniquement par les commandes `scrub` et `check`.
 
 
-14 ENCODAGE
-===========
+14 ENCODAGE (ENCODING)
+======================
 
 SnapRAID sous Unix ignore tout encodage. Il lit et stocke les
 noms de fichiers avec le même encodage utilisé par le système

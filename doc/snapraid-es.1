@@ -1,7 +1,7 @@
 .TH "SnapRAID Backup para Arrays de Discos" 1
 .SH NAME
 snapraid \- SnapRAID Backup para Arrays de Discos
-.SH SYNOPSIS 
+.SH SINOPSIS (SYNOPSIS) 
 snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
@@ -77,7 +77,7 @@ snapraid [\-c, \-\-conf CONFIG]
 snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PD
-.SH DESCRIPTION 
+.SH DESCRIPCIóN (DESCRIPTION) 
 SnapRAID es un programa de copia de seguridad diseñado para arrays
 de discos, que almacena información de paridad para la recuperación
 de datos en caso de hasta seis fallos de disco.
@@ -118,7 +118,7 @@ https://www.snapraid.it/
 .PD 0
 .PD
 .RE
-.SH LIMITACIONES 
+.SH LIMITACIONES (LIMITATIONS) 
 SnapRAID es un híbrido entre un RAID y un programa de copia de seguridad, con el objetivo di combinar
 los mejores beneficios de ambos. Sin embargo, tiene algunas limitaciones que debería
 considerar antes de usarlo.
@@ -167,7 +167,7 @@ Solo se guardan nombres de archivo, marcas de tiempo, enlaces simbólicos
 y enlaces duros. Los permisos, la propiedad y los atributos
 extendidos no se guardan.
 .PD
-.SH GETTING STARTED 
+.SH PRIMEROS PASOS (GETTING STARTED) 
 Para usar SnapRAID, primero debe seleccionar un disco en su array de
 discos para dedicarlo a la información de \`parity\` (paridad). Con un
 disco para paridad, podrá recuperarse de un solo fallo de disco,
@@ -314,7 +314,7 @@ Cuando este comando se complete, sus datos estarán SEGUROS.
 .PP
 Ahora puede comenzar a usar su array como desee y periódicamente
 actualizar la información de paridad ejecutando el comando \`sync\`.
-.SS Scrubbing 
+.SS Limpieza (Scrubbing) 
 Para verificar periódicamente los datos y la paridad en busca de
 errores, puede ejecutar el comando \`scrub\` (fregar/limpiar).
 .PP
@@ -373,7 +373,7 @@ Ejecutar \`scrub\` en un array no sincronizado puede reportar errores
 causados por archivos eliminados o modificados. Estos errores se
 informan en la salida de \`scrub\`, pero los bloques relacionados no
 se marcan como defectuosos.
-.SS Pooling 
+.SS Agrupación (Pooling) 
 Nota: La función de pooling descrita a continuación ha sido
 sustituida por la herramienta mergerfs, que ahora es la opción
 recomendada para los usuarios de Linux en la comunidad SnapRAID.
@@ -527,7 +527,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 .PD 0
 .PD
 .RE
-.SS Undeleting 
+.SS Restauración (Undeleting) 
 SnapRAID funciona más como un programa de copia de seguridad que como
 un sistema RAID, y se puede usar para restaurar o recuperar archivos
 a su estado anterior usando la opción \-f, \-\-filter:
@@ -564,7 +564,7 @@ snapraid fix \-m
 .PD 0
 .PD
 .RE
-.SS Recovering 
+.SS Recuperación (Recovering) 
 Ha sucedido lo peor, ¡y ha perdido uno o más discos!
 .PP
 ¡NO ENTRE EN PÁNICO! ¡Podrá recuperarlos!
@@ -671,7 +671,7 @@ snapraid sync
 .RE
 .PP
 Si todo se recupera, este comando es inmediato.
-.SH COMMANDS 
+.SH COMANDOS (COMMANDS) 
 SnapRAID proporciona unos pocos comandos simples que le permiten:
 .PD 0
 .IP \(bu
@@ -1061,7 +1061,7 @@ Si desea reasignar estos archivos, puede usar la opción
 \-W, \-\-force\-realloc\-tail.
 Tenga en cuenta que dichos archivos no estarán protegidos por la paridad durante
 el proceso de reasignación.
-.SH OPTIONS 
+.SH OPCIONES (OPTIONS) 
 SnapRAID proporciona las siguientes opciones:
 .TP
 .B \-c, \-\-conf CONFIG
@@ -1382,7 +1382,7 @@ Imprime una pantalla de ayuda corta.
 .TP
 .B \-V, \-\-version
 Imprime la versión del programa.
-.SH CONFIGURATION 
+.SH CONFIGURACIóN (CONFIGURATION) 
 SnapRAID requiere un archivo de configuración para saber dónde se
 encuentra su array de discos y dónde almacenar la información de paridad.
 .PP
@@ -1877,7 +1877,7 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD 0
 .PD
 .RE
-.SH SNAPSHOTS 
+.SH INSTANTáNEAS (SNAPSHOTS) 
 Si la opción de instantánea está habilitada en la configuración, SnapRAID
 utiliza la funcionalidad de instantáneas del sistema de archivos para garantizar operaciones atómicas
 y consistentes.
@@ -1965,7 +1965,7 @@ a toda la matriz, en cuyo caso, \`check\` y \`fix\` usarán los sistemas
 de archivos activos exclusivamente.
 .PP
 Todos los demás comandos funcionan exclusivamente en el sistema de archivos activo.
-.SH CICLO DE VIDA DE LAS INSTANTáNEAS 
+.SH CICLO DE VIDA DE LAS INSTANTáNEAS (SNAPSHOTS LIFECYCLE) 
 SnapRAID gestiona dos instantáneas específicas, \`stable\` y \`pending\`,
 dentro de un directorio oculto en la raíz de cada subvolumen de datos.
 En Btrfs, Bcachefs y NTFS se utiliza el directorio \`.snapraid/\`,
@@ -1998,7 +1998,7 @@ con éxito y se guarda la versión final del archivo .content.
 Si un \`sync\` se reinicia después de una interrupción, la instantánea pending existente
 se elimina y se crea una nueva para
 capturar el estado actual del sistema de archivos activo.
-.SH PATTERN 
+.SH PATRONES (PATTERN) 
 Los patrones proporcionan una forma flexible de filtrar archivos para su inclusión o
 exclusión. Al usar caracteres de globbing, puede definir reglas que coincidan con
 nombres de archivos específicos o estructuras de directorios completas sin
@@ -2184,7 +2184,7 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 En Unix, al usar caracteres globbing en la línea de comandos, debe
 ponerlos entre comillas para evitar que el shell los expanda.
-.SH IGNORAR ARCHIVOS 
+.SH IGNORAR ARCHIVOS (IGNORE FILE) 
 Además de las reglas globales en el archivo de configuración, puedes
 colocar archivos \`.snapraidignore\` en cualquier directorio dentro del array
 para definir reglas de exclusión descentralizadas.
@@ -2244,7 +2244,7 @@ build/
 .PD 0
 .PD
 .RE
-.SH CONTENT 
+.SH CONTENIDO (CONTENT) 
 SnapRAID almacena la lista y las sumas de comprobación de sus
 archivos en el archivo de contenido.
 .PP
@@ -2256,7 +2256,7 @@ El archivo de contenido es leído y escrito por los comandos \`sync\`,
 \`scrub\`, \`touch\` y \`rehash\`. Es leído por los comandos \`status\`, \`diff\`,
 \`check\`, \`fix\`, \`list\`, \`dup\`, \`locate\` y \`pool\`, y es completamente
 ignorado por los comandos \`smart\`, \`probe\`, \`up\`, \`down\` y \`devices\`.
-.SH PARITY 
+.SH PARIDAD (PARITY) 
 SnapRAID almacena la información de paridad de su array en los
 archivos de paridad.
 .PP
@@ -2265,7 +2265,7 @@ de todos los bloques definidos en el archivo \`content\`.
 .PP
 Estos archivos son leídos y escritos por los comandos \`sync\` y \`fix\`
 y solo leídos por los comandos \`scrub\` y \`check\`.
-.SH ENCODING 
+.SH CODIFICACIóN (ENCODING) 
 SnapRAID en Unix ignora cualquier codificación. Lee y almacena los
 nombres de archivo con la misma codificación utilizada por el sistema
 de archivos.
@@ -2281,5 +2281,5 @@ archivo impresos; si redirige la salida de la consola a un archivo,
 el archivo resultante siempre está en formato UTF\-8.
 .SH COPYRIGHT 
 Este archivo es Copyright (C) 2025 Andrea Mazzoleni
-.SH SEE ALSO 
+.SH VéASE TAMBIéN (SEE ALSO) 
 snapraid_log(1), snapraidd(1)

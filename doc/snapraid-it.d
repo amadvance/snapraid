@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - Backup SnapRAID per Array di Dischi
 
-Sinossi
+Sinossi (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Sinossi
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Descrizione
+Descrizione (Description)
 	SnapRAID è un programma di backup progettato per array di dischi, che
 	memorizza informazioni di parità per il recupero dati in caso di guasto
 	fino a sei dischi.
@@ -51,7 +51,7 @@ Descrizione
 
 		:https://www.snapraid.it/
 
-Limitazioni
+Limitazioni (Limitations)
 	SnapRAID è un ibrido tra un RAID e un programma di backup, con l'obiettivo di combinare
 	i migliori vantaggi di entrambi. Tuttavia, presenta alcune limitazioni che dovresti
 	considerare prima di usarlo.
@@ -91,7 +91,7 @@ Limitazioni
 	* Vengono salvati solo nomi di file, timestamp, symlink e hardlink.
 		Permessi, proprietà e attributi estesi non vengono salvati.
 
-Iniziare
+Iniziare (Getting Started)
 	Per usare SnapRAID, è necessario prima selezionare un disco nell'array
 	di dischi da dedicare alle informazioni di `parity` (parità). Con un
 	disco per la parità, si sarà in grado di recuperare da un singolo guasto
@@ -174,7 +174,7 @@ Iniziare
 	Ora è possibile iniziare a usare l'array come si desidera e aggiornare
 	periodicamente le informazioni di parità eseguendo il comando `sync`.
 
-  Scrubbing
+  Scrubbing (Scrubbing)
 	Per controllare periodicamente i dati e la parità per gli errori, è
 	possibile eseguire il comando `scrub`.
 
@@ -216,7 +216,7 @@ Iniziare
 	nell'output di `scrub`, ma i blocchi correlati non sono contrassegnati
 	come bad.
 
-  Pooling
+  Pooling (Pooling)
 	Nota: La funzionalità di pooling descritta di seguito è stata
 	sostituita dallo strumento mergerfs, che è ora l'opzione consigliata
 	per gli utenti Linux nella comunità SnapRAID. Mergefs fornisce un modo
@@ -295,7 +295,7 @@ Iniziare
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Annullamento Eliminazione
+  Annullamento eliminazione (Undeleting)
 	SnapRAID funziona più come un programma di backup che come un sistema RAID
 	e può essere utilizzato per ripristinare o annullare l'eliminazione dei
 	file al loro stato precedente utilizzando l'opzione -f, --filter:
@@ -317,7 +317,7 @@ Iniziare
 
 		:snapraid fix -m
 
-  Recupero
+  Recupero (Recovering)
 	È successo il peggio e si è perso uno o più dischi!
 
 	NON FARSI PRENDERE DAL PANICO! Sarà possibile recuperarli!
@@ -407,7 +407,7 @@ Iniziare
 
 	Se tutto è recuperato, questo comando è immediato.
 
-Comandi
+Comandi (Commands)
 	SnapRAID fornisce alcuni semplici comandi che consentono di:
 
 	* Stampare lo stato dell'array -> `status`
@@ -783,7 +783,7 @@ Comandi
 	Si tenga presente che tali file non saranno protetti dalla parità durante
 	il processo di riallocazione.
 
-Opzioni
+Opzioni (Options)
 	SnapRAID fornisce le seguenti opzioni:
 
 	-c, --conf CONFIG
@@ -1109,7 +1109,7 @@ Opzioni
 	-V, --version
 		Stampa la versione del programma.
 
-Configurazione
+Configurazione (Configuration)
 	SnapRAID richiede un file di configurazione per sapere dove si trova
 	l'array di dischi e dove memorizzare le informazioni di parità.
 
@@ -1584,7 +1584,7 @@ Snapshots
 
 	Tutti gli altri comandi operano esclusivamente sul file system live.
 
-Ciclo di vita degli snapshot
+Ciclo di vita degli snapshot (Snapshots Lifecycle)
 	SnapRAID gestisce due snapshot specifici, `stable` e `pending`,
 	all'interno di una directory nascosta alla radice di ogni sottovolume dati.
 	In Btrfs, Bcachefs e NTFS viene utilizzata la directory `.snapraid/`,
@@ -1740,7 +1740,7 @@ Pattern
 	In Unix, quando si utilizzano caratteri di globbing sulla riga di
 	comando, è necessario citarli per impedire alla shell di espanderli.
 
-Ignore File
+File da ignorare (Ignore File)
 	In aggiunta alle regole globali nel file di configurazione, è possibile
 	inserire file `.snapraidignore` in qualsiasi directory all'interno dell'array
 	per definire regole di esclusione decentralizzate.
@@ -1782,7 +1782,7 @@ Ignore File
 		:# Esclude qualsiasi file .tmp all'interno di projects/ o delle sue sottocartelle
 		:*.tmp
 
-Content
+Contenuto (Content)
 	SnapRAID memorizza l'elenco e i checksum dei file nel file di contenuto.
 
 	È un file binario che elenca tutti i file presenti nell'array di dischi,
@@ -1793,7 +1793,7 @@ Content
 	`fix`, `list`, `dup`, `locate` e `pool`, e viene completamente ignorato
 	dai comandi `smart`, `probe`, `up`, `down` e `devices`.
 
-Parity
+Parità (Parity)
 	SnapRAID memorizza le informazioni di parità dell'array nei file di
 	parità.
 
@@ -1803,7 +1803,7 @@ Parity
 	Questi file vengono letti e scritti dai comandi `sync` e `fix` e
 	solo letti dai comandi `scrub` e `check`.
 
-Codifica
+Codifica (Encoding)
 	SnapRAID in Unix ignora qualsiasi codifica. Legge e memorizza i
 	nomi dei file con la stessa codifica utilizzata dal file system.
 
@@ -1821,5 +1821,5 @@ Codifica
 Copyright
 	Questo file è Copyright (C) 2025 Andrea Mazzoleni
 
-Vedi Anche
+Vedi anche (See Also)
 	snapraid_log(1), snapraidd(1)

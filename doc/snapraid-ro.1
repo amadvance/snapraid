@@ -1,7 +1,7 @@
 .TH "SnapRAID Backup pentru Matrici de Discuri" 1
 .SH NAME
 snapraid \- SnapRAID Backup pentru Matrici de Discuri
-.SH SINTAXă 
+.SH SINTAXă (SYNOPSIS) 
 snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
@@ -77,7 +77,7 @@ snapraid [\-c, \-\-conf CONFIG]
 snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PD
-.SH DESCRIERE 
+.SH DESCRIERE (DESCRIPTION) 
 SnapRAID este un program de backup conceput pentru matrici de discuri, care stochează
 informații de paritate pentru recuperarea datelor în cazul a până la șase
 defecte de disc.
@@ -117,7 +117,7 @@ https://www.snapraid.it/
 .PD 0
 .PD
 .RE
-.SH LIMITăRI 
+.SH LIMITăRI (LIMITATIONS) 
 SnapRAID este un hibrid între un RAID și un program de backup, având ca scop combinarea
 celor mai bune avantaje ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
 să le luați în considerare înainte de a\-l utiliza.
@@ -165,7 +165,7 @@ a întregii matrici de discuri.
 Sunt salvate doar numele fișierelor, mărcile temporale, symlink\-urile și hardlink\-urile.
 Permisiunile, proprietarul și atributele extinse nu sunt salvate.
 .PD
-.SH NOțIUNI DE BAZă 
+.SH NOțIUNI DE BAZă (GETTING STARTED) 
 Pentru a utiliza SnapRAID, trebuie mai întâi să selectați un disc în matricea dvs. de discuri
 pentru a\-l dedica informațiilor de \`paritate\`. Cu un singur disc pentru paritate, veți
 putea recupera dintr\-o singură defecțiune de disc, similar cu RAID5.
@@ -310,7 +310,7 @@ Când această comandă se finalizează, datele dvs. sunt ÎN SIGURANȚĂ.
 .PP
 Acum puteți începe să utilizați matricea după cum doriți și
 să actualizați periodic informațiile de paritate rulând comanda \`sync\`.
-.SS Scrubbing (Verificare) 
+.SS Verificare (Scrubbing) 
 Pentru a verifica periodic datele și paritatea pentru erori, puteți
 rula comanda \`scrub\`.
 .PP
@@ -367,7 +367,7 @@ snapraid \-p bad scrub
 Rularea \`scrub\` pe o matrice nesincronizată poate raporta erori cauzate de
 fișiere eliminate sau modificate. Aceste erori sunt raportate în ieșirea \`scrub\`,
 dar blocurile aferente nu sunt marcate ca defecte.
-.SS Pooling (Agregare) 
+.SS Agregare (Pooling) 
 Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
 mergerfs, care este acum opțiunea recomandată pentru utilizatorii Linux în
 comunitatea SnapRAID. Mergefs oferă o modalitate mai flexibilă și eficientă
@@ -514,7 +514,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 .PD 0
 .PD
 .RE
-.SS Undeleting (Anulare Ștergere) 
+.SS Anulare ștergere (Undeleting) 
 SnapRAID funcționează mai mult ca un program de backup decât un sistem RAID și poate
 fi folosit pentru a restaura sau anula ștergerea fișierelor la starea lor anterioară utilizând
 opțiunea \-f, \-\-filter:
@@ -550,7 +550,7 @@ snapraid fix \-m
 .PD 0
 .PD
 .RE
-.SS Recuperare 
+.SS Recuperare (Recovering) 
 Cel mai rău s\-a întâmplat și ați pierdut unul sau mai multe discuri!
 .PP
 NU INTRAȚI ÎN PANICĂ! Veți putea să le recuperați!
@@ -651,7 +651,7 @@ snapraid sync
 .RE
 .PP
 Dacă totul este recuperat, această comandă este imediată.
-.SH COMENZI 
+.SH COMENZI (COMMANDS) 
 SnapRAID oferă câteva comenzi simple care vă permit să:
 .PD 0
 .IP \(bu
@@ -1027,7 +1027,7 @@ Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
 .PP
 Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul procesului
 de realocare.
-.SH OPțIUNI 
+.SH OPțIUNI (OPTIONS) 
 SnapRAID oferă următoarele opțiuni:
 .TP
 .B \-c, \-\-conf CONFIG
@@ -1328,7 +1328,7 @@ Tipărește un ecran de ajutor scurt.
 .TP
 .B \-V, \-\-version
 Tipărește versiunea programului.
-.SH CONFIGURARE 
+.SH CONFIGURARE (CONFIGURATION) 
 SnapRAID necesită un fișier de configurare pentru a ști unde se află matricea dvs. de discuri
 și unde să stocheze informațiile de paritate.
 .PP
@@ -1889,7 +1889,7 @@ Dacă nu este furnizată nicio opțiune \-d, SnapRAID presupune că operațiunea
 sistemele de fișiere live.
 .PP
 Toate celelalte comenzi operează exclusiv pe sistemul de fișiere live.
-.SH CICLUL DE VIAță AL SNAPSHOT\-URILOR 
+.SH CICLUL DE VIAță AL SNAPSHOT\-URILOR (SNAPSHOTS LIFECYCLE) 
 SnapRAID gestionează două snapshot\-uri specifice, \`stable\` și \`pending\`,
 într\-un director ascuns la rădăcina fiecărui subvolum de date.
 În Btrfs, Bcachefs și NTFS se folosește directorul \`.snapraid/\`,

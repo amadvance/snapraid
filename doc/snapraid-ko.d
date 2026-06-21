@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - 디스크 어레이를 위한 SnapRAID 백업
 
-Synopsis
+개요 (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Synopsis
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Description
+설명 (Description)
 	SnapRAID는 디스크 어레이를 위해 설계된 백업 프로그램으로,
 	최대 6개의 디스크 오류가 발생해도 데이터를 복구하기 위한
 	패리티 정보를 저장합니다.
@@ -50,7 +50,7 @@ Description
 
 		:https://www.snapraid.it/
 
-제한 사항
+제한 사항 (Limitations)
 	SnapRAID는 RAID와 백업 프로그램의 하이브리드로, 두 가지의 장점을 결합하는 것을
 	목표로 합니다. 그러나 사용하기 전에 고려해야 할 몇 가지 제한 사항이 있습니다.
 
@@ -88,7 +88,7 @@ Description
 	* 파일 이름, 타임스탬프, 심볼릭 링크, 하드 링크만 저장됩니다.
 		권한, 소유권, 확장 속성은 저장되지 않습니다.
 
-Getting Started
+시작하기 (Getting Started)
 	SnapRAID를 사용하려면, 먼저 디스크 어레이에서 하나의 디스크를
 	`parity`(패리티) 정보 전용으로 선택해야 합니다. 하나의 패리티 디스크로
 	RAID5와 유사하게 단일 디스크 오류로부터 복구할 수 있습니다.
@@ -168,7 +168,7 @@ Getting Started
 	이제 어레이를 원하는 대로 사용하고 주기적으로 `sync` 명령을
 	실행하여 패리티 정보를 업데이트할 수 있습니다.
 
-  Scrubbing
+  스크러빙 (Scrubbing)
 	주기적으로 데이터 및 패리티의 오류를 확인하려면 `scrub` 명령을
 	실행할 수 있습니다.
 
@@ -206,7 +206,7 @@ Getting Started
 	인한 오류가 보고될 수 있습니다. 이러한 오류는 `scrub` 출력에는
 	보고되지만, 관련 블록은 bad로 표시되지 않습니다.
 
-  Pooling
+  풀링 (Pooling)
 	참고: 아래에 설명된 풀링(pooling) 기능은 **mergerfs** 도구로 대체되었으며,
 	이는 SnapRAID 커뮤니티에서 Linux 사용자를 위한 권장 옵션입니다.
 	Mergefs는 여러 드라이브를 단일 통합 마운트 지점으로 풀링하는 더 유연하고
@@ -278,7 +278,7 @@ Getting Started
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Undeleting
+  삭제 취소 (Undeleting)
 	SnapRAID는 RAID 시스템보다는 백업 프로그램처럼 작동하며,
 	-f, --filter 옵션을 사용하여 파일이나 디렉토리를 이전 상태로 복원하거나
 	삭제 취소할 수 있습니다:
@@ -299,7 +299,7 @@ Getting Started
 
 		:snapraid fix -m
 
-  Recovering
+  복구 (Recovering)
 	최악의 상황이 발생하여 하나 이상의 디스크를 잃었습니다!
 
 	**패닉하지 마십시오!** 복구할 수 있습니다!
@@ -385,7 +385,7 @@ Getting Started
 
 	모든 것이 복구되면 이 명령은 즉시 완료됩니다.
 
-명령어
+명령어 (Commands)
 	SnapRAID는 다음과 같은 작업을 수행할 수 있는 몇 가지 간단한 명령어를 제공합니다.
 
 	* 어레이의 상태 출력 -> `status`
@@ -724,7 +724,7 @@ Getting Started
 	재할당 과정 동안 해당 파일들은 패리티에 의해 보호되지 않으므로
 	주의하십시오.
 
-Options
+옵션 (Options)
 	SnapRAID는 다음 옵션을 제공합니다:
 
 	-c, --conf CONFIG
@@ -1006,7 +1006,7 @@ Options
 	-V, --version
 		프로그램 버전을 출력합니다.
 
-Configuration
+설정 (Configuration)
 	SnapRAID는 디스크 어레이의 위치와 패리티 정보를 저장할 위치를
 	알기 위해 설정 파일이 필요합니다.
 
@@ -1369,7 +1369,7 @@ Configuration
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots (스냅샷)
+스냅샷 (Snapshots)
 	구성에서 스냅샷 옵션이 활성화된 경우, SnapRAID는 원자적이고
 	일관된 작업을 보장하기 위해 파일시스템 스냅샷 기능을 이용합니다.
 
@@ -1429,7 +1429,7 @@ Snapshots (스냅샷)
 
 	다른 모든 명령어는 라이브 파일시스템에서만 독점적으로 작동합니다.
 
-스냅샷 수명 주기
+스냅샷 수명 주기 (Snapshots Lifecycle)
 	SnapRAID는 각 데이터 하위 볼륨의 루트에 있는 숨겨진 디렉터리 내에서
 	`stable`(안정)과 `pending`(보류)이라는 두 가지 특정 스냅샷을 관리합니다.
 	Btrfs, Bcachefs 및 NTFS에서는 `.snapraid/` 디렉터리가 사용되며,
@@ -1457,7 +1457,7 @@ Snapshots (스냅샷)
 	중단 후 `sync` 가 재시작되면 기존의 보류 중인(pending) 스냅샷은 삭제되고,
 	라이브 파일시스템의 현재 상태를 캡처하기 위해 새 스냅샷이 생성됩니다.
 
-Pattern
+패턴 (Pattern)
 	패턴은 포함하거나 제외할 파일을 필터링하는 유연한 방법을 제공합니다.
 	글로빙(globbing) 문자를 사용하면 모든 경로를 일일이 나열하지 않고도
 	특정 파일 이름이나 전체 디렉토리 구조와 일치하는 규칙을 정의할 수 있습니다.
@@ -1570,7 +1570,7 @@ Pattern
 	Unix에서는 명령줄에서 글로빙 문자를 사용할 때 셸이 확장하는 것을
 	방지하기 위해 따옴표로 묶어야 합니다.
 
-Ignore File
+제외 파일 (Ignore File)
 	설정 파일의 전역 규칙 외에도, 배열 내의 모든 디렉토리에 `.snapraidignore`
 	파일을 배치하여 분산된 제외 규칙을 정의할 수 있습니다.
 
@@ -1610,7 +1610,7 @@ Ignore File
 		:# projects/ 또는 그 하위 폴더의 모든 .tmp 파일 제외
 		:*.tmp
 
-Content
+콘텐츠 (Content)
 	SnapRAID는 content 파일에 파일 목록과 체크섬을 저장합니다.
 
 	이것은 디스크 어레이에 있는 모든 파일의 목록과 무결성을 확인하기 위한
@@ -1621,7 +1621,7 @@ Content
 	`dup`, `locate` 및 `pool` 명령에 의해 읽혀지며, `smart`, `probe`,
 	`up`, `down` 및 `devices` 명령에 의해 완전히 무시됩니다.
 
-Parity
+패리티 (Parity)
 	SnapRAID는 패리티 파일에 어레이의 패리티 정보를 저장합니다.
 
 	이들은 `content` 파일에 정의된 모든 블록의 계산된 패리티를 포함하는
@@ -1630,7 +1630,7 @@ Parity
 	이 파일들은 `sync` 및 `fix` 명령에 의해 읽고 쓰여지며,
 	`scrub` 및 `check` 명령에 의해서만 읽혀집니다.
 
-Encoding
+인코딩 (Encoding)
 	Unix의 SnapRAID는 인코딩을 무시합니다. 파일 시스템에서 사용되는
 	것과 동일한 인코딩으로 파일 이름을 읽고 저장합니다.
 
@@ -1643,8 +1643,8 @@ Encoding
 	이는 출력되는 파일 이름에만 영향을 미치며, 콘솔 출력을 파일로
 	리디렉션하는 경우 결과 파일은 항상 UTF-8 형식입니다.
 
-Copyright
+저작권 (Copyright)
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
-See Also
+참고 (See Also)
 	snapraid_log(1), snapraidd(1)

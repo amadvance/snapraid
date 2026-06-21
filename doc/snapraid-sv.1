@@ -77,7 +77,7 @@ snapraid [\-c, \-\-conf CONFIG]
 snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PD
-.SH BESKRIVNING 
+.SH BESKRIVNING (DESCRIPTION) 
 SnapRAID är ett säkerhetskopieringsprogram designat för disk\-arrayer,
 som lagrar paritetsinformation för dataåterställning vid upp till sex
 diskfel.
@@ -117,7 +117,7 @@ https://www.snapraid.it/
 .PD 0
 .PD
 .RE
-.SH BEGRäNSNINGAR 
+.SH BEGRäNSNINGAR (LIMITATIONS) 
 SnapRAID är en hybrid mellan en RAID och ett backupprogram, med målet att kombinera
 de bästa fördelarna med båda. Det har dock vissa begränsningar som du bör
 överväga innan du använder det.
@@ -165,7 +165,7 @@ fel på hela disk\-arrayen.
 Endast filnamn, tidsstämplar, symboliska länkar och hårda länkar sparas.
 Behörigheter, ägarskap och utökade attribut sparas inte.
 .PD
-.SH KOM IGåNG 
+.SH KOM IGåNG (GETTING STARTED) 
 För att använda SnapRAID måste du först välja en disk i din disk\-array
 som ska dediceras till \`parity\`\-information. Med en disk för paritet,
 kommer du att kunna återställa från ett enda diskfel, liknande RAID5.
@@ -368,7 +368,7 @@ snapraid \-p bad scrub
 Att köra \`scrub\` på en osynkad array kan rapportera fel orsakade av
 borttagna eller modifierade filer. Dessa fel rapporteras i \`scrub\`\-
 utdata, men de relaterade blocken markeras inte som dåliga.
-.SS Poolning 
+.SS Poolning (Pooling) 
 Obs: Poolningsfunktionen som beskrivs nedan har ersatts av verktyget
 mergerfs, som nu är det rekommenderade alternativet för Linux\-användare i
 SnapRAID\-communityt. Mergefs ger ett mer flexibelt och effektivt
@@ -552,7 +552,7 @@ snapraid fix \-m
 .PD 0
 .PD
 .RE
-.SS Återställning 
+.SS Återställning (Recovering) 
 Det värsta har hänt, och du har förlorat en eller flera diskar!
 .PP
 FÅ INTE PANIK! Du kommer att kunna återställa dem!
@@ -655,7 +655,7 @@ snapraid sync
 .RE
 .PP
 Om allt är återställt är detta kommando omedelbart.
-.SH KOMMANDON 
+.SH KOMMANDON (COMMANDS) 
 SnapRAID tillhandahåller några enkla kommandon som gör att du kan:
 .PD 0
 .IP \(bu
@@ -1032,7 +1032,7 @@ Om du vill omallokera dessa filer kan du använda alternativet
 \-W, \-\-force\-realloc\-tail.
 Var medveten om att sådana filer inte skyddas av paritet under
 omallokeringsprocessen.
-.SH ALTERNATIV 
+.SH ALTERNATIV (OPTIONS) 
 SnapRAID tillhandahåller följande alternativ:
 .TP
 .B \-c, \-\-conf CONFIG
@@ -1330,7 +1330,7 @@ Skriver ut en kort hjälpskärm.
 .TP
 .B \-V, \-\-version
 Skriver ut programversionen.
-.SH KONFIGURATION 
+.SH KONFIGURATION (CONFIGURATION) 
 SnapRAID kräver en konfigurationsfil för att veta var din disk\-array
 finns och var paritetsinformationen ska lagras.
 .PP
@@ -1802,7 +1802,7 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD 0
 .PD
 .RE
-.SH SNAPSHOTS (ÖGONBLICKSBILDER) 
+.SH ÖGONBLICKSBILDER (SNAPSHOTS) 
 Om alternativet för ögonblicksbilder är aktiverat i konfigurationen använder SnapRAID
 filsystemets funktionalitet för ögonblicksbilder för att säkerställa atomära och
 konsekventa operationer.
@@ -1888,7 +1888,7 @@ hela arrayen, i detta fall kommer \`check\` och \`fix\` att använda de
 aktiva filsystemen uteslutande.
 .PP
 Alla andra kommandon fungerar uteslutande på det aktiva filsystemet.
-.SH LIVSCYKEL FöR öGONBLICKSBILDER 
+.SH LIVSCYKEL FöR öGONBLICKSBILDER (SNAPSHOTS LIFECYCLE) 
 SnapRAID hanterar två specifika ögonblicksbilder, \`stable\` och \`pending\`,
 inom en dold katalog i roten av varje datavolym.
 I Btrfs, Bcachefs och NTFS används katalogen \`.snapraid/\`,
@@ -2182,7 +2182,7 @@ block definierade i \`content\`\-filen.
 .PP
 Dessa filer läses och skrivs av kommandona \`sync\` och \`fix\` och
 läses endast av kommandona \`scrub\` och \`check\`.
-.SH KODNING 
+.SH KODNING (ENCODING) 
 SnapRAID i Unix ignorerar all kodning. Det läser och lagrar
 filnamnen med samma kodning som används av filsystemet.
 .PP
@@ -2197,5 +2197,5 @@ omdirigerar konsolutdata till en fil, är den resulterande filen alltid
 i UTF\-8\-format.
 .SH UPPHOVSRäTT (COPYRIGHT) 
 Denna fil är Copyright (C) 2025 Andrea Mazzoleni
-.SH SE ÄVEN (SEE ALSO) 
+.SH SE äVEN (SEE ALSO) 
 snapraid_log(1), snapraidd(1)

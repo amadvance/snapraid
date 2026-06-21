@@ -3,8 +3,8 @@
                    =========================================
 
 
-1 SINTAXă
-=========
+1 SINTAXă (SYNOPSIS)
+====================
 
 snapraid [-c, --conf CONFIG]
 	[-f, --filter PATTERN] [-d, --filter-disk NAME]
@@ -28,8 +28,8 @@ snapraid [-c, --conf CONFIG]
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
 
-2 DESCRIERE
-===========
+2 DESCRIERE (DESCRIPTION)
+=========================
 
 SnapRAID este un program de backup conceput pentru matrici de discuri, care stochează
 informații de paritate pentru recuperarea datelor în cazul a până la șase
@@ -59,8 +59,8 @@ Pentru mai multe informații, vă rugăm să vizitați site-ul oficial SnapRAID:
     https://www.snapraid.it/
 
 
-3 LIMITăRI
-==========
+3 LIMITăRI (LIMITATIONS)
+========================
 
 SnapRAID este un hibrid între un RAID și un program de backup, având ca scop combinarea
 celor mai bune avantaje ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
@@ -101,8 +101,8 @@ Alte limitări ale SnapRAID sunt:
   Permisiunile, proprietarul și atributele extinse nu sunt salvate.
 
 
-4 NOțIUNI DE BAZă
-=================
+4 NOțIUNI DE BAZă (GETTING STARTED)
+===================================
 
 Pentru a utiliza SnapRAID, trebuie mai întâi să selectați un disc în matricea dvs. de discuri
 pentru a-l dedica informațiilor de `paritate`. Cu un singur disc pentru paritate, veți
@@ -184,7 +184,7 @@ Când această comandă se finalizează, datele dvs. sunt ÎN SIGURANȚĂ.
 Acum puteți începe să utilizați matricea după cum doriți și
 să actualizați periodic informațiile de paritate rulând comanda `sync`.
 
-4.1 Scrubbing (Verificare)
+4.1 Verificare (Scrubbing)
 --------------------------
 
 Pentru a verifica periodic datele și paritatea pentru erori, puteți
@@ -224,7 +224,7 @@ Rularea `scrub` pe o matrice nesincronizată poate raporta erori cauzate de
 fișiere eliminate sau modificate. Aceste erori sunt raportate în ieșirea `scrub`,
 dar blocurile aferente nu sunt marcate ca defecte.
 
-4.2 Pooling (Agregare)
+4.2 Agregare (Pooling)
 ----------------------
 
 Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
@@ -297,7 +297,7 @@ De asemenea, ar putea fi necesar să configurați clienții la distanță pentru
 
     fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-4.3 Undeleting (Anulare Ștergere)
+4.3 Anulare ștergere (Undeleting)
 ---------------------------------
 
 SnapRAID funcționează mai mult ca un program de backup decât un sistem RAID și poate
@@ -320,8 +320,8 @@ Sau pentru a recupera toate fișierele șterse de pe toate unitățile cu:
 
     snapraid fix -m
 
-4.4 Recuperare
---------------
+4.4 Recuperare (Recovering)
+---------------------------
 
 Cel mai rău s-a întâmplat și ați pierdut unul sau mai multe discuri!
 
@@ -409,8 +409,8 @@ Rulați comanda `sync` pentru a resincroniza matricea cu noul disc.
 Dacă totul este recuperat, această comandă este imediată.
 
 
-5 COMENZI
-=========
+5 COMENZI (COMMANDS)
+====================
 
 SnapRAID oferă câteva comenzi simple care vă permit să:
 
@@ -800,8 +800,8 @@ Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul pro
 de realocare.
 
 
-6 OPțIUNI
-=========
+6 OPțIUNI (OPTIONS)
+===================
 
 SnapRAID oferă următoarele opțiuni:
 
@@ -1105,8 +1105,8 @@ SnapRAID oferă următoarele opțiuni:
         Tipărește versiunea programului.
 
 
-7 CONFIGURARE
-=============
+7 CONFIGURARE (CONFIGURATION)
+=============================
 
 SnapRAID necesită un fișier de configurare pentru a ști unde se află matricea dvs. de discuri
 și unde să stocheze informațiile de paritate.
@@ -1604,8 +1604,8 @@ sistemele de fișiere live.
 Toate celelalte comenzi operează exclusiv pe sistemul de fișiere live.
 
 
-9 CICLUL DE VIAță AL SNAPSHOT-URILOR
-====================================
+9 CICLUL DE VIAță AL SNAPSHOT-URILOR (SNAPSHOTS LIFECYCLE)
+==========================================================
 
 SnapRAID gestionează două snapshot-uri specifice, `stable` și `pending`,
 într-un director ascuns la rădăcina fiecărui subvolum de date.

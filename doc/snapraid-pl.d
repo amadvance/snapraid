@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - Kopia zapasowa SnapRAID dla macierzy dyskowych
 
-Synopsis
+Składnia (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Synopsis
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Description
+Opis (Description)
 	SnapRAID to program do tworzenia kopii zapasowych przeznaczony
 	dla macierzy dyskowych, przechowujący informacje parzystości
 	do odzyskiwania danych w przypadku awarii do sześciu dysków.
@@ -50,7 +50,7 @@ Description
 
 		:https://www.snapraid.it/
 
-Ograniczenia
+Ograniczenia (Limitations)
 	SnapRAID jest hybrydą pomiędzy RAID a programem do tworzenia kopii zapasowych, mającą na celu połączenie
 	najlepszych zalet obu tych rozwiązań. Posiada jednak pewne ograniczenia, które należy
 	wziąć pod uwagę przed jego użyciem.
@@ -90,7 +90,7 @@ Ograniczenia
 		i dowiązania twarde.
 		Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
 
-Getting Started
+Pierwsze kroki (Getting Started)
 	Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
 	dysków, który zostanie przeznaczony na informacje o `parzystości`. Z jednym dyskiem
 	na parzystość będziesz w stanie odzyskać dane po awarii pojedynczego dysku,
@@ -173,7 +173,7 @@ Getting Started
 	Teraz możesz zacząć używać swojej macierzy, jak chcesz, i okresowo
 	aktualizować informacje o parzystości, uruchamiając polecenie `sync`.
 
-  Scrubbing
+  Scrubbing (Scrubbing)
 	Aby okresowo sprawdzać dane i parzystość pod kątem błędów, możesz
 	uruchomić polecenie `scrub`.
 
@@ -211,7 +211,7 @@ Getting Started
 	spowodowane usuniętymi lub zmodyfikowanymi plikami. Błędy te są zgłaszane
 	w wyniku `scrub`, ale powiązane bloki nie są oznaczane jako złe.
 
-  Pooling
+  Pooling (Pooling)
 	Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
 	narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
 	w społeczności SnapRAID. Mergefs zapewnia bardziej elastyczny i wydajny
@@ -283,7 +283,7 @@ Getting Started
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Undeleting
+  Cofanie usuwania (Undeleting)
 	SnapRAID działa bardziej jak program do tworzenia kopii zapasowych niż system RAID
 	i może być użyty do przywrócenia lub odzyskania usuniętych plików do ich poprzedniego
 	stanu za pomocą opcji -f, --filter:
@@ -304,7 +304,7 @@ Getting Started
 
 		:snapraid fix -m
 
-  Recovering
+  Odzyskiwanie (Recovering)
 	Najgorsze się wydarzyło i straciłeś jeden lub więcej dysków!
 
 	NIE PANIKUJ! Będziesz w stanie je odzyskać!
@@ -391,7 +391,7 @@ Getting Started
 
 	Jeśli wszystko zostanie odzyskane, to polecenie jest natychmiastowe.
 
-Polecenia
+Polecenia (Commands)
 	SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 
 	* Wyświetlenie stanu macierzy -> `status`
@@ -745,7 +745,7 @@ Polecenia
 	Pamiętaj, że takie pliki nie będą chronione przez parzystość podczas procesu
 	realokacji.
 
-Options
+Opcje (Options)
 	SnapRAID udostępnia następujące opcje:
 
 	-c, --conf CONFIG
@@ -1043,7 +1043,7 @@ Options
 	-V, --version
 		Wyświetla wersję programu.
 
-Configuration
+Konfiguracja (Configuration)
 	SnapRAID wymaga pliku konfiguracyjnego, aby wiedzieć, gdzie znajduje się Twoja macierz
 	dysków i gdzie przechowywać informacje o parzystości.
 
@@ -1416,7 +1416,7 @@ Configuration
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots (Migawki)
+Migawki (Snapshots)
 	Jeśli opcja snapshot jest włączona w konfiguracji, SnapRAID
 	wykorzystuje funkcjonalność migawek systemu plików w celu zapewnienia operacji atomowych
 	i spójnych.
@@ -1493,7 +1493,7 @@ Snapshots (Migawki)
 
 	Wszystkie inne polecenia działają wyłącznie na aktywnym systemie plików.
 
-Cykl życia migawek
+Cykl życia migawek (Snapshots Lifecycle)
 	SnapRAID zarządza dwoma określonymi migawkami, `stable` (stabilną) oraz `pending` (oczekującą),
 	w ukrytym katalogu w katalogu głównym każdego podwolumenu danych.
 	W systemach Btrfs, Bcachefs i NTFS używany jest katalog `.snapraid/`,
@@ -1527,7 +1527,7 @@ Cykl życia migawek
 	oczekująca (pending) migawka jest usuwana, a tworzona jest nowa, aby
 	uchwycić bieżący stan aktywnego systemu plików.
 
-Pattern
+Wzorce (Pattern)
 	Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub
 	wykluczenia. Używając znaków globbingowych, można zdefiniować reguły, które
 	pasują do określonych nazw plików lub całych struktur katalogów bez
@@ -1643,7 +1643,7 @@ Pattern
 	W systemie Unix, używając znaków globbing w wierszu poleceń, musisz
 	je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
 
-Ignore File
+Plik ignorowania (Ignore File)
 	Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
 	`.snapraidignore` w dowolnym katalogu w macierzy, aby zdefiniować
 	zdecentralizowane reguły wykluczania.
@@ -1685,7 +1685,7 @@ Ignore File
 		:# Wyklucza każdy plik .tmp wewnątrz projects/ lub jego podfolderach
 		:*.tmp
 
-Content
+Zawartość (Content)
 	SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 
 	Jest to plik binarny, który zawiera listę wszystkich plików obecnych w Twojej macierzy dysków,
@@ -1697,7 +1697,7 @@ Content
 	całkowicie ignorowany przez polecenia `smart`, `probe`, `up`, `down`
 	i `devices`.
 
-Parity
+Parzystość (Parity)
 	SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
 	parzystości.
 
@@ -1707,7 +1707,7 @@ Parity
 	Pliki te są odczytywane i zapisywane przez polecenia `sync` i `fix`
 	oraz tylko odczytywane przez polecenia `scrub` i `check`.
 
-Encoding
+Kodowanie (Encoding)
 	SnapRAID w systemie Unix ignoruje wszelkie kodowanie. Odczytuje i przechowuje
 	nazwy plików z tym samym kodowaniem używanym przez system plików.
 
@@ -1721,8 +1721,8 @@ Encoding
 	przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 	w formacie UTF-8.
 
-Copyright
+Prawa autorskie (Copyright)
 	Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 
-See Also
+Zobacz również (See Also)
 	snapraid_log(1), snapraidd(1)
