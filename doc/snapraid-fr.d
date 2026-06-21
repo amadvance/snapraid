@@ -1815,8 +1815,10 @@ Contenu (Content)
 	présents dans votre baie de disques, ainsi que toutes les sommes
 	de contrôle pour vérifier leur intégrité.
 
-	Ce fichier est lu et écrit par les commandes `sync` et `scrub` et
-	lu par les commandes `fix`, `check` et `status`.
+	Le fichier de contenu est lu et écrit par les commandes `sync`, `scrub`,
+	`touch` et `rehash`. Il est lu par les commandes `status`, `diff`,
+	`check`, `fix`, `list`, `dup`, `locate` et `pool`, et il est complètement
+	ignoré par les commandes `smart`, `probe`, `up`, `down` et `devices`.
 
 Parité (Parity)
 	SnapRAID stocke les informations de parité de votre baie dans
