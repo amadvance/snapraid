@@ -1769,13 +1769,20 @@ Windows 콘솔을 UTF-8 모드로 설정하고 콘솔 글꼴로 `Lucida Console`
 리디렉션하는 경우 결과 파일은 항상 UTF-8 형식입니다.
 
 
-15 저작권 (COPYRIGHT)
+15 번역 (TRANSLATION)
+===================
+
+이 문서는 영어 매뉴얼의 자동 번역본입니다.
+공식 버전은 영어 매뉴얼을 참조하십시오.
+
+
+16 저작권 (COPYRIGHT)
 ==================
 
 This file is Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 참고 (SEE ALSO)
+17 참고 (SEE ALSO)
 ================
 
 snapraid_log(1), snapraidd(1)

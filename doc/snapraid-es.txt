@@ -1932,13 +1932,20 @@ archivo impresos; si redirige la salida de la consola a un archivo,
 el archivo resultante siempre está en formato UTF-8.
 
 
-15 COPYRIGHT
+15 TRADUCCIóN (TRANSLATION)
+===========================
+
+Este documento es una traducción automática del manual en inglés.
+Consulte el manual en inglés para obtener la versión oficial.
+
+
+16 COPYRIGHT
 ============
 
 Este archivo es Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 VéASE TAMBIéN (SEE ALSO)
+17 VéASE TAMBIéN (SEE ALSO)
 ===========================
 
 snapraid_log(1), snapraidd(1)

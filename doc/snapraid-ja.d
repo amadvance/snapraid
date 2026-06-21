@@ -1594,6 +1594,10 @@ Name{number}
 	これは出力されるファイル名にのみ影響します。コンソール出力をファイルにリダイレクトする場合、
 	結果のファイルは常にUTF-8形式になります。
 
+翻訳 (Translation)
+	この文書は英語版マニュアルの自動翻訳です。
+	正確な記述については英語版マニュアルを参照してください。
+
 著作権 (Copyright)
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 

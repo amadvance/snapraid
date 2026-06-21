@@ -1643,6 +1643,10 @@ Name{number}
 	이는 출력되는 파일 이름에만 영향을 미치며, 콘솔 출력을 파일로
 	리디렉션하는 경우 결과 파일은 항상 UTF-8 형식입니다.
 
+번역 (Translation)
+	이 문서는 영어 매뉴얼의 자동 번역본입니다.
+	공식 버전은 영어 매뉴얼을 참조하십시오.
+
 저작권 (Copyright)
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
