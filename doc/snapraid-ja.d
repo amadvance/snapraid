@@ -1,7 +1,7 @@
 Name{number}
 	snapraid - Disk Array用 SnapRAID バックアップ
 
-Synopsis
+概要 (Synopsis)
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
@@ -23,7 +23,7 @@ Synopsis
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Description
+説明 (Description)
 	SnapRAIDは、ディスクアレイ用のバックアッププログラムで、最大6台のディスク障害が発生した場合の
 	データ復旧のためにパリティ情報を保存します。
 
@@ -47,7 +47,7 @@ Description
 
 		:https://www.snapraid.it/
 
-制限事項
+制限事項 (Limitations)
 	SnapRAIDはRAIDとバックアッププログラムのハイブリッドであり、両方の利点を組み合わせることを
 	目指しています。ただし、使用する前に考慮すべきいくつかの制限事項があります。
 
@@ -84,7 +84,7 @@ Description
 	* **ファイル名、タイムスタンプ、シンボリックリンク、およびハードリンク**のみが保存されます。
 		アクセス許可、所有権、および拡張属性は保存されません。
 
-Getting Started
+はじめに (Getting Started)
 	SnapRAIDを使用するには、まずディスクアレイ内の1つのディスクを `parity` 情報専用に
 	選択する必要があります。パリティ用に1つのディスクを使用すると、RAID5と同様に、単一のディスク障害から
 	復旧できます。
@@ -158,7 +158,7 @@ Getting Started
 	これで、アレイを自由に使い始め、定期的に `sync` コマンドを実行してパリティ情報を
 	更新できます。
 
-  Scrubbing
+  スクラブ (Scrubbing)
 	データとパリティのエラーを定期的にチェックするには、`scrub` コマンドを
 	実行できます。
 
@@ -197,7 +197,7 @@ Getting Started
 	引き起こされたエラーが報告される場合があります。これらのエラーは `scrub` の
 	出力で報告されますが、関連するブロックは不良としてマークされません。
 
-  Pooling
+  プーリング (Pooling)
 	注: ここで説明するプーリング機能は、**mergerfs** ツールに取って代わられました。
 	mergerfs は、SnapRAIDコミュニティのLinuxユーザーに推奨されるオプションです。
 	Mergefs は、複数のドライブを単一の統合されたマウントポイントにプールするための、
@@ -269,7 +269,7 @@ Getting Started
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Undeleting
+  削除取り消し (Undeleting)
 	SnapRAIDはRAIDシステムよりもバックアッププログラムのように機能し、
 	-f, --filter オプションを使用してファイルを以前の状態に復元または削除解除するために
 	使用できます。
@@ -290,7 +290,7 @@ Getting Started
 
 		:snapraid fix -m
 
-  Recovering
+  回復 (Recovering)
 	最悪の事態が発生し、1台以上のディスクを失いました！
 
 	**パニックにならないでください！** 復旧できます！
@@ -373,7 +373,7 @@ Getting Started
 
 	すべてが復旧されていれば、このコマンドは即座に完了します。
 
-コマンド
+コマンド (Commands)
 	SnapRAIDは、以下の操作を行ういくつかのシンプルなコマンドを提供します。
 
 	* アレイの状態を表示する -> `status`
@@ -712,7 +712,7 @@ Getting Started
 	再配置プロセス中、これらのファイルはパリティによって保護されないことに
 	注意してください。
 
-Options
+オプション (Options)
 	SnapRAIDには、次のオプションがあります。
 
 	-c, --conf CONFIG
@@ -978,7 +978,7 @@ Options
 	-V, --version
 		プログラムのバージョンを出力します。
 
-Configuration
+設定 (Configuration)
 	SnapRAIDは、ディスクアレイの場所とパリティ情報の保存場所を知るために、構成ファイルを
 	必要とします。
 
@@ -1323,7 +1323,7 @@ Configuration
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots（スナップショット）
+スナップショット (Snapshots)
 	設定でスナップショットオプションが有効になっている場合、SnapRAIDは
 	ファイルシステムのスナップショット機能を利用して、アトミックで一貫性のある操作を保証します。
 
@@ -1382,7 +1382,7 @@ Snapshots（スナップショット）
 
 	他のすべてのコマンドは、ライブファイルシステム上でのみ動作します。
 
-スナップショットのライフサイクル
+スナップショットのライフサイクル (Snapshots Lifecycle)
 	SnapRAIDは、各データサブボリュームのルートにある隠しディレクトリ内で、
 	`stable`（安定）と `pending`（保留）という2つの特定のスナップショットを管理します。
 	Btrfs、Bcachefs、およびNTFSでは `.snapraid/` ディレクトリが使用され、
@@ -1410,7 +1410,7 @@ Snapshots（スナップショット）
 	中断後に `sync` が再開されると、既存の保留中（pending）のスナップショットは削除され、
 	ライブファイルシステムの現在の状態をキャプチャするために新しいスナップショットが作成されます。
 
-Pattern
+パターン (Pattern)
 	パターンは、含めるファイルまたは除外するファイルをフィルタリングするための柔軟な方法を
 	提供します。グロブ文字を使用することで、すべてのパスを手動でリストすることなく、
 	特定のファイル名やディレクトリ構造全体に一致するルールを定義できます。
@@ -1520,7 +1520,7 @@ Pattern
 	Unixでは、コマンドラインでグロブ文字を使用する場合、シェルがそれらを展開するのを
 	防ぐために引用符で囲む必要があります。
 
-Ignore File
+除外ファイル (Ignore File)
 	設定ファイルのグローバルルールに加えて、アレイ内の任意のディレクトリに
 	.snapraidignore ファイルを配置して、分散型の除外ルールを定義できます。
 
@@ -1561,7 +1561,7 @@ Ignore File
 		:# projects/ またはそのサブフォルダ内のすべての .tmp ファイルを除外
 		:*.tmp
 
-Content
+コンテンツ (Content)
 	SnapRAIDは、ファイルの一覧とチェックサムをコンテンツファイルに保存します。
 
 	これはバイナリファイルであり、ディスクアレイに存在するすべてのファイルと、
@@ -1573,7 +1573,7 @@ Content
 	`smart`、`probe`、`up`、`down`、および `devices` コマンドによって
 	完全に無視されます。
 
-Parity
+パリティ (Parity)
 	SnapRAIDは、アレイのパリティ情報をパリティファイルに保存します。
 
 	これらはバイナリファイルであり、`content` ファイルで定義されたすべてのブロックの
@@ -1582,7 +1582,7 @@ Parity
 	これらのファイルは `sync` および `fix` コマンドによって読み書きされ、
 	`scrub` および `check` コマンドによって**読み取られるだけ**です。
 
-Encoding
+エンコーディング (Encoding)
 	UnixのSnapRAIDは、エンコーディングを無視します。ファイルシステムで使用されている
 	のと同じエンコーディングでファイル名を読み取り、保存します。
 
@@ -1594,8 +1594,8 @@ Encoding
 	これは出力されるファイル名にのみ影響します。コンソール出力をファイルにリダイレクトする場合、
 	結果のファイルは常にUTF-8形式になります。
 
-Copyright
+著作権 (Copyright)
 	This file is Copyright (C) 2025 Andrea Mazzoleni
 
-See Also
+関連項目 (See Also)
 	snapraid_log(1), snapraidd(1)

@@ -23,7 +23,7 @@ Synopsis
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
-Description
+Beschreibung (Description)
 	SnapRAID ist ein Sicherungsprogramm, das für Festplatten-Arrays
 	entwickelt wurde und Paritätsinformationen zur Datenwiederherstellung
 	bei Ausfall von bis zu sechs Festplatten speichert.
@@ -51,7 +51,7 @@ Description
 
 		:https://www.snapraid.it/
 
-Einschränkungen
+Einschränkungen (Limitations)
 	SnapRAID ist ein Hybrid aus RAID und einem Backup-Programm mit dem Ziel, die
 	besten Vorteile von beiden zu kombinieren. Es hat jedoch einige Einschränkungen, die Sie
 	vor der Verwendung berücksichtigen sollten.
@@ -92,7 +92,7 @@ Einschränkungen
 		Hardlinks werden gespeichert. Berechtigungen, Eigentümerschaft
 		und erweiterte Attribute werden nicht gespeichert.
 
-Getting Started
+Erste Schritte (Getting Started)
 	Um SnapRAID zu verwenden, müssen Sie zuerst eine Festplatte in Ihrem
 	Festplatten-Array auswählen, die für `parity`-Informationen
 	reserviert wird. Mit einer Festplatte für Parität können Sie von
@@ -178,7 +178,7 @@ Getting Started
 	Jetzt können Sie Ihr Array nach Belieben verwenden und die Paritätsinformationen
 	regelmäßig durch Ausführen des `sync`-Befehls aktualisieren.
 
-  Scrubbing
+  Scrubben (Scrubbing)
 	Um die Daten und die Parität regelmäßig auf Fehler zu überprüfen,
 	können Sie den Befehl `scrub` ausführen.
 
@@ -223,7 +223,7 @@ Getting Started
 	gemeldet, aber die zugehörigen Blöcke werden nicht als fehlerhaft
 	markiert.
 
-  Pooling
+  Zusammenführen (Pooling)
 	Hinweis: Die unten beschriebene Pooling-Funktion wurde durch das
 	Tool mergerfs ersetzt, das jetzt die empfohlene Option für Linux-Benutzer
 	in der SnapRAID-Community ist. Mergefs bietet eine flexiblere
@@ -304,7 +304,7 @@ Getting Started
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
-  Undeleting
+  Wiederherstellen (Undeleting)
 	SnapRAID funktioniert eher wie ein Sicherungsprogramm als ein RAID-System
 	und kann verwendet werden, um Dateien in ihren vorherigen Zustand
 	wiederherzustellen oder das Löschen rückgängig zu machen, indem die
@@ -327,7 +327,7 @@ Getting Started
 
 		:snapraid fix -m
 
-  Recovering
+  Wiederherstellung (Recovering)
 	Das Schlimmste ist passiert, und Sie haben eine oder mehrere Festplatten
 	verloren!
 
@@ -427,7 +427,7 @@ Getting Started
 
 	Wenn alles wiederhergestellt ist, ist dieser Befehl sofort.
 
-Befehle
+Befehle (Commands)
 	SnapRAID bietet ein paar einfache Befehle, mit denen Sie:
 
 	* Den Status des Arrays ausgeben -> `status`
@@ -814,7 +814,7 @@ Befehle
 	Beachten Sie, dass solche Dateien während des Neuzuweisungsprozesses
 	nicht durch die Parität geschützt sind.
 
-Options
+Optionen (Options)
 	SnapRAID bietet die folgenden Optionen:
 
 	-c, --conf CONFIG
@@ -1131,7 +1131,7 @@ Options
 	-V, --version
 		Gibt die Programmversion aus.
 
-Configuration
+Konfiguration (Configuration)
 	SnapRAID benötigt eine Konfigurationsdatei, um zu wissen, wo sich
 	Ihr Festplatten-Array befindet und wo die Paritätsinformationen
 	gespeichert werden sollen.
@@ -1603,7 +1603,7 @@ Snapshots
 
 	Alle anderen Befehle arbeiten ausschließlich auf dem Live-Dateisystem.
 
-Lebenszyklus von Snapshots
+Lebenszyklus von Snapshots (Snapshots Lifecycle)
 	SnapRAID verwaltet zwei spezifische Snapshots, `stable` und `pending`,
 	in einem versteckten Verzeichnis im Stammverzeichnis jedes Daten-Subvolumes.
 	Unter Btrfs, Bcachefs und NTFS wird das Verzeichnis `.snapraid/` verwendet,
@@ -1636,7 +1636,7 @@ Lebenszyklus von Snapshots
 	ausstehende (pending) Snapshot gelöscht und ein neuer erstellt, um den
 	aktuellen Zustand des Live-Dateisystems zu erfassen.
 
-Pattern
+Muster (Pattern)
 	Muster bieten eine flexible Möglichkeit, Dateien für die Einbeziehung oder
 	den Ausschluss zu filtern. Durch die Verwendung von Globbing-Zeichen können Sie Regeln definieren,
 	die mit bestimmten Dateinamen oder ganzen Verzeichnisstrukturen übereinstimmen, ohne
@@ -1757,7 +1757,7 @@ Pattern
 	Unter Unix müssen Sie Globbing-Zeichen in der Befehlszeile in
 	Anführungszeichen setzen, um zu verhindern, dass die Shell sie erweitert.
 
-Dateien Ignorieren
+Dateien Ignorieren (Ignore File)
 	Zusätzlich zu den globalen Regeln in der Konfigurationsdatei können Sie
 	`.snapraidignore`-Dateien in jedem Verzeichnis innerhalb des Arrays platzieren,
 	um dezentrale Ausschlussregeln zu definieren.
@@ -1799,7 +1799,7 @@ Dateien Ignorieren
 		:# Schließt jede .tmp-Datei innerhalb von projects/ oder deren Unterordnern aus
 		:*.tmp
 
-Content
+Inhalt (Content)
 	SnapRAID speichert die Liste und Prüfsummen Ihrer Dateien in der
 	Content-Datei.
 
@@ -1813,7 +1813,7 @@ Content
 	von den Befehlen `smart`, `probe`, `up`, `down` und `devices` vollständig
 	ignoriert.
 
-Parity
+Parität (Parity)
 	SnapRAID speichert die Paritätsinformationen Ihres Arrays in den
 	Paritätsdateien.
 
@@ -1823,7 +1823,7 @@ Parity
 	Diese Dateien werden von den Befehlen `sync` und `fix` gelesen
 	und geschrieben und nur von den Befehlen `scrub` und `check` gelesen.
 
-Encoding
+Kodierung (Encoding)
 	SnapRAID ignoriert unter Unix jede Kodierung. Es liest und speichert
 	die Dateinamen mit derselben Kodierung, die vom Dateisystem
 	verwendet wird.
@@ -1841,5 +1841,5 @@ Encoding
 Copyright
 	Diese Datei ist Copyright (C) 2025 Andrea Mazzoleni
 
-See Also
+Siehe auch (See Also)
 	snapraid_log(1), snapraidd(1)
