@@ -1,7 +1,7 @@
 .TH "Kopia zapasowa SnapRAID dla macierzy dyskowych" 1
 .SH NAME
 snapraid \- Kopia zapasowa SnapRAID dla macierzy dyskowych
-.SH SYNOPSIS 
+.SH SKłADNIA (SYNOPSIS) 
 snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
@@ -77,7 +77,7 @@ snapraid [\-c, \-\-conf CONFIG]
 snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PD
-.SH DESCRIPTION 
+.SH OPIS (DESCRIPTION) 
 SnapRAID to program do tworzenia kopii zapasowych przeznaczony
 dla macierzy dyskowych, przechowujący informacje parzystości
 do odzyskiwania danych w przypadku awarii do sześciu dysków.
@@ -116,7 +116,7 @@ https://www.snapraid.it/
 .PD 0
 .PD
 .RE
-.SH OGRANICZENIA 
+.SH OGRANICZENIA (LIMITATIONS) 
 SnapRAID jest hybrydą pomiędzy RAID a programem do tworzenia kopii zapasowych, mającą na celu połączenie
 najlepszych zalet obu tych rozwiązań. Posiada jednak pewne ograniczenia, które należy
 wziąć pod uwagę przed jego użyciem.
@@ -165,7 +165,7 @@ Zapisywane są tylko nazwy plików, znaczniki czasu, dowiązania symboliczne
 i dowiązania twarde.
 Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
 .PD
-.SH GETTING STARTED 
+.SH PIERWSZE KROKI (GETTING STARTED) 
 Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
 dysków, który zostanie przeznaczony na informacje o \`parzystości\`. Z jednym dyskiem
 na parzystość będziesz w stanie odzyskać dane po awarii pojedynczego dysku,
@@ -312,7 +312,7 @@ Kiedy to polecenie się zakończy, Twoje dane są BEZPIECZNE.
 .PP
 Teraz możesz zacząć używać swojej macierzy, jak chcesz, i okresowo
 aktualizować informacje o parzystości, uruchamiając polecenie \`sync\`.
-.SS Scrubbing 
+.SS Scrubbing (Scrubbing) 
 Aby okresowo sprawdzać dane i parzystość pod kątem błędów, możesz
 uruchomić polecenie \`scrub\`.
 .PP
@@ -369,7 +369,7 @@ snapraid \-p bad scrub
 Uruchomienie \`scrub\` na niezsynchronizowanej macierzy może zgłosić błędy
 spowodowane usuniętymi lub zmodyfikowanymi plikami. Błędy te są zgłaszane
 w wyniku \`scrub\`, ale powiązane bloki nie są oznaczane jako złe.
-.SS Pooling 
+.SS Pooling (Pooling) 
 Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
 narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
 w społeczności SnapRAID. Mergefs zapewnia bardziej elastyczny i wydajny
@@ -517,7 +517,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 .PD 0
 .PD
 .RE
-.SS Undeleting 
+.SS Cofanie usuwania (Undeleting) 
 SnapRAID działa bardziej jak program do tworzenia kopii zapasowych niż system RAID
 i może być użyty do przywrócenia lub odzyskania usuniętych plików do ich poprzedniego
 stanu za pomocą opcji \-f, \-\-filter:
@@ -553,7 +553,7 @@ snapraid fix \-m
 .PD 0
 .PD
 .RE
-.SS Recovering 
+.SS Odzyskiwanie (Recovering) 
 Najgorsze się wydarzyło i straciłeś jeden lub więcej dysków!
 .PP
 NIE PANIKUJ! Będziesz w stanie je odzyskać!
@@ -655,7 +655,7 @@ snapraid sync
 .RE
 .PP
 Jeśli wszystko zostanie odzyskane, to polecenie jest natychmiastowe.
-.SH POLECENIA 
+.SH POLECENIA (COMMANDS) 
 SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 .PD 0
 .IP \(bu
@@ -1031,7 +1031,7 @@ Jeśli chcesz dokonać realokacji tych plików, możesz użyć opcji
 \-W, \-\-force\-realloc\-tail.
 Pamiętaj, że takie pliki nie będą chronione przez parzystość podczas procesu
 realokacji.
-.SH OPTIONS 
+.SH OPCJE (OPTIONS) 
 SnapRAID udostępnia następujące opcje:
 .TP
 .B \-c, \-\-conf CONFIG
@@ -1328,7 +1328,7 @@ Wyświetla krótki ekran pomocy.
 .TP
 .B \-V, \-\-version
 Wyświetla wersję programu.
-.SH CONFIGURATION 
+.SH KONFIGURACJA (CONFIGURATION) 
 SnapRAID wymaga pliku konfiguracyjnego, aby wiedzieć, gdzie znajduje się Twoja macierz
 dysków i gdzie przechowywać informacje o parzystości.
 .PP
@@ -1798,7 +1798,7 @@ smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD 0
 .PD
 .RE
-.SH SNAPSHOTS (MIGAWKI) 
+.SH MIGAWKI (SNAPSHOTS) 
 Jeśli opcja snapshot jest włączona w konfiguracji, SnapRAID
 wykorzystuje funkcjonalność migawek systemu plików w celu zapewnienia operacji atomowych
 i spójnych.
@@ -1886,7 +1886,7 @@ całej macierzy. W takim przypadku \`check\` oraz \`fix\` będą używać wyłą
 aktywnych systemów plików.
 .PP
 Wszystkie inne polecenia działają wyłącznie na aktywnym systemie plików.
-.SH CYKL żYCIA MIGAWEK 
+.SH CYKL żYCIA MIGAWEK (SNAPSHOTS LIFECYCLE) 
 SnapRAID zarządza dwoma określonymi migawkami, \`stable\` (stabilną) oraz \`pending\` (oczekującą),
 w ukrytym katalogu w katalogu głównym każdego podwolumenu danych.
 W systemach Btrfs, Bcachefs i NTFS używany jest katalog \`.snapraid/\`,
@@ -1919,7 +1919,7 @@ i zapisaniu ostatecznej wersji pliku .content.
 Jeśli operacja \`sync\` zostanie zrestartowana po przerwaniu, istniejąca
 oczekująca (pending) migawka jest usuwana, a tworzona jest nowa, aby
 uchwycić bieżący stan aktywnego systemu plików.
-.SH PATTERN 
+.SH WZORCE (PATTERN) 
 Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub
 wykluczenia. Używając znaków globbingowych, można zdefiniować reguły, które
 pasują do określonych nazw plików lub całych struktur katalogów bez
@@ -2101,7 +2101,7 @@ snapraid \-f \[dq]*.mp3\[dq] check
 .PP
 W systemie Unix, używając znaków globbing w wierszu poleceń, musisz
 je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
-.SH IGNORE FILE 
+.SH PLIK IGNOROWANIA (IGNORE FILE) 
 Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
 \`.snapraidignore\` w dowolnym katalogu w macierzy, aby zdefiniować
 zdecentralizowane reguły wykluczania.
@@ -2161,7 +2161,7 @@ build/
 .PD 0
 .PD
 .RE
-.SH CONTENT 
+.SH ZAWARTOść (CONTENT) 
 SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 .PP
 Jest to plik binarny, który zawiera listę wszystkich plików obecnych w Twojej macierzy dysków,
@@ -2172,7 +2172,7 @@ Plik zawartości jest odczytywany i zapisywany przez polecenia \`sync\`,
 \`diff\`, \`check\`, \`fix\`, \`list\`, \`dup\`, \`locate\` i \`pool\`, oraz jest
 całkowicie ignorowany przez polecenia \`smart\`, \`probe\`, \`up\`, \`down\`
 i \`devices\`.
-.SH PARITY 
+.SH PARZYSTOść (PARITY) 
 SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
 parzystości.
 .PP
@@ -2181,7 +2181,7 @@ bloków zdefiniowanych w pliku \`content\`.
 .PP
 Pliki te są odczytywane i zapisywane przez polecenia \`sync\` i \`fix\`
 oraz tylko odczytywane przez polecenia \`scrub\` i \`check\`.
-.SH ENCODING 
+.SH KODOWANIE (ENCODING) 
 SnapRAID w systemie Unix ignoruje wszelkie kodowanie. Odczytuje i przechowuje
 nazwy plików z tym samym kodowaniem używanym przez system plików.
 .PP
@@ -2194,7 +2194,7 @@ czcionki TrueType, takiej jak \`Lucida Console\`, jako czcionki konsoli.
 Dotyczy to tylko drukowanych nazw plików; jeśli
 przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 w formacie UTF\-8.
-.SH COPYRIGHT 
+.SH PRAWA AUTORSKIE (COPYRIGHT) 
 Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
-.SH SEE ALSO 
+.SH ZOBACZ RóWNIEż (SEE ALSO) 
 snapraid_log(1), snapraidd(1)

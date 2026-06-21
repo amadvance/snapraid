@@ -164,7 +164,7 @@ Seuls les noms de fichiers, les horodatages, les liens symboliques
 et les liens matériels sont sauvegardés. Les permissions, la
 propriété et les attributs étendus ne sont pas sauvegardés.
 .PD
-.SH DéMARRER 
+.SH DéMARRER (GETTING STARTED) 
 Pour utiliser SnapRAID, vous devez d\'abord sélectionner un disque
 dans votre baie de disques pour le dédier aux informations de \`parité\`.
 Avec un disque pour la parité, vous pourrez récupérer d\'une
@@ -572,7 +572,7 @@ snapraid fix \-m
 .PD 0
 .PD
 .RE
-.SS Récupération 
+.SS Récupération (Recovering) 
 Le pire est arrivé, et vous avez perdu un ou plusieurs disques !
 .PP
 NE PANIQUEZ PAS ! Vous pourrez les récupérer !
@@ -681,7 +681,7 @@ snapraid sync
 .RE
 .PP
 Si tout est récupéré, cette commande est immédiate.
-.SH COMMANDES 
+.SH COMMANDES (COMMANDS) 
 SnapRAID fournit quelques commandes simples qui vous permettent de :
 .PD 0
 .IP \(bu
@@ -1997,7 +1997,7 @@ Si aucune option \-d n\'est fournie, SnapRAID suppose que l\'opération s\'appli
 les systèmes de fichiers actifs.
 .PP
 Toutes les autres commandes fonctionnent exclusivement sur le système de fichiers actif.
-.SH CYCLE DE VIE DES INSTANTANéS 
+.SH CYCLE DE VIE DES INSTANTANéS (SNAPSHOTS LIFECYCLE) 
 SnapRAID gère deux instantanés spécifiques, \`stable\` et \`pending\`,
 dans un répertoire caché à la racine de chaque sous\-volume de données.
 Dans Btrfs, Bcachefs et NTFS, le répertoire \`.snapraid/\` est utilisé,
@@ -2223,7 +2223,7 @@ snapraid \-f \[dq]*.mp3\[dq] check
 Sous Unix, lorsque vous utilisez des caractères de globbing sur la
 ligne de commande, vous devez les mettre entre guillemets pour empêcher
 le shell de les développer.
-.SH IGNORER DES FICHIERS (IGNORE FILES) 
+.SH IGNORER DES FICHIERS (IGNORE FILE) 
 En plus des règles globales du fichier de configuration, vous pouvez
 placer des fichiers \`.snapraidignore\` dans n\'importe quel répertoire de la grappe
 pour définir des règles d\'exclusion décentralisées.
@@ -2304,7 +2304,7 @@ blocs définis dans le fichier \`content\`.
 .PP
 Ces fichiers sont lus et écrits par les commandes \`sync\` et \`fix\` et
 lus uniquement par les commandes \`scrub\` et \`check\`.
-.SH ENCODAGE 
+.SH ENCODAGE (ENCODING) 
 SnapRAID sous Unix ignore tout encodage. Il lit et stocke les
 noms de fichiers avec le même encodage utilisé par le système
 de fichiers.
