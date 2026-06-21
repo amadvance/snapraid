@@ -1722,6 +1722,10 @@ Codare (Encoding)
 	redirecționați ieșirea consolei către un fișier, fișierul rezultat este întotdeauna
 	în format UTF-8.
 
+Traducere (Translation)
+	Acest document este o traducere automată a manualului în limba engleză.
+	Consultați manualul în limba engleză pentru versiunea oficială.
+
 Drept de Autor (Copyright)
 	Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
 

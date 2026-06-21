@@ -1846,6 +1846,10 @@ Encodage (Encoding)
 	redirigez la sortie de la console vers un fichier, le fichier
 	résultant est toujours au format UTF-8.
 
+Traduction (Translation)
+	Ce document est une traduction automatique du manuel en anglais.
+	Veuillez vous référer au manuel en anglais pour la version officielle.
+
 Droits d'auteur (Copyright)
 	Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
 

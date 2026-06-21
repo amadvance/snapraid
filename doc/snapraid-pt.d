@@ -1757,6 +1757,10 @@ Codificação (Encoding)
 	redirecionar a saída do console para um arquivo, o arquivo resultante
 	estará sempre no formato UTF-8.
 
+Tradução (Translation)
+	Este documento é uma tradução automática do manual em inglês.
+	Consulte o manual em inglês para a versão oficial.
+
 Direitos Autorais (Copyright)
 	Este arquivo é Copyright (C) 2025 Andrea Mazzoleni
 

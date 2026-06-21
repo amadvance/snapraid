@@ -1838,6 +1838,10 @@ Kodierung (Encoding)
 	die Konsolenausgabe in eine Datei umleiten, ist die resultierende
 	Datei immer im UTF-8-Format.
 
+Übersetzung (Translation)
+	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
+	Die maßgebliche Version finden Sie im englischen Handbuch.
+
 Copyright
 	Diese Datei ist Copyright (C) 2025 Andrea Mazzoleni
 

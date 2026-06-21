@@ -1721,6 +1721,10 @@ Kodowanie (Encoding)
 	przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 	w formacie UTF-8.
 
+Tłumaczenie (Translation)
+	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
+	Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.
+
 Prawa autorskie (Copyright)
 	Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
 

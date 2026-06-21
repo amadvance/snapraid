@@ -1972,13 +1972,20 @@ redirigez la sortie de la console vers un fichier, le fichier
 résultant est toujours au format UTF-8.
 
 
-15 DROITS D'AUTEUR (COPYRIGHT)
+15 TRADUCTION (TRANSLATION)
+===========================
+
+Ce document est une traduction automatique du manuel en anglais.
+Veuillez vous référer au manuel en anglais pour la version officielle.
+
+
+16 DROITS D'AUTEUR (COPYRIGHT)
 ==============================
 
 Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 VOIR AUSSI (SEE ALSO)
+17 VOIR AUSSI (SEE ALSO)
 ========================
 
 snapraid_log(1), snapraidd(1)

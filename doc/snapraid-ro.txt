@@ -1848,13 +1848,20 @@ redirecționați ieșirea consolei către un fișier, fișierul rezultat este î
 în format UTF-8.
 
 
-15 DREPT DE AUTOR (COPYRIGHT)
+15 TRADUCERE (TRANSLATION)
+==========================
+
+Acest document este o traducere automată a manualului în limba engleză.
+Consultați manualul în limba engleză pentru versiunea oficială.
+
+
+16 DREPT DE AUTOR (COPYRIGHT)
 =============================
 
 Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
 
 
-16 VEZI șI (SEE ALSO)
+17 VEZI șI (SEE ALSO)
 =====================
 
 snapraid_log(1), snapraidd(1)
