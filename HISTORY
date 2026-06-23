@@ -10,6 +10,9 @@ SnapRAID HISTORY
  * Fixed the smartctl type detection retry during probe on Windows to
    properly preserve the standby check option, preventing standby disks
    from spinning up if a retry is needed.
+ * Save the content file before aborting 'sync' due to safety thresholds
+   if files were touched by '--gui-touch-before', preventing timestamp
+   desynchronization and false diff reports on subsequent runs.
 
 14.7 2026/06
 ============

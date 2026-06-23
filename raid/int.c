@@ -433,9 +433,9 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *q;
 	uint8_t *qa;
 	const int N = 2;
-	const uint8_t *T[N][N];
-	uint8_t G[N * N];
-	uint8_t V[N * N];
+	const uint8_t *T[2][2];
+	uint8_t G[2 * 2];
+	uint8_t V[2 * 2];
 	size_t i;
 	int j, k;
 
