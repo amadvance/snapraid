@@ -627,10 +627,10 @@ void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	const int N = 2;
-	uint8_t *p[N];
-	uint8_t *pa[N];
-	uint8_t G[N * N];
-	uint8_t V[N * N];
+	uint8_t *p[2];
+	uint8_t *pa[2];
+	uint8_t G[2 * 2];
+	uint8_t V[2 * 2];
 	size_t i;
 	int j, k;
 
