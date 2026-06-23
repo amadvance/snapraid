@@ -4,10 +4,21 @@
 #ifndef __APP_H
 #define __APP_H
 
+#include "os/os.h"
+
 /**
  * Include list support to have tommy_node.
  */
 #include "tommyds/tommylist.h"
+
+#define EINTERNAL EFAULT /**< Internal assertion failed. */
+#define EDATA EIO /**< Silent data corruption. */
+#define ESOFT EINVAL /**< Software error, like permission denied. */
+#define EUSER EINVAL /**< Invalid value specified by the user. */
+#define EEXTERNAL EINVAL /**< Invalid external interface behaviour. */
+#define ECONTENT EINVAL /**< Invalid content file. */
+#define EENVIRONMENT EINVAL /**< Invalid physical environment, like temperature too high. */
+#define ESYSLOG EINVAL /**< Syslog error. */
 
 /**
  * Basic block position type.
@@ -33,34 +44,6 @@ static inline int hardlink(const char* a, const char* b)
  * Return 0 on success.
  */
 int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t size);
-
-/**
- * Physical offset not yet read.
- */
-#define FILEPHY_UNREAD_OFFSET 0
-
-/**
- * Special value returned when the file-system doesn't report any offset for unknown reason.
- */
-#define FILEPHY_UNREPORTED_OFFSET 1
-
-/**
- * Special value returned when the file doesn't have a real offset.
- * For example, because it's stored in the NTFS MFT.
- */
-#define FILEPHY_WITHOUT_OFFSET 2
-
-/**
- * Value indicating real offsets. All offsets greater or equal at this one are real.
- */
-#define FILEPHY_REAL_OFFSET 3
-
-/**
- * Get the physical address of the specified file.
- * This is expected to be just a hint and not necessarily correct or unique.
- * Return 0 on success.
- */
-int filephy(const char* path, uint64_t size, uint64_t* physical);
 
 /**
  * Check if the underline file-system support persistent inodes.
@@ -393,17 +376,6 @@ int ambient_temperature(void);
  */
 #define WINDOWS_SPACEHOLDER_SIZE (256 * 1024 * 1024)
 
-/**
- * Generic errors
- */
-#define EINTERNAL EFAULT /**< Internal assertion failed. */
-#define EDATA EIO /**< Silent data corruption. */
-#define ESOFT EINVAL /**< Software error, like permission denied. */
-#define EUSER EINVAL /**< Invalid value specified by the user. */
-#define EEXTERNAL EINVAL /**< Invalid external interface behaviour. */
-#define ECONTENT EINVAL /**< Invalid content file. */
-#define EENVIRONMENT EINVAL /**< Invalid physical environment, like temperature too high. */
-
 /****************************************************************************/
 /* app */
 
@@ -426,11 +398,6 @@ void app_default_conf(char* dst, size_t dst_size, const char* argv0);
  * Signal handler.
  */
 void app_signal_handler(int signum);
-
-/**
- * Global variable to identify if Ctrl+C is pressed.
- */
-int app_global_interrupt(void);
 
 #endif
 

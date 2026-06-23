@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2011 Andrea Mazzoleni
+// Copyright (C) 2026 Andrea Mazzoleni
 
 #ifndef __PORTABLE_MINGW_H
 #define __PORTABLE_MINGW_H
@@ -7,6 +7,14 @@
 #ifdef __MINGW32__ /* Only for MingW */
 
 #include <wchar.h>
+
+#define SYSLOG "EventLog"
+
+#define OS_LVL_CRITICAL 1
+#define OS_LVL_ERROR 2
+#define OS_LVL_WARNING 3
+#define OS_LVL_INFO 4
+#define OS_LVL_DEBUG 5
 
 /* map Windows name to POSIX name */
 #define strncasecmp _strnicmp
@@ -39,12 +47,23 @@ wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required);
 #define convert(buf, a) convert_arg(buf, a, 0)
 #define convert_if_required(buf, a) convert_arg(buf, a, 1)
 
+/**
+ * Convert a generic string from UTF16 to UTF8.
+ * \return The converted string. It never fails.
+ */
 char* u16tou8(char* conv_buf, const wchar_t* src);
 
 /**
  * Convert a generic string from UTF8 to UTF16.
+ * \return The converted string. It never fails.
  */
 wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
+
+/**
+ * Convert a generic string from UTF16 to UTF8.
+ * \return The converted string. 0 on failure
+ */
+char* u16tou8_mayfail(char* conv_buf, size_t conv_size, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator);
 
 /****************************************************************************/
 /* file */
@@ -58,6 +77,8 @@ wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
 /* Remap functions and types */
 #undef fopen
 #define fopen windows_fopen
+#define FOPEN_TEXT "t"
+#define FOPEN_BINARY "b"
 #undef open
 #define open windows_open
 #define open_noatime windows_open
@@ -106,6 +127,7 @@ wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
 #undef utimensat
 #define utimensat windows_utimensat
 #define O_NOFOLLOW 0
+#define O_CLOEXEC 0
 #define dirent_hidden windows_dirent_hidden
 #define HAVE_STRUCT_DIRENT_D_STAT 1
 #undef HAVE_STRUCT_DIRENT_D_INO
@@ -145,6 +167,12 @@ wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
 #define HAVE_DIRECT_IO 1
 #define O_DIRECT 0x10000000
 #define O_DSYNC 0x20000000
+#undef gmtime_r
+#define gmtime_r windows_gmtime_r
+#undef localtime_r
+#define localtime_r windows_localtime_r
+#undef realpath
+#define realpath windows_realpath
 
 /**
  * If nanoseconds are not supported, we report the special STAT_NSEC_INVALID value,
@@ -154,6 +182,39 @@ wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
 
 /* We have nano second support */
 #define STAT_NSEC(st) ((int)(st)->st_mtimensec)
+
+static inline int WEXITSTATUS(DWORD status)
+{
+	return status;
+}
+
+static inline int WTERMSIG(DWORD status)
+{
+	/* identify most common crash reasons */
+	switch (status) {
+	case 0x40000015 : return SIGABRT; /* STATUS_FATAL_APP_EXIT */
+	case 0xC0000005 : return SIGSEGV; /* STATUS_ACCESS_VIOLATION */
+	case 0xC0000006 : return SIGSEGV; /* STATUS_IN_PAGE_ERROR */
+	case 0xC000001D : return SIGILL; /* STATUS_ILLEGAL_INSTRUCTION */
+	case 0xC00000FD : return SIGSEGV; /* STATUS_STACK_OVERFLOW */
+	case 0xC0000090 : return SIGFPE; /* STATUS_FLOAT_INVALID_OPERATION */
+	case 0xC0000094 : return SIGFPE; /* STATUS_INTEGER_DIVIDE_BY_ZERO */
+	case 0xC000013A : return SIGINT; /* STATUS_CONTROL_C_EXIT */
+	case 0xC0000409 : return SIGSEGV; /* STATUS_STACK_BUFFER_OVERRUN */
+	}
+
+	return 0;
+}
+
+static inline int WIFEXITED(DWORD status)
+{
+	return status < 0xC0000000 && WTERMSIG(status) == 0;
+}
+
+static inline int WIFSIGNALED(DWORD status)
+{
+	return WTERMSIG(status) != 0;
+}
 
 /**
  * Generic stat information.
@@ -354,7 +415,7 @@ const char* windows_stat_desc(struct stat* st);
 unsigned windows_sleep(unsigned seconds);
 
 /**
- * List usleep().
+ * Like usleep().
  */
 void windows_usleep(uint64_t useconds);
 
@@ -411,9 +472,24 @@ ssize_t windows_pread(int f, void* buffer, size_t size, off_t offset);
 ssize_t windows_pwrite(int f, const void* buffer, size_t size, off_t offset);
 
 /**
- * List direct_size().
+ * Like direct_size().
  */
 size_t windows_direct_size(void);
+
+/**
+ * Like gmtime_r().
+ */
+struct tm* windows_gmtime_r(const time_t* timer, struct tm* result);
+
+/**
+ * Like localtime_r().
+ */
+struct tm* windows_localtime_r(const time_t* timer, struct tm* result);
+
+/**
+ * Like realpath().
+ */
+char* windows_realpath(const char* path, char* resolved_path);
 
 /**
  * Like GetFileAttributes()
@@ -448,17 +524,28 @@ int windows_is_wine(void);
 #define HAVE_THREAD 1
 typedef void* windows_thread_t;
 typedef CRITICAL_SECTION windows_mutex_t;
+typedef struct {
+	SRWLOCK srw;
+	BOOL exclusive;
+} windows_rwlock_t;
 typedef CONDITION_VARIABLE windows_cond_t;
 typedef void* windows_key_t;
 /* remap to pthread */
+#define pid_t intptr_t
 #define thread_id_t windows_thread_t
 #define thread_mutex_t windows_mutex_t
 #define thread_cond_t windows_cond_t
+#define thread_rwlock_t windows_rwlock_t
 #define thread_key_t windows_key_t
 #define pthread_mutex_init windows_mutex_init
 #define pthread_mutex_destroy windows_mutex_destroy
 #define pthread_mutex_lock windows_mutex_lock
 #define pthread_mutex_unlock windows_mutex_unlock
+#define pthread_rwlock_init windows_rwlock_init
+#define pthread_rwlock_destroy windows_rwlock_destroy
+#define pthread_rwlock_rdlock windows_rwlock_rdlock
+#define pthread_rwlock_wrlock windows_rwlock_wrlock
+#define pthread_rwlock_unlock windows_rwlock_unlock
 #define pthread_cond_init windows_cond_init
 #define pthread_cond_destroy windows_cond_destroy
 #define pthread_cond_signal windows_cond_signal
@@ -478,6 +565,11 @@ int windows_mutex_init(windows_mutex_t* mutex, void* attr);
 int windows_mutex_destroy(windows_mutex_t* mutex);
 int windows_mutex_lock(windows_mutex_t* mutex);
 int windows_mutex_unlock(windows_mutex_t* mutex);
+int windows_rwlock_init(windows_rwlock_t* mutex, void* attr);
+int windows_rwlock_destroy(windows_rwlock_t* mutex);
+int windows_rwlock_rdlock(windows_rwlock_t* mutex);
+int windows_rwlock_wrlock(windows_rwlock_t* mutex);
+int windows_rwlock_unlock(windows_rwlock_t* mutex);
 int windows_cond_init(windows_cond_t* cond, void* attr);
 int windows_cond_destroy(windows_cond_t* cond);
 int windows_cond_signal(windows_cond_t* cond);
@@ -495,6 +587,23 @@ int windows_key_create(windows_key_t* key, void (*destructor)(void*));
 int windows_key_delete(windows_key_t key);
 void* windows_getspecific(windows_key_t key);
 int windows_setspecific(windows_key_t key, void* value);
+
+/****************************************************************************/
+/* service */
+
+#if !HAVE_GETOPT_LONG
+#error HAVE_GETOPT_LONG is required in Windows for the service options
+#endif
+
+/**
+ * Log into Eventlog
+ */
+void windows_eventlog(int level, const char* msg);
+
+/**
+ * Signal that the service is starting and it needs more time.
+ */
+void windows_starting(void);
 
 #endif
 #endif

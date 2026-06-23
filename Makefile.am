@@ -11,7 +11,9 @@ endif
 
 # Windows
 if HOST_WINDOWS
-snapraid_LDADD = resource_res.o
+snapraid_LDADD = resource_res.o -ladvapi32 -luserenv
+mktest_LDADD = -ladvapi32 -luserenv
+mkstream_LDADD = -ladvapi32 -luserenv
 
 resource_res.o: cmdline/resource.rc cmdline/resource.manifest
 	$(WINDRES) --include-dir=. --include-dir=$(srcdir) $< -o $@
@@ -64,9 +66,9 @@ snapraid_SOURCES = \
 	cmdline/import.c \
 	cmdline/search.c \
 	cmdline/thermal.c \
-	cmdline/mingw.c \
+	os/mingw.c \
 	cmdline/mingwapp.c \
-	cmdline/unix.c \
+	os/unix.c \
 	cmdline/unixapp.c
 
 noinst_HEADERS = \
@@ -92,7 +94,6 @@ noinst_HEADERS = \
 	tommyds/tommyhashdyn.c \
 	tommyds/tommylist.c \
 	tommyds/tommytree.c \
-	cmdline/portable.h \
 	cmdline/snapraid.h \
 	cmdline/io.h \
 	cmdline/bw.h \
@@ -115,24 +116,26 @@ noinst_HEADERS = \
 	cmdline/import.h \
 	cmdline/search.h \
 	cmdline/thermal.h \
-	cmdline/mingw.h \
-	cmdline/unix.h \
-	cmdline/os.h \
-	cmdline/app.h
+	cmdline/app.h \
+	os/os.h \
+	os/mingw.h \
+	os/unix.h \
+	os/os.h \
+	os/portable.h
 
 mktest_SOURCES = \
 	cmdline/mktest.c \
-	cmdline/mingw.c \
+	os/mingw.c \
 	cmdline/mingwapp.c \
-	cmdline/unix.c \
+	os/unix.c \
 	cmdline/unixapp.c \
 	cmdline/support.c
 
 mkstream_SOURCES = \
 	cmdline/mkstream.c \
-	cmdline/mingw.c \
+	os/mingw.c \
 	cmdline/mingwapp.c \
-	cmdline/unix.c \
+	os/unix.c \
 	cmdline/unixapp.c \
 	cmdline/support.c \
 	cmdline/util.c \

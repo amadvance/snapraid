@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#include "portable.h"
+#include "os/portable.h"
 
 #include "elem.h"
 #include "import.h"
@@ -5043,7 +5043,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 		return -1;
 
 	/* stop if requested */
-	if (app_global_interrupt()) {
+	if (os_signal_interrupt()) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
 			msg_status("Not starting due to interruption\n");
@@ -5564,7 +5564,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 	}
 
 	/* stop if requested */
-	if (app_global_interrupt()) {
+	if (os_signal_interrupt()) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
 			msg_bar("\n");

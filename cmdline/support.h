@@ -4,7 +4,6 @@
 #ifndef __SUPPORT_H
 #define __SUPPORT_H
 
-#include "os.h"
 #include "app.h"
 
 /****************************************************************************/
@@ -93,6 +92,7 @@ typedef void log_ptr(int err, const char* format, ...) __attribute__((format(att
  *
  * These messages go in the log file and in stderr unconditionally.
  */
+void vlog_fatal(int err, const char* format, va_list ap, const char* post);
 void log_fatal(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
 
 /**
@@ -106,6 +106,7 @@ void log_fatal(int err, const char* format, ...) __attribute__((format(attribute
  *
  * These messages go in the log file if specified, otherwise they go in stderr.
  */
+void vlog_error(int err, const char* format, va_list ap, const char* post);
 void log_error(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
 
 /**
