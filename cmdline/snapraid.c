@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#include "portable.h"
+#include "os/portable.h"
 
-#include "os.h"
 #include "snapraid.h"
 #include "support.h"
 #include "elem.h"
@@ -1413,7 +1412,7 @@ int snapraid_main(int argc, char* argv[])
 		}
 	}
 
-	os_init(opt.force_scan_winfind);
+	os_init(OS_INIT_OPT_AVOID_SLEEP | (opt.force_scan_winfind ? OS_INIT_OPT_WINFIND : 0));
 	app_init();
 	raid_init();
 	crc32c_init();
@@ -2091,19 +2090,19 @@ int snapraid_main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (app_global_interrupt()) {
+	if (os_signal_interrupt()) {
 		/* LCOV_EXCL_START */
 #ifdef _WIN32
 		exit(STATUS_CONTROL_C_EXIT);
 #else
 		/* restore default handler */
-		signal(app_global_interrupt(), SIG_DFL);
+		signal(os_signal_interrupt(), SIG_DFL);
 
 		/* raise the signal again*/
-		raise(app_global_interrupt());
+		raise(os_signal_interrupt());
 
 		/* if raise() didn't terminate */
-		_exit(128 + app_global_interrupt());
+		_exit(128 + os_signal_interrupt());
 #endif
 		/* LCOV_EXCL_STOP */
 	}
