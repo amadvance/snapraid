@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2011 Andrea Mazzoleni
+// Copyright (C) 2026 Andrea Mazzoleni
 
 #ifndef __PORTABLE_H
 #define __PORTABLE_H
@@ -33,6 +33,11 @@
 #define _WIN32_WINNT 0x601
 
 /**
+ * Enable the rand_s() function.
+ */
+#define _CRT_RAND_S
+
+/**
  * Undef as it clashes with windows.h declarations
  */
 #undef DATADIR
@@ -46,7 +51,7 @@
 #ifdef __MINGW32__
 #if defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO == 1
 #define attribute_printf gnu_printf /* GNU format */
-#define printf __mingw_printf
+#define printf(...) __mingw_printf(__VA_ARGS__) /* to support %z in printf */
 #else
 #define attribute_printf ms_printf /* MSVCRT format */
 #endif
@@ -64,7 +69,6 @@
 #ifndef __noreturn
 #define __noreturn __attribute__((noreturn))
 #endif
-
 
 /**
  * Architecture for inline assembly.
@@ -225,6 +229,38 @@
 #include <execinfo.h>
 #endif
 
+#ifdef HAVE_STRINGS
+#include <strings.h>
+#endif
+
+#if HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+
+#if HAVE_GRP_H
+#include <grp.h>
+#endif
+
+#if HAVE_PWD_H
+#include <pwd.h>
+#endif
+
+#if HAVE_SYS_SYSINFO_H
+#include <sys/sysinfo.h>
+#endif
+
+#if HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
+#endif
+
+#if HAVE_ZLIB
+#include <zlib.h>
+#endif
+
+#if HAVE_ZSTD
+#include <zstd.h>
+#endif
+
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
@@ -250,20 +286,6 @@
 
 #ifdef HAVE_LINUX_CLOSE_RANGE_H
 #include <linux/close_range.h>
-#endif
-
-/* implement close_range for glibc 2.33 or earlier */
-#if defined(__linux__) && !defined(HAVE_CLOSE_RANGE)
-#include <sys/syscall.h>
-#ifndef __NR_close_range
-#define __NR_close_range 436
-#endif
-#define close_range close_range_impl
-static inline int close_range_impl(unsigned int first, unsigned int last, unsigned int flags)
-{
-	return (int)syscall(__NR_close_range, first, last, flags);
-}
-#define HAVE_CLOSE_RANGE 1
 #endif
 
 /*

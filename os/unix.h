@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2011 Andrea Mazzoleni
+// Copyright (C) 2026 Andrea Mazzoleni
 
 #ifndef __UNIX_H
 #define __UNIX_H
@@ -8,6 +8,38 @@
 #define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
 #define HAVE_DIRECT_IO 1 /**< Support O_DIRECT in open(). */
 #endif
+
+#define SYSLOG "syslog"
+
+#define OS_LVL_CRITICAL LOG_CRIT
+#define OS_LVL_ERROR LOG_ERR
+#define OS_LVL_WARNING LOG_WARNING
+#define OS_LVL_INFO LOG_INFO
+#define OS_LVL_DEBUG LOG_DEBUG
+
+/* implement close_range for glibc 2.33 or earlier */
+#if defined(__linux__) && !defined(HAVE_CLOSE_RANGE)
+#include <sys/syscall.h>
+#ifndef __NR_close_range
+#define __NR_close_range 436
+#endif
+#define close_range close_range_impl
+static inline int close_range_impl(unsigned int first, unsigned int last, unsigned int flags)
+{
+	return (int)syscall(__NR_close_range, first, last, flags);
+}
+#define HAVE_CLOSE_RANGE 1
+#endif
+
+#ifndef WEXITSTATUS
+#define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+#define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
+
+#define FOPEN_TEXT ""
+#define FOPEN_BINARY ""
 
 #define O_BINARY 0 /**< Not used in Unix. */
 #define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
@@ -119,6 +151,7 @@ typedef pthread_t thread_id_t;
 typedef pthread_mutex_t thread_mutex_t;
 typedef pthread_cond_t thread_cond_t;
 typedef pthread_key_t thread_key_t;
+typedef pthread_rwlock_t thread_rwlock_t;
 #endif
 
 #endif

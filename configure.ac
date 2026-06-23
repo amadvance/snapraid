@@ -7,7 +7,7 @@ AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
-AC_CONFIG_SRCDIR([cmdline/portable.h])
+AC_CONFIG_SRCDIR([os/os.h])
 AC_CONFIG_HEADERS([config.h])
 
 dnl Enables as many system-specific extensions as reasonably possible
@@ -72,7 +72,7 @@ AC_HEADER_DIRENT
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h time.h sys/time.h])
 AC_CHECK_HEADERS([unistd.h getopt.h io.h inttypes.h byteswap.h])
-AC_CHECK_HEADERS([pthread.h math.h])
+AC_CHECK_HEADERS([pthread.h math.h syslog.h grp.h pwd.h])
 AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/sysmacros.h sys/mkdev.h sys/mount.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h linux/btrfs.h execinfo.h])
 AC_CHECK_HEADERS([mach/mach_time.h sys/sysctl.h])

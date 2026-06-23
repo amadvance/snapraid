@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 Andrea Mazzoleni
 
-#include "portable.h"
+#include "os/portable.h"
 
 #include "thermal.h"
 #include "state.h"
@@ -328,7 +328,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		sleep_time -= 30;
 	}
 
-	if (!app_global_interrupt()) { /* don't wake-up if we are interrupting */
+	if (!os_signal_interrupt()) { /* don't wake-up if we are interrupting */
 		log_tag("thermal:spinup\n");
 
 		/* spinup */
