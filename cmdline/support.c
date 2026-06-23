@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#include "portable.h"
+#include "os/portable.h"
 
 #include "support.h"
 
@@ -362,10 +362,18 @@ static void vmsg(FILE* out, const char* format, va_list ap)
 	free(dup);
 }
 
-void log_fatal(int err, const char* format, ...)
+static void msg(FILE* out, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
+static void msg(FILE* out, const char* format, ...)
 {
 	va_list ap;
 
+	va_start(ap, format);
+	vmsg(out, format, ap);
+	va_end(ap);
+}
+
+void vlog_fatal(int err, const char* format, va_list ap, const char* post)
+{
 	lock_msg();
 
 	if (stdlog) {
@@ -374,26 +382,41 @@ void log_fatal(int err, const char* format, ...)
 		else
 			fprintf(stdlog, "msg:fatal: ");
 
-		va_start(ap, format);
-		vfprintf(stdlog, format, ap);
-		va_end(ap);
+		va_list ap_copy;
+		va_copy(ap_copy, ap);
+		vfprintf(stdlog, format, ap_copy);
+		va_end(ap_copy);
+
+		if (post)
+			fprintf(stdlog, "%s", post);
 
 		fflush(stdlog);
 	}
 
-	va_start(ap, format);
-	vmsg(stderr, format, ap);
-	va_end(ap);
+	va_list ap_copy2;
+	va_copy(ap_copy2, ap);
+	vmsg(stderr, format, ap_copy2);
+	va_end(ap_copy2);
+
+	if (post)
+		msg(stderr, "%s", post);
 
 	fflush(stderr);
 
 	unlock_msg();
 }
 
-void log_error(int err, const char* format, ...)
+void log_fatal(int err, const char* format, ...)
 {
 	va_list ap;
 
+	va_start(ap, format);
+	vlog_fatal(err, format, ap, 0);
+	va_end(ap);
+}
+
+void vlog_error(int err, const char* format, va_list ap, const char* post)
+{
 	lock_msg();
 
 	if (stdlog) {
@@ -402,20 +425,58 @@ void log_error(int err, const char* format, ...)
 		else
 			fprintf(stdlog, "msg:error: ");
 
-		va_start(ap, format);
-		vfprintf(stdlog, format, ap);
-		va_end(ap);
+		va_list ap_copy;
+		va_copy(ap_copy, ap);
+		vfprintf(stdlog, format, ap_copy);
+		va_end(ap_copy);
+
+		if (post)
+			fprintf(stdlog, "%s", post);
 
 		fflush(stdlog);
 	} else {
-		va_start(ap, format);
-		vmsg(stderr, format, ap);
-		va_end(ap);
+		va_list ap_copy;
+		va_copy(ap_copy, ap);
+		vmsg(stderr, format, ap_copy);
+		va_end(ap_copy);
+
+		if (post)
+			msg(stderr, "%s", post);
 
 		fflush(stderr);
 	}
 
 	unlock_msg();
+}
+
+void log_error(int err, const char* format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vlog_error(err, format, ap, 0);
+	va_end(ap);
+}
+
+void os_syslog(int level, const char* format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	switch (level) {
+	case OS_LVL_CRITICAL :
+		vlog_fatal(ESYSLOG, format, ap, "\n");
+		break;
+	case OS_LVL_ERROR :
+		vlog_error(ESYSLOG, format, ap, "\n");
+		break;
+	case OS_LVL_WARNING :
+	case OS_LVL_INFO :
+		/* do not log */
+		break;
+	}
+
+	va_end(ap);
 }
 
 void log_expected(int err, const char* format, ...)

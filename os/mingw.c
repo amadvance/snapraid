@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2011 Andrea Mazzoleni
+// Copyright (C) 2026 Andrea Mazzoleni
 
-#include "portable.h"
+#include "os/portable.h"
 
 #ifdef __MINGW32__ /* Only for MingW */
 
 #include "os.h"
-#include "app.h" /* for app_global_interrupt() */
-#include "support.h"
+
+#include "tommyds/tommylist.h"
+
+#include <userenv.h> /* CreateEnvironmentBlock */
 
 /****************************************************************************/
 /* global */
@@ -89,71 +91,143 @@ void os_signal_init(void (*handler_term)(int sig), void (*handler_hup)(int sig))
 	}
 }
 
+const char* os_signal_name(int sig)
+{
+	switch (sig) {
+#ifdef SIGHUP
+	case SIGHUP : return "SIGHUP";
+#endif
+#ifdef SIGINT
+	case SIGINT : return "SIGINT";
+#endif
+#ifdef SIGQUIT
+	case SIGQUIT : return "SIGQUIT";
+#endif
+#ifdef SIGILL
+	case SIGILL : return "SIGILL";
+#endif
+#ifdef SIGTRAP
+	case SIGTRAP : return "SIGTRAP";
+#endif
+#ifdef SIGABRT
+	case SIGABRT : return "SIGABRT";
+#endif
+#ifdef SIGBUS
+	case SIGBUS : return "SIGBUS";
+#endif
+#ifdef SIGFPE
+	case SIGFPE : return "SIGFPE";
+#endif
+#ifdef SIGKILL
+	case SIGKILL : return "SIGKILL";
+#endif
+#ifdef SIGUSR1
+	case SIGUSR1 : return "SIGUSR1";
+#endif
+#ifdef SIGSEGV
+	case SIGSEGV : return "SIGSEGV";
+#endif
+#ifdef SIGUSR2
+	case SIGUSR2 : return "SIGUSR2";
+#endif
+#ifdef SIGPIPE
+	case SIGPIPE : return "SIGPIPE";
+#endif
+#ifdef SIGALRM
+	case SIGALRM : return "SIGALRM";
+#endif
+#ifdef SIGTERM
+	case SIGTERM : return "SIGTERM";
+#endif
+	}
+
+	return "UNKNOWN";
+}
+
 /****************************************************************************/
 /* convert */
 
-wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
+wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* src, size_t number_of_char, size_t* result_length_without_terminator)
+{
+	/* MB_ERR_INVALID_CHARS forces the API to fail on malformed UTF-8 sequences */
+	int ret = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, src, number_of_char, conv_buf, number_of_wchar);
+	if (ret <= 0)
+		return 0;
+
+	if (result_length_without_terminator)
+		*result_length_without_terminator = ret;
+
+	return conv_buf;
+}
+
+char* u16tou8_mayfail(char* conv_buf, size_t number_of_char, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
+{
+	/* WC_ERR_INVALID_CHARS forces the API to fail on malformed UTF-16 sequences */
+	int ret = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, number_of_wchar, conv_buf, number_of_char, 0, 0);
+	if (ret <= 0)
+		return 0;
+
+	if (result_length_without_terminator)
+		*result_length_without_terminator = ret;
+
+	return conv_buf;
+}
+
+static wchar_t* u8tou16_force(wchar_t* conv_buf, size_t number_of_wchar, const char* src, size_t number_of_char, size_t* result_length_without_terminator)
 {
 	/* flags at 0 forces the API to never fail on malformed UTF-8 sequences */
-	int ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_buf, CONV_MAX);
+	int ret = MultiByteToWideChar(CP_UTF8, 0, src, number_of_char, conv_buf, number_of_wchar);
 	if (ret <= 0) {
 		DWORD error = GetLastError();
 		if (error == ERROR_INSUFFICIENT_BUFFER) {
-			log_fatal(EINTERNAL, "Path too long converting '%s' from UTF-8 to UTF-16\n", src);
+			os_syslog(OS_LVL_CRITICAL, "path too long converting '%s' from UTF-8 to UTF-16", src);
 		} else {
-			log_fatal(EINTERNAL, "Error %u converting '%s' from UTF-8 to UTF-16\n", (unsigned)error, src);
+			os_syslog(OS_LVL_CRITICAL, "error %u converting '%s' from UTF-8 to UTF-16", (unsigned)error, src);
 		}
 		os_abort();
 	}
 
-	return conv_buf;
-}
-
-/**
- * Convert a generic string from UTF16 to UTF8.
- */
-static char* u16tou8ex_may_fail(char* conv_buf, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
-{
-	/* WC_ERR_INVALID_CHARS forces the API to fail on malformed UTF-16 sequences */
-	int ret = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
-	if (ret <= 0)
-		return 0;
-
-	*result_length_without_terminator = ret;
+	if (result_length_without_terminator)
+		*result_length_without_terminator = ret;
 
 	return conv_buf;
 }
 
-static char* u16tou8ex(char* conv_buf, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
+static char* u16tou8_force(char* conv_buf, size_t number_of_char, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
 	/* flags at 0 forces the API to never fail on malformed UTF-16 sequences */
-	int ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
+	int ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, number_of_char, 0, 0);
 	if (ret <= 0) {
 		DWORD error = GetLastError();
 		if (error == ERROR_INSUFFICIENT_BUFFER) {
-			log_fatal(EINTERNAL, "Path too long converting from UTF-16 to UTF-8 with len %u\n", (unsigned)number_of_wchar);
+			os_syslog(OS_LVL_CRITICAL, "path too long converting from UTF-16 to UTF-8 with len %u", (unsigned)number_of_wchar);
 		} else {
-			log_fatal(EINTERNAL, "Error %u converting from UTF-16 to UTF-8 with len %u\n", (unsigned)error, (unsigned)number_of_wchar);
+			os_syslog(OS_LVL_CRITICAL, "error %u converting from UTF-16 to UTF-8 with len %u", (unsigned)error, (unsigned)number_of_wchar);
 			if (src != 0) {
 				for (size_t i = 0; i < number_of_wchar; ++i) {
-					log_fatal(EINTERNAL, "%4u: %04x\n", (unsigned)i, src[i]);
+					os_syslog(OS_LVL_CRITICAL, "%4u: %04x", (unsigned)i, src[i]);
 				}
 			}
 		}
 		os_abort();
 	}
 
-	*result_length_without_terminator = ret;
+	if (result_length_without_terminator)
+		*result_length_without_terminator = ret;
 
 	return conv_buf;
 }
 
+wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
+{
+	/* convert also the 0 terminator */
+	return u8tou16_force(conv_buf, CONV_MAX, src, strlen(src) + 1, 0);
+}
+
 char* u16tou8(char* conv_buf, const wchar_t* src)
 {
-	size_t len;
-
 	/* convert also the 0 terminator */
-	return u16tou8ex(conv_buf, src, wcslen(src) + 1, &len);
+	return u16tou8_force(conv_buf, CONV_MAX, src, wcslen(src) + 1, 0);
 }
 
 /**
@@ -221,9 +295,9 @@ wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required)
 	if (ret <= 0) {
 		DWORD error = GetLastError();
 		if (error == ERROR_INSUFFICIENT_BUFFER) {
-			log_fatal(EINTERNAL, "Path too long converting '%s' from UTF-8 to UTF-16\n", src);
+			os_syslog(OS_LVL_CRITICAL, "oath too long converting '%s' from UTF-8 to UTF-16", src);
 		} else {
-			log_fatal(EINTERNAL, "Error %u converting '%s' from UTF-8 to UTF-16\n", (unsigned)error, src);
+			os_syslog(OS_LVL_CRITICAL, "error %u converting '%s' from UTF-8 to UTF-16", (unsigned)error, src);
 		}
 		os_abort();
 	}
@@ -278,13 +352,13 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 	if ((FileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 		st->st_desc = "device";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {         /* Offline */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "offline";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) {         /* Temporary */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Temporary */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "temporary";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {         /* Reparse point */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
 		switch (ReparseTag) {
 		/* if we don't have the ReparseTag information */
 		case 0 :
@@ -325,7 +399,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 			st->st_desc = "reparse-point";
 			break;
 		}
-	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) {         /* System */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
 		if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			st->st_mode = S_IFCHR;
 			st->st_desc = "system-directory";
@@ -397,7 +471,7 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	 */
 	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
 		errno = EINVAL;
-		log_fatal(errno, "Invalid inode number! Is this ReFS?\n");
+		os_syslog(OS_LVL_INFO, "invalid inode number! Is this ReFS?");
 		return -1;
 	}
 
@@ -444,7 +518,7 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 	/* in ReFS the IDs are 128 bit, and the 64 bit interface may fail */
 	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
 		errno = EINVAL;
-		log_fatal(errno, "Invalid inode number! Is this ReFS?\n");
+		os_syslog(OS_LVL_INFO, "Invalid inode number! Is this ReFS?");
 		return -1;
 	}
 
@@ -497,11 +571,11 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	const char* name;
 	size_t len;
 
-	name = u16tou8ex(conv_buf, info->cFileName, wcslen(info->cFileName), &len);
+	name = u16tou8_force(conv_buf, CONV_MAX, info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		log_fatal(EINTERNAL, "Name too long\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "name too long");
+		os_exit();
 	}
 
 	memcpy(dirent->d_name, name, len);
@@ -516,11 +590,11 @@ static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const F
 	const char* name;
 	size_t len;
 
-	name = u16tou8ex(conv_buf, stream->FileName, stream->FileNameLength / 2, &len);
+	name = u16tou8_force(conv_buf, CONV_MAX, stream->FileName, stream->FileNameLength / 2, &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		log_fatal(EINTERNAL, "Name too long\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "name too long");
+		os_exit();
 	}
 
 	memcpy(dirent->d_name, name, len);
@@ -529,6 +603,9 @@ static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const F
 	return windows_stream2stat(info, stream, &dirent->d_stat);
 }
 
+/**
+ * Convert Windows error to errno.
+ */
 void windows_errno(DWORD error)
 {
 	switch (error) {
@@ -540,20 +617,20 @@ void windows_errno(DWORD error)
 		 */
 		errno = EINVAL;
 		break;
-	case ERROR_HANDLE_EOF :         /* in ReadFile() over the end of the file */
+	case ERROR_HANDLE_EOF : /* in ReadFile() over the end of the file */
 		errno = EINVAL;
 		break;
 	case ERROR_FILE_NOT_FOUND :
-	case ERROR_PATH_NOT_FOUND :         /* in GetFileAttributeW() if internal path not found */
+	case ERROR_PATH_NOT_FOUND : /* in GetFileAttributeW() if internal path not found */
 		errno = ENOENT;
 		break;
-	case ERROR_ACCESS_DENIED :         /* in CreateDirectoryW() if dir is scheduled for deletion */
-	case ERROR_CURRENT_DIRECTORY :         /* in RemoveDirectoryW() if removing the current directory */
-	case ERROR_SHARING_VIOLATION :         /* in RemoveDirectoryW() if in use */
-	case ERROR_WRITE_PROTECT :         /* when dealing with read-only media/snapshot and trying to write to them */
+	case ERROR_ACCESS_DENIED : /* in CreateDirectoryW() if dir is scheduled for deletion */
+	case ERROR_CURRENT_DIRECTORY : /* in RemoveDirectoryW() if removing the current directory */
+	case ERROR_SHARING_VIOLATION : /* in RemoveDirectoryW() if in use */
+	case ERROR_WRITE_PROTECT : /* when dealing with read-only media/snapshot and trying to write to them */
 		errno = EACCES;
 		break;
-	case ERROR_ALREADY_EXISTS :         /* in CreateDirectoryW() if already exists */
+	case ERROR_ALREADY_EXISTS : /* in CreateDirectoryW() if already exists */
 		errno = EEXIST;
 		break;
 	case ERROR_DISK_FULL :
@@ -565,19 +642,22 @@ void windows_errno(DWORD error)
 	case ERROR_NOT_ENOUGH_MEMORY :
 		errno = ENOMEM;
 		break;
-	case ERROR_NOT_SUPPORTED :         /* in CreateSymlinkW() if not present in kernel32 */
+	case ERROR_NOT_SUPPORTED : /* in CreateSymlinkW() if not present in kernel32 */
 		errno = ENOSYS;
 		break;
-	case ERROR_PRIVILEGE_NOT_HELD :         /* in CreateSymlinkW() if no SeCreateSymbolicLinkPrivilige permission */
+	case ERROR_PRIVILEGE_NOT_HELD : /* in CreateSymlinkW() if no SeCreateSymbolicLinkPrivilige permission */
 		errno = EPERM;
 		break;
-	case ERROR_IO_DEVICE :         /* in ReadFile() and WriteFile() */
-	case ERROR_CRC :         /* in ReadFile() */
+	case ERROR_IO_DEVICE : /* in ReadFile() and WriteFile() */
+	case ERROR_CRC : /* in ReadFile() */
 		errno = EIO;
+		break;
+	case WSAEADDRINUSE :
+		errno = EADDRINUSE;
 		break;
 	default :
 		errno = ENXIO;
-		log_fatal(errno, "Unexpected Windows error %lu.\n", error);
+		os_syslog(OS_LVL_INFO, "unexpected Windows error %lu", error);
 		break;
 	}
 }
@@ -682,115 +762,6 @@ int windows_rmdir(const char* file)
 	}
 
 	return 0;
-}
-
-static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
-{
-	STARTING_VCN_INPUT_BUFFER svib;
-	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
-	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
-	BOOL ret;
-	DWORD n;
-
-	/* in Wine FSCTL_GET_RETRIEVAL_POINTERS is not supported */
-	if (is_wine) {
-		*physical = FILEPHY_UNREPORTED_OFFSET;
-		return TRUE;
-	}
-
-	/* set the output variable, just to be safe */
-	rpb->ExtentCount = 0;
-
-	/* read the physical address */
-	svib.StartingVcn.QuadPart = 0;
-	ret = DeviceIoControl(h, FSCTL_GET_RETRIEVAL_POINTERS, &svib, sizeof(svib), rpb_buffer, sizeof(rpb_buffer), &n, 0);
-	if (!ret) {
-		DWORD error = GetLastError();
-		if (error == ERROR_MORE_DATA) {
-			/*
-			 * We ignore ERROR_MODE_DATA because we are interested only at the first entry
-			 * and this is the expected error if the files has more entries
-			 */
-		} else if (error == ERROR_HANDLE_EOF) {
-			/*
-			 * If the file is small, it can be stored in the Master File Table (MFT)
-			 * and then it doesn't have a physical address
-			 * In such case we report a specific fake address, to report this special condition
-			 * that it's different from the 0 offset reported by the underline file system
-			 */
-			*physical = FILEPHY_WITHOUT_OFFSET;
-			return TRUE;
-		} else if (error == ERROR_NOT_SUPPORTED) {
-			/* for disks shared on network this operation is not supported */
-			*physical = FILEPHY_UNREPORTED_OFFSET;
-			return TRUE;
-		} else {
-			return FALSE;
-		}
-	}
-
-	if (rpb->ExtentCount < 1)
-		*physical = FILEPHY_UNREPORTED_OFFSET;
-	else
-		*physical = rpb->Extents[0].Lcn.QuadPart + FILEPHY_REAL_OFFSET;
-
-	return TRUE;
-}
-
-int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
-{
-	wchar_t conv_buf[CONV_MAX];
-	BY_HANDLE_FILE_INFORMATION info;
-	FILE_ATTRIBUTE_TAG_INFO tag;
-	HANDLE h;
-
-	/*
-	 * Open the handle of the file.
-	 *
-	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
-	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
-	 *
-	 * Note that even with FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-	 * and FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT some paths
-	 * cannot be opened like "C:\System Volume Information" resulting
-	 * in error ERROR_ACCESS_DENIED.
-	 */
-	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	if (!GetFileInformationByHandle(h, &info)) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		windows_errno(error);
-		return -1;
-	}
-
-	if (!GetReparseTagInfoByHandle(h, &tag, info.dwFileAttributes)) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		windows_errno(error);
-		return -1;
-	}
-
-	/* read the physical offset, only if a pointer is provided */
-	if (physical != 0) {
-		if (!GetFilePhysicalOffset(h, physical)) {
-			DWORD error = GetLastError();
-			CloseHandle(h);
-			windows_errno(error);
-			return -1;
-		}
-	}
-
-	if (!CloseHandle(h)) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	return windows_info2stat(&info, &tag, st);
 }
 
 int windows_stat(const char* file, struct windows_stat* st)
@@ -920,8 +891,8 @@ int windows_fsync(int fd)
 			 * So, we use now an extended error reporting.
 			 */
 			windows_errno(error);
-			log_fatal(errno, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
-			log_fatal(errno, "Are you using ATA-over-Ethernet ? Please report it.\n");
+			os_syslog(OS_LVL_INFO, "unexpected Windows INVALID_HANDLE error in FlushFileBuffers()");
+			os_syslog(OS_LVL_INFO, "are you using ATA-over-Ethernet? Please report it.");
 			return -1;
 
 		case ERROR_ACCESS_DENIED :
@@ -977,8 +948,8 @@ static int windows_vsync(const wchar_t* volume)
 			 * So, we use now an extended error reporting.
 			 */
 			windows_errno(error);
-			log_fatal(errno, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
-			log_fatal(errno, "Are you using ATA-over-Ethernet ? Please report it.\n");
+			os_syslog(OS_LVL_INFO, "unexpected Windows INVALID_HANDLE error in FlushFileBuffers()");
+			os_syslog(OS_LVL_INFO, "are you using ATA-over-Ethernet? Please report it.");
 			return -1;
 
 		case ERROR_ACCESS_DENIED :
@@ -1337,8 +1308,8 @@ static windows_dir* windows_opendir_find(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		log_fatal(EFAULT, "Low memory\n");
-		exit(EXIT_FAILURE);
+		errno = ENOMEM;
+		return 0;
 	}
 
 	wdir = convert(conv_buf, dir);
@@ -1467,25 +1438,23 @@ static windows_dir* windows_opendir_stream(const char* dir)
 {
 	wchar_t conv_buf[CONV_MAX];
 	windows_dir* dirstream;
-	WCHAR* wdir;
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		log_fatal(EFAULT, "Low memory\n");
-		exit(EXIT_FAILURE);
+		errno = ENOMEM;
+		return 0;
 	}
-
-	wdir = convert(conv_buf, dir);
 
 	/* uses a 64 kB buffer for reading directory */
 	dirstream->buffer_size = 64 * 1024;
 	dirstream->buffer = malloc(dirstream->buffer_size);
 	if (!dirstream->buffer) {
-		log_fatal(EFAULT, "Low memory\n");
-		exit(EXIT_FAILURE);
+		free(dirstream);
+		errno = ENOMEM;
+		return 0;
 	}
 
-	dirstream->h = CreateFileW(wdir, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	dirstream->h = CreateFileW(convert(conv_buf, dir), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (dirstream->h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		free(dirstream->buffer);
@@ -1593,7 +1562,7 @@ const char* windows_stat_desc(struct stat* st)
 unsigned windows_sleep(unsigned seconds)
 {
 	while (seconds) {
-		if (app_global_interrupt())         /* SIGINT should stop the sleep */
+		if (os_signal_interrupt())         /* SIGINT should stop the sleep */
 			break;
 		Sleep(1000);
 		--seconds;
@@ -1744,7 +1713,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	}
 
 	/* convert the name to UTF-8 */
-	name = u16tou8ex(conv_buf_name,
+	name = u16tou8_force(conv_buf_name, CONV_MAX,
 			rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
 			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
 
@@ -1762,137 +1731,6 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	}
 
 	return len;
-}
-
-int filephy(const char* file, uint64_t size, uint64_t* physical)
-{
-	wchar_t conv_buf[CONV_MAX];
-	HANDLE h;
-
-	(void)size;
-
-	/* open the handle of the file */
-	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	if (!GetFilePhysicalOffset(h, physical)) {
-		DWORD error = GetLastError();
-		CloseHandle(h);
-		windows_errno(error);
-		return -1;
-	}
-
-	CloseHandle(h);
-	return 0;
-}
-
-int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_hardlinks, uint64_t* total_space, uint64_t* free_space, char* fstype, size_t fstype_size, char* fslabel, size_t fslabel_size)
-{
-	wchar_t conv_buf[CONV_MAX];
-
-	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
-	if (has_persistent_inode)
-		*has_persistent_inode = 1;
-
-	/* NTFS doesn't synchronize hardlinks metadata */
-	if (has_syncronized_hardlinks)
-		*has_syncronized_hardlinks = 0;
-
-	if (free_space || total_space) {
-		ULARGE_INTEGER total_bytes;
-		ULARGE_INTEGER total_free_bytes;
-		DWORD attr;
-		char dir[PATH_MAX];
-
-		if (strlen(path) + 1 > sizeof(dir)) {
-			windows_errno(ERROR_BUFFER_OVERFLOW);
-			return -1;
-		}
-
-		strcpy(dir, path);
-
-		/* get the file attributes */
-		attr = GetFileAttributesW(convert(conv_buf, dir));
-		if (attr == INVALID_FILE_ATTRIBUTES) {
-			DWORD error = GetLastError();
-
-			if (error != ERROR_FILE_NOT_FOUND) {
-				windows_errno(error);
-				return -1;
-			}
-
-			/*
-			 * If it doesn't exist, we assume a file
-			 * and we check for the containing dir
-			 */
-			attr = 0;
-		}
-
-		/* if it's not a directory, truncate the file name */
-		if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-			char* slash = strrchr(dir, '/');
-
-			/**
-			 * Cut the file name, but leave the last slash.
-			 *
-			 * This is done because a MSDN comment about using of UNC paths.
-			 *
-			 * MSDN 'GetDiskFreeSpaceEx function'
-			 * http://msdn.microsoft.com/en-us/library/windows/desktop/aa364937%28v=vs.85%29.aspx
-			 * If this parameter is a UNC name, it must include a trailing backslash,
-			 * for example, "\\MyServer\MyShare\".
-			 */
-			if (slash)
-				slash[1] = 0;
-		}
-
-		/*
-		 * Get the free space of the directory
-		 * note that it must be a directory
-		 */
-		if (!GetDiskFreeSpaceExW(convert(conv_buf, dir), 0, &total_bytes, &total_free_bytes)) {
-			windows_errno(GetLastError());
-			return -1;
-		}
-
-		if (total_space)
-			*total_space = total_bytes.QuadPart;
-		if (free_space)
-			*free_space = total_free_bytes.QuadPart;
-	}
-
-	if (fstype && fslabel) {
-		wchar_t volume_root[PATH_MAX];
-		wchar_t fs_name[PATH_MAX];
-		wchar_t vol_name[PATH_MAX];
-
-		fstype[0] = 0;
-		fslabel[0] = 0;
-		if (GetVolumePathNameW(convert(conv_buf, path), volume_root, PATH_MAX)) {
-			if (GetVolumeInformationW(volume_root, vol_name, PATH_MAX, 0, 0, 0, fs_name, PATH_MAX)) {
-				char u8[CONV_MAX];
-				size_t len;
-				char* ret;
-
-				ret = u16tou8ex_may_fail(u8, fs_name, wcslen(fs_name), &len);
-				if (ret != 0 && len + 1 <= fstype_size) {
-					memcpy(fstype, u8, len);
-					fstype[len] = 0;
-				}
-
-				ret = u16tou8ex_may_fail(u8, vol_name, wcslen(vol_name), &len);
-				if (ret != 0 && len + 1 <= fslabel_size) {
-					memcpy(fslabel, u8, len);
-					fslabel[len] = 0;
-				}
-			}
-		}
-	}
-
-	return 0;
 }
 
 /* ensure to call the real C strerror() */
@@ -1927,6 +1765,9 @@ const char* windows_strerror(int err)
 	free(previous);
 	return error;
 }
+
+/* restore the define used later */
+#define  strerror windows_strerror
 
 ssize_t windows_read(int fd, void* buffer, size_t size)
 {
@@ -2052,7 +1893,7 @@ retry:
 		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/a7c25ba9/
 		 */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			log_fatal(EEXTERNAL, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
+			os_syslog(OS_LVL_ERROR, "unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...");
 			Sleep(50);
 			goto retry;
 		}
@@ -2090,7 +1931,7 @@ retry:
 		DWORD err = GetLastError();
 		/* See windows_pread() for comments on this error management */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			log_fatal(EEXTERNAL, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
+			os_syslog(OS_LVL_ERROR, "unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...");
 			Sleep(50);
 			goto retry;
 		}
@@ -2102,484 +1943,187 @@ retry:
 	return count;
 }
 
-size_t windows_direct_size(void)
+struct tm* windows_gmtime_r(const time_t* timer, struct tm* result)
 {
-	SYSTEM_INFO si;
-
-	GetSystemInfo(&si);
-
-	/*
-	 * MSDN 'File Buffering'
-	 * https://msdn.microsoft.com/en-us/library/windows/desktop/cc644950%28v=vs.85%29.aspx
-	 *
-	 * "Therefore, in most situations, page-aligned memory will also be sector-aligned,"
-	 * "because the case where the sector size is larger than the page size is rare."
-	 */
-	return si.dwPageSize;
+	/* Windows returns 0 on success, unlike POSIX which returns the pointer */
+	if (gmtime_s(result, timer) == 0) {
+		return result;
+	}
+	return NULL;
 }
 
-#define WINDOWS_NTFS_MAGIC  0x5346544E   /* 'N','T','F','S' */
-
-#define PS_CMD_MAX 4096
-
-#define SNAPSHOT_GUID ".guid"
-
-/*
- * PowerShell helper
- *
- * Runs a PowerShell one-liner via _popen() and captures the first line
- * of stdout into `out` as UTF-8.
- * `out` may be NULL when output is not needed.
- *
- * The caller builds `command` as a string using snprintf().
- * Any embedded path literals must use single quotes so they survive
- * the outer double-quote wrapping passed to cmd.exe.
- *
- * Returns 0 on success, -1 on failure.
- */
-static int windows_ps(const char* ps_command, char* out, size_t out_size)
+struct tm* windows_localtime_r(const time_t* timer, struct tm* result)
 {
-	char cmd[PS_CMD_MAX];
-	FILE* fp;
-	int ret;
-
-	ret = snprintf(cmd, sizeof(cmd), "powershell.exe -NoProfile -NonInteractive -Command \"%s\" 2>nul", ps_command);
-	if (ret < 0 || ret >= (int)sizeof(cmd)) {
-		errno = EINVAL;
-		return -1;
+	/* Windows returns 0 on success, unlike POSIX which returns the pointer */
+	if (localtime_s(result, timer) == 0) {
+		return result;
 	}
+	return NULL;
+}
 
-	fp = _popen(cmd, "r");
-	if (!fp) {
+char* windows_realpath(const char* path, char* resolved_path)
+{
+	wchar_t conv_buf[CONV_MAX];
+	HANDLE h = CreateFileW(convert(conv_buf, path), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
-		log_error(errno, "Failed to run PowerShell command '%s' (from popen).\n", cmd);
-		return -1;
+		return 0;
 	}
 
-	if (out && out_size > 0) {
-		/* get the first line */
-		if (!fgets(out, (int)out_size, fp)) {
-			out[0] = 0;
+	DWORD result = GetFinalPathNameByHandleW(h, conv_buf, CONV_MAX, FILE_NAME_NORMALIZED);
+
+	CloseHandle(h);
+
+	if (result == 0 || result >= CONV_MAX) {
+		windows_errno(GetLastError());
+		return 0;
+	}
+
+	resolved_path = u16tou8(resolved_path, conv_buf);
+
+	/* Windows prefixes paths with "\\?\" (UNC). Skip it if you want a standard path */
+	if (strncmp(resolved_path, "\\\\?\\", 4) == 0) {
+		memmove(resolved_path, resolved_path + 4, strlen(resolved_path) - 3);
+	}
+
+	return resolved_path;
+}
+
+/****************************************************************************/
+/* fs */
+
+static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
+{
+	STARTING_VCN_INPUT_BUFFER svib;
+	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
+	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
+	BOOL ret;
+	DWORD n;
+
+	/* in Wine FSCTL_GET_RETRIEVAL_POINTERS is not supported */
+	if (is_wine) {
+		*physical = FILEPHY_UNREPORTED_OFFSET;
+		return TRUE;
+	}
+
+	/* set the output variable, just to be safe */
+	rpb->ExtentCount = 0;
+
+	/* read the physical address */
+	svib.StartingVcn.QuadPart = 0;
+	ret = DeviceIoControl(h, FSCTL_GET_RETRIEVAL_POINTERS, &svib, sizeof(svib), rpb_buffer, sizeof(rpb_buffer), &n, 0);
+	if (!ret) {
+		DWORD error = GetLastError();
+		if (error == ERROR_MORE_DATA) {
+			/*
+			 * We ignore ERROR_MODE_DATA because we are interested only at the first entry
+			 * and this is the expected error if the files has more entries
+			 */
+		} else if (error == ERROR_HANDLE_EOF) {
+			/*
+			 * If the file is small, it can be stored in the Master File Table (MFT)
+			 * and then it doesn't have a physical address
+			 * In such case we report a specific fake address, to report this special condition
+			 * that it's different from the 0 offset reported by the underline file system
+			 */
+			*physical = FILEPHY_WITHOUT_OFFSET;
+			return TRUE;
+		} else if (error == ERROR_NOT_SUPPORTED) {
+			/* for disks shared on network this operation is not supported */
+			*physical = FILEPHY_UNREPORTED_OFFSET;
+			return TRUE;
 		} else {
-			/* trim spaces and newlines */
-			strtrim(out);
+			return FALSE;
 		}
 	}
 
-	ret = _pclose(fp);
-	if (ret == -1) {
-		errno = EINVAL;
-		log_error(errno, "Failed to run PowerShell command '%s' (from pclose).\n", cmd);
-		return -1;
-	}
-	if (ret != 0) {
-		errno = EINVAL;
-		log_error(errno, "PowerShell command '%s' failed with '%d' (from pclose).\n", cmd, ret);
-		return -1;
-	}
-
-	return 0;
-}
-
-/**
- * Validates a GUID string of the form:
- *   xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
- * Does NOT accept braced forms like {xxxxxxxx-...}.
- *
- * Returns true if valid, false otherwise.
- */
-int windows_guid_is_valid(const char* guid, int len)
-{
-	if (!guid || len != 38)
-		return -1;
-
-	if (guid[0] != '{' || guid[37] != '}')
-		return -1;
-
-	const char* inner = guid + 1;
-
-	for (int i = 0; i < 36; ++i) {
-		if (i == 8 || i == 13 || i == 18 || i == 23) {
-			if (inner[i] != '-')
-				return -1;
-		} else {
-			char c = inner[i];
-			int is_digit = (c >= '0' && c <= '9');
-			int is_upper_hex = (c >= 'A' && c <= 'F');
-			int is_lower_hex = (c >= 'a' && c <= 'f');
-
-			if (!is_digit && !is_upper_hex && !is_lower_hex)
-				return -1;
-		}
-	}
-
-	return 0;
-}
-
-static int windows_read_guid(const char* guid_link, char* guid, size_t guid_size)
-{
-	int len = windows_readlink(guid_link, guid, guid_size);
-	if (len < 0 && errno == ENOENT) {
-		guid[0] = 0;
-		return 0;
-	}
-	if (len < 0) {
-		log_error(errno, "Error readlink '%s'. %s.\n", guid_link, strerror(errno));
-		return -1;
-	}
-
-	if ((size_t)len >= guid_size) {
-		errno = ENAMETOOLONG;
-		log_error(errno, "GUID too long in '%s'.\n", guid_link);
-		return -1;
-	}
-
-	guid[len] = 0;
-
-	/* validate that the GUID contains only safe characters: [A-Za-z0-9-{}] */
-	if (windows_guid_is_valid(guid, len) != 0)
-		return -1;
-
-	return 0;
-}
-
-static int windows_rebuild_link(const struct fssnapshot_struct* fss, const char* name)
-{
-	char cmd[PS_CMD_MAX];
-	char device_path[PATH_MAX];
-	char target_path[PATH_MAX];
-	char link_path[PATH_MAX];
-	char guid_link[PATH_MAX];
-	char guid[PATH_MAX];
-
-	pathcpy(guid_link, sizeof(guid_link), fss->snapshot_dir);
-	pathcat(guid_link, sizeof(guid_link), name);
-	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
-
-	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
-	pathcat(link_path, sizeof(link_path), name);
-
-	int ret = windows_read_guid(guid_link, guid, sizeof(guid));
-	if (ret != 0) {
-		return -1;
-	}
-
-	/* if no GUID, assume it absent */
-	if (guid[0] == 0) {
-		/* remove stale links */
-		windows_rmdir(link_path);
-		return 0;
-	}
-
-	snprintf(cmd, sizeof(cmd),
-		"(Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'}).DeviceObject",
-		guid);
-
-	if (windows_ps(cmd, device_path, sizeof(device_path)) != 0) {
-		log_error(errno, "Error getting DeviceObject from GUID '%s'. %s.\n", guid, strerror(errno));
-		return -1;
-	}
-
-	/* if no device path, assume snapshot absent */
-	if (device_path[0] == 0) {
-		/* remove stale links */
-		windows_rmdir(guid_link);
-		windows_rmdir(link_path);
-		return 0;
-	}
-
-	pathimport(target_path, sizeof(target_path), device_path);
-	pathslash(target_path, sizeof(target_path));
-
-	/* remove stale link if present */
-	windows_rmdir(link_path);
-
-	if (windows_symlink_directory(target_path, link_path) != 0) {
-		log_error(errno, "Error creating symlink '%s'. %s.\n", link_path, strerror(errno));
-		return -1;
-	}
-
-	return 0;
-}
-
-static int windows_delete_link(const struct fssnapshot_struct* fss, const char* name)
-{
-	char link_path[PATH_MAX];
-
-	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
-	pathcat(link_path, sizeof(link_path), name);
-
-	/* remove link if present */
-	windows_rmdir(link_path);
-
-	return 0;
-}
-
-int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
-{
-	wchar_t conv_buf_vol[CONV_MAX];
-	char conv_buf_root[CONV_MAX];
-	wchar_t volume_root[PATH_MAX];
-	wchar_t volume_name[PATH_MAX];
-	wchar_t fs_name[32];
-	uint32_t magic;
-
-	/*
-	 * GetVolumePathNameW() accepts any path: file, directory, or deep
-	 * subdirectory, and resolves it to the volume root (e.g. L"C:\").
-	 * The result always carries a trailing backslash.
-	 *
-	 * Use convert_if_required() to avoid the automatic addition of \\?\
-	 * made by convert() that is propagated in the resulting volume_root
-	 */
-	if (!GetVolumePathNameW(convert_if_required(conv_buf_vol, dir), volume_root, PATH_MAX)) {
-		windows_errno(GetLastError());
-		log_error(errno, "Error getting VolumeRoot from '%s'. %s.\n", dir, strerror(errno));
-		return -1;
-	}
-
-	if (!GetVolumeInformationW(volume_root, 0, 0, 0, 0, 0, fs_name, 32)) {
-		windows_errno(GetLastError());
-		log_error(errno, "Error getting information of VolumeRoot '%s'. %s.\n", u16tou8(conv_buf_root, volume_root), strerror(errno));
-		return -1;
-	}
-	if (wcscmp(fs_name, L"NTFS") == 0)
-		magic = WINDOWS_NTFS_MAGIC;
+	if (rpb->ExtentCount < 1)
+		*physical = FILEPHY_UNREPORTED_OFFSET;
 	else
-		return -1;         /* support only NTFS */
+		*physical = rpb->Extents[0].Lcn.QuadPart + FILEPHY_REAL_OFFSET;
+
+	return TRUE;
+}
+
+int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
+{
+	wchar_t conv_buf[CONV_MAX];
+	BY_HANDLE_FILE_INFORMATION info;
+	FILE_ATTRIBUTE_TAG_INFO tag;
+	HANDLE h;
 
 	/*
-	 * Obtain the canonical volume name: \\?\Volume{GUID}\
+	 * Open the handle of the file.
 	 *
-	 * GetVolumePathNameW() may return a drive letter path ("C:\") or a
-	 * directory mount point ("D:\Mount\").  Neither is guaranteed to be
-	 * accepted by Win32_ShadowCopy.Create() on volumes without a drive
-	 * letter.  GetVolumeNameForVolumeMountPointW() always returns the
-	 * stable kernel-form GUID path that VSS requires, regardless of how
-	 * many (or how few) mount points the volume has.
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
+	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 *
-	 * We store it in fss->dataset.
+	 * Note that even with FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	 * and FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT some paths
+	 * cannot be opened like "C:\System Volume Information" resulting
+	 * in error ERROR_ACCESS_DENIED.
 	 */
-	if (!GetVolumeNameForVolumeMountPointW(volume_root, volume_name, PATH_MAX)) {
+	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
-		log_error(errno, "Error getting VolumeName of VolumeRoot '%s'. %s.\n", u16tou8(conv_buf_root, volume_root), strerror(errno));
 		return -1;
 	}
 
-	/* don't use pathimport for dataset to keep backslashes */
-	pathcpy(fss->dataset, sizeof(fss->dataset), u16tou8(conv_buf_root, volume_name));
-
-	/* use pathimport to convert backslashes to slashes */
-	pathimport(fss->root_dir, sizeof(fss->root_dir), u16tou8(conv_buf_root, volume_root));
-
-	/* the returned root_dir should match the start of the passed dir */
-	if (pathncmp(fss->root_dir, dir, strlen(fss->root_dir)) != 0) {
-		errno = EINVAL;
-		log_error(errno, "Not matching VolumeRoot '%s' for '%s'.\n", fss->root_dir, dir);
+	if (!GetFileInformationByHandle(h, &info)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
 		return -1;
 	}
 
-	pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), fss->root_dir);
-	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), SNAPSHOT_CONTAINER "/");
-
-	if (windows_mkdir(fss->snapshot_dir) != 0 && errno != EEXIST) {
-		log_error(errno, "Error creating directory '%s'. %s.\n", fss->snapshot_dir, strerror(errno));
+	if (!GetReparseTagInfoByHandle(h, &tag, info.dwFileAttributes)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
 		return -1;
 	}
 
-	/* refresh the links, after reboots they gets invalidated */
-	if (windows_rebuild_link(fss, SNAPSHOT_PENDING) != 0) {
+	/* read the physical offset, only if a pointer is provided */
+	if (physical != 0) {
+		if (!GetFilePhysicalOffset(h, physical)) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
+	}
+
+	if (!CloseHandle(h)) {
+		windows_errno(GetLastError());
 		return -1;
 	}
 
-	if (windows_rebuild_link(fss, SNAPSHOT_STABLE) != 0) {
-		return -1;
-	}
-
-	fss->magic = magic;
-
-	return 0;
+	return windows_info2stat(&info, &tag, st);
 }
 
-int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat* st)
+int filephy(const char* file, uint64_t size, uint64_t* physical)
 {
-	char link_path[PATH_MAX];
+	wchar_t conv_buf[CONV_MAX];
+	HANDLE h;
 
-	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
-	pathcat(link_path, sizeof(link_path), name);
-	pathcat(link_path, sizeof(link_path), SNAPSHOT_GUID);         /* we check the GUID as it's the one that matter */
+	(void)size;
 
-	/* use lstat because we want to check the link */
-	if (windows_lstat(link_path, st) != 0)
+	/* open the handle of the file */
+	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
 		return -1;
+	}
 
-	/* it must be a link to a directory */
-	if (!S_ISLNKDIR(st->st_mode))
+	if (!GetFilePhysicalOffset(h, physical)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
 		return -1;
+	}
 
+	CloseHandle(h);
 	return 0;
-}
-
-int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
-{
-	char cmd[PS_CMD_MAX];
-	char device_path[PATH_MAX];
-	char target_path[PATH_MAX];
-	char link_path[PATH_MAX];
-	char guid_link[PATH_MAX];
-	char out[PATH_MAX];
-
-	/* create VSS shadow copy and capture the system-assigned GUID */
-	snprintf(cmd, sizeof(cmd),
-		"$r = (Get-WmiObject -List Win32_ShadowCopy).Create('%s', 'ClientAccessible'); "
-		"if ($r.ReturnValue -eq 0) { "
-		"Write-Output ('ID_' + $r.ShadowID); "
-		"} else { "
-		"Write-Output ('0x{0:X8}' -f $r.ReturnValue); "
-		"}",
-		fss->dataset);
-	if (windows_ps(cmd, out, sizeof(out)) != 0) {
-		log_error(errno, "Error creating snapshot of VolumeName '%s'. %s.\n", fss->dataset, strerror(errno));
-		return -1;
-	}
-	if (strncmp(out, "ID_", 3) != 0) {
-		errno = ENODATA;
-		log_error(errno, "VSS snapshot creation of '%s' failed with error %s.\n", fss->dataset, out);
-		return -1;
-	}
-
-	const char* guid = out + 3;
-
-	/* resolve the shadow copy's device object path */
-	snprintf(cmd, sizeof(cmd), "(Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'}).DeviceObject", guid);
-	if (windows_ps(cmd, device_path, sizeof(device_path)) != 0) {
-		log_error(errno, "Error getting the snapshot DeviceObject from GUID '%s'. %s.\n", guid, strerror(errno));
-		goto bail_and_delete;
-	}
-	if (device_path[0] == 0) {
-		errno = ENODATA;
-		log_error(errno, "Empty snapshot DeviceObject of GUID '%s'. %s.\n", guid, strerror(errno));
-		goto bail_and_delete;
-	}
-
-	/* use pathimport to convert backslashes to slashes */
-	pathimport(target_path, sizeof(target_path), device_path);
-
-	/* the ending slash is required, otherwise the link won't work */
-	pathslash(target_path, sizeof(target_path));
-
-	pathcpy(link_path, sizeof(link_path), fss->snapshot_dir);
-	pathcat(link_path, sizeof(link_path), name);
-
-	/* remove potential stale link */
-	windows_rmdir(link_path);
-
-	int ret = windows_symlink_directory(target_path, link_path);
-	if (ret != 0) {
-		log_error(errno, "Error creating symlink '%s'. %s.\n", link_path, strerror(errno));
-		goto bail_and_delete;
-	}
-
-	pathcpy(guid_link, sizeof(guid_link), fss->snapshot_dir);
-	pathcat(guid_link, sizeof(guid_link), name);
-	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
-
-	/* store GUID persistently as symlink target */
-	ret = windows_symlink_directory(guid, guid_link);
-	if (ret != 0) {
-		log_error(errno, "Error creating GUID symlink '%s'. %s.\n", guid_link, strerror(errno));
-		windows_rmdir(link_path);
-		goto bail_and_delete;
-	}
-
-	return 0;
-
-bail_and_delete:
-	/* destroy the shadow copy we just created */
-	snprintf(cmd, sizeof(cmd), "Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'} | Remove-WmiObject", guid);
-	windows_ps(cmd, 0, 0);
-	return -1;
-}
-
-int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
-{
-	char guid[PATH_MAX];
-	char cmd[PS_CMD_MAX];
-	char guid_link[PATH_MAX];
-
-	pathcpy(guid_link, sizeof(guid_link), fss->snapshot_dir);
-	pathcat(guid_link, sizeof(guid_link), name);
-	pathcat(guid_link, sizeof(guid_link), SNAPSHOT_GUID);
-
-	if (windows_read_guid(guid_link, guid, sizeof(guid)) != 0)
-		return -1;
-
-	/* if the GUID link is gone, assume everything is gone */
-	if (guid[0] == 0) {
-		/* remove as not valid anymore */
-		windows_delete_link(fss, name);
-		return 0;
-	}
-
-	/* destroy the VSS shadow copy */
-	snprintf(cmd, sizeof(cmd), "Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'} | Remove-WmiObject", guid);
-	int ret = windows_ps(cmd, 0, 0);
-	if (ret != 0) {
-		log_error(errno, "Error destroy the snapshot from GUID '%s'. %s.\n", guid, strerror(errno));
-		/* remove as not valid anymore */
-		windows_delete_link(fss, name);
-		return -1;
-	}
-
-	/* remove live symlink if present */
-	windows_delete_link(fss, name);
-
-	/* remove persistent GUID symlink */
-	if (windows_rmdir(guid_link) != 0) {
-		log_error(errno, "Error rmdir '%s'. %s.\n", guid_link, strerror(errno));
-		return -1;
-	}
-
-	return 0;
-}
-
-int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
-{
-	char old_guid[PATH_MAX];
-	char new_guid[PATH_MAX];
-
-	pathcpy(old_guid, sizeof(old_guid), fss->snapshot_dir);
-	pathcat(old_guid, sizeof(old_guid), old_name);
-	pathcat(old_guid, sizeof(old_guid), SNAPSHOT_GUID);
-	pathcpy(new_guid, sizeof(new_guid), fss->snapshot_dir);
-	pathcat(new_guid, sizeof(new_guid), new_name);
-	pathcat(new_guid, sizeof(new_guid), SNAPSHOT_GUID);
-
-	if (windows_rename(old_guid, new_guid) != 0) {
-		log_error(errno, "Error renaming  '%s' to '%s'. %s.\n", old_guid, new_guid, strerror(errno));
-		return -1;
-	}
-
-	/* the rename is the latest operation, and then we don't care about the links, we just remove both */
-	windows_delete_link(fss, old_name);
-	windows_delete_link(fss, new_name);
-
-	return 0;
-}
-
-void fssnapshot_unmount(const struct fssnapshot_struct* fss)
-{
-	/*
-	 * Remove symlinks on exit to prevent "Dangling Links."
-	 * Since \Device\HarddiskVolumeShadowCopyN paths are reassigned by the kernel
-	 * at boot, a stale link would either point to a non-existent device or,
-	 * worse, a different disk's snapshot.
-	 *
-	 * Deleting the link ensures system hygiene and prevents users from seeing
-	 * "Location not available" errors or incorrect data after a reboot.
-	 */
-	windows_delete_link(fss, SNAPSHOT_PENDING);
-	windows_delete_link(fss, SNAPSHOT_STABLE);
 }
 
 /****************************************************************************/
@@ -2654,6 +2198,49 @@ int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex)
 	return 0;
 }
 
+int windows_rwlock_init(windows_rwlock_t* rwlock, void* attr)
+{
+	(void)attr;
+	InitializeSRWLock(&rwlock->srw);
+	rwlock->exclusive = 0;
+
+	return 0;
+}
+
+int windows_rwlock_destroy(windows_rwlock_t* rwlock)
+{
+	(void)rwlock;
+
+	return 0;
+}
+
+int windows_rwlock_rdlock(windows_rwlock_t* rwlock)
+{
+	AcquireSRWLockShared(&rwlock->srw);
+
+	return 0;
+}
+
+int windows_rwlock_wrlock(windows_rwlock_t* rwlock)
+{
+	AcquireSRWLockExclusive(&rwlock->srw);
+	rwlock->exclusive = 1;
+
+	return 0;
+}
+
+int windows_rwlock_unlock(windows_rwlock_t* rwlock)
+{
+	if (rwlock->exclusive) {
+		rwlock->exclusive = 0;
+		ReleaseSRWLockExclusive(&rwlock->srw);
+	} else {
+		ReleaseSRWLockShared(&rwlock->srw);
+	}
+
+	return 0;
+}
+
 struct windows_key_context {
 	void (*func)(void*);
 	DWORD key;
@@ -2668,8 +2255,10 @@ int windows_key_create(windows_key_t* key, void (*destructor)(void*))
 	struct windows_key_context* context;
 
 	context = malloc(sizeof(struct windows_key_context));
-	if (!context)
+	if (!context) {
+		errno = ENOMEM;
 		return -1;
+	}
 
 	context->func = destructor;
 	context->key = TlsAlloc();
@@ -2688,21 +2277,21 @@ int windows_key_create(windows_key_t* key, void (*destructor)(void*))
 	return 0;
 }
 
-int windows_key_delete(windows_key_t void_key)
+int windows_key_delete(windows_key_t key)
 {
-	struct windows_key_context* key = void_key;
+	struct windows_key_context* context = key;
 
 	/* use the destructor for the local variable and remove from the list of destructors */
-	if (key->func) {
-		void* value = windows_getspecific(key);
+	if (context->func) {
+		void* value = windows_getspecific(context);
 		if (value)
-			key->func(value);
-		tommy_list_remove_existing(&windows_key_list, &key->node);
+			context->func(value);
+		tommy_list_remove_existing(&windows_key_list, &context->node);
 	}
 
-	TlsFree(key->key);
+	TlsFree(context->key);
 
-	free(key);
+	free(context);
 
 	return 0;
 }
@@ -2764,8 +2353,10 @@ int windows_create(thread_id_t* thread, void* attr, void* (*func)(void*), void* 
 	(void)attr;
 
 	context = malloc(sizeof(struct windows_thread_context));
-	if (!context)
+	if (!context) {
+		errno = ENOMEM;
 		return -1;
+	}
 
 	context->func = func;
 	context->arg = arg;
@@ -2807,7 +2398,842 @@ int windows_join(thread_id_t thread, void** retval)
 }
 
 /****************************************************************************/
+/* exec */
+
+#define COMMAND_LINE_MAX 32767
+
+static int needs_quote(const WCHAR* arg)
+{
+	while (*arg) {
+		if (*arg == L' ' || *arg == L'\t' || *arg == L'"')
+			return 1;
+		++arg;
+	}
+
+	return 0;
+}
+
+#define charcat(c) \
+	do { \
+		if (pos + 1 >= size) { \
+			return -1; \
+		} \
+		cmd[pos++] = (c); \
+	} while (0)
+
+static int fixcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
+{
+	while (*arg)
+		charcat(*arg++);
+
+	return pos;
+}
+
+static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
+{
+	int has_quote;
+
+	/* space separator */
+	if (pos != 0)
+		charcat(L' ');
+
+	has_quote = needs_quote(arg);
+
+	if (!has_quote) {
+		while (*arg)
+			charcat(*arg++);
+	} else {
+		/* starting quote */
+		charcat(L'"');
+
+		while (*arg) {
+			int bl = 0;
+			while (*arg == L'\\') {
+				++arg;
+				++bl;
+			}
+
+			if (*arg == 0) {
+				/* double backslashes before closing quote */
+				bl = bl * 2;
+				while (bl--)
+					charcat(L'\\');
+			} else if (*arg == '"') {
+				/* double backslashes + escape the quote */
+				bl = bl * 2 + 1;
+				while (bl--)
+					charcat(L'\\');
+				charcat(L'"');
+				++arg;
+			} else {
+				/* normal backslashes */
+				while (bl--)
+					charcat(L'\\');
+				charcat(*arg);
+				++arg;
+			}
+		}
+
+		/* ending quote */
+		charcat(L'"');
+	}
+
+	return pos;
+}
+
+pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const char* run_as_user)
+{
+	wchar_t conv[CONV_MAX];
+	HANDLE stdout_write_handle = INVALID_HANDLE_VALUE;
+	HANDLE stdout_read_handle = INVALID_HANDLE_VALUE;
+	HANDLE stderr_write_handle = INVALID_HANDLE_VALUE;
+	HANDLE stderr_read_handle = INVALID_HANDLE_VALUE;
+	SECURITY_ATTRIBUTES sa;
+	PROCESS_INFORMATION pi;
+	STARTUPINFOW si;
+	BOOL ret;
+	int has_out = (stdout_read_int != NULL);
+	int has_err = (stderr_read_int != NULL);
+	int out_f = -1;
+	int err_f = -1;
+
+	/* set the bInheritHandle flag so pipe handles are inherited */
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = TRUE;
+	sa.lpSecurityDescriptor = NULL;
+
+	if (has_out) {
+		/* create a pipe for the child process's STDOUT */
+		if (!CreatePipe(&stdout_read_handle, &stdout_write_handle, &sa, 0)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to create pipe for spawn, errno=%s(%d)", strerror(errno), errno);
+			return -1;
+		}
+
+		/* ensure the reading handle to the pipe is not inherited */
+		if (!SetHandleInformation(stdout_read_handle, HANDLE_FLAG_INHERIT, 0)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+			CloseHandle(stdout_write_handle);
+			CloseHandle(stdout_read_handle);
+			return -1;
+		}
+
+		out_f = _open_osfhandle((intptr_t)stdout_read_handle, O_RDONLY | O_BINARY);
+		if (out_f == -1) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to open osfhandle for spawn, errno=%s(%d)", strerror(errno), errno);
+			CloseHandle(stdout_write_handle);
+			CloseHandle(stdout_read_handle);
+			return -1;
+		}
+	}
+
+	if (has_err) {
+		/* create a pipe for the child process's STDERR */
+		if (!CreatePipe(&stderr_read_handle, &stderr_write_handle, &sa, 0)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to create pipe for spawn, errno=%s(%d)", strerror(errno), errno);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			return -1;
+		}
+
+		/* ensure the reading handle to the pipe is not inherited */
+		if (!SetHandleInformation(stderr_read_handle, HANDLE_FLAG_INHERIT, 0)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+			CloseHandle(stderr_write_handle);
+			CloseHandle(stderr_read_handle);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			return -1;
+		}
+
+		err_f = _open_osfhandle((intptr_t)stderr_read_handle, O_RDONLY | O_BINARY);
+		if (err_f == -1) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to open osfhandle for spawn, errno=%s(%d)", strerror(errno), errno);
+			CloseHandle(stderr_write_handle);
+			CloseHandle(stderr_read_handle);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			return -1;
+		}
+	}
+
+	/* prepare command line string (Windows uses a single string, not an array) */
+	WCHAR cmd_buffer[COMMAND_LINE_MAX];
+	char cmd_buffer_conv[COMMAND_LINE_MAX * 3]; /* * 3 is needed because a single UTF-16 character can take up to 3 bytes in UTF-8 */
+	int pos = 0;
+	for (int i = 0; argv[i]; ++i) {
+		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
+		if (pos < 0) {
+			os_syslog(OS_LVL_INFO, "command to long for spawn");
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			if (has_err) {
+				CloseHandle(stderr_write_handle);
+				close(err_f);
+			}
+			return -1;
+		}
+	}
+	cmd_buffer[pos] = 0;
+
+	/* set up members of the STARTUPINFO structure */
+	ZeroMemory(&pi, sizeof(pi));
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+	si.hStdOutput = has_out ? stdout_write_handle : GetStdHandle(STD_OUTPUT_HANDLE);
+	si.hStdError = has_err ? stderr_write_handle : GetStdHandle(STD_ERROR_HANDLE);
+	si.dwFlags |= STARTF_USESTDHANDLES;
+
+	/*
+	 * Set the Working Directory to the root of the C drive.
+	 * For safety, we avoid defaulting to C:\Windows\System32.
+	 */
+	const wchar_t* cwd = L"C:\\";
+
+	/* create the child process */
+	if (run_as_user == 0 || run_as_user[0] == 0) {
+		ret = CreateProcessW(
+			NULL,
+			cmd_buffer,
+			NULL, NULL,
+			TRUE, /* inherit pipe handles */
+			CREATE_NEW_PROCESS_GROUP,
+			NULL, cwd,
+			&si, &pi
+		);
+	} else {
+		/* Drop to restricted service account */
+		HANDLE h_token = NULL;
+
+		/* Validate that the requested user is actually a supported Service Account before attempting logon */
+		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
+			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			if (has_err) {
+				CloseHandle(stderr_write_handle);
+				close(err_f);
+			}
+			return -1;
+		}
+
+		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			if (has_err) {
+				CloseHandle(stderr_write_handle);
+				close(err_f);
+			}
+			return -1;
+		}
+
+		/* Create an environment block to ensure PATH is loaded */
+		LPVOID env = NULL;
+		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			CloseHandle(h_token);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			if (has_err) {
+				CloseHandle(stderr_write_handle);
+				close(err_f);
+			}
+			return -1;
+		}
+
+		ret = CreateProcessAsUserW(
+			h_token,
+			NULL,
+			cmd_buffer,
+			NULL, NULL,
+			TRUE, /* inherit pipe handles */
+			CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT,
+			env, cwd,
+			&si, &pi
+		);
+
+		if (env)
+			DestroyEnvironmentBlock(env);
+		CloseHandle(h_token);
+	}
+	if (!ret) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		if (has_out) {
+			CloseHandle(stdout_write_handle);
+			close(out_f);
+		}
+		if (has_err) {
+			CloseHandle(stderr_write_handle);
+			close(err_f);
+		}
+		return -1;
+	}
+
+	/* close the write end of the pipes in the parent */
+	if (has_out) {
+		CloseHandle(stdout_write_handle);
+	}
+	if (has_err) {
+		CloseHandle(stderr_write_handle);
+	}
+
+	/* close the handle to the primary thread, we don't need it */
+	CloseHandle(pi.hThread);
+
+	if (has_out) {
+		*stdout_read_int = out_f;
+	}
+	if (has_err) {
+		*stderr_read_int = err_f;
+	}
+
+	return (intptr_t)pi.hProcess;
+}
+
+pid_t os_wait(pid_t pid, int* status)
+{
+	HANDLE h = (void*)pid;
+	DWORD exit_code;
+
+	WaitForSingleObject(h, INFINITE);
+
+	if (GetExitCodeProcess(h, &exit_code)) {
+		CloseHandle(h);
+		*status = exit_code;
+		return pid;
+	}
+
+	CloseHandle(h);
+
+	return -1;
+}
+
+int os_term(pid_t pid)
+{
+	HANDLE h = (void*)pid;
+	DWORD id = GetProcessId(h);
+
+	if (id == 0)
+		return -1;
+
+	/* detach from current console (if any) */
+	FreeConsole();
+
+	/* attach to the child's console */
+	if (!AttachConsole(id))
+		return -1;
+
+	/* Disable Ctrl-C for the PARENT so we don't kill ourselves */
+	SetConsoleCtrlHandler(0, TRUE);
+
+	/* This will now reach the child's SetConsoleCtrlHandler */
+	GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, id);
+
+	/* Clean up */
+	FreeConsole();
+
+	return 0;
+}
+
+int os_command(const char* command, const char* run_as_user, const char* stdin_text)
+{
+	wchar_t conv[CONV_MAX];
+	HANDLE stdin_read_handle;
+	HANDLE stdin_write_handle;
+	SECURITY_ATTRIBUTES sa;
+	PROCESS_INFORMATION pi;
+	STARTUPINFOW si;
+	BOOL ret;
+	int64_t start, stop;
+
+	start = os_tick_sec();
+
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = TRUE;
+	sa.lpSecurityDescriptor = NULL;
+
+	/* create pipe for child's STDIN */
+	if (!CreatePipe(&stdin_read_handle, &stdin_write_handle, &sa, 0)) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to create pipe for command, errno=%s(%d)", strerror(errno), errno);
+		return -1;
+	}
+
+	/* ensure the parent's write end is NOT inherited */
+	if (!SetHandleInformation(stdin_write_handle, HANDLE_FLAG_INHERIT, 0)) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+		CloseHandle(stdin_read_handle);
+		CloseHandle(stdin_write_handle);
+		return -1;
+	}
+
+	/* create a handle to the NUL device */
+	HANDLE nul = CreateFileW(
+		L"NUL",
+		GENERIC_WRITE,
+		FILE_SHARE_WRITE | FILE_SHARE_READ,
+		&sa,
+		OPEN_EXISTING,
+		0,
+		NULL);
+	if (nul == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to create nul device, errno=%s(%d)", strerror(errno), errno);
+		CloseHandle(stdin_read_handle);
+		CloseHandle(stdin_write_handle);
+		return -1;
+	}
+
+	ZeroMemory(&pi, sizeof(pi));
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	si.hStdInput = stdin_read_handle;
+	si.hStdOutput = nul;
+	si.hStdError = nul;
+	si.dwFlags |= STARTF_USESTDHANDLES;
+
+	/*
+	 * Set the Working Directory to the root of the C drive.
+	 * For safety, we avoid defaulting to C:\Windows\System32.
+	 */
+	const wchar_t* cwd = L"C:\\";
+
+	/*
+	 * No drop of privilege requested
+	 * Run exactly as the parent daemon
+	 */
+	if (run_as_user == 0 || run_as_user[0] == 0) {
+		/* create the child process */
+		ret = CreateProcessW(
+			NULL,
+			u8tou16(conv, command),
+			NULL, NULL,
+			TRUE, /* inherit pipe handles */
+			CREATE_NO_WINDOW,
+			NULL, cwd,
+			&si, &pi
+		);
+	} else {
+		/*
+		 * Drop to restricted service account.
+		 */
+		HANDLE h_token = NULL;
+
+		/*
+		 * Validate that the requested user is actually a supported
+		 * Service Account before attempting logon.
+		 */
+		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
+			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			CloseHandle(stdin_read_handle);
+			CloseHandle(stdin_write_handle);
+			CloseHandle(nul);
+			return -1;
+		}
+
+		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			CloseHandle(stdin_read_handle);
+			CloseHandle(stdin_write_handle);
+			CloseHandle(nul);
+			return -1;
+		}
+
+		/*
+		 * Create an environment block to ensure PATH is loaded.
+		 */
+		LPVOID env = NULL;
+		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			CloseHandle(stdin_read_handle);
+			CloseHandle(stdin_write_handle);
+			CloseHandle(nul);
+			CloseHandle(h_token);
+			return -1;
+		}
+
+		ret = CreateProcessAsUserW(
+			h_token,
+			NULL,
+			u8tou16(conv, command),
+			NULL, NULL,
+			TRUE, /* inherit pipe handles */
+			CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+			env, cwd,
+			&si, &pi
+		);
+
+		if (env)
+			DestroyEnvironmentBlock(env);
+		CloseHandle(h_token);
+	}
+	if (!ret) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to create process '%s' for command, errno=%s(%d)", command, strerror(errno), errno);
+		CloseHandle(stdin_read_handle);
+		CloseHandle(stdin_write_handle);
+		CloseHandle(nul);
+		return -1;
+	}
+
+	/* close nul device */
+	CloseHandle(nul);
+
+	/* close the read end in the parent immediately */
+	CloseHandle(stdin_read_handle);
+
+	/* write the string to the child's STDIN */
+	if (stdin_text && strlen(stdin_text) > 0) {
+		DWORD written;
+		WriteFile(stdin_write_handle, stdin_text, (DWORD)strlen(stdin_text), &written, NULL);
+	}
+
+	/* closing the write handle sends EOF to the child */
+	CloseHandle(stdin_write_handle);
+
+	/* wait for completion and get exit code */
+	WaitForSingleObject(pi.hProcess, INFINITE);
+
+	DWORD status;
+	GetExitCodeProcess(pi.hProcess, &status);
+
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+
+	stop = os_tick_sec();
+	int64_t execution_time = stop - start;
+	if (execution_time > 30)
+		os_syslog(OS_LVL_WARNING, "command %s ran for %" PRId64 " seconds that is unexpectedly long", command, execution_time);
+
+	if (WIFEXITED(status)) {
+		int exit_code = WEXITSTATUS(status);
+		if (exit_code == 0)
+			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with success", command, execution_time);
+		else
+			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with exit code %d", command, execution_time, exit_code);
+		return exit_code;
+	} else if (WIFSIGNALED(status)) {
+		/* child died from a signal */
+		int sig = WTERMSIG(status);
+		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
+		return 128 + sig;
+	} else {
+		/* in Windows it can happen */
+		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds for unknown reason, status=0x%08x", command, execution_time, (unsigned)status);
+		return -1;
+	}
+}
+
+static WCHAR* env_combine(const WCHAR* base_env, char** envp)
+{
+	size_t base_len = 0;
+	if (base_env) {
+		const WCHAR* p = base_env;
+		while (*p != 0) {
+			p += wcslen(p) + 1;
+		}
+		base_len = p - base_env + 1;
+	} else {
+		base_len = 1;
+	}
+
+	size_t envv_w_total_len = 0;
+	int envv_count = 0;
+	if (envp) {
+		while (envp[envv_count] != NULL) {
+			envv_count++;
+		}
+	}
+
+	WCHAR** envv_w = NULL;
+	WCHAR* new_env = NULL;
+
+	if (envv_count > 0) {
+		envv_w = calloc(envv_count, sizeof(WCHAR*));
+		if (!envv_w) {
+			goto bail;
+		}
+		for (int i = 0; i < envv_count; ++i) {
+			wchar_t conv[CONV_MAX];
+			u8tou16(conv, envp[i]);
+			size_t len = wcslen(conv);
+			envv_w[i] = malloc((len + 1) * sizeof(WCHAR));
+			if (!envv_w[i]) {
+				errno = ENOMEM;
+				goto bail;
+			}
+			memcpy(envv_w[i], conv, (len + 1) * sizeof(WCHAR));
+			envv_w_total_len += len + 1;
+		}
+	}
+
+	size_t total_len = base_len + envv_w_total_len + 1;
+	new_env = malloc(total_len * sizeof(WCHAR));
+	if (!new_env) {
+		errno = ENOMEM;
+		goto bail;
+	}
+
+	WCHAR* dst = new_env;
+	if (base_len > 1 && base_env) {
+		memcpy(dst, base_env, (base_len - 1) * sizeof(WCHAR));
+		dst += base_len - 1;
+	}
+	for (int i = 0; i < envv_count; ++i) {
+		if (envv_w && envv_w[i]) {
+			size_t len = wcslen(envv_w[i]);
+			memcpy(dst, envv_w[i], (len + 1) * sizeof(WCHAR));
+			dst += len + 1;
+		}
+	}
+	*dst = 0;
+
+bail:
+	if (envv_w) {
+		for (int i = 0; i < envv_count; ++i) {
+			free(envv_w[i]);
+		}
+		free(envv_w);
+	}
+
+	return new_env;
+}
+
+int os_script(char** argv, char** envp, const char* run_as_user)
+{
+	wchar_t conv[CONV_MAX];
+	PROCESS_INFORMATION pi;
+	STARTUPINFOW si;
+	BOOL ret;
+	char resolved_path[PATH_MAX];
+	int64_t start, stop;
+	const char* script_path = argv[0];
+
+	/* resolve the script path to prevent symlink attacks */
+	if (!realpath(script_path, resolved_path)) {
+		os_syslog(OS_LVL_INFO, "failed to resolve script, path=%s, errno=%s(%d)", script_path, strerror(errno), errno);
+		return -1;
+	}
+
+	start = os_tick_sec();
+
+	ZeroMemory(&pi, sizeof(pi));
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+
+	/* prepare command line string (Windows uses a single string, not an array) */
+	WCHAR cmd_buffer[COMMAND_LINE_MAX];
+	char cmd_buffer_conv[COMMAND_LINE_MAX * 3]; /* * 3 is needed because a single UTF-16 character can take up to 3 bytes in UTF-8 */
+	int pos = 0;
+
+	/*
+	 * We add an extra set of quotes: cmd /c " "path with spaces" arg1 "arg 2" "
+	 * This ensures cmd.exe parses the internal quotes correctly.
+	 */
+	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L"cmd.exe /c \" ");
+	pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, resolved_path));
+	if (pos < 0) {
+		os_syslog(OS_LVL_INFO, "command to long for script");
+		return -1;
+	}
+	for (int i = 1; argv[i]; ++i) {
+		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
+		if (pos < 0) {
+			os_syslog(OS_LVL_INFO, "command to long for script");
+			return -1;
+		}
+	}
+	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L" \"");
+	if (pos < 0) {
+		os_syslog(OS_LVL_INFO, "command to long for script");
+		return -1;
+	}
+	cmd_buffer[pos] = 0;
+
+	/*
+	 * Set the Working Directory to the root of the C drive.
+	 * For safety, we avoid defaulting to C:\Windows\System32.
+	 */
+	const wchar_t* cwd = L"C:\\";
+
+	/*
+	 * No drop of privilege requested
+	 * Run exactly as the parent daemon
+	 */
+	if (run_as_user == 0 || run_as_user[0] == 0) {
+		WCHAR* base_env = NULL;
+		WCHAR* combined_env = NULL;
+		DWORD creation_flags = CREATE_NO_WINDOW;
+
+		if (envp != NULL) {
+			base_env = GetEnvironmentStringsW();
+			if (!base_env) {
+				windows_errno(GetLastError());
+				os_syslog(OS_LVL_INFO, "failed to get environment strings, errno=%s(%d)", strerror(errno), errno);
+				return -1;
+			}
+			combined_env = env_combine(base_env, envp);
+			FreeEnvironmentStringsW(base_env);
+			if (!combined_env) {
+				errno = ENOMEM;
+				os_syslog(OS_LVL_INFO, "failed to combine environment strings (out of memory)");
+				return -1;
+			}
+			creation_flags |= CREATE_UNICODE_ENVIRONMENT;
+		}
+
+		/* create the child process */
+		ret = CreateProcessW(
+			NULL,
+			cmd_buffer,
+			NULL, NULL,
+			FALSE, /* no need to inherit handles */
+			creation_flags,
+			combined_env, cwd,
+			&si, &pi
+		);
+
+		if (combined_env)
+			free(combined_env);
+	} else {
+		/*
+		 * Drop to restricted service account.
+		 */
+		HANDLE h_token = NULL;
+
+		/*
+		 * Validate that the requested user is actually a supported
+		 * Service Account before attempting logon.
+		 */
+		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
+			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			return -1;
+		}
+
+		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			return -1;
+		}
+
+		/*
+		 * Create an environment block to ensure PATH is loaded.
+		 */
+		LPVOID env = NULL;
+		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			CloseHandle(h_token);
+			return -1;
+		}
+
+		WCHAR* combined_env = NULL;
+		if (envp != NULL) {
+			combined_env = env_combine((const WCHAR*)env, envp);
+			if (!combined_env) {
+				errno = ENOMEM;
+				os_syslog(OS_LVL_INFO, "failed to combine environment strings (out of memory)");
+				DestroyEnvironmentBlock(env);
+				CloseHandle(h_token);
+				return -1;
+			}
+		}
+
+		ret = CreateProcessAsUserW(
+			h_token,
+			NULL,
+			cmd_buffer,
+			NULL, NULL,
+			FALSE, /* no need to inherit handles */
+			CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+			combined_env ? combined_env : env, cwd,
+			&si, &pi
+		);
+
+		if (combined_env)
+			free(combined_env);
+		if (env)
+			DestroyEnvironmentBlock(env);
+		CloseHandle(h_token);
+	}
+	if (!ret) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to create process '%s' for script, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		return -1;
+	}
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+
+	DWORD status;
+	GetExitCodeProcess(pi.hProcess, &status);
+
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+
+	stop = os_tick_sec();
+	int64_t execution_time = stop - start;
+	if (execution_time > 30)
+		os_syslog(OS_LVL_WARNING, "script %s took %" PRId64 " seconds", resolved_path, execution_time);
+
+	if (WIFEXITED(status)) {
+		int exit_code = WEXITSTATUS(status);
+		if (exit_code == 0)
+			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with success", resolved_path, execution_time);
+		else
+			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with exit code %d", resolved_path, execution_time, exit_code);
+		return exit_code;
+	} else if (WIFSIGNALED(status)) {
+		/* child died from a signal */
+		int sig = WTERMSIG(status);
+		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
+		return 128 + sig;
+	} else {
+		/* in Windows it can happen */
+		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds for unknown reason, status=0x%08x", resolved_path, execution_time, (unsigned)status);
+		return -1;
+	}
+}
+
+/****************************************************************************/
 /* os */
+
+int os_randomize(void* void_ptr, size_t size)
+{
+	unsigned char* ptr = void_ptr;
+
+	/* try RtlGenRandom */
+	if (ptr_RtlGenRandom != 0 && ptr_RtlGenRandom(ptr, size) != 0)
+		return 0;
+
+	return -1;
+}
 
 char* os_fgets(char* s, int size, OS_FILE* stream)
 {
@@ -2870,25 +3296,26 @@ uint64_t os_tick(void)
 	return r;
 }
 
+uint64_t os_tick_sec(void)
+{
+	return GetTickCount64() / 1000;
+}
+
 uint64_t os_tick_ms(void)
 {
 	return GetTickCount64();
 }
 
-int os_randomize(void* void_ptr, size_t size)
+void os_privileges_acquire(void)
 {
-	size_t i;
-	unsigned char* ptr = void_ptr;
+}
 
-	/* try RtlGenRandom */
-	if (ptr_RtlGenRandom != 0 && ptr_RtlGenRandom(ptr, size) != 0)
-		return 0;
+void os_privileges_release(void)
+{
+}
 
-	/* fallback to standard rand */
-	for (i = 0; i < size; ++i)
-		ptr[i] = random_u8();
-
-	return 0;
+void os_privileges_drop(void)
+{
 }
 
 void os_abort(void)
@@ -2916,6 +3343,11 @@ void os_abort(void)
 	printf("https://github.com/amadvance/snapraid/issues\n");
 
 	/* use exit() and not abort to avoid the Windows abort dialog */
+	os_exit();
+}
+
+void os_exit(void)
+{
 	exit(EXIT_FAILURE);
 }
 
@@ -2945,40 +3377,40 @@ static void exedir_init(void)
 	slash[1] = 0;
 }
 
-void os_init(int opt)
+void os_init(unsigned opt)
 {
 	HMODULE ntdll, kernel32;
 
-	is_scan_winfind = opt != 0;
+	is_scan_winfind = (opt & OS_INIT_OPT_WINFIND) != 0;
 
 	/* initialize the thread local storage for strerror(), using free() as destructor */
 	if (windows_key_create(&last_error, free) != 0) {
-		log_fatal(EEXTERNAL, "Error calling windows_key_create().\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "error calling windows_key_create()");
+		os_exit();
 	}
 
 	tick_last = 0;
 	if (windows_mutex_init(&tick_lock, 0) != 0) {
-		log_fatal(EEXTERNAL, "Error calling windows_mutex_init().\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "error calling windows_mutex_init()");
+		os_exit();
 	}
 
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
-		log_fatal(EEXTERNAL, "Error loading the NTDLL module.\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "error loading the NTDLL module");
+		os_exit();
 	}
 
 	kernel32 = GetModuleHandle("KERNEL32.DLL");
 	if (!kernel32) {
-		log_fatal(EEXTERNAL, "Error loading the KERNEL32 module.\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "error loading the KERNEL32 module");
+		os_exit();
 	}
 
 	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (!dll_advapi32) {
-		log_fatal(EEXTERNAL, "Error loading the ADVAPI32 module.\n");
-		exit(EXIT_FAILURE);
+		os_syslog(OS_LVL_CRITICAL, "error loading the ADVAPI32 module");
+		os_exit();
 	}
 
 	/* check for Wine presence */
@@ -2987,13 +3419,15 @@ void os_init(int opt)
 	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 
-	/*
-	 * Set the thread execution level to avoid sleep
-	 * first try for Windows 7
-	 */
-	if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
-		/* retry with the XP variant */
-		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
+	if ((opt & OS_INIT_OPT_AVOID_SLEEP) != 0) {
+		/*
+		 * Set the thread execution level to avoid sleep
+		 * first try for Windows 7
+		 */
+		if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
+			/* retry with the XP variant */
+			SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
+		}
 	}
 
 	exedir_init();
