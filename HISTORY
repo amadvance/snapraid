@@ -1,6 +1,16 @@
 SnapRAID HISTORY
 ================
 
+14.8 2026/06
+============
+ * Avoid spinning up standby disks on Windows in some machines during
+   the 'probe' and other device-monitoring commands. Direct system
+   queries for disk properties, size, and geometry are now performed
+   using zero-access handles.
+ * Fixed the smartctl type detection retry during probe on Windows to
+   properly preserve the standby check option, preventing standby disks
+   from spinning up if a retry is needed.
+
 14.7 2026/06
 ============
  * Fix the 'touch' command on Windows for files with the read-only

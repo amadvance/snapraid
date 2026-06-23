@@ -2740,7 +2740,7 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 	(void)family; /* not available, smartctl uses an internal database to get it */
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
+	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		windows_errno(error);
@@ -3247,9 +3247,14 @@ int devmap(void)
 		HANDLE h;
 
 		/* open the volume */
-		h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
-		if (h == INVALID_HANDLE_VALUE)
+		h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+		if (h == INVALID_HANDLE_VALUE) {
+			DWORD error = GetLastError();
+			if (error != ERROR_FILE_NOT_FOUND)
+				log_tag("enumeration:/dev/pd%d::error:%lu\n", i, error);
 			continue;
+		}
+
 		char serial[SMART_MAX];
 		serial[0] = 0;
 		devattr_property(h, serial, 0, 0);
