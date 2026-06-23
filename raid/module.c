@@ -456,7 +456,7 @@ int raid_selftest(void)
 	const int nv = nd + RAID_PARITY_MAX * 2 + 1;
 	void *v_alloc;
 	void **v;
-	void *ref[nd + RAID_PARITY_MAX];
+	void *ref[TEST_COUNT + RAID_PARITY_MAX];
 	int ir[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int i, np;
