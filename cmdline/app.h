@@ -270,7 +270,7 @@ extern int exit_sync_needed;
 #define SMARTCTL_FLAG_SELFERROR_LOGGED (1 << 7) /**< The device self-test log contains records of errors. */
 
 /**
- * SMART max attribute length.
+ * SMART max attribute name or value length.
  */
 #define SMART_MAX 128
 
@@ -291,7 +291,7 @@ extern int exit_sync_needed;
 #define SMART_ATTR_WHEN_FAILED_NEVER 64
 
 struct smart_attr {
-	char name[128]; /**< SMART attribute name. */
+	char name[SMART_MAX]; /**< SMART attribute name. */
 	uint64_t raw; /**< SMART attributes raw. It can be SMART_UNASSIGNED. */
 	uint64_t norm; /**< SMART attributes normalized. It can be SMART_UNASSIGNED even if raw is not. */
 	uint64_t worst; /**< SMART attributes worst. It can be SMART_UNASSIGNED even if raw/norm is not. */
