@@ -46,6 +46,8 @@ SnapRAID HISTORY
    `-a` command line argument used to retrieve SMART attributes with a
    customized set of arguments, enabling better support for RAID
    controllers and USB enclosures.
+ * Added support for specifying case-insensitive SMART attribute names
+   (instead of only numeric IDs) in the `smartignore` configuration option.
 
 14.8 2026/06
 ============

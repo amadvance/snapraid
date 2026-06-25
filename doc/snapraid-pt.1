@@ -1712,19 +1712,27 @@ PARITY é um dos nomes de paridade: \`parity\`, \`2\-parity\`, \`3\-parity\`,
 \`4\-parity\`, \`5\-parity\`, \`6\-parity\` ou \`z\-parity\`.
 O valor especial * pode ser usado para ignorar o atributo em todos os discos.
 .PP
-Por exemplo, para ignorar o atributo \`Current Pending Sector Count\` em
-todos os discos:
+Múltiplos atributos podem ser especificados separados por espaços.
+Cada atributo pode ser especificado como um número de 1 a 255, ou como um
+nome insensível a maiúsculas/minúsculas (por exemplo, \`Current_Pending_Sector\`).
+.PP
+Por exemplo, para ignorar os atributos \`Current Pending Sector Count\` e
+\`Reallocated Sectors Count\` em todos os discos pelo seu número ou nome:
 .PP
 .RS 4
-smartignore * 197
+smartignore * 197 5
+.PD 0
+.PP
+.PD
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 .PD 0
 .PD
 .RE
 .PP
-Para ignorá\-lo apenas no primeiro disco de paridade:
+Para ignorá\-los apenas no primeiro disco de paridade:
 .PP
 .RS 4
-smartignore parity 197
+smartignore parity 197 5
 .PD 0
 .PD
 .RE

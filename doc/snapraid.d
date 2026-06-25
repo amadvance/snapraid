@@ -1380,14 +1380,20 @@ Configuration
 	`4-parity`, `5-parity`, `6-parity`, or `z-parity`.
 	The special value * can be used to ignore the attribute on all disks.
 
-	For example, to ignore the `Current Pending Sector Count` attribute on
-	all disks:
+	Multiple attributes can be specified separated by spaces.
+	Each attribute can be specified as a number from 1 to 255, or as a
+	case-insensitive name (e.g. `Current_Pending_Sector`).
 
-		:smartignore * 197
+	For example, to ignore the `Current Pending Sector Count` and
+	`Reallocated Sectors Count` attributes on all disks by their number
+	or name:
 
-	To ignore it only on the first parity disk:
+		:smartignore * 197 5
+		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-		:smartignore parity 197
+	To ignore them only on the first parity disk:
+
+		:smartignore parity 197 5
 
   Examples
 	An example of a typical configuration for Unix is:
