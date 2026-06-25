@@ -2369,6 +2369,10 @@ int smartctl_attribute(OS_FILE* f, const char* file, const char* name, struct sm
 	for (i = 0; i < INFO_COUNT; ++i)
 		info[i] = SMART_UNASSIGNED;
 
+	pathcpy(smart[SMART_ERROR_PROTOCOL].name, sizeof(smart[SMART_ERROR_PROTOCOL].name), "error_protocol");
+	pathcpy(smart[SMART_ERROR_MEDIUM].name, sizeof(smart[SMART_ERROR_MEDIUM].name), "error_medium");
+	pathcpy(smart[SMART_WEAR_LEVEL].name, sizeof(smart[SMART_WEAR_LEVEL].name), "wear_level");
+
 	/* read the file */
 	inside = 0;
 	while (1) {

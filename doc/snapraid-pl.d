@@ -1375,14 +1375,19 @@ Konfiguracja (Configuration)
 	`4-parity`, `5-parity`, `6-parity` lub `z-parity`.
 	Specjalna wartość * może być użyta do zignorowania atrybutu na wszystkich dyskach.
 
-	Na przykład, aby zignorować atrybut `Current Pending Sector Count` na
-	wszystkich dyskach:
+	Można określić wiele atrybutów oddzielonych spacjami.
+	Każdy atrybut można określić jako liczbę od 1 do 255 lub jako nazwę
+	niewrażliwą na wielkość liter (np. `Current_Pending_Sector`).
 
-		:smartignore * 197
+	Na przykład, aby zignorować atrybuty `Current Pending Sector Count` i
+	`Reallocated Sectors Count` na wszystkich dyskach za pomocą ich numeru lub nazwy:
 
-	Aby zignorować go tylko na pierwszym dysku parzystości:
+		:smartignore * 197 5
+		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-		:smartignore parity 197
+	Aby zignorować je tylko na pierwszym dysku parzystości:
+
+		:smartignore parity 197 5
 
   Examples
 	Przykład typowej konfiguracji dla systemu Unix:

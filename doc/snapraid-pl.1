@@ -1674,19 +1674,27 @@ PARITY to jedna z nazw parzystości: \`parity\`, \`2\-parity\`, \`3\-parity\`,
 \`4\-parity\`, \`5\-parity\`, \`6\-parity\` lub \`z\-parity\`.
 Specjalna wartość * może być użyta do zignorowania atrybutu na wszystkich dyskach.
 .PP
-Na przykład, aby zignorować atrybut \`Current Pending Sector Count\` na
-wszystkich dyskach:
+Można określić wiele atrybutów oddzielonych spacjami.
+Każdy atrybut można określić jako liczbę od 1 do 255 lub jako nazwę
+niewrażliwą na wielkość liter (np. \`Current_Pending_Sector\`).
+.PP
+Na przykład, aby zignorować atrybuty \`Current Pending Sector Count\` i
+\`Reallocated Sectors Count\` na wszystkich dyskach za pomocą ich numeru lub nazwy:
 .PP
 .RS 4
-smartignore * 197
+smartignore * 197 5
+.PD 0
+.PP
+.PD
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 .PD 0
 .PD
 .RE
 .PP
-Aby zignorować go tylko na pierwszym dysku parzystości:
+Aby zignorować je tylko na pierwszym dysku parzystości:
 .PP
 .RS 4
-smartignore parity 197
+smartignore parity 197 5
 .PD 0
 .PD
 .RE

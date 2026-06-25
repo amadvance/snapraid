@@ -275,6 +275,14 @@ extern int exit_sync_needed;
 #define SMART_MAX 128
 
 /**
+ * Smart ignore structure.
+ */
+struct smartignore_struct {
+	int attr_index; /**< 0 if not set */
+	char attr_name[SMART_MAX]; /**< Empty if not set */
+};
+
+/**
  * Value for unassigned SMART attribute.
  */
 #define SMART_UNASSIGNED 0xFFFFFFFFFFFFFFFFULL
@@ -315,7 +323,7 @@ struct devinfo_struct {
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
 	char smartctl[SMART_MAX]; /**< Custom option for smartctl. Empty means auto. */
 	char smartctl_info[SMART_MAX]; /* Info options for smartctl. Empty means -a. */
-	int smartignore[SMART_IGNORE_MAX]; /**< Attribues to ignore */
+	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Attributes to ignore */
 	char file[PATH_MAX]; /**< File device. */
 #ifdef _WIN32
 	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */

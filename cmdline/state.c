@@ -146,8 +146,10 @@ void state_init(struct snapraid_state* state)
 		}
 		state->parity[l].smartctl[0] = 0;
 		state->parity[l].smartctl_info[0] = 0;
-		for (i = 0; i < SMART_IGNORE_MAX; ++i)
-			state->parity[l].smartignore[i] = 0;
+		for (i = 0; i < SMART_IGNORE_MAX; ++i) {
+			state->parity[l].smartignore[i].attr_index = 0;
+			state->parity[l].smartignore[i].attr_name[0] = 0;
+		}
 		state->parity[l].total_blocks = 0;
 		state->parity[l].free_blocks = 0;
 		state->parity[l].skip_access = 0;
@@ -167,8 +169,10 @@ void state_init(struct snapraid_state* state)
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->no_conf = 0;
-	for (i = 0; i < SMART_IGNORE_MAX; ++i)
-		state->smartignore[i] = 0;
+	for (i = 0; i < SMART_IGNORE_MAX; ++i) {
+		state->smartignore[i].attr_index = 0;
+		state->smartignore[i].attr_name[0] = 0;
+	}
 	state->rehash_blocks = 0;
 	state->bad_blocks = 0;
 	state->unsynced_blocks = 0;
@@ -1265,7 +1269,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				}
 			}
 		} else if (strcmp(tag, "smartignore") == 0) {
-			int* smart;
+			struct smartignore_struct* smart;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -1341,20 +1345,32 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					/* LCOV_EXCL_STOP */
 				}
 
-				smart[si] = strtou(buffer, &e, 0);
+				int val = strtou(buffer, &e, 0);
 
-				if (!e || *e) {
-					/* LCOV_EXCL_START */
-					log_fatal(EUSER, "Invalid 'smartignore' specification in '%s' at line %u. It should be a number.\n", path, line);
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
-
-				if (smart[si] < 1 || smart[si] >= 256) {
-					/* LCOV_EXCL_START */
-					log_fatal(EUSER, "Invalid 'smartignore' specification in '%s' at line %u. It should be between 1 and 255.\n", path, line);
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
+				if (e && !*e) {
+					/* numerical form */
+					if (val < 1 || val >= 256) {
+						/* LCOV_EXCL_START */
+						log_fatal(EUSER,
+							"Invalid 'smartignore' specification in '%s' at line %u. It should be between 1 and 255.\n",
+							path, line);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+					smart[si].attr_index = val;
+					smart[si].attr_name[0] = 0;
+				} else {
+					/* name form */
+					if (strlen(buffer) >= SMART_MAX) {
+						/* LCOV_EXCL_START */
+						log_fatal(EUSER,
+							"Invalid 'smartignore' specification in '%s' at line %u. Attribute name too long.\n",
+							path, line);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+					smart[si].attr_index = 0;
+					pathcpy(smart[si].attr_name, sizeof(smart[si].attr_name), buffer);
 				}
 
 				++si;

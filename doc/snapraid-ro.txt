@@ -1478,14 +1478,19 @@ PARITY este unul dintre numele de paritate: `parity`, `2-parity`, `3-parity`,
 `4-parity`, `5-parity`, `6-parity` sau `z-parity`.
 Valoarea specială * poate fi utilizată pentru a ignora atributul pe toate discurile.
 
-De exemplu, pentru a ignora atributul `Current Pending Sector Count` pe
-toate discurile:
+Mai multe atribute pot fi specificate separate prin spații.
+Fiecare atribut poate fi specificat ca un număr de la 1 la 255 sau ca un
+nume insensibil la majuscule (de exemplu, `Current_Pending_Sector`).
 
-    smartignore * 197
+De exemplu, pentru a ignora atributele `Current Pending Sector Count` și
+`Reallocated Sectors Count` pe toate discurile după numărul sau numele lor:
 
-Pentru a-l ignora doar pe primul disc de paritate:
+    smartignore * 197 5
+    smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-    smartignore parity 197
+Pentru a le ignora doar pe primul disc de paritate:
+
+    smartignore parity 197 5
 
 7.19 Exemple
 ------------
