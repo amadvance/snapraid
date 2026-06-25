@@ -3692,9 +3692,9 @@ int ambient_temperature(void)
 
 		while ((hwmon_entry = readdir(hwmon_dir)) != NULL) {
 			char hwmon_name[PATH_MAX];
-			char value[128];
-			char name[128];
-			char label[128];
+			char value[SMART_MAX];
+			char name[SMART_MAX];
+			char label[SMART_MAX];
 			char* dash;
 			char* e;
 			int temp;
