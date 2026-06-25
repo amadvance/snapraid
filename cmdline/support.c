@@ -2588,13 +2588,13 @@ int smartctl_attribute(OS_FILE* f, const char* file, const char* name, struct sm
 		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
 		} else if (inside) {
-			char id_name[128] = { 0 };
-			char type[64] = { 0 };
-			char updated[64] = { 0 };
-			char when_failed[64] = { 0 };
-			char norm[64] = { 0 };
-			char worst[64] = { 0 };
-			char thresh[64] = { 0 };
+			char id_name[SMART_MAX] = { 0 };
+			char type[SMART_MAX] = { 0 };
+			char updated[SMART_MAX] = { 0 };
+			char when_failed[SMART_MAX] = { 0 };
+			char norm[SMART_MAX] = { 0 };
+			char worst[SMART_MAX] = { 0 };
+			char thresh[SMART_MAX] = { 0 };
 			uint64_t min, max, avg;
 			int format_minmax = 0;
 			int format_avg = 0;
