@@ -1211,13 +1211,19 @@ Name{number}
 	`4-parity`、`5-parity`、`6-parity` 或 `z-parity`。
 	特殊值 * 可用于在所有磁盘上忽略该属性。
 
-	例如，要在所有磁盘上忽略 `Current Pending Sector Count` 属性：
+	可以指定多个属性，用空格分隔。
+	每个属性可以指定为 1 到 255 之间的数字，或者不区分大小写的名称
+	（例如 `Current_Pending_Sector`）。
 
-		:smartignore * 197
+	例如，要在所有磁盘上通过编号或名称忽略 `Current Pending Sector Count` 和
+	`Reallocated Sectors Count` 属性：
 
-	要仅在第一个奇偶校验磁盘上忽略它：
+		:smartignore * 197 5
+		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-		:smartignore parity 197
+	要仅在第一个奇偶校验磁盘上忽略它们：
+
+		:smartignore parity 197 5
 
   Examples
 	Unix 的典型配置示例如下：

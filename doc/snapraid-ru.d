@@ -1380,14 +1380,19 @@ Name{number}
 	`4-parity`, `5-parity`, `6-parity` или `z-parity`.
 	Специальное значение * может использоваться для игнорирования атрибута на всех дисках.
 
-	Например, чтобы игнорировать атрибут `Current Pending Sector Count` на
-	всех дисках:
+	Можно указать несколько атрибутов, разделенных пробелами.
+	Каждый атрибут может быть указан как число от 1 до 255 или как имя,
+	нечувствительное к регистру (например, `Current_Pending_Sector`).
 
-		:smartignore * 197
+	Например, чтобы игнорировать атрибуты `Current Pending Sector Count` и
+	`Reallocated Sectors Count` на всех дисках по их номеру или имени:
 
-	Чтобы игнорировать его только на первом диске четности:
+		:smartignore * 197 5
+		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-		:smartignore parity 197
+	Чтобы игнорировать их только на первом диске четности:
+
+		:smartignore parity 197 5
 
   Examples
 	Пример типичной конфигурации для Unix:

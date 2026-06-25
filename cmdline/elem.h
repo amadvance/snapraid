@@ -345,7 +345,7 @@ struct snapraid_extra {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	char smartctl[SMART_MAX]; /**< Custom option for smartctl. Empty means auto. */
 	char smartctl_info[SMART_MAX]; /* Info options for smartctl. Empty means -a. */
-	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
+	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
 	char fstype[FSINFO_MAX]; /**< Filesystem type */
 	char fslabel[FSINFO_MAX]; /**< Filesystem label */
@@ -384,7 +384,7 @@ struct snapraid_disk {
 
 	char smartctl[SMART_MAX]; /**< Custom option for smartctl. Empty means auto. */
 	char smartctl_info[SMART_MAX]; /* Info options for smartctl. Empty means -a. */
-	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
+	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
 	char fstype[FSINFO_MAX]; /**< Filesystem type */
 	char fslabel[FSINFO_MAX]; /**< Filesystem label */
@@ -538,7 +538,7 @@ struct snapraid_parity {
 	unsigned split_mac; /**< Number of parity splits. */
 	char smartctl[SMART_MAX]; /**< Custom option for smartctl. Empty means auto. */
 	char smartctl_info[SMART_MAX]; /* Info options for smartctl. Empty means -a. */
-	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
+	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
 	int is_excluded_by_filter; /**< If the parity is excluded by filters. */

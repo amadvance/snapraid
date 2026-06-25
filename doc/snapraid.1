@@ -1679,19 +1679,28 @@ PARITY is one of the parity names: \`parity\`, \`2\-parity\`, \`3\-parity\`,
 \`4\-parity\`, \`5\-parity\`, \`6\-parity\`, or \`z\-parity\`.
 The special value * can be used to ignore the attribute on all disks.
 .PP
-For example, to ignore the \`Current Pending Sector Count\` attribute on
-all disks:
+Multiple attributes can be specified separated by spaces.
+Each attribute can be specified as a number from 1 to 255, or as a
+case\-insensitive name (e.g. \`Current_Pending_Sector\`).
+.PP
+For example, to ignore the \`Current Pending Sector Count\` and
+\`Reallocated Sectors Count\` attributes on all disks by their number
+or name:
 .PP
 .RS 4
-smartignore * 197
+smartignore * 197 5
+.PD 0
+.PP
+.PD
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 .PD 0
 .PD
 .RE
 .PP
-To ignore it only on the first parity disk:
+To ignore them only on the first parity disk:
 .PP
 .RS 4
-smartignore parity 197
+smartignore parity 197 5
 .PD 0
 .PD
 .RE
