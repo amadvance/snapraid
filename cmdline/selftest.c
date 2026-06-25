@@ -932,6 +932,69 @@ static void test_parse_smartctl(void)
 	}
 }
 
+static void test_smart_ignore(void)
+{
+	struct snapraid_state state;
+	devinfo_t devinfo;
+	int i;
+
+	memset(&state, 0, sizeof(state));
+	memset(&devinfo, 0, sizeof(devinfo));
+
+	/* Initialize devinfo attributes with mock data */
+	for (i = 0; i < SMART_COUNT; ++i) {
+		devinfo.smart[i].raw = 100;
+		devinfo.smart[i].norm = 100;
+		snprintf(devinfo.smart[i].name, sizeof(devinfo.smart[i].name), "Attr_%d", i);
+	}
+	/* Special name for test */
+	pathcpy(devinfo.smart[5].name, sizeof(devinfo.smart[5].name), "Reallocated_Sector_Ct");
+	pathcpy(devinfo.smart[197].name, sizeof(devinfo.smart[197].name), "Current_Pending_Sector");
+
+	/* 1. Test numerical global ignore */
+	state.smartignore[0].attr_index = 5;
+	state.smartignore[0].attr_name[0] = 0;
+
+	/* 2. Test name global ignore (case-insensitive) */
+	state.smartignore[1].attr_index = 0;
+	pathcpy(state.smartignore[1].attr_name, sizeof(state.smartignore[1].attr_name), "current_pending_sector");
+
+	/* 3. Test numerical devinfo ignore */
+	devinfo.smartignore[0].attr_index = 10;
+	devinfo.smartignore[0].attr_name[0] = 0;
+
+	/* 4. Test name devinfo ignore (case-insensitive) */
+	devinfo.smartignore[1].attr_index = 0;
+	pathcpy(devinfo.smartignore[1].attr_name, sizeof(devinfo.smartignore[1].attr_name), "aTtR_20");
+
+	state_smart_ignore(&state, &devinfo);
+
+	/* Check that ignored attributes are set to SMART_UNASSIGNED */
+	if (devinfo.smart[5].raw != SMART_UNASSIGNED) {
+		log_fatal(EINTERNAL, "test_smart_ignore: numerical global ignore failed\n");
+		exit(EXIT_FAILURE);
+	}
+	if (devinfo.smart[197].raw != SMART_UNASSIGNED) {
+		log_fatal(EINTERNAL, "test_smart_ignore: name global ignore failed\n");
+		exit(EXIT_FAILURE);
+	}
+	if (devinfo.smart[10].raw != SMART_UNASSIGNED) {
+		log_fatal(EINTERNAL, "test_smart_ignore: numerical devinfo ignore failed\n");
+		exit(EXIT_FAILURE);
+	}
+	if (devinfo.smart[20].raw != SMART_UNASSIGNED) {
+		log_fatal(EINTERNAL, "test_smart_ignore: name devinfo ignore failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Check that non-ignored attributes are still present */
+	if (devinfo.smart[6].raw != 100) {
+		log_fatal(EINTERNAL, "test_smart_ignore: unmodified attribute was cleared\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+
 void selftest(void)
 {
 	log_tag("selftest:\n");
@@ -958,6 +1021,7 @@ void selftest(void)
 	test_tommy();
 	test_wnmatch();
 	test_parse_smartctl();
+	test_smart_ignore();
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed SELF test\n");

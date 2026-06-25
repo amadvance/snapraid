@@ -1785,19 +1785,27 @@ PARITÉ est l\'un des noms de parité : \`parity\`, \`2\-parity\`, \`3\-parity\`
 La valeur spéciale * peut être utilisée pour ignorer l\'attribut
 sur tous les disques.
 .PP
-Par exemple, pour ignorer l\'attribut \`Current Pending Sector Count\`
-sur tous les disques :
+Plusieurs attributs peuvent être spécifiés séparés par des espaces.
+Chaque attribut peut être spécifié sous forme de nombre de 1 à 255, ou sous
+forme de nom insensible à la casse (par exemple \`Current_Pending_Sector\`).
+.PP
+Par exemple, pour ignorer les attributs \`Current Pending Sector Count\` et
+\`Reallocated Sectors Count\` sur tous les disques par leur numéro ou leur nom :
 .PP
 .RS 4
-smartignore * 197
+smartignore * 197 5
+.PD 0
+.PP
+.PD
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 .PD 0
 .PD
 .RE
 .PP
-Pour l\'ignorer uniquement sur le premier disque de parité :
+Pour les ignorer uniquement sur le premier disque de parité :
 .PP
 .RS 4
-smartignore parity 197
+smartignore parity 197 5
 .PD 0
 .PD
 .RE

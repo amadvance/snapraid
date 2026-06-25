@@ -1627,11 +1627,19 @@ PARITY는 \`parity\`, \`2\-parity\`, \`3\-parity\`, \`4\-parity\`, \`5\-parity\`
 \`6\-parity\`, 또는 \`z\-parity\` 중 하나의 패리티 이름입니다.
 특수 값 *는 모든 디스크에서 속성을 무시하는 데 사용될 수 있습니다.
 .PP
-예를 들어, 모든 디스크에서 \`Current Pending Sector Count\` 속성을
-무시하려면:
+여러 속성을 공백으로 구분하여 지정할 수 있습니다.
+각 속성은 1에서 255 사이의 숫자나 대소문자를 구분하지 않는 이름
+(예: \`Current_Pending_Sector\`)으로 지정할 수 있습니다.
+.PP
+예를 들어, 모든 디스크에서 \`Current Pending Sector Count\` 와
+\`Reallocated Sectors Count\` 속성을 번호나 이름으로 무시하려면:
 .PP
 .RS 4
-smartignore * 197
+smartignore * 197 5
+.PD 0
+.PP
+.PD
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 .PD 0
 .PD
 .RE
@@ -1639,7 +1647,7 @@ smartignore * 197
 첫 번째 패리티 디스크에서만 무시하려면:
 .PP
 .RS 4
-smartignore parity 197
+smartignore parity 197 5
 .PD 0
 .PD
 .RE

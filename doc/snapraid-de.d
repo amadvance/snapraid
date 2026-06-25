@@ -1490,14 +1490,21 @@ Konfiguration (Configuration)
 	Der Sonderwert * kann verwendet werden, um das Attribut auf allen
 	Festplatten zu ignorieren.
 
-	Um beispielsweise das Attribut `Current Pending Sector Count` auf allen
-	Festplatten zu ignorieren:
+	Es können mehrere Attribute durch Leerzeichen getrennt angegeben werden.
+	Jedes Attribut kann als Nummer von 1 bis 255 oder als Name ohne
+	Berücksichtigung der Groß-/Kleinschreibung (z. B. `Current_Pending_Sector`)
+	angegeben werden.
 
-		:smartignore * 197
+	Um beispielsweise das Attribut `Current Pending Sector Count` und
+	`Reallocated Sectors Count` auf allen Festplatten über ihre Nummer
+	oder ihren Namen zu ignorieren:
 
-	Um es nur auf der ersten Paritätsfestplatte zu ignorieren:
+		:smartignore * 197 5
+		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-		:smartignore parity 197
+	Um sie nur auf der ersten Paritätsfestplatte zu ignorieren:
+
+		:smartignore parity 197 5
 
   Examples
 	Ein Beispiel für eine typische Konfiguration für Unix ist:

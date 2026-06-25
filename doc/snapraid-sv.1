@@ -1678,19 +1678,27 @@ PARITY är ett av paritetsnamnen: \`parity\`, \`2\-parity\`, \`3\-parity\`,
 \`4\-parity\`, \`5\-parity\`, \`6\-parity\` eller \`z\-parity\`.
 Det speciella värdet * kan användas för att ignorera attributet på alla diskar.
 .PP
-Till exempel, för att ignorera attributet \`Current Pending Sector Count\` på
-alla diskar:
+Flera attribut kan specificeras separerade med mellanslag.
+Varje attribut kan specificeras som ett nummer från 1 till 255, eller som ett
+skiftlägesokänsligt namn (t.ex. \`Current_Pending_Sector\`).
+.PP
+Till exempel, för att ignorera attributen \`Current Pending Sector Count\` och
+\`Reallocated Sectors Count\` på alla diskar med deras nummer oder namn:
 .PP
 .RS 4
-smartignore * 197
+smartignore * 197 5
+.PD 0
+.PP
+.PD
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 .PD 0
 .PD
 .RE
 .PP
-För att ignorera det endast på den första paritetsdisken:
+För att ignorera dem endast på den första paritetsdisken:
 .PP
 .RS 4
-smartignore parity 197
+smartignore parity 197 5
 .PD 0
 .PD
 .RE

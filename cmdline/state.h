@@ -134,7 +134,7 @@ struct snapraid_state {
 	unsigned prevhash; /**< Previous hash kind used.  In case of rehash. */
 	unsigned besthash; /**< Best hash suggested. */
 	const char* command; /**< Command running. */
-	int smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for all devices. */
+	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for all devices. */
 	uint64_t rehash_blocks; /**< Blocks marked rehash */
 	uint64_t bad_blocks; /**< Blocks marked bad */
 	uint64_t unsynced_blocks; /**< If the parity is invalid, and a sync is needed. */
@@ -464,6 +464,11 @@ void generate_configuration(const char* content);
  * Parse smartctl command.
  */
 int parse_smartctl(const char* custom, char* smartctl, size_t smartctl_size, char* smartctl_info, size_t smartctl_info_size);
+
+/**
+ * Apply smart ignore logic to devinfo.
+ */
+void state_smart_ignore(struct snapraid_state* state, devinfo_t* devinfo);
 
 #endif
 
