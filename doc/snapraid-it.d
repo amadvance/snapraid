@@ -44,7 +44,7 @@ Descrizione (Description)
 	* È possibile aggiungere dischi in qualsiasi momento.
 	* SnapRAID non blocca i dati; è possibile smettere di usarlo in qualsiasi
 		momento senza riformattare o spostare i dati.
-	* Per accedere a un file, è necessario far girare solo un singolo disco,
+	* Per accedere a un file, è necessario avviare la rotazione di solo un singolo disco,
 		risparmiando energia e riducendo il rumore.
 
 	Per maggiori informazioni, si prega di visitare il sito ufficiale SnapRAID:
@@ -58,7 +58,7 @@ Limitazioni (Limitations)
 
 	La limitazione principale è che se un disco si guasta, puoi recuperare i dati solo fino allo
 	stato dell'ultima operazione di `sync`. Qualsiasi dato aggiunto o modifica apportata
-	dall'ultimo sync che si trova sul disco guasto andrà perso.
+	dopo l'ultimo sync sul disco guasto andrà perso.
 
 	Di conseguenza, SnapRAID è adatto principalmente per dati che cambiano raramente.
 
@@ -66,7 +66,7 @@ Limitazioni (Limitations)
 	dall'uso o meno dell'opzione `snapshot`:
 
 	* Con il supporto snapshot (disponibile su Btrfs, ZFS, Bcachefs e NTFS),
-		SnapRAID può mantenere automaticamente un riferimento congelato dei dischi dati.
+		SnapRAID può mantenere automaticamente un'immagine congelata dei dischi dati.
 		Ciò garantisce che anche se si modificano o si eliminano file sul file system live
 		durante o dopo un sync, il processo di recupero rimane coerente e affidabile.
 
@@ -91,7 +91,7 @@ Limitazioni (Limitations)
 	* Vengono salvati solo nomi di file, timestamp, symlink e hardlink.
 		Permessi, proprietà e attributi estesi non vengono salvati.
 
-Iniziare (Getting Started)
+Primi passi (Getting Started)
 	Per usare SnapRAID, è necessario prima selezionare un disco nell'array
 	di dischi da dedicare alle informazioni di `parity` (parità). Con un
 	disco per la parità, si sarà in grado di recuperare da un singolo guasto
@@ -105,7 +105,7 @@ Iniziare (Getting Started)
 	dell'array, poiché le informazioni di parità possono crescere fino alle
 	dimensioni del più grande disco dati nell'array.
 
-	Questi dischi saranno dedicati alla memorizzazione dei file di `parity`.
+	Questi dischi saranno dedicati alla memorizzazione dei file di parità.
 	Non si dovrebbero memorizzare i propri dati su di essi.
 
 	Quindi, è necessario definire i dischi `data` (dati) che si desidera
@@ -120,7 +120,7 @@ Iniziare (Getting Started)
 	per verificarne l'integrità.
 	Il file `content` viene memorizzato in più copie e ogni copia deve
 	essere su un disco diverso per garantire che, anche in caso di guasti
-	multipli del disco, sia disponibile almeno una copia.
+	multipli ai dischi, sia disponibile almeno una copia.
 
 	Ad esempio, supponiamo di essere interessati a un solo livello di
 	protezione con parità e che i dischi si trovino in:
@@ -185,8 +185,8 @@ Iniziare (Getting Started)
 
 	Ogni esecuzione del comando controlla circa l'8% dell'array, escludendo
 	i dati già sottoposti a scrub nei 10 giorni precedenti.
-	È possibile utilizzare l'opzione -p, --plan per specificare un importo
-	diverso e l'opzione -o, --older-than per specificare un'età diversa
+	È possibile utilizzare l'opzione -p, --plan per specificare una quantità
+	diversa e l'opzione -o, --older-than per specificare un'età diversa
 	in giorni.
 	Ad esempio, per controllare il 5% dell'array per blocchi più vecchi di
 	20 giorni, usare:
@@ -194,32 +194,32 @@ Iniziare (Getting Started)
 		:snapraid -p 5 -o 20 scrub
 
 	Se vengono trovati errori silenti o di input/output durante il processo,
-	i blocchi corrispondenti vengono contrassegnati come bad (cattivi) nel
+	i blocchi corrispondenti vengono contrassegnati come `bad` (danneggiati) nel
 	file `content` ed elencati nel comando `status`.
 
 		:snapraid status
 
 	Per correggerli, è possibile utilizzare il comando `fix`, filtrando
-	i blocchi bad con l'opzione -e, --filter-error:
+	i blocchi danneggiati con l'opzione -e, --filter-error:
 
 		:snapraid -e fix
 
 	Al prossimo `scrub`, gli errori scompariranno dal report `status`
 	se sono stati veramente corretti. Per renderlo più veloce, è possibile
 	utilizzare -p bad per eseguire lo scrub solo dei blocchi contrassegnati
-	come bad.
+	come `bad`.
 
 		:snapraid -p bad scrub
 
 	L'esecuzione di `scrub` su un array non sincronizzato può riportare
 	errori causati da file rimossi o modificati. Questi errori sono riportati
 	nell'output di `scrub`, ma i blocchi correlati non sono contrassegnati
-	come bad.
+	come `bad`.
 
   Pooling (Pooling)
 	Nota: La funzionalità di pooling descritta di seguito è stata
 	sostituita dallo strumento mergerfs, che è ora l'opzione consigliata
-	per gli utenti Linux nella comunità SnapRAID. Mergefs fornisce un modo
+	per gli utenti Linux nella comunità SnapRAID. Mergerfs fornisce un modo
 	più flessibile ed efficiente per raggruppare più unità in un singolo
 	punto di montaggio unificato, consentendo un accesso trasparente ai
 	file attraverso l'array senza fare affidamento sui collegamenti
@@ -297,8 +297,8 @@ Iniziare (Getting Started)
 
   Annullamento eliminazione (Undeleting)
 	SnapRAID funziona più come un programma di backup che come un sistema RAID
-	e può essere utilizzato per ripristinare o annullare l'eliminazione dei
-	file al loro stato precedente utilizzando l'opzione -f, --filter:
+	e può essere utilizzato per ripristinare i file al loro stato precedente
+	o annullarne l'eliminazione utilizzando l'opzione -f, --filter:
 
 		:snapraid fix -f FILE
 
@@ -318,7 +318,7 @@ Iniziare (Getting Started)
 		:snapraid fix -m
 
   Recupero (Recovering)
-	È successo il peggio e si è perso uno o più dischi!
+	È successo il peggio e si sono persi uno o più dischi!
 
 	NON FARSI PRENDERE DAL PANICO! Sarà possibile recuperarli!
 
@@ -328,7 +328,7 @@ Iniziare (Getting Started)
 
 	Quindi procedere con i seguenti passaggi.
 
-    PASSO 1 -> Riconfigurazione
+    PASSO 1 -> Riconfigurazione (Reconfigure)
 	È necessario un po' di spazio per recuperare, idealmente su dischi di
 	riserva aggiuntivi, ma un disco USB esterno o un disco remoto saranno
 	sufficienti.
@@ -429,7 +429,7 @@ Comandi (Commands)
 	eseguito `sync`. Le modifiche successive non vengono prese in
 	considerazione.
 
-	Se sono stati rilevati blocchi bad, vengono elencati i loro numeri
+	Se sono stati rilevati blocchi danneggiati, vengono elencati i loro numeri
 	di blocco. Per correggerli, è possibile utilizzare il comando `fix -e`.
 
 	Mostra anche un grafico che rappresenta l'ultima volta che ogni blocco
@@ -478,8 +478,8 @@ Comandi (Commands)
   probe
 	Stampa lo stato POWER di tutti i dischi nel sistema.
 
-	`Standby` significa che il disco non sta girando. `Active` significa
-	che il disco sta girando.
+	`Standby` significa che il disco non è in rotazione. `Active` significa
+	che il disco è in rotazione.
 
 	Questo comando utilizza lo strumento `smartctl` ed è equivalente
 	all'esecuzione di `smartctl -n standby -i` su tutti i dispositivi.
@@ -491,12 +491,12 @@ Comandi (Commands)
 	Nulla viene modificato.
 
   up
-	Fa girare tutti i dischi dell'array.
+	Avvia la rotazione di tutti i dischi dell'array.
 
-	È possibile far girare solo dischi specifici utilizzando l'opzione -d,
+	È possibile avviare la rotazione di soli dischi specifici utilizzando l'opzione -d,
 	--filter-disk.
 
-	Far girare tutti i dischi contemporaneamente richiede molta energia.
+	Avviare la rotazione di tutti i dischi contemporaneamente richiede molta energia.
 	Assicurarsi che l'alimentatore possa sostenerlo.
 
 	Nulla viene modificato.
@@ -541,13 +541,13 @@ Comandi (Commands)
 			il percorso completo deve corrispondere per essere
 			identificato, non solo il nome.
 		relocated - File spostati sullo stesso disco o su un disco
-			diverso dove  l'originale è scomparso.
-			Sono identificati dall' avere lo stesso nome, dimensione
+			diverso dove l'originale è scomparso.
+			Sono identificati dall'avere lo stesso nome, dimensione
 			e timestamp.
 			Se il timestamp al sottomultiplo del secondo è zero,
 			il percorso completo deve corrispondere per essere
 			identificato.
-			A differenza dei file `moved` sullo stesso disco,
+			A differenza dei file 'moved' sullo stesso disco,
 			i file ricollocati hanno un inode diverso.
 		restored - File con un inode diverso ma directory,
 			nome, dimensione e timestamp corrispondenti.
@@ -571,7 +571,7 @@ Comandi (Commands)
 	è stato interrotto.
 
 	Se vengono trovati errori silenti o di input/output durante il processo,
-	i blocchi corrispondenti vengono contrassegnati come bad.
+	i blocchi corrispondenti vengono contrassegnati come `bad` (danneggiati).
 
 	I file sono identificati dal percorso e/o dall'inode e controllati
 	per dimensione e timestamp.
@@ -597,7 +597,7 @@ Comandi (Commands)
 
 	È possibile definire un piano o una quantità di scrub diversa
 	utilizzando l'opzione -p, --plan, che accetta:
-	bad - Esegue lo scrub dei blocchi contrassegnati come bad.
+	bad - Esegue lo scrub dei blocchi contrassegnati come `bad`.
 	new - Esegue lo scrub dei blocchi appena sincronizzati non ancora
 		sottoposti a scrub.
 	full - Esegue lo scrub di tutto.
@@ -615,22 +615,22 @@ Comandi (Commands)
 	`status`.
 
 	Per qualsiasi errore silente o di input/output trovato, i blocchi
-	corrispondenti vengono contrassegnati come bad nel file `content`.
-	Questi blocchi bad sono elencati in `status` e possono essere corretti
+	corrispondenti vengono contrassegnati come `bad` nel file `content`.
+	Questi blocchi danneggiati sono elencati in `status` e possono essere corretti
 	con `fix -e`.
 	Dopo la correzione, al prossimo scrub, verranno ricontrollati e, se
-	trovati corretti, il contrassegno bad verrà rimosso.
-	Per eseguire lo scrub solo dei blocchi bad, è possibile utilizzare
+	trovati corretti, il contrassegno `bad` verrà rimosso.
+	Per eseguire lo scrub solo dei blocchi danneggiati, è possibile utilizzare
 	il comando `scrub -p bad`.
 
 	Si consiglia di eseguire `scrub` solo su un array sincronizzato per
 	evitare errori segnalati causati da dati non sincronizzati. Questi
 	errori sono riconosciuti come non essendo errori silenti e i blocchi non
-	vengono contrassegnati come bad, ma tali errori sono riportati
+	vengono contrassegnati come `bad`, ma tali errori sono riportati
 	nell'output del comando.
 
 	Il file `content` viene modificato per aggiornare l'ora dell'ultimo
-	controllo per ogni blocco e per contrassegnare i blocchi bad.
+	controllo per ogni blocco e per contrassegnare i blocchi danneggiati.
 	I file `parity` NON vengono modificati.
 	I file nell'array NON vengono modificati.
 
@@ -648,7 +648,7 @@ Comandi (Commands)
 	elaborato. Utilizzare le opzioni di filtro per selezionare un
 	sottoinsieme di file o dischi su cui operare.
 
-	Per correggere solo i blocchi contrassegnati come bad durante `sync`
+	Per correggere solo i blocchi contrassegnati come `bad` (danneggiati) durante `sync`
 	e `scrub`, utilizzare l'opzione -e, --filter-error.
 	A differenza di altre opzioni di filtro, questa applica correzioni solo
 	ai file che sono invariati dall'ultimo `sync`.
@@ -681,8 +681,8 @@ Comandi (Commands)
 	ad esempio dopo un processo di recupero o in altre condizioni speciali.
 	Per i controlli periodici e pianificati, utilizzare `scrub`.
 
-	Se si utilizza l'opzione -a, --audit-only, viene controllato solo
-	l'hash dei file e i dati di parità vengono ignorati per un'esecuzione
+	Se si utilizza l'opzione -a, --audit-only, vengono controllati solo
+	i dati dei file e i dati di parità vengono ignorati per un'esecuzione
 	più veloce.
 
 	I file sono identificati solo dal percorso, non dall'inode.
@@ -777,11 +777,10 @@ Comandi (Commands)
 
 	È possibile utilizzare l'opzione -t, --tail per limitare l'operazione ai file
 	che occupano la porzione di coda specificata della parità.
-	Se si desidera riallocare questi file, è possibile utilizzare l'opzione
-	-W, --force-realloc-tail.
 
-	Si tenga presente che tali file non saranno protetti dalla parità durante
-	il processo di riallocazione.
+	Se si desidera riallocare questi file, è possibile utilizzare l'opzione
+	-W, --force-realloc-tail. Si tenga presente che tali file non saranno
+	protetti dalla parità durante il processo di riallocazione.
 
 Opzioni (Options)
 	SnapRAID fornisce le seguenti opzioni:
@@ -795,11 +794,11 @@ Opzioni (Options)
 
 	-f, --filter PATTERN
 		Filtra i file da elaborare in `check` e `fix`.
-		Vengono elaborati solo i file che corrispondono al modello
+		Vengono elaborati solo i file che corrispondono al pattern
 		specificato.
 		Questa opzione può essere utilizzata più volte.
 		Vedere la sezione PATTERN per maggiori dettagli sulle
-		specifiche del modello.
+		specifiche del pattern.
 		In Unix, assicurarsi che i caratteri di globbing siano citati
 		se usati.
 		Questa opzione può essere utilizzata solo con `check` e `fix`.
@@ -846,7 +845,7 @@ Opzioni (Options)
 		100, viene interpretato come la percentuale di blocchi da
 		sottoporre a scrub.
 		Invece di una percentuale, è possibile specificare un piano:
-		`bad` esegue lo scrub dei blocchi bad, `new` esegue lo scrub
+		`bad` esegue lo scrub dei blocchi danneggiati, `new` esegue lo scrub
 		dei blocchi non ancora sottoposti a scrub, e `full` esegue lo
 		scrub di tutto.
 		Questa opzione può essere utilizzata solo con `scrub`.
@@ -855,7 +854,7 @@ Opzioni (Options)
 		Seleziona la parte più vecchia dell'array da elaborare in `scrub`.
 		DAYS è l'età minima in giorni per un blocco da sottoporre a
 		scrub; il valore predefinito è 10.
-		I blocchi contrassegnati come bad vengono sempre sottoposti a scrub
+		I blocchi contrassegnati come `bad` vengono sempre sottoposti a scrub
 		indipendentemente da questa opzione.
 		Questa opzione può essere utilizzata solo con `scrub`.
 
@@ -908,9 +907,9 @@ Opzioni (Options)
 		RATE è il numero di byte al secondo. È possibile specificare un
 		moltiplicatore come K, M, G o T (ad esempio, --bw-limit 1G).
 
-	-t, --tail DIMENSIONE
+	-t, --tail SIZE
 		Limita l'elenco dei file a quelli che non utilizzano più della
-		dimensione di coda specificata dei dischi di parità.
+		porzione finale specificata dei dischi di parità.
 		È possibile utilizzare moltiplicatori come K, M, G o T (ad es. --tail 1G).
 		Questa opzione è valida solo se utilizzata insieme al comando
 		`locate`.
@@ -1019,9 +1018,9 @@ Opzioni (Options)
 		sconsigliato utilizzarla.
 		NON si ha protezione dei dati durante l'operazione `sync`.
 
-	-W, --force-realloc-tail DIMENSIONE
+	-W, --force-realloc-tail SIZE
 		Funziona come -R, --force-realloc, ma limitatamente alla porzione
-		di coda specificata (ultimi DIMENSIONE byte) di ogni file di parità.
+		di coda specificata (ultimi SIZE byte) di ogni file di parità.
 		Forza la riallocazione (spostamento) di qualsiasi frammento/blocco di file
 		attualmente memorizzato in quella sezione di coda, consentendo loro di essere
 		posizionati ovunque nei file di parità dove sia disponibile spazio libero
@@ -1044,7 +1043,7 @@ Opzioni (Options)
 	-l, --log FILE
 		Scrive un log dettagliato nel file specificato.
 		Se questa opzione non è specificata, gli errori imprevisti vengono
-		stampati sullo schermo, potenzialmente resulting in un output
+		stampati sullo schermo, potenzialmente producendo un output
 		eccessivo in caso di molti errori. Quando -l, --log è specificato,
 		vengono stampati sullo schermo solo gli errori fatali che
 		causano l'arresto di SnapRAID.
@@ -1203,7 +1202,7 @@ Configurazione (Configuration)
 	È possibile cambiare il punto di montaggio secondo necessità,
 	purché si mantenga fisso NAME.
 
-	È necessario utilizzare un'opzione per ogni disco dati nell'array.
+	Si dovrebbe utilizzare un'opzione per ogni disco dati nell'array.
 
 	È possibile rinominare un disco in seguito modificando NAME
 	direttamente nel file di configurazione e quindi eseguendo un
@@ -1253,18 +1252,18 @@ Configurazione (Configuration)
 	In Windows, sono quelli con l'attributo nascosto.
 
   exclude/include PATTERN
-	Definisce i modelli di file o directory da escludere o includere
+	Definisce i pattern di file o directory da escludere o includere
 	nel processo di sync.
-	Tutti i modelli vengono elaborati nell'ordine specificato.
+	Tutti i pattern vengono elaborati nell'ordine specificato.
 
-	Se il primo modello che corrisponde è un `exclude`, il file
+	Se il primo pattern che corrisponde è un `exclude`, il file
 	viene escluso. Se è un `include`, il file viene incluso.
-	Se nessun modello corrisponde, il file viene escluso se l'ultimo
-	modello specificato è un `include`, o incluso se l'ultimo modello
+	Se nessun pattern corrisponde, il file viene escluso se l'ultimo
+	pattern specificato è un `include`, o incluso se l'ultimo pattern
 	specificato è un `exclude`.
 
 	Vedere la sezione PATTERN per maggiori dettagli sulle specifiche
-	del modello.
+	del pattern.
 
 	Questa opzione può essere utilizzata più volte.
 
@@ -1335,27 +1334,27 @@ Configurazione (Configuration)
 	tipicamente richiede 1 GiB di RAM per ogni 16 TB di dati nell'array.
 
 	Nello specifico, per memorizzare gli hash dei dati, SnapRAID richiede
-	circa $TS*(1+HS)/BS$ byte di RAM,
-	dove $TS$ è la dimensione totale in byte dell'array di dischi, $BS$ è la
-	dimensione del blocco in byte e $HS$ è la dimensione dell'hash in byte.
+	circa TS*(1+HS)/BS byte di RAM,
+	dove TS è la dimensione totale in byte dell'array di dischi, BS è la
+	dimensione del blocco in byte e HS è la dimensione dell'hash in byte.
 
 	Ad esempio, con 8 dischi da 4 TB, una dimensione di blocco di 256 KiB
-	($1 \text{ KiB} = 1024 \text{ byte}$) e una dimensione di hash di 16, si ottiene:
+	(1 KiB = 1024 byte) e una dimensione di hash di 16, si ottiene:
 
-	:RAM = $(8 * 4 * 10^{12}) * (1+16) / (256 * 2^{10}) = 1.93 \text{ GiB}$
+	:RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 
 	Passando a una dimensione di hash di 8, si ottiene:
 
-	:RAM = $(8 * 4 * 10^{12}) * (1+8) / (256 * 2^{10}) = 1.02 \text{ GiB}$
+	:RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
 
 	Passando a una dimensione di blocco di 512, si ottiene:
 
-	:RAM = $(8 * 4 * 10^{12}) * (1+16) / (512 * 2^{10}) = 0.96 \text{ GiB}$
+	:RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 
-	Passando sia a una dimensione di hash di 8 che a una dimensione di
+	Passando sia a una dimensione di hash di 8 sia a una dimensione di
 	blocco di 512, si ottiene:
 
-	:RAM = $(8 * 4 * 10^{12}) * (1+8) / (512 * 2^{10}) = 0.51 \text{ GiB}$
+	:RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 
   autosave SIZE_IN_GIGABYTES
 	Salva automaticamente lo stato durante la sincronizzazione o lo scrubbing
@@ -1480,7 +1479,7 @@ Configurazione (Configuration)
 
 		:smartignore parity 197 5
 
-  Esempi
+  Esempi (Examples)
 	Un esempio di configurazione tipica per Unix è:
 
 		:parity /mnt/diskp/snapraid.parity
@@ -1512,7 +1511,7 @@ Configurazione (Configuration)
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots
+Snapshot (Snapshots)
 	Se l'opzione snapshot è abilitata nella configurazione, SnapRAID
 	utilizza le funzionalità di snapshot del file system per garantire operazioni atomiche
 	e coerenti.
@@ -1559,7 +1558,7 @@ Snapshots
 	Assicurati che SnapRAID sia eseguito con i permessi necessari (es. sudo)
 	quando gli snapshot sono abilitati.
 
-  Comportamento dei comandi con gli snapshot
+  Comportamento dei comandi con gli snapshot (Command Behavior with Snapshots)
 	I comandi `sync` e `scrub` operano entrambi esclusivamente sugli snapshot
 	per garantire che tutte le operazioni sui dati siano eseguite rispetto a uno stato coerente
 	e congelato. Utilizzando questi snapshot, SnapRAID previene le discrepanze di parità
@@ -1758,7 +1757,7 @@ File da ignorare (Ignore File)
 	escluso indipendentemente dalle impostazioni di inclusione globali.
 
 	La logica dei pattern in `.snapraidignore` rispecchia la configurazione globale
-	ma ancora i pattern alla directory in cui si trova il file:
+	ma vincola i pattern alla directory in cui si trova il file:
 
 	=FILE
 		Seleziona qualsiasi file chiamato FILE in questa directory o sotto di essa.
@@ -1824,12 +1823,19 @@ Codifica (Encoding)
 	reindirizza l'output della console a un file, il file risultante è
 	sempre in formato UTF-8.
 
+Codice di uscita (Exit Code)
+	SnapRAID termina con i seguenti codici di errore:
+
+	0 - Tutto OK.
+	1 - Il comando ha riscontrato alcuni errori.
+	2 - Il comando `diff` ha rilevato che tutto è OK, ma è necessario un `sync`.
+
 Traduzione (Translation)
 	Questo documento è una traduzione automatica del manuale in inglese.
 	Fare riferimento al manuale in inglese per la versione ufficiale.
 
 Copyright
-	Questo file è Copyright (C) 2025 Andrea Mazzoleni
+	Questo file è Copyright (C) 2026 Andrea Mazzoleni
 
 Vedi anche (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)
