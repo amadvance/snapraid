@@ -3,24 +3,25 @@ Name{number}
 
 Synopsis
 	:snapraid [-c, --conf CONFIG]
-	:	[-f, --filter MOTIF] [-d, --filter-disk NOM]
+	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
-	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DOSSIER]
-	:	[-p, --plan PERC|mauvais|nouveau|complet]
-	:	[-o, --older-than JOURS] [-l, --log FICHIER]
-	:	[-s, --spin-down-on-error] [-w, --bw-limit DÉBIT]
+	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
+	:	[-p, --plan PERC|bad|new|full]
+	:	[-o, --older-than DAYS] [-l, --log FILE]
+	:	[-s, --spin-down-on-error] [-w, --bw-limit RATE]
+	:	[-t, --tail]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-N, --force-nocopy] [-F, --force-full]
 	:	[-R, --force-realloc] [-W, --force-realloc-tail]
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
-	:	[-L, --error-limit NOMBRE]
+	:	[-L, --error-limit NUMBER]
 	:	[-A, --stats]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|probe|up|down|diff|sync|scrub|fix|check
 	:	|list|dup|pool|devices|touch|rehash|locate
 
-	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENU]
+	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
 Description
 	SnapRAID est un programme de sauvegarde conçu pour les baies de disques,
@@ -89,7 +90,7 @@ Limitations
 		de défaillances de disques. Avec une sauvegarde, vous pouvez
 		récupérer d'une défaillance complète de toute la baie de disques.
 	* Seuls les noms de fichiers, les horodatages, les liens symboliques
-		et les liens matériels sont sauvegardés. Les permissions, la
+		et les liens physiques sont sauvegardés. Les permissions, la
 		propriété et les attributs étendus ne sont pas sauvegardés.
 
 Démarrer (Getting Started)
@@ -209,7 +210,7 @@ Démarrer (Getting Started)
 
 	Lors du prochain `scrub`, les erreurs disparaîtront du rapport
 	`status` si elles sont réellement corrigées. Pour accélérer,
-	vous pouvez utiliser -p mauvais pour nettoyer uniquement les blocs
+	vous pouvez utiliser -p bad pour nettoyer uniquement les blocs
 	marqués comme mauvais.
 
 		:snapraid -p bad scrub
@@ -222,7 +223,7 @@ Démarrer (Getting Started)
   Mise en commun (Pooling)
 	Note : La fonctionnalité de mise en commun décrite ci-dessous a été
 	remplacée par l'outil mergerfs, qui est désormais l'option recommandée
-	pour les utilisateurs Linux de la communauté SnapRAID. Mergefs offre
+	pour les utilisateurs Linux de la communauté SnapRAID. Mergerfs offre
 	un moyen plus flexible et efficace de regrouper plusieurs disques
 	dans un seul point de montage unifié, permettant un accès transparent
 	aux fichiers sur toute votre baie sans dépendre de liens symboliques.
@@ -307,11 +308,11 @@ Démarrer (Getting Started)
 	ou récupérer des fichiers dans leur état précédent à l'aide
 	de l'option -f, --filter :
 
-		:snapraid fix -f FICHIER
+		:snapraid fix -f FILE
 
 	ou pour un répertoire :
 
-		:snapraid fix -f DOSSIER/
+		:snapraid fix -f DIR/
 
 	Vous pouvez également l'utiliser pour récupérer uniquement les
 	fichiers accidentellement supprimés à l'intérieur d'un
@@ -319,7 +320,7 @@ Démarrer (Getting Started)
 	qui ne restaure que les fichiers manquants, laissant tous
 	les autres intacts.
 
-		:snapraid fix -m -f DOSSIER/
+		:snapraid fix -m -f DIR/
 
 	Ou pour récupérer tous les fichiers supprimés sur tous les
 	lecteurs avec :
@@ -364,9 +365,9 @@ Démarrer (Getting Started)
 	Exécutez la commande fix, en stockant le journal dans un fichier
 	externe avec :
 
-		:snapraid -d NOM -l fix.log fix
+		:snapraid -d NAME -l fix.log fix
 
-	Où NOM est le nom du disque, tel que `d1` dans notre exemple précédent.
+	Où NAME est le nom du disque, tel que `d1` dans notre exemple précédent.
 	Si le disque à récupérer est un disque de parité, utilisez les noms
 	`parity`, `2-parity`, etc.
 	Si vous avez plusieurs disques défaillants, utilisez plusieurs
@@ -402,9 +403,9 @@ Démarrer (Getting Started)
 	Par précaution, vous pouvez maintenant exécuter une commande `check`
 	pour vous assurer que tout est correct sur le disque récupéré.
 
-		:snapraid -d NOM -a check
+		:snapraid -d NAME -a check
 
-	Où NOM est le nom du disque, tel que `d1` dans notre exemple précédent.
+	Où NAME est le nom du disque, tel que `d1` dans notre exemple précédent.
 
 	Les options -d et -a indiquent à SnapRAID de vérifier uniquement le
 	disque spécifié et d'ignorer toutes les données de parité.
@@ -473,7 +474,7 @@ Commandes (Commands)
 		logerr - Le journal d'erreurs du périphérique contient des erreurs.
 		selferr - Le journal d'auto-test du périphérique contient des erreurs.
 
-	Si l'option -v, --verbose est spécifiée, une analyse statistique
+	Si l'option `-v, --verbose` est spécifiée, une analyse statistique
 	plus approfondie est fournie. Cette analyse peut vous aider à
 	décider si vous avez besoin de plus ou moins de parité.
 
@@ -808,11 +809,11 @@ Options
 		Sous Windows, il utilise le fichier `snapraid.conf` dans le même
 		répertoire que `snapraid.exe`.
 
-	-f, --filter MOTIF
+	-f, --filter PATTERN
 		Filtre les fichiers à traiter dans `check` et `fix`.
 		Seuls les fichiers correspondant au motif spécifié sont traités.
 		Cette option peut être utilisée plusieurs fois.
-		Voir la section MOTIF pour plus de détails sur les
+		Voir la section PATTERN pour plus de détails sur les
 		spécifications de motifs.
 		Sous Unix, assurez-vous que les caractères de globbing sont
 		entre guillemets s'ils sont utilisés.
@@ -820,7 +821,7 @@ Options
 		Elle ne peut pas être utilisée avec `sync` et `scrub`, car ils
 		traitent toujours l'intégralité de la baie.
 
-	-d, --filter-disk NOM
+	-d, --filter-disk NAME
 		Filtre les disques à traiter dans `check`, `fix`, `up` et `down`.
 		Vous devez spécifier un nom de disque tel que défini dans le fichier
 		de configuration.
@@ -864,9 +865,9 @@ Options
 		qui n'ont pas encore été nettoyés, et `full` nettoie tout.
 		Cette option ne peut être utilisée qu'avec `scrub`.
 
-	-o, --older-than JOURS
+	-o, --older-than DAYS
 		Sélectionne la partie la plus ancienne de la baie à traiter dans `scrub`.
-		JOURS est l'âge minimum en jours pour qu'un bloc soit nettoyé ;
+		DAYS est l'âge minimum en jours pour qu'un bloc soit nettoyé ;
 		la valeur par défaut est 10.
 		Les blocs marqués comme mauvais sont toujours nettoyés,
 		quelle que soit cette option.
@@ -903,7 +904,7 @@ Options
 		opération fix avant de continuer.
 		Cette option ne peut être utilisée qu'avec `sync`.
 
-	-i, --import DOSSIER
+	-i, --import DIR
 		Importe à partir du répertoire spécifié tous les fichiers supprimés
 		de la baie après le dernier `sync`.
 		Si vous avez toujours de tels fichiers, ils peuvent être utilisés
@@ -921,12 +922,12 @@ Options
 		assurer que les disques sont arrêtés en toute sécurité
 		même lorsqu'une commande échoue.
 
-	-w, --bw-limit DÉBIT
+	-w, --bw-limit RATE
 		Applique une limite de bande passante globale pour tous les disques.
-		Le DÉBIT est le nombre d'octets par seconde. Vous pouvez spécifier
-		un multiplicateur tel que K, M ou G (par exemple, --bw-limit 1G).
+		Le RATE est le nombre d'octets par seconde. Vous pouvez spécifier
+		un multiplicateur tel que K, M, G ou T (par exemple, --bw-limit 1G).
 
-	-t, --tail TAILLE
+	-t, --tail SIZE
 		Limite la liste des fichiers à ceux n'utilisant pas plus que la
 		taille de queue spécifiée des disques de parité.
 		Vous pouvez utiliser des multiplicateurs tels que K, M, G ou T (ex: --tail 1G).
@@ -1039,9 +1040,9 @@ Options
 		fortement recommandé de ne pas l'utiliser.
 		Vous N'AVEZ AUCUNE protection des données pendant l'opération `sync`.
 
-	-W, --force-realloc-tail TAILLE
-		Fonctionne comme -R, --force-realloc, maar limité à la partie terminale
-		spécifiée (les derniers TAILLE octets) de chaque fichier de parité.
+	-W, --force-realloc-tail SIZE
+		Fonctionne comme -R, --force-realloc, mais limité à la partie terminale
+		spécifiée (les derniers SIZE octets) de chaque fichier de parité.
 		Force la réallocation (déplacement) de tout fragment/bloc de fichier
 		actuellement stocké dans cette section terminale, leur permettant d'être
 		placés n'importe où dans le(s) fichier(s) de parité où de l'espace libre
@@ -1061,7 +1062,7 @@ Options
 		Vous n'avez PAS de protection des données pendant l'opération `sync`
 		pour les fichiers affectés.
 
-	-l, --log FICHIER
+	-l, --log FILE
 		Écrit un journal détaillé dans le fichier spécifié.
 		Si cette option n'est pas spécifiée, les erreurs inattendues
 		sont imprimées à l'écran, ce qui peut entraîner une sortie
@@ -1081,7 +1082,7 @@ Options
 		Consultez le fichier ou la page de manuel snapraid_log.txt
 		pour les descriptions des balises de journal.
 
-	-L, --error-limit NOMBRE
+	-L, --error-limit NUMBER
 		Définit une nouvelle limite d'erreurs avant d'arrêter l'exécution.
 		Par défaut, SnapRAID s'arrête s'il rencontre plus de 100
 		erreurs d'entrée/sortie, indiquant qu'un disque est
@@ -1101,7 +1102,7 @@ Options
 		Ne traite que le nombre de blocs spécifié.
 		Cette option est principalement destinée à la récupération manuelle avancée.
 
-	-C, --gen-conf CONTENU
+	-C, --gen-conf CONTENT
 		Génère un fichier de configuration factice à partir d'un
 		fichier de contenu existant.
 		Le fichier de configuration est écrit sur la sortie standard
@@ -1141,7 +1142,7 @@ Configuration
 
 	Il doit contenir les options suivantes (sensibles à la casse) :
 
-  parity FICHIER [,FICHIER] ...
+  parity FILE [,FILE] ...
 	Définit les fichiers à utiliser pour stocker les informations de parité.
 	La parité permet une protection contre une seule défaillance
 	de disque, similaire au RAID5.
@@ -1163,7 +1164,7 @@ Configuration
 
 	Cette option est obligatoire et ne peut être utilisée qu'une seule fois.
 
-  (2,3,4,5,6)-parity FICHIER [,FICHIER] ...
+  (2,3,4,5,6)-parity FILE [,FILE] ...
 	Définit les fichiers à utiliser pour stocker les informations de parité
 	supplémentaires.
 
@@ -1183,7 +1184,7 @@ Configuration
 
 	Ces options sont facultatives et ne peuvent être utilisées qu'une seule fois.
 
-  z-parity FICHIER [,FICHIER] ...
+  z-parity FILE [,FILE] ...
 	Définit un fichier et un format alternatifs pour stocker la triple parité.
 
 	Cette option est une alternative à `3-parity`, principalement destinée
@@ -1202,7 +1203,7 @@ Configuration
 	le fichier de configuration avec le fichier z-parity ou 3-parity souhaité
 	et en utilisant `fix` pour le recréer.
 
-  content FICHIER
+  content FILE
 	Définit le fichier à utiliser pour stocker la liste et les sommes de
 	contrôle de tous les fichiers présents dans votre baie de disques.
 
@@ -1217,19 +1218,19 @@ Configuration
 	Vous devez stocker au moins une copie pour chaque disque de parité
 	utilisé plus un. L'utilisation de copies supplémentaires ne nuit pas.
 
-  data NOM DOSSIER
+  data NAME DIR
 	Définit le nom et le point de montage des disques de données dans
-	la baie. NOM est utilisé pour identifier le disque et doit
-	être unique. DOSSIER est le point de montage du disque dans le
+	la baie. NAME est utilisé pour identifier le disque et doit
+	être unique. DIR est le point de montage du disque dans le
 	système de fichiers.
 
 	Vous pouvez modifier le point de montage au besoin, tant que
-	vous gardez le NOM fixe.
+	vous gardez le NAME fixe.
 
 	Vous devriez utiliser une option pour chaque disque de données
 	de la baie.
 
-	Vous pouvez renommer un disque plus tard en changeant le NOM directement
+	Vous pouvez renommer un disque plus tard en changeant le NAME directement
 	dans le fichier de configuration, puis en exécutant une commande `sync`.
 	Dans le cas d'un renommage, l'association est faite en utilisant l'UUID
 	stocké des disques.
@@ -1275,7 +1276,7 @@ Configuration
 	Sous Unix, les fichiers cachés sont ceux commençant par `.`.
 	Sous Windows, ce sont ceux avec l'attribut caché.
 
-  exclude/include MOTIF
+  exclude/include PATTERN
 	Définit les motifs de fichiers ou de répertoires à exclure ou à inclure
 	dans le processus de synchronisation.
 	Tous les motifs sont traités dans l'ordre spécifié.
@@ -1286,12 +1287,12 @@ Configuration
 	spécifié est un `include`, ou inclus si le dernier motif
 	spécifié est un `exclude`.
 
-	Voir la section MOTIF pour plus de détails sur les
+	Voir la section PATTERN pour plus de détails sur les
 	spécifications de motifs.
 
 	Cette option peut être utilisée plusieurs fois.
 
-  blocksize TAILLE_EN_KIBIOCTETS
+  blocksize SIZE_IN_KIBIBYTES
 	Définit la taille de bloc de base en kibioctets pour la parité.
 	Un kibioctet est de 1024 octets.
 
@@ -1344,7 +1345,7 @@ Configuration
 	pour un disque de 4 To, ce qui permet environ 460 000 fichiers sur
 	chaque disque de données sans aucun espace gaspillé.
 
-  hashsize TAILLE_EN_OCTETS
+  hashsize SIZE_IN_BYTES
 	Définit la taille du hachage en octets pour les blocs enregistrés.
 
 	La taille de hachage par défaut est de 16 octets (128 bits),
@@ -1356,7 +1357,7 @@ Configuration
 
 	Une raison d'utiliser une taille de hachage différente est si votre
 	système a une mémoire limitée. En règle générale, SnapRAID nécessite
-	généralement 1 Gio de RAM pour chaque 16 To de données dans la baie.
+	1 Gio de RAM pour chaque 16 To de données dans la baie.
 
 	Plus précisément, pour stocker les hachages des données, SnapRAID
 	nécessite environ TS*(1+HS)/BS octets de RAM,
@@ -1381,14 +1382,14 @@ Configuration
 
 	:RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 Gio
 
-  autosave TAILLE_EN_GIGAOCTETS
+  autosave SIZE_IN_GIGABYTES
 	Enregistre automatiquement l'état lors de la synchronisation ou du
 	nettoyage après la quantité spécifiée de Go traités.
 	Cette option est utile pour éviter de redémarrer de longues commandes
 	`sync` à partir de zéro si elles sont interrompues par un plantage
 	de la machine ou tout autre événement.
 
-  temp_limit TEMPÉRATURE_CELSIUS
+  temp_limit TEMPERATURE_CELSIUS
 	Définit la température maximale autorisée du disque en Celsius.
 	Lorsqu'elle est spécifiée, SnapRAID vérifie périodiquement la
 	température de tous les disques à l'aide de l'outil smartctl.
@@ -1420,20 +1421,20 @@ Configuration
 
 	Normalement, SnapRAID n'affiche que la température du disque le plus chaud.
 	Pour afficher la température de tous les disques, utilisez l'option
-	-A ou --stats.
+	`-A, --stats`.
 
-  temp_sleep TEMPS_EN_MINUTES
+  temp_sleep TIME_IN_MINUTES
 	Définit le temps de veille, en minutes, lorsque la limite de température
 	est atteinte. Pendant cette période, les disques restent arrêtés.
 	La valeur par défaut est de 5 minutes.
 
-  pool DOSSIER
+  pool DIR
 	Définit le répertoire de mise en commun où la vue virtuelle de la
 	baie de disques est créée à l'aide de la commande `pool`.
 
 	Le répertoire doit déjà exister.
 
-  share CHEMIN_UNC
+  share UNC_DIR
 	Définit le chemin UNC Windows requis pour accéder aux disques à distance.
 
 	Si cette option est spécifiée, les liens symboliques créés dans le
@@ -1448,7 +1449,7 @@ Configuration
 
 	Cette option est requise uniquement pour Windows.
 
-  smartctl DISQUE/PARITÉ OPTIONS...
+  smartctl DISK/PARITY OPTIONS...
 	Définit les options smartctl personnalisées pour obtenir les attributs
 	SMART de chaque disque. Cela peut être nécessaire pour les contrôleurs
 	RAID et certains disques USB qui ne peuvent pas être détectés
@@ -1456,8 +1457,8 @@ Configuration
 	périphérique, mais il est facultatif pour les périphériques fixes
 	comme les contrôleurs RAID.
 
-	DISQUE est le même nom de disque spécifié dans l'option `data`.
-	PARITÉ est l'un des noms de parité : `parity`, `2-parity`, `3-parity`,
+	DISK est le même nom de disque spécifié dans l'option `data`.
+	PARITY est l'un des noms de parité : `parity`, `2-parity`, `3-parity`,
 	`4-parity`, `5-parity`, `6-parity` ou `z-parity`.
 
 	Dans les OPTIONS spécifiées, la chaîne `%s` est remplacée par le
@@ -1478,13 +1479,13 @@ Configuration
 		:smartctl d1 [info: -H -i -c -A] -d sat %s
 		:smartctl parity -d sat %s
 
-  smartignore DISQUE/PARITÉ ATTR [ATTR...]
+  smartignore DISK/PARITY ATTR [ATTR...]
 	Ignore l'attribut SMART spécifié lors du calcul de la probabilité
 	de défaillance du disque. Cette option est utile si un disque signale
 	des valeurs inhabituelles ou trompeuses pour un attribut particulier.
 
-	DISQUE est le même nom de disque spécifié dans l'option `data`.
-	PARITÉ est l'un des noms de parité : `parity`, `2-parity`, `3-parity`,
+	DISK est le même nom de disque spécifié dans l'option `data`.
+	PARITY est l'un des noms de parité : `parity`, `2-parity`, `3-parity`,
 	`4-parity`, `5-parity`, `6-parity` ou `z-parity`.
 	La valeur spéciale * peut être utilisée pour ignorer l'attribut
 	sur tous les disques.
@@ -1503,7 +1504,7 @@ Configuration
 
 		:smartignore parity 197 5
 
-  Exemples
+  Exemples (Examples)
 	Un exemple de configuration typique pour Unix est :
 
 		:parity /mnt/diskp/snapraid.parity
@@ -1582,7 +1583,7 @@ Snapshots
 	Assurez-vous que SnapRAID est exécuté avec les autorisations nécessaires (par exemple, sudo)
 	lorsque les instantanés sont activés.
 
-  Comportement des commandes avec les instantanés
+  Comportement des commandes avec les instantanés (Command Behavior with Snapshots)
 	Les commandes `sync` et `scrub` fonctionnent toutes deux exclusivement sur les instantanés
 	pour garantir que toutes les opérations sur les données sont effectuées par rapport à un état cohérent
 	et figé. En utilisant ces instantanés, SnapRAID empêche les écarts de parité
@@ -1852,12 +1853,19 @@ Encodage (Encoding)
 	redirigez la sortie de la console vers un fichier, le fichier
 	résultant est toujours au format UTF-8.
 
+Code de sortie (Exit Code)
+	SnapRAID se termine avec les codes d'erreur suivants :
+
+	0 - Tout est OK.
+	1 - La commande a rencontré des erreurs.
+	2 - La commande `diff` a trouvé que tout est OK, mais un `sync` est requis.
+
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.
 	Veuillez vous référer au manuel en anglais pour la version officielle.
 
 Droits d'auteur (Copyright)
-	Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
+	Ce fichier est Copyright (C) 2026 Andrea Mazzoleni
 
 Voir aussi (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)

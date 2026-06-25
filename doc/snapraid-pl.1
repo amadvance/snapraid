@@ -1,6 +1,6 @@
-.TH "Kopia zapasowa SnapRAID dla macierzy dyskowych" 1
+.TH "Program do tworzenia kopii zapasowych SnapRAID dla macierzy dyskowych" 1
 .SH NAME
-snapraid \- Kopia zapasowa SnapRAID dla macierzy dyskowych
+snapraid \- Program do tworzenia kopii zapasowych SnapRAID dla macierzy dyskowych
 .SH SKłADNIA (SYNOPSIS) 
 snapraid [\-c, \-\-conf CONFIG]
 .PD 0
@@ -163,7 +163,7 @@ awarii całej macierzy dysków.
 .IP \(bu
 Zapisywane są tylko nazwy plików, znaczniki czasu, dowiązania symboliczne
 i dowiązania twarde.
-Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
+Uprawnienia, właściciel (własność) i rozszerzone atrybuty nie są zapisywane.
 .PD
 .SH PIERWSZE KROKI (GETTING STARTED) 
 Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
@@ -369,10 +369,10 @@ snapraid \-p bad scrub
 Uruchomienie \`scrub\` na niezsynchronizowanej macierzy może zgłosić błędy
 spowodowane usuniętymi lub zmodyfikowanymi plikami. Błędy te są zgłaszane
 w wyniku \`scrub\`, ale powiązane bloki nie są oznaczane jako złe.
-.SS Pooling (Pooling) 
+.SS Łączenie w pulę (Pooling) 
 Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
 narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
-w społeczności SnapRAID. Mergefs zapewnia bardziej elastyczny i wydajny
+w społeczności SnapRAID. Mergerfs zapewnia bardziej elastyczny i wydajny
 sposób łączenia wielu dysków w jeden ujednolicony punkt montowania,
 umożliwiając bezproblemowy dostęp do plików w całej macierzy bez polegania
 na dowiązaniach symbolicznych. Dobrze integruje się z SnapRAID w celu ochrony
@@ -614,7 +614,7 @@ Teraz odzyskałeś wszystko, co jest możliwe do odzyskania. Jeśli niektóre pl
 są częściowo lub całkowicie nie do odzyskania, zostaną one przemianowane
 poprzez dodanie rozszerzenia \`.unrecoverable\`.
 .PP
-Szczegółową listę wszystkich nie do odzyskania bloków znajdziesz w pliku fix.log,
+Szczegółową listę wszystkich bloków nie do odzyskania znajdziesz w pliku fix.log,
 sprawdzając wszystkie linie zaczynające się od \`unrecoverable:\`.
 .PP
 Jeśli nie jesteś zadowolony z odzyskiwania, możesz spróbować ponownie
@@ -661,7 +661,7 @@ SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 .IP \(bu
 Wyświetlenie stanu macierzy \-> \`status\`
 .IP \(bu
-Kontrolę dysków \-> \`smart\`, \`probe\`, \`up\`, \`down\`
+Kontrola dysków \-> \`smart\`, \`probe\`, \`up\`, \`down\`
 .IP \(bu
 Utworzenie punktu kopii zapasowej/przywracania \-> \`sync\`
 .IP \(bu
@@ -817,11 +817,11 @@ Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
 i znacznika czasu.
 Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
 musi być zgodna, aby plik został zidentyfikowany.
-W przeciwieństwie do plików \'moved\' na tym samym dysku, pliki
-relokowane mają inny i\-węzeł.
+W przeciwieństwie do plików przeniesionych (\'moved\') na tym samym dysku, pliki
+relokowane mają inny inode.
 .HP 4
 .I restored
-Pliki o innym i\-węźle, ale pasującym katalogu,
+Pliki o innym inode, ale pasującym katalogu,
 nazwie, rozmiarze i znaczniku czasu.
 Są to zazwyczaj pliki przywrócone po ich usunięciu.
 .PD
@@ -888,7 +888,7 @@ Aby sprawdzić tylko złe bloki, możesz użyć polecenia \`scrub \-p bad\`.
 .PP
 Zaleca się uruchamianie \`scrub\` tylko na zsynchronizowanej macierzy, aby uniknąć
 zgłaszania błędów spowodowanych przez niezsynchronizowane dane. Błędy te są rozpoznawane
-jako nie będące cichymi błędami, a bloki nie są oznaczane jako złe,
+jako niebędące cichymi błędami, a bloki nie są oznaczane jako złe,
 ale takie błędy są zgłaszane w wyniku polecenia.
 .PP
 Plik \`content\` jest modyfikowany w celu zaktualizowania czasu ostatniego sprawdzenia
@@ -1142,9 +1142,9 @@ Stosuje globalne ograniczenie przepustowości dla wszystkich dysków. RATE to
 liczba bajtów na sekundę. Możesz określić mnożnik,
 taki jak K, M lub G (np. \-\-bw\-limit 1G).
 .TP
-.B \-t, \-\-tail ROZMIAR
-Ogranicza listę plików do tych, które nie używają więcej niż określony
-końcowy rozmiar dysków parzystości.
+.B \-t, \-\-tail SIZE
+Ogranicza listę plików do tych, które nie wykraczają poza określoną
+sekcję końcową (ogon) plików parzystości.
 Możesz użyć mnożników takich jak K, M, G lub T (np. \-\-tail 1G).
 Opcja ta jest ważna tylko wtedy, gdy jest używana wraz z poleceniem
 \`locate\`.
@@ -1242,9 +1242,9 @@ OSTRZEŻENIE! Ta opcja jest tylko dla ekspertów i jest wysoce
 zalecane, aby jej nie używać.
 NIE MASZ ochrony danych podczas operacji \`sync\`.
 .TP
-.B \-W, \-\-force\-realloc\-tail ROZMIAR
+.B \-W, \-\-force\-realloc\-tail SIZE
 Działa jak \-R, \-\-force\-realloc, ale ogranicza się do określonej części
-końcowej (ostatnie ROZMIAR bajtów) każdego pliku parzystości.
+końcowej (ostatnie SIZE bajtów) każdego pliku parzystości.
 Wymusza realokację (przeniesienie) wszelkich fragmentów/bloków plików
 obecnie przechowywanych w tej sekcji końcowej, pozwalając na ich
 umieszczenie w dowolnym miejscu w pliku (plikach) parzystości, gdzie
@@ -1276,7 +1276,7 @@ w trybie dołączania. Wystąpienia \`%D\` i \`%T\` w nazwie są
 zastępowane datą i czasem w formacie RRRRMMDD i
 GGMMSS. W plikach wsadowych Windows musisz podwoić
 znak \`%\`, np. result\-%%D.log. Aby użyć \`>>\`, musisz
-ujęć nazwę w cudzysłów, np. \`\[dq]>>result.log\[dq]\`.
+ująć nazwę w cudzysłów, np. \`\[dq]>>result.log\[dq]\`.
 Aby wyprowadzić log do standardowego wyjścia lub standardowego błędu,
 możesz użyć odpowiednio \`\[dq]>&1\[dq]\` i \`\[dq]>&2\[dq]\`.
 Opisy tagów logu znajdziesz w pliku snapraid_log.txt lub na stronie podręcznika.
@@ -1506,7 +1506,7 @@ zmarnujesz 12,8 GB parzystości, co może skutkować
 .PP
 Możesz sprawdzić ilość zmarnowanego miejsca na każdym dysku za pomocą \`status\`.
 Jest to ilość miejsca, którą musisz pozostawić wolną na dyskach danych
-lub użyć dla plików nie włączonych do macierzy.
+lub użyć dla plików niewłączonych do macierzy.
 Jeśli ta wartość jest ujemna, oznacza to, że jesteś blisko wypełnienia
 parzystości i reprezentuje to przestrzeń, którą nadal możesz zmarnować.
 .PP
@@ -1580,7 +1580,7 @@ Ustawia maksymalną dozwoloną temperaturę dysku w stopniach Celsjusza. Po okre
 SnapRAID okresowo sprawdza temperaturę wszystkich dysków za pomocą
 narzędzia smartctl. Aktualne temperatury dysków są wyświetlane podczas
 działania SnapRAID. Jeśli którykolwiek dysk przekroczy ten limit, wszystkie operacje
-zostają zatrzymane, a dyski są zatrzymywane (przechodzą w stan gotowości) na czas
+zostają zatrzymane, a dyski są wyłączane (przechodzą w stan czuwania / uśpienia) na czas
 zdefiniowany przez opcję \`temp_sleep\`. Po okresie uśpienia, operacje
 są wznawiane, potencjalnie ponownie zatrzymując się, jeśli limit temperatury
 zostanie ponownie osiągnięty.
@@ -1588,7 +1588,7 @@ zostanie ponownie osiągnięty.
 Podczas działania SnapRAID analizuje również krzywą nagrzewania każdego
 dysku i szacuje długoterminową stałą temperaturę, którą mają
 osiągnąć, jeśli aktywność będzie kontynuowana. Oszacowanie jest wykonywane tylko po
-czterokrotnym wzroście temperatury dysku, co zapewnia, że
+czterokrotnym zarejestrowaniu wzrostu temperatury dysku, co zapewnia, że
 dostępnych jest wystarczająco dużo punktów danych do ustalenia wiarygodnego trendu.
 Ta przewidywana stała temperatura jest pokazywana w nawiasach obok
 aktualnej wartości i pomaga ocenić, czy chłodzenie systemu jest
@@ -1604,7 +1604,7 @@ wykorzystuje najniższą temperaturę dysku zmierzoną na początku uruchomienia
 Normalnie SnapRAID pokazuje tylko temperaturę najgorętszego dysku.
 Aby wyświetlić temperaturę wszystkich dysków, użyj opcji \-A lub \-\-stats.
 .SS temp_sleep TIME_IN_MINUTES 
-Ustawia czas gotowości, w minutach, po osiągnięciu limitu temperatury.
+Ustawia czas wstrzymania (czuwania), w minutach, po osiągnięciu limitu temperatury.
 W tym okresie dyski pozostają zatrzymane. Domyślnie jest to 5 minut.
 .SS pool DIR 
 Definiuje katalog puli, w którym tworzony jest wirtualny widok macierzy
@@ -1994,7 +1994,7 @@ specjalne katalogi Windows są traktowane jako pliki, co oznacza, że aby je
 wykluczyć, musisz użyć reguły pliku, a nie katalogu.
 .PP
 Jeśli nazwa pliku zawiera znak \`*\`, \`?\`, \`[\`,
-lub \`]\`, musisz go uciec, aby uniknąć interpretacji jako
+lub \`]\`, musisz go zamaskować (poprzedzić znakiem ucieczki), aby uniknąć interpretacji jako
 znaku globbing. W systemie Unix znakiem ucieczki jest \`\\\`; w systemie Windows jest to \`^\`.
 Gdy wzorzec znajduje się w wierszu poleceń, musisz podwoić znak ucieczki,
 aby uniknąć interpretacji przez powłokę poleceń.
@@ -2203,10 +2203,25 @@ czcionki TrueType, takiej jak \`Lucida Console\`, jako czcionki konsoli.
 Dotyczy to tylko drukowanych nazw plików; jeśli
 przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 w formacie UTF\-8.
+.SH KOD WYJśCIA (EXIT CODE) 
+SnapRAID kończy działanie z następującymi kodami błędów:
+.RS 0
+.PD 0
+.HP 4
+.I 0
+Wszystko w porządku.
+.HP 4
+.I 1
+Polecenie napotkało błędy.
+.HP 4
+.I 2
+Polecenie \`diff\` wykazało, że wszystko jest w porządku, ale wymagane jest \`sync\`.
+.PD
+.RE
 .SH TłUMACZENIE (TRANSLATION) 
 Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.
 .SH PRAWA AUTORSKIE (COPYRIGHT) 
-Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
+Ten plik jest chroniony prawem autorskim (C) 2026 Andrea Mazzoleni
 .SH ZOBACZ RóWNIEż (SEE ALSO) 
 snapraid_log(1), snapraidd(1), rsync(1)
