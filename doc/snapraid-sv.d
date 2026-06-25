@@ -57,7 +57,7 @@ Begränsningar (Limitations)
 	överväga innan du använder det.
 
 	Den huvudsakliga begränsningen är att om en disk havererar kan du endast återställa data fram till
-	tillståndet för den senaste `sync`-iseringen. Data som lagts till eller modifieringar som gjorts
+	tillståndet för den senaste `sync`-operationen. Data som lagts till eller modifieringar som gjorts
 	sedan den senaste synkroniseringen och som är placerade på den felaktiga disken kommer att gå förlorade.
 
 	Följaktligen är SnapRAID främst lämpat för data som sällan ändras.
@@ -213,7 +213,7 @@ Kom igång (Getting Started)
   Poolning (Pooling)
 	Obs: Poolningsfunktionen som beskrivs nedan har ersatts av verktyget
 	mergerfs, som nu är det rekommenderade alternativet för Linux-användare i
-	SnapRAID-communityt. Mergefs ger ett mer flexibelt och effektivt
+	SnapRAID-communityt. Mergerfs ger ett mer flexibelt och effektivt
 	sätt att poola flera enheter till en enda enhetlig monteringspunkt,
 	vilket möjliggör sömlös åtkomst till filer över din array utan att förlita sig
 	på symboliska länkar. Det integreras väl med SnapRAID för paritetsskydd
@@ -287,17 +287,17 @@ Kom igång (Getting Started)
 	kan användas för att återställa eller ångra radering av filer till deras tidigare tillstånd
 	med hjälp av alternativet -f, --filter:
 
-		:snapraid fix -f FIL
+		:snapraid fix -f FILE
 
 	eller för en katalog:
 
-		:snapraid fix -f KATALOG/
+		:snapraid fix -f DIR/
 
 	Du kan också använda det för att återställa endast oavsiktligt raderade filer inuti
 	en katalog med hjälp av alternativet -m, --filter-missing, som återställer
 	endast saknade filer, och lämnar alla andra orörda.
 
-		:snapraid fix -m -f KATALOG/
+		:snapraid fix -m -f DIR/
 
 	Eller för att återställa alla raderade filer på alla enheter med:
 
@@ -337,9 +337,9 @@ Kom igång (Getting Started)
     STEG 2 -> Fixa
 	Kör kommandot fix och lagra loggen i en extern fil med:
 
-		:snapraid -d NAMN -l fix.log fix
+		:snapraid -d NAME -l fix.log fix
 
-	Där NAMN är namnet på disken, till exempel `d1` i vårt tidigare exempel.
+	Där NAME är namnet på disken, till exempel `d1` i vårt tidigare exempel.
 	Om disken som ska återställas är en paritetsdisk, använd namnen `parity`, `2-parity`,
 	etc.
 	Om du har flera felaktiga diskar, använd flera -d-alternativ för att specificera alla
@@ -362,21 +362,21 @@ Kom igång (Getting Started)
 
 	Om du till exempel har tagit bort filer från arrayen efter den senaste
 	`sync`, kan detta leda till att vissa filer inte återställs.
-	I detta fall kan du försöka igen `fix` med alternativet -i, --import,
+	I detta fall kan du köra `fix` igen med alternativet -i, --import,
 	specificera var dessa filer nu finns för att inkludera dem igen i
 	återställningsprocessen.
 
 	Om du är nöjd med återställningen kan du fortsätta,
-	men notera att efter synkronisering kan du inte försöka igen kommandot `fix`
+	men notera att efter synkronisering kan du inte köra `fix`-kommandot igen
 	längre!
 
     STEG 3 -> Kontrollera
 	Som en försiktighetsåtgärd kan du nu köra ett `check`-kommando för att säkerställa att
 	allt är korrekt på den återställda disken.
 
-		:snapraid -d NAMN -a check
+		:snapraid -d NAME -a check
 
-	Där NAMN är namnet på disken, till exempel `d1` i vårt tidigare exempel.
+	Där NAME är namnet på disken, till exempel `d1` i vårt tidigare exempel.
 
 	Alternativen -d och -a talar om för SnapRAID att endast kontrollera den specificerade disken
 	och ignorera all paritetsdata.
@@ -606,11 +606,11 @@ Kommandon (Commands)
 	Lagar alla filer och paritetsdata.
 
 	Alla filer och paritetsdata jämförs med det tillstånd som sparades i
-	den senaste `sync`-iseringen. Om en skillnad hittas återställs den till det sparade tillståndet.
+	den senaste `sync`-operationen. Om en skillnad hittas återställs den till det sparade tillståndet.
 
 	VARNING!
 	Kommandot `fix` skiljer inte mellan fel och avsiktliga modifieringar.
-	Det återställer villkorslöst filtillståndet till den senaste `sync`-iseringen.
+	Det återställer villkorslöst filtillståndet till den senaste `sync`-operationen.
 
 	Om inget annat alternativ specificeras, behandlas hela arrayen.
 	Använd filteralternativen för att välja en delmängd av filer eller diskar att arbeta med.
@@ -625,7 +625,7 @@ Kommandon (Commands)
 
 	Innan fixningen skannas hela arrayen för att hitta alla filer som flyttats
 	sedan den senaste `sync`-operationen.
-	Dessa filer identifieras av deras tidsstämpel, ignorera deras namn
+	Dessa filer identifieras av deras tidsstämpel, oavsett namn
 	och katalog, och används i återställningsprocessen vid behov.
 	Om du flyttade några av dem utanför arrayen kan du använda alternativet -i, --import
 	för att specificera ytterligare kataloger att skanna.
@@ -658,7 +658,7 @@ Kommandon (Commands)
 	Listar alla filer som finns i arrayen vid tidpunkten för den
 	senaste `sync`.
 
-	Med -v eller --verbose visas även undertiden.
+	Med -v eller --verbose visas även subsekundprecisionen.
 
 	Inget ändras.
 
@@ -699,16 +699,16 @@ Kommandon (Commands)
 	Inget ändras.
 
   touch
-	Anger en godtycklig undertidsstämpel för alla filer
+	Anger en godtycklig tidsstämpel för undersekunder för alla filer
 	som har den satt till noll.
 
 	Detta förbättrar SnapRAIDs förmåga att känna igen flyttade
 	och kopierade filer, eftersom det gör tidsstämpeln nästan unik,
 	vilket minskar möjliga dubbletter.
 
-	Mer specifikt, om undertidsstämpeln inte är noll,
+	Mer specifikt, om tidsstämpeln för undersekunder inte är noll,
 	identifieras en flyttad eller kopierad fil som sådan om den matchar
-	namn, storlek och tidsstämpel. Om undertidsstämpeln
+	namn, storlek och tidsstämpel. Om tidsstämpeln för undersekunder
 	är noll, betraktas den som en kopia endast om hela sökvägen,
 	storlek och tidsstämpel alla matchar.
 
@@ -760,7 +760,7 @@ Alternativ (Options)
 		Filtrerar filerna att behandla i `check` och `fix`.
 		Endast filerna som matchar det specificerade mönstret behandlas.
 		Detta alternativ kan användas flera gånger.
-		Se avsnittet MÖNSTER för mer information om
+		Se avsnittet PATTERN för mer information om
 		mönsterspecifikationer.
 		I Unix, se till att globbing-tecken citeras om de används.
 		Detta alternativ kan endast användas med `check` och `fix`.
@@ -858,7 +858,7 @@ Alternativ (Options)
 		antalet byte per sekund. Du kan specificera en multiplikator
 		som K, M eller G (t.ex. --bw-limit 1G).
 
-	-t, --tail STORLEK
+	-t, --tail SIZE
 		Begränsa fillistan till de som inte använder mer än den angivna
 		slutstorleken på paritetsdiskarna.
 		Du kan använda multiplikatorer som K, M, G eller T (t.ex. --tail 1G).
@@ -920,7 +920,7 @@ Alternativ (Options)
 	-D, --force-device
 		Tvingar den osäkra operationen att fixa med otillgängliga diskar
 		eller med diskar på samma fysiska enhet.
-		Till exempel, om du förlorade två datadisker och har en reservdisk för att återställa
+		Till exempel, om du förlorade två datadiskar och har en reservdisk för att återställa
 		endast den första, kan du ignorera den andra otillgängliga disken.
 		Eller, om du vill återställa en disk i det lediga utrymme som finns kvar på en
 		redan använd disk, dela samma fysiska enhet.
@@ -959,9 +959,9 @@ Alternativ (Options)
 		starkt att inte använda det.
 		Du HAR INGET dataskydd under `sync`-operationen.
 
-	-W, --force-realloc-tail STORLEK
+	-W, --force-realloc-tail SIZE
 		Fungerar som -R, --force-realloc, men begränsat till den angivna
-		slutdelen (de sista STORLEK byten) av varje paritetsfil.
+		slutdelen (de sista SIZE byten) av varje paritetsfil.
 		Den tvingar omallokering (flytt) av alla filfragment/block som för
 		närvarande lagras i den slutsektionen, vilket gör att de kan placeras
 		var som helst i paritetsfilen/filerna där ledigt utrymme finns
@@ -1008,7 +1008,7 @@ Alternativ (Options)
 
 	-S, --start BLKSTART
 		Börjar behandlingen från det specificerade
-		blocknumret. Detta kan vara användbart för att försöka igen att kontrollera
+		blocknumret. Detta kan vara användbart för att på nytt försöka kontrollera
 		eller fixa specifika block i händelse av en skadad disk.
 		Detta alternativ är främst för avancerad manuell återställning.
 
@@ -1056,7 +1056,7 @@ Konfiguration (Configuration)
 
 	Den måste innehålla följande alternativ (skiftlägeskänsligt):
 
-  parity FIL [,FIL] ...
+  parity FILE [,FILE] ...
 	Definierar de filer som ska användas för att lagra paritetsinformationen.
 	Pariteten möjliggör skydd från ett enda disk-
 	fel, liknande RAID5.
@@ -1077,7 +1077,7 @@ Konfiguration (Configuration)
 
 	Detta alternativ är obligatoriskt och kan endast användas en gång.
 
-  (2,3,4,5,6)-parity FIL [,FIL] ...
+  (2,3,4,5,6)-parity FILE [,FILE] ...
 	Definierar de filer som ska användas för att lagra extra paritetsinformation.
 
 	För varje paritetsnivå som specificeras aktiveras en ytterligare skyddsnivå:
@@ -1095,7 +1095,7 @@ Konfiguration (Configuration)
 
 	Dessa alternativ är valfria och kan endast användas en gång.
 
-  z-parity FIL [,FIL] ...
+  z-parity FILE [,FILE] ...
 	Definierar en alternativ fil och ett format för att lagra trippel paritet.
 
 	Detta alternativ är ett alternativ till `3-parity`, främst avsett för
@@ -1113,7 +1113,7 @@ Konfiguration (Configuration)
 	konfigurationsfilen med önskad z-parity eller 3-parity fil
 	och använda `fix` för att återskapa den.
 
-  content FIL
+  content FILE
 	Definierar den fil som ska användas för att lagra listan och checksummorna för alla
 	filer som finns i din disk-array.
 
@@ -1128,18 +1128,18 @@ Konfiguration (Configuration)
 	Du måste lagra minst en kopia för varje paritetsdisk som används
 	plus en. Att använda ytterligare kopior skadar inte.
 
-  data NAMN KATALOG
+  data NAME DIR
 	Definierar namnet och monteringspunkten för datadiskarna i
-	arrayen. NAMN används för att identifiera disken och måste
-	vara unikt. KATALOG är monteringspunkten för disken i
+	arrayen. NAME används för att identifiera disken och måste
+	vara unikt. DIR är monteringspunkten för disken i
 	filsystemet.
 
 	Du kan ändra monteringspunkten vid behov, så länge
-	du behåller NAMN fixerat.
+	du behåller NAME fixerat.
 
 	Du bör använda ett alternativ för varje datadisk i arrayen.
 
-	Du kan byta namn på en disk senare genom att ändra NAMN direkt
+	Du kan byta namn på en disk senare genom att ändra NAME direkt
 	i konfigurationsfilen och sedan köra ett `sync`-kommando.
 	I händelse av namnbyte görs associationen med hjälp av den lagrade
 	UUID:n för diskarna.
@@ -1184,7 +1184,7 @@ Konfiguration (Configuration)
 	I Unix är dolda filer de som börjar med `.`.
 	I Windows är de de med det dolda attributet.
 
-  exclude/include MÖNSTER
+  exclude/include PATTERN
 	Definierar fil- eller katalogmönstren att exkludera eller inkludera
 	i sync-processen.
 	Alla mönster behandlas i den specificerade ordningen.
@@ -1195,12 +1195,12 @@ Konfiguration (Configuration)
 	som specificerats är ett `include`-mönster, eller inkluderas om det sista mönstret
 	som specificerats är ett `exclude`-mönster.
 
-	Se avsnittet MÖNSTER för mer information om mönster-
+	Se avsnittet PATTERN för mer information om mönster-
 	specifikationer.
 
 	Detta alternativ kan användas flera gånger.
 
-  blocksize STORLEK_I_KIBIBYTES
+  blocksize SIZE_IN_KIBIBYTES
 	Definierar den grundläggande blockstorleken i kibibytes för pariteten.
 	En kibibyte är 1024 byte.
 
@@ -1246,7 +1246,7 @@ Konfiguration (Configuration)
 	en 4 TB-disk, vilket möjliggör cirka 460 000 filer på varje datadisk utan
 	något bortkastat utrymme.
 
-  hashsize STORLEK_I_BYTE
+  hashsize SIZE_IN_BYTES
 	Definierar hash-storleken i byte för de sparade blocken.
 
 	Standard hash-storlek är 16 byte (128 bitar), vilket bör fungera
@@ -1282,13 +1282,13 @@ Konfiguration (Configuration)
 
 	:RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 
-  autosave STORLEK_I_GIGABYTES
+  autosave SIZE_IN_GIGABYTES
 	Sparar automatiskt tillståndet vid synkronisering eller skrubbning efter att den
 	specificerade mängden GB har behandlats.
 	Detta alternativ är användbart för att undvika att starta om långa `sync`-
 	kommandon från början om de avbryts av en maskinkrasch eller någon annan händelse.
 
-  temp_limit TEMPERATUR_CELSIUS
+  temp_limit TEMPERATURE_CELSIUS
 	Anger den maximalt tillåtna disk-temperaturen i Celsius. När den specificeras,
 	kontrollerar SnapRAID periodiskt temperaturen på alla diskar med hjälp av
 	verktyget smartctl. De aktuella disk-temperaturerna visas medan
@@ -1303,32 +1303,32 @@ Konfiguration (Configuration)
 	nå om aktiviteten fortsätter. Uppskattningen utförs först efter att
 	disk-temperaturen har ökat fyra gånger, vilket säkerställer att tillräckligt med
 	datapoäng finns tillgängliga för att fastställa en pålitlig trend.
-	Denna förutsagda stabila temperatur visas inom parentes bredvid den
+	Denna förutsagda stabila temperatur visas inom parentes bredvid det
 	aktuella värdet och hjälper till att bedöma om systemets kylning är
 	tillräcklig. Denna uppskattade temperatur är endast för informationssyfte
-	och har ingen effekt på SnapRAIDs beteende. Programmens
+	och har ingen effekt på SnapRAIDs beteende. Programmets
 	åtgärder baseras enbart på de faktiska uppmätta disk-temperaturerna.
 
-	För att utföra denna analys behöver SnapRAID en referens för system-
-	temperaturen. Det försöker först läsa den från tillgängliga hårdvaru-
-	sensorer. Om ingen system-sensor kan nås, används den lägsta disk-
-	temperaturen som mättes vid start av körningen som en reservreferens.
+	För att utföra denna analys behöver SnapRAID en referens för systemtemperaturen.
+	Det försöker först läsa den från tillgängliga hårdvarusensorer.
+	Om ingen systemsensor kan nås, används den lägsta disk-
+	temperaturen som mättes i början av körningen som en reservreferens.
 
 	Normalt visar SnapRAID endast temperaturen på den hetaste disken.
 	För att visa temperaturen på alla diskar, använd alternativet -A eller --stats.
 
-  temp_sleep TID_I_MINUTER
+  temp_sleep TIME_IN_MINUTES
 	Anger standby-tiden, i minuter, när temperaturgränsen har
 	nåtts. Under denna period förblir diskarna nedsnurrade. Standard
 	är 5 minuter.
 
-  pool KATALOG
+  pool DIR
 	Definierar poolningskatalogen där den virtuella vyn av disk-
 	arrayen skapas med hjälp av kommandot `pool`.
 
 	Katalogen måste redan existera.
 
-  share UNC_KATALOG
+  share UNC_DIR
 	Definierar Windows UNC-sökvägen som krävs för att få åtkomst till diskarna på distans.
 
 	Om detta alternativ specificeras, använder de symboliska länkarna som skapats i pool-
@@ -1342,7 +1342,7 @@ Konfiguration (Configuration)
 
 	Detta alternativ krävs endast för Windows.
 
-  smartctl DISK/PARITY ALTERNATIV...
+  smartctl DISK/PARITY OPTIONS...
 	Definierar anpassade smartctl-alternativ för att få SMART-attributen för
 	varje disk. Detta kan krävas för RAID-kontroller och vissa USB-
 	diskar som inte kan upptäckas automatiskt. Platsinnehavaren %s ersätts av
@@ -1384,7 +1384,7 @@ Konfiguration (Configuration)
 	skiftlägesokänsligt namn (t.ex. `Current_Pending_Sector`).
 
 	Till exempel, för att ignorera attributen `Current Pending Sector Count` och
-	`Reallocated Sectors Count` på alla diskar med deras nummer oder namn:
+	`Reallocated Sectors Count` på alla diskar med deras nummer eller namn:
 
 		:smartignore * 197 5
 		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
@@ -1728,12 +1728,19 @@ Kodning (Encoding)
 	omdirigerar konsolutdata till en fil, är den resulterande filen alltid
 	i UTF-8-format.
 
+Slutkod (Exit Code)
+	SnapRAID avslutas med följande statuskoder:
+
+	0 - Allt OK.
+	1 - Kommandot stötte på fel.
+	2 - Kommandot `diff` fann att allt är OK, men en `sync` behövs.
+
 Översättning (Translation)
 	Detta dokument är en automatisk översättning av den engelska manualen.
 	Se den engelska manualen för den officiella versionen.
 
 Upphovsrätt (Copyright)
-	Denna fil är Copyright (C) 2025 Andrea Mazzoleni
+	Denna fil är Copyright (C) 2026 Andrea Mazzoleni
 
 Se även (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)

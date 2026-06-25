@@ -34,7 +34,7 @@ Descripción (Description)
 
 	* Puede utilizar discos ya llenos de archivos sin la necesidad de
 		reformatearlos, accediendo a ellos como de costumbre.
-	* Todos sus datos son hasheados para asegurar la integridad de los datos
+	* Todos sus datos son procesados con hash para asegurar la integridad de los datos
 		y prevenir la corrupción silenciosa.
 	* Cuando el número de discos fallidos excede el recuento de paridad,
 		la pérdida de datos se limita a los discos afectados; los datos en
@@ -53,7 +53,7 @@ Descripción (Description)
 		:https://www.snapraid.it/
 
 Limitaciones (Limitations)
-	SnapRAID es un híbrido entre un RAID y un programa de copia de seguridad, con el objetivo di combinar
+	SnapRAID es un híbrido entre un RAID y un programa de copia de seguridad, con el objetivo de combinar
 	los mejores beneficios de ambos. Sin embargo, tiene algunas limitaciones que debería
 	considerar antes de usarlo.
 
@@ -89,7 +89,7 @@ Limitaciones (Limitations)
 		Con una copia de seguridad, puede recuperarse de un fallo completo
 		de todo el array de discos.
 	* Solo se guardan nombres de archivo, marcas de tiempo, enlaces simbólicos
-		y enlaces duros. Los permisos, la propiedad y los atributos
+		y enlaces físicos. Los permisos, la propiedad y los atributos
 		extendidos no se guardan.
 
 Primeros pasos (Getting Started)
@@ -177,7 +177,7 @@ Primeros pasos (Getting Started)
 
   Limpieza (Scrubbing)
 	Para verificar periódicamente los datos y la paridad en busca de
-	errores, puede ejecutar el comando `scrub` (fregar/limpiar).
+	errores, puede ejecutar el comando `scrub` (depurar/limpiar).
 
 		:snapraid scrub
 
@@ -185,7 +185,7 @@ Primeros pasos (Getting Started)
 	durante el comando `sync` para verificar la integridad.
 
 	Cada ejecución del comando verifica aproximadamente el 8% del array,
-	excluyendo los datos ya fregados en los 10 días anteriores.
+	excluyendo los datos ya depurados en los 10 días anteriores.
 	Puede usar la opción -p, --plan para especificar una cantidad
 	diferente y la opción -o, --older-than para especificar una edad
 	diferente en días. Por ejemplo, para verificar el 5% del array en
@@ -204,9 +204,9 @@ Primeros pasos (Getting Started)
 
 		:snapraid -e fix
 
-	En el siguiente `scrub`, los errores desaparecerán del informe de
+	En la siguiente depuración (`scrub`), los errores desaparecerán del informe de
 	`status` si realmente se han corregido. Para hacerlo más rápido,
-	puede usar -p bad para fregar solo los bloques marcados como defectuosos.
+	puede usar -p bad para depurar solo los bloques marcados como defectuosos.
 
 		:snapraid -p bad scrub
 
@@ -219,7 +219,7 @@ Primeros pasos (Getting Started)
 	Nota: La función de pooling descrita a continuación ha sido
 	sustituida por la herramienta mergerfs, que ahora es la opción
 	recomendada para los usuarios de Linux en la comunidad SnapRAID.
-	Mergefs proporciona una forma más flexible y eficiente de agrupar
+	Mergerfs proporciona una forma más flexible y eficiente de agrupar
 	múltiples unidades en un único punto de montaje unificado,
 	permitiendo un acceso sin problemas a los archivos en todo su array
 	sin depender de enlaces simbólicos. Se integra bien con SnapRAID
@@ -322,8 +322,8 @@ Primeros pasos (Getting Started)
 
 	Lo primero que debe hacer es evitar más cambios en su array de discos.
 	Deshabilite cualquier conexión remota a él y cualquier proceso
-	programado, incluida cualquier sincronización o fregado nocturno
-	programado de SnapRAID.
+	programado, incluida cualquier sincronización o depuración nocturna
+	programada de SnapRAID.
 
 	Luego, proceda con los siguientes pasos.
 
@@ -410,7 +410,7 @@ Primeros pasos (Getting Started)
 Comandos (Commands)
 	SnapRAID proporciona unos pocos comandos simples que le permiten:
 
-	* Mostrar el estado de la matriz -> `status`
+	* Mostrar el estado del array -> `status`
 	* Controlar los discos -> `smart`, `probe`, `up`, `down`
 	* Crear un punto de copia de seguridad/recuperación -> `sync`
 	* Comprobar periódicamente los datos -> `scrub`
@@ -423,7 +423,7 @@ Comandos (Commands)
 
 	Incluye información sobre la fragmentación de la paridad, la antigüedad
 	de los bloques sin verificar y todos los errores silenciosos
-	registrados encontrados durante el fregado.
+	registrados encontrados durante la depuración.
 
 	La información presentada se refiere a la última vez que ejecutó
 	`sync`. Las modificaciones posteriores no se tienen en cuenta.
@@ -432,8 +432,8 @@ Comandos (Commands)
 	Para corregirlos, puede usar el comando `fix -e`.
 
 	También muestra un gráfico que representa la última vez que cada
-	bloque fue fregado o sincronizado. Los bloques fregados se muestran
-	con `*`, los bloques sincronizados pero aún no fregados con `o`.
+	bloque fue depurado o sincronizado. Los bloques depurados se muestran
+	con `*`, los bloques sincronizados pero aún no depurados con `o`.
 
 	Nada se modifica.
 
@@ -582,38 +582,38 @@ Comandos (Commands)
 	Los archivos en el array NO se modifican.
 
   scrub
-	Frota (scrubs) el array, buscando errores silenciosos o de
+	Depura (scrubs) el array, buscando errores silenciosos o de
 	entrada/salida en los discos de datos y paridad.
 
 	Cada invocación verifica aproximadamente el 8% del array, excluyendo
-	los datos ya fregados en los últimos 10 días.
-	Esto significa que fregar una vez a la semana asegura que cada bit de
+	los datos ya depurados en los últimos 10 días.
+	Esto significa que depurar una vez a la semana asegura que cada bit de
 	datos se verifique al menos una vez cada tres meses.
 
-	Puede definir un plan de fregado o una cantidad diferente utilizando
+	Puede definir un plan de depuración o una cantidad diferente utilizando
 	la opción -p, --plan, que acepta:
-	bad - Fregar bloques marcados como defectuosos.
-	new - Fregar bloques recién sincronizados que aún no han sido fregados.
-	full - Fregar todo.
-	0-100 - Fregar el porcentaje especificado de bloques.
+	bad - Depurar bloques marcados como defectuosos.
+	new - Depurar bloques recién sincronizados que aún no han sido depurados.
+	full - Depurar todo.
+	0-100 - Depurar el porcentaje especificado de bloques.
 
 	Si especifica un valor de porcentaje, también puede usar la opción -o,
 	--older-than para definir la antigüedad del bloque.
-	Los bloques más antiguos se friegan primero, asegurando una verificación
+	Los bloques más antiguos se depuran primero, asegurando una verificación
 	óptima.
-	Si desea fregar solo los bloques recién sincronizados que aún no han
-	sido fregados, use la opción `-p new`.
+	Si desea depurar solo los bloques recién sincronizados que aún no han
+	sido depurados, use la opción `-p new`.
 
-	Para obtener detalles del estado del fregado, use el comando `status`.
+	Para obtener detalles del estado de la depuración, use el comando `status`.
 
 	Para cualquier error silencioso o de entrada/salida encontrado, los
 	bloques correspondientes se marcan como defectuosos en el archivo
 	`content`.
 	Estos bloques defectuosos se enumeran en `status` y se pueden
 	corregir con `fix -e`.
-	Después de la corrección, en el siguiente fregado, se volverán a
+	Después de la corrección, en la siguiente depuración, se volverán a
 	verificar y, si se encuentran corregidos, se eliminará la marca de defectuoso.
-	Para fregar solo los bloques defectuosos, puede usar el comando
+	Para depurar solo los bloques defectuosos, puede usar el comando
 	`scrub -p bad`.
 
 	Se recomienda ejecutar `scrub` solo en un array sincronizado para evitar
@@ -832,19 +832,19 @@ Opciones (Options)
 		Esta opción solo se puede usar con `check` y `fix`.
 
 	-p, --plan PERC|bad|new|full
-		Selecciona el plan de fregado (scrub). Si PERC es un valor
+		Selecciona el plan de depuración (scrub). Si PERC es un valor
 		numérico de 0 a 100, se interpreta como el porcentaje de
-		bloques a fregar.
+		bloques a depurar.
 		En lugar de un porcentaje, puede especificar un plan:
-		`bad` friega bloques defectuosos, `new` friega bloques aún
-		no fregados, y `full` friega todo.
+		`bad` depura bloques defectuosos, `new` depura bloques aún
+		no depurados, y `full` depura todo.
 		Esta opción solo se puede usar con `scrub`.
 
 	-o, --older-than DAYS
 		Selecciona la parte más antigua del array para procesar en `scrub`.
-		DAYS es la edad mínima en días para que un bloque sea fregado;
+		DAYS es la edad mínima en días para que un bloque sea depurado;
 		el valor predeterminado es 10.
-		Los bloques marcados como defectuosos siempre se friegan
+		Los bloques marcados como defectuosos siempre se depuran
 		independientemente de esta opción.
 		Esta opción solo se puede usar con `scrub`.
 
@@ -900,7 +900,7 @@ Opciones (Options)
 		RATE es el número de bytes por segundo. Puede especificar un
 		multiplicador como K, M o G (por ejemplo, --bw-limit 1G).
 
-	-t, --tail TAMAÑO
+	-t, --tail SIZE
 		Limita la lista de archivos a aquellos que no usan más del
 		tamaño de cola especificado de los discos de paridad.
 		Puede usar multiplicadores como K, M, G o T (por ejemplo, --tail 1G).
@@ -1008,9 +1008,9 @@ Opciones (Options)
 		recomienda encarecidamente no usarla.
 		NO tiene protección de datos durante la operación `sync`.
 
-	-W, --force-realloc-tail TAMAÑO
+	-W, --force-realloc-tail SIZE
 		Funciona como -R, --force-realloc, pero limitado a la porción final
-		especificada (últimos TAMAÑO bytes) de cada archivo de paridad.
+		especificada (últimos SIZE bytes) de cada archivo de paridad.
 		Fuerza la reasignación (movimiento) de cualquier fragmento/bloque de archivo
 		actualmente almacenado en esa sección final, permitiendo que se coloquen
 		en cualquier lugar de los archivos de paridad donde haya espacio libre
@@ -1202,8 +1202,8 @@ Configuración (Configuration)
 	Define el nombre y el punto de montaje de discos adicionales para monitorear
 	con los comandos `smart` y `probe`.
 
-	Esto es útil para monitorear discos que no forman parte de la
-	matriz pero que son necesarios para que el sistema funcione, como
+	Esto es útil para monitorear discos que no forman parte del
+	array pero que son necesarios para que el sistema funcione, como
 	el disco de arranque.
 
 	Tenga en cuenta que dichos discos no se ven afectados por los comandos `up` y `down`
@@ -1219,7 +1219,7 @@ Configuración (Configuration)
 
 	Esto mejora significativamente la recuperación: si un archivo se elimina del sistema de archivos activo,
 	permanece preservado en la instantánea. Esto evita que la paridad se "rompa"
-	para ese bloque, asegurando che aún pueda recuperar los datos con éxito
+	para ese bloque, asegurando que aún pueda recuperar los datos con éxito
 	si falla otro disco.
 
 	Esta opción se aplica exclusivamente a discos de datos formateados con los sistemas de
@@ -1345,7 +1345,7 @@ Configuración (Configuration)
 	:RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 
   autosave SIZE_IN_GIGABYTES
-	Guarda automáticamente el estado al sincronizar o fregar después de
+	Guarda automáticamente el estado al sincronizar o depurar después de
 	la cantidad especificada de GB procesados.
 	Esta opción es útil para evitar reiniciar comandos `sync` largos
 	desde cero si son interrumpidos por un fallo de la máquina o
@@ -1573,7 +1573,7 @@ Instantáneas (Snapshots)
 	tenga una referencia estable y congelada para resolver las ecuaciones de paridad.
 
 	Si no se proporciona la opción -d, SnapRAID asume que la operación se aplica
-	a toda la matriz, en cuyo caso, `check` y `fix` usarán los sistemas
+	a todo el array, en cuyo caso, `check` y `fix` usarán los sistemas
 	de archivos activos exclusivamente.
 
 	Todos los demás comandos funcionan exclusivamente en el sistema de archivos activo.
@@ -1812,12 +1812,19 @@ Codificación (Encoding)
 	archivo impresos; si redirige la salida de la consola a un archivo,
 	el archivo resultante siempre está en formato UTF-8.
 
+Código de salida (Exit Code)
+	SnapRAID termina con los siguientes códigos de error:
+
+	0 - Todo bien.
+	1 - El comando encontró algunos errores.
+	2 - El comando `diff` determinó que todo está bien, pero se necesita un `sync`.
+
 Traducción (Translation)
 	Este documento es una traducción automática del manual en inglés.
 	Consulte el manual en inglés para obtener la versión oficial.
 
 Copyright
-	Este archivo es Copyright (C) 2025 Andrea Mazzoleni
+	Este archivo es Copyright (C) 2026 Andrea Mazzoleni
 
 Véase también (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)
