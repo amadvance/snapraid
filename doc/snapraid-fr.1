@@ -6,7 +6,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-f, \-\-filter MOTIF] [\-d, \-\-filter\-disk NOM]
+	[\-f, \-\-filter PATTERN] [\-d, \-\-filter\-disk NAME]
 .PD 0
 .PP
 .PD
@@ -14,19 +14,23 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-a, \-\-audit\-only] [\-h, \-\-pre\-hash] [\-i, \-\-import DOSSIER]
+	[\-a, \-\-audit\-only] [\-h, \-\-pre\-hash] [\-i, \-\-import DIR]
 .PD 0
 .PP
 .PD
-	[\-p, \-\-plan PERC|mauvais|nouveau|complet]
+	[\-p, \-\-plan PERC|bad|new|full]
 .PD 0
 .PP
 .PD
-	[\-o, \-\-older\-than JOURS] [\-l, \-\-log FICHIER]
+	[\-o, \-\-older\-than DAYS] [\-l, \-\-log FILE]
 .PD 0
 .PP
 .PD
-	[\-s, \-\-spin\-down\-on\-error] [\-w, \-\-bw\-limit DÉBIT]
+	[\-s, \-\-spin\-down\-on\-error] [\-w, \-\-bw\-limit RATE]
+.PD 0
+.PP
+.PD
+	[\-t, \-\-tail]
 .PD 0
 .PP
 .PD
@@ -50,7 +54,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-L, \-\-error\-limit NOMBRE]
+	[\-L, \-\-error\-limit NUMBER]
 .PD 0
 .PP
 .PD
@@ -70,7 +74,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PD
 .PP
-snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENU]
+snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PD
 .SH DESCRIPTION 
@@ -161,7 +165,7 @@ de défaillances de disques. Avec une sauvegarde, vous pouvez
 récupérer d\'une défaillance complète de toute la baie de disques.
 .IP \(bu
 Seuls les noms de fichiers, les horodatages, les liens symboliques
-et les liens matériels sont sauvegardés. Les permissions, la
+et les liens physiques sont sauvegardés. Les permissions, la
 propriété et les attributs étendus ne sont pas sauvegardés.
 .PD
 .SH DéMARRER (GETTING STARTED) 
@@ -361,7 +365,7 @@ snapraid \-e fix
 .PP
 Lors du prochain \`scrub\`, les erreurs disparaîtront du rapport
 \`status\` si elles sont réellement corrigées. Pour accélérer,
-vous pouvez utiliser \-p mauvais pour nettoyer uniquement les blocs
+vous pouvez utiliser \-p bad pour nettoyer uniquement les blocs
 marqués comme mauvais.
 .PP
 .RS 4
@@ -377,7 +381,7 @@ ne sont pas marqués comme mauvais.
 .SS Mise en commun (Pooling) 
 Note : La fonctionnalité de mise en commun décrite ci\-dessous a été
 remplacée par l\'outil mergerfs, qui est désormais l\'option recommandée
-pour les utilisateurs Linux de la communauté SnapRAID. Mergefs offre
+pour les utilisateurs Linux de la communauté SnapRAID. Mergerfs offre
 un moyen plus flexible et efficace de regrouper plusieurs disques
 dans un seul point de montage unifié, permettant un accès transparent
 aux fichiers sur toute votre baie sans dépendre de liens symboliques.
@@ -539,7 +543,7 @@ ou récupérer des fichiers dans leur état précédent à l\'aide
 de l\'option \-f, \-\-filter :
 .PP
 .RS 4
-snapraid fix \-f FICHIER
+snapraid fix \-f FILE
 .PD 0
 .PD
 .RE
@@ -547,7 +551,7 @@ snapraid fix \-f FICHIER
 ou pour un répertoire :
 .PP
 .RS 4
-snapraid fix \-f DOSSIER/
+snapraid fix \-f DIR/
 .PD 0
 .PD
 .RE
@@ -559,7 +563,7 @@ qui ne restaure que les fichiers manquants, laissant tous
 les autres intacts.
 .PP
 .RS 4
-snapraid fix \-m \-f DOSSIER/
+snapraid fix \-m \-f DIR/
 .PD 0
 .PD
 .RE
@@ -617,12 +621,12 @@ Exécutez la commande fix, en stockant le journal dans un fichier
 externe avec :
 .PP
 .RS 4
-snapraid \-d NOM \-l fix.log fix
+snapraid \-d NAME \-l fix.log fix
 .PD 0
 .PD
 .RE
 .PP
-Où NOM est le nom du disque, tel que \`d1\` dans notre exemple précédent.
+Où NAME est le nom du disque, tel que \`d1\` dans notre exemple précédent.
 Si le disque à récupérer est un disque de parité, utilisez les noms
 \`parity\`, \`2\-parity\`, etc.
 Si vous avez plusieurs disques défaillants, utilisez plusieurs
@@ -658,12 +662,12 @@ Par précaution, vous pouvez maintenant exécuter une commande \`check\`
 pour vous assurer que tout est correct sur le disque récupéré.
 .PP
 .RS 4
-snapraid \-d NOM \-a check
+snapraid \-d NAME \-a check
 .PD 0
 .PD
 .RE
 .PP
-Où NOM est le nom du disque, tel que \`d1\` dans notre exemple précédent.
+Où NAME est le nom du disque, tel que \`d1\` dans notre exemple précédent.
 .PP
 Les options \-d et \-a indiquent à SnapRAID de vérifier uniquement le
 disque spécifié et d\'ignorer toutes les données de parité.
@@ -752,7 +756,7 @@ Le journal d\'auto\-test du périphérique contient des erreurs.
 .PD
 .RE
 .PP
-Si l\'option \-v, \-\-verbose est spécifiée, une analyse statistique
+Si l\'option \`\-v, \-\-verbose\` est spécifiée, une analyse statistique
 plus approfondie est fournie. Cette analyse peut vous aider à
 décider si vous avez besoin de plus ou moins de parité.
 .PP
@@ -1091,11 +1095,11 @@ s\'il existe, sinon \`/etc/snapraid.conf\`.
 Sous Windows, il utilise le fichier \`snapraid.conf\` dans le même
 répertoire que \`snapraid.exe\`.
 .TP
-.B \-f, \-\-filter MOTIF
+.B \-f, \-\-filter PATTERN
 Filtre les fichiers à traiter dans \`check\` et \`fix\`.
 Seuls les fichiers correspondant au motif spécifié sont traités.
 Cette option peut être utilisée plusieurs fois.
-Voir la section MOTIF pour plus de détails sur les
+Voir la section PATTERN pour plus de détails sur les
 spécifications de motifs.
 Sous Unix, assurez\-vous que les caractères de globbing sont
 entre guillemets s\'ils sont utilisés.
@@ -1103,7 +1107,7 @@ Cette option ne peut être utilisée qu\'avec \`check\` et \`fix\`.
 Elle ne peut pas être utilisée avec \`sync\` et \`scrub\`, car ils
 traitent toujours l\'intégralité de la baie.
 .TP
-.B \-d, \-\-filter\-disk NOM
+.B \-d, \-\-filter\-disk NAME
 Filtre les disques à traiter dans \`check\`, \`fix\`, \`up\` et \`down\`.
 Vous devez spécifier un nom de disque tel que défini dans le fichier
 de configuration.
@@ -1147,9 +1151,9 @@ Au lieu d\'un pourcentage, vous pouvez spécifier un plan :
 qui n\'ont pas encore été nettoyés, et \`full\` nettoie tout.
 Cette option ne peut être utilisée qu\'avec \`scrub\`.
 .TP
-.B \-o, \-\-older\-than JOURS
+.B \-o, \-\-older\-than DAYS
 Sélectionne la partie la plus ancienne de la baie à traiter dans \`scrub\`.
-JOURS est l\'âge minimum en jours pour qu\'un bloc soit nettoyé ;
+DAYS est l\'âge minimum en jours pour qu\'un bloc soit nettoyé ;
 la valeur par défaut est 10.
 Les blocs marqués comme mauvais sont toujours nettoyés,
 quelle que soit cette option.
@@ -1186,7 +1190,7 @@ réussi et, si nécessaire, vous permet d\'exécuter une
 opération fix avant de continuer.
 Cette option ne peut être utilisée qu\'avec \`sync\`.
 .TP
-.B \-i, \-\-import DOSSIER
+.B \-i, \-\-import DIR
 Importe à partir du répertoire spécifié tous les fichiers supprimés
 de la baie après le dernier \`sync\`.
 Si vous avez toujours de tels fichiers, ils peuvent être utilisés
@@ -1204,12 +1208,12 @@ et une consommation d\'énergie. Utilisez cette option pour vous
 assurer que les disques sont arrêtés en toute sécurité
 même lorsqu\'une commande échoue.
 .TP
-.B \-w, \-\-bw\-limit DÉBIT
+.B \-w, \-\-bw\-limit RATE
 Applique une limite de bande passante globale pour tous les disques.
-Le DÉBIT est le nombre d\'octets par seconde. Vous pouvez spécifier
-un multiplicateur tel que K, M ou G (par exemple, \-\-bw\-limit 1G).
+Le RATE est le nombre d\'octets par seconde. Vous pouvez spécifier
+un multiplicateur tel que K, M, G ou T (par exemple, \-\-bw\-limit 1G).
 .TP
-.B \-t, \-\-tail TAILLE
+.B \-t, \-\-tail SIZE
 Limite la liste des fichiers à ceux n\'utilisant pas plus que la
 taille de queue spécifiée des disques de parité.
 Vous pouvez utiliser des multiplicateurs tels que K, M, G ou T (ex: \-\-tail 1G).
@@ -1322,9 +1326,9 @@ AVERTISSEMENT ! Cette option est réservée aux experts, et il est
 fortement recommandé de ne pas l\'utiliser.
 Vous N\'AVEZ AUCUNE protection des données pendant l\'opération \`sync\`.
 .TP
-.B \-W, \-\-force\-realloc\-tail TAILLE
-Fonctionne comme \-R, \-\-force\-realloc, maar limité à la partie terminale
-spécifiée (les derniers TAILLE octets) de chaque fichier de parité.
+.B \-W, \-\-force\-realloc\-tail SIZE
+Fonctionne comme \-R, \-\-force\-realloc, mais limité à la partie terminale
+spécifiée (les derniers SIZE octets) de chaque fichier de parité.
 Force la réallocation (déplacement) de tout fragment/bloc de fichier
 actuellement stocké dans cette section terminale, leur permettant d\'être
 placés n\'importe où dans le(s) fichier(s) de parité où de l\'espace libre
@@ -1344,7 +1348,7 @@ recommandé de ne pas l\'utiliser.
 Vous n\'avez PAS de protection des données pendant l\'opération \`sync\`
 pour les fichiers affectés.
 .TP
-.B \-l, \-\-log FICHIER
+.B \-l, \-\-log FILE
 Écrit un journal détaillé dans le fichier spécifié.
 Si cette option n\'est pas spécifiée, les erreurs inattendues
 sont imprimées à l\'écran, ce qui peut entraîner une sortie
@@ -1364,7 +1368,7 @@ respectivement.
 Consultez le fichier ou la page de manuel snapraid_log.txt
 pour les descriptions des balises de journal.
 .TP
-.B \-L, \-\-error\-limit NOMBRE
+.B \-L, \-\-error\-limit NUMBER
 Définit une nouvelle limite d\'erreurs avant d\'arrêter l\'exécution.
 Par défaut, SnapRAID s\'arrête s\'il rencontre plus de 100
 erreurs d\'entrée/sortie, indiquant qu\'un disque est
@@ -1384,7 +1388,7 @@ Cette option est principalement destinée à la récupération manuelle avancée
 Ne traite que le nombre de blocs spécifié.
 Cette option est principalement destinée à la récupération manuelle avancée.
 .TP
-.B \-C, \-\-gen\-conf CONTENU
+.B \-C, \-\-gen\-conf CONTENT
 Génère un fichier de configuration factice à partir d\'un
 fichier de contenu existant.
 Le fichier de configuration est écrit sur la sortie standard
@@ -1422,7 +1426,7 @@ Sous Windows, il utilise le fichier \`snapraid.conf\` dans le même
 répertoire que \`snapraid.exe\`.
 .PP
 Il doit contenir les options suivantes (sensibles à la casse) :
-.SS parity FICHIER [,FICHIER] ... 
+.SS parity FILE [,FILE] ... 
 Définit les fichiers à utiliser pour stocker les informations de parité.
 La parité permet une protection contre une seule défaillance
 de disque, similaire au RAID5.
@@ -1443,7 +1447,7 @@ Sous Windows, 256 Mo sont laissés inutilisés sur chaque disque pour
 éviter l\'avertissement concernant les disques pleins.
 .PP
 Cette option est obligatoire et ne peut être utilisée qu\'une seule fois.
-.SS (2,3,4,5,6)\-parity FICHIER [,FICHIER] ... 
+.SS (2,3,4,5,6)\-parity FILE [,FILE] ... 
 Définit les fichiers à utiliser pour stocker les informations de parité
 supplémentaires.
 .PP
@@ -1468,7 +1472,7 @@ de parité précédents.
 Les mêmes considérations que pour l\'option \`parity\` s\'appliquent.
 .PP
 Ces options sont facultatives et ne peuvent être utilisées qu\'une seule fois.
-.SS z\-parity FICHIER [,FICHIER] ... 
+.SS z\-parity FILE [,FILE] ... 
 Définit un fichier et un format alternatifs pour stocker la triple parité.
 .PP
 Cette option est une alternative à \`3\-parity\`, principalement destinée
@@ -1486,7 +1490,7 @@ performances.
 Il est possible de convertir d\'un format à l\'autre en ajustant
 le fichier de configuration avec le fichier z\-parity ou 3\-parity souhaité
 et en utilisant \`fix\` pour le recréer.
-.SS content FICHIER 
+.SS content FILE 
 Définit le fichier à utiliser pour stocker la liste et les sommes de
 contrôle de tous les fichiers présents dans votre baie de disques.
 .PP
@@ -1500,19 +1504,19 @@ enregistrer plusieurs copies du même fichier.
 .PP
 Vous devez stocker au moins une copie pour chaque disque de parité
 utilisé plus un. L\'utilisation de copies supplémentaires ne nuit pas.
-.SS data NOM DOSSIER 
+.SS data NAME DIR 
 Définit le nom et le point de montage des disques de données dans
-la baie. NOM est utilisé pour identifier le disque et doit
-être unique. DOSSIER est le point de montage du disque dans le
+la baie. NAME est utilisé pour identifier le disque et doit
+être unique. DIR est le point de montage du disque dans le
 système de fichiers.
 .PP
 Vous pouvez modifier le point de montage au besoin, tant que
-vous gardez le NOM fixe.
+vous gardez le NAME fixe.
 .PP
 Vous devriez utiliser une option pour chaque disque de données
 de la baie.
 .PP
-Vous pouvez renommer un disque plus tard en changeant le NOM directement
+Vous pouvez renommer un disque plus tard en changeant le NAME directement
 dans le fichier de configuration, puis en exécutant une commande \`sync\`.
 Dans le cas d\'un renommage, l\'association est faite en utilisant l\'UUID
 stocké des disques.
@@ -1554,7 +1558,7 @@ des instantanés.
 Exclut tous les fichiers et répertoires cachés.
 Sous Unix, les fichiers cachés sont ceux commençant par \`.\`.
 Sous Windows, ce sont ceux avec l\'attribut caché.
-.SS exclude/include MOTIF 
+.SS exclude/include PATTERN 
 Définit les motifs de fichiers ou de répertoires à exclure ou à inclure
 dans le processus de synchronisation.
 Tous les motifs sont traités dans l\'ordre spécifié.
@@ -1565,11 +1569,11 @@ Si aucun motif ne correspond, le fichier est exclu si le dernier motif
 spécifié est un \`include\`, ou inclus si le dernier motif
 spécifié est un \`exclude\`.
 .PP
-Voir la section MOTIF pour plus de détails sur les
+Voir la section PATTERN pour plus de détails sur les
 spécifications de motifs.
 .PP
 Cette option peut être utilisée plusieurs fois.
-.SS blocksize TAILLE_EN_KIBIOCTETS 
+.SS blocksize SIZE_IN_KIBIBYTES 
 Définit la taille de bloc de base en kibioctets pour la parité.
 Un kibioctet est de 1024 octets.
 .PP
@@ -1625,7 +1629,7 @@ mkfs.ext4 \-m 0 \-T largefile4 DEVICE
 Cela se traduit par environ 1,5 % d\'espace supplémentaire, environ 60 Go
 pour un disque de 4 To, ce qui permet environ 460 000 fichiers sur
 chaque disque de données sans aucun espace gaspillé.
-.SS hashsize TAILLE_EN_OCTETS 
+.SS hashsize SIZE_IN_BYTES 
 Définit la taille du hachage en octets pour les blocs enregistrés.
 .PP
 La taille de hachage par défaut est de 16 octets (128 bits),
@@ -1637,7 +1641,7 @@ cette valeur à l\'avenir, vous devrez recréer l\'intégralité de la parité !
 .PP
 Une raison d\'utiliser une taille de hachage différente est si votre
 système a une mémoire limitée. En règle générale, SnapRAID nécessite
-généralement 1 Gio de RAM pour chaque 16 To de données dans la baie.
+1 Gio de RAM pour chaque 16 To de données dans la baie.
 .PP
 Plus précisément, pour stocker les hachages des données, SnapRAID
 nécessite environ TS*(1+HS)/BS octets de RAM,
@@ -1669,13 +1673,13 @@ bloc de 512, vous obtenez :
 RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 Gio
 .PD 0
 .PD
-.SS autosave TAILLE_EN_GIGAOCTETS 
+.SS autosave SIZE_IN_GIGABYTES 
 Enregistre automatiquement l\'état lors de la synchronisation ou du
 nettoyage après la quantité spécifiée de Go traités.
 Cette option est utile pour éviter de redémarrer de longues commandes
 \`sync\` à partir de zéro si elles sont interrompues par un plantage
 de la machine ou tout autre événement.
-.SS temp_limit TEMPÉRATURE_CELSIUS 
+.SS temp_limit TEMPERATURE_CELSIUS 
 Définit la température maximale autorisée du disque en Celsius.
 Lorsqu\'elle est spécifiée, SnapRAID vérifie périodiquement la
 température de tous les disques à l\'aide de l\'outil smartctl.
@@ -1707,17 +1711,17 @@ au début de l\'exécution comme référence de secours.
 .PP
 Normalement, SnapRAID n\'affiche que la température du disque le plus chaud.
 Pour afficher la température de tous les disques, utilisez l\'option
-\-A ou \-\-stats.
-.SS temp_sleep TEMPS_EN_MINUTES 
+\`\-A, \-\-stats\`.
+.SS temp_sleep TIME_IN_MINUTES 
 Définit le temps de veille, en minutes, lorsque la limite de température
 est atteinte. Pendant cette période, les disques restent arrêtés.
 La valeur par défaut est de 5 minutes.
-.SS pool DOSSIER 
+.SS pool DIR 
 Définit le répertoire de mise en commun où la vue virtuelle de la
 baie de disques est créée à l\'aide de la commande \`pool\`.
 .PP
 Le répertoire doit déjà exister.
-.SS share CHEMIN_UNC 
+.SS share UNC_DIR 
 Définit le chemin UNC Windows requis pour accéder aux disques à distance.
 .PP
 Si cette option est spécifiée, les liens symboliques créés dans le
@@ -1731,7 +1735,7 @@ en ajoutant le nom du disque tel que spécifié dans l\'option \`data\`,
 et en ajoutant enfin le répertoire et le nom du fichier.
 .PP
 Cette option est requise uniquement pour Windows.
-.SS smartctl DISQUE/PARITÉ OPTIONS... 
+.SS smartctl DISK/PARITY OPTIONS... 
 Définit les options smartctl personnalisées pour obtenir les attributs
 SMART de chaque disque. Cela peut être nécessaire pour les contrôleurs
 RAID et certains disques USB qui ne peuvent pas être détectés
@@ -1739,8 +1743,8 @@ automatiquement. Le placeholder %s est remplacé par le nom du
 périphérique, mais il est facultatif pour les périphériques fixes
 comme les contrôleurs RAID.
 .PP
-DISQUE est le même nom de disque spécifié dans l\'option \`data\`.
-PARITÉ est l\'un des noms de parité : \`parity\`, \`2\-parity\`, \`3\-parity\`,
+DISK est le même nom de disque spécifié dans l\'option \`data\`.
+PARITY est l\'un des noms de parité : \`parity\`, \`2\-parity\`, \`3\-parity\`,
 \`4\-parity\`, \`5\-parity\`, \`6\-parity\` ou \`z\-parity\`.
 .PP
 Dans les OPTIONS spécifiées, la chaîne \`%s\` est remplacée par le
@@ -1774,13 +1778,13 @@ smartctl parity \-d sat %s
 .PD 0
 .PD
 .RE
-.SS smartignore DISQUE/PARITÉ ATTR [ATTR...] 
+.SS smartignore DISK/PARITY ATTR [ATTR...] 
 Ignore l\'attribut SMART spécifié lors du calcul de la probabilité
 de défaillance du disque. Cette option est utile si un disque signale
 des valeurs inhabituelles ou trompeuses pour un attribut particulier.
 .PP
-DISQUE est le même nom de disque spécifié dans l\'option \`data\`.
-PARITÉ est l\'un des noms de parité : \`parity\`, \`2\-parity\`, \`3\-parity\`,
+DISK est le même nom de disque spécifié dans l\'option \`data\`.
+PARITY est l\'un des noms de parité : \`parity\`, \`2\-parity\`, \`3\-parity\`,
 \`4\-parity\`, \`5\-parity\`, \`6\-parity\` ou \`z\-parity\`.
 La valeur spéciale * peut être utilisée pour ignorer l\'attribut
 sur tous les disques.
@@ -1809,7 +1813,7 @@ smartignore parity 197 5
 .PD 0
 .PD
 .RE
-.SS Exemples 
+.SS Exemples (Examples) 
 Un exemple de configuration typique pour Unix est :
 .PP
 .RS 4
@@ -1976,7 +1980,7 @@ prennent en charge les instantanés les utiliseront, tandis que les autres disqu
 La création et la suppression d\'instantanés nécessitent des privilèges d\'administration.
 Assurez\-vous que SnapRAID est exécuté avec les autorisations nécessaires (par exemple, sudo)
 lorsque les instantanés sont activés.
-.SS Comportement des commandes avec les instantanés 
+.SS Comportement des commandes avec les instantanés (Command Behavior with Snapshots) 
 Les commandes \`sync\` et \`scrub\` fonctionnent toutes deux exclusivement sur les instantanés
 pour garantir que toutes les opérations sur les données sont effectuées par rapport à un état cohérent
 et figé. En utilisant ces instantanés, SnapRAID empêche les écarts de parité
@@ -2328,10 +2332,25 @@ de console.
 Cela n\'affecte que les noms de fichiers imprimés ; si vous
 redirigez la sortie de la console vers un fichier, le fichier
 résultant est toujours au format UTF\-8.
+.SH CODE DE SORTIE (EXIT CODE) 
+SnapRAID se termine avec les codes d\'erreur suivants :
+.RS 0
+.PD 0
+.HP 4
+.I 0
+Tout est OK.
+.HP 4
+.I 1
+La commande a rencontré des erreurs.
+.HP 4
+.I 2
+La commande \`diff\` a trouvé que tout est OK, mais un \`sync\` est requis.
+.PD
+.RE
 .SH TRADUCTION (TRANSLATION) 
 Ce document est une traduction automatique du manuel en anglais.
 Veuillez vous référer au manuel en anglais pour la version officielle.
 .SH DROITS D\'AUTEUR (COPYRIGHT) 
-Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
+Ce fichier est Copyright (C) 2026 Andrea Mazzoleni
 .SH VOIR AUSSI (SEE ALSO) 
 snapraid_log(1), snapraidd(1), rsync(1)
