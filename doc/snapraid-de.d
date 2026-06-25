@@ -45,7 +45,7 @@ Beschreibung (Description)
 	* SnapRAID sperrt Ihre Daten nicht ein; Sie können die Verwendung
 		jederzeit beenden, ohne neu formatieren oder Daten verschieben zu müssen.
 	* Um auf eine Datei zuzugreifen, muss nur eine einzige Festplatte
-		drehen (spinnen), was Strom spart und Geräusche reduziert.
+		anlaufen (drehen), was Strom spart und Geräusche reduziert.
 
 	Für weitere Informationen besuchen Sie bitte die offizielle SnapRAID-Website:
 
@@ -80,13 +80,13 @@ Einschränkungen (Limitations)
 
 	* Mit SnapRAID haben Sie immer noch separate Dateisysteme für jede
 		Festplatte. Mit RAID erhalten Sie ein einziges großes Dateisystem.
-	* SnapRAID streift (stripes) keine Daten.
+	* SnapRAID verwendet kein Data-Striping (Verteilen von Datenblöcken).
 		Mit RAID erhalten Sie einen Geschwindigkeitsvorteil durch Striping.
 	* SnapRAID unterstützt keine Echtzeit-Wiederherstellung.
 		Mit RAID müssen Sie die Arbeit nicht unterbrechen, wenn eine
 		Festplatte ausfällt.
 	* SnapRAID kann Daten nur von einer begrenzten Anzahl von Festplattenausfällen
-		wiederherstellen. Mit einer Sicherung können Sie von einem
+		wiederherstellen. Mit einer Sicherung können Sie Daten nach einem
 		vollständigen Ausfall des gesamten Festplatten-Arrays wiederherstellen.
 	* Nur Dateinamen, Zeitstempel, symbolische Links (symlinks) und
 		Hardlinks werden gespeichert. Berechtigungen, Eigentümerschaft
@@ -95,10 +95,10 @@ Einschränkungen (Limitations)
 Erste Schritte (Getting Started)
 	Um SnapRAID zu verwenden, müssen Sie zuerst eine Festplatte in Ihrem
 	Festplatten-Array auswählen, die für `parity`-Informationen
-	reserviert wird. Mit einer Festplatte für Parität können Sie von
-	einem einzelnen Festplattenausfall wiederherstellen, ähnlich wie bei RAID5.
+	reserviert wird. Mit einer Festplatte für Parität können Sie Daten
+	nach einem einzelnen Festplattenausfall wiederherstellen, ähnlich wie bei RAID5.
 
-	Wenn Sie von mehr Festplattenausfällen wiederherstellen möchten,
+	Wenn Sie mehr Festplattenausfälle ausgleichen möchten,
 	ähnlich wie bei RAID6, müssen Sie zusätzliche Festplatten für Parität
 	reservieren. Jede zusätzliche Paritätsfestplatte ermöglicht die
 	Wiederherstellung von einem weiteren Festplattenausfall.
@@ -226,7 +226,7 @@ Erste Schritte (Getting Started)
   Zusammenführen (Pooling)
 	Hinweis: Die unten beschriebene Pooling-Funktion wurde durch das
 	Tool mergerfs ersetzt, das jetzt die empfohlene Option für Linux-Benutzer
-	in der SnapRAID-Community ist. Mergefs bietet eine flexiblere
+	in der SnapRAID-Community ist. Mergerfs bietet eine flexiblere
 	und effizientere Möglichkeit, mehrere Laufwerke zu einem einzigen,
 	vereinheitlichten Einhängepunkt (Mount Point) zusammenzufassen,
 	was einen nahtlosen Zugriff auf Dateien über Ihr gesamtes Array
@@ -428,7 +428,7 @@ Erste Schritte (Getting Started)
 	Wenn alles wiederhergestellt ist, ist dieser Befehl sofort.
 
 Befehle (Commands)
-	SnapRAID bietet ein paar einfache Befehle, mit denen Sie:
+	SnapRAID bietet ein paar einfache Befehle, mit denen Sie folgende Aktionen ausführen können:
 
 	* Den Status des Arrays ausgeben -> `status`
 	* Die Festplatten steuern -> `smart`, `probe`, `up`, `down`
@@ -454,7 +454,7 @@ Befehle (Commands)
 	verwenden.
 
 	Es zeigt auch ein Diagramm an, das den letzten Zeitpunkt darstellt,
-	zu dem jeder Block gescrubbed oder synchronisiert wurde. Gescrubbed
+	zu dem jeder Block gescrubbed oder synchronisiert wurde. Gescrubbte
 	Blöcke werden mit `*`, Blöcke, die synchronisiert, aber noch nicht
 	gescrubbed wurden, mit `o` angezeigt.
 
@@ -464,7 +464,7 @@ Befehle (Commands)
 	Gibt einen SMART-Bericht aller Festplatten im System aus.
 
 	Es enthält eine Schätzung der Ausfallwahrscheinlichkeit im nächsten
-	Jahr, sodass Sie die Wartungsersetzung von Festplatten planen können,
+	Jahr, sodass Sie den vorsorglichen Austausch von Festplatten planen können,
 	die verdächtige Attribute aufweisen.
 
 	Diese Wahrscheinlichkeitsschätzung wird durch Korrelation der SMART-Attribute
@@ -930,9 +930,9 @@ Optionen (Options)
 	-w, --bw-limit RATE
 		Wendet eine globale Bandbreitenbegrenzung für alle Festplatten
 		an. RATE ist die Anzahl der Bytes pro Sekunde. Sie können
-		einen Multiplikator wie K, M oder G angeben (z.B. --bw-limit 1G).
+		einen Multiplikator wie K, M, G oder T angeben (z.B. --bw-limit 1G).
 
-	-t, --tail GRÖSSE
+	-t, --tail SIZE
 		Beschränkt die Dateiliste auf diejenigen, die nicht mehr als die
 		angegebene Tail-Größe der Paritätsfestplatten belegen.
 		Sie können Multiplikatoren wie K, M, G oder T verwenden (z. B. --tail 1G).
@@ -962,7 +962,7 @@ Optionen (Options)
 		mit Nullgröße, die zuvor nicht Null war. Wenn SnapRAID eine
 		solche Bedingung erkennt, stoppt es den Vorgang, es sei denn,
 		Sie geben diese Option an. Dies ermöglicht es Ihnen, leicht zu
-		erkennen, wann nach einem Systemabsturz einige zugegriffene Dateien
+		erkennen, wann nach einem Systemabsturz einige Dateien, auf die zugegriffen wurde,
 		abgeschnitten (truncated) wurden. Dies ist eine mögliche Bedingung
 		unter Linux mit den ext3/ext4-Dateisystemen.
 		Diese Option kann nur mit `sync` verwendet werden.
@@ -997,7 +997,7 @@ Optionen (Options)
 		Wenn Sie beispielsweise zwei Datenfestplatten verloren haben und
 		eine Ersatzfestplatte haben, um nur die erste wiederherzustellen,
 		können Sie die zweite unzugängliche Festplatte ignorieren.
-		Oder wenn Sie eine Festplatte in dem auf einer bereits
+		Oder wenn Sie eine Festplatte auf dem auf einer bereits
 		verwendeten Festplatte verbleibenden freien Speicherplatz
 		wiederherstellen möchten, wobei sie dasselbe physische Gerät
 		gemeinsam nutzen.
@@ -1041,9 +1041,9 @@ Optionen (Options)
 		dringend empfohlen, sie nicht zu verwenden.
 		Sie haben während der `sync`-Operation KEINEN Datenschutz.
 
-	-W, --force-realloc-tail GRÖSSE
+	-W, --force-realloc-tail SIZE
 		Funktioniert wie -R, --force-realloc, ist jedoch auf den angegebenen
-		Endbereich (die letzten GRÖSSE Bytes) jeder Paritätsdatei beschränkt.
+		Endbereich (die letzten SIZE Bytes) jeder Paritätsdatei beschränkt.
 		Erzwingt die Neuzuweisung (Verschiebung) aller Dateifragmente/-blöcke, die
 		derzeit in diesem Endabschnitt gespeichert sind, sodass sie an beliebiger Stelle
 		in den Paritätsdateien platziert werden können, wo freier Speicherplatz
@@ -1104,7 +1104,7 @@ Optionen (Options)
 		Wiederherstellung gedacht.
 
 	-C, --gen-conf CONTENT
-		Generiert eine Dummy-Konfigurationsdatei aus einer vorhandenen
+		Generiert eine Dummy-Konfigurationsdatei aus einer bestehenden
 		Content-Datei. Die Konfigurationsdatei wird in die Standardausgabe
 		geschrieben und überschreibt keine vorhandene.
 		Diese Konfigurationsdatei enthält auch die Informationen,
@@ -1145,9 +1145,8 @@ Konfiguration (Configuration)
 	enthalten:
 
   parity FILE [,FILE] ...
-	Definiert die Dateien, die zum Speichern der Paritätsinformationen
-	verwendet werden sollen. Die Parität ermöglicht den Schutz
-	vor einem einzelnen Festplattenausfall, ähnlich wie bei RAID5.
+	Definiert die Dateien, die zum Speichern der Paritätsinformationen verwendet werden.
+	Die Parität ermöglicht den Schutz vor einem einzelnen Festplattenausfall, ähnlich wie bei RAID5.
 
 	Sie können mehrere Dateien angeben, die sich auf unterschiedlichen
 	Festplatten befinden müssen. Wenn eine Datei nicht mehr wachsen
@@ -1167,8 +1166,7 @@ Konfiguration (Configuration)
 	Diese Option ist obligatorisch und kann nur einmal verwendet werden.
 
   (2,3,4,5,6)-parity FILE [,FILE] ...
-	Definiert die Dateien, die zum Speichern zusätzlicher Paritätsinformationen
-	verwendet werden sollen.
+	Definiert die Dateien, die zum Speichern zusätzlicher Paritätsinformationen verwendet werden.
 
 	Für jede angegebene Paritätsstufe wird eine zusätzliche Schutzstufe
 	aktiviert:
@@ -1206,8 +1204,8 @@ Konfiguration (Configuration)
 	3-parity-Datei angepasst und `fix` zur Neuerstellung verwendet wird.
 
   content FILE
-	Definiert die Datei, die zum Speichern der Liste und Prüfsummen
-	aller im Festplatten-Array vorhandenen Dateien verwendet werden soll.
+	Definiert die Datei, die zum Speichern der Liste und der Prüfsummen aller
+	im Festplatten-Array vorhandenen Dateien verwendet wird.
 
 	Sie kann auf einer für Daten, Parität oder einer anderen
 	verfügbaren Festplatte platziert werden.
@@ -1221,10 +1219,9 @@ Konfiguration (Configuration)
 	plus eine speichern. Die Verwendung zusätzlicher Kopien schadet nicht.
 
   data NAME DIR
-	Definiert den Namen und den Einhängepunkt (Mount Point) der
-	Datenfestplatten im Array. NAME wird zur Identifizierung der
-	Festplatte verwendet und muss eindeutig sein. DIR ist der
-	Einhängepunkt der Festplatte im Dateisystem.
+	Definiert den Namen und Einhängepunkt der Datenfestplatten im Array. NAME
+	wird zur Identifizierung der Festplatte verwendet und muss eindeutig sein.
+	DIR ist der Einhängepunkt der Festplatte im Dateisystem.
 
 	Sie können den Einhängepunkt nach Bedarf ändern, solange Sie
 	den NAME unverändert lassen.
@@ -1251,14 +1248,14 @@ Konfiguration (Configuration)
 	Aktiviert die Verwendung von Dateisystem-Snapshots für die Befehle `sync`, `scrub`,
 	`check` und `fix`.
 
-	Wenn aktiviert, erstellt SnapRAID zu Beginn eines 'sync' einen schreibgeschützten Snapshot Ihrer Daten.
-	Dies gewährleistet eine konsistente Point-in-Time-Ansicht Ihrer Dateien und verhindert
-	Fehler, die durch gleichzeitige Dateiänderungen verursacht werden.
+	Wenn aktiviert, erstellt SnapRAID zu Beginn eines 'sync' einen schreibgeschützten
+	Snapshot Ihrer Daten. Dies gewährleistet eine konsistente Point-in-Time-Ansicht
+	Ihrer Dateien und verhindert Fehler, die durch gleichzeitige Dateiänderungen verursacht werden.
 
-	Dies verbessert die Wiederherstellung erheblich: Wenn eine Datei aus dem Live-Dateisystem gelöscht wird,
-	bleibt sie im Snapshot erhalten. Dies verhindert, dass die Parität für diesen Block
-	"beschädigt" wird, sodass Sie Daten immer noch erfolgreich wiederherstellen können,
-	wenn eine andere Festplatte ausfällt.
+	Dies verbessert die Wiederherstellung erheblich: Wenn eine Datei aus dem
+	Live-Dateisystem gelöscht wird, bleibt sie im Snapshot erhalten. Dies verhindert,
+	dass die Parität für diesen Block "beschädigt" wird, sodass Sie Daten immer noch
+	erfolgreich wiederherstellen können, wenn eine andere Festplatte ausfällt.
 
 	Diese Option gilt ausschließlich für Datenträger, die mit den Dateisystemen
 	Btrfs, Bcachefs oder ZFS unter Linux und NTFS unter Windows formatiert sind.
@@ -1266,8 +1263,8 @@ Konfiguration (Configuration)
 	die Live-Version des Dateisystems.
 
 	Das Erstellen und Löschen von Snapshots erfordert Administratorrechte.
-	Stellen Sie sicher, dass SnapRAID mit den erforderlichen Berechtigungen (z. B. sudo) ausgeführt wird, wenn
-	diese Option aktiviert ist.
+	Stellen Sie sicher, dass SnapRAID mit den erforderlichen Berechtigungen (z. B. sudo)
+	ausgeführt wird, wenn diese Option aktiviert ist.
 
 	Eine detaillierte Erklärung des Snapshot-Lebenszyklus finden Sie im Abschnitt SNAPSHOTS.
 
@@ -1506,7 +1503,7 @@ Konfiguration (Configuration)
 
 		:smartignore parity 197 5
 
-  Examples
+  Beispiele (Examples)
 	Ein Beispiel für eine typische Konfiguration für Unix ist:
 
 		:parity /mnt/diskp/snapraid.parity
@@ -1582,7 +1579,7 @@ Snapshots
 	Stellen Sie sicher, dass SnapRAID mit den erforderlichen Berechtigungen (z. B. sudo)
 	ausgeführt wird, wenn Snapshots aktiviert sind.
 
-  Befehlsverhalten mit Snapshots
+  Befehlsverhalten mit Snapshots (Command Behavior with Snapshots)
 	Die Befehle `sync` und `scrub` arbeiten beide ausschließlich auf Snapshots,
 	um sicherzustellen, dass alle Datenoperationen auf einem konsistenten,
 	eingefrorenen Zustand ausgeführt werden. Durch die Nutzung dieser Snapshots verhindert SnapRAID Paritätskonflikte,
@@ -1846,12 +1843,19 @@ Kodierung (Encoding)
 	die Konsolenausgabe in eine Datei umleiten, ist die resultierende
 	Datei immer im UTF-8-Format.
 
+Exit-Code (Exit Code)
+	SnapRAID endet mit den folgenden Fehlercodes:
+
+	0 - Alles OK.
+	1 - Der Befehl ist auf Fehler gestoßen.
+	2 - Der Befehl `diff` hat festgestellt, dass alles OK ist, aber ein `sync` erforderlich ist.
+
 Übersetzung (Translation)
 	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
 	Die maßgebliche Version finden Sie im englischen Handbuch.
 
 Copyright
-	Diese Datei ist Copyright (C) 2025 Andrea Mazzoleni
+	Diese Datei ist Copyright (C) 2026 Andrea Mazzoleni
 
 Siehe auch (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)

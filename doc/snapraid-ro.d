@@ -32,7 +32,7 @@ Descriere (Description)
 	care se schimbă rar, SnapRAID oferă câteva caracteristici:
 
 	* Puteți utiliza discuri deja pline cu fișiere fără
-		nevoia de a le reformat, accesându-le ca de obicei.
+		nevoia de a le reformata, accesându-le ca de obicei.
 	* Toate datele dvs. sunt hash-uite pentru a asigura integritatea datelor și a preveni
 		corupția silențioasă.
 	* Când numărul de discuri defecte depășește numărul de parități,
@@ -43,7 +43,7 @@ Descriere (Description)
 	* Discurile pot avea dimensiuni diferite.
 	* Puteți adăuga discuri în orice moment.
 	* SnapRAID nu vă blochează datele; puteți înceta să-l utilizați
-		oricând fără a reforma sau muta date.
+		oricând fără a reformata sau muta date.
 	* Pentru a accesa un fișier, este necesar să se rotească doar un singur disc, economisind
 		energie și reducând zgomotul.
 
@@ -212,7 +212,7 @@ Noțiuni de Bază (Getting Started)
   Agregare (Pooling)
 	Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
 	mergerfs, care este acum opțiunea recomandată pentru utilizatorii Linux în
-	comunitatea SnapRAID. Mergefs oferă o modalitate mai flexibilă și eficientă
+	comunitatea SnapRAID. Mergerfs oferă o modalitate mai flexibilă și eficientă
 	de a agrega mai multe discuri într-un singur punct de montare unificat,
 	permițând accesul neîntrerupt la fișiere pe toată matricea dvs. fără a se baza
 	pe link-uri simbolice. Se integrează bine cu SnapRAID pentru protecția parității
@@ -221,7 +221,7 @@ Noțiuni de Bază (Getting Started)
 
 	Pentru a avea toate fișierele din matricea dvs. afișate în același arbore de directoare,
 	puteți activa funcționalitatea de `pooling`. Aceasta creează o vizualizare virtuală
-	doar în citire a tuturor fișierelor din matricea dvs. folosind link-uri simbolice.
+	read-only a tuturor fișierelor din matricea dvs. folosind link-uri simbolice.
 
 	Puteți configura directorul de `pooling` în fișierul de configurare cu:
 
@@ -320,7 +320,7 @@ Noțiuni de Bază (Getting Started)
 	a discului defect să indice o locație cu suficient spațiu gol
 	pentru a recupera fișierele.
 
-	De exemplu, dacă discul `d1` a eșuat, schimbați de la:
+	De exemplu, dacă discul `d1` s-a defectat, schimbați de la:
 
 		:data d1 /mnt/disk1/
 
@@ -356,7 +356,7 @@ Noțiuni de Bază (Getting Started)
 	Dacă nu sunteți mulțumit de recuperare, o puteți reîncerca de câte
 	ori doriți.
 
-	De exemplu, dacă ați eliminat fișiere din matrice după ultima
+	De exemplu, dacă ați eliminat fișiere din matrice după ultimul
 	`sync`, acest lucru poate duce la nerecuperarea unor fișiere.
 	În acest caz, puteți reîncerca `fix`-ul utilizând opțiunea -i, --import,
 	specificând unde se află acum aceste fișiere pentru a le include din nou în
@@ -421,7 +421,7 @@ Comenzi (Commands)
 	Tipărește un raport SMART al tuturor discurilor din sistem.
 
 	Include o estimare a probabilității de eșec în anul următor,
-	permițându-vă să planificați înlocuiri de întreținere a discurilor care prezintă
+	permițându-vă să planificați înlocuiri de întreținere ale discurilor care prezintă
 	atribute suspecte.
 
 	Această estimare a probabilității este obținută prin corelarea atributelor SMART
@@ -429,7 +429,7 @@ Comenzi (Commands)
 
 		:https://www.backblaze.com/hard-drive-test-data.html
 
-	Dacă SMART raportează că un disc este pe cale să eșueze, `FAIL` sau `PREFAIL` este tipărit
+	Dacă SMART raportează că un disc este pe cale să se defecteze, `FAIL` sau `PREFAIL` este tipărit
 	pentru acel disc, iar SnapRAID returnează o eroare.
 	În acest caz, înlocuirea imediată a discului este puternic recomandată.
 
@@ -466,7 +466,7 @@ Comenzi (Commands)
 	Nimic nu este modificat.
 
   up
-	Pornirea tuturor discurilor din matrice.
+	Pornește toate discurile din matrice.
 
 	Puteți porni doar discuri specifice utilizând opțiunea -d, --filter-disk.
 
@@ -476,7 +476,7 @@ Comenzi (Commands)
 	Nimic nu este modificat.
 
   down
-	Oprirea (spin down) tuturor discurilor din matrice.
+	Oprește (spin down) toate discurile din matrice.
 
 	Această comandă utilizează instrumentul `smartctl` și este echivalentă cu rularea
 	`smartctl -s standby,now` pe toate dispozitivele.
@@ -490,7 +490,7 @@ Comenzi (Commands)
 	Nimic nu este modificat.
 
   diff
-	Listează toate fișierele modificate de la ultima `sync` care trebuie
+	Listează toate fișierele modificate de la ultimul `sync` care trebuie
 	să li se recalculeze datele de paritate.
 
 	Această comandă nu verifică datele fișierului, ci doar marca temporală,
@@ -509,23 +509,23 @@ Comenzi (Commands)
 		copied - Fișiere copiate pe același disc sau pe un disc diferit
 			unde fișierul original încă există.
 			Acestea sunt identificate prin faptul că au același nume,
-			dimensiune și amprentă temporală.
-			Dacă amprenta temporală sub-secundă este zero, calea completă
+			dimensiune și marcă temporală.
+			Dacă marca temporală sub-secundă este zero, calea completă
 			trebuie să se potrivească pentru a fi identificate, nu doar
 			numele.
 		relocated - Fișiere mutate pe același disc sau pe un disc diferit
 			unde originalul a dispărut.
 			Acestea sunt identificate prin faptul că au același nume,
-			dimensiune și amprentă temporală.
-			Dacă amprenta temporală sub-secundă este zero, calea completă
+			dimensiune și marcă temporală.
+			Dacă marca temporală sub-secundă este zero, calea completă
 			trebuie să se potrivească pentru a fi identificate.
 			Spre deosebire de fișierele 'moved' de pe același disc, fișierele
 			relocate au un inod diferit.
 		restored - Fișiere cu un inod diferit, dar care se potrivesc ca
-			director, nume, dimensiune și amprentă temporală.
+			director, nume, dimensiune și marcă temporală.
 			Acestea sunt de obicei fișiere restaurate după ce au fost șterse.
 
-	Dacă este necesară o `sync`, codul de retur al procesului este 2, în loc de
+	Dacă este necesară o sincronizare, codul de retur al procesului este 2, în loc de
 	cel implicit 0. Codul de retur 1 este utilizat pentru o condiție de eroare generică.
 
 	Nimic nu este modificat.
@@ -612,7 +612,7 @@ Comenzi (Commands)
 	Pentru a repara doar blocurile marcate ca defecte în timpul `sync` și `scrub`,
 	utilizați opțiunea -e, --filter-error.
 	Spre deosebire de alte opțiuni de filtrare, aceasta aplică reparații doar fișierelor care sunt
-	neschimbate de la ultima `sync`.
+	neschimbate de la ultimul `sync`.
 
 	SnapRAID redenumește toate fișierele care nu pot fi reparate adăugând extensia
 	`.unrecoverable`.
@@ -650,7 +650,7 @@ Comenzi (Commands)
 
   list
 	Listează toate fișierele conținute în matrice la momentul
-	ultimei `sync`.
+	ultimului `sync`.
 
 	Cu -v sau --verbose, este afișat și timpul sub-secundă.
 
@@ -735,11 +735,10 @@ Comenzi (Commands)
 
 	Puteți utiliza opțiunea -t, --tail pentru a restricționa operațiunea la fișierele
 	care ocupă porțiunea finală specificată a parității.
-	Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
-	-W, --force-realloc-tail.
 
-	Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul procesului
-	de realocare.
+	Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
+	-W, --force-realloc-tail. Rețineți că astfel de fișiere nu vor
+	fi protejate de paritate în timpul procesului de realocare.
 
 Opțiuni (Options)
 	SnapRAID oferă următoarele opțiuni:
@@ -832,7 +831,7 @@ Opțiuni (Options)
 
 	-i, --import DIR
 		Importă din directorul specificat orice fișiere șterse
-		din matrice după ultima `sync`.
+		din matrice după ultimul `sync`.
 		Dacă mai aveți astfel de fișiere, ele pot fi utilizate de `check`
 		și `fix` pentru a îmbunătăți procesul de recuperare.
 		Fișierele sunt citite, inclusiv în subdirectoare, și sunt
@@ -850,9 +849,9 @@ Opțiuni (Options)
 	-w, --bw-limit RATE
 		Aplică o limită globală de lățime de bandă pentru toate discurile. RATE este
 		numărul de octeți pe secundă. Puteți specifica un multiplicator
-		cum ar fi K, M sau G (de exemplu, --bw-limit 1G).
+		cum ar fi K, M, G sau T (de exemplu, --bw-limit 1G).
 
-	-t, --tail DIMENSIUNE
+	-t, --tail SIZE
 		Limitează listarea fișierelor la cele care nu utilizează mai mult de
 		dimensiunea finală specificată a discurilor de paritate.
 		Puteți utiliza multiplicatori precum K, M, G sau T (ex. --tail 1G).
@@ -895,11 +894,7 @@ Opțiuni (Options)
 		dacă nu specificați această opțiune.
 		Acest lucru vă permite să detectați cu ușurință când un sistem de fișiere de date nu este
 		montat.
-		Este permis, totuși, să aveți o singură schimbare de UUID cu
-		paritate simplă și mai multe cu paritate multiplă, deoarece acesta este
-		cazul normal la înlocuirea discurilor după o recuperare.
-		Această opțiune poate fi utilizată doar cu `sync`, `check` sau
-		`fix`.
+		Această opțiune poate fi utilizată doar cu `sync`.
 
 	-U, --force-uuid
 		Forțează operațiunea nesigură de sincronizare, verificare și reparare
@@ -956,7 +951,7 @@ Opțiuni (Options)
 		recomandat să nu o utilizați.
 		NU aveți protecție a datelor în timpul operațiunii `sync`.
 
-	-W, --force-realloc-tail DIMENSIUNE
+	-W, --force-realloc-tail SIZE
 		Funcționează ca -R, --force-realloc, dar limitat la porțiunea finală
 		specificată (ultimii DIMENSIUNE octeți) ai fiecărui fișier de paritate.
 		Forțează realocarea (mutarea) oricăror fragmente/blocuri de fișiere stocate
@@ -998,7 +993,7 @@ Opțiuni (Options)
 	-L, --error-limit NUMBER
 		Setează o nouă limită de erori înainte de a opri execuția.
 		În mod implicit, SnapRAID se oprește dacă întâlnește mai mult de 100
-		de erori de intrare/ieșire, indicând că un disc probabil eșuează.
+		de erori de intrare/ieșire, indicând că un disc probabil se defectează.
 		Această opțiune afectează `sync` și `scrub`, cărora li se permite
 		să continue după primul set de erori de disc pentru a încerca
 		să își finalizeze operațiunile.
@@ -1082,7 +1077,7 @@ Configurare (Configuration)
 
 	* 2-parity activează paritatea dublă RAID6.
 	* 3-parity activează paritatea triplă.
-	* 4-parity activează paritatea quad (patru).
+	* 4-parity activează paritatea cvadruplă (patru).
 	* 5-parity activează paritatea penta (cinci).
 	* 6-parity activează paritatea hexa (șase).
 
@@ -1101,7 +1096,7 @@ Configurare (Configuration)
 	suportă setul de instrucțiuni SSSE3. În astfel de cazuri, oferă
 	o performanță mai bună.
 
-	Acest format este similar, dar mai rapid decât cel utilizat de ZFS RAIDZ3.
+	Acest format este similar cu cel utilizat de ZFS RAIDZ3, dar mai rapid decât acesta.
 	Ca și ZFS, nu funcționează dincolo de paritatea triplă.
 
 	Când utilizați `3-parity`, veți fi avertizați dacă este recomandat să utilizați
@@ -1112,7 +1107,7 @@ Configurare (Configuration)
 	și utilizând `fix` pentru a-l recrea.
 
   content FILE
-	Definește fișierul de utilizat pentru a stoca lista și sumele de control (checksums) a tuturor
+	Definește fișierul de utilizat pentru a stoca lista și sumele de control (checksums) ale tuturor
 	fișierelor prezente în matricea dvs. de discuri.
 
 	Poate fi plasat pe un disc utilizat pentru date, paritate sau
@@ -1285,7 +1280,7 @@ Configurare (Configuration)
 	Salvează automat starea la sincronizare sau verificare după
 	cantitatea specificată de GB procesați.
 	Această opțiune este utilă pentru a evita repornirea comenzilor `sync` lungi
-	de la zero dacă sunt întrerupte de o cădere a mașinii sau de orice alt eveniment.
+	de la zero dacă sunt întrerupte de o pană de sistem sau de orice alt eveniment.
 
   temp_limit TEMPERATURE_CELSIUS
 	Setează temperatura maximă permisă a discului în Celsius. Când este specificată,
@@ -1294,13 +1289,13 @@ Configurare (Configuration)
 	SnapRAID funcționează. Dacă un disc depășește această limită, toate operațiunile
 	se opresc, iar discurile sunt oprite (puse în standby) pentru durata
 	definită de opțiunea `temp_sleep`. După perioada de așteptare, operațiunile
-	reiau, putând întrerupe din nou dacă limita de temperatură este atinsă
+	se reiau, putând fi întrerupte din nou dacă limita de temperatură este atinsă
 	încă o dată.
 
 	În timpul funcționării, SnapRAID analizează și curba de încălzire a fiecărui
 	disc și estimează temperatura constantă pe termen lung pe care se așteaptă să o
 	atingă dacă activitatea continuă. Estimarea este efectuată numai după
-	ce temperatura discului a crescut de patru ori, asigurându-se că sunt disponibile
+	ce temperatura discului a înregistrat patru creșteri, asigurându-se că sunt disponibile
 	suficiente puncte de date pentru a stabili o tendință fiabilă.
 	Această temperatură constantă prezisă este afișată între paranteze lângă
 	valoarea curentă și ajută la evaluarea dacă răcirea sistemului este
@@ -1370,7 +1365,7 @@ Configurare (Configuration)
 
   smartignore DISK/PARITY ATTR [ATTR...]
 	Ignoră atributul SMART specificat la calcularea probabilității
-	de eșec a discului. Această opțiune este utilă dacă un disc raportează valori neobișnuite sau
+	de eșec al discului. Această opțiune este utilă dacă un disc raportează valori neobișnuite sau
 	înșelătoare pentru un anumit atribut.
 
 	DISK este același nume de disc specificat în opțiunea `data`.
@@ -1424,7 +1419,7 @@ Configurare (Configuration)
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
-Snapshots
+Snapshot-uri (Snapshots)
 	Dacă opțiunea snapshot este activată în configurație, SnapRAID
 	utilizează funcționalitatea de snapshot a sistemului de fișiere pentru a asigura operațiuni atomice
 	și consistente.
@@ -1548,7 +1543,7 @@ Model (Pattern)
 
 	Asteriscul simplu `*` se potrivește cu orice secvență de caractere, dar, la fel ca
 	semnul întrebării, nu trece niciodată de limitele directoarelor. Se oprește la
-	slash-ul înainte, ceea ce îl face potrivit pentru potrivirea în cadrul unei singure
+	bara oblică (/), ceea ce îl face potrivit pentru potrivirea în cadrul unei singure
 	componente a căii. Acesta este comportamentul standard al metacaracterelor, familiar
 	din shell globbing.
 
@@ -1728,12 +1723,19 @@ Codare (Encoding)
 	redirecționați ieșirea consolei către un fișier, fișierul rezultat este întotdeauna
 	în format UTF-8.
 
+Cod de ieșire (Exit Code)
+	SnapRAID se termină cu următoarele coduri de eroare:
+
+	0 - Totul este OK.
+	1 - Comanda a întâmpinat unele erori.
+	2 - Comanda `diff` a constatat că totul este OK, dar este necesar un `sync`.
+
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.
 	Consultați manualul în limba engleză pentru versiunea oficială.
 
 Drept de Autor (Copyright)
-	Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
+	Acest fișier este Copyright (C) 2026 Andrea Mazzoleni
 
 Vezi și (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)

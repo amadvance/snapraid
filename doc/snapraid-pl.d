@@ -1,5 +1,5 @@
 Name{number}
-	snapraid - Kopia zapasowa SnapRAID dla macierzy dyskowych
+	snapraid - Program do tworzenia kopii zapasowych SnapRAID dla macierzy dyskowych
 
 Składnia (Synopsis)
 	:snapraid [-c, --conf CONFIG]
@@ -88,7 +88,7 @@ Ograniczenia (Limitations)
 		awarii całej macierzy dysków.
 	* Zapisywane są tylko nazwy plików, znaczniki czasu, dowiązania symboliczne
 		i dowiązania twarde.
-		Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
+		Uprawnienia, właściciel (własność) i rozszerzone atrybuty nie są zapisywane.
 
 Pierwsze kroki (Getting Started)
 	Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
@@ -211,10 +211,10 @@ Pierwsze kroki (Getting Started)
 	spowodowane usuniętymi lub zmodyfikowanymi plikami. Błędy te są zgłaszane
 	w wyniku `scrub`, ale powiązane bloki nie są oznaczane jako złe.
 
-  Pooling (Pooling)
+  Łączenie w pulę (Pooling)
 	Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
 	narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
-	w społeczności SnapRAID. Mergefs zapewnia bardziej elastyczny i wydajny
+	w społeczności SnapRAID. Mergerfs zapewnia bardziej elastyczny i wydajny
 	sposób łączenia wielu dysków w jeden ujednolicony punkt montowania,
 	umożliwiając bezproblemowy dostęp do plików w całej macierzy bez polegania
 	na dowiązaniach symbolicznych. Dobrze integruje się z SnapRAID w celu ochrony
@@ -355,7 +355,7 @@ Pierwsze kroki (Getting Started)
 	są częściowo lub całkowicie nie do odzyskania, zostaną one przemianowane
 	poprzez dodanie rozszerzenia `.unrecoverable`.
 
-	Szczegółową listę wszystkich nie do odzyskania bloków znajdziesz w pliku fix.log,
+	Szczegółową listę wszystkich bloków nie do odzyskania znajdziesz w pliku fix.log,
 	sprawdzając wszystkie linie zaczynające się od `unrecoverable:`.
 
 	Jeśli nie jesteś zadowolony z odzyskiwania, możesz spróbować ponownie
@@ -395,7 +395,7 @@ Polecenia (Commands)
 	SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 
 	* Wyświetlenie stanu macierzy -> `status`
-	* Kontrolę dysków -> `smart`, `probe`, `up`, `down`
+	* Kontrola dysków -> `smart`, `probe`, `up`, `down`
 	* Utworzenie punktu kopii zapasowej/przywracania -> `sync`
 	* Okresowe sprawdzanie danych -> `scrub`
 	* Przywrócenie ostatniego punktu kopii zapasowej/przywracania -> `fix`.
@@ -523,9 +523,9 @@ Polecenia (Commands)
 			i znacznika czasu.
 			Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
 			musi być zgodna, aby plik został zidentyfikowany.
-			W przeciwieństwie do plików 'moved' na tym samym dysku, pliki
-			relokowane mają inny i-węzeł.
-		restored - Pliki o innym i-węźle, ale pasującym katalogu,
+			W przeciwieństwie do plików przeniesionych ('moved') na tym samym dysku, pliki
+			relokowane mają inny inode.
+		restored - Pliki o innym inode, ale pasującym katalogu,
 			nazwie, rozmiarze i znaczniku czasu.
 			Są to zazwyczaj pliki przywrócone po ich usunięciu.
 
@@ -592,7 +592,7 @@ Polecenia (Commands)
 
 	Zaleca się uruchamianie `scrub` tylko na zsynchronizowanej macierzy, aby uniknąć
 	zgłaszania błędów spowodowanych przez niezsynchronizowane dane. Błędy te są rozpoznawane
-	jako nie będące cichymi błędami, a bloki nie są oznaczane jako złe,
+	jako niebędące cichymi błędami, a bloki nie są oznaczane jako złe,
 	ale takie błędy są zgłaszane w wyniku polecenia.
 
 	Plik `content` jest modyfikowany w celu zaktualizowania czasu ostatniego sprawdzenia
@@ -856,9 +856,9 @@ Opcje (Options)
 		liczba bajtów na sekundę. Możesz określić mnożnik,
 		taki jak K, M lub G (np. --bw-limit 1G).
 
-	-t, --tail ROZMIAR
-		Ogranicza listę plików do tych, które nie używają więcej niż określony
-		końcowy rozmiar dysków parzystości.
+	-t, --tail SIZE
+		Ogranicza listę plików do tych, które nie wykraczają poza określoną
+		sekcję końcową (ogon) plików parzystości.
 		Możesz użyć mnożników takich jak K, M, G lub T (np. --tail 1G).
 		Opcja ta jest ważna tylko wtedy, gdy jest używana wraz z poleceniem
 		`locate`.
@@ -956,9 +956,9 @@ Opcje (Options)
 		zalecane, aby jej nie używać.
 		NIE MASZ ochrony danych podczas operacji `sync`.
 
-	-W, --force-realloc-tail ROZMIAR
+	-W, --force-realloc-tail SIZE
 		Działa jak -R, --force-realloc, ale ogranicza się do określonej części
-		końcowej (ostatnie ROZMIAR bajtów) każdego pliku parzystości.
+		końcowej (ostatnie SIZE bajtów) każdego pliku parzystości.
 		Wymusza realokację (przeniesienie) wszelkich fragmentów/bloków plików
 		obecnie przechowywanych w tej sekcji końcowej, pozwalając na ich
 		umieszczenie w dowolnym miejscu w pliku (plikach) parzystości, gdzie
@@ -990,7 +990,7 @@ Opcje (Options)
 		zastępowane datą i czasem w formacie RRRRMMDD i
 		GGMMSS. W plikach wsadowych Windows musisz podwoić
 		znak `%`, np. result-%%D.log. Aby użyć `>>`, musisz
-		ujęć nazwę w cudzysłów, np. `">>result.log"`.
+		ująć nazwę w cudzysłów, np. `">>result.log"`.
 		Aby wyprowadzić log do standardowego wyjścia lub standardowego błędu,
 		możesz użyć odpowiednio `">&1"` i `">&2"`.
 		Opisy tagów logu znajdziesz w pliku snapraid_log.txt lub na stronie podręcznika.
@@ -1225,7 +1225,7 @@ Konfiguracja (Configuration)
 
 	Możesz sprawdzić ilość zmarnowanego miejsca na każdym dysku za pomocą `status`.
 	Jest to ilość miejsca, którą musisz pozostawić wolną na dyskach danych
-	lub użyć dla plików nie włączonych do macierzy.
+	lub użyć dla plików niewłączonych do macierzy.
 	Jeśli ta wartość jest ujemna, oznacza to, że jesteś blisko wypełnienia
 	parzystości i reprezentuje to przestrzeń, którą nadal możesz zmarnować.
 
@@ -1290,7 +1290,7 @@ Konfiguracja (Configuration)
 	SnapRAID okresowo sprawdza temperaturę wszystkich dysków za pomocą
 	narzędzia smartctl. Aktualne temperatury dysków są wyświetlane podczas
 	działania SnapRAID. Jeśli którykolwiek dysk przekroczy ten limit, wszystkie operacje
-	zostają zatrzymane, a dyski są zatrzymywane (przechodzą w stan gotowości) na czas
+	zostają zatrzymane, a dyski są wyłączane (przechodzą w stan czuwania / uśpienia) na czas
 	zdefiniowany przez opcję `temp_sleep`. Po okresie uśpienia, operacje
 	są wznawiane, potencjalnie ponownie zatrzymując się, jeśli limit temperatury
 	zostanie ponownie osiągnięty.
@@ -1298,7 +1298,7 @@ Konfiguracja (Configuration)
 	Podczas działania SnapRAID analizuje również krzywą nagrzewania każdego
 	dysku i szacuje długoterminową stałą temperaturę, którą mają
 	osiągnąć, jeśli aktywność będzie kontynuowana. Oszacowanie jest wykonywane tylko po
-	czterokrotnym wzroście temperatury dysku, co zapewnia, że
+	czterokrotnym zarejestrowaniu wzrostu temperatury dysku, co zapewnia, że
 	dostępnych jest wystarczająco dużo punktów danych do ustalenia wiarygodnego trendu.
 	Ta przewidywana stała temperatura jest pokazywana w nawiasach obok
 	aktualnej wartości i pomaga ocenić, czy chłodzenie systemu jest
@@ -1315,7 +1315,7 @@ Konfiguracja (Configuration)
 	Aby wyświetlić temperaturę wszystkich dysków, użyj opcji -A lub --stats.
 
   temp_sleep TIME_IN_MINUTES
-	Ustawia czas gotowości, w minutach, po osiągnięciu limitu temperatury.
+	Ustawia czas wstrzymania (czuwania), w minutach, po osiągnięciu limitu temperatury.
 	W tym okresie dyski pozostają zatrzymane. Domyślnie jest to 5 minut.
 
   pool DIR
@@ -1599,7 +1599,7 @@ Wzorce (Pattern)
 	wykluczyć, musisz użyć reguły pliku, a nie katalogu.
 
 	Jeśli nazwa pliku zawiera znak `*`, `?`, `[`,
-	lub `]`, musisz go uciec, aby uniknąć interpretacji jako
+	lub `]`, musisz go zamaskować (poprzedzić znakiem ucieczki), aby uniknąć interpretacji jako
 	znaku globbing. W systemie Unix znakiem ucieczki jest `\`; w systemie Windows jest to `^`.
 	Gdy wzorzec znajduje się w wierszu poleceń, musisz podwoić znak ucieczki,
 	aby uniknąć interpretacji przez powłokę poleceń.
@@ -1727,12 +1727,19 @@ Kodowanie (Encoding)
 	przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 	w formacie UTF-8.
 
+Kod wyjścia (Exit Code)
+	SnapRAID kończy działanie z następującymi kodami błędów:
+
+	0 - Wszystko w porządku.
+	1 - Polecenie napotkało błędy.
+	2 - Polecenie `diff` wykazało, że wszystko jest w porządku, ale wymagane jest `sync`.
+
 Tłumaczenie (Translation)
 	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 	Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.
 
 Prawa autorskie (Copyright)
-	Ten plik jest chroniony prawem autorskim (C) 2025 Andrea Mazzoleni
+	Ten plik jest chroniony prawem autorskim (C) 2026 Andrea Mazzoleni
 
 Zobacz również (See Also)
 	snapraid_log(1), snapraidd(1), rsync(1)
