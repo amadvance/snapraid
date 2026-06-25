@@ -1466,14 +1466,19 @@ Configurazione (Configuration)
 	Il valore speciale * può essere utilizzato per ignorare l'attributo
 	su tutti i dischi.
 
-	Ad esempio, per ignorare l'attributo `Current Pending Sector Count`
-	su tutti i dischi:
+	È possibile specificare più attributi separati da spazi.
+	Ciascun attributo può essere specificato come un numero da 1 a 255, o come
+	un nome insensibile al maiuscolo/minuscolo (ad es. `Current_Pending_Sector`).
 
-		:smartignore * 197
+	Ad esempio, per ignorare gli attributi `Current Pending Sector Count` e
+	`Reallocated Sectors Count` su tutti i dischi per numero o nome:
 
-	Per ignorarlo solo sul primo disco di parità:
+		:smartignore * 197 5
+		:smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
-		:smartignore parity 197
+	Per ignorarli solo sul primo disco di parità:
+
+		:smartignore parity 197 5
 
   Esempi
 	Un esempio di configurazione tipica per Unix è:

@@ -844,8 +844,10 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 	disk->smartctl[0] = 0;
 	disk->smartctl_info[0] = 0;
-	for (i = 0; i < SMART_IGNORE_MAX; ++i)
-		disk->smartignore[i] = 0;
+	for (i = 0; i < SMART_IGNORE_MAX; ++i) {
+		disk->smartignore[i].attr_index = 0;
+		disk->smartignore[i].attr_name[0] = 0;
+	}
 	disk->fstype[0] = 0;
 	disk->fslabel[0] = 0;
 	disk->mount_device = dev;
@@ -917,8 +919,10 @@ struct snapraid_extra* extra_alloc(const char* name, const char* dir, uint64_t d
 
 	extra->smartctl[0] = 0;
 	extra->smartctl_info[0] = 0;
-	for (i = 0; i < SMART_IGNORE_MAX; ++i)
-		extra->smartignore[i] = 0;
+	for (i = 0; i < SMART_IGNORE_MAX; ++i) {
+		extra->smartignore[i].attr_index = 0;
+		extra->smartignore[i].attr_name[0] = 0;
+	}
 	extra->fstype[0] = 0;
 	extra->fslabel[0] = 0;
 	extra->device = dev;

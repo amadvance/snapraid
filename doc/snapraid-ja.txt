@@ -1383,13 +1383,19 @@ PARITY はパリティ名のいずれかです：`parity`、`2-parity`、`3-pari
 `4-parity`、`5-parity`、`6-parity`、または `z-parity`。
 特殊な値 `*` は、すべてのディスクで属性を無視するために使用できます。
 
-例として、すべてのディスクで `Current Pending Sector Count` 属性を無視するには：
+複数の属性をスペースで区切って指定できます。
+各属性は1から255までの数値、または大文字と小文字を区别しない名前
+(例: `Current_Pending_Sector`)として指定できます。
 
-    smartignore * 197
+例として、すべてのディスクで `Current Pending Sector Count` と
+`Reallocated Sectors Count` 属性を番号または名前で無視するには：
+
+    smartignore * 197 5
+    smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 
 最初のパリティディスクでのみ無視するには：
 
-    smartignore parity 197
+    smartignore parity 197 5
 
 7.19 Examples
 -------------
