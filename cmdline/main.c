@@ -165,7 +165,10 @@ int main(int argc, char* argv[])
 	}
 
 	utf8_argc = 0;
-	utf8_argv = malloc((wide_argc + 1) * sizeof(void*));
+	if (wide_argc < 0) {
+		exit(EXIT_FAILURE);
+	}
+	utf8_argv = calloc((size_t)wide_argc + 1, sizeof(void*));
 	if (!utf8_argv) {
 		exit(EXIT_FAILURE);
 	}
