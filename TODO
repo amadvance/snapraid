@@ -5,13 +5,16 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* If UUID is unsupported, return a fake one ? This will allow to
-  differentiate between the empty one with the case of access to a
-  disk skipped.
+* Use statx() instead of lstat() when scanning directories.
 
-* Integration with MergeFS ?
+* Add a new 'restore' command, similar to 'fix', that recovers a whole disk 
+  using the same multithreaded approach as sync/scrub.
 
-* Evaluate use of syscall getdents64() instead of readdir(): https://linux.die.net/man/2/getdents64
+* Integration with MergerFS ?
+
+* Restore ownership and permissions, at least in Unix.
+
+* Restore directory timestamps.
 
 * Check Reliability Test. We can derive Failure probability from MBTF
 https://github.com/linuxhw/SMART
@@ -100,10 +103,6 @@ currently used one.
 In fact, it makes sense as it's a good way to control the cache on the file,
 so, despite the name, that usage could be common for not temporary files.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/57d40108/
-
-* Restore ownership and permissions, at least in Unix.
-
-* Restore directory timestamps.
 
 * Add an option for dup to list only duplicates with different names.
 This supposing that if a file has the same name, it's intentionally duplicated.
