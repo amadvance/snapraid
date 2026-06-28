@@ -1550,7 +1550,7 @@ struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t 
 	map->position = position;
 	map->total_blocks = total_blocks;
 	map->free_blocks = free_blocks;
-	pathcpy(map->uuid, sizeof(map->uuid), uuid);
+	pathcpy(map->content_uuid, sizeof(map->content_uuid), uuid);
 
 	return map;
 }
