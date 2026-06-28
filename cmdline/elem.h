@@ -485,7 +485,7 @@ struct snapraid_disk {
  */
 struct snapraid_map {
 	char name[PATH_MAX]; /**< Name of the disk. */
-	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. They are read from the content file. */
+	char content_uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. They are read from the content file. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at last 'sync'. */
 	unsigned position; /**< Position of the disk in the parity. */
