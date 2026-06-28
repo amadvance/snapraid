@@ -139,6 +139,7 @@ void state_init(struct snapraid_state* state)
 		for (s = 0; s < SPLIT_MAX; ++s) {
 			state->parity[l].split_map[s].path[0] = 0;
 			state->parity[l].split_map[s].uuid[0] = 0;
+			state->parity[l].split_map[s].content_uuid[0] = 0;
 			state->parity[l].split_map[s].fstype[0] = 0;
 			state->parity[l].split_map[s].fslabel[0] = 0;
 			state->parity[l].split_map[s].size = PARITY_SIZE_INVALID;
@@ -1809,27 +1810,19 @@ static void state_map(struct snapraid_state* state)
 	if (!state->opt.skip_parity_access) {
 		for (l = 0; l < state->level; ++l) {
 			for (s = 0; s < state->parity[l].split_mac; ++s) {
-				char uuid[UUID_MAX];
-				int ret;
-
-				ret = devuuid(state->parity[l].split_map[s].device, state->parity[l].split_map[s].path, uuid, sizeof(uuid));
-
-				if (ret != 0) {
-					/* uuid not available, just ignore */
+				/* if uuid is not available, just ignore */
+				if (state->parity[l].split_map[s].uuid[0] == 0) {
 					continue;
 				}
 
 				/* if the uuid is changed */
-				if (strcmp(uuid, state->parity[l].split_map[s].uuid) != 0) {
+				if (strcmp(state->parity[l].split_map[s].uuid, state->parity[l].split_map[s].content_uuid) != 0) {
 					/* if the previous uuid is available */
-					if (state->parity[l].split_map[s].uuid[0] != 0) {
+					if (state->parity[l].split_map[s].content_uuid[0] != 0) {
 						/* count the number of uuid change */
 						++uuid_mismatch;
-						log_error(ESOFT, "UUID change for parity '%s/%u' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].uuid, uuid);
+						log_error(ESOFT, "UUID change for parity '%s/%u' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].content_uuid, state->parity[l].split_map[s].uuid);
 					}
-
-					/* update the uuid */
-					pathcpy(state->parity[l].split_map[s].uuid, sizeof(state->parity[l].split_map[s].uuid), uuid);
 
 					/* write the new state with the new uuid */
 					state->need_write = 1;
@@ -3236,13 +3229,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (state->parity[v_level].split_mac < 1)
 					state->parity[v_level].split_mac = 1;
 				/* set the parity info */
-				pathcpy(state->parity[v_level].split_map[0].uuid, sizeof(state->parity[v_level].split_map[0].uuid), v_uuid);
+				if (state->no_conf) {
+					pathcpy(state->parity[v_level].split_map[0].uuid, sizeof(state->parity[v_level].split_map[0].uuid), v_uuid);
+				}
+				pathcpy(state->parity[v_level].split_map[0].content_uuid, sizeof(state->parity[v_level].split_map[0].content_uuid), v_uuid);
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
 
 				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 					lev_config_name(v_level), /* P command always has a single split */
-					state->parity[v_level].split_map[0].uuid,
+					state->parity[v_level].split_map[0].content_uuid,
 					esc_tag(state->parity[v_level].split_map[0].path),
 					state->parity[v_level].split_map[0].size);
 			}
@@ -3370,12 +3366,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					} else {
 						char parity_name[64];
 
-						/* we copy the path only if without configuration file */
-						if (state->no_conf)
+						/* we copy the path and uuid only if without configuration file */
+						if (state->no_conf) {
 							pathcpy(state->parity[v_level].split_map[s].path, sizeof(state->parity[v_level].split_map[s].path), v_path);
+							pathcpy(state->parity[v_level].split_map[s].uuid, sizeof(state->parity[v_level].split_map[s].uuid), v_uuid);
+						}
 
 						/* set the split info */
-						pathcpy(state->parity[v_level].split_map[s].uuid, sizeof(state->parity[v_level].split_map[s].uuid), v_uuid);
+						pathcpy(state->parity[v_level].split_map[s].content_uuid, sizeof(state->parity[v_level].split_map[s].content_uuid), v_uuid);
 						state->parity[v_level].split_map[s].size = v_size;
 
 						if (s == 0)
@@ -3384,7 +3382,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(v_level), s);
 						log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 							parity_name,
-							state->parity[v_level].split_map[s].uuid,
+							state->parity[v_level].split_map[s].content_uuid,
 							esc_tag(state->parity[v_level].split_map[s].path),
 							state->parity[v_level].split_map[s].size);
 					}
@@ -3689,8 +3687,22 @@ static void* state_write_thread(void* arg)
 		sputb32(state->parity[l].split_mac, f);
 		for (s = 0; s < state->parity[l].split_mac; ++s) {
 			char parity_name[64];
+			const char* uuid;
 			sputbs(state->parity[l].split_map[s].path, f);
-			sputbs(state->parity[l].split_map[s].uuid, f);
+
+			/*
+			 * If the probed uuid is not empty, write it. Otherwise, if parity access was
+			 * skipped (globally or individually), write the last known uuid read from the
+			 * content file. Otherwise, write the empty probed uuid.
+			 */
+			if (state->parity[l].split_map[s].uuid[0] == 0
+				&& (state->opt.skip_parity_access || state->parity[l].skip_access)) {
+				uuid = state->parity[l].split_map[s].content_uuid;
+			} else {
+				uuid = state->parity[l].split_map[s].uuid;
+			}
+			sputbs(uuid, f);
+
 			sputb64(state->parity[l].split_map[s].size, f);
 			if (s == 0)
 				pathcpy(parity_name, sizeof(parity_name), lev_config_name(l));
@@ -3699,7 +3711,7 @@ static void* state_write_thread(void* arg)
 			if (context->first) {
 				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 					parity_name,
-					state->parity[l].split_map[s].uuid,
+					uuid,
 					state->parity[l].split_map[s].path,
 					state->parity[l].split_map[s].size);
 			}
