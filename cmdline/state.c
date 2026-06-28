@@ -1774,21 +1774,21 @@ static void state_map(struct snapraid_state* state)
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (disk->has_unsupported_uuid) {
+			if (disk->uuid[0] == 0) {
 				/* if uuid is not available, skip this one */
 				continue;
 			}
 
 			/* if the uuid is changed */
-			if (strcmp(disk->uuid, map->uuid) != 0) {
+			if (strcmp(disk->uuid, map->content_uuid) != 0) {
 				/* mark the disk as with an UUID change */
 				disk->has_different_uuid = 1;
 
 				/* if the previous uuid is available */
-				if (map->uuid[0] != 0) {
+				if (map->content_uuid[0] != 0) {
 					/* count the number of uuid change */
 					++uuid_mismatch;
-					log_error(ESOFT, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, disk->uuid);
+					log_error(ESOFT, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->content_uuid, disk->uuid);
 				} else {
 					/*
 					 * No message here, because having a disk without
@@ -1796,9 +1796,6 @@ static void state_map(struct snapraid_state* state)
 					 */
 					disk->had_empty_uuid = 1;
 				}
-
-				/* update the uuid in the mapping, */
-				pathcpy(map->uuid, sizeof(map->uuid), disk->uuid);
 
 				/* write the new state with the new uuid */
 				state->need_write = 1;
@@ -1810,8 +1807,8 @@ static void state_map(struct snapraid_state* state)
 	if (!state->opt.skip_parity_access) {
 		for (l = 0; l < state->level; ++l) {
 			for (s = 0; s < state->parity[l].split_mac; ++s) {
-				/* if uuid is not available, just ignore */
 				if (state->parity[l].split_map[s].uuid[0] == 0) {
+					/* if uuid is not available, skip this one */
 					continue;
 				}
 
@@ -3648,12 +3645,26 @@ static void* state_write_thread(void* arg)
 
 		/* save the mapping only if disk is mapped */
 		if (disk->mapping_idx != -1) {
+			const char* uuid;
+
 			sputc('M', f);
 			sputbs(map->name, f);
 			sputb32(map->position, f);
 			sputb64(map->total_blocks, f);
 			sputb64(map->free_blocks, f);
-			sputbs(map->uuid, f);
+
+			/*
+			 * If the probed uuid is empty, but disk access was skipped (globally
+			 * or individually), write the last known uuid. Otherwise, write the
+			 * empty probed uuid.
+			 */
+			if (disk->uuid[0] == 0 && (state->opt.skip_disk_access || disk->skip_access)) {
+				uuid = map->content_uuid;
+			} else {
+				uuid = disk->uuid;
+			}
+			sputbs(uuid, f);
+
 			if (context->first) {
 				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
 					esc_tag(map->name),
@@ -3661,7 +3672,7 @@ static void* state_write_thread(void* arg)
 					map->free_blocks * (uint64_t)state->block_size);
 				log_tag("content_data_split:%s:%s\n",
 					esc_tag(map->name),
-					map->uuid);
+					uuid);
 			}
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
@@ -5794,8 +5805,8 @@ void generate_configuration(const char* path)
 		struct snapraid_map* map = j->data;
 		struct snapraid_disk* disk;
 		printf("# Set the correct dir for disk '%s'\n", map->name);
-		if (map->uuid[0])
-			printf("# Disk '%s' is the one with id '%s'\n", map->name, map->uuid);
+		if (map->content_uuid[0])
+			printf("# Disk '%s' is the one with id '%s'\n", map->name, map->content_uuid);
 		disk = find_disk_by_name(&state, map->name);
 		if (disk && disk->filelist) {
 			struct snapraid_file* file = disk->filelist->data;
