@@ -516,7 +516,8 @@ struct snapraid_map {
  */
 struct snapraid_split {
 	char path[PATH_MAX]; /**< Path of the parity file. */
-	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. They are probed during the config reading, and later read from the content file. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. They are probed during the config reading. */
+	char content_uuid[UUID_MAX]; /**< UUID read from the content file. */
 	char fstype[FSINFO_MAX]; /**< Filesystem type */
 	char fslabel[FSINFO_MAX]; /**< Filesystem label */
 
