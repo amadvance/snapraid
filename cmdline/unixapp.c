@@ -1171,10 +1171,28 @@ static blkid_cache cache = 0;
 /* uuid */
 
 /**
- * Get the UUID using the /dev/disk/by-uuid/ links.
- * It doesn't require root permission, and the uuid are always updated.
- * It doesn't work with Btrfs file-systems that don't export the main UUID
- * in /dev/disk/by-uuid/.
+ * Get the filesystem UUID using the /dev/disk/by-uuid/ links.
+ * It doesn't require root permission, and the UUIDs are always updated.
+ *
+ * NOTE: This method reads the filesystem-level UUID (unlike /dev/disk/by-partuuid/
+ * which reads the GPT partition table slot).
+ *
+ * This method WILL reliably work for standard single-device filesystems:
+ * - ext2 / ext3 / ext4
+ * - XFS
+ * - F2FS (Flash-Friendly File System)
+ * - NTFS
+ * - FAT32 / exFAT (via their volume serial number formatted as a UUID string)
+ *
+ * This method will NOT find an entry for:
+ * - Network filesystems (NFS, SMB/CIFS, CephFS)
+ * - Virtual/In-memory filesystems (tmpfs, proc, sysfs)
+ * - ZFS (bypasses the Linux block layer and uses internal GUIDs)
+ * - Raw flash filesystems (JFFS2, UBIFS)
+ *
+ * For multi-device filesystems like Btrfs and Bcachefs, all member devices
+ * share the same filesystem UUID. Because /dev/disk/by-uuid/ cannot have duplicate
+ * filename entries, only ONE arbitrary device from the pool will be present here.
  */
 #if HAVE_LINUX_DEVICE
 static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
