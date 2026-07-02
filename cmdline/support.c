@@ -2185,7 +2185,7 @@ void malloc_fail(size_t size)
 
 void* malloc_nofail(size_t size)
 {
-	void* ptr = malloc(size);
+	void* ptr = malloc(size ? size : 1);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
@@ -2218,7 +2218,7 @@ void* calloc_nofail(size_t count, size_t size)
 	size *= count;
 
 	/* see the note in malloc_nofail() of why we don't use calloc() */
-	ptr = malloc(size);
+	ptr = malloc(size ? size : 1);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
