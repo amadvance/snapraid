@@ -1411,22 +1411,50 @@ void os_privileges_acquire(void)
 {
 	if (can_switch) {
 		if (seteuid(0) != 0) {
-			os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
+			if (errno == EPERM) {
+				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
+				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);				
+				os_abort();
+			}
 		}
 		if (setegid(0) != 0) {
-			os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
+			if (errno == EPERM) {
+				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
+				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
 		}
 	}
 }
 
 void os_privileges_release(void)
 {
-	if (can_switch) {
-		if (setegid(unpriv_gid) != 0) {
+	if (can_switch && setegid(unpriv_gid) != 0) {
+		if (errno == EPERM) {
+			/*
+			 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
+			 */
+			os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
+			can_switch = 0;
+		} else {
 			os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+			os_abort();
 		}
-		if (seteuid(unpriv_uid) != 0) {
+	}
+	if (can_switch && seteuid(unpriv_uid) != 0) {
+		if (errno == EPERM) {
+			/*
+			 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
+			 */
+			os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
+			can_switch = 0;
+		} else {
 			os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+			os_abort();
 		}
 	}
 }
