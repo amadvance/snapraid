@@ -21,7 +21,7 @@ int exit_sync_needed = 2;
 /****************************************************************************/
 /* signal */
 
-volatile int global_interrupt = 0;
+volatile sig_atomic_t global_interrupt = 0;
 
 int os_signal_interrupt(void)
 {
