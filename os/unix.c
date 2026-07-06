@@ -1576,16 +1576,26 @@ void os_abort(void)
 	unsigned i;
 #endif
 
-	printf("Stacktrace of " PACKAGE " v" VERSION);
+	const char* platform = "";
+	const char* compiler = "";
+
 #ifdef _linux
-	printf(", linux");
+	platform = ", linux";
+#elif defined(__APPLE__)
+	platform = ", macOS";
+#elif defined(__FreeBSD__)
+	platform = ", FreeBSD";
 #endif
-#ifdef __GNUC__
-	printf(", gcc " __VERSION__);
+
+#if defined(__clang__)
+	compiler = ", clang " __clang_version__;
+#elif defined(__GNUC__)
+	compiler = ", gcc " __VERSION__;
 #endif
-	printf(", %d-bit", (int)sizeof(void*) * 8);
-	printf(", PATH_MAX=%d", PATH_MAX);
-	printf("\n");
+
+	os_syslog(OS_LVL_CRITICAL, "Stacktrace of " PACKAGE " v" VERSION
+		"%s%s, %d-bit, PATH_MAX=%d",
+		platform, compiler, (int)sizeof(void*) * 8, PATH_MAX);
 
 #if HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS
 	size = backtrace(stack, 32);
@@ -1600,7 +1610,7 @@ void os_abort(void)
 		else
 			msg = "<unknown>";
 
-		printf("[bt] %02u: %s\n", i, msg);
+		os_syslog(OS_LVL_CRITICAL, "[bt] %02u: %s", i, msg);
 
 		if (messages) {
 			int ret;
@@ -1624,16 +1634,16 @@ void os_abort(void)
 
 				ret = system(addr2line);
 				if (WIFEXITED(ret) && WEXITSTATUS(ret) != 0)
-					printf("exit:%d\n", WEXITSTATUS(ret));
+					os_syslog(OS_LVL_CRITICAL, "exit:%d", WEXITSTATUS(ret));
 				if (WIFSIGNALED(ret))
-					printf("signal:%d\n", WTERMSIG(ret));
+					os_syslog(OS_LVL_CRITICAL, "signal:%d", WTERMSIG(ret));
 			}
 		}
 	}
 #endif
 
-	printf("Please report this error to the SnapRAID Issues:\n");
-	printf("https://github.com/amadvance/snapraid/issues\n");
+	os_syslog(OS_LVL_CRITICAL, "Please report this error to the SnapRAID Issues:");
+	os_syslog(OS_LVL_CRITICAL, "https://github.com/amadvance/snapraid/issues");
 
 	abort();
 }
