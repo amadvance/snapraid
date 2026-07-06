@@ -2929,9 +2929,10 @@ void thread_join(thread_id_t thread, void** retval)
 void thread_yield(void)
 {
 #ifdef __MINGW32__
-	Sleep(0);
+	Sleep(1); /* avoid 100% cpu utilization */
 #else
 	sched_yield();
+	usleep(1000); /* avoid 100% cpu utilization */
 #endif
 }
 #endif
