@@ -103,13 +103,33 @@ static char* argutf8(const WCHAR* arg)
 }
 
 /* Global variable to store child process handle */
-static HANDLE child_process = NULL;
+static void* volatile child_process = NULL;
+
+/*
+ * Safe atomic access helpers for child_process.
+ *
+ * The console_handler runs concurrently on an OS-managed thread created by
+ * the Windows kernel. Because plain writes and standard volatile access do not
+ * guarantee CPU cache visibility (flushing from store buffers) or prevent CPU/compiler
+ * out-of-order reordering (due to lack of hardware memory barriers/fences on MinGW),
+ * we must use Win32 Interlocked APIs to ensure safe, atomic, fence-protected reads
+ * and writes of the child process handle.
+ */
+static HANDLE child_process_read(void)
+{
+	return InterlockedCompareExchangePointer(&child_process, NULL, NULL);
+}
+
+static void child_process_write(HANDLE handle)
+{
+	InterlockedExchangePointer(&child_process, handle);
+}
 
 /* Console control handler - forwards Ctrl+C, Ctrl+Break to child */
 static BOOL WINAPI console_handler(DWORD ctrl_type)
 {
 	/* if no child, default behavior */
-	if (child_process == NULL)
+	if (child_process_read() == NULL)
 		return FALSE;
 
 	switch (ctrl_type) {
@@ -225,7 +245,7 @@ int main(int argc, char* argv[])
 		}
 
 		/* store child process handle for signal handler */
-		child_process = pi.hProcess;
+		child_process_write(pi.hProcess);
 
 		wait = WaitForSingleObject(pi.hProcess, INFINITE);
 		if (wait != WAIT_OBJECT_0) {
@@ -237,7 +257,7 @@ int main(int argc, char* argv[])
 		}
 
 		/* clear child process handle */
-		child_process = NULL;
+		child_process_write(NULL);
 
 		if (!GetExitCodeProcess(pi.hProcess, &res)) {
 			fprintf(stderr, "GetExitCodeProcess failed: %lu\n", (unsigned long)GetLastError());
