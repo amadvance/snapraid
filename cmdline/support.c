@@ -1183,7 +1183,7 @@ char* strtrim(char* str)
 
 	end[0] = 0;
 
-	if (begin != end)
+	if (begin != str)
 		memmove(str, begin, end - begin + 1);
 
 	return str;
