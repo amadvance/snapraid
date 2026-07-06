@@ -174,8 +174,8 @@ int main(int argc, char* argv[])
 	(void)argc;
 	(void)argv;
 
-	res = GetModuleFileNameW(NULL, app_buffer, sizeof(app_buffer));
-	if (res == 0 || res >= sizeof(app_buffer)) {
+	res = GetModuleFileNameW(NULL, app_buffer, COMMAND_LINE_MAX);
+	if (res == 0 || res >= COMMAND_LINE_MAX) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	pos = argcat(cmd_buffer, sizeof(cmd_buffer), 0, app_buffer);
+	pos = argcat(cmd_buffer, COMMAND_LINE_MAX, 0, app_buffer);
 	if (pos < 0) {
 		exit(EXIT_FAILURE);
 	}
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 		if (wcscmp(wide_argv[i], L"-s") == 0 || wcscmp(wide_argv[i], L"--spin-down-on-error") == 0) {
 			mode = MODE_SPINDOWN;
 		} else {
-			pos = argcat(cmd_buffer, sizeof(cmd_buffer), pos, wide_argv[i]);
+			pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, wide_argv[i]);
 			if (pos < 0) {
 				exit(EXIT_FAILURE);
 			}
