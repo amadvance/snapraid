@@ -8,6 +8,7 @@
 #include "io.h"
 
 #include <math.h>
+#include <float.h>
 
 struct snapraid_thermal* thermal_alloc(uint64_t dev, const char* name)
 {
@@ -103,7 +104,13 @@ struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_p
 	}
 
 	model.rmse = sqrt(sum_squared_residuals / n_points);
-	model.r_squared = 1.0 - (sum_squared_residuals / sum_total);
+
+	/* avoid sum_total underflow and division by zero */
+	if (sum_total > FLT_EPSILON) {
+		model.r_squared = 1.0 - (sum_squared_residuals / sum_total);
+	} else {
+		model.r_squared = 1.0;
+	}
 
 	return model;
 }
