@@ -266,11 +266,9 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 }
 
 /**
- * Validates a GUID string of the form:
- *   xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
- * Does NOT accept braced forms like {xxxxxxxx-...}.
+ * Validates a GUID string of the form: {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
  *
- * Returns true if valid, false otherwise.
+ * Returns 0 if valid, -1 otherwise.
  */
 int windows_guid_is_valid(const char* guid, int len)
 {
