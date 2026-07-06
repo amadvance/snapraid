@@ -679,7 +679,7 @@ int sgetbs(STREAM* f, char* str, size_t size)
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (len + 1 > size) {
+	if (len >= size) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
