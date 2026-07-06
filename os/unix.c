@@ -1605,17 +1605,29 @@ void os_abort(void)
 		if (messages) {
 			int ret;
 			char addr2line[1024];
+			char path[1024];
 			size_t j = 0;
 			while (msg[j] != '(' && msg[j] != ' ' && msg[j] != 0)
 				++j;
 
-			snprintf(addr2line, sizeof(addr2line), "addr2line %p -e %.*s", stack[i], (unsigned)j, msg);
+			if (j >= sizeof(path))
+				j = sizeof(path) - 1;
+			memcpy(path, msg, j);
+			path[j] = 0;
 
-			ret = system(addr2line);
-			if (WIFEXITED(ret) && WEXITSTATUS(ret) != 0)
-				printf("exit:%d\n", WEXITSTATUS(ret));
-			if (WIFSIGNALED(ret))
-				printf("signal:%d\n", WTERMSIG(ret));
+			/*
+			 * Verify that the path consists only of safe characters (alphanumeric, slash, dot, dash, underscore).
+			 * This prevents arbitrary command execution via crafted executable names or directories.
+			 */
+			if (strspn(path, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/.-_") == j) {
+				snprintf(addr2line, sizeof(addr2line), "addr2line %p -e %s", stack[i], path);
+
+				ret = system(addr2line);
+				if (WIFEXITED(ret) && WEXITSTATUS(ret) != 0)
+					printf("exit:%d\n", WEXITSTATUS(ret));
+				if (WIFSIGNALED(ret))
+					printf("signal:%d\n", WTERMSIG(ret));
+			}
 		}
 	}
 #endif
