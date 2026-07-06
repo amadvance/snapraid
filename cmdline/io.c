@@ -605,11 +605,11 @@ static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigne
 
 					task = &worker->task_map[io->reader_index];
 
-					thread_mutex_unlock(&io->io_mutex);
-
 					/* mark the worker as processed */
 					/* setting the previous one to point at the next one */
 					*let = io->reader_list[i + 1];
+
+					thread_mutex_unlock(&io->io_mutex);
 
 					/* return the position */
 					*pos = i - base;
@@ -691,11 +691,11 @@ static void io_parity_write_thread(struct snapraid_io* io, unsigned* pos, unsign
 
 			/* if the worker has finished this index */
 			if (busy_index != worker->index) {
-				thread_mutex_unlock(&io->io_mutex);
-
 				/* mark the worker as processed */
 				/* setting the previous one to point at the next one */
 				*let = io->writer_list[i + 1];
+
+				thread_mutex_unlock(&io->io_mutex);
 
 				/* return the position */
 				*pos = i;
