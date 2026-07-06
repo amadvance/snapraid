@@ -171,7 +171,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 	/* possibly waiting disks */
 	waiting_mac = diskmax > RAID_PARITY_MAX ? diskmax : RAID_PARITY_MAX;
-	waiting_map = malloc_nofail(waiting_mac * sizeof(unsigned));
+	waiting_map = nalloc_nofail(waiting_mac, sizeof(unsigned));
 
 	soft_error = 0;
 	io_error = 0;

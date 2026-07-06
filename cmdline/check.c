@@ -975,8 +975,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	memset(buffer[buffermax - 1], 0, state->block_size);
 	raid_zero(buffer[buffermax - 1]);
 
-	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
-	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
+	failed = nalloc_nofail(diskmax, sizeof(struct failed_struct));
+	failed_map = nalloc_nofail(diskmax, sizeof(unsigned));
 
 	soft_error = 0;
 	io_error = 0;

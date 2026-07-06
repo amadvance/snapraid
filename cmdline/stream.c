@@ -91,7 +91,7 @@ STREAM* sopen_multi_write(unsigned count, int flags)
 	STREAM* s = malloc_nofail(sizeof(STREAM));
 
 	s->handle_size = count;
-	s->handle = malloc_nofail(count * sizeof(struct stream_handle));
+	s->handle = nalloc_nofail(count, sizeof(struct stream_handle));
 	s->flags = flags;
 
 	for (i = 0; i < count; ++i)
