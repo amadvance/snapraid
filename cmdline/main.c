@@ -96,8 +96,10 @@ static char* argutf8(const WCHAR* arg)
 		return 0;
 
 	res = WideCharToMultiByte(CP_UTF8, 0, arg, len + 1 /* include final null */, utf8_arg, utf8_len, 0, 0);
-	if (res != utf8_len)
+	if (res != utf8_len) {
+		free(utf8_arg);
 		return 0;
+	}
 
 	return utf8_arg;
 }
