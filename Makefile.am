@@ -129,7 +129,8 @@ mktest_SOURCES = \
 	cmdline/mingwapp.c \
 	os/unix.c \
 	cmdline/unixapp.c \
-	cmdline/support.c
+	cmdline/support.c \
+	tommyds/tommy.c
 
 mkstream_SOURCES = \
 	cmdline/mkstream.c \
@@ -140,7 +141,8 @@ mkstream_SOURCES = \
 	cmdline/support.c \
 	cmdline/util.c \
 	cmdline/stream.c \
-	raid/memory.c
+	raid/memory.c \
+	tommyds/tommy.c
 
 # Checker binary share the snapraid variables, with the exception of the checker.c source
 checker_SOURCES = $(snapraid_SOURCES:cmdline/snapraid.c=cmdline/checker.c)
