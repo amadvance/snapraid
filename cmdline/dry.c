@@ -60,6 +60,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 		ret = handle_close(handle);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+
 			/*
 			 * This one is really an unexpected error, because we are only reading
 			 * and closing a descriptor should never fail
@@ -368,6 +369,10 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			/*
+			 * If handle_close fails, the handle was open (f != -1), which
+			 * guarantees that both file and disk pointers are valid.
+			 */
 			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 

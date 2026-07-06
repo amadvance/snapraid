@@ -354,6 +354,10 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			/*
+			 * If handle_close fails, the handle was open (f != -1), which
+			 * guarantees that both file and disk pointers are valid.
+			 */
 			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
@@ -1485,6 +1489,10 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			/*
+			 * If handle_close fails, the handle was open (f != -1), which
+			 * guarantees that both file and disk pointers are valid.
+			 */
 			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
