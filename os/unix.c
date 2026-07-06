@@ -1029,9 +1029,19 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	if (pipe_fds[1] != -1) {
 		/* write text to child's stdin */
-		ssize_t len = strlen(stdin_text);
-		if (write(pipe_fds[1], stdin_text, len) != len) {
-			os_syslog(OS_LVL_INFO, "failed to write full stdin to command %s", command);
+		size_t len = strlen(stdin_text);
+		size_t written = 0;
+		while (written < len) {
+			ssize_t ret_write = write(pipe_fds[1], stdin_text + written, len - written);
+			if (ret_write < 0) {
+				if (errno == EINTR)
+					continue;
+				if (errno == EPIPE)
+					break; /* child closed stdin early */
+				os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(errno), errno);
+				break;
+			}
+			written += (size_t)ret_write;
 		}
 		/* closing the pipe sends EOF to the child (e.g., tells curl data is done) */
 		close(pipe_fds[1]);
