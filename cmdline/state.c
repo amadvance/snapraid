@@ -4344,7 +4344,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 				count_hardlink = context->count_hardlink;
 				count_symlink = context->count_symlink;
 				count_dir = context->count_dir;
-				cound_bad = context->count_bad;
+				count_bad = context->count_bad;
 				count_rehash = context->count_rehash;
 				count_unsynced = context->count_unsynced;
 				count_unscrubbed = context->count_unscrubbed;
