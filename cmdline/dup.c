@@ -33,7 +33,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 	hash->disk = disk;
 	hash->file = file;
 
-	buf = malloc_nofail(file->blockmax * hash_size);
+	buf = nalloc_nofail(file->blockmax, hash_size);
 
 	/* set the back pointer */
 	for (i = 0; i < file->blockmax; ++i) {
