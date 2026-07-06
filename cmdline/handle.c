@@ -382,7 +382,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 	}
 	++size; /* size is one more than the max */
 
-	handle = malloc_nofail(size * sizeof(struct snapraid_handle));
+	handle = nalloc_nofail(size, sizeof(struct snapraid_handle));
 
 	for (j = 0; j < size; ++j) {
 		/* default for empty position */

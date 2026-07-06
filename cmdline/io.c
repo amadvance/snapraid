@@ -1021,10 +1021,10 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	io->reader_max = readers_count;
 	io->writer_max = writers_count;
 
-	io->reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io->reader_max);
-	io->reader_list = malloc_nofail(sizeof(unsigned) * (io->reader_max + 1));
-	io->writer_map = malloc_nofail(sizeof(struct snapraid_worker) * io->writer_max);
-	io->writer_list = malloc_nofail(sizeof(unsigned) * (io->writer_max + 1));
+	io->reader_map = nalloc_nofail(io->reader_max, sizeof(struct snapraid_worker));
+	io->reader_list = nalloc_nofail(io->reader_max + 1, sizeof(unsigned));
+	io->writer_map = nalloc_nofail(io->writer_max, sizeof(struct snapraid_worker));
+	io->writer_list = nalloc_nofail(io->writer_max + 1, sizeof(unsigned));
 
 	io->data_base = 0;
 	io->data_count = 0;
