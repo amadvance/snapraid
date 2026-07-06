@@ -4117,10 +4117,17 @@ static void* state_write_thread(void* arg)
 	if (context->first)
 		bucket_to_list(&bucket_hash, &state->bucketlist, &state->bucketcount);
 
+	/*
+	 * Do not need to free the bucket entries in the success path because they
+	 * are added only if context->first is true, and they are already moved
+	 * to the list.
+	 */
+
 	tommy_hashdyn_done(&bucket_hash);
 	return 0;
 
 bail:
+	tommy_hashdyn_foreach(&bucket_hash, (tommy_foreach_func*)bucket_free);
 	tommy_hashdyn_done(&bucket_hash);
 	return context;
 }
