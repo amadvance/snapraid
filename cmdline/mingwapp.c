@@ -163,13 +163,13 @@ size_t windows_direct_size(void)
 
 #define WINDOWS_NTFS_MAGIC  0x5346544E   /* 'N','T','F','S' */
 
-#define PS_CMD_MAX 16384
+#define PS_CMD_MAX 16384 /* needs a x4 factor to handle -EncodedCommand */
 
 #define SNAPSHOT_GUID ".guid"
 
 static const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static void base64_encode(const unsigned char* in, size_t in_len, char* out, size_t out_max)
+static int base64_encode(const unsigned char* in, size_t in_len, char* out, size_t out_max)
 {
 	size_t i, j = 0;
 	for (i = 0; i < in_len; i += 3) {
@@ -186,7 +186,7 @@ static void base64_encode(const unsigned char* in, size_t in_len, char* out, siz
 		}
 
 		if (j + 4 >= out_max)
-			break;
+			return -1;
 
 		out[j++] = b64chars[(val >> 18) & 0x3F];
 		out[j++] = b64chars[(val >> 12) & 0x3F];
@@ -194,6 +194,7 @@ static void base64_encode(const unsigned char* in, size_t in_len, char* out, siz
 		out[j++] = (count > 2) ? b64chars[val & 0x3F] : '=';
 	}
 	out[j] = 0;
+	return 0;
 }
 
 /*
@@ -225,7 +226,11 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 	}
 
 	/* base64 encode the UTF-16LE command bytes (excluding the null terminator) */
-	base64_encode((const unsigned char*)wcmd, (wlen - 1) * sizeof(WCHAR), b64cmd, sizeof(b64cmd));
+	if (base64_encode((const unsigned char*)wcmd, (wlen - 1) * sizeof(WCHAR), b64cmd, sizeof(b64cmd)) != 0) {
+		errno = E2BIG;
+		log_error(errno, "Failed to run PowerShell command '%s' (too big to encode).\n", ps_command);
+		return -1;
+	}
 
 	ret = snprintf(cmd, sizeof(cmd), "powershell.exe -NoProfile -NonInteractive -EncodedCommand \"%s\" 2>nul", b64cmd);
 	if (ret < 0 || ret >= (int)sizeof(cmd)) {
