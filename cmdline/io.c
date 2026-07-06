@@ -557,7 +557,15 @@ static void io_flush_thread(struct snapraid_io* io)
 		if (all_done)
 			break;
 
-		/* wait for something to complete */
+		/*
+		 * Wait for something to complete.
+		 *
+		 * We cannot use thread_cond_wait(&io->write_done) here because
+		 * write_done is heavily optimized to only be signaled when the oldest
+		 * task in the queue completes (done_index == waiting_index).
+		 * Since io_flush waits for all tasks to complete, it would miss
+		 * wakeups for newer tasks and deadlock.
+		 */
 		thread_yield();
 	}
 }
