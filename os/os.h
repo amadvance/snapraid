@@ -78,6 +78,8 @@ typedef struct OS_FILE {
  * with its stdin and stderr redirected to /dev/null. The underlying pipe is
  * created with O_CLOEXEC set to prevent leakage across concurrent forks.
  *
+ * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
+ *
  * \param argv A NULL-terminated array of strings representing the argument vector.
  *             argv[0] must contain the absolute path to the verified executable.
  * \return A pointer to an initialized OS_FILE structure on success, or NULL on failure.
@@ -114,6 +116,7 @@ int os_pclose(OS_FILE* stream);
 
 /**
  * Spawn a new process with the specified argument vector, optionally capturing stdout and/or stderr.
+ * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
  * \param argv Array of command line arguments.
  * \param stdout_read_fd Pointer to store file descriptor for stdout, or NULL to redirect to /dev/null.
  * \param stderr_read_fd Pointer to store file descriptor for stderr, or NULL to redirect to /dev/null.
@@ -147,6 +150,8 @@ int os_term(pid_t pid);
  * The child is placed in its own process group (setpgid) to isolate it
  * from signals sent to the daemon's process group.
  *
+ * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
+ *
  * \param argv NULL-terminated argument vector. argv[0] must be the absolute path
  *             to the executable.
  * \return The child exit status on success, or -1 on failure.
@@ -155,6 +160,7 @@ int os_spawn_and_wait(const char** argv);
 
 /**
  * Execute a system command with optional user context and input.
+ * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
  * \param command Command to execute.
  * \param run_as_user User to run command as (NULL for current user).
  * \param stdin_text Text to provide as stdin (NULL for no input).
@@ -164,6 +170,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 /**
  * Execute a script file with specified user context.
+ * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
  * \param argv Array of command line arguments.
  * \param envp Environment variables (NULL-terminated list of strings).
  * \param run_as_user User to run script as (NULL for current user).
