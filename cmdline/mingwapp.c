@@ -163,9 +163,38 @@ size_t windows_direct_size(void)
 
 #define WINDOWS_NTFS_MAGIC  0x5346544E   /* 'N','T','F','S' */
 
-#define PS_CMD_MAX 4096
+#define PS_CMD_MAX 16384
 
 #define SNAPSHOT_GUID ".guid"
+
+static const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void base64_encode(const unsigned char* in, size_t in_len, char* out, size_t out_max)
+{
+	size_t i, j = 0;
+	for (i = 0; i < in_len; i += 3) {
+		uint32_t val = 0;
+		int count = 0;
+		int k;
+
+		for (k = 0; k < 3; ++k) {
+			val <<= 8;
+			if (i + k < in_len) {
+				val |= in[i + k];
+				++count;
+			}
+		}
+
+		if (j + 4 >= out_max)
+			break;
+
+		out[j++] = b64chars[(val >> 18) & 0x3F];
+		out[j++] = b64chars[(val >> 12) & 0x3F];
+		out[j++] = (count > 1) ? b64chars[(val >> 6) & 0x3F] : '=';
+		out[j++] = (count > 2) ? b64chars[val & 0x3F] : '=';
+	}
+	out[j] = 0;
+}
 
 /*
  * PowerShell helper
@@ -174,19 +203,31 @@ size_t windows_direct_size(void)
  * of stdout into `out` as UTF-8.
  * `out` may be NULL when output is not needed.
  *
- * The caller builds `command` as a string using snprintf().
- * Any embedded path literals must use single quotes so they survive
- * the outer double-quote wrapping passed to cmd.exe.
+ * The command is executed using -EncodedCommand (Base64 UTF-16LE) to safely
+ * handle any shell metacharacters or quotes in paths and volume names.
  *
  * Returns 0 on success, -1 on failure.
  */
 static int windows_ps(const char* ps_command, char* out, size_t out_size)
 {
 	char cmd[PS_CMD_MAX];
+	WCHAR wcmd[PS_CMD_MAX];
+	char b64cmd[PS_CMD_MAX];
 	FILE* fp;
 	int ret;
+	int wlen;
 
-	ret = snprintf(cmd, sizeof(cmd), "powershell.exe -NoProfile -NonInteractive -Command \"%s\" 2>nul", ps_command);
+	/* convert UTF-8 command to UTF-16LE WCHARs */
+	wlen = MultiByteToWideChar(CP_UTF8, 0, ps_command, -1, wcmd, PS_CMD_MAX);
+	if (wlen <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* base64 encode the UTF-16LE command bytes (excluding the null terminator) */
+	base64_encode((const unsigned char*)wcmd, (wlen - 1) * sizeof(WCHAR), b64cmd, sizeof(b64cmd));
+
+	ret = snprintf(cmd, sizeof(cmd), "powershell.exe -NoProfile -NonInteractive -EncodedCommand \"%s\" 2>nul", b64cmd);
 	if (ret < 0 || ret >= (int)sizeof(cmd)) {
 		errno = EINVAL;
 		return -1;
@@ -195,7 +236,7 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 	fp = _popen(cmd, "r");
 	if (!fp) {
 		windows_errno(GetLastError());
-		log_error(errno, "Failed to run PowerShell command '%s' (from popen).\n", cmd);
+		log_error(errno, "Failed to run PowerShell command '%s' (from popen).\n", ps_command);
 		return -1;
 	}
 
@@ -212,12 +253,12 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 	ret = _pclose(fp);
 	if (ret == -1) {
 		errno = EINVAL;
-		log_error(errno, "Failed to run PowerShell command '%s' (from pclose).\n", cmd);
+		log_error(errno, "Failed to run PowerShell command '%s' (from pclose).\n", ps_command);
 		return -1;
 	}
 	if (ret != 0) {
 		errno = EINVAL;
-		log_error(errno, "PowerShell command '%s' failed with '%d' (from pclose).\n", cmd, ret);
+		log_error(errno, "PowerShell command '%s' failed with '%d' (from pclose).\n", ps_command, ret);
 		return -1;
 	}
 
