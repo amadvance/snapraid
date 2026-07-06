@@ -785,8 +785,15 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* remove from the name set */
 				tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 
-				/* save the new name */
+				/*
+				 * Protect the file->sub mutation because other threads may concurrently
+				 * search the stampset and read this file's name string inside
+				 * file_namestamp_compare/file_pathstamp_compare, or when doing
+				 * a pathcpy() during copy detection.
+				 */
+				stamp_lock(disk);
 				file_rename(file, sub);
+				stamp_unlock(disk);
 
 				/* reinsert in the name set */
 				tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
@@ -1040,6 +1047,8 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			struct snapraid_disk* other_disk = i->data;
 			struct snapraid_file* other_file;
 
+			char sub_other[PATH_MAX];
+
 			stamp_lock(other_disk);
 			/* if the nanosecond part of the time stamp is valid, search */
 			/* for name and stamp, otherwise for path and stamp */
@@ -1047,6 +1056,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_namestamp_compare, file, hash);
 			else
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_pathstamp_compare, file, hash);
+
+			if (other_file) {
+				/* copy sub path safely before unlocking stamp_lock */
+				pathcpy(sub_other, sizeof(sub_other), other_file->sub);
+			}
 			stamp_unlock(other_disk);
 
 			/* if found, and it's a fully hashed file */
@@ -1054,13 +1068,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				char path_other[PATH_MAX];
 				struct stat other_st;
 
-				/*
-				 * Protect the write as multiple threads may write the same FILE_IS_RELOCATED bit.
-				 *
-				 * Note that this flag is written in the "shared" portion of the flags,
-				 * intended exactly to avoid data race from multiple threads using
-				 * the stamp_lock() protection.
-				 */
 				stamp_lock(other_disk);
 				file_flag_set(other_file, FILE_IS_RELOCATED);
 				stamp_unlock(other_disk);
@@ -1069,20 +1076,20 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				file_copy(other_file, file);
 
 				/* check if other file still exists */
-				pathprint(path_other, sizeof(path_other), "%s%s", other_disk->dir, other_file->sub);
+				pathprint(path_other, sizeof(path_other), "%s%s", other_disk->dir, sub_other);
 				if (lstat(path_other, &other_st) == 0) {
 					++scan->count_copy;
 
-					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub), disk->name, esc_tag(file->sub));
+					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(sub_other), disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub), fmt_term(disk, file->sub));
+						msg_info("copy %s -> %s\n", fmt_term(other_disk, sub_other), fmt_term(disk, file->sub));
 					}
 				} else {
 					++scan->count_relocate;
 
-					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub), disk->name, esc_tag(file->sub));
+					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(sub_other), disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("relocate %s -> %s\n", fmt_term(other_disk, other_file->sub), fmt_term(disk, file->sub));
+						msg_info("relocate %s -> %s\n", fmt_term(other_disk, sub_other), fmt_term(disk, file->sub));
 					}
 				}
 
