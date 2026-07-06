@@ -412,7 +412,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->physical = physical;
 	file->flag = 0;
 	file->shared_flag = 0;
-	file->blockvec = malloc_nofail(file->blockmax * block_sizeof());
+	file->blockvec = nalloc_nofail(file->blockmax, block_sizeof());
 
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = file_block(file, i);
@@ -437,7 +437,7 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->inode = copy->inode;
 	file->physical = copy->physical;
 	file->flag = copy->flag;
-	file->blockvec = malloc_nofail(file->blockmax * block_sizeof());
+	file->blockvec = nalloc_nofail(file->blockmax, block_sizeof());
 
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = file_block(file, i);
@@ -781,7 +781,7 @@ struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, dat
 	dealloc->mtime_sec = mtime_sec;
 	dealloc->mtime_nsec = mtime_nsec;
 	dealloc->blockmax = (size + block_size - 1) / block_size;
-	dealloc->blockhash = malloc_nofail(dealloc->blockmax * BLOCK_HASH_SIZE);
+	dealloc->blockhash = nalloc_nofail(dealloc->blockmax, BLOCK_HASH_SIZE);
 
 	return dealloc;
 }

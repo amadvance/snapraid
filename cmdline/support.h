@@ -525,7 +525,13 @@ size_t malloc_counter_get(void);
 void* malloc_nofail(size_t size);
 
 /**
- * Safe cmalloc.
+ * Safe malloc with calloc calling arguments.
+ * If no memory is available, it aborts.
+ */
+void* nalloc_nofail(size_t count, size_t size);
+
+/**
+ * Safe calloc.
  * If no memory is available, it aborts.
  */
 void* calloc_nofail(size_t count, size_t size);

@@ -54,7 +54,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	file->path = strdup_nofail(path);
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
-	file->blockimp = malloc_nofail(file->blockmax * sizeof(struct snapraid_import_block));
+	file->blockimp = nalloc_nofail(file->blockmax, sizeof(struct snapraid_import_block));
 	file->is_runtime = 1;
 
 	buffer = malloc_nofail(block_size);
@@ -144,7 +144,7 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 	file->path = strdup_nofail(path);
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
-	file->blockimp = malloc_nofail(file->blockmax * sizeof(struct snapraid_import_block));
+	file->blockimp = nalloc_nofail(file->blockmax, sizeof(struct snapraid_import_block));
 	file->is_runtime = 0;
 
 	offset = 0;

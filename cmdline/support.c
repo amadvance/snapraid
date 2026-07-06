@@ -2168,14 +2168,17 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
-void* calloc_nofail(size_t count, size_t size)
+void* nalloc_nofail(size_t count, size_t size)
 {
-	void* ptr;
+	if (count > SIZE_MAX / size) {
+		log_fatal(EINTERNAL, "Allocation size overflow\n");
+		os_abort();
+	}
 
 	size *= count;
 
 	/* see the note in malloc_nofail() of why we don't use calloc() */
-	ptr = malloc(size ? size : 1);
+	void* ptr = malloc(size ? size : 1);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
@@ -2183,33 +2186,28 @@ void* calloc_nofail(size_t count, size_t size)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-
-	memset(ptr, 0, size);
 
 	malloc_counter_inc(size);
 
 	return ptr;
 }
 
+void* calloc_nofail(size_t count, size_t size)
+{
+	void* ptr = nalloc_nofail(count, size);
+
+	memset(ptr, 0, count * size);
+
+	return ptr;
+}
+
 char* strdup_nofail(const char* str)
 {
-	size_t size;
-	char* ptr;
+	size_t size = strlen(str) + 1;
 
-	size = strlen(str) + 1;
-
-	ptr = malloc(size);
-
-	if (!ptr) {
-		/* LCOV_EXCL_START */
-		malloc_fail(size);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	char* ptr = malloc_nofail(size);
 
 	memcpy(ptr, str, size);
-
-	malloc_counter_inc(size);
 
 	return ptr;
 }
