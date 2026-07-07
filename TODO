@@ -3,7 +3,13 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- Next
+15.x Releases
+=============
+
+All done ?
+
+16.x Releases
+=============
 
 * Use statx() instead of lstat() when scanning directories.
 
@@ -15,6 +21,8 @@ This is the list of TODO items for SnapRAID.
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
+
+* Enable MuseAir and disable random seed
 
 * Check Reliability Test. We can derive Failure probability from MBTF
 https://github.com/linuxhw/SMART
@@ -31,6 +39,9 @@ Example, snapraid LIST --test-fmt dependents >FileList_with_dependents.txt
 The goal is a filelist that, for every file, includes full paths to the dependent files
 on other data disks needed to repair that file (in addition to the parity data).
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/6e872fdae0/
+
+Future
+======
 
 - Minor
 
@@ -127,10 +138,22 @@ This 'init' will work also without a content file, and parity files.
 Instead 'sync' will require all of them.
 This will also help when running with the parity filesystem unmounted.
 
-* Rename sync->backup and fix->restore. It seems to me a naming expressing
+* Rename sync->backup and fix->restore/recover. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
 
-- Pooling
+
+Rejected TODO
+=============
+
+This is a list of rejected TODO items.
+
+* Parallel hashes using vector instructions. See the 'parallel_hashes' branch.
+- Only Spooky2 can be effectively parallelized because vector instructions 
+  cannot efficiently perform 64x64->128 bit multiplications.
+            best    murmur3  spooky2  spk2sse  spk2avx  metro    museair  musesse  museavx
+    hash    spooky2 6163     17570    24227    *34519*  20612    *27894*  10648    19827 
+- This small speed increase occurs only in the best-case scenario when AVX is present 
+  and the number of disks is divisible by 4.
 
 * Add a new "commit" command to move changes from the pool to the array.
 It should:
@@ -144,8 +167,7 @@ but kept in the same disk of the array.
 - Detect deletes, and move file in the array to a "/trash/" directory
 of the same disk. For safety no real deletion is done.
 File with the same name will get an extra extension like ".1", ".2".
-
-- Major
+- MergerFS is anyway better
 
 * Allocate parity minimizing concurrent use of it
 Each parity allocation should check for a parity
@@ -157,11 +179,12 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1797bf7d/
 enough parity, as the benefit of existing parity is maximized.
 - Possible increase of fragmentation of parity allocation
 - No real benefit when the array is filled
-
-Rejected TODO
-=============
-
-This is a list of rejected TODO items.
+- Slowing down operation that have to check the whole array.
+  10 disk at 10% utilization, will use the full parity, requiring to
+  read and write it completly. Essentially doubling the amount of data
+  needed to be read or written.
+- Rotating disks are faster at low sector addresses, allocating high
+  parity will slow down disks that could be instead faster.
 
 * Use a memory mapped file to read the content file
 - Tried. No speed gain.
