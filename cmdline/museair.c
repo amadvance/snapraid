@@ -4,7 +4,7 @@
 /*
  * Derivative work of MuseAir v1 in the "Long" (len > 32), "b128", and "bfast" configurations.
  *
- * This implementation also accepts a length of 32, unlike the original MuseAir,
+ * This implementation also accepts a length <= 32, unlike the original MuseAir,
  * which switches to the short version for this length.
  *
  * https://github.com/eternal-io/museair
@@ -60,13 +60,20 @@ static void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uin
 {
 	const uint8_t* p = bytes;
 	size_t q = len;
+	uint8_t buf[32];
+
+	if (unlikely(q < 32)) {
+		memset(buf, 0, 32);
+		if (q > 0)
+			memcpy(buf, p, q);
+		p = buf;
+		q = 32;
+	}
 
 	uint64_t i, j, k;
 	uint64_t lo0, lo1, lo2, lo3, lo4, lo5 = MUSEAIR_CONSTANT[6];
 	uint64_t hi0, hi1, hi2, hi3, hi4, hi5 = MUSEAIR_CONSTANT[6];
 	uint64_t state[6] = { MUSEAIR_CONSTANT[0], MUSEAIR_CONSTANT[1], MUSEAIR_CONSTANT[2], MUSEAIR_CONSTANT[3], MUSEAIR_CONSTANT[4], MUSEAIR_CONSTANT[5] };
-
-	assert(len >= 32);
 
 	uint64_t seed_a = util_read64(seed);
 	uint64_t seed_b = util_read64(seed + 8);
