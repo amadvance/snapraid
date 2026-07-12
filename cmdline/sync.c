@@ -422,11 +422,14 @@ int failed_compare_by_index(const void* void_a, const void* void_b)
 }
 
 /**
- * Buffer for storing the new hashes.
+ * Buffer for saving state between loops.
  */
-struct snapraid_rehash {
+struct snapraid_disk_state {
+	struct snapraid_task* task;
 	unsigned char hash[HASH_MAX];
-	struct snapraid_block* block;
+	unsigned char rehash[HASH_MAX];
+	unsigned diskcur;
+	int needs_hash;
 };
 
 /**
@@ -646,8 +649,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	struct snapraid_io io;
 	struct snapraid_plan plan;
 	struct snapraid_handle* handle;
-	void* rehandle_alloc;
-	struct snapraid_rehash* rehandle;
 	unsigned diskmax;
 	block_off_t blockcur;
 	unsigned j;
@@ -673,6 +674,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned* waiting_map;
 	unsigned waiting_mac;
 	bit_vect_t* block_enabled;
+	struct snapraid_disk_state* disk_state;
+	void** hash_digest;
+	void** rehash_digest;
+	const void** hash_src;
+	size_t* hash_size;
 
 	/* get the present time */
 	now = time(0);
@@ -680,8 +686,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	/* maps the disks to handles */
 	handle = handle_mapping(state, &diskmax);
 
-	/* rehash buffers */
-	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);
+	/* allocate snapraid_disk_state and batch arrays */
+	disk_state = malloc_nofail(diskmax * sizeof(struct snapraid_disk_state));
+	hash_digest = malloc_nofail(diskmax * sizeof(void*));
+	rehash_digest = malloc_nofail(diskmax * sizeof(void*));
+	hash_src = malloc_nofail(diskmax * sizeof(const void*));
+	hash_size = malloc_nofail(diskmax * sizeof(size_t));
 
 	/* we need 1 * data + 1 * parity */
 	buffermax = diskmax + state->level;
@@ -759,7 +769,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		int parity_needs_to_be_updated;
 		int parity_going_to_be_updated;
 		snapraid_info info;
-		int rehash;
+		int needs_rehash;
 		void** buffer;
 		int writer_error[IO_WRITER_ERROR_MAX];
 
@@ -788,7 +798,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		info = info_get(&state->infoarr, blockcur);
 
 		/* if we have to use the old hash */
-		rehash = info_get_rehash(info);
+		needs_rehash = info_get_rehash(info);
 
 		/*
 		 * If the parity requires to be updated
@@ -813,34 +823,33 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			parity_needs_to_be_updated = 1;
 
 		/* for each disk, process the block */
+		/* clear disk_state needs_hash flags */
 		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_task* task;
-			ssize_t read_size;
-			unsigned char hash[HASH_MAX];
-			struct snapraid_block* block;
-			unsigned block_state;
-			struct snapraid_disk* disk;
-			struct snapraid_file* file;
-			block_off_t file_pos;
+			disk_state[j].needs_hash = 0;
+		}
+
+		unsigned hash_count = 0;
+
+		/* for each disk, read the block  */
+		for (j = 0; j < diskmax; ++j) {
 			unsigned diskcur;
+			struct snapraid_disk_state* ds;
+			unsigned block_state;
 
 			/* until now is misc */
 			state_usage_misc(state);
 
-			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
+			struct snapraid_task* task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
+			struct snapraid_block* block = task->block;
+			struct snapraid_disk* disk = task->disk;
+			struct snapraid_file* file = task->file;
 
 			/* until now is disk */
 			state_usage_disk(state, handle, waiting_map, waiting_mac);
 
-			/* get the results */
-			disk = task->disk;
-			block = task->block;
-			file = task->file;
-			file_pos = task->file_pos;
-			read_size = task->read_size;
-
-			/* by default no rehash in case of "continue" */
-			rehandle[diskcur].block = 0;
+			ds = &disk_state[diskcur];
+			ds->task = task;
+			ds->diskcur = diskcur;
 
 			/* if the disk position is not used */
 			if (!disk)
@@ -926,21 +935,44 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* LCOV_EXCL_STOP */
 			}
 
-			countsize += read_size;
+			countsize += task->read_size;
 
-			/* now compute the hash */
-			if (rehash) {
-				memhash(state->prevhash, state->prevhashseed, hash, buffer[diskcur], read_size);
+			/* request hash computation */
+			ds->needs_hash = 1;
+			hash_digest[hash_count] = ds->hash;
+			rehash_digest[hash_count] = ds->rehash;
+			hash_src[hash_count] = buffer[diskcur];
+			hash_size[hash_count] = task->read_size;
+			++hash_count;
+		}
 
-				/* compute the new hash, and store it */
-				rehandle[diskcur].block = block;
-				memhash(state->hash, state->hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size);
+		/* for each disk, compute the hash */
+		if (hash_count > 0) {
+			if (needs_rehash) {
+				memhash_multi(state->prevhash, state->prevhashseed, hash_digest, hash_src, hash_size, hash_count);
+				memhash_multi(state->hash, state->hashseed, rehash_digest, hash_src, hash_size, hash_count);
 			} else {
-				memhash(state->hash, state->hashseed, hash, buffer[diskcur], read_size);
+				memhash_multi(state->hash, state->hashseed, hash_digest, hash_src, hash_size, hash_count);
 			}
+		}
 
-			/* until now is hash */
-			state_usage_hash(state);
+		/* until now is hash */
+		state_usage_hash(state);
+
+		/* for each disk, process the hash results */
+		for (j = 0; j < diskmax; ++j) {
+			if (!disk_state[j].needs_hash)
+				continue;
+
+			struct snapraid_task* task = disk_state[j].task;
+			struct snapraid_block* block = task->block;
+			struct snapraid_disk* disk = task->disk;
+			struct snapraid_file* file = task->file;
+			ssize_t read_size = task->read_size;
+			block_off_t file_pos = task->file_pos;
+
+			unsigned char* hash = disk_state[j].hash;
+			unsigned diskcur = disk_state[j].diskcur;
 
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
@@ -1171,7 +1203,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 							size_t size = failed[j].size;
 
 							/* compute the hash of the recovered block */
-							if (rehash) {
+							if (needs_rehash) {
 								memhash(state->prevhash, state->prevhashseed, hash, block_buffer, size);
 							} else {
 								memhash(state->hash, state->hashseed, hash, block_buffer, size);
@@ -1258,11 +1290,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				&& !silent_error_on_this_block
 			) {
 				/* if rehash is needed */
-				if (rehash) {
+				if (needs_rehash) {
 					/* store all the new hash already computed */
 					for (j = 0; j < diskmax; ++j) {
-						if (rehandle[j].block)
-							memcpy(rehandle[j].block->hash, rehandle[j].hash, BLOCK_HASH_SIZE);
+						if (disk_state[j].needs_hash)
+							memcpy(disk_state[j].task->block->hash, disk_state[j].rehash, BLOCK_HASH_SIZE);
 					}
 				}
 
@@ -1510,12 +1542,16 @@ bail:
 	free(zero_alloc);
 	free(copy_alloc);
 	free(copy);
-	free(rehandle_alloc);
 	free(failed);
 	free(failed_map);
 	free(waiting_map);
 	io_done(&io);
 	free(block_enabled);
+	free(disk_state);
+	free(hash_digest);
+	free(rehash_digest);
+	free(hash_src);
+	free(hash_size);
 
 	if (state->opt.expect_recoverable) {
 		if (soft_error + silent_error + io_error == 0)

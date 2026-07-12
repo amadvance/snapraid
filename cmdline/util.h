@@ -233,6 +233,12 @@ const char* memhashname(unsigned kind);
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size);
 
 /**
+ * Compute the HASH of multiple memory blocks at the same time.
+ * Seed is a 128 bit vector.
+ */
+void memhash_multi(unsigned kind, const unsigned char* seed, void** digest, const void** src, const size_t* size, unsigned count);
+
+/**
  * Return the hash name.
  */
 const char* hash_config_name(unsigned kind);

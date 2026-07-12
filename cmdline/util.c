@@ -787,6 +787,13 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 	}
 }
 
+void memhash_multi(unsigned kind, const unsigned char* seed, void** digest, const void** src, const size_t* size, unsigned count)
+{
+	for (unsigned i = 0; i < count; ++i) {
+		memhash(kind, seed, digest[i], src[i], size[i]);
+	}
+}
+
 const char* hash_config_name(unsigned kind)
 {
 	switch (kind) {
