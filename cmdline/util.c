@@ -760,8 +760,12 @@ unsigned membesthash(void)
 
 #include "murmur3.c"
 #include "spooky2.c"
+#include "spooky2sse.c"
+#include "spooky2avx.c"
 #include "metro.c"
 #include "museair.c"
+#include "museairsse.c"
+#include "museairavx.c"
 
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)
 {

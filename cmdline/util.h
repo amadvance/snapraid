@@ -230,6 +230,12 @@ const char* memhashname(unsigned kind);
  * Compute the HASH of a memory block.
  * Seed is a 128 bit vector.
  */
+void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest);
+void SpookyHash128SSE(const void* data0, const void* data1, size_t size, const uint8_t* seed0, const uint8_t* seed1, uint8_t* digest0, uint8_t* digest1);
+void SpookyHash128AVX(const void* data0, const void* data1, const void* data2, const void* data3, size_t size, const uint8_t* seed0, const uint8_t* seed1, const uint8_t* seed2, const uint8_t* seed3, uint8_t* digest0, uint8_t* digest1, uint8_t* digest2, uint8_t* digest3);
+void MuseAirLoongSSE(const void* data0, const void* data1, size_t size, const uint8_t* seed0, const uint8_t* seed1, uint8_t* digest0, uint8_t* digest1);
+void MuseAirLoongAVX(const void* data0, const void* data1, const void* data2, const void* data3, size_t size, const uint8_t* seed0, const uint8_t* seed1, const uint8_t* seed2, const uint8_t* seed3, uint8_t* digest0, uint8_t* digest1, uint8_t* digest2, uint8_t* digest3);
+void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out);
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size);
 
 /**

@@ -235,6 +235,132 @@ static void test_hash(void)
 		}
 	}
 
+	for (i = 0; TEST_SPOOKY2[i].data; ++i) {
+		unsigned char digest0[HASH_MAX];
+		unsigned char digest1[HASH_MAX];
+		unsigned char buffer0[4096];
+		unsigned char buffer1[4096];
+		unsigned char seed0[HASH_MAX];
+		unsigned char seed1[HASH_MAX];
+		int len = TEST_SPOOKY2[i].len;
+		unsigned k;
+
+		if (len > 4096) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Test vector too long\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		for (k = 0; TEST_SPOOKY2[k].data; ++k) {
+			if (TEST_SPOOKY2[k].len == len && k != i) {
+				break;
+			}
+		}
+		if (!TEST_SPOOKY2[k].data) {
+			k = i;
+		}
+
+		memcpy(buffer0, TEST_SPOOKY2[i].data, len);
+		memcpy(seed0, TEST_SPOOKY2[i].seed, HASH_MAX);
+
+		memcpy(buffer1, TEST_SPOOKY2[k].data, len);
+		memcpy(seed1, TEST_SPOOKY2[k].seed, HASH_MAX);
+
+		SpookyHash128SSE(buffer0, buffer1, len, seed0, seed1, digest0, digest1);
+
+		if (memcmp(digest0, TEST_SPOOKY2[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed SpookyHash128SSE test 0 on vector %d\n", i);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest1, TEST_SPOOKY2[k].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed SpookyHash128SSE test 1 on vector %d and %d\n", i, k);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* SpookyHash128AVX self-test */
+	for (i = 0; TEST_SPOOKY2[i].data; ++i) {
+		unsigned char buffer0[4096];
+		unsigned char buffer1[4096];
+		unsigned char buffer2[4096];
+		unsigned char buffer3[4096];
+		unsigned char seed0[HASH_MAX];
+		unsigned char seed1[HASH_MAX];
+		unsigned char seed2[HASH_MAX];
+		unsigned char seed3[HASH_MAX];
+		unsigned char digest0[HASH_MAX];
+		unsigned char digest1[HASH_MAX];
+		unsigned char digest2[HASH_MAX];
+		unsigned char digest3[HASH_MAX];
+		int len = TEST_SPOOKY2[i].len;
+		unsigned k, l, m;
+
+		for (k = 0; TEST_SPOOKY2[k].data; ++k) {
+			if (TEST_SPOOKY2[k].len == len && k != i) {
+				break;
+			}
+		}
+		if (!TEST_SPOOKY2[k].data) k = i;
+
+		for (l = 0; TEST_SPOOKY2[l].data; ++l) {
+			if (TEST_SPOOKY2[l].len == len && l != i && l != k) {
+				break;
+			}
+		}
+		if (!TEST_SPOOKY2[l].data) l = i;
+
+		for (m = 0; TEST_SPOOKY2[m].data; ++m) {
+			if (TEST_SPOOKY2[m].len == len && m != i && m != k && m != l) {
+				break;
+			}
+		}
+		if (!TEST_SPOOKY2[m].data) m = i;
+
+		memcpy(buffer0, TEST_SPOOKY2[i].data, len);
+		memcpy(seed0, TEST_SPOOKY2[i].seed, HASH_MAX);
+
+		memcpy(buffer1, TEST_SPOOKY2[k].data, len);
+		memcpy(seed1, TEST_SPOOKY2[k].seed, HASH_MAX);
+
+		memcpy(buffer2, TEST_SPOOKY2[l].data, len);
+		memcpy(seed2, TEST_SPOOKY2[l].seed, HASH_MAX);
+
+		memcpy(buffer3, TEST_SPOOKY2[m].data, len);
+		memcpy(seed3, TEST_SPOOKY2[m].seed, HASH_MAX);
+
+		SpookyHash128AVX(buffer0, buffer1, buffer2, buffer3, len, seed0, seed1, seed2, seed3, digest0, digest1, digest2, digest3);
+
+		if (memcmp(digest0, TEST_SPOOKY2[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed SpookyHash128AVX test 0 on vector %d\n", i);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest1, TEST_SPOOKY2[k].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed SpookyHash128AVX test 1 on vector %d and %d\n", i, k);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest2, TEST_SPOOKY2[l].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed SpookyHash128AVX test 2 on vector %d and %d\n", i, l);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest3, TEST_SPOOKY2[m].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed SpookyHash128AVX test 3 on vector %d and %d\n", i, m);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
 	for (i = 0; TEST_METRO[i].data; ++i) {
 		unsigned char digest[HASH_MAX];
 		memcpy(buffer_aligned, TEST_METRO[i].data, TEST_METRO[i].len);
@@ -256,6 +382,140 @@ static void test_hash(void)
 		if (memcmp(digest, TEST_MUSEAIR[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Failed MuseAir test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* MuseAir SSE self-test */
+	for (i = 0; TEST_MUSEAIR[i].data; ++i) {
+		unsigned char digest0[HASH_MAX];
+		unsigned char digest1[HASH_MAX];
+		unsigned char buffer0[4096];
+		unsigned char buffer1[4096];
+		unsigned char seed0[HASH_MAX];
+		unsigned char seed1[HASH_MAX];
+		int len = TEST_MUSEAIR[i].len;
+		unsigned k;
+
+		if (len > 4096) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Test vector too long\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		for (k = 0; TEST_MUSEAIR[k].data; ++k) {
+			if (TEST_MUSEAIR[k].len == len && k != i) {
+				break;
+			}
+		}
+		if (!TEST_MUSEAIR[k].data) {
+			k = i;
+		}
+
+		memcpy(buffer0, TEST_MUSEAIR[i].data, len);
+		memcpy(seed0, TEST_MUSEAIR[i].seed, HASH_MAX);
+
+		memcpy(buffer1, TEST_MUSEAIR[k].data, len);
+		memcpy(seed1, TEST_MUSEAIR[k].seed, HASH_MAX);
+
+		MuseAirLoongSSE(buffer0, buffer1, len, seed0, seed1, digest0, digest1);
+
+		if (memcmp(digest0, TEST_MUSEAIR[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed MuseAirLoongSSE test 0 on vector %d\n", i);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest1, TEST_MUSEAIR[k].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed MuseAirLoongSSE test 1 on vector %d and %d\n", i, k);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* MuseAir AVX self-test */
+	for (i = 0; TEST_MUSEAIR[i].data; ++i) {
+		unsigned char buffer0[4096];
+		unsigned char buffer1[4096];
+		unsigned char buffer2[4096];
+		unsigned char buffer3[4096];
+		unsigned char seed0[HASH_MAX];
+		unsigned char seed1[HASH_MAX];
+		unsigned char seed2[HASH_MAX];
+		unsigned char seed3[HASH_MAX];
+		unsigned char digest0[HASH_MAX];
+		unsigned char digest1[HASH_MAX];
+		unsigned char digest2[HASH_MAX];
+		unsigned char digest3[HASH_MAX];
+		int len = TEST_MUSEAIR[i].len;
+		unsigned k, l, m;
+
+		if (len > 4096) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Test vector too long\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		for (k = 0; TEST_MUSEAIR[k].data; ++k) {
+			if (TEST_MUSEAIR[k].len == len && k != i) {
+				break;
+			}
+		}
+		if (!TEST_MUSEAIR[k].data) k = i;
+
+		for (l = 0; TEST_MUSEAIR[l].data; ++l) {
+			if (TEST_MUSEAIR[l].len == len && l != i && l != k) {
+				break;
+			}
+		}
+		if (!TEST_MUSEAIR[l].data) l = i;
+
+		for (m = 0; TEST_MUSEAIR[m].data; ++m) {
+			if (TEST_MUSEAIR[m].len == len && m != i && m != k && m != l) {
+				break;
+			}
+		}
+		if (!TEST_MUSEAIR[m].data) m = i;
+
+		memcpy(buffer0, TEST_MUSEAIR[i].data, len);
+		memcpy(seed0, TEST_MUSEAIR[i].seed, HASH_MAX);
+
+		memcpy(buffer1, TEST_MUSEAIR[k].data, len);
+		memcpy(seed1, TEST_MUSEAIR[k].seed, HASH_MAX);
+
+		memcpy(buffer2, TEST_MUSEAIR[l].data, len);
+		memcpy(seed2, TEST_MUSEAIR[l].seed, HASH_MAX);
+
+		memcpy(buffer3, TEST_MUSEAIR[m].data, len);
+		memcpy(seed3, TEST_MUSEAIR[m].seed, HASH_MAX);
+
+		MuseAirLoongAVX(buffer0, buffer1, buffer2, buffer3, len, seed0, seed1, seed2, seed3, digest0, digest1, digest2, digest3);
+
+		if (memcmp(digest0, TEST_MUSEAIR[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed MuseAirLoongAVX test 0 on vector %d\n", i);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest1, TEST_MUSEAIR[k].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed MuseAirLoongAVX test 1 on vector %d and %d\n", i, k);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest2, TEST_MUSEAIR[l].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed MuseAirLoongAVX test 2 on vector %d and %d\n", i, l);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (memcmp(digest3, TEST_MUSEAIR[m].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed MuseAirLoongAVX test 3 on vector %d and %d\n", i, m);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

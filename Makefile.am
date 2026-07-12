@@ -109,10 +109,14 @@ noinst_HEADERS = \
 	cmdline/murmur3test.c \
 	cmdline/spooky2.c \
 	cmdline/spooky2test.c \
+	cmdline/spooky2sse.c \
+	cmdline/spooky2avx.c \
 	cmdline/metro.c \
 	cmdline/metrotest.c \
 	cmdline/museair.c \
 	cmdline/museairtest.c \
+	cmdline/museairsse.c \
+	cmdline/museairavx.c \
 	cmdline/import.h \
 	cmdline/search.h \
 	cmdline/thermal.h \

@@ -56,7 +56,7 @@ static const uint64_t MASK_I = 01555555555555555555555ULL;
 static const uint64_t MASK_J = 01333333333333333333333ULL;
 static const uint64_t MASK_K = 00666666666666666666666ULL;
 
-static void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out)
+void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out)
 {
 	const uint8_t* p = bytes;
 	size_t q = len;

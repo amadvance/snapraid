@@ -154,8 +154,12 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	printf("%8s", "best");
 	printf("%8s", "murmur3");
 	printf("%8s", "spooky2");
+	printf("%8s", "spk2sse");
+	printf("%8s", "spk2avx");
 	printf("%8s", "metro");
 	printf("%8s", "museair");
+	printf("%8s", "musesse");
+	printf("%8s", "museavx");
 	printf("\n");
 
 	printf("%8s", "hash");
@@ -178,6 +182,38 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
+	if (raid_cpu_has_sse2()) {
+		SPEED_START {
+			for (j = 0; j < nd - 1; j += 2) {
+				SpookyHash128SSE(v[j], v[j + 1], size, seed, seed, digest, digest);
+			}
+			if (j < nd) {
+				SpookyHash128(v[j], size, seed, digest);
+			}
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+	} else {
+		printf("%8s", "-");
+	}
+	fflush(stdout);
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd - 3; j += 4) {
+				SpookyHash128AVX(v[j], v[j + 1], v[j + 2], v[j + 3], size, seed, seed, seed, seed, digest, digest, digest, digest);
+			}
+			for (; j < nd; ++j) {
+				SpookyHash128(v[j], size, seed, digest);
+			}
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+	} else {
+		printf("%8s", "-");
+	}
+	fflush(stdout);
+
 	SPEED_START {
 		for (j = 0; j < nd; ++j)
 			memhash(HASH_METRO, seed, digest, v[j], size);
@@ -192,6 +228,38 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+
+	if (raid_cpu_has_sse2()) {
+		SPEED_START {
+			for (j = 0; j < nd - 1; j += 2) {
+				MuseAirLoongSSE(v[j], v[j + 1], size, seed, seed, digest, digest);
+			}
+			if (j < nd) {
+				MuseAirLoong(v[j], size, seed, digest);
+			}
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+	} else {
+		printf("%8s", "-");
+	}
+	fflush(stdout);
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd - 3; j += 4) {
+				MuseAirLoongAVX(v[j], v[j + 1], v[j + 2], v[j + 3], size, seed, seed, seed, seed, digest, digest, digest, digest);
+			}
+			for (; j < nd; ++j) {
+				MuseAirLoong(v[j], size, seed, digest);
+			}
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+	} else {
+		printf("%8s", "-");
+	}
 	printf("\n");
 	printf("\n");
 }
