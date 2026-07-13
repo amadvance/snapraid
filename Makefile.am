@@ -42,6 +42,7 @@ snapraid_SOURCES = \
 	cmdline/io.c \
 	cmdline/bw.c \
 	cmdline/util.c \
+	cmdline/str.c \
 	cmdline/stream.c \
 	cmdline/support.c \
 	cmdline/memory.c \
@@ -99,6 +100,7 @@ noinst_HEADERS = \
 	cmdline/io.h \
 	cmdline/bw.h \
 	cmdline/util.h \
+	cmdline/str.h \
 	cmdline/stream.h \
 	cmdline/support.h \
 	cmdline/memory.h \
@@ -132,6 +134,7 @@ mktest_SOURCES = \
 	os/unix.c \
 	cmdline/unixapp.c \
 	cmdline/support.c \
+	cmdline/str.c \
 	cmdline/memory.c \
 	tommyds/tommy.c
 
@@ -142,6 +145,7 @@ mkstream_SOURCES = \
 	os/unix.c \
 	cmdline/unixapp.c \
 	cmdline/support.c \
+	cmdline/str.c \
 	cmdline/memory.c \
 	cmdline/util.c \
 	cmdline/stream.c \
