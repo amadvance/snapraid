@@ -3909,6 +3909,13 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		}
 	}
 
+	if (info_has_rehash && state->prevhash == HASH_UNDEFINED) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Internal inconsistency: Rehash blocks found but previous checksum is missing!\n");
+		os_abort();
+		/* LCOV_EXCL_STOP */
+	}
+
 	/* map disks */
 	mapping_idx = 0;
 	for (i = state->maplist; i != 0; i = i->next) {
