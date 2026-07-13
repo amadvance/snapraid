@@ -5,6 +5,7 @@
 #define __SUPPORT_H
 
 #include "app.h"
+#include "memory.h"
 
 /****************************************************************************/
 /* lock */
@@ -509,43 +510,6 @@ int advise_open(struct advise_struct* advise, int f);
 int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
 int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
 void advise_close(struct advise_struct* advise, int f);
-
-/****************************************************************************/
-/* memory */
-
-/**
- * Return the size of the cumulative allocated memory.
- */
-size_t malloc_counter_get(void);
-
-/**
- * Safe malloc.
- * If no memory is available, it aborts.
- */
-void* malloc_nofail(size_t size);
-
-/**
- * Safe malloc with calloc calling arguments.
- * If no memory is available, it aborts.
- */
-void* nalloc_nofail(size_t count, size_t size);
-
-/**
- * Safe calloc.
- * If no memory is available, it aborts.
- */
-void* calloc_nofail(size_t count, size_t size);
-
-/**
- * Safe strdup.
- * If no memory is available, it aborts.
- */
-char* strdup_nofail(const char* str);
-
-/**
- * Helper for printing an error about a failed allocation.
- */
-void malloc_fail(size_t size);
 
 /****************************************************************************/
 /* smartctl */
