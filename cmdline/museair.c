@@ -21,6 +21,113 @@
  * there isn't a C one because I don't want to deal with boilerplates in C yet.
  */
 
+/*
+ * Analysis of the BFast variant and blinding multiplication
+ *
+ * Many fast non-cryptographic hashes (wyhash, rapidhash) use "folding
+ * multiplication": fold_mul(state ^ input_a, input_b ^ SECRET), where both
+ * the state and a public constant are XORed directly with input words.
+ * This is vulnerable to "blinding multiplication": if any operand becomes
+ * zero, the product is zero, and all accumulated state in that lane is lost.
+ * An attacker who knows the SECRET constants can trivially craft an input
+ * word that zeros out an operand, with probability 2^-64 per attempt (or
+ * 2^-63 considering either operand).
+ *
+ * MuseAir BFast avoids this by using a circular accumulator with six
+ * 64-bit state words. The core loop processes 12 input words per iteration:
+ *
+ *   state[0] ^= input[0];
+ *   state[1] ^= input[1];
+ *   (lo0, hi0) = wide_mul(state[0], state[1]);
+ *   state[0] = lo5 ^ hi0;   // lo5 is from the PREVIOUS step
+ *   ...repeat circularly for state[1] through state[5]...
+ *
+ * Inputs are mixed into the state (not XORed with public constants), so
+ * an attacker must predict the evolving state to craft a blinding input.
+ *
+ * Even if a blinding multiplication occurs at the current step (one
+ * operand is zero, making lo0 = hi0 = 0), the state update becomes:
+ *
+ *   state[0] = lo5 ^ 0 = lo5
+ *
+ * The state is NOT zeroed out: it inherits lo5 from the previous step,
+ * which still carries entropy from all earlier inputs. The state only
+ * zeros out if lo5 also happens to be zero.
+ *
+ * The probability of lo5 being zero equals the probability that the
+ * low 64 bits of a 64x64->128 multiplication are zero. This happens
+ * when the total number of trailing zero bits in both operands is >= 64.
+ * For uniformly random operands, the exact count of such pairs in
+ * {0..2^n-1}^2 is (n+2) * 2^(n-1). For n = 64 this gives 33 * 2^64
+ * pairs out of 2^128 total, so:
+ *
+ *   P(lo64 = 0) = 33 * 2^-64 ~ 2^-59
+ *
+ * The overall probability of a catastrophic state zero-out is therefore:
+ *
+ *   P(blinding at current step) * P(lo5 = 0)
+ *   ~ 2^-63 * 33 * 2^-64
+ *   = 33 * 2^-127
+ *   ~ 2^-122
+ *
+ * This is astronomically unlikely and completely irrelevant for detecting
+ * silent data corruption, where inputs are real file data (not adversarial).
+ *
+ * The "Standard" variant of MuseAir replaces the assignment (=) with a
+ * subtraction (-=) in the state update, making blinding multiplication
+ * impossible at a performance cost.
+ *
+ * Why BFast was chosen over Standard for SnapRAID
+ *
+ * SnapRAID uses the hash exclusively to detect silent data corruption
+ * (bit rot, firmware bugs, media degradation). The inputs are always
+ * real file data read from disk, never adversarially crafted content.
+ * In this context:
+ *
+ * - The 2^-122 blinding probability is irrelevant. Random bit errors
+ *   produce uniformly random changes that cannot trigger a blinding
+ *   multiplication. Only a deliberate attacker controlling the exact
+ *   file content could attempt to exploit it.
+ *
+ * - Both variants pass all 250 SMHasher3 quality tests and provide
+ *   identical error detection for random corruption.
+ *
+ * - BFast is measurably faster, and its structure is more amenable to
+ *   loop unrolling.
+ *
+ * The Standard variant's only advantage, full immunity to adversarial
+ * blinding, provides no benefit when the threat model is physical
+ * data corruption rather than a malicious actor.
+ *
+ * Short-input extension (len <= 32)
+ *
+ * The original MuseAir algorithm uses a completely separate "Short"
+ * hash function for inputs of 32 bytes or less. This implementation
+ * instead zero-pads short inputs to 32 bytes and processes them
+ * through the same "Long" code path:
+ *
+ *   if (len < 32) { memset(buf, 0, 32); memcpy(buf, p, len); }
+ *
+ * The motivation is to avoid maintaining two distinct hash algorithms.
+ * Having a single code path reduces complexity and the potential for
+ * algorithm defects. Hash functions generally provide a specialized
+ * short version to improve performance for small keys, but this is
+ * irrelevant for SnapRAID, which typically hashes 256 KB blocks.
+ * Short inputs only occur as an exception.
+ *
+ * This extension is safe because the original length is mixed into
+ * the finalization, independent of the zero-padded buffer:
+ *
+ *   rot = len & 63;
+ *   i = rotl64(i, rot);   // left-rotate by original length
+ *   j = rotr64(j, rot);   // right-rotate by original length
+ *   k = k - len;          // subtract original length
+ *
+ * So even though zero-padded buffers for, say, len=1 and len=2 are
+ * identical, the different rotation amounts and subtraction values
+ * produce completely different hashes after the final multiplications.
+ */
+
 #define u64x(N) (N * 8)
 
 /* AiryAi(0) fractional part calculated by Y-Cruncher */
