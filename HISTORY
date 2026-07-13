@@ -1,9 +1,8 @@
 SnapRAID HISTORY
 ================
 
-=======
-15.0 WIP
-========
+15.0 (Work in Progress)
+=======================
  * Added support for automated filesystem snapshots to ensure data
    consistency and improve recovery reliability.
    When the 'snapshot' option is enabled, SnapRAID transparently manages
