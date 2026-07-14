@@ -2,7 +2,9 @@
 // Copyright (C) 2026 Andrea Mazzoleni
 
 /*
- * Derivative work of MuseAir v1 in the "Long" (len > 32), "b128", and "bfast" configurations.
+ * Derivative work of MuseAir v2 in the "long" (len > 32), "b128", and "bfast" configurations.
+ *
+ * Note that this specific MuseAir configuration didn't change from v1 to v2.
  *
  * This implementation also accepts a length <= 32, unlike the original MuseAir,
  * which switches to the short version for this length.
@@ -11,14 +13,11 @@
  */
 
 /*
- * MuseAir v1
+ * MuseAir v2
  * By K--Aethiax
  *
  * Released into the public domain under the CC0 1.0 license. To view a copy
  * of this license, visit: https://creativecommons.org/publicdomain/zero/1.0/
- *
- * Note that this file is used with SMHasher3, not a standalone implementation;
- * there isn't a C one because I don't want to deal with boilerplates in C yet.
  */
 
 /*
@@ -157,8 +156,6 @@ static const uint64_t MUSEAIR_CONSTANT[13] = {
 #define likely(a) tommy_likely(a)
 #define unlikely(a) tommy_unlikely(a)
 
-static const uint64_t MASK_A = 0xAAAAAAAAAAAAAAAAULL;
-static const uint64_t MASK_B = 0x5555555555555555ULL;
 static const uint64_t MASK_I = 01555555555555555555555ULL;
 static const uint64_t MASK_J = 01333333333333333333333ULL;
 static const uint64_t MASK_K = 00666666666666666666666ULL;
