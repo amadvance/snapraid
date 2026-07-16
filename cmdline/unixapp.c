@@ -66,7 +66,7 @@ static const char* const bcachefs_paths[] = {
 static const char* find_bcachefs(void)
 {
 	for (int i = 0; bcachefs_paths[i]; ++i) {
-		if (access(bcachefs_paths[i], X_OK) == 0) {
+		if (eaccess(bcachefs_paths[i], X_OK) == 0) {
 			return bcachefs_paths[i];
 		}
 	}
@@ -98,7 +98,7 @@ static const char* const zfs_paths[] = {
 static const char* find_zfs(void)
 {
 	for (int i = 0; zfs_paths[i]; ++i) {
-		if (access(zfs_paths[i], X_OK) == 0) {
+		if (eaccess(zfs_paths[i], X_OK) == 0) {
 			return zfs_paths[i];
 		}
 	}
@@ -127,7 +127,7 @@ static const char* const zpool_paths[] = {
 static const char* find_zpool(void)
 {
 	for (int i = 0; zpool_paths[i]; ++i) {
-		if (access(zpool_paths[i], X_OK) == 0) {
+		if (eaccess(zpool_paths[i], X_OK) == 0) {
 			return zpool_paths[i];
 		}
 	}
@@ -2004,7 +2004,7 @@ static int fssnapshot_zfs(const char* dir, uint32_t magic, struct fssnapshot_str
 	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), ".zfs/snapshot/");
 
 	/* ensure ZFS snapshot directory is visible */
-	if (access(fss->snapshot_dir, R_OK | X_OK) != 0) {
+	if (eaccess(fss->snapshot_dir, R_OK | X_OK) != 0) {
 		log_error(errno, "ZFS snapshot directory not accessible: '%s'. %s.\n", fss->snapshot_dir, strerror(errno));
 		return -1;
 	}
