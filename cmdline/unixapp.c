@@ -2807,14 +2807,32 @@ static int devsmart(dev_t device, const char* name, const char* smartctl, const 
 
 	char info_buf[SMART_MAX];
 	pathcpy(info_buf, sizeof(info_buf), info_opts);
-	argc += argsplit(argv + argc, ARGS_MAX - argc - 1, info_buf);
+	argc += argsplit(argv + argc, ARGS_MAX - argc, info_buf);
+	if (argc >= ARGS_MAX) {
+		/* LCOV_EXCL_START */
+		log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	char extra_args[PATH_MAX];
 	if (smartctl[0]) {
 		pathprint(extra_args, sizeof(extra_args), smartctl, file);
-		argc += argsplit(argv + argc, ARGS_MAX - argc - 1, extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_args);
+		if (argc >= ARGS_MAX) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		log_tag("smartctl:%s:%s:run: %s [info: %s] %s\n", file, name, x, info_opts, extra_args);
 	} else {
+		if (argc >= ARGS_MAX - 1) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		argv[argc++] = file;
 		log_tag("smartctl:%s:%s:run: %s [info: %s] %s\n", file, name, x, info_opts, file);
 	}
@@ -2966,14 +2984,32 @@ static int devprobe(dev_t device, const char* name, const char* smartctl, const 
 
 	char info_buf[SMART_MAX];
 	pathcpy(info_buf, sizeof(info_buf), info_opts);
-	argc += argsplit(argv + argc, ARGS_MAX - argc - 1, info_buf);
+	argc += argsplit(argv + argc, ARGS_MAX - argc, info_buf);
+	if (argc >= ARGS_MAX) {
+		/* LCOV_EXCL_START */
+		log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	char extra_args[PATH_MAX];
 	if (smartctl[0]) {
 		pathprint(extra_args, sizeof(extra_args), smartctl, file);
-		argc += argsplit(argv + argc, ARGS_MAX - argc - 1, extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_args);
+		if (argc >= ARGS_MAX) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] %s\n", file, name, x, info_opts, extra_args);
 	} else {
+		if (argc >= ARGS_MAX - 1) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		argv[argc++] = file;
 		log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] %s\n", file, name, x, info_opts, file);
 	}
@@ -3065,9 +3101,21 @@ static int devdown(dev_t device, const char* name, const char* smartctl)
 
 	if (smartctl[0]) {
 		pathprint(extra_args, sizeof(extra_args), smartctl, file);
-		argc += argsplit(argv + argc, ARGS_MAX - argc - 1, extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_args);
+		if (argc >= ARGS_MAX) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		log_tag("smartctl:%s:%s:run: %s -s standby,now %s\n", file, name, x, extra_args);
 	} else {
+		if (argc >= ARGS_MAX - 1) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		argv[argc++] = file;
 		log_tag("smartctl:%s:%s:run: %s -s standby,now %s\n", file, name, x, file);
 	}
