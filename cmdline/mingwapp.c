@@ -537,6 +537,12 @@ int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
 
 	const char* guid = out + 3;
 
+	if (windows_guid_is_valid(guid, strlen(guid)) != 0) {
+		errno = EINVAL;
+		log_error(errno, "Invalid GUID received from VSS shadow copy creation: '%s'\n", guid);
+		return -1;
+	}
+
 	/* resolve the shadow copy's device object path */
 	snprintf(cmd, sizeof(cmd), "(Get-WmiObject Win32_ShadowCopy | Where-Object {$_.ID -eq '%s'}).DeviceObject", guid);
 	if (windows_ps(cmd, device_path, sizeof(device_path)) != 0) {
