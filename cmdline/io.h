@@ -76,7 +76,13 @@ struct snapraid_worker {
 	thread_id_t thread; /**< Thread context for the worker. */
 #endif
 
-	struct snapraid_io* io; /**< Parent pointer. */
+	/**
+	 * Parent pointer.
+	 *
+	 * Note that worker threads must NOT use this pointer to access
+	 * the global state (io->state).
+	 */
+	struct snapraid_io* io;
 
 	void (*func)(struct snapraid_worker*, struct snapraid_task*);
 
@@ -182,6 +188,15 @@ struct snapraid_worker {
  * io_stop(&io);
  */
 struct snapraid_io {
+	/**
+	 * Pointer to the global state.
+	 *
+	 * Note that this pointer must NOT be accessed inside worker threads
+	 * (e.g. data_reader/writer, parity_reader/writer functions).
+	 * Workers must only operate on their pre-allocated buffers and local task variables,
+	 * while any state modifications must strictly happen on the main thread
+	 * after I/O completion.
+	 */
 	struct snapraid_state* state;
 
 	/**
