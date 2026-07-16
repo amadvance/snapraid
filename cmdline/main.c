@@ -315,7 +315,7 @@ const char* get_argv0(const char* argv0)
 }
 
 /* global variable to store child PID for signal handler */
-static volatile pid_t child_pid = 0;
+static volatile sig_atomic_t child_pid = 0;
 
 /* signal handler that forwards signals to child */
 /* LCOV_EXCL_START */
@@ -364,6 +364,18 @@ int main(int argc, char* argv[])
 		sigaction(SIGUSR1, &sa, NULL); /* user-defined 1 */
 		sigaction(SIGUSR2, &sa, NULL); /* user-defined 2 */
 
+		sigset_t set, oldset;
+		sigemptyset(&set);
+		sigaddset(&set, SIGINT);
+		sigaddset(&set, SIGQUIT);
+		sigaddset(&set, SIGTERM);
+		sigaddset(&set, SIGHUP);
+		sigaddset(&set, SIGUSR1);
+		sigaddset(&set, SIGUSR2);
+
+		/* block signals to prevent signal race before child_pid is set */
+		sigprocmask(SIG_BLOCK, &set, &oldset);
+
 		pid_t pid = fork();
 		if (pid == -1) {
 			/* LCOV_EXCL_START */
@@ -383,6 +395,9 @@ int main(int argc, char* argv[])
 			signal(SIGUSR1, SIG_DFL);
 			signal(SIGUSR2, SIG_DFL);
 
+			/* unblock signals in child */
+			sigprocmask(SIG_SETMASK, &oldset, NULL);
+
 			execvp(get_argv0(argv[0]), argv);
 
 			/* here it's an error */
@@ -396,6 +411,9 @@ int main(int argc, char* argv[])
 
 			/* store child PID so signal handler can forward signals */
 			child_pid = pid;
+
+			/* unblock signals in parent */
+			sigprocmask(SIG_SETMASK, &oldset, NULL);
 
 			do {
 				ret = waitpid(pid, &status, 0);
