@@ -417,7 +417,7 @@ static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapra
 		}
 	}
 
-	/* insert in the delayed list */
+	/* insert in the delayed allocation list */
 	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
 }
 
@@ -640,9 +640,6 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 	stamp_unlock(disk);
-
-	/* delayed allocation of the parity */
-	scan_file_delayed_allocate(scan, file);
 }
 
 /**
@@ -677,7 +674,15 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
 	stamp_unlock(disk);
 
-	/* deallocate the file from the parity */
+	/*
+	 * Deallocate the file from the parity.
+	 *
+	 * This is safe to run unlocked because:
+	 * 1. Modified files deallocations are deferred to Phase 2 (mono-threaded phase).
+	 * 2. Invalid parity files deallocated in Phase 1 are never selected by
+	 *    file_is_full_hashed_and_stable() during copy-detection (since they lack
+	 *    valid parity blocks).
+	 */
 	scan_file_deallocate(scan, file);
 }
 
@@ -698,13 +703,15 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 
 	/* if the file is full invalid, schedule a reinsert at later stage */
 	if (file_is_full_invalid_parity_and_stable(scan->state, disk, file)) {
+
 		struct snapraid_file* copy = file_dup(file);
+		file_flag_set(copy, FILE_IS_MODIFIED_NEW);
 
-		/* remove the file */
-		scan_file_remove(scan, file, 0);
+		/* insert in the delayed allocation list */
+		scan_file_delayed_allocate(scan, copy);
 
-		/* reinsert the copy in the delayed list */
-		scan_file_insert(scan, copy);
+		/* mark the file to be removed on Phase 2 */
+		file_flag_set(file, FILE_IS_REALLOC_OLD);
 	}
 }
 
@@ -723,6 +730,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	int64_t file_already_present_mtime_sec;
 	int file_already_present_mtime_nsec;
 	int is_file_reported;
+	int is_file_modified;
 	/*
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
 	 * to detect moved files.
@@ -912,6 +920,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 	/* initialize for later overwrite */
 	is_file_reported = 0;
+	is_file_modified = 0;
 	is_original_file_size_different_than_zero = 0;
 
 	/* then try finding it by name */
@@ -1034,8 +1043,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* keep track if the original file was not of zero size */
 		is_original_file_size_different_than_zero = file->size != 0;
 
-		/* remove it, and continue to insert it again */
-		scan_file_remove(scan, file, 1);
+		/* mark it as to be removed in Phase 2 */
+		file_flag_set(file, FILE_IS_MODIFIED_OLD);
+
+		/* flag that we are inserting the modified version so we skip Phase 1 insertion sets */
+		is_file_modified = 1;
 
 		/* and continue to insert it again */
 	} else {
@@ -1114,7 +1126,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			}
 			stamp_unlock(other_disk);
 
-			/* if found, and it's a fully hashed file */
+			/*
+			 * If found, check stability and copy the hash.
+			 *
+			 * This is safe to execute unlocked because:
+			 * 1. Modified files deallocations are deferred to Phase 2 (mono-threaded phase).
+			 * 2. file_is_full_invalid_parity_and_stable() only accepts files with complete
+			 *    invalid parity, preventing them from being selected by file_is_full_hashed_and_stable().
+			 */
 			if (other_file && file_is_full_hashed_and_stable(scan->state, other_disk, other_file)) {
 				char path_other[PATH_MAX];
 				struct stat other_st;
@@ -1179,8 +1198,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		}
 	}
 
-	/* insert the file in the delayed list */
-	scan_file_insert(scan, file);
+	if (!is_file_modified) { /* modified files are re-inserted in Phase 3 */
+		scan_file_insert(scan, file);
+	} else {
+		file_flag_set(file, FILE_IS_MODIFIED_NEW);
+	}
+
+	/* insert the file in the delayed allocation list */
+	scan_file_delayed_allocate(scan, file);
 }
 
 /**
@@ -1759,7 +1784,20 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 	}
 
-	/* first scan all the directory and find new and deleted files */
+	/*
+	 * We split the search in three phases:
+	 * Phase 1: Parallel scanning of directories, finding new and modified files (without deletions/deallocations).
+	 * Phase 2: Serialized removals (deleted files and old versions of modified files) to free up parity space.
+	 * Phase 3: Serialized insertions and allocations of new files.
+	 *
+	 * We must start Phase 2 (deletions) only when all disks have finished Phase 1 (scanning),
+	 * to ensure that copy/relocation detection on any disk can search the stampset of other disks
+	 * before their old files are deleted/deallocated.
+	 */
+
+	/*
+	 * Phase 1: Parallel scanning of directories
+	 */
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
 #if HAVE_THREAD
@@ -1784,13 +1822,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 #endif
 
-	/*
-	 * We split the search in two phases because to detect files
-	 * moved from one disk to another we have to start deletion
-	 * only when all disks have all the new files found
-	 */
-
-	/* now process all the new and deleted files */
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
 		struct snapraid_disk* disk = scan->disk;
@@ -1798,6 +1829,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		unsigned phy_dup;
 		uint64_t phy_last;
 		struct snapraid_file* phy_file_last;
+
+		/*
+		 * Phase 2: Removals (deleted files and old versions of modified files)
+		 */
 
 		/* check for removed files */
 		node = disk->filelist;
@@ -1807,8 +1842,11 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			/* next node */
 			node = node->next;
 
-			/* remove if not present */
-			if (!file_flag_has(file, FILE_IS_PRESENT)) {
+			if (file_flag_has(file, FILE_IS_REALLOC_OLD)) {
+				scan_file_remove(scan, file, 0);
+			} else if (file_flag_has(file, FILE_IS_MODIFIED_OLD)) {
+				scan_file_remove(scan, file, 1);
+			} else if (!file_flag_has(file, FILE_IS_PRESENT)) {
 				/* here we are in mono-thread context, no need to use the stamp_lock() to read FILE_IS_RELOCATED */
 				if (!file_flag_has(file, FILE_IS_RELOCATED)) {
 					++scan->count_remove;
@@ -1859,6 +1897,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 
 		/*
+		 * Phase 3: Insertions (new files and new versions of modified files)
+		 *
 		 * Sort the files before inserting them
 		 * we use a stable sort to ensure that if the reported physical offset/inode
 		 * are always 0, we keep at least the directory order
@@ -1911,6 +1951,11 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 			/* next node */
 			node = node->next;
+
+			/* if this is a modified file new version, insert it into sets now */
+			if (file_flag_has(file, FILE_IS_MODIFIED_NEW)) {
+				scan_file_insert(scan, file);
+			}
 
 			/* insert in the parity */
 			scan_file_allocate(scan, file);

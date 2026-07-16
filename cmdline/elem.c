@@ -437,6 +437,7 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->inode = copy->inode;
 	file->physical = copy->physical;
 	file->flag = copy->flag;
+	file->shared_flag = 0;
 	file->blockvec = nalloc_nofail(file->blockmax, block_sizeof());
 
 	for (i = 0; i < file->blockmax; ++i) {
