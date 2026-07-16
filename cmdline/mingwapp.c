@@ -894,9 +894,9 @@ static int devsmart(uint64_t device, const char* name, const char* smartctl, con
 	if (smartctl[0]) {
 		char option[SMART_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, option);
+		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, file);
+		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, file);
 	}
 
 	count = 0;
@@ -952,7 +952,7 @@ retry:
 			&& info[INFO_ROTATION_RATE] == SMART_UNASSIGNED
 		) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" %s -d sat %s", windows_exedir(), info_opts, file);
+			snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" %s -d sat %s", windows_exedir(), info_opts, file);
 
 			++count;
 			goto retry;
@@ -1218,9 +1218,9 @@ static int devprobe(uint64_t device, const char* name, const char* smartctl, con
 	if (smartctl[0]) {
 		char option[SMART_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, option);
+		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, file);
+		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, file);
 	}
 
 	count = 0;
@@ -1269,7 +1269,7 @@ retry:
 		 */
 		if (ret == 2) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -n standby,3 %s -d sat %s", windows_exedir(), info_opts, file);
+			snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -n standby,3 %s -d sat %s", windows_exedir(), info_opts, file);
 
 			++count;
 			goto retry;
@@ -1309,9 +1309,9 @@ static int devdown(uint64_t device, const char* name, const char* smartctl)
 	if (smartctl[0]) {
 		char option[SMART_MAX];
 		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), option);
+		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), file);
+		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), file);
 	}
 
 	count = 0;
@@ -1360,7 +1360,7 @@ retry:
 		 */
 		if (ret == 2) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now -d sat %s", windows_exedir(), file);
+			snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -s standby,now -d sat %s", windows_exedir(), file);
 
 			++count;
 			goto retry;
