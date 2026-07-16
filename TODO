@@ -43,7 +43,41 @@ See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/6e872fdae0/
 Future
 ======
 
+- Major
+
+* Size-Based Checkpointing (autosave) using a write-ahead log (WAL).
+  Instead of writing the full content file periodically (autosave), write incremental
+  updates to companion `.wal` files. Use the existing bit-efficient `STREAM`
+  abstraction (`cmdline/stream.h`) for the WAL. For each synced block entry,
+  the stream writes: target disk index (`disk_idx`), block state (`state`),
+  block position (`block_idx`), and the newly computed block hash (`hash`).
+  This automatically provides:
+  - Variable-length binary integer packing (`sputb32`/`sputb64`), reducing the average
+    record size to ~20 bytes.
+  - Built-in stream buffering for batched writes to prevent mechanical disk seeks,
+    with periodic `ssync()` flushes (calling fdatasync internally).
+  - Out-of-the-box support for atomic mirrored writes to multiple content directories
+    via `sopen_multi_write()`.
+  - Built-in block-level CRC integrity protection.
+  Perform a full checkpoint (writing the content file and truncating the WAL)
+  only when the WAL file size exceeds a threshold (e.g., 50 MB).
+
 - Minor
+
+* Emergency Memory Reserve for Graceful OOM Shutdown.
+  Pre-allocate a small emergency memory reserve buffer (e.g., 10 MB) at program
+  startup. Modify `malloc_nofail` (and related memory allocators in `memory.c`)
+  so that if an allocation fails (returns NULL), the emergency buffer is freed
+  to give the system breathing room. Then, trigger a graceful shutdown by
+  stopping active I/O threads and calling `state_write()` to save the content
+  file (preserving progress up to the last synced block) before calling `os_abort()`.
+
+* Time-Based Content File Loading.
+  On startup, read the modification time (mtime) of all configured content files,
+  and sort the loading list to try loading the newest one first.
+  This resolves the inconsistency window during sequential renames on crashes.
+  If the newest file is corrupt, the existing load loop naturally falls back to the
+  next newest.
 
 * Add a new scrub option for checking recent blocks. Like -n, --newer-than.
 Working the opposite of -o-, --older-than
