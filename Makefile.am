@@ -2,6 +2,7 @@ bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest mkstream checker
 
 AM_CPPFLAGS = -DSYSCONFDIR="\"${sysconfdir}\""
+CLEANFILES =
 
 if HAVE_DISK_ARBITRATION
 snapraid_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
@@ -18,7 +19,7 @@ mkstream_LDADD = -ladvapi32 -luserenv
 resource_res.o: cmdline/resource.rc cmdline/resource.manifest
 	$(WINDRES) --include-dir=. --include-dir=$(srcdir) $< -o $@
 
-CLEANFILES = resource_res.o
+CLEANFILES += resource_res.o
 endif
 
 snapraid_SOURCES = \
@@ -330,10 +331,18 @@ SNAP = $(srcdir)/test/test-snap.conf
 MSG = @echo =====
 SNAPRAID = ./checker$(EXEEXT)
 
+CLEANFILES += rm.exe mv.exe touch.exe
+
 setupcheck:
 	rm -rf bench
 	rm -f test.log
+	rm -f rm.exe mv.exe touch.exe
 	mkdir bench
+if !HAVE_POSIX
+	ln -sf $$(which rm) rm.exe
+	ln -sf $$(which mv) mv.exe
+	ln -sf $$(which touch) touch.exe
+endif
 
 # Not included in main check because it requires root permissions
 snapcheck: mktest checker setupcheck
