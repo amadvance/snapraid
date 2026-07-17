@@ -1,6 +1,6 @@
 #include <windows.h>
 
-#include "../config.h"
+#include "config.h"
 
 1 RT_MANIFEST "resource.manifest"
 
