@@ -1832,20 +1832,21 @@ int snapraid_main(int argc, char* argv[])
 		if (state.opt.force_realloc)
 			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
 
-		if (opt.gui_touch_before)
+		if (opt.gui_touch_before) {
 			state_touch(&state);
+
+			/* save the new state if required */
+			if (state.need_write)
+				state_write(&state);
+		}
 
 		state_scan(&state);
 
 		if (opt.gui_threshold_removes != 0 && state.removed_files >= opt.gui_threshold_removes) {
-			if (state.need_write)
-				state_write(&state);
 			log_fatal(EUSER, "Too many files were removed (%u, limit is %u). Sync aborted.\n", state.removed_files, opt.gui_threshold_removes);
 			exit(EXIT_SYNC_NEEDED);
 		}
 		if (opt.gui_threshold_updates != 0 && state.updated_files >= opt.gui_threshold_updates) {
-			if (state.need_write)
-				state_write(&state);
 			log_fatal(EUSER, "Too many files were updated (%u, limit is %u). Sync aborted.\n", state.updated_files, opt.gui_threshold_updates);
 			exit(EXIT_SYNC_NEEDED);
 		}

@@ -1,6 +1,14 @@
 SnapRAID HISTORY
 ================
 
+14.9 2026/07
+============
+ * Fix a regression when both the '--gui-touch-before' and
+   '--gui-threshold' options are selected at the same time, which may
+   prevent the thresholds from working correctly. Now, the content file
+   is unconditionally saved before scanning for differences if any touch
+   is performed.
+
 14.8 2026/06
 ============
  * Avoid spinning up standby disks on Windows in some machines during
