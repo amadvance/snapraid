@@ -1300,12 +1300,28 @@ int os_wait(pid_t pid, int* status)
 
 int os_term(pid_t pid)
 {
+	if (pid <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	/*
 	 * Send signal to the negative PID to target the entire Process Group.
 	 * This ensures that SnapRAID and any programs it may have spawned are
 	 * terminated together, preventing orphaned worker processes.
 	 */
 	return kill(-pid, SIGTERM);
+}
+
+int os_kill(pid_t pid)
+{
+	if (pid <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* Send SIGKILL signal to the negative PID to target the entire Process Group */
+	return kill(-pid, SIGKILL);
 }
 
 int os_spawn_and_wait(const char** argv)
