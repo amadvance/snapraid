@@ -141,6 +141,13 @@ pid_t os_wait(pid_t pid, int* status);
 int os_term(pid_t pid);
 
 /**
+ * Forcibly terminate a process.
+ * \param pid Process ID of the process to kill.
+ * \return 0 on success, -1 on failure.
+ */
+int os_kill(pid_t pid);
+
+/**
  * Fork and execute a verified executable, discarding all I/O.
  *
  * Spawns @argv[0] in a new process with stdin, stdout and stderr all

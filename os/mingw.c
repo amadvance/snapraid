@@ -2774,6 +2774,23 @@ int os_term(pid_t pid)
 	return 0;
 }
 
+int os_kill(pid_t pid)
+{
+	if (pid <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	HANDLE h = (void*)pid;
+
+	if (!TerminateProcess(h, 1)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
 int os_command(const char* command, const char* run_as_user, const char* stdin_text)
 {
 	wchar_t conv[CONV_MAX];
