@@ -2611,7 +2611,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			cmd_buffer,
 			NULL, NULL,
 			TRUE, /* inherit pipe handles */
-			CREATE_NEW_PROCESS_GROUP,
+			CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW,
 			NULL, cwd,
 			&si, &pi
 		);
@@ -2670,7 +2670,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			cmd_buffer,
 			NULL, NULL,
 			TRUE, /* inherit pipe handles */
-			CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT,
+			CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW,
 			env, cwd,
 			&si, &pi
 		);
