@@ -19,14 +19,59 @@ struct raid_gen_algo {
 	const char *tag; /**< Hardware descriptive tag. */
 };
 
+struct raid_rec_algo {
+	raid_rec_fn *rec;
+	const char *tag;  /**< Hardware descriptive tag. */
+};
+
 /**
- * Registered algorithms for parity generation.
+ * Registered algorithms for parity generation and recovery.
  *
- * Set by the raid_gen_register() calls.
- *
- * Indexes are the RAID_ALGO_* constants
+ * Set by the raid_gen_register() / raid_rec_register() calls.
  */
-static struct raid_gen_algo raid_gen_algo[RAID_ALGO_MAX];
+static struct raid_gen_algo raid_gen_algo_raid[RAID_ALGO_MAX];
+static struct raid_rec_algo raid_rec_algo_raid[RAID_PARITY_MAX];
+static struct raid_gen_algo raid_gen_algo_aes[RAID_ALGO_MAX];
+static struct raid_rec_algo raid_rec_algo_aes[RAID_PARITY_MAX];
+
+static struct raid_gen_algo *raid_gen_algo;
+static struct raid_rec_algo *raid_rec_algo;
+
+static int raid_mode_active = RAID_MODE_GET;
+
+const uint8_t(*raid_gfmul)[256];
+const uint8_t *raid_gfexp;
+const uint8_t *raid_gfinv;
+const uint8_t(*raid_gfvandermonde)[256];
+const uint8_t(*raid_gfcauchy)[256];
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+const uint8_t(*raid_gfcauchypshufb)[5][2][16];
+const uint8_t(*raid_gfmulpshufb)[2][16];
+#endif
+const uint8_t(*raid_gfgen)[256];
+
+uint8_t raid_poly_byte;
+uint8_t raid_inv2_byte;
+uint32_t raid_poly_32;
+uint64_t raid_poly_64;
+uint32_t raid_inv2_32;
+uint64_t raid_inv2_64;
+
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+struct gfconst16 __aligned(16) gfconst16 =
+{
+	{ 0 },
+	{
+		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
+	},
+	{ 0 },
+	{
+		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
+	}
+};
+#endif
 
 void raid_gen(int nd, int np, size_t size, void **v)
 {
@@ -48,20 +93,6 @@ void raid_gen(int nd, int np, size_t size, void **v)
  * Index 0 is for one parity, 1 for the two parities, and so on.
  */
 static raid_rec_fn *raid_rec_ptr[RAID_PARITY_MAX];
-
-struct raid_rec_algo {
-	raid_rec_fn *rec;
-	const char *tag;  /**< Hardware descriptive tag. */
-};
-
-/**
- * Registered algorithms for data recovery.
- *
- * Set by the raid_rec_register() calls.
- *
- * Indexes are the RAID_ALGO_* constants
- */
-static struct raid_rec_algo raid_rec_algo[RAID_PARITY_MAX];
 
 void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 {
@@ -157,14 +188,14 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 		raid_rec_algo[nr - 1].rec(nr, id, ip, nd, size, v);
 }
 
-const char *raid_gen_tag(int na)
+const char * raid_gen_tag(int na)
 {
 	BUG_ON(na < 0 || na >= RAID_ALGO_MAX);
 
 	return raid_gen_algo[na].tag;
 }
 
-const char *raid_rec_tag(int na)
+const char * raid_rec_tag(int na)
 {
 	/* there is no custom recover for vandermonde */
 	if (na == RAID_ALGO_VANDERMONDE_PAR3)
@@ -175,29 +206,80 @@ const char *raid_rec_tag(int na)
 	return raid_rec_algo[na].tag;
 }
 
-/**
- * Generator matrix currently used.
- */
-const uint8_t(*raid_gfgen)[256];
-
-void raid_mode(int mode)
+int raid_mode(int mode)
 {
-	BUG_ON(mode != RAID_MODE_VANDERMONDE && mode != RAID_MODE_CAUCHY);
+	int prev = raid_mode_active;
 
-	if (mode == RAID_MODE_VANDERMONDE) {
+	if (mode == RAID_MODE_GET)
+		return prev;
+
+	BUG_ON(mode != RAID_MODE_CAUCHY_RAID && mode != RAID_MODE_VANDERMONDE_RAID && mode != RAID_MODE_CAUCHY_AES);
+
+	raid_mode_active = mode;
+
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		raid_gfmul = raid_gfmul_aes;
+		raid_gfexp = raid_gfexp_aes;
+		raid_gfinv = raid_gfinv_aes;
+		raid_gfvandermonde = 0;
+		raid_gfcauchy = raid_gfcauchy_aes;
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+		raid_gfcauchypshufb = raid_gfcauchypshufb_aes;
+		raid_gfmulpshufb = raid_gfmulpshufb_aes;
+#endif
+
+		raid_poly_byte = RAID_POLY_AES;
+		raid_inv2_byte = RAID_INV2_AES;
+		raid_poly_32 = RAID_POLY_32_AES;
+		raid_poly_64 = RAID_POLY_64_AES;
+		raid_inv2_32 = RAID_INV2_32_AES;
+		raid_inv2_64 = RAID_INV2_64_AES;
+
+		raid_gen_algo = raid_gen_algo_aes;
+		raid_rec_algo = raid_rec_algo_aes;
+	} else {
+		raid_gfmul = raid_gfmul_raid;
+		raid_gfexp = raid_gfexp_raid;
+		raid_gfinv = raid_gfinv_raid;
+		raid_gfvandermonde = raid_gfvandermonde_raid;
+		raid_gfcauchy = raid_gfcauchy_raid;
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+		raid_gfcauchypshufb = raid_gfcauchypshufb_raid;
+		raid_gfmulpshufb = raid_gfmulpshufb_raid;
+#endif
+
+		raid_poly_byte = RAID_POLY_RAID;
+		raid_inv2_byte = RAID_INV2_RAID;
+		raid_poly_32 = RAID_POLY_32_RAID;
+		raid_poly_64 = RAID_POLY_64_RAID;
+		raid_inv2_32 = RAID_INV2_32_RAID;
+		raid_inv2_64 = RAID_INV2_64_RAID;
+
+		raid_gen_algo = raid_gen_algo_raid;
+		raid_rec_algo = raid_rec_algo_raid;
+	}
+
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+	memset(gfconst16.poly, raid_poly_byte, 16);
+	memset(gfconst16.half, raid_inv2_byte, 16);
+#endif
+
+	if (mode == RAID_MODE_VANDERMONDE_RAID) {
 		raid_gen_ptr[0] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR1].gen;
 		raid_gen_ptr[1] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR2].gen;
 		raid_gen_ptr[2] = raid_gen_algo[RAID_ALGO_VANDERMONDE_PAR3].gen;
 		raid_gen_ptr[3] = 0;
 		raid_gen_ptr[4] = 0;
 		raid_gen_ptr[5] = 0;
+
 		raid_rec_ptr[0] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR1].rec;
 		raid_rec_ptr[1] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR2].rec;
 		raid_rec_ptr[2] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR3].rec;
 		raid_rec_ptr[3] = 0;
 		raid_rec_ptr[4] = 0;
 		raid_rec_ptr[5] = 0;
-		raid_gfgen = gfvandermonde;
+
+		raid_gfgen = raid_gfvandermonde;
 	} else {
 		raid_gen_ptr[0] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR1].gen;
 		raid_gen_ptr[1] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR2].gen;
@@ -205,14 +287,18 @@ void raid_mode(int mode)
 		raid_gen_ptr[3] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR4].gen;
 		raid_gen_ptr[4] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR5].gen;
 		raid_gen_ptr[5] = raid_gen_algo[RAID_ALGO_CAUCHY_PAR6].gen;
+
 		raid_rec_ptr[0] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR1].rec;
 		raid_rec_ptr[1] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR2].rec;
 		raid_rec_ptr[2] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR3].rec;
 		raid_rec_ptr[3] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR4].rec;
 		raid_rec_ptr[4] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR5].rec;
 		raid_rec_ptr[5] = raid_rec_algo[RAID_ALGO_CAUCHY_PAR6].rec;
-		raid_gfgen = gfcauchy;
+
+		raid_gfgen = raid_gfcauchy;
 	}
+
+	return prev;
 }
 
 void raid_gen_force(int np, raid_gen_fn *fn)
@@ -222,20 +308,32 @@ void raid_gen_force(int np, raid_gen_fn *fn)
 	raid_gen_ptr[np - 1] = fn;
 }
 
-void raid_gen_register(int na, const char *tag, raid_gen_fn *gen)
+void raid_gen_register(int na, const char *tag, raid_gen_fn *gen, uint8_t poly)
 {
 	BUG_ON(na < 0 || na >= RAID_ALGO_MAX);
 
-	raid_gen_algo[na].tag = tag;
-	raid_gen_algo[na].gen = gen;
+	if (poly == RAID_POLY_ANY || poly == RAID_POLY_RAID) {
+		raid_gen_algo_raid[na].tag = tag;
+		raid_gen_algo_raid[na].gen = gen;
+	}
+	if (poly == RAID_POLY_ANY || poly == RAID_POLY_AES) {
+		raid_gen_algo_aes[na].tag = tag;
+		raid_gen_algo_aes[na].gen = gen;
+	}
 }
 
-void raid_rec_register(int na, const char *tag, raid_rec_fn *rec)
+void raid_rec_register(int na, const char *tag, raid_rec_fn *rec, uint8_t poly)
 {
 	BUG_ON(na < 0 || na >= RAID_PARITY_MAX);
 
-	raid_rec_algo[na].tag = tag;
-	raid_rec_algo[na].rec = rec;
+	if (poly == RAID_POLY_ANY || poly == RAID_POLY_RAID) {
+		raid_rec_algo_raid[na].tag = tag;
+		raid_rec_algo_raid[na].rec = rec;
+	}
+	if (poly == RAID_POLY_ANY || poly == RAID_POLY_AES) {
+		raid_rec_algo_aes[na].tag = tag;
+		raid_rec_algo_aes[na].rec = rec;
+	}
 }
 
 /*
@@ -259,7 +357,7 @@ void raid_init(void)
 #endif
 
 	/* set the default mode */
-	raid_mode(RAID_MODE_CAUCHY);
+	raid_mode(RAID_MODE_CAUCHY_RAID);
 }
 
 /*
@@ -281,7 +379,7 @@ void raid_gen_ref(int nd, int np, size_t size, void **vv)
 			uint8_t b = v[d][i];
 
 			for (j = 0; j < np; ++j)
-				p[j] ^= gfmul[b][gfgen[j][d]];
+				p[j] ^= raid_gfmul[b][raid_gfgen[j][d]];
 		}
 
 		for (j = 0; j < np; ++j)
@@ -477,7 +575,7 @@ int raid_selftest(void)
 
 	/* use the multiplication table as data */
 	for (i = 0; i < nd; ++i)
-		ref[i] = ((uint8_t *)gfmul) + size * i;
+		ref[i] = ((uint8_t *)raid_gfmul) + size * i;
 
 	/* setup reference parity */
 	for (i = 0; i < RAID_PARITY_MAX; ++i)

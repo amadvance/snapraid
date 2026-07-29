@@ -76,7 +76,7 @@ static int raid_validate(int nr, int *id, int nv, int *ip, int nd, size_t size, 
 
 			b = v[j][i];
 			for (l = 0; l < nv; ++l)
-				p[l] ^= gfmul[b][gfgen[ip[l]][j]];
+				p[l] ^= raid_gfmul[b][raid_gfgen[ip[l]][j]];
 		}
 
 		/* reconstruct data */
@@ -90,7 +90,7 @@ static int raid_validate(int nr, int *id, int nv, int *ip, int nd, size_t size, 
 
 			/* add the parity contribution of the reconstructed data */
 			for (l = nr; l < nv; ++l)
-				p[l] ^= gfmul[b][gfgen[ip[l]][idj]];
+				p[l] ^= raid_gfmul[b][raid_gfgen[ip[l]][idj]];
 		}
 
 		/* check that the final parity is 0 */

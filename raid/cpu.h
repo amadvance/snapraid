@@ -74,25 +74,25 @@ static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model
 	}
 }
 
-static inline int raid_cpu_match_sse(uint32_t cpuid_1_ecx, uint32_t cpuid_1_edx)
+static inline int raid_cpu_match_sse(uint32_t leaf_1_ecx, uint32_t leaf_1_edx)
 {
 	uint32_t reg[4];
 
 	raid_cpuid(1, 0, reg);
-	if ((reg[2] & cpuid_1_ecx) != cpuid_1_ecx)
+	if ((reg[2] & leaf_1_ecx) != leaf_1_ecx)
 		return 0;
-	if ((reg[3] & cpuid_1_edx) != cpuid_1_edx)
+	if ((reg[3] & leaf_1_edx) != leaf_1_edx)
 		return 0;
 
 	return 1;
 }
 
-static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx, uint32_t cpuid_7_ecx, uint32_t xcr0)
+static inline int raid_cpu_match_avx(uint32_t leaf_1_ecx, uint32_t leaf_7_ebx, uint32_t leaf_7_ecx, uint32_t xcr0)
 {
 	uint32_t reg[4];
 
 	raid_cpuid(1, 0, reg);
-	if ((reg[2] & cpuid_1_ecx) != cpuid_1_ecx)
+	if ((reg[2] & leaf_1_ecx) != leaf_1_ecx)
 		return 0;
 
 	raid_xgetbv(reg);
@@ -100,10 +100,10 @@ static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx,
 		return 0;
 
 	raid_cpuid(7, 0, reg);
-	if ((reg[1] & cpuid_7_ebx) != cpuid_7_ebx)
+	if ((reg[1] & leaf_7_ebx) != leaf_7_ebx)
 		return 0;
 
-	if ((reg[2] & cpuid_7_ecx) != cpuid_7_ecx)
+	if ((reg[2] & leaf_7_ecx) != leaf_7_ecx)
 		return 0;
 
 	return 1;
@@ -123,9 +123,9 @@ static inline int raid_cpu_has_sse2(void)
 	 * 2. Check that the processor supports the SSE and/or SSE2 extensions (true if
 	 * CPUID.01H:EDX.SSE[bit 25] = 1 and/or CPUID.01H:EDX.SSE2[bit 26] = 1).
 	 */
-	return raid_cpu_match_sse(
-		0,
-		1 << 26); /* SSE2 */
+	uint32_t leaf_1_edx = 1 << 26; /* SSE2 */
+
+	return raid_cpu_match_sse(0, leaf_1_edx);
 }
 
 static inline int raid_cpu_has_ssse3(void)
@@ -140,9 +140,10 @@ static inline int raid_cpu_has_ssse3(void)
 	 * Next, use the additional step provided below:
 	 * Check that the processor supports SSSE3 (if CPUID.01H:ECX.SSSE3[bit 9] = 1).
 	 */
-	return raid_cpu_match_sse(
-		1 << 9, /* SSSE3 */
-		1 << 26); /* SSE2 */
+	uint32_t leaf_1_ecx = 1 << 9; /* SSSE3 */
+	uint32_t leaf_1_edx = 1 << 26; /* SSE2 */
+
+	return raid_cpu_match_sse(leaf_1_ecx, leaf_1_edx);
 }
 
 static inline int raid_cpu_has_crc32(void)
@@ -156,9 +157,9 @@ static inline int raid_cpu_has_crc32(void)
 	 * Before an application attempts to use the CRC32 instruction, it must check
 	 * that the processor supports SSE4.2 (if CPUID.01H:ECX.SSE4_2[bit 20] = 1).
 	 */
-	return raid_cpu_match_sse(
-		1 << 20, /* CRC32 */
-		0);
+	uint32_t leaf_1_ecx = 1 << 20; /* CRC32 */
+
+	return raid_cpu_match_sse(leaf_1_ecx, 0);
 }
 
 static inline int raid_cpu_has_avx2(void)
@@ -178,11 +179,11 @@ static inline int raid_cpu_has_avx2(void)
 	 * Application Software must identify that hardware supports AVX, after that it must
 	 * also detect support for AVX2 by checking CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5].
 	 */
-	return raid_cpu_match_avx(
-		(1 << 27) | (1 << 28), /* Leaf 1, ECX: XSAVE and AVX */
-		1 << 5, /* Leaf 7, EBX: AVX2 */
-		0, /* Leaf 7, ECX: */
-		3 << 1); /* XCR0: OS saves XMM and YMM registers */
+	uint32_t leaf_1_ecx = (1 << 27) | (1 << 28); /* XSAVE and AVX */
+	uint32_t leaf_7_ebx = 1 << 5; /* AVX2 */
+	uint32_t xcr0 = 3 << 1; /* OS saves XMM and YMM registers */
+
+	return raid_cpu_match_avx(leaf_1_ecx, leaf_7_ebx, 0, xcr0);
 }
 
 static inline int raid_cpu_has_avx2gfni(void)
@@ -194,11 +195,12 @@ static inline int raid_cpu_has_avx2gfni(void)
 	 * 3) Verify AVX2 support (CPUID.7.0:EBX[5])
 	 * 4) Verify GFNI support (CPUID.7.0:ECX[8])
 	 */
-	return raid_cpu_match_avx(
-		(1 << 27) | (1 << 28), /* Leaf 1, ECX: XSAVE and AVX */
-		1 << 5, /* Leaf 7, EBX: AVX2 */
-		1 << 8, /* Leaf 7, ECX: GFNI */
-		3 << 1); /* XCR0: OS saves XMM and YMM registers */
+	uint32_t leaf_1_ecx = (1 << 27) | (1 << 28); /* XSAVE and AVX */
+	uint32_t leaf_7_ebx = 1 << 5; /* AVX2 */
+	uint32_t leaf_7_ecx = 1 << 8; /* GFNI */
+	uint32_t xcr0 = 3 << 1; /* OS saves XMM and YMM registers */
+
+	return raid_cpu_match_avx(leaf_1_ecx, leaf_7_ebx, leaf_7_ecx, xcr0);
 }
 
 static inline int raid_cpu_has_avx512bw(void)
@@ -219,21 +221,21 @@ static inline int raid_cpu_has_avx512bw(void)
 	 * Note that intentionally we don't check for AVX and AVX2
 	 * because the documentation doesn't require that
 	 */
-	return raid_cpu_match_avx(
-		1 << 27, /* Leaf 1, ECX: XSAVE/XGETBV */
-		(1 << 16) | (1 << 30), /* Leaf 7, EBX: AVX512F and AVX512BW */
-		0, /* Leaf 7, ECX: */
-		(3 << 1) | (7 << 5)); /* XCR0: OS saves XMM, YMM and ZMM registers */
+	uint32_t leaf_1_ecx = 1 << 27; /* XSAVE/XGETBV */
+	uint32_t leaf_7_ebx = (1 << 16) | (1 << 30); /* AVX512F and AVX512BW */
+	uint32_t xcr0 = (3 << 1) | (7 << 5); /* OS saves XMM, YMM and ZMM registers */
+
+	return raid_cpu_match_avx(leaf_1_ecx, leaf_7_ebx, 0, xcr0);
 }
 
 static inline int raid_cpu_has_avx512gfni(void)
 {
-	return raid_cpu_match_avx(
-		1 << 27, /* Leaf 1, ECX: XSAVE/XGETBV */
-		1 << 16,  /* Leaf 7, EBX: AVX512F (Foundation) */
-		1 << 8, /* Leaf 7, ECX: GFNI */
-		(3 << 1) | (7 << 5) /* XCR0: OS saves XMM, YMM and ZMM registers */
-	);
+	uint32_t leaf_1_ecx = 1 << 27; /* XSAVE/XGETBV */
+	uint32_t leaf_7_ebx = 1 << 16; /* AVX512F (Foundation) */
+	uint32_t leaf_7_ecx = 1 << 8; /* GFNI */
+	uint32_t xcr0 = (3 << 1) | (7 << 5); /* OS saves XMM, YMM and ZMM registers */
+
+	return raid_cpu_match_avx(leaf_1_ecx, leaf_7_ebx, leaf_7_ecx, xcr0);
 }
 
 /**
@@ -247,25 +249,23 @@ static inline int raid_cpu_is_atom(unsigned family, unsigned model)
 	/*
 	 * x86 Architecture CPUID
 	 * http://www.sandpile.org/x86/cpuid.htm
-	 *
-	 * Intel Atom
-	 * 1C (28) Atom (45 nm) with 512 KB on-die L2
-	 * 26 (38) Atom (45 nm) with 512 KB on-die L2
-	 * 36 (54) Atom (32 nm) with 512 KB on-die L2
-	 * 27 (39) Atom (32 nm) with 512 KB on-die L2
-	 * 35 (53) Atom (?? nm) with ??? KB on-die L2
-	 * 4A (74) Atom 2C (22 nm) 1 MB L2 + PowerVR (TGR)
-	 * 5A (90) Atom 4C (22 nm) 2 MB L2 + PowerVR (ANN)
-	 * 37 (55) Atom 4C (22 nm) 2 MB L2 + Intel Gen7 (BYT)
-	 * 4C (76) Atom 4C (14 nm) 2 MB L2 + Intel Gen8 (BSW)
-	 * 5D (93) Atom 4C (28 nm TSMC) 1 MB L2 + Mali (SoFIA)
-	 * 4D (77) Atom 8C (22 nm) 4 MB L2 (AVN)
-	 * ?? Atom ?C (14 nm) ? MB L2 (DVN)
 	 */
-	return model == 28 || model == 38 || model == 54
-		|| model == 39 || model == 53 || model == 74
-		|| model == 90 || model == 55 || model == 76
-		|| model == 93 || model == 77;
+	switch (model) {
+	case 28: /* 1C Atom (45 nm) */
+	case 38: /* 26 Atom (45 nm) */
+	case 39: /* 27 Atom (32 nm) */
+	case 53: /* 35 Atom */
+	case 54: /* 36 Atom (32 nm) */
+	case 55: /* 37 Atom 4C (22 nm BYT) */
+	case 74: /* 4A Atom 2C (22 nm TGR) */
+	case 76: /* 4C Atom 4C (14 nm BSW) */
+	case 77: /* 4D Atom 8C (22 nm AVN) */
+	case 90: /* 5A Atom 4C (22 nm ANN) */
+	case 93: /* 5D Atom 4C (28 nm SoFIA) */
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 /**

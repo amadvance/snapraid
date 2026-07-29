@@ -51,7 +51,6 @@ recurse:
 
 	/* if the position has reached the max */
 	if (c[i] >= n) {
-
 		/* if we are at the first level, we have finished */
 		if (i == 0)
 			return 0;
@@ -118,7 +117,6 @@ recurse:
 
 	/* if the position has reached the max */
 	if (c[i] >= h) {
-
 		/* if we are at the first level, we have finished */
 		if (i == 0)
 			return 0;
@@ -141,4 +139,3 @@ recurse:
 	return 1;
 }
 #endif
-

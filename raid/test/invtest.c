@@ -98,7 +98,7 @@ static __always_inline int test_sub_matrix(int nr, int64_t *total)
 			/* setup the submatrix */
 			for (i = 0; i < nr; ++i)
 				for (j = 0; j < nr; ++j)
-					M[i * nr + j] = gfgen[ip[i]][id[j]];
+					M[i * nr + j] = raid_gfgen[ip[i]][id[j]];
 
 			/* invert */
 			if (raid_invert_fast(M, nr) != 0)
@@ -155,7 +155,7 @@ int main(void)
 {
 	printf("Matrix inversion test for the RAID Cauchy library\n\n");
 
-	/* required to set the gfgen table */
+	/* required to set the raid tables */
 	raid_init();
 
 	if (test_all_sub_matrix() != 0) {
@@ -166,4 +166,3 @@ int main(void)
 
 	return 0;
 }
-

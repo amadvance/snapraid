@@ -30,7 +30,6 @@
 #endif
 #endif
 
-
 /*
  * Includes anything required for compatibility.
  */
@@ -61,7 +60,7 @@
 /*
  * Align a pointer at the specified size.
  */
-static __always_inline void *__align_ptr(void *ptr, uintptr_t size)
+static __always_inline void * __align_ptr(void *ptr, uintptr_t size)
 {
 	uintptr_t offset = (uintptr_t)ptr;
 
@@ -174,10 +173,10 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
  * This allows to specify the same memory buffer for multiple parities
  * knowing that you'll get the latest written one.
  * This characteristic is used by the raid_delta_gen() function to
- * avoid to damage unused parities in recovering.
+ * avoid damaging unused parities during recovery.
  *
  * @nd Number of data blocks
- * @size Size of the blocks pointed by @vv. It must be a multiple of 64.
+ * @size Size of the blocks pointed to by @vv. It must be a multiple of 64.
  * @vv Vector of pointers to the blocks of data and parity.
  *   It has (@nd + #parities) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
@@ -233,9 +232,10 @@ typedef void (raid_rec_fn)(int nr, int *id, int *ip, int nd, size_t size, void *
  * @na Algo code of the function. One of RAID_ALGO_*.
  * @tag Descriptive short tag of the implementation, like "sse2", "avx2",...
  * @fn Function to register.
+ * @poly Polynomial choice (RAID_POLY_ANY, RAID_POLY_RAID, RAID_POLY_AES).
  */
-void raid_gen_register(int na, const char *tag, raid_gen_fn *fn);
-void raid_rec_register(int na, const char *tag, raid_rec_fn *fn);
+void raid_gen_register(int na, const char *tag, raid_gen_fn *fn, uint8_t poly);
+void raid_rec_register(int na, const char *tag, raid_rec_fn *fn, uint8_t poly);
 
 /**
  * Set functions for data recovery.
@@ -256,7 +256,7 @@ void raid_gen_force(int np, raid_gen_fn *fn);
 void raid_register_int(void);
 
 /**
- * Register all the functions based on x86 intructions.
+ * Register all the functions based on x86 instructions.
  */
 void raid_register_sse2(void);
 void raid_register_ssse3(void);
@@ -264,7 +264,7 @@ void raid_register_avx2(void);
 void raid_register_avx512(void);
 
 /**
- * Register all the functions based on GFNI intructions.
+ * Register all the functions based on GFNI instructions.
  */
 void raid_register_avx2gfni(void);
 void raid_register_avx512gfni(void);
@@ -274,8 +274,8 @@ void raid_register_avx512gfni(void);
  *
  * Given the specified algo code, return the tag of the registered function.
  */
-const char *raid_gen_tag(int na);
-const char *raid_rec_tag(int na);
+const char * raid_gen_tag(int na);
+const char * raid_rec_tag(int na);
 
 /**
  * Basic functionality self test.
@@ -291,30 +291,50 @@ struct gfconst16 {
 	uint8_t half[16];
 	uint8_t low7[16];
 };
-extern const struct gfconst16 gfconst16;
+extern struct gfconst16 gfconst16 __aligned(16);
 #endif
 
 /*
  * Tables.
  */
-extern const uint8_t raid_gfmul[256][256] __aligned(256);
-extern const uint8_t raid_gfexp[256] __aligned(256);
-extern const uint8_t raid_gfinv[256] __aligned(256);
-extern const uint8_t raid_gfvandermonde[3][256] __aligned(256);
-extern const uint8_t raid_gfcauchy[6][256] __aligned(256);
-extern const uint8_t raid_gfcauchypshufb[251][5][2][16] __aligned(256);
-extern const uint8_t raid_gfmulpshufb[256][2][16] __aligned(256);
-extern const uint8_t raid_gfcauchycoeff[251][4][16] __aligned(256);
-extern const uint8_t (*raid_gfgen)[256];
-#define gfmul raid_gfmul
-#define gfexp raid_gfexp
-#define gfinv raid_gfinv
-#define gfvandermonde raid_gfvandermonde
-#define gfcauchy raid_gfcauchy
-#define gfgenpshufb raid_gfcauchypshufb
-#define gfmulpshufb raid_gfmulpshufb
-#define gfgencoeff raid_gfcauchycoeff
-#define gfgen raid_gfgen
+extern const uint8_t raid_gfmul_raid[256][256] __aligned(256);
+extern const uint8_t raid_gfexp_raid[256] __aligned(256);
+extern const uint8_t raid_gfinv_raid[256] __aligned(256);
+extern const uint8_t raid_gfvandermonde_raid[3][256] __aligned(256);
+extern const uint8_t raid_gfcauchy_raid[6][256] __aligned(256);
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+extern const uint8_t raid_gfcauchypshufb_raid[251][5][2][16] __aligned(256);
+extern const uint8_t raid_gfmulpshufb_raid[256][2][16] __aligned(256);
+#endif
+
+extern const uint8_t raid_gfmul_aes[256][256] __aligned(256);
+extern const uint8_t raid_gfexp_aes[256] __aligned(256);
+extern const uint8_t raid_gfinv_aes[256] __aligned(256);
+extern const uint8_t raid_gfcauchy_aes[6][256] __aligned(256);
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+extern const uint8_t raid_gfcauchypshufb_aes[251][5][2][16] __aligned(256);
+extern const uint8_t raid_gfmulpshufb_aes[256][2][16] __aligned(256);
+#endif
+
+extern const uint8_t(*raid_gfmul)[256];
+extern const uint8_t *raid_gfexp;
+extern const uint8_t *raid_gfinv;
+extern const uint8_t(*raid_gfvandermonde)[256];
+extern const uint8_t(*raid_gfcauchy)[256];
+#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+extern const uint8_t(*raid_gfcauchypshufb)[5][2][16];
+extern const uint8_t(*raid_gfmulpshufb)[2][16];
+#endif
+extern const uint8_t(*raid_gfgen)[256];
+
+extern uint8_t raid_poly_byte;
+extern uint8_t raid_inv2_byte;
+extern uint32_t raid_poly_32;
+extern uint64_t raid_poly_64;
+extern uint32_t raid_inv2_32;
+extern uint64_t raid_inv2_64;
+
+#include "gf.h"
 
 /*
  * Assembler blocks.

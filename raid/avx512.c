@@ -16,7 +16,7 @@
  */
 void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -34,7 +34,7 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 				"vmovdqa64 %0,%%zmm1\n\t"
 				"vpternlogq $0x96,%1,%%zmm1,%%zmm0"
 				:
-				: "m" (v[d][i]), "m" (v[d+1][i])
+				: "m" (v[d][i]), "m" (v[d + 1][i])
 			);
 		}
 
@@ -88,23 +88,23 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
 			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
 			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (gfgenpshufb[d][0][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (gfgenpshufb[d][0][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[d][0][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[d][0][1][0]));
 			if (np >= 3) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (gfgenpshufb[d][1][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (gfgenpshufb[d][1][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
 			}
 			if (np >= 4) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (gfgenpshufb[d][2][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (gfgenpshufb[d][2][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
 			}
 			if (np >= 5) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (gfgenpshufb[d][3][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (gfgenpshufb[d][3][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[d][3][0][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[d][3][1][0]));
 			}
 			if (np >= 6) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (gfgenpshufb[d][4][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (gfgenpshufb[d][4][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[d][4][0][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[d][4][1][0]));
 			}
 
 			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");
@@ -220,8 +220,8 @@ void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 	raid_avx_begin();
 
 	asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfconst16.low4[0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm4" : : "m" (gfmulpshufb[V][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm5" : : "m" (gfmulpshufb[V][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm4" : : "m" (raid_gfmulpshufb[V][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm5" : : "m" (raid_gfmulpshufb[V][1][0]));
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
@@ -279,10 +279,10 @@ void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 		asm volatile ("vpxord %zmm6,%zmm6,%zmm6");
 
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfmulpshufb[V[0]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (gfmulpshufb[V[0]][1][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (gfmulpshufb[V[1]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (gfmulpshufb[V[1]][1][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
 		asm volatile ("vpsrlw  $4,%zmm0,%zmm5");
 		asm volatile ("vpsrlw  $4,%zmm1,%zmm13");
 		asm volatile ("vpandd  %zmm7,%zmm0,%zmm4");
@@ -302,10 +302,10 @@ void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 		asm volatile ("vpxord %zmm6,%zmm6,%zmm6");
 
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfmulpshufb[V[2]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (gfmulpshufb[V[2]][1][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (gfmulpshufb[V[3]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (gfmulpshufb[V[3]][1][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
+		asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
 		asm volatile ("vpsrlw  $4,%zmm0,%zmm5");
 		asm volatile ("vpsrlw  $4,%zmm1,%zmm13");
 		asm volatile ("vpandd  %zmm7,%zmm0,%zmm4");
@@ -338,7 +338,7 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX*64+64];
+	uint8_t buffer[RAID_PARITY_MAX * 64 + 64];
 	uint8_t *pd = __align_ptr(buffer, 64);
 	size_t i;
 	int j, k;
@@ -369,7 +369,7 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 			asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[j][i]));
 			asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (pa[j][i]));
 			asm volatile ("vpxorq    %zmm1,%zmm0,%zmm0");
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pd[j*64]));
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pd[j * 64]));
 		}
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
@@ -377,9 +377,9 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 			asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
 			for (k = 0; k < N; ++k) {
 				uint8_t m = V[j * N + k];
-				asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (gfmulpshufb[m][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (gfmulpshufb[m][1][0]));
-				asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (pd[k*64]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (raid_gfmulpshufb[m][0][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfmulpshufb[m][1][0]));
+				asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (pd[k * 64]));
 				asm volatile ("vpsrlw    $4,%zmm4,%zmm5");
 				asm volatile ("vpandq    %zmm7,%zmm4,%zmm4");
 				asm volatile ("vpandq    %zmm7,%zmm5,%zmm5");
@@ -400,19 +400,19 @@ void raid_register_avx512(void)
 {
 	if (raid_cpu_has_avx512bw()) {
 		if (!raid_cpu_has_slow_avx512()) {
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "avx512", raid_gen1_avx512bw);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "avx512", raid_gen2_avx512bw);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "avx512", raid_gen3_avx512bw);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "avx512", raid_gen4_avx512bw);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "avx512", raid_gen5_avx512bw);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "avx512", raid_gen6_avx512bw);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "avx512", raid_gen1_avx512bw, RAID_POLY_ANY);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "avx512", raid_gen2_avx512bw, RAID_POLY_ANY);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "avx512", raid_gen3_avx512bw, RAID_POLY_ANY);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "avx512", raid_gen4_avx512bw, RAID_POLY_ANY);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "avx512", raid_gen5_avx512bw, RAID_POLY_ANY);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "avx512", raid_gen6_avx512bw, RAID_POLY_ANY);
 
-			raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "avx512", raid_rec1_avx512bw);
-			raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "avx512", raid_rec2_avx512bw);
-			raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "avx512", raid_recX_avx512bw);
-			raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "avx512", raid_recX_avx512bw);
-			raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "avx512", raid_recX_avx512bw);
-			raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "avx512", raid_recX_avx512bw);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "avx512", raid_rec1_avx512bw, RAID_POLY_ANY);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "avx512", raid_rec2_avx512bw, RAID_POLY_ANY);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "avx512", raid_recX_avx512bw, RAID_POLY_ANY);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "avx512", raid_recX_avx512bw, RAID_POLY_ANY);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "avx512", raid_recX_avx512bw, RAID_POLY_ANY);
+			raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "avx512", raid_recX_avx512bw, RAID_POLY_ANY);
 		}
 	}
 }

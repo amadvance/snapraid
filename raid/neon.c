@@ -123,7 +123,7 @@ void raid_gen2_neon(int nd, size_t size, void **vv)
 			"str q2, %2\n"
 			"str q3, %3\n"
 			: "=m" (p[i]), "=m" (p[i + 16]),
-			  "=m" (q[i]), "=m" (q[i + 16])
+			"=m" (q[i]), "=m" (q[i + 16])
 		);
 	}
 
@@ -216,8 +216,8 @@ void raid_genz_neon(int nd, size_t size, void **vv)
 			"str q4, %4\n"
 			"str q5, %5\n"
 			: "=m" (p[i]), "=m" (p[i + 16]),
-			  "=m" (q[i]), "=m" (q[i + 16]),
-			  "=m" (r[i]), "=m" (r[i + 16])
+			"=m" (q[i]), "=m" (q[i + 16]),
+			"=m" (r[i]), "=m" (r[i + 16])
 		);
 	}
 
@@ -285,7 +285,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v5.16b, v5.16b, v20.16b\n"
 				:
-				: "m" (gfgenpshufb[l][1][0][0]), "m" (gfgenpshufb[l][1][1][0])
+				: "m" (raid_gfcauchypshufb[l][1][0][0]), "m" (raid_gfcauchypshufb[l][1][1][0])
 			);
 		}
 		if (np >= 4) {
@@ -300,7 +300,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v7.16b, v7.16b, v20.16b\n"
 				:
-				: "m" (gfgenpshufb[l][2][0][0]), "m" (gfgenpshufb[l][2][1][0])
+				: "m" (raid_gfcauchypshufb[l][2][0][0]), "m" (raid_gfcauchypshufb[l][2][1][0])
 			);
 		}
 		if (np >= 5) {
@@ -315,7 +315,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v9.16b, v9.16b, v20.16b\n"
 				:
-				: "m" (gfgenpshufb[l][3][0][0]), "m" (gfgenpshufb[l][3][1][0])
+				: "m" (raid_gfcauchypshufb[l][3][0][0]), "m" (raid_gfcauchypshufb[l][3][1][0])
 			);
 		}
 		if (np >= 6) {
@@ -330,7 +330,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v11.16b, v11.16b, v20.16b\n"
 				:
-				: "m" (gfgenpshufb[l][4][0][0]), "m" (gfgenpshufb[l][4][1][0])
+				: "m" (raid_gfcauchypshufb[l][4][0][0]), "m" (raid_gfcauchypshufb[l][4][1][0])
 			);
 		}
 
@@ -383,7 +383,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v5.16b, v5.16b, v20.16b\n"
 					:
-					: "m" (gfgenpshufb[d][1][0][0]), "m" (gfgenpshufb[d][1][1][0])
+					: "m" (raid_gfcauchypshufb[d][1][0][0]), "m" (raid_gfcauchypshufb[d][1][1][0])
 				);
 			}
 			if (np >= 4) {
@@ -400,7 +400,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v7.16b, v7.16b, v20.16b\n"
 					:
-					: "m" (gfgenpshufb[d][2][0][0]), "m" (gfgenpshufb[d][2][1][0])
+					: "m" (raid_gfcauchypshufb[d][2][0][0]), "m" (raid_gfcauchypshufb[d][2][1][0])
 				);
 			}
 			if (np >= 5) {
@@ -417,7 +417,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v9.16b, v9.16b, v20.16b\n"
 					:
-					: "m" (gfgenpshufb[d][3][0][0]), "m" (gfgenpshufb[d][3][1][0])
+					: "m" (raid_gfcauchypshufb[d][3][0][0]), "m" (raid_gfcauchypshufb[d][3][1][0])
 				);
 			}
 			if (np >= 6) {
@@ -434,7 +434,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v11.16b, v11.16b, v20.16b\n"
 					:
-					: "m" (gfgenpshufb[d][4][0][0]), "m" (gfgenpshufb[d][4][1][0])
+					: "m" (raid_gfcauchypshufb[d][4][0][0]), "m" (raid_gfcauchypshufb[d][4][1][0])
 				);
 			}
 		}
@@ -494,7 +494,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			"str q2, %2\n"
 			"str q3, %3\n"
 			: "=m" (v[nd][i]), "=m" (v[nd][i + 16]),
-			  "=m" (v[nd + 1][i]), "=m" (v[nd + 1][i + 16])
+			"=m" (v[nd + 1][i]), "=m" (v[nd + 1][i + 16])
 		);
 
 		if (np >= 3) {
@@ -613,7 +613,7 @@ void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			"str q2, %0\n"
 			: "=m" (pa[i])
 			: "m" (p[i]), "m" (pa[i]), "m" (gfconst16.low4[0]),
-			  "m" (gfmulpshufb[V][0][0]), "m" (gfmulpshufb[V][1][0])
+			"m" (raid_gfmulpshufb[V][0][0]), "m" (raid_gfmulpshufb[V][1][0])
 		);
 	}
 
@@ -713,12 +713,12 @@ void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			"str q4, %1\n"
 			: "=m" (pa[0][i]), "=m" (pa[1][i])
 			: "m" (gfconst16.low4[0]),
-			  "m" (p[0][i]), "m" (pa[0][i]),
-			  "m" (p[1][i]), "m" (pa[1][i]),
-			  "m" (gfmulpshufb[V[0]][0][0]), "m" (gfmulpshufb[V[0]][1][0]),
-			  "m" (gfmulpshufb[V[1]][0][0]), "m" (gfmulpshufb[V[1]][1][0]),
-			  "m" (gfmulpshufb[V[2]][0][0]), "m" (gfmulpshufb[V[2]][1][0]),
-			  "m" (gfmulpshufb[V[3]][0][0]), "m" (gfmulpshufb[V[3]][1][0])
+			"m" (p[0][i]), "m" (pa[0][i]),
+			"m" (p[1][i]), "m" (pa[1][i]),
+			"m" (raid_gfmulpshufb[V[0]][0][0]), "m" (raid_gfmulpshufb[V[0]][1][0]),
+			"m" (raid_gfmulpshufb[V[1]][0][0]), "m" (raid_gfmulpshufb[V[1]][1][0]),
+			"m" (raid_gfmulpshufb[V[2]][0][0]), "m" (raid_gfmulpshufb[V[2]][1][0]),
+			"m" (raid_gfmulpshufb[V[3]][0][0]), "m" (raid_gfmulpshufb[V[3]][1][0])
 		);
 	}
 
@@ -736,7 +736,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX*16+16];
+	uint8_t buffer[RAID_PARITY_MAX * 16 + 16];
 	uint8_t *pd = __align_ptr(buffer, 16);
 	size_t i;
 	int j, k;
@@ -767,7 +767,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"ldr q1, %2\n"
 				"eor v0.16b, v0.16b, v1.16b\n"
 				"str q0, %0\n"
-				: "=m" (pd[j*16])
+				: "=m" (pd[j * 16])
 				: "m" (p[j][i]), "m" (pa[j][i])
 			);
 		}
@@ -793,8 +793,8 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 					"eor v2.16b, v2.16b, v3.16b\n"
 					"eor v0.16b, v0.16b, v2.16b\n"
 					:
-					: "m" (pd[k*16]), "m" (gfconst16.low4[0]),
-					  "m" (gfmulpshufb[m][0][0]), "m" (gfmulpshufb[m][1][0])
+					: "m" (pd[k * 16]), "m" (gfconst16.low4[0]),
+					"m" (raid_gfmulpshufb[m][0][0]), "m" (raid_gfmulpshufb[m][1][0])
 				);
 			}
 
@@ -810,19 +810,19 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 void raid_register_neon(void)
 {
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_gen1_neon);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_gen2_neon);
-	raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "neon", raid_genz_neon);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_gen3_neon);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_gen4_neon);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_gen5_neon);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_gen6_neon);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_gen1_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_gen2_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "neon", raid_genz_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_gen3_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_gen4_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_gen5_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_gen6_neon, RAID_POLY_ANY);
 
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_rec1_neon);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_rec2_neon);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_recX_neon);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_recX_neon);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_recX_neon);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_recX_neon);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_rec1_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_rec2_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_recX_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_recX_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_recX_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_recX_neon, RAID_POLY_ANY);
 }
 #endif

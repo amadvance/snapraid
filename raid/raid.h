@@ -23,7 +23,7 @@
  *   other RAID implementations. Use this when reading or writing data
  *   that may be accessed by other software or hardware RAID controllers.
  *
- * 0x1b  (x^8 + x^4 + x^3 + x + 1)    -- AES polynomial (USE_RAID_AES)
+ * 0x1b  (x^8 + x^4 + x^3 + x + 1)    -- AES polynomial
  *
  *   The polynomial used by the AES encryption standard. Choosing this
  *   polynomial enables the use of the Intel GFNI (Galois Field New
@@ -39,30 +39,40 @@
  *   the standard 0x1d polynomial, so this option requires that all
  *   data be generated and recovered using the same polynomial choice.
  */
-#ifdef USE_RAID_AES
-#define RAID_POLY 0x1b
-#else
-#define RAID_POLY 0x1d
-#endif
 
 /**
- * RAID mode supporting up to 6 parities.
+ * Special mode code used to query the active mode.
+ */
+#define RAID_MODE_GET -1
+
+/**
+ * Default RAID mode supporting up to 6 parities using the standard polynomial 0x1d.
  *
- * It requires SSSE3 to get good performance with triple or more parities.
+ * Provides high performance on modern CPUs with SSSE3, AVX2, AVX-512, or NEON support.
+ * Ensures maximum compatibility with standard Linux RAID arrays.
  *
  * This is the default mode set after calling raid_init().
  */
-#define RAID_MODE_CAUCHY 0
+#define RAID_MODE_CAUCHY_RAID 0
 
 /**
- * RAID mode supporting up to 3 parities,
+ * Legacy RAID mode supporting up to 3 parities using standard polynomial 0x1d.
  *
- * It has a fast triple parity implementation without SSSE3, but it cannot
- * go beyond triple parity.
+ * Uses Vandermonde matrix coefficients for triple parity (Z parity), which allows
+ * efficient 3-parity generation on older/low-end CPUs without SSSE3 or NEON.
  *
- * This is mostly intended for low end CPUs like ARM and AMD Athlon.
+ * It cannot be used for arrays with more than 3 parities.
  */
-#define RAID_MODE_VANDERMONDE 1
+#define RAID_MODE_VANDERMONDE_RAID 1
+
+/**
+ * RAID mode supporting up to 6 parities using AES polynomial 0x1b.
+ *
+ * It has the same performance as RAID_MODE_CAUCHY_RAID on CPUs without GFNI,
+ * but achieves significantly higher throughput on CPUs supporting GFNI hardware
+ * acceleration.
+ */
+#define RAID_MODE_CAUCHY_AES 2
 
 /**
  * Maximum number of parity disks supported.
@@ -79,7 +89,7 @@
  *
  * You must call this function before any other.
  *
- * The RAID system is initialized in the RAID_MODE_CAUCHY mode.
+ * The RAID system is initialized in the RAID_MODE_CAUCHY_RAID mode.
  */
 void raid_init(void);
 
@@ -94,21 +104,21 @@ void raid_init(void);
 int raid_selftest(void);
 
 /**
- * Sets the mode to use. One of RAID_MODE_*.
+ * Sets or queries the mode to use. One of RAID_MODE_*.
  *
- * You can change mode at any time, and it will affect next calls to raid_gen(),
- * raid_rec() and raid_data().
+ * Passing RAID_MODE_GET (-1) queries the current active mode without changing it.
+ * Passing a valid mode (RAID_MODE_CAUCHY_RAID, RAID_MODE_VANDERMONDE_RAID,
+ * RAID_MODE_CAUCHY_AES) sets the mode.
  *
- * The two modes are compatible for the first two levels of parity.
- * The third one is different.
+ * Returns the mode that was active prior to this call.
  */
-void raid_mode(int mode);
+int raid_mode(int mode);
 
 /**
- * Sets the zero buffer to use in recovering.
+ * Sets the zero buffer to use during recovery.
  *
  * Before calling raid_rec() and raid_data() you must provide a memory
- * buffer filled with zero with the same size of the blocks to recover.
+ * buffer filled with zeros of the same size as the blocks to recover.
  *
  * This buffer is only read and never written.
  */
@@ -123,8 +133,8 @@ void raid_zero(void *zero);
  * Each parity block allows to recover one data block.
  *
  * @nd Number of data blocks.
- * @np Number of parities blocks to compute.
- * @size Size of the blocks pointed by @v. It must be a multiple of 64.
+ * @np Number of parity blocks to compute.
+ * @size Size of the blocks pointed to by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks for
  *   data, following with the parity blocks.
@@ -139,18 +149,18 @@ void raid_gen(int nd, int np, size_t size, void **v);
  * This function recovers all the data and parity blocks marked as bad
  * in the @ir vector.
  *
- * Ensure to have @nr <= @np, otherwise recovering is not possible.
+ * Ensure @nr <= @np, otherwise recovery is not possible.
  *
- * The parities blocks used for recovering are automatically selected from
+ * The parity blocks used for recovery are automatically selected from
  * the ones NOT present in the @ir vector.
  *
  * In case there are more parity blocks than needed, the parities at lower
- * indexes are used in the recovering, and the others are ignored.
+ * indexes are used for recovery, and the others are ignored.
  *
  * Note that no internal integrity check is done when recovering. If the
  * provided parities are correct, the resulting data will be correct.
  * If parities are wrong, the resulting recovered data will be wrong.
- * This happens even in the case you have more parities blocks than needed,
+ * This happens even in the case you have more parity blocks than needed,
  * and some form of integrity verification would be possible.
  *
  * @nr Number of failed data and parity blocks to recover.
@@ -177,14 +187,14 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  * @nr Number of failed data blocks to recover.
  * @id[] Vector of @nr indexes of the data blocks to recover.
  *   The indexes start from 0. They must be in order.
- * @ip[] Vector of @nr indexes of the parity blocks to use for recovering.
+ * @ip[] Vector of @nr indexes of the parity blocks to use for recovery.
  *   The indexes start from 0. They must be in order.
  * @nd Number of data blocks.
- * @size Size of the blocks pointed by @v. It must be a multiple of 64.
+ * @size Size of the blocks pointed to by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nr - 1] + 1) elements. The starting elements are the
  *   blocks for data, following with the parity blocks.
- *   Each blocks has @size bytes.
+ *   Each block has @size bytes.
  */
 void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
 
@@ -193,10 +203,10 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
  *
  * This function checks if the specified failed blocks combination satisfies
  * the redundancy information. A combination is assumed matching, if the
- * remaining valid parity is matching the expected value after recovering.
+ * remaining valid parity matches the expected value after recovery.
  *
  * The number of failed blocks @nr must be strictly less than the number of
- * parities @np, because you need one more parity to validate the recovering.
+ * parities @np, because you need one more parity to validate recovery.
  *
  * No data or parity blocks are modified.
  *
