@@ -95,7 +95,7 @@ static int lev_config_scan(const char* s, unsigned* level, unsigned* mode)
 	if (strcmp(s, "z-parity") == 0) {
 		*level = 2;
 		if (mode)
-			*mode = RAID_MODE_VANDERMONDE;
+			*mode = RAID_MODE_VANDERMONDE_RAID;
 		return 0;
 	}
 
@@ -107,7 +107,7 @@ const char* lev_raid_name(unsigned mode, unsigned n)
 	switch (n) {
 	case 1 : return "par1";
 	case 2 : return "par2";
-	case 3 : if (mode == RAID_MODE_CAUCHY)
+	case 3 : if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES)
 			return "par3";
 		else
 			return "parz";
@@ -132,7 +132,7 @@ void state_init(struct snapraid_state* state)
 	state->written = 0;
 	state->checked_read = 0;
 	state->block_size = 256 * KIBI; /* default 256 KiB */
-	state->raid_mode = RAID_MODE_CAUCHY;
+	state->raid_mode = RAID_MODE_CAUCHY_RAID;
 	state->file_mode = ADVISE_DEFAULT;
 	for (l = 0; l < LEV_MAX; ++l) {
 		state->parity[l].split_mac = 0;
@@ -226,7 +226,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	unsigned l, s;
 
 	/* check for parity level */
-	if (state->raid_mode == RAID_MODE_VANDERMONDE) {
+	if (state->raid_mode == RAID_MODE_VANDERMONDE_RAID) {
 		if (state->level > 3) {
 			/* LCOV_EXCL_START */
 			log_fatal(EUSER, "Using z-parity limits you to a maximum of 3 parities.\n");
@@ -481,7 +481,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #ifdef CONFIG_X86
 	if (!raid_cpu_has_ssse3())
 #endif
-	if (state->raid_mode == RAID_MODE_CAUCHY && !state->opt.no_warnings) {
+	if ((state->raid_mode == RAID_MODE_CAUCHY_RAID || state->raid_mode == RAID_MODE_CAUCHY_AES) && !state->opt.no_warnings) {
 		if (state->level == 3) {
 			log_info(EUSER, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
 			log_info(EUSER, "WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");

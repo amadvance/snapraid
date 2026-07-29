@@ -1046,35 +1046,64 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Vandermonde test\n");
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {
+	if (raid_test_rec(RAID_MODE_VANDERMONDE_RAID, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed REC Vandermonde test\n");
+		log_fatal(EINTERNAL, "Failed REC Vandermonde RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {
+	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy test\n");
+		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {
+	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed REC Cauchy test\n");
+		log_fatal(EINTERNAL, "Failed REC Cauchy RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
+	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 1, 256) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy test single data disk\n");
+		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test single data disk\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+	if (raid_test_par(RAID_MODE_CAUCHY_AES, 32, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (raid_test_rec(RAID_MODE_CAUCHY_AES, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed REC Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* Verify raid_mode get/set behavior */
+	int cur = raid_mode(RAID_MODE_GET);
+	int prev = raid_mode(RAID_MODE_CAUCHY_AES);
+	if (prev != cur) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode set did not return previous mode\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (raid_mode(RAID_MODE_GET) != RAID_MODE_CAUCHY_AES) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode GET did not return active mode\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	raid_mode(prev);
 }
 
