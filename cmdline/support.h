@@ -106,6 +106,15 @@ void log_fatal(int err, const char* format, ...) __attribute__((format(attribute
 void log_error(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
 
 /**
+ * Informational messages.
+ *
+ * Messages reporting general status information or warnings that do not indicate failure.
+ *
+ * These messages go in the log file if specified, otherwise they go in stderr.
+ */
+void log_info(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
+
+/**
  * Expected error messages, without fallback to stderr.
  *
  * These errors are "someway" expected, and then they never go to screen.

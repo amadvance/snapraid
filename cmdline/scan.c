@@ -2066,7 +2066,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			msg_status("No differences\n");
 		}
 		if (state->unsynced_blocks != 0)
-			log_error(EUSER, "The last sync was interrupted. Run it again!\n");
+			log_info(EUSER, "The last sync was interrupted. Run it again!\n");
 
 		if (state->unsynced_blocks != 0) {
 			log_tag("summary:exit:unsynced\n");

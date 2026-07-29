@@ -418,6 +418,35 @@ void log_error(int err, const char* format, ...)
 	unlock_msg();
 }
 
+
+void log_info(int err, const char* format, ...)
+{
+	va_list ap;
+
+	lock_msg();
+
+	if (stdlog) {
+		if (is_hw(err))
+			fprintf(stdlog, "msg:error_hardware: "); /* we never expect an hardware error */
+		else
+			fprintf(stdlog, "msg:info: ");
+
+		va_start(ap, format);
+		vfprintf(stdlog, format, ap);
+		va_end(ap);
+
+		fflush(stdlog);
+	} else {
+		va_start(ap, format);
+		vmsg(stderr, format, ap);
+		va_end(ap);
+
+		fflush(stderr);
+	}
+
+	unlock_msg();
+}
+
 void log_expected(int err, const char* format, ...)
 {
 	va_list ap;

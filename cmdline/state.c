@@ -471,11 +471,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #endif
 	if (state->raid_mode == RAID_MODE_CAUCHY && !state->opt.no_warnings) {
 		if (state->level == 3) {
-			log_error(ESOFT, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
-			log_error(ESOFT, "WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
+			log_info(EUSER, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
+			log_info(EUSER, "WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
 		} else if (state->level > 3) {
-			log_error(ESOFT, "WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
-			log_error(ESOFT, "WARNING! It's recommended to reduce the parity levels to triple parity.\n");
+			log_info(EUSER, "WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
+			log_info(EUSER, "WARNING! It's recommended to reduce the parity levels to triple parity.\n");
 		}
 	}
 
@@ -1766,15 +1766,15 @@ static void state_map(struct snapraid_state* state)
 	if (!state->opt.no_warnings) {
 		/* LCOV_EXCL_START */
 		if (diskcount >= 36 && state->level < 6) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use six parity levels.\n", diskcount);
+			log_info(EUSER, "WARNING! For %u disks, it's recommended to use six parity levels.\n", diskcount);
 		} else if (diskcount >= 29 && state->level < 5) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use five parity levels.\n", diskcount);
+			log_info(EUSER, "WARNING! For %u disks, it's recommended to use five parity levels.\n", diskcount);
 		} else if (diskcount >= 22 && state->level < 4) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use four parity levels.\n", diskcount);
+			log_info(EUSER, "WARNING! For %u disks, it's recommended to use four parity levels.\n", diskcount);
 		} else if (diskcount >= 15 && state->level < 3) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use three parity levels.\n", diskcount);
+			log_info(EUSER, "WARNING! For %u disks, it's recommended to use three parity levels.\n", diskcount);
 		} else if (diskcount >= 5 && state->level < 2) {
-			log_error(EUSER, "WARNING! For %u disks, it's recommended to use two parity levels.\n", diskcount);
+			log_info(EUSER, "WARNING! For %u disks, it's recommended to use two parity levels.\n", diskcount);
 		}
 		/* LCOV_EXCL_STOP */
 	}
@@ -2948,7 +2948,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* search by UUID if renamed */
 				disk = find_disk_by_uuid(state, uuid);
 				if (disk) {
-					log_error(EUSER, "WARNING! Renaming disk '%s' to '%s'\n", buffer, disk->name);
+					log_info(EUSER, "WARNING! Renaming disk '%s' to '%s'\n", buffer, disk->name);
 
 					/* write the new state with the new name */
 					state->need_write = 1;
@@ -3169,7 +3169,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						}
 
 						/* otherwise we can drop it */
-						log_error(EUSER, "WARNING! Dropping from '%s' unused split '%u'\n", lev_config_name(v_level), s);
+						log_info(EUSER, "WARNING! Dropping from '%s' unused split '%u'\n", lev_config_name(v_level), s);
 					} else {
 						char parity_name[64];
 
@@ -4291,7 +4291,7 @@ void state_read(struct snapraid_state* state)
 
 	/* if not found, assume empty */
 	if (!f) {
-		log_error(EUSER, "No content file found. Assuming empty.\n");
+		log_info(EUSER, "No content file found. Assuming empty.\n");
 
 		/* create the initial mapping */
 		state_map(state);
