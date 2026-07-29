@@ -15,15 +15,28 @@ int main(void)
 
 	raid_init();
 
-	printf("Self-test...\n");
+	printf("Test Cauchy RAID\n");
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
-		printf("FAILED!\n");
-		exit(EXIT_FAILURE);
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
-	printf("OK\n\n");
 
+	raid_mode(RAID_MODE_CAUCHY_AES);
+
+	printf("Test Cauchy AES\n");
+	if (raid_selftest() != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
+	printf("OK\n");
 	return 0;
-}
 
+bail:
+	/* LCOV_EXCL_START */
+	printf("FAILED!\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}

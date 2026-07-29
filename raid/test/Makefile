@@ -32,7 +32,7 @@ CC = gcc
 LD = ld
 CFLAGS = -I.. -Wall -Wextra -g
 ifeq ($(COVERAGE),)
-CFLAGS += -O2 -DUSE_RAID_AES
+CFLAGS += -O2
 else
 CFLAGS += -O0 --coverage -DCOVERAGE=1 -DNDEBUG=1
 endif

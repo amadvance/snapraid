@@ -70,6 +70,7 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 	uint8_t *q;
 	int d, l;
 	size_t i;
+	const uint32_t poly_32 = raid_poly_32;
 
 	uint32_t d0, q0, p0;
 	uint32_t d1, q1, p1;
@@ -88,8 +89,8 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 			p0 ^= d0;
 			p1 ^= d1;
 
-			q0 = x2_32(q0);
-			q1 = x2_32(q1);
+			q0 = x2_32(q0, poly_32);
+			q1 = x2_32(q1, poly_32);
 
 			q0 ^= d0;
 			q1 ^= d1;
@@ -111,6 +112,7 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 	uint8_t *q;
 	int d, l;
 	size_t i;
+	const uint64_t poly_64 = raid_poly_64;
 
 	uint64_t d0, q0, p0;
 	uint64_t d1, q1, p1;
@@ -129,8 +131,8 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 			p0 ^= d0;
 			p1 ^= d1;
 
-			q0 = x2_64(q0);
-			q1 = x2_64(q1);
+			q0 = x2_64(q0, poly_64);
+			q1 = x2_64(q1, poly_64);
 
 			q0 ^= d0;
 			q1 ^= d1;
@@ -147,12 +149,14 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
  */
 void raid_genz_int32(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
 	int d, l;
 	size_t i;
+	const uint32_t poly_32 = raid_poly_32;
+	const uint32_t inv2_32 = raid_inv2_32;
 
 	uint32_t d0, r0, q0, p0;
 	uint32_t d1, r1, q1, p1;
@@ -172,14 +176,14 @@ void raid_genz_int32(int nd, size_t size, void **vv)
 			p0 ^= d0;
 			p1 ^= d1;
 
-			q0 = x2_32(q0);
-			q1 = x2_32(q1);
+			q0 = x2_32(q0, poly_32);
+			q1 = x2_32(q1, poly_32);
 
 			q0 ^= d0;
 			q1 ^= d1;
 
-			r0 = d2_32(r0);
-			r1 = d2_32(r1);
+			r0 = d2_32(r0, inv2_32);
+			r1 = d2_32(r1, inv2_32);
 
 			r0 ^= d0;
 			r1 ^= d1;
@@ -198,12 +202,14 @@ void raid_genz_int32(int nd, size_t size, void **vv)
  */
 void raid_genz_int64(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
 	int d, l;
 	size_t i;
+	const uint64_t poly_64 = raid_poly_64;
+	const uint64_t inv2_64 = raid_inv2_64;
 
 	uint64_t d0, r0, q0, p0;
 	uint64_t d1, r1, q1, p1;
@@ -223,14 +229,14 @@ void raid_genz_int64(int nd, size_t size, void **vv)
 			p0 ^= d0;
 			p1 ^= d1;
 
-			q0 = x2_64(q0);
-			q1 = x2_64(q1);
+			q0 = x2_64(q0, poly_64);
+			q1 = x2_64(q1, poly_64);
 
 			q0 ^= d0;
 			q1 ^= d1;
 
-			r0 = d2_64(r0);
-			r1 = d2_64(r1);
+			r0 = d2_64(r0, inv2_64);
+			r1 = d2_64(r1, inv2_64);
 
 			r0 ^= d0;
 			r1 ^= d1;
@@ -274,8 +280,8 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
+			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
+			r0 ^= raid_gfmul[d0][raid_gfgen[2][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -323,9 +329,9 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
-			s0 ^= gfmul[d0][gfgen[3][d]];
+			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
+			r0 ^= raid_gfmul[d0][raid_gfgen[2][d]];
+			s0 ^= raid_gfmul[d0][raid_gfgen[3][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -377,10 +383,10 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
-			s0 ^= gfmul[d0][gfgen[3][d]];
-			t0 ^= gfmul[d0][gfgen[4][d]];
+			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
+			r0 ^= raid_gfmul[d0][raid_gfgen[2][d]];
+			s0 ^= raid_gfmul[d0][raid_gfgen[3][d]];
+			t0 ^= raid_gfmul[d0][raid_gfgen[4][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -436,11 +442,11 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
-			s0 ^= gfmul[d0][gfgen[3][d]];
-			t0 ^= gfmul[d0][gfgen[4][d]];
-			u0 ^= gfmul[d0][gfgen[5][d]];
+			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
+			r0 ^= raid_gfmul[d0][raid_gfgen[2][d]];
+			s0 ^= raid_gfmul[d0][raid_gfgen[3][d]];
+			t0 ^= raid_gfmul[d0][raid_gfgen[4][d]];
+			u0 ^= raid_gfmul[d0][raid_gfgen[5][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -648,23 +654,23 @@ void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_register_int(void)
 {
 	if (sizeof(void *) == 4) {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int32", raid_gen1_int32);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int32", raid_gen2_int32);
-		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int32", raid_genz_int32);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int32", raid_gen1_int32, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int32", raid_gen2_int32, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int32", raid_genz_int32, RAID_POLY_ANY);
 	} else {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int64", raid_gen1_int64);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64);
-		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int64", raid_genz_int64);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int64", raid_gen1_int64, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int64", raid_genz_int64, RAID_POLY_ANY);
 	}
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_gen3_int8);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_gen4_int8);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_gen5_int8);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_gen6_int8);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_gen3_int8, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_gen4_int8, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_gen5_int8, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_gen6_int8, RAID_POLY_ANY);
 
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "int8", raid_rec1_int8);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "int8", raid_rec2_int8);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_recX_int8);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_recX_int8);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_recX_int8);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_recX_int8);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "int8", raid_rec1_int8, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "int8", raid_rec2_int8, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_recX_int8, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_recX_int8, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_recX_int8, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_recX_int8, RAID_POLY_ANY);
 }

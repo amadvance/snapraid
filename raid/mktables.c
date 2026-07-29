@@ -4,10 +4,19 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+ * Galois field reduction polynomials.
+ *
+ * RAID_POLY_RAID - Standard RAID polynomial 0x1d (x^8 + x^4 + x^3 + x^2 + 1).
+ * RAID_POLY_AES  - AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1) for GFNI acceleration.
+ */
+#define RAID_POLY_RAID 0x1d
+#define RAID_POLY_AES 0x1b
+
 /**
  * Multiplication a*b in GF(2^8).
  */
-static uint8_t gfmul(uint8_t poly, uint8_t a, uint8_t b)
+static uint8_t raid_gfmul(uint8_t poly, uint8_t a, uint8_t b)
 {
 	uint8_t v;
 
@@ -32,7 +41,7 @@ static uint8_t gfmul(uint8_t poly, uint8_t a, uint8_t b)
 /**
  * Inversion (1/a) in GF(2^8).
  */
-uint8_t gfinv[256];
+uint8_t raid_gfinv[256];
 
 /**
  * Number of parities.
@@ -107,7 +116,7 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 	inv_x = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[1 * DISK + i] = inv_x;
-		inv_x = gfmul(poly, 2, inv_x);
+		inv_x = raid_gfmul(poly, 2, inv_x);
 	}
 
 	/*
@@ -135,13 +144,13 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 	for (j = 0; j < PARITY - 2; ++j) {
 		inv_x = 1;
 		for (i = 0; i < DISK; ++i) {
-			uint8_t x = gfinv[inv_x];
+			uint8_t x = raid_gfinv[inv_x];
 
-			matrix[(j + 2) * DISK + i] = gfinv[y ^ x];
-			inv_x = gfmul(poly, 2, inv_x);
+			matrix[(j + 2) * DISK + i] = raid_gfinv[y ^ x];
+			inv_x = raid_gfmul(poly, 2, inv_x);
 		}
 
-		y = gfmul(poly, 2, y);
+		y = raid_gfmul(poly, 2, y);
 	}
 
 	/*
@@ -158,10 +167,10 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 	 *   1 187 166 215   7 106
 	 */
 	for (j = 0; j < PARITY - 2; ++j) {
-		uint8_t f = gfinv[matrix[(j + 2) * DISK]];
+		uint8_t f = raid_gfinv[matrix[(j + 2) * DISK]];
 
 		for (i = 0; i < DISK; ++i)
-			matrix[(j + 2) * DISK + i] = gfmul(poly, matrix[(j + 2) * DISK + i], f);
+			matrix[(j + 2) * DISK + i] = raid_gfmul(poly, matrix[(j + 2) * DISK + i], f);
 	}
 }
 
@@ -181,33 +190,33 @@ static void set_power(uint8_t poly, uint8_t *matrix)
 	v = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[1 * DISK + i] = v;
-		v = gfmul(poly, 2, v);
+		v = raid_gfmul(poly, 2, v);
 	}
 
 	v = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[2 * DISK + i] = v;
-		v = gfmul(poly, div_by_2, v);
+		v = raid_gfmul(poly, div_by_2, v);
 	}
 }
 
-void tables(uint8_t poly)
+void tables(uint8_t poly, const char *tag)
 {
 	uint8_t v;
 	int i, j, k, p;
 	uint8_t matrix[PARITY * 256];
 
 	/* a*b */
-	printf("const uint8_t __aligned(256) raid_gfmul[256][256] =\n");
+	printf("const uint8_t __aligned(256) raid_gfmul_%s[256][256] =\n", tag);
 	printf("{\n");
 	for (i = 0; i < 256; ++i) {
 		printf("\t{\n");
 		for (j = 0; j < 256; ++j) {
 			if (j % 8 == 0)
 				printf("\t\t");
-			v = gfmul(poly, i, j);
+			v = raid_gfmul(poly, i, j);
 			if (v == 1)
-				gfinv[i] = j;
+				raid_gfinv[i] = j;
 			printf("0x%02x,", (unsigned)v);
 			if (j % 8 == 7)
 				printf("\n");
@@ -219,14 +228,14 @@ void tables(uint8_t poly)
 	printf("};\n\n");
 
 	/* 2^a */
-	printf("const uint8_t __aligned(256) raid_gfexp[256] =\n");
+	printf("const uint8_t __aligned(256) raid_gfexp_%s[256] =\n", tag);
 	printf("{\n");
 	v = 1;
 	for (i = 0; i < 256; ++i) {
 		if (i % 8 == 0)
 			printf("\t");
 		printf("0x%02x,", v);
-		v = gfmul(poly, v, 2);
+		v = raid_gfmul(poly, v, 2);
 		if (i % 8 == 7)
 			printf("\n");
 		else
@@ -235,7 +244,7 @@ void tables(uint8_t poly)
 	printf("};\n\n");
 
 	/* 1/a */
-	printf("const uint8_t __aligned(256) raid_gfinv[256] =\n");
+	printf("const uint8_t __aligned(256) raid_gfinv_%s[256] =\n", tag);
 	printf("{\n");
 	printf("\t/* note that the first element is not significant */\n");
 	for (i = 0; i < 256; ++i) {
@@ -244,45 +253,12 @@ void tables(uint8_t poly)
 		if (i == 0)
 			v = 0;
 		else
-			v = gfinv[i];
+			v = raid_gfinv[i];
 		printf("0x%02x,", v);
 		if (i % 8 == 7)
 			printf("\n");
 		else
 			printf(" ");
-	}
-	printf("};\n\n");
-
-	/* power matrix */
-	set_power(poly, matrix);
-
-	printf("/**\n");
-	printf(" * Power matrix used to generate parity.\n");
-	printf(" * This matrix is valid for up to %u parities with %u data disks.\n", 3, DISK);
-	printf(" *\n");
-	for (p = 0; p < 3; ++p) {
-		printf(" *");
-		for (i = 0; i < DISK; ++i)
-			printf(" %02x", matrix[p * DISK + i]);
-		printf("\n");
-	}
-	printf(" */\n");
-	printf("const uint8_t __aligned(256) raid_gfvandermonde[%u][256] =\n", 3);
-	printf("{\n");
-	for (p = 0; p < 3; ++p) {
-		printf("\t{\n");
-		for (i = 0; i < DISK; ++i) {
-			if (i % 8 == 0)
-				printf("\t\t");
-			printf("0x%02x,", matrix[p * DISK + i]);
-			if (i != DISK - 1) {
-				if (i % 8 == 7)
-					printf("\n");
-				else
-					printf(" ");
-			}
-		}
-		printf("\n\t},\n");
 	}
 	printf("};\n\n");
 
@@ -300,7 +276,7 @@ void tables(uint8_t poly)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const uint8_t __aligned(256) raid_gfcauchy[%u][256] =\n", PARITY);
+	printf("const uint8_t __aligned(256) raid_gfcauchy_%s[%u][256] =\n", tag, PARITY);
 	printf("{\n");
 	for (p = 0; p < PARITY; ++p) {
 		printf("\t{\n");
@@ -319,14 +295,14 @@ void tables(uint8_t poly)
 	}
 	printf("};\n\n");
 
-	printf("#ifdef CONFIG_X86\n");
+	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON)\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for the Cauchy matrix.\n");
 	printf(" *\n");
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
 	printf(" * Where DISK is from 0 to %u, PARITY from 1 to %u, LH from 0 to 1.\n", DISK - 1, PARITY);
 	printf(" */\n");
-	printf("const uint8_t __aligned(256) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, PARITY - 1);
+	printf("const uint8_t __aligned(256) raid_gfcauchypshufb_%s[%u][%u][2][16] =\n", tag, DISK, PARITY - 1);
 	printf("{\n");
 	for (i = 0; i < DISK; ++i) {
 		printf("\t{\n");
@@ -335,9 +311,9 @@ void tables(uint8_t poly)
 			for (j = 0; j < 2; ++j) {
 				printf("\t\t\t{ ");
 				for (k = 0; k < 16; ++k) {
-					v = gfmul(poly, matrix[p * DISK + i], k);
+					v = raid_gfmul(poly, matrix[p * DISK + i], k);
 					if (j == 1)
-						v = gfmul(poly, v, 16);
+						v = raid_gfmul(poly, v, 16);
 					printf("0x%02x", (unsigned)v);
 					if (k != 15)
 						printf(", ");
@@ -351,23 +327,23 @@ void tables(uint8_t poly)
 	printf("};\n");
 	printf("#endif\n\n");
 
-	printf("#ifdef CONFIG_X86\n");
+	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON)\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for generic multiplication.\n");
 	printf(" *\n");
 	printf(" * Indexes are [MULTIPLIER][LH].\n");
 	printf(" * Where MULTIPLIER is from 0 to 255, LH from 0 to 1.\n");
 	printf(" */\n");
-	printf("const uint8_t __aligned(256) raid_gfmulpshufb[256][2][16] =\n");
+	printf("const uint8_t __aligned(256) raid_gfmulpshufb_%s[256][2][16] =\n", tag);
 	printf("{\n");
 	for (i = 0; i < 256; ++i) {
 		printf("\t{\n");
 		for (j = 0; j < 2; ++j) {
 			printf("\t\t{ ");
 			for (k = 0; k < 16; ++k) {
-				v = gfmul(poly, i, k);
+				v = raid_gfmul(poly, i, k);
 				if (j == 1)
-					v = gfmul(poly, v, 16);
+					v = raid_gfmul(poly, v, 16);
 				printf("0x%02x", (unsigned)v);
 				if (k != 15)
 					printf(", ");
@@ -378,6 +354,42 @@ void tables(uint8_t poly)
 	}
 	printf("};\n");
 	printf("#endif\n\n");
+
+	if (poly == RAID_POLY_AES)
+		return;
+
+	/* power matrix */
+	set_power(poly, matrix);
+
+	printf("/**\n");
+	printf(" * Power matrix used to generate parity.\n");
+	printf(" * This matrix is valid for up to %u parities with %u data disks.\n", 3, DISK);
+	printf(" *\n");
+	for (p = 0; p < 3; ++p) {
+		printf(" *");
+		for (i = 0; i < DISK; ++i)
+			printf(" %02x", matrix[p * DISK + i]);
+		printf("\n");
+	}
+	printf(" */\n");
+	printf("const uint8_t __aligned(256) raid_gfvandermonde_%s[%u][256] =\n", tag, 3);
+	printf("{\n");
+	for (p = 0; p < 3; ++p) {
+		printf("\t{\n");
+		for (i = 0; i < DISK; ++i) {
+			if (i % 8 == 0)
+				printf("\t\t");
+			printf("0x%02x,", matrix[p * DISK + i]);
+			if (i != DISK - 1) {
+				if (i % 8 == 7)
+					printf("\n");
+				else
+					printf(" ");
+			}
+		}
+		printf("\n\t},\n");
+	}
+	printf("};\n\n");
 }
 
 int main(void)
@@ -387,15 +399,14 @@ int main(void)
 	printf("\n");
 
 	printf("#include \"internal.h\"\n");
+	printf("#include \"gf.h\"\n");
 	printf("\n");
 
-	printf("#ifdef USE_RAID_AES\n");
-	printf("/* Tables with the AES Polynomial 0x1b */\n");
-	tables(0x1b);
-	printf("#else\n");
 	printf("/* Tables with the RAID Polynomial 0x1d */\n");
-	tables(0x1d);
-	printf("#endif\n");
+	tables(RAID_POLY_RAID, "raid");
+
+	printf("/* Tables with the AES Polynomial 0x1b */\n");
+	tables(RAID_POLY_AES, "aes");
 
 	return 0;
 }

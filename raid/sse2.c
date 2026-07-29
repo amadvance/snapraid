@@ -414,15 +414,15 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 void raid_register_sse2(void)
 {
 	if (raid_cpu_has_sse2()) {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "sse2", raid_gen1_sse2);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "sse2", raid_gen2_sse2);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "sse2", raid_gen1_sse2, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "sse2", raid_gen2_sse2, RAID_POLY_ANY);
 #ifdef CONFIG_X86_64
 		if (!raid_cpu_has_slow_extendedreg())
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "sse2e", raid_gen2_sse2ext);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "sse2e", raid_gen2_sse2ext, RAID_POLY_ANY);
 		/* note that raid_cpu_has_slow_extendedreg() doesn't affect vandermonde */
-		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "sse2e", raid_genz_sse2ext);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "sse2e", raid_genz_sse2ext, RAID_POLY_ANY);
 #else
-		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "sse2", raid_genz_sse2);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "sse2", raid_genz_sse2, RAID_POLY_ANY);
 #endif
 	}
 }

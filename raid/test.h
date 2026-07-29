@@ -54,4 +54,3 @@ int raid_test_rec(unsigned mode, int nd, size_t size);
 int raid_test_par(unsigned mode, int nd, size_t size);
 
 #endif
-

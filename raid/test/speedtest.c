@@ -58,8 +58,8 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
  * Stop time measurement.
  */
 #define SPEED_STOP \
-		count += delta; \
-		gettimeofday(&stop, 0); \
+	count += delta; \
+	gettimeofday(&stop, 0); \
 	} while (diffgettimeofday(&start, &stop) < period); \
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
@@ -87,7 +87,7 @@ void speed_mem(int nd, void **v, int size, int delta, int period)
 	printf("\n");
 }
 
-void speed_gen(int nd, void **v, int size, int delta, int period, const char* msg)
+void speed_gen(int nd, void **v, int size, int delta, int period, const char *msg)
 {
 	struct timeval start;
 	struct timeval stop;
@@ -1285,7 +1285,7 @@ void speed(void)
 	memset(v[nd + RAID_PARITY_MAX], 0, size);
 	memset(v_direct[nd + RAID_PARITY_MAX], 0, size);
 	raid_zero(v[nd + RAID_PARITY_MAX]);
-	
+
 	speed_mem(nd, v, size, delta, period);
 	speed_gen(nd, v, size, delta, period, "");
 	speed_gen(nd, v_direct, size, delta, period, " (without displacement)");
@@ -1316,17 +1316,9 @@ int main(void)
 	if (raid_cpu_has_avx512bw())
 		printf("Including x86 AVX512BW\n");
 	if (raid_cpu_has_avx2gfni())
-#ifdef USE_RAID_AES
 		printf("Including x86 AVX2GFNI\n");
-#else
-		printf("Including x86 AVX2GFNI (Performance reference only. Polynomial mismatch prevents use)\n");
-#endif
 	if (raid_cpu_has_avx512gfni())
-#ifdef USE_RAID_AES
 		printf("Including x86 AVX512GFNI\n");
-#else
-		printf("Including x86 AVX512GFNI (Performance reference only. Polynomial mismatch prevents use)\n");
-#endif
 #endif
 
 	printf("\nPlease wait about 30 seconds...\n\n");
@@ -1335,4 +1327,3 @@ int main(void)
 
 	return 0;
 }
-

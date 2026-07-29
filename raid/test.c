@@ -164,7 +164,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 	int np;
 
 	raid_mode(mode);
-	if (mode == RAID_MODE_CAUCHY)
+	if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES)
 		np = RAID_PARITY_MAX;
 	else
 		np = 3;
@@ -207,14 +207,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 			if (raid_cpu_has_avx2())
 				test_setup(i) = raid_rec1_avx2;
 #ifdef CONFIG_X86_64
-			if (raid_cpu_has_avx512bw())
-				test_setup(i) = raid_rec1_avx512bw;
-#ifdef USE_RAID_AES
-			if (raid_cpu_has_avx2gfni())
-				test_setup(i) = raid_rec1_avx2gfni;
-			if (raid_cpu_has_avx512gfni())
-				test_setup(i) = raid_rec1_avx512gfni;
-#endif
+			if (mode == RAID_MODE_CAUCHY_AES) {
+				if (raid_cpu_has_avx2gfni())
+					test_setup(i) = raid_rec1_avx2gfni;
+				if (raid_cpu_has_avx512gfni())
+					test_setup(i) = raid_rec1_avx512gfni;
+			}
 #endif
 #endif
 #ifdef CONFIG_NEON
@@ -230,12 +228,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_X86_64
 			if (raid_cpu_has_avx512bw())
 				test_setup(i) = raid_rec2_avx512bw;
-#ifdef USE_RAID_AES
-			if (raid_cpu_has_avx2gfni())
-				test_setup(i) = raid_rec2_avx2gfni;
-			if (raid_cpu_has_avx512gfni())
-				test_setup(i) = raid_rec2_avx512gfni;
-#endif
+			if (mode == RAID_MODE_CAUCHY_AES) {
+				if (raid_cpu_has_avx2gfni())
+					test_setup(i) = raid_rec2_avx2gfni;
+				if (raid_cpu_has_avx512gfni())
+					test_setup(i) = raid_rec2_avx512gfni;
+			}
 #endif
 #endif
 #ifdef CONFIG_NEON
@@ -251,12 +249,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_X86_64
 			if (raid_cpu_has_avx512bw())
 				test_setup(i) = raid_recX_avx512bw;
-#ifdef USE_RAID_AES
-			if (raid_cpu_has_avx2gfni())
-				test_setup(i) = raid_recX_avx2gfni;
-			if (raid_cpu_has_avx512gfni())
-				test_setup(i) = raid_recX_avx512gfni;
-#endif
+			if (mode == RAID_MODE_CAUCHY_AES) {
+				if (raid_cpu_has_avx2gfni())
+					test_setup(i) = raid_recX_avx2gfni;
+				if (raid_cpu_has_avx512gfni())
+					test_setup(i) = raid_recX_avx512gfni;
+			}
 #endif
 #endif
 #ifdef CONFIG_NEON
@@ -338,7 +336,7 @@ int raid_test_par(int mode, int nd, size_t size)
 	int np;
 
 	raid_mode(mode);
-	if (mode == RAID_MODE_CAUCHY)
+	if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES)
 		np = RAID_PARITY_MAX;
 	else
 		np = 3;
@@ -401,18 +399,18 @@ int raid_test_par(int mode, int nd, size_t size)
 		test_setup(1) = raid_gen1_avx512bw;
 		test_setup(2) = raid_gen2_avx512bw;
 	}
-#ifdef USE_RAID_AES
-	if (raid_cpu_has_avx2gfni()) {
-		test_setup(2) = raid_gen2_avx2gfni;
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		if (raid_cpu_has_avx2gfni()) {
+			test_setup(2) = raid_gen2_avx2gfni;
+		}
+		if (raid_cpu_has_avx512gfni()) {
+			test_setup(2) = raid_gen2_avx512gfni;
+		}
 	}
-	if (raid_cpu_has_avx512gfni()) {
-		test_setup(2) = raid_gen2_avx512gfni;
-	}
-#endif
 #endif
 #endif
 
-	if (mode == RAID_MODE_CAUCHY) {
+	if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
 		test_setup(3) = raid_gen3_int8;
 		test_setup(4) = raid_gen4_int8;
 		test_setup(5) = raid_gen5_int8;
@@ -451,20 +449,20 @@ int raid_test_par(int mode, int nd, size_t size)
 			test_setup(5) = raid_gen5_avx512bw;
 			test_setup(6) = raid_gen6_avx512bw;
 		}
-#ifdef USE_RAID_AES
-		if (raid_cpu_has_avx2gfni()) {
-			test_setup(3) = raid_gen3_avx2gfni;
-			test_setup(4) = raid_gen4_avx2gfni;
-			test_setup(5) = raid_gen5_avx2gfni;
-			test_setup(6) = raid_gen6_avx2gfni;
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			if (raid_cpu_has_avx2gfni()) {
+				test_setup(3) = raid_gen3_avx2gfni;
+				test_setup(4) = raid_gen4_avx2gfni;
+				test_setup(5) = raid_gen5_avx2gfni;
+				test_setup(6) = raid_gen6_avx2gfni;
+			}
+			if (raid_cpu_has_avx512gfni()) {
+				test_setup(3) = raid_gen3_avx512gfni;
+				test_setup(4) = raid_gen4_avx512gfni;
+				test_setup(5) = raid_gen5_avx512gfni;
+				test_setup(6) = raid_gen6_avx512gfni;
+			}
 		}
-		if (raid_cpu_has_avx512gfni()) {
-			test_setup(3) = raid_gen3_avx512gfni;
-			test_setup(4) = raid_gen4_avx512gfni;
-			test_setup(5) = raid_gen5_avx512gfni;
-			test_setup(6) = raid_gen6_avx512gfni;
-		}
-#endif
 #endif
 #endif
 	} else {
