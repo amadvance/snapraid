@@ -231,7 +231,7 @@
 /**
  * Enables lock file support.
  */
-#if HAVE_FLOCK && HAVE_FTRUNCATE
+#if (HAVE_FLOCK && HAVE_FTRUNCATE) || defined(_WIN32)
 #define HAVE_LOCKFILE 1
 #endif
 

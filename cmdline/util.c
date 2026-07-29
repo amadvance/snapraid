@@ -814,6 +814,34 @@ unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t 
 #if HAVE_LOCKFILE
 int lock_lock(const char* file)
 {
+#ifdef _WIN32
+	wchar_t conv_buf[PATH_MAX];
+	HANDLE h;
+
+	if (MultiByteToWideChar(CP_UTF8, 0, file, -1, conv_buf, PATH_MAX) <= 0) {
+		/* LCOV_EXCL_START */
+		errno = EACCES;
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* open or create the lock file with zero share mode for exclusive access and delete on close */
+	h = CreateFileW(conv_buf, GENERIC_READ | GENERIC_WRITE | DELETE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		/* LCOV_EXCL_START */
+		DWORD err = GetLastError();
+		if (err == ERROR_SHARING_VIOLATION || err == ERROR_ACCESS_DENIED || err == ERROR_DELETE_PENDING) {
+			errno = EWOULDBLOCK;
+		} else {
+			errno = EACCES;
+		}
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* Windows HANDLE values are 31-bit indices into per-process handle tables, so casting to int is safe */
+	return (intptr_t)h;
+#else
 	int f;
 
 	f = open(file, O_RDONLY | O_CREAT, 0600);
@@ -832,12 +860,21 @@ int lock_lock(const char* file)
 	}
 
 	return f;
+#endif
 }
 #endif
 
 #if HAVE_LOCKFILE
 int lock_unlock(int f)
 {
+#ifdef _WIN32
+	if (!CloseHandle((HANDLE)(intptr_t)f)) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	return 0;
+#else
 	/*
 	 * Intentionally don't remove the lock file.
 	 * Removing it just introduces race course with other process
@@ -850,6 +887,7 @@ int lock_unlock(int f)
 	}
 
 	return 0;
+#endif
 }
 #endif
 

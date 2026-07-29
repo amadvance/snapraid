@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+14.10 2026/08
+=============
+ * Enable lock file support on Windows to prevent concurrent runs.
+
 14.9 2026/07
 ============
  * Fix a regression when both the '--gui-touch-before' and
