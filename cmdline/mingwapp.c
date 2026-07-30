@@ -983,15 +983,45 @@ static int serial_descriptor(PSTORAGE_DEVICE_DESCRIPTOR descriptor, size_t size,
 		return -1;
 
 	const char* raw = (const char*)descriptor + descriptor->SerialNumberOffset;
-	size_t len = 0;
-
-	/* find the length, not assuming a 0 ending */
-	while (descriptor->SerialNumberOffset + len < size && raw[len] != 0)
-		++len;
-
-	if (len < 6) /* a serial cannot be so short */
+	const char* end = memchr(raw, 0, size - descriptor->SerialNumberOffset);
+	if (!end)
 		return -1;
 
+	size_t len = end - raw;
+	if (len + 1 > output_size)
+		return -1;
+
+	/* a serial cannot be too short */
+	if (len < 6)
+		return -1;
+
+	/* all must be printable */
+	for (size_t i = 0; i < len; ++i) {
+		if (!isprint((unsigned char)raw[i]))
+			return -1;
+	}
+
+	memcpy(output, raw, len);
+	output[len] = 0;
+
+	strtrim(output);
+
+	return 0;
+}
+
+static int product_descriptor(PSTORAGE_DEVICE_DESCRIPTOR descriptor, size_t size, char* output, size_t output_size)
+{
+	if (descriptor->ProductIdOffset == 0
+		|| descriptor->ProductIdOffset == (DWORD)-1
+		|| descriptor->ProductIdOffset >= size)
+		return -1;
+
+	const char* raw = (const char*)descriptor + descriptor->ProductIdOffset;
+	const char* end = memchr(raw, 0, size - descriptor->ProductIdOffset);
+	if (!end)
+		return -1;
+
+	size_t len = end - raw;
 	if (len + 1 > output_size)
 		return -1;
 
@@ -1013,13 +1043,15 @@ static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
 {
 	STORAGE_PROPERTY_QUERY query = { 0 };
 	STORAGE_DESCRIPTOR_HEADER header = { 0 };
+	STORAGE_DEVICE_DESCRIPTOR* desc;
+	size_t descriptor_size;
 	DWORD bytes;
 
 	query.PropertyId = StorageDeviceProperty;
 	query.QueryType = PropertyStandardQuery;
 	if (!DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &header, sizeof(header), &bytes, 0))
 		return;
-	if (header.Size == 0)
+	if (header.Size < sizeof(STORAGE_DEVICE_DESCRIPTOR))
 		return;
 
 	/* allocate buffer and query full descriptor */
@@ -1032,12 +1064,29 @@ static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
 		return;
 	}
 
-	STORAGE_DEVICE_DESCRIPTOR* desc = (STORAGE_DEVICE_DESCRIPTOR*)buffer;
+	/*
+	 * Do not trust the descriptor size or offsets returned by a storage driver.
+	 * DeviceIoControl() may return fewer bytes than requested, and strings in
+	 * the descriptor are only offsets into the returned byte range.
+	 */
+	if (bytes < sizeof(STORAGE_DEVICE_DESCRIPTOR)) {
+		free(buffer);
+		return;
+	}
+
+	desc = (STORAGE_DEVICE_DESCRIPTOR*)buffer;
+	descriptor_size = bytes;
+	if (descriptor_size > header.Size)
+		descriptor_size = header.Size;
+	if (desc->Size < sizeof(STORAGE_DEVICE_DESCRIPTOR) || desc->Size > descriptor_size) {
+		free(buffer);
+		return;
+	}
+	descriptor_size = desc->Size;
 
 	/* extract strings (offsets are from start of descriptor) */
-	if (model && *model == 0 && desc->ProductIdOffset) {
-		snprintf(model, SMART_MAX, "%s", (char*)(buffer + desc->ProductIdOffset));
-		strtrim(model);
+	if (model && *model == 0) {
+		product_descriptor(desc, descriptor_size, model, SMART_MAX);
 	}
 
 	if (serial && *serial == 0) {
@@ -1047,7 +1096,7 @@ static void devattr_property(HANDLE h, char* serial, char* model, char* inter)
 		 *
 		 * If smartctl was not able to read it, we now accept anything.
 		 */
-		serial_descriptor(desc, bytes, serial, SMART_MAX);
+		serial_descriptor(desc, descriptor_size, serial, SMART_MAX);
 	}
 
 #define BusTypeVirtual            0x0E
