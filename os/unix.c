@@ -1592,8 +1592,8 @@ void os_abort(void)
 	unsigned i;
 #endif
 
-	const char* platform = "";
-	const char* compiler = "";
+	const char* platform;
+	const char* compiler;
 
 #ifdef _linux
 	platform = ", linux";
@@ -1601,12 +1601,16 @@ void os_abort(void)
 	platform = ", macOS";
 #elif defined(__FreeBSD__)
 	platform = ", FreeBSD";
+#else
+	platform = "";
 #endif
 
 #if defined(__clang__)
 	compiler = ", clang " __clang_version__;
 #elif defined(__GNUC__)
 	compiler = ", gcc " __VERSION__;
+#else
+	compiler = "";
 #endif
 
 	os_syslog(OS_LVL_CRITICAL, "Stacktrace of " PACKAGE " v" VERSION

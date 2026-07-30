@@ -329,7 +329,9 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			/* LCOV_EXCL_STOP */
 		}
 
-		if (hash_is_invalid(block->hash)) {
+		if (block == BLOCK_NULL) {
+			hash = "none";
+		} else if (hash_is_invalid(block->hash)) {
 			hash = "lost";
 		} else if (hash_is_zero(block->hash)) {
 			hash = "zero";

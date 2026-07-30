@@ -188,8 +188,6 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	/* start all the worker threads */
 	io_start(&io, blockstart, blockmax, 0);
 
-	blockcur = blockstart;
-
 	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
 	if (alert > 0)
 		goto end;

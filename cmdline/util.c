@@ -457,30 +457,30 @@ void crc32c_init(void)
 
 /*
  * Rotate left.
- * In x86/x64 they are optimized with a single assembler instruction.
+ * In x86/x64/ARM they are optimized with a single assembler instruction.
  */
-static inline uint32_t util_rotl32(uint32_t x, int8_t r)
+static inline uint32_t util_rotl32(uint32_t x, unsigned r)
 {
-	return (x << r) | (x >> (32 - r));
+	return (x << (r & 31)) | (x >> ((-r) & 31));
 }
 
-static inline uint64_t util_rotl64(uint64_t x, int8_t r)
+static inline uint64_t util_rotl64(uint64_t x, unsigned r)
 {
-	return (x << r) | (x >> (64 - r));
+	return (x << (r & 63)) | (x >> ((-r) & 63));
 }
 
 /*
  * Rotate right.
- * In x86/x64 they are optimized with a single assembler instruction.
+ * In x86/x64/ARM they are optimized with a single assembler instruction.
  */
-static inline uint32_t util_rotr32(uint32_t x, int8_t r)
+static inline uint32_t util_rotr32(uint32_t x, unsigned r)
 {
-	return (x >> r) | (x << (32 - r));
+	return (x >> (r & 31)) | (x << ((-r) & 31));
 }
 
-static inline uint64_t util_rotr64(uint64_t x, int8_t r)
+static inline uint64_t util_rotr64(uint64_t x, unsigned r)
 {
-	return (x >> r) | (x << (64 - r));
+	return (x >> (r & 63)) | (x << ((-r) & 63));
 }
 
 /**
@@ -677,24 +677,29 @@ int util_selftest(void)
 	if (util_rotl32(0x00000001U, 31) != 0x80000000U) return -1;
 	if (util_rotl32(0x12345678U, 4) != 0x23456781U) return -1;
 	if (util_rotl32(0x12345678U, 0) != 0x12345678U) return -1;
-	if (util_rotl32(0x12345678U, 32) != 0x12345678U) return -1;  /* r % 32 == 0 */
+	if (util_rotl32(0x12345678U, 32) != 0x12345678U) return -1;
 
 	/* rotate right 32-bit */
 	if (util_rotr32(0x00000001U, 1) != 0x80000000U) return -1;
 	if (util_rotr32(0x80000000U, 1) != 0x40000000U) return -1;
 	if (util_rotr32(0x00000002U, 1) != 0x00000001U) return -1;
 	if (util_rotr32(0x12345678U, 4) != 0x81234567U) return -1;
+	if (util_rotr32(0x12345678U, 0) != 0x12345678U) return -1;
+	if (util_rotr32(0x12345678U, 32) != 0x12345678U) return -1;
 
 	/* rotate left 64-bit */
 	if (util_rotl64(1ULL, 1) != 2ULL) return -1;
 	if (util_rotl64(1ULL << 63, 1) != 1ULL) return -1;
 	if (util_rotl64(0x123456789ABCDEF0ULL, 8) != 0x3456789ABCDEF012ULL) return -1;
 	if (util_rotl64(0x123456789ABCDEF0ULL, 0) != 0x123456789ABCDEF0ULL) return -1;
+	if (util_rotl64(0x123456789ABCDEF0ULL, 64) != 0x123456789ABCDEF0ULL) return -1;
 
 	/* rotate right 64-bit */
 	if (util_rotr64(1ULL, 1) != (1ULL << 63)) return -1;
 	if (util_rotr64(2ULL, 1) != 1ULL) return -1;
 	if (util_rotr64(0x123456789ABCDEF0ULL, 8) != 0xF0123456789ABCDEULL) return -1;
+	if (util_rotr64(0x123456789ABCDEF0ULL, 0) != 0x123456789ABCDEF0ULL) return -1;
+	if (util_rotr64(0x123456789ABCDEF0ULL, 64) != 0x123456789ABCDEF0ULL) return -1;
 
 	/* util_mum tests */
 	uint64_t a, b;
