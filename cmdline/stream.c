@@ -586,7 +586,7 @@ int sgetb32(STREAM* f, uint32_t* value)
 {
 	uint32_t v;
 	unsigned char b;
-	unsigned char s;
+	unsigned s;
 	int c;
 
 	v = 0;
@@ -603,12 +603,19 @@ loop:
 	if ((b & 0x80) == 0) {
 		v |= (uint32_t)b << s;
 		s += 7;
-		if (s >= 32) {
+		if (tommy_unlikely(s >= 32)) {
 			/* LCOV_EXCL_START */
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		goto loop;
+	}
+
+	/*
+	 * Check for overflow: at s == 28 only 4 bits (0x0f) fit in uint32_t
+	 */
+	if (tommy_unlikely(s == 28 && (b & 0x70) != 0)) {
+		return -1;
 	}
 
 	v |= (uint32_t)(b & 0x7f) << s;
@@ -622,7 +629,7 @@ int sgetb64(STREAM* f, uint64_t* value)
 {
 	uint64_t v;
 	unsigned char b;
-	unsigned char s;
+	unsigned s;
 	int c;
 
 	v = 0;
@@ -639,12 +646,19 @@ loop:
 	if ((b & 0x80) == 0) {
 		v |= (uint64_t)b << s;
 		s += 7;
-		if (s >= 64) {
+		if (tommy_unlikely(s >= 64)) {
 			/* LCOV_EXCL_START */
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		goto loop;
+	}
+
+	/*
+	 * Check for overflow: at s == 63 only 1 bit (0x01) fits in uint64_t
+	 */
+	if (tommy_unlikely(s == 63 && (b & 0x7e) != 0)) {
+		return -1;
 	}
 
 	v |= (uint64_t)(b & 0x7f) << s;

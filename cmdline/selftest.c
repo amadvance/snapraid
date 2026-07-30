@@ -13,6 +13,7 @@
 #include "elem.h"
 #include "state.h"
 #include "support.h"
+#include "stream.h"
 #include "tommyds/tommyhash.h"
 #include "tommyds/tommyarray.h"
 #include "tommyds/tommyarrayblkof.h"
@@ -994,6 +995,85 @@ static void test_smart_ignore(void)
 	}
 }
 
+static void test_stream(void)
+{
+	STREAM f;
+	uint32_t v32;
+	uint64_t v64;
+
+	/* 32-bit valid boundary */
+	unsigned char buf_v32[] = { 0x7f, 0x7f, 0x7f, 0x7f, 0x8f };
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_v32;
+	f.end = buf_v32 + sizeof(buf_v32);
+	if (sgetb32(&f, &v32) != 0 || v32 != 0xffffffffU) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: valid uint32 max failed\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* 32-bit overflow payload in 5th terminal byte */
+	unsigned char buf_o32[] = { 0x00, 0x00, 0x00, 0x00, 0xf1 };
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_o32;
+	f.end = buf_o32 + sizeof(buf_o32);
+	if (sgetb32(&f, &v32) == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: uint32 overflow accepted\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* 32-bit 5th byte non-terminal */
+	unsigned char buf_nt32[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x80 };
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_nt32;
+	f.end = buf_nt32 + sizeof(buf_nt32);
+	if (sgetb32(&f, &v32) == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: uint32 5th non-terminal accepted\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* 64-bit valid boundary */
+	unsigned char buf_v64[] = { 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x81 };
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_v64;
+	f.end = buf_v64 + sizeof(buf_v64);
+	if (sgetb64(&f, &v64) != 0 || v64 != 0xffffffffffffffffULL) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: valid uint64 max failed\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* 64-bit overflow payload in 10th terminal byte */
+	unsigned char buf_o64[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x83 };
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_o64;
+	f.end = buf_o64 + sizeof(buf_o64);
+	if (sgetb64(&f, &v64) == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: uint64 overflow accepted\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* 64-bit 10th byte non-terminal */
+	unsigned char buf_nt64[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x80 };
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_nt64;
+	f.end = buf_nt64 + sizeof(buf_nt64);
+	if (sgetb64(&f, &v64) == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: uint64 10th non-terminal accepted\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
 
 void selftest(void)
 {
@@ -1019,6 +1099,7 @@ void selftest(void)
 	test_hash();
 	test_crc32c();
 	test_tommy();
+	test_stream();
 	test_wnmatch();
 	test_parse_smartctl();
 	test_smart_ignore();
