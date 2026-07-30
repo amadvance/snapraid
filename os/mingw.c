@@ -642,6 +642,9 @@ void windows_errno(DWORD error)
 	case ERROR_NOT_ENOUGH_MEMORY :
 		errno = ENOMEM;
 		break;
+	case ERROR_NO_SYSTEM_RESOURCES :
+		errno = ENOBUFS; /* in ReadFile() and WriteFile() */
+		break;
 	case ERROR_NOT_SUPPORTED : /* in CreateSymlinkW() if not present in kernel32 */
 		errno = ENOSYS;
 		break;
@@ -1849,11 +1852,14 @@ off_t windows_lseek(int fd, off_t offset, int whence)
 	return ret.QuadPart;
 }
 
+#define RETRY_MAX 10
+
 ssize_t windows_pread(int fd, void* buffer, size_t size, off_t offset)
 {
 	HANDLE h;
 	OVERLAPPED overlapped;
 	DWORD count;
+	unsigned retry = 0;
 
 	if (fd == -1) {
 		errno = EBADF;
@@ -1866,7 +1872,7 @@ ssize_t windows_pread(int fd, void* buffer, size_t size, off_t offset)
 		return -1;
 	}
 
-retry:
+loop:
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.Offset = offset & 0xFFFFFFFF;
 	overlapped.OffsetHigh = offset >> 32;
@@ -1892,10 +1898,18 @@ retry:
 		 * Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...
 		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/a7c25ba9/
 		 */
+		if (err == ERROR_NO_SYSTEM_RESOURCES && retry < RETRY_MAX) {
+			unsigned delay = 20 << retry;
+			if (delay > 1000)
+				delay = 1000;
+			++retry;
+			os_syslog(OS_LVL_ERROR, "unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retry %u/%u after %u ms...", retry, RETRY_MAX, delay);
+			Sleep(delay);
+			goto loop;
+		}
+
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			os_syslog(OS_LVL_ERROR, "unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...");
-			Sleep(50);
-			goto retry;
+			os_syslog(OS_LVL_ERROR, "giving up on ERROR_NO_SYSTEM_RESOURCES in pread() after %u retries", retry);
 		}
 
 		windows_errno(err);
@@ -1910,6 +1924,7 @@ ssize_t windows_pwrite(int fd, const void* buffer, size_t size, off_t offset)
 	HANDLE h;
 	OVERLAPPED overlapped;
 	DWORD count;
+	unsigned retry = 0;
 
 	if (fd == -1) {
 		errno = EBADF;
@@ -1922,18 +1937,27 @@ ssize_t windows_pwrite(int fd, const void* buffer, size_t size, off_t offset)
 		return -1;
 	}
 
-retry:
+loop:
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.Offset = offset & 0xFFFFFFFF;
 	overlapped.OffsetHigh = offset >> 32;
 
 	if (!WriteFile(h, buffer, size, &count, &overlapped)) {
 		DWORD err = GetLastError();
-		/* See windows_pread() for comments on this error management */
+
+		/* see windows_pread() for comments on this error management */
+		if (err == ERROR_NO_SYSTEM_RESOURCES && retry < RETRY_MAX) {
+			unsigned delay = 20 << retry;
+			if (delay > 1000)
+				delay = 1000;
+			++retry;
+			os_syslog(OS_LVL_ERROR, "unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retry %u/%u after %u ms...", retry, RETRY_MAX, delay);
+			Sleep(delay);
+			goto loop;
+		}
+
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			os_syslog(OS_LVL_ERROR, "unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...");
-			Sleep(50);
-			goto retry;
+			os_syslog(OS_LVL_ERROR, "giving up on ERROR_NO_SYSTEM_RESOURCES in pwrite() after %u retries", retry);
 		}
 
 		windows_errno(err);
