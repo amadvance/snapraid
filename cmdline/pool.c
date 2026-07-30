@@ -351,7 +351,7 @@ static void make_link(tommy_hashdyn* poolset, const char* pool_dir, const char* 
 	ret = symlink(linkto_exported, path);
 	if (ret != 0) {
 		if (errno == EEXIST) {
-			log_fatal(errno, "WARNING! Duplicate pooling for '%s'\n", path);
+			log_error(errno, "WARNING! Duplicate pooling for '%s'\n", path);
 #ifdef _WIN32
 		} else if (errno == EPERM) {
 			/* LCOV_EXCL_START */

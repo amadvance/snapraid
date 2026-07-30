@@ -1822,7 +1822,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					/* if verbose, print the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						log_error(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						log_info(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1907,7 +1907,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			}
 		}
 		if (done) {
-			log_fatal(ESOFT, "\nare now missing or have been rewritten!\n");
+			log_error(ESOFT, "\nare now missing or have been rewritten!\n");
 			if (all_rewritten) {
 				log_error(ESOFT, "This could occur when restoring a disk from a backup\n");
 				log_error(ESOFT, "program that is not setting correctly the timestamps.\n");
@@ -1932,14 +1932,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (disk->has_unreliable_physical) {
 				if (!done) {
 					done = 1;
-					log_error(ESOFT, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
+					log_info(ESOFT, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
 				} else {
-					log_error(ESOFT, ", '%s'", disk->name);
+					log_info(ESOFT, ", '%s'", disk->name);
 				}
 			}
 		}
 		if (done) {
-			log_error(ESOFT, ". The order of files won't be optimal.\n");
+			log_info(ESOFT, ". The order of files won't be optimal.\n");
 		}
 	}
 
@@ -1951,14 +1951,14 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		if (disk->has_volatile_inodes) {
 			if (!done) {
 				done = 1;
-				log_error(ESOFT, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
+				log_info(ESOFT, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
 			} else {
-				log_error(ESOFT, ", '%s'", disk->name);
+				log_info(ESOFT, ", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		log_error(ESOFT, ". Inodes are not used to detect move operations.\n");
+		log_info(ESOFT, ". Inodes are not used to detect move operations.\n");
 	}
 
 	/* check for disks with changed UUID */
