@@ -116,14 +116,6 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/648955ec/ (Leifi in
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/5b6ef1b9/ (Miles in check + filter)
 Partially done. Now you can control it with --test-fmt
 
-* Add ReFS support with 128 bit inode
-See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/2be14f63/
-https://github.com/Microsoft/Windows-driver-samples/blob/master/filesys/miniFilter/avscan/filter/utility.h
-https://github.com/Microsoft/Windows-driver-samples/blob/master/filesys/miniFilter/avscan/filter/utility.c
-https://github.com/Microsoft/Windows-driver-samples/blob/master/filesys/miniFilter/delete/delete.c
-Partially done. Until the inodes are less than 64 bit, everything works.
-If a 128 bit inode is found, it aborts with "Invalid inode number! Is this ReFS?"
-
 * When a disk is replaced, and SnapRAID detects this by a UUID change, we could clear the
 scrub information for that disk.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/ee87901b/

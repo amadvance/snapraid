@@ -660,7 +660,6 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 		struct snapraid_file* collide_file;
 		struct snapraid_file* file;
 		block_off_t file_pos;
-		uint64_t inode;
 
 		disk = handle[j].disk;
 		if (!disk) {
@@ -774,10 +773,12 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 			log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub));
 			msg_info("recovered %s\n", fmt_term(disk, file->sub));
 
-			inode = handle[j].st.st_ino;
-
 			/* search for the corresponding inode */
-			collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+			uint64_t inode = handle[j].st.st_ino; /* don't know the exact type of st_ino and we cannot pass it by pointer in the search */
+			if (inode != INODE_INVALID)
+				collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+			else
+				collide_file = 0;
 
 			/*
 			 * If the inode is already in the database and it refers to a different file name,
@@ -1808,7 +1809,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					log_error(ESOFT, "Error stating hardlink-to '%s' for not regular file.\n", path);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
-				} else if (!unsuccessful && st.st_ino != stto.st_ino) {
+				} else if (!unsuccessful && st.st_ino != INODE_INVALID && stto.st_ino != INODE_INVALID && st.st_ino != stto.st_ino) {
 					unsuccessful = 1;
 
 					log_error(ESOFT, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);

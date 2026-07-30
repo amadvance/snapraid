@@ -260,7 +260,7 @@ int windows_fstat(int fd, struct windows_stat* st);
 /**
  * Like the C lstat(), but with some limitations.
  *
- * The st_ino field may be 0 if it's not possible to read it in a fast way.
+ * The st_ino field may be INODE_INVALID if it's not possible to read it in a fast way.
  * Specifically this always happens.
  *
  * In case of hardlinks, the size and the attributes of the file can

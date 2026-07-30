@@ -34,9 +34,10 @@
 #endif
 
 /* File Index */
-#ifndef FILE_INVALID_FILE_ID
+#undef FILE_INVALID_FILE_ID
 #define FILE_INVALID_FILE_ID          ((ULONGLONG)-1LL)
-#endif
+#undef FILE_UNSUPPORTED_FILE_ID
+#define FILE_UNSUPPORTED_FILE_ID      0
 
 /**
  * Direct access to RtlGenRandom().
@@ -464,16 +465,44 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	 *
 	 * From Microsoft "Application Compatibility with ReFS"
 	 * http://download.microsoft.com/download/C/B/3/CB3561DC-6BF6-443D-B5B9-9676ACDF7F75/Application%20Compatibility%20with%20ReFS.docx
-	 * "64-bit file identifier can be obtained from GetFileInformationByHandle in"
-	 * "the nFileIndexHigh and nFileIndexLow members. This API is an extended version"
-	 * "that includes 128-bit file identifiers.  If GetFileInformationByHandle returns"
-	 * "FILE_INVALID_FILE_ID, the identifier may only be described in 128 bit form."
+	 * 64-bit file identifier can be obtained from GetFileInformationByHandle in
+	 * the nFileIndexHigh and nFileIndexLow members. This API is an extended version
+	 * that includes 128-bit file identifiers.  If GetFileInformationByHandle returns
+	 * FILE_INVALID_FILE_ID, the identifier may only be described in 128 bit form.
+	 * 
+	 * From Microsoft "[MS-FSCC]: File System Control Codes - 11/21/2025 v60.0 - 6 Appendix B: Product Behavior"
+	 * https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0
+	 * 
+	 * 64bitFileID Generate Stable Unique
+	 * FAT           Yes      No     No
+	 * EXFAT         Yes      No     No
+	 * FAT32         Yes      No     No
+	 * UDFS          Yes      Yes    Yes
+	 * NTFS          Yes      Yes    Yes
+	 * ReFS          Yes      Yes    Yes
+	 *
+	 * NTFS computes the 64-bit file ID as follows: the low 48 bits are the index of the
+	 * file's primary record in the master file table (MFT); the remaining 16 bits are
+	 * a sequence number. Therefore, it is possible, though rare, that a different file
+	 * can have the same 64-bit file ID as a file on that volume had in the past.
+	 *
+	 * ReFS maps a subset of the possible 128-bit file ID values to a 64-bit value using
+	 * a reversible algorithm; for values outside of this subset, ReFS sets the 64-bit
+	 * file ID to -1.
+	 *
+	 * From Microsoft "[MS-FSCC]: File System Control Codes - 11/21/2025 v60.0 - 2.1.9 64-bit file ID"
+	 * https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/2d3333fe-fc98-4a6f-98a2-4bb805aff407?utm_source=chatgpt.com
+	 * 
+	 * A 64-bit file ID value uniquely identifies a file within a given volume. This
+	 * identifier is generated and stored by the file system. The identifier SHOULD
+	 * be unique to the volume and stable until the file is deleted.
+	 * For file systems that do not support a 64-bit file ID, this field MUST be
+	 * set to 0, and MUST be ignored.
+	 * For files for which a unique 64-bit file ID cannot be established, this
+	 * field MUST be set to 0xFFFFFFFFFFFFFFFF, and MUST be ignored.
 	 */
-	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
-		errno = EINVAL;
-		os_syslog(OS_LVL_INFO, "invalid inode number! Is this ReFS?");
-		return -1;
-	}
+	if (st->st_ino == FILE_INVALID_FILE_ID || st->st_ino == FILE_UNSUPPORTED_FILE_ID)
+		st->st_ino = INODE_INVALID;
 
 	return 0;
 }
@@ -516,11 +545,8 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 	st->st_sync = 0;
 
 	/* in ReFS the IDs are 128 bit, and the 64 bit interface may fail */
-	if (st->st_ino == (uint64_t)FILE_INVALID_FILE_ID) {
-		errno = EINVAL;
-		os_syslog(OS_LVL_INFO, "Invalid inode number! Is this ReFS?");
-		return -1;
-	}
+	if (st->st_ino == FILE_INVALID_FILE_ID || st->st_ino == FILE_UNSUPPORTED_FILE_ID)
+		st->st_ino = INODE_INVALID;
 
 	return 0;
 }
@@ -553,7 +579,7 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	st->st_mtimensec = (mtime % 10000000) * 100;
 
 	/* No inode information available */
-	st->st_ino = 0;
+	st->st_ino = INODE_INVALID;
 
 	/* No link information available */
 	st->st_nlink = 0;

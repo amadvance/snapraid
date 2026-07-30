@@ -2364,7 +2364,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, 0);
 
 			/* insert the file in the file containers */
-			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+			if (file->inode != INODE_INVALID)
+				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
