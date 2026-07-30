@@ -2007,7 +2007,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		int all_missing = 0;
 		int all_rewritten = 0;
 		done = 0;
+
 		for (i = state->disklist, j = scanlist; i != 0; i = i->next, j = j->next) {
+			assert(j != 0); /* silence the clang static analyzer (both lists have the same number of elements) */
+
 			struct snapraid_disk* disk = i->data;
 			struct snapraid_scan* scan = j->data;
 

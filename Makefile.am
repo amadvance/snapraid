@@ -229,6 +229,7 @@ clean-local:
 	rm -f lcov.info
 	rm -f gmon.out
 	rm -f makeslackware.sh makeslackdist.sh pkg/snapraid.SlackBuild pkg/snapraid.info makedeb.sh pkg/control makerpm.sh pkg/snapraid.spec
+	rm -fr *.plist
 
 maintainer-clean-local:
 	rm -f $(LIST_MAN)

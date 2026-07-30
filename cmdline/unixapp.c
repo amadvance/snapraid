@@ -2026,6 +2026,8 @@ int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 		/* LCOV_EXCL_STOP */
 	}
 
+	assert(fss != 0); /* silence the clang static analyzer (it's never called with a NULL fss) */
+
 	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
 		/* btrfs reserved inode 256 for subvolume roots */
 		return fssnapshot_inode(path, BTRFS_SUPER_MAGIC, 256, fss);

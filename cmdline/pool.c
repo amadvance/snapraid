@@ -80,7 +80,7 @@ static int clean_dir(const char* dir)
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-		if (dd == 0 && errno == 0) {
+		if (dd == 0) {
 			break; /* finished */
 		}
 
@@ -196,7 +196,7 @@ static void read_dir(tommy_hashdyn* poolset, const char* base_dir, const char* s
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-		if (dd == 0 && errno == 0) {
+		if (dd == 0) {
 			break; /* finished */
 		}
 
