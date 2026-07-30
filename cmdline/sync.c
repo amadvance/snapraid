@@ -191,7 +191,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			if (handle[j].st.st_size != file->size
 				|| handle[j].st.st_mtime != file->mtime_sec
 				|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
-				|| handle[j].st.st_ino != file->inode
+				|| (handle[j].st.st_ino != INODE_INVALID && file->inode != INODE_INVALID && handle[j].st.st_ino != file->inode)
 			) {
 				if (handle[j].st.st_size != file->size) {
 					log_tag("error:%" PRIu64 ":%s:%s: Unexpected size change\n", blockcur, disk->name, esc_tag(file->sub));
@@ -564,7 +564,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	if (handle->st.st_size != task->file->size
 		|| handle->st.st_mtime != task->file->mtime_sec
 		|| STAT_NSEC(&handle->st) != task->file->mtime_nsec
-		|| handle->st.st_ino != task->file->inode
+		|| (handle->st.st_ino != INODE_INVALID && task->file->inode != INODE_INVALID && handle->st.st_ino != task->file->inode)
 	) {
 		log_tag("error:%" PRIu64 ":%s:%s: Unexpected attribute change\n", blockcur, disk->name, esc_tag(task->file->sub));
 		if (handle->st.st_size != task->file->size) {

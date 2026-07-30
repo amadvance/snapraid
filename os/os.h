@@ -196,6 +196,16 @@ int os_validate_exec_input(const char* str);
 /* fs */
 
 /**
+ * Invalid inode number.
+ *
+ * Value 0 is used to represent an invalid or unavailable inode number.
+ * While 0 is not strictly guaranteed to be invalid by standards, in practice
+ * it is never used for valid files. And even if a file happens to have inode 0,
+ * the program will simply process that specific file without using its inode.
+ */
+#define INODE_INVALID 0
+
+/**
  * Physical offset not yet read.
  */
 #define FILEPHY_UNREAD_OFFSET 0

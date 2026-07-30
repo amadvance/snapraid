@@ -604,7 +604,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			st->st_nlink = synced_st.st_nlink;
 		}
 
-		if (st->st_ino != synced_st.st_ino) {
+		if (st->st_ino != INODE_INVALID && synced_st.st_ino != INODE_INVALID && st->st_ino != synced_st.st_ino) {
 			log_tag("%s:%u:%s:%s: Uncached inode change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
 			log_fatal(ESOFT, "DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
 				(uint64_t)st->st_ino, (uint64_t)synced_st.st_ino, sub);
@@ -633,7 +633,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 	struct snapraid_disk* disk = scan->disk;
 
 	/* insert the file in the containers */
-	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
+	if (file->inode != INODE_INVALID)
 		tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 
 	stamp_lock(disk);
@@ -652,9 +652,13 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	struct snapraid_disk* disk = scan->disk;
 
 	/* remove the file from the containers */
-	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
+	if (file->inode != INODE_INVALID)
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+	stamp_lock(disk);
 	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
+	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
+	stamp_unlock(disk);
 
 	/*
 	 * Keep track of the removed file (that won't be added later)
@@ -669,10 +673,6 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 		/* insert the dealloc in the dealloc containers */
 		tommy_list_insert_tail(&disk->dealloclist, &dealloc->nodelist, dealloc);
 	}
-
-	stamp_lock(disk);
-	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
-	stamp_unlock(disk);
 
 	/*
 	 * Deallocate the file from the parity.
@@ -763,9 +763,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	 * Always search with the new inode, in the all new inodes found until now,
 	 * with the eventual presence of also the past inodes
 	 */
-	uint64_t inode = st->st_ino;
-
-	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+	uint64_t inode = st->st_ino; /* don't know the exact type of st_ino and we cannot pass it by pointer in the search */
+	if (inode != INODE_INVALID)
+		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+	else
+		file = 0;
 
 	/* identify moved files with past inodes and hardlinks with the new inodes */
 	if (file) {
@@ -901,19 +903,19 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		 * otherwise, it will get removed
 		 */
 
+		/* here the inode must be present */
+		if (file->inode == INODE_INVALID) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Internal inconsistency in inode for file '%s%s' as unexpected missing\n", disk->dir, sub);
+			os_abort();
+			/* LCOV_EXCL_STOP */
+		}
+
 		/* remove from the inode set */
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 
-		/*
-		 * Clear the inode
-		 * this is not really needed for correct functionality
-		 * because we are going to set FILE_IS_WITHOUT_INODE
-		 * but it's easier for debugging to have invalid inodes set to 0
-		 */
-		file->inode = 0;
-
-		/* mark as missing inode */
-		file_flag_set(file, FILE_IS_WITHOUT_INODE);
+		/* clear the inode */
+		file->inode = INODE_INVALID;
 
 		/* go further to find it by name */
 	}
@@ -931,20 +933,18 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 	if (is_file_already_present) {
 		/* if the file is without an inode */
-		if (file_flag_has(file, FILE_IS_WITHOUT_INODE)) {
+		if (file->inode == INODE_INVALID) {
 			/* set it now */
 			file->inode = st->st_ino;
 
-			/* insert in the set */
-			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-
-			/* unmark as missing inode */
-			file_flag_clear(file, FILE_IS_WITHOUT_INODE);
+			/* insert in the set if valid */
+			if (file->inode != INODE_INVALID)
+				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 		} else {
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
 				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
+				log_fatal(EINTERNAL, "Internal inconsistency in inode '%" PRIu64 "' for file '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -987,7 +987,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			}
 
 			/* if when processing the disk we used the past inodes values */
-			if (has_past_inodes) {
+			if (has_past_inodes && file->inode != INODE_INVALID && st->st_ino != INODE_INVALID) {
 				/*
 				 * If persistent inodes are supported, we are sure that the inode number
 				 * is now different, because otherwise the file would have been found
@@ -1574,7 +1574,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				 * If the st_ino field is missing, takes care to fill it using the extended lstat()
 				 * this can happen only in Windows
 				 */
-				if (st->st_ino == 0 || st->st_nlink == 0) {
+				if (st->st_ino == INODE_INVALID || st->st_nlink == 0) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
 						log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
@@ -1736,13 +1736,11 @@ static void* scan_disk(void* arg)
 			node = node->next;
 
 			/* remove from the inode set */
-			tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+			if (file->inode != INODE_INVALID)
+				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 
 			/* clear the inode */
-			file->inode = 0;
-
-			/* mark as missing inode */
-			file_flag_set(file, FILE_IS_WITHOUT_INODE);
+			file->inode = INODE_INVALID;
 		}
 	}
 

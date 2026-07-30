@@ -48,6 +48,9 @@ SnapRAID HISTORY
    controllers and USB enclosures.
  * Added support for specifying case-insensitive SMART attribute names
    (instead of only numeric IDs) in the `smartignore` configuration option.
+ * Added support for filesystems where only specific files fail to report a
+   64-bit inode number (such as ReFS when 128-bit file IDs cannot be mapped),
+   allowing SnapRAID to continue processing those individual files without inodes.
 
 14.10 2026/08
 =============

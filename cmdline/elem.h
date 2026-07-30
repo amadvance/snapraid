@@ -213,14 +213,6 @@ struct snapraid_block {
  */
 #define FILE_IS_UNSYNCED 0x100
 
-/**
- * If the file is without inode.
- * It could happen in file-systems where inodes are not persistent,
- * or when restoring a full disk with "fix".
- * In such cases we have to clear any stored duplicate inode.
- * After the scan process completes, no file should have this flag set.
- */
-#define FILE_IS_WITHOUT_INODE 0x200
 
 /**
  * The file is deleted.
