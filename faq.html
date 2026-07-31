@@ -1133,7 +1133,7 @@ How can I add a data disk to an existing array?
 </h3>
 <div class="faq-answer">
 <p>
-To add a new data disk to the array, add the new "disk" option in the configuration file,
+To add a new data disk to the array, add the new "data" option in the configuration file,
 then run a "sync" command:
 </p>
 <p><pre>
@@ -1154,7 +1154,7 @@ To remove a data disk from the array, follow these steps:
 </p>
 <ul>
 <li>
-Change the related "disk" option in the configuration file to point to an empty directory.
+Change the related "data" option in the configuration file to point to an empty directory.
 </li>
 <li>
 Remove any "content" option pointing to that disk from the configuration file.
@@ -1167,7 +1167,7 @@ snapraid sync -E
 The "-E" option allows SnapRAID to proceed even when detecting an empty disk.
 </li>
 <li>
-After the "sync" command completes, remove the "disk" option from the configuration file.
+After the "sync" command completes, remove the "data" option from the configuration file.
 </li>
 </ul>
 <p>
