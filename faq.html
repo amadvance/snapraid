@@ -609,7 +609,7 @@ ReFS
 </td>
 <td>
 No. ReFS uses
-<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363788%28v=vs.85%29.aspx">
+<a href="https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information">
  128-bit inodes
 </a>
 ,
@@ -727,21 +727,10 @@ For optimal performance, connect all disks via SATA, not USB.
 </p>
 <p>
 See
-<a href="https://lime-technology.com/forum/index.php?topic=7998.0">
-Raj's Prototype Builds
+<a href="http://greenleaf-technology.com/greenleaf-prototype-builds/">
+Greenleaf Prototype Builds
 </a>
 for examples of hardware setups.
-</p>
-<p>
-For choosing hard drives, refer to
-<a href="https://www.backblaze.com/blog/what-hard-drive-should-i-buy/">
-Backblaze's What Hard Drive Should I Buy?
-</a>
-and
-<a href="https://www.backblaze.com/blog/enterprise-drive-reliability/">
-Backblaze's Enterprise Drives: Fact or Fiction?
-</a>
-.
 </p>
 </div>
 </div>
@@ -951,7 +940,7 @@ How can I use more disks than available drive letters in Windows?
 <div class="faq-answer">
 <p>
 Use
-<a href="https://technet.microsoft.com/en-us/library/cc938934.aspx">
+<a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-2000-server/cc938435(v=technet.10)">
 Volume Mount Points
 </a>
 to mount a disk in a directory without
@@ -1502,7 +1491,7 @@ Another possibility is that a program modified files without updating their time
 In Linux, this is rare, except for memory-mapped files not yet closed.
 In Windows, timestamps are guaranteed to update only after closing a file.
 See
-<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365747%28v=vs.85%29.aspx">
+<a href="https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile">
 MSDN WriteFile()
 </a>
 :
@@ -1517,7 +1506,7 @@ to the file.
 For memory-mapped files in Windows, the program must manually update the timestamp,
 as Windows does not do so automatically.
 See
-<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366537%28v=vs.85%29.aspx">
+<a href="https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createfilemappinga">
 MSDN CreateFileMapping()
 </a>
 :
@@ -1544,12 +1533,7 @@ Use the "-l" option to generate a log file:
 snapraid check -l mylog.log
 </pre></p>
 <p>
-These log files can be large, potentially several GB. If too large for your editor,
-use
-<a href="https://mh-nexus.de/en/hxd/">
-HxD
-</a>
-.
+These log files can be large, potentially several GB.
 </p>
 </div>
 </div>
@@ -1591,11 +1575,11 @@ What integrity checksum does SnapRAID use?
 <div class="faq-answer">
 <p>
 SnapRAID uses
-<a href="https://github.com/aappleby/smhasher">
+<a href="https://en.wikipedia.org/wiki/MurmurHash">
 Murmur3
 </a>
 and
-<a href="https://burtleburtle.net/bob/hash/spooky.html">
+<a href="https://en.wikipedia.org/wiki/Jenkins_hash_function#SpookyHash">
 SpookyHash
 </a>
 128-bit hashes.
@@ -1613,7 +1597,7 @@ Integrity checksums detect silent errors when a hard drive returns corrupt data 
 </p>
 <p>
 For an introduction to this issue, see:
-<a href="https://www.zdnet.com/blog/storage/data-corruption-is-worse-than-you-know/191">
+<a href="https://www.zdnet.com/article/data-corruption-is-worse-than-you-know/">
 Data corruption is worse than you know
 </a>
 .
@@ -1983,7 +1967,7 @@ Renaming, deleting, or recreating files during SnapRAID operation can cause inod
 <p>
 If using a FAT file system in Windows, convert to NTFS.
 Although inodes (FileIndex) are theoretically
-<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363788%28v=vs.85%29.aspx">
+<a href="https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information">
 unique in FAT
 </a>
 ,
