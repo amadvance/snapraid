@@ -765,6 +765,10 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 
 	start = os_tick_sec();
 
+#if defined(__linux__) && defined(PR_SET_PDEATHSIG)
+	pid_t ppid = getpid();
+#endif
+
 	pid = fork();
 	if (pid < 0) {
 		os_syslog(OS_LVL_INFO, "failed to fork script=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
@@ -801,6 +805,15 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 			if (setuid(pw->pw_uid) != 0)
 				_exit(126);
 		}
+
+#if defined(__linux__) && defined(PR_SET_PDEATHSIG)
+		/* Send SIGKILL to child if parent daemon dies unexpectedly */
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
+		/* exit if parent died before prctl to avoid becoming orphaned */
+		if (getppid() != ppid) {
+			_exit(127);
+		}
+#endif
 
 		/* io sandboxing */
 		int null_fd = open("/dev/null", O_RDWR);
@@ -933,6 +946,10 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	start = os_tick_sec();
 
+#if defined(__linux__) && defined(PR_SET_PDEATHSIG)
+	pid_t ppid = getpid();
+#endif
+
 	pid = fork();
 	if (pid < 0) {
 		os_syslog(OS_LVL_INFO, "failed to fork command=%s, errno=%s(%d)", command, strerror(errno), errno);
@@ -975,6 +992,15 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			if (setuid(pw->pw_uid) != 0)
 				_exit(126);
 		}
+
+#if defined(__linux__) && defined(PR_SET_PDEATHSIG)
+		/* Send SIGKILL to child if parent daemon dies unexpectedly */
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
+		/* exit if parent died before prctl to avoid becoming orphaned */
+		if (getppid() != ppid) {
+			_exit(127);
+		}
+#endif
 
 		/* io sandboxing */
 		int null_fd = open("/dev/null", O_RDWR);
@@ -1157,6 +1183,10 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 		}
 	}
 
+#if defined(__linux__) && defined(PR_SET_PDEATHSIG)
+	pid_t ppid = getpid();
+#endif
+
 	pid = fork();
 	if (pid < 0) {
 		os_syslog(OS_LVL_INFO, "failed to fork path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
@@ -1194,6 +1224,15 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 			if (setuid(pw->pw_uid) != 0)
 				_exit(126);
 		}
+
+#if defined(__linux__) && defined(PR_SET_PDEATHSIG)
+		/* Send SIGKILL to child if parent daemon dies unexpectedly */
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
+		/* exit if parent died before prctl to avoid becoming orphaned */
+		if (getppid() != ppid) {
+			_exit(127);
+		}
+#endif
 
 		/* io sandboxing */
 		int null_fd = open("/dev/null", O_RDWR | O_CLOEXEC);

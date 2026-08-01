@@ -2531,6 +2531,8 @@ static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 	return pos;
 }
 
+static HANDLE os_job_handle = 0;
+
 pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const char* run_as_user)
 {
 	wchar_t conv[CONV_MAX];
@@ -2741,6 +2743,17 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			close(err_f);
 		}
 		return -1;
+	}
+
+	/*
+	 * Assign spawned process to Job Object configured with JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE.
+	 * This ensures Windows automatically terminates child processes if the daemon crashes unexpectedly.
+	 */
+	if (os_job_handle != 0) {
+		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to assign process to job object, errno=%s(%d)", strerror(errno), errno);
+		}
 	}
 
 	/* close the write end of the pipes in the parent */
@@ -3550,6 +3563,18 @@ void os_init(unsigned opt)
 		os_exit();
 	}
 
+	/* initialize job object to terminate child processes if daemon dies */
+	os_job_handle = CreateJobObjectW(0, 0);
+	if (os_job_handle != 0) {
+		JOBOBJECT_EXTENDED_LIMIT_INFORMATION info;
+		ZeroMemory(&info, sizeof(info));
+		info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+		if (!SetInformationJobObject(os_job_handle, JobObjectExtendedLimitInformation, &info, sizeof(info))) {
+			CloseHandle(os_job_handle);
+			os_job_handle = 0;
+		}
+	}
+
 	/* check for Wine presence */
 	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
@@ -3572,6 +3597,11 @@ void os_init(unsigned opt)
 
 void os_done(void)
 {
+	if (os_job_handle != 0) {
+		CloseHandle(os_job_handle);
+		os_job_handle = 0;
+	}
+
 	/* delete the thread local storage for strerror() */
 	windows_key_delete(last_error);
 

@@ -70,12 +70,9 @@ dnl Checks for header files.
 AC_HEADER_ASSERT
 AC_HEADER_DIRENT
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h time.h sys/time.h])
-AC_CHECK_HEADERS([unistd.h getopt.h io.h inttypes.h byteswap.h])
-AC_CHECK_HEADERS([pthread.h math.h syslog.h grp.h pwd.h])
-AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/sysmacros.h sys/mkdev.h sys/mount.h])
-AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h linux/btrfs.h execinfo.h])
-AC_CHECK_HEADERS([mach/mach_time.h sys/sysctl.h])
+AC_CHECK_HEADERS([stdint.h inttypes.h unistd.h math.h execinfo.h strings.h getopt.h syslog.h grp.h pwd.h io.h])
+AC_CHECK_HEADERS([sys/file.h sys/sysctl.h sys/ioctl.h sys/time.h sys/types.h sys/mkdev.h sys/sysmacros.h sys/stat.h sys/prctl.h sys/sysinfo.h sys/utsname.h])
+AC_CHECK_HEADERS([linux/fs.h linux/btrfs.h linux/fiemap.h mach/mach_time.h])
 
 # Check for the close_range(...,CLOSE_RANGE_CLOEXEC)
 AC_CHECK_HEADERS([linux/close_range.h])

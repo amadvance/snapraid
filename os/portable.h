@@ -217,6 +217,10 @@
 #include <sys/wait.h>
 #endif
 
+#if HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
+
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
@@ -309,4 +313,3 @@
 #endif
 
 #endif
-
