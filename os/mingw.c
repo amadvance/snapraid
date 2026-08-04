@@ -2801,6 +2801,8 @@ pid_t os_wait(pid_t pid, int* status)
  * Child processes spawned via os_spawn() with CREATE_NO_WINDOW have an invisible
  * console host allocated by the OS. Attaching to the child's console allows
  * sending a CTRL_BREAK_EVENT signal so SnapRAID CLI catches it and flushes state/checkpoints.
+ * When called from a background Windows Service (which has no console), FreeConsole()
+ * detaches from the child's console host and leaves the service in its original state.
  */
 int os_term(pid_t pid)
 {
@@ -2812,10 +2814,10 @@ int os_term(pid_t pid)
 		return -1;
 	}
 
-	/* detach from current console (if any) */
+	/* detach from current console (if any; background service has no console) */
 	FreeConsole();
 
-	/* attach to the child's console */
+	/* attach to the child's invisible console host */
 	if (!AttachConsole(id)) {
 		/* fallback: terminate process forcibly if console attachment fails */
 		if (!TerminateProcess(h, 1)) {
@@ -2831,7 +2833,7 @@ int os_term(pid_t pid)
 	/* this will now reach the child's SetConsoleCtrlHandler */
 	GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, id);
 
-	/* clean up */
+	/* detach from child console, returning calling service process to its console-less state */
 	FreeConsole();
 
 	return 0;
