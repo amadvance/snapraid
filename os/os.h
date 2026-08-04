@@ -135,6 +135,7 @@ pid_t os_wait(pid_t pid, int* status);
 
 /**
  * Terminate gracefully a process.
+ * The caller must subsequently call os_wait() to reap process resources and close handles.
  * \param pid Process ID of the process to terminate.
  * \return 0 on success, -1 on failure.
  */
@@ -142,6 +143,7 @@ int os_term(pid_t pid);
 
 /**
  * Forcibly terminate a process.
+ * The caller must subsequently call os_wait() to reap process resources and close handles.
  * \param pid Process ID of the process to kill.
  * \return 0 on success, -1 on failure.
  */
