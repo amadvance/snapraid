@@ -1349,7 +1349,17 @@ int os_term(pid_t pid)
 	 * This ensures that SnapRAID and any programs it may have spawned are
 	 * terminated together, preventing orphaned worker processes.
 	 */
-	return kill(-pid, SIGTERM);
+	int ret = kill(-pid, SIGTERM);
+
+	/*
+	 * If setpgid(0, 0) has not yet executed in the child, process group -pid
+	 * does not exist and kill() returns ESRCH. Fallback to targeting the process directly.
+	 */
+	if (ret < 0 && errno == ESRCH) {
+		ret = kill(pid, SIGTERM);
+	}
+
+	return ret;
 }
 
 int os_kill(pid_t pid)
@@ -1360,7 +1370,17 @@ int os_kill(pid_t pid)
 	}
 
 	/* Send SIGKILL signal to the negative PID to target the entire Process Group */
-	return kill(-pid, SIGKILL);
+	int ret = kill(-pid, SIGKILL);
+
+	/*
+	 * If setpgid(0, 0) has not yet executed in the child, process group -pid
+	 * does not exist and kill() returns ESRCH. Fallback to targeting the process directly.
+	 */
+	if (ret < 0 && errno == ESRCH) {
+		ret = kill(pid, SIGKILL);
+	}
+
+	return ret;
 }
 
 int os_spawn_and_wait(const char** argv)
