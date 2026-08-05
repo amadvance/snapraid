@@ -859,10 +859,12 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		if (envp != NULL) {
 			int envv_count = 0;
 			while (envp[envv_count] != NULL) {
-				envv_count++;
+				++envv_count;
 			}
 			int scrubbed_count = sizeof(envp_scrubbed) / sizeof(envp_scrubbed[0]) - 1;
-			char* envp_dynamic[scrubbed_count + envv_count + 1];
+			char** envp_dynamic = malloc((size_t)(scrubbed_count + envv_count + 1) * sizeof(char*));
+			if (!envp_dynamic)
+				_exit(126);
 			for (int i = 0; i < scrubbed_count; ++i) {
 				envp_dynamic[i] = envp_scrubbed[i];
 			}
