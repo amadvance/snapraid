@@ -674,7 +674,7 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 			if (errno == ENODEV || errno == ENOENT)
 				continue; /* this is the expected error on missing id */
 			log_error(errno, "Ioctl BTRFS_IOC_DEV_INFO failed. %s.", strerror(errno));
-			return -1;
+			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -682,7 +682,7 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 		struct stat st;
 		if (stat((char*)dev_info.path, &st) != 0) {
 			/* LCOV_EXCL_START */
-			return -1;
+			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -697,9 +697,14 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 
 	/* something has to be found */
 	if (found == 0)
-		return -1;
+		goto bail;
 
 	return 0;
+
+bail:
+	tommy_list_foreach(devlist, free);
+	tommy_list_init(devlist);
+	return -1;
 }
 
 static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list* devlist)
