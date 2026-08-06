@@ -839,7 +839,8 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		 *
 		 * For scripts we cannot set fd as CLOEXEC.
 		 */
-		close_range(3, fd - 1, CLOSE_RANGE_CLOEXEC);
+		if (fd > 3)
+			close_range(3, fd - 1, CLOSE_RANGE_CLOEXEC);
 		close_range(fd + 1, ~0U, CLOSE_RANGE_CLOEXEC);
 #endif
 
@@ -1333,7 +1334,7 @@ int os_wait(pid_t pid, int* status)
 	} while (ret == -1 && errno == EINTR);
 
 	if (ret == -1) {
-		os_syslog(OS_LVL_INFO, "failed to wait, errno=%s(%d)", strerror(errno), errno);		
+		os_syslog(OS_LVL_INFO, "failed to wait, errno=%s(%d)", strerror(errno), errno);
 	}
 
 	return ret;
@@ -1502,7 +1503,7 @@ void os_privileges_acquire(void)
 				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
 				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);				
+				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
