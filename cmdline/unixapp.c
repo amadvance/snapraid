@@ -430,7 +430,7 @@ next:
  * Read a file from sys.
  * Trim spaces.
  * Always put an ending 0.
- * Do not report error on reading.
+ * Do not log error on reading.
  * Return an error if truncated
  *
  * Return -1 on error, 0 on success
@@ -2896,24 +2896,16 @@ static void devattr(dev_t device, uint64_t* info, char* serial, char* family, ch
 
 	if (info[INFO_SIZE] == SMART_UNASSIGNED) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/size", major(device), minor(device));
-		if (sysattr(path, buf, sizeof(buf)) == 0) {
-			char* e;
-			uint64_t v;
-			v = strtoul(buf, &e, 10);
-			if (*e == 0)
-				info[INFO_SIZE] = v * 512;
-		}
+		long long v = syslong(path);
+		if (v >= 0)
+			info[INFO_SIZE] = v * 512;
 	}
 
 	if (info[INFO_ROTATION_RATE] == SMART_UNASSIGNED) {
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/queue/rotational", major(device), minor(device));
-		if (sysattr(path, buf, sizeof(buf)) == 0) {
-			char* e;
-			uint64_t v;
-			v = strtoul(buf, &e, 10);
-			if (*e == 0)
-				info[INFO_ROTATION_RATE] = v;
-		}
+		long long v = syslong(path);
+		if (v >= 0)
+			info[INFO_ROTATION_RATE] = v;
 	}
 
 	if (*model == 0) {
@@ -3200,22 +3192,13 @@ static int devdownifup(dev_t device, const char* name, const char* smartctl, con
 static int devpower(dev_t device)
 {
 	char path[PATH_MAX];
-	char buf[512];
-	uint64_t rotational;
-
-	rotational = SMART_UNASSIGNED;
+	long long rotational;
 
 	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/queue/rotational", major(device), minor(device));
-	if (sysattr(path, buf, sizeof(buf)) == 0) {
-		char* e;
-		uint64_t v;
-		v = strtoul(buf, &e, 10);
-		if (*e == 0)
-			rotational = v;
-	}
+	rotational = syslong(path);
 
-	if (rotational == SMART_UNASSIGNED)
-		return 0; /* assume not rotational */
+	if (rotational < 0)
+		return 1; /* assume rotational if unknown */
 
 	return rotational != 0;
 }
