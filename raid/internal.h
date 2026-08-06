@@ -368,6 +368,15 @@ static __always_inline void raid_sse_end(void)
 	 * clobber them freely.
 	 *
 	 * Registers ymm and zmm don't have this requirement.
+	 *
+	 * Note: Placing dummy clobber lists at the end of the function rather
+	 * than on individual inner asm statements is not a strictly conforming
+	 * inline assembly pattern. However, because the inner loops use only
+	 * scalar integer variables for loop counters and pointers (which GCC and
+	 * Clang allocate to general-purpose integer registers), and because the
+	 * function calls are dispatched via pointers (preventing inlining), this
+	 * workaround successfully forces GCC and Clang to save and restore
+	 * callee-saved registers in the function prologue/epilogue for the Windows ABI.
 	 */
 #ifdef __SSE2__
 	asm volatile ("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
@@ -404,6 +413,18 @@ static __always_inline void raid_neon_begin(void)
 
 static __always_inline void raid_neon_end(void)
 {
+	/*
+	 * Clobbers registers used in NEON asm operations.
+	 *
+	 * Note: Placing dummy clobber lists at the end of the function rather
+	 * than on individual inner asm statements is not a strictly conforming
+	 * inline assembly pattern. However, because the inner loops use only
+	 * scalar integer variables for loop counters and pointers (which GCC and
+	 * Clang allocate to general-purpose integer registers), and because the
+	 * function calls are dispatched via pointers (preventing inlining), this
+	 * workaround successfully forces GCC and Clang to save and restore AAPCS64
+	 * callee-saved registers (v8-v15) in the function prologue/epilogue.
+	 */
 	asm volatile ("" : : : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 	asm volatile ("" : : : "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
 	asm volatile ("" : : : "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
