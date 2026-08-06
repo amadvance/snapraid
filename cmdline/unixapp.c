@@ -647,8 +647,6 @@ struct dev_struct {
 #if HAVE_LINUX_DEVICE
 static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_list* devlist)
 {
-	int found = 0;
-
 	struct btrfs_ioctl_fs_info_args fs_info;
 	memset(&fs_info, 0, sizeof(fs_info));
 	if (ioctl(fd, BTRFS_IOC_FS_INFO, &fs_info) < 0) {
@@ -690,13 +688,11 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 		dev->device = st.st_rdev;
 		tommy_list_insert_tail(devlist, &dev->node, dev);
 
-		++found;
-
 		log_tag("dereference:btrfs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
 	}
 
 	/* something has to be found */
-	if (found == 0)
+	if (tommy_list_empty(devlist))
 		goto bail;
 
 	return 0;
@@ -811,6 +807,10 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 
 		log_tag("dereference:bcachefs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
 	}
+
+	/* something has to be found */
+	if (tommy_list_empty(devlist))
+		return -1;
 
 	return 0;
 }
@@ -934,7 +934,6 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		/* LCOV_EXCL_STOP */
 	}
 
-	size_t count = 0;
 	while (1) {
 		char buf[PATH_MAX * 2 + 64];
 
@@ -963,12 +962,11 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		tommy_list_insert_tail(devlist, &dev->node, dev);
 
 		log_tag("dereference:zfs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
-		++count;
 	}
 
 	os_pclose(fp);
 
-	if (count == 0) {
+	if (tommy_list_empty(devlist)) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
