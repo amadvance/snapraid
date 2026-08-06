@@ -798,8 +798,11 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 	for (unsigned i = 0; i < dev_mac; ++i) {
 		/* get major:minor, use stat on the path returned */
 		struct stat st;
-		if (stat(dev_map[i], &st) != 0)
-			continue;
+		if (stat(dev_map[i], &st) != 0) {
+			/* LCOV_EXCL_START */
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
 		dev->device = st.st_rdev;
@@ -810,9 +813,14 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 
 	/* something has to be found */
 	if (tommy_list_empty(devlist))
-		return -1;
+		goto bail;
 
 	return 0;
+
+bail:
+	tommy_list_foreach(devlist, free);
+	tommy_list_init(devlist);
+	return -1;
 }
 
 static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char* uuid, size_t uuid_size, char* mount_point, size_t mount_point_size)
@@ -951,11 +959,19 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		file[i] = 0;
 
 		struct stat st;
-		if (stat(file, &st) != 0)
-			continue;
+		if (stat(file, &st) != 0) {
+			/* LCOV_EXCL_START */
+			os_pclose(fp);
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
-		if (!S_ISBLK(st.st_mode))
-			continue;
+		if (!S_ISBLK(st.st_mode)) {
+			/* LCOV_EXCL_START */
+			os_pclose(fp);
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		struct dev_struct* dev = malloc_nofail(sizeof(struct dev_struct));
 		dev->device = st.st_rdev;
@@ -966,13 +982,15 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 
 	os_pclose(fp);
 
-	if (tommy_list_empty(devlist)) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+	if (tommy_list_empty(devlist))
+		goto bail;
 
 	return 0;
+
+bail:
+	tommy_list_foreach(devlist, free);
+	tommy_list_init(devlist);
+	return -1;
 }
 
 /**
