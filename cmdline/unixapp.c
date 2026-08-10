@@ -1385,6 +1385,73 @@ static int devuuid_label(uint64_t device, char* label, size_t label_size)
 }
 #endif
 
+/**
+ * Get the LABEL using the generic Linux FS_IOC_GETFSLABEL ioctl.
+ */
+#if HAVE_LINUX_DEVICE
+#ifndef FSLABEL_MAX
+#define FSLABEL_MAX 256
+#endif
+
+#ifndef FS_IOC_GETFSLABEL
+#define FS_IOC_GETFSLABEL _IOR(0x94, 49, char[FSLABEL_MAX])
+#endif
+
+static int devlabel_ioctl(const char* path, char* label, size_t label_size)
+{
+	char label_buf[FSLABEL_MAX];
+
+	int fd = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (fd < 0 && (errno == ENOENT || errno == ENOTDIR)) {
+		char dir[PATH_MAX];
+		char* slash;
+		if (strlen(path) + 1 > sizeof(dir)) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		strcpy(dir, path);
+		slash = strrchr(dir, '/');
+		if (slash) {
+			*slash = 0;
+			fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+		}
+	}
+	if (fd < 0) {
+		/* LCOV_EXCL_START */
+		log_tag("label:ioctl: open(%s) failed, %s\n", path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	memset(label_buf, 0, sizeof(label_buf));
+	if (ioctl(fd, FS_IOC_GETFSLABEL, label_buf) < 0) {
+		log_tag("label:ioctl: FS_IOC_GETFSLABEL(%s) failed, %s\n", path, strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	close(fd);
+
+	if (label_buf[0] == 0) {
+		log_tag("label:ioctl:%s: empty label\n", path);
+		return -1;
+	}
+
+	if (strlen(label_buf) + 1 > label_size) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	strcpy(label, label_buf);
+
+	log_tag("label:ioctl:%s: found %s\n", path, label);
+
+	return 0;
+}
+#endif
+
 
 #ifdef __APPLE__
 static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
@@ -1963,10 +2030,15 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 
 	if (fslabel) {
 		fslabel[0] = 0;
+#if HAVE_LINUX_DEVICE
+		if (devlabel_ioctl(path, fslabel, fslabel_size) != 0)
+#endif
 #if HAVE_BLKID
-		struct stat fst;
-		if (stat(path, &fst) == 0)
-			devuuid_label(fst.st_dev, fslabel, fslabel_size);
+		{
+			struct stat fst;
+			if (stat(path, &fst) == 0)
+				devuuid_label(fst.st_dev, fslabel, fslabel_size);
+		}
 #else
 		(void)fslabel_size;
 #endif
