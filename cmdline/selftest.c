@@ -971,19 +971,19 @@ static void test_smart_ignore(void)
 	state_smart_ignore(&state, &devinfo);
 
 	/* Check that ignored attributes are set to SMART_UNASSIGNED */
-	if (devinfo.smart[5].raw != SMART_UNASSIGNED) {
+	if (devinfo.smart[5].raw != SMART_UNASSIGNED || devinfo.smart[5].norm != SMART_UNASSIGNED) {
 		log_fatal(EINTERNAL, "test_smart_ignore: numerical global ignore failed\n");
 		exit(EXIT_FAILURE);
 	}
-	if (devinfo.smart[197].raw != SMART_UNASSIGNED) {
+	if (devinfo.smart[197].raw != SMART_UNASSIGNED || devinfo.smart[197].norm != SMART_UNASSIGNED) {
 		log_fatal(EINTERNAL, "test_smart_ignore: name global ignore failed\n");
 		exit(EXIT_FAILURE);
 	}
-	if (devinfo.smart[10].raw != SMART_UNASSIGNED) {
+	if (devinfo.smart[10].raw != SMART_UNASSIGNED || devinfo.smart[10].norm != SMART_UNASSIGNED) {
 		log_fatal(EINTERNAL, "test_smart_ignore: numerical devinfo ignore failed\n");
 		exit(EXIT_FAILURE);
 	}
-	if (devinfo.smart[20].raw != SMART_UNASSIGNED) {
+	if (devinfo.smart[20].raw != SMART_UNASSIGNED || devinfo.smart[20].norm != SMART_UNASSIGNED) {
 		log_fatal(EINTERNAL, "test_smart_ignore: name devinfo ignore failed\n");
 		exit(EXIT_FAILURE);
 	}

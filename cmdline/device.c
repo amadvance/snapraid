@@ -533,6 +533,14 @@ static void state_info_log(devinfo_t* devinfo)
 		log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->info[INFO_ROTATION_RATE]);
 }
 
+static void smart_attr_clear(struct smart_attr* attr)
+{
+	attr->raw = SMART_UNASSIGNED;
+	attr->norm = SMART_UNASSIGNED;
+	attr->worst = SMART_UNASSIGNED;
+	attr->thresh = SMART_UNASSIGNED;
+}
+
 void state_smart_ignore(struct snapraid_state* state, devinfo_t* devinfo)
 {
 	int i, j;
@@ -541,26 +549,26 @@ void state_smart_ignore(struct snapraid_state* state, devinfo_t* devinfo)
 	for (i = 0; i < SMART_IGNORE_MAX; ++i) {
 		/* global ignore */
 		if (state->smartignore[i].attr_index > 0 && state->smartignore[i].attr_index < 256) {
-			devinfo->smart[state->smartignore[i].attr_index].raw = SMART_UNASSIGNED;
+			smart_attr_clear(&devinfo->smart[state->smartignore[i].attr_index]);
 		}
 		if (state->smartignore[i].attr_name[0] != 0) {
 			for (j = 0; j < SMART_COUNT; ++j) {
 				if (devinfo->smart[j].name[0] != 0
 					&& strcasecmp(devinfo->smart[j].name, state->smartignore[i].attr_name) == 0) {
-					devinfo->smart[j].raw = SMART_UNASSIGNED;
+					smart_attr_clear(&devinfo->smart[j]);
 				}
 			}
 		}
 
 		/* devinfo ignore */
 		if (devinfo->smartignore[i].attr_index > 0 && devinfo->smartignore[i].attr_index < 256) {
-			devinfo->smart[devinfo->smartignore[i].attr_index].raw = SMART_UNASSIGNED;
+			smart_attr_clear(&devinfo->smart[devinfo->smartignore[i].attr_index]);
 		}
 		if (devinfo->smartignore[i].attr_name[0] != 0) {
 			for (j = 0; j < SMART_COUNT; ++j) {
 				if (devinfo->smart[j].name[0] != 0
 					&& strcasecmp(devinfo->smart[j].name, devinfo->smartignore[i].attr_name) == 0) {
-					devinfo->smart[j].raw = SMART_UNASSIGNED;
+					smart_attr_clear(&devinfo->smart[j]);
 				}
 			}
 		}
