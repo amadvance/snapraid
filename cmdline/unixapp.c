@@ -682,7 +682,7 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 			/* btrfs device IDs (devid) are not guaranteed to be contiguous */
 			if (errno == ENODEV || errno == ENOENT)
 				continue; /* this is the expected error on missing id */
-			log_error(errno, "Ioctl BTRFS_IOC_DEV_INFO failed. %s.", strerror(errno));
+			log_error(errno, "Failed ioctl BTRFS_IOC_DEV_INFO. %s.", strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -691,6 +691,14 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 		struct stat st;
 		if (stat((char*)dev_info.path, &st) != 0) {
 			/* LCOV_EXCL_START */
+			log_error(errno, "Failed stat %s. %s.", dev_info.path, strerror(errno));
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (!S_ISBLK(st.st_mode)) {
+			/* LCOV_EXCL_START */
+			log_error(errno, "Device %s is not a block device.", dev_info.path);
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -811,6 +819,14 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 		struct stat st;
 		if (stat(dev_map[i], &st) != 0) {
 			/* LCOV_EXCL_START */
+			log_error(errno, "Failed stat %s. %s.", dev_map[i], strerror(errno));
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (!S_ISBLK(st.st_mode)) {
+			/* LCOV_EXCL_START */
+			log_error(errno, "Device %s is not a block device.", dev_map[i]);
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -972,6 +988,7 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		struct stat st;
 		if (stat(file, &st) != 0) {
 			/* LCOV_EXCL_START */
+			log_error(errno, "Failed stat %s. %s.", file, strerror(errno));
 			os_pclose(fp);
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -979,6 +996,7 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 
 		if (!S_ISBLK(st.st_mode)) {
 			/* LCOV_EXCL_START */
+			log_error(errno, "Device %s is not a block device.", file);
 			os_pclose(fp);
 			goto bail;
 			/* LCOV_EXCL_STOP */
