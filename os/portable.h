@@ -159,6 +159,10 @@
 #include <unistd.h>
 #endif
 
+#if HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>

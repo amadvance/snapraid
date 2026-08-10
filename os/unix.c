@@ -863,9 +863,9 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 				++envv_count;
 			}
 			int scrubbed_count = sizeof(envp_scrubbed) / sizeof(envp_scrubbed[0]) - 1;
-			char** envp_dynamic = malloc((size_t)(scrubbed_count + envv_count + 1) * sizeof(char*));
-			if (!envp_dynamic)
-				_exit(126);
+
+			/* use alloca instead of malloc after fork for async-signal safety in multithreaded process */
+			char** envp_dynamic = alloca((size_t)(scrubbed_count + envv_count + 1) * sizeof(char*));
 			for (int i = 0; i < scrubbed_count; ++i) {
 				envp_dynamic[i] = envp_scrubbed[i];
 			}
