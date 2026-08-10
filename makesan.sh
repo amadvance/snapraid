@@ -9,9 +9,7 @@ COMPILER=clang
 # Options for configure
 # --disable-asm
 #   Inline assembly is not supported by the Sanitizers
-# --without-blkid
-#   External libraries are not supported by the Sanitizers
-OPTIONS="--disable-asm --without-blkid"
+OPTIONS="--disable-asm"
 
 # Source directory
 SOURCE=`pwd`

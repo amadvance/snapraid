@@ -2128,10 +2128,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 	if (done) {
 		log_error(ESOFT, ". Not using inodes to detect move operations.\n");
-#if defined(_linux) && !HAVE_BLKID
-		log_error(ESOFT, "The 'blkid' library is not linked in SnapRAID!\n");
-		log_error(ESOFT, "Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
-#endif
 	}
 
 	total.count_equal = 0;

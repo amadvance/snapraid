@@ -51,6 +51,7 @@ SnapRAID HISTORY
  * Added support for filesystems where only specific files fail to report a
    64-bit inode number (such as ReFS when 128-bit file IDs cannot be mapped),
    allowing SnapRAID to continue processing those individual files without inodes.
+ * Removed the dependency on the 'libblkid' library.
 
 14.10 2026/08
 =============

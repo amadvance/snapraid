@@ -1192,12 +1192,6 @@ static int devresolve(uint64_t device, char* path, size_t path_size)
 }
 #endif
 
-/**
- * Cache used by blkid.
- */
-#if HAVE_BLKID
-static blkid_cache cache = 0;
-#endif
 
 /****************************************************************************/
 /* uuid */
@@ -1302,88 +1296,6 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 }
 #endif
 
-/**
- * Get the UUID using libblkid.
- * It uses a cache to work without root permission, resulting in UUID
- * not necessarily recent.
- * We could call blkid_probe_all() to refresh the UUID, but it would
- * require root permission to read the superblocks, and resulting in
- * all the disks spinning.
- */
-#if HAVE_BLKID
-static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
-{
-	char* devname;
-	char* uuidname;
-
-	devname = blkid_devno_to_devname(device);
-	if (!devname) {
-		/* LCOV_EXCL_START */
-		log_tag("uuid:blkid:%u:%u: blkid_devno_to_devname() failed, %s\n", major(device), minor(device), strerror(errno));
-		/* device mapping failed */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	uuidname = blkid_get_tag_value(cache, "UUID", devname);
-	if (!uuidname) {
-		/* LCOV_EXCL_START */
-		log_tag("uuid:blkid:%u:%u: blkid_get_tag_value(UUID,%s) failed, %s\n", major(device), minor(device), devname, strerror(errno));
-		/* uuid mapping failed */
-		free(devname);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	pathcpy(uuid, uuid_size, uuidname);
-
-	log_tag("uuid:blkid:%u:%u:%s: found %s\n", major(device), minor(device), uuid, devname);
-
-	free(devname);
-	free(uuidname);
-	return 0;
-}
-#endif
-
-/**
- * Get the LABEL using libblkid.
- * It uses a cache to work without root permission, resulting in LABEL
- * not necessarily recent.
- */
-#if HAVE_BLKID
-static int devuuid_label(uint64_t device, char* label, size_t label_size)
-{
-	char* devname;
-	char* labelname;
-
-	devname = blkid_devno_to_devname(device);
-	if (!devname) {
-		/* LCOV_EXCL_START */
-		log_tag("label:blkid:%u:%u: blkid_devno_to_devname() failed, %s\n", major(device), minor(device), strerror(errno));
-		/* device mapping failed */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	labelname = blkid_get_tag_value(cache, "LABEL", devname);
-	if (!labelname) {
-		/* LCOV_EXCL_START */
-		log_tag("label:blkid:%u:%u: blkid_get_tag_value(LABEL,%s) failed, %s\n", major(device), minor(device), devname, strerror(errno));
-		free(devname);
-		/* label mapping failed */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	pathcpy(label, label_size, labelname);
-
-	log_tag("label:blkid:%u:%u:%s: found %s\n", major(device), minor(device), label, devname);
-
-	free(devname);
-	free(labelname);
-	return 0;
-}
-#endif
 
 /**
  * Get the LABEL using the generic Linux FS_IOC_GETFSLABEL ioctl.
@@ -1692,12 +1604,6 @@ int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid
 	log_tag("uuid:by-uuid:%u:%u: by-uuid not supported\n", major(device_id), minor(device_id));
 #endif
 
-#if HAVE_BLKID
-	if (devuuid_blkid(device_id, uuid, uuid_size) == 0)
-		return 0;
-#else
-	log_tag("uuid:blkid:%u:%u: blkid support not compiled in\n", major(device_id), minor(device_id));
-#endif
 
 	log_tag("uuid:notfound:%u:%u:\n", major(device_id), minor(device_id));
 
@@ -2031,14 +1937,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	if (fslabel) {
 		fslabel[0] = 0;
 #if HAVE_LINUX_DEVICE
-		if (devlabel_ioctl(path, fslabel, fslabel_size) != 0)
-#endif
-#if HAVE_BLKID
-		{
-			struct stat fst;
-			if (stat(path, &fst) == 0)
-				devuuid_label(fst.st_dev, fslabel, fslabel_size);
-		}
+		devlabel_ioctl(path, fslabel, fslabel_size);
 #else
 		(void)fslabel_size;
 #endif
@@ -3953,26 +3852,12 @@ int ambient_temperature(void)
 
 void app_init(void)
 {
-#if HAVE_BLKID
-	int ret;
-	ret = blkid_get_cache(&cache, NULL);
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EEXTERNAL, "WARNING Failed to get blkid cache\n");
-		/* LCOV_EXCL_STOP */
-	}
-#endif
-
 	/* set LC_ALL=C to make smartctl ignoring the locale when printing info */
 	setenv("LC_ALL", "C", 1);
 }
 
 void app_done(void)
 {
-#if HAVE_BLKID
-	if (cache != 0)
-		blkid_put_cache(cache);
-#endif
 }
 
 void app_default_conf(char* conf, size_t conf_size, const char* argv0)

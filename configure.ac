@@ -200,21 +200,6 @@ AS_IF([test "x$is_windows" = "xyes"], [
 ])
 AM_CONDITIONAL([HAVE_PTHREAD], [test "x$have_pthreads" = "xyes"])
 
-dnl Checks for libblkid
-AC_ARG_WITH([blkid],
-    AS_HELP_STRING([--without-blkid], [Ignore presence of blkid and disable it]))
-AS_IF([test "x$with_blkid" != "xno"],
-	[AC_SEARCH_LIBS([blkid_probe_all], [blkid], [have_blkid=yes], [have_blkid=no])],
-	[have_blkid=no])
-AS_IF([test "x$have_blkid" = "xyes"],
-	[
-		AC_CHECK_HEADERS([blkid/blkid.h])
-		AC_CHECK_FUNCS([blkid_devno_to_devname blkid_get_tag_value])
-	],
-	[AS_IF([test "x$with_blkid" = "xyes"],
-		[AC_MSG_ERROR([blkid requested but not found])
-	])
-])
 
 dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])

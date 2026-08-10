@@ -132,12 +132,6 @@
 #include <linux/fiemap.h>
 #endif
 
-#if HAVE_BLKID_BLKID_H
-#include <blkid/blkid.h>
-#if HAVE_BLKID_DEVNO_TO_DEVNAME && HAVE_BLKID_GET_TAG_VALUE
-#define HAVE_BLKID 1
-#endif
-#endif
 
 /**
  * Includes some standard headers.
@@ -313,3 +307,4 @@
 #endif
 
 #endif
+
