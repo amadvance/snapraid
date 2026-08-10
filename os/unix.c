@@ -1282,6 +1282,8 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 		 *
 		 * fallback: if it fails, we assume to be still safe, as all fds and
 		 * sockets should be already created with CLOEXEC.
+		 *
+		 * For binaries fd can be set as CLOEXEC because fexecve loads the ELF image into memory before closing descriptors.
 		 */
 		close_range(3, ~0U, CLOSE_RANGE_CLOEXEC);
 #endif
