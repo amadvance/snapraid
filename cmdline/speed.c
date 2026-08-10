@@ -1655,7 +1655,8 @@ void speed(int period, int nd, int size)
 	speed_gen(nd, v_direct, size, delta, period, " (without displacement)");
 	speed_rec(nd, v, size, delta, period);
 
-	printf("If the 'best' expectations are wrong, please report it in the SnapRAID forum\n\n");
+	printf("If the 'best' expectations are wrong, please report it at:\n\n");
+	printf("    https://github.com/amadvance/snapraid/issues/64\n\n");
 
 	free(v_alloc);
 	free(v);
