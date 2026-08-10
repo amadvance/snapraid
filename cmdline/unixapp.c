@@ -478,6 +478,17 @@ static long long syslong(const char* path)
 	return v;
 }
 
+/*
+ * Parse a sysfs hexadecimal bitmask string (e.g. thread_siblings).
+ *
+ * Linux sysfs outputs bitmasks in big-endian 32-bit hex word groups
+ * (highest CPUs on the left, lowest CPUs on the right).
+ *
+ * Left-shifting digits into a 64-bit unsigned long long operates modulo 2^64,
+ * discarding any high-order hex words (CPUs >= 64) and leaving bits 0..63
+ * containing the exact mask for CPUs 0..63. Since CPUS_MAX is 64, this mask
+ * is always accurate for all evaluated CPUs even on systems with > 64 CPUs.
+ */
 static unsigned long long syshex(const char* path)
 {
 	char buf[1152]; /* enough for 1024 CPUs */
