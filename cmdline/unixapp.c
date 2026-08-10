@@ -1294,8 +1294,125 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 	closedir(d);
 	return -1;
 }
-#endif
 
+static int hexval(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return -1;
+}
+
+/**
+ * Decode udev \xNN hex escapes into raw string.
+ * Return 0 on success, -1 if truncated.
+ */
+static int udev_decode(char* dst, size_t dst_size, const char* src)
+{
+	size_t i = 0;
+	while (*src != 0) {
+		if (i + 1 >= dst_size)
+			return -1;
+		if (src[0] == '\\' && src[1] == 'x' && src[2] != 0 && src[3] != 0) {
+			int h1 = hexval(src[2]);
+			int h2 = hexval(src[3]);
+			if (h1 >= 0 && h2 >= 0) {
+				dst[i++] = (char)((h1 << 4) | h2);
+				src += 4;
+				continue;
+			}
+		}
+		dst[i++] = *src++;
+	}
+	dst[i] = 0;
+	return 0;
+}
+
+/**
+ * Get the filesystem LABEL using the /dev/disk/by-label/ links.
+ */
+static int devlabel_dev(uint64_t device, char* label, size_t label_size)
+{
+	ssize_t ret;
+	DIR* d;
+	struct dirent* dd;
+	struct stat st;
+
+	/* scan the LABEL directory searching for the device */
+	d = opendir("/dev/disk/by-label");
+	if (!d) {
+		/* LCOV_EXCL_START */
+		log_tag("label:by-label:%u:%u: opendir(/dev/disk/by-label) failed, %s\n", major(device), minor(device), strerror(errno));
+		/* directory missing?, likely we are not in Linux */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	int dir_fd = dirfd(d);
+	if (dir_fd == -1) {
+		/* LCOV_EXCL_START */
+		log_tag("label:by-label:%u:%u: dirfd(/dev/disk/by-label) failed, %s\n", major(device), minor(device), strerror(errno));
+		closedir(d);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	while ((dd = readdir(d)) != 0) {
+		/* skip "." and ".." files */
+		if (strcmp(dd->d_name, ".") == 0 || strcmp(dd->d_name, "..") == 0)
+			continue;
+
+		ret = fstatat(dir_fd, dd->d_name, &st, 0);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_tag("label:by-label:%u:%u: fstatat(%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
+			/* generic error, ignore and continue the search */
+			continue;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* if it matches, we have the label */
+		if (S_ISBLK(st.st_mode) && st.st_rdev == (dev_t)device) {
+			char buf[PATH_MAX];
+			char path[PATH_MAX];
+
+			/* resolve the link */
+			pathprint(path, sizeof(path), "/dev/disk/by-label/%s", dd->d_name);
+			ret = readlink(path, buf, sizeof(buf));
+			if (ret < 0 || ret >= PATH_MAX) {
+				/* LCOV_EXCL_START */
+				log_tag("label:by-label:%u:%u: readlink(/dev/disk/by-label/%s) failed, %s\n", major(device), minor(device), dd->d_name, strerror(errno));
+				/* generic error, ignore and continue the search */
+				continue;
+				/* LCOV_EXCL_STOP */
+			}
+			buf[ret] = 0;
+
+			/* found */
+			if (udev_decode(label, label_size, dd->d_name) != 0) {
+				/* LCOV_EXCL_START */
+				closedir(d);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			log_tag("label:by-label:%u:%u:%s: found %s\n", major(device), minor(device), label, buf);
+
+			closedir(d);
+			return 0;
+		}
+	}
+
+	log_tag("label:by-label:%u:%u: /dev/disk/by-label doesn't contain a matching block device\n", major(device), minor(device));
+
+	/* not found */
+	closedir(d);
+	return -1;
+}
+#endif
 
 /**
  * Get the LABEL using the generic Linux FS_IOC_GETFSLABEL ioctl.
@@ -1317,15 +1434,13 @@ static int devlabel_ioctl(const char* path, char* label, size_t label_size)
 	if (fd < 0 && (errno == ENOENT || errno == ENOTDIR)) {
 		char dir[PATH_MAX];
 		char* slash;
-		if (strlen(path) + 1 > sizeof(dir)) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-		strcpy(dir, path);
+		pathcpy(dir, sizeof(dir), path);
 		slash = strrchr(dir, '/');
 		if (slash) {
-			*slash = 0;
+			if (slash == dir)
+				slash[1] = 0;
+			else
+				*slash = 0;
 			fd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 		}
 	}
@@ -1937,7 +2052,11 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	if (fslabel) {
 		fslabel[0] = 0;
 #if HAVE_LINUX_DEVICE
-		devlabel_ioctl(path, fslabel, fslabel_size);
+		if (devlabel_ioctl(path, fslabel, fslabel_size) != 0) {
+			struct stat fst;
+			if (stat(path, &fst) == 0)
+				devlabel_dev(fst.st_dev, fslabel, fslabel_size);
+		}
 #else
 		(void)fslabel_size;
 #endif
