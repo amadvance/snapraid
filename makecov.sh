@@ -21,7 +21,7 @@ if ! make check; then
 fi
 
 # Root test for Btrfs
-sudo make btrfscheck
+sudo make snapcheck
 
 # Run commands on a real array to test smartctl
 sudo ./snapraid probe
