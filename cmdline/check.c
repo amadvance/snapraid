@@ -2147,6 +2147,8 @@ bail:
 	free(buffer_alloc);
 	free(buffer);
 
+	bw_done(&bw);
+
 	/* fail if some error are present after the run */
 	if (fix) {
 		if (state->opt.expect_unrecoverable) {

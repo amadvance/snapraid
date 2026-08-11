@@ -14,12 +14,20 @@ struct snapraid_bw {
 	uint64_t limit; /**< Bandwidth limit in bytes per second */
 	uint64_t total; /**< Remaining bytes allowed in current second */
 	uint64_t start; /**< Time when to reset the bandwidth counter */
+#if HAVE_THREAD
+	thread_mutex_t lock; /**< Mutex protecting bw fields */
+#endif
 };
 
 /**
  * Initialize the bandwidth limit
  */
 void bw_init(struct snapraid_bw* bw, uint64_t limit);
+
+/**
+ * Destroy the bandwidth limit
+ */
+void bw_done(struct snapraid_bw* bw);
 
 /**
  * Limit IO bandwidth to stay within the configured limit.

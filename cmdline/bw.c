@@ -10,6 +10,18 @@ void bw_init(struct snapraid_bw* bw, uint64_t limit)
 	bw->limit = limit;
 	bw->total = 0;
 	bw->start = os_tick_ms();
+#if HAVE_THREAD
+	thread_mutex_init(&bw->lock);
+#endif
+}
+
+void bw_done(struct snapraid_bw* bw)
+{
+#if HAVE_THREAD
+	thread_mutex_destroy(&bw->lock);
+#else
+	(void)bw;
+#endif
 }
 
 void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
@@ -17,13 +29,18 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 	if (!bw || bw->limit == 0)
 		return;
 
+#if HAVE_THREAD
+	thread_mutex_lock(&bw->lock);
+#endif
+
 	uint64_t start = bw->start;
 	uint64_t now = os_tick_ms();
 	uint64_t elapsed = now - start;
 	uint64_t done;
 	uint64_t eta;
 
-	done = __atomic_fetch_add(&bw->total, bytes, __ATOMIC_SEQ_CST);
+	bw->total += bytes;
+	done = bw->total;
 
 	eta = done * 1000 / bw->limit;
 
@@ -38,6 +55,10 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 		bw->start = now - eta - 10000;
 		elapsed = eta + 10000;
 	}
+
+#if HAVE_THREAD
+	thread_mutex_unlock(&bw->lock);
+#endif
 
 	if (eta > elapsed) {
 		eta -= elapsed;

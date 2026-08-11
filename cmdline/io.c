@@ -1138,6 +1138,8 @@ void io_done(struct snapraid_io* io)
 	free(io->writer_map);
 	free(io->writer_list);
 
+	bw_done(&io->bw);
+
 #if HAVE_THREAD
 	if (io->io_max > 1) {
 		thread_mutex_destroy(&io->io_mutex);
