@@ -116,7 +116,7 @@ void* malloc_nofail(size_t size)
 
 void* nalloc_nofail(size_t count, size_t size)
 {
-	if (count > SIZE_MAX / size) {
+	if (size != 0 && count > SIZE_MAX / size) {
 		log_fatal(EINTERNAL, "Allocation size overflow\n");
 		os_abort();
 	}
