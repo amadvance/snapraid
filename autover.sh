@@ -1,19 +1,21 @@
 #!/bin/sh
 #
 
-if [ -f .version ]; then
+SRCDIR="${srcdir:-$(dirname "$0")}"
+
+if [ -f "$SRCDIR/.version" ]; then
     # Get version from the .version file
-    VERSION=$(cat .version)
+    VERSION=$(cat "$SRCDIR/.version")
 fi
 
-if [ -z "$VERSION" ] && [ -d .git ]; then
+if [ -z "$VERSION" ] && [ -e "$SRCDIR/.git" ]; then
     # Get version from git tags, removing the 'v' prefix
-    VERSION=$(git describe --match 'v*' 2>/dev/null | sed 's/^v//')
+    VERSION=$(git -C "$SRCDIR" describe --match 'v*' 2>/dev/null | sed 's/^v//')
 fi
 
-if [ -z "$VERSION" ] && [ -d .git ]; then
+if [ -z "$VERSION" ] && [ -e "$SRCDIR/.git" ]; then
     # Fall back to short commit hash
-    VERSION=0-$(git rev-parse --short HEAD 2>/dev/null)
+    VERSION=0-$(git -C "$SRCDIR" rev-parse --short HEAD 2>/dev/null)
 fi
 
 if [ -z "$VERSION" ]; then

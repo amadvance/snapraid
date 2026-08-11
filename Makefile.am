@@ -125,7 +125,6 @@ noinst_HEADERS = \
 	os/os.h \
 	os/mingw.h \
 	os/unix.h \
-	os/os.h \
 	os/portable.h
 
 mktest_SOURCES = \
@@ -173,7 +172,7 @@ LIST_TXT = doc/snapraid.txt doc/snapraid_log.txt $(patsubst %, doc/snapraid-%.tx
 LIST_XML = doc/snapraid.xml doc/snapraid_log.xml $(patsubst %, doc/snapraid-%.xml, $(LANG_CODES))
 
 EXTRA_DIST = \
-	autogen.sh autover.sh \
+	autogen.sh autover.sh valgrind.supp \
 	README AUTHORS HISTORY INSTALL BLUEBOX TODO CHECK INSTALL.windows \
 	COPYING LICENSES/GPL-2.0 LICENSES/GPL-3.0 LICENSES/BSD-2-Clause \
 	$(LIST_D) \
@@ -1289,16 +1288,16 @@ lcov_html:
 # Rules for documentation
 if HAVE_ADVD2
 %.1 : %.d
-	advd2 man < $(srcdir)/$< > $@
+	advd2 man < $< > $@
 
 %.txt : %.d
-	advd2 txt < $(srcdir)/$< | todos > $@
+	advd2 txt < $< | todos > $@
 
 %.html : %.d
-	advd2 html < $(srcdir)/$< > $@
+	advd2 html < $< > $@
 
 %.xml : %.d
-	advd2 xml < $(srcdir)/$< > $@
+	advd2 xml < $< > $@
 endif
 
 # Web distribution
@@ -1319,13 +1318,13 @@ distwindows-x86: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
-	cp support/smartctl.exe tmp/smartctl.exe
-	todos < snapraid.conf.example.windows > tmp/snapraid.conf.example
-	todos < README > tmp/readme.txt
-	todos < AUTHORS > tmp/authors.txt
-	todos < HISTORY > tmp/history.txt
-	todos < BLUEBOX > tmp/bluebox.txt
-	todos < LICENSES/GPL-3.0 > tmp/copying.txt
+	cp $(srcdir)/support/smartctl.exe tmp/smartctl.exe
+	todos < $(srcdir)/snapraid.conf.example.windows > tmp/snapraid.conf.example
+	todos < $(srcdir)/README > tmp/readme.txt
+	todos < $(srcdir)/AUTHORS > tmp/authors.txt
+	todos < $(srcdir)/HISTORY > tmp/history.txt
+	todos < $(srcdir)/BLUEBOX > tmp/bluebox.txt
+	todos < $(srcdir)/LICENSES/GPL-3.0 > tmp/copying.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
 	rm -r tmp
 
@@ -1333,12 +1332,12 @@ distwindows-x64: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x64.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
-	cp support/smartctl.exe tmp/smartctl.exe
-	todos < snapraid.conf.example.windows > tmp/snapraid.conf.example
-	todos < README > tmp/readme.txt
-	todos < AUTHORS > tmp/authors.txt
-	todos < HISTORY > tmp/history.txt
-	todos < BLUEBOX > tmp/bluebox.txt
-	todos < LICENSES/GPL-3.0 > tmp/copying.txt
+	cp $(srcdir)/support/smartctl.exe tmp/smartctl.exe
+	todos < $(srcdir)/snapraid.conf.example.windows > tmp/snapraid.conf.example
+	todos < $(srcdir)/README > tmp/readme.txt
+	todos < $(srcdir)/AUTHORS > tmp/authors.txt
+	todos < $(srcdir)/HISTORY > tmp/history.txt
+	todos < $(srcdir)/BLUEBOX > tmp/bluebox.txt
+	todos < $(srcdir)/LICENSES/GPL-3.0 > tmp/copying.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp

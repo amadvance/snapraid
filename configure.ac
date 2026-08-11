@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.65])
+AC_PREREQ([2.70])
 dnl Get version number from git
 m4_define([git_revision], m4_esyscmd_s([./autover.sh]))
-AC_INIT([SnapRAID CLI], [git_revision], [], [snapraid], [https://www.snapraid.it])
+AC_INIT([SnapRAID CLI],[git_revision],[],[snapraid],[https://www.snapraid.it])
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
@@ -57,7 +57,7 @@ AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame
 # AX_CHECK_COMPILE_FLAG([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
 # AX_CHECK_COMPILE_FLAG([-fno-optimize-sibling-calls], CFLAGS="$CFLAGS -fno-optimize-sibling-calls", [])
 AX_CHECK_COMPILE_FLAG([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
-# This the new default for gcc 10
+# This is the new default for gcc 10
 AX_CHECK_COMPILE_FLAG([-fno-common], CFLAGS="$CFLAGS -fno-common", [])
 
 dnl Checks for system.
@@ -68,9 +68,8 @@ AC_C_BIGENDIAN
 
 dnl Checks for header files.
 AC_HEADER_ASSERT
-AC_HEADER_DIRENT
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([stdint.h inttypes.h unistd.h math.h execinfo.h strings.h getopt.h syslog.h grp.h pwd.h io.h alloca.h])
+AC_CHECK_HEADERS([dirent.h stdint.h inttypes.h unistd.h math.h execinfo.h strings.h getopt.h syslog.h grp.h pwd.h io.h alloca.h])
 AC_CHECK_HEADERS([sys/file.h sys/sysctl.h sys/ioctl.h sys/time.h sys/types.h sys/mkdev.h sys/sysmacros.h sys/stat.h sys/prctl.h sys/sysinfo.h sys/utsname.h])
 AC_CHECK_HEADERS([linux/fs.h linux/btrfs.h linux/fiemap.h mach/mach_time.h])
 
@@ -95,13 +94,11 @@ AC_COMPILE_IFELSE([
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
 AC_C_VOLATILE
 AC_TYPE_SIZE_T
 AC_TYPE_OFF_T
-AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
@@ -183,7 +180,6 @@ AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [[
 ]])
 
 dnl Checks for libraries
-have_pthreads=no
 AS_IF([test "x$is_windows" = "xyes"], [
 	AC_MSG_NOTICE([Windows native threads support enabled])
 ], [
@@ -198,18 +194,16 @@ AS_IF([test "x$is_windows" = "xyes"], [
         AC_MSG_WARN([Single-threaded version])
     ])
 ])
-AM_CONDITIONAL([HAVE_PTHREAD], [test "x$have_pthreads" = "xyes"])
-
 
 dnl Checks for compiler
-AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
-AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
-AC_CHECK_CC_OPT([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
-AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
-AC_CHECK_CC_OPT([-Wshorten-64-to-32], CFLAGS="$CFLAGS -Wshorten-64-to-32", [])
+AX_CHECK_COMPILE_FLAG([-Wall], CFLAGS="$CFLAGS -Wall", [])
+AX_CHECK_COMPILE_FLAG([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
+AX_CHECK_COMPILE_FLAG([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
+AX_CHECK_COMPILE_FLAG([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
+AX_CHECK_COMPILE_FLAG([-Wshorten-64-to-32], CFLAGS="$CFLAGS -Wshorten-64-to-32", [])
 
 dnl Disable warning about zero-length-bounds raised by gcc 10 on linux kernel header on the fm_extents field
-AC_CHECK_CC_OPT([-Wno-zero-length-bounds], CFLAGS="$CFLAGS -Wno-zero-length-bounds", [])
+AX_CHECK_COMPILE_FLAG([-Wno-zero-length-bounds], CFLAGS="$CFLAGS -Wno-zero-length-bounds", [])
 
 dnl Checks for asm
 AC_ARG_ENABLE([asm],
@@ -345,29 +339,29 @@ AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],[enable debugging])],
 	[
 	CFLAGS="-Og -g -pthread -Wall -Wextra"
-	AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
+	AX_CHECK_COMPILE_FLAG([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
 	],
 	[])
 
 AC_ARG_ENABLE([warning-as-error],
 	[AS_HELP_STRING([--enable-warning-as-error],[stop build on warnings])],
 	[
-	AC_CHECK_CC_OPT([-Werror], CFLAGS="$CFLAGS -Werror", [])
+	AX_CHECK_COMPILE_FLAG([-Werror], CFLAGS="$CFLAGS -Werror", [])
 	dnl This avoid the Darwin error: clang: error: argument unused during compilation: '-pthread'
 	dnl See: https://llvm.org/bugs/show_bug.cgi?id=7798
-	AC_CHECK_CC_OPT([-Wno-error=unused-command-line-argument], CFLAGS="$CFLAGS -Wno-error=unused-command-line-argument", [])
+	AX_CHECK_COMPILE_FLAG([-Wno-error=unused-command-line-argument], CFLAGS="$CFLAGS -Wno-error=unused-command-line-argument", [])
 	],
 	[])
 
 AC_ARG_ENABLE([warning],
 	[AS_HELP_STRING([--enable-warning],[enable extra warning])],
 	[
-	AC_CHECK_CC_OPT([-Wpointer-arith], CFLAGS="$CFLAGS -Wpointer-arith", [])
-	AC_CHECK_CC_OPT([-Wcast-qual], CFLAGS="$CFLAGS -Wcast-qual", [])
-	AC_CHECK_CC_OPT([-Wunused], CFLAGS="$CFLAGS -Wunused", [])
-	AC_CHECK_CC_OPT([-Wunreachable-code], CFLAGS="$CFLAGS -Wunreachable-code", [])
-	AC_CHECK_CC_OPT([-Wpadded], CFLAGS="$CFLAGS -Wpadded", [])
-	AC_CHECK_CC_OPT([-Weverything], CFLAGS="$CFLAGS -Weverything", [])
+	AX_CHECK_COMPILE_FLAG([-Wpointer-arith], CFLAGS="$CFLAGS -Wpointer-arith", [])
+	AX_CHECK_COMPILE_FLAG([-Wcast-qual], CFLAGS="$CFLAGS -Wcast-qual", [])
+	AX_CHECK_COMPILE_FLAG([-Wunused], CFLAGS="$CFLAGS -Wunused", [])
+	AX_CHECK_COMPILE_FLAG([-Wunreachable-code], CFLAGS="$CFLAGS -Wunreachable-code", [])
+	AX_CHECK_COMPILE_FLAG([-Wpadded], CFLAGS="$CFLAGS -Wpadded", [])
+	AX_CHECK_COMPILE_FLAG([-Weverything], CFLAGS="$CFLAGS -Weverything", [])
 	],
 	[])
 
