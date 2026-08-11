@@ -1230,7 +1230,7 @@ static int devpower(uint64_t device, const char* name, const char* wfile)
 		DWORD error = GetLastError();
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return 0; /* assume not rotational */
+		return 1; /* assume rotational if unknown */
 	}
 
 	/* get the interface */
@@ -1248,11 +1248,11 @@ static int devpower(uint64_t device, const char* name, const char* wfile)
 		DWORD error = GetLastError();
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return 0; /* assume not rotational */
+		return 1; /* assume rotational if unknown */
 	}
 
 	if (rotational == SMART_UNASSIGNED)
-		return 0; /* assume not rotational */
+		return 1; /* assume rotational if unknown */
 
 	return rotational != 0;
 }
