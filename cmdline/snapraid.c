@@ -1865,7 +1865,7 @@ int snapraid_main(int argc, char* argv[])
 
 		/* commit the snapshot as stable */
 		if (ret == 0) {
-			state_snapshot_commit(&state);
+			ret = state_snapshot_commit(&state);
 			state_snapshot_cleanup(&state);
 		}
 	} else if (operation == OPERATION_DRY) {
