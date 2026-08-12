@@ -1,0 +1,140 @@
+RAID Library
+============
+
+This directory contains the Galois Field GF(2^8) erasure coding engine used by
+SnapRAID. It provides multi-parity generation, missing data and parity block
+recovery, error candidate validation, and brute-force block failure scanning.
+
+The library supports up to 251 data blocks and up to 6 parity blocks using an
+Extended Cauchy Matrix construction that guarantees MDS (Maximum Distance
+Separable) properties for all supported combinations of disk failures.
+
+
+Public API
+----------
+
+Header: #include "raid.h"
+
+Before invoking any generation or recovery functions, call raid_init() once to
+detect CPU capabilities and initialize mode dispatch.
+
+  void raid_init(void)
+    Initializes algorithm tables and detects hardware SIMD instruction sets
+    (SSE2, SSSE3, AVX2, AVX-512, GFNI, NEON). Sets default operating mode to
+    RAID_MODE_CAUCHY_RAID. Must be called before any other API function.
+
+  int raid_mode(int mode)
+    Sets or queries the active operating mode.
+    - Pass RAID_MODE_GET (-1) to query current active mode.
+    - Pass RAID_MODE_CAUCHY_RAID, RAID_MODE_VANDERMONDE_RAID, or
+      RAID_MODE_CAUCHY_AES to set mode.
+    Returns the mode active prior to this call.
+
+  void raid_zero(void *zero)
+    Registers a read-only buffer filled with zeros of block size 'size'.
+    Required prior to calling raid_rec() or raid_data() for delta parity
+    computation.
+
+  void raid_gen(int nd, int np, size_t size, void **v)
+    Computes 'np' parity blocks from 'nd' data blocks. Vector 'v' contains
+    'nd + np' block pointers (data blocks v[0..nd-1], parity blocks
+    v[nd..nd+np-1]). Data blocks are read-only; parity blocks are written.
+
+  void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
+    Recovers 'nr' failed blocks (data or parity) listed in sorted index array
+    'ir'. Indexes start at 0 (data 0..nd-1, parity nd..nd+np-1). Pointers in 'v'
+    for good blocks are read; pointers for bad blocks are target destinations.
+    Requires nr <= np.
+
+  void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
+    Recovers 'nr' failed data blocks listed in sorted array 'id', using
+    parities listed in sorted array 'ip'. Parity blocks in 'v' are unmodified.
+    Requires nr <= nd and nr <= RAID_PARITY_MAX.
+
+  int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
+    Validates whether candidate failed block set 'ir' matches available parity
+    redundancy. Returns 0 if candidate set matches, or -1 if invalid. Requires
+    nr < np. Does not modify data or parity blocks.
+
+  int raid_scan(int *ir, int nd, int np, size_t size, void **v)
+    Searches for up to 'np - 1' failed blocks using available redundancy.
+    Fills 'ir' with failed block indexes and returns the number of failures
+    found (0 if no error), or -1 if failed blocks cannot be uniquely located.
+
+  int raid_selftest(void)
+    Runs startup verification tests for parity generation, recovery, and
+    scanning across parity levels 1..6. Returns 0 on success, < 0 on failure.
+
+
+Memory and Alignment Requirements
+---------------------------------
+
+  - Vector Layout: In vector 'v', data blocks MUST precede parity blocks:
+      v[0 ... nd-1]       -> Data blocks
+      v[nd ... nd+np-1]   -> Parity blocks (PAR1, PAR2, ..., PAR6)
+
+  - Block Size: Parameter 'size' MUST be a multiple of 64 bytes
+    (size % 64 == 0).
+
+  - Memory Alignment: Blocks should ideally be aligned on 16/32/64-byte
+    boundaries to optimize SIMD vector loads and stores.
+
+  - Sorted Index Arrays: Index arrays ('ir', 'id', 'ip') MUST be strictly
+    sorted in ascending order (e.g. ir[0] < ir[1] < ... < ir[nr-1]).
+
+
+Operating Modes and Polynomials
+-------------------------------
+
+  RAID_MODE_CAUCHY_RAID (Default mode = 0)
+    Uses Cauchy matrix generator with standard RAID polynomial 0x1d
+    (x^8 + x^4 + x^3 + x^2 + 1, decimal 285). Supports parities 1 to 6.
+    Matches standard Linux RAID-6 (Anvin method) for 2-parity arrays and
+    ensures on-disk compatibility.
+
+  RAID_MODE_VANDERMONDE_RAID (Mode = 1)
+    Legacy mode supporting up to 3 parities using standard polynomial 0x1d.
+    Uses Cauchy for PAR1/PAR2 and Vandermonde matrix coefficients for PAR3
+    (Z parity). Optimized for low-end CPUs without vector instructions.
+
+  RAID_MODE_CAUCHY_AES (Mode = 2)
+    Uses Cauchy matrix with AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1).
+    Enables hardware acceleration via Intel GFNI instructions (vgf2p8mulb)
+    on supported CPUs (Ice Lake or newer). Parity data is incompatible with
+    standard 0x1d polynomial arrays.
+
+
+Implementation Structure
+------------------------
+
+  raid.h        Public API declarations, macros, and mode constants.
+  raid.c        Cauchy matrix solver, Gauss-Jordan inversion, delta generation.
+  module.c      Algorithm registration, CPU detection, and dynamic dispatch.
+  int.c         Portable C fallback implementation (8/32/64-bit word loops).
+  tables.c      Precomputed GF(2^8) log/exp, multiplication, Cauchy tables.
+  mktables.c    Table generator script for GF(2^8) field matrices.
+  internal.h    Private header, assertion macros (BUG_ON), alignment helpers.
+
+  Platform-Specific Acceleration:
+    sse2.c      x86 SSE2 (128-bit SIMD vectorization)
+    ssse3.c     x86 SSSE3 (128-bit pshufb nibble-split multiplication)
+    avx2.c      x86 AVX2 (256-bit vectorization)
+    avx512.c    x86 AVX-512BW (512-bit vectorization)
+    gfni.c      x86 GFNI hardware Galois field vector multiplication
+    neon.c      ARM NEON (128-bit SIMD vectorization)
+
+
+Testing and Benchmarks
+----------------------
+
+Standalone test applications located in raid/test/ provide verification and
+performance evaluation:
+
+  raid/test/selftest   Quick startup self-test verifying basic correctness.
+  raid/test/fulltest   Exhaustive test suite testing all combinations of data
+                       disks (1..251) and single/multi-disk failure recovery.
+  raid/test/invtest    Matrix inversion test verifying non-singularity for all
+                       square submatrices of the Cauchy matrix.
+  raid/test/speedtest  Benchmark measuring single-thread throughput (MiB/s)
+                       for parity generation and recovery across all SIMD
+                       implementations.
