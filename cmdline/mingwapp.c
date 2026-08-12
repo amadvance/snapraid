@@ -437,7 +437,7 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	if (wcscmp(fs_name, L"NTFS") == 0)
 		magic = WINDOWS_NTFS_MAGIC;
 	else
-		return -1;         /* support only NTFS */
+		return 1; /* support only NTFS */
 
 	/*
 	 * Obtain the canonical volume name: \\?\Volume{GUID}\

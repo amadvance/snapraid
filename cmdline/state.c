@@ -5965,8 +5965,13 @@ int state_snapshot_scan(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* check if it supports snapshot */
-		if (fssnapshot_mount(disk->mount_point, &disk->fss) != 0)
+		int res = fssnapshot_mount(disk->mount_point, &disk->fss);
+		if (res > 0)
 			continue;
+		if (res < 0) {
+			log_fatal(EINTERNAL, "Failed to setup snapshot for disk '%s'.\n", disk->name);
+			return -1;
+		}
 
 		size_t root_len = strlen(disk->fss.root_dir);
 

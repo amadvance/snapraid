@@ -2177,12 +2177,12 @@ int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 	} else if (sfs.f_type == ZFS_SUPER_MAGIC) {
 		return fssnapshot_zfs(path, ZFS_SUPER_MAGIC, fss);
 	} else {
-		return -1;
+		return 1;
 	}
 #else
 	(void)path;
 	(void)fss;
-	return -1;
+	return 1;
 #endif
 }
 
