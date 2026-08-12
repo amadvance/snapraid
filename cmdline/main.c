@@ -387,6 +387,9 @@ int main(int argc, char* argv[])
 		if (pid == 0) {
 			/* child process */
 
+			/* isolate child in its own process group to prevent double signal delivery from terminal */
+			setpgid(0, 0);
+
 			/* restore default signal handlers */
 			signal(SIGINT, SIG_DFL);
 			signal(SIGQUIT, SIG_DFL);
@@ -408,6 +411,9 @@ int main(int argc, char* argv[])
 		} else {
 			/* parent process */
 			int status;
+
+			/* set child process group in parent to prevent race condition */
+			setpgid(pid, pid);
 
 			/* store child PID so signal handler can forward signals */
 			child_pid = pid;
