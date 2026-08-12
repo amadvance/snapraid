@@ -48,46 +48,47 @@ unsigned raid_optimal_displacement(int n)
 #define RAID_WRAP_SIZE 4096
 
 /*
- * PREFETCHER MITIGATION VIA PAGE-OFFSET RANDOMIZATION (WAY-SHIFTING)
+ * PREFETCHER MITIGATION WITH 4K STRIDE PERTURBATION
  *
- * STRIDE_NOISE is a sequence of small, non-linear multipliers used to inject
- * variable byte offsets into the physical distance between consecutive disk
- * buffers during allocation. These multipliers are applied in 4096-byte chunks.
+ * STRIDE_NOISE is a sequence of small, non-linear multipliers used to add
+ * variable 4096-byte increments to the virtual distance between consecutive
+ * disk buffers during allocation.
  *
- * The parity generation loops contain a massive cross-disk jump in the inner
- * loop. If the distance between every disk is a constant delta (e.g., exactly
- * 256KB + fixed displacement bytes), modern IP-based stride prefetchers
- * (particularly on architectures like AMD Zen 5) will easily recognize the pattern.
+ * The parity generation loops repeatedly access corresponding offsets in each
+ * disk buffer. If the distance between buffers is constant, the inner loop
+ * produces a regular cross-buffer stride in addition to the unit-stride access
+ * within each buffer. A two-dimensional prefetcher can recognize this access
+ * pattern as a regular grid of disk buffers and offsets.
  *
- * Because the prefetcher is biased to aggressively accelerate constant positive
- * strides, it incorrectly assumes the program is executing a massive linear
- * sweep of memory. It begins flooding the memory controller with speculative,
- * useless requests for data far beyond the active disks. This "garbage traffic"
- * saturates the memory bus, starving the AVX/SIMD execution engine of
- * the actual data it needs and crippling throughput.
+ * This additional prefetching is not necessarily useful. The cross-buffer
+ * accesses already form independent forward streams, and excessive look-ahead
+ * can cause cache pollution or pressure on cache-fill and memory-request
+ * resources.
  *
- * We must blind the prefetcher by making the stride unpredictable, but we CANNOT
- * alter the carefully calculated L1 cache set mapping (raid_optimal_displacement),
- * otherwise we will cause catastrophic L1 cache thrashing.
+ * raid_optimal_displacement() provides the fixed displacement that separates
+ * buffer starts among L1 cache sets. This cache-set separation is the most
+ * likely cause of the broad performance improvement over contiguous buffers.
+ * STRIDE_NOISE is an additional perturbation and must retain that mapping.
  *
- * - The standard x86 L1 data cache has 64 sets, and a cache line is 64 bytes.
- * A full wrap-around of the L1 cache is exactly 64 * 64 = 4096 bytes (which
- * also perfectly aligns with a standard 4KB memory page).
+ * On common x86 L1 data caches there are 64 sets and cache lines are 64 bytes.
+ * A full set-index cycle is therefore 64 * 64 = 4096 bytes, which also matches
+ * the usual memory-page size.
  *
- * - By adding a random multiple of 4096 bytes to our jump:
- * 1. The physical memory address changes wildly, breaking the constant stride.
- * 2. The modulo-64 cache math is completely unaffected ((X + 4096) % 64 == X % 64).
+ * By adding a varying multiple of 4096 bytes to the buffer spacing:
  *
- * The IP-based stride prefetcher monitors the cross-disk jumps and sees a
- * chaotic sequence of massive, fluctuating deltas (e.g., +275KB, +267KB, +288KB).
- * Because the stride is never constant, the prefetcher's internal confidence
- * counter never builds up. The prefetcher safely disables itself for the inner
- * loop.
+ * 1. The virtual cross-buffer stride varies instead of remaining constant.
+ * 2. The L1 set index is unchanged because adding 4096 bytes preserves address
+ *    bits 6 through 11.
  *
- * With the noisy prefetcher silenced, the memory bus is cleared. The CPU's L2
- * stream prefetcher is left alone to perfectly track the independent +64 byte
- * forward reads for each individual disk. The AVX/SIMD execution engine receives
- * 100% of the bandwidth, yielding maximum physical throughput.
+ * STRIDE_NOISE is deterministic, not random. Its non-uniform sequence can make
+ * the cross-buffer pattern less suitable for stride-based prediction while
+ * leaving the sequential access pattern of each buffer unchanged.
+ *
+ * With the fixed displacement already applied, STRIDE_NOISE had no material
+ * effect on the tested Intel processor. On Zen 5, which has a two-dimensional
+ * prefetcher, disabling it caused a large throughput reduction. This points to
+ * two-dimensional prefetching as the likely trigger, rather than to an Intel
+ * or AMD vendor difference.
  *
  * These are the results in MB/s with no stride noise on a Zen 5 CPU:
  *
