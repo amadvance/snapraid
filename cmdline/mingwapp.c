@@ -541,6 +541,7 @@ int fssnapshot_create(const struct fssnapshot_struct* fss, const char* name)
 
 	const char* guid = out + 3;
 
+	/* do not jump to bail_and_delete if GUID is invalid because an unvalidated GUID cannot be safely used in a WMI query */
 	if (windows_guid_is_valid(guid, strlen(guid)) != 0) {
 		errno = EINVAL;
 		log_error(errno, "Invalid GUID received from VSS shadow copy creation: '%s'\n", guid);
