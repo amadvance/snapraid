@@ -2566,7 +2566,7 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 }
 
 #if HAVE_LINUX_DEVICE
-static int fssnapshot_btrfs_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
+static int fssnapshot_fs_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
 {
 	char old_path[PATH_MAX];
 	char new_path[PATH_MAX];
@@ -2577,25 +2577,6 @@ static int fssnapshot_btrfs_rename(const struct fssnapshot_struct* fss, const ch
 	pathcat(new_path, sizeof(new_path), new_name);
 
 	if (rename(old_path, new_path) < 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	return 0;
-}
-#endif
-
-#if HAVE_LINUX_DEVICE
-static int fssnapshot_bcachefs_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
-{
-	if (fssnapshot_bcachefs_create(fss, new_name) != 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (fssnapshot_bcachefs_delete(fss, old_name) != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -2650,10 +2631,8 @@ static int fssnapshot_zfs_rename(const struct fssnapshot_struct* fss, const char
 int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
 {
 #if HAVE_LINUX_DEVICE
-	if (fss->magic == BTRFS_SUPER_MAGIC) {
-		return fssnapshot_btrfs_rename(fss, old_name, new_name);
-	} else if (fss->magic == BCACHEFS_SUPER_MAGIC) {
-		return fssnapshot_bcachefs_rename(fss, old_name, new_name);
+	if (fss->magic == BTRFS_SUPER_MAGIC || fss->magic == BCACHEFS_SUPER_MAGIC) {
+		return fssnapshot_fs_rename(fss, old_name, new_name);
 	} else if (fss->magic == ZFS_SUPER_MAGIC) {
 		return fssnapshot_zfs_rename(fss, old_name, new_name);
 	} else {
