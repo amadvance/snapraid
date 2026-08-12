@@ -5956,7 +5956,7 @@ static int state_snapshot_dir(struct fssnapshot_struct* fss, const char* name, c
 	return 0;
 }
 
-int state_snapshot_new(struct snapraid_state* state)
+int state_snapshot_scan(struct snapraid_state* state)
 {
 	if (!state->snapshot)
 		return 0;
@@ -5970,7 +5970,47 @@ int state_snapshot_new(struct snapraid_state* state)
 
 		size_t root_len = strlen(disk->fss.root_dir);
 
-		/* delete a potential previous pending snapshot */
+		/* delete a potential previous scan snapshot */
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_SCAN, 0, 0) == 0) {
+			if (fssnapshot_delete(&disk->fss, SNAPSHOT_SCAN) != 0) {
+				log_fatal(errno, "Failed to delete scan snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+				return -1;
+			}
+		}
+
+		/* create a new snapshot for scanning */
+		if (fssnapshot_create(&disk->fss, SNAPSHOT_SCAN) != 0) {
+			log_fatal(errno, "Failed to create scan snapshot '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+			return -1;
+		}
+
+		msg_progress("Created disk %s scan snapshot...\n", disk->name);
+
+		/* setup the snapshot in use */
+		if (state_snapshot_dir(&disk->fss, SNAPSHOT_SCAN, disk->mount_point + root_len, disk) != 0) {
+			log_error(errno, "Error stating scan snapshot '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int state_snapshot_pending(struct snapraid_state* state)
+{
+	if (!state->snapshot)
+		return 0;
+
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		/* check if it supports snapshot */
+		if (disk->fss.magic == 0)
+			continue;
+
+		size_t root_len = strlen(disk->fss.root_dir);
+
+		/* delete the pending snapshot only after the content state was saved */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, 0, 0) == 0) {
 			if (fssnapshot_delete(&disk->fss, SNAPSHOT_PENDING) != 0) {
 				log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
@@ -5978,9 +6018,9 @@ int state_snapshot_new(struct snapraid_state* state)
 			}
 		}
 
-		/* create a new snapshot */
-		if (fssnapshot_create(&disk->fss, SNAPSHOT_PENDING) != 0) {
-			log_fatal(errno, "Failed to create pending snapshot '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+		/* make the scan snapshot available for recovery */
+		if (fssnapshot_rename(&disk->fss, SNAPSHOT_SCAN, SNAPSHOT_PENDING) != 0) {
+			log_fatal(errno, "Failed to rename scan snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
 			return -1;
 		}
 

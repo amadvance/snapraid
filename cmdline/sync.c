@@ -1686,13 +1686,16 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			log_fatal(EUSER, "WARNING! Skipped state write for --test-skip-content-write option.\n");
 		}
 
-		if (state->opt.kill_before_sync) {
+		/* make the scanned state available for recovery before changing parity */
+		if (state_snapshot_pending(state) != 0) {
+			/* LCOV_EXCL_START */
+			++process_error;
+			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
+		} else if (state->opt.kill_before_sync) {
 			log_fatal(EUSER, "WARNING! Killing due --test-kill-before-sync option.\n");
 			exit(EXIT_SUCCESS);
-		}
-
-		/* skip degenerated cases of empty parity, or skipping all */
-		if (blockstart < blockmax) {
+		} else if (blockstart < blockmax) {
 			ret = state_sync_process(state, parity_handle, blockstart, blockmax);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */

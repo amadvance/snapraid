@@ -66,7 +66,8 @@ Begränsningar (Limitations)
 	på om alternativet `snapshot` (ögonblicksbild) används:
 
 	* Med stöd för ögonblicksbilder (tillgängligt på Btrfs, ZFS, Bcachefs och NTFS)
-		kan SnapRAID automatiskt upprätthålla en frusen referens av dina datadiskar.
+		kan SnapRAID automatiskt upprätthålla en oberoende frusen referens
+		för varje datafilsystem som stöds.
 		Detta säkerställer att även om du ändrar eller tar bort filer på ditt aktiva filsystem
 		under eller efter en synkronisering, förblir återställningsprocessen konsekvent och tillförlitlig.
 
@@ -1159,9 +1160,10 @@ Konfiguration (Configuration)
 	Aktiverar användningen av filsystemets ögonblicksbilder för kommandona `sync`, `scrub`,
 	`check` och `fix`.
 
-	När det är aktiverat skapar SnapRAID en skrivskyddad ögonblicksbild av dina data vid
-	början av en 'sync'. Detta säkerställer en konsekvent tidpunktsvy av dina
-	filer, vilket förhindrar fel som orsakas av samtidiga filändringar.
+	När det är aktiverat skapar SnapRAID en skrivskyddad ögonblicksbild av varje
+	datafilsystem som stöds vid början av en 'sync'. Detta ger en stabil vy av varje
+	filsystem och förhindrar att senare ändringar ändrar den data som används för
+	paritetsberäkningen.
 
 	Detta förbättrar återställningen avsevärt: om en fil tas bort från det aktiva filsystemet
 	förblir den bevarad i ögonblicksbilden. Detta förhindrar att pariteten blir "trasig"
@@ -1427,8 +1429,8 @@ Konfiguration (Configuration)
 
 Ögonblicksbilder (Snapshots)
 	Om alternativet för ögonblicksbilder är aktiverat i konfigurationen använder SnapRAID
-	filsystemets funktionalitet för ögonblicksbilder för att säkerställa atomära och
-	konsekventa operationer.
+	filsystemets ögonblicksbilder för att hålla data som läses under en operation stabil,
+	även om filer på de aktiva filsystemen senare ändras eller tas bort.
 
 	Hanteringen av ögonblicksbilder är helt automatisk och transparent.
 	Du kan fortsätta att använda SnapRAID exakt som tidigare, med det
@@ -1439,7 +1441,8 @@ Konfiguration (Configuration)
 
 	Konsistens - Filer som ändras på det aktiva filsystemet under en långvarig
 		sync eller scrub kommer inte att orsaka paritetsfel eller avbrutna
-		operationer, eftersom SnapRAID ser en frusen tidpunktsbild.
+		operationer, eftersom varje filsystem med ögonblicksbild förblir oförändrat
+		under hela operationen.
 	Återställning - Om en fil uppdateras eller tas bort från det aktiva filsystemet
 		förblir den bevarad i ögonblicksbilden. Om ett diskhaveri inträffar
 		innan nästa sync körs, använder SnapRAID den data som bevarats
@@ -1471,12 +1474,12 @@ Konfiguration (Configuration)
 	när ögonblicksbilder är aktiverade.
 
   Kommandobeteende med ögonblicksbilder
-	Kommandona `sync` och `scrub` arbetar båda uteslutande på ögonblicksbilder
-	för att säkerställa att alla dataoperationer utförs mot ett konsekvent,
-	fruset tillstånd. Genom att använda dessa ögonblicksbilder förhindrar SnapRAID paritetsfel
-	som annars skulle utlösas av samtidiga filändringar på det aktiva filsystemet.
-	Under en `sync` använder kommandot en ny ögonblicksbild som skapas vid
-	början av processen för att fånga det aktuella tillståndet för paritetsberäkning.
+	Kommandona `sync` och `scrub` använder ögonblicksbilder för datadiskar vars
+	filsystem stöder dem. På en disk med ögonblicksbild ser kommandot en stabil
+	filsystembild som inte påverkas av samtidiga ändringar på det aktiva filsystemet.
+	Under en `sync` skapas en ny ögonblicksbild oberoende för varje datafilsystem
+	som stöds. Dessa ögonblicksbilder tillhandahåller gemensamt den data som används
+	för paritetsberäkning.
 	I motsats till detta använder kommandot `scrub` den senaste ögonblicksbilden, den som
 	skapades under den senaste synkroniseringen, för att upprätthålla en tillförlitlig referenspunkt
 	som matchar den befintliga pariteten.
@@ -1502,7 +1505,7 @@ Konfiguration (Configuration)
 	Alla andra kommandon fungerar uteslutande på det aktiva filsystemet.
 
 Livscykel för ögonblicksbilder (Snapshots Lifecycle)
-	SnapRAID hanterar två specifika ögonblicksbilder, `stable` och `pending`,
+	SnapRAID hanterar tre specifika ögonblicksbilder, `stable`, `pending` och `scan`,
 	inom en dold katalog i roten av varje datavolym.
 	I Btrfs, Bcachefs och NTFS används katalogen `.snapraid/`,
 	i ZFS standardkatalogen `.zfs/snapshot/`.
@@ -1512,8 +1515,12 @@ Livscykel för ögonblicksbilder (Snapshots Lifecycle)
 	att beräkna den aktuella pariteten. Den fungerar som den primära datakällan
 	för kommandona `scrub`, `check` och `fix`.
 
-	Ögonblicksbilden `pending` är en tillfällig bild som skapas i början
-	av en `sync` för att tillhandahålla ett fruset tillstånd för paritetsberäkning.
+	Ögonblicksbilden `scan` är en tillfällig bild som skapas i början
+	av en `sync` för att tillhandahålla ett fruset tillstånd för skanning och paritetsberäkning.
+	Efter skanning och sparning av det nya innehållstillståndet ersätter den den föregående
+	`pending`-ögonblicksbilden.
+
+	Ögonblicksbilden `pending` är bilden som används av en avbruten `sync`.
 	Efter framgångsrik slutförande av operationen raderas den föregående `stable`
 	ögonblicksbilden, och `pending`-ögonblicksbilden upphöjs till
 	att ta dess plats som den nya stabila referensen.

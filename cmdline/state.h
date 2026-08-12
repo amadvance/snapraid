@@ -426,9 +426,14 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 void state_attr(struct snapraid_state* state, tommy_list* low);
 
 /**
- * Create (or reuse existing) pending snapshots
+ * Create (or reuse existing) scan snapshots
  */
-int state_snapshot_new(struct snapraid_state* state);
+int state_snapshot_scan(struct snapraid_state* state);
+
+/**
+ * Promote scan snapshots to pending before starting parity processing.
+ */
+int state_snapshot_pending(struct snapraid_state* state);
 
 /**
  * Make the pending snapshots as stable

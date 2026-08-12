@@ -487,6 +487,10 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 		return -1;
 	}
 
+	if (windows_rebuild_link(fss, SNAPSHOT_SCAN) != 0) {
+		return -1;
+	}
+
 	fss->magic = magic;
 
 	return 0;
@@ -645,6 +649,8 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 {
 	char old_guid[PATH_MAX];
 	char new_guid[PATH_MAX];
+	char old_link[PATH_MAX];
+	char new_link[PATH_MAX];
 
 	pathcpy(old_guid, sizeof(old_guid), fss->snapshot_dir);
 	pathcat(old_guid, sizeof(old_guid), old_name);
@@ -652,15 +658,20 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 	pathcpy(new_guid, sizeof(new_guid), fss->snapshot_dir);
 	pathcat(new_guid, sizeof(new_guid), new_name);
 	pathcat(new_guid, sizeof(new_guid), SNAPSHOT_GUID);
+	pathcpy(old_link, sizeof(old_link), fss->snapshot_dir);
+	pathcat(old_link, sizeof(old_link), old_name);
+	pathcpy(new_link, sizeof(new_link), fss->snapshot_dir);
+	pathcat(new_link, sizeof(new_link), new_name);
 
 	if (windows_rename(old_guid, new_guid) != 0) {
 		log_error(errno, "Error renaming  '%s' to '%s'. %s.\n", old_guid, new_guid, strerror(errno));
 		return -1;
 	}
 
-	/* the rename is the latest operation, and then we don't care about the links, we just remove both */
-	windows_delete_link(fss, old_name);
-	windows_delete_link(fss, new_name);
+	if (windows_rename(old_link, new_link) != 0) {
+		log_error(errno, "Error renaming '%s' to '%s'. %s.\n", old_link, new_link, strerror(errno));
+		return -1;
+	}
 
 	return 0;
 }
@@ -678,6 +689,7 @@ void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 	 */
 	windows_delete_link(fss, SNAPSHOT_PENDING);
 	windows_delete_link(fss, SNAPSHOT_STABLE);
+	windows_delete_link(fss, SNAPSHOT_SCAN);
 }
 
 /****************************************************************************/

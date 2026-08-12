@@ -65,7 +65,8 @@ Ograniczenia (Limitations)
 	od tego, czy użyto opcji `snapshot` (migawki):
 
 	* Z obsługą migawek (dostępną w systemach plików Btrfs, ZFS, Bcachefs i NTFS),
-		SnapRAID może automatycznie utrzymywać zamrożony stan dysków z danymi.
+		SnapRAID może automatycznie utrzymywać niezależny, zamrożony punkt
+		odniesienia dla każdego obsługiwanego systemu plików z danymi.
 		Zapewnia to, że nawet jeśli zmodyfikujesz lub usuniesz pliki w aktywnym systemie plików
 		w trakcie lub po synchronizacji, proces odzyskiwania pozostanie spójny i niezawodny.
 
@@ -1157,9 +1158,10 @@ Konfiguracja (Configuration)
 	Włącza używanie migawek systemu plików dla poleceń `sync`, `scrub`,
 	`check` oraz `fix`.
 
-	Po włączeniu, SnapRAID tworzy migawkę danych w trybie tylko do odczytu na
-	początku operacji 'sync'. Zapewnia to spójny obraz plików z danego momentu,
-	zapobiegając błędom wywołanym przez jednoczesne modyfikacje plików.
+	Po włączeniu, SnapRAID tworzy migawkę w trybie tylko do odczytu dla każdego
+	obsługiwanego systemu plików z danymi na początku operacji 'sync'. Zapewnia to
+	stabilny obraz każdego systemu plików, zapobiegając sytuacji, w której późniejsze
+	modyfikacje zmieniłyby dane użyte do obliczenia parzystości.
 
 	To znacznie usprawnia odzyskiwanie danych: jeśli plik zostanie usunięty z aktywnego systemu
 	plików, pozostaje zachowany w migawce. Zapobiega to sytuacji, w której parzystość staje się "uszkodzona"
@@ -1423,8 +1425,9 @@ Konfiguracja (Configuration)
 
 Migawki (Snapshots)
 	Jeśli opcja snapshot jest włączona w konfiguracji, SnapRAID
-	wykorzystuje funkcjonalność migawek systemu plików w celu zapewnienia operacji atomowych
-	i spójnych.
+	używa migawek systemu plików, aby utrzymać stabilność danych odczytywanych
+	podczas operacji, nawet jeśli pliki w aktywnych systemach plików zostaną
+	później zmodyfikowane lub usunięte.
 
 	Zarządzanie migawkami jest całkowicie automatyczne i przejrzyste.
 	Możesz nadal używać SnapRAID dokładnie tak jak dotychczas, z dodatkową
@@ -1435,7 +1438,8 @@ Migawki (Snapshots)
 
 	Spójność - Pliki zmodyfikowane w aktywnym systemie plików podczas długotrwałej
 		operacji sync lub scrub nie spowodują niezgodności parzystości ani przerwania
-		operacji, ponieważ SnapRAID widzi zamrożony obraz z danego momentu.
+		operacji, ponieważ każdy objęty migawką system plików pozostaje niezmieniony
+		przez cały czas trwania operacji.
 	Odzyskiwanie - Jeśli plik zostanie zaktualizowany lub usunięty z aktywnego systemu plików,
 		pozostaje zachowany w migawce. Jeśli awaria dysku nastąpi
 		przed uruchomieniem kolejnej operacji sync, SnapRAID użyje danych zachowanych
@@ -1469,12 +1473,13 @@ Migawki (Snapshots)
 	gdy migawki są włączone.
 
   Zachowanie poleceń przy użyciu migawek
-	Polecenia `sync` oraz `scrub` działają wyłącznie na migawkach,
-	aby zapewnić, że wszystkie operacje na danych są wykonywane na spójnym,
-	zamrożonym stanie. Poprzez wykorzystanie tych migawek, SnapRAID zapobiega niezgodnościom
-	parzystości, które w przeciwnym razie zostałyby wywołane przez jednoczesne modyfikacje plików w aktywnym systemie plików.
-	Podczas operacji `sync` polecenie używa nowej migawki utworzonej na
-	początku procesu, aby uchwycić bieżący stan do obliczenia parzystości.
+	Polecenia `sync` oraz `scrub` używają migawek dla dysków z danymi, których
+	systemy plików je obsługują. Na dysku objętym migawką polecenie widzi stabilny
+	obraz systemu plików, na który nie mają wpływu równoczesne zmiany w aktywnym
+	systemie plików.
+	Podczas operacji `sync` nowa migawka jest tworzona niezależnie dla każdego
+	obsługiwanego systemu plików z danymi. Migawki te łącznie dostarczają dane
+	używane do obliczenia parzystości.
 	W przeciwieństwie do tego, polecenie `scrub` wykorzystuje ostatnią migawkę, tę
 	utworzoną podczas najnowszej synchronizacji, aby utrzymać wiarygodny punkt odniesienia
 	odpowiadający istniejącej parzystości.
@@ -1500,7 +1505,7 @@ Migawki (Snapshots)
 	Wszystkie inne polecenia działają wyłącznie na aktywnym systemie plików.
 
 Cykl życia migawek (Snapshots Lifecycle)
-	SnapRAID zarządza dwoma określonymi migawkami, `stable` (stabilną) oraz `pending` (oczekującą),
+	SnapRAID zarządza trzema określonymi migawkami, `stable` (stabilną), `pending` (oczekującą) oraz `scan` (skanowania),
 	w ukrytym katalogu w katalogu głównym każdego podwolumenu danych.
 	W systemach Btrfs, Bcachefs i NTFS używany jest katalog `.snapraid/`,
 	w systemie ZFS standardowy `.zfs/snapshot/`.
@@ -1510,8 +1515,12 @@ Cykl życia migawek (Snapshots Lifecycle)
 	obliczenia bieżącej parzystości. Służy ona jako główne źródło danych
 	dla poleceń `scrub`, `check` i `fix`.
 
-	Migawka `pending` to tymczasowy obraz tworzony na początku
-	operacji `sync` w celu zapewnienia zamrożonego stanu do obliczenia parzystości.
+	Migawka `scan` to tymczasowy obraz tworzony na początku
+	operacji `sync` w celu zapewnienia zamrożonego stanu do skanowania i obliczenia parzystości.
+	Po zeskanowaniu i zapisaniu nowego stanu zawartości zastępuje ona poprzednią
+	migawkę `pending`.
+
+	Migawka `pending` to obraz używany przez przerwaną operację `sync`.
 	Po pomyślnym zakończeniu operacji poprzednia migawka `stable`
 	jest usuwana, a migawka `pending` zostaje podniesiona do rangi
 	nowej stabilnej referencji.

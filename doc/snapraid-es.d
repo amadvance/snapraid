@@ -67,7 +67,8 @@ Limitaciones (Limitations)
 	de si se utiliza la opción de instantánea (`snapshot`):
 
 	* Con soporte para instantáneas (disponible en Btrfs, ZFS, Bcachefs y NTFS),
-		SnapRAID puede mantener automáticamente una referencia congelada de sus discos de datos.
+		SnapRAID puede mantener automáticamente una referencia congelada
+		independiente de cada sistema de archivos de datos compatible.
 		Esto garantiza que incluso si modifica o elimina archivos en su sistema de archivos activo
 		durante o después de un sync, el proceso de recuperación se mantenga consistente y confiable.
 
@@ -1213,9 +1214,10 @@ Configuración (Configuration)
 	Habilita el uso de instantáneas del sistema de archivos para los comandos `sync`, `scrub`,
 	`check` y `fix`.
 
-	Cuando está habilitado, SnapRAID crea una instantánea de solo lectura de sus datos al
-	comienzo de un 'sync'. Esto asegura una vista consistente y en un punto en el tiempo de sus
-	archivos, evitando errores causados por modificaciones concurrentes de archivos.
+	Cuando está habilitado, SnapRAID crea una instantánea de solo lectura de cada
+	sistema de archivos de datos compatible al comienzo de un 'sync'. Esto proporciona una
+	vista estable de cada sistema de archivos, evitando que modificaciones posteriores cambien
+	los datos utilizados para el cómputo de paridad.
 
 	Esto mejora significativamente la recuperación: si un archivo se elimina del sistema de archivos activo,
 	permanece preservado en la instantánea. Esto evita que la paridad se "rompa"
@@ -1502,8 +1504,9 @@ Configuración (Configuration)
 
 Instantáneas (Snapshots)
 	Si la opción de instantánea está habilitada en la configuración, SnapRAID
-	utiliza la funcionalidad de instantáneas del sistema de archivos para garantizar operaciones atómicas
-	y consistentes.
+	utiliza instantáneas del sistema de archivos para mantener estables los datos leídos
+	durante una operación, incluso cuando los archivos en los sistemas de archivos activos
+	se modifican o eliminan posteriormente.
 
 	La gestión de las instantáneas es completamente automática y transparente.
 	Puede continuar usando SnapRAID exactamente como antes, con la
@@ -1514,7 +1517,8 @@ Instantáneas (Snapshots)
 
 	Consistencia - Los archivos modificados en el sistema de archivos activo durante un sync o scrub de
 		larga duración no causarán desajustes de paridad ni operaciones abortadas,
-		ya que SnapRAID ve una imagen congelada en el tiempo.
+		porque cada sistema de archivos con instantánea permanece sin cambios durante
+		toda la operación.
 	Recuperación - Si un archivo se actualiza o elimina del sistema de archivos activo,
 		permanece preservado en la instantánea. Si ocurre un fallo de disco
 		antes de que se ejecute el siguiente sync, SnapRAID utiliza los datos preservados
@@ -1548,12 +1552,13 @@ Instantáneas (Snapshots)
 	cuando las instantáneas estén habilitadas.
 
   Comportamiento de comandos con instantáneas
-	Los comandos `sync` y `scrub` operan exclusivamente en instantáneas
-	para garantizar que todas las operaciones de datos se realicen contra un estado consistente
-	y congelado. Al utilizar estas instantáneas, SnapRAID evita desajustes de paridad
-	que de otro modo serian provocados por modificaciones de archivos concurrentes en el sistema de archivos activo.
-	Durante un `sync`, el comando utiliza una nueva instantánea creada al
-	inicio del proceso para capturar el estado actual para el cómputo de paridad.
+	Los comandos `sync` y `scrub` utilizan instantáneas para los discos de datos cuyos
+	sistemas de archivos las admiten. En un disco con instantánea, el comando ve
+	una imagen estable del sistema de archivos no afectada por cambios concurrentes en
+	el sistema de archivos activo.
+	Durante un `sync`, se crea una nueva instantánea de forma independiente para cada
+	sistema de archivos de datos compatible. Estas instantáneas proporcionan colectivamente
+	los datos utilizados para el cómputo de paridad.
 	Por el contrario, el comando `scrub` utiliza la última instantánea, la
 	creada durante el sync más reciente, para mantener un punto de referencia confiable
 	que coincida con la paridad existente.
@@ -1579,7 +1584,7 @@ Instantáneas (Snapshots)
 	Todos los demás comandos funcionan exclusivamente en el sistema de archivos activo.
 
 Ciclo de vida de las instantáneas (Snapshots Lifecycle)
-	SnapRAID gestiona dos instantáneas específicas, `stable` y `pending`,
+	SnapRAID gestiona tres instantáneas específicas, `stable`, `pending` y `scan`,
 	dentro de un directorio oculto en la raíz de cada subvolumen de datos.
 	En Btrfs, Bcachefs y NTFS se utiliza el directorio `.snapraid/`,
 	en ZFS el estándar `.zfs/snapshot/`.
@@ -1589,8 +1594,12 @@ Ciclo de vida de las instantáneas (Snapshots Lifecycle)
 	calcular la paridad actual. Sirve como fuente de datos principal
 	para los comandos `scrub`, `check` y `fix`.
 
-	La instantánea `pending` es una imagen temporal creada al inicio
-	de un `sync` para proporcionar un estado congelado para el cómputo de paridad.
+	La instantánea `scan` es una imagen temporal creada al inicio
+	de un `sync` para proporcionar un estado congelado para el escaneo y el cómputo de paridad.
+	Después de escanear y guardar el nuevo estado de contenido, reemplaza la instantánea
+	`pending` anterior.
+
+	La instantánea `pending` es la imagen utilizada por un `sync` interrumpido.
 	Una vez completada con éxito la operación, la instantánea `stable` anterior
 	se elimina y la instantánea `pending` se promueve para
 	tomar su lugar como la nueva referencia estable.

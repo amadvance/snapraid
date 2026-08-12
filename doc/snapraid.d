@@ -66,7 +66,8 @@ Limitations
 	on whether the `snapshot` option is used:
 
 	* With snapshot support (available on Btrfs, ZFS, Bcachefs, and NTFS),
-		SnapRAID can automatically maintain a frozen reference of your data disks.
+		SnapRAID can automatically maintain an independent frozen reference
+		of each supported data filesystem.
 		This ensures that even if you modify or delete files on your live
 		filesystem during or after a sync, the recovery process remains
 		consistent and reliable.
@@ -1159,9 +1160,10 @@ Configuration
 	Enable the use of filesystem snapshots for the `sync`, `scrub`,
 	`check`, and `fix` commands.
 
-	When enabled, SnapRAID creates a read-only snapshot of your data at the
-	start of a 'sync'. This ensures a consistent, point-in-time view of your
-	files, preventing errors caused by concurrent file modifications.
+	When enabled, SnapRAID creates a read-only snapshot of each supported
+	data filesystem at the start of a 'sync'. This provides a stable view of
+	each filesystem, preventing later modifications from changing the data
+	used for parity computation.
 
 	This significantly improves recovery: if a file is deleted from the live
 	filesystem, it remains preserved in the snapshot. This prevents the parity
@@ -1429,8 +1431,9 @@ Configuration
 
 Snapshots
 	If the snapshot option is enabled in the configuration, SnapRAID
-	utilizes filesystem snapshot functionality to ensure atomic and
-	consistent operations.
+	uses filesystem snapshots to keep the data read during an operation
+	stable, even when files on the live filesystems are subsequently
+	modified or deleted.
 
 	The management of snapshots is completely automatic and transparent.
 	You can continue to use SnapRAID exactly as before, with the
@@ -1441,7 +1444,8 @@ Snapshots
 
 	Consistency - Files modified on the live filesystem during a long-running
 		sync or scrub will not cause parity mismatches or aborted
-		operations, as SnapRAID sees a frozen point-in-time image.
+		operations, because each snapshotted filesystem remains unchanged
+		for the duration of the operation.
 	Recovery - If a file is updated or deleted from the live filesystem,
 		it remains preserved in the snapshot. If a disk failure occurs
 		before the next sync is run, SnapRAID uses the data preserved
@@ -1475,13 +1479,13 @@ Snapshots
 	when snapshots are enabled.
 
   Command Behavior with Snapshots
-	The `sync` and `scrub` commands both operate exclusively on snapshots
-	to ensure that all data operations are performed against a consistent,
-	frozen state. By utilizing these snapshots, SnapRAID prevents parity
-	mismatches that would otherwise be triggered by concurrent file
-	modifications on the live filesystem.
-	During a `sync`, the command uses a new snapshot created at the
-	start of the process to capture the current state for parity computation.
+	The `sync` and `scrub` commands use snapshots for data disks whose
+	filesystems support them. On a snapshotted disk, the command sees
+	a stable filesystem image unaffected by concurrent changes to the
+	live filesystem.
+	During a `sync`, a new snapshot is created independently for each
+	supported data filesystem. These snapshots collectively provide the
+	data used for parity computation.
 	In contrast, the `scrub` command utilizes the last snapshot, the one
 	created during the most recent sync, to maintain a reliable reference
 	point that matches the existing parity.
@@ -1507,7 +1511,7 @@ Snapshots
 	All other commands operate exclusively on the live filesystem.
 
 Snapshots Lifecycle
-	SnapRAID manages two specific snapshots, `stable` and `pending`,
+	SnapRAID manages three specific snapshots, `stable`, `pending`, and `scan`,
 	within a hidden directory at the root of each data subvolume.
 	In Btrfs, Bcachefs, and NTFS it's used the `.snapraid/` directory,
 	in ZFS the standard `.zfs/snapshot/`.
@@ -1517,8 +1521,12 @@ Snapshots Lifecycle
 	compute the current parity. It serves as the primary data source
 	for `scrub`, `check`, and `fix` commands.
 
-	The `pending` snapshot is a temporary image created at the start
-	of a `sync` to provide a frozen state for parity computation.
+	The `scan` snapshot is a temporary image created at the start
+	of a `sync` to provide a frozen state for scanning and parity computation.
+	After scanning and saving the new content state, it replaces the previous
+	`pending` snapshot.
+
+	The `pending` snapshot is the image used by an interrupted sync.
 	Upon successful completion of the operation, the previous `stable`
 	snapshot is deleted, and the `pending` snapshot is promoted to
 	take its place as the new stable reference.

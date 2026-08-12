@@ -66,7 +66,8 @@ Einschränkungen (Limitations)
 	davon ab, ob die Option `snapshot` verwendet wird:
 
 	* Mit Snapshot-Unterstützung (verfügbar auf Btrfs, ZFS, Bcachefs und NTFS)
-		kann SnapRAID automatisch eine eingefrorene Referenz Ihrer Datenträger beibehalten.
+		kann SnapRAID automatisch eine unabhängige eingefrorene Referenz
+		jedes unterstützten Daten-Dateisystems beibehalten.
 		Dies stellt sicher, dass der Wiederherstellungsprozess konsistent und zuverlässig bleibt,
 		selbst wenn Sie während oder nach einem Sync Dateien auf Ihrem Live-Dateisystem ändern oder löschen.
 
@@ -1249,8 +1250,9 @@ Konfiguration (Configuration)
 	`check` und `fix`.
 
 	Wenn aktiviert, erstellt SnapRAID zu Beginn eines 'sync' einen schreibgeschützten
-	Snapshot Ihrer Daten. Dies gewährleistet eine konsistente Point-in-Time-Ansicht
-	Ihrer Dateien und verhindert Fehler, die durch gleichzeitige Dateiänderungen verursacht werden.
+	Snapshot jedes unterstützten Daten-Dateisystems. Dies bietet eine stabile Ansicht
+	jedes Dateisystems und verhindert, dass spätere Änderungen die für die Paritätsberechnung
+	verwendeten Daten verändern.
 
 	Dies verbessert die Wiederherstellung erheblich: Wenn eine Datei aus dem
 	Live-Dateisystem gelöscht wird, bleibt sie im Snapshot erhalten. Dies verhindert,
@@ -1536,8 +1538,9 @@ Konfiguration (Configuration)
 		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 Snapshots
-	Wenn die Snapshot-Option in der Konfiguration aktiviert ist, nutzt SnapRAID
-	die Dateisystem-Snapshot-Funktionalität, um atomare und konsistente Operationen zu gewährleisten.
+	Wenn die Snapshot-Option in der Konfiguration aktiviert ist, verwendet SnapRAID
+	Dateisystem-Snapshots, um die während einer Operation gelesenen Daten stabil zu halten,
+	selbst wenn Dateien auf den Live-Dateisystemen nachträglich geändert oder gelöscht werden.
 
 	Die Verwaltung von Snapshots erfolgt vollständig automatisch und transparent.
 	Sie können SnapRAID genau wie bisher verwenden, wobei der zusätzliche Schutz
@@ -1547,7 +1550,7 @@ Snapshots
 
 	Konsistenz - Dateien, die während eines lang laufenden Syncs oder Scrubs auf dem Live-Dateisystem
 		geändert werden, verursachen keine Paritätskonflikte oder abgebrochenen Operationen,
-		da SnapRAID ein eingefrorenes Point-in-Time-Abbild sieht.
+		weil jedes Dateisystem mit Snapshot für die Dauer der Operation unverändert bleibt.
 	Wiederherstellung - Wenn eine Datei im Live-Dateisystem aktualisiert oder gelöscht wird,
 		bleibt sie im Snapshot erhalten. Wenn ein Festplattenausfall auftritt,
 		bevor der nächste Sync ausgeführt wird, verwendet SnapRAID die im Snapshot konservierten Daten,
@@ -1580,12 +1583,13 @@ Snapshots
 	ausgeführt wird, wenn Snapshots aktiviert sind.
 
   Befehlsverhalten mit Snapshots (Command Behavior with Snapshots)
-	Die Befehle `sync` und `scrub` arbeiten beide ausschließlich auf Snapshots,
-	um sicherzustellen, dass alle Datenoperationen auf einem konsistenten,
-	eingefrorenen Zustand ausgeführt werden. Durch die Nutzung dieser Snapshots verhindert SnapRAID Paritätskonflikte,
-	die andernfalls durch gleichzeitige Dateiänderungen auf dem Live-Dateisystem ausgelöst würden.
-	Während eines `sync` verwendet der Befehl einen neuen Snapshot, der zu Beginn des Prozesses
-	erstellt wurde, um den aktuellen Zustand für die Paritätsberechnung zu erfassen.
+	Die Befehle `sync` und `scrub` verwenden Snapshots für Datenträger, deren
+	Dateisysteme diese unterstützen. Auf einer Festplatte mit Snapshot sieht der Befehl
+	ein stabiles Dateisystemabbild, das von gleichzeitigen Änderungen am Live-Dateisystem
+	unbeeinflusst bleibt.
+	Während eines `sync` wird unabhängig für jedes unterstützte Daten-Dateisystem ein
+	neuer Snapshot erstellt. Diese Snapshots liefern gemeinsam die für die Paritätsberechnung
+	verwendeten Daten.
 	Im Gegensatz dazu verwendet der Befehl `scrub` den letzten Snapshot, also den, der
 	während des letzten erfolgreichen Syncs erstellt wurde, um einen zuverlässigen Referenzpunkt
 	beizubehalten, der mit der vorhandenen Parität übereinstimmt.
@@ -1609,7 +1613,7 @@ Snapshots
 	Alle anderen Befehle arbeiten ausschließlich auf dem Live-Dateisystem.
 
 Lebenszyklus von Snapshots (Snapshots Lifecycle)
-	SnapRAID verwaltet zwei spezifische Snapshots, `stable` und `pending`,
+	SnapRAID verwaltet drei spezifische Snapshots, `stable`, `pending` und `scan`,
 	in einem versteckten Verzeichnis im Stammverzeichnis jedes Daten-Subvolumes.
 	Unter Btrfs, Bcachefs und NTFS wird das Verzeichnis `.snapraid/` verwendet,
 	unter ZFS das Standardverzeichnis `.zfs/snapshot/`.
@@ -1619,8 +1623,12 @@ Lebenszyklus von Snapshots (Snapshots Lifecycle)
 	Berechnung der aktuellen Parität verwendet wurden. Er dient als primäre Datenquelle
 	für die Befehle `scrub`, `check` und `fix`.
 
-	Der `pending`-Snapshot ist ein temporäres Abbild, das zu Beginn eines `sync`
-	erstellt wird, um einen eingefrorenen Zustand für die Paritätsberechnung bereitzustellen.
+	Der `scan`-Snapshot ist ein temporäres Abbild, das zu Beginn eines `sync`
+	erstellt wird, um einen eingefrorenen Zustand für das Scannen und die Paritätsberechnung bereitzustellen.
+	Nach dem Scannen und Speichern des neuen Inhaltszustands ersetzt er den vorherigen
+	`pending`-Snapshot.
+
+	Der `pending`-Snapshot ist das Abbild, das von einem unterbrochenen `sync` verwendet wird.
 	Nach erfolgreichem Abschluss des Vorgangs wird der vorherige `stable`-Snapshot gelöscht
 	und der `pending`-Snapshot wird heraufgestuft, um seinen Platz als neue stabile Referenz einzunehmen.
 

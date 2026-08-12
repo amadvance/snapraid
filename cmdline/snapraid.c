@@ -1806,7 +1806,7 @@ int snapraid_main(int argc, char* argv[])
 				state_write(&state);
 		}
 
-		ret = state_snapshot_new(&state);
+		ret = state_snapshot_scan(&state);
 		if (ret != 0) {
 			exit(EXIT_FAILURE);
 		}
