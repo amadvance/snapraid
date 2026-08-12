@@ -12,33 +12,27 @@
 #define RAID_MALLOC_ALIGN 256
 
 /*
- * Memory displacement to avoid L1 cache set aliasing and 4K aliasing penalties
- * on contiguous blocks, used by raid_malloc_vector().
+ * Memory displacement to color buffer starts across L1 cache sets, used by
+ * raid_malloc_vector().
  *
- * When allocating a sequence of disk buffers with a size that is a large
- * power of 2 (or multiples of 4KB/2MB), their starting addresses naturally
- * map to the exact same sets in the L1 Data Cache. If these blocks are
- * accessed in parallel during SIMD parity generation, the memory streams
- * will constantly evict each other, resulting in severe cache thrashing.
+ * On the intended x86 L1 data cache layout, cache lines are 64 bytes and there
+ * are 64 sets. Contiguous buffers whose size is a multiple of 4096 bytes have
+ * the same L1 set index at corresponding offsets. Parallel SIMD streams can
+ * then contend for the same set, reducing the useful prefetch distance and
+ * causing conflict misses.
  *
- * Furthermore, if buffers are separated by exact multiples of 4096 bytes,
- * modern CPUs suffer a "4K Aliasing" penalty. The memory disambiguation unit
- * misidentifies the lower 12-bits of the addresses as a match, attempting
- * invalid Store-to-Load Forwarding which results in a ~20-cycle pipeline flush.
+ * A displacement of X * 64 bytes changes the starting set index of each
+ * buffer. The cycle of distinct starting sets is 64 / gcd(X, 64).
  *
- * To eliminate both bottlenecks, each disk buffer is allocated with a dynamic
- * displacement of (X * 64 bytes). The optimal 'X' balances two hardware rules:
- * 1. L1 Capacity: The cycle of utilized L1 sets must be >= the number of disks.
- * 2. 4K Aliasing: 'X' should be as close to 32 (2048 bytes) as possible to
- * maximize the distance from 4096-byte boundaries.
+ * The multiplier X scales with the number of allocated buffers (n):
+ * - n <= 8  -> 24 * 64: Cycle of 8.
+ * - n <= 16 -> 28 * 64: Cycle of 16.
+ * - n <= 32 -> 30 * 64: Cycle of 32.
+ * - n > 32  -> 33 * 64: Cycle of 64.
  *
- * The multiplier 'X' scales dynamically based on the disk count (nd):
- * - nd <= 8  -> 24 * 64: Cycle of 8. Safest distance from 4K boundaries.
- * - nd <= 16 -> 28 * 64: Cycle of 16. Widely disperses memory streams across
- * the cache, preventing hardware prefetcher clustering.
- * - nd <= 32 -> 30 * 64: Cycle of 32. Tighter L1 packing.
- * - nd <= 64 -> 33 * 64: Cycle of 64. 33 and 64 are coprime, guaranteeing up
- * to 64 streams never collide in L1 or trigger 4K stalls.
+ * The 64-set cycle gives distinct starting set indexes for up to 64 buffers;
+ * for larger vectors the starting set indexes repeat. It reduces, but does not
+ * eliminate, all possible L1 cache conflicts.
  *
  * These are the results in MB/s with no displacement:
  *
@@ -52,8 +46,10 @@
  *     gen5   avx2e     488                                    7147    7465           14231
  *     gen6   avx2e     398                                    5828    6381           12196
  *
- * These are the results with a strategic cache line displacement,
- * demonstrating throughput improvements in the order of 20% or more:
+ * These are the results with the cache-line displacement, demonstrating
+ * throughput improvements in the order of 20% or more. They were measured on
+ * a machine without a two-dimensional prefetcher, where STRIDE_NOISE had no
+ * material effect. They therefore measure the fixed displacement alone:
  *
  * RAID functions used for computing the parity with 'sync':
  *             best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
