@@ -176,11 +176,11 @@ void state_thermal(struct snapraid_state* state, time_t now)
 
 	/* on error, just disable thermal gathering */
 	if (ret != 0)
-		return;
+		goto bail;
 
 	/* if the list is empty, it's not supported in this platform */
 	if (tommy_list_empty(&low))
-		return;
+		goto bail;
 
 	/* report new attribute */
 	state_attr(state, &low);
@@ -289,6 +289,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 	log_tag("thermal:highest:%d\n", highest_temperature);
 	log_flush();
 
+bail:
 	tommy_list_foreach(&high, free);
 	tommy_list_foreach(&low, free);
 }
