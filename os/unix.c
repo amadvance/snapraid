@@ -1327,9 +1327,9 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 	return pid;
 }
 
-int os_wait(pid_t pid, int* status)
+pid_t os_wait(pid_t pid, int* status)
 {
-	int ret;
+	pid_t ret;
 
 	do {
 		ret = waitpid(pid, status, 0);
