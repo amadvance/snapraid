@@ -7,6 +7,7 @@
 #ifdef __linux__
 #define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
 #define HAVE_DIRECT_IO 1 /**< Support O_DIRECT in open(). */
+#include <sys/syscall.h>
 #endif
 
 #define SYSLOG "syslog"
@@ -19,7 +20,6 @@
 
 /* implement close_range for glibc 2.33 or earlier */
 #if defined(__linux__) && !defined(HAVE_CLOSE_RANGE)
-#include <sys/syscall.h>
 #ifndef __NR_close_range
 #define __NR_close_range 436
 #endif

@@ -1494,35 +1494,6 @@ void os_privileges_drop(void)
 		}
 	}
 
-	os_privileges_release();
-}
-
-void os_privileges_acquire(void)
-{
-	if (can_switch) {
-		if (seteuid(0) != 0) {
-			if (errno == EPERM) {
-				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
-				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
-			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
-				os_abort();
-			}
-		}
-		if (setegid(0) != 0) {
-			if (errno == EPERM) {
-				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
-				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
-			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
-				os_abort();
-			}
-		}
-	}
-}
-
-void os_privileges_release(void)
-{
 	if (can_switch) {
 		if (setegid(unpriv_gid) != 0) {
 			if (errno == EPERM) {
@@ -1546,6 +1517,119 @@ void os_privileges_release(void)
 				os_abort();
 			}
 		}
+	}
+}
+
+void os_privileges_acquire(void)
+{
+	if (can_switch) {
+#if defined(__linux__) && defined(SYS_setresuid) && defined(SYS_setresgid)
+		/*
+		 * On Linux with glibc/NPTL, calling standard POSIX seteuid()/setegid() triggers an
+		 * internal SIGSETXID signal broadcast to all threads in the process to enforce process-wide
+		 * credential consistency. This causes two major issues:
+		 * 1. Security: Acquiring privileges in the task runner thread temporarily elevates ALL threads
+		 *    (including CivetWeb REST API threads handling HTTP requests) to root.
+		 * 2. Concurrency: Intermittent EAGAIN/EPERM errors or signal contention when multiple threads switch credentials.
+		 *
+		 * Using raw Linux syscalls (SYS_setresuid / SYS_setresgid) bypasses the glibc NPTL signal broadcast,
+		 * performing thread-local privilege escalation strictly for the calling thread while keeping WebUI
+		 * worker threads securely unprivileged.
+		 */
+		if (syscall(SYS_setresuid, (uid_t)-1, (uid_t)0, (uid_t)-1) != 0) {
+			if (errno == EPERM) {
+				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
+				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+		if (syscall(SYS_setresgid, (gid_t)-1, (gid_t)0, (gid_t)-1) != 0) {
+			if (errno == EPERM) {
+				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
+				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+#else
+		if (seteuid(0) != 0) {
+			if (errno == EPERM) {
+				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
+				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+		if (setegid(0) != 0) {
+			if (errno == EPERM) {
+				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
+				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+#endif
+	}
+}
+
+void os_privileges_release(void)
+{
+	if (can_switch) {
+#if defined(__linux__) && defined(SYS_setresuid) && defined(SYS_setresgid)
+		/*
+		 * Use raw Linux syscalls for thread-local privilege dropping to match os_privileges_acquire.
+		 */
+		if (syscall(SYS_setresgid, (gid_t)-1, (gid_t)unpriv_gid, (gid_t)-1) != 0) {
+			if (errno == EPERM) {
+				/*
+				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
+				 */
+				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+		if (syscall(SYS_setresuid, (uid_t)-1, (uid_t)unpriv_uid, (uid_t)-1) != 0) {
+			if (errno == EPERM) {
+				/*
+				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
+				 */
+				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+#else
+		if (setegid(unpriv_gid) != 0) {
+			if (errno == EPERM) {
+				/*
+				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
+				 */
+				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+		if (seteuid(unpriv_uid) != 0) {
+			if (errno == EPERM) {
+				/*
+				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
+				 */
+				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+#endif
 	}
 }
 
