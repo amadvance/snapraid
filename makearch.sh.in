@@ -2,10 +2,6 @@
 #
 # Script to build a Arch .pkg package for @PACKAGE_NAME@
 #
-# This version:
-# - Prefers a source tarball already present in the current directory
-# - Only downloads it if not found locally
-#
 # Requirements:
 # - Run as root (or with sudo) for proper ownership/permissions in package
 
@@ -13,7 +9,6 @@ set -euo pipefail
 
 VERSION="@PACKAGE_VERSION@"
 TARBALL="@PACKAGE@-${VERSION}.tar.gz"
-SOURCE_URL="https://github.com/amadvance/@PACKAGE@/releases/download/v${VERSION}/${TARBALL}"
 PKG_NAME="@PACKAGE@"
 PKG_ROOT="${PKG_NAME}-arch-root"
 
@@ -22,12 +17,9 @@ if [[ ! -f "pkg/.PKGINFO" ]]; then
   exit 1
 fi
 
-# Prefer local tarball
-if [[ -f "./${TARBALL}" ]]; then
-  echo "Found ${TARBALL} locally."
-else
-  echo "Downloading ${TARBALL}..."
-  curl -L -O "$SOURCE_URL"
+if [[ ! -f "${TARBALL}" ]]; then
+  echo "Error: ${TARBALL} not found in the current directory."
+  exit 1
 fi
 
 # Clean previous builds

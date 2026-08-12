@@ -6,8 +6,6 @@
 #
 # This version:
 # - Works without rpmdevtools
-# - Prefers a source tarball already present in the current directory
-# - Only downloads it if not found locally
 #
 # Requirements:
 # - rpmbuild available
@@ -32,7 +30,6 @@ fi
 echo "SnapRAID version: $VERSION"
 
 TARBALL="@PACKAGE@-${VERSION}.tar.gz"
-SOURCE_URL="https://github.com/amadvance/@PACKAGE@/releases/download/v${VERSION}/${TARBALL}"
 
 # Set up rpmbuild tree manually in ~/rpmbuild if it doesn't exist
 RPMBUILD_DIR="$HOME/rpmbuild"
@@ -43,15 +40,13 @@ else
   echo "rpmbuild directory structure already exists in $RPMBUILD_DIR"
 fi
 
-# Look for the tarball first in the current directory, then in ~/rpmbuild/SOURCES
+# Look for the tarball in the current directory
 if [[ -f "./$TARBALL" ]]; then
   echo "Found $TARBALL in the current directory. Copying to ~/rpmbuild/SOURCES..."
   cp "./$TARBALL" "$RPMBUILD_DIR/SOURCES/"
-elif [[ ! -f "$RPMBUILD_DIR/SOURCES/$TARBALL" ]]; then
-  echo "Downloading $TARBALL (not found locally or in ~/rpmbuild/SOURCES)..."
-  curl -L -o "$RPMBUILD_DIR/SOURCES/$TARBALL" "$SOURCE_URL"
 else
-  echo "$TARBALL already present in ~/rpmbuild/SOURCES"
+  echo "Error: $TARBALL not found in the current directory."
+  exit 1
 fi
 
 # Copy spec file to SPECS directory (preserving the original filename)
