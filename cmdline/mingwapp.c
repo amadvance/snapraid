@@ -373,6 +373,7 @@ static int windows_rebuild_link(const struct fssnapshot_struct* fss, const char*
 
 	/* if no device path, assume snapshot absent */
 	if (device_path[0] == 0) {
+		log_error(0, "WARNING! Snapshot '%s' DeviceObject lost or removed externally.\n", name);
 		/* remove stale links */
 		windows_rmdir(guid_link);
 		windows_rmdir(link_path);

@@ -6082,8 +6082,13 @@ void state_snapshot_read(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* check if it supports snapshot */
-		if (fssnapshot_mount(disk->mount_point, &disk->fss) != 0)
+		int res = fssnapshot_mount(disk->mount_point, &disk->fss);
+		if (res > 0)
 			continue;
+		if (res < 0) {
+			log_error(0, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem...\n", disk->name);
+			continue;
+		}
 
 		size_t root_len = strlen(disk->fss.root_dir);
 
@@ -6094,6 +6099,7 @@ void state_snapshot_read(struct snapraid_state* state)
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
 			} else {
 				/* fallback to standard mount point */
+				log_error(0, "WARNING! Disk %s snapshot missing, falling back to live filesystem...\n", disk->name);
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
@@ -6115,8 +6121,13 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 		struct snapraid_disk* disk = i->data;
 
 		/* check if it supports snapshot */
-		if (fssnapshot_mount(disk->mount_point, &disk->fss) != 0)
+		int res = fssnapshot_mount(disk->mount_point, &disk->fss);
+		if (res > 0)
 			continue;
+		if (res < 0) {
+			log_error(0, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem...\n", disk->name);
+			continue;
+		}
 
 		size_t root_len = strlen(disk->fss.root_dir);
 
@@ -6149,6 +6160,7 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
 			} else {
 				/* fallback to standard mount point */
+				log_error(0, "WARNING! Disk %s snapshot missing, falling back to live filesystem...\n", disk->name);
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
