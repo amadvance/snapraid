@@ -219,7 +219,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 		/* LCOV_EXCL_STOP */
 	}
 
-	f = open(path, O_RDONLY);
+	f = open(path, O_RDONLY | O_CLOEXEC);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
 		free(fiemap);
@@ -816,7 +816,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 #endif
 
 		/* io sandboxing */
-		int null_fd = open("/dev/null", O_RDWR);
+		int null_fd = open("/dev/null", O_RDWR | O_CLOEXEC);
 		if (null_fd == -1)
 			_exit(126);
 
@@ -1006,7 +1006,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 #endif
 
 		/* io sandboxing */
-		int null_fd = open("/dev/null", O_RDWR);
+		int null_fd = open("/dev/null", O_RDWR | O_CLOEXEC);
 		if (null_fd == -1)
 			_exit(126);
 
@@ -1615,7 +1615,7 @@ int os_randomize(void* ptr, size_t size)
 	int f;
 	ssize_t ret;
 
-	f = open("/dev/urandom", O_RDONLY);
+	f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
 		return -1;
