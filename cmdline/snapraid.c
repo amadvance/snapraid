@@ -1491,6 +1491,29 @@ int snapraid_main(int argc, char* argv[])
 
 	/* check options compatibility */
 	switch (operation) {
+#if HAVE_CHECKER
+	case OPERATION_SYNC :
+#endif
+	case OPERATION_DRY :
+	case OPERATION_CHECK :
+	case OPERATION_FIX :
+		break;
+	default :
+		if (blockstart != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EUSER, "You cannot use -S, --start with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (blockcount != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EUSER, "You cannot use -B, --count with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	switch (operation) {
 	case OPERATION_CHECK :
 		break;
 	default :

@@ -1097,12 +1097,14 @@ Optionen (Options)
 		Dies kann nützlich sein, um die Überprüfung oder Behebung
 		spezifischer Blöcke im Falle einer beschädigten Festplatte
 		zu wiederholen. Diese Option ist hauptsächlich für die erweiterte
-		manuelle Wiederherstellung gedacht.
+		manuelle Wiederherstellung gedacht und wird nur von `check`
+		und `fix` unterstützt.
 
 	-B, --count BLKCOUNT
 		Verarbeitet nur die angegebene Anzahl von Blöcken.
 		Diese Option ist hauptsächlich für die erweiterte manuelle
-		Wiederherstellung gedacht.
+		Wiederherstellung gedacht und wird nur von `check` und `fix`
+		unterstützt.
 
 	-C, --gen-conf CONTENT
 		Generiert eine Dummy-Konfigurationsdatei aus einer bestehenden

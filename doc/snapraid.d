@@ -1010,11 +1010,13 @@ Options
 		Starts processing from the specified
 		block number. This can be useful for retrying to check
 		or fix specific blocks in case of a damaged disk.
-		This option is mainly for advanced manual recovery.
+		This option is mainly for advanced manual recovery and
+		is supported only by `check` and `fix`.
 
 	-B, --count BLKCOUNT
 		Processes only the specified number of blocks.
-		This option is mainly for advanced manual recovery.
+		This option is mainly for advanced manual recovery and
+		is supported only by `check` and `fix`.
 
 	-C, --gen-conf CONTENT
 		Generates a dummy configuration file from an existing

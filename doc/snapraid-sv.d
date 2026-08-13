@@ -1011,11 +1011,13 @@ Alternativ (Options)
 		Börjar behandlingen från det specificerade
 		blocknumret. Detta kan vara användbart för att på nytt försöka kontrollera
 		eller fixa specifika block i händelse av en skadad disk.
-		Detta alternativ är främst för avancerad manuell återställning.
+		Detta alternativ är främst för avancerad manuell återställning
+		och stöds endast av `check` och `fix`.
 
 	-B, --count BLKCOUNT
 		Behandlar endast det specificerade antalet block.
-		Detta alternativ är främst för avancerad manuell återställning.
+		Detta alternativ är främst för avancerad manuell återställning
+		och stöds endast av `check` och `fix`.
 
 	-C, --gen-conf CONTENT
 		Genererar en dummy-konfigurationsfil från en befintlig

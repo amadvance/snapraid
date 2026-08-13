@@ -1135,11 +1135,13 @@ SnapRAID fornisce le seguenti opzioni:
         Avvia l'elaborazione dal numero di blocco specificato.
         Ciò può essere utile per riprovare a controllare o correggere
         blocchi specifici in caso di disco danneggiato.
-        Questa opzione è principalmente per il recupero manuale avanzato.
+        Questa opzione è principalmente per il recupero manuale avanzato
+        ed è supportata solo da `check` e `fix`.
 
     -B, --count BLKCOUNT
         Elabora solo il numero specificato di blocchi.
-        Questa opzione è principalmente per il recupero manuale avanzato.
+        Questa opzione è principalmente per il recupero manuale avanzato
+        ed è supportata solo da `check` e `fix`.
 
     -C, --gen-conf CONTENT
         Genera un file di configurazione fittizio da un file di contenuto

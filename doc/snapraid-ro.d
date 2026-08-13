@@ -1004,11 +1004,13 @@ Opțiuni (Options)
 		Începe procesarea de la numărul de bloc
 		specificat. Acest lucru poate fi util pentru a reîncerca verificarea
 		sau repararea anumitor blocuri în cazul unui disc deteriorat.
-		Această opțiune este în principal pentru recuperarea manuală avansată.
+		Această opțiune este în principal pentru recuperarea manuală avansată
+		și este acceptată numai de `check` și `fix`.
 
 	-B, --count BLKCOUNT
 		Procesează doar numărul specificat de blocuri.
-		Această opțiune este în principal pentru recuperarea manuală avansată.
+		Această opțiune este în principal pentru recuperarea manuală avansată
+		și este acceptată numai de `check` și `fix`.
 
 	-C, --gen-conf CONTENT
 		Generează un fișier de configurare fictiv dintr-un fișier

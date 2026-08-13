@@ -1037,11 +1037,13 @@ Opções (Options)
 		Começa o processamento a partir do número de bloco
 		especificado. Isso pode ser útil para tentar verificar
 		ou corrigir blocos específicos em caso de um disco danificado.
-		Esta opção é principalmente para recuperação manual avançada.
+		Esta opção é principalmente para recuperação manual avançada
+		e é suportada apenas por `check` e `fix`.
 
 	-B, --count BLKCOUNT
 		Processa apenas o número especificado de blocos.
-		Esta opção é principalmente para recuperação manual avançada.
+		Esta opção é principalmente para recuperação manual avançada
+		e é suportada apenas por `check` e `fix`.
 
 	-C, --gen-conf CONTENT
 		Gera um arquivo de configuração dummy a partir de um arquivo

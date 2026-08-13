@@ -1009,11 +1009,13 @@ Opcje (Options)
 		Zaczyna przetwarzanie od określonego
 		numeru bloku. Może to być przydatne do ponownej próby sprawdzenia
 		lub naprawy określonych bloków w przypadku uszkodzonego dysku.
-		Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania.
+		Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania
+		i jest obsługiwana tylko przez `check` i `fix`.
 
 	-B, --count BLKCOUNT
 		Przetwarza tylko określoną liczbę bloków.
-		Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania.
+		Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania
+		i jest obsługiwana tylko przez `check` i `fix`.
 
 	-C, --gen-conf CONTENT
 		Generuje atrapę pliku konfiguracyjnego z istniejącego
