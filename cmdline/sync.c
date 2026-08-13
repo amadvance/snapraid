@@ -286,7 +286,8 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			++countpos;
 
 			/* progress */
-			if (state_progress(state, 0, blockcur, countpos, countmax, countsize)) {
+			alert = state_progress(state, 0, blockcur, countpos, countmax, countsize);
+			if (alert != 0) {
 				/* LCOV_EXCL_START */
 				*skip_sync = 1; /* avoid to run the next sync due user interruption */
 				break;
@@ -318,6 +319,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* LCOV_EXCL_STOP */
 			}
 		}
+
+		if (*skip_sync)
+			break;
 	}
 
 end:
@@ -334,8 +338,6 @@ end:
 		msg_status("%8u soft errors\n", soft_error);
 		msg_status("%8u io errors\n", io_error);
 		msg_status("%8u data errors\n", silent_error);
-	} else {
-		msg_status("Everything OK\n");
 	}
 
 	if (soft_error)
@@ -378,7 +380,7 @@ finish:
 	if (soft_error + io_error + silent_error != 0)
 		return -1;
 
-	if (alert < 0)
+	if (alert != 0)
 		return -1;
 
 	return 0;
@@ -1346,7 +1348,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		++countpos;
 
 		/* progress */
-		if (state_progress(state, &io, blockcur, countpos, countmax, countsize)) {
+		alert = state_progress(state, &io, blockcur, countpos, countmax, countsize);
+		if (alert != 0) {
 			/* LCOV_EXCL_START */
 			break;
 			/* LCOV_EXCL_STOP */
@@ -1431,18 +1434,10 @@ end:
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
-
-	/* now the parity is fully written, no need to keep deallocated files */
-	state_commit(state);
-
 	if (state->opt.kill_after_sync) {
 		log_fatal(EUSER, "WARNING! Killing due --test-kill-after-sync option.\n");
 		exit(EXIT_SUCCESS);
 	}
-
-	/* save the new state if required */
-	if ((state->need_write || state->opt.force_content_write))
-		state_write(state);
 
 	state_usage_print(state);
 
@@ -1451,10 +1446,6 @@ end:
 		msg_status("%8u soft errors\n", soft_error);
 		msg_status("%8u io errors\n", io_error);
 		msg_status("%8u data errors\n", silent_error);
-	} else {
-		/* print the result only if processed something */
-		if (countpos != 0)
-			msg_status("Everything OK\n");
 	}
 
 	if (soft_error)
@@ -1525,7 +1516,7 @@ bail:
 			return -1;
 	}
 
-	if (alert < 0)
+	if (alert != 0)
 		return -1;
 
 	return 0;
@@ -1565,7 +1556,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	if (blockcount != 0 && blockcount < blockmax - blockstart) {
 		blockmax = blockstart + blockcount;
 	}
-
 	for (l = 0; l < state->level; ++l) {
 		data_off_t out_size;
 		block_off_t parityblocks;
@@ -1723,6 +1713,16 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (process_error != 0)
 		return -1;
+
+	msg_status("Everything OK\n");
+
+	/* only a clean full sync makes all deallocation records obsolete */
+	state_commit(state);
+
+	/* persist progress and error markings only after all parity handles are closed */
+	if (state->need_write || state->opt.force_content_write)
+		state_write(state);
+
 	return 0;
 }
 

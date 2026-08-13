@@ -682,8 +682,6 @@ end:
 		msg_status("%8u soft errors\n", soft_error);
 		msg_status("%8u io errors\n", io_error);
 		msg_status("%8u data errors\n", silent_error);
-	} else {
-		msg_status("Everything OK\n");
 	}
 
 	if (soft_error)
@@ -944,6 +942,9 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 
 	if (process_error != 0)
 		return -1;
+
+	msg_status("Everything OK\n");
+
 	return 0;
 }
 

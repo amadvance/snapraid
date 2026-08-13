@@ -4946,9 +4946,14 @@ void state_commit(struct snapraid_state* state)
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
-		/* clear the dealloc list */
-		tommy_list_foreach(&disk->dealloclist, (tommy_foreach_func*)dealloc_free);
-		tommy_list_init(&disk->dealloclist);
+		if (!tommy_list_empty(&disk->dealloclist)) {
+			/* clear the dealloc list */
+			tommy_list_foreach(&disk->dealloclist, (tommy_foreach_func*)dealloc_free);
+			tommy_list_init(&disk->dealloclist);
+
+			/* mark the state as needing write */
+			state->need_write = 1;
+		}
 	}
 }
 

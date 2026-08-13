@@ -1492,6 +1492,10 @@ int snapraid_main(int argc, char* argv[])
 	/* check options compatibility */
 	switch (operation) {
 #if HAVE_CHECKER
+	/*
+	 * Ranged sync is retained only for checker regression scenarios.
+	 * The checker never enables filesystem snapshots.
+	 */
 	case OPERATION_SYNC :
 #endif
 	case OPERATION_DRY :
@@ -1886,8 +1890,12 @@ int snapraid_main(int argc, char* argv[])
 
 		ret = state_sync(&state, blockstart, blockcount);
 
-		/* commit the snapshot as stable */
+		/*
+		 * On an operation error, intentionally leave snapshot mounts available
+		 * so that the user can inspect the filesystem state.
+		 */
 		if (ret == 0) {
+			/* commit the snapshot as stable */
 			ret = state_snapshot_commit(&state);
 			state_snapshot_cleanup(&state);
 		}
@@ -1940,6 +1948,10 @@ int snapraid_main(int argc, char* argv[])
 
 		ret = state_scrub(&state, plan100, olderthan);
 
+		/*
+		 * On an operation error, intentionally leave snapshot mounts available
+		 * so that the user can inspect the filesystem state.
+		 */
 		if (ret == 0) {
 			state_snapshot_cleanup(&state);
 		}
@@ -2076,6 +2088,10 @@ int snapraid_main(int argc, char* argv[])
 				state_scan(&state);
 		}
 
+		/*
+		 * On an operation error, intentionally leave snapshot mounts available
+		 * so that the user can inspect the filesystem state.
+		 */
 		if (ret == 0) {
 			state_snapshot_cleanup(&state);
 		}

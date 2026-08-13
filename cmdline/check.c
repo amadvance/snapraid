@@ -2091,11 +2091,7 @@ bail:
 			/* without checking, we don't know if they are really recoverable or not */
 			if (!state->opt.auditonly)
 				msg_status("%8u unrecoverable errors\n", unrecoverable_error);
-			if (fix)
-				msg_status("Everything OK\n");
 		}
-	} else {
-		msg_status("Everything OK\n");
 	}
 
 	if ((soft_error || io_error || silent_error) && !fix) {
@@ -2329,6 +2325,9 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	if (process_error != 0)
 		return -1;
+
+	msg_status("Everything OK\n");
+
 	return 0;
 }
 
