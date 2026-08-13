@@ -6003,6 +6003,8 @@ int state_snapshot_scan(struct snapraid_state* state)
 
 int state_snapshot_pending(struct snapraid_state* state)
 {
+	int error = 0;
+
 	if (!state->snapshot)
 		return 0;
 
@@ -6019,14 +6021,16 @@ int state_snapshot_pending(struct snapraid_state* state)
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, 0, 0) == 0) {
 			if (fssnapshot_delete(&disk->fss, SNAPSHOT_PENDING) != 0) {
 				log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-				return -1;
+				error = -1;
+				continue;
 			}
 		}
 
 		/* make the scan snapshot available for recovery */
 		if (fssnapshot_rename(&disk->fss, SNAPSHOT_SCAN, SNAPSHOT_PENDING) != 0) {
 			log_fatal(errno, "Failed to rename scan snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-			return -1;
+			error = -1;
+			continue;
 		}
 
 		msg_progress("Created disk %s pending snapshot...\n", disk->name);
@@ -6034,15 +6038,18 @@ int state_snapshot_pending(struct snapraid_state* state)
 		/* setup the snapshot in use */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk->mount_point + root_len, disk) != 0) {
 			log_error(errno, "Error stating pending snapshot '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-			return -1;
+			error = -1;
+			continue;
 		}
 	}
 
-	return 0;
+	return error;
 }
 
 int state_snapshot_commit(struct snapraid_state* state)
 {
+	int error = 0;
+
 	if (!state->snapshot)
 		return 0;
 
@@ -6057,20 +6064,22 @@ int state_snapshot_commit(struct snapraid_state* state)
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, 0, 0) == 0) {
 			if (fssnapshot_delete(&disk->fss, SNAPSHOT_STABLE) != 0) {
 				log_fatal(errno, "Failed to delete stable snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-				return -1;
+				error = -1;
+				continue;
 			}
 		}
 
 		/* rename pending to stable */
 		if (fssnapshot_rename(&disk->fss, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
 			log_fatal(errno, "Failed to rename snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-			return -1;
+			error = -1;
+			continue;
 		}
 
 		msg_progress("Committed disk %s stable snapshot...\n", disk->name);
 	}
 
-	return 0;
+	return error;
 }
 
 void state_snapshot_read(struct snapraid_state* state)
