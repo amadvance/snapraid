@@ -583,7 +583,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					} else {
 						log_tag("parity_error_data:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
 						log_error(EDATA, "Data error in parity '%s' at position '%" PRIu64 "', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
-						log_error(EDATA, "Data error in parity '%s' at position '%" PRIu64 "', diff parity bits %u/%u\n", lev_config_name(l), blockcur, diff, state->block_size * 8);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
