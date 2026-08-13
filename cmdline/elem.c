@@ -330,7 +330,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 
 int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_file* file)
 {
-	unsigned i;
+	block_off_t i;
 
 	if (!filter_error)
 		return 0;

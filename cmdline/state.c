@@ -2275,7 +2275,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			uint64_t v_mtime_sec;
 			uint32_t v_mtime_nsec;
 			uint64_t v_inode;
-			uint32_t v_idx;
+			block_off_t v_idx;
 			struct snapraid_file* file;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
