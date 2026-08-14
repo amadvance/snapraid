@@ -671,6 +671,8 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 
 	if (windows_rename(old_link, new_link) != 0) {
 		log_error(errno, "Error renaming '%s' to '%s'. %s.\n", old_link, new_link, strerror(errno));
+		/* remove as not valid anymore */
+		windows_delete_link(fss, old_name);
 		return -1;
 	}
 
