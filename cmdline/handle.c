@@ -32,6 +32,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	/* initial values, changed later if required */
 	handle->created = 0;
+	handle->readonly_errno = 0;
 
 	/*
 	 * Flags for opening
@@ -45,8 +46,12 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	/* if failed for missing write permission */
 	if (handle->f == -1 && (errno == EACCES || errno == EROFS)) {
+		int saved_errno = errno;
 		/* open for read-only */
 		handle->f = open(handle->path, flags | O_RDONLY);
+		if (handle->f != -1) {
+			handle->readonly_errno = saved_errno;
+		}
 	}
 
 	/* if failed for missing file */
@@ -109,6 +114,16 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 {
 	int ret;
 
+	if (handle->readonly_errno != 0) {
+		if (file->size == handle->st.st_size)
+			return 0;
+		/* LCOV_EXCL_START */
+		errno = handle->readonly_errno;
+		log_fatal(errno, "Failed to truncate file '%s' for missing write permission. %s.\n", handle->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
 	ret = ftruncate(handle->f, file->size);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
@@ -145,6 +160,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 
 	/* for sure not created */
 	handle->created = 0;
+	handle->readonly_errno = 0;
 
 	/*
 	 * Flags for opening
@@ -220,6 +236,7 @@ int handle_close(struct snapraid_handle* handle)
 	handle->file = 0;
 	handle->f = -1;
 	handle->valid_size = 0;
+	handle->readonly_errno = 0;
 
 	return 0;
 }
@@ -303,6 +320,14 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 	ssize_t write_size;
 	ssize_t count;
 	int ret;
+
+	if (handle->readonly_errno != 0) {
+		/* LCOV_EXCL_START */
+		errno = handle->readonly_errno;
+		log_fatal(errno, "Failed to write file '%s' for missing write permission. %s.\n", handle->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	offset = file_pos * (data_off_t)block_size;
 
@@ -390,6 +415,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		handle[j].file = 0;
 		handle[j].f = -1;
 		handle[j].valid_size = 0;
+		handle[j].readonly_errno = 0;
 		handle[j].bw = 0;
 	}
 
