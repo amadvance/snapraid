@@ -1674,6 +1674,17 @@ uint64_t os_tick(void)
 
 uint64_t os_tick_ms(void)
 {
+#if HAVE_CLOCK_GETTIME && defined(CLOCK_MONOTONIC)
+	struct timespec ts;
+
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+		/* LCOV_EXCL_START */
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return ts.tv_sec * 1000ULL + ts.tv_nsec / 1000000;
+#else
 	struct timeval tv;
 
 	if (gettimeofday(&tv, 0) != 0) {
@@ -1683,15 +1694,32 @@ uint64_t os_tick_ms(void)
 	}
 
 	return tv.tv_sec * 1000ULL + tv.tv_usec / 1000;
+#endif
 }
 
 uint64_t os_tick_sec(void)
 {
+#if HAVE_CLOCK_GETTIME && defined(CLOCK_MONOTONIC)
 	struct timespec ts;
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+		/* LCOV_EXCL_START */
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return ts.tv_sec;
+#else
+	struct timeval tv;
+
+	if (gettimeofday(&tv, 0) != 0) {
+		/* LCOV_EXCL_START */
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return tv.tv_sec;
+#endif
 }
 
 int os_usleep(uint64_t usec)
