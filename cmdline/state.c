@@ -2133,8 +2133,15 @@ static int fs_is_block_unsynced(struct snapraid_state* state, block_off_t pos)
 }
 
 /**
- * Flush the file checking the final CRC.
+ * Flush the file checking the final CRC and abort on error.
  * We exploit the fact that the CRC is always stored in the last 4 bytes.
+ *
+ * Notice that on corruption, decoding error, or CRC mismatch we intentionally
+ * exit with a fatal error rather than automatically falling back to another
+ * content file. Automatic fallback could silently mask disk or memory corruption
+ * or inadvertently load a stale state. We require the user to explicitly rename
+ * or delete the corrupted file so SnapRAID will fall back to the surviving copy
+ * on the next run.
  */
 static void decoding_error(const char* path, STREAM* f)
 {
@@ -2145,7 +2152,9 @@ static void decoding_error(const char* path, STREAM* f)
 	if (seof(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal(ECONTENT, "Unexpected end of content file '%s' at offset %" PRIi64 "\n", path, stell(f));
-		log_fatal(ECONTENT, "This content file is truncated. Please use an alternate copy.\n");
+		log_fatal(ECONTENT, "The content file '%s' is truncated!\n", path);
+		log_fatal(ECONTENT, "To recover, rename or delete it and rerun the command.\n");
+		log_fatal(ECONTENT, "SnapRAID will automatically fall back to the next healthy copy.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2177,7 +2186,9 @@ static void decoding_error(const char* path, STREAM* f)
 
 	if (crc_computed != crc_stored) {
 		log_fatal(ECONTENT, "CRC mismatch in '%s'\n", path);
-		log_fatal(ECONTENT, "This content file is damaged! Please use an alternate copy.\n");
+		log_fatal(ECONTENT, "The content file '%s' is damaged or corrupted (CRC mismatch)!\n", path);
+		log_fatal(ECONTENT, "To recover, rename or delete it and rerun the command.\n");
+		log_fatal(ECONTENT, "SnapRAID will automatically fall back to the next healthy copy.\n");
 		exit(EXIT_FAILURE);
 	} else {
 		log_fatal(ECONTENT, "The CRC of the file is correct!\n");
@@ -3398,7 +3409,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				/* here don't call decoding_error() because it's too late to get the crc */
 				log_fatal(errno, "Error reading the CRC in '%s' at offset %" PRIi64 "\n", path, stell(f));
-				log_fatal(errno, "This content file is damaged! Use an alternate copy.\n");
+				log_fatal(errno, "The content file '%s' is damaged or corrupted!\n", path);
+				log_fatal(errno, "To recover, rename or delete it and rerun the command.\n");
+				log_fatal(errno, "SnapRAID will automatically fall back to the next healthy copy.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3407,7 +3420,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				/* here don't call decoding_error() because it's too late to get the crc */
 				log_fatal(ECONTENT, "CRC mismatch in '%s'\n", path);
-				log_fatal(ECONTENT, "The content file is damaged! Please use an alternate copy.\n");
+				log_fatal(ECONTENT, "The content file '%s' is damaged or corrupted (CRC mismatch)!\n", path);
+				log_fatal(ECONTENT, "To recover, rename or delete it and rerun the command.\n");
+				log_fatal(ECONTENT, "SnapRAID will automatically fall back to the next healthy copy.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3440,7 +3455,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	if (!crc_checked) {
 		/* LCOV_EXCL_START */
 		log_fatal(ECONTENT, "Reached the end of '%s' without finding the expected CRC\n", path);
-		log_fatal(ECONTENT, "This content file is truncated or damaged! Use an alternate copy.\n");
+		log_fatal(ECONTENT, "The content file '%s' is truncated or damaged!\n", path);
+		log_fatal(ECONTENT, "To recover, rename or delete it and rerun the command.\n");
+		log_fatal(ECONTENT, "SnapRAID will automatically fall back to the next healthy copy.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4548,7 +4565,15 @@ void state_read(struct snapraid_state* state)
 	int ret;
 	int c;
 
-	/* iterate over all the available content files and load the first one present */
+	/*
+	 * Iterate over all the available content files and load the first one present.
+	 *
+	 * Only missing files (ENOENT) trigger automatic failover to the next replica.
+	 * If a file exists but is corrupted or damaged, reading will fail-fast with
+	 * exit(EXIT_FAILURE) to alert the user to possible hardware or filesystem corruption.
+	 * Once the user renames or removes the broken copy, the next run will fall back
+	 * to the healthy replica and automatically re-create the missing one.
+	 */
 	f = 0;
 	node = tommy_list_head(&state->contentlist);
 	while (node) {
