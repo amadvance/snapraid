@@ -192,7 +192,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		}
 
 		/* exclude snapshot container even before calling lstat() */
-		if (disk != 0 && filter_snapshot(sub, name) != 0) {
+		if (disk != 0 && filter_snapshot(state->snapshot, sub, name) != 0) {
 			msg_verbose("Excluding snapshots directory '%s'\n", path_next);
 			continue;
 		}

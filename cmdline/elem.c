@@ -389,8 +389,11 @@ int filter_content(tommy_list* contentlist, const char* mount_point, size_t moun
 	return 0;
 }
 
-int filter_snapshot(const char* sub, const char* name)
+int filter_snapshot(int enable, const char* sub, const char* name)
 {
+	if (!enable)
+		return 0;
+
 	if (*sub == 0 && pathcmp(name, SNAPSHOT_CONTAINER) == 0)
 		return -1;
 

@@ -649,7 +649,7 @@ int filter_content(tommy_list* contentlist, const char* mount_point, size_t moun
  * Filter a path that is in a snapshot
  * Return !=0 if should be excluded.
  */
-int filter_snapshot(const char* sub, const char* name);
+int filter_snapshot(int enable, const char* sub, const char* name);
 
 /**
  * Check if the specified hash is invalid.

@@ -1437,7 +1437,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		}
 
 		/* exclude snapshot container even before calling lstat() */
-		if (filter_snapshot(sub_next, name) != 0) {
+		if (filter_snapshot(state->snapshot, sub_next, name) != 0) {
 			msg_verbose("Excluding snapshots directory '%s'\n", path_next);
 			continue;
 		}
