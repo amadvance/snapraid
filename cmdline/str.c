@@ -316,14 +316,15 @@ static const char* match_class(const char* p, char t)
 	while (*p && *p != ']') {
 		if (p[1] == '-' && p[2] != ']' && p[2] != 0) {
 			/* range [a-z] */
-			char start = *p;
-			char end = p[2];
+			unsigned char start = (unsigned char)*p;
+			unsigned char end = (unsigned char)p[2];
+			unsigned char c = (unsigned char)t;
 #ifdef WIN32
-			start = tolower((unsigned char)start);
-			end = tolower((unsigned char)end);
-			t = tolower((unsigned char)t);
+			start = tolower(start);
+			end = tolower(end);
+			c = tolower(c);
 #endif
-			if (t >= start && t <= end)
+			if (c >= start && c <= end)
 				matched = 1;
 			p += 3;
 		} else {
