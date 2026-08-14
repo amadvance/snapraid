@@ -897,7 +897,7 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 			break;
 
 		/* split the line */
-		mac = strsplit(map, 3, s, " \t\n");
+		mac = strsplit(map, 3, s, "\t\n");
 
 		if (mac < 3)
 			continue;
