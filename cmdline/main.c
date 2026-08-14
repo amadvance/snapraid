@@ -8,6 +8,35 @@
 #define MODE_DEFAULT 0
 #define MODE_SPINDOWN 1
 
+static int build_spindown_argv(int argc, char* argv[], char* spindown_argv[5])
+{
+	char* conf = 0;
+	int count = 0;
+	int i;
+
+	for (i = 1; i < argc; ++i) {
+		if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--conf") == 0) {
+			if (i + 1 < argc) {
+				conf = argv[++i];
+			}
+		} else if (strncmp(argv[i], "-c", 2) == 0 && argv[i][2] != 0) {
+			conf = argv[i] + 2;
+		} else if (strncmp(argv[i], "--conf=", 7) == 0) {
+			conf = argv[i] + 7;
+		}
+	}
+
+	spindown_argv[count++] = argv[0];
+	if (conf) {
+		spindown_argv[count++] = "-c";
+		spindown_argv[count++] = conf;
+	}
+	spindown_argv[count++] = "down";
+	spindown_argv[count] = 0;
+
+	return count;
+}
+
 #ifdef _WIN32
 #define COMMAND_LINE_MAX 32767
 
@@ -274,17 +303,15 @@ int main(int argc, char* argv[])
 		ret = res;
 
 		if (ret != 0) {
-			char* spindown_argv[3];
-			spindown_argv[0] = utf8_argv[0];
-			spindown_argv[1] = "down";
-			spindown_argv[2] = 0;
+			char* spindown_argv[5];
+			int spindown_argc = build_spindown_argv(utf8_argc, utf8_argv, spindown_argv);
 
 			/* sync all disks */
 			printf("Flush...\n");
 			if (sync() != 0)
 				printf("WARNING! Failed to flush disks!\n");
 
-			snapraid_main(2, spindown_argv);
+			snapraid_main(spindown_argc, spindown_argv);
 		}
 	}
 
@@ -453,17 +480,15 @@ int main(int argc, char* argv[])
 			}
 
 			if (ret != 0) {
-				char* spindown_argv[3];
-				spindown_argv[0] = argv[0];
-				spindown_argv[1] = "down";
-				spindown_argv[2] = 0;
+				char* spindown_argv[5];
+				int spindown_argc = build_spindown_argv(argc, argv, spindown_argv);
 
 				/* ignore sigpipe to allow spindown even if the terminal is closed */
 				signal(SIGPIPE, SIG_IGN);
 
 				/* in *nix DO NOT CALL sync() because we use syncfs() in all single disks befode the down command */
 
-				snapraid_main(2, spindown_argv);
+				snapraid_main(spindown_argc, spindown_argv);
 			}
 		}
 	}
