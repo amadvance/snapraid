@@ -42,7 +42,7 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 	bw->total += bytes;
 	done = bw->total;
 
-	eta = done * 1000 / bw->limit;
+	eta = (done / bw->limit) * 1000 + (done % bw->limit) * 1000 / bw->limit;
 
 	/*
 	 * To prevent accumulating unlimited credit during long pauses
@@ -61,10 +61,7 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 #endif
 
 	if (eta > elapsed) {
-		eta -= elapsed;
-		if (eta > 1000)
-			eta = 1000;
-		usleep((unsigned)eta * 1000);
+		os_usleep((eta - elapsed) * 1000);
 	}
 }
 

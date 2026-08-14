@@ -308,6 +308,16 @@ uint64_t os_tick_ms(void);
 uint64_t os_tick_sec(void);
 
 /**
+ * Sleep for the specified number of microseconds.
+ *
+ * Loops in bounded intervals and returns on the first error or signal interruption.
+ * \param usec Number of microseconds to sleep.
+ * \return 0 on success, -1 on error.
+ */
+int os_usleep(uint64_t usec);
+
+
+/**
  * Abort the process with a stacktrace.
  */
 void os_abort(void) __noreturn;
@@ -343,3 +353,4 @@ int os_randomize(void* ptr, size_t size);
 int os_get_optimal_cpu(void);
 
 #endif
+

@@ -1694,6 +1694,34 @@ uint64_t os_tick_sec(void)
 	return ts.tv_sec;
 }
 
+int os_usleep(uint64_t usec)
+{
+	while (usec > 0) {
+		unsigned chunk = 999999;
+		if (usec < chunk)
+			chunk = (unsigned)usec;
+
+		if (os_signal_interrupt()) {
+			errno = EINTR;
+			return -1;
+		}
+
+		/*
+		 * Sleep in intervals of at most 999999 microseconds because POSIX usleep()
+		 * only accepts values less than 1,000,000 microseconds (< 1 second)
+		 * and may fail with EINVAL for larger values.
+		 */
+		if (usleep(chunk) != 0)
+			return -1;
+
+		usec -= chunk;
+	}
+
+	return 0;
+}
+
+
+
 int os_randomize(void* ptr, size_t size)
 {
 	int f;

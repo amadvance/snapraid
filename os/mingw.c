@@ -469,10 +469,10 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	 * the nFileIndexHigh and nFileIndexLow members. This API is an extended version
 	 * that includes 128-bit file identifiers.  If GetFileInformationByHandle returns
 	 * FILE_INVALID_FILE_ID, the identifier may only be described in 128 bit form.
-	 * 
+	 *
 	 * From Microsoft "[MS-FSCC]: File System Control Codes - 11/21/2025 v60.0 - 6 Appendix B: Product Behavior"
 	 * https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0
-	 * 
+	 *
 	 * 64bitFileID Generate Stable Unique
 	 * FAT           Yes      No     No
 	 * EXFAT         Yes      No     No
@@ -492,7 +492,7 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	 *
 	 * From Microsoft "[MS-FSCC]: File System Control Codes - 11/21/2025 v60.0 - 2.1.9 64-bit file ID"
 	 * https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/2d3333fe-fc98-4a6f-98a2-4bb805aff407?utm_source=chatgpt.com
-	 * 
+	 *
 	 * A 64-bit file ID value uniquely identifies a file within a given volume. This
 	 * identifier is generated and stored by the file system. The identifier SHOULD
 	 * be unique to the volume and stable until the file is deleted.
@@ -1598,11 +1598,6 @@ unsigned windows_sleep(unsigned seconds)
 	}
 
 	return seconds;
-}
-
-void windows_usleep(uint64_t useconds)
-{
-	Sleep(useconds / 1000);
 }
 
 int windows_link(const char* existing, const char* file)
@@ -3457,6 +3452,27 @@ uint64_t os_tick_ms(void)
 {
 	return GetTickCount64();
 }
+
+int os_usleep(uint64_t usec)
+{
+	while (usec > 0) {
+		unsigned chunk = 1000000;
+		if (usec < chunk)
+			chunk = (unsigned)usec;
+
+		if (os_signal_interrupt()) {
+			errno = EINTR;
+			return -1;
+		}
+
+		Sleep(chunk / 1000);
+
+		usec -= chunk;
+	}
+
+	return 0;
+}
+
 
 void os_privileges_acquire(void)
 {
