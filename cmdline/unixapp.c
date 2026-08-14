@@ -722,6 +722,36 @@ bail:
 	return -1;
 }
 
+/**
+ * Decodes octal escape sequences (\ooo) in place.
+ *
+ * In /proc/self/mountinfo, special characters like spaces, tabs, newlines,
+ * and backslashes are encoded as 3-digit octal escape sequences (e.g. \040 for space).
+ * Decoding is performed in place because the decoded character is always
+ * shorter than the 4-byte escape sequence.
+ */
+static void unescape_mount(char* s)
+{
+	char* r = s;
+	char* w = s;
+
+	while (*r != 0) {
+		if (r[0] == '\\'
+			&& r[1] >= '0' && r[1] <= '7'
+			&& r[2] >= '0' && r[2] <= '7'
+			&& r[3] >= '0' && r[3] <= '7') {
+			*w = (char)(((r[1] - '0') << 6) | ((r[2] - '0') << 3) | (r[3] - '0'));
+			++w;
+			r += 4;
+		} else {
+			*w = *r;
+			++w;
+			++r;
+		}
+	}
+	*w = 0;
+}
+
 static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list* devlist)
 {
 	char resolved[PATH_MAX];
@@ -784,6 +814,7 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 			continue;
 
 		/* mount point must contain the directory */
+		unescape_mount(id_map[4]);
 		const char* mp = id_map[4];
 		size_t mp_len = strlen(mp);
 		if (strncmp(resolved, mp, mp_len) != 0)
@@ -799,6 +830,7 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 		/* keep the longest (innermost) match */
 		if (mp_len > best_len) {
 			best_len = mp_len;
+			unescape_mount(fs_map[1]);
 			pathcpy(device_list, sizeof(device_list), fs_map[1]);
 		}
 	}
