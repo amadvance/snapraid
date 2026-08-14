@@ -56,12 +56,20 @@ void bw_limit(struct snapraid_bw* bw, uint64_t bytes)
 		elapsed = eta + 10000;
 	}
 
-#if HAVE_THREAD
-	thread_mutex_unlock(&bw->lock);
-#endif
-
+	/*
+	 * Sleep inside the lock to serialize delays across all worker threads.
+	 *
+	 * When multiple threads perform IO in parallel, holding the lock
+	 * during sleep ensures each thread only sleeps for its own incremental
+	 * delay, while waiting threads wait on the mutex and accurately measure
+	 * the elapsed time once they acquire the lock.
+	 */
 	if (eta > elapsed) {
 		os_usleep((eta - elapsed) * 1000);
 	}
+
+#if HAVE_THREAD
+	thread_mutex_unlock(&bw->lock);
+#endif
 }
 
