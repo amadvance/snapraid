@@ -159,12 +159,27 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 		block->size = read_size;
 
 		memcpy(block->hash, dealloc->blockhash + i * BLOCK_HASH_SIZE, BLOCK_HASH_SIZE);
-		hash_invalid_set(block->prevhash);
 
 		/* do not insert invalid hashes */
-		if (!hash_is_invalid(block->hash))
+		if (!hash_is_invalid(block->hash)) {
 			tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
-		/* do not insert prevhash */
+
+			/* if we are in a rehash state */
+			if (state->prevhash != HASH_UNDEFINED) {
+				/*
+				 * The deallocation record doesn't identify which hash algorithm
+				 * produced the stored digest, so index it under both algorithms.
+				 * This is safe because state_import_fetch() hashes the candidate
+				 * bytes with the requested algorithm before accepting them.
+				 */
+				memcpy(block->prevhash, block->hash, BLOCK_HASH_SIZE);
+				tommy_hashdyn_insert(&state->previmportset, &block->prevnodeset, block, import_block_hash(block->prevhash));
+			} else {
+				hash_invalid_set(block->prevhash);
+			}
+		} else {
+			hash_invalid_set(block->prevhash);
+		}
 
 		offset += read_size;
 		size -= read_size;
