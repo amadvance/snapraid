@@ -742,6 +742,74 @@ int os_validate_exec_input(const char* str)
 	return 0;
 }
 
+/****************************************************************************/
+/* user credential management */
+
+#define GROUPS_MAX 64
+#define PASSWD_MAX 2048
+
+struct os_user {
+	int enabled;
+	uid_t uid;
+	gid_t gid;
+	int ngroups;
+	gid_t groups[GROUPS_MAX];
+};
+
+#ifdef __APPLE__
+typedef int os_group_t;
+#else
+typedef gid_t os_group_t;
+#endif
+
+static int os_user_lookup(const char* run_as_user, struct os_user* user)
+{
+	memset(user, 0, sizeof(*user));
+
+	if (!run_as_user || run_as_user[0] == 0)
+		return 0;
+
+	struct passwd pw;
+	struct passwd* pw_res = 0;
+	char pw_buf[PASSWD_MAX];
+	int err = getpwnam_r(run_as_user, &pw, pw_buf, sizeof(pw_buf), &pw_res);
+	if (err != 0 || !pw_res) {
+		os_syslog(OS_LVL_INFO, "failed to get user info for %s, errno=%s(%d)", run_as_user, strerror(err ? err : ENOENT), err ? err : ENOENT);
+		return -1;
+	}
+
+	user->enabled = 1;
+	user->uid = pw.pw_uid;
+	user->gid = pw.pw_gid;
+
+	os_group_t groups_buf[GROUPS_MAX];
+	int ngroups = sizeof(groups_buf) / sizeof(groups_buf[0]);
+
+	if (getgrouplist(pw.pw_name, (os_group_t)pw.pw_gid, groups_buf, &ngroups) < 0) {
+		os_syslog(OS_LVL_INFO, "failed to get group list for %s, exceeds maximum of %d groups", run_as_user, GROUPS_MAX);
+		return -1;
+	}
+
+	user->ngroups = ngroups;
+	for (int i = 0; i < ngroups; ++i) {
+		user->groups[i] = (gid_t)groups_buf[i];
+	}
+
+	return 0;
+}
+
+static void os_user_drop_privileges(const struct os_user* user)
+{
+	if (user->enabled) {
+		if (setgroups(user->ngroups, user->groups) != 0)
+			_exit(126);
+		if (setgid(user->gid) != 0)
+			_exit(126);
+		if (setuid(user->uid) != 0)
+			_exit(126);
+	}
+}
+
 /**
  * Executes a script directly via its file descriptor.
  */
@@ -752,6 +820,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	int ret;
 	int status;
 	int64_t start, stop;
+	struct os_user user;
 
 	int fd = verify_executable(argv[0], resolved_path, 1);
 	if (fd < 0) {
@@ -759,6 +828,11 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	}
 
 	if (verify_shebang_interpreter(fd, resolved_path) != 0) {
+		close(fd);
+		return -1;
+	}
+
+	if (os_user_lookup(run_as_user, &user) != 0) {
 		close(fd);
 		return -1;
 	}
@@ -788,23 +862,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		setpgid(0, 0);
 
 		/* drop privileges first (if configured) */
-		if (run_as_user && run_as_user[0] != 0) {
-			errno = 0;
-			struct passwd* pw = getpwnam(run_as_user);
-			if (!pw) {
-				/* if errno is 0, user simply wasn't found. Otherwise, it's a real error */
-				if (errno == 0)
-					_exit(127);
-				else
-					_exit(126);
-			}
-			if (initgroups(pw->pw_name, pw->pw_gid) != 0)
-				_exit(126);
-			if (setgid(pw->pw_gid) != 0)
-				_exit(126);
-			if (setuid(pw->pw_uid) != 0)
-				_exit(126);
-		}
+		os_user_drop_privileges(&user);
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
 		/* Send SIGKILL to child if parent daemon dies unexpectedly */
@@ -938,6 +996,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	int status;
 	int pipe_fds[2] = { -1, -1 };
 	int64_t start, stop;
+	struct os_user user;
 
 	/* create pipe only if we have text to send */
 	if (stdin_text != NULL) {
@@ -945,6 +1004,14 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			os_syslog(OS_LVL_INFO, "failed to create input pipe, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
+	}
+
+	if (os_user_lookup(run_as_user, &user) != 0) {
+		if (pipe_fds[0] != -1) {
+			close(pipe_fds[0]);
+			close(pipe_fds[1]);
+		}
+		return -1;
 	}
 
 	start = os_tick_sec();
@@ -978,23 +1045,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			close(pipe_fds[1]); /* Close unused write end */
 
 		/* drop privileges first (if configured) */
-		if (run_as_user && run_as_user[0] != 0) {
-			errno = 0;
-			struct passwd* pw = getpwnam(run_as_user);
-			if (!pw) {
-				/* if errno is 0, user simply wasn't found. Otherwise, it's a real error */
-				if (errno == 0)
-					_exit(127);
-				else
-					_exit(126);
-			}
-			if (initgroups(pw->pw_name, pw->pw_gid) != 0)
-				_exit(126);
-			if (setgid(pw->pw_gid) != 0)
-				_exit(126);
-			if (setuid(pw->pw_uid) != 0)
-				_exit(126);
-		}
+		os_user_drop_privileges(&user);
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
 		/* Send SIGKILL to child if parent daemon dies unexpectedly */
@@ -1160,6 +1211,7 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 	int has_out = (stdout_read_fd != NULL);
 	int has_err = (stderr_read_fd != NULL);
 	pid_t pid;
+	struct os_user user;
 
 	int fd = verify_executable(argv[0], resolved_path, 0);
 	if (fd < 0) {
@@ -1184,6 +1236,19 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 			close(fd);
 			return -1;
 		}
+	}
+
+	if (os_user_lookup(run_as_user, &user) != 0) {
+		if (has_out) {
+			close(out_pipe[0]);
+			close(out_pipe[1]);
+		}
+		if (has_err) {
+			close(err_pipe[0]);
+			close(err_pipe[1]);
+		}
+		close(fd);
+		return -1;
 	}
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
@@ -1211,22 +1276,7 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 		setpgid(0, 0);
 
 		/* drop privileges first (if configured) */
-		if (run_as_user && run_as_user[0] != 0) {
-			errno = 0;
-			struct passwd* pw = getpwnam(run_as_user);
-			if (!pw) {
-				if (errno == 0)
-					_exit(127);
-				else
-					_exit(126);
-			}
-			if (initgroups(pw->pw_name, pw->pw_gid) != 0)
-				_exit(126);
-			if (setgid(pw->pw_gid) != 0)
-				_exit(126);
-			if (setuid(pw->pw_uid) != 0)
-				_exit(126);
-		}
+		os_user_drop_privileges(&user);
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
 		/* Send SIGKILL to child if parent daemon dies unexpectedly */
