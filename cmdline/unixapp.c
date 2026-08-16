@@ -211,9 +211,8 @@ static ssize_t sysread(const char* path, char* buf, size_t buf_size)
 
 #if HAVE_LINUX_DEVICE
 /*
- * sysread_vpd_pg83 — parse raw binary VPD page 0x83 (Device Identification)
- * from a sysfs vpd_pg83 file and extract the first NAA (Network Address
- * Authority) designator for the Logical Unit (ASSOCIATION == 0x00).
+ * sysattr_vpd_pg80 — parse raw binary VPD page 0x80 (Unit Serial Number)
+ * from a sysfs vpd_pg80 file.
  */
 static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
 {
@@ -235,7 +234,7 @@ static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
 	}
 
 	/* clamp to what was actually read */
-	size_t page_len = buf[3];
+	size_t page_len = ((size_t)buf[2] << 8) | buf[3];
 	size_t available = (size_t)ret - 4;
 	if (available < page_len)
 		page_len = available;
