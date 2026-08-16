@@ -895,7 +895,9 @@ static int devstat(uint64_t device, const char* name, const char* wfile, uint64_
 		return -1;
 	}
 
-	*count = ds.ReadCount + ds.WriteCount;
+	/* accumulate in 64-bit to avoid 32-bit overflow when adding the two DWORD counters */
+	*count = ds.ReadCount;
+	*count += ds.WriteCount;
 
 	return 0;
 }
