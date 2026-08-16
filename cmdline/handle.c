@@ -273,13 +273,15 @@ ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsign
 
 	read_size = file_block_size(handle->file, file_pos, block_size);
 
-	count = 0;
-	errno = 0;
-	do {
-		bw_limit(handle->bw, block_size - count);
+	bw_limit(handle->bw, block_size);
 
+	count = 0;
+	do {
 		read_ret = pread(handle->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret == -1) {
+			if (errno == EINTR)
+				continue;
+
 			/* LCOV_EXCL_START */
 			log_error(errno, "Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, block_size - count, strerror(errno));
 			return -1;
@@ -287,8 +289,7 @@ ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsign
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			if (errno == 0)
-				errno = ENXIO;
+			errno = ENXIO;
 			log_error(errno, "Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
@@ -333,12 +334,15 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 
 	write_size = file_block_size(handle->file, file_pos, block_size);
 
+	bw_limit(handle->bw, write_size);
+
 	count = 0;
 	do {
-		bw_limit(handle->bw, write_size - count);
-
 		write_ret = pwrite(handle->f, block_buffer + count, write_size - count, offset + count);
 		if (write_ret == -1) {
+			if (errno == EINTR)
+				continue;
+
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 			return -1;

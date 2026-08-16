@@ -839,12 +839,15 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	if (split->valid_size < offset + block_size)
 		split->valid_size = offset + block_size;
 
+	bw_limit(handle->bw, block_size);
+
 	count = 0;
 	do {
-		bw_limit(handle->bw, block_size - count);
-
 		write_ret = pwrite(split->f, block_buffer + count, block_size - count, offset + count);
 		if (write_ret == -1) {
+			if (errno == EINTR)
+				continue;
+
 			/* LCOV_EXCL_START */
 			if (errno == ENOSPC) {
 				log_fatal(errno, "Failed to grow parity file '%s' using write due lack of space.\n", split->path);
@@ -904,13 +907,15 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		/* LCOV_EXCL_STOP */
 	}
 
-	count = 0;
-	errno = 0;
-	do {
-		bw_limit(handle->bw, block_size - count);
+	bw_limit(handle->bw, block_size);
 
+	count = 0;
+	do {
 		read_ret = pread(split->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret == -1) {
+			if (errno == EINTR)
+				continue;
+
 			/* LCOV_EXCL_START */
 			log_error(errno, "Error reading parity file '%s' at offset %" PRIu64 " for size %u. %s.\n", split->path, offset + count, block_size - count, strerror(errno));
 			return -1;
@@ -918,8 +923,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			if (errno == 0)
-				errno = ENXIO;
+			errno = ENXIO;
 			log_error(errno, "Unexpected end of parity file '%s' at offset %" PRIu64 ". %s.\n", split->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */

@@ -309,6 +309,7 @@ int sflush(STREAM* s)
 {
 	ssize_t ret;
 	ssize_t size;
+	ssize_t count;
 	unsigned i;
 
 	if (s->state != STREAM_STATE_WRITE) {
@@ -322,15 +323,32 @@ int sflush(STREAM* s)
 		return 0;
 
 	for (i = 0; i < s->handle_size; ++i) {
-		ret = write(s->handle[i].f, s->buffer, size);
+		count = 0;
+		do {
+			ret = write(s->handle[i].f, s->buffer + count, size - count);
 
-		if (ret != size) {
-			/* LCOV_EXCL_START */
-			s->state = STREAM_STATE_ERROR;
-			s->state_index = i;
-			return EOF;
-			/* LCOV_EXCL_STOP */
-		}
+			if (ret < 0) {
+				if (errno == EINTR)
+					continue;
+
+				/* LCOV_EXCL_START */
+				s->state = STREAM_STATE_ERROR;
+				s->state_index = i;
+				return EOF;
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (ret == 0) {
+				/* LCOV_EXCL_START */
+				errno = EIO;
+				s->state = STREAM_STATE_ERROR;
+				s->state_index = i;
+				return EOF;
+				/* LCOV_EXCL_STOP */
+			}
+
+			count += ret;
+		} while (count < size);
 	}
 
 	/*
