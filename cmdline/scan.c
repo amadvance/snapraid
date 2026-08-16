@@ -774,14 +774,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* check if the file is not changed */
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
-			&& (file->mtime_nsec == STAT_NSEC(st)
-		        /*
-		         * Always accept the stored value if it's STAT_NSEC_INVALID
-		         * it happens when upgrading from an old version of SnapRAID
-		         * not yet supporting the nanosecond field
-		         */
-			|| file->mtime_nsec == STAT_NSEC_INVALID
-			)
+			&& file->mtime_nsec == STAT_NSEC(st)
 		) {
 			/* check if multiple files have the same inode */
 			if (file_flag_has(file, FILE_IS_PRESENT)) {
@@ -800,19 +793,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
-
-			/*
-			 * Update the nanoseconds mtime only if different
-			 * to avoid unneeded updates
-			 */
-			if (file->mtime_nsec == STAT_NSEC_INVALID
-				&& STAT_NSEC(st) != file->mtime_nsec
-			) {
-				file->mtime_nsec = STAT_NSEC(st);
-
-				/* we have to save the new mtime */
-				scan->need_write = 1;
-			}
 
 			if (strcmp(file->sub, sub) != 0) {
 				/* if the path is different, it means a moved file with the same inode */
@@ -961,30 +941,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* check if the file is not changed */
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
-			&& (file->mtime_nsec == STAT_NSEC(st)
-		        /*
-		         * Always accept the stored value if it's STAT_NSEC_INVALID
-		         * it happens when upgrading from an old version of SnapRAID
-		         * not yet supporting the nanosecond field
-		         */
-			|| file->mtime_nsec == STAT_NSEC_INVALID
-			)
+			&& file->mtime_nsec == STAT_NSEC(st)
 		) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
-
-			/*
-			 * Update the nano seconds mtime only if different
-			 * to avoid unneeded updates
-			 */
-			if (file->mtime_nsec == STAT_NSEC_INVALID
-				&& STAT_NSEC(st) != STAT_NSEC_INVALID
-			) {
-				file->mtime_nsec = STAT_NSEC(st);
-
-				/* we have to save the new mtime */
-				scan->need_write = 1;
-			}
 
 			/* if when processing the disk we used the past inodes values */
 			if (has_past_inodes && file->inode != INODE_INVALID && st->st_ino != INODE_INVALID) {
