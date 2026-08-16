@@ -33,6 +33,14 @@
 #define WIN32_ES_CONTINUOUS           0x80000000L
 #endif
 
+/* For SetSearchPathMode */
+#ifndef BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE
+#define BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE 0x00000001
+#endif
+#ifndef BASE_SEARCH_PATH_PERMANENT
+#define BASE_SEARCH_PATH_PERMANENT 0x00008000
+#endif
+
 /* File Index */
 #undef FILE_INVALID_FILE_ID
 #define FILE_INVALID_FILE_ID          ((ULONGLONG)-1LL)
@@ -3610,6 +3618,9 @@ void os_init(unsigned opt)
 		os_syslog(OS_LVL_CRITICAL, "error loading the KERNEL32 module");
 		os_exit();
 	}
+
+	/* enable safe search path mode permanently to prevent binary hijacking from CWD */
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
 
 	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (!dll_advapi32) {

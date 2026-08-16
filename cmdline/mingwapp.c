@@ -203,7 +203,7 @@ static int base64_encode(const unsigned char* in, size_t in_len, char* out, size
 /*
  * PowerShell helper
  *
- * Runs a PowerShell one-liner via _popen() and captures the first line
+ * Runs a PowerShell one-liner via os_spawn() and captures the first line
  * of stdout into `out` as UTF-8.
  * `out` may be NULL when output is not needed.
  *
@@ -214,12 +214,33 @@ static int base64_encode(const unsigned char* in, size_t in_len, char* out, size
  */
 static int windows_ps(const char* ps_command, char* out, size_t out_size)
 {
-	char cmd[PS_CMD_MAX];
+	WCHAR wps_path[PATH_MAX];
+	char ps_path[PATH_MAX * 3];
 	WCHAR wcmd[PS_CMD_MAX / 4];
 	char b64cmd[PS_CMD_MAX];
-	FILE* fp;
-	int ret;
+	DWORD plen;
+	int stdout_fd = -1;
+	pid_t pid;
+	int status;
 	int wlen;
+
+	/*
+	 * Resolve powershell.exe to an absolute path.
+	 * Safe search mode enabled in os_init() via SetSearchPathMode() ensures
+	 * system directories and PATH are searched before the current working directory.
+	 */
+	plen = SearchPathW(NULL, L"powershell.exe", NULL, PATH_MAX, wps_path, NULL);
+	if (plen == 0 || plen >= PATH_MAX) {
+		windows_errno(GetLastError());
+		log_error(errno, "Failed to locate powershell.exe for command '%s'.\n", ps_command);
+		return -1;
+	}
+
+	if (WideCharToMultiByte(CP_UTF8, 0, wps_path, -1, ps_path, sizeof(ps_path), 0, 0) == 0) {
+		errno = E2BIG;
+		log_error(errno, "Failed to convert powershell.exe path for command '%s'.\n", ps_command);
+		return -1;
+	}
 
 	/* convert UTF-8 command to UTF-16LE WCHARs */
 	wlen = MultiByteToWideChar(CP_UTF8, 0, ps_command, -1, wcmd, PS_CMD_MAX / 4);
@@ -236,38 +257,50 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 		return -1;
 	}
 
-	ret = snprintf(cmd, sizeof(cmd), "powershell.exe -NoProfile -NonInteractive -EncodedCommand \"%s\" 2>nul", b64cmd);
-	if (ret < 0 || ret >= (int)sizeof(cmd)) {
-		errno = EINVAL;
-		return -1;
-	}
+	char* argv[] = {
+		ps_path,
+		"-NoProfile",
+		"-NonInteractive",
+		"-EncodedCommand",
+		b64cmd,
+		0
+	};
 
-	fp = _popen(cmd, "r");
-	if (!fp) {
-		windows_errno(GetLastError());
-		log_error(errno, "Failed to run PowerShell command '%s' (from popen).\n", ps_command);
+	pid = os_spawn(argv, &stdout_fd, 0, 0);
+	if (pid < 0) {
+		log_error(errno, "Failed to run PowerShell command '%s' (from os_spawn).\n", ps_command);
 		return -1;
 	}
 
 	if (out && out_size > 0) {
-		/* get the first line */
-		if (!fgets(out, (int)out_size, fp)) {
-			out[0] = 0;
-		} else {
-			/* trim spaces and newlines */
-			strtrim(out);
+		size_t pos = 0;
+		while (pos + 1 < out_size) {
+			ssize_t ret = read(stdout_fd, out + pos, out_size - 1 - pos);
+			if (ret <= 0)
+				break;
+			pos += ret;
+			if (memchr(out, '\n', pos))
+				break;
 		}
+		out[pos] = 0;
+
+		/* truncate at first newline and trim */
+		char* eol = strpbrk(out, "\r\n");
+		if (eol)
+			*eol = 0;
+		strtrim(out);
 	}
 
-	ret = _pclose(fp);
-	if (ret == -1) {
-		errno = EINVAL;
-		log_error(errno, "Failed to run PowerShell command '%s' (from pclose).\n", ps_command);
+	close(stdout_fd);
+
+	status = 0;
+	if (os_wait(pid, &status) < 0) {
+		log_error(errno, "Failed to wait for PowerShell command '%s' (from os_wait).\n", ps_command);
 		return -1;
 	}
-	if (ret != 0) {
+	if (status != 0) {
 		errno = EINVAL;
-		log_error(errno, "PowerShell command '%s' failed with '%d' (from pclose).\n", ps_command, ret);
+		log_error(errno, "PowerShell command '%s' failed with '%d'.\n", ps_command, status);
 		return -1;
 	}
 
