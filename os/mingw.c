@@ -1730,16 +1730,43 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 
 	CloseHandle(h);
 
+	/* need at least the fixed headers */
+	if (n < 20 || rdb->ReparseDataLength < 12 || (size_t)rdb->ReparseDataLength + 8 > n) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	/* check if it's really a symbolic link */
 	if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK) {
 		errno = EINVAL;
 		return -1;
 	}
 
+	WORD off = rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+	WORD bytes = rdb->SymbolicLinkReparseBuffer.PrintNameLength;
+	size_t path_bytes = rdb->ReparseDataLength - 12;
+
+	/*
+	 * Require a canonical non-empty PrintName. It represents the user-visible
+	 * symlink target, unlike SubstituteName which may use the NT namespace.
+	 * Reject non-canonical reparse points instead of normalizing SubstituteName.
+	 */
+	if (bytes == 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* validate alignment and bounds */
+	if ((off % sizeof(WCHAR)) != 0 || (bytes % sizeof(WCHAR)) != 0 || (size_t)off + bytes > path_bytes) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	const WCHAR* print = rdb->SymbolicLinkReparseBuffer.PathBuffer + (off / sizeof(WCHAR));
+	size_t print_len = bytes / sizeof(WCHAR);
+
 	/* convert the name to UTF-8 */
-	name = u16tou8_force(conv_buf_name, CONV_MAX,
-			rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
-			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
+	name = u16tou8_force(conv_buf_name, CONV_MAX, print, print_len, &len);
 
 	/* check for overflow */
 	if (len > size) {
