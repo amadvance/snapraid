@@ -423,6 +423,28 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 }
 
 /**
+ * Convert Windows FILETIME to the Unix stat format.
+ *
+ * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
+ * http://support.microsoft.com/kb/167296
+ */
+static void windows_time2stat(int64_t filetime, struct windows_stat* st)
+{
+	int64_t mtime = filetime - 116444736000000000LL;
+	int64_t sec = mtime / 10000000;
+	int64_t rem = mtime % 10000000;
+
+	/* in C99, negative division truncates towards zero; normalize so that rem >= 0 */
+	if (rem < 0) {
+		--sec;
+		rem += 10000000;
+	}
+
+	st->st_mtime = sec;
+	st->st_mtimensec = rem * 100;
+}
+
+/**
  * Convert Windows info to the Unix stat format.
  */
 static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
@@ -439,15 +461,7 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	mtime <<= 32;
 	mtime |= info->ftLastWriteTime.dwLowDateTime;
 
-	/*
-	 * Convert to unix time
-	 *
-	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
-	 * http://support.microsoft.com/kb/167296
-	 */
-	mtime -= 116444736000000000LL;
-	st->st_mtime = mtime / 10000000;
-	st->st_mtimensec = (mtime % 10000000) * 100;
+	windows_time2stat(mtime, st);
 
 	st->st_ino = info->nFileIndexHigh;
 	st->st_ino <<= 32;
@@ -512,8 +526,6 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
  */
 static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_stat* st)
 {
-	int64_t mtime;
-
 	/*
 	 * The FILE_ID_BOTH_DIR_INFO doesn't have the ReparseTag information
 	 * we could use instead FILE_ID_EXTD_DIR_INFO, but it's available only
@@ -523,17 +535,7 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 
 	st->st_size = stream->EndOfFile.QuadPart;
 
-	mtime = stream->LastWriteTime.QuadPart;
-
-	/*
-	 * Convert to unix time
-	 *
-	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
-	 * http://support.microsoft.com/kb/167296
-	 */
-	mtime -= 116444736000000000LL;
-	st->st_mtime = mtime / 10000000;
-	st->st_mtimensec = (mtime % 10000000) * 100;
+	windows_time2stat(stream->LastWriteTime.QuadPart, st);
 
 	st->st_ino = stream->FileId.QuadPart;
 
@@ -568,15 +570,7 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	mtime <<= 32;
 	mtime |= info->ftLastWriteTime.dwLowDateTime;
 
-	/*
-	 * Convert to unix time
-	 *
-	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
-	 * http://support.microsoft.com/kb/167296
-	 */
-	mtime -= 116444736000000000LL;
-	st->st_mtime = mtime / 10000000;
-	st->st_mtimensec = (mtime % 10000000) * 100;
+	windows_time2stat(mtime, st);
 
 	/* No inode information available */
 	st->st_ino = INODE_INVALID;
