@@ -1337,8 +1337,14 @@ static windows_dir* windows_opendir_find(const char* dir)
 
 	wdir = convert(conv_buf, dir);
 
-	/* add final / and * */
+	/* add final \ and * */
 	len = wcslen(wdir);
+	if (len + 3 > CONV_MAX) {
+		free(dirstream);
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+
 	if (len != 0 && wdir[len - 1] != '\\')
 		wdir[len++] = L'\\';
 	wdir[len++] = L'*';
