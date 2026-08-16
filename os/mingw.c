@@ -2047,9 +2047,18 @@ char* windows_realpath(const char* path, char* resolved_path)
 
 	resolved_path = u16tou8(resolved_path, conv_buf);
 
-	/* Windows prefixes paths with "\\?\" (UNC). Skip it if you want a standard path */
-	if (strncmp(resolved_path, "\\\\?\\", 4) == 0) {
-		memmove(resolved_path, resolved_path + 4, strlen(resolved_path) - 3);
+	/*
+	 * Windows prefixes normalized paths with "\\?\" (for local drives)
+	 * or "\\?\UNC\" (for network shares). Convert them to standard format.
+	 */
+	if (strncmp(resolved_path, "\\\\?\\UNC\\", 8) == 0) {
+		/* replace "\\?\UNC\" with "\\" */
+		resolved_path[0] = '\\';
+		resolved_path[1] = '\\';
+		memmove(resolved_path + 2, resolved_path + 8, strlen(resolved_path + 8) + 1);
+	} else if (strncmp(resolved_path, "\\\\?\\", 4) == 0) {
+		/* skip "\\?\" */
+		memmove(resolved_path, resolved_path + 4, strlen(resolved_path + 4) + 1);
 	}
 
 	return resolved_path;
