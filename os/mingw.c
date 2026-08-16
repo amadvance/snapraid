@@ -2659,6 +2659,22 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		}
 	}
 
+	/* open NUL to redirect stdin and any uncaptured stdout or stderr */
+	HANDLE nul_handle = CreateFileW(L"NUL", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
+	if (nul_handle == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to open NUL for spawn, errno=%s(%d)", strerror(errno), errno);
+		if (has_out) {
+			CloseHandle(stdout_write_handle);
+			close(out_f);
+		}
+		if (has_err) {
+			CloseHandle(stderr_write_handle);
+			close(err_f);
+		}
+		return -1;
+	}
+
 	/* prepare command line string (Windows uses a single string, not an array) */
 	WCHAR cmd_buffer[COMMAND_LINE_MAX];
 	char cmd_buffer_conv[COMMAND_LINE_MAX * 3]; /* * 3 is needed because a single UTF-16 character can take up to 3 bytes in UTF-8 */
@@ -2667,6 +2683,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
 		if (pos < 0) {
 			os_syslog(OS_LVL_INFO, "command to long for spawn");
+			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
 				close(out_f);
@@ -2684,9 +2701,9 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	ZeroMemory(&pi, sizeof(pi));
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
-	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-	si.hStdOutput = has_out ? stdout_write_handle : GetStdHandle(STD_OUTPUT_HANDLE);
-	si.hStdError = has_err ? stderr_write_handle : GetStdHandle(STD_ERROR_HANDLE);
+	si.hStdInput = nul_handle;
+	si.hStdOutput = has_out ? stdout_write_handle : nul_handle;
+	si.hStdError = has_err ? stderr_write_handle : nul_handle;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
 	/*
@@ -2713,6 +2730,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* Validate that the requested user is actually a supported Service Account before attempting logon */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
 				close(out_f);
@@ -2727,6 +2745,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
 				close(out_f);
@@ -2744,6 +2763,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			CloseHandle(h_token);
+			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
 				close(out_f);
@@ -2773,6 +2793,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	if (!ret) {
 		windows_errno(GetLastError());
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		CloseHandle(nul_handle);
 		if (has_out) {
 			CloseHandle(stdout_write_handle);
 			close(out_f);
@@ -2783,6 +2804,9 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		}
 		return -1;
 	}
+
+	/* close NUL handle in parent */
+	CloseHandle(nul_handle);
 
 	/*
 	 * Assign spawned process to Job Object configured with JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE.
