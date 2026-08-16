@@ -233,11 +233,15 @@ static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* clamp to what was actually read */
 	size_t page_len = ((size_t)buf[2] << 8) | buf[3];
 	size_t available = (size_t)ret - 4;
-	if (available < page_len)
-		page_len = available;
+
+	/* if incomplete */
+	if (page_len > available) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* if empty */
 	if (page_len == 0) {
@@ -246,7 +250,7 @@ static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if too bit to store the 0 termination */
+	/* if too big to store the 0 termination */
 	if (4 + page_len + 1 > sizeof(buf)) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -334,7 +338,11 @@ static int sysattr_vpd_pg83(const char* path, char* dst, size_t dst_size)
 
 	size_t page_len = ((size_t)buf[2] << 8) | buf[3];
 
-	/* clamp to what was actually read */
+	/*
+	 * Clamp to what was actually read. This is safe because descriptors are
+	 * parsed individually below with strict bounds checking and exact length
+	 * validation, so incomplete or truncated data is never returned.
+	 */
 	size_t available = (size_t)ret - 4;
 	if (page_len > available)
 		page_len = available;
