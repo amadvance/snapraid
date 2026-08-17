@@ -626,15 +626,22 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 }
 
 /**
- * Insert the file in the data set.
+ * Insert the file in the inode set.
  */
-static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* file)
+static void scan_file_inode_insert(struct snapraid_scan* scan, struct snapraid_file* file)
 {
 	struct snapraid_disk* disk = scan->disk;
 
-	/* insert the file in the containers */
 	if (file->inode != INODE_INVALID)
 		tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+}
+
+/**
+ * Insert the file in the path and stamp sets.
+ */
+static void scan_file_stamp_insert(struct snapraid_scan* scan, struct snapraid_file* file)
+{
+	struct snapraid_disk* disk = scan->disk;
 
 	stamp_lock(disk);
 	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
@@ -705,7 +712,7 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 	if (file_is_full_invalid_parity_and_stable(scan->state, disk, file)) {
 
 		struct snapraid_file* copy = file_dup(file);
-		file_flag_set(copy, FILE_IS_MODIFIED_NEW);
+		file_flag_set(copy, FILE_IS_REALLOC_NEW);
 
 		/* insert in the delayed allocation list */
 		scan_file_delayed_allocate(scan, copy);
@@ -1003,10 +1010,16 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* keep track if the original file was not of zero size */
 		is_original_file_size_different_than_zero = file->size != 0;
 
+		/* the old version doesn't represent the current inode anymore */
+		if (file->inode != INODE_INVALID) {
+			tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+			file->inode = INODE_INVALID;
+		}
+
 		/* mark it as to be removed in Phase 2 */
 		file_flag_set(file, FILE_IS_MODIFIED_OLD);
 
-		/* flag that we are inserting the modified version so we skip Phase 1 insertion sets */
+		/* flag the modified version to defer path/stamp insertion to Phase 3 */
 		is_file_modified = 1;
 
 		/* and continue to insert it again */
@@ -1158,9 +1171,16 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		}
 	}
 
-	if (!is_file_modified) { /* modified files are re-inserted in Phase 3 */
-		scan_file_insert(scan, file);
+	if (!is_file_modified) {
+		scan_file_inode_insert(scan, file);
+		scan_file_stamp_insert(scan, file);
 	} else {
+		/*
+		 * Insert the new inode before scanning the next path, so paths with the
+		 * same inode are recognized as hardlinks to this file. Keep the old
+		 * path/stamp entries until Phase 2; the new entries are inserted in Phase 3.
+		 */
+		scan_file_inode_insert(scan, file);
 		file_flag_set(file, FILE_IS_MODIFIED_NEW);
 	}
 
@@ -1910,9 +1930,17 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			/* next node */
 			node = node->next;
 
-			/* if this is a modified file new version, insert it into sets now */
+			/* insert the delayed containers before allocating the file */
 			if (file_flag_has(file, FILE_IS_MODIFIED_NEW)) {
-				scan_file_insert(scan, file);
+				/*
+				 * The inode was already inserted in Phase 1, so later paths with the same
+				 * inode could be recognized as hardlinks. Now that Phase 2 removed the old
+				 * version, insert only the new path/stamp entries.
+				 */
+				scan_file_stamp_insert(scan, file);
+			} else if (file_flag_has(file, FILE_IS_REALLOC_NEW)) {
+				scan_file_inode_insert(scan, file);
+				scan_file_stamp_insert(scan, file);
 			}
 
 			/* insert in the parity */

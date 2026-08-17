@@ -243,7 +243,7 @@ struct snapraid_block {
 #define FILE_IS_MODIFIED_OLD 0x10000
 
 /**
- * Flag to indicate the new version of a modified/reallocated file during scanning.
+ * Flag to indicate the new version of a modified file during scanning.
  */
 #define FILE_IS_MODIFIED_NEW 0x20000
 
@@ -251,6 +251,11 @@ struct snapraid_block {
  * Flag to indicate the old version of a kept file being reallocated during scanning.
  */
 #define FILE_IS_REALLOC_OLD 0x40000
+
+/**
+ * Flag to indicate the new version of a kept file being reallocated during scanning.
+ */
+#define FILE_IS_REALLOC_NEW 0x80000
 
 /**
  * Flags from this bit are shared between multiple threads
