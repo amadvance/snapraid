@@ -667,6 +667,9 @@ endif
 	ln bench/disk1/target1 bench/disk1/file_hardlink1
 	ln bench/disk1/target1 bench/disk1/file_hardlink2
 	ln bench/disk1/target1 bench/disk1/file_hardlink3
+# CHECKFLAGS forces alpha order, so the modified main file is scanned before its hardlink
+	echo ORIGINAL > bench/disk1/a-hardlink-main
+	ln bench/disk1/a-hardlink-main bench/disk1/b-hardlink-link
 if HAVE_POSIX
 	ln -s bench/disk1/target1 bench/disk1/file_symlink1
 	ln -s bench/disk1/target1 bench/disk1/file_symlink2
@@ -674,6 +677,29 @@ if HAVE_POSIX
 endif
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) sync
+	$(MSG) Modified hardlink scan and recovery
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) --gui-verbose -c $(PAR1) list -l test.log > output.log
+	grep -q '^file:disk1:a-hardlink-main:' test.log
+	grep -q '^link_hardlink:disk1:b-hardlink-link:a-hardlink-main$$' test.log
+	! grep -q '^file:disk1:b-hardlink-link:' test.log
+	echo MODIFIED-CONTENT-WITH-DIFFERENT-SIZE > bench/hardlink-expected
+	echo MODIFIED-CONTENT-WITH-DIFFERENT-SIZE > bench/disk1/a-hardlink-main
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) --gui-verbose -c $(PAR1) list -l test.log > output.log
+	grep -q '^file:disk1:a-hardlink-main:' test.log
+	grep -q '^link_hardlink:disk1:b-hardlink-link:a-hardlink-main$$' test.log
+	! grep -q '^file:disk1:b-hardlink-link:' test.log
+	rm bench/disk1/a-hardlink-main bench/disk1/b-hardlink-link
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
+	test -f bench/disk1/a-hardlink-main
+	test -f bench/disk1/b-hardlink-link
+	cmp bench/hardlink-expected bench/disk1/a-hardlink-main
+	cmp bench/hardlink-expected bench/disk1/b-hardlink-link
+if HAVE_POSIX
+	test bench/disk1/a-hardlink-main -ef bench/disk1/b-hardlink-link
+endif
+	rm bench/hardlink-expected bench/disk1/a-hardlink-main bench/disk1/b-hardlink-link
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) --test-io-advise-none -c $(PAR1) sync -F --test-io-cache 1
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) --test-io-advise-sequential -c $(PAR1) sync -F --test-io-stats
