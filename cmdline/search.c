@@ -50,6 +50,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	const char* path = file->path;
 	int f;
 	ssize_t ret;
+	size_t count;
 
 	/* compare file info */
 	if (arg->file->size != file->size)
@@ -75,13 +76,28 @@ int search_file_compare(const void* void_arg, const void* void_data)
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pread(f, arg->buffer, arg->read_size, arg->offset);
-	if (ret < 0 || (unsigned)ret != arg->read_size) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	count = 0;
+	do {
+		ret = pread(f, (char*)arg->buffer + count, arg->read_size - count, arg->offset + count);
+		if (ret < 0) {
+			if (errno == EINTR)
+				continue;
+
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (ret == 0) {
+			/* LCOV_EXCL_START */
+			errno = ENXIO;
+			log_fatal(errno, "Unexpected end of file '%s'. %s.\n", path, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		count += ret;
+	} while (count < arg->read_size);
 
 	ret = close(f);
 	if (ret != 0) {

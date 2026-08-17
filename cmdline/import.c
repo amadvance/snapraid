@@ -83,16 +83,32 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_import_block* block = &file->blockimp[i];
 		size_t read_size = block_size;
+		size_t count;
 		if (read_size > size)
 			read_size = size;
 
-		ret = read(f, buffer, read_size);
-		if (ret < 0 || (unsigned)ret != read_size) {
-			/* LCOV_EXCL_START */
-			log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		count = 0;
+		do {
+			ret = read(f, (char*)buffer + count, read_size - count);
+			if (ret < 0) {
+				if (errno == EINTR)
+					continue;
+
+				/* LCOV_EXCL_START */
+				log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			if (ret == 0) {
+				/* LCOV_EXCL_START */
+				errno = ENXIO;
+				log_fatal(errno, "Unexpected end of file '%s'. %s.\n", path, strerror(errno));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			count += ret;
+		} while (count < read_size);
 
 		block->file = file;
 		block->offset = offset;
@@ -203,6 +219,7 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	const unsigned char* hash = missing_block->hash;
 	unsigned block_size = state->block_size;
 	size_t read_size;
+	size_t count;
 	unsigned char buffer_hash[HASH_MAX];
 	const char* path;
 
@@ -236,13 +253,28 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pread(f, buffer, read_size, block->offset);
-	if (ret < 0 || (unsigned)ret != read_size) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	count = 0;
+	do {
+		ret = pread(f, (char*)buffer + count, read_size - count, block->offset + count);
+		if (ret < 0) {
+			if (errno == EINTR)
+				continue;
+
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (ret == 0) {
+			/* LCOV_EXCL_START */
+			errno = ENXIO;
+			log_fatal(errno, "Unexpected end of file '%s'. %s.\n", path, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		count += ret;
+	} while (count < read_size);
 
 	ret = close(f);
 	if (ret != 0) {
