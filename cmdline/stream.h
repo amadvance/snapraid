@@ -152,9 +152,10 @@ uint32_t scrc_stream(STREAM* s);
 /**
  * Check if the buffer has enough data loaded.
  */
-static inline int sptrlookup(STREAM* s, ssize_t size)
+static inline int sptrlookup(STREAM* s, size_t size)
 {
-	return s->pos + size <= s->end;
+	/* compute remaining distance to avoid pointer arithmetic out of buffer bounds */
+	return size <= (size_t)(s->end - s->pos);
 }
 
 /**

@@ -277,7 +277,7 @@ int sdeplete(STREAM* s, unsigned char* last)
 
 	while (1) {
 		/* increase the position up to 4 bytes before the end */
-		if (s->pos + 4 <= s->end)
+		if (s->end - s->pos >= 4)
 			s->pos = s->end - 4;
 
 		/* insert the last 4 bytes */
