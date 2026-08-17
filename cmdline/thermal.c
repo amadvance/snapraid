@@ -138,6 +138,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 
 		entry->device = disk->mount_device;
 		device_name_set(entry, disk->name, 0);
+		entry->is_array = 1;
 		pathcpy(entry->mount, sizeof(entry->mount), disk->mount_point);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
 		pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), disk->smartctl_info);
@@ -156,6 +157,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 
 			entry->device = state->parity[j].split_map[s].device;
 			device_name_set(entry, lev_config_name(j), s);
+			entry->is_array = 1;
 			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
 			pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), state->parity[j].smartctl_info);
@@ -173,7 +175,9 @@ void state_thermal(struct snapraid_state* state, time_t now)
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, DEVICE_SMART);
 	} else {
-		ret = devquery(&high, &low, DEVICE_SMART);
+		ret = devquery(&high, &low);
+		if (ret == 0 && !tommy_list_empty(&low))
+			ret = devrun(&low, DEVICE_SMART);
 	}
 
 	/* on error, just disable thermal gathering */

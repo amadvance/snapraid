@@ -851,9 +851,7 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 	}
 
 	for (i = 0; i < vde->NumberOfDiskExtents; ++i) {
-		devinfo_t* devinfo;
-
-		devinfo = calloc_nofail(1, sizeof(devinfo_t));
+		devinfo_t* devinfo = calloc_nofail(1, sizeof(devinfo_t));
 
 		pathcpy(devinfo->name, sizeof(devinfo->name), parent->name);
 		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), parent->smartctl);
@@ -1747,10 +1745,14 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int devquery(tommy_list* high, tommy_list* low, int operation)
+void devsync(tommy_list* high)
+{
+	(void)high;
+}
+
+int devquery(tommy_list* high, tommy_list* low)
 {
 	tommy_node* i;
-	void* (*func)(void* arg) = 0;
 
 	/* for each device */
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
@@ -1781,6 +1783,13 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	return 0;
+}
+
+int devrun(tommy_list* low, int operation)
+{
+	void* (*func)(void* arg) = 0;
 
 	switch (operation) {
 	case DEVICE_UP : func = thread_spinup; break;

@@ -315,9 +315,6 @@ struct smart_attr {
 #define POWER_ACTIVE 1
 #define POWER_UNKNOWN -1
 
-/**
- * Device info entry.
- */
 struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
 	char name[PATH_MAX]; /**< Name of the disk combined with the split index if any */
@@ -330,6 +327,7 @@ struct devinfo_struct {
 	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */
 #endif
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
+	int is_array; /**< 1 if this is an array disk (data or parity), 0 if extra disk. */
 	struct devinfo_struct* split; /**< Pointer at first split if this one is not the first. */
 	struct smart_attr smart[SMART_COUNT]; /**< All smart values. */
 	uint64_t info[INFO_COUNT]; /**< Informational attributes not related to SMART telemetry. */
@@ -356,12 +354,21 @@ void device_name_set(devinfo_t* dev, const char* name, int index);
 #define DEVICE_DOWNIFUP 5
 
 /**
- * Query all the "high" level devices with the specified operation,
- * and produces a list of "low" level devices to operate on.
+ * Sync filesystems associated with the "high" level devices.
+ */
+void devsync(tommy_list* high);
+
+/**
+ * Query all the "high" level devices and produce a list of "low" level devices.
  *
  * The passed "low" device list must be already initialized.
  */
-int devquery(tommy_list* high, tommy_list* low, int operation);
+int devquery(tommy_list* high, tommy_list* low);
+
+/**
+ * Execute an operation on the "low" level devices.
+ */
+int devrun(tommy_list* low, int operation);
 
 /**
  * Fill with fake data the device list.

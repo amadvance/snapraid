@@ -3669,10 +3669,28 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int devquery(tommy_list* high, tommy_list* low, int operation)
+void devsync(tommy_list* high)
 {
-	void* (*func)(void* arg) = 0;
+#if HAVE_SYNCFS
+	tommy_node* i;
 
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
+		devinfo_t* devinfo = i->data;
+		int f;
+
+		f = open(devinfo->mount, O_RDONLY);
+		if (f >= 0) {
+			syncfs(f);
+			close(f);
+		}
+	}
+#else
+	(void)high;
+#endif
+}
+
+int devquery(tommy_list* high, tommy_list* low)
+{
 #if HAVE_LINUX_DEVICE
 	tommy_node* i;
 	struct stat st;
@@ -3689,17 +3707,6 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		uint64_t device = devinfo->device;
-
-#if HAVE_SYNCFS
-		if (operation == DEVICE_DOWN) {
-			/* flush the high level filesystem before spinning down */
-			int f = open(devinfo->mount, O_RDONLY);
-			if (f >= 0) {
-				syncfs(f);
-				close(f);
-			}
-		}
-#endif
 
 		tommy_list devlist;
 		tommy_list_init(&devlist);
@@ -3753,7 +3760,15 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	}
 #else
 	(void)high;
+	(void)low;
 #endif
+
+	return 0;
+}
+
+int devrun(tommy_list* low, int operation)
+{
+	void* (*func)(void* arg) = 0;
 
 	switch (operation) {
 	case DEVICE_UP : func = thread_spinup; break;

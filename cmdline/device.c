@@ -640,7 +640,7 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 	unsigned j;
 	size_t device_pad;
 	size_t serial_pad;
-	int have_parent;
+	int have_array;
 	double array_failure_rate;
 	double p_at_least_one_failure;
 	int make_it_fail = 0;
@@ -649,7 +649,7 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 	/* compute lengths for padding */
 	device_pad = 0;
 	serial_pad = 0;
-	have_parent = 0;
+	have_array = 0;
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		size_t len;
 		devinfo_t* devinfo = i->data;
@@ -662,8 +662,8 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 		if (len > serial_pad)
 			serial_pad = len;
 
-		if (devinfo->parent != 0)
-			have_parent = 1;
+		if (devinfo->parent && devinfo->parent->is_array)
+			have_array = 1;
 	}
 
 	printf("SnapRAID SMART report:\n");
@@ -756,8 +756,10 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 				/* this happens only if no data */
 				printf("    -");
 			} else {
-				/* use only the disks in the array */
-				if (devinfo->parent != 0 || !have_parent)
+				int is_array = devinfo->parent && devinfo->parent->is_array;
+
+				/* compute failure rate only for array disks (or fallback to all disks if none are array members) */
+				if (is_array || !have_array)
 					array_failure_rate += afr;
 
 				printf("%4.0f%%", poisson_prob_at_least_one_failure(afr) * 100);
@@ -976,6 +978,41 @@ static void state_devices(struct snapraid_state* state, tommy_list* low)
 	}
 }
 
+static void state_devices_check(struct snapraid_state* state, tommy_list* low)
+{
+	tommy_node* i;
+
+	if (state->opt.no_warnings || state->opt.skip_device)
+		return;
+
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
+		devinfo_t* d1 = i->data;
+		tommy_node* j;
+
+		for (j = i->next; j != 0; j = j->next) {
+			devinfo_t* d2 = j->data;
+
+			if (d1->device == d2->device && d1->parent && d2->parent) {
+				devinfo_t* p1 = d1->parent;
+				devinfo_t* p2 = d2->parent;
+
+				/* only check conflict between array members (data/parity) */
+				if (!p1->is_array || !p2->is_array)
+					continue;
+
+				/* ignore extents of the same member or splits of the same parity level */
+				devinfo_t* a1 = p1->split ? p1->split : p1;
+				devinfo_t* a2 = p2->split ? p2->split : p2;
+				if (a1 == a2)
+					continue;
+
+				log_error(EUSER, "WARNING! Disks '%s' and '%s' share physical device '%s'.\n", p1->name, p2->name, d1->file);
+				log_error(EUSER, "This configuration does not provide independent physical fault domains.\n");
+			}
+		}
+	}
+}
+
 int devtest(tommy_list* high, tommy_list* low, int operation)
 {
 	tommy_node* i;
@@ -1080,6 +1117,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 
 		entry->device = disk->mount_device;
 		device_name_set(entry, disk->name, 0);
+		entry->is_array = 1;
 		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
 		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
 		pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), disk->smartctl_info);
@@ -1108,6 +1146,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 
 			entry->device = state->parity[j].split_map[s].device;
 			device_name_set(entry, lev_config_name(j), s);
+			entry->is_array = 1;
 			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
 			pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), state->parity[j].smartctl_info);
@@ -1140,6 +1179,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 
 			entry->device = extra->device;
 			device_name_set(entry, extra->name, 0);
+			entry->is_array = 0;
 			pathcpy(entry->mount, sizeof(entry->mount), extra->dir);
 			pathcpy(entry->smartctl, sizeof(entry->smartctl), extra->smartctl);
 			pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), extra->smartctl_info);
@@ -1156,7 +1196,11 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
 	} else {
-		ret = devquery(&high, &low, operation);
+		/* issue pending filesystem writes before the underlying devices enter standby */
+		if (operation == DEVICE_DOWN)
+			devsync(&high);
+
+		ret = devquery(&high, &low);
 	}
 
 	/* if the list is empty, it's not supported in this platform */
@@ -1177,6 +1221,14 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 	} else {
 		state_stat(state, &high);
 
+		state_devices_check(state, &low);
+
+		if (!state->opt.fake_device) {
+			ret = devrun(&low, operation);
+			if (ret != 0)
+				goto bail;
+		}
+
 		if (operation == DEVICE_SMART)
 			state_smart(state, state->level + tommy_list_count(&state->disklist), &low);
 
@@ -1190,6 +1242,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 			state_devices(state, &low);
 	}
 
+bail:
 	tommy_list_foreach(&high, free);
 	tommy_list_foreach(&low, free);
 
