@@ -645,7 +645,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
  * In such case, the check/fix command won't report any information of the
  * files partially checked.
  */
-static int file_post(struct snapraid_state* state, int fix, block_off_t i, struct snapraid_handle* handle, unsigned diskmax)
+static int file_post(struct snapraid_state* state, int fix, int partial, block_off_t i, struct snapraid_handle* handle, unsigned diskmax)
 {
 	unsigned j;
 	int ret;
@@ -700,6 +700,17 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 				/* LCOV_EXCL_STOP */
 			}
 			was_unrecoverable = handle[j].is_unrecoverable;
+
+			/*
+			 * A partial fix operates only at block level. Reaching the last block of a
+			 * file doesn't imply that the whole file was processed, so don't perform any
+			 * file-level finalization, including marking it finished, promoting an
+			 * .unrecoverable file, reporting it recovered, or restoring its timestamp.
+			 * This is intentional also when an explicit block range happens to cover all
+			 * the parity blocks, to keep -S/-B behavior independent of the parity size.
+			 */
+			if (partial)
+				goto close_and_continue;
 
 			/*
 			 * Mark that we finished with this file
@@ -971,7 +982,7 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 	return 0;
 }
 
-static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax, int partial)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -1616,7 +1627,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		}
 
 		/* post process the files */
-		ret = file_post(state, fix, i, handle, diskmax);
+		ret = file_post(state, fix, partial, i, handle, diskmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
@@ -2233,12 +2244,19 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	block_off_t blockmax;
 	data_off_t size;
 	int ret;
+	int partial;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
 	unsigned process_error;
 	unsigned l;
 
 	msg_progress("Initializing...\n");
+
+	/*
+	 * partial follows the explicit -S/-B request, not its clipped effective
+	 * coverage; a nonzero -B remains partial even if it reaches the parity end.
+	 */
+	partial = blockstart != 0 || blockcount != 0;
 
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -2335,7 +2353,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, fix, parity_ptr, blockstart, blockmax);
+		ret = state_check_process(state, fix, parity_ptr, blockstart, blockmax, partial);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			++process_error;
