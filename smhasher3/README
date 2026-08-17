@@ -1,0 +1,136 @@
+SMHasher3 validation files for SnapRAID
+=======================================
+
+This directory contains SMHasher3 adapters and test results for the 128-bit
+non-cryptographic hash functions used by SnapRAID.
+
+The adapters reproduce the SnapRAID implementations while adapting their
+128-bit seed interfaces to the 64-bit seed_t exposed by SMHasher3.
+
+
+SMHasher3 version
+=================
+
+commit 51d3cd1ac0aa4934f6aacb44d9d234f50300b6e3
+Author: Frank J. T. Wojcik <fwojcik@uw.edu>
+Date:   Tue Aug 4 11:58:32 2026 -0700
+
+    Fix whitespace (NFC)
+
+
+Files and results
+=================
+
+museair_snapraid.cpp
+    MuseAir BFast-128 as used by SnapRAID. Inputs shorter than 32 bytes
+    are zero-padded to 32 bytes and processed with the Long path while
+    retaining the original input length.
+
+MuseAir-128.bfast-snapraid.txt
+    SMHasher3 output for museair_snapraid.cpp.
+
+    Result comparison:
+    The SnapRAID variant passes all 252 tests. The official MuseAir
+    BFast-128 also passes its complete test set. The different short-input
+    path used by SnapRAID shows no statistical regression. Small differences
+    in the p-value distribution are not significant enough to rank either
+    version as better.
+
+spooky2_snapraid.cpp
+    SpookyHash V2 128-bit as used by SnapRAID. SnapRAID always uses the
+    Long path instead of the standard Short path below 192 bytes.
+
+SpookyHash2-128-snapraid.txt
+    SMHasher3 output for spooky2_snapraid.cpp.
+
+    Result comparison:
+    The SnapRAID variant passes all 252 tests. The official SpookyHash V2
+    128-bit implementation has strong BIC failures on several short input
+    lengths. Those failures come from the Short path. Always using the Long
+    path, as SnapRAID does, removes the observed BIC weakness.
+
+murmur3_snapraid.cpp
+    MurmurHash3 x86_128 as used by SnapRAID, with the SnapRAID 128-bit
+    seed interface.
+
+MurmurHash3-128-snapraid.txt
+    SMHasher3 output for murmur3_snapraid.cpp.
+
+    Result comparison:
+    The SnapRAID variant passes 179 of 252 tests, compared with 154 of 250
+    for the official MurmurHash3 x86_128 int32 variant. Most data-path
+    failures are the same, including BIC, Text, TwoBytes, PerlinNoise and
+    Bitflip. The main improvement is in seed tests because the SnapRAID
+    adapter uses all 64 bits of seed_t, while the official SMHasher3 wrapper
+    uses only the low 32 bits. MurmurHash3 remains substantially weaker than
+    the newer hashes and is retained by SnapRAID only for legacy use.
+
+
+Seed mapping
+============
+
+SMHasher3 exposes one 64-bit seed_t, while SnapRAID uses 128-bit seeds.
+
+For MuseAir and SpookyHash V2:
+
+seed[0..7]  = seed_t
+seed[8..15] = seed_t
+
+For MurmurHash3 x86_128 this gives:
+
+h1 = low32(seed_t)
+h2 = high32(seed_t)
+h3 = low32(seed_t)
+h4 = high32(seed_t)
+
+This intentionally tests the same diagonal seed mapping used by the other
+SnapRAID adapters.
+
+
+Building
+========
+
+Copy the adapters into the SMHasher3 hashes directory:
+
+hashes/museair_snapraid.cpp
+hashes/spooky2_snapraid.cpp
+hashes/murmur3_snapraid.cpp
+
+Add them to hashes/Hashsrc.cmake and rebuild SMHasher3.
+
+Check the registrations with:
+
+./SMHasher3 --list | grep -i snapraid
+
+
+Generating the result files
+===========================
+
+./SMHasher3 MuseAir-128.bfast-snapraid \
+    --extra --notest=Speed,Hashmap --ncpu=16 \
+    > MuseAir-128.bfast-snapraid.txt 2>&1
+
+./SMHasher3 SpookyHash2-128-snapraid \
+    --extra --notest=Speed,Hashmap --ncpu=16 \
+    > SpookyHash2-128-snapraid.txt 2>&1
+
+./SMHasher3 MurmurHash3-128.snapraid \
+    --extra --notest=Speed,Hashmap --ncpu=16 \
+    > MurmurHash3-128-snapraid.txt 2>&1
+
+
+Source relationship
+===================
+
+The authoritative implementations remain the SnapRAID source files:
+
+cmdline/museair.c
+cmdline/spooky2.c
+cmdline/murmur3.c
+
+SnapRAID repository:
+
+https://github.com/amadvance/snapraid
+
+Whenever one of these implementations changes, compare the corresponding
+adapter again with the SnapRAID source and rerun the SMHasher3 test.
