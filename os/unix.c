@@ -1849,7 +1849,7 @@ void os_abort(void)
 	const char* platform;
 	const char* compiler;
 
-#ifdef _linux
+#ifdef __linux__
 	platform = ", linux";
 #elif defined(__APPLE__)
 	platform = ", macOS";
