@@ -1525,7 +1525,8 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 {
 	block_off_t blockmax;
 	block_off_t used_paritymax;
-	block_off_t file_paritymax;
+	data_off_t used_parity_size;
+	data_off_t file_parity_size;
 	data_off_t size;
 	int ret;
 	struct snapraid_parity_handle parity_handle[LEV_MAX];
@@ -1540,9 +1541,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* minimum size of the parity files we expect */
 	used_paritymax = parity_used_size(state);
+	used_parity_size = used_paritymax * (data_off_t)state->block_size;
 
 	/* effective size of the parity files */
-	file_paritymax = 0;
+	file_parity_size = 0;
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
@@ -1570,26 +1572,30 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 
 		/* number of block in the parity file */
-		parity_size(&parity_handle[l], &out_size);
+		parity_valid_size(&parity_handle[l], &out_size);
 		parityblocks = out_size / state->block_size;
 
 		/* if the file is too small */
-		if (parityblocks < used_paritymax) {
+		if (out_size < used_parity_size) {
 			log_fatal(ESOFT, "WARNING! The %s parity has only %" PRIu64 " blocks instead of %" PRIu64 ".\n", lev_name(l), parityblocks, used_paritymax);
 		}
 
-		/* keep the smallest parity number of blocks */
-		if (l == 0 || file_paritymax > parityblocks)
-			file_paritymax = parityblocks;
+		/* keep the smallest valid parity size */
+		if (l == 0 || file_parity_size > out_size)
+			file_parity_size = out_size;
 	}
 
-	/* if we do a full parity realloc or computation, having a wrong parity size is expected */
-	if (!state->opt.force_realloc && !state->opt.force_full) {
+	/*
+	 * A full parity rebuild or reallocation from zero reconstructs truncated
+	 * parity. Tail-only reallocation still relies on the existing prefix, so a
+	 * truncation before parity_tail remains fatal.
+	 */
+	if (!state->opt.force_full && !(state->opt.force_realloc && state->opt.parity_tail == 0)) {
 		/* if the parities are too small */
-		if (file_paritymax < used_paritymax) {
+		if (file_parity_size < used_parity_size) {
 			/* LCOV_EXCL_START */
 			log_fatal(ESOFT, "DANGER! One or more the parity files are smaller than expected!\n");
-			if (file_paritymax != 0) {
+			if (file_parity_size != 0) {
 				log_fatal(ESOFT, "If this happens because you are using an old content file,\n");
 				log_fatal(ESOFT, "you can 'sync' anyway using 'snapraid --force-full sync'\n");
 				log_fatal(ESOFT, "to force a full rebuild of the parity.\n");

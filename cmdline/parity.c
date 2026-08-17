@@ -127,6 +127,32 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 	*out_size = size;
 }
 
+void parity_valid_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
+{
+	unsigned s;
+	data_off_t size;
+
+	/* compute the contiguous valid prefix of the logical parity layout */
+	size = 0;
+
+	for (s = 0; s < handle->split_mac; ++s) {
+		struct snapraid_split_handle* split = &handle->split_map[s];
+		data_off_t run = split->valid_size;
+
+		/* don't count physical data outside the logical split */
+		if (run > split->size)
+			run = split->size;
+
+		size += run;
+
+		/* later splits cannot compensate for a hole in this one */
+		if (run < split->size)
+			break;
+	}
+
+	*out_size = size;
+}
+
 int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size)
 {
 	unsigned s;

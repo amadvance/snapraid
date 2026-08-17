@@ -95,6 +95,15 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
+ * Get the size of the contiguous valid prefix of the parity.
+ *
+ * This returns the logical prefix covered by valid data in all consecutive splits.
+ * For example, with two 100 GiB splits, if the first is truncated to 90 GiB
+ * and the second is fully valid, the valid prefix is 90 GiB, not 190 GiB.
+ */
+void parity_valid_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
+
+/**
  * Open an already existing parity file.
  */
 int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size);

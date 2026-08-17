@@ -14,6 +14,7 @@
 #include "state.h"
 #include "support.h"
 #include "stream.h"
+#include "parity.h"
 #include "tommyds/tommyhash.h"
 #include "tommyds/tommyarray.h"
 #include "tommyds/tommyarrayblkof.h"
@@ -291,6 +292,47 @@ static void test_crc32c(void)
 		if (digest != TEST_CRC32C[i].digest || digest_gen != TEST_CRC32C[i].digest) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Failed CRC32C test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+}
+
+static void test_parity(void)
+{
+	static const struct {
+		unsigned split_mac;
+		data_off_t size[2];
+		data_off_t valid_size[2];
+		data_off_t expected;
+	} test[] = {
+		{ 1, { 100, 0 }, { 100, 0 }, 100 },
+		{ 1, { 100, 0 }, { 90, 0 }, 90 },
+		{ 1, { 100, 0 }, { 99, 0 }, 99 },
+		{ 2, { 100, 100 }, { 90, 100 }, 90 },
+		{ 2, { 100, 100 }, { 100, 70 }, 170 },
+		{ 2, { 100, 100 }, { 110, 100 }, 200 },
+		{ 2, { 100, 100 }, { 0, 100 }, 0 },
+		{ 0, { 0, 0 }, { 0, 0 }, 0 }
+	};
+	unsigned i;
+
+	for (i = 0; test[i].split_mac != 0; ++i) {
+		struct snapraid_parity_handle handle;
+		data_off_t size;
+		unsigned s;
+
+		memset(&handle, 0, sizeof(handle));
+		handle.split_mac = test[i].split_mac;
+		for (s = 0; s < handle.split_mac; ++s) {
+			handle.split_map[s].size = test[i].size[s];
+			handle.split_map[s].valid_size = test[i].valid_size[s];
+		}
+
+		parity_valid_size(&handle, &size);
+		if (size != test[i].expected) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed parity valid size test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1079,6 +1121,7 @@ void selftest(void)
 	}
 	test_hash();
 	test_crc32c();
+	test_parity();
 	test_tommy();
 	test_stream();
 	test_wnmatch();
