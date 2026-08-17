@@ -1584,7 +1584,7 @@ static void* thread_spinup(void* arg)
 
 	/* skip not rotational devices */
 	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
-		return (void*)-1;
+		return 0;
 
 	start = os_tick_ms();
 
@@ -1624,7 +1624,7 @@ static void* thread_spindown(void* arg)
 
 	/* skip not rotational devices */
 	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
-		return (void*)-1;
+		return 0;
 
 	start = os_tick_ms();
 
@@ -1647,6 +1647,10 @@ static void* thread_spindownifup(void* arg)
 	devinfo_t* devinfo = arg;
 	uint64_t start;
 	int power;
+
+	/* skip not rotational devices */
+	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
+		return 0;
 
 	start = os_tick_ms();
 
