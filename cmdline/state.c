@@ -3422,6 +3422,20 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			crc_checked = 1;
+
+			/* trailing bytes would lie outside the content boundary verified by the terminal CRC */
+			c = sgetc(f);
+			if (c != EOF) {
+				/* LCOV_EXCL_START */
+				log_fatal(ECONTENT, "Unexpected data after CRC in content file '%s' at offset %" PRIi64 "\n", path, stell(f));
+				log_fatal(ECONTENT, "The content file '%s' is damaged or corrupted!\n", path);
+				log_fatal(ECONTENT, "To recover, rename or delete it and rerun the command.\n");
+				log_fatal(ECONTENT, "SnapRAID will automatically fall back to the next healthy copy.\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			break;
 		} else {
 			/* LCOV_EXCL_START */
 			decoding_error(path, f);
@@ -6208,4 +6222,3 @@ void state_snapshot_cleanup(struct snapraid_state* state)
 		fssnapshot_unmount(&disk->fss);
 	}
 }
-
