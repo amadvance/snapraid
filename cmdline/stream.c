@@ -231,8 +231,9 @@ static int sfill(STREAM* s)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if we reached the end, doesn't try to read */
+	/* expose the logical size boundary as EOF, just like EOF from the underlying file */
 	if (s->offset >= s->size) {
+		s->state = STREAM_STATE_EOF;
 		return EOF;
 	}
 
