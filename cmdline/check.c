@@ -690,6 +690,17 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 
 		/* finish the fix process if it's the last block of the files */
 		if (fix) {
+			int was_unrecoverable;
+
+			if (handle[j].file != file) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Internal inconsistency in file handle '%s' instead of '%s'\n",
+					handle[j].file != 0 ? handle[j].file->sub : "<none>", file->sub);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			was_unrecoverable = handle[j].is_unrecoverable;
+
 			/*
 			 * Mark that we finished with this file
 			 * to identify later any NOT finished ones
@@ -698,7 +709,6 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 
 			/* if the file is damaged, meaning that a fix failed */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
-				/* rename it to .unrecoverable */
 				char path[PATH_MAX];
 				char path_to[PATH_MAX];
 
@@ -706,25 +716,26 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
 
 				/* ensure to close the file before renaming */
-				if (handle[j].file == file) {
-					ret = handle_close(&handle[j]);
+				ret = handle_close(&handle[j]);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_fatal_errno(errno, disk->name);
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* a previous recovery is already quarantined */
+				if (!was_unrecoverable) {
+					ret = rename(path, path_to);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+						log_fatal(errno, "Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
+						log_tag("%s:%" PRIu64 ":%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						return -1;
 						/* LCOV_EXCL_STOP */
 					}
-				}
-
-				ret = rename(path, path_to);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal(errno, "Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("%s:%" PRIu64 ":%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-					return -1;
-					/* LCOV_EXCL_STOP */
 				}
 
 				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub));
@@ -734,8 +745,40 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 				goto close_and_continue;
 			}
 
+			/*
+			 * This rename is the file-level recovery commit point. Keep the file
+			 * quarantined until every block was processed without FILE_IS_DAMAGED;
+			 * block-by-block promotion could expose an incomplete recovery.
+			 */
+			if (was_unrecoverable) {
+				char path[PATH_MAX];
+				char path_from[PATH_MAX];
+
+				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
+				pathprint(path_from, sizeof(path_from), "%s%s.unrecoverable", disk->dir, file->sub);
+
+				ret = handle_close(&handle[j]);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_fatal_errno(errno, disk->name);
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = rename(path_from, path);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_fatal(errno, "Error renaming '%s'. %s.\n", path_from, strerror(errno));
+					log_tag("%s:%" PRIu64 ":%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_fatal_errno(errno, disk->name);
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			}
+
 			/* if the file is not fixed, meaning that it is untouched */
-			if (!file_flag_has(file, FILE_IS_FIXED)) {
+			if (!file_flag_has(file, FILE_IS_FIXED) && !was_unrecoverable) {
 				/* nothing to do, but close the file */
 				goto close_and_continue;
 			}
@@ -756,11 +799,8 @@ static int file_post(struct snapraid_state* state, int fix, block_off_t i, struc
 					/* LCOV_EXCL_STOP */
 				}
 
-				/*
-				 * Reopen it as readonly, as to set the mtime readonly access it's enough
-				 * we know that the file exists because it has the FILE_IS_FIXED tag
-				 */
-				ret = handle_open(&handle[j], file, state->file_mode, 0);
+				/* reopen the promoted file for writing, as required to set the mtime on Windows */
+				ret = handle_create(&handle[j], file, state->file_mode);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
@@ -2341,4 +2381,3 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	return 0;
 }
-

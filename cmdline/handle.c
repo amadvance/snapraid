@@ -32,6 +32,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	/* initial values, changed later if required */
 	handle->created = 0;
+	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
 	/*
@@ -56,26 +57,32 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	/* if failed for missing file */
 	if (handle->f == -1 && errno == ENOENT) {
-		char path_from[PATH_MAX];
+		char path_unrecoverable[PATH_MAX];
 
-		/* check if exists a .unrecoverable copy, and rename to the real one */
-		pathprint(path_from, sizeof(path_from), "%s.unrecoverable", handle->path);
+		/* check if exists a .unrecoverable copy */
+		pathprint(path_unrecoverable, sizeof(path_unrecoverable), "%s.unrecoverable", handle->path);
 
 		/*
-		 * Reuse a previous partial recovery as the starting point for a
-		 * multistep fix. Readable CHG blocks in this file are intentionally
-		 * preserved because their current hash is not available.
+		 * Open a previous recovery directly as .unrecoverable, keeping it
+		 * quarantined until the whole file is processed successfully. Promoting
+		 * it now could expose an incomplete or unverified file if this fix aborts
+		 * or fails again. Reuse it for a multistep fix, preserving readable CHG
+		 * blocks because their current hash is not available.
 		 */
-		if (rename(path_from, handle->path) == 0) {
-			/* open for read write */
-			handle->f = open(handle->path, flags | O_RDWR);
-		} else {
+		handle->f = open(path_unrecoverable, flags | O_RDWR);
+		if (handle->f != -1) {
+			handle->is_unrecoverable = 1;
+			pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+		} else if (errno == ENOENT) {
 			/* create it */
 			handle->f = open(handle->path, flags | O_RDWR | O_CREAT, 0600);
 			if (handle->f != -1) {
 				/* mark it as created if really done */
 				handle->created = 1;
 			}
+		} else {
+			/* report the path that failed to open */
+			pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
 		}
 	}
 
@@ -165,6 +172,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 
 	/* for sure not created */
 	handle->created = 0;
+	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
 	/*
@@ -232,6 +240,7 @@ int handle_close(struct snapraid_handle* handle)
 			handle->file = 0;
 			handle->f = -1;
 			handle->valid_size = 0;
+			handle->is_unrecoverable = 0;
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -241,6 +250,7 @@ int handle_close(struct snapraid_handle* handle)
 	handle->file = 0;
 	handle->f = -1;
 	handle->valid_size = 0;
+	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
 	return 0;
@@ -424,6 +434,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		handle[j].file = 0;
 		handle[j].f = -1;
 		handle[j].valid_size = 0;
+		handle[j].is_unrecoverable = 0;
 		handle[j].readonly_errno = 0;
 		handle[j].bw = 0;
 	}

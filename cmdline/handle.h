@@ -20,6 +20,7 @@ struct snapraid_handle {
 	struct advise_struct advise; /**< Advise information. */
 	data_off_t valid_size; /**< Size of the valid data. */
 	int created; /**< If the file was created, otherwise it was already existing. */
+	int is_unrecoverable; /**< If the open descriptor refers to the .unrecoverable path. */
 	int readonly_errno; /**< Non-zero if opened read-only as fallback. */
 	struct snapraid_bw* bw; /**< Context for bandwidth limiting. */
 };
@@ -28,6 +29,7 @@ struct snapraid_handle {
  * Create a file.
  * The file is created if missing, and opened with write access.
  * If the file is created, the handle->created is set.
+ * If a previous .unrecoverable file is opened, the handle->is_unrecoverable is set.
  * The initial size of the file is stored in the file->st struct.
  * If the file cannot be opened for write access, it's opened with read-only access.
  * The read-only access works only if the file has already the correct size and doesn't need to be modified.
