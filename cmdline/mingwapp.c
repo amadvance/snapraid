@@ -857,6 +857,7 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 
 		pathcpy(devinfo->name, sizeof(devinfo->name), parent->name);
 		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), parent->smartctl);
+		pathcpy(devinfo->smartctl_info, sizeof(devinfo->smartctl_info), parent->smartctl_info);
 		memcpy(devinfo->smartignore, parent->smartignore, sizeof(devinfo->smartignore));
 		devinfo->device = vde->Extents[i].DiskNumber;
 		pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
