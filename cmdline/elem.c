@@ -701,10 +701,13 @@ int extent_file_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_extent* arg_a = void_a;
 	const struct snapraid_extent* arg_b = void_b;
+	uintptr_t file_a = (uintptr_t)arg_a->file;
+	uintptr_t file_b = (uintptr_t)arg_b->file;
 
-	if (arg_a->file < arg_b->file)
+	/* cast to uintptr_t to avoid undefined behavior when comparing pointers to distinct heap allocations */
+	if (file_a < file_b)
 		return -1;
-	if (arg_a->file > arg_b->file)
+	if (file_a > file_b)
 		return 1;
 
 	if (arg_a->file_pos < arg_b->file_pos)
@@ -1293,10 +1296,13 @@ static int extent_file_inside_compare_unlock(const void* void_a, const void* voi
 {
 	const struct extent_file_inside* arg_a = void_a;
 	const struct snapraid_extent* arg_b = void_b;
+	uintptr_t file_a = (uintptr_t)arg_a->file;
+	uintptr_t file_b = (uintptr_t)arg_b->file;
 
-	if (arg_a->file < arg_b->file)
+	/* cast to uintptr_t to avoid undefined behavior when comparing pointers to distinct heap allocations */
+	if (file_a < file_b)
 		return -1;
-	if (arg_a->file > arg_b->file)
+	if (file_a > file_b)
 		return 1;
 
 	if (arg_a->file_pos < arg_b->file_pos)
