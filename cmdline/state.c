@@ -5872,9 +5872,12 @@ void generate_configuration(const char* path)
 
 
 /**
- * Flush and sync the parity files.
+ * Establish a durable I/O barrier: drain asynchronous writes, collect their
+ * errors, sync parity only if all writes succeeded, then quiesce read-ahead.
+ * A failed writer invalidates the whole barrier because parity must not be
+ * treated as coherent, or recorded in content state, after a failed write.
  */
-int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur)
+int state_barrier(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur)
 {
 	unsigned l;
 
@@ -5903,6 +5906,10 @@ int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct sna
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	/* complete all read-ahead without consuming the results */
+	if (io)
+		io_quiesce(io);
 
 	return 0;
 }

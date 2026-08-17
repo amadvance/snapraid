@@ -17,6 +17,7 @@ void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip) 
 void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error) = 0;
 void (*io_refresh)(struct snapraid_io* io) = 0;
 void (*io_flush)(struct snapraid_io* io, int* writer_error) = 0;
+void (*io_quiesce)(struct snapraid_io* io) = 0;
 
 /**
  * Get the next block position to process.
@@ -218,6 +219,11 @@ static void io_flush_mono(struct snapraid_io* io, int* writer_error)
 	io_writer_error_get(io, writer_error);
 }
 
+static void io_quiesce_mono(struct snapraid_io* io)
+{
+	(void)io;
+}
+
 static struct snapraid_task* io_task_read_mono(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
 	struct snapraid_worker* worker;
@@ -316,6 +322,9 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 	/* the synchronization is protected by the io mutex */
 	thread_mutex_lock(&io->io_mutex);
 
+	/* acknowledge completion of the previous task */
+	worker->busy = 0;
+
 	while (1) {
 		unsigned next_index;
 
@@ -344,6 +353,7 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 			/* get the new working task */
 			worker->index = next_index;
 			task = &worker->task_map[worker->index];
+			worker->busy = 1;
 
 			/* if the just completed task is at this index */
 			if (done_index == waiting_index) {
@@ -604,6 +614,44 @@ static void io_flush_thread(struct snapraid_io* io, int* writer_error)
 		 * Since io_flush waits for all tasks to complete, it would miss
 		 * wakeups for newer tasks and deadlock.
 		 */
+		thread_yield();
+	}
+}
+
+static void io_quiesce_thread(struct snapraid_io* io)
+{
+	unsigned i;
+
+	while (1) {
+		int all_done = 1;
+
+		/* the synchronization is protected by the io mutex */
+		thread_mutex_lock(&io->io_mutex);
+
+		for (i = 0; i < io->reader_max; ++i) {
+			struct snapraid_worker* worker = &io->reader_map[i];
+			unsigned next_index = (worker->index + 1) % io->io_max;
+
+			/*
+			 * busy covers the task already dequeued and executing outside
+			 * the mutex. A different next index identifies scheduled work
+			 * not yet dequeued. Completed but unconsumed tasks need neither.
+			 * When stopping, pending tasks cannot start and don't need draining.
+			 */
+			if (worker->busy || (!io->done && next_index != io->reader_index)) {
+				all_done = 0;
+				break;
+			}
+		}
+
+		if (all_done) {
+			thread_mutex_unlock(&io->io_mutex);
+			return;
+		}
+
+		thread_mutex_unlock(&io->io_mutex);
+
+		/* wait for a reader to complete */
 		thread_yield();
 	}
 }
@@ -902,6 +950,7 @@ static void io_start_thread(struct snapraid_io* io,
 		struct snapraid_worker* worker = &io->reader_map[i];
 
 		worker->index = 0;
+		worker->busy = 1;
 
 		thread_create(&worker->thread, io_reader_thread, worker);
 	}
@@ -1136,6 +1185,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		io_write_next = io_write_next_thread;
 		io_refresh = io_refresh_thread;
 		io_flush = io_flush_thread;
+		io_quiesce = io_quiesce_thread;
 		io_data_read = io_data_read_thread;
 		io_parity_read = io_parity_read_thread;
 		io_parity_write = io_parity_write_thread;
@@ -1155,6 +1205,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		io_write_next = io_write_next_mono;
 		io_refresh = io_refresh_mono;
 		io_flush = io_flush_mono;
+		io_quiesce = io_quiesce_mono;
 		io_data_read = io_data_read_mono;
 		io_parity_read = io_parity_read_mono;
 		io_parity_write = io_parity_write_mono;

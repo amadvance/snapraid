@@ -74,7 +74,7 @@ struct snapraid_task {
 struct snapraid_worker {
 #if HAVE_THREAD
 	thread_id_t thread; /**< Thread context for the worker. */
-	int busy; /**< A task is currently being processed. */
+	int busy; /**< A read or write task is currently being processed. */
 #endif
 
 	/**
@@ -508,6 +508,13 @@ extern void (*io_refresh)(struct snapraid_io* io);
  * \param writer_error Return the number of errors. Vector of IO_WRITER_ERROR_MAX elements.
  */
 extern void (*io_flush)(struct snapraid_io* io, int* writer_error);
+
+/**
+ * Wait for all scheduled reads to complete.
+ *
+ * Completed read-ahead results are retained for later consumption.
+ */
+extern void (*io_quiesce)(struct snapraid_io* io);
 
 #endif
 

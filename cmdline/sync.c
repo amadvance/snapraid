@@ -1362,7 +1362,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			state_progress_stop(state);
 
 			/* before spinning down flush all the caches */
-			ret = state_flush(state, &io, parity_handle, blockcur);
+			ret = state_barrier(state, &io, parity_handle, blockcur);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
@@ -1399,7 +1399,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			 * Before writing the new content file we ensure that
 			 * the parity is really written flushing the disk cache
 			 */
-			ret = state_flush(state, &io, parity_handle, blockcur);
+			ret = state_barrier(state, &io, parity_handle, blockcur);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
@@ -1425,7 +1425,7 @@ end:
 	 * Before returning we ensure that
 	 * the parity is really written flushing the disk cache
 	 */
-	ret = state_flush(state, &io, parity_handle, blockcur);
+	ret = state_barrier(state, &io, parity_handle, blockcur);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);

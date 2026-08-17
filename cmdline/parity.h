@@ -134,9 +134,13 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 /**
- * Flush and sync the parity files.
+ * Complete all pending I/O and sync the parity files.
+ *
+ * This waits for all parity writes, reports their errors, and flushes the
+ * parity data to disk. It also waits for all scheduled read-ahead to complete
+ * without consuming the results, which remain available to the caller.
  */
-int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur);
+int state_barrier(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur);
 
 
 #endif
