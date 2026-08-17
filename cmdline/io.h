@@ -74,6 +74,7 @@ struct snapraid_task {
 struct snapraid_worker {
 #if HAVE_THREAD
 	thread_id_t thread; /**< Thread context for the worker. */
+	int busy; /**< A task is currently being processed. */
 #endif
 
 	/**

@@ -348,6 +348,8 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 	if (error_index >= 0 && error_index < IO_WRITER_ERROR_MAX)
 		++io->writer_error[error_index];
 
+	worker->busy = 0;
+
 	while (1) {
 		unsigned next_index;
 
@@ -367,6 +369,8 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 			/* get the new working task */
 			worker->index = next_index;
 			task = &worker->task_map[worker->index];
+
+			worker->busy = 1;
 
 			/* if the just completed task is at this index */
 			if (done_index == waiting_index) {
@@ -545,8 +549,12 @@ static void io_flush_thread(struct snapraid_io* io)
 			/* get the next pending task */
 			unsigned next_index = (worker->index + 1) % io->io_max;
 
-			/* if the queue of pending tasks is not empty */
-			if (next_index != io->writer_index) {
+			/*
+			 * Ring indices can look empty after a writer dequeues its last task and
+			 * executes it outside the mutex. busy represents this in-flight gap;
+			 * without it flush could return before the final parity write completes.
+			 */
+			if (worker->busy || next_index != io->writer_index) {
 				all_done = 0;
 				break;
 			}
@@ -873,6 +881,7 @@ static void io_start_thread(struct snapraid_io* io,
 		struct snapraid_worker* worker = &io->writer_map[i];
 
 		worker->index = io->io_max - 1;
+		worker->busy = 0;
 
 		thread_create(&worker->thread, io_writer_thread, worker);
 	}
@@ -1150,4 +1159,3 @@ void io_done(struct snapraid_io* io)
 	}
 #endif
 }
-
