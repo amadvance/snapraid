@@ -61,6 +61,11 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		/* check if exists a .unrecoverable copy, and rename to the real one */
 		pathprint(path_from, sizeof(path_from), "%s.unrecoverable", handle->path);
 
+		/*
+		 * Reuse a previous partial recovery as the starting point for a
+		 * multistep fix. Readable CHG blocks in this file are intentionally
+		 * preserved because their current hash is not available.
+		 */
 		if (rename(path_from, handle->path) == 0) {
 			/* open for read write */
 			handle->f = open(handle->path, flags | O_RDWR);

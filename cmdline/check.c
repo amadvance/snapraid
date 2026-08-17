@@ -1298,8 +1298,19 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			 */
 			if (block_state == BLOCK_STATE_CHG) {
 				/*
-				 * We DO NOT mark them as bad to avoid to overwrite them with wrong data.
-				 * if we don't have a hash, we always assume the first read of the block correct.
+				 * A CHG block has no hash for the current data. The stored hash
+				 * refers to the previous content, and after an interrupted sync
+				 * parity may refer either to the old or to the new content.
+				 *
+				 * If the block is readable, preserve it and assume it is the best
+				 * available copy of the current data. We must not try to validate it
+				 * against block->hash, as a match would only identify the old data
+				 * and a mismatch would not prove that the current data is correct.
+				 *
+				 * This also intentionally applies to data reused from a previous
+				 * multistep fix through an .unrecoverable file: already readable CHG
+				 * data is preserved, while fix attempts to recover only missing or
+				 * unreadable blocks.
 				 */
 				failed[failed_count].is_bad = 0; /* we assume the CHG block correct */
 				failed[failed_count].is_outofdate = 0;
