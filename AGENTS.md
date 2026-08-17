@@ -103,6 +103,7 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 
 - **Return codes**: `0` means no-error; `< 0` means error; positive for specific results
 - **Logging**: Use `log_fatal()`, `log_tag()`, `msg_info()`, `msg_progress()`, `msg_verbose()` from `support.h`
+- **Tag Escaping**: When emitting structured tags with `log_tag()`, always wrap file paths, directory paths, link targets, disk names, filter patterns, and arbitrary string fields with `esc_tag()` to prevent colons (e.g., Windows drive letters `C:`), backslashes, or newlines from breaking colon-delimited tag parsing.
 - **Allocation**: Always use custom `malloc_nofail()`, `calloc_nofail()`, `nalloc_nofail()`, or `strdup_nofail()` wrappers (which handle OOM by aborting)
 - **Path Manipulation**: Never use standard unsafe string functions (`strcpy`, `strcat`, `strcmp`) on paths. Always use the platform-correct, size-bounded wrappers in `support.h` (e.g., `pathcpy()`, `pathcat()`, `pathcmp()`, `pathslash()`).
 - **TommyDS Iteration**: For `tommy_list`, iterate using:

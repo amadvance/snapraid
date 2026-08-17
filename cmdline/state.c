@@ -3745,7 +3745,7 @@ static void* state_write_thread(void* arg)
 				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
 					parity_name,
 					uuid,
-					state->parity[l].split_map[s].path,
+					esc_tag(state->parity[l].split_map[s].path),
 					state->parity[l].split_map[s].size);
 			}
 		}

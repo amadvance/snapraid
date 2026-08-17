@@ -130,9 +130,9 @@ int state_status(struct snapraid_state* state)
 				++file_zerosubsecond;
 				++disk_file_zerosubsecond;
 				if (disk_file_zerosubsecond < 50)
-					log_tag("zerosubsecond:%s:%s: \n", disk->name, file->sub);
+					log_tag("zerosubsecond:%s:%s: \n", disk->name, esc_tag(file->sub));
 				if (disk_file_zerosubsecond == 50)
-					log_tag("zerosubsecond:%s:%s: (more follow)\n", disk->name, file->sub);
+					log_tag("zerosubsecond:%s:%s: (more follow)\n", disk->name, esc_tag(file->sub));
 			}
 
 			/* check fragmentation */
