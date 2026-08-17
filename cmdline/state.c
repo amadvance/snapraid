@@ -4278,7 +4278,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 			}
 		}
 
-		f = sopen_write(tmp);
+		f = sopen_write(tmp, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
 		if (f == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error opening the temporary content file '%s'. %s.\n", tmp, strerror(errno));
