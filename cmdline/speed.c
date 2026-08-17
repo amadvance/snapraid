@@ -154,7 +154,6 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	printf("%8s", "best");
 	printf("%8s", "murmur3");
 	printf("%8s", "spooky2");
-	printf("%8s", "metro");
 	printf("%8s", "museair");
 	printf("\n");
 
@@ -173,14 +172,6 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	SPEED_START {
 		for (j = 0; j < nd; ++j)
 			memhash(HASH_SPOOKY2, seed, digest, v[j], size);
-	} SPEED_STOP
-
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
-
-	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memhash(HASH_METRO, seed, digest, v[j], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);

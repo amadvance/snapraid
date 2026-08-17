@@ -144,13 +144,6 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 	{ 0, 0, { 0 }, { 0 } }
 };
 
-/**
- * Test vectors for MetroHash_128_1
- */
-static struct hash_test_vector TEST_METRO[] = {
-#include "metrotest.c"
-	{ 0, 0, { 0 }, { 0 } }
-};
 
 /**
  * Test vectors for MuseAirLoong
@@ -236,18 +229,6 @@ static void test_hash(void)
 		}
 	}
 
-	for (i = 0; TEST_METRO[i].data; ++i) {
-		unsigned char digest[HASH_MAX];
-		memcpy(buffer_aligned, TEST_METRO[i].data, TEST_METRO[i].len);
-		memcpy(seed_aligned, TEST_METRO[i].seed, HASH_MAX);
-		memhash(HASH_METRO, seed_aligned, digest, buffer_aligned, TEST_METRO[i].len);
-		if (memcmp(digest, TEST_METRO[i].digest, HASH_MAX) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Failed Metro test\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
 
 	for (i = 0; TEST_MUSEAIR[i].data; ++i) {
 		unsigned char digest[HASH_MAX];

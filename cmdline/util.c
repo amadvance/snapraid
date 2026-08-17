@@ -515,18 +515,6 @@ static inline uint64_t util_swap64(uint64_t v)
 }
 #endif
 
-static inline uint8_t util_read8(const void* void_ptr)
-{
-	const uint8_t* ptr = void_ptr;
-	return ptr[0];
-}
-
-static inline uint16_t util_read16(const void* void_ptr)
-{
-	const uint8_t* ptr = void_ptr;
-	return ptr[0] + (ptr[1] << 8);
-}
-
 static inline uint32_t util_read32(const void* ptr)
 {
 	uint32_t v;
@@ -741,7 +729,6 @@ const char* memhashname(unsigned kind)
 	switch (kind) {
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
-	case HASH_METRO : return "metro";
 	case HASH_MUSEAIR : return "museair";
 	}
 
@@ -765,7 +752,6 @@ unsigned membesthash(void)
 
 #include "murmur3.c"
 #include "spooky2.c"
-#include "metro.c"
 #include "museair.c"
 
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)
@@ -776,9 +762,6 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		break;
 	case HASH_SPOOKY2 :
 		SpookyHash128(src, size, seed, digest);
-		break;
-	case HASH_METRO :
-		MetroHash128(src, size, seed, digest);
 		break;
 	case HASH_MUSEAIR :
 		MuseAirLoong(src, size, seed, digest);
@@ -798,7 +781,6 @@ const char* hash_config_name(unsigned kind)
 	case HASH_UNDEFINED : return "undefined";
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
-	case HASH_METRO : return "metro";
 	case HASH_MUSEAIR : return "museair";
 	default :
 		/* LCOV_EXCL_START */

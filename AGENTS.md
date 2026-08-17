@@ -23,7 +23,7 @@ The CLI is organized into focused C modules:
 | `sync.c`, `scrub.c`, `check.c`, `status.c` | CLI commands for core operations (synchronize, integrity scrub, check, health status) |
 | `pool.c`, `dup.c`, `list.c`, `touch.c`, `rehash.c` | CLI commands for pooling layouts, finding duplicates, listing files, updating tracking/hashes |
 | `device.c`, `dry.c` | Disk device geometry/UUID querying, and dry-run execution simulation |
-| `murmur3.c`, `spooky2.c`, `metro.c`, `museair.c` (and tests) | Non-cryptographic hash implementations (MurmurHash3, SpookyHash, MetroHash, MuseAir) and tests |
+| `murmur3.c`, `spooky2.c`, `museair.c` (and tests) | Non-cryptographic hash implementations (MurmurHash3, SpookyHash, MuseAir) and tests |
 | `support.h` / `support.c`, `app.h` | Locks, logging, thread wrappers, global constants |
 | `str.h` / `str.c` | Path/string utilities |
 | `memory.h` / `memory.c` | Safe memory allocation and tracking helpers |
