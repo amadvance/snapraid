@@ -1775,6 +1775,26 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 	/*
 	 * Phase 1: Parallel scanning of directories
+	 *
+	 * Invariants during and after this phase:
+	 * - Each disk is modified only by its scan thread. Cross-disk stampset
+	 *   accesses used by copy/relocate detection are protected by stamp_lock().
+	 * - No old file, link, directory, or parity allocation is removed. This keeps
+	 *   every old stamp available to all scan threads for copy/relocate detection.
+	 * - For every valid inode already encountered in the current scan, inodeset
+	 *   points to the current FILE_IS_PRESENT file. Later paths with the same inode
+	 *   are therefore represented as hardlinks to that single file.
+	 * - Files with INODE_INVALID are never inserted into inodeset. Inode validity
+	 *   does not change when their path/stamp insertion is scheduled.
+	 * - A new normal file is immediately inserted into all applicable
+	 *   inode/path/stamp sets and queued for delayed parity allocation.
+	 * - For a modified file, FILE_IS_MODIFIED_OLD has INODE_INVALID and is no
+	 *   longer in inodeset, but remains in pathset/stampset and filelist.
+	 *   FILE_IS_MODIFIED_NEW is in inodeset only if its inode is valid, has no
+	 *   path/stamp entry, and is queued for Phase 3.
+	 * - For a reallocated unchanged file, FILE_IS_REALLOC_OLD remains in all its
+	 *   original containers. FILE_IS_REALLOC_NEW is only queued for Phase 3 and
+	 *   is not inserted into any file container yet.
 	 */
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
@@ -1810,6 +1830,25 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 		/*
 		 * Phase 2: Removals (deleted files and old versions of modified files)
+		 *
+		 * Invariants on entry and during this phase:
+		 * - All Phase 1 scan threads have terminated, so removals are serialized and
+		 *   no copy/relocate detection can still reference an old stamp or allocation.
+		 * - Existing files not marked FILE_IS_PRESENT are still in their applicable
+		 *   inode/path/stamp sets and filelist, ready for normal removal.
+		 * - FILE_IS_MODIFIED_OLD is no longer in inodeset and has INODE_INVALID, so
+		 *   scan_file_remove() removes only its old path/stamp entries and allocation.
+		 *   A replacement with a valid inode remains in inodeset during the removal.
+		 * - FILE_IS_REALLOC_OLD is still in all applicable inode/path/stamp sets and
+		 *   filelist, while FILE_IS_REALLOC_NEW is in no file container.
+		 * - New normal files are already in all applicable inode/path/stamp sets,
+		 *   modified new files have only their applicable inode entry, and all new
+		 *   versions are also in file_insert_list, without parity allocation or
+		 *   filelist membership.
+		 * - Every old file/link/directory node is removed at most once. Deallocation
+		 *   happens before any Phase 3 allocation, making the freed parity reusable.
+		 * - On exit, no old path/stamp entry conflicts with a queued modified version;
+		 *   a queued reallocation has no old inode/path/stamp entry left either.
 		 */
 
 		/* check for removed files */
@@ -1876,6 +1915,24 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 		/*
 		 * Phase 3: Insertions (new files and new versions of modified files)
+		 *
+		 * Invariants on entry and after each insertion:
+		 * - All removals and deallocations for this disk are complete, and every file
+		 *   to allocate is present exactly once in file_insert_list.
+		 * - A new normal file is already in all applicable inode/path/stamp sets, so
+		 *   it requires no further container insertion.
+		 * - A FILE_IS_MODIFIED_NEW with a valid inode is already in inodeset from
+		 *   Phase 1 for hardlink detection; only its path/stamp nodes are inserted here.
+		 * - FILE_IS_REALLOC_NEW is in no file container; all its applicable
+		 *   inode/path/stamp nodes are inserted here after FILE_IS_REALLOC_OLD was
+		 *   removed in Phase 2.
+		 * - The flags select the insertion path directly. No lookup or idempotent
+		 *   insertion is used, and every TommyDS node is inserted exactly once.
+		 * - Container insertion precedes scan_file_allocate(), which adds the parity
+		 *   allocation and filelist node. Links and directories are inserted after files.
+		 * - On exit, every current file is in pathset/stampset, every valid inode has
+		 *   one file in inodeset, and all other paths for that inode are hardlinks.
+		 *   state_fscheck() validates the resulting structures after all disks finish.
 		 *
 		 * Sort the files before inserting them
 		 * we use a stable sort to ensure that if the reported physical offset/inode
