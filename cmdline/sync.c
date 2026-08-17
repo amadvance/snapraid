@@ -629,8 +629,7 @@ static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_t
 
 		if (is_hw(errno)) {
 			log_fatal_errno(errno, lev_config_name(level));
-			/* continue until the error limit is reached */
-			task->state = TASK_STATE_IOERROR_CONTINUE;
+			task->state = TASK_STATE_IOERROR;
 		} else {
 			log_fatal_errno(errno, lev_config_name(level));
 			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);

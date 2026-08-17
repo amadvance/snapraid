@@ -504,8 +504,10 @@ extern void (*io_refresh)(struct snapraid_io* io);
 
 /**
  * Flush all the writes.
+ *
+ * \param writer_error Return the number of errors. Vector of IO_WRITER_ERROR_MAX elements.
  */
-extern void (*io_flush)(struct snapraid_io* io);
+extern void (*io_flush)(struct snapraid_io* io, int* writer_error);
 
 #endif
 

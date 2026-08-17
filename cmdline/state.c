@@ -5878,8 +5878,19 @@ int state_flush(struct snapraid_state* state, struct snapraid_io* io, struct sna
 {
 	unsigned l;
 
-	if (io)
-		io_flush(io);
+	if (io) {
+		int writer_error[IO_WRITER_ERROR_MAX];
+		unsigned j;
+
+		io_flush(io, writer_error);
+
+		for (j = 0; j < IO_WRITER_ERROR_MAX; ++j) {
+			if (writer_error[j]) {
+				errno = EIO;
+				return -1;
+			}
+		}
+	}
 
 	/* flush all parity handles to ensure data is written to disk */
 	for (l = 0; l < state->level; ++l) {

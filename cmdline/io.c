@@ -16,7 +16,7 @@ void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* wait
 void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip) = 0;
 void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error) = 0;
 void (*io_refresh)(struct snapraid_io* io) = 0;
-void (*io_flush)(struct snapraid_io* io) = 0;
+void (*io_flush)(struct snapraid_io* io, int* writer_error) = 0;
 
 /**
  * Get the next block position to process.
@@ -124,6 +124,39 @@ static void io_writer_sched_empty(struct snapraid_io* io, int task_index, block_
 	}
 }
 
+/**
+ * Add an error to the global writer error counters.
+ */
+static void io_writer_error_add(struct snapraid_io* io, int state)
+{
+	int error_index;
+
+	error_index = state - IO_WRITER_ERROR_BASE;
+
+	/*
+	 * Map negative TASK_STATE_* error codes to array indices [0..IO_WRITER_ERROR_MAX - 1].
+	 * Non-error states (e.g. TASK_STATE_EMPTY, TASK_STATE_DONE) result in an index
+	 * outside this range and are ignored.
+	 */
+	if (error_index >= 0 && error_index < IO_WRITER_ERROR_MAX)
+		++io->writer_error[error_index];
+}
+
+/**
+ * Transfer the accumulated writer errors to the caller and clear the counters.
+ * Threaded callers must hold io_mutex so no writer can increment a counter
+ * between its read and clear; the mono-thread path needs no lock.
+ */
+static void io_writer_error_get(struct snapraid_io* io, int* writer_error)
+{
+	unsigned i;
+
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i) {
+		writer_error[i] = io->writer_error[i];
+		io->writer_error[i] = 0;
+	}
+}
+
 /*****************************************************************************/
 /* mono thread */
 
@@ -167,14 +200,11 @@ static void io_write_preset_mono(struct snapraid_io* io, block_off_t blockcur, i
 
 static void io_write_next_mono(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
 {
-	unsigned i;
-
 	(void)blockcur;
 	(void)skip;
 
 	/* report errors */
-	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
-		writer_error[i] = io->writer_error[i];
+	io_writer_error_get(io, writer_error);
 }
 
 static void io_refresh_mono(struct snapraid_io* io)
@@ -182,9 +212,10 @@ static void io_refresh_mono(struct snapraid_io* io)
 	(void)io;
 }
 
-static void io_flush_mono(struct snapraid_io* io)
+static void io_flush_mono(struct snapraid_io* io, int* writer_error)
 {
-	(void)io;
+	/* report errors */
+	io_writer_error_get(io, writer_error);
 }
 
 static struct snapraid_task* io_task_read_mono(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
@@ -237,11 +268,12 @@ static void io_parity_write_mono(struct snapraid_io* io, unsigned* pos, unsigned
 	worker = &io->writer_map[i];
 	task = &worker->task_map[0];
 
-	io->writer_error[i] = 0;
-
 	/* do the work */
-	if (task->state != TASK_STATE_EMPTY)
+	if (task->state != TASK_STATE_EMPTY) {
 		worker->func(worker, task);
+
+		io_writer_error_add(io, task->state);
+	}
 
 	/* return the position */
 	*pos = i;
@@ -338,15 +370,12 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int state)
 {
 	struct snapraid_io* io = worker->io;
-	int error_index;
 
 	/* the synchronization is protected by the io mutex */
 	thread_mutex_lock(&io->io_mutex);
 
 	/* counts the number of errors in the global state */
-	error_index = state - IO_WRITER_ERROR_BASE;
-	if (error_index >= 0 && error_index < IO_WRITER_ERROR_MAX)
-		++io->writer_error[error_index];
+	io_writer_error_add(io, state);
 
 	worker->busy = 0;
 
@@ -462,10 +491,7 @@ static void io_write_next_thread(struct snapraid_io* io, block_off_t blockcur, i
 	thread_mutex_lock(&io->io_mutex);
 
 	/* report errors */
-	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i) {
-		writer_error[i] = io->writer_error[i];
-		io->writer_error[i] = 0;
-	}
+	io_writer_error_get(io, writer_error);
 
 	if (skip) {
 		/* skip the next write */
@@ -533,7 +559,7 @@ static void io_refresh_thread(struct snapraid_io* io)
 	thread_mutex_unlock(&io->io_mutex);
 }
 
-static void io_flush_thread(struct snapraid_io* io)
+static void io_flush_thread(struct snapraid_io* io, int* writer_error)
 {
 	unsigned i;
 
@@ -560,10 +586,14 @@ static void io_flush_thread(struct snapraid_io* io)
 			}
 		}
 
-		thread_mutex_unlock(&io->io_mutex);
+		if (all_done) {
+			/* report errors */
+			io_writer_error_get(io, writer_error);
+			thread_mutex_unlock(&io->io_mutex);
+			return;
+		}
 
-		if (all_done)
-			break;
+		thread_mutex_unlock(&io->io_mutex);
 
 		/*
 		 * Wait for something to complete.
