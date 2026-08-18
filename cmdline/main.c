@@ -42,6 +42,9 @@ static int build_spindown_argv(int argc, char* argv[], char* spindown_argv[5])
 
 static int needs_quote(const WCHAR* arg)
 {
+	if (*arg == 0)
+		return 1;
+
 	while (*arg) {
 		if (*arg == L' ' || *arg == L'\t' || *arg == L'"')
 			return 1;

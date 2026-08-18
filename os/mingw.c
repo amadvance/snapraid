@@ -2493,6 +2493,9 @@ int windows_join(thread_id_t thread, void** retval)
 
 static int needs_quote(const WCHAR* arg)
 {
+	if (*arg == 0)
+		return 1;
+
 	while (*arg) {
 		if (*arg == L' ' || *arg == L'\t' || *arg == L'"')
 			return 1;
