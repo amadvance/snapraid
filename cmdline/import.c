@@ -211,32 +211,27 @@ void import_file_free(struct snapraid_import_file* file)
 	free(file);
 }
 
-int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)
+static int state_import_fetch_candidate(struct snapraid_state* state, int rehash, struct snapraid_import_block* block, const unsigned char* hash, unsigned char* buffer)
 {
-	struct snapraid_import_block* block;
 	ssize_t ret;
 	int f;
-	const unsigned char* hash = missing_block->hash;
 	unsigned block_size = state->block_size;
 	size_t read_size;
 	size_t count;
 	unsigned char buffer_hash[HASH_MAX];
 	const char* path;
 
-	if (rehash) {
-		block = tommy_hashdyn_search(&state->previmportset, import_block_prevhash_compare, hash, import_block_hash(hash));
-	} else {
-		block = tommy_hashdyn_search(&state->importset, import_block_hash_compare, hash, import_block_hash(hash));
-	}
-	if (!block)
-		return -1;
-
 	path = block->file->path;
 	read_size = block->size;
 
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
-		/* if no file, just skip it */
+		/*
+		 * A deallocated source is historical and may be stale, so ENOENT is a
+		 * best-effort miss that lets the caller try another matching candidate.
+		 * A runtime import was hashed in this run; its disappearance violates
+		 * that invariant and must remain fatal.
+		 */
 		if (errno == ENOENT && !block->file->is_runtime) {
 			log_error(EUSER, "WARNING! Unexpected missing deallocated file '%s'.\n", path);
 			return -1;
@@ -296,7 +291,12 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 		memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
 
 	if (memcmp(buffer_hash, hash, BLOCK_HASH_SIZE) != 0) {
-		/* if hash mismatch, skip it */
+		/*
+		 * Deallocated contents may have changed since they were recorded, so a
+		 * mismatch is best-effort and another candidate may still be valid.
+		 * A runtime import was hashed in this run; a mismatch means concurrent
+		 * modification and must remain fatal.
+		 */
 		if (!block->file->is_runtime) {
 			log_error(EUSER, "WARNING! Unexpected hash mismatch from deallocated file '%s'.\n", path);
 			return -1;
@@ -310,6 +310,50 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	}
 
 	return 0;
+}
+
+int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)
+{
+	tommy_hashdyn* importset;
+	tommy_hashdyn_node* node;
+	tommy_uint32_t hash32;
+	const unsigned char* hash = missing_block->hash;
+
+	if (rehash)
+		importset = &state->previmportset;
+	else
+		importset = &state->importset;
+
+	hash32 = import_block_hash(hash);
+
+	/*
+	 * Multiple blocks may have the same digest. tommy_hashdyn_search() would
+	 * stop at the first one, but a deallocated source may be stale, so walk
+	 * the bucket until an exact candidate is reread and validated.
+	 */
+	node = tommy_hashdyn_bucket(importset, hash32);
+	while (node) {
+		struct snapraid_import_block* block = node->data;
+
+		/* hash32 is only an index: reject other bucket keys, then compare the full digest */
+		if (node->index == hash32) {
+			int equal;
+
+			if (rehash)
+				equal = import_block_prevhash_compare(hash, block) == 0;
+			else
+				equal = import_block_hash_compare(hash, block) == 0;
+
+			if (equal) {
+				if (state_import_fetch_candidate(state, rehash, block, hash, buffer) == 0)
+					return 0;
+			}
+		}
+
+		node = node->next;
+	}
+
+	return -1;
 }
 
 static void import_dir(struct snapraid_state* state, const char* dir)
