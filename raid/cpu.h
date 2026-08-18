@@ -231,7 +231,7 @@ static inline int raid_cpu_has_avx512bw(void)
 static inline int raid_cpu_has_avx512gfni(void)
 {
 	uint32_t leaf_1_ecx = 1 << 27; /* XSAVE/XGETBV */
-	uint32_t leaf_7_ebx = 1 << 16; /* AVX512F (Foundation) */
+	uint32_t leaf_7_ebx = (1 << 16) | (1 << 30); /* AVX512F and AVX512BW */
 	uint32_t leaf_7_ecx = 1 << 8; /* GFNI */
 	uint32_t xcr0 = (3 << 1) | (7 << 5); /* OS saves XMM, YMM and ZMM registers */
 
