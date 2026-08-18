@@ -80,6 +80,10 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 - `uncrustify.cfg`: Code formatting rules for main application source files
 - `linux.cfg`: Code formatting rules for `raid/` directory and its subdirectories
 - Run `make doc` to regenerate all manual pages (`*.1`) and text manuals (`*.txt`)
+- Always use parallel compilation with `make -j$(nproc)` instead of plain `make`
+- To cross-compile for Windows x64: run `make clean && ./configure.windows-x64 && make -j$(nproc)`
+- After configuring for Windows (`./configure.windows-x64`), it is not necessary to reconfigure back for Linux; you can leave it configured for Windows
+- Always run `make clean` when switching build configurations or targets between Linux (`./configure`) and Windows (`./configure.windows-x64`)
 
 ## Code Style Guidelines
 
