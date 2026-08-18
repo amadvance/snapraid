@@ -43,19 +43,21 @@
 // slower than MD5.
 //
 
+#define rd(data, x) util_read64((const uint8_t*)(data) + (x) * 8)
+
 #define Mix(data, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11) \
-	s0 += data[0];   s2 ^= s10;  s11 ^= s0;   s0 = util_rotl64(s0, 11);   s11 += s1; \
-	s1 += data[1];   s3 ^= s11;  s0 ^= s1;   s1 = util_rotl64(s1, 32);   s0 += s2; \
-	s2 += data[2];   s4 ^= s0;   s1 ^= s2;   s2 = util_rotl64(s2, 43);   s1 += s3; \
-	s3 += data[3];   s5 ^= s1;   s2 ^= s3;   s3 = util_rotl64(s3, 31);   s2 += s4; \
-	s4 += data[4];   s6 ^= s2;   s3 ^= s4;   s4 = util_rotl64(s4, 17);   s3 += s5; \
-	s5 += data[5];   s7 ^= s3;   s4 ^= s5;   s5 = util_rotl64(s5, 28);   s4 += s6; \
-	s6 += data[6];   s8 ^= s4;   s5 ^= s6;   s6 = util_rotl64(s6, 39);   s5 += s7; \
-	s7 += data[7];   s9 ^= s5;   s6 ^= s7;   s7 = util_rotl64(s7, 57);   s6 += s8; \
-	s8 += data[8];   s10 ^= s6;   s7 ^= s8;   s8 = util_rotl64(s8, 55);   s7 += s9; \
-	s9 += data[9];   s11 ^= s7;   s8 ^= s9;   s9 = util_rotl64(s9, 54);   s8 += s10; \
-	s10 += data[10];  s0 ^= s8;   s9 ^= s10;  s10 = util_rotl64(s10, 22);  s9 += s11; \
-	s11 += data[11];  s1 ^= s9;   s10 ^= s11;  s11 = util_rotl64(s11, 46);  s10 += s0;
+	s0 += rd(data, 0);   s2 ^= s10;  s11 ^= s0;   s0 = util_rotl64(s0, 11);   s11 += s1; \
+	s1 += rd(data, 1);   s3 ^= s11;  s0 ^= s1;   s1 = util_rotl64(s1, 32);   s0 += s2; \
+	s2 += rd(data, 2);   s4 ^= s0;   s1 ^= s2;   s2 = util_rotl64(s2, 43);   s1 += s3; \
+	s3 += rd(data, 3);   s5 ^= s1;   s2 ^= s3;   s3 = util_rotl64(s3, 31);   s2 += s4; \
+	s4 += rd(data, 4);   s6 ^= s2;   s3 ^= s4;   s4 = util_rotl64(s4, 17);   s3 += s5; \
+	s5 += rd(data, 5);   s7 ^= s3;   s4 ^= s5;   s5 = util_rotl64(s5, 28);   s4 += s6; \
+	s6 += rd(data, 6);   s8 ^= s4;   s5 ^= s6;   s6 = util_rotl64(s6, 39);   s5 += s7; \
+	s7 += rd(data, 7);   s9 ^= s5;   s6 ^= s7;   s7 = util_rotl64(s7, 57);   s6 += s8; \
+	s8 += rd(data, 8);   s10 ^= s6;  s7 ^= s8;   s8 = util_rotl64(s8, 55);   s7 += s9; \
+	s9 += rd(data, 9);   s11 ^= s7;  s8 ^= s9;   s9 = util_rotl64(s9, 54);   s8 += s10; \
+	s10 += rd(data, 10); s0 ^= s8;   s9 ^= s10;  s10 = util_rotl64(s10, 22); s9 += s11; \
+	s11 += rd(data, 11); s1 ^= s9;   s10 ^= s11; s11 = util_rotl64(s11, 46); s10 += s0;
 
 #define EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11) \
 	h11 += h1;   h2 ^= h11;  h1 = util_rotl64(h1, 44); \
@@ -72,9 +74,9 @@
 	h10 += h0;   h1 ^= h10;  h0 = util_rotl64(h0, 54);
 
 #define End(data, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11) \
-	h0 += data[0];  h1 += data[1];  h2 += data[2];    h3 += data[3]; \
-	h4 += data[4];  h5 += data[5];  h6 += data[6];    h7 += data[7]; \
-	h8 += data[8];  h9 += data[9];  h10 += data[10];   h11 += data[11]; \
+	h0 += rd(data, 0);   h1 += rd(data, 1);   h2 += rd(data, 2);    h3 += rd(data, 3); \
+	h4 += rd(data, 4);   h5 += rd(data, 5);   h6 += rd(data, 6);    h7 += rd(data, 7); \
+	h8 += rd(data, 8);   h9 += rd(data, 9);   h10 += rd(data, 10);  h11 += rd(data, 11); \
 	EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11); \
 	EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11); \
 	EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
@@ -92,19 +94,16 @@
 //  * is a not-very-regular mix of 1's and 0's
 //  * does not need any other special mathematical properties
 //
-#define sc_const 0xdeadbeefdeadbeefLL
+#define sc_const 0xdeadbeefdeadbeefULL
 
 void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)
 {
 	uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
-	uint64_t buf[sc_numVars];
+	uint8_t buf[sc_blockSize];
 	size_t nblocks;
-	const uint64_t* blocks;
-	const uint64_t* end;
+	const uint8_t* p;
+	const uint8_t* end;
 	size_t size_remainder;
-#if WORDS_BIGENDIAN
-	unsigned i;
-#endif
 
 	h9 = util_read64(seed + 0);
 	h10 = util_read64(seed + 8);
@@ -114,32 +113,22 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	h2 = h5 = h8 = h11 = sc_const;
 
 	nblocks = size / sc_blockSize;
-	blocks = data;
-	end = blocks + nblocks * sc_numVars;
+	p = data;
+	end = p + nblocks * sc_blockSize;
 
 	/* body */
-	while (blocks < end) {
-#if WORDS_BIGENDIAN
-		for (i = 0; i < sc_numVars; ++i)
-			buf[i] = util_swap64(blocks[i]);
-		Mix(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
-#else
-		Mix(blocks, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
-#endif
-		blocks += sc_numVars;
+	while (p < end) {
+		Mix(p, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
+		p += sc_blockSize;
 	}
 
 	/* tail */
-	size_remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));
-	memcpy(buf, end, size_remainder);
-	memset(((uint8_t*)buf) + size_remainder, 0, sc_blockSize - size_remainder);
-	((uint8_t*)buf)[sc_blockSize - 1] = size_remainder;
+	size_remainder = size - nblocks * sc_blockSize;
+	memcpy(buf, p, size_remainder);
+	memset(buf + size_remainder, 0, sc_blockSize - size_remainder);
+	buf[sc_blockSize - 1] = size_remainder;
 
 	/* finalization */
-#if WORDS_BIGENDIAN
-	for (i = 0; i < sc_numVars; ++i)
-		buf[i] = util_swap64(buf[i]);
-#endif
 	End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
 
 	util_write64(digest + 0, h0);

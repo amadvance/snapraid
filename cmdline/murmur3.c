@@ -63,9 +63,8 @@ uint32_t c4 = 0xa1e38b93;
 
 void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, void* digest)
 {
-	size_t nblocks;
-	const uint32_t* blocks;
-	const uint32_t* end;
+	const uint8_t* p;
+	const uint8_t* end;
 	size_t size_remainder;
 	uint32_t h1, h2, h3, h4;
 
@@ -74,23 +73,15 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 	h3 = util_read32(seed + 8);
 	h4 = util_read32(seed + 12);
 
-	nblocks = size / 16;
-	blocks = data;
-	end = blocks + nblocks * 4;
+	p = data;
+	end = p + (size & ~15);
 
 	/* body */
-	while (blocks < end) {
-		uint32_t k1 = blocks[0];
-		uint32_t k2 = blocks[1];
-		uint32_t k3 = blocks[2];
-		uint32_t k4 = blocks[3];
-
-#if WORDS_BIGENDIAN
-		k1 = util_swap32(k1);
-		k2 = util_swap32(k2);
-		k3 = util_swap32(k3);
-		k4 = util_swap32(k4);
-#endif
+	while (p < end) {
+		uint32_t k1 = util_read32(p + 0);
+		uint32_t k2 = util_read32(p + 4);
+		uint32_t k3 = util_read32(p + 8);
+		uint32_t k4 = util_read32(p + 12);
 
 		k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;
 
@@ -108,13 +99,13 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 
 		h4 = util_rotl32(h4, 13); h4 += h1; h4 = h4 * 5 + 0x32ac3b17;
 
-		blocks += 4;
+		p += 16;
 	}
 
 	/* tail */
 	size_remainder = size & 15;
 	if (size_remainder != 0) {
-		const uint8_t* tail = (const uint8_t*)blocks;
+		const uint8_t* tail = p;
 
 		uint32_t k1 = 0;
 		uint32_t k2 = 0;
