@@ -40,10 +40,6 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 {
 	wchar_t conv_buf[CONV_MAX];
 
-	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
-	if (has_persistent_inode)
-		*has_persistent_inode = 1;
-
 	/* NTFS doesn't synchronize hardlinks metadata */
 	if (has_syncronized_hardlinks)
 		*has_syncronized_hardlinks = 0;
@@ -111,15 +107,41 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 			*free_space = total_free_bytes.QuadPart;
 	}
 
-	if (fstype && fslabel) {
+	if (has_persistent_inode || fstype || fslabel) {
 		wchar_t volume_root[PATH_MAX];
 		wchar_t fs_name[PATH_MAX];
 		wchar_t vol_name[PATH_MAX];
+		int has_volume_info = 0;
 
-		fstype[0] = 0;
-		fslabel[0] = 0;
+		if (fstype && fstype_size > 0)
+			fstype[0] = 0;
+		if (fslabel && fslabel_size > 0)
+			fslabel[0] = 0;
+
 		if (GetVolumePathNameW(convert(conv_buf, path), volume_root, PATH_MAX)) {
 			if (GetVolumeInformationW(volume_root, vol_name, PATH_MAX, 0, 0, 0, fs_name, PATH_MAX)) {
+				has_volume_info = 1;
+			}
+		}
+
+		if (has_persistent_inode) {
+			*has_persistent_inode = 0;
+
+			/**
+			 * Reuse stored file IDs across scans only for filesystems known to
+			 * provide stable and unique IDs. An unknown or unavailable filesystem
+			 * must be treated as volatile: a false negative only loses inode-based
+			 * move detection, while a false positive can match an unrelated file.
+			 */
+			if (has_volume_info
+				&& (_wcsicmp(fs_name, L"NTFS") == 0
+				|| _wcsicmp(fs_name, L"ReFS") == 0)) {
+				*has_persistent_inode = 1;
+			}
+		}
+
+		if (has_volume_info) {
+			if (fstype && fstype_size > 0) {
 				char u8[CONV_MAX];
 				size_t len;
 				char* ret;
@@ -129,6 +151,12 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 					memcpy(fstype, u8, len);
 					fstype[len] = 0;
 				}
+			}
+
+			if (fslabel && fslabel_size > 0) {
+				char u8[CONV_MAX];
+				size_t len;
+				char* ret;
 
 				ret = u16tou8_mayfail(u8, sizeof(u8), vol_name, wcslen(vol_name), &len);
 				if (ret != 0 && len + 1 <= fslabel_size) {
