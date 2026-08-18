@@ -13,7 +13,7 @@
  * Pseudo random limits for parity
  */
 #define PARITY_LIMIT(size, split, level) \
-	size ? size + (123562341 + split * 634542351 + level * 983491341) % size : 0
+	(size ? (size) + (123562341U + (split) * 634542351U + (level) * 983491341U) % (size) : 0)
 
 /****************************************************************************/
 /* parity */
