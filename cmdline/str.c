@@ -115,7 +115,7 @@ unsigned argsplit(const char** split_map, unsigned split_max, char* str)
 				/* double-quoted block */
 				++str;
 				while (*str != 0 && *str != '"') {
-					if (*str == '\\' && strchr(dq_escapable, *(str + 1))) {
+					if (*str == '\\' && *(str + 1) != 0 && strchr(dq_escapable, *(str + 1))) {
 						++str;
 					}
 					*dst++ = *str++;
