@@ -4543,7 +4543,7 @@ static void state_rename_content(struct snapraid_state* state)
 {
 	tommy_node* i;
 
-#if defined(_linux) /* this sequence is linux specific */
+#if defined(__linux__) /* this sequence is linux specific */
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
