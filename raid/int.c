@@ -21,14 +21,14 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
 	p = v[nd];
 
 	for (i = 0; i < size; i += 8) {
-		p0 = v_32(v[l][i]);
-		p1 = v_32(v[l][i + 4]);
+		p0 = v_read32(&v[l][i]);
+		p1 = v_read32(&v[l][i + 4]);
 		for (d = l - 1; d >= 0; --d) {
-			p0 ^= v_32(v[d][i]);
-			p1 ^= v_32(v[d][i + 4]);
+			p0 ^= v_read32(&v[d][i]);
+			p1 ^= v_read32(&v[d][i + 4]);
 		}
-		v_32(p[i]) = p0;
-		v_32(p[i + 4]) = p1;
+		v_write32(&p[i], p0);
+		v_write32(&p[i + 4], p1);
 	}
 }
 
@@ -49,14 +49,14 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 	p = v[nd];
 
 	for (i = 0; i < size; i += 16) {
-		p0 = v_64(v[l][i]);
-		p1 = v_64(v[l][i + 8]);
+		p0 = v_read64(&v[l][i]);
+		p1 = v_read64(&v[l][i + 8]);
 		for (d = l - 1; d >= 0; --d) {
-			p0 ^= v_64(v[d][i]);
-			p1 ^= v_64(v[d][i + 8]);
+			p0 ^= v_read64(&v[d][i]);
+			p1 ^= v_read64(&v[d][i + 8]);
 		}
-		v_64(p[i]) = p0;
-		v_64(p[i + 8]) = p1;
+		v_write64(&p[i], p0);
+		v_write64(&p[i + 8], p1);
 	}
 }
 
@@ -80,11 +80,11 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 	q = v[nd + 1];
 
 	for (i = 0; i < size; i += 8) {
-		q0 = p0 = v_32(v[l][i]);
-		q1 = p1 = v_32(v[l][i + 4]);
+		q0 = p0 = v_read32(&v[l][i]);
+		q1 = p1 = v_read32(&v[l][i + 4]);
 		for (d = l - 1; d >= 0; --d) {
-			d0 = v_32(v[d][i]);
-			d1 = v_32(v[d][i + 4]);
+			d0 = v_read32(&v[d][i]);
+			d1 = v_read32(&v[d][i + 4]);
 
 			p0 ^= d0;
 			p1 ^= d1;
@@ -95,10 +95,10 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 			q0 ^= d0;
 			q1 ^= d1;
 		}
-		v_32(p[i]) = p0;
-		v_32(p[i + 4]) = p1;
-		v_32(q[i]) = q0;
-		v_32(q[i + 4]) = q1;
+		v_write32(&p[i], p0);
+		v_write32(&p[i + 4], p1);
+		v_write32(&q[i], q0);
+		v_write32(&q[i + 4], q1);
 	}
 }
 
@@ -122,11 +122,11 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 	q = v[nd + 1];
 
 	for (i = 0; i < size; i += 16) {
-		q0 = p0 = v_64(v[l][i]);
-		q1 = p1 = v_64(v[l][i + 8]);
+		q0 = p0 = v_read64(&v[l][i]);
+		q1 = p1 = v_read64(&v[l][i + 8]);
 		for (d = l - 1; d >= 0; --d) {
-			d0 = v_64(v[d][i]);
-			d1 = v_64(v[d][i + 8]);
+			d0 = v_read64(&v[d][i]);
+			d1 = v_read64(&v[d][i + 8]);
 
 			p0 ^= d0;
 			p1 ^= d1;
@@ -137,10 +137,10 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 			q0 ^= d0;
 			q1 ^= d1;
 		}
-		v_64(p[i]) = p0;
-		v_64(p[i + 8]) = p1;
-		v_64(q[i]) = q0;
-		v_64(q[i + 8]) = q1;
+		v_write64(&p[i], p0);
+		v_write64(&p[i + 8], p1);
+		v_write64(&q[i], q0);
+		v_write64(&q[i + 8], q1);
 	}
 }
 
@@ -167,11 +167,11 @@ void raid_genz_int32(int nd, size_t size, void **vv)
 	r = v[nd + 2];
 
 	for (i = 0; i < size; i += 8) {
-		r0 = q0 = p0 = v_32(v[l][i]);
-		r1 = q1 = p1 = v_32(v[l][i + 4]);
+		r0 = q0 = p0 = v_read32(&v[l][i]);
+		r1 = q1 = p1 = v_read32(&v[l][i + 4]);
 		for (d = l - 1; d >= 0; --d) {
-			d0 = v_32(v[d][i]);
-			d1 = v_32(v[d][i + 4]);
+			d0 = v_read32(&v[d][i]);
+			d1 = v_read32(&v[d][i + 4]);
 
 			p0 ^= d0;
 			p1 ^= d1;
@@ -188,12 +188,12 @@ void raid_genz_int32(int nd, size_t size, void **vv)
 			r0 ^= d0;
 			r1 ^= d1;
 		}
-		v_32(p[i]) = p0;
-		v_32(p[i + 4]) = p1;
-		v_32(q[i]) = q0;
-		v_32(q[i + 4]) = q1;
-		v_32(r[i]) = r0;
-		v_32(r[i + 4]) = r1;
+		v_write32(&p[i], p0);
+		v_write32(&p[i + 4], p1);
+		v_write32(&q[i], q0);
+		v_write32(&q[i + 4], q1);
+		v_write32(&r[i], r0);
+		v_write32(&r[i + 4], r1);
 	}
 }
 
@@ -220,11 +220,11 @@ void raid_genz_int64(int nd, size_t size, void **vv)
 	r = v[nd + 2];
 
 	for (i = 0; i < size; i += 16) {
-		r0 = q0 = p0 = v_64(v[l][i]);
-		r1 = q1 = p1 = v_64(v[l][i + 8]);
+		r0 = q0 = p0 = v_read64(&v[l][i]);
+		r1 = q1 = p1 = v_read64(&v[l][i + 8]);
 		for (d = l - 1; d >= 0; --d) {
-			d0 = v_64(v[d][i]);
-			d1 = v_64(v[d][i + 8]);
+			d0 = v_read64(&v[d][i]);
+			d1 = v_read64(&v[d][i + 8]);
 
 			p0 ^= d0;
 			p1 ^= d1;
@@ -241,12 +241,12 @@ void raid_genz_int64(int nd, size_t size, void **vv)
 			r0 ^= d0;
 			r1 ^= d1;
 		}
-		v_64(p[i]) = p0;
-		v_64(p[i + 8]) = p1;
-		v_64(q[i]) = q0;
-		v_64(q[i + 8]) = q1;
-		v_64(r[i]) = r0;
-		v_64(r[i + 8]) = r1;
+		v_write64(&p[i], p0);
+		v_write64(&p[i + 8], p1);
+		v_write64(&q[i], q0);
+		v_write64(&q[i + 8], q1);
+		v_write64(&r[i], r0);
+		v_write64(&r[i + 8], r1);
 	}
 }
 
@@ -277,7 +277,7 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = 0;
 		for (d = l; d > 0; --d) {
-			d0 = v_8(v[d][i]);
+			d0 = v[d][i];
 
 			p0 ^= d0;
 			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
@@ -285,15 +285,15 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
 		}
 
 		/* first disk with all coefficients at 1 */
-		d0 = v_8(v[0][i]);
+		d0 = v[0][i];
 
 		p0 ^= d0;
 		q0 ^= d0;
 		r0 ^= d0;
 
-		v_8(p[i]) = p0;
-		v_8(q[i]) = q0;
-		v_8(r[i]) = r0;
+		p[i] = p0;
+		q[i] = q0;
+		r[i] = r0;
 	}
 }
 
@@ -326,7 +326,7 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = s0 = 0;
 		for (d = l; d > 0; --d) {
-			d0 = v_8(v[d][i]);
+			d0 = v[d][i];
 
 			p0 ^= d0;
 			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
@@ -335,17 +335,17 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
 		}
 
 		/* first disk with all coefficients at 1 */
-		d0 = v_8(v[0][i]);
+		d0 = v[0][i];
 
 		p0 ^= d0;
 		q0 ^= d0;
 		r0 ^= d0;
 		s0 ^= d0;
 
-		v_8(p[i]) = p0;
-		v_8(q[i]) = q0;
-		v_8(r[i]) = r0;
-		v_8(s[i]) = s0;
+		p[i] = p0;
+		q[i] = q0;
+		r[i] = r0;
+		s[i] = s0;
 	}
 }
 
@@ -380,7 +380,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = s0 = t0 = 0;
 		for (d = l; d > 0; --d) {
-			d0 = v_8(v[d][i]);
+			d0 = v[d][i];
 
 			p0 ^= d0;
 			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
@@ -390,7 +390,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 		}
 
 		/* first disk with all coefficients at 1 */
-		d0 = v_8(v[0][i]);
+		d0 = v[0][i];
 
 		p0 ^= d0;
 		q0 ^= d0;
@@ -398,11 +398,11 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 		s0 ^= d0;
 		t0 ^= d0;
 
-		v_8(p[i]) = p0;
-		v_8(q[i]) = q0;
-		v_8(r[i]) = r0;
-		v_8(s[i]) = s0;
-		v_8(t[i]) = t0;
+		p[i] = p0;
+		q[i] = q0;
+		r[i] = r0;
+		s[i] = s0;
+		t[i] = t0;
 	}
 }
 
@@ -439,7 +439,7 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = s0 = t0 = u0 = 0;
 		for (d = l; d > 0; --d) {
-			d0 = v_8(v[d][i]);
+			d0 = v[d][i];
 
 			p0 ^= d0;
 			q0 ^= raid_gfmul[d0][raid_gfgen[1][d]];
@@ -450,7 +450,7 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
 		}
 
 		/* first disk with all coefficients at 1 */
-		d0 = v_8(v[0][i]);
+		d0 = v[0][i];
 
 		p0 ^= d0;
 		q0 ^= d0;
@@ -459,12 +459,12 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
 		t0 ^= d0;
 		u0 ^= d0;
 
-		v_8(p[i]) = p0;
-		v_8(q[i]) = q0;
-		v_8(r[i]) = r0;
-		v_8(s[i]) = s0;
-		v_8(t[i]) = t0;
-		v_8(u[i]) = u0;
+		p[i] = p0;
+		q[i] = q0;
+		r[i] = r0;
+		s[i] = s0;
+		t[i] = t0;
+		u[i] = u0;
 	}
 }
 

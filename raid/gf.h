@@ -56,19 +56,33 @@ static __always_inline uint8_t A(int p, int d)
 }
 
 /*
- * Dereference as uint8_t
+ * Safe memory read/write helpers avoiding strict-aliasing and unaligned access UB.
  */
-#define v_8(p) (*(uint8_t *)&(p))
+static __always_inline uint32_t v_read32(const void *ptr)
+{
+	uint32_t v;
 
-/*
- * Dereference as uint32_t
- */
-#define v_32(p) (*(uint32_t *)&(p))
+	memcpy(&v, ptr, sizeof(v));
+	return v;
+}
 
-/*
- * Dereference as uint64_t
- */
-#define v_64(p) (*(uint64_t *)&(p))
+static __always_inline uint64_t v_read64(const void *ptr)
+{
+	uint64_t v;
+
+	memcpy(&v, ptr, sizeof(v));
+	return v;
+}
+
+static __always_inline void v_write32(void *ptr, uint32_t v)
+{
+	memcpy(ptr, &v, sizeof(v));
+}
+
+static __always_inline void v_write64(void *ptr, uint64_t v)
+{
+	memcpy(ptr, &v, sizeof(v));
+}
 
 /*
  * Galois field reduction polynomials.
