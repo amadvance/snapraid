@@ -4871,7 +4871,26 @@ static void state_rename_content(struct snapraid_state* state)
 {
 	tommy_node* i;
 
-#if defined(__linux__) /* this sequence is linux specific */
+#ifndef _WIN32
+	/*
+	 * This sequence relies on POSIX file-system semantics.
+	 *
+	 * The temporary content file has already been flushed and fsync'ed.
+	 * rename()/renameat() atomically replaces the old content file, but the
+	 * directory entry update is not necessarily durable when the rename
+	 * returns.
+	 *
+	 * Open and fsync the parent directory after the rename to ensure that the
+	 * new content file name is persisted before state_write() returns. This
+	 * ordering is required for crash consistency because parity modifications
+	 * may start only after the pre-sync content state has been durably
+	 * published.
+	 *
+	 * When renameat() is available, perform the rename relative to the same
+	 * directory descriptor that is subsequently fsync'ed. Use O_DIRECTORY
+	 * when available, while retaining compatibility with POSIX systems where
+	 * O_DIRECTORY is not defined.
+	 */
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
@@ -4888,8 +4907,13 @@ static void state_rename_content(struct snapraid_state* state)
 		else
 			pathcpy(dir, sizeof(dir), ".");
 
+		int flags = O_RDONLY;
+#ifdef O_DIRECTORY
+		flags |= O_DIRECTORY;
+#endif
+
 		/* open the directory to get the handle */
-		handle = open(dir, O_RDONLY | O_DIRECTORY);
+		handle = open(dir, flags);
 		if (handle < 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error opening the directory '%s'. %s.\n", dir, strerror(errno));
@@ -4899,17 +4923,33 @@ static void state_rename_content(struct snapraid_state* state)
 
 		/* now rename the just written copy with the correct name */
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (rename(tmp, content->content) != 0) {
+#if HAVE_RENAMEAT
+		const char* content_name = slash ? content->content + (slash - dir) + 1 : content->content;
+		char tmp_name[PATH_MAX];
+
+		pathprint(tmp_name, sizeof(tmp_name), "%s.tmp", content_name);
+		if (renameat(handle, tmp_name, handle, content_name) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error renaming the content file '%s' to '%s'. %s.\n", tmp, content->content, strerror(errno));
+			close(handle);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+#else
+		if (rename(tmp, content->content) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error renaming the content file '%s' to '%s'. %s.\n", tmp, content->content, strerror(errno));
+			close(handle);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+#endif
 
 		/* sync the directory */
 		if (fsync(handle) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error syncing the directory '%s'. %s.\n", dir, strerror(errno));
+			close(handle);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -6240,3 +6280,4 @@ void state_snapshot_cleanup(struct snapraid_state* state)
 		fssnapshot_unmount(&disk->fss);
 	}
 }
+
