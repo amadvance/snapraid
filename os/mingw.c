@@ -1114,9 +1114,9 @@ int windows_futimens(int fd, struct windows_timespec tv[2])
 	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
 	 * http://support.microsoft.com/kb/167296
 	 */
-	mtime = tv[0].tv_sec;
+	mtime = tv[1].tv_sec;
 	mtime *= 10000000;
-	mtime += tv[0].tv_nsec / 100;
+	mtime += tv[1].tv_nsec / 100;
 	mtime += 116444736000000000LL;
 
 	ft.dwHighDateTime = mtime >> 32;
@@ -1172,9 +1172,9 @@ int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], i
 	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
 	 * http://support.microsoft.com/kb/167296
 	 */
-	mtime = tv[0].tv_sec;
+	mtime = tv[1].tv_sec;
 	mtime *= 10000000;
-	mtime += tv[0].tv_nsec / 100;
+	mtime += tv[1].tv_nsec / 100;
 	mtime += 116444736000000000LL;
 
 	ft.dwHighDateTime = mtime >> 32;
