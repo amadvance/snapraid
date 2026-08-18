@@ -2508,6 +2508,7 @@ static int needs_quote(const WCHAR* arg)
 #define charcat(c) \
 	do { \
 		if (pos + 1 >= size) { \
+			errno = E2BIG; \
 			return -1; \
 		} \
 		cmd[pos++] = (c); \
@@ -2521,6 +2522,15 @@ static int fixcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 	return pos;
 }
 
+/*
+ * Append one argument using the Microsoft C runtime command-line
+ * quoting rules. Use this when building a normal CreateProcessW()
+ * command line that the target process will parse back into argv[].
+ *
+ * Do not use this for cmd.exe /c or batch-script arguments: cmd.exe
+ * applies an additional command language with different metacharacter
+ * parsing rules.
+ */
 static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 {
 	int has_quote;
@@ -2568,6 +2578,73 @@ static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 
 		/* ending quote */
 		charcat(L'"');
+	}
+
+	return pos;
+}
+
+/*
+ * Append one argument for a batch script invoked through cmd.exe /c.
+ * Unlike argcat(), this must preserve the argument boundary while
+ * preventing cmd.exe command metacharacters from changing the command
+ * structure.
+ *
+ * Use this only for intentional .bat/.cmd execution through cmd.exe.
+ * Do not use it for normal CreateProcessW() argv serialization.
+ */
+static int scriptcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
+{
+	int has_space = 0;
+	const WCHAR* p;
+
+	/* space separator */
+	if (pos != 0)
+		charcat(L' ');
+
+	/* empty argument requires quotes to preserve it as a parameter */
+	if (*arg == 0) {
+		charcat(L'"');
+		charcat(L'"');
+		return pos;
+	}
+
+	/* check for embedded quotes and whitespace */
+	for (p = arg; *p; ++p) {
+		if (*p == L'"') {
+			/* embedded double quotes in script arguments are unsupported */
+			errno = EINVAL;
+			return -1;
+		}
+		if (*p == L' ' || *p == L'\t')
+			has_space = 1;
+	}
+
+	if (has_space) {
+		/* enclose arguments containing whitespace in double quotes */
+		charcat(L'"');
+		while (*arg)
+			charcat(*arg++);
+		charcat(L'"');
+	} else {
+		/* escape cmd.exe structural metacharacters using caret (^) */
+		while (*arg) {
+			switch (*arg) {
+			case L'&' :
+			case L'|' :
+			case L'<' :
+			case L'>' :
+			case L'^' :
+			case L'(' :
+			case L')' :
+				charcat(L'^');
+				charcat(*arg);
+				break;
+			default :
+				charcat(*arg);
+				break;
+			}
+			++arg;
+		}
 	}
 
 	return pos;
@@ -3272,19 +3349,27 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	int pos = 0;
 
 	/*
-	 * We add an extra set of quotes: cmd /c " "path with spaces" arg1 "arg 2" "
+	 * We add an extra set of quotes: cmd.exe /d /v:off /c " "path with spaces" arg1 "arg 2" "
 	 * This ensures cmd.exe parses the internal quotes correctly.
+	 * /d disables AutoRun registry commands to ensure deterministic execution.
+	 * /v:off explicitly disables delayed environment variable expansion (!VAR!).
 	 */
-	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L"cmd.exe /c \" ");
-	pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, resolved_path));
+	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L"cmd.exe /d /v:off /c \" ");
+	pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, resolved_path));
 	if (pos < 0) {
-		os_syslog(OS_LVL_INFO, "command to long for script");
+		if (errno == EINVAL)
+			os_syslog(OS_LVL_INFO, "unsupported embedded double quote in script path");
+		else
+			os_syslog(OS_LVL_INFO, "command to long for script");
 		return -1;
 	}
 	for (int i = 1; argv[i]; ++i) {
-		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
+		pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
 		if (pos < 0) {
-			os_syslog(OS_LVL_INFO, "command to long for script");
+			if (errno == EINVAL)
+				os_syslog(OS_LVL_INFO, "unsupported embedded double quote in script argument");
+			else
+				os_syslog(OS_LVL_INFO, "command to long for script");
 			return -1;
 		}
 	}

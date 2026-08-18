@@ -57,11 +57,21 @@ static int needs_quote(const WCHAR* arg)
 #define charcat(c) \
 	do { \
 		if (pos + 1 >= size) { \
+			errno = E2BIG; \
 			return -1; \
 		} \
 		cmd[pos++] = (c); \
 	} while (0)
 
+/*
+ * Append one argument using the Microsoft C runtime command-line
+ * quoting rules. Use this when building a normal CreateProcessW()
+ * command line that the target process will parse back into argv[].
+ *
+ * Do not use this for cmd.exe /c or batch-script arguments: cmd.exe
+ * applies an additional command language with different metacharacter
+ * parsing rules.
+ */
 static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 {
 	int has_quote;
