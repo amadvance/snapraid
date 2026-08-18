@@ -2939,13 +2939,53 @@ pid_t os_wait(pid_t pid, int* status)
 }
 
 /**
- * Terminate a running child process gracefully on Windows.
+ * Gracefully terminate a process created by os_spawn() on Windows.
  *
- * Child processes spawned via os_spawn() with CREATE_NO_WINDOW have an invisible
- * console host allocated by the OS. Attaching to the child's console allows
- * sending a CTRL_BREAK_EVENT signal so SnapRAID CLI catches it and flushes state/checkpoints.
- * When called from a background Windows Service (which has no console), FreeConsole()
- * detaches from the child's console host and leaves the service in its original state.
+ * os_spawn() creates console applications with both CREATE_NO_WINDOW and
+ * CREATE_NEW_PROCESS_GROUP.
+ *
+ * CREATE_NO_WINDOW does not mean that the child is created as a detached
+ * process with no console support. For a console application it provides a
+ * windowless console, so the process can still receive console control events.
+ *
+ * CREATE_NEW_PROCESS_GROUP creates a new process group whose identifier is
+ * the process ID of the child created by CreateProcess(). This allows
+ * CTRL_BREAK_EVENT to be directed specifically to the child's process group:
+ *
+ *     CREATE_NO_WINDOW
+ *         -> child has a windowless console
+ *
+ *     CREATE_NEW_PROCESS_GROUP
+ *         -> child PID is also the process-group ID
+ *
+ * GenerateConsoleCtrlEvent() can signal only processes sharing the console
+ * of the caller. Therefore, this function first detaches the calling process
+ * from its current console, if any, temporarily attaches it to the child's
+ * console using AttachConsole(child_pid), and then sends:
+ *
+ *     GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, child_pid)
+ *
+ * The child process group then receives CTRL_BREAK_EVENT and can perform an
+ * orderly shutdown instead of being forcibly terminated.
+ *
+ * This works particularly well when called by a Windows Service. Services
+ * normally have no console of their own, so the sequence is simply:
+ *
+ *     Service without a console
+ *         -> AttachConsole(child_pid)
+ *         -> GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, child_pid)
+ *         -> child receives CTRL_BREAK_EVENT
+ *         -> FreeConsole()
+ *         -> Service is console-less again
+ *
+ * Note that console attachment is process-wide. If the calling process was
+ * already attached to a console, the initial FreeConsole() detaches it and
+ * that previous console is not restored on return. FreeConsole() and
+ * AttachConsole() also reset the process console control-handler table.
+ * For this reason, this function is best suited to callers that normally
+ * have no console, such as Windows Services.
+ *
+ * If attaching to the child's console fails, fall back to TerminateProcess().
  */
 int os_term(pid_t pid)
 {
