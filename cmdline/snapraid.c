@@ -861,26 +861,40 @@ static struct option long_options[] = {
  */
 #define OPTIONS "t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRW:ahTC:vqHVw:"
 
-int parse_option_size(const char* arg, uint64_t* out_size)
+static int parse_option_size(const char* arg, uint64_t* out_size)
 {
 	char* e;
+	uint64_t mult = 1;
+
+	while (isspace((unsigned char)*arg))
+		++arg;
+
+	if (*arg == '-')
+		return -1;
 
 	/* parse the number part */
+	errno = 0;
 	uint64_t size = strtoull(arg, &e, 10);
-	if (e == arg)
+	if (e == arg || errno == ERANGE)
 		return -1;
 
-	/* Handle suffixes */
+	/* handle suffixes */
 	if ((e[0] == 'k' || e[0] == 'K') && e[1] == 0) {
-		size *= KILO;
+		mult = KILO;
 	} else if ((e[0] == 'm' || e[0] == 'M') && e[1] == 0) {
-		size *= MEGA;
+		mult = MEGA;
 	} else if ((e[0] == 'g' || e[0] == 'G') && e[1] == 0) {
-		size *= GIGA;
+		mult = GIGA;
 	} else if ((e[0] == 't' || e[0] == 'T') && e[1] == 0) {
-		size *= TERA;
+		mult = TERA;
 	} else if (e[0] != 0) {
 		return -1;
+	}
+
+	if (mult != 1) {
+		if (size > UINT64_MAX / mult)
+			return -1;
+		size *= mult;
 	}
 
 	*out_size = size;
