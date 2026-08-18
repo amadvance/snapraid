@@ -38,6 +38,19 @@
  * nonsingular, so the linear system is always solvable for any combination
  * of missing disks. This guarantees an MDS code.
  *
+ * The Cauchy construction below uses a primitive generator g.
+ *
+ * RAID_MODE_CAUCHY_RAID uses:
+ *     polynomial 0x11d
+ *     generator g = 2
+ *
+ * RAID_MODE_CAUCHY_AES uses:
+ *     polynomial 0x11b
+ *     generator g = 3
+ *
+ * The numerical examples below refer to RAID_MODE_CAUCHY_RAID,
+ * using polynomial 0x11d and generator g = 2.
+ *
  * How the matrix is obtained:
  *
  *   The matrix is constructed to match Linux RAID coefficients for the
@@ -47,17 +60,18 @@
  *      where all x_i and y_j are distinct elements (the textbook definition
  *      of a Cauchy matrix).
  *
- *   2. For the first row (j=0), set x_i = 2^-i and y_0 = 0, resulting in:
+ *   2. For the first row (j=0), set x_i = g^-i and y_0 = 0, resulting in:
  *
- *        row j=0 -> 1/(x_i + y_0) = 1/(2^-i + 0) = 2^i
+ *        row j=0 -> 1/(x_i + y_0) = 1/(g^-i + 0) = g^i
  *
  *      which reproduces the RAID-6 coefficients.
  *
- *   3. For subsequent rows (j>0), set y_j = 2^j, yielding:
+ *   3. For subsequent rows (j>0), set y_j = g^j, yielding:
  *
- *        rows j>0 -> 1/(x_i + y_j) = 1/(2^-i + 2^j)
+ *        rows j>0 -> 1/(x_i + y_j) = 1/(g^-i + g^j)
  *
- *      ensuring x_i != y_j for any i >= 0, j >= 1, and i + j < 255.
+ *      Since g is primitive and has multiplicative order 255,
+ *      g^-i != g^j for the supported indexes where i + j < 255.
  *
  *   4. Place a row filled with 1 at the top of the matrix, transforming it
  *      into an Extended Cauchy Matrix. This preserves the nonsingularity
@@ -71,7 +85,8 @@
  *
  * Concrete example in GF(256) for k=6, m=4:
  *
- *   First, create a 3x6 Cauchy matrix using x_i = 2^-i and y_0 = 0, y_j = 2^j for j>0:
+ *   First, create a 3x6 Cauchy matrix using x_i = g^-i and y_0 = 0, y_j = g^j for j>0.
+ *   For RAID_MODE_CAUCHY_RAID, where g=2, this gives:
  *
  *     x = { 1, 142, 71, 173, 216, 108 }
  *     y = { 0, 2, 4 }
@@ -124,17 +139,20 @@
  * Parity computation is as follows:
  *
  *   P = sum(Di)
- *   Q = sum(2^i * Di)
+ *   Q = sum(g^i * Di)
  *   R = sum(A[2,i] * Di)
  *   S = sum(A[3,i] * Di)
  *   T = sum(A[4,i] * Di)
  *   U = sum(A[5,i] * Di) for 0 <= i < N
  *
+ *   where g=2 for RAID_MODE_CAUCHY_RAID and
+ *   g=3 for RAID_MODE_CAUCHY_AES.
+ *
  * Recovery from six disk failures at indices x, y, z, h, v, w (0 <= x < y < z < h < v < w < N)
  * involves computing parity of the remaining N-6 disks:
  *
  *   Pa = sum(Di)
- *   Qa = sum(2^i * Di)
+ *   Qa = sum(g^i * Di)
  *   Ra = sum(A[2,i] * Di)
  *   Sa = sum(A[3,i] * Di)
  *   Ta = sum(A[4,i] * Di)
@@ -152,11 +170,14 @@
  * yields:
  *
  *   Pd =          Dx +          Dy +          Dz +          Dh +          Dv +          Dw
- *   Qd =    2^x * Dx +    2^y * Dy +    2^z * Dz +    2^h * Dh +    2^v * Dv +    2^w * Dw
+ *   Qd =    g^x * Dx +    g^y * Dy +    g^z * Dz +    g^h * Dh +    g^v * Dv +    g^w * Dw
  *   Rd = A[2,x] * Dx + A[2,y] * Dy + A[2,z] * Dz + A[2,h] * Dh + A[2,v] * Dv + A[2,w] * Dw
  *   Sd = A[3,x] * Dx + A[3,y] * Dy + A[3,z] * Dz + A[3,h] * Dh + A[3,v] * Dv + A[3,w] * Dw
  *   Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
  *   Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
+ *
+ * with g=2 for RAID_MODE_CAUCHY_RAID and
+ * g=3 for RAID_MODE_CAUCHY_AES.
  *
  * This linear system is always solvable since the coefficient matrix is
  * nonsingular due to the properties of A[].
@@ -398,20 +419,20 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v)
  * Starting from the equations:
  *
  * Pd = Dx + Dy
- * Qd = 2^id[0] * Dx + 2^id[1] * Dy
+ * Qd = g^id[0] * Dx + g^id[1] * Dy
  *
  * and solving we get:
  *
- *               1                     2^(-id[0])
+ *               1                     g^(-id[0])
  * Dy = ------------------- * Pd + ------------------- * Qd
- *      2^(id[1]-id[0]) + 1        2^(id[1]-id[0]) + 1
+ *      g^(id[1]-id[0]) + 1        g^(id[1]-id[0]) + 1
  *
  * Dx = Dy + Pd
  *
  * with conditions:
  *
- * 2^id[0] != 0
- * 2^(id[1]-id[0]) + 1 != 0
+ * g^id[0] != 0
+ * g^(id[1]-id[0]) + 1 != 0
  *
  * That are always satisfied for any 0<=id[0]<id[1]<255.
  */
@@ -426,8 +447,8 @@ void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 	const uint8_t *T[2];
 
 	/* get multiplication tables */
-	T[0] = table(inv(pow2(id[1] - id[0]) ^ 1));
-	T[1] = table(inv(pow2(id[0]) ^ pow2(id[1])));
+	T[0] = table(inv(powgen(id[1] - id[0]) ^ 1));
+	T[1] = table(inv(powgen(id[0]) ^ powgen(id[1])));
 
 	/* compute delta parity */
 	raid_delta_gen(2, id, ip, nd, size, vv);

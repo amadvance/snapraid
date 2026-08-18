@@ -88,9 +88,9 @@ Operating Modes and Polynomials
 
   RAID_MODE_CAUCHY_RAID (Default mode = 0)
     Uses Cauchy matrix generator with standard RAID polynomial 0x1d
-    (x^8 + x^4 + x^3 + x^2 + 1, decimal 285). Supports parities 1 to 6.
-    Matches standard Linux RAID-6 (Anvin method) for 2-parity arrays and
-    ensures on-disk compatibility.
+    (x^8 + x^4 + x^3 + x^2 + 1, decimal 285, 0x11d) and primitive generator
+    g = 2. Supports parities 1 to 6. Matches standard Linux RAID-6 (Anvin
+    method) for 2-parity arrays and ensures on-disk compatibility.
 
   RAID_MODE_VANDERMONDE_RAID (Mode = 1)
     Legacy mode supporting up to 3 parities using standard polynomial 0x1d.
@@ -98,10 +98,13 @@ Operating Modes and Polynomials
     (Z parity). Optimized for low-end CPUs without vector instructions.
 
   RAID_MODE_CAUCHY_AES (Mode = 2)
-    Uses Cauchy matrix with AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1).
-    Enables hardware acceleration via Intel GFNI instructions (vgf2p8mulb)
-    on supported CPUs (Ice Lake or newer). Parity data is incompatible with
-    standard 0x1d polynomial arrays.
+    Uses Cauchy matrix with AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1,
+    0x11b) and primitive generator g = 3. Enables hardware acceleration via
+    Intel GFNI instructions (vgf2p8mulb) on supported CPUs (Ice Lake or newer).
+    Parity data is incompatible with standard 0x1d polynomial arrays.
+
+  Both Cauchy modes use the same Extended Cauchy construction with coefficients
+  based on powers of their respective primitive generator.
 
 
 Implementation Structure

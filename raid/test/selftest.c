@@ -4,6 +4,7 @@
 /* Self-test for the RAID library */
 
 #include "internal.h"
+#include "test.h"
 #include "cpu.h"
 
 #include <stdio.h>
@@ -16,15 +17,23 @@ int main(void)
 	raid_init();
 
 	printf("Test Cauchy RAID\n");
+	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
-	raid_mode(RAID_MODE_CAUCHY_AES);
-
 	printf("Test Cauchy AES\n");
+	if (raid_test_poly(RAID_MODE_CAUCHY_AES) != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;

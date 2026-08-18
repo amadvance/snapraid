@@ -141,6 +141,165 @@ int raid_test_sort(void)
 	return 0;
 }
 
+/*
+ * Tests the mathematical properties required by a Cauchy RAID mode.
+ *
+ * This is intentionally only a fast sanity check. It does not prove that
+ * all square submatrices are nonsingular. The exhaustive verification of
+ * the MDS property is performed by raid/test/invtest.
+ *
+ * SnapRAID uses two Extended Cauchy constructions:
+ *
+ *   RAID_MODE_CAUCHY_RAID:
+ *       polynomial 0x11d
+ *       primitive generator g=2
+ *
+ *   RAID_MODE_CAUCHY_AES:
+ *       polynomial 0x11b
+ *       primitive generator g=3
+ *
+ * The parity generation tests compare optimized implementations against
+ * raid_gen_ref(), but both use the same active generator matrix. Therefore
+ * they can agree even if the matrix itself is mathematically unsuitable.
+ *
+ * This test instead checks a few fundamental properties of the field
+ * generator and of the generated Cauchy matrix.
+ */
+int raid_test_poly(unsigned mode)
+{
+	int i, j;
+	int p, d;
+
+	/*
+	 * This test is defined only for the two Cauchy modes.
+	 *
+	 * Vandermonde parity intentionally uses a different construction and
+	 * is not part of this test.
+	 */
+	if (mode != RAID_MODE_CAUCHY_RAID
+		&& mode != RAID_MODE_CAUCHY_AES)
+		return -1;
+
+	/*
+	 * Select the mode first so that:
+	 *
+	 *     raid_gfexp
+	 *     raid_gfcauchy
+	 *     raid_gfmul
+	 *     raid_gfinv
+	 *
+	 * all refer to the tables of the field being tested.
+	 *
+	 * This also verifies the normal raid_mode() table selection path
+	 * instead of accessing the *_raid or *_aes tables directly.
+	 */
+	raid_mode(mode);
+
+	/*
+	 * Primitive order alone is not enough to protect parity format
+	 * compatibility. Each Cauchy mode has a fixed reducing polynomial
+	 * and primitive generator, which determine the actual matrix coefficients.
+	 */
+	if (mode == RAID_MODE_CAUCHY_RAID) {
+		if (raid_poly_byte != RAID_POLY_RAID)
+			return -1;
+		if (raid_gfexp[1] != 2)
+			return -1;
+	} else if (mode == RAID_MODE_CAUCHY_AES) {
+		if (raid_poly_byte != RAID_POLY_AES)
+			return -1;
+		if (raid_gfexp[1] != 3)
+			return -1;
+	}
+
+	/*
+	 * raid_gfexp[a] contains g^a for the primitive generator associated
+	 * with the active Cauchy mode.
+	 *
+	 * The multiplicative group GF(2^8)* contains 255 elements:
+	 *
+	 *     255 = 3 * 5 * 17
+	 *
+	 * The order of every nonzero field element divides 255.
+	 *
+	 * To prove that g has order exactly 255, it is therefore sufficient
+	 * to verify:
+	 *
+	 *     g^255 == 1
+	 *
+	 * and to exclude the three maximal proper divisors:
+	 *
+	 *     255 / 3  = 85
+	 *     255 / 5  = 51
+	 *     255 / 17 = 15
+	 *
+	 * Hence a primitive generator must satisfy:
+	 *
+	 *     g^85 != 1
+	 *     g^51 != 1
+	 *     g^15 != 1
+	 */
+	if (raid_gfexp[0] != 1)
+		return -1;
+	if (raid_gfexp[255] != 1)
+		return -1;
+	if (raid_gfexp[85] == 1)
+		return -1;
+	if (raid_gfexp[51] == 1)
+		return -1;
+	if (raid_gfexp[15] == 1)
+		return -1;
+
+	/*
+	 * The Q row of the Extended Cauchy matrix contains:
+	 *
+	 *     1, g, g^2, g^3, ...
+	 *
+	 * SnapRAID supports RAID_DATA_MAX data disks, so all generator powers
+	 * corresponding to those columns must be distinct.
+	 *
+	 * A primitive generator of order 255 guarantees this, but checking it
+	 * explicitly is inexpensive and also verifies the generated
+	 * raid_gfexp[] table itself.
+	 */
+	for (i = 0; i < RAID_DATA_MAX; ++i)
+		for (j = i + 1; j < RAID_DATA_MAX; ++j)
+			if (raid_gfexp[i] == raid_gfexp[j])
+				return -1;
+
+	/*
+	 * The second row of the Extended Cauchy matrix is exactly g^d.
+	 *
+	 * Verify that the exponent table and the actual matrix used for
+	 * parity generation agree for every supported data column.
+	 *
+	 * This makes sure that the primitive generator checked above is the
+	 * same generator actually used by the Q row.
+	 */
+	for (d = 0; d < RAID_DATA_MAX; ++d)
+		if (raid_gfcauchy[1][d] != raid_gfexp[d])
+			return -1;
+
+	/*
+	 * Every coefficient of the active 6x251 Cauchy generator matrix must
+	 * be nonzero.
+	 *
+	 * A single coefficient is itself a 1x1 submatrix, so a zero
+	 * coefficient would make that submatrix singular and immediately
+	 * disprove the MDS property.
+	 *
+	 * Absence of zero coefficients is only a necessary condition. It does
+	 * not prove that every larger square submatrix is nonsingular. That
+	 * exhaustive verification remains the responsibility of invtest.
+	 */
+	for (p = 0; p < RAID_PARITY_MAX; ++p)
+		for (d = 0; d < RAID_DATA_MAX; ++d)
+			if (raid_gfcauchy[p][d] == 0)
+				return -1;
+
+	return 0;
+}
+
 #define test_setup(i) f[i - 1][nf[i - 1]++]
 
 int raid_test_rec(int mode, int nd, size_t size)
@@ -374,25 +533,49 @@ int raid_test_par(int mode, int nd, size_t size)
 	/* setup all the available functions */
 	test_setup(1) = raid_gen1_int32;
 	test_setup(1) = raid_gen1_int64;
-	test_setup(2) = raid_gen2_int32;
-	test_setup(2) = raid_gen2_int64;
+	test_setup(2) = raid_gen2_int8;
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		test_setup(2) = raid_gen2_int32_aes;
+		test_setup(2) = raid_gen2_int64_aes;
+	} else {
+		test_setup(2) = raid_gen2_int32_raid;
+		test_setup(2) = raid_gen2_int64_raid;
+	}
 
 #ifdef CONFIG_NEON
 	test_setup(1) = raid_gen1_neon;
-	test_setup(2) = raid_gen2_neon;
+	if (mode == RAID_MODE_CAUCHY_AES)
+		test_setup(2) = raid_gen2_neon_aes;
+	else
+		test_setup(2) = raid_gen2_neon_raid;
 #endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		test_setup(1) = raid_gen1_sse2;
-		test_setup(2) = raid_gen2_sse2;
+		if (mode == RAID_MODE_CAUCHY_AES)
+			test_setup(2) = raid_gen2_sse2_aes;
+		else
+			test_setup(2) = raid_gen2_sse2_raid;
 #ifdef CONFIG_X86_64
-		test_setup(2) = raid_gen2_sse2ext;
+		if (mode == RAID_MODE_CAUCHY_AES)
+			test_setup(2) = raid_gen2_sse2ext_aes;
+		else
+			test_setup(2) = raid_gen2_sse2ext_raid;
 #endif
 	}
 	if (raid_cpu_has_avx2()) {
 		test_setup(1) = raid_gen1_avx2;
-		test_setup(2) = raid_gen2_avx2;
+		if (mode == RAID_MODE_CAUCHY_AES)
+			test_setup(2) = raid_gen2_avx2_aes;
+		else
+			test_setup(2) = raid_gen2_avx2_raid;
+#ifdef CONFIG_X86_64
+		if (mode == RAID_MODE_CAUCHY_AES)
+			test_setup(2) = raid_gen2_avx2ext_aes;
+		else
+			test_setup(2) = raid_gen2_avx2ext_raid;
+#endif
 	}
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx512bw()) {
@@ -401,10 +584,10 @@ int raid_test_par(int mode, int nd, size_t size)
 	}
 	if (mode == RAID_MODE_CAUCHY_AES) {
 		if (raid_cpu_has_avx2gfni()) {
-			test_setup(2) = raid_gen2_avx2gfni;
+			test_setup(2) = raid_gen2_avx2gfni_aes;
 		}
 		if (raid_cpu_has_avx512gfni()) {
-			test_setup(2) = raid_gen2_avx512gfni;
+			test_setup(2) = raid_gen2_avx512gfni_aes;
 		}
 	}
 #endif
@@ -417,31 +600,57 @@ int raid_test_par(int mode, int nd, size_t size)
 		test_setup(6) = raid_gen6_int8;
 
 #ifdef CONFIG_NEON
-		test_setup(3) = raid_gen3_neon;
-		test_setup(4) = raid_gen4_neon;
-		test_setup(5) = raid_gen5_neon;
-		test_setup(6) = raid_gen6_neon;
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			test_setup(3) = raid_gen3_neon_aes;
+			test_setup(4) = raid_gen4_neon_aes;
+			test_setup(5) = raid_gen5_neon_aes;
+			test_setup(6) = raid_gen6_neon_aes;
+		} else {
+			test_setup(3) = raid_gen3_neon_raid;
+			test_setup(4) = raid_gen4_neon_raid;
+			test_setup(5) = raid_gen5_neon_raid;
+			test_setup(6) = raid_gen6_neon_raid;
+		}
 #endif
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_ssse3()) {
-			test_setup(3) = raid_gen3_ssse3;
-			test_setup(4) = raid_gen4_ssse3;
-			test_setup(5) = raid_gen5_ssse3;
-			test_setup(6) = raid_gen6_ssse3;
+			if (mode == RAID_MODE_CAUCHY_AES) {
+				test_setup(3) = raid_gen3_ssse3_aes;
+				test_setup(4) = raid_gen4_ssse3_aes;
+			} else {
+				test_setup(3) = raid_gen3_ssse3_raid;
+				test_setup(4) = raid_gen4_ssse3_raid;
+				test_setup(5) = raid_gen5_ssse3_raid;
+				test_setup(6) = raid_gen6_ssse3_raid;
+			}
 #ifdef CONFIG_X86_64
-			test_setup(3) = raid_gen3_ssse3ext;
-			test_setup(4) = raid_gen4_ssse3ext;
-			test_setup(5) = raid_gen5_ssse3ext;
-			test_setup(6) = raid_gen6_ssse3ext;
+			if (mode == RAID_MODE_CAUCHY_AES) {
+				test_setup(3) = raid_gen3_ssse3ext_aes;
+				test_setup(4) = raid_gen4_ssse3ext_aes;
+				test_setup(5) = raid_gen5_ssse3ext_aes;
+				test_setup(6) = raid_gen6_ssse3ext_aes;
+			} else {
+				test_setup(3) = raid_gen3_ssse3ext_raid;
+				test_setup(4) = raid_gen4_ssse3ext_raid;
+				test_setup(5) = raid_gen5_ssse3ext_raid;
+				test_setup(6) = raid_gen6_ssse3ext_raid;
+			}
 #endif
 		}
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx2()) {
-			test_setup(3) = raid_gen3_avx2ext;
-			test_setup(4) = raid_gen4_avx2ext;
-			test_setup(5) = raid_gen5_avx2ext;
-			test_setup(6) = raid_gen6_avx2ext;
+			if (mode == RAID_MODE_CAUCHY_AES) {
+				test_setup(3) = raid_gen3_avx2ext_aes;
+				test_setup(4) = raid_gen4_avx2ext_aes;
+				test_setup(5) = raid_gen5_avx2ext_aes;
+				test_setup(6) = raid_gen6_avx2ext_aes;
+			} else {
+				test_setup(3) = raid_gen3_avx2ext_raid;
+				test_setup(4) = raid_gen4_avx2ext_raid;
+				test_setup(5) = raid_gen5_avx2ext_raid;
+				test_setup(6) = raid_gen6_avx2ext_raid;
+			}
 		}
 		if (raid_cpu_has_avx512bw()) {
 			test_setup(3) = raid_gen3_avx512bw;
@@ -451,38 +660,38 @@ int raid_test_par(int mode, int nd, size_t size)
 		}
 		if (mode == RAID_MODE_CAUCHY_AES) {
 			if (raid_cpu_has_avx2gfni()) {
-				test_setup(3) = raid_gen3_avx2gfni;
-				test_setup(4) = raid_gen4_avx2gfni;
-				test_setup(5) = raid_gen5_avx2gfni;
-				test_setup(6) = raid_gen6_avx2gfni;
+				test_setup(3) = raid_gen3_avx2gfni_aes;
+				test_setup(4) = raid_gen4_avx2gfni_aes;
+				test_setup(5) = raid_gen5_avx2gfni_aes;
+				test_setup(6) = raid_gen6_avx2gfni_aes;
 			}
 			if (raid_cpu_has_avx512gfni()) {
-				test_setup(3) = raid_gen3_avx512gfni;
-				test_setup(4) = raid_gen4_avx512gfni;
-				test_setup(5) = raid_gen5_avx512gfni;
-				test_setup(6) = raid_gen6_avx512gfni;
+				test_setup(3) = raid_gen3_avx512gfni_aes;
+				test_setup(4) = raid_gen4_avx512gfni_aes;
+				test_setup(5) = raid_gen5_avx512gfni_aes;
+				test_setup(6) = raid_gen6_avx512gfni_aes;
 			}
 		}
 #endif
 #endif
 	} else {
-		test_setup(3) = raid_genz_int32;
-		test_setup(3) = raid_genz_int64;
+		test_setup(3) = raid_genz_int32_raid;
+		test_setup(3) = raid_genz_int64_raid;
 
 #ifdef CONFIG_NEON
-		test_setup(3) = raid_genz_neon;
+		test_setup(3) = raid_genz_neon_raid;
 #endif
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_sse2()) {
-			test_setup(3) = raid_genz_sse2;
+			test_setup(3) = raid_genz_sse2_raid;
 #ifdef CONFIG_X86_64
-			test_setup(3) = raid_genz_sse2ext;
+			test_setup(3) = raid_genz_sse2ext_raid;
 #endif
 		}
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_avx2())
-			test_setup(3) = raid_genz_avx2ext;
+			test_setup(3) = raid_genz_avx2ext_raid;
 #endif
 #endif
 	}

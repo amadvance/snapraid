@@ -61,9 +61,9 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 (RAID6 with powers of 2) 32bit C implementation
+ * GEN2 (double parity) 32bit C implementation
  */
-void raid_gen2_int32(int nd, size_t size, void **vv)
+static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -74,6 +74,7 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 
 	uint32_t d0, q0, p0;
 	uint32_t d1, q1, p1;
+	uint32_t qold;
 
 	l = nd - 1;
 	p = v[nd];
@@ -89,8 +90,15 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 			p0 ^= d0;
 			p1 ^= d1;
 
+			qold = q0;
 			q0 = x2_32(q0, poly_32);
+			if (generator == 3)
+				q0 ^= qold;
+
+			qold = q1;
 			q1 = x2_32(q1, poly_32);
+			if (generator == 3)
+				q1 ^= qold;
 
 			q0 ^= d0;
 			q1 ^= d1;
@@ -102,10 +110,20 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 	}
 }
 
+void raid_gen2_int32_raid(int nd, size_t size, void **vv)
+{
+	raid_gen2_int32_gen(nd, size, vv, 2);
+}
+
+void raid_gen2_int32_aes(int nd, size_t size, void **vv)
+{
+	raid_gen2_int32_gen(nd, size, vv, 3);
+}
+
 /*
- * GEN2 (RAID6 with powers of 2) 64bit C implementation
+ * GEN2 (double parity) 64bit C implementation
  */
-void raid_gen2_int64(int nd, size_t size, void **vv)
+static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -116,6 +134,7 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 
 	uint64_t d0, q0, p0;
 	uint64_t d1, q1, p1;
+	uint64_t qold;
 
 	l = nd - 1;
 	p = v[nd];
@@ -131,8 +150,15 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 			p0 ^= d0;
 			p1 ^= d1;
 
+			qold = q0;
 			q0 = x2_64(q0, poly_64);
+			if (generator == 3)
+				q0 ^= qold;
+
+			qold = q1;
 			q1 = x2_64(q1, poly_64);
+			if (generator == 3)
+				q1 ^= qold;
 
 			q0 ^= d0;
 			q1 ^= d1;
@@ -144,10 +170,25 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 	}
 }
 
+void raid_gen2_int64_raid(int nd, size_t size, void **vv)
+{
+	raid_gen2_int64_gen(nd, size, vv, 2);
+}
+
+void raid_gen2_int64_aes(int nd, size_t size, void **vv)
+{
+	raid_gen2_int64_gen(nd, size, vv, 3);
+}
+
+void raid_gen2_int8(int nd, size_t size, void **vv)
+{
+	raid_gen_ref(nd, 2, size, vv);
+}
+
 /*
  * GENz (triple parity with powers of 2^-1) 32bit C implementation
  */
-void raid_genz_int32(int nd, size_t size, void **vv)
+void raid_genz_int32_raid(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -200,7 +241,7 @@ void raid_genz_int32(int nd, size_t size, void **vv)
 /*
  * GENz (triple parity with powers of 2^-1) 64bit C implementation
  */
-void raid_genz_int64(int nd, size_t size, void **vv)
+void raid_genz_int64_raid(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -653,19 +694,23 @@ void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 void raid_register_int(void)
 {
-	if (sizeof(void *) == 4) {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int32", raid_gen1_int32, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int32", raid_gen2_int32, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int32", raid_genz_int32, RAID_POLY_ANY);
-	} else {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int64", raid_gen1_int64, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int64", raid_genz_int64, RAID_POLY_ANY);
-	}
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int8", raid_gen2_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_gen3_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_gen4_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_gen5_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "int8", raid_gen6_int8, RAID_POLY_ANY);
+
+	if (sizeof(void *) == 4) {
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int32", raid_gen1_int32, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int32", raid_gen2_int32_raid, RAID_POLY_RAID);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int32", raid_gen2_int32_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int32", raid_genz_int32_raid, RAID_POLY_RAID);
+	} else {
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "int64", raid_gen1_int64, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64_raid, RAID_POLY_RAID);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int64", raid_gen2_int64_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "int64", raid_genz_int64_raid, RAID_POLY_RAID);
+	}
 
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "int8", raid_rec1_int8, RAID_POLY_ANY);
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "int8", raid_rec2_int8, RAID_POLY_ANY);

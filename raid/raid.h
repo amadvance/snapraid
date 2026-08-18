@@ -9,23 +9,26 @@
  *
  * RAID parity computation operates in GF(2^8), a finite field where
  * arithmetic is performed modulo an irreducible polynomial of degree 8.
- * The choice of polynomial affects both correctness and performance:
- * all tables, coefficients, and parity data are tied to a specific
- * polynomial and cannot be mixed.
+ * The choice of operating mode affects both correctness and performance:
+ * all tables, coefficients, and parity data are tied to the selected
+ * polynomial and primitive generator and cannot be mixed between
+ * incompatible operating modes.
  *
  * Two polynomials are supported:
  *
  * 0x1d  (x^8 + x^4 + x^3 + x^2 + 1)  -- Standard RAID polynomial
  *
  *   The polynomial used by the original RAID-6 specification and the
- *   Linux kernel RAID implementation. Choosing this polynomial ensures
- *   on-disk compatibility with existing RAID arrays and interchange with
- *   other RAID implementations. Use this when reading or writing data
- *   that may be accessed by other software or hardware RAID controllers.
+ *   Linux kernel RAID implementation, used with primitive generator g=2.
+ *   Choosing this polynomial ensures on-disk compatibility with existing
+ *   RAID arrays and interchange with other RAID implementations. Use this
+ *   when reading or writing data that may be accessed by other software or
+ *   hardware RAID controllers.
  *
  * 0x1b  (x^8 + x^4 + x^3 + x + 1)    -- AES polynomial
  *
- *   The polynomial used by the AES encryption standard. Choosing this
+ *   The polynomial used by the AES encryption standard (0x11b including
+ *   the x^8 term), used with primitive generator g=3. Choosing this
  *   polynomial enables the use of the Intel GFNI (Galois Field New
  *   Instructions) extension, specifically the vgf2p8mulb instruction,
  *   which performs GF(2^8) multiplication natively in hardware using
@@ -36,8 +39,8 @@
  *   single vgf2p8mulb instruction. On CPUs supporting GFNI (Ice Lake and
  *   later), this yields a significant throughput improvement. The
  *   trade-off is that parity data is not compatible with arrays using
- *   the standard 0x1d polynomial, so this option requires that all
- *   data be generated and recovered using the same polynomial choice.
+ *   the standard 0x1d polynomial (g=2), so this option requires that all
+ *   data be generated and recovered using the same operating mode.
  */
 
 /**
@@ -46,7 +49,7 @@
 #define RAID_MODE_GET -1
 
 /**
- * Default RAID mode supporting up to 6 parities using the standard polynomial 0x1d.
+ * Default RAID mode supporting up to 6 parities using standard polynomial 0x1d and generator g=2.
  *
  * Provides high performance on modern CPUs with SSSE3, AVX2, AVX-512, or NEON support.
  * Ensures maximum compatibility with standard Linux RAID arrays.
@@ -66,11 +69,11 @@
 #define RAID_MODE_VANDERMONDE_RAID 1
 
 /**
- * RAID mode supporting up to 6 parities using AES polynomial 0x1b.
+ * RAID mode supporting up to 6 parities using AES polynomial 0x1b (0x11b) and primitive generator g=3.
  *
- * It has the same performance as RAID_MODE_CAUCHY_RAID on CPUs without GFNI,
- * but achieves significantly higher throughput on CPUs supporting GFNI hardware
- * acceleration.
+ * It has slightly lower performance than RAID_MODE_CAUCHY_RAID on CPUs without GFNI due
+ * to the additional cost of generator g=3, but achieves significantly higher throughput on
+ * CPUs supporting GFNI hardware acceleration.
  */
 #define RAID_MODE_CAUCHY_AES 2
 

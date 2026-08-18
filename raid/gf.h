@@ -30,9 +30,9 @@ static __always_inline uint8_t inv(uint8_t v)
 }
 
 /*
- * GF 2^a.
+ * GF generator^a for the active Cauchy matrix.
  */
-static __always_inline uint8_t pow2(int v)
+static __always_inline uint8_t powgen(int v)
 {
 	BUG_ON(v < 0 || v > 254); /* invalid exponent */
 

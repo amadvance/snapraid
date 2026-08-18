@@ -9,7 +9,7 @@
 /*
  * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_gen3_ssse3(int nd, size_t size, void **vv)
+static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -37,7 +37,7 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
-		/* last disk without the multiplication by two */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
@@ -58,11 +58,15 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 
+			if (generator == 3)
+				asm volatile ("movdqa %xmm1,%xmm6");
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pcmpgtb %xmm1,%xmm5");
 			asm volatile ("paddb %xmm1,%xmm1");
 			asm volatile ("pand %xmm3,%xmm5");
 			asm volatile ("pxor %xmm5,%xmm1");
+			if (generator == 3)
+				asm volatile ("pxor %xmm6,%xmm1");
 
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm4,%xmm1");
@@ -83,11 +87,15 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 
+		if (generator == 3)
+			asm volatile ("movdqa %xmm1,%xmm6");
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pcmpgtb %xmm1,%xmm5");
 		asm volatile ("paddb %xmm1,%xmm1");
 		asm volatile ("pand %xmm3,%xmm5");
 		asm volatile ("pxor %xmm5,%xmm1");
+		if (generator == 3)
+			asm volatile ("pxor %xmm6,%xmm1");
 
 		asm volatile ("pxor %xmm4,%xmm0");
 		asm volatile ("pxor %xmm4,%xmm1");
@@ -101,13 +109,23 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 	raid_sse_end();
 }
 
+void raid_gen3_ssse3_raid(int nd, size_t size, void **vv)
+{
+	raid_gen3_ssse3_gen(nd, size, vv, 2);
+}
+
+void raid_gen3_ssse3_aes(int nd, size_t size, void **vv)
+{
+	raid_gen3_ssse3_gen(nd, size, vv, 3);
+}
+
 #ifdef CONFIG_X86_64
 /*
  * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
+static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -135,7 +153,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 32) {
-		/* last disk without the by two multiplication */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i + 16]));
 
@@ -164,11 +182,19 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm7,%xmm2");
 		asm volatile ("pxor   %xmm15,%xmm10");
 
-		/* intermediate disks */
-		for (d = l - 1; d > 0; --d) {
+		/* process two intermediate disks per iteration */
+		for (d = l - 1; d > 1; d -= 2) {
+			/* disk d */
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i + 16]));
 
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+			asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+
+			if (generator == 3) {
+				asm volatile ("movdqa %xmm1,%xmm6");
+				asm volatile ("movdqa %xmm9,%xmm14");
+			}
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pxor %xmm13,%xmm13");
 			asm volatile ("pcmpgtb %xmm1,%xmm5");
@@ -179,6 +205,10 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile ("pand %xmm3,%xmm13");
 			asm volatile ("pxor %xmm5,%xmm1");
 			asm volatile ("pxor %xmm13,%xmm9");
+			if (generator == 3) {
+				asm volatile ("pxor %xmm6,%xmm1");
+				asm volatile ("pxor %xmm14,%xmm9");
+			}
 
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm4,%xmm1");
@@ -194,8 +224,107 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile ("pand   %xmm11,%xmm5");
 			asm volatile ("pand   %xmm11,%xmm13");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %xmm7,%xmm6");
+			asm volatile ("movdqa %xmm15,%xmm14");
+			asm volatile ("pshufb %xmm4,%xmm7");
+			asm volatile ("pshufb %xmm12,%xmm6");
+			asm volatile ("pshufb %xmm5,%xmm15");
+			asm volatile ("pshufb %xmm13,%xmm14");
+			asm volatile ("pxor   %xmm7,%xmm2");
+			asm volatile ("pxor   %xmm6,%xmm10");
+			asm volatile ("pxor   %xmm15,%xmm2");
+			asm volatile ("pxor   %xmm14,%xmm10");
+
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d - 1][i]));
+			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d - 1][i + 16]));
+
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d - 1][1][0][0]));
+			asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfcauchypshufb[d - 1][1][1][0]));
+
+			if (generator == 3) {
+				asm volatile ("movdqa %xmm1,%xmm6");
+				asm volatile ("movdqa %xmm9,%xmm14");
+			}
+			asm volatile ("pxor %xmm5,%xmm5");
+			asm volatile ("pxor %xmm13,%xmm13");
+			asm volatile ("pcmpgtb %xmm1,%xmm5");
+			asm volatile ("pcmpgtb %xmm9,%xmm13");
+			asm volatile ("paddb %xmm1,%xmm1");
+			asm volatile ("paddb %xmm9,%xmm9");
+			asm volatile ("pand %xmm3,%xmm5");
+			asm volatile ("pand %xmm3,%xmm13");
+			asm volatile ("pxor %xmm5,%xmm1");
+			asm volatile ("pxor %xmm13,%xmm9");
+			if (generator == 3) {
+				asm volatile ("pxor %xmm6,%xmm1");
+				asm volatile ("pxor %xmm14,%xmm9");
+			}
+
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm4,%xmm1");
+			asm volatile ("pxor %xmm12,%xmm8");
+			asm volatile ("pxor %xmm12,%xmm9");
+
+			asm volatile ("movdqa %xmm4,%xmm5");
+			asm volatile ("movdqa %xmm12,%xmm13");
+			asm volatile ("psrlw  $4,%xmm5");
+			asm volatile ("psrlw  $4,%xmm13");
+			asm volatile ("pand   %xmm11,%xmm4");
+			asm volatile ("pand   %xmm11,%xmm12");
+			asm volatile ("pand   %xmm11,%xmm5");
+			asm volatile ("pand   %xmm11,%xmm13");
+
+			asm volatile ("movdqa %xmm7,%xmm6");
+			asm volatile ("movdqa %xmm15,%xmm14");
+			asm volatile ("pshufb %xmm4,%xmm7");
+			asm volatile ("pshufb %xmm12,%xmm6");
+			asm volatile ("pshufb %xmm5,%xmm15");
+			asm volatile ("pshufb %xmm13,%xmm14");
+			asm volatile ("pxor   %xmm7,%xmm2");
+			asm volatile ("pxor   %xmm6,%xmm10");
+			asm volatile ("pxor   %xmm15,%xmm2");
+			asm volatile ("pxor   %xmm14,%xmm10");
+		}
+
+		if (d == 1) {
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[1][i]));
+			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[1][i + 16]));
+
+			if (generator == 3) {
+				asm volatile ("movdqa %xmm1,%xmm6");
+				asm volatile ("movdqa %xmm9,%xmm14");
+			}
+			asm volatile ("pxor %xmm5,%xmm5");
+			asm volatile ("pxor %xmm13,%xmm13");
+			asm volatile ("pcmpgtb %xmm1,%xmm5");
+			asm volatile ("pcmpgtb %xmm9,%xmm13");
+			asm volatile ("paddb %xmm1,%xmm1");
+			asm volatile ("paddb %xmm9,%xmm9");
+			asm volatile ("pand %xmm3,%xmm5");
+			asm volatile ("pand %xmm3,%xmm13");
+			asm volatile ("pxor %xmm5,%xmm1");
+			asm volatile ("pxor %xmm13,%xmm9");
+			if (generator == 3) {
+				asm volatile ("pxor %xmm6,%xmm1");
+				asm volatile ("pxor %xmm14,%xmm9");
+			}
+
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm4,%xmm1");
+			asm volatile ("pxor %xmm12,%xmm8");
+			asm volatile ("pxor %xmm12,%xmm9");
+
+			asm volatile ("movdqa %xmm4,%xmm5");
+			asm volatile ("movdqa %xmm12,%xmm13");
+			asm volatile ("psrlw  $4,%xmm5");
+			asm volatile ("psrlw  $4,%xmm13");
+			asm volatile ("pand   %xmm11,%xmm4");
+			asm volatile ("pand   %xmm11,%xmm12");
+			asm volatile ("pand   %xmm11,%xmm5");
+			asm volatile ("pand   %xmm11,%xmm13");
+
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[1][1][0][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[1][1][1][0]));
 			asm volatile ("movdqa %xmm6,%xmm14");
 			asm volatile ("movdqa %xmm7,%xmm15");
 			asm volatile ("pshufb %xmm4,%xmm6");
@@ -212,6 +341,10 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i + 16]));
 
+		if (generator == 3) {
+			asm volatile ("movdqa %xmm1,%xmm6");
+			asm volatile ("movdqa %xmm9,%xmm14");
+		}
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pxor %xmm13,%xmm13");
 		asm volatile ("pcmpgtb %xmm1,%xmm5");
@@ -222,6 +355,10 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pand %xmm3,%xmm13");
 		asm volatile ("pxor %xmm5,%xmm1");
 		asm volatile ("pxor %xmm13,%xmm9");
+		if (generator == 3) {
+			asm volatile ("pxor %xmm6,%xmm1");
+			asm volatile ("pxor %xmm14,%xmm9");
+		}
 
 		asm volatile ("pxor %xmm4,%xmm0");
 		asm volatile ("pxor %xmm4,%xmm1");
@@ -240,12 +377,22 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
+
+void raid_gen3_ssse3ext_raid(int nd, size_t size, void **vv)
+{
+	raid_gen3_ssse3ext_gen(nd, size, vv, 2);
+}
+
+void raid_gen3_ssse3ext_aes(int nd, size_t size, void **vv)
+{
+	raid_gen3_ssse3ext_gen(nd, size, vv, 3);
+}
 #endif
 
 /*
  * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_gen4_ssse3(int nd, size_t size, void **vv)
+static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -272,7 +419,7 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
-		/* last disk without the by two multiplication */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
@@ -301,11 +448,15 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 
+			if (generator == 3)
+				asm volatile ("movdqa %xmm1,%xmm6");
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pcmpgtb %xmm1,%xmm5");
 			asm volatile ("paddb %xmm1,%xmm1");
 			asm volatile ("pand %xmm7,%xmm5");
 			asm volatile ("pxor %xmm5,%xmm1");
+			if (generator == 3)
+				asm volatile ("pxor %xmm6,%xmm1");
 
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
@@ -336,11 +487,15 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 
+		if (generator == 3)
+			asm volatile ("movdqa %xmm1,%xmm6");
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pcmpgtb %xmm1,%xmm5");
 		asm volatile ("paddb %xmm1,%xmm1");
 		asm volatile ("pand %xmm7,%xmm5");
 		asm volatile ("pxor %xmm5,%xmm1");
+		if (generator == 3)
+			asm volatile ("pxor %xmm6,%xmm1");
 
 		asm volatile ("pxor %xmm4,%xmm0");
 		asm volatile ("pxor %xmm4,%xmm1");
@@ -356,13 +511,23 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 	raid_sse_end();
 }
 
+void raid_gen4_ssse3_raid(int nd, size_t size, void **vv)
+{
+	raid_gen4_ssse3_gen(nd, size, vv, 2);
+}
+
+void raid_gen4_ssse3_aes(int nd, size_t size, void **vv)
+{
+	raid_gen4_ssse3_gen(nd, size, vv, 3);
+}
+
 #ifdef CONFIG_X86_64
 /*
  * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
+static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -389,7 +554,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 32) {
-		/* last disk without the by two multiplication */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i + 16]));
@@ -437,6 +602,10 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i + 16]));
 
+			if (generator == 3) {
+				asm volatile ("movdqa %xmm1,%xmm6");
+				asm volatile ("movdqa %xmm9,%xmm14");
+			}
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pxor %xmm13,%xmm13");
 			asm volatile ("pcmpgtb %xmm1,%xmm5");
@@ -447,6 +616,10 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile ("pand %xmm7,%xmm13");
 			asm volatile ("pxor %xmm5,%xmm1");
 			asm volatile ("pxor %xmm13,%xmm9");
+			if (generator == 3) {
+				asm volatile ("pxor %xmm6,%xmm1");
+				asm volatile ("pxor %xmm14,%xmm9");
+			}
 
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm4,%xmm1");
@@ -495,6 +668,10 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i + 16]));
 
+		if (generator == 3) {
+			asm volatile ("movdqa %xmm1,%xmm6");
+			asm volatile ("movdqa %xmm9,%xmm14");
+		}
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pxor %xmm13,%xmm13");
 		asm volatile ("pcmpgtb %xmm1,%xmm5");
@@ -505,6 +682,10 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pand %xmm7,%xmm13");
 		asm volatile ("pxor %xmm5,%xmm1");
 		asm volatile ("pxor %xmm13,%xmm9");
+		if (generator == 3) {
+			asm volatile ("pxor %xmm6,%xmm1");
+			asm volatile ("pxor %xmm14,%xmm9");
+		}
 
 		asm volatile ("pxor %xmm4,%xmm0");
 		asm volatile ("pxor %xmm4,%xmm1");
@@ -527,12 +708,22 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 
 	raid_sse_end();
 }
+
+void raid_gen4_ssse3ext_raid(int nd, size_t size, void **vv)
+{
+	raid_gen4_ssse3ext_gen(nd, size, vv, 2);
+}
+
+void raid_gen4_ssse3ext_aes(int nd, size_t size, void **vv)
+{
+	raid_gen4_ssse3ext_gen(nd, size, vv, 3);
+}
 #endif
 
 /*
  * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_gen5_ssse3(int nd, size_t size, void **vv)
+void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -563,7 +754,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
-		/* last disk without the by two multiplication */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
@@ -668,7 +859,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 /*
  * GENX SSSE3ext implementation
  */
-static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, int np, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -703,7 +894,7 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
-		/* last disk without the by two multiplication */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm10" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %xmm10,%xmm0");
@@ -750,11 +941,15 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i]));
 
+			if (generator == 3)
+				asm volatile ("movdqa %xmm1,%xmm12");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm1,%xmm11");
 			asm volatile ("paddb %xmm1,%xmm1");
 			asm volatile ("pand %xmm14,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm1");
+			if (generator == 3)
+				asm volatile ("pxor %xmm12,%xmm1");
 
 			asm volatile ("pxor %xmm10,%xmm0");
 			asm volatile ("pxor %xmm10,%xmm1");
@@ -804,11 +999,15 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm10" : : "m" (v[0][i]));
 
+		if (generator == 3)
+			asm volatile ("movdqa %xmm1,%xmm12");
 		asm volatile ("pxor %xmm11,%xmm11");
 		asm volatile ("pcmpgtb %xmm1,%xmm11");
 		asm volatile ("paddb %xmm1,%xmm1");
 		asm volatile ("pand %xmm14,%xmm11");
 		asm volatile ("pxor %xmm11,%xmm1");
+		if (generator == 3)
+			asm volatile ("pxor %xmm12,%xmm1");
 
 		asm volatile ("pxor %xmm10,%xmm0");
 		asm volatile ("pxor %xmm10,%xmm1");
@@ -841,16 +1040,21 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
+void raid_gen5_ssse3ext_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_ssse3ext(nd, size, vv, 5);
+	raid_genX_ssse3ext(nd, size, vv, 5, 2);
+}
+
+void raid_gen5_ssse3ext_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_ssse3ext(nd, size, vv, 5, 3);
 }
 #endif
 
 /*
  * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_gen6_ssse3(int nd, size_t size, void **vv)
+void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -883,7 +1087,7 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
-		/* last disk without the by two multiplication */
+		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[0]));
@@ -1009,9 +1213,14 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
+void raid_gen6_ssse3ext_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_ssse3ext(nd, size, vv, 6);
+	raid_genX_ssse3ext(nd, size, vv, 6, 2);
+}
+
+void raid_gen6_ssse3ext_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_ssse3ext(nd, size, vv, 6, 3);
 }
 #endif
 
@@ -1253,16 +1462,22 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_register_ssse3(void)
 {
 	if (raid_cpu_has_ssse3()) {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3", raid_gen3_ssse3, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3", raid_gen4_ssse3, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "ssse3", raid_gen5_ssse3, RAID_POLY_ANY);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "ssse3", raid_gen6_ssse3, RAID_POLY_ANY);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3", raid_gen3_ssse3_raid, RAID_POLY_RAID);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3", raid_gen3_ssse3_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3", raid_gen4_ssse3_raid, RAID_POLY_RAID);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3", raid_gen4_ssse3_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "ssse3", raid_gen5_ssse3_raid, RAID_POLY_RAID);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "ssse3", raid_gen6_ssse3_raid, RAID_POLY_RAID);
 #ifdef CONFIG_X86_64
 		if (!raid_cpu_has_slow_extendedreg()) {
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3e", raid_gen3_ssse3ext, RAID_POLY_ANY);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3e", raid_gen4_ssse3ext, RAID_POLY_ANY);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "ssse3e", raid_gen5_ssse3ext, RAID_POLY_ANY);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "ssse3e", raid_gen6_ssse3ext, RAID_POLY_ANY);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3e", raid_gen3_ssse3ext_raid, RAID_POLY_RAID);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "ssse3e", raid_gen3_ssse3ext_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3e", raid_gen4_ssse3ext_raid, RAID_POLY_RAID);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "ssse3e", raid_gen4_ssse3ext_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "ssse3e", raid_gen5_ssse3ext_raid, RAID_POLY_RAID);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "ssse3e", raid_gen5_ssse3ext_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "ssse3e", raid_gen6_ssse3ext_raid, RAID_POLY_RAID);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "ssse3e", raid_gen6_ssse3ext_aes, RAID_POLY_AES);
 		}
 #endif
 

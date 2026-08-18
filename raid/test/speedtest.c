@@ -95,6 +95,7 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	int64_t dt;
 	int i;
 	int count;
+	int mode = raid_mode(RAID_MODE_GET);
 
 	/* RAID table */
 	printf("RAID functions used for computing the parity%s:\n", msg);
@@ -216,26 +217,53 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	printf("%8s", raid_gen_tag(RAID_ALGO_CAUCHY_PAR2));
 	fflush(stdout);
 
-	printf("%8s", "");
-
 	SPEED_START {
-		raid_gen2_int32(nd, size, v);
+		raid_gen2_int8(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
-	SPEED_START {
-		raid_gen2_int64(nd, size, v);
-	} SPEED_STOP
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		SPEED_START {
+			raid_gen2_int32_aes(nd, size, v);
+		} SPEED_STOP
 
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+
+		SPEED_START {
+			raid_gen2_int64_aes(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	} else {
+		SPEED_START {
+			raid_gen2_int32_raid(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+
+		SPEED_START {
+			raid_gen2_int64_raid(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
 
 #ifdef CONFIG_NEON
-	SPEED_START {
-		raid_gen2_neon(nd, size, v);
-	} SPEED_STOP
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		SPEED_START {
+			raid_gen2_neon_aes(nd, size, v);
+		} SPEED_STOP
+	} else {
+		SPEED_START {
+			raid_gen2_neon_raid(nd, size, v);
+		} SPEED_STOP
+	}
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
@@ -243,17 +271,29 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
-		SPEED_START {
-			raid_gen2_sse2(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen2_sse2_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen2_sse2_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen2_sse2ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen2_sse2ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen2_sse2ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -266,14 +306,32 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 #endif
 	}
 	if (raid_cpu_has_avx2()) {
-		SPEED_START {
-			raid_gen2_avx2(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen2_avx2_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen2_avx2_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
+
 #ifdef CONFIG_X86_64
-		printf("%8s", "");
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen2_avx2ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen2_avx2ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 #ifdef CONFIG_X86_64
@@ -286,92 +344,31 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx2gfni()) {
-		SPEED_START {
-			raid_gen2_avx2gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen2_avx2gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx512gfni()) {
-		SPEED_START {
-			raid_gen2_avx512gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen2_avx512gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 #endif
 #endif
-	printf("\n");
-
-	/* GENz */
-	printf("%8s", "genz");
-	printf("%8s", raid_gen_tag(RAID_ALGO_VANDERMONDE_PAR3));
-	fflush(stdout);
-
-	printf("%8s", "");
-
-	SPEED_START {
-		raid_genz_int32(nd, size, v);
-	} SPEED_STOP
-
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
-
-	SPEED_START {
-		raid_genz_int64(nd, size, v);
-	} SPEED_STOP
-
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
-
-#ifdef CONFIG_NEON
-	SPEED_START {
-		raid_genz_neon(nd, size, v);
-	} SPEED_STOP
-
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
-#endif
-
-#ifdef CONFIG_X86
-	if (raid_cpu_has_sse2()) {
-		SPEED_START {
-			raid_genz_sse2(nd, size, v);
-		} SPEED_STOP
-
-		printf("%8" PRIu64, ds / dt);
-		fflush(stdout);
-
-#ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_genz_sse2ext(nd, size, v);
-		} SPEED_STOP
-
-		printf("%8" PRIu64, ds / dt);
-		fflush(stdout);
-#endif
-	}
-	if (raid_cpu_has_ssse3()) {
-		printf("%8s", "");
-#ifdef CONFIG_X86_64
-		printf("%8s", "");
-#endif
-	}
-	if (raid_cpu_has_avx2()) {
-		printf("%8s", "");
-#ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_genz_avx2ext(nd, size, v);
-		} SPEED_STOP
-
-		printf("%8" PRIu64, ds / dt);
-		fflush(stdout);
-#endif
-	}
-#endif
-
 	printf("\n");
 
 	/* GEN3 */
@@ -390,9 +387,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	printf("%8s", "");
 
 #ifdef CONFIG_NEON
-	SPEED_START {
-		raid_gen3_neon(nd, size, v);
-	} SPEED_STOP
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		SPEED_START {
+			raid_gen3_neon_aes(nd, size, v);
+		} SPEED_STOP
+	} else {
+		SPEED_START {
+			raid_gen3_neon_raid(nd, size, v);
+		} SPEED_STOP
+	}
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
@@ -406,16 +409,28 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 #endif
 	}
 	if (raid_cpu_has_ssse3()) {
-		SPEED_START {
-			raid_gen3_ssse3(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen3_ssse3_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen3_ssse3_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen3_ssse3ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen3_ssse3ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen3_ssse3ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -424,9 +439,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	if (raid_cpu_has_avx2()) {
 		printf("%8s", "");
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen3_avx2ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen3_avx2ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen3_avx2ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -442,19 +463,27 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx2gfni()) {
-		SPEED_START {
-			raid_gen3_avx2gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen3_avx2gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx512gfni()) {
-		SPEED_START {
-			raid_gen3_avx512gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen3_avx512gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 #endif
@@ -477,9 +506,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	printf("%8s", "");
 
 #ifdef CONFIG_NEON
-	SPEED_START {
-		raid_gen4_neon(nd, size, v);
-	} SPEED_STOP
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		SPEED_START {
+			raid_gen4_neon_aes(nd, size, v);
+		} SPEED_STOP
+	} else {
+		SPEED_START {
+			raid_gen4_neon_raid(nd, size, v);
+		} SPEED_STOP
+	}
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
@@ -493,16 +528,28 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 #endif
 	}
 	if (raid_cpu_has_ssse3()) {
-		SPEED_START {
-			raid_gen4_ssse3(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen4_ssse3_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen4_ssse3_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen4_ssse3ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen4_ssse3ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen4_ssse3ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -511,9 +558,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	if (raid_cpu_has_avx2()) {
 		printf("%8s", "");
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen4_avx2ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen4_avx2ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen4_avx2ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -529,19 +582,27 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx2gfni()) {
-		SPEED_START {
-			raid_gen4_avx2gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen4_avx2gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx512gfni()) {
-		SPEED_START {
-			raid_gen4_avx512gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen4_avx512gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 #endif
@@ -564,9 +625,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	printf("%8s", "");
 
 #ifdef CONFIG_NEON
-	SPEED_START {
-		raid_gen5_neon(nd, size, v);
-	} SPEED_STOP
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		SPEED_START {
+			raid_gen5_neon_aes(nd, size, v);
+		} SPEED_STOP
+	} else {
+		SPEED_START {
+			raid_gen5_neon_raid(nd, size, v);
+		} SPEED_STOP
+	}
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
@@ -580,16 +647,26 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 #endif
 	}
 	if (raid_cpu_has_ssse3()) {
-		SPEED_START {
-			raid_gen5_ssse3(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_RAID) {
+			SPEED_START {
+				raid_gen5_ssse3_raid(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen5_ssse3ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen5_ssse3ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen5_ssse3ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -598,9 +675,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	if (raid_cpu_has_avx2()) {
 		printf("%8s", "");
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen5_avx2ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen5_avx2ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen5_avx2ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -616,19 +699,27 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx2gfni()) {
-		SPEED_START {
-			raid_gen5_avx2gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen5_avx2gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx512gfni()) {
-		SPEED_START {
-			raid_gen5_avx512gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen5_avx512gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 #endif
@@ -651,9 +742,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	printf("%8s", "");
 
 #ifdef CONFIG_NEON
-	SPEED_START {
-		raid_gen6_neon(nd, size, v);
-	} SPEED_STOP
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		SPEED_START {
+			raid_gen6_neon_aes(nd, size, v);
+		} SPEED_STOP
+	} else {
+		SPEED_START {
+			raid_gen6_neon_raid(nd, size, v);
+		} SPEED_STOP
+	}
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
@@ -667,16 +764,26 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 #endif
 	}
 	if (raid_cpu_has_ssse3()) {
-		SPEED_START {
-			raid_gen6_ssse3(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_RAID) {
+			SPEED_START {
+				raid_gen6_ssse3_raid(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen6_ssse3ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen6_ssse3ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen6_ssse3ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -685,9 +792,15 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	if (raid_cpu_has_avx2()) {
 		printf("%8s", "");
 #ifdef CONFIG_X86_64
-		SPEED_START {
-			raid_gen6_avx2ext(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen6_avx2ext_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
+			SPEED_START {
+				raid_gen6_avx2ext_raid(nd, size, v);
+			} SPEED_STOP
+		}
 
 		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
@@ -703,23 +816,143 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx2gfni()) {
-		SPEED_START {
-			raid_gen6_avx2gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen6_avx2gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 	if (raid_cpu_has_avx512gfni()) {
-		SPEED_START {
-			raid_gen6_avx512gfni(nd, size, v);
-		} SPEED_STOP
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen6_avx512gfni_aes(nd, size, v);
+			} SPEED_STOP
 
-		printf("%8" PRIu64, ds / dt);
+			printf("%8" PRIu64, ds / dt);
+		} else {
+			printf("%8s", "");
+		}
 		fflush(stdout);
 	}
 #endif
 #endif
+	printf("\n");
+	printf("\n");
+}
+
+void speed_genz(int nd, void **v, int size, int delta, int period)
+{
+	struct timeval start;
+	struct timeval stop;
+	int64_t ds;
+	int64_t dt;
+	int i;
+	int count;
+
+	/* Vandermonde table */
+	printf("Vandermonde RAID functions used for computing the parity:\n");
+	printf("%8s", "");
+	printf("%8s", "best");
+	printf("%8s", "int8");
+	printf("%8s", "int32");
+	printf("%8s", "int64");
+#ifdef CONFIG_NEON
+	printf("%8s", "neon");
+#endif
+#ifdef CONFIG_X86
+	if (raid_cpu_has_sse2()) {
+		printf("%8s", "sse2");
+#ifdef CONFIG_X86_64
+		printf("%8s", "sse2e");
+#endif
+	}
+	if (raid_cpu_has_ssse3()) {
+		printf("%8s", "ssse3");
+#ifdef CONFIG_X86_64
+		printf("%8s", "ssse3e");
+#endif
+	}
+	if (raid_cpu_has_avx2()) {
+		printf("%8s", "avx2");
+#ifdef CONFIG_X86_64
+		printf("%8s", "avx2e");
+#endif
+	}
+#endif
+	printf("\n");
+
+	/* GENz */
+	printf("%8s", "genz");
+	printf("%8s", raid_gen_tag(RAID_ALGO_VANDERMONDE_PAR3));
+	fflush(stdout);
+
+	printf("%8s", "");
+
+	SPEED_START {
+		raid_genz_int32_raid(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		raid_genz_int64_raid(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+
+#ifdef CONFIG_NEON
+	SPEED_START {
+		raid_genz_neon_raid(nd, size, v);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
+#ifdef CONFIG_X86
+	if (raid_cpu_has_sse2()) {
+		SPEED_START {
+			raid_genz_sse2_raid(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+
+#ifdef CONFIG_X86_64
+		SPEED_START {
+			raid_genz_sse2ext_raid(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+#endif
+	}
+	if (raid_cpu_has_ssse3()) {
+		printf("%8s", "");
+#ifdef CONFIG_X86_64
+		printf("%8s", "");
+#endif
+	}
+	if (raid_cpu_has_avx2()) {
+		printf("%8s", "");
+#ifdef CONFIG_X86_64
+		SPEED_START {
+			raid_genz_avx2ext_raid(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+#endif
+	}
+#endif
+
 	printf("\n");
 	printf("\n");
 }
@@ -845,12 +1078,13 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #endif
 	printf("\n");
 
+	/* GEN2 */
 	printf("%8s", "rec2");
 	printf("%8s", raid_rec_tag(RAID_ALGO_CAUCHY_PAR2));
 	fflush(stdout);
 
 	SPEED_START {
-		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64 : raid_gen2_int32);
+		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -860,7 +1094,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		raid_gen_force(2, raid_gen2_neon);
+		raid_gen_force(2, raid_gen2_neon_raid);
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_neon(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -873,9 +1107,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(2, raid_gen2_sse2ext);
+			raid_gen_force(2, raid_gen2_sse2ext_raid);
 #else
-			raid_gen_force(2, raid_gen2_sse2);
+			raid_gen_force(2, raid_gen2_sse2_raid);
 #endif
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
@@ -886,7 +1120,11 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(2, raid_gen2_avx2);
+#ifdef CONFIG_X86_64
+			raid_gen_force(2, raid_gen2_avx2ext_raid);
+#else
+			raid_gen_force(2, raid_gen2_avx2_raid);
+#endif
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_avx2(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -907,7 +1145,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2gfni()) {
 		SPEED_START {
-			raid_gen_force(2, raid_gen2_avx2gfni);
+			raid_gen_force(2, raid_gen2_avx2gfni_aes);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_avx2gfni(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -917,7 +1155,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
-			raid_gen_force(2, raid_gen2_avx512gfni);
+			raid_gen_force(2, raid_gen2_avx512gfni_aes);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_avx512gfni(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -943,7 +1181,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		raid_gen_force(3, raid_gen3_neon);
+		raid_gen_force(3, raid_gen3_neon_raid);
 		raid_recX_neon(3, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -955,9 +1193,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(3, raid_gen3_ssse3ext);
+			raid_gen_force(3, raid_gen3_ssse3ext_raid);
 #else
-			raid_gen_force(3, raid_gen3_ssse3);
+			raid_gen_force(3, raid_gen3_ssse3_raid);
 #endif
 			raid_recX_ssse3(3, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -967,7 +1205,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(3, raid_gen3_avx2ext);
+			raid_gen_force(3, raid_gen3_avx2ext_raid);
 			raid_recX_avx2(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -986,7 +1224,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2gfni()) {
 		SPEED_START {
-			raid_gen_force(3, raid_gen3_avx2gfni);
+			raid_gen_force(3, raid_gen3_avx2gfni_aes);
 			raid_recX_avx2gfni(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -995,7 +1233,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
-			raid_gen_force(3, raid_gen3_avx512gfni);
+			raid_gen_force(3, raid_gen3_avx512gfni_aes);
 			raid_recX_avx512gfni(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1020,7 +1258,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		raid_gen_force(4, raid_gen4_neon);
+		raid_gen_force(4, raid_gen4_neon_raid);
 		raid_recX_neon(4, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1032,9 +1270,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(4, raid_gen4_ssse3ext);
+			raid_gen_force(4, raid_gen4_ssse3ext_raid);
 #else
-			raid_gen_force(4, raid_gen4_ssse3);
+			raid_gen_force(4, raid_gen4_ssse3_raid);
 #endif
 			raid_recX_ssse3(4, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1045,9 +1283,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(4, raid_gen4_avx2ext);
+			raid_gen_force(4, raid_gen4_avx2ext_raid);
 #else
-			raid_gen_force(4, raid_gen4_ssse3);
+			raid_gen_force(4, raid_gen4_ssse3_raid);
 #endif
 			raid_recX_avx2(4, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1067,7 +1305,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2gfni()) {
 		SPEED_START {
-			raid_gen_force(4, raid_gen4_avx2gfni);
+			raid_gen_force(4, raid_gen4_avx2gfni_aes);
 			raid_recX_avx2gfni(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1076,7 +1314,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
-			raid_gen_force(4, raid_gen4_avx512gfni);
+			raid_gen_force(4, raid_gen4_avx512gfni_aes);
 			raid_recX_avx512gfni(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1101,7 +1339,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		raid_gen_force(5, raid_gen5_neon);
+		raid_gen_force(5, raid_gen5_neon_raid);
 		raid_recX_neon(5, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1113,9 +1351,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(5, raid_gen5_ssse3ext);
+			raid_gen_force(5, raid_gen5_ssse3ext_raid);
 #else
-			raid_gen_force(5, raid_gen5_ssse3);
+			raid_gen_force(5, raid_gen5_ssse3_raid);
 #endif
 			raid_recX_ssse3(5, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1126,9 +1364,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(5, raid_gen5_avx2ext);
+			raid_gen_force(5, raid_gen5_avx2ext_raid);
 #else
-			raid_gen_force(5, raid_gen5_ssse3);
+			raid_gen_force(5, raid_gen5_ssse3_raid);
 #endif
 			raid_recX_avx2(5, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1148,7 +1386,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2gfni()) {
 		SPEED_START {
-			raid_gen_force(5, raid_gen5_avx2gfni);
+			raid_gen_force(5, raid_gen5_avx2gfni_aes);
 			raid_recX_avx2gfni(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1157,7 +1395,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
-			raid_gen_force(5, raid_gen5_avx512gfni);
+			raid_gen_force(5, raid_gen5_avx512gfni_aes);
 			raid_recX_avx512gfni(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1182,7 +1420,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		raid_gen_force(6, raid_gen6_neon);
+		raid_gen_force(6, raid_gen6_neon_raid);
 		raid_recX_neon(6, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1194,9 +1432,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(6, raid_gen6_ssse3ext);
+			raid_gen_force(6, raid_gen6_ssse3ext_raid);
 #else
-			raid_gen_force(6, raid_gen6_ssse3);
+			raid_gen_force(6, raid_gen6_ssse3_raid);
 #endif
 			raid_recX_ssse3(6, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1207,9 +1445,9 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
 #ifdef CONFIG_X86_64
-			raid_gen_force(6, raid_gen6_avx2ext);
+			raid_gen_force(6, raid_gen6_avx2ext_raid);
 #else
-			raid_gen_force(6, raid_gen6_ssse3);
+			raid_gen_force(6, raid_gen6_ssse3_raid);
 #endif
 			raid_recX_avx2(6, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1229,7 +1467,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2gfni()) {
 		SPEED_START {
-			raid_gen_force(6, raid_gen6_avx2gfni);
+			raid_gen_force(6, raid_gen6_avx2gfni_aes);
 			raid_recX_avx2gfni(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1238,7 +1476,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
-			raid_gen_force(6, raid_gen6_avx512gfni);
+			raid_gen_force(6, raid_gen6_avx512gfni_aes);
 			raid_recX_avx512gfni(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1257,8 +1495,6 @@ void speed(void)
 	int nv;
 	void *v_alloc;
 	void **v;
-	void *v_direct_alloc;
-	void **v_direct;
 	int i;
 	int size = TEST_SIZE;
 	int delta = TEST_DELTA;
@@ -1273,28 +1509,31 @@ void speed(void)
 	printf("\n");
 
 	v = raid_malloc_vector(nv, size, &v_alloc);
-	v_direct = raid_malloc_vector_align(nv, size, RAID_MALLOC_ALIGN, 0, 0, &v_direct_alloc);
 
 	/* initialize disks with fixed data */
-	for (i = 0; i < nd; ++i) {
+	for (i = 0; i < nd; ++i)
 		memset(v[i], i, size);
-		memset(v_direct[i], i, size);
-	}
 
 	/* zero buffer */
 	memset(v[nd + RAID_PARITY_MAX], 0, size);
-	memset(v_direct[nd + RAID_PARITY_MAX], 0, size);
 	raid_zero(v[nd + RAID_PARITY_MAX]);
 
 	speed_mem(nd, v, size, delta, period);
-	speed_gen(nd, v, size, delta, period, "");
-	speed_gen(nd, v_direct, size, delta, period, " (without displacement)");
+
+	raid_mode(RAID_MODE_CAUCHY_RAID);
+	speed_gen(nd, v, size, delta, period, " (RAID polynomial)");
+
+	raid_mode(RAID_MODE_CAUCHY_AES);
+	speed_gen(nd, v, size, delta, period, " (AES polynomial)");
+
+	raid_mode(RAID_MODE_VANDERMONDE_RAID);
+	speed_genz(nd, v, size, delta, period);
+
+	raid_mode(RAID_MODE_CAUCHY_RAID);
 	speed_rec(nd, v, size, delta, period);
 
 	free(v_alloc);
 	free(v);
-	free(v_direct_alloc);
-	free(v_direct);
 }
 
 int main(void)

@@ -32,6 +32,16 @@ int raid_test_sort(void);
 int raid_test_combo(void);
 
 /**
+ * Tests the Galois field and Cauchy matrix properties.
+ *
+ * Verifies the expected polynomial and primitive generator and basic
+ * properties of the Extended Cauchy matrix for the specified RAID mode.
+ *
+ * Returns 0 on success.
+ */
+int raid_test_poly(unsigned mode);
+
+/**
  * Tests recovering functions.
  *
  * All the recovering functions are tested with all the combinations

@@ -1163,6 +1163,12 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed POLY Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test\n");
@@ -1178,6 +1184,12 @@ void selftest(void)
 	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 1, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test single data disk\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (raid_test_poly(RAID_MODE_CAUCHY_AES) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed POLY Cauchy AES test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

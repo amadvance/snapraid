@@ -58,7 +58,7 @@ uint8_t raid_gfinv[256];
 /**
  * Setup the Cauchy matrix used to generate the parity.
  */
-static void set_cauchy(uint8_t poly, uint8_t *matrix)
+static void set_cauchy(uint8_t poly, uint8_t generator, uint8_t *matrix)
 {
 	int i, j;
 	uint8_t inv_x, y;
@@ -83,18 +83,21 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 		matrix[0 * DISK + i] = 1;
 
 	/*
-	 * The second row is formed with powers 2^i, and it's the first
+	 * The second row is formed with powers g^i, and it's the first
 	 * row of the Cauchy matrix.
 	 *
 	 * Each element of the Cauchy matrix is in the form 1/(x_i + y_j)
 	 * where all x_i and y_j must be different for any i and j.
 	 *
-	 * For the first row with j=0, we choose x_i = 2^-i and y_0 = 0
+	 * For the first row with j=0, we choose x_i = g^-i and y_0 = 0
 	 * and we obtain a first row formed as:
 	 *
-	 * 1/(x_i + y_0) = 1/(2^-i + 0) = 2^i
+	 * 1/(x_i + y_0) = 1/(g^-i + 0) = g^i
 	 *
-	 * with 2^-i != 0 for any i
+	 * with g^-i != 0 for any i
+	 *
+	 * The numerical examples below use RAID_MODE_CAUCHY_RAID,
+	 * with polynomial 0x11d and generator g=2.
 	 *
 	 * In the example we get:
 	 *
@@ -116,17 +119,18 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 	inv_x = 1;
 	for (i = 0; i < DISK; ++i) {
 		matrix[1 * DISK + i] = inv_x;
-		inv_x = raid_gfmul(poly, 2, inv_x);
+		inv_x = raid_gfmul(poly, generator, inv_x);
 	}
 
 	/*
 	 * The rest of the Cauchy matrix is formed by choosing for each row j
-	 * a new y_j = 2^j and reusing the x_i already assigned in the first
+	 * a new y_j = g^j and reusing the x_i already assigned in the first
 	 * row obtaining :
 	 *
-	 * 1/(x_i + y_j) = 1/(2^-i + 2^j)
+	 * 1/(x_i + y_j) = 1/(g^-i + g^j)
 	 *
-	 * with 2^-i + 2^j != 0 for any i,j with i>=0,j>=1,i+j<255
+	 * with g^-i + g^j != 0, because g is primitive and has
+	 * multiplicative order 255, with i + j < 255 for all supported entries.
 	 *
 	 * In the example we get:
 	 *
@@ -140,17 +144,17 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 	 * 244  83  78 183 118  47
 	 * 167  39 213  59 153  82
 	 */
-	y = 2;
+	y = generator;
 	for (j = 0; j < PARITY - 2; ++j) {
 		inv_x = 1;
 		for (i = 0; i < DISK; ++i) {
 			uint8_t x = raid_gfinv[inv_x];
 
 			matrix[(j + 2) * DISK + i] = raid_gfinv[y ^ x];
-			inv_x = raid_gfmul(poly, 2, inv_x);
+			inv_x = raid_gfmul(poly, generator, inv_x);
 		}
 
-		y = raid_gfmul(poly, 2, y);
+		y = raid_gfmul(poly, generator, y);
 	}
 
 	/*
@@ -164,7 +168,7 @@ static void set_cauchy(uint8_t poly, uint8_t *matrix)
 	 *   1   1   1   1   1   1
 	 *   1   2   4   8  16  32
 	 *   1 245 210 196 154 113
-	 *   1 187 166 215   7 106
+	 *   1 187 166 215 199   7
 	 */
 	for (j = 0; j < PARITY - 2; ++j) {
 		uint8_t f = raid_gfinv[matrix[(j + 2) * DISK]];
@@ -200,7 +204,7 @@ static void set_power(uint8_t poly, uint8_t *matrix)
 	}
 }
 
-void tables(uint8_t poly, const char *tag)
+void tables(uint8_t poly, uint8_t generator, const char *tag)
 {
 	uint8_t v;
 	int i, j, k, p;
@@ -227,7 +231,7 @@ void tables(uint8_t poly, const char *tag)
 	}
 	printf("};\n\n");
 
-	/* 2^a */
+	/* generator^a */
 	printf("const uint8_t __aligned(256) raid_gfexp_%s[256] =\n", tag);
 	printf("{\n");
 	v = 1;
@@ -235,7 +239,7 @@ void tables(uint8_t poly, const char *tag)
 		if (i % 8 == 0)
 			printf("\t");
 		printf("0x%02x,", v);
-		v = raid_gfmul(poly, v, 2);
+		v = raid_gfmul(poly, v, generator);
 		if (i % 8 == 7)
 			printf("\n");
 		else
@@ -263,7 +267,7 @@ void tables(uint8_t poly, const char *tag)
 	printf("};\n\n");
 
 	/* cauchy matrix */
-	set_cauchy(poly, matrix);
+	set_cauchy(poly, generator, matrix);
 
 	printf("/**\n");
 	printf(" * Cauchy matrix used to generate parity.\n");
@@ -403,10 +407,10 @@ int main(void)
 	printf("\n");
 
 	printf("/* Tables with the RAID Polynomial 0x1d */\n");
-	tables(RAID_POLY_RAID, "raid");
+	tables(RAID_POLY_RAID, 2, "raid");
 
 	printf("/* Tables with the AES Polynomial 0x1b */\n");
-	tables(RAID_POLY_AES, "aes");
+	tables(RAID_POLY_AES, 3, "aes");
 
 	return 0;
 }

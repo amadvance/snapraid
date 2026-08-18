@@ -60,9 +60,9 @@ void raid_gen1_neon(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 (RAID6 with powers of 2) NEON implementation
+ * GEN2 Cauchy NEON implementation using the active generator
  */
-void raid_gen2_neon(int nd, size_t size, void **vv)
+static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -93,6 +93,13 @@ void raid_gen2_neon(int nd, size_t size, void **vv)
 		);
 
 		for (d = l - 1; d >= 0; --d) {
+			if (generator == 3) {
+				/* v14-v15 are otherwise unused and preserve Q across the AES xtime. */
+				asm volatile (
+					"mov v14.16b, v2.16b\n"
+					"mov v15.16b, v3.16b\n"
+				);
+			}
 			asm volatile (
 				/* double Q0-Q1 */
 				"sshr v16.16b, v2.16b, #7\n"
@@ -115,6 +122,12 @@ void raid_gen2_neon(int nd, size_t size, void **vv)
 				:
 				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
+			if (generator == 3) {
+				asm volatile (
+					"eor v2.16b, v2.16b, v14.16b\n"
+					"eor v3.16b, v3.16b, v15.16b\n"
+				);
+			}
 		}
 
 		asm volatile (
@@ -130,10 +143,20 @@ void raid_gen2_neon(int nd, size_t size, void **vv)
 	raid_neon_end();
 }
 
+void raid_gen2_neon_raid(int nd, size_t size, void **vv)
+{
+	raid_gen2_neon_gen(nd, size, vv, 2);
+}
+
+void raid_gen2_neon_aes(int nd, size_t size, void **vv)
+{
+	raid_gen2_neon_gen(nd, size, vv, 3);
+}
+
 /*
  * GENz (triple parity with powers of 2^-1) NEON implementation
  */
-void raid_genz_neon(int nd, size_t size, void **vv)
+void raid_genz_neon_raid(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -227,7 +250,7 @@ void raid_genz_neon(int nd, size_t size, void **vv)
 /*
  * GENX NEON implementation
  */
-static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int np, int generator)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -253,7 +276,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 	);
 
 	for (i = 0; i < size; i += 32) {
-		/* last disk without the multiplication by two */
+		/* last disk without the generator multiplication */
 		asm volatile (
 			"ldr q0, %0\n"
 			"ldr q1, %1\n"
@@ -336,6 +359,12 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
+			if (generator == 3) {
+				asm volatile (
+					"mov v14.16b, v2.16b\n"
+					"mov v15.16b, v3.16b\n"
+				);
+			}
 			asm volatile (
 				/* double Q0-Q1 */
 				"sshr v20.16b, v2.16b, #7\n"
@@ -358,6 +387,12 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				:
 				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
+			if (generator == 3) {
+				asm volatile (
+					"eor v2.16b, v2.16b, v14.16b\n"
+					"eor v3.16b, v3.16b, v15.16b\n"
+				);
+			}
 
 			if (np >= 3) {
 				asm volatile (
@@ -440,6 +475,12 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 		}
 
 		/* first disk with all coefficients at 1 */
+		if (generator == 3) {
+			asm volatile (
+				"mov v14.16b, v2.16b\n"
+				"mov v15.16b, v3.16b\n"
+			);
+		}
 		asm volatile (
 			/* double Q0-Q1 */
 			"sshr v20.16b, v2.16b, #7\n"
@@ -462,6 +503,12 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			:
 			: "m" (v[0][i]), "m" (v[0][i + 16])
 		);
+		if (generator == 3) {
+			asm volatile (
+				"eor v2.16b, v2.16b, v14.16b\n"
+				"eor v3.16b, v3.16b, v15.16b\n"
+			);
+		}
 
 		if (np >= 3) {
 			asm volatile (
@@ -533,33 +580,53 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 /*
  * GEN3 (triple parity with Cauchy matrix) NEON implementation
  */
-void raid_gen3_neon(int nd, size_t size, void **vv)
+void raid_gen3_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 3);
+	raid_genX_neon(nd, size, vv, 3, 2);
+}
+
+void raid_gen3_neon_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_neon(nd, size, vv, 3, 3);
 }
 
 /*
  * GEN4 (quad parity with Cauchy matrix) NEON implementation
  */
-void raid_gen4_neon(int nd, size_t size, void **vv)
+void raid_gen4_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 4);
+	raid_genX_neon(nd, size, vv, 4, 2);
+}
+
+void raid_gen4_neon_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_neon(nd, size, vv, 4, 3);
 }
 
 /*
  * GEN5 (penta parity with Cauchy matrix) NEON implementation
  */
-void raid_gen5_neon(int nd, size_t size, void **vv)
+void raid_gen5_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 5);
+	raid_genX_neon(nd, size, vv, 5, 2);
+}
+
+void raid_gen5_neon_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_neon(nd, size, vv, 5, 3);
 }
 
 /*
  * GEN6 (hexa parity with Cauchy matrix) NEON implementation
  */
-void raid_gen6_neon(int nd, size_t size, void **vv)
+void raid_gen6_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 6);
+	raid_genX_neon(nd, size, vv, 6, 2);
+}
+
+void raid_gen6_neon_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_neon(nd, size, vv, 6, 3);
 }
 
 /*
@@ -811,12 +878,17 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_register_neon(void)
 {
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_gen1_neon, RAID_POLY_ANY);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_gen2_neon, RAID_POLY_ANY);
-	raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "neon", raid_genz_neon, RAID_POLY_ANY);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_gen3_neon, RAID_POLY_ANY);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_gen4_neon, RAID_POLY_ANY);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_gen5_neon, RAID_POLY_ANY);
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_gen6_neon, RAID_POLY_ANY);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_gen2_neon_raid, RAID_POLY_RAID);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_gen2_neon_aes, RAID_POLY_AES);
+	raid_gen_register(RAID_ALGO_VANDERMONDE_PAR3, "neon", raid_genz_neon_raid, RAID_POLY_RAID);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_gen3_neon_raid, RAID_POLY_RAID);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_gen3_neon_aes, RAID_POLY_AES);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_gen4_neon_raid, RAID_POLY_RAID);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_gen4_neon_aes, RAID_POLY_AES);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_gen5_neon_raid, RAID_POLY_RAID);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_gen5_neon_aes, RAID_POLY_AES);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_gen6_neon_raid, RAID_POLY_RAID);
+	raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_gen6_neon_aes, RAID_POLY_AES);
 
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_rec1_neon, RAID_POLY_ANY);
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_rec2_neon, RAID_POLY_ANY);

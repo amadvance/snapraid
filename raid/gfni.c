@@ -10,7 +10,7 @@
 /*
  * GENX AVX2 GFNI implementation
  */
-static __always_inline void raid_genX_avx2gfni(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **vv, int np)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -119,7 +119,7 @@ static __always_inline void raid_genX_avx2gfni(int nd, size_t size, void **vv, i
 /*
  * GENX AVX512 GFNI implementation
  */
-static __always_inline void raid_genX_avx512gfni(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void **vv, int np)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -199,83 +199,83 @@ static __always_inline void raid_genX_avx512gfni(int nd, size_t size, void **vv,
 }
 
 /*
- * GEN2 (RAID6 with powers of 2) AVX2 GFNI implementation
+ * GEN2 Cauchy AVX2 GFNI implementation
  */
-void raid_gen2_avx2gfni(int nd, size_t size, void **vv)
+void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni(nd, size, vv, 2);
+	raid_genX_avx2gfni_aes(nd, size, vv, 2);
 }
 
 /*
- * GEN2 (RAID6 with powers of 2) GFNI implementation
+ * GEN2 Cauchy GFNI implementation
  */
-void raid_gen2_avx512gfni(int nd, size_t size, void **vv)
+void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni(nd, size, vv, 2);
+	raid_genX_avx512gfni_aes(nd, size, vv, 2);
 }
 
 /*
  * GEN3 (triple parity with Cauchy matrix) AVX2 GFNI implementation
  */
-void raid_gen3_avx2gfni(int nd, size_t size, void **vv)
+void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni(nd, size, vv, 3);
+	raid_genX_avx2gfni_aes(nd, size, vv, 3);
 }
 
 /*
  * GEN3 (triple parity with Cauchy matrix) GFNI implementation
  */
-void raid_gen3_avx512gfni(int nd, size_t size, void **vv)
+void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni(nd, size, vv, 3);
+	raid_genX_avx512gfni_aes(nd, size, vv, 3);
 }
 
 /*
  * GEN4 (quad parity with Cauchy matrix) AVX2 GFNI implementation
  */
-void raid_gen4_avx2gfni(int nd, size_t size, void **vv)
+void raid_gen4_avx2gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni(nd, size, vv, 4);
+	raid_genX_avx2gfni_aes(nd, size, vv, 4);
 }
 
 /*
  * GEN4 (quad parity with Cauchy matrix) GFNI implementation
  */
-void raid_gen4_avx512gfni(int nd, size_t size, void **vv)
+void raid_gen4_avx512gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni(nd, size, vv, 4);
+	raid_genX_avx512gfni_aes(nd, size, vv, 4);
 }
 
 /*
  * GEN5 (penta parity with Cauchy matrix) AVX2 GFNI implementation
  */
-void raid_gen5_avx2gfni(int nd, size_t size, void **vv)
+void raid_gen5_avx2gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni(nd, size, vv, 5);
+	raid_genX_avx2gfni_aes(nd, size, vv, 5);
 }
 
 /*
  * GEN5 (penta parity with Cauchy matrix) GFNI implementation
  */
-void raid_gen5_avx512gfni(int nd, size_t size, void **vv)
+void raid_gen5_avx512gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni(nd, size, vv, 5);
+	raid_genX_avx512gfni_aes(nd, size, vv, 5);
 }
 
 /*
  * GEN6 (hexa parity with Cauchy matrix) AVX2 GFNI implementation
  */
-void raid_gen6_avx2gfni(int nd, size_t size, void **vv)
+void raid_gen6_avx2gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni(nd, size, vv, 6);
+	raid_genX_avx2gfni_aes(nd, size, vv, 6);
 }
 
 /*
  * GEN6 (hexa parity with Cauchy matrix) GFNI implementation
  */
-void raid_gen6_avx512gfni(int nd, size_t size, void **vv)
+void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni(nd, size, vv, 6);
+	raid_genX_avx512gfni_aes(nd, size, vv, 6);
 }
 
 /*
@@ -636,11 +636,11 @@ void raid_recX_avx512gfni(int nr, int *id, int *ip, int nd, size_t size, void **
 void raid_register_avx2gfni(void)
 {
 	if (raid_cpu_has_avx2gfni()) {
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni", raid_gen2_avx2gfni, RAID_POLY_AES);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni", raid_gen3_avx2gfni, RAID_POLY_AES);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "gfni", raid_gen4_avx2gfni, RAID_POLY_AES);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "gfni", raid_gen5_avx2gfni, RAID_POLY_AES);
-		raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "gfni", raid_gen6_avx2gfni, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni", raid_gen2_avx2gfni_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni", raid_gen3_avx2gfni_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "gfni", raid_gen4_avx2gfni_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "gfni", raid_gen5_avx2gfni_aes, RAID_POLY_AES);
+		raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "gfni", raid_gen6_avx2gfni_aes, RAID_POLY_AES);
 
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "gfni", raid_rec1_avx2gfni, RAID_POLY_AES);
 		raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "gfni", raid_rec2_avx2gfni, RAID_POLY_AES);
@@ -655,11 +655,11 @@ void raid_register_avx512gfni(void)
 {
 	if (raid_cpu_has_avx512gfni()) {
 		if (!raid_cpu_has_slow_avx512()) {
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni512", raid_gen2_avx512gfni, RAID_POLY_AES);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni512", raid_gen3_avx512gfni, RAID_POLY_AES);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "gfni512", raid_gen4_avx512gfni, RAID_POLY_AES);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "gfni512", raid_gen5_avx512gfni, RAID_POLY_AES);
-			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "gfni512", raid_gen6_avx512gfni, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "gfni512", raid_gen2_avx512gfni_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "gfni512", raid_gen3_avx512gfni_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "gfni512", raid_gen4_avx512gfni_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "gfni512", raid_gen5_avx512gfni_aes, RAID_POLY_AES);
+			raid_gen_register(RAID_ALGO_CAUCHY_PAR6, "gfni512", raid_gen6_avx512gfni_aes, RAID_POLY_AES);
 
 			raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "gfni512", raid_rec1_avx512gfni, RAID_POLY_AES);
 			raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "gfni512", raid_rec2_avx512gfni, RAID_POLY_AES);

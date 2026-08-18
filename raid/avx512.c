@@ -153,7 +153,7 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
 }
 
 /*
- * GEN2 (RAID6 with powers of 2) AVX512BW implementation
+ * GEN2 Cauchy AVX512BW implementation
  */
 void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 {
