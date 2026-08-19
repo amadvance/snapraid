@@ -16,6 +16,13 @@ int main(void)
 
 	raid_init();
 
+	printf("Test GFNI affine matrices\n");
+	if (raid_test_gfaffine() != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Cauchy RAID\n");
 	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
 		/* LCOV_EXCL_START */

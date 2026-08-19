@@ -39,6 +39,34 @@ static uint8_t raid_gfmul(uint8_t poly, uint8_t a, uint8_t b)
 }
 
 /**
+ * Setup the GFNI affine matrix for multiplication by a constant.
+ *
+ * VGF2P8MULB is fixed to the AES polynomial 0x11b, while RAID parity is
+ * defined over GF(2^8) modulo 0x11d. VGF2P8AFFINEQB can implement the
+ * multiplication because multiplication by a constant is GF(2)-linear.
+ *
+ * VGF2P8AFFINEQB stores the row producing output bit j in byte 7-j.
+ * Within each row, bit k selects input bit k.
+ */
+static void set_affine(uint8_t poly, uint8_t c, uint8_t *matrix)
+{
+	int j, k;
+
+	for (j = 0; j < 8; ++j) {
+		uint8_t row = 0;
+
+		for (k = 0; k < 8; ++k) {
+			uint8_t v = raid_gfmul(poly, c, (uint8_t)(1U << k));
+
+			if ((v & (1U << j)) != 0)
+				row |= (uint8_t)(1U << k);
+		}
+
+		matrix[7 - j] = row;
+	}
+}
+
+/**
  * Inversion (1/a) in GF(2^8).
  */
 uint8_t raid_gfinv[256];
@@ -230,6 +258,31 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 		printf("\t},\n");
 	}
 	printf("};\n\n");
+
+	if (poly == RAID_POLY_RAID) {
+		uint8_t affine[8];
+
+		printf("/**\n");
+		printf(" * GFNI affine matrices for multiplication in GF(2^8)/0x11d.\n");
+		printf(" *\n");
+		printf(" * VGF2P8AFFINEQB consumes one 8x8 matrix per 64-bit lane.\n");
+		printf(" * Byte 7-j contains the row producing output bit j, and bit k\n");
+		printf(" * of that byte selects input bit k. The instruction uses imm8=0.\n");
+		printf(" */\n");
+		printf("const uint8_t __aligned(256) raid_gfaffine_raid[256][8] =\n");
+		printf("{\n");
+		for (i = 0; i < 256; ++i) {
+			set_affine(poly, (uint8_t)i, affine);
+			printf("\t{ ");
+			for (j = 0; j < 8; ++j) {
+				printf("0x%02x", (unsigned)affine[j]);
+				if (j != 7)
+					printf(", ");
+			}
+			printf(" },\n");
+		}
+		printf("};\n\n");
+	}
 
 	/* generator^a */
 	printf("const uint8_t __aligned(256) raid_gfexp_%s[256] =\n", tag);

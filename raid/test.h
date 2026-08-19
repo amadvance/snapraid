@@ -32,6 +32,13 @@ int raid_test_sort(void);
 int raid_test_combo(void);
 
 /**
+ * Tests all RAID affine GFNI matrices against scalar GF multiplication.
+ *
+ * Returns 0 on success.
+ */
+int raid_test_gfaffine(void);
+
+/**
  * Tests the Galois field and Cauchy matrix properties.
  *
  * Verifies the expected polynomial and primitive generator and basic

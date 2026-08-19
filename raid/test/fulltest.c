@@ -73,6 +73,13 @@ int main(void)
 		/* LCOV_EXCL_STOP */
 	}
 
+	printf("Test GFNI affine matrices...\n");
+	if (raid_test_gfaffine() != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Cauchy RAID parity generation with 1-%u data disks...\n", RAID_DATA_MAX);
 	for (int i = 1; i <= RAID_DATA_MAX; ++i) {
 		if (raid_test_par(RAID_MODE_CAUCHY_RAID, i, TEST_SIZE) != 0) {

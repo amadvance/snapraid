@@ -1151,6 +1151,12 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+	if (raid_test_gfaffine() != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GFNI AFFINE test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test\n");
