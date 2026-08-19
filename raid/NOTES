@@ -1,0 +1,1140 @@
+SnapRAID RAID library performance notes
+=======================================
+
+Scope
+-----
+
+These notes summarize performance experiments, implementation choices,
+rejected ideas, recovery optimizations, and non-obvious conclusions
+reached while reviewing and tuning the SnapRAID RAID library.
+
+The focus is the 1..6 parity implementation, especially x86 AVX2,
+AVX512BW, GFNI, SSSE3, and AArch64/AArch32 NEON backends.
+
+This is intentionally a record of what has already been tried and what was
+learned from it, so that the same ideas are not repeatedly re-investigated.
+
+Detailed project-by-project comparisons with other RAID and erasure-coding
+engines are kept in OTHERS. This file keeps only conclusions that affect
+SnapRAID implementation or optimization policy.
+
+The main rule is to optimize the real SnapRAID workload, not only isolated
+inner loops.
+
+
+Implementation overview
+-----------------------
+
+Generation:
+
+* The 1..6 parity generation paths are considered effectively closed from
+  a performance point of view after coefficient-residency optimization and
+  the separation of the AES G23 and common x2 hot paths.
+
+* Non-GFNI AES generation uses dedicated x2-only and G23 implementations.
+  When the number of data disks does not reach the first G23 x3 transition,
+  AES dispatches directly to the same branch-free x2 implementation structure
+  used by RAID, with the active AES polynomial and Cauchy tables.
+
+* The G23 implementation is reserved for larger arrays that actually require
+  x3 transitions. This avoids carrying G23 boundary control flow through the
+  overwhelmingly common small-array generation path.
+
+* Relevant scalar, SSE/SSSE3, AVX2, AVX512BW, AArch64/AArch32 NEON, RAID GFNI
+  affine, and AES GFNI paths are implemented.
+
+* Specialized GEN2 and GEN3 paths keep useful multiplication tables or
+  coefficient representations in vector registers when register pressure
+  permits it.
+
+* This residency optimization preserves the preferred chunk-major,
+  multi-output traversal. It does not add another pass over source blocks.
+
+* RAID GFNI Horner Q is implemented where it is useful and where register
+  pressure allows it.
+
+* AVX512 128-byte processing, non-GFNI AVX512BW Horner, standalone
+  VPTERNLOGQ transformations, VPBLENDVB, cached parity stores, and large
+  pre-expanded GFNI constants have been investigated. Some are rejected, while
+  VPTERNLOGQ is now used where it is part of a larger profitable GEN2/GEN3
+  restructuring.
+
+Recovery:
+
+* The normal one-data-disk recovery with P available is already handled by
+  raid_rec1of1(), which is essentially an XOR generation pass with pointer
+  remapping.
+
+* Generic REC1 non-P SIMD kernels have been locally optimized and spatially
+  unrolled where useful.
+
+* Generic REC2 non-GFNI kernels hoist coefficient tables and reuse delta nibble
+  splits.
+
+* NEON REC2 processes two 16-byte blocks per iteration, for a 32-byte recovery
+  chunk on the optimized AArch64 path.
+
+* RECX keeps delta values in SIMD registers on the optimized paths and reuses
+  pre-split low/high nibbles instead of repeatedly reconstructing them.
+
+* Non-GFNI RECX precomputes shuffle-table pointers in C before entering the hot
+  data loop.
+
+* RAID GFNI RECX precomputes the 8-byte affine representation of every inverse
+  matrix coefficient in C before entering the hot data loop.
+
+* A recurring RECX local cost is repeated coefficient table/matrix loading
+  or broadcasting inside the data loop.
+
+* Specialized SIMD P+Q rec2of2 recovery is a distinct optimization
+  opportunity. The scalar int8 implementation already has the formula.
+
+Architecture and validation:
+
+* AArch32 has a separate NEON backend for generation and recovery. Cross-build,
+  QEMU user-mode testing, and CI coverage are available for the ARM32 path.
+
+* Matrix inversion has dedicated multithreaded stress testing. With at most six
+  parity levels, inversion setup is not a significant performance target.
+
+
+Real workload assumptions
+-------------------------
+
+* SnapRAID processes large blocks: typically 256 KiB per data/parity block.
+
+* A normal stripe therefore touches a large amount of memory. With 12 data
+  disks, one 256 KiB stripe already means about 3 MiB of data input before
+  considering parity output.
+
+* This large-block behavior is very important. Optimizations that reread a
+  source buffer, increase the number of passes, or enlarge lookup tables can be
+  worse even if the inner instruction sequence looks better.
+
+* This is also the first filter for ideas taken from other RAID or
+  erasure-coding engines. A design optimized for page-sized recovery,
+  cache-resident tiles, or generic small shards may make a different memory
+  tradeoff and should not be copied mechanically.
+
+* Prefer reducing work inside the existing single-pass traversal before
+  considering a traversal change. Saving a broadcast or table load is useful;
+  saving registers by rereading a complete 256 KiB source block usually is not.
+
+* SnapRAID uses a queue before parity data is written to disk. Real measurements
+  with actual disk writes show that very small queues are worse. Performance
+  improves clearly up to about queue depth 32, and still improves after that,
+  but with diminishing returns.
+
+* With 256 KiB blocks, queue depth 32 means this much parity output can be in
+  flight:
+
+      1 parity  =  8 MiB
+      2 parity  = 16 MiB
+      3 parity  = 24 MiB
+      6 parity  = 48 MiB
+
+  Therefore a parity block produced by the RAID kernel is normally not consumed
+  immediately.
+
+* A memory read of a 256 KiB block that is no longer cached is still very cheap
+  compared with real storage I/O. Trying to keep many queued parity blocks hot
+  in cache is therefore not necessarily useful.
+
+
+MOVNT / non-temporal stores
+---------------------------
+
+* Generation backends use MOVNTDQ / VMOVNTDQ for parity output where applicable.
+
+* The synthetic speedtest naturally favors non-temporal stores because generated
+  parity is not consumed afterwards. This benchmark therefore measures producer
+  throughput, not the complete producer -> queue -> writer pipeline.
+
+* However, the real SnapRAID queue makes the workload much closer to the
+  non-temporal case than to an immediate-consumer case.
+
+* Cached stores could potentially help only with very short queues, where the
+  writer consumes parity while it is still hot. Queue depths around 1..4 are the
+  most plausible area where this could happen.
+
+* Those very short queues are not representative of the real fastest disk
+  pipeline. Real measurements already show that queues up to about 32 provide
+  substantial improvements.
+
+* At realistic queue depths, cached parity output would occupy many MiB of cache
+  and could evict useful input data. MOVNT avoids this cache pollution and
+  avoids normal cache allocation/write-allocate behavior for parity output.
+
+* Conclusion: keep MOVNT for the normal generation path. Replacing MOVNT with
+  cached stores is not considered an open optimization.
+
+
+Typical recovery case
+---------------------
+
+* The common recovery case is one failed data disk while parity P is still
+  available.
+
+* raid_rec() selects the first available parity. Therefore, for a single data
+  failure with P available, recovery uses P.
+
+* REC1 implementations special-case ip[0] == 0 and call raid_rec1of1().
+
+* raid_rec1of1() remaps pointers so that P is used as an XOR input and the
+  failed data buffer is used as the GEN1 output, then calls
+  raid_gen(nd, 1, ...).
+
+* Therefore the common single-disk recovery path does NOT call
+  raid_delta_gen().
+
+* The data traffic is already close to the minimum:
+
+      read P
+      read all surviving data blocks
+      XOR them
+      write the recovered data block once
+
+* There are no temporary syndrome buffers, no GF multiplication, and no matrix
+  inversion in this common path.
+
+* This means that large architectural recovery changes mostly optimize rare
+  failure cases, not the usual single-disk recovery.
+
+* Two simultaneous data disk failures are already an exceptional case in normal
+  use. Three or more simultaneous data failures are even less important as
+  optimization targets.
+
+
+Recovery speedtest interpretation
+---------------------------------
+
+The recovery speed tests contain separate rows for the important fast paths and
+for the generic recovery paths.
+
+REC1OF1:
+
+* The row uses ip[0] == 0.
+
+* Every REC1 wrapper therefore enters raid_rec1of1() instead of executing its
+  normal GF recovery body.
+
+* The speed test explicitly selects the generation function used by the
+  raid_rec1of1() call with raid_gen_force(1, ...).
+
+* There is no GFNI GEN1 because PAR1 is only XOR. Therefore:
+
+      rec1of1 avx2     -> raid_gen1_avx2
+      rec1of1 gfni     -> raid_gen1_avx2
+
+      rec1of1 avx512   -> raid_gen1_avx512bw
+      rec1of1 gfni512  -> raid_gen1_avx512bw
+
+  This is intentional. The GFNI recovery wrapper is selected, but the fast path
+  naturally reduces to the best available XOR generator.
+
+REC1:
+
+* The generic REC1 row uses ip + 1 to avoid the PAR1 fast path.
+
+* It therefore measures recovery from Q or a later parity and executes the
+  backend-specific REC1 GF multiplication kernel.
+
+REC2OF2:
+
+* The row uses ip = { 0, 1 }, meaning P and Q.
+
+* raid_rec2_int8() has an existing specialized P+Q fast path and calls
+  raid_rec2of2_int8().
+
+* SIMD REC2 implementations do not have the equivalent specialized P+Q
+  fast path. They execute the generic 2x2 recovery algorithm with P and Q.
+
+* This makes the row useful as a direct benchmark for deciding whether a
+  specialized SIMD rec2of2 implementation is worthwhile.
+
+REC2:
+
+* The generic REC2 row uses ip + 1, avoiding the P+Q fast case.
+
+* It measures the normal generic 2x2 recovery path.
+
+Delta generation:
+
+* Each recovery benchmark explicitly forces a matching generation backend with
+  raid_gen_force() before entering the timed recovery function.
+
+* This is important because raid_delta_gen() internally calls raid_gen().
+
+* The benchmark therefore avoids accidentally comparing a recovery kernel while
+  using an unrelated generation backend for its delta step.
+
+
+raid_delta_gen() fusion
+-----------------------
+
+* A fused recovery design was studied, where selected syndromes would be
+  accumulated directly instead of:
+
+      raid_delta_gen()
+      temporary parity output
+      reload temporary parity
+      solve recovery matrix
+
+* The fused design could also compute only the parity rows actually selected by
+  ip[].
+
+* This matters because raid_delta_gen() currently computes:
+
+      np = ip[nr - 1] + 1
+
+  and raid_gen() can generate only a prefix of parity rows.
+
+* Example:
+
+      nr = 3
+      ip = { 0, 2, 5 }
+
+  requires GEN6 today even though only P, R and U are needed.
+
+* A fused RECX could calculate exactly those three syndromes.
+
+* The idea is technically valid and could reduce temporary memory traffic and
+  unnecessary parity work.
+
+* However, the common rec1of1/P case already bypasses raid_delta_gen() entirely.
+
+* Because the main benefit applies to less common multiple-failure or missing-P
+  cases, this direction was intentionally deprioritized.
+
+* Decision: do not pursue raid_delta_gen() + REC fusion for now.
+
+
+Generation: AVX512 width and unrolling
+--------------------------------------
+
+* Wider processing is not automatically faster.
+
+* AVX512 128-byte processing was tested and can be slower than the existing
+  64-byte path.
+
+* Therefore do not assume that x2/x4 spatial unrolling used by some RAID
+  engines is beneficial for SnapRAID.
+
+* The block size is already large, memory traffic is substantial, and wider
+  unrolling can increase register pressure, front-end work, and AVX512 power or
+  frequency effects without reducing total memory traffic.
+
+* Standalone VPTERNLOGQ transformations were tested on Zen 5 and did not improve
+  performance.
+
+* This is not a general rejection of VPTERNLOGQ. AVX512BW GEN2/GEN3
+  kernels use VPTERNLOGQ where it is part of a larger table-residency
+  restructuring that reduces other work. Judge the complete kernel, not an
+  instruction in isolation.
+
+* Conclusion: keep the conservative AVX512 processing width unless a
+  specific benchmark proves otherwise.
+
+
+Generation: Horner
+------------------
+
+* Classic RAID6 P+Q generation uses the Horner recurrence for Q with the
+  standard RAID polynomial/generator.
+
+* Non-GFNI AES Cauchy generation also evaluates Q with Horner's method. Its
+  coefficient sequence uses multiplication by 2 almost everywhere, with
+  multiplication by 3 only at the fixed G23 coset boundaries. The optimized
+  implementation of this recurrence is described in the next section.
+
+* A Horner-style AVX512BW non-GFNI implementation was tested on Zen 5 and did
+  not improve performance.
+
+* Therefore Horner is NOT considered an open optimization for the AVX512BW
+  non-GFNI generation path.
+
+* GFNI is different.
+
+* For RAID GFNI generation, Horner Q is useful because multiplying by the fixed
+  generator can use one fixed affine matrix instead of a different matrix for
+  every data coefficient.
+
+* RAID GFNI Horner Q is implemented as follows:
+
+      AVX2 RAID GFNI GEN2..GEN5:
+          Horner Q with a fixed multiply-by-2 affine matrix resident in a
+          register.
+
+      AVX2 RAID GFNI GEN6:
+          keep the direct-coefficient implementation because register pressure
+          is too high to keep the extra fixed matrix efficiently.
+
+      AVX512 RAID GFNI GEN2..GEN6:
+          Horner Q with the fixed matrix resident in a register.
+
+      AES GFNI:
+          unchanged, direct VGF2P8MULB coefficient multiplication.
+
+* D0/final coefficient 1 is handled directly where appropriate.
+
+* Conclusion: GFNI Horner Q is implemented where useful. Non-GFNI AVX512BW
+  Horner was tested and rejected.
+
+
+Generation: AES G23 x2/G23 split
+--------------------------------
+
+The AES Extended Cauchy Q sequence is evaluated in descending Horner order.
+
+Most transitions multiply the Q accumulator by 2. Multiplication by 3 is
+required only at the four boundaries between the five G23 cosets:
+
+    d = 203, 152, 101, 50
+
+Therefore arrays with at most 51 data disks never execute an x3 transition.
+For nd = 51 the first Horner step is d = 49. The first x3 transition appears
+only at nd = 52, where the first processed step is d = 50.
+
+The dispatch condition is centralized in:
+
+    raid_g23_x2_only(nd)
+
+which currently means:
+
+    nd <= 51
+
+The value 51 is not merely a performance tuning threshold. It is the largest
+data-disk count for which the AES G23 Q recurrence contains only x2
+transitions. The threshold may safely be lowered for performance experiments,
+but it cannot be increased without making the x2-only implementation
+incorrect.
+
+Earlier implementations kept x2 and G23 behavior in a single generator and
+tested G23 state inside or around the hot data loop. This was correct, but it
+hurt generated code even when no x3 transition was actually executed.
+
+The current implementation therefore uses two separate paths:
+
+    *_x2()
+        branch-free Horner recurrence using only Q *= 2
+
+    *_g23()
+        segmented Horner recurrence using Q *= 2 between boundaries
+        and Q *= 3 at the fixed G23 boundaries
+
+AES wrappers dispatch before entering the hot kernel:
+
+    if (raid_g23_x2_only(nd))
+        *_x2(...);
+    else
+        *_g23(...);
+
+RAID always selects the x2 path.
+
+The G23 implementation computes the first relevant boundary from:
+
+    raid_g23_boundary(l - 1)
+
+where l = nd - 1.
+
+Using l - 1 is important. Q is initialized directly from D[l], so D[l] does
+not perform a Horner multiplication. The first transition occurs before adding
+D[l - 1].
+
+Between boundaries, the G23 implementations run dedicated x2-only loops.
+The x3 transition is handled separately at the boundary. Implementations that
+process two data disks per iteration must stop pairing before a boundary so
+that a pair never crosses an x3 transition.
+
+For GEN3 and higher, D0 is normally handled separately to avoid unnecessary
+Cauchy-table work. Since the lowest G23 boundary is d = 50, the final D0
+transition is always Q *= 2.
+
+This separation was introduced for performance, not correctness. A generic
+G23 implementation with no active boundary is mathematically equivalent to
+the x2 path, but its additional control-flow structure can still produce
+significantly worse machine code.
+
+This was confirmed on an Intel family 6 model 165 CPU with GCC 11.2.0,
+where forcing the generic G23 control flow on small arrays caused a measurable
+throughput loss across SIMD backends even without executing any x3 transition.
+
+
+Generation: coefficient residency
+---------------------------------
+
+Recent GEN2/GEN3 work established coefficient residency as a practical
+generation optimization, not only a theoretical one.
+
+* Non-GFNI SIMD GEN2/GEN3 kernels preload useful low/high multiplication tables
+  into vector registers when the register file has enough space.
+
+* The resident set can be partial. When there are more data disks than can be
+  covered by spare registers, later disks fall back to loading their
+  coefficient tables normally.
+
+* GEN3 has higher register pressure because both Q and R coefficients are
+  needed. Residency is therefore deliberately bounded by the available
+  register file rather than forcing spills or another source pass.
+
+* Appropriate GFNI generation paths also preload coefficient representations
+  when doing so reduces repeated setup without increasing source traffic.
+
+* AVX512BW can use VPTERNLOGQ as part of these resident-table kernels to combine
+  the accumulator with low/high products. The useful optimization is the whole
+  scheduling and residency change, not VPTERNLOGQ by itself.
+
+* The source chunk is still loaded once and contributes to all parity outputs
+  before moving on. The optimization therefore preserves the most important
+  large-block memory property.
+
+General conclusion:
+
+* First use spare registers to remove repeated coefficient setup while
+  preserving one-pass multi-output generation.
+
+* Do not trade coefficient residency for extra 256 KiB source passes.
+
+* Generation success does not imply that RECX can use the same register map.
+  RECX must also keep multiple deltas and reconstruction state live, so its
+  coefficient-residency opportunity remains narrower.
+
+Overall generation conclusion:
+
+* For the 1..6 parity implementation, no major generation optimization remains
+  with a strong reason to be investigated.
+
+* Further generation changes should require new hardware evidence, a changed
+  workload, or measurements that identify a concrete bottleneck.
+
+
+GFNI field implementation
+-------------------------
+
+* AES GFNI multiplication maps naturally to VGF2P8MULB because the instruction
+  uses the AES polynomial.
+
+* Standard RAID polynomial 0x11d cannot use VGF2P8MULB directly.
+
+* RAID GFNI therefore uses VGF2P8AFFINEQB with precomputed affine matrices.
+
+* The global affine matrix table stores 8 bytes per coefficient.
+
+* A generic exhaustive software test validates all coefficient/input pairs
+  against the normal RAID GF multiplication table.
+
+* Dedicated hardware affine-matrix validators were intentionally not added.
+  Normal generation/recovery tests exercise the hardware path.
+
+* RAID and AES GFNI recovery/generation have polynomial-specific names:
+
+      *_gfni_raid
+      *_gfni_aes
+
+  with backend tags:
+
+      gfni
+      gfni512
+
+* This naming and registration split is intentional and should be preserved.
+
+
+GFNI RECX coefficient precomputation
+------------------------------------
+
+RAID GFNI RECX previously performed this dependency chain for every coefficient
+inside every data chunk:
+
+      load coefficient byte from V[]
+      use it to index raid_gfaffine_raid[]
+      load the 8-byte affine matrix
+      broadcast the matrix
+      VGF2P8AFFINEQB
+
+The current implementation precomputes:
+
+      uint8_t C[N * N][8]
+
+and copies the complete 8-byte affine representation for every inverse matrix
+coefficient before entering the data loop.
+
+The hot loop therefore becomes:
+
+      direct load/broadcast from C[]
+      VGF2P8AFFINEQB
+
+This removes the coefficient-byte -> indexed affine-table dependency from the
+hot loop while keeping the compact 8-byte representation.
+
+Important details:
+
+* All 8 bytes must be copied. An affine matrix coefficient is not one byte.
+
+* Using a byte array and memcpy() keeps the representation explicit and avoids
+  strict-aliasing assumptions.
+
+* AVX2 and AVX512 RAID GFNI RECX both use this precomputation.
+
+* AES GFNI does not need this conversion because VGF2P8MULB consumes the
+  coefficient byte directly.
+
+* The remaining repeated operation is the per-chunk broadcast of the 8-byte
+  affine matrix.
+
+
+GFNI pre-expanded affine tables
+-------------------------------
+
+* Some high-performance generic erasure-code engines use pre-expanded GFNI
+  constants, for example a 32-byte representation ready for vector use.
+
+* For SnapRAID this would increase the RAID affine table from about 2 KiB to
+  about 8 KiB.
+
+* With large 256 KiB processing blocks, the small 8-byte entries plus
+  broadcast have a better cache-footprint tradeoff.
+
+* No convincing reason was found to trade four times the table footprint for
+  fewer broadcasts.
+
+* Decision: keep compact 8-byte affine matrices.
+
+
+External implementation comparisons
+-----------------------------------
+
+Detailed comparisons are in OTHERS. The implementations studied include
+specialized RAID engines, filesystem RAID, and general Reed-Solomon libraries.
+
+The important conclusions are general rather than project-specific.
+
+Classify an external advantage before trying to copy it:
+
+    algorithm advantage
+        the method performs genuinely less mathematical work
+
+    implementation advantage
+        the same work is scheduled, vectorized, or prepared better
+
+    workload-specific advantage
+        the method wins because the external workload has different block,
+        cache, parity, update, or latency assumptions
+
+This distinction prevents a good optimization for another engine from becoming
+an automatic SnapRAID TODO.
+
+Memory traversal:
+
+* Several modern high-throughput engines confirm that loading one source chunk
+  and updating multiple outputs from it is a strong general strategy.
+
+* Other engines deliberately process cache-resident regions and repeatedly
+  update cached parity. That can be correct when parity is consumed again
+  immediately, but it is a different memory model from SnapRAID generation.
+
+* Whole-region operations that keep one coefficient resident can be efficient
+  for generic erasure coding. For SnapRAID, the same loop orientation can
+  require rereading large source blocks and is normally a poor trade.
+
+* The preferred order remains: preserve the one-pass source traversal, then use
+  spare registers, hoisting, and precomputation to reduce local coefficient
+  cost.
+
+Specialization:
+
+* SnapRAID can specialize aggressively because parity is limited to 1..6 and
+  the matrix structure is known.
+
+* Generic engines may use large generated N-input/M-output kernel families,
+  general decoding matrices, structured solvers, or broader runtime machinery.
+  These are valuable for their scale but do not automatically reduce work in
+  the N <= 6 SnapRAID domain.
+
+* The most useful external ideas are usually local: fuse multiple outputs,
+  precompute coefficient representations, reuse source splits, special-case
+  coefficient 0/1 where simple, and exploit algebraic fast paths.
+
+Cache and stores:
+
+* Store policy follows output lifetime. Cached stores are appropriate when an
+  algorithm immediately reloads parity; non-temporal stores are appropriate
+  when final parity is queued and consumed later.
+
+* Therefore cached stores in another fast implementation are not evidence that
+  SnapRAID should change its MOVNT policy.
+
+Recovery:
+
+* General matrix inversion or structured Cauchy solvers become important at
+  larger scale. For at most six missing blocks, moving 256 KiB regions is far
+  more important than reducing the tiny matrix-setup cost.
+
+* Algorithmic failure-case specializations are different: if a fixed recovery
+  case provably needs fewer GF multiplications, it remains worth measuring.
+  The specialized P+Q rec2of2 case is an example.
+
+Runtime and architecture:
+
+* Some engines benchmark implementations at startup, while others dispatch only
+  from CPU capabilities. Runtime calibration remains low priority for SnapRAID
+  because the kernel set is small and the workload is stable.
+
+* Other engines support additional SIMD families such as SVE, RVV, or VSX.
+  These are useful porting references, not hot-path optimization tasks
+  without a target platform requirement.
+
+
+Memory layout, displacement and stride noise
+--------------------------------------------
+
+* The memory layout is not a neutral detail.
+
+* Fixed displacement between buffers was observed to help.
+
+* STRIDE_NOISE behavior differs by CPU.
+
+* On Intel, stride noise had little effect in the observed tests.
+
+* On Zen 5, disabling stride noise caused a large throughput reduction.
+
+* This indicates that hardware prefetch/cache behavior is already strongly
+  affected by the chosen buffer layout.
+
+* Therefore new software-prefetch or traversal changes should not be assumed to
+  help. They must be benchmarked against the existing displacement/stride
+  behavior.
+
+* This is another reason to avoid adding extra passes over 256 KiB blocks.
+
+
+REC1 optimizations
+------------------
+
+The important normal REC1 case is already raid_rec1of1() with P and is close to
+the minimum possible memory traffic.
+
+For generic REC1, used when P is unavailable:
+
+* AVX2 processes 64 bytes per iteration using two independent 32-byte chains.
+
+* SSSE3 x86-64 processes 64 bytes per iteration using four independent 16-byte
+  chains. The x86-32 path keeps the smaller register-compatible fallback.
+
+* NEON processes 64 bytes per iteration using four independent 16-byte chains.
+
+The arithmetic work per byte is mostly unchanged. The purpose of the unrolling
+is:
+
+* reduce loop-control overhead
+* expose more independent work
+* improve instruction scheduling around shuffle/table operations
+
+This is a local optimization, not an architectural change.
+
+REC1 status:
+
+* rec1of1/P is essentially closed.
+
+* Generic non-P REC1 may still receive small local tuning if measurements show a
+  clear benefit.
+
+* No major REC1 algorithmic optimization is currently expected.
+
+
+REC2 optimizations
+------------------
+
+Generic non-GFNI REC2 table/broadcast hoisting is implemented.
+
+AVX2 x86-64:
+
+* keep the 8 low/high shuffle tables for V0..V3 resident in ymm8..ymm15
+* keep the low-nibble mask resident
+* split d0/d1 once per chunk
+* reuse the split values for both recovered outputs
+
+AVX512BW:
+
+* keep the 8 low/high shuffle tables resident in zmm16..zmm23
+* keep the low-nibble mask resident
+* split d0/d1 once per chunk
+* reuse the split values for both recovered outputs
+
+SSSE3 x86-64:
+
+* keep all four coefficient low/high tables in XMM registers
+* split both deltas once
+* reuse the split values for both outputs
+
+NEON:
+
+* keep the four low/high coefficient tables in v20..v27
+* keep the low-nibble mask in v28
+* process two independent 16-byte blocks per iteration
+* split both deltas once per block
+* reuse the split values for both outputs
+* the 32-byte unrolled kernel uses 25 vector registers
+
+Important portability result:
+
+* x86-32 has only the low eight XMM/YMM registers available to these old ISA
+  paths.
+
+* Optimizations that depend on xmm8..xmm15 or ymm8..ymm15 must remain restricted
+  to CONFIG_X86_64.
+
+REC2 status:
+
+* Generic REC2 local table/split reuse is implemented.
+
+* Scalar int8 already has specialized rec2of2 P+Q recovery.
+
+* Specialized SIMD rec2of2 P+Q is a possible further optimization.
+
+
+Specialized rec2of2 P+Q
+-----------------------
+
+For failures of two data disks recovered specifically with P and Q, the system
+can be reduced to:
+
+      Dy = C0 * Pd ^ C1 * Qd
+      Dx = Pd ^ Dy
+
+This needs only two GF multiplications for Dy, followed by one XOR for Dx,
+instead of the generic 2x2 reconstruction with four GF multiplications.
+
+The scalar int8 implementation already uses this specialization.
+
+SIMD REC2 backends use the generic 2x2 matrix solution even when
+ip = { 0, 1 }.
+
+Potential targets include:
+
+* SSSE3
+* AVX2
+* AVX512BW
+* AVX2 GFNI
+* AVX512 GFNI
+* NEON
+
+The new rec2of2 benchmark row exists specifically to measure whether these
+specializations are worth adding.
+
+Practical priority remains low because simultaneous loss of two data disks is an
+exceptional real-world case.
+
+
+RECX delta handling
+-------------------
+
+RECX previously had avoidable temporary-buffer and repeated split work.
+
+The optimized structure keeps the delta values for each data
+chunk in SIMD registers.
+
+For non-GFNI paths:
+
+* each delta is split into low/high nibbles once
+* the split values remain in SIMD registers while all recovered outputs are
+  calculated
+* the same split values are reused across output rows
+* stack temporary delta buffers are avoided on the optimized paths
+
+For GFNI paths:
+
+* the byte deltas remain directly in SIMD registers
+* no nibble split is needed
+
+This closes the old questions:
+
+      can pd[k] stay in a register longer?
+      can low/high nibble splits be reused across outputs?
+
+For the optimized paths, the answer is yes and this work is implemented.
+
+
+RECX shuffle-table pointer precomputation
+----------------------------------------
+
+Non-GFNI RECX previously performed coefficient address calculation inside the
+hot loop:
+
+      load coefficient byte from V[]
+      multiply the coefficient index by 32
+      add the raid_gfmulpshufb base address
+      load low/high shuffle tables
+
+The implementation precomputes in C:
+
+      T[j] = &raid_gfmulpshufb[V[j]][0][0];
+
+The hot assembly then only performs:
+
+      load T[j]
+      load or broadcast low table at T[j] + 0
+      load or broadcast high table at T[j] + 16
+
+This has two advantages:
+
+1. It removes coefficient-index address arithmetic from the hot assembly.
+
+2. It keeps C object layout and address calculation in C, leaving the assembly
+   focused on SIMD operations.
+
+Optimized users include:
+
+* AVX2 RECX x86-64
+* AVX512BW RECX
+* SSSE3 RECX x86-64
+* NEON RECX
+
+For x86-32 AVX2/SSSE3 fallbacks, T[] is not unnecessarily built when the old
+fallback body does not use it.
+
+The remaining cost is that the low/high tables are still loaded or broadcast for
+every coefficient of every data chunk.
+
+
+RECX register state
+-------------------
+
+The RECX structure already uses registers aggressively.
+
+AVX512BW:
+
+* up to six delta values are kept as low/high pairs in zmm0..zmm11
+* zmm12..zmm15 are reconstruction temporaries/accumulators
+* zmm31 keeps the low-nibble mask
+* coefficient shuffle tables are still broadcast from T[] during reconstruction
+
+AVX512 RAID GFNI:
+
+* up to six byte deltas are kept in zmm0..zmm5
+* temporary/accumulator registers are used for reconstruction
+* coefficient affine matrices come directly from precomputed C[]
+* one 8-byte affine matrix is still broadcast per coefficient per chunk
+
+AVX2 RAID GFNI:
+
+* the two 32-byte halves of up to six delta blocks occupy most of the available
+  YMM register file
+* C[] removes indexed affine-table lookup
+* register pressure leaves less room for keeping many coefficient matrices
+  resident
+
+AVX2/SSSE3 non-GFNI:
+
+* the optimized x86-64 paths keep pre-split deltas in vector registers
+* register pressure is significantly higher than AVX512
+* coefficient table residency is therefore much more constrained
+
+NEON:
+
+* pre-split deltas are kept in vector registers
+* T[] provides direct pointers to low/high multiplication tables
+* reconstruction still loads each coefficient table pair as needed
+
+
+RECX coefficient residency
+--------------------------
+
+The main RECX local optimization question is:
+
+      can repeated coefficient loads/broadcasts be reduced by keeping useful
+      coefficient tables or affine matrices resident in spare vector registers?
+
+This is most plausible on AVX512 because of the larger register file.
+
+Possible experiments:
+
+* keep one output row of coefficients resident across data chunks
+
+* keep a useful prefix of coefficient tables resident when N permits it
+
+* on AVX512 RAID GFNI, keep several 8-byte affine matrices broadcast in ZMM
+  registers instead of broadcasting them again for every chunk
+
+* on AVX512BW, keep some low/high shuffle-table pairs resident
+
+Constraints:
+
+* Do not add a second pass over the 256 KiB block.
+
+* Do not spill deltas or accumulators merely to save coefficient broadcasts.
+
+* Do not add large N-specific kernel families unless measurements justify the
+  complexity.
+
+* AVX2 and SSSE3 register pressure is already high, so the likely opportunity is
+  much smaller there.
+
+* NEON has more architectural registers than old x86 SIMD but RECX already
+  uses a significant part of them; any residency experiment should be
+  measured carefully.
+
+This is a narrow local problem. Delta residency, nibble reuse, coefficient
+address precomputation, and GFNI affine lookup precomputation are already
+implemented.
+
+
+Recovery optimization policy
+----------------------------
+
+For recovery, avoid new architecture-level changes unless a very strong case
+appears.
+
+Preferred optimizations are basic/local:
+
+* hoist loop-invariant values
+* keep masks/tables/matrices resident when register pressure allows it
+* avoid repeated loads or broadcasts
+* initialize accumulators from the first useful term
+* keep address calculations in C when doing so simplifies inline assembly
+* exploit coefficient 0 or 1 only when it stays simple and does not add harmful
+  branching or complexity
+* use limited spatial unrolling only when it exposes ILP without excessive
+  register pressure
+
+Avoid unless new measurements provide a concrete reason:
+
+* raid_delta_gen() fusion
+* extra full passes over source blocks
+* aggressive spatial unrolling
+* software prefetch without clear evidence
+* changing MOVNT policy
+* major loop-orientation changes
+* large pre-expanded lookup tables
+* broad runtime calibration machinery
+
+
+Recovery matrix setup and inversion
+-----------------------------------
+
+* Recovery matrices are at most 6x6 for the 1..6 parity implementation.
+
+* The arithmetic cost of constructing and inverting such a matrix is tiny
+  compared with reading and writing 256 KiB data regions.
+
+* More elaborate structured Cauchy solvers, inversion caches, or asymptotically
+  faster coding methods are therefore not useful performance targets for the
+  1..6 parity limit.
+
+* A dedicated multithreaded inversion stress test exists to validate the matrix
+  code independently of the data-path SIMD kernels.
+
+* At parity counts far beyond six, matrix construction and structured
+  solvers should be re-evaluated together with the whole memory traversal.
+  They should not be optimized in isolation.
+
+
+Inline assembly and portability constraints
+-------------------------------------------
+
+The SIMD code intentionally uses multiple small or large asm volatile blocks and
+keeps SIMD state live across them.
+
+Important project constraints:
+
+* Assembly blocks that dereference pointers internally must model memory effects
+  appropriately. RECX pointer-based blocks use a "memory" clobber.
+
+* The x86 SSE/AVX end helpers declare SIMD clobbers needed by the project ABI
+  strategy, including the Windows x64 callee-saved XMM registers.
+
+* The NEON end helper declares v0..v31 clobbered so that GCC/Clang preserve
+  AAPCS64 callee-saved v8..v15 when required.
+
+* The end-of-function dummy-clobber mechanism is a documented project technique.
+  It is not a fully explicit extended-asm dataflow model, so future compiler
+  portability changes should be reviewed carefully.
+
+* Do not assume x86-32 has xmm8..xmm15 or ymm8..ymm15.
+
+* AArch32 NEON is a separate backend. Do not assume the AArch64 register or ABI
+  model when changing ARM32 assembly.
+
+* RAID thread-safety requirements are documented. Avoid introducing mutable
+  global calibration or dispatch state without preserving those requirements.
+
+* RAID block sizes passed to the SIMD code are multiples of 64, so the
+  32-byte and 64-byte unrolled loops do not need tail handling.
+
+These are established implementation constraints, not correctness findings.
+
+
+Scaling beyond 6 parity levels
+------------------------------
+
+The implementation deliberately targets at most six parity levels.
+
+* At this scale, fixed-parity specialization keeps matrix setup small and
+  enables tight kernels with explicit register allocation.
+
+* General-purpose erasure-code engines demonstrate other designs, including
+  generic matrix kernels, generated multi-input/multi-output kernels, and
+  algorithms intended for much larger shard counts.
+
+* Those designs solve a different scaling problem. They should not be adopted
+  merely to generalize a domain where the fixed 1..6 structure is useful.
+
+* If the parity limit is increased substantially, generic intrinsics or
+  generated kernels should be compared with handwritten specialization.
+  Memory traversal
+  must remain a first-class design constraint.
+
+* Scaling beyond six parity levels is primarily a functional and architectural
+  change, not an unresolved performance problem of the 1..6 implementation.
+
+
+Short list of ideas already tried or rejected
+---------------------------------------------
+
+* AVX512 128-byte generation processing:
+  tried, can be slower.
+
+* Non-GFNI AVX512BW Horner:
+  tried on Zen 5, no improvement.
+
+* Standalone VPTERNLOGQ substitutions:
+  tried on Zen 5, no improvement. This does not reject integrated use as part
+  of the profitable GEN2/GEN3 resident-table kernels.
+
+* VPBLENDVB x2:
+  tried, no benefit / worse.
+
+* MOVNT -> cached stores:
+  not appropriate for the normal queued disk-write workload; keep MOVNT.
+
+* GFNI 32-byte pre-expanded affine constants:
+  rejected due to larger cache footprint.
+
+* Split outputs into multiple full source passes:
+  rejected because 256 KiB source blocks would be reread.
+
+* Whole-region/output-major rewrites intended mainly to keep one coefficient
+  resident:
+  poor fit when they add source rereads. Use register residency inside the
+  existing traversal instead.
+
+* RECX source-major rewrite:
+  low priority; hot tiny delta working set and register-pressure tradeoff.
+
+* raid_delta_gen() + REC fusion:
+  technically valid but intentionally deprioritized because the normal
+  rec1of1/P case bypasses raid_delta_gen() already.
+
+* Software prefetch:
+  no strong reason to add it given the existing long streams and proven
+  sensitivity to displacement/stride tuning.
+
+* Runtime backend microbenchmark selection:
+  possible, but low value relative to complexity.
+
+* Large generic N-input/M-output kernel families:
+  useful for general erasure coding, but not justified for the fixed
+  1..6 parity domain without a concrete benchmark need.
+
+* Structured or asymptotically faster matrix solvers:
+  unnecessary at N <= 6 because matrix setup is tiny compared with data
+  movement.
