@@ -1048,6 +1048,74 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_avx_begin();
 
+#ifdef CONFIG_X86_64
+	asm volatile ("vpbroadcastb %0,%%ymm6" : : "m" (gfconst16.low4[0]));
+
+	/* the inverse matrix V[] is constant for the whole recovery. */
+	asm volatile ("vbroadcasti128 %0,%%ymm8" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm9" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
+
+	for (i = 0; i < size; i += 32) {
+		/* d0 = p[0] ^ pa[0] */
+		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[0][i]));
+		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pa[0][i]));
+		asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
+
+		/* d1 = p[1] ^ pa[1] */
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[1][i]));
+		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pa[1][i]));
+		asm volatile ("vpxor %ymm4,%ymm1,%ymm1");
+
+		/*
+		 * Split both deltas into low/high nibbles once.
+		 *
+		 * ymm0 = d0 low
+		 * ymm2 = d0 high
+		 * ymm1 = d1 low
+		 * ymm3 = d1 high
+		 */
+		asm volatile ("vpsrlw $4,%ymm0,%ymm2");
+		asm volatile ("vpsrlw $4,%ymm1,%ymm3");
+		asm volatile ("vpand %ymm6,%ymm0,%ymm0");
+		asm volatile ("vpand %ymm6,%ymm2,%ymm2");
+		asm volatile ("vpand %ymm6,%ymm1,%ymm1");
+		asm volatile ("vpand %ymm6,%ymm3,%ymm3");
+
+		/*
+		 * pa[0] = V[0] * d0 ^ V[1] * d1
+		 */
+		asm volatile ("vpshufb %ymm0,%ymm8,%ymm4");
+		asm volatile ("vpshufb %ymm2,%ymm9,%ymm5");
+		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
+
+		asm volatile ("vpshufb %ymm1,%ymm10,%ymm5");
+		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
+		asm volatile ("vpshufb %ymm3,%ymm11,%ymm5");
+		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
+
+		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[0][i]));
+
+		/*
+		 * pa[1] = V[2] * d0 ^ V[3] * d1
+		 */
+		asm volatile ("vpshufb %ymm0,%ymm12,%ymm4");
+		asm volatile ("vpshufb %ymm2,%ymm13,%ymm5");
+		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
+
+		asm volatile ("vpshufb %ymm1,%ymm14,%ymm5");
+		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
+		asm volatile ("vpshufb %ymm3,%ymm15,%ymm5");
+		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
+
+		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[1][i]));
+	}
+#else /* CONFIG_X86_32 */
 	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 32) {
@@ -1106,6 +1174,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[1][i]));
 	}
+#endif
 
 	raid_avx_end();
 }

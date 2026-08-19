@@ -246,18 +246,24 @@ void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 {
 	uint8_t **v = (uint8_t **)vv;
 	const int N = 2;
-	uint8_t *p[N], *pa[N];
-	uint8_t G[N * N], V[N * N];
+	uint8_t *p[N];
+	uint8_t *pa[N];
+	uint8_t G[N * N];
+	uint8_t V[N * N];
 	size_t i;
 	int j, k;
 
-	(void)nr;
+	(void)nr; /* unused, it's always 2 */
 
+	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
 			G[j * N + k] = A(ip[j], id[k]);
 
+	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
@@ -267,61 +273,86 @@ void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	raid_avx_begin();
 
+	/*
+	 * zmm7 = 0x0f nibble mask
+	 *
+	 * zmm16 = V[0] low table
+	 * zmm17 = V[0] high table
+	 * zmm18 = V[1] low table
+	 * zmm19 = V[1] high table
+	 * zmm20 = V[2] low table
+	 * zmm21 = V[2] high table
+	 * zmm22 = V[3] low table
+	 * zmm23 = V[3] high table
+	 */
+
 	asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfconst16.low4[0]));
 
+	/* the inverse matrix V[] is constant for the whole recovery. */
+	asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm22" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm23" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
+
 	for (i = 0; i < size; i += 64) {
+		/* d0 = p[0] ^ pa[0] */
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[0][i]));
 		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (pa[0][i]));
+		asm volatile ("vpxord %zmm2,%zmm0,%zmm0");
+
+		/* d1 = p[1] ^ pa[1] */
 		asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (p[1][i]));
 		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (pa[1][i]));
-		asm volatile ("vpxord   %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxord   %zmm3,%zmm1,%zmm1");
+		asm volatile ("vpxord %zmm3,%zmm1,%zmm1");
 
-		asm volatile ("vpxord %zmm6,%zmm6,%zmm6");
+		/*
+		 * Split both deltas into low/high nibbles once.
+		 *
+		 * zmm4  = d0 low
+		 * zmm5  = d0 high
+		 * zmm12 = d1 low
+		 * zmm13 = d1 high
+		 */
+		asm volatile ("vpsrlw $4,%zmm0,%zmm5");
+		asm volatile ("vpsrlw $4,%zmm1,%zmm13");
+		asm volatile ("vpandd %zmm7,%zmm0,%zmm4");
+		asm volatile ("vpandd %zmm7,%zmm5,%zmm5");
+		asm volatile ("vpandd %zmm7,%zmm1,%zmm12");
+		asm volatile ("vpandd %zmm7,%zmm13,%zmm13");
 
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
-		asm volatile ("vpsrlw  $4,%zmm0,%zmm5");
-		asm volatile ("vpsrlw  $4,%zmm1,%zmm13");
-		asm volatile ("vpandd  %zmm7,%zmm0,%zmm4");
-		asm volatile ("vpandd  %zmm7,%zmm5,%zmm5");
-		asm volatile ("vpandd  %zmm7,%zmm1,%zmm12");
-		asm volatile ("vpandd  %zmm7,%zmm13,%zmm13");
-		asm volatile ("vpshufb %zmm4,%zmm2,%zmm2");
-		asm volatile ("vpshufb %zmm5,%zmm3,%zmm3");
-		asm volatile ("vpshufb %zmm12,%zmm10,%zmm10");
-		asm volatile ("vpshufb %zmm13,%zmm11,%zmm11");
-		asm volatile ("vpxord  %zmm2,%zmm6,%zmm6");
-		asm volatile ("vpxord  %zmm3,%zmm6,%zmm6");
-		asm volatile ("vpxord  %zmm10,%zmm6,%zmm6");
-		asm volatile ("vpxord  %zmm11,%zmm6,%zmm6");
+		/*
+		 * pa[0] = V[0] * d0 ^ V[1] * d1
+		 */
+		asm volatile ("vpshufb %zmm4,%zmm16,%zmm2");
+		asm volatile ("vpshufb %zmm5,%zmm17,%zmm3");
+		asm volatile ("vpshufb %zmm12,%zmm18,%zmm10");
+		asm volatile ("vpshufb %zmm13,%zmm19,%zmm11");
 
-		asm volatile ("vmovdqa64 %%zmm6,%0" : "=m" (pa[0][i]));
+		asm volatile ("vpxord %zmm3,%zmm2,%zmm2");
+		asm volatile ("vpxord %zmm10,%zmm2,%zmm2");
+		asm volatile ("vpxord %zmm11,%zmm2,%zmm2");
 
-		asm volatile ("vpxord %zmm6,%zmm6,%zmm6");
+		asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (pa[0][i]));
 
-		asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
-		asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
-		asm volatile ("vpsrlw  $4,%zmm0,%zmm5");
-		asm volatile ("vpsrlw  $4,%zmm1,%zmm13");
-		asm volatile ("vpandd  %zmm7,%zmm0,%zmm4");
-		asm volatile ("vpandd  %zmm7,%zmm5,%zmm5");
-		asm volatile ("vpandd  %zmm7,%zmm1,%zmm12");
-		asm volatile ("vpandd  %zmm7,%zmm13,%zmm13");
-		asm volatile ("vpshufb %zmm4,%zmm2,%zmm2");
-		asm volatile ("vpshufb %zmm5,%zmm3,%zmm3");
-		asm volatile ("vpshufb %zmm12,%zmm10,%zmm10");
-		asm volatile ("vpshufb %zmm13,%zmm11,%zmm11");
-		asm volatile ("vpxord  %zmm2,%zmm6,%zmm6");
-		asm volatile ("vpxord  %zmm3,%zmm6,%zmm6");
-		asm volatile ("vpxord  %zmm10,%zmm6,%zmm6");
-		asm volatile ("vpxord  %zmm11,%zmm6,%zmm6");
+		/*
+		 * pa[1] = V[2] * d0 ^ V[3] * d1
+		 *
+		 * Reuse the already computed low/high nibbles.
+		 */
+		asm volatile ("vpshufb %zmm4,%zmm20,%zmm2");
+		asm volatile ("vpshufb %zmm5,%zmm21,%zmm3");
+		asm volatile ("vpshufb %zmm12,%zmm22,%zmm10");
+		asm volatile ("vpshufb %zmm13,%zmm23,%zmm11");
 
-		asm volatile ("vmovdqa64 %%zmm6,%0" : "=m" (pa[1][i]));
+		asm volatile ("vpxord %zmm3,%zmm2,%zmm2");
+		asm volatile ("vpxord %zmm10,%zmm2,%zmm2");
+		asm volatile ("vpxord %zmm11,%zmm2,%zmm2");
+
+		asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (pa[1][i]));
 	}
 
 	raid_avx_end();
