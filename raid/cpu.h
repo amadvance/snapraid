@@ -48,9 +48,9 @@ static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model
 
 	raid_cpuid(0, 0, reg);
 
-	((uint32_t *)vendor)[0] = reg[1];
-	((uint32_t *)vendor)[1] = reg[3];
-	((uint32_t *)vendor)[2] = reg[2];
+	memcpy(vendor + 0, &reg[1], 4);
+	memcpy(vendor + 4, &reg[3], 4);
+	memcpy(vendor + 8, &reg[2], 4);
 	vendor[12] = 0;
 
 	raid_cpuid(1, 0, reg);
