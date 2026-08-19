@@ -295,6 +295,9 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	int np;
 	void *latest;
 
+	/* zero buffer must be initialized prior to delta recovery */
+	BUG_ON(raid_zero_block == 0);
+
 	/*
 	 * Total number of parities we are going to process
 	 * they are both the used and the unused ones

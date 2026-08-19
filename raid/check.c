@@ -115,7 +115,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 
 	/* enforce limit on number of failures */
 	BUG_ON(nr >= np); /* >= because we check with extra parity */
-	BUG_ON(np > RAID_PARITY_MAX);
+	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
 
 	/* enforce order in index vector */
 	BUG_ON(nr >= 2 && ir[0] >= ir[1]);

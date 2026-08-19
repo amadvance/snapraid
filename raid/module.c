@@ -37,7 +37,7 @@ static struct raid_rec_algo raid_rec_algo_aes[RAID_PARITY_MAX];
 static struct raid_gen_algo *raid_gen_algo;
 static struct raid_rec_algo *raid_rec_algo;
 
-static int raid_mode_active = RAID_MODE_GET;
+int raid_mode_active = RAID_MODE_GET;
 
 const uint8_t(*raid_gfmul)[256];
 const uint8_t *raid_gfexp;
@@ -80,8 +80,9 @@ void raid_gen(int nd, int np, size_t size, void **v)
 
 	/* enforce limit on number of failures */
 	BUG_ON(np < 1);
-	BUG_ON(np > RAID_PARITY_MAX);
+	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
 
+	BUG_ON(raid_gen_ptr[np - 1] == 0);
 	raid_gen_ptr[np - 1](nd, size, v);
 }
 
@@ -104,7 +105,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 
 	/* enforce limit on number of failures */
 	BUG_ON(nr > np);
-	BUG_ON(np > RAID_PARITY_MAX);
+	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
 
 	/* enforce order in index vector */
 	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
@@ -183,9 +184,14 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	BUG_ON(nr >= 5 && ip[3] >= ip[4]);
 	BUG_ON(nr >= 6 && ip[4] >= ip[5]);
 
+	/* enforce limit on index vector for parity */
+	BUG_ON(nr > 0 && (ip[nr - 1] >= RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && ip[nr - 1] >= 3)));
+
 	/* if failed data is present */
-	if (nr != 0)
-		raid_rec_algo[nr - 1].rec(nr, id, ip, nd, size, v);
+	if (nr != 0) {
+		BUG_ON(raid_rec_ptr[nr - 1] == 0);
+		raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
+	}
 }
 
 const char * raid_gen_tag(int na)

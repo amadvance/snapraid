@@ -373,6 +373,7 @@ extern uint32_t raid_poly_32;
 extern uint64_t raid_poly_64;
 extern uint32_t raid_inv2_32;
 extern uint64_t raid_inv2_64;
+extern int raid_mode_active;
 
 #include "gf.h"
 
