@@ -663,11 +663,18 @@ void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_neon_begin();
 
+	/* preload tables */
+	asm volatile (
+		"ldr q28, %0\n" /* low4 */
+		"ldr q24, %1\n" /* v low table */
+		"ldr q25, %2\n" /* v high table */
+		:
+		: "m" (gfconst16.low4[0]),
+		"m" (raid_gfmulpshufb[V][0][0]), "m" (raid_gfmulpshufb[V][1][0])
+	);
+
 	for (i = 0; i < size; i += 16) {
 		asm volatile (
-			"ldr q28, %3\n" /* low4 */
-			"ldr q24, %4\n" /* v low table */
-			"ldr q25, %5\n" /* v high table */
 			"ldr q0, %1\n"
 			"ldr q1, %2\n"
 			"eor v0.16b, v0.16b, v1.16b\n"
@@ -679,8 +686,7 @@ void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			"eor v2.16b, v2.16b, v3.16b\n"
 			"str q2, %0\n"
 			: "=m" (pa[i])
-			: "m" (p[i]), "m" (pa[i]), "m" (gfconst16.low4[0]),
-			"m" (raid_gfmulpshufb[V][0][0]), "m" (raid_gfmulpshufb[V][1][0])
+			: "m" (p[i]), "m" (pa[i])
 		);
 	}
 
@@ -721,71 +727,69 @@ void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_neon_begin();
 
+	/* preload tables */
+	asm volatile (
+		"ldr q28, %0\n" /* low4 */
+		"ldr q20, %1\n" /* v[0] low table */
+		"ldr q21, %2\n" /* v[0] high table */
+		"ldr q22, %3\n" /* v[1] low table */
+		"ldr q23, %4\n" /* v[1] high table */
+		"ldr q24, %5\n" /* v[2] low table */
+		"ldr q25, %6\n" /* v[2] high table */
+		"ldr q26, %7\n" /* v[3] low table */
+		"ldr q27, %8\n" /* v[3] high table */
+		:
+		: "m" (gfconst16.low4[0]),
+		"m" (raid_gfmulpshufb[V[0]][0][0]), "m" (raid_gfmulpshufb[V[0]][1][0]),
+		"m" (raid_gfmulpshufb[V[1]][0][0]), "m" (raid_gfmulpshufb[V[1]][1][0]),
+		"m" (raid_gfmulpshufb[V[2]][0][0]), "m" (raid_gfmulpshufb[V[2]][1][0]),
+		"m" (raid_gfmulpshufb[V[3]][0][0]), "m" (raid_gfmulpshufb[V[3]][1][0])
+	);
+
 	for (i = 0; i < size; i += 16) {
 		asm volatile (
-			"ldr q28, %2\n" /* low4 */
-
 			/* load delta 0 */
-			"ldr q0, %3\n"
-			"ldr q2, %4\n"
+			"ldr q0, %2\n"
+			"ldr q2, %3\n"
 			"eor v0.16b, v0.16b, v2.16b\n"
 
 			/* load delta 1 */
-			"ldr q1, %5\n"
-			"ldr q3, %6\n"
+			"ldr q1, %4\n"
+			"ldr q3, %5\n"
 			"eor v1.16b, v1.16b, v3.16b\n"
 
-			/* reconstruct pa[0] */
-			"ldr q24, %7\n" /* v[0] low table */
-			"ldr q25, %8\n" /* v[0] high table */
+			/* split delta 0 */
 			"ushr v17.16b, v0.16b, #4\n"
 			"and v16.16b, v0.16b, v28.16b\n"
 			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v4.16b, {v24.16b}, v16.16b\n"
-			"tbl v5.16b, {v25.16b}, v17.16b\n"
+
+			/* split delta 1 */
+			"ushr v19.16b, v1.16b, #4\n"
+			"and v18.16b, v1.16b, v28.16b\n"
+			"and v19.16b, v19.16b, v28.16b\n"
+
+			/* reconstruct pa[0] */
+			"tbl v4.16b, {v20.16b}, v16.16b\n"
+			"tbl v5.16b, {v21.16b}, v17.16b\n"
 			"eor v4.16b, v4.16b, v5.16b\n" /* v4 has delta0 * V[0] */
-
-			"ldr q24, %9\n" /* v[1] low table */
-			"ldr q25, %10\n" /* v[1] high table */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v6.16b, {v24.16b}, v16.16b\n"
-			"tbl v7.16b, {v25.16b}, v17.16b\n"
+			"tbl v6.16b, {v22.16b}, v18.16b\n"
+			"tbl v7.16b, {v23.16b}, v19.16b\n"
 			"eor v6.16b, v6.16b, v7.16b\n" /* v6 has delta1 * V[1] */
-
 			"eor v4.16b, v4.16b, v6.16b\n"
 			"str q4, %0\n"
 
 			/* reconstruct pa[1] */
-			"ldr q24, %11\n" /* v[2] low table */
-			"ldr q25, %12\n" /* v[2] high table */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
 			"tbl v4.16b, {v24.16b}, v16.16b\n"
 			"tbl v5.16b, {v25.16b}, v17.16b\n"
 			"eor v4.16b, v4.16b, v5.16b\n" /* v4 has delta0 * V[2] */
-
-			"ldr q24, %13\n" /* v[3] low table */
-			"ldr q25, %14\n" /* v[3] high table */
-			"ushr v17.16b, v1.16b, #4\n"
-			"and v16.16b, v1.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v6.16b, {v24.16b}, v16.16b\n"
-			"tbl v7.16b, {v25.16b}, v17.16b\n"
+			"tbl v6.16b, {v26.16b}, v18.16b\n"
+			"tbl v7.16b, {v27.16b}, v19.16b\n"
 			"eor v6.16b, v6.16b, v7.16b\n" /* v6 has delta1 * V[3] */
-
 			"eor v4.16b, v4.16b, v6.16b\n"
 			"str q4, %1\n"
 			: "=m" (pa[0][i]), "=m" (pa[1][i])
-			: "m" (gfconst16.low4[0]),
-			"m" (p[0][i]), "m" (pa[0][i]),
-			"m" (p[1][i]), "m" (pa[1][i]),
-			"m" (raid_gfmulpshufb[V[0]][0][0]), "m" (raid_gfmulpshufb[V[0]][1][0]),
-			"m" (raid_gfmulpshufb[V[1]][0][0]), "m" (raid_gfmulpshufb[V[1]][1][0]),
-			"m" (raid_gfmulpshufb[V[2]][0][0]), "m" (raid_gfmulpshufb[V[2]][1][0]),
-			"m" (raid_gfmulpshufb[V[3]][0][0]), "m" (raid_gfmulpshufb[V[3]][1][0])
+			: "m" (p[0][i]), "m" (pa[0][i]),
+			"m" (p[1][i]), "m" (pa[1][i])
 		);
 	}
 
@@ -826,6 +830,13 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_neon_begin();
 
+	/* preload tables */
+	asm volatile (
+		"ldr q28, %0\n" /* low4 */
+		:
+		: "m" (gfconst16.low4[0])
+	);
+
 	for (i = 0; i < size; i += 16) {
 		/* delta */
 		for (j = 0; j < N; ++j) {
@@ -848,9 +859,8 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			for (k = 0; k < N; ++k) {
 				uint8_t m = V[j * N + k];
 				asm volatile (
-					"ldr q28, %1\n" /* low4 */
-					"ldr q24, %2\n"
-					"ldr q25, %3\n"
+					"ldr q24, %1\n"
+					"ldr q25, %2\n"
 					"ldr q4, %0\n"
 					"ushr v17.16b, v4.16b, #4\n"
 					"and v16.16b, v4.16b, v28.16b\n"
@@ -860,7 +870,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 					"eor v2.16b, v2.16b, v3.16b\n"
 					"eor v0.16b, v0.16b, v2.16b\n"
 					:
-					: "m" (pd[k * 16]), "m" (gfconst16.low4[0]),
+					: "m" (pd[k * 16]),
 					"m" (raid_gfmulpshufb[m][0][0]), "m" (raid_gfmulpshufb[m][1][0])
 				);
 			}
