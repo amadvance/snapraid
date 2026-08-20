@@ -1097,7 +1097,6 @@ static void test_stream(void)
 	}
 }
 
-
 void selftest(void)
 {
 	log_tag("selftest:\n");
@@ -1127,9 +1126,24 @@ void selftest(void)
 	test_wnmatch();
 	test_parse_smartctl();
 	test_smart_ignore();
+	raid_mode(RAID_MODE_CAUCHY_RAID);
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed SELF test\n");
+		log_fatal(EINTERNAL, "Failed SELF Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	raid_mode(RAID_MODE_CAUCHY_AES);
+	if (raid_selftest() != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed SELF Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	raid_mode(RAID_MODE_VANDERMONDE_RAID);
+	if (raid_selftest() != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed SELF Vandermonde RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1212,7 +1226,7 @@ void selftest(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* Verify raid_mode get/set behavior */
+	/* verify raid_mode get/set behavior */
 	int cur = raid_mode(RAID_MODE_GET);
 	int prev = raid_mode(RAID_MODE_CAUCHY_AES);
 	if (prev != cur) {
@@ -1227,6 +1241,8 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	raid_mode(prev);
+	
+	/* restore default mode */
+	raid_mode(RAID_MODE_CAUCHY_RAID);
 }
 

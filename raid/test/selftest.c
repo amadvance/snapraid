@@ -29,6 +29,7 @@ int main(void)
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
+	raid_mode(RAID_MODE_CAUCHY_RAID);
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
@@ -41,11 +42,22 @@ int main(void)
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
+	raid_mode(RAID_MODE_CAUCHY_AES);
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
+
+	printf("Test Vandermonde RAID\n");
+	raid_mode(RAID_MODE_VANDERMONDE_RAID);
+	if (raid_selftest() != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
+	raid_mode(RAID_MODE_CAUCHY_RAID);
 
 	printf("OK\n");
 	return 0;

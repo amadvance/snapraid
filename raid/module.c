@@ -564,10 +564,17 @@ int raid_selftest(void)
 	int ir[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int i, np;
+	int np_max;
 	int ret = 0;
 
 	/* ensure to have enough space for data */
 	BUG_ON(nd * size > 65536);
+
+	/* vandermonde mode only supports up to 3 parity rows */
+	if (raid_mode_active == RAID_MODE_VANDERMONDE_RAID)
+		np_max = 3;
+	else
+		np_max = RAID_PARITY_MAX;
 
 	v = raid_malloc_vector(nv, size, &v_alloc);
 	if (!v) {
@@ -584,14 +591,14 @@ int raid_selftest(void)
 		ref[i] = ((uint8_t *)raid_gfmul) + size * i;
 
 	/* setup reference parity */
-	for (i = 0; i < RAID_PARITY_MAX; ++i)
+	for (i = 0; i < np_max; ++i)
 		ref[nd + i] = v[nd + RAID_PARITY_MAX + i];
 
 	/* compute reference parity */
-	raid_gen_ref(nd, RAID_PARITY_MAX, size, ref);
+	raid_gen_ref(nd, np_max, size, ref);
 
 	/* test for each parity level */
-	for (np = 1; np <= RAID_PARITY_MAX; ++np) {
+	for (np = 1; np <= np_max; ++np) {
 		/* test parity generation */
 		ret = raid_test_par(nd, np, size, v, ref);
 		if (ret != 0) {
