@@ -786,50 +786,87 @@ void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		"m" (raid_gfmulpshufb[V[3]][0][0]), "m" (raid_gfmulpshufb[V[3]][1][0])
 	);
 
-	for (i = 0; i < size; i += 16) {
+	for (i = 0; i < size; i += 32) {
 		asm volatile (
-			/* load delta 0 */
-			"ldr q0, %2\n"
-			"ldr q2, %3\n"
-			"eor v0.16b, v0.16b, v2.16b\n"
+			/* load delta 0 block 0 & 1 */
+			"ldr q0, %4\n"
+			"ldr q2, %5\n"
+			"ldr q8, %8\n"
+			"ldr q9, %9\n"
+			"eor v0.16b, v0.16b, v8.16b\n"
+			"eor v2.16b, v2.16b, v9.16b\n"
 
-			/* load delta 1 */
-			"ldr q1, %4\n"
-			"ldr q3, %5\n"
-			"eor v1.16b, v1.16b, v3.16b\n"
+			/* load delta 1 block 0 & 1 */
+			"ldr q4, %6\n"
+			"ldr q6, %7\n"
+			"ldr q10, %10\n"
+			"ldr q11, %11\n"
+			"eor v4.16b, v4.16b, v10.16b\n"
+			"eor v6.16b, v6.16b, v11.16b\n"
 
-			/* split delta 0 */
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
+			/* split delta 0 (v0, v2 -> v0 low, v1 high, v2 low, v3 high) */
+			"ushr v1.16b, v0.16b, #4\n"
+			"ushr v3.16b, v2.16b, #4\n"
+			"and v0.16b, v0.16b, v28.16b\n"
+			"and v1.16b, v1.16b, v28.16b\n"
+			"and v2.16b, v2.16b, v28.16b\n"
+			"and v3.16b, v3.16b, v28.16b\n"
 
-			/* split delta 1 */
-			"ushr v19.16b, v1.16b, #4\n"
-			"and v18.16b, v1.16b, v28.16b\n"
-			"and v19.16b, v19.16b, v28.16b\n"
+			/* split delta 1 (v4, v6 -> v4 low, v5 high, v6 low, v7 high) */
+			"ushr v5.16b, v4.16b, #4\n"
+			"ushr v7.16b, v6.16b, #4\n"
+			"and v4.16b, v4.16b, v28.16b\n"
+			"and v5.16b, v5.16b, v28.16b\n"
+			"and v6.16b, v6.16b, v28.16b\n"
+			"and v7.16b, v7.16b, v28.16b\n"
 
-			/* reconstruct pa[0] */
-			"tbl v4.16b, {v20.16b}, v16.16b\n"
-			"tbl v5.16b, {v21.16b}, v17.16b\n"
-			"eor v4.16b, v4.16b, v5.16b\n" /* v4 has delta0 * V[0] */
-			"tbl v6.16b, {v22.16b}, v18.16b\n"
-			"tbl v7.16b, {v23.16b}, v19.16b\n"
-			"eor v6.16b, v6.16b, v7.16b\n" /* v6 has delta1 * V[1] */
-			"eor v4.16b, v4.16b, v6.16b\n"
-			"str q4, %0\n"
+			/* reconstruct pa[0] (v8 = block 0, v9 = block 1) */
+			/* V[0] * delta 0 */
+			"tbl v8.16b, {v20.16b}, v0.16b\n"
+			"tbl v9.16b, {v20.16b}, v2.16b\n"
+			"tbl v12.16b, {v21.16b}, v1.16b\n"
+			"tbl v13.16b, {v21.16b}, v3.16b\n"
+			"eor v8.16b, v8.16b, v12.16b\n"
+			"eor v9.16b, v9.16b, v13.16b\n"
 
-			/* reconstruct pa[1] */
-			"tbl v4.16b, {v24.16b}, v16.16b\n"
-			"tbl v5.16b, {v25.16b}, v17.16b\n"
-			"eor v4.16b, v4.16b, v5.16b\n" /* v4 has delta0 * V[2] */
-			"tbl v6.16b, {v26.16b}, v18.16b\n"
-			"tbl v7.16b, {v27.16b}, v19.16b\n"
-			"eor v6.16b, v6.16b, v7.16b\n" /* v6 has delta1 * V[3] */
-			"eor v4.16b, v4.16b, v6.16b\n"
-			"str q4, %1\n"
-			: "=m" (pa[0][i]), "=m" (pa[1][i])
-			: "m" (p[0][i]), "m" (pa[0][i]),
-			"m" (p[1][i]), "m" (pa[1][i])
+			/* V[1] * delta 1 */
+			"tbl v12.16b, {v22.16b}, v4.16b\n"
+			"tbl v13.16b, {v22.16b}, v6.16b\n"
+			"tbl v14.16b, {v23.16b}, v5.16b\n"
+			"tbl v15.16b, {v23.16b}, v7.16b\n"
+			"eor v12.16b, v12.16b, v14.16b\n"
+			"eor v13.16b, v13.16b, v15.16b\n"
+			"eor v8.16b, v8.16b, v12.16b\n"
+			"eor v9.16b, v9.16b, v13.16b\n"
+			"str q8, %0\n"
+			"str q9, %1\n"
+
+			/* reconstruct pa[1] (v10 = block 0, v11 = block 1) */
+			/* V[2] * delta 0 */
+			"tbl v10.16b, {v24.16b}, v0.16b\n"
+			"tbl v11.16b, {v24.16b}, v2.16b\n"
+			"tbl v12.16b, {v25.16b}, v1.16b\n"
+			"tbl v13.16b, {v25.16b}, v3.16b\n"
+			"eor v10.16b, v10.16b, v12.16b\n"
+			"eor v11.16b, v11.16b, v13.16b\n"
+
+			/* V[3] * delta 1 */
+			"tbl v12.16b, {v26.16b}, v4.16b\n"
+			"tbl v13.16b, {v26.16b}, v6.16b\n"
+			"tbl v14.16b, {v27.16b}, v5.16b\n"
+			"tbl v15.16b, {v27.16b}, v7.16b\n"
+			"eor v12.16b, v12.16b, v14.16b\n"
+			"eor v13.16b, v13.16b, v15.16b\n"
+			"eor v10.16b, v10.16b, v12.16b\n"
+			"eor v11.16b, v11.16b, v13.16b\n"
+			"str q10, %2\n"
+			"str q11, %3\n"
+			: "=m" (pa[0][i]), "=m" (pa[0][i + 16]),
+			"=m" (pa[1][i]), "=m" (pa[1][i + 16])
+			: "m" (p[0][i]), "m" (p[0][i + 16]),
+			"m" (p[1][i]), "m" (p[1][i + 16]),
+			"m" (pa[0][i]), "m" (pa[0][i + 16]),
+			"m" (pa[1][i]), "m" (pa[1][i + 16])
 		);
 	}
 
