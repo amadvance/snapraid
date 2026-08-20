@@ -1048,16 +1048,18 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 64 + 64];
-	uint8_t *pd = __align_ptr(buffer, 64);
 	size_t i;
 	int j, k;
 
+	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
 			G[j * N + k] = A(ip[j], id[k]);
 
+	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
@@ -1069,23 +1071,108 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 
 	for (i = 0; i < size; i += 64) {
 		/* delta */
-		for (j = 0; j < N; ++j) {
-			asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[j][i]));
-			asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (pa[j][i]));
-			asm volatile ("vpxorq    %zmm1,%zmm0,%zmm0");
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pd[j * 64]));
-		}
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm0\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm0, %%zmm0\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
+
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm1\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm1, %%zmm1\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
+
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm2\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm2, %%zmm2\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
+
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm3\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm3, %%zmm3\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm4\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm4, %%zmm4\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm5\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm5, %%zmm5\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx"
+		);
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
-			for (k = 0; k < N; ++k) {
-				asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (pd[k * 64]));
-				asm volatile ("vpbroadcastq %0,%%zmm2" : : "m" (raid_gfaffine_raid[V[j * N + k]][0]));
-				asm volatile ("vgf2p8affineqb $0,%zmm2,%zmm4,%zmm2");
-				asm volatile ("vpxorq    %zmm2,%zmm0,%zmm0");
-			}
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[j][i]));
+			asm volatile (
+				"movzbq 0(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vgf2p8affineqb $0, %%zmm6, %%zmm0, %%zmm7\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 1(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vgf2p8affineqb $0, %%zmm6, %%zmm1, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 2(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vgf2p8affineqb $0, %%zmm6, %%zmm2, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 3(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vgf2p8affineqb $0, %%zmm6, %%zmm3, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 4(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vgf2p8affineqb $0, %%zmm6, %%zmm4, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 5(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vgf2p8affineqb $0, %%zmm6, %%zmm5, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+
+				"1:\n"
+				"movq %3, %%rax\n"
+				"vmovdqa64 %%zmm7, (%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfaffine_raid)
+				: "rax", "rcx"
+			);
 		}
 	}
 
@@ -1403,16 +1490,18 @@ void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 64 + 64];
-	uint8_t *pd = __align_ptr(buffer, 64);
 	size_t i;
 	int j, k;
 
+	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
 			G[j * N + k] = A(ip[j], id[k]);
 
+	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
@@ -1424,23 +1513,102 @@ void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 
 	for (i = 0; i < size; i += 64) {
 		/* delta */
-		for (j = 0; j < N; ++j) {
-			asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[j][i]));
-			asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (pa[j][i]));
-			asm volatile ("vpxorq    %zmm1,%zmm0,%zmm0");
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pd[j * 64]));
-		}
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm0\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm0, %%zmm0\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
+
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm1\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm1, %%zmm1\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
+
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm2\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm2, %%zmm2\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
+
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm3\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm3, %%zmm3\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm4\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm4, %%zmm4\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm5\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm6\n"
+			"vpxorq %%zmm6, %%zmm5, %%zmm5\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx"
+		);
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
-			for (k = 0; k < N; ++k) {
-				asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (pd[k * 64]));
-				asm volatile ("vpbroadcastb %0,%%zmm2" : : "m" (V[j * N + k]));
-				asm volatile ("vgf2p8mulb %zmm4,%zmm2,%zmm2");
-				asm volatile ("vpxorq    %zmm2,%zmm0,%zmm0");
-			}
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[j][i]));
+			asm volatile (
+				"vpbroadcastb 0(%2), %%zmm6\n"
+				"vgf2p8mulb %%zmm0, %%zmm6, %%zmm7\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 1(%2), %%zmm6\n"
+				"vgf2p8mulb %%zmm1, %%zmm6, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 2(%2), %%zmm6\n"
+				"vgf2p8mulb %%zmm2, %%zmm6, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 3(%2), %%zmm6\n"
+				"vgf2p8mulb %%zmm3, %%zmm6, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 4(%2), %%zmm6\n"
+				"vgf2p8mulb %%zmm4, %%zmm6, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 5(%2), %%zmm6\n"
+				"vgf2p8mulb %%zmm5, %%zmm6, %%zmm6\n"
+				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
+
+				"1:\n"
+				"movq %3, %%rax\n"
+				"vmovdqa64 %%zmm7, (%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j])
+				: "rax"
+			);
 		}
 	}
 
