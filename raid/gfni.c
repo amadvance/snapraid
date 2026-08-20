@@ -978,6 +978,7 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t C[RAID_PARITY_MAX * RAID_PARITY_MAX][8];
 	size_t i;
 	int j, k;
 
@@ -988,6 +989,10 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* precompute affine representations of the coefficients */
+	for (j = 0; j < N * N; ++j)
+		memcpy(C[j], raid_gfaffine_raid[V[j]], 8);
 
 	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
@@ -1075,15 +1080,13 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"movzbq 0(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vpbroadcastq 0(%2), %%ymm14\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm0, %%ymm12\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm1, %%ymm13\n"
 				"cmpq $1, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 1(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vpbroadcastq 8(%2), %%ymm14\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm2, %%ymm15\n"
 				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm3, %%ymm15\n"
@@ -1091,8 +1094,7 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 				"cmpq $2, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 2(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vpbroadcastq 16(%2), %%ymm14\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm4, %%ymm15\n"
 				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm5, %%ymm15\n"
@@ -1100,8 +1102,7 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 				"cmpq $3, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 3(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vpbroadcastq 24(%2), %%ymm14\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm6, %%ymm15\n"
 				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm7, %%ymm15\n"
@@ -1109,8 +1110,7 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 				"cmpq $4, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 4(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vpbroadcastq 32(%2), %%ymm14\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm8, %%ymm15\n"
 				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm9, %%ymm15\n"
@@ -1118,8 +1118,7 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 				"cmpq $5, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 5(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vpbroadcastq 40(%2), %%ymm14\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm10, %%ymm15\n"
 				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
 				"vgf2p8affineqb $0, %%ymm14, %%ymm11, %%ymm15\n"
@@ -1130,8 +1129,8 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 				"vmovdqa %%ymm12, 0(%%rax, %1)\n"
 				"vmovdqa %%ymm13, 32(%%rax, %1)\n"
 				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfaffine_raid)
-				: "rax", "rcx", "cc", "memory"
+				: "r" ((uint64_t)N), "r" (i), "r" (C[j * N]), "r" (pa[j])
+				: "rax", "cc", "memory"
 			);
 		}
 	}
@@ -1150,6 +1149,7 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t C[RAID_PARITY_MAX * RAID_PARITY_MAX][8];
 	size_t i;
 	int j, k;
 
@@ -1160,6 +1160,10 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* precompute affine representations of the coefficients */
+	for (j = 0; j < N * N; ++j)
+		memcpy(C[j], raid_gfaffine_raid[V[j]], 8);
 
 	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
@@ -1229,42 +1233,36 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"movzbq 0(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vpbroadcastq 0(%2), %%zmm6\n"
 				"vgf2p8affineqb $0, %%zmm6, %%zmm0, %%zmm7\n"
 				"cmpq $1, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 1(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vpbroadcastq 8(%2), %%zmm6\n"
 				"vgf2p8affineqb $0, %%zmm6, %%zmm1, %%zmm6\n"
 				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
 				"cmpq $2, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 2(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vpbroadcastq 16(%2), %%zmm6\n"
 				"vgf2p8affineqb $0, %%zmm6, %%zmm2, %%zmm6\n"
 				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
 				"cmpq $3, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 3(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vpbroadcastq 24(%2), %%zmm6\n"
 				"vgf2p8affineqb $0, %%zmm6, %%zmm3, %%zmm6\n"
 				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
 				"cmpq $4, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 4(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vpbroadcastq 32(%2), %%zmm6\n"
 				"vgf2p8affineqb $0, %%zmm6, %%zmm4, %%zmm6\n"
 				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
 				"cmpq $5, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 5(%2), %%rcx\n"
-				"vpbroadcastq (%4, %%rcx, 8), %%zmm6\n"
+				"vpbroadcastq 40(%2), %%zmm6\n"
 				"vgf2p8affineqb $0, %%zmm6, %%zmm5, %%zmm6\n"
 				"vpxorq %%zmm6, %%zmm7, %%zmm7\n"
 
@@ -1272,8 +1270,8 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 				"movq %3, %%rax\n"
 				"vmovdqa64 %%zmm7, (%%rax, %1)\n"
 				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfaffine_raid)
-				: "rax", "rcx", "cc", "memory"
+				: "r" ((uint64_t)N), "r" (i), "r" (C[j * N]), "r" (pa[j])
+				: "rax", "cc", "memory"
 			);
 		}
 	}
