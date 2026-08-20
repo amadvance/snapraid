@@ -267,8 +267,16 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
 /**
  * Scan for failed blocks.
  *
- * This function identifies the failed data and parity blocks using the
- * available redundancy.
+ * This function searches for a set of failed data and parity blocks
+ * compatible with the available redundancy.
+ *
+ * It first checks for no failures, and then tries candidate combinations
+ * with an increasing number of failures, from 1 up to @np - 1. The first
+ * combination satisfying the redundancy information is returned.
+ *
+ * If multiple combinations satisfy the redundancy information, only the
+ * first one encountered is returned. This function does not check that the
+ * returned combination is unique.
  *
  * It uses a brute force method, and then the call can be expensive.
  * The expected execution time is proportional to the binomial coefficient
@@ -299,7 +307,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  *   Each block has @size bytes and must be aligned to a 64-byte boundary.
  * @return Number of block indexes returned in the @ir vector.
  *   0 if no error is detected.
- *   -1 if it's not possible to identify the failed disks.
+ *   -1 if no compatible combination with fewer than @np failures is found.
  */
 int raid_scan(int *ir, int nd, int np, size_t size, void **v);
 

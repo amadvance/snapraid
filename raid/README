@@ -62,9 +62,12 @@ detect CPU capabilities and initialize mode dispatch.
 
   int raid_scan(int *ir, int nd, int np, size_t size, void **v)
     Searches for up to 'np - 1' failed blocks using available redundancy.
-    Each block pointed to by 'v' must be aligned to a 64-byte boundary.
-    Fills 'ir' with failed block indexes and returns the number of failures
-    found (0 if no error), or -1 if failed blocks cannot be uniquely located.
+    Candidates are tested with an increasing number of failures, and the
+    first combination matching the redundancy is returned. If multiple
+    combinations match, the first one encountered is returned without
+    checking uniqueness. Each block pointed to by 'v' must be aligned to a
+    64-byte boundary. Fills 'ir' with the matching block indexes and returns
+    their number (0 if no error), or -1 if no compatible combination is found.
 
   int raid_selftest(void)
     Runs startup verification tests for parity generation, recovery, and
