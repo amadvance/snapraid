@@ -41,7 +41,7 @@ OBJS = raid.o check.o int.o sse2.o ssse3.o avx2.o avx512.o gfni.o neon.o tables.
 %.o: ../%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: fulltest speedtest selftest invtest mktables tables.c
+all: fulltest speedtest selftest invtest invtestx mktables tables.c
 
 fulltest: $(OBJS) fulltest.o
 	$(CC) $(CFLAGS) -o fulltest $^
@@ -54,6 +54,9 @@ selftest: $(OBJS) selftest.o
 
 invtest: $(OBJS) invtest.o
 	$(CC) $(CFLAGS) -o invtest $^
+
+invtestx: $(OBJS) invtestx.o
+	$(CC) $(CFLAGS) -pthread -o invtestx $^
 
 mktables: mktables.o
 	$(CC) $(CFLAGS) -o mktables $^
@@ -125,5 +128,5 @@ clean:
 	rm -rf coverage
 
 distclean: clean
-	rm -f fulltest speedtest selftest invtest
+	rm -f fulltest speedtest selftest invtest invtestx
 
