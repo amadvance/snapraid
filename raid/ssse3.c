@@ -1258,6 +1258,78 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_sse_begin();
 
+#ifdef CONFIG_X86_64
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[V][0][0]));
+	asm volatile ("movdqa %0,%%xmm5" : : "m" (raid_gfmulpshufb[V][1][0]));
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (p[i + 32]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (p[i + 48]));
+
+		asm volatile ("movdqa %0,%%xmm8" : : "m" (pa[i]));
+		asm volatile ("movdqa %0,%%xmm9" : : "m" (pa[i + 16]));
+		asm volatile ("movdqa %0,%%xmm10" : : "m" (pa[i + 32]));
+		asm volatile ("movdqa %0,%%xmm11" : : "m" (pa[i + 48]));
+
+		asm volatile ("pxor %xmm8,%xmm0");
+		asm volatile ("pxor %xmm9,%xmm1");
+		asm volatile ("pxor %xmm10,%xmm2");
+		asm volatile ("pxor %xmm11,%xmm3");
+
+		asm volatile ("movdqa %xmm0,%xmm8");
+		asm volatile ("movdqa %xmm1,%xmm9");
+		asm volatile ("movdqa %xmm2,%xmm10");
+		asm volatile ("movdqa %xmm3,%xmm11");
+
+		asm volatile ("psrlw $4,%xmm8");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("psrlw $4,%xmm10");
+		asm volatile ("psrlw $4,%xmm11");
+
+		asm volatile ("pand %xmm7,%xmm0");
+		asm volatile ("pand %xmm7,%xmm1");
+		asm volatile ("pand %xmm7,%xmm2");
+		asm volatile ("pand %xmm7,%xmm3");
+
+		asm volatile ("pand %xmm7,%xmm8");
+		asm volatile ("pand %xmm7,%xmm9");
+		asm volatile ("pand %xmm7,%xmm10");
+		asm volatile ("pand %xmm7,%xmm11");
+
+		asm volatile ("movdqa %xmm4,%xmm12");
+		asm volatile ("movdqa %xmm4,%xmm13");
+		asm volatile ("movdqa %xmm4,%xmm14");
+		asm volatile ("movdqa %xmm4,%xmm15");
+
+		asm volatile ("pshufb %xmm0,%xmm12");
+		asm volatile ("pshufb %xmm1,%xmm13");
+		asm volatile ("pshufb %xmm2,%xmm14");
+		asm volatile ("pshufb %xmm3,%xmm15");
+
+		asm volatile ("movdqa %xmm5,%xmm0");
+		asm volatile ("movdqa %xmm5,%xmm1");
+		asm volatile ("movdqa %xmm5,%xmm2");
+		asm volatile ("movdqa %xmm5,%xmm3");
+
+		asm volatile ("pshufb %xmm8,%xmm0");
+		asm volatile ("pshufb %xmm9,%xmm1");
+		asm volatile ("pshufb %xmm10,%xmm2");
+		asm volatile ("pshufb %xmm11,%xmm3");
+
+		asm volatile ("pxor %xmm12,%xmm0");
+		asm volatile ("pxor %xmm13,%xmm1");
+		asm volatile ("pxor %xmm14,%xmm2");
+		asm volatile ("pxor %xmm15,%xmm3");
+
+		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[i + 16]));
+		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i + 32]));
+		asm volatile ("movdqa %%xmm3,%0" : "=m" (pa[i + 48]));
+	}
+#else /* CONFIG_X86_32 */
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 	asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[V][0][0]));
 	asm volatile ("movdqa %0,%%xmm5" : : "m" (raid_gfmulpshufb[V][1][0]));
@@ -1277,6 +1349,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm3,%xmm2");
 		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i]));
 	}
+#endif
 
 	raid_sse_end();
 }

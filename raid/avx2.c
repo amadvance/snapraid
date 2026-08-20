@@ -998,17 +998,33 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[V][0][0]));
 	asm volatile ("vbroadcasti128 %0,%%ymm5" : : "m" (raid_gfmulpshufb[V][1][0]));
 
-	for (i = 0; i < size; i += 32) {
+	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (pa[i]));
-		asm volatile ("vpxor   %ymm1,%ymm0,%ymm0");
-		asm volatile ("vpsrlw  $4,%ymm0,%ymm1");
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
+		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[i]));
+		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[i + 32]));
+
+		asm volatile ("vpxor   %ymm2,%ymm0,%ymm0");
+		asm volatile ("vpxor   %ymm3,%ymm1,%ymm1");
+
+		asm volatile ("vpsrlw  $4,%ymm0,%ymm2");
+		asm volatile ("vpsrlw  $4,%ymm1,%ymm3");
+
 		asm volatile ("vpand   %ymm7,%ymm0,%ymm0");
 		asm volatile ("vpand   %ymm7,%ymm1,%ymm1");
-		asm volatile ("vpshufb %ymm0,%ymm4,%ymm2");
-		asm volatile ("vpshufb %ymm1,%ymm5,%ymm3");
-		asm volatile ("vpxor   %ymm3,%ymm2,%ymm2");
-		asm volatile ("vmovdqa %%ymm2,%0" : "=m" (pa[i]));
+		asm volatile ("vpand   %ymm7,%ymm2,%ymm2");
+		asm volatile ("vpand   %ymm7,%ymm3,%ymm3");
+
+		asm volatile ("vpshufb %ymm0,%ymm4,%ymm0");
+		asm volatile ("vpshufb %ymm1,%ymm4,%ymm1");
+		asm volatile ("vpshufb %ymm2,%ymm5,%ymm2");
+		asm volatile ("vpshufb %ymm3,%ymm5,%ymm3");
+
+		asm volatile ("vpxor   %ymm2,%ymm0,%ymm0");
+		asm volatile ("vpxor   %ymm3,%ymm1,%ymm1");
+
+		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
+		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
 	}
 
 	raid_avx_end();

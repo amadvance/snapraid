@@ -673,20 +673,60 @@ void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		"m" (raid_gfmulpshufb[V][0][0]), "m" (raid_gfmulpshufb[V][1][0])
 	);
 
-	for (i = 0; i < size; i += 16) {
+	for (i = 0; i < size; i += 64) {
 		asm volatile (
-			"ldr q0, %1\n"
-			"ldr q1, %2\n"
-			"eor v0.16b, v0.16b, v1.16b\n"
-			"ushr v17.16b, v0.16b, #4\n"
-			"and v16.16b, v0.16b, v28.16b\n"
-			"and v17.16b, v17.16b, v28.16b\n"
-			"tbl v2.16b, {v24.16b}, v16.16b\n"
-			"tbl v3.16b, {v25.16b}, v17.16b\n"
-			"eor v2.16b, v2.16b, v3.16b\n"
-			"str q2, %0\n"
-			: "=m" (pa[i])
-			: "m" (p[i]), "m" (pa[i])
+			"ldr q0, %4\n"
+			"ldr q1, %5\n"
+			"ldr q2, %6\n"
+			"ldr q3, %7\n"
+
+			"ldr q8, %8\n"
+			"ldr q9, %9\n"
+			"ldr q10, %10\n"
+			"ldr q11, %11\n"
+
+			"eor v0.16b, v0.16b, v8.16b\n"
+			"eor v1.16b, v1.16b, v9.16b\n"
+			"eor v2.16b, v2.16b, v10.16b\n"
+			"eor v3.16b, v3.16b, v11.16b\n"
+
+			"ushr v8.16b, v0.16b, #4\n"
+			"ushr v9.16b, v1.16b, #4\n"
+			"ushr v10.16b, v2.16b, #4\n"
+			"ushr v11.16b, v3.16b, #4\n"
+
+			"and v0.16b, v0.16b, v28.16b\n"
+			"and v1.16b, v1.16b, v28.16b\n"
+			"and v2.16b, v2.16b, v28.16b\n"
+			"and v3.16b, v3.16b, v28.16b\n"
+
+			"and v8.16b, v8.16b, v28.16b\n"
+			"and v9.16b, v9.16b, v28.16b\n"
+			"and v10.16b, v10.16b, v28.16b\n"
+			"and v11.16b, v11.16b, v28.16b\n"
+
+			"tbl v12.16b, {v24.16b}, v0.16b\n"
+			"tbl v13.16b, {v24.16b}, v1.16b\n"
+			"tbl v14.16b, {v24.16b}, v2.16b\n"
+			"tbl v15.16b, {v24.16b}, v3.16b\n"
+
+			"tbl v8.16b, {v25.16b}, v8.16b\n"
+			"tbl v9.16b, {v25.16b}, v9.16b\n"
+			"tbl v10.16b, {v25.16b}, v10.16b\n"
+			"tbl v11.16b, {v25.16b}, v11.16b\n"
+
+			"eor v0.16b, v12.16b, v8.16b\n"
+			"eor v1.16b, v13.16b, v9.16b\n"
+			"eor v2.16b, v14.16b, v10.16b\n"
+			"eor v3.16b, v15.16b, v11.16b\n"
+
+			"str q0, %0\n"
+			"str q1, %1\n"
+			"str q2, %2\n"
+			"str q3, %3\n"
+			: "=m" (pa[i]), "=m" (pa[i + 16]), "=m" (pa[i + 32]), "=m" (pa[i + 48])
+			: "m" (p[i]), "m" (p[i + 16]), "m" (p[i + 32]), "m" (p[i + 48]),
+			"m" (pa[i]), "m" (pa[i + 16]), "m" (pa[i + 32]), "m" (pa[i + 48])
 		);
 	}
 
