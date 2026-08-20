@@ -26,6 +26,35 @@ jobs:
       - run: ./configure --enable-warning-as-error
       - run: make all snapcheck
       - run: make distcheck
+  build-arm32:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-arm-linux-gnueabihf \
+            libc6-dev-armhf-cross \
+            qemu-user
+      - run: autoreconf -i
+      - run: |
+          CC=arm-linux-gnueabihf-gcc \
+          CFLAGS="-O2 -march=armv7-a -mfpu=neon -mfloat-abi=hard" \
+          TARGET_RUNNER="qemu-arm -cpu cortex-a15 -L /usr/arm-linux-gnueabihf" \
+          ./configure \
+            --build="$(./config.guess)" \
+            --host=arm-linux-gnueabihf \
+            --enable-warning-as-error
+      - run: make all
+      - run: |
+          file snapraid
+          arm-linux-gnueabihf-readelf -h snapraid
+      - run: |
+          qemu-arm \
+            -cpu cortex-a15 \
+            -L /usr/arm-linux-gnueabihf \
+            ./snapraid -V
+      - run: make check
   build-win:
     runs-on: windows-latest
     defaults:
