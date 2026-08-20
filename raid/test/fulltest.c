@@ -33,6 +33,9 @@ int main(void)
 #ifdef CONFIG_NEON
 	printf("Including ARM NEON\n");
 #endif
+#ifdef CONFIG_NEON32
+	printf("Including ARM NEON\n");
+#endif
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2())
 		printf("Including x86 SSE2\n");

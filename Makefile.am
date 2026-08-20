@@ -34,6 +34,7 @@ snapraid_SOURCES = \
 	raid/avx512.c \
 	raid/gfni.c \
 	raid/neon.c \
+	raid/neon32.c \
 	raid/helper.c \
 	raid/memory.c \
 	raid/test.c \

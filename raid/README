@@ -150,7 +150,8 @@ Implementation Structure
     avx2.c      x86 AVX2 (256-bit vectorization)
     avx512.c    x86 AVX-512BW (512-bit vectorization)
     gfni.c      x86 GFNI generation/recovery (RAID affine and AES multiply)
-    neon.c      ARM NEON (128-bit SIMD vectorization)
+    neon.c      AArch64 ARM NEON (128-bit SIMD vectorization)
+    neon32.c    AArch32 ARM NEON (128-bit SIMD vectorization)
 
 
 Testing and Benchmarks

@@ -352,7 +352,7 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 	}
 	printf("};\n\n");
 
-	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON)\n");
+	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for the Cauchy matrix.\n");
 	printf(" *\n");
@@ -384,7 +384,7 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 	printf("};\n");
 	printf("#endif\n\n");
 
-	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON)\n");
+	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for generic multiplication.\n");
 	printf(" *\n");

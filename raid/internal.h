@@ -23,9 +23,14 @@
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1
 #endif
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__aarch64__)
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #define CONFIG_NEON 1
+#endif
+#endif
+#if defined(__arm__)
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define CONFIG_NEON32 1
 #endif
 #endif
 #endif
@@ -198,6 +203,21 @@ void raid_gen6_neon_aes(int nd, size_t size, void **vv);
 void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_gen1_neon32(int nd, size_t size, void **vv);
+void raid_gen2_neon32_raid(int nd, size_t size, void **vv);
+void raid_gen2_neon32_aes(int nd, size_t size, void **vv);
+void raid_genz_neon32_raid(int nd, size_t size, void **vv);
+void raid_gen3_neon32_raid(int nd, size_t size, void **vv);
+void raid_gen3_neon32_aes(int nd, size_t size, void **vv);
+void raid_gen4_neon32_raid(int nd, size_t size, void **vv);
+void raid_gen4_neon32_aes(int nd, size_t size, void **vv);
+void raid_gen5_neon32_raid(int nd, size_t size, void **vv);
+void raid_gen5_neon32_aes(int nd, size_t size, void **vv);
+void raid_gen6_neon32_raid(int nd, size_t size, void **vv);
+void raid_gen6_neon32_aes(int nd, size_t size, void **vv);
+void raid_rec1_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Functions for parity computation.
@@ -323,7 +343,7 @@ const char * raid_rec_tag(int na);
  */
 int raid_selftest(void);
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
@@ -342,7 +362,7 @@ extern const uint8_t raid_gfinv_raid[256] __aligned(256);
 extern const uint8_t raid_gfvandermonde_raid[3][256] __aligned(256);
 extern const uint8_t raid_gfcauchy_raid[6][256] __aligned(256);
 extern const uint8_t raid_gfaffine_raid[256][8] __aligned(256);
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 extern const uint8_t raid_gfcauchypshufb_raid[251][5][2][16] __aligned(256);
 extern const uint8_t raid_gfmulpshufb_raid[256][2][16] __aligned(256);
 #endif
@@ -351,7 +371,7 @@ extern const uint8_t raid_gfmul_aes[256][256] __aligned(256);
 extern const uint8_t raid_gfexp_aes[256] __aligned(256);
 extern const uint8_t raid_gfinv_aes[256] __aligned(256);
 extern const uint8_t raid_gfcauchy_aes[6][256] __aligned(256);
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 extern const uint8_t raid_gfcauchypshufb_aes[251][5][2][16] __aligned(256);
 extern const uint8_t raid_gfmulpshufb_aes[256][2][16] __aligned(256);
 #endif
@@ -361,7 +381,7 @@ extern const uint8_t *raid_gfexp;
 extern const uint8_t *raid_gfinv;
 extern const uint8_t(*raid_gfvandermonde)[256];
 extern const uint8_t(*raid_gfcauchy)[256];
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 extern const uint8_t(*raid_gfcauchypshufb)[5][2][16];
 extern const uint8_t(*raid_gfmulpshufb)[2][16];
 #endif
@@ -473,6 +493,30 @@ static __always_inline void raid_neon_end(void)
 }
 
 void raid_register_neon(void);
+#endif
+
+#ifdef CONFIG_NEON32
+static __always_inline void raid_neon32_begin(void)
+{
+}
+
+static __always_inline void raid_neon32_end(void)
+{
+	/*
+	 * Clobbers registers used in AArch32 NEON asm operations.
+	 *
+	 * Like raid_neon_end(), the inner asm statements intentionally
+	 * preserve hidden NEON state across adjacent asm blocks. Keep the
+	 * dummy clobbers at the end of the function so the compiler preserves
+	 * the AAPCS32 callee-saved NEON registers when necessary.
+	 */
+	asm volatile ("" : : : "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7");
+	asm volatile ("" : : : "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15");
+	asm volatile ("" : : : "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23");
+	asm volatile ("" : : : "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31");
+}
+
+void raid_register_neon32(void);
 #endif
 
 #endif

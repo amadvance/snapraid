@@ -9272,7 +9272,7 @@ const uint8_t __aligned(256) raid_gfcauchy_raid[6][256] =
 	},
 };
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 /**
  * PSHUFB tables for the Cauchy matrix.
  *
@@ -14806,7 +14806,7 @@ const uint8_t __aligned(256) raid_gfcauchypshufb_raid[251][5][2][16] =
 };
 #endif
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 /**
  * PSHUFB tables for generic multiplication.
  *
@@ -24957,7 +24957,7 @@ const uint8_t __aligned(256) raid_gfcauchy_aes[6][256] =
 	},
 };
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 /**
  * PSHUFB tables for the Cauchy matrix.
  *
@@ -30491,7 +30491,7 @@ const uint8_t __aligned(256) raid_gfcauchypshufb_aes[251][5][2][16] =
 };
 #endif
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 /**
  * PSHUFB tables for generic multiplication.
  *
@@ -31526,4 +31526,3 @@ const uint8_t __aligned(256) raid_gfmulpshufb_aes[256][2][16] =
 	},
 };
 #endif
-

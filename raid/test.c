@@ -418,6 +418,9 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_NEON
 			test_setup(i) = raid_rec1_neon;
 #endif
+#ifdef CONFIG_NEON32
+			test_setup(i) = raid_rec1_neon32;
+#endif
 		} else if (i == 2) {
 			test_setup(i) = raid_rec2_int8;
 #ifdef CONFIG_X86
@@ -447,6 +450,9 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_NEON
 			test_setup(i) = raid_rec2_neon;
 #endif
+#ifdef CONFIG_NEON32
+			test_setup(i) = raid_rec2_neon32;
+#endif
 		} else {
 			test_setup(i) = raid_recX_int8;
 #ifdef CONFIG_X86
@@ -475,6 +481,9 @@ int raid_test_rec(int mode, int nd, size_t size)
 #endif
 #ifdef CONFIG_NEON
 			test_setup(i) = raid_recX_neon;
+#endif
+#ifdef CONFIG_NEON32
+			test_setup(i) = raid_recX_neon32;
 #endif
 		}
 	}
@@ -606,6 +615,13 @@ int raid_test_par(int mode, int nd, size_t size)
 	else
 		test_setup(2) = raid_gen2_neon_raid;
 #endif
+#ifdef CONFIG_NEON32
+	test_setup(1) = raid_gen1_neon32;
+	if (mode == RAID_MODE_CAUCHY_AES)
+		test_setup(2) = raid_gen2_neon32_aes;
+	else
+		test_setup(2) = raid_gen2_neon32_raid;
+#endif
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
@@ -671,6 +687,19 @@ int raid_test_par(int mode, int nd, size_t size)
 			test_setup(4) = raid_gen4_neon_raid;
 			test_setup(5) = raid_gen5_neon_raid;
 			test_setup(6) = raid_gen6_neon_raid;
+		}
+#endif
+#ifdef CONFIG_NEON32
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			test_setup(3) = raid_gen3_neon32_aes;
+			test_setup(4) = raid_gen4_neon32_aes;
+			test_setup(5) = raid_gen5_neon32_aes;
+			test_setup(6) = raid_gen6_neon32_aes;
+		} else {
+			test_setup(3) = raid_gen3_neon32_raid;
+			test_setup(4) = raid_gen4_neon32_raid;
+			test_setup(5) = raid_gen5_neon32_raid;
+			test_setup(6) = raid_gen6_neon32_raid;
 		}
 #endif
 
@@ -753,6 +782,9 @@ int raid_test_par(int mode, int nd, size_t size)
 
 #ifdef CONFIG_NEON
 		test_setup(3) = raid_genz_neon_raid;
+#endif
+#ifdef CONFIG_NEON32
+		test_setup(3) = raid_genz_neon32_raid;
 #endif
 
 #ifdef CONFIG_X86

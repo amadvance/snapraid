@@ -36,7 +36,7 @@ CFLAGS += -O2
 else
 CFLAGS += -O0 --coverage -DCOVERAGE=1 -DNDEBUG=1
 endif
-OBJS = raid.o check.o int.o sse2.o ssse3.o avx2.o avx512.o gfni.o neon.o tables.o memory.o test.o helper.o module.o
+OBJS = raid.o check.o int.o sse2.o ssse3.o avx2.o avx512.o gfni.o neon.o neon32.o tables.o memory.o test.o helper.o module.o
 
 %.o: ../%.c
 	$(CC) $(CFLAGS) -c -o $@ $<

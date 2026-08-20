@@ -44,7 +44,7 @@ const uint8_t *raid_gfexp;
 const uint8_t *raid_gfinv;
 const uint8_t(*raid_gfvandermonde)[256];
 const uint8_t(*raid_gfcauchy)[256];
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 const uint8_t(*raid_gfcauchypshufb)[5][2][16];
 const uint8_t(*raid_gfmulpshufb)[2][16];
 #endif
@@ -57,7 +57,7 @@ uint64_t raid_poly_64;
 uint32_t raid_inv2_32;
 uint64_t raid_inv2_64;
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 struct gfconst16 __aligned(16) gfconst16 =
 {
 	{ 0 },
@@ -229,7 +229,7 @@ int raid_mode(int mode)
 		raid_gfinv = raid_gfinv_aes;
 		raid_gfvandermonde = 0;
 		raid_gfcauchy = raid_gfcauchy_aes;
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 		raid_gfcauchypshufb = raid_gfcauchypshufb_aes;
 		raid_gfmulpshufb = raid_gfmulpshufb_aes;
 #endif
@@ -249,7 +249,7 @@ int raid_mode(int mode)
 		raid_gfinv = raid_gfinv_raid;
 		raid_gfvandermonde = raid_gfvandermonde_raid;
 		raid_gfcauchy = raid_gfcauchy_raid;
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 		raid_gfcauchypshufb = raid_gfcauchypshufb_raid;
 		raid_gfmulpshufb = raid_gfmulpshufb_raid;
 #endif
@@ -265,7 +265,7 @@ int raid_mode(int mode)
 		raid_rec_algo = raid_rec_algo_raid;
 	}
 
-#if defined(CONFIG_X86) || defined(CONFIG_NEON)
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 	memset(gfconst16.poly, raid_poly_byte, 16);
 	memset(gfconst16.half, raid_inv2_byte, 16);
 #endif
@@ -360,6 +360,9 @@ void raid_init(void)
 #endif
 #ifdef CONFIG_NEON
 	raid_register_neon();
+#endif
+#ifdef CONFIG_NEON32
+	raid_register_neon32();
 #endif
 
 	/* set the default mode */
