@@ -32,32 +32,37 @@ detect CPU capabilities and initialize mode dispatch.
 
   void raid_zero(void *zero)
     Registers a read-only buffer filled with zeros of block size 'size'.
-    Required prior to calling raid_rec() or raid_data() for delta parity
-    computation.
+    The buffer must be aligned to a 64-byte boundary. Required prior to
+    calling raid_rec() or raid_data() for delta parity computation.
 
   void raid_gen(int nd, int np, size_t size, void **v)
     Computes 'np' parity blocks from 'nd' data blocks. Vector 'v' contains
     'nd + np' block pointers (data blocks v[0..nd-1], parity blocks
-    v[nd..nd+np-1]). Data blocks are read-only; parity blocks are written.
+    v[nd..nd+np-1]). Each block must be aligned to a 64-byte boundary.
+    Data blocks are read-only; parity blocks are written.
 
   void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
     Recovers 'nr' failed blocks (data or parity) listed in sorted index array
-    'ir'. Indexes start at 0 (data 0..nd-1, parity nd..nd+np-1). Pointers in 'v'
+    'ir'. Indexes start at 0 (data 0..nd-1, parity nd..nd+np-1). Each block
+    pointed to by 'v' must be aligned to a 64-byte boundary. Pointers in 'v'
     for good blocks are read; pointers for bad blocks are target destinations.
     Requires nr <= np.
 
   void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
     Recovers 'nr' failed data blocks listed in sorted array 'id', using
-    parities listed in sorted array 'ip'. Parity blocks in 'v' are unmodified.
+    parities listed in sorted array 'ip'. Each block pointed to by 'v' must
+    be aligned to a 64-byte boundary. Parity blocks in 'v' are unmodified.
     Requires nr <= nd and nr <= RAID_PARITY_MAX.
 
   int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
     Validates whether candidate failed block set 'ir' matches available parity
-    redundancy. Returns 0 if candidate set matches, or -1 if invalid. Requires
+    redundancy. Each block pointed to by 'v' must be aligned to a 64-byte
+    boundary. Returns 0 if candidate set matches, or -1 if invalid. Requires
     nr < np. Does not modify data or parity blocks.
 
   int raid_scan(int *ir, int nd, int np, size_t size, void **v)
     Searches for up to 'np - 1' failed blocks using available redundancy.
+    Each block pointed to by 'v' must be aligned to a 64-byte boundary.
     Fills 'ir' with failed block indexes and returns the number of failures
     found (0 if no error), or -1 if failed blocks cannot be uniquely located.
 
@@ -66,8 +71,8 @@ detect CPU capabilities and initialize mode dispatch.
     scanning across parity levels 1..6. Returns 0 on success, < 0 on failure.
 
 
-Memory and Alignment Requirements
----------------------------------
+Memory, Alignment and Aliasing Requirements
+-------------------------------------------
 
   - Vector Layout: In vector 'v', data blocks MUST precede parity blocks:
       v[0 ... nd-1]       -> Data blocks
@@ -76,8 +81,20 @@ Memory and Alignment Requirements
   - Block Size: Parameter 'size' MUST be a multiple of 64 bytes
     (size % 64 == 0).
 
-  - Memory Alignment: Blocks should ideally be aligned on 16/32/64-byte
-    boundaries to optimize SIMD vector loads and stores.
+  - Memory Alignment: All data and parity blocks pointed to by 'v[]'
+    (as well as the zero buffer passed to raid_zero()) MUST be aligned to
+    a 64-byte boundary. This requirement applies to each individual block
+    buffer, not to the pointer array 'v' itself.
+
+  - Buffer Aliasing: Entries in 'v[]' MAY point to the same block buffer.
+    Blocks are processed from lower to higher offsets. For each processed
+    byte or vector chunk, all required inputs are read before outputs are
+    written. Parity outputs are written in increasing parity order.
+    Consequently, when multiple parity outputs point to the same block,
+    later parity outputs overwrite earlier ones.
+
+    This guarantee applies to block aliasing (identical block pointers);
+    arbitrary partial overlap between distinct block ranges is not supported.
 
   - Sorted Index Arrays: Index arrays ('ir', 'id', 'ip') MUST be strictly
     sorted in ascending order (e.g. ir[0] < ir[1] < ... < ir[nr-1]).

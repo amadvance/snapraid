@@ -133,9 +133,29 @@ int raid_mode(int mode);
  * Before calling raid_rec() and raid_data() you must provide a memory
  * buffer filled with zeros of the same size as the blocks to recover.
  *
+ * The buffer pointed to by @zero must be aligned to a 64-byte boundary.
+ *
  * This buffer is only read and never written.
  */
 void raid_zero(void *zero);
+
+/**
+ * Block aliasing
+ *
+ * In raid_gen(), block pointers passed through @v may alias the same block
+ * buffer. Blocks are processed from lower to higher offsets. For each
+ * processed byte or vector chunk, all required inputs are read before
+ * outputs are written. Parity outputs are written in increasing parity
+ * order.
+ *
+ * If multiple parity outputs alias the same block, the value of the last
+ * parity written remains in that block.
+ *
+ * In raid_rec() and raid_data(), each block being recovered must have a
+ * distinct destination buffer that does not alias any other block in @v.
+ *
+ * Arbitrary partial overlap between different block ranges is not supported.
+ */
 
 /**
  * Computes parity blocks.
@@ -151,8 +171,9 @@ void raid_zero(void *zero);
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks for
  *   data, following with the parity blocks.
- *   Data blocks are only read and not modified. Parity blocks are written.
- *   Each block has @size bytes.
+ *   Data entries are used as inputs and parity entries as outputs.
+ *   Entries may point to the same block buffer.
+ *   Each block has @size bytes and must be aligned to a 64-byte boundary.
  */
 void raid_gen(int nd, int np, size_t size, void **v);
 
@@ -187,7 +208,9 @@ void raid_gen(int nd, int np, size_t size, void **v);
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
- *   Each block has @size bytes.
+ *   Each block being recovered must have a distinct destination buffer
+ *   that does not alias any other block in this vector.
+ *   Each block has @size bytes and must be aligned to a 64-byte boundary.
  */
 void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
 
@@ -207,7 +230,9 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nr - 1] + 1) elements. The starting elements are the
  *   blocks for data, following with the parity blocks.
- *   Each block has @size bytes.
+ *   Each data block being recovered must have a distinct destination buffer
+ *   that does not alias any other block in this vector.
+ *   Each block has @size bytes and must be aligned to a 64-byte boundary.
  */
 void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
 
@@ -234,7 +259,7 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
- *   Each block has @size bytes.
+ *   Each block has @size bytes and must be aligned to a 64-byte boundary.
  * @return 0 if the check is satisfied. -1 otherwise.
  */
 int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
@@ -271,7 +296,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
- *   Each block has @size bytes.
+ *   Each block has @size bytes and must be aligned to a 64-byte boundary.
  * @return Number of block indexes returned in the @ir vector.
  *   0 if no error is detected.
  *   -1 if it's not possible to identify the failed disks.
