@@ -1190,8 +1190,6 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 32 + 32];
-	uint8_t *pd = __align_ptr(buffer, 32);
 	size_t i;
 	int j, k;
 
@@ -1213,41 +1211,215 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_avx_begin();
 
+#ifdef CONFIG_X86_64
+	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.low4[0]));
+
+	for (i = 0; i < size; i += 32) {
+		/* delta */
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"vmovdqa (%%rax, %1), %%ymm12\n"
+			"vmovdqa (%%rbx, %1), %%ymm13\n"
+			"vpxor %%ymm13, %%ymm12, %%ymm12\n"
+			"vpsrlw $4, %%ymm12, %%ymm1\n"
+			"vpand %%ymm15, %%ymm12, %%ymm0\n"
+			"vpand %%ymm15, %%ymm1, %%ymm1\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
+
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"vmovdqa (%%rax, %1), %%ymm12\n"
+			"vmovdqa (%%rbx, %1), %%ymm13\n"
+			"vpxor %%ymm13, %%ymm12, %%ymm12\n"
+			"vpsrlw $4, %%ymm12, %%ymm3\n"
+			"vpand %%ymm15, %%ymm12, %%ymm2\n"
+			"vpand %%ymm15, %%ymm3, %%ymm3\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
+
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"vmovdqa (%%rax, %1), %%ymm12\n"
+			"vmovdqa (%%rbx, %1), %%ymm13\n"
+			"vpxor %%ymm13, %%ymm12, %%ymm12\n"
+			"vpsrlw $4, %%ymm12, %%ymm5\n"
+			"vpand %%ymm15, %%ymm12, %%ymm4\n"
+			"vpand %%ymm15, %%ymm5, %%ymm5\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
+
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"vmovdqa (%%rax, %1), %%ymm12\n"
+			"vmovdqa (%%rbx, %1), %%ymm13\n"
+			"vpxor %%ymm13, %%ymm12, %%ymm12\n"
+			"vpsrlw $4, %%ymm12, %%ymm7\n"
+			"vpand %%ymm15, %%ymm12, %%ymm6\n"
+			"vpand %%ymm15, %%ymm7, %%ymm7\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"vmovdqa (%%rax, %1), %%ymm12\n"
+			"vmovdqa (%%rbx, %1), %%ymm13\n"
+			"vpxor %%ymm13, %%ymm12, %%ymm12\n"
+			"vpsrlw $4, %%ymm12, %%ymm9\n"
+			"vpand %%ymm15, %%ymm12, %%ymm8\n"
+			"vpand %%ymm15, %%ymm9, %%ymm9\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"vmovdqa (%%rax, %1), %%ymm12\n"
+			"vmovdqa (%%rbx, %1), %%ymm13\n"
+			"vpxor %%ymm13, %%ymm12, %%ymm12\n"
+			"vpsrlw $4, %%ymm12, %%ymm11\n"
+			"vpand %%ymm15, %%ymm12, %%ymm10\n"
+			"vpand %%ymm15, %%ymm11, %%ymm11\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx", "cc", "memory"
+		);
+
+		/* reconstruct */
+		for (j = 0; j < N; ++j) {
+			asm volatile (
+				"movzbq 0(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti128 0(%4, %%rcx), %%ymm13\n"
+				"vbroadcasti128 16(%4, %%rcx), %%ymm14\n"
+				"vpshufb %%ymm0, %%ymm13, %%ymm13\n"
+				"vpshufb %%ymm1, %%ymm14, %%ymm14\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 1(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm2, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
+				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm3, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 2(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm4, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
+				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm5, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 3(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm6, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
+				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm7, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 4(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm8, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
+				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm9, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 5(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm10, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
+				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vpshufb %%ymm11, %%ymm12, %%ymm12\n"
+				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
+
+				"1:\n"
+				"vpxor %%ymm14, %%ymm13, %%ymm13\n"
+				"movq %3, %%rax\n"
+				"vmovdqa %%ymm13, (%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "rax", "rcx", "cc", "memory"
+			);
+		}
+	}
+#else /* CONFIG_X86_32 */
+	uint8_t buffer_low[RAID_PARITY_MAX * 32 + 32];
+	uint8_t buffer_high[RAID_PARITY_MAX * 32 + 32];
+	uint8_t *pd_low = __align_ptr(buffer_low, 32);
+	uint8_t *pd_high = __align_ptr(buffer_high, 32);
+
 	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 32) {
 		/* delta */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[j][i]));
-			asm volatile ("vmovdqa %0,%%ymm1" : : "m" (pa[j][i]));
-			asm volatile ("vpxor   %ymm1,%ymm0,%ymm0");
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pd[j * 32]));
+			asm volatile (
+				"vmovdqa %2, %%ymm0\n"
+				"vmovdqa %3, %%ymm1\n"
+				"vpxor   %%ymm1, %%ymm0, %%ymm0\n"
+				"vpsrlw  $4, %%ymm0, %%ymm1\n"
+				"vpand   %%ymm7, %%ymm0, %%ymm0\n"
+				"vpand   %%ymm7, %%ymm1, %%ymm1\n"
+				"vmovdqa %%ymm0, %0\n"
+				"vmovdqa %%ymm1, %1\n"
+				: "=m" (pd_low[j * 32]), "=m" (pd_high[j * 32])
+				: "m" (p[j][i]), "m" (pa[j][i])
+			);
 		}
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
-			asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
+			asm volatile (
+				"vpxor %%ymm0, %%ymm0, %%ymm0\n"
+				"vpxor %%ymm1, %%ymm1, %%ymm1\n"
+			);
 
 			for (k = 0; k < N; ++k) {
 				uint8_t m = V[j * N + k];
 
-				asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[m][0][0]));
-				asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[m][1][0]));
-				asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pd[k * 32]));
-				asm volatile ("vpsrlw  $4,%ymm4,%ymm5");
-				asm volatile ("vpand   %ymm7,%ymm4,%ymm4");
-				asm volatile ("vpand   %ymm7,%ymm5,%ymm5");
-				asm volatile ("vpshufb %ymm4,%ymm2,%ymm2");
-				asm volatile ("vpshufb %ymm5,%ymm3,%ymm3");
-				asm volatile ("vpxor   %ymm2,%ymm0,%ymm0");
-				asm volatile ("vpxor   %ymm3,%ymm1,%ymm1");
+				asm volatile (
+					"vbroadcasti128 %0, %%ymm2\n"
+					"vbroadcasti128 %1, %%ymm3\n"
+					"vmovdqa        %2, %%ymm4\n"
+					"vmovdqa        %3, %%ymm5\n"
+					"vpshufb        %%ymm4, %%ymm2, %%ymm2\n"
+					"vpshufb        %%ymm5, %%ymm3, %%ymm3\n"
+					"vpxor          %%ymm2, %%ymm0, %%ymm0\n"
+					"vpxor          %%ymm3, %%ymm1, %%ymm1\n"
+					:
+					: "m" (raid_gfmulpshufb[m][0][0]), "m" (raid_gfmulpshufb[m][1][0]),
+					"m" (pd_low[k * 32]), "m" (pd_high[k * 32])
+				);
 			}
 
-			asm volatile ("vpxor %ymm1,%ymm0,%ymm0");
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[j][i]));
+			asm volatile (
+				"vpxor   %%ymm1, %%ymm0, %%ymm0\n"
+				"vmovdqa %%ymm0, %0\n"
+				: "=m" (pa[j][i])
+			);
 		}
 	}
+#endif
 
 	raid_avx_end();
 }

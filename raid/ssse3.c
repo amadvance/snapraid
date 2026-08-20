@@ -1315,6 +1315,84 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_sse_begin();
 
+#ifdef CONFIG_X86_64
+	asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low4[0]));
+
+	/* the inverse matrix V[] is constant for the whole recovery. */
+	asm volatile ("movdqa %0,%%xmm8" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
+	asm volatile ("movdqa %0,%%xmm9" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
+	asm volatile ("movdqa %0,%%xmm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
+	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
+	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
+	asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
+
+	for (i = 0; i < size; i += 16) {
+		/* d0 = p[0] ^ pa[0] */
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (pa[0][i]));
+		asm volatile ("pxor %xmm4,%xmm0");
+
+		/* d1 = p[1] ^ pa[1] */
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[1][i]));
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (pa[1][i]));
+		asm volatile ("pxor %xmm4,%xmm1");
+
+		/*
+		 * Split both deltas into low/high nibbles once.
+		 *
+		 * xmm0 = d0 low
+		 * xmm2 = d0 high
+		 * xmm1 = d1 low
+		 * xmm3 = d1 high
+		 */
+		asm volatile ("movdqa %xmm0,%xmm2");
+		asm volatile ("movdqa %xmm1,%xmm3");
+		asm volatile ("psrlw $4,%xmm2");
+		asm volatile ("psrlw $4,%xmm3");
+		asm volatile ("pand %xmm6,%xmm0");
+		asm volatile ("pand %xmm6,%xmm2");
+		asm volatile ("pand %xmm6,%xmm1");
+		asm volatile ("pand %xmm6,%xmm3");
+
+		/*
+		 * pa[0] = V[0] * d0 ^ V[1] * d1
+		 */
+		asm volatile ("movdqa %xmm8,%xmm4");
+		asm volatile ("pshufb %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm9,%xmm5");
+		asm volatile ("pshufb %xmm2,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		asm volatile ("movdqa %xmm10,%xmm5");
+		asm volatile ("pshufb %xmm1,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+		asm volatile ("movdqa %xmm11,%xmm5");
+		asm volatile ("pshufb %xmm3,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[0][i]));
+
+		/*
+		 * pa[1] = V[2] * d0 ^ V[3] * d1
+		 */
+		asm volatile ("movdqa %xmm12,%xmm4");
+		asm volatile ("pshufb %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm13,%xmm5");
+		asm volatile ("pshufb %xmm2,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		asm volatile ("movdqa %xmm14,%xmm5");
+		asm volatile ("pshufb %xmm1,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+		asm volatile ("movdqa %xmm15,%xmm5");
+		asm volatile ("pshufb %xmm3,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[1][i]));
+	}
+#else /* CONFIG_X86_32 */
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
@@ -1381,6 +1459,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
 	}
+#endif
 
 	raid_sse_end();
 }
@@ -1396,8 +1475,6 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 16 + 16];
-	uint8_t *pd = __align_ptr(buffer, 16);
 	size_t i;
 	int j, k;
 
@@ -1419,42 +1496,228 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_sse_begin();
 
+#ifdef CONFIG_X86_64
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+
+	for (i = 0; i < size; i += 16) {
+		/* delta */
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"movdqa (%%rax, %1), %%xmm12\n"
+			"movdqa (%%rbx, %1), %%xmm13\n"
+			"pxor %%xmm13, %%xmm12\n"
+			"movdqa %%xmm12, %%xmm1\n"
+			"psrlw $4, %%xmm1\n"
+			"pand %%xmm15, %%xmm12\n"
+			"pand %%xmm15, %%xmm1\n"
+			"movdqa %%xmm12, %%xmm0\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
+
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"movdqa (%%rax, %1), %%xmm12\n"
+			"movdqa (%%rbx, %1), %%xmm13\n"
+			"pxor %%xmm13, %%xmm12\n"
+			"movdqa %%xmm12, %%xmm3\n"
+			"psrlw $4, %%xmm3\n"
+			"pand %%xmm15, %%xmm12\n"
+			"pand %%xmm15, %%xmm3\n"
+			"movdqa %%xmm12, %%xmm2\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
+
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"movdqa (%%rax, %1), %%xmm12\n"
+			"movdqa (%%rbx, %1), %%xmm13\n"
+			"pxor %%xmm13, %%xmm12\n"
+			"movdqa %%xmm12, %%xmm5\n"
+			"psrlw $4, %%xmm5\n"
+			"pand %%xmm15, %%xmm12\n"
+			"pand %%xmm15, %%xmm5\n"
+			"movdqa %%xmm12, %%xmm4\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
+
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"movdqa (%%rax, %1), %%xmm12\n"
+			"movdqa (%%rbx, %1), %%xmm13\n"
+			"pxor %%xmm13, %%xmm12\n"
+			"movdqa %%xmm12, %%xmm7\n"
+			"psrlw $4, %%xmm7\n"
+			"pand %%xmm15, %%xmm12\n"
+			"pand %%xmm15, %%xmm7\n"
+			"movdqa %%xmm12, %%xmm6\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"movdqa (%%rax, %1), %%xmm12\n"
+			"movdqa (%%rbx, %1), %%xmm13\n"
+			"pxor %%xmm13, %%xmm12\n"
+			"movdqa %%xmm12, %%xmm9\n"
+			"psrlw $4, %%xmm9\n"
+			"pand %%xmm15, %%xmm12\n"
+			"pand %%xmm15, %%xmm9\n"
+			"movdqa %%xmm12, %%xmm8\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"movdqa (%%rax, %1), %%xmm12\n"
+			"movdqa (%%rbx, %1), %%xmm13\n"
+			"pxor %%xmm13, %%xmm12\n"
+			"movdqa %%xmm12, %%xmm11\n"
+			"psrlw $4, %%xmm11\n"
+			"pand %%xmm15, %%xmm12\n"
+			"pand %%xmm15, %%xmm11\n"
+			"movdqa %%xmm12, %%xmm10\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx", "cc", "memory"
+		);
+
+		/* reconstruct */
+		for (j = 0; j < N; ++j) {
+			asm volatile (
+				"movzbq 0(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"movdqa 0(%4, %%rcx), %%xmm13\n"
+				"movdqa 16(%4, %%rcx), %%xmm14\n"
+				"pshufb %%xmm0, %%xmm13\n"
+				"pshufb %%xmm1, %%xmm14\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 1(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm2, %%xmm12\n"
+				"pxor %%xmm12, %%xmm13\n"
+				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm3, %%xmm12\n"
+				"pxor %%xmm12, %%xmm14\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 2(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm4, %%xmm12\n"
+				"pxor %%xmm12, %%xmm13\n"
+				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm5, %%xmm12\n"
+				"pxor %%xmm12, %%xmm14\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 3(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm6, %%xmm12\n"
+				"pxor %%xmm12, %%xmm13\n"
+				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm7, %%xmm12\n"
+				"pxor %%xmm12, %%xmm14\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 4(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm8, %%xmm12\n"
+				"pxor %%xmm12, %%xmm13\n"
+				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm9, %%xmm12\n"
+				"pxor %%xmm12, %%xmm14\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 5(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm10, %%xmm12\n"
+				"pxor %%xmm12, %%xmm13\n"
+				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"pshufb %%xmm11, %%xmm12\n"
+				"pxor %%xmm12, %%xmm14\n"
+
+				"1:\n"
+				"pxor %%xmm14, %%xmm13\n"
+				"movq %3, %%rax\n"
+				"movdqa %%xmm13, (%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "rax", "rcx", "cc", "memory"
+			);
+		}
+	}
+#else /* CONFIG_X86_32 */
+	uint8_t buffer_low[RAID_PARITY_MAX * 16 + 16];
+	uint8_t buffer_high[RAID_PARITY_MAX * 16 + 16];
+	uint8_t *pd_low = __align_ptr(buffer_low, 16);
+	uint8_t *pd_high = __align_ptr(buffer_high, 16);
+
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
 		/* delta */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("movdqa %0,%%xmm0" : : "m" (p[j][i]));
-			asm volatile ("movdqa %0,%%xmm1" : : "m" (pa[j][i]));
-			asm volatile ("pxor   %xmm1,%xmm0");
-			asm volatile ("movdqa %%xmm0,%0" : "=m" (pd[j * 16]));
+			asm volatile (
+				"movdqa %2, %%xmm0\n"
+				"movdqa %3, %%xmm1\n"
+				"pxor   %%xmm1, %%xmm0\n"
+				"movdqa %%xmm0, %%xmm1\n"
+				"psrlw  $4, %%xmm1\n"
+				"pand   %%xmm7, %%xmm0\n"
+				"pand   %%xmm7, %%xmm1\n"
+				"movdqa %%xmm0, %0\n"
+				"movdqa %%xmm1, %1\n"
+				: "=m" (pd_low[j * 16]), "=m" (pd_high[j * 16])
+				: "m" (p[j][i]), "m" (pa[j][i])
+			);
 		}
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("pxor %xmm0,%xmm0");
-			asm volatile ("pxor %xmm1,%xmm1");
+			asm volatile (
+				"pxor %%xmm0, %%xmm0\n"
+				"pxor %%xmm1, %%xmm1\n"
+			);
 
 			for (k = 0; k < N; ++k) {
 				uint8_t m = V[j * N + k];
 
-				asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[m][0][0]));
-				asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[m][1][0]));
-				asm volatile ("movdqa %0,%%xmm4" : : "m" (pd[k * 16]));
-				asm volatile ("movdqa %xmm4,%xmm5");
-				asm volatile ("psrlw  $4,%xmm5");
-				asm volatile ("pand   %xmm7,%xmm4");
-				asm volatile ("pand   %xmm7,%xmm5");
-				asm volatile ("pshufb %xmm4,%xmm2");
-				asm volatile ("pshufb %xmm5,%xmm3");
-				asm volatile ("pxor   %xmm2,%xmm0");
-				asm volatile ("pxor   %xmm3,%xmm1");
+				asm volatile (
+					"movdqa %0, %%xmm2\n"
+					"movdqa %1, %%xmm3\n"
+					"movdqa %2, %%xmm4\n"
+					"movdqa %3, %%xmm5\n"
+					"pshufb %%xmm4, %%xmm2\n"
+					"pshufb %%xmm5, %%xmm3\n"
+					"pxor   %%xmm2, %%xmm0\n"
+					"pxor   %%xmm3, %%xmm1\n"
+					:
+					: "m" (raid_gfmulpshufb[m][0][0]), "m" (raid_gfmulpshufb[m][1][0]),
+					"m" (pd_low[k * 16]), "m" (pd_high[k * 16])
+				);
 			}
 
-			asm volatile ("pxor %xmm1,%xmm0");
-			asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[j][i]));
+			asm volatile (
+				"pxor   %%xmm1, %%xmm0\n"
+				"movdqa %%xmm0, %0\n"
+				: "=m" (pa[j][i])
+			);
 		}
 	}
+#endif
 
 	raid_sse_end();
 }

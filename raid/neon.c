@@ -807,8 +807,6 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 16 + 16];
-	uint8_t *pd = __align_ptr(buffer, 16);
 	size_t i;
 	int j, k;
 
@@ -830,7 +828,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	raid_neon_begin();
 
-	/* preload tables */
+	/* preload mask */
 	asm volatile (
 		"ldr q28, %0\n" /* low4 */
 		:
@@ -839,45 +837,142 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 16) {
 		/* delta */
-		for (j = 0; j < N; ++j) {
-			asm volatile (
-				"ldr q0, %1\n"
-				"ldr q1, %2\n"
-				"eor v0.16b, v0.16b, v1.16b\n"
-				"str q0, %0\n"
-				: "=m" (pd[j * 16])
-				: "m" (p[j][i]), "m" (pa[j][i])
-			);
-		}
+		asm volatile (
+			"ldr x4, [%2, #0]\n"
+			"ldr x5, [%3, #0]\n"
+			"ldr q0, [x4, %1]\n"
+			"ldr q14, [x5, %1]\n"
+			"eor v0.16b, v0.16b, v14.16b\n"
+			"ushr v1.16b, v0.16b, #4\n"
+			"and v0.16b, v0.16b, v28.16b\n"
+			"and v1.16b, v1.16b, v28.16b\n"
+			"cmp %0, #1\n"
+			"b.ls 1f\n"
+
+			"ldr x4, [%2, #8]\n"
+			"ldr x5, [%3, #8]\n"
+			"ldr q2, [x4, %1]\n"
+			"ldr q14, [x5, %1]\n"
+			"eor v2.16b, v2.16b, v14.16b\n"
+			"ushr v3.16b, v2.16b, #4\n"
+			"and v2.16b, v2.16b, v28.16b\n"
+			"and v3.16b, v3.16b, v28.16b\n"
+			"cmp %0, #2\n"
+			"b.ls 1f\n"
+
+			"ldr x4, [%2, #16]\n"
+			"ldr x5, [%3, #16]\n"
+			"ldr q4, [x4, %1]\n"
+			"ldr q14, [x5, %1]\n"
+			"eor v4.16b, v4.16b, v14.16b\n"
+			"ushr v5.16b, v4.16b, #4\n"
+			"and v4.16b, v4.16b, v28.16b\n"
+			"and v5.16b, v5.16b, v28.16b\n"
+			"cmp %0, #3\n"
+			"b.ls 1f\n"
+
+			"ldr x4, [%2, #24]\n"
+			"ldr x5, [%3, #24]\n"
+			"ldr q6, [x4, %1]\n"
+			"ldr q14, [x5, %1]\n"
+			"eor v6.16b, v6.16b, v14.16b\n"
+			"ushr v7.16b, v6.16b, #4\n"
+			"and v6.16b, v6.16b, v28.16b\n"
+			"and v7.16b, v7.16b, v28.16b\n"
+			"cmp %0, #4\n"
+			"b.ls 1f\n"
+
+			"ldr x4, [%2, #32]\n"
+			"ldr x5, [%3, #32]\n"
+			"ldr q8, [x4, %1]\n"
+			"ldr q14, [x5, %1]\n"
+			"eor v8.16b, v8.16b, v14.16b\n"
+			"ushr v9.16b, v8.16b, #4\n"
+			"and v8.16b, v8.16b, v28.16b\n"
+			"and v9.16b, v9.16b, v28.16b\n"
+			"cmp %0, #5\n"
+			"b.ls 1f\n"
+
+			"ldr x4, [%2, #40]\n"
+			"ldr x5, [%3, #40]\n"
+			"ldr q10, [x4, %1]\n"
+			"ldr q14, [x5, %1]\n"
+			"eor v10.16b, v10.16b, v14.16b\n"
+			"ushr v11.16b, v10.16b, #4\n"
+			"and v10.16b, v10.16b, v28.16b\n"
+			"and v11.16b, v11.16b, v28.16b\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "x4", "x5", "cc", "memory"
+		);
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"eor v0.16b, v0.16b, v0.16b\n"
-			);
+				"ldrb w4, [%2, #0]\n"
+				"add x5, %4, x4, lsl #5\n"
+				"ldp q24, q25, [x5]\n"
+				"tbl v12.16b, {v24.16b}, v0.16b\n"
+				"tbl v13.16b, {v25.16b}, v1.16b\n"
+				"cmp %0, #1\n"
+				"b.ls 1f\n"
 
-			for (k = 0; k < N; ++k) {
-				uint8_t m = V[j * N + k];
-				asm volatile (
-					"ldr q24, %1\n"
-					"ldr q25, %2\n"
-					"ldr q4, %0\n"
-					"ushr v17.16b, v4.16b, #4\n"
-					"and v16.16b, v4.16b, v28.16b\n"
-					"and v17.16b, v17.16b, v28.16b\n"
-					"tbl v2.16b, {v24.16b}, v16.16b\n"
-					"tbl v3.16b, {v25.16b}, v17.16b\n"
-					"eor v2.16b, v2.16b, v3.16b\n"
-					"eor v0.16b, v0.16b, v2.16b\n"
-					:
-					: "m" (pd[k * 16]),
-					"m" (raid_gfmulpshufb[m][0][0]), "m" (raid_gfmulpshufb[m][1][0])
-				);
-			}
+				"ldrb w4, [%2, #1]\n"
+				"add x5, %4, x4, lsl #5\n"
+				"ldp q24, q25, [x5]\n"
+				"tbl v14.16b, {v24.16b}, v2.16b\n"
+				"tbl v15.16b, {v25.16b}, v3.16b\n"
+				"eor v12.16b, v12.16b, v14.16b\n"
+				"eor v13.16b, v13.16b, v15.16b\n"
+				"cmp %0, #2\n"
+				"b.ls 1f\n"
 
-			asm volatile (
-				"str q0, %0\n"
-				: "=m" (pa[j][i])
+				"ldrb w4, [%2, #2]\n"
+				"add x5, %4, x4, lsl #5\n"
+				"ldp q24, q25, [x5]\n"
+				"tbl v14.16b, {v24.16b}, v4.16b\n"
+				"tbl v15.16b, {v25.16b}, v5.16b\n"
+				"eor v12.16b, v12.16b, v14.16b\n"
+				"eor v13.16b, v13.16b, v15.16b\n"
+				"cmp %0, #3\n"
+				"b.ls 1f\n"
+
+				"ldrb w4, [%2, #3]\n"
+				"add x5, %4, x4, lsl #5\n"
+				"ldp q24, q25, [x5]\n"
+				"tbl v14.16b, {v24.16b}, v6.16b\n"
+				"tbl v15.16b, {v25.16b}, v7.16b\n"
+				"eor v12.16b, v12.16b, v14.16b\n"
+				"eor v13.16b, v13.16b, v15.16b\n"
+				"cmp %0, #4\n"
+				"b.ls 1f\n"
+
+				"ldrb w4, [%2, #4]\n"
+				"add x5, %4, x4, lsl #5\n"
+				"ldp q24, q25, [x5]\n"
+				"tbl v14.16b, {v24.16b}, v8.16b\n"
+				"tbl v15.16b, {v25.16b}, v9.16b\n"
+				"eor v12.16b, v12.16b, v14.16b\n"
+				"eor v13.16b, v13.16b, v15.16b\n"
+				"cmp %0, #5\n"
+				"b.ls 1f\n"
+
+				"ldrb w4, [%2, #5]\n"
+				"add x5, %4, x4, lsl #5\n"
+				"ldp q24, q25, [x5]\n"
+				"tbl v14.16b, {v24.16b}, v10.16b\n"
+				"tbl v15.16b, {v25.16b}, v11.16b\n"
+				"eor v12.16b, v12.16b, v14.16b\n"
+				"eor v13.16b, v13.16b, v15.16b\n"
+
+				"1:\n"
+				"eor v12.16b, v12.16b, v13.16b\n"
+				"str q12, [%3, %1]\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "x4", "x5", "cc", "memory"
 			);
 		}
 	}

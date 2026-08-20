@@ -369,8 +369,6 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 64 + 64];
-	uint8_t *pd = __align_ptr(buffer, 64);
 	size_t i;
 	int j, k;
 
@@ -392,35 +390,154 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	raid_avx_begin();
 
-	asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (gfconst16.low4[0]));
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
 		/* delta */
-		for (j = 0; j < N; ++j) {
-			asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[j][i]));
-			asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (pa[j][i]));
-			asm volatile ("vpxorq    %zmm1,%zmm0,%zmm0");
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pd[j * 64]));
-		}
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm12\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm13\n"
+			"vpxorq %%zmm13, %%zmm12, %%zmm12\n"
+			"vpsrlw $4, %%zmm12, %%zmm1\n"
+			"vpandq %%zmm31, %%zmm12, %%zmm0\n"
+			"vpandq %%zmm31, %%zmm1, %%zmm1\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
+
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm12\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm13\n"
+			"vpxorq %%zmm13, %%zmm12, %%zmm12\n"
+			"vpsrlw $4, %%zmm12, %%zmm3\n"
+			"vpandq %%zmm31, %%zmm12, %%zmm2\n"
+			"vpandq %%zmm31, %%zmm3, %%zmm3\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
+
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm12\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm13\n"
+			"vpxorq %%zmm13, %%zmm12, %%zmm12\n"
+			"vpsrlw $4, %%zmm12, %%zmm5\n"
+			"vpandq %%zmm31, %%zmm12, %%zmm4\n"
+			"vpandq %%zmm31, %%zmm5, %%zmm5\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
+
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm12\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm13\n"
+			"vpxorq %%zmm13, %%zmm12, %%zmm12\n"
+			"vpsrlw $4, %%zmm12, %%zmm7\n"
+			"vpandq %%zmm31, %%zmm12, %%zmm6\n"
+			"vpandq %%zmm31, %%zmm7, %%zmm7\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm12\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm13\n"
+			"vpxorq %%zmm13, %%zmm12, %%zmm12\n"
+			"vpsrlw $4, %%zmm12, %%zmm9\n"
+			"vpandq %%zmm31, %%zmm12, %%zmm8\n"
+			"vpandq %%zmm31, %%zmm9, %%zmm9\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"vmovdqa64 (%%rax, %1), %%zmm12\n"
+			"vmovdqa64 (%%rbx, %1), %%zmm13\n"
+			"vpxorq %%zmm13, %%zmm12, %%zmm12\n"
+			"vpsrlw $4, %%zmm12, %%zmm11\n"
+			"vpandq %%zmm31, %%zmm12, %%zmm10\n"
+			"vpandq %%zmm31, %%zmm11, %%zmm11\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx", "cc", "memory"
+		);
+
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vpxorq %zmm0,%zmm0,%zmm0");
-			asm volatile ("vpxorq %zmm1,%zmm1,%zmm1");
-			for (k = 0; k < N; ++k) {
-				uint8_t m = V[j * N + k];
-				asm volatile ("vbroadcasti32x4 %0,%%zmm2" : : "m" (raid_gfmulpshufb[m][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfmulpshufb[m][1][0]));
-				asm volatile ("vmovdqa64 %0,%%zmm4" : : "m" (pd[k * 64]));
-				asm volatile ("vpsrlw    $4,%zmm4,%zmm5");
-				asm volatile ("vpandq    %zmm7,%zmm4,%zmm4");
-				asm volatile ("vpandq    %zmm7,%zmm5,%zmm5");
-				asm volatile ("vpshufb   %zmm4,%zmm2,%zmm2");
-				asm volatile ("vpshufb   %zmm5,%zmm3,%zmm3");
-				asm volatile ("vpxorq    %zmm2,%zmm0,%zmm0");
-				asm volatile ("vpxorq    %zmm3,%zmm1,%zmm1");
-			}
-			asm volatile ("vpxorq    %zmm1,%zmm0,%zmm0");
-			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[j][i]));
+			asm volatile (
+				"movzbq 0(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti32x4 0(%4, %%rcx), %%zmm14\n"
+				"vbroadcasti32x4 16(%4, %%rcx), %%zmm15\n"
+				"vpshufb %%zmm0, %%zmm14, %%zmm14\n"
+				"vpshufb %%zmm1, %%zmm15, %%zmm15\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 1(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"vpshufb %%zmm2, %%zmm12, %%zmm12\n"
+				"vpshufb %%zmm3, %%zmm13, %%zmm13\n"
+				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
+				"vpxorq %%zmm13, %%zmm15, %%zmm15\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 2(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"vpshufb %%zmm4, %%zmm12, %%zmm12\n"
+				"vpshufb %%zmm5, %%zmm13, %%zmm13\n"
+				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
+				"vpxorq %%zmm13, %%zmm15, %%zmm15\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 3(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"vpshufb %%zmm6, %%zmm12, %%zmm12\n"
+				"vpshufb %%zmm7, %%zmm13, %%zmm13\n"
+				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
+				"vpxorq %%zmm13, %%zmm15, %%zmm15\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 4(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"vpshufb %%zmm8, %%zmm12, %%zmm12\n"
+				"vpshufb %%zmm9, %%zmm13, %%zmm13\n"
+				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
+				"vpxorq %%zmm13, %%zmm15, %%zmm15\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 5(%2), %%rcx\n"
+				"shlq $5, %%rcx\n"
+				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"vpshufb %%zmm10, %%zmm12, %%zmm12\n"
+				"vpshufb %%zmm11, %%zmm13, %%zmm13\n"
+				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
+				"vpxorq %%zmm13, %%zmm15, %%zmm15\n"
+
+				"1:\n"
+				"vpxorq %%zmm15, %%zmm14, %%zmm14\n"
+				"movq %3, %%rax\n"
+				"vmovdqa64 %%zmm14, (%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "rax", "rcx", "cc", "memory"
+			);
 		}
 	}
 

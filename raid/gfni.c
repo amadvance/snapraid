@@ -978,16 +978,18 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 64 + 64];
-	uint8_t *pd = __align_ptr(buffer, 64);
 	size_t i;
 	int j, k;
 
+	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
 			G[j * N + k] = A(ip[j], id[k]);
 
+	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
@@ -999,38 +1001,138 @@ void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 
 	for (i = 0; i < size; i += 64) {
 		/* delta */
-		for (j = 0; j < N; ++j) {
-			asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[j][i]));
-			asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[j][i + 32]));
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm0\n"
+			"vmovdqa 32(%%rax, %1), %%ymm1\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm0, %%ymm0\n"
+			"vpxor %%ymm15, %%ymm1, %%ymm1\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
 
-			asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[j][i]));
-			asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[j][i + 32]));
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm2\n"
+			"vmovdqa 32(%%rax, %1), %%ymm3\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm2, %%ymm2\n"
+			"vpxor %%ymm15, %%ymm3, %%ymm3\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
 
-			asm volatile ("vpxor    %ymm2,%ymm0,%ymm0");
-			asm volatile ("vpxor    %ymm3,%ymm1,%ymm1");
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm4\n"
+			"vmovdqa 32(%%rax, %1), %%ymm5\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm4, %%ymm4\n"
+			"vpxor %%ymm15, %%ymm5, %%ymm5\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
 
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pd[j * 64]));
-			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pd[j * 64 + 32]));
-		}
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm6\n"
+			"vmovdqa 32(%%rax, %1), %%ymm7\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm6, %%ymm6\n"
+			"vpxor %%ymm15, %%ymm7, %%ymm7\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm8\n"
+			"vmovdqa 32(%%rax, %1), %%ymm9\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm8, %%ymm8\n"
+			"vpxor %%ymm15, %%ymm9, %%ymm9\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm10\n"
+			"vmovdqa 32(%%rax, %1), %%ymm11\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm10, %%ymm10\n"
+			"vpxor %%ymm15, %%ymm11, %%ymm11\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx", "cc", "memory"
+		);
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
-			asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
-			for (k = 0; k < N; ++k) {
-				asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pd[k * 64]));
-				asm volatile ("vmovdqa %0,%%ymm5" : : "m" (pd[k * 64 + 32]));
+			asm volatile (
+				"movzbq 0(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm0, %%ymm12\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm1, %%ymm13\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
 
-				asm volatile ("vpbroadcastq %0,%%ymm2" : : "m" (raid_gfaffine_raid[V[j * N + k]][0]));
+				"movzbq 1(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm2, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm3, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
 
-				asm volatile ("vgf2p8affineqb $0,%ymm2,%ymm4,%ymm3");
-				asm volatile ("vpxor    %ymm3,%ymm0,%ymm0");
+				"movzbq 2(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm4, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm5, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
 
-				asm volatile ("vgf2p8affineqb $0,%ymm2,%ymm5,%ymm3");
-				asm volatile ("vpxor    %ymm3,%ymm1,%ymm1");
-			}
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[j][i]));
-			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[j][i + 32]));
+				"movzbq 3(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm6, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm7, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 4(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm8, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm9, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"movzbq 5(%2), %%rcx\n"
+				"vpbroadcastq (%4, %%rcx, 8), %%ymm14\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm10, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8affineqb $0, %%ymm14, %%ymm11, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+
+				"1:\n"
+				"movq %3, %%rax\n"
+				"vmovdqa %%ymm12, 0(%%rax, %1)\n"
+				"vmovdqa %%ymm13, 32(%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfaffine_raid)
+				: "rax", "rcx", "cc", "memory"
+			);
 		}
 	}
 
@@ -1121,7 +1223,7 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 			"1:\n"
 			:
 			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
-			: "rax", "rbx"
+			: "rax", "rbx", "cc", "memory"
 		);
 
 		/* reconstruct */
@@ -1171,7 +1273,7 @@ void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 				"vmovdqa64 %%zmm7, (%%rax, %1)\n"
 				:
 				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfaffine_raid)
-				: "rax", "rcx"
+				: "rax", "rcx", "cc", "memory"
 			);
 		}
 	}
@@ -1295,6 +1397,10 @@ void raid_rec2_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 	}
 
 	raid_avx_begin();
+	asm volatile ("vpbroadcastb %0,%%ymm10" : : "m" (V[0]));
+	asm volatile ("vpbroadcastb %0,%%ymm11" : : "m" (V[1]));
+	asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (V[2]));
+	asm volatile ("vpbroadcastb %0,%%ymm13" : : "m" (V[3]));
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[0][i]));
@@ -1315,27 +1421,23 @@ void raid_rec2_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 		asm volatile ("vpxor    %ymm6,%ymm2,%ymm2");
 		asm volatile ("vpxor    %ymm7,%ymm3,%ymm3");
 
-		asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (V[0]));
-		asm volatile ("vgf2p8mulb %ymm0,%ymm8,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm1,%ymm8,%ymm5");
+		asm volatile ("vgf2p8mulb %ymm0,%ymm10,%ymm4");
+		asm volatile ("vgf2p8mulb %ymm1,%ymm10,%ymm5");
 
-		asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (V[1]));
-		asm volatile ("vgf2p8mulb %ymm2,%ymm8,%ymm9");
+		asm volatile ("vgf2p8mulb %ymm2,%ymm11,%ymm9");
 		asm volatile ("vpxor    %ymm9,%ymm4,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm3,%ymm8,%ymm9");
+		asm volatile ("vgf2p8mulb %ymm3,%ymm11,%ymm9");
 		asm volatile ("vpxor    %ymm9,%ymm5,%ymm5");
 
 		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[0][i]));
 		asm volatile ("vmovdqa %%ymm5,%0" : "=m" (pa[0][i + 32]));
 
-		asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (V[2]));
-		asm volatile ("vgf2p8mulb %ymm0,%ymm8,%ymm6");
-		asm volatile ("vgf2p8mulb %ymm1,%ymm8,%ymm7");
+		asm volatile ("vgf2p8mulb %ymm0,%ymm12,%ymm6");
+		asm volatile ("vgf2p8mulb %ymm1,%ymm12,%ymm7");
 
-		asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (V[3]));
-		asm volatile ("vgf2p8mulb %ymm2,%ymm8,%ymm9");
+		asm volatile ("vgf2p8mulb %ymm2,%ymm13,%ymm9");
 		asm volatile ("vpxor    %ymm9,%ymm6,%ymm6");
-		asm volatile ("vgf2p8mulb %ymm3,%ymm8,%ymm9");
+		asm volatile ("vgf2p8mulb %ymm3,%ymm13,%ymm9");
 		asm volatile ("vpxor    %ymm9,%ymm7,%ymm7");
 
 		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[1][i]));
@@ -1372,6 +1474,10 @@ void raid_rec2_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 	}
 
 	raid_avx_begin();
+	asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (V[0]));
+	asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (V[1]));
+	asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (V[2]));
+	asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (V[3]));
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[0][i]));
@@ -1383,24 +1489,20 @@ void raid_rec2_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 
 		asm volatile ("vpxorq    %zmm6,%zmm6,%zmm6");
 
-		asm volatile ("vpbroadcastb %0,%%zmm2" : : "m" (V[0]));
-		asm volatile ("vgf2p8mulb %zmm0,%zmm2,%zmm2");
+		asm volatile ("vgf2p8mulb %zmm0,%zmm8,%zmm2");
 		asm volatile ("vpxorq    %zmm2,%zmm6,%zmm6");
 
-		asm volatile ("vpbroadcastb %0,%%zmm3" : : "m" (V[1]));
-		asm volatile ("vgf2p8mulb %zmm1,%zmm3,%zmm3");
+		asm volatile ("vgf2p8mulb %zmm1,%zmm9,%zmm3");
 		asm volatile ("vpxorq    %zmm3,%zmm6,%zmm6");
 
 		asm volatile ("vmovdqa64 %%zmm6,%0" : "=m" (pa[0][i]));
 
 		asm volatile ("vpxorq    %zmm6,%zmm6,%zmm6");
 
-		asm volatile ("vpbroadcastb %0,%%zmm2" : : "m" (V[2]));
-		asm volatile ("vgf2p8mulb %zmm0,%zmm2,%zmm2");
+		asm volatile ("vgf2p8mulb %zmm0,%zmm10,%zmm2");
 		asm volatile ("vpxorq    %zmm2,%zmm6,%zmm6");
 
-		asm volatile ("vpbroadcastb %0,%%zmm3" : : "m" (V[3]));
-		asm volatile ("vgf2p8mulb %zmm1,%zmm3,%zmm3");
+		asm volatile ("vgf2p8mulb %zmm1,%zmm11,%zmm3");
 		asm volatile ("vpxorq    %zmm3,%zmm6,%zmm6");
 
 		asm volatile ("vmovdqa64 %%zmm6,%0" : "=m" (pa[1][i]));
@@ -1420,16 +1522,18 @@ void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t buffer[RAID_PARITY_MAX * 64 + 64];
-	uint8_t *pd = __align_ptr(buffer, 64);
 	size_t i;
 	int j, k;
 
+	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
 			G[j * N + k] = A(ip[j], id[k]);
 
+	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
@@ -1441,38 +1545,132 @@ void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 
 	for (i = 0; i < size; i += 64) {
 		/* delta */
-		for (j = 0; j < N; ++j) {
-			asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[j][i]));
-			asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[j][i + 32]));
+		asm volatile (
+			"movq 0(%2), %%rax\n"
+			"movq 0(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm0\n"
+			"vmovdqa 32(%%rax, %1), %%ymm1\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm0, %%ymm0\n"
+			"vpxor %%ymm15, %%ymm1, %%ymm1\n"
+			"cmpq $1, %0\n"
+			"jbe 1f\n"
 
-			asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[j][i]));
-			asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[j][i + 32]));
+			"movq 8(%2), %%rax\n"
+			"movq 8(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm2\n"
+			"vmovdqa 32(%%rax, %1), %%ymm3\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm2, %%ymm2\n"
+			"vpxor %%ymm15, %%ymm3, %%ymm3\n"
+			"cmpq $2, %0\n"
+			"jbe 1f\n"
 
-			asm volatile ("vpxor    %ymm2,%ymm0,%ymm0");
-			asm volatile ("vpxor    %ymm3,%ymm1,%ymm1");
+			"movq 16(%2), %%rax\n"
+			"movq 16(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm4\n"
+			"vmovdqa 32(%%rax, %1), %%ymm5\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm4, %%ymm4\n"
+			"vpxor %%ymm15, %%ymm5, %%ymm5\n"
+			"cmpq $3, %0\n"
+			"jbe 1f\n"
 
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pd[j * 64]));
-			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pd[j * 64 + 32]));
-		}
+			"movq 24(%2), %%rax\n"
+			"movq 24(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm6\n"
+			"vmovdqa 32(%%rax, %1), %%ymm7\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm6, %%ymm6\n"
+			"vpxor %%ymm15, %%ymm7, %%ymm7\n"
+			"cmpq $4, %0\n"
+			"jbe 1f\n"
+
+			"movq 32(%2), %%rax\n"
+			"movq 32(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm8\n"
+			"vmovdqa 32(%%rax, %1), %%ymm9\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm8, %%ymm8\n"
+			"vpxor %%ymm15, %%ymm9, %%ymm9\n"
+			"cmpq $5, %0\n"
+			"jbe 1f\n"
+
+			"movq 40(%2), %%rax\n"
+			"movq 40(%3), %%rbx\n"
+			"vmovdqa 0(%%rax, %1), %%ymm10\n"
+			"vmovdqa 32(%%rax, %1), %%ymm11\n"
+			"vmovdqa 0(%%rbx, %1), %%ymm14\n"
+			"vmovdqa 32(%%rbx, %1), %%ymm15\n"
+			"vpxor %%ymm14, %%ymm10, %%ymm10\n"
+			"vpxor %%ymm15, %%ymm11, %%ymm11\n"
+
+			"1:\n"
+			:
+			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
+			: "rax", "rbx", "cc", "memory"
+		);
 
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
-			asm volatile ("vpxor %ymm0,%ymm0,%ymm0");
-			asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
-			for (k = 0; k < N; ++k) {
-				asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pd[k * 64]));
-				asm volatile ("vmovdqa %0,%%ymm5" : : "m" (pd[k * 64 + 32]));
+			asm volatile (
+				"vpbroadcastb 0(%2), %%ymm14\n"
+				"vgf2p8mulb %%ymm0, %%ymm14, %%ymm12\n"
+				"vgf2p8mulb %%ymm1, %%ymm14, %%ymm13\n"
+				"cmpq $1, %0\n"
+				"jbe 1f\n"
 
-				asm volatile ("vpbroadcastb %0,%%ymm2" : : "m" (V[j * N + k]));
+				"vpbroadcastb 1(%2), %%ymm14\n"
+				"vgf2p8mulb %%ymm2, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8mulb %%ymm3, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $2, %0\n"
+				"jbe 1f\n"
 
-				asm volatile ("vgf2p8mulb %ymm4,%ymm2,%ymm3");
-				asm volatile ("vpxor    %ymm3,%ymm0,%ymm0");
+				"vpbroadcastb 2(%2), %%ymm14\n"
+				"vgf2p8mulb %%ymm4, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8mulb %%ymm5, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $3, %0\n"
+				"jbe 1f\n"
 
-				asm volatile ("vgf2p8mulb %ymm5,%ymm2,%ymm3");
-				asm volatile ("vpxor    %ymm3,%ymm1,%ymm1");
-			}
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[j][i]));
-			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[j][i + 32]));
+				"vpbroadcastb 3(%2), %%ymm14\n"
+				"vgf2p8mulb %%ymm6, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8mulb %%ymm7, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $4, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 4(%2), %%ymm14\n"
+				"vgf2p8mulb %%ymm8, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8mulb %%ymm9, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+				"cmpq $5, %0\n"
+				"jbe 1f\n"
+
+				"vpbroadcastb 5(%2), %%ymm14\n"
+				"vgf2p8mulb %%ymm10, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm12, %%ymm12\n"
+				"vgf2p8mulb %%ymm11, %%ymm14, %%ymm15\n"
+				"vpxor %%ymm15, %%ymm13, %%ymm13\n"
+
+				"1:\n"
+				"movq %3, %%rax\n"
+				"vmovdqa %%ymm12, 0(%%rax, %1)\n"
+				"vmovdqa %%ymm13, 32(%%rax, %1)\n"
+				:
+				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j])
+				: "rax", "cc", "memory"
+			);
 		}
 	}
 
@@ -1563,7 +1761,7 @@ void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 			"1:\n"
 			:
 			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
-			: "rax", "rbx"
+			: "rax", "rbx", "cc", "memory"
 		);
 
 		/* reconstruct */
@@ -1607,7 +1805,7 @@ void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 				"vmovdqa64 %%zmm7, (%%rax, %1)\n"
 				:
 				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j])
-				: "rax"
+				: "rax", "cc", "memory"
 			);
 		}
 	}
