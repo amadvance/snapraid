@@ -82,6 +82,7 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 - Run `make doc` to regenerate all manual pages (`*.1`) and text manuals (`*.txt`)
 - Always use parallel compilation with `make -j$(nproc)` instead of plain `make`
 - To cross-compile for Windows x64: run `make clean && ./configure.windows-x64 && make -j$(nproc)`
+- The Windows build needs to be tested only when modifying Windows-specific code (e.g., `os/mingw.*`, `cmdline/mingwapp.c`, or Windows-specific `#ifdef` paths)
 - After configuring for Windows (`./configure.windows-x64`), it is not necessary to reconfigure back for Linux; you can leave it configured for Windows
 - Always run `make clean` when switching build configurations or targets between Linux (`./configure`) and Windows (`./configure.windows-x64`)
 
@@ -127,4 +128,5 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 
 - Never run `make check` because it's too expansive
 - Run `./snapraid test` for the regression test
+- The Windows build needs to be tested only when modifying Windows-specific code
 - Verify error paths and recovery scenarios (the test suite covers aborted sync, UUID changes, disk failures)
