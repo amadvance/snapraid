@@ -212,6 +212,11 @@ AS_IF([test "x$enable_asm" != "xno"], [
 	AC_DEFINE([HAVE_ASSEMBLY], [1], [Define to 1 if inline assembly should be used.])
 ])
 
+dnl Optional command prefix used to execute cross-compiled target binaries.
+dnl For example:
+dnl   TARGET_RUNNER="qemu-arm -cpu cortex-a15 -L /usr/arm-linux-gnueabihf"
+AC_ARG_VAR([TARGET_RUNNER], [Command prefix used to execute cross-compiled target binaries])
+
 dnl Checks for test environment
 AS_CASE([$host],
 	[*-*-mingw*],
@@ -219,9 +224,18 @@ AS_CASE([$host],
 	TESTENV="$WINE"
 	FAILENV="$TESTENV"
 	],
-	[POSIX=1]
+	[
+	POSIX=1
+	AS_IF([test "x$cross_compiling" = "xyes" && test -n "$TARGET_RUNNER"],
+		[
+		TESTENV="$TARGET_RUNNER"
+		FAILENV="$TESTENV"
+		AC_MSG_NOTICE([Cross-compiled target runner: $TARGET_RUNNER])
+		])
+	]
 )
 AM_CONDITIONAL(HAVE_POSIX, [test x"$POSIX" != x])
+AM_CONDITIONAL(CROSS_COMPILING, [test "x$cross_compiling" = "xyes"])
 AM_CONDITIONAL(HAVE_DISK_ARBITRATION, [test "$(uname)" = Darwin])
 
 AC_ARG_ENABLE([profiler],

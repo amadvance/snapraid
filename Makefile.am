@@ -502,7 +502,9 @@ endif
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) down -d parity -d disk1
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) devices
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) probe --test-fake-device
+if !CROSS_COMPILING
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) probe --test-fake-device -s
+endif
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --test-fake-device --test-expect-failure
 if HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) pool
