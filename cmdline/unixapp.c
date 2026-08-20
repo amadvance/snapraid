@@ -43,6 +43,22 @@ void app_signal_handler(int signum)
 #define BCACHEFS_SUPER_MAGIC 0xCA451A4E
 #define ZFS_SUPER_MAGIC 0x2FC12FC1
 
+#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
+/**
+ * Return the filesystem type as an unsigned value.
+ *
+ * In glibc, 'struct statfs.f_type' has type '__fsword_t' (signed 'int' on 32-bit
+ * architectures and 'long' on 64-bit). Directly comparing signed 'f_type' against
+ * 32-bit unsigned magic constants (e.g. BTRFS_SUPER_MAGIC > 0x7FFFFFFF) triggers
+ * signedness comparison warnings on 32-bit systems. Converting to unsigned here
+ * avoids signed/unsigned comparison mismatches across all architectures.
+ */
+static inline unsigned statfs_type(const struct statfs* sfs)
+{
+	return sfs->f_type;
+}
+#endif
+
 #if HAVE_LINUX_DEVICE
 static const char* const bcachefs_paths[] = {
 #ifdef BCACHEFS_PATH
@@ -1090,11 +1106,11 @@ static int devdereference(uint64_t device, const char* dir, tommy_list* devlist)
 	}
 
 	int ret;
-	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
+	if (statfs_type(&sfs) == BTRFS_SUPER_MAGIC) {
 		ret = devdereference_btrfs(device, dir, fd, devlist);
-	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
+	} else if (statfs_type(&sfs) == BCACHEFS_SUPER_MAGIC) {
 		ret = devdereference_bcachefs(device, dir, devlist);
-	} else if (sfs.f_type == ZFS_SUPER_MAGIC) {
+	} else if (statfs_type(&sfs) == ZFS_SUPER_MAGIC) {
 		ret = devdereference_zfs(device, dir, devlist);
 	} else {
 		/* insert the device itself in the list */
@@ -1638,7 +1654,7 @@ static int devuuid_btrfs(uint64_t device, const char* dir, char* uuid, size_t uu
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
+	if (statfs_type(&sfs) != BTRFS_SUPER_MAGIC) {
 		close(fd);
 		return -1;
 	}
@@ -1697,7 +1713,7 @@ static int devuuid_bcachefs(uint64_t device, const char* dir, char* uuid, size_t
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (sfs.f_type != BCACHEFS_SUPER_MAGIC) {
+	if (statfs_type(&sfs) != BCACHEFS_SUPER_MAGIC) {
 		close(fd);
 		return -1;
 	}
@@ -2032,7 +2048,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	/* to get the fs type check "man stat" or "stat -f -t FILE" */
 	if (has_persistent_inode) {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
-		switch (st.f_type) {
+		switch (statfs_type(&st)) {
 		case FUSEBLK_SUPER_MAGIC : /* FUSE, "fuseblk" in the stat command */
 		case MSDOS_SUPER_MAGIC : /* VFAT, "msdos" in the stat command */
 			*has_persistent_inode = 0;
@@ -2050,7 +2066,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 
 	if (has_syncronized_hardlinks) {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
-		switch (st.f_type) {
+		switch (statfs_type(&st)) {
 		case NTFS_SB_MAGIC : /* NTFS */
 		case MSDOS_SUPER_MAGIC : /* VFAT, "msdos" in the stat command */
 			*has_syncronized_hardlinks = 0;
@@ -2093,7 +2109,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 	 * from: https://github.com/influxdata/gopsutil/blob/master/disk/disk_linux.go
 	 */
 	for (int i = 0; FILESYSTEMS[i].id != 0; ++i) {
-		if (st.f_type == FILESYSTEMS[i].id) {
+		if (statfs_type(&st) == FILESYSTEMS[i].id) {
 			ptype = FILESYSTEMS[i].name;
 			break;
 		}
@@ -2207,13 +2223,13 @@ int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 
 	assert(fss != 0); /* silence the clang static analyzer (it's never called with a NULL fss) */
 
-	if (sfs.f_type == BTRFS_SUPER_MAGIC) {
+	if (statfs_type(&sfs) == BTRFS_SUPER_MAGIC) {
 		/* btrfs reserved inode 256 for subvolume roots */
 		return fssnapshot_inode(path, BTRFS_SUPER_MAGIC, 256, fss);
-	} else if (sfs.f_type == BCACHEFS_SUPER_MAGIC) {
+	} else if (statfs_type(&sfs) == BCACHEFS_SUPER_MAGIC) {
 		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
 		return fssnapshot_inode(path, BCACHEFS_SUPER_MAGIC, 4096, fss);
-	} else if (sfs.f_type == ZFS_SUPER_MAGIC) {
+	} else if (statfs_type(&sfs) == ZFS_SUPER_MAGIC) {
 		return fssnapshot_zfs(path, ZFS_SUPER_MAGIC, fss);
 	} else {
 		return 1;
