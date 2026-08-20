@@ -100,32 +100,50 @@
 /**
  * Initializes the RAID system.
  *
- * You must call this function before any other.
+ * You must call this function before any other RAID function.
+ *
+ * Initialization modifies global RAID state and must not be called
+ * concurrently with any other RAID function.
  *
  * The RAID system is initialized in the RAID_MODE_CAUCHY_RAID mode.
  */
 void raid_init(void);
 
 /**
- * Runs a basic functionality self test.
- *
- * The test is immediate, and it's intended to be run at application
- * startup to check the integrity of the RAID system.
- *
- * It returns 0 on success.
- */
-int raid_selftest(void);
-
-/**
  * Sets or queries the mode to use. One of RAID_MODE_*.
+ *
+ * The selected mode is global to the RAID library and affects all subsequent
+ * generation, recovery, validation, and scanning operations.
  *
  * Passing RAID_MODE_GET (-1) queries the current active mode without changing it.
  * Passing a valid mode (RAID_MODE_CAUCHY_RAID, RAID_MODE_VANDERMONDE_RAID,
  * RAID_MODE_CAUCHY_AES) sets the mode.
  *
+ * Changing the mode modifies global RAID state. raid_mode() must not be called
+ * concurrently with any other RAID function.
+ *
  * Returns the mode that was active prior to this call.
  */
 int raid_mode(int mode);
+
+/**
+ * Runs a basic functionality self test.
+ *
+ * raid_init() must be called before this function.
+ *
+ * If a mode different from the default is required, raid_mode() must be
+ * called before this function. The self test verifies the currently selected
+ * RAID mode.
+ *
+ * The test is immediate, and it's intended to be run at application
+ * startup to check the integrity of the RAID system.
+ *
+ * The test modifies global RAID state and must not be called concurrently
+ * with any other RAID function.
+ *
+ * It returns 0 on success.
+ */
+int raid_selftest(void);
 
 /**
  * Sets the zero buffer to use during recovery.
@@ -136,6 +154,12 @@ int raid_mode(int mode);
  * The buffer pointed to by @zero must be aligned to a 64-byte boundary.
  *
  * This buffer is only read and never written.
+ *
+ * The selected zero buffer is global to the RAID library. raid_zero() must
+ * not be called concurrently with any other RAID function.
+ *
+ * Once set, the buffer must remain valid and unchanged while it is being
+ * used by recovery operations.
  */
 void raid_zero(void *zero);
 
