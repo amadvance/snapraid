@@ -1228,6 +1228,12 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_avx_begin();
 
 #ifdef CONFIG_X86_64
+	const uint8_t *T[RAID_PARITY_MAX * RAID_PARITY_MAX];
+
+	/* precompute shuffle table pointers */
+	for (j = 0; j < N * N; ++j)
+		T[j] = &raid_gfmulpshufb[V[j]][0][0];
+
 	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 32) {
@@ -1306,65 +1312,59 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"movzbq 0(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti128 0(%4, %%rcx), %%ymm13\n"
-				"vbroadcasti128 16(%4, %%rcx), %%ymm14\n"
+				"movq 0(%2), %%rcx\n"
+				"vbroadcasti128 0(%%rcx), %%ymm13\n"
+				"vbroadcasti128 16(%%rcx), %%ymm14\n"
 				"vpshufb %%ymm0, %%ymm13, %%ymm13\n"
 				"vpshufb %%ymm1, %%ymm14, %%ymm14\n"
 				"cmpq $1, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 1(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"movq 8(%2), %%rcx\n"
+				"vbroadcasti128 0(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm2, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
-				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vbroadcasti128 16(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm3, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
 				"cmpq $2, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 2(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"movq 16(%2), %%rcx\n"
+				"vbroadcasti128 0(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm4, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
-				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vbroadcasti128 16(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm5, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
 				"cmpq $3, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 3(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"movq 24(%2), %%rcx\n"
+				"vbroadcasti128 0(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm6, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
-				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vbroadcasti128 16(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm7, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
 				"cmpq $4, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 4(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"movq 32(%2), %%rcx\n"
+				"vbroadcasti128 0(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm8, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
-				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vbroadcasti128 16(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm9, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
 				"cmpq $5, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 5(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti128 0(%4, %%rcx), %%ymm12\n"
+				"movq 40(%2), %%rcx\n"
+				"vbroadcasti128 0(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm10, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm13, %%ymm13\n"
-				"vbroadcasti128 16(%4, %%rcx), %%ymm12\n"
+				"vbroadcasti128 16(%%rcx), %%ymm12\n"
 				"vpshufb %%ymm11, %%ymm12, %%ymm12\n"
 				"vpxor %%ymm12, %%ymm14, %%ymm14\n"
 
@@ -1373,7 +1373,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"movq %3, %%rax\n"
 				"vmovdqa %%ymm13, (%%rax, %1)\n"
 				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "r" ((uint64_t)N), "r" (i), "r" (&T[j * N]), "r" (pa[j])
 				: "rax", "rcx", "cc", "memory"
 			);
 		}

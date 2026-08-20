@@ -369,6 +369,7 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *T[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	size_t i;
 	int j, k;
 
@@ -379,6 +380,10 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* precompute shuffle table pointers */
+	for (j = 0; j < N * N; ++j)
+		T[j] = &raid_gfmulpshufb[V[j]][0][0];
 
 	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
@@ -468,19 +473,17 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"movzbq 0(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti32x4 0(%4, %%rcx), %%zmm14\n"
-				"vbroadcasti32x4 16(%4, %%rcx), %%zmm15\n"
+				"movq 0(%2), %%rcx\n"
+				"vbroadcasti32x4 0(%%rcx), %%zmm14\n"
+				"vbroadcasti32x4 16(%%rcx), %%zmm15\n"
 				"vpshufb %%zmm0, %%zmm14, %%zmm14\n"
 				"vpshufb %%zmm1, %%zmm15, %%zmm15\n"
 				"cmpq $1, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 1(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
-				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"movq 8(%2), %%rcx\n"
+				"vbroadcasti32x4 0(%%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%%rcx), %%zmm13\n"
 				"vpshufb %%zmm2, %%zmm12, %%zmm12\n"
 				"vpshufb %%zmm3, %%zmm13, %%zmm13\n"
 				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
@@ -488,10 +491,9 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 				"cmpq $2, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 2(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
-				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"movq 16(%2), %%rcx\n"
+				"vbroadcasti32x4 0(%%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%%rcx), %%zmm13\n"
 				"vpshufb %%zmm4, %%zmm12, %%zmm12\n"
 				"vpshufb %%zmm5, %%zmm13, %%zmm13\n"
 				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
@@ -499,10 +501,9 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 				"cmpq $3, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 3(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
-				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"movq 24(%2), %%rcx\n"
+				"vbroadcasti32x4 0(%%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%%rcx), %%zmm13\n"
 				"vpshufb %%zmm6, %%zmm12, %%zmm12\n"
 				"vpshufb %%zmm7, %%zmm13, %%zmm13\n"
 				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
@@ -510,10 +511,9 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 				"cmpq $4, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 4(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
-				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"movq 32(%2), %%rcx\n"
+				"vbroadcasti32x4 0(%%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%%rcx), %%zmm13\n"
 				"vpshufb %%zmm8, %%zmm12, %%zmm12\n"
 				"vpshufb %%zmm9, %%zmm13, %%zmm13\n"
 				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
@@ -521,10 +521,9 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 				"cmpq $5, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 5(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"vbroadcasti32x4 0(%4, %%rcx), %%zmm12\n"
-				"vbroadcasti32x4 16(%4, %%rcx), %%zmm13\n"
+				"movq 40(%2), %%rcx\n"
+				"vbroadcasti32x4 0(%%rcx), %%zmm12\n"
+				"vbroadcasti32x4 16(%%rcx), %%zmm13\n"
 				"vpshufb %%zmm10, %%zmm12, %%zmm12\n"
 				"vpshufb %%zmm11, %%zmm13, %%zmm13\n"
 				"vpxorq %%zmm12, %%zmm14, %%zmm14\n"
@@ -535,7 +534,7 @@ void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 				"movq %3, %%rax\n"
 				"vmovdqa64 %%zmm14, (%%rax, %1)\n"
 				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "r" ((uint64_t)N), "r" (i), "r" (&T[j * N]), "r" (pa[j])
 				: "rax", "rcx", "cc", "memory"
 			);
 		}

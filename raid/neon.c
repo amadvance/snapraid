@@ -884,6 +884,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *pa[RAID_PARITY_MAX];
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *T[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	size_t i;
 	int j, k;
 
@@ -894,6 +895,10 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
+
+	/* precompute shuffle table pointers */
+	for (j = 0; j < N * N; ++j)
+		T[j] = &raid_gfmulpshufb[V[j]][0][0];
 
 	/* compute delta parity */
 	raid_delta_gen(N, id, ip, nd, size, vv);
@@ -988,16 +993,14 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"ldrb w4, [%2, #0]\n"
-				"add x5, %4, x4, lsl #5\n"
+				"ldr x5, [%2, #0]\n"
 				"ldp q24, q25, [x5]\n"
 				"tbl v12.16b, {v24.16b}, v0.16b\n"
 				"tbl v13.16b, {v25.16b}, v1.16b\n"
 				"cmp %0, #1\n"
 				"b.ls 1f\n"
 
-				"ldrb w4, [%2, #1]\n"
-				"add x5, %4, x4, lsl #5\n"
+				"ldr x5, [%2, #8]\n"
 				"ldp q24, q25, [x5]\n"
 				"tbl v14.16b, {v24.16b}, v2.16b\n"
 				"tbl v15.16b, {v25.16b}, v3.16b\n"
@@ -1006,8 +1009,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"cmp %0, #2\n"
 				"b.ls 1f\n"
 
-				"ldrb w4, [%2, #2]\n"
-				"add x5, %4, x4, lsl #5\n"
+				"ldr x5, [%2, #16]\n"
 				"ldp q24, q25, [x5]\n"
 				"tbl v14.16b, {v24.16b}, v4.16b\n"
 				"tbl v15.16b, {v25.16b}, v5.16b\n"
@@ -1016,8 +1018,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"cmp %0, #3\n"
 				"b.ls 1f\n"
 
-				"ldrb w4, [%2, #3]\n"
-				"add x5, %4, x4, lsl #5\n"
+				"ldr x5, [%2, #24]\n"
 				"ldp q24, q25, [x5]\n"
 				"tbl v14.16b, {v24.16b}, v6.16b\n"
 				"tbl v15.16b, {v25.16b}, v7.16b\n"
@@ -1026,8 +1027,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"cmp %0, #4\n"
 				"b.ls 1f\n"
 
-				"ldrb w4, [%2, #4]\n"
-				"add x5, %4, x4, lsl #5\n"
+				"ldr x5, [%2, #32]\n"
 				"ldp q24, q25, [x5]\n"
 				"tbl v14.16b, {v24.16b}, v8.16b\n"
 				"tbl v15.16b, {v25.16b}, v9.16b\n"
@@ -1036,8 +1036,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"cmp %0, #5\n"
 				"b.ls 1f\n"
 
-				"ldrb w4, [%2, #5]\n"
-				"add x5, %4, x4, lsl #5\n"
+				"ldr x5, [%2, #40]\n"
 				"ldp q24, q25, [x5]\n"
 				"tbl v14.16b, {v24.16b}, v10.16b\n"
 				"tbl v15.16b, {v25.16b}, v11.16b\n"
@@ -1048,7 +1047,7 @@ void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"eor v12.16b, v12.16b, v13.16b\n"
 				"str q12, [%3, %1]\n"
 				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "r" ((uint64_t)N), "r" (i), "r" (&T[j * N]), "r" (pa[j])
 				: "x4", "x5", "cc", "memory"
 			);
 		}

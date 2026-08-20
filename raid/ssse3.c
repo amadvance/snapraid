@@ -1570,6 +1570,12 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_sse_begin();
 
 #ifdef CONFIG_X86_64
+	const uint8_t *T[RAID_PARITY_MAX * RAID_PARITY_MAX];
+
+	/* precompute shuffle table pointers */
+	for (j = 0; j < N * N; ++j)
+		T[j] = &raid_gfmulpshufb[V[j]][0][0];
+
 	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
@@ -1660,65 +1666,59 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		/* reconstruct */
 		for (j = 0; j < N; ++j) {
 			asm volatile (
-				"movzbq 0(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"movdqa 0(%4, %%rcx), %%xmm13\n"
-				"movdqa 16(%4, %%rcx), %%xmm14\n"
+				"movq 0(%2), %%rcx\n"
+				"movdqa 0(%%rcx), %%xmm13\n"
+				"movdqa 16(%%rcx), %%xmm14\n"
 				"pshufb %%xmm0, %%xmm13\n"
 				"pshufb %%xmm1, %%xmm14\n"
 				"cmpq $1, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 1(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"movq 8(%2), %%rcx\n"
+				"movdqa 0(%%rcx), %%xmm12\n"
 				"pshufb %%xmm2, %%xmm12\n"
 				"pxor %%xmm12, %%xmm13\n"
-				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"movdqa 16(%%rcx), %%xmm12\n"
 				"pshufb %%xmm3, %%xmm12\n"
 				"pxor %%xmm12, %%xmm14\n"
 				"cmpq $2, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 2(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"movq 16(%2), %%rcx\n"
+				"movdqa 0(%%rcx), %%xmm12\n"
 				"pshufb %%xmm4, %%xmm12\n"
 				"pxor %%xmm12, %%xmm13\n"
-				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"movdqa 16(%%rcx), %%xmm12\n"
 				"pshufb %%xmm5, %%xmm12\n"
 				"pxor %%xmm12, %%xmm14\n"
 				"cmpq $3, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 3(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"movq 24(%2), %%rcx\n"
+				"movdqa 0(%%rcx), %%xmm12\n"
 				"pshufb %%xmm6, %%xmm12\n"
 				"pxor %%xmm12, %%xmm13\n"
-				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"movdqa 16(%%rcx), %%xmm12\n"
 				"pshufb %%xmm7, %%xmm12\n"
 				"pxor %%xmm12, %%xmm14\n"
 				"cmpq $4, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 4(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"movq 32(%2), %%rcx\n"
+				"movdqa 0(%%rcx), %%xmm12\n"
 				"pshufb %%xmm8, %%xmm12\n"
 				"pxor %%xmm12, %%xmm13\n"
-				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"movdqa 16(%%rcx), %%xmm12\n"
 				"pshufb %%xmm9, %%xmm12\n"
 				"pxor %%xmm12, %%xmm14\n"
 				"cmpq $5, %0\n"
 				"jbe 1f\n"
 
-				"movzbq 5(%2), %%rcx\n"
-				"shlq $5, %%rcx\n"
-				"movdqa 0(%4, %%rcx), %%xmm12\n"
+				"movq 40(%2), %%rcx\n"
+				"movdqa 0(%%rcx), %%xmm12\n"
 				"pshufb %%xmm10, %%xmm12\n"
 				"pxor %%xmm12, %%xmm13\n"
-				"movdqa 16(%4, %%rcx), %%xmm12\n"
+				"movdqa 16(%%rcx), %%xmm12\n"
 				"pshufb %%xmm11, %%xmm12\n"
 				"pxor %%xmm12, %%xmm14\n"
 
@@ -1727,7 +1727,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 				"movq %3, %%rax\n"
 				"movdqa %%xmm13, (%%rax, %1)\n"
 				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&V[j * N]), "r" (pa[j]), "r" (raid_gfmulpshufb)
+				: "r" ((uint64_t)N), "r" (i), "r" (&T[j * N]), "r" (pa[j])
 				: "rax", "rcx", "cc", "memory"
 			);
 		}
