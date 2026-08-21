@@ -63,10 +63,10 @@ void raid_gen1_neon32(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AArch32 NEON implementation using the active generator.
+ * GEN2 Cauchy AArch32 NEON implementation using the active Q transition.
  */
 static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
-	void **vv, int generator)
+	void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -86,8 +86,12 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 		:
 		: "Q" (gfconst16.poly[0])
 	);
+	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 32) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		asm volatile (
 			"vld1.8 {q0}, %0\n"
 			"vld1.8 {q1}, %1\n"
@@ -98,7 +102,14 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 		);
 
 		for (d = l - 1; d >= 0; --d) {
-			if (generator == 3) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
+			if (g23 && g23_x3) {
 				asm volatile (
 					"vmov q10, q2\n"
 					"vmov q11, q3\n"
@@ -122,7 +133,7 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 				:
 				: "Q" (v[d][i]), "Q" (v[d][i + 16])
 			);
-			if (generator == 3) {
+			if (g23 && g23_x3) {
 				asm volatile (
 					"veor q2, q2, q10\n"
 					"veor q3, q3, q11\n"
@@ -145,12 +156,12 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 
 void raid_gen2_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon32_gen(nd, size, vv, 2);
+	raid_gen2_neon32_gen(nd, size, vv, 0);
 }
 
 void raid_gen2_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon32_gen(nd, size, vv, 3);
+	raid_gen2_neon32_gen(nd, size, vv, 1);
 }
 
 /*
@@ -244,7 +255,7 @@ void raid_genz_neon32_raid(int nd, size_t size, void **vv)
  * GENX AArch32 NEON implementation.
  */
 static __always_inline void raid_genX_neon32(int nd, size_t size,
-	void **vv, int np, int generator)
+	void **vv, int np, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -258,6 +269,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 			memcpy(v[1 + d], v[0], size);
 		return;
 	}
+	int g23_start = raid_g23_count(l - 1);
 
 	raid_neon32_begin();
 
@@ -269,6 +281,9 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	);
 
 	for (i = 0; i < size; i += 16) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		/* last disk without the generator multiplication */
 		asm volatile (
 			"vld1.8 {q0}, %0\n"
@@ -353,7 +368,14 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			if (generator == 3) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
+			if (g23 && g23_x3) {
 				asm volatile (
 					"vmov q13, q1\n"
 				);
@@ -369,7 +391,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 				:
 				: "Q" (v[d][i])
 			);
-			if (generator == 3) {
+			if (g23 && g23_x3) {
 				asm volatile (
 					"veor q1, q1, q13\n"
 				);
@@ -448,7 +470,14 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 		}
 
 		/* first disk with all coefficients at 1 */
-		if (generator == 3) {
+		g23_x3 = 0;
+		if (g23) {
+			g23_x3 = --g23_count == 0;
+			if (g23_x3)
+				g23_count = 51;
+		}
+
+		if (g23 && g23_x3) {
 			asm volatile (
 				"vmov q13, q1\n"
 			);
@@ -464,7 +493,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 			:
 			: "Q" (v[0][i])
 		);
-		if (generator == 3) {
+		if (g23 && g23_x3) {
 			asm volatile (
 				"veor q1, q1, q13\n"
 			);
@@ -533,12 +562,12 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
  */
 void raid_gen3_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 3, 2);
+	raid_genX_neon32(nd, size, vv, 3, 0);
 }
 
 void raid_gen3_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 3, 3);
+	raid_genX_neon32(nd, size, vv, 3, 1);
 }
 
 /*
@@ -546,12 +575,12 @@ void raid_gen3_neon32_aes(int nd, size_t size, void **vv)
  */
 void raid_gen4_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 4, 2);
+	raid_genX_neon32(nd, size, vv, 4, 0);
 }
 
 void raid_gen4_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 4, 3);
+	raid_genX_neon32(nd, size, vv, 4, 1);
 }
 
 /*
@@ -559,12 +588,12 @@ void raid_gen4_neon32_aes(int nd, size_t size, void **vv)
  */
 void raid_gen5_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 5, 2);
+	raid_genX_neon32(nd, size, vv, 5, 0);
 }
 
 void raid_gen5_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 5, 3);
+	raid_genX_neon32(nd, size, vv, 5, 1);
 }
 
 /*
@@ -572,12 +601,12 @@ void raid_gen5_neon32_aes(int nd, size_t size, void **vv)
  */
 void raid_gen6_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 6, 2);
+	raid_genX_neon32(nd, size, vv, 6, 0);
 }
 
 void raid_gen6_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 6, 3);
+	raid_genX_neon32(nd, size, vv, 6, 1);
 }
 
 /*

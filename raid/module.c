@@ -40,7 +40,6 @@ static struct raid_rec_algo *raid_rec_algo;
 int raid_mode_active = RAID_MODE_GET;
 
 const uint8_t(*raid_gfmul)[256];
-const uint8_t *raid_gfexp;
 const uint8_t *raid_gfinv;
 const uint8_t(*raid_gfvandermonde)[256];
 const uint8_t(*raid_gfcauchy)[256];
@@ -225,7 +224,6 @@ int raid_mode(int mode)
 
 	if (mode == RAID_MODE_CAUCHY_AES) {
 		raid_gfmul = raid_gfmul_aes;
-		raid_gfexp = raid_gfexp_aes;
 		raid_gfinv = raid_gfinv_aes;
 		raid_gfvandermonde = 0;
 		raid_gfcauchy = raid_gfcauchy_aes;
@@ -245,7 +243,6 @@ int raid_mode(int mode)
 		raid_rec_algo = raid_rec_algo_aes;
 	} else {
 		raid_gfmul = raid_gfmul_raid;
-		raid_gfexp = raid_gfexp_raid;
 		raid_gfinv = raid_gfinv_raid;
 		raid_gfvandermonde = raid_gfvandermonde_raid;
 		raid_gfcauchy = raid_gfcauchy_raid;

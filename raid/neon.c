@@ -60,9 +60,9 @@ void raid_gen1_neon(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy NEON implementation using the active generator
+ * GEN2 Cauchy NEON implementation using the active Q transition
  */
-static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -81,8 +81,12 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 		:
 		: "m" (gfconst16.poly[0])
 	);
+	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 32) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		asm volatile (
 			"ldr q0, %0\n"
 			"ldr q1, %1\n"
@@ -93,7 +97,14 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 		);
 
 		for (d = l - 1; d >= 0; --d) {
-			if (generator == 3) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
+			if (g23 && g23_x3) {
 				/* v14-v15 are otherwise unused and preserve Q across the AES xtime. */
 				asm volatile (
 					"mov v14.16b, v2.16b\n"
@@ -122,7 +133,7 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 				:
 				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
-			if (generator == 3) {
+			if (g23 && g23_x3) {
 				asm volatile (
 					"eor v2.16b, v2.16b, v14.16b\n"
 					"eor v3.16b, v3.16b, v15.16b\n"
@@ -145,12 +156,12 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 
 void raid_gen2_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon_gen(nd, size, vv, 2);
+	raid_gen2_neon_gen(nd, size, vv, 0);
 }
 
 void raid_gen2_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon_gen(nd, size, vv, 3);
+	raid_gen2_neon_gen(nd, size, vv, 1);
 }
 
 /*
@@ -250,7 +261,7 @@ void raid_genz_neon_raid(int nd, size_t size, void **vv)
 /*
  * GENX NEON implementation
  */
-static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int np, int generator)
+static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int np, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -264,6 +275,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			memcpy(v[1 + d], v[0], size);
 		return;
 	}
+	int g23_start = raid_g23_count(l - 1);
 
 	raid_neon_begin();
 
@@ -276,6 +288,9 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 	);
 
 	for (i = 0; i < size; i += 32) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		/* last disk without the generator multiplication */
 		asm volatile (
 			"ldr q0, %0\n"
@@ -359,7 +374,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			if (generator == 3) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
+			if (g23 && g23_x3) {
 				asm volatile (
 					"mov v14.16b, v2.16b\n"
 					"mov v15.16b, v3.16b\n"
@@ -387,7 +409,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				:
 				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
-			if (generator == 3) {
+			if (g23 && g23_x3) {
 				asm volatile (
 					"eor v2.16b, v2.16b, v14.16b\n"
 					"eor v3.16b, v3.16b, v15.16b\n"
@@ -475,7 +497,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 		}
 
 		/* first disk with all coefficients at 1 */
-		if (generator == 3) {
+		g23_x3 = 0;
+		if (g23) {
+			g23_x3 = --g23_count == 0;
+			if (g23_x3)
+				g23_count = 51;
+		}
+
+		if (g23 && g23_x3) {
 			asm volatile (
 				"mov v14.16b, v2.16b\n"
 				"mov v15.16b, v3.16b\n"
@@ -503,7 +532,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			:
 			: "m" (v[0][i]), "m" (v[0][i + 16])
 		);
-		if (generator == 3) {
+		if (g23 && g23_x3) {
 			asm volatile (
 				"eor v2.16b, v2.16b, v14.16b\n"
 				"eor v3.16b, v3.16b, v15.16b\n"
@@ -582,12 +611,12 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
  */
 void raid_gen3_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 3, 2);
+	raid_genX_neon(nd, size, vv, 3, 0);
 }
 
 void raid_gen3_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 3, 3);
+	raid_genX_neon(nd, size, vv, 3, 1);
 }
 
 /*
@@ -595,12 +624,12 @@ void raid_gen3_neon_aes(int nd, size_t size, void **vv)
  */
 void raid_gen4_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 4, 2);
+	raid_genX_neon(nd, size, vv, 4, 0);
 }
 
 void raid_gen4_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 4, 3);
+	raid_genX_neon(nd, size, vv, 4, 1);
 }
 
 /*
@@ -608,12 +637,12 @@ void raid_gen4_neon_aes(int nd, size_t size, void **vv)
  */
 void raid_gen5_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 5, 2);
+	raid_genX_neon(nd, size, vv, 5, 0);
 }
 
 void raid_gen5_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 5, 3);
+	raid_genX_neon(nd, size, vv, 5, 1);
 }
 
 /*
@@ -621,12 +650,12 @@ void raid_gen5_neon_aes(int nd, size_t size, void **vv)
  */
 void raid_gen6_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 6, 2);
+	raid_genX_neon(nd, size, vv, 6, 0);
 }
 
 void raid_gen6_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 6, 3);
+	raid_genX_neon(nd, size, vv, 6, 1);
 }
 
 /*

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 /*
  * Galois field reduction polynomials.
@@ -84,9 +85,9 @@ uint8_t raid_gfinv[256];
 #define DISK (257 - PARITY)
 
 /**
- * Setup the Cauchy matrix used to generate the parity.
+ * Setup the RAID/g=2 Cauchy matrix used to generate parity.
  */
-static void set_cauchy(uint8_t poly, uint8_t generator, uint8_t *matrix)
+static void set_cauchy_raid(uint8_t poly, uint8_t generator, uint8_t *matrix)
 {
 	int i, j;
 	uint8_t inv_x, y;
@@ -207,6 +208,68 @@ static void set_cauchy(uint8_t poly, uint8_t generator, uint8_t *matrix)
 }
 
 /**
+ * Setup the AES Extended Cauchy matrix using the G23 sequence.
+ *
+ * The data X set consumes the canonical sequence from the beginning,
+ * x[i]=inv(q[i]), while the Cauchy Y set starts with zero and consumes the
+ * sequence backward from the end, y[j]=inv(q[255-j]) for j>0. For PARITY=n,
+ * DISK=257-n; increasing parity removes one X element from the tail and
+ * appends that same element to Y, leaving all existing rows unchanged on the
+ * remaining data columns. This defines a nested matrix without implementing
+ * parity levels above the current limit.
+ */
+static void set_cauchy_aes(uint8_t *matrix)
+{
+	uint8_t q[255];
+	uint8_t y[PARITY - 1];
+	int i, j, k;
+
+	q[0] = 1;
+	for (i = 0; i < 254; ++i) {
+		uint8_t generator = i == 50 || i == 101 || i == 152 || i == 203 ? 3 : 2;
+
+		q[i + 1] = raid_gfmul(RAID_POLY_AES, generator, q[i]);
+	}
+
+	/* The five cosets must enumerate GF(256)* exactly once. */
+	for (i = 0; i < 255; ++i) {
+		if (q[i] == 0) {
+			fprintf(stderr, "Invalid zero in AES G23 sequence at %d\n", i);
+			exit(EXIT_FAILURE);
+		}
+		for (k = i + 1; k < 255; ++k) {
+			if (q[i] == q[k]) {
+				fprintf(stderr, "Duplicate in AES G23 sequence at %d and %d\n", i, k);
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	for (i = 0; i < DISK; ++i)
+		matrix[i] = 1;
+
+	y[0] = 0;
+	for (j = 1; j < PARITY - 1; ++j)
+		y[j] = raid_gfinv[q[255 - j]];
+
+	for (j = 0; j < PARITY - 1; ++j) {
+		for (i = 0; i < DISK; ++i) {
+			uint8_t x = raid_gfinv[q[i]];
+
+			matrix[(j + 1) * DISK + i] = raid_gfinv[x ^ y[j]];
+		}
+	}
+
+	/* Normalize R..U so every coefficient in the first column is 1. */
+	for (j = 1; j < PARITY - 1; ++j) {
+		uint8_t f = raid_gfinv[matrix[(j + 1) * DISK]];
+
+		for (i = 0; i < DISK; ++i)
+			matrix[(j + 1) * DISK + i] = raid_gfmul(RAID_POLY_AES, matrix[(j + 1) * DISK + i], f);
+	}
+}
+
+/**
  * Setup the Power matrix used to generate the parity.
  */
 static void set_power(uint8_t poly, uint8_t *matrix)
@@ -284,22 +347,6 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 		printf("};\n\n");
 	}
 
-	/* generator^a */
-	printf("const uint8_t __aligned(256) raid_gfexp_%s[256] =\n", tag);
-	printf("{\n");
-	v = 1;
-	for (i = 0; i < 256; ++i) {
-		if (i % 8 == 0)
-			printf("\t");
-		printf("0x%02x,", v);
-		v = raid_gfmul(poly, v, generator);
-		if (i % 8 == 7)
-			printf("\n");
-		else
-			printf(" ");
-	}
-	printf("};\n\n");
-
 	/* 1/a */
 	printf("const uint8_t __aligned(256) raid_gfinv_%s[256] =\n", tag);
 	printf("{\n");
@@ -320,7 +367,10 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 	printf("};\n\n");
 
 	/* cauchy matrix */
-	set_cauchy(poly, generator, matrix);
+	if (poly == RAID_POLY_AES)
+		set_cauchy_aes(matrix);
+	else
+		set_cauchy_raid(poly, generator, matrix);
 
 	printf("/**\n");
 	printf(" * Cauchy matrix used to generate parity.\n");
@@ -410,10 +460,11 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 		printf("\t},\n");
 	}
 	printf("};\n");
-	printf("#endif\n\n");
+	printf("#endif\n");
 
 	if (poly == RAID_POLY_AES)
 		return;
+	printf("\n");
 
 	/* power matrix */
 	set_power(poly, matrix);

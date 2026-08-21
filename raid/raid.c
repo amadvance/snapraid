@@ -38,20 +38,34 @@
  * nonsingular, so the linear system is always solvable for any combination
  * of missing disks. This guarantees an MDS code.
  *
- * The Cauchy construction below uses a primitive generator g.
+ * RAID_MODE_CAUCHY_RAID uses polynomial 0x11d and the existing primitive
+ * generator g=2 construction described below.
  *
- * RAID_MODE_CAUCHY_RAID uses:
- *     polynomial 0x11d
- *     generator g = 2
+ * RAID_MODE_CAUCHY_AES instead uses polynomial 0x11b and a G23 Extended
+ * Cauchy construction. In the AES field, element 2 has multiplicative order
+ * 51 while element 3 is primitive. Therefore H=<2> has five cosets in
+ * GF(256)*. The Q coefficients q[0..254] enumerate those cosets, starting
+ * with q[0]=1. Within a coset q advances by multiplication by 2. The four
+ * transitions between cosets advance by multiplication by 3, after the
+ * coefficients indexed 50, 101, 152, and 203.
  *
- * RAID_MODE_CAUCHY_AES uses:
- *     polynomial 0x11b
- *     generator g = 3
+ * The AES data X set consumes inverses of the G23 sequence from the beginning,
+ * q[0], q[1], ..., while the Cauchy Y set starts with zero and consumes
+ * inverses backward from its end: Y[0]=0 and Y[j]=inv(q[255-j]) for j>0.
+ * Thus R, S, T, and U use inv(q[254]), inv(q[253]), inv(q[252]), and
+ * inv(q[251]), respectively. For PARITY=n and DISK=257-n, increasing parity
+ * removes one X element from the tail and appends it to Y, leaving the existing
+ * rows unchanged on the remaining columns. X and Y are disjoint and together
+ * contain all 256 field elements, so C[j,i]=1/(X[i]+Y[j]) defines valid Cauchy
+ * rows. Adding P as an all-ones row forms an Extended Cauchy matrix. Q is the
+ * row for Y[0]=0 and therefore Q=sum(q[i]*Di). Rows R through U are scaled so
+ * their first coefficient is 1. This nonzero row scaling preserves the MDS
+ * property, and the resulting 6x251 matrix is MDS.
  *
  * The numerical examples below refer to RAID_MODE_CAUCHY_RAID,
  * using polynomial 0x11d and generator g = 2.
  *
- * How the matrix is obtained:
+ * How the RAID/g=2 matrix is obtained:
  *
  *   The matrix is constructed to match Linux RAID coefficients for the
  *   first two rows, while ensuring that all square submatrices are nonsingular.
@@ -121,7 +135,7 @@
  * data disks, one for each column. All the 377,342,351,231 square submatrices
  * are nonsingular, verified also by brute-force testing.
  *
- * This matrix can be extended to support any number of parities by simply
+ * The RAID/g=2 matrix can be extended to support any number of parities by simply
  * adding additional rows and removing one column for each new row to maintain
  * the condition i + j < 255.
  * (See mktables.c for more details on how the matrix is generated.)
@@ -132,27 +146,27 @@
  * or AVX2 instructions [1][5] make this approach competitive with the triple
  * parity computation using power coefficients.
  *
- * Another advantage of the Cauchy matrix is that the first two rows can
+ * Another advantage of the RAID/g=2 Cauchy matrix is that the first two rows can
  * replicate the RAID5 and RAID6 approach, resulting in a compatible extension.
  * SSSE3 or AVX2 instructions are only needed for triple parity or beyond.
  *
  * Parity computation is as follows:
  *
  *   P = sum(Di)
- *   Q = sum(g^i * Di)
+ *   Q = sum(A[1,i] * Di)
  *   R = sum(A[2,i] * Di)
  *   S = sum(A[3,i] * Di)
  *   T = sum(A[4,i] * Di)
  *   U = sum(A[5,i] * Di) for 0 <= i < N
  *
- *   where g=2 for RAID_MODE_CAUCHY_RAID and
- *   g=3 for RAID_MODE_CAUCHY_AES.
+ * For RAID_MODE_CAUCHY_RAID, A[1,i]=2^i. For RAID_MODE_CAUCHY_AES,
+ * A[1,i]=q[i] from the G23 sequence.
  *
  * Recovery from six disk failures at indices x, y, z, h, v, w (0 <= x < y < z < h < v < w < N)
  * involves computing parity of the remaining N-6 disks:
  *
  *   Pa = sum(Di)
- *   Qa = sum(g^i * Di)
+ *   Qa = sum(A[1,i] * Di)
  *   Ra = sum(A[2,i] * Di)
  *   Sa = sum(A[3,i] * Di)
  *   Ta = sum(A[4,i] * Di)
@@ -170,14 +184,11 @@
  * yields:
  *
  *   Pd =          Dx +          Dy +          Dz +          Dh +          Dv +          Dw
- *   Qd =    g^x * Dx +    g^y * Dy +    g^z * Dz +    g^h * Dh +    g^v * Dv +    g^w * Dw
+ *   Qd = A[1,x] * Dx + A[1,y] * Dy + A[1,z] * Dz + A[1,h] * Dh + A[1,v] * Dv + A[1,w] * Dw
  *   Rd = A[2,x] * Dx + A[2,y] * Dy + A[2,z] * Dz + A[2,h] * Dh + A[2,v] * Dv + A[2,w] * Dw
  *   Sd = A[3,x] * Dx + A[3,y] * Dy + A[3,z] * Dz + A[3,h] * Dh + A[3,v] * Dv + A[3,w] * Dw
  *   Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
  *   Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
- *
- * with g=2 for RAID_MODE_CAUCHY_RAID and
- * g=3 for RAID_MODE_CAUCHY_AES.
  *
  * This linear system is always solvable since the coefficient matrix is
  * nonsingular due to the properties of A[].
@@ -422,20 +433,19 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v)
  * Starting from the equations:
  *
  * Pd = Dx + Dy
- * Qd = g^id[0] * Dx + g^id[1] * Dy
+ * Qd = A[1,id[0]] * Dx + A[1,id[1]] * Dy
  *
  * and solving we get:
  *
- *               1                     g^(-id[0])
- * Dy = ------------------- * Pd + ------------------- * Qd
- *      g^(id[1]-id[0]) + 1        g^(id[1]-id[0]) + 1
+ *      Qd + A[1,id[0]] * Pd
+ * Dy = ------------------------
+ *       A[1,id[0]] + A[1,id[1]]
  *
  * Dx = Dy + Pd
  *
  * with conditions:
  *
- * g^id[0] != 0
- * g^(id[1]-id[0]) + 1 != 0
+ * A[1,id[0]] + A[1,id[1]] != 0
  *
  * That are always satisfied for any 0<=id[0]<id[1]<255.
  */
@@ -449,9 +459,9 @@ void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *qa;
 	const uint8_t *T[2];
 
-	/* get multiplication tables */
-	T[0] = table(inv(powgen(id[1] - id[0]) ^ 1));
-	T[1] = table(inv(powgen(id[0]) ^ powgen(id[1])));
+	/* get multiplication tables from the actual active Q coefficients */
+	T[0] = table(mul(A(1, id[0]), inv(A(1, id[0]) ^ A(1, id[1]))));
+	T[1] = table(inv(A(1, id[0]) ^ A(1, id[1])));
 
 	/* compute delta parity */
 	raid_delta_gen(2, id, ip, nd, size, vv);

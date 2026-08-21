@@ -39,9 +39,9 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AVX2 implementation using the active generator
+ * GEN2 Cauchy AVX2 implementation using the active Q transition
  */
-static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -57,15 +57,26 @@ static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, i
 
 	asm volatile ("vpbroadcastb %0, %%ymm7" : : "m" (gfconst16.poly[0]));
 	asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
+	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 64) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
 		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[l][i + 32]));
 		asm volatile ("vmovdqa %ymm0,%ymm2");
 		asm volatile ("vmovdqa %ymm1,%ymm3");
 
 		for (d = l - 1; d >= 0; --d) {
-			if (generator == 3) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
+			if (g23 && g23_x3) {
 				asm volatile ("vmovdqa %ymm2,%ymm4");
 				asm volatile ("vmovdqa %ymm3,%ymm5");
 				asm volatile ("vpaddb %ymm2,%ymm2,%ymm2");
@@ -108,12 +119,12 @@ static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, i
 
 void raid_gen2_avx2_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_avx2_gen(nd, size, vv, 2);
+	raid_gen2_avx2_gen(nd, size, vv, 0);
 }
 
 void raid_gen2_avx2_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_avx2_gen(nd, size, vv, 3);
+	raid_gen2_avx2_gen(nd, size, vv, 1);
 }
 
 #ifdef CONFIG_X86_64
@@ -126,7 +137,7 @@ void raid_gen2_avx2_aes(int nd, size_t size, void **vv)
  * Note that it uses 16 registers, meaning that x64 is required.
  */
 static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size,
-	void **vv, int generator)
+	void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -142,8 +153,13 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size,
 
 	asm volatile ("vpxor %ymm14,%ymm14,%ymm14");
 	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.poly[0]));
+	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 64) {
+		int g23_count = g23_start;
+		int g23_x3_d;
+		int g23_x3_d1;
+
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
 		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[l][i + 32]));
 		asm volatile ("vmovdqa %ymm0,%ymm2");
@@ -151,61 +167,88 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size,
 
 		/* process two disks per iteration */
 		for (d = l - 1; d >= 1; d -= 2) {
+			g23_x3_d = 0;
+			g23_x3_d1 = 0;
+			if (g23) {
+				g23_x3_d = --g23_count == 0;
+				if (g23_x3_d)
+					g23_count = 51;
+				g23_x3_d1 = --g23_count == 0;
+				if (g23_x3_d1)
+					g23_count = 51;
+			}
+
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm5" : : "m" (v[d][i + 32]));
 			asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[d - 1][i]));
 			asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[d - 1][i + 32]));
 
+			if (g23 && g23_x3_d) {
+				asm volatile ("vmovdqa %ymm2,%ymm12");
+				asm volatile ("vmovdqa %ymm3,%ymm13");
+			}
 			asm volatile ("vpcmpgtb %ymm2,%ymm14,%ymm10");
-			asm volatile ("vpaddb %ymm2,%ymm2,%ymm8");
-			asm volatile ("vpxor %ymm6,%ymm4,%ymm12");
-			asm volatile ("vpand %ymm15,%ymm10,%ymm10");
-			asm volatile ("vpxor %ymm10,%ymm8,%ymm8");
-			asm volatile ("vpxor %ymm4,%ymm8,%ymm8");
-			asm volatile ("vpcmpgtb %ymm8,%ymm14,%ymm10");
-			asm volatile ("vpaddb %ymm8,%ymm8,%ymm8");
-			asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-			if (generator == 3)
-				asm volatile ("vpxor %ymm2,%ymm12,%ymm12");
-			asm volatile ("vpand %ymm15,%ymm10,%ymm10");
-			asm volatile ("vpxor %ymm10,%ymm8,%ymm8");
-			if (generator == 3)
-				asm volatile ("vpxor %ymm12,%ymm8,%ymm2");
-			else
-				asm volatile ("vpxor %ymm6,%ymm8,%ymm2");
-
 			asm volatile ("vpcmpgtb %ymm3,%ymm14,%ymm11");
-			asm volatile ("vpaddb %ymm3,%ymm3,%ymm9");
-			asm volatile ("vpxor %ymm7,%ymm5,%ymm13");
+			asm volatile ("vpaddb %ymm2,%ymm2,%ymm2");
+			asm volatile ("vpaddb %ymm3,%ymm3,%ymm3");
+			asm volatile ("vpand %ymm15,%ymm10,%ymm10");
 			asm volatile ("vpand %ymm15,%ymm11,%ymm11");
-			asm volatile ("vpxor %ymm11,%ymm9,%ymm9");
-			asm volatile ("vpxor %ymm5,%ymm9,%ymm9");
-			asm volatile ("vpcmpgtb %ymm9,%ymm14,%ymm11");
-			asm volatile ("vpaddb %ymm9,%ymm9,%ymm9");
-			asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-			if (generator == 3)
-				asm volatile ("vpxor %ymm3,%ymm13,%ymm13");
+			asm volatile ("vpxor %ymm10,%ymm2,%ymm2");
+			asm volatile ("vpxor %ymm11,%ymm3,%ymm3");
+			if (g23 && g23_x3_d)
+				asm volatile ("vpxor %ymm12,%ymm2,%ymm2");
+			if (g23 && g23_x3_d)
+				asm volatile ("vpxor %ymm13,%ymm3,%ymm3");
+			asm volatile ("vpxor %ymm4,%ymm2,%ymm2");
+			asm volatile ("vpxor %ymm5,%ymm3,%ymm3");
+
+			if (g23 && g23_x3_d1) {
+				asm volatile ("vmovdqa %ymm2,%ymm12");
+				asm volatile ("vmovdqa %ymm3,%ymm13");
+			}
+			asm volatile ("vpcmpgtb %ymm2,%ymm14,%ymm10");
+			asm volatile ("vpcmpgtb %ymm3,%ymm14,%ymm11");
+			asm volatile ("vpaddb %ymm2,%ymm2,%ymm2");
+			asm volatile ("vpaddb %ymm3,%ymm3,%ymm3");
+			asm volatile ("vpand %ymm15,%ymm10,%ymm10");
 			asm volatile ("vpand %ymm15,%ymm11,%ymm11");
-			asm volatile ("vpxor %ymm11,%ymm9,%ymm9");
-			if (generator == 3)
-				asm volatile ("vpxor %ymm13,%ymm9,%ymm3");
-			else
-				asm volatile ("vpxor %ymm7,%ymm9,%ymm3");
+			asm volatile ("vpxor %ymm10,%ymm2,%ymm2");
+			asm volatile ("vpxor %ymm11,%ymm3,%ymm3");
+			if (g23 && g23_x3_d1)
+				asm volatile ("vpxor %ymm12,%ymm2,%ymm2");
+			if (g23 && g23_x3_d1)
+				asm volatile ("vpxor %ymm13,%ymm3,%ymm3");
+			asm volatile ("vpxor %ymm6,%ymm2,%ymm2");
+			asm volatile ("vpxor %ymm7,%ymm3,%ymm3");
+
+			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
+			asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
+			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
+			asm volatile ("vpxor %ymm7,%ymm1,%ymm1");
 		}
 
 		/* single remaining disk */
 		if (d == 0) {
+			int g23_x3;
+
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[0][i]));
 			asm volatile ("vmovdqa %0,%%ymm5" : : "m" (v[0][i + 32]));
 
 			asm volatile ("vpcmpgtb %ymm2,%ymm14,%ymm10");
 			asm volatile ("vpaddb %ymm2,%ymm2,%ymm8");
 			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm4,%ymm2,%ymm12");
 			asm volatile ("vpand %ymm15,%ymm10,%ymm10");
 			asm volatile ("vpxor %ymm10,%ymm8,%ymm8");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm12,%ymm8,%ymm2");
 			else
 				asm volatile ("vpxor %ymm4,%ymm8,%ymm2");
@@ -213,11 +256,11 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size,
 			asm volatile ("vpcmpgtb %ymm3,%ymm14,%ymm11");
 			asm volatile ("vpaddb %ymm3,%ymm3,%ymm9");
 			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm5,%ymm3,%ymm13");
 			asm volatile ("vpand %ymm15,%ymm11,%ymm11");
 			asm volatile ("vpxor %ymm11,%ymm9,%ymm9");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm13,%ymm9,%ymm3");
 			else
 				asm volatile ("vpxor %ymm5,%ymm9,%ymm3");
@@ -234,12 +277,12 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size,
 
 void raid_gen2_avx2ext_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_avx2ext_gen(nd, size, vv, 2);
+	raid_gen2_avx2ext_gen(nd, size, vv, 0);
 }
 
 void raid_gen2_avx2ext_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_avx2ext_gen(nd, size, vv, 3);
+	raid_gen2_avx2ext_gen(nd, size, vv, 1);
 }
 
 /*
@@ -324,7 +367,7 @@ void raid_genz_avx2ext_raid(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -344,6 +387,7 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			memcpy(v[1 + i], v[0], size);
 		return;
 	}
+	int g23_start = raid_g23_count(l - 1);
 
 	raid_avx_begin();
 
@@ -352,6 +396,10 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 	asm volatile ("vpbroadcastb %0, %%ymm11" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 64) {
+		int g23_count = g23_start;
+		int g23_x3_d;
+		int g23_x3_d1;
+
 		/* last disk without the generator multiplication */
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[l][i]));
 		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i + 32]));
@@ -379,20 +427,31 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 
 		/* process two intermediate disks per iteration */
 		for (d = l - 1; d > 1; d -= 2) {
+			g23_x3_d = 0;
+			g23_x3_d1 = 0;
+			if (g23) {
+				g23_x3_d = --g23_count == 0;
+				if (g23_x3_d)
+					g23_count = 51;
+				g23_x3_d1 = --g23_count == 0;
+				if (g23_x3_d1)
+					g23_count = 51;
+			}
+
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i + 32]));
 
 			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
 			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
 
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vmovdqa %ymm1,%ymm6");
 			asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 			asm volatile ("vpcmpgtb %ymm1,%ymm5,%ymm5");
 			asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 			asm volatile ("vpand %ymm3,%ymm5,%ymm5");
 			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vpxor %ymm6,%ymm1,%ymm1");
 
 			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
@@ -407,14 +466,14 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vpxor %ymm7,%ymm6,%ymm6");
 			asm volatile ("vpxor %ymm6,%ymm2,%ymm2");
 
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vmovdqa %ymm9,%ymm6");
 			asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
 			asm volatile ("vpcmpgtb %ymm9,%ymm13,%ymm13");
 			asm volatile ("vpaddb %ymm9,%ymm9,%ymm9");
 			asm volatile ("vpand %ymm3,%ymm13,%ymm13");
 			asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vpxor %ymm6,%ymm9,%ymm9");
 
 			asm volatile ("vpxor %ymm12,%ymm8,%ymm8");
@@ -435,14 +494,14 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d - 1][1][0][0]));
 			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[d - 1][1][1][0]));
 
-			if (generator == 3)
+			if (g23 && g23_x3_d1)
 				asm volatile ("vmovdqa %ymm1,%ymm6");
 			asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 			asm volatile ("vpcmpgtb %ymm1,%ymm5,%ymm5");
 			asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 			asm volatile ("vpand %ymm3,%ymm5,%ymm5");
 			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-			if (generator == 3)
+			if (g23 && g23_x3_d1)
 				asm volatile ("vpxor %ymm6,%ymm1,%ymm1");
 
 			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
@@ -457,14 +516,14 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vpxor %ymm7,%ymm6,%ymm6");
 			asm volatile ("vpxor %ymm6,%ymm2,%ymm2");
 
-			if (generator == 3)
+			if (g23 && g23_x3_d1)
 				asm volatile ("vmovdqa %ymm9,%ymm6");
 			asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
 			asm volatile ("vpcmpgtb %ymm9,%ymm13,%ymm13");
 			asm volatile ("vpaddb %ymm9,%ymm9,%ymm9");
 			asm volatile ("vpand %ymm3,%ymm13,%ymm13");
 			asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-			if (generator == 3)
+			if (g23 && g23_x3_d1)
 				asm volatile ("vpxor %ymm6,%ymm9,%ymm9");
 
 			asm volatile ("vpxor %ymm12,%ymm8,%ymm8");
@@ -482,17 +541,24 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 
 		/* single remaining intermediate disk */
 		if (d == 1) {
+			g23_x3_d = 0;
+			if (g23) {
+				g23_x3_d = --g23_count == 0;
+				if (g23_x3_d)
+					g23_count = 51;
+			}
+
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[1][i]));
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[1][i + 32]));
 
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vmovdqa %ymm1,%ymm6");
 			asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 			asm volatile ("vpcmpgtb %ymm1,%ymm5,%ymm5");
 			asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 			asm volatile ("vpand %ymm3,%ymm5,%ymm5");
 			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vpxor %ymm6,%ymm1,%ymm1");
 
 			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
@@ -510,14 +576,14 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vpxor %ymm7,%ymm6,%ymm6");
 			asm volatile ("vpxor %ymm6,%ymm2,%ymm2");
 
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vmovdqa %ymm9,%ymm6");
 			asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
 			asm volatile ("vpcmpgtb %ymm9,%ymm13,%ymm13");
 			asm volatile ("vpaddb %ymm9,%ymm9,%ymm9");
 			asm volatile ("vpand %ymm3,%ymm13,%ymm13");
 			asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-			if (generator == 3)
+			if (g23 && g23_x3_d)
 				asm volatile ("vpxor %ymm6,%ymm9,%ymm9");
 
 			asm volatile ("vpxor %ymm12,%ymm8,%ymm8");
@@ -537,7 +603,14 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[0][i]));
 		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i + 32]));
 
-		if (generator == 3) {
+		g23_x3_d = 0;
+		if (g23) {
+			g23_x3_d = --g23_count == 0;
+			if (g23_x3_d)
+				g23_count = 51;
+		}
+
+		if (g23 && g23_x3_d) {
 			asm volatile ("vmovdqa %ymm1,%ymm6");
 			asm volatile ("vmovdqa %ymm9,%ymm14");
 		}
@@ -551,7 +624,7 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vpand %ymm3,%ymm13,%ymm13");
 		asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
 		asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-		if (generator == 3) {
+		if (g23 && g23_x3_d) {
 			asm volatile ("vpxor %ymm6,%ymm1,%ymm1");
 			asm volatile ("vpxor %ymm14,%ymm9,%ymm9");
 		}
@@ -576,12 +649,12 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 
 void raid_gen3_avx2ext_raid(int nd, size_t size, void **vv)
 {
-	raid_gen3_avx2ext_gen(nd, size, vv, 2);
+	raid_gen3_avx2ext_gen(nd, size, vv, 0);
 }
 
 void raid_gen3_avx2ext_aes(int nd, size_t size, void **vv)
 {
-	raid_gen3_avx2ext_gen(nd, size, vv, 3);
+	raid_gen3_avx2ext_gen(nd, size, vv, 1);
 }
 #endif
 
@@ -591,7 +664,7 @@ void raid_gen3_avx2ext_aes(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -613,6 +686,7 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 			memcpy(v[1 + i], v[0], size);
 		return;
 	}
+	int g23_start = raid_g23_count(l - 1);
 
 	raid_avx_begin();
 
@@ -622,6 +696,9 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 64) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		/* last disk without the generator multiplication */
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[l][i]));
 		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i + 32]));
@@ -658,14 +735,21 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			if (generator == 3)
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
+			if (g23 && g23_x3)
 				asm volatile ("vmovdqa %ymm1,%ymm4");
 			asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 			asm volatile ("vpcmpgtb %ymm1,%ymm5,%ymm5");
 			asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 			asm volatile ("vpand %ymm6,%ymm5,%ymm5");
 			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm4,%ymm1,%ymm1");
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
 			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
@@ -673,14 +757,14 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vpsrlw $4,%ymm4,%ymm5");
 			asm volatile ("vpand %ymm7,%ymm4,%ymm4");
 			asm volatile ("vpand %ymm7,%ymm5,%ymm5");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vmovdqa %ymm9,%ymm12");
 			asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
 			asm volatile ("vpcmpgtb %ymm9,%ymm13,%ymm13");
 			asm volatile ("vpaddb %ymm9,%ymm9,%ymm9");
 			asm volatile ("vpand %ymm6,%ymm13,%ymm13");
 			asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm12,%ymm9,%ymm9");
 
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i + 32]));
@@ -715,28 +799,35 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 		}
 
 		/* first disk with all coefficients at 1 */
-		if (generator == 3)
+		g23_x3 = 0;
+		if (g23) {
+			g23_x3 = --g23_count == 0;
+			if (g23_x3)
+				g23_count = 51;
+		}
+
+		if (g23 && g23_x3)
 			asm volatile ("vmovdqa %ymm1,%ymm4");
 		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 		asm volatile ("vpcmpgtb %ymm1,%ymm5,%ymm5");
 		asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 		asm volatile ("vpand %ymm6,%ymm5,%ymm5");
 		asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-		if (generator == 3)
+		if (g23 && g23_x3)
 			asm volatile ("vpxor %ymm4,%ymm1,%ymm1");
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[0][i]));
 		asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
 		asm volatile ("vpxor %ymm4,%ymm1,%ymm1");
 		asm volatile ("vpxor %ymm4,%ymm2,%ymm2");
 		asm volatile ("vpxor %ymm4,%ymm3,%ymm3");
-		if (generator == 3)
+		if (g23 && g23_x3)
 			asm volatile ("vmovdqa %ymm9,%ymm12");
 		asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
 		asm volatile ("vpcmpgtb %ymm9,%ymm13,%ymm13");
 		asm volatile ("vpaddb %ymm9,%ymm9,%ymm9");
 		asm volatile ("vpand %ymm6,%ymm13,%ymm13");
 		asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-		if (generator == 3)
+		if (g23 && g23_x3)
 			asm volatile ("vpxor %ymm12,%ymm9,%ymm9");
 
 		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i + 32]));
@@ -760,12 +851,12 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 
 void raid_gen4_avx2ext_raid(int nd, size_t size, void **vv)
 {
-	raid_gen4_avx2ext_gen(nd, size, vv, 2);
+	raid_gen4_avx2ext_gen(nd, size, vv, 0);
 }
 
 void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv)
 {
-	raid_gen4_avx2ext_gen(nd, size, vv, 3);
+	raid_gen4_avx2ext_gen(nd, size, vv, 1);
 }
 #endif
 
@@ -773,7 +864,7 @@ void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv)
 /*
  * GENX AVX2EXT implementation
  */
-static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, int np, int generator)
+static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, int np, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -787,6 +878,7 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 			memcpy(v[1 + d], v[0], size);
 		return;
 	}
+	int g23_start = raid_g23_count(l - 1);
 
 	raid_avx_begin();
 
@@ -796,6 +888,9 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 32) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		/* last disk without the generator multiplication */
 		asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[l][i]));
 
@@ -836,15 +931,22 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
 			asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[d][i]));
 
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vmovdqa %ymm1,%ymm12");
 			asm volatile ("vpcmpgtb %ymm1,%ymm6,%ymm11");
 			asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 			asm volatile ("vpand %ymm14,%ymm11,%ymm11");
 			asm volatile ("vpxor %ymm11,%ymm1,%ymm1");
-			if (generator == 3)
+			if (g23 && g23_x3)
 				asm volatile ("vpxor %ymm12,%ymm1,%ymm1");
 
 			asm volatile ("vpxor %ymm10,%ymm0,%ymm0");
@@ -890,13 +992,20 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 		/* first disk with all coefficients at 1 */
 		asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[0][i]));
 
-		if (generator == 3)
+		g23_x3 = 0;
+		if (g23) {
+			g23_x3 = --g23_count == 0;
+			if (g23_x3)
+				g23_count = 51;
+		}
+
+		if (g23 && g23_x3)
 			asm volatile ("vmovdqa %ymm1,%ymm12");
 		asm volatile ("vpcmpgtb %ymm1,%ymm6,%ymm11");
 		asm volatile ("vpaddb %ymm1,%ymm1,%ymm1");
 		asm volatile ("vpand %ymm14,%ymm11,%ymm11");
 		asm volatile ("vpxor %ymm11,%ymm1,%ymm1");
-		if (generator == 3)
+		if (g23 && g23_x3)
 			asm volatile ("vpxor %ymm12,%ymm1,%ymm1");
 
 		asm volatile ("vpxor %ymm10,%ymm0,%ymm0");
@@ -934,12 +1043,12 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
  */
 void raid_gen5_avx2ext_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2ext(nd, size, vv, 5, 2);
+	raid_genX_avx2ext(nd, size, vv, 5, 0);
 }
 
 void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2ext(nd, size, vv, 5, 3);
+	raid_genX_avx2ext(nd, size, vv, 5, 1);
 }
 #endif
 
@@ -951,12 +1060,12 @@ void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv)
  */
 void raid_gen6_avx2ext_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2ext(nd, size, vv, 6, 2);
+	raid_genX_avx2ext(nd, size, vv, 6, 0);
 }
 
 void raid_gen6_avx2ext_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2ext(nd, size, vv, 6, 3);
+	raid_genX_avx2ext(nd, size, vv, 6, 1);
 }
 #endif
 

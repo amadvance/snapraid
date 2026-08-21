@@ -120,17 +120,20 @@ Operating Modes and Polynomials
     (Z parity). Optimized for low-end CPUs without vector instructions.
 
   RAID_MODE_CAUCHY_AES (Mode = 2)
-    Uses Cauchy matrix with AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1,
-    0x11b) and primitive generator g = 3. On CPUs supporting Intel GFNI,
-    generation and recovery are accelerated directly using VGF2P8MULB.
+    Uses a 6x251 Extended Cauchy matrix with AES polynomial 0x1b
+    (x^8 + x^4 + x^3 + x + 1, 0x11b). Its Q row uses the G23 sequence,
+    with multiplication by 2 for almost every coefficient transition and
+    multiplication by 3 only between its five cosets. On CPUs supporting
+    Intel GFNI, generation and recovery are accelerated directly using VGF2P8MULB.
     This native GFNI multiplication is typically faster than the affine GFNI
     implementation required by the standard RAID polynomial. Parity data is
-    incompatible with standard 0x11d polynomial arrays.
+    incompatible with standard 0x11d polynomial arrays and with the previous
+    RAID_MODE_CAUCHY_AES parity layout.
 
-  Both Cauchy modes use the same Extended Cauchy construction with coefficients
-  based on powers of their respective primitive generator. GFNI acceleration
-  is available for both fields: the RAID field uses affine transformations,
-  while the AES field uses the native GFNI multiplication instruction.
+  Both Cauchy modes support RAID_DATA_MAX = 251 data disks and
+  RAID_PARITY_MAX = 6 parity levels. GFNI acceleration is available for both
+  fields: the RAID field uses affine transformations, while the AES field uses
+  the native GFNI multiplication instruction.
 
 
 Implementation Structure
@@ -140,7 +143,7 @@ Implementation Structure
   raid.c        Cauchy matrix solver, Gauss-Jordan inversion, delta generation.
   module.c      Algorithm registration, CPU detection, and dynamic dispatch.
   int.c         Portable C fallback implementation (8/32/64-bit word loops).
-  tables.c      Precomputed GF(2^8) log/exp, multiplication, Cauchy tables.
+  tables.c      Precomputed GF(2^8) multiplication and Cauchy tables.
   mktables.c    Generator for GF(2^8), Cauchy, and GFNI affine tables.
   internal.h    Private header, assertion macros (BUG_ON), alignment helpers.
 

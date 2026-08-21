@@ -8,7 +8,7 @@
  * nonsingular (invertible) for both operating modes:
  *
  *   RAID: GF polynomial 0x11d, primitive generator g=2
- *   AES:  GF polynomial 0x11b, primitive generator g=3
+ *   AES:  GF polynomial 0x11b, G23 Extended Cauchy construction
  */
 
 #include "internal.h"

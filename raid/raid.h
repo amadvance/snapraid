@@ -11,7 +11,7 @@
  * arithmetic is performed modulo an irreducible polynomial of degree 8.
  * The choice of operating mode affects both correctness and performance:
  * all tables, coefficients, and parity data are tied to the selected
- * polynomial and primitive generator and cannot be mixed between
+ * polynomial and generator matrix and cannot be mixed between
  * incompatible operating modes.
  *
  * Two polynomials are supported:
@@ -31,7 +31,8 @@
  * 0x1b  (x^8 + x^4 + x^3 + x + 1)    -- AES polynomial
  *
  *   The polynomial used by the AES encryption standard (0x11b including
- *   the x^8 term), used with primitive generator g=3.
+ *   the x^8 term). Parity uses a 6x251 Extended Cauchy matrix whose Q row
+ *   follows the G23 sequence.
  *
  *   On CPUs supporting Intel GFNI, generation and recovery can use the
  *   vgf2p8mulb instruction, which performs GF(2^8) multiplication directly
@@ -76,14 +77,14 @@
 #define RAID_MODE_VANDERMONDE_RAID 1
 
 /**
- * RAID mode supporting up to 6 parities using AES polynomial 0x1b (0x11b) and primitive generator g=3.
+ * RAID mode supporting up to 6 parities and 251 data disks using AES polynomial 0x1b (0x11b).
  *
- * It has slightly lower performance than RAID_MODE_CAUCHY_RAID on CPUs without GFNI due
- * to the additional cost of generator g=3. On CPUs supporting GFNI, it uses native
- * VGF2P8MULB multiplication and is typically faster than the affine GFNI implementation
- * required by RAID_MODE_CAUCHY_RAID.
+ * It uses an Extended Cauchy matrix with a G23 Q sequence, allowing optimized
+ * generators to use multiplication by 2 for almost every disk transition.
+ * On CPUs supporting GFNI, it uses native VGF2P8MULB multiplication.
  *
- * Parity data is incompatible with RAID_MODE_CAUCHY_RAID.
+ * This parity layout is incompatible with RAID_MODE_CAUCHY_RAID and with the
+ * previous RAID_MODE_CAUCHY_AES layout.
  */
 #define RAID_MODE_CAUCHY_AES 2
 

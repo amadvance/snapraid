@@ -189,19 +189,22 @@ int raid_test_sort(void)
  *
  *   RAID_MODE_CAUCHY_AES:
  *       polynomial 0x11b
- *       primitive generator g=3
+ *       G23 Extended Cauchy construction
  *
  * The parity generation tests compare optimized implementations against
  * raid_gen_ref(), but both use the same active generator matrix. Therefore
  * they can agree even if the matrix itself is mathematically unsuitable.
  *
- * This test instead checks a few fundamental properties of the field
- * generator and of the generated Cauchy matrix.
+ * This test instead constructs the expected Q sequence independently and
+ * checks the generated matrix coefficients.
  */
 int raid_test_poly(unsigned mode)
 {
+	uint8_t q[255];
+	uint8_t v;
 	int i, j;
 	int p, d;
+	int g23_count;
 
 	/*
 	 * This test is defined only for the two Cauchy modes.
@@ -216,7 +219,6 @@ int raid_test_poly(unsigned mode)
 	/*
 	 * Select the mode first so that:
 	 *
-	 *     raid_gfexp
 	 *     raid_gfcauchy
 	 *     raid_gfmul
 	 *     raid_gfinv
@@ -229,89 +231,97 @@ int raid_test_poly(unsigned mode)
 	raid_mode(mode);
 
 	/*
-	 * Primitive order alone is not enough to protect parity format
-	 * compatibility. Each Cauchy mode has a fixed reducing polynomial
-	 * and primitive generator, which determine the actual matrix coefficients.
+	 * Each Cauchy mode has a fixed reducing polynomial and matrix
+	 * construction, which together determine the parity format.
 	 */
 	if (mode == RAID_MODE_CAUCHY_RAID) {
 		if (raid_poly_byte != RAID_POLY_RAID)
 			return -1;
-		if (raid_gfexp[1] != 2)
-			return -1;
-	} else if (mode == RAID_MODE_CAUCHY_AES) {
+	} else {
 		if (raid_poly_byte != RAID_POLY_AES)
-			return -1;
-		if (raid_gfexp[1] != 3)
 			return -1;
 	}
 
-	/*
-	 * raid_gfexp[a] contains g^a for the primitive generator associated
-	 * with the active Cauchy mode.
-	 *
-	 * The multiplicative group GF(2^8)* contains 255 elements:
-	 *
-	 *     255 = 3 * 5 * 17
-	 *
-	 * The order of every nonzero field element divides 255.
-	 *
-	 * To prove that g has order exactly 255, it is therefore sufficient
-	 * to verify:
-	 *
-	 *     g^255 == 1
-	 *
-	 * and to exclude the three maximal proper divisors:
-	 *
-	 *     255 / 3  = 85
-	 *     255 / 5  = 51
-	 *     255 / 17 = 15
-	 *
-	 * Hence a primitive generator must satisfy:
-	 *
-	 *     g^85 != 1
-	 *     g^51 != 1
-	 *     g^15 != 1
-	 */
-	if (raid_gfexp[0] != 1)
-		return -1;
-	if (raid_gfexp[255] != 1)
-		return -1;
-	if (raid_gfexp[85] == 1)
-		return -1;
-	if (raid_gfexp[51] == 1)
-		return -1;
-	if (raid_gfexp[15] == 1)
-		return -1;
+	q[0] = 1;
+	g23_count = 51;
+	for (i = 0; i < 254; ++i) {
+		uint8_t f = 2;
 
-	/*
-	 * The Q row of the Extended Cauchy matrix contains:
-	 *
-	 *     1, g, g^2, g^3, ...
-	 *
-	 * SnapRAID supports RAID_DATA_MAX data disks, so all generator powers
-	 * corresponding to those columns must be distinct.
-	 *
-	 * A primitive generator of order 255 guarantees this, but checking it
-	 * explicitly is inexpensive and also verifies the generated
-	 * raid_gfexp[] table itself.
-	 */
-	for (i = 0; i < RAID_DATA_MAX; ++i)
-		for (j = i + 1; j < RAID_DATA_MAX; ++j)
-			if (raid_gfexp[i] == raid_gfexp[j])
-				return -1;
+		if (mode == RAID_MODE_CAUCHY_AES && --g23_count == 0) {
+			f = 3;
+			g23_count = 51;
+		}
+		q[i + 1] = mul(f, q[i]);
+	}
 
-	/*
-	 * The second row of the Extended Cauchy matrix is exactly g^d.
-	 *
-	 * Verify that the exponent table and the actual matrix used for
-	 * parity generation agree for every supported data column.
-	 *
-	 * This makes sure that the primitive generator checked above is the
-	 * same generator actually used by the Q row.
-	 */
-	for (d = 0; d < RAID_DATA_MAX; ++d)
-		if (raid_gfcauchy[1][d] != raid_gfexp[d])
+	/* Both constructions enumerate distinct nonzero Q coefficients. */
+	for (i = 0; i < 255; ++i) {
+		if (q[i] == 0)
 			return -1;
+		for (j = i + 1; j < 255; ++j)
+			if (q[i] == q[j])
+				return -1;
+	}
+
+	for (d = 0; d < RAID_DATA_MAX; ++d) {
+		if (raid_gfcauchy[0][d] != 1)
+			return -1;
+		if (raid_gfcauchy[1][d] != q[d])
+			return -1;
+	}
+
+	if (mode == RAID_MODE_CAUCHY_AES) {
+		/* In AES, 2 has order 51 and 3 has order 255. */
+		v = 1;
+		for (i = 1; i <= 51; ++i) {
+			v = mul(2, v);
+			if ((i == 3 || i == 17) && v == 1)
+				return -1;
+		}
+		if (v != 1)
+			return -1;
+
+		v = 1;
+		for (i = 1; i <= 255; ++i) {
+			v = mul(3, v);
+			if ((i == 15 || i == 51 || i == 85) && v == 1)
+				return -1;
+		}
+		if (v != 1)
+			return -1;
+
+		if (q[251] != 0xb8 || q[252] != 0x6b
+			|| q[253] != 0xd6 || q[254] != 0xb7)
+			return -1;
+		if (inv(q[251]) != 0xa5 || inv(q[252]) != 0xdf
+			|| inv(q[253]) != 0xe2 || inv(q[254]) != 0x71)
+			return -1;
+
+		/* the descending Y allocation keeps future matrices nested */
+		for (i = 6; i <= 9; ++i) {
+			int disk = 257 - i;
+
+			for (j = 1; j < i - 1; ++j)
+				if (255 - j < disk || 255 - j > 254)
+					return -1;
+			if (255 - (i - 2) != disk)
+				return -1;
+		}
+
+		/* independently reconstruct and normalize the four Cauchy rows */
+		for (p = 2; p < RAID_PARITY_MAX; ++p) {
+			uint8_t y = inv(q[256 - p]);
+			uint8_t f = inv(inv(q[0]) ^ y);
+			uint8_t scale = inv(f);
+
+			for (d = 0; d < RAID_DATA_MAX; ++d) {
+				uint8_t c = inv(inv(q[d]) ^ y);
+
+				if (raid_gfcauchy[p][d] != mul(c, scale))
+					return -1;
+			}
+		}
+	}
 
 	/*
 	 * Every coefficient of the active 6x251 Cauchy generator matrix must
@@ -548,6 +558,57 @@ bail:
 	free(v);
 	return -1;
 	/* LCOV_EXCL_STOP */
+}
+
+int raid_test_rec2_g23(size_t size)
+{
+	static const int missing[][2] = {
+		{ 1, 20 },
+		{ 50, 51 },
+		{ 10, 204 }
+	};
+	void *v_alloc;
+	void **v;
+	void *save[2];
+	int ip[2] = { 0, 1 };
+	int nv = RAID_DATA_MAX + RAID_PARITY_MAX + 3;
+	int i, j;
+
+	raid_mode(RAID_MODE_CAUCHY_AES);
+	v = raid_malloc_vector(nv, size, &v_alloc);
+	if (!v)
+		return -1;
+
+	memset(v[nv - 1], 0, size);
+	raid_zero(v[nv - 1]);
+	raid_mrand_vector(3, RAID_DATA_MAX, size, v);
+	raid_gen_ref(RAID_DATA_MAX, RAID_PARITY_MAX, size, v);
+
+	for (j = 0; j < (int)(sizeof(missing) / sizeof(missing[0])); ++j) {
+		int id[2] = { missing[j][0], missing[j][1] };
+
+		for (i = 0; i < 2; ++i) {
+			save[i] = v[id[i]];
+			v[id[i]] = v[RAID_DATA_MAX + RAID_PARITY_MAX + i];
+		}
+
+		raid_rec2_int8(2, id, ip, RAID_DATA_MAX, size, v);
+
+		for (i = 0; i < 2; ++i) {
+			if (memcmp(v[id[i]], save[i], size) != 0)
+				goto bail;
+			v[id[i]] = save[i];
+		}
+	}
+
+	free(v_alloc);
+	free(v);
+	return 0;
+
+bail:
+	free(v_alloc);
+	free(v);
+	return -1;
 }
 
 int raid_test_tail(int mode, int nd_max, size_t size)

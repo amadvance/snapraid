@@ -41,7 +41,7 @@ int raid_test_gfaffine(void);
 /**
  * Tests the Galois field and Cauchy matrix properties.
  *
- * Verifies the expected polynomial and primitive generator and basic
+ * Verifies the expected polynomial and matrix construction and basic
  * properties of the Extended Cauchy matrix for the specified RAID mode.
  *
  * Returns 0 on success.
@@ -59,6 +59,13 @@ int raid_test_poly(unsigned mode);
  * Returns 0 on success.
  */
 int raid_test_rec(unsigned mode, int nd, size_t size);
+
+/**
+ * Tests P/Q double-disk recovery at selected G23 positions.
+ *
+ * Returns 0 on success.
+ */
+int raid_test_rec2_g23(size_t size);
 
 /**
  * Tests recovering functions on the tail data disks.

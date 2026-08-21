@@ -63,7 +63,7 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 /*
  * GEN2 (double parity) 32bit C implementation
  */
-static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -79,26 +79,39 @@ static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, 
 	l = nd - 1;
 	p = v[nd];
 	q = v[nd + 1];
+	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 8) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		q0 = p0 = v_read32(&v[l][i]);
 		q1 = p1 = v_read32(&v[l][i + 4]);
 		for (d = l - 1; d >= 0; --d) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
 			d0 = v_read32(&v[d][i]);
 			d1 = v_read32(&v[d][i + 4]);
 
 			p0 ^= d0;
 			p1 ^= d1;
 
-			qold = q0;
-			q0 = x2_32(q0, poly_32);
-			if (generator == 3)
+			if (g23 && g23_x3) {
+				qold = q0;
+				q0 = x2_32(q0, poly_32);
 				q0 ^= qold;
-
-			qold = q1;
-			q1 = x2_32(q1, poly_32);
-			if (generator == 3)
+				qold = q1;
+				q1 = x2_32(q1, poly_32);
 				q1 ^= qold;
+			} else {
+				q0 = x2_32(q0, poly_32);
+				q1 = x2_32(q1, poly_32);
+			}
 
 			q0 ^= d0;
 			q1 ^= d1;
@@ -112,18 +125,18 @@ static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, 
 
 void raid_gen2_int32_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_int32_gen(nd, size, vv, 2);
+	raid_gen2_int32_gen(nd, size, vv, 0);
 }
 
 void raid_gen2_int32_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_int32_gen(nd, size, vv, 3);
+	raid_gen2_int32_gen(nd, size, vv, 1);
 }
 
 /*
  * GEN2 (double parity) 64bit C implementation
  */
-static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, int g23)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -139,26 +152,39 @@ static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, 
 	l = nd - 1;
 	p = v[nd];
 	q = v[nd + 1];
+	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 16) {
+		int g23_count = g23_start;
+		int g23_x3;
+
 		q0 = p0 = v_read64(&v[l][i]);
 		q1 = p1 = v_read64(&v[l][i + 8]);
 		for (d = l - 1; d >= 0; --d) {
+			g23_x3 = 0;
+			if (g23) {
+				g23_x3 = --g23_count == 0;
+				if (g23_x3)
+					g23_count = 51;
+			}
+
 			d0 = v_read64(&v[d][i]);
 			d1 = v_read64(&v[d][i + 8]);
 
 			p0 ^= d0;
 			p1 ^= d1;
 
-			qold = q0;
-			q0 = x2_64(q0, poly_64);
-			if (generator == 3)
+			if (g23 && g23_x3) {
+				qold = q0;
+				q0 = x2_64(q0, poly_64);
 				q0 ^= qold;
-
-			qold = q1;
-			q1 = x2_64(q1, poly_64);
-			if (generator == 3)
+				qold = q1;
+				q1 = x2_64(q1, poly_64);
 				q1 ^= qold;
+			} else {
+				q0 = x2_64(q0, poly_64);
+				q1 = x2_64(q1, poly_64);
+			}
 
 			q0 ^= d0;
 			q1 ^= d1;
@@ -172,12 +198,12 @@ static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, 
 
 void raid_gen2_int64_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_int64_gen(nd, size, vv, 2);
+	raid_gen2_int64_gen(nd, size, vv, 0);
 }
 
 void raid_gen2_int64_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_int64_gen(nd, size, vv, 3);
+	raid_gen2_int64_gen(nd, size, vv, 1);
 }
 
 void raid_gen2_int8(int nd, size_t size, void **vv)
