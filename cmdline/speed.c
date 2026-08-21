@@ -330,12 +330,7 @@ void speed_gen(int nd, void** v, int size, int delta, int period, const char* ms
 	printf("%8s", raid_gen_tag(RAID_ALGO_CAUCHY_PAR2));
 	fflush(stdout);
 
-	SPEED_START {
-		raid_gen2_int8(nd, size, v);
-	} SPEED_STOP
-
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
+	printf("%8s", "");
 
 	if (mode == RAID_MODE_CAUCHY_AES) {
 		SPEED_START {
@@ -844,15 +839,17 @@ void speed_gen(int nd, void** v, int size, int delta, int period, const char* ms
 #endif
 	}
 	if (raid_cpu_has_ssse3()) {
-		if (mode == RAID_MODE_CAUCHY_RAID) {
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen5_ssse3_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
 			SPEED_START {
 				raid_gen5_ssse3_raid(nd, size, v);
 			} SPEED_STOP
-
-			printf("%8" PRIu64, ds / dt);
-		} else {
-			printf("%8s", "");
 		}
+
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -984,17 +981,18 @@ void speed_gen(int nd, void** v, int size, int delta, int period, const char* ms
 #endif
 	}
 	if (raid_cpu_has_ssse3()) {
-		if (mode == RAID_MODE_CAUCHY_RAID) {
+		if (mode == RAID_MODE_CAUCHY_AES) {
+			SPEED_START {
+				raid_gen6_ssse3_aes(nd, size, v);
+			} SPEED_STOP
+		} else {
 			SPEED_START {
 				raid_gen6_ssse3_raid(nd, size, v);
 			} SPEED_STOP
-
-			printf("%8" PRIu64, ds / dt);
-		} else {
-			printf("%8s", "");
 		}
-		fflush(stdout);
 
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
 #ifdef CONFIG_X86_64
 		if (mode == RAID_MODE_CAUCHY_AES) {
 			SPEED_START {

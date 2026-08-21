@@ -151,6 +151,13 @@ int main(void)
 		/* LCOV_EXCL_STOP */
 	}
 
+	printf("Test Cauchy AES P/Q recovery within and across G23 cosets...\n");
+	if (raid_test_rec2_g23(TEST_SIZE) != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("OK\n");
 	return 0;
 

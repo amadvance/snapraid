@@ -1237,6 +1237,12 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+	if (raid_test_rec2_g23(256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed G23 P/Q recovery test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 	if (raid_test_tail(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed TAIL Cauchy AES test\n");
@@ -1244,23 +1250,52 @@ void selftest(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* verify raid_mode get/set behavior */
-	int cur = raid_mode(RAID_MODE_GET);
-	int prev = raid_mode(RAID_MODE_CAUCHY_AES);
-	if (prev != cur) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "raid_mode set did not return previous mode\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-	if (raid_mode(RAID_MODE_GET) != RAID_MODE_CAUCHY_AES) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "raid_mode GET did not return active mode\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* restore default mode */
+	/* verify RAID -> AES -> RAID switches all mode-dependent GF/Cauchy tables */
 	raid_mode(RAID_MODE_CAUCHY_RAID);
+	if (raid_gfmul != raid_gfmul_raid || raid_gfinv != raid_gfinv_raid
+		|| raid_gfcauchy != raid_gfcauchy_raid || raid_gfgen != raid_gfcauchy_raid) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode did not select RAID tables\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+	if (raid_gfcauchypshufb != raid_gfcauchypshufb_raid
+		|| raid_gfmulpshufb != raid_gfmulpshufb_raid) {
+		log_fatal(EINTERNAL, "raid_mode did not select RAID SIMD tables\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
+	if (raid_mode(RAID_MODE_CAUCHY_AES) != RAID_MODE_CAUCHY_RAID
+		|| raid_mode(RAID_MODE_GET) != RAID_MODE_CAUCHY_AES
+		|| raid_gfmul != raid_gfmul_aes || raid_gfinv != raid_gfinv_aes
+		|| raid_gfcauchy != raid_gfcauchy_aes || raid_gfgen != raid_gfcauchy_aes) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode did not select AES tables\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+	if (raid_gfcauchypshufb != raid_gfcauchypshufb_aes
+		|| raid_gfmulpshufb != raid_gfmulpshufb_aes) {
+		log_fatal(EINTERNAL, "raid_mode did not select AES SIMD tables\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
+	if (raid_mode(RAID_MODE_CAUCHY_RAID) != RAID_MODE_CAUCHY_AES
+		|| raid_gfmul != raid_gfmul_raid || raid_gfinv != raid_gfinv_raid
+		|| raid_gfcauchy != raid_gfcauchy_raid || raid_gfgen != raid_gfcauchy_raid) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode did not restore RAID tables\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+	if (raid_gfcauchypshufb != raid_gfcauchypshufb_raid
+		|| raid_gfmulpshufb != raid_gfmulpshufb_raid) {
+		log_fatal(EINTERNAL, "raid_mode did not restore RAID SIMD tables\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
 }
 

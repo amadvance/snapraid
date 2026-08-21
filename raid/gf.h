@@ -30,16 +30,6 @@ static __always_inline uint8_t inv(uint8_t v)
 }
 
 /*
- * GF generator^a for the active Cauchy matrix.
- */
-static __always_inline uint8_t powgen(int v)
-{
-	BUG_ON(v < 0 || v > 254); /* invalid exponent */
-
-	return raid_gfexp[v];
-}
-
-/*
  * Gets the multiplication table for a specified value.
  */
 static __always_inline const uint8_t *table(uint8_t v)
