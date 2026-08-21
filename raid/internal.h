@@ -416,28 +416,30 @@ static __always_inline void raid_sse_end(void)
 	asm volatile ("sfence" : : : "memory");
 
 	/*
-	 * Clobbers registers used in the asm code
-	 * this is required because in the Windows ABI,
-	 * registers xmm6-xmm15 should be kept by the callee.
+	 * Clobbers registers used in the asm code.
+	 * This is required because in the Windows ABI, registers xmm6-xmm15
+	 * must be preserved by the callee.
 	 *
-	 * This clobber list forces the compiler to save any
-	 * register that needs to be saved.
+	 * This clobber list forces the compiler to save any register that
+	 * needs to be preserved.
 	 *
-	 * We check for __SSE2__ because we require that the
-	 * compiler supports SSE2 registers in the clobber list.
-	 * If the compiler doesn't support SSE2 registers, we can
-	 * clobber them freely.
+	 * We check for __SSE2__ because we require that the compiler supports
+	 * SSE2 registers in the clobber list. If the compiler doesn't support
+	 * SSE2 registers, we can clobber them freely.
 	 *
 	 * Registers ymm and zmm don't have this requirement.
 	 *
-	 * Note: Placing dummy clobber lists at the end of the function rather
-	 * than on individual inner asm statements is not a strictly conforming
-	 * inline assembly pattern. However, because the inner loops use only
-	 * scalar integer variables for loop counters and pointers (which GCC and
-	 * Clang allocate to general-purpose integer registers), and because the
-	 * function calls are dispatched via pointers (preventing inlining), this
-	 * workaround successfully forces GCC and Clang to save and restore
-	 * callee-saved registers in the function prologue/epilogue for the Windows ABI.
+	 * The inner asm statements intentionally keep SIMD state in fixed
+	 * registers across adjacent asm blocks. This is not a strictly
+	 * conforming extended-assembly pattern, but it is a well-established
+	 * technique also used by the Linux RAID and OpenZFS RAIDZ SIMD
+	 * implementations.
+	 *
+	 * The inner loops use only scalar integer variables for loop counters
+	 * and pointers, which GCC and Clang allocate to general-purpose
+	 * registers. Functions are also dispatched through pointers, preventing
+	 * inlining. The dummy clobbers below therefore force GCC and Clang to
+	 * save and restore callee-saved registers when required by the ABI.
 	 */
 #ifdef __SSE2__
 	asm volatile ("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
@@ -459,9 +461,9 @@ static __always_inline void raid_avx_end(void)
 	raid_sse_end();
 
 	/*
-	 * Reset the upper part of the ymm registers
-	 * to avoid the 70 clocks penalty on the next
-	 * xmm register use
+	 * Clear the upper parts of the vector registers before returning.
+	 * This avoids AVX-to-legacy-SSE transition penalties on processors
+	 * where mixing AVX and legacy SSE instructions incurs a cost.
 	 */
 	asm volatile ("vzeroupper" : : : "memory");
 }
@@ -477,14 +479,17 @@ static __always_inline void raid_neon_end(void)
 	/*
 	 * Clobbers registers used in NEON asm operations.
 	 *
-	 * Note: Placing dummy clobber lists at the end of the function rather
-	 * than on individual inner asm statements is not a strictly conforming
-	 * inline assembly pattern. However, because the inner loops use only
-	 * scalar integer variables for loop counters and pointers (which GCC and
-	 * Clang allocate to general-purpose integer registers), and because the
-	 * function calls are dispatched via pointers (preventing inlining), this
-	 * workaround successfully forces GCC and Clang to save and restore AAPCS64
-	 * callee-saved registers (v8-v15) in the function prologue/epilogue.
+	 * The inner asm statements intentionally keep NEON state in fixed
+	 * registers across adjacent asm blocks. This is not a strictly
+	 * conforming extended-assembly pattern, but it is a well-established
+	 * technique also used by the Linux RAID and OpenZFS RAIDZ SIMD
+	 * implementations.
+	 *
+	 * The inner loops use only scalar integer variables for loop counters
+	 * and pointers, which GCC and Clang allocate to general-purpose
+	 * registers. Functions are also dispatched through pointers, preventing
+	 * inlining. The dummy clobbers below therefore force GCC and Clang to
+	 * save and restore the AAPCS64 callee-saved NEON registers v8-v15.
 	 */
 	asm volatile ("" : : : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 	asm volatile ("" : : : "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
@@ -505,10 +510,18 @@ static __always_inline void raid_neon32_end(void)
 	/*
 	 * Clobbers registers used in AArch32 NEON asm operations.
 	 *
-	 * Like raid_neon_end(), the inner asm statements intentionally
-	 * preserve hidden NEON state across adjacent asm blocks. Keep the
-	 * dummy clobbers at the end of the function so the compiler preserves
-	 * the AAPCS32 callee-saved NEON registers when necessary.
+	 * The inner asm statements intentionally keep NEON state in fixed
+	 * registers across adjacent asm blocks. This is not a strictly
+	 * conforming extended-assembly pattern, but it is a well-established
+	 * technique also used by the Linux RAID and OpenZFS RAIDZ SIMD
+	 * implementations.
+	 *
+	 * The inner loops use only scalar integer variables for loop counters
+	 * and pointers, which GCC and Clang allocate to general-purpose
+	 * registers. Functions are also dispatched through pointers, preventing
+	 * inlining. The dummy clobbers below therefore force GCC and Clang to
+	 * save and restore the AAPCS32 callee-saved NEON registers when
+	 * required.
 	 */
 	asm volatile ("" : : : "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7");
 	asm volatile ("" : : : "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15");
