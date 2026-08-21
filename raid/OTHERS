@@ -1,0 +1,1123 @@
+SnapRAID RAID engine comparison notes
+=====================================
+
+
+Scope
+-----
+
+These notes compare the SnapRAID RAID engine with other RAID and erasure-coding
+implementations that are useful optimization references. The goal is not to
+rank projects by a single benchmark. The goal is to understand which design
+choices follow from each workload and which techniques can or cannot be
+transferred to SnapRAID.
+
+The most important rule is the same one used in NOTES: optimize the real
+SnapRAID workload, not only isolated inner loops. A technique that reduces
+instruction count can still be a loss if it adds another pass over a 256 KiB
+block, increases cache footprint, or changes the lifetime of parity data in an
+unfavorable way.
+
+Three different kinds of advantage are distinguished throughout this document:
+
+* Algorithmic advantage: the coding or recovery algorithm fundamentally
+  requires less work.
+
+* Implementation advantage: the same mathematical work is scheduled,
+  vectorized, or dispatched more efficiently.
+
+* Workload-specific advantage: a design is faster because its assumptions fit
+  one application, but the same design may be unsuitable for another
+  application.
+
+The third category is especially important. Linux RAID6, OpenZFS RAIDZ, ISA-L,
+klauspost/reedsolomon, Jerasure/GF-Complete, and CM256/gf256 do not all
+optimize the same problem.
+
+
+Source snapshots
+----------------
+
+The comparison below was prepared from these source snapshots. Commit hashes
+are recorded so that later changes in the external projects do not silently
+change the meaning of the notes.
+
+    Linux kernel          torvalds/linux
+      818bebeb63dd6bf5f4e07e145f6cdbace520a34c
+
+    OpenZFS               openzfs/zfs
+      7e1cb1374b7156ca1fd1fb6379f899e83c8687ea
+
+    Intel ISA-L           intel/isa-l
+      8b7e3b28a2b7b816483d3f9e80162e11cebeaa70
+
+    klauspost/reedsolomon klauspost/reedsolomon
+      af9e2b1b1bad1889954523347758996aafd9c805
+
+    Jerasure              ceph/jerasure
+      de1739cc8483696506829b52e7fda4f6bb195e6a
+
+    GF-Complete           ceph/gf-complete
+      a6862d10c9db467148f20eef2c6445ac9afd94d8
+
+    CM256                 catid/cm256
+      634d1e36b095dbba937586a7e9843d828762dae4
+
+    gf256                 catid/gf256
+      2f88f20ec3f80d304ce060c824aac31cb0d684ae
+
+
+Compared implementations
+------------------------
+
+SnapRAID: A storage-oriented RAID engine specialized for large fixed-size
+          blocks and a small parity count. The current implementation supports
+          one to six parity levels and is aggressively specialized by parity
+          count and CPU backend.
+
+* Typical data/parity block size is 256 KiB.
+
+* Generation tries to read a source region once, advance all required parity
+  outputs together, keep accumulators in SIMD registers, and store final parity
+  once.
+
+* P is XOR. Q uses a mode-specific structured recurrence. The normal RAID mode
+  uses powers of generator 2 over polynomial 0x11d. The AES mode uses the G23
+  sequence over polynomial 0x11b, with multiply-by-2 transitions and fixed
+  multiply-by-3 transitions between its five cosets. Higher parity rows use
+  the corresponding extended Cauchy construction.
+
+* Non-GFNI AES generation exploits this structure with separate x2-only and
+  G23 kernels. Small arrays that do not reach an x3 boundary use the simple
+  x2 path directly instead of carrying G23 control flow through the hot loop.
+
+* Generation has specialized GEN1..GEN6 kernels. Recovery has dedicated REC1,
+  REC2, and RECX paths plus important fast cases such as rec1of1.
+
+* Current optimized backends include x86 SSSE3, AVX2, AVX512BW and GFNI, plus
+  AArch64 and AArch32 NEON.
+
+* Generation uses non-temporal parity stores where appropriate because parity
+  normally enters a queue before the disk writer consumes it.
+
+Linux RAID6: A kernel RAID6 P+Q engine. It is much less general than a
+             Reed-Solomon library and therefore can specialize very
+             aggressively for exactly two parity equations.
+
+* P is XOR and Q is the classic RAID6 generator-power syndrome over GF(2^8),
+  implemented naturally with a Horner multiply-by-2 recurrence.
+
+* Generation keeps P and Q in registers while walking all data disks for the
+  current vector position, then writes both parity vectors once.
+
+* x86 generation contains spatial x1/x2/x4 variants, explicit prefetch, and
+  non-temporal final stores in optimized paths.
+
+* Recovery is specifically designed for one or two failures. The public RAID6
+  recovery interface operates on at most PAGE_SIZE at a time.
+
+* Architecture coverage is broad: x86, ARM NEON, PowerPC, s390, RISC-V vector,
+  LoongArch SIMD, and generic integer implementations.
+
+* Generation can be benchmarked at boot and the fastest registered
+  implementation selected dynamically.
+
+OpenZFS RAIDZ: A filesystem-integrated RAID engine supporting RAIDZ1, RAIDZ2
+               and RAIDZ3. It must handle ZFS RAIDZ geometry, ABD buffers, and
+               rows whose columns may have different lengths.
+
+* P, Q and R use coefficients based on 1, 2 and 4 respectively over the
+  standard RAID GF(2^8) polynomial.
+
+* Q and R generation use fixed multiply-by-2 and multiply-by-4 Horner
+  recurrences.
+
+* Parity generation is blocked in 64 KiB regions for L2 locality.
+
+* For each data column, the parity region is loaded, updated and stored. Cached
+  stores are therefore a natural consequence of parity reuse.
+
+* Recovery has explicit rec_p, rec_q, rec_r, rec_pq, rec_pr, rec_qr and rec_pqr
+  operations with coefficients prepared ahead of the hot loops.
+
+* The implementation can benchmark each generation and recovery operation
+  independently and assemble a per-operation fastest backend.
+
+Intel ISA-L: A high-throughput general erasure-coding library. The fundamental
+             operation is a GF(2^8) vector dot product with arbitrary
+             coefficients, not a fixed RAID P/Q/R layout.
+
+* The API supports systematic Reed-Solomon matrices, Cauchy matrices, generic
+  matrix inversion, and user-provided coefficient sets.
+
+* Fast encode/decode kernels calculate one to six destination vectors in one
+  pass. More outputs are handled in groups.
+
+* For a source vector, SIMD kernels can split the source nibbles once and reuse
+  them while updating several output accumulators.
+
+* PSHUFB-style paths use 32 bytes of expanded low/high nibble tables per
+  coefficient.
+
+* x86 backends include SSE/AVX/AVX2/AVX512 and GFNI variants. Current non-x86
+  support includes AArch64 NEON and SVE/SVE2, PPC64LE VSX, and RISC-V RVV.
+
+* A separate update API supports adding the contribution of one source vector
+  to one or more existing parity vectors.
+
+klauspost/reedsolomon: A modern general-purpose Reed-Solomon implementation in
+                       Go with architecture-specific generated kernels,
+                       cache-aware work partitioning, parallel execution, and a
+                       separate Leopard mode for very high shard counts.
+
+* The normal Reed-Solomon path uses a systematic matrix, with Vandermonde as
+  the default and optional Cauchy, Jerasure-compatible, PAR1 and custom
+  matrices.
+
+* Generated SIMD microkernels cover combinations of multiple inputs and
+  multiple outputs, up to 10 by 10 on the main generated paths.
+
+* The implementation chooses a cache-sized amount of data per round instead of
+  blindly processing an arbitrarily large shard in one unit.
+
+* x86 paths include AVX2, AVX512 and GFNI. AArch64 includes NEON and SVE; there
+  is also architecture-specific PPC64LE support.
+
+* Normal reconstruction builds a decoding matrix from surviving shards, inverts
+  it, and reuses the same multi-output coding machinery for missing shards.
+
+* An inversion-tree cache can reuse decoding information for repeated erasure
+  patterns.
+
+* For shard counts beyond the normal GF(2^8) matrix regime, Leopard provides a
+  different O(n log n) coding strategy.
+
+Jerasure/GF-Complete: A general erasure-coding framework paired with a generic
+                      Galois-field library. Jerasure provides coding matrices,
+                      bitmatrices, schedules and decode orchestration;
+                      GF-Complete provides field arithmetic and region
+                      operations.
+
+* Jerasure supports Vandermonde and Cauchy coding constructions and can convert
+  matrices into XOR-oriented bitmatrices.
+
+* Cauchy good-matrix and smart-schedule techniques primarily reduce XOR work in
+  bitmatrix/packetized coding, not direct SIMD byte-wise GF multiplication.
+
+* For w=8, GF-Complete can use low/high nibble split tables with SSSE3 or NEON,
+  closely resembling the PSHUFB/TBL multiplication technique used by other
+  libraries.
+
+* A GF-Complete region multiply keeps the coefficient tables resident while
+  processing the whole region, but Jerasure matrix encoding naturally invokes
+  such region work separately for matrix rows/sources.
+
+* The Ceph mirror snapshots used here are legacy code and should be read as
+  algorithm/implementation references rather than current optimization targets.
+
+CM256/gf256: A compact Cauchy MDS codec paired with a GF(2^8) region engine. It
+             targets generic original/recovery blocks and can support many more
+             recovery blocks than SnapRAID.
+
+* CM256 normalizes its Cauchy construction so that the first recovery row is
+  all ones, giving a simple XOR parity row.
+
+* Encoding processes each recovery block as a whole-region multiply plus
+  multiply-add sequence.
+
+* gf256 uses low/high nibble shuffle multiplication on SSSE3/AVX2 and NEON
+  paths.
+
+* The standalone AVX2 gf256 tables are pre-expanded to vector width, trading a
+  larger table footprint for normal vector loads instead of 128-bit
+  load-and-broadcast operations.
+
+* CM256 decoding exploits Cauchy structure directly through a Schur-type LDU
+  solve rather than treating every decode as an arbitrary matrix inversion.
+
+
+Primary target and workload
+---------------------------
+
+The primary target is the most important comparison category. It explains many
+apparent contradictions between otherwise good implementations.
+
+SnapRAID: Large storage blocks, normally 256 KiB, and one to six parity levels.
+          The normal generation workload streams many MiB of source data per
+          stripe and queues parity before disk output. Full extra passes over
+          source or parity buffers are expensive enough to influence kernel
+          design.
+
+Linux RAID6: Kernel RAID6 with exactly P+Q. Generation is a streaming storage
+             operation, but the recovery interface is page-sized. The tiny
+             fixed parity count permits formulas and kernels that would not
+             generalize to many parity outputs.
+
+OpenZFS RAIDZ: Filesystem RAID with one to three parity columns, dynamic row
+               geometry and ABD buffers. Cache-blocked processing and repeated
+               parity updates are reasonable because the parity working region
+               is deliberately kept hot.
+
+ISA-L: General high-throughput erasure coding for storage, networking and other
+       buffer-oriented applications. It must handle arbitrary coefficient
+       matrices and parity counts without assuming RAID-specific P/Q semantics.
+
+klauspost: General Reed-Solomon shards over a wide range of block sizes and
+           data/parity counts. It combines generic matrix semantics with
+           cache-aware tiling, parallelism and generated SIMD microkernels.
+
+Jerasure/GF: General erasure-coding construction and field operations. The
+             framework also supports packetized bitmatrix/schedule approaches
+             whose cost model is different from direct byte-wise SIMD GF
+             multiplication.
+
+CM256/gf256: Generic Cauchy MDS blocks, including use cases with many recovery
+             blocks. Whole-region GF operations make coefficient residency
+             easy, but can require source/output regions to be traversed more
+             than once.
+
+The direct consequence for SnapRAID is:
+
+    Saving arithmetic is not enough.
+
+    An optimization should preferably preserve:
+
+        one traversal of each large source region
+        simultaneous progress of required parity outputs
+        accumulator residency in SIMD registers
+        one final parity store
+
+
+Coding scheme and parity organization
+-------------------------------------
+
+SnapRAID: Systematic storage layout with P as XOR and higher parity rows from
+          an extended Cauchy construction. Q has a structured recurrence whose
+          exact form depends on the selected field.
+
+          In the RAID mode, Q uses powers of generator 2 and therefore has the
+          classic fixed multiply-by-2 Horner recurrence.
+
+          In the AES mode, Q uses the G23 sequence. Its Horner recurrence is
+          still highly structured: multiplication is by 2 almost everywhere,
+          with multiplication by 3 only at four fixed coset boundaries.
+
+          These coefficient properties and the small maximum parity count are
+          known to the implementation and can be exploited directly.
+
+Linux RAID6: Exactly P+Q. P is XOR and Q uses powers of generator 2 over the
+             standard RAID field. Q therefore has a natural Horner recurrence
+             with a fixed multiply-by-2 operation.
+
+OpenZFS RAIDZ: RAIDZ1/2/3 use P, Q and R. P uses coefficient 1, Q uses powers
+               of 2, and R uses powers of 4. The fixed 1/2/4 choice supports
+               simple XOR, MUL2 and MUL4 operations in the generation kernels.
+
+ISA-L: Generic systematic Reed-Solomon or Cauchy matrices, plus arbitrary
+       caller-provided coefficients. The vector kernels do not depend on a
+       particular RAID matrix.
+
+klauspost: Systematic matrix coding with Vandermonde by default and multiple
+           matrix options. Generated kernels treat the matrix coefficients
+           generically while recognizing selected useful matrix properties in
+           some paths.
+
+Jerasure/GF: Generic Vandermonde, Cauchy and bitmatrix constructions. Cauchy
+             matrix improvement can minimize bitmatrix one-count, which matters
+             for XOR schedules but not directly for PSHUFB/GFNI byte
+             multiplication cost.
+
+CM256/gf256: Normalized Cauchy coding. The normalization deliberately creates
+             an all-one first recovery row. Remaining rows are generic Cauchy
+             coefficients rather than a RAID-specific Q power sequence.
+
+The matrix choice therefore affects more than recoverability. SnapRAID, Linux
+RAID6 and OpenZFS can exploit structured generator recurrences in generation.
+
+Linux RAID6 and OpenZFS use simple fixed multipliers throughout their Horner
+recurrences. SnapRAID RAID does the same for Q with multiply-by-2, while
+SnapRAID AES uses a piecewise-fixed G23 recurrence with only four known
+multiply-by-3 boundaries.
+
+This remains fundamentally different from generic matrix libraries, which
+spend more effort making arbitrary coefficient multiplication fast.
+
+
+GF(2^8) arithmetic
+------------------
+
+Most implementations compared here use byte-oriented GF(2^8), but they do not
+all use the same coding matrix or even the same primitive polynomial. Similar
+SIMD instructions do not imply compatible parity.
+
+SnapRAID: Two GF(2^8) fields are supported by the Cauchy modes.
+
+          The normal RAID field uses polynomial 0x11d. Non-GFNI SIMD
+          multiplication uses compact low/high nibble shuffle tables. RAID
+          GFNI represents multiplication by each coefficient as an 8-byte
+          affine matrix because the native GFNI multiply instruction is defined
+          for the AES field.
+
+          The AES field uses polynomial 0x11b, matching the field implemented
+          natively by VGF2P8MULB. AES GFNI can therefore multiply directly by
+          coefficient bytes without the affine conversion required by the RAID
+          field.
+
+          Non-GFNI AES generation uses the same SIMD field primitives as the
+          rest of the implementation, while the structured G23 Q row is
+          evaluated with multiply-by-2 Horner transitions and multiply-by-3
+          only at the fixed coset boundaries.
+
+Linux RAID6: Uses polynomial 0x11d. Generation mostly needs multiplication by
+             the fixed generator 2, implemented by byte shift plus conditional
+             XOR with 0x1d. Recovery also uses precomputed GF tables and SIMD
+             shuffle tables.
+
+OpenZFS RAIDZ: Uses polynomial 0x11d. Generation emphasizes fixed MUL2 and
+               MUL4. General recovery coefficient multiplication uses
+               table/shuffle machinery in optimized SIMD backends.
+
+ISA-L: Uses the standard 0x11d field for its common GF(2^8) erasure-code
+       functions. Classic SIMD paths expand each coefficient into 16-byte low
+       and 16-byte high nibble tables. GFNI paths use a GFNI-ready expanded
+       representation.
+
+klauspost: The normal Reed-Solomon path uses the same common 0x11d field.
+           Generated backends include shuffle-based and GFNI multiplication,
+           allowing a particularly direct microarchitectural comparison with
+           SnapRAID.
+
+Jerasure/GF: GF-Complete is intentionally more general and supports multiple
+             field techniques. Its w=8 split-table SIMD path uses the same
+             basic low/high nibble decomposition as PSHUFB-based SnapRAID and
+             ISA-L kernels.
+
+CM256/gf256: Uses a different GF(2^8) polynomial, 0x14d, in its normal
+             configuration. The SIMD multiplication technique is still
+             comparable even though the actual coding coefficients and parity
+             bytes are not compatible with SnapRAID.
+
+
+Supported architectures
+-----------------------
+
+Architecture lists below describe the RAID/erasure-code engines studied, not
+every instruction set used elsewhere in each project.
+
+SnapRAID: Portable scalar C plus x86 SSSE3, AVX2, AVX512BW and GFNI, and NEON
+          on both AArch64 and AArch32.
+
+Linux RAID6: Generic integer plus x86 MMX/SSE/SSE2/AVX2/AVX512 generation and
+             SSSE3/AVX2/AVX512 recovery. It also has ARM NEON, PowerPC
+             AltiVec/vpermxor, s390 vector, RISC-V RVV and LoongArch SIMD
+             support.
+
+OpenZFS RAIDZ: Scalar, x86-64 SSE2, SSSE3, AVX2, AVX512F and AVX512BW, AArch64
+               NEON and NEONx2, and PowerPC AltiVec in the current RAIDZ math
+               dispatcher.
+
+ISA-L: x86-64 SSE/AVX/AVX2/AVX512 including GFNI, AArch64 NEON and SVE/SVE2,
+       PPC64LE VSX, RISC-V64 RVV, and portable baseline C.
+
+klauspost: Portable Go plus generated x86 SIMD including AVX2/AVX512/GFNI,
+           AArch64 NEON/SVE, and architecture-specific PPC64LE support.
+
+Jerasure/GF: Portable C with GF-Complete SIMD support including SSSE3 and NEON,
+             plus other generic field techniques. It predates the AVX512/GFNI
+             generation of libraries.
+
+CM256/gf256: Portable scalar code plus gf256 SIMD implementations centered on
+             SSSE3, AVX2 and NEON.
+
+For architecture breadth, Linux RAID6 is the strongest reference. For modern
+generic GF kernels, ISA-L and klauspost are more directly comparable with
+current SnapRAID x86 and ARM work.
+
+
+Kernel and code specialization strategy
+---------------------------------------
+
+SnapRAID: Hand-specializes around the small fixed parity domain. GEN1 through
+          GEN6 are different kernels, and recovery distinguishes REC1, REC2,
+          RECX and specific fast paths. This allows register allocation and
+          algebra to change with parity count.
+
+          Non-GFNI AES generation is additionally specialized into separate
+          x2-only and G23 kernels. This is deliberate code duplication:
+          keeping G23 boundary control flow out of the common x2-only path was
+          measured to improve generated code and throughput even when no x3
+          transition would actually execute.
+
+Linux RAID6: Specializes a single mathematical problem, P+Q, but supplies
+             several spatial unroll factors and architecture backends. The
+             x1/x2/x4 variants are alternative implementations of the same
+             fixed syndrome operation.
+
+OpenZFS RAIDZ: Specializes by P, PQ and PQR generation and by each supported
+               recovery combination. Backend macro layers provide the same
+               algorithm with different SIMD widths and field primitives.
+
+ISA-L: Provides families of assembly kernels for one through six simultaneous
+       destinations. The high-level function partitions a larger destination
+       count into groups supported by those kernels.
+
+klauspost: Uses extensive code generation for many N-input by M-output
+           combinations. This moves specialization from RAID semantics to
+           generic matrix microkernels and creates a large generated assembly
+           body.
+
+Jerasure/GF: Keeps coding construction and GF region primitives relatively
+             separate. The framework is general, while GF-Complete specializes
+             the field operation selected for a region.
+
+CM256/gf256: Uses a compact generic Cauchy codec and optimized region
+             primitives rather than a large family of parity-count-specific
+             encode kernels.
+
+SnapRAID and klauspost therefore demonstrate two different kinds of
+specialization:
+
+    SnapRAID:
+        specialize the RAID algorithm
+
+    klauspost/reedsolomon:
+        specialize generic matrix multiplication microkernels
+
+
+Memory traversal
+----------------
+
+Memory traversal is the category where workload differences matter most for
+SnapRAID. For large blocks, the number of full source and destination passes
+can dominate small instruction-count savings.
+
+SnapRAID: The preferred organization is vector-offset outer, source-disk inner,
+          with all required parity accumulators live. A source chunk is loaded
+          once and contributes to all parity outputs before the next source is
+          loaded.
+
+    for each SIMD chunk:
+        initialize P/Q/R/... accumulators
+        for each source disk:
+            load source chunk once
+            update all parity accumulators
+        store each final parity chunk once
+
+Linux RAID6: Very similar for P+Q generation. P and Q stay live while the
+             kernel walks all data disks for the current SIMD chunk, followed
+             by one final store of each parity output.
+
+OpenZFS RAIDZ: Processes 64 KiB cache-blocked regions. Within a region, each
+               data column updates parity buffers that are loaded and stored
+               repeatedly. This deliberately trades more parity memory
+               operations for L2 locality and compatibility with RAIDZ/ABD
+               geometry.
+
+    for each 64 KiB region:
+        initialize parity region
+        for each data column:
+            load data
+            load/update/store P
+            load/update/store Q/R as required
+
+ISA-L: Multi-output dot-product kernels load a source vector chunk, split it
+       once, and apply several coefficient tables to several live destination
+       accumulators. This preserves much of the same source-reuse benefit as
+       SnapRAID without assuming RAID-specific coefficients.
+
+klauspost: Uses cache-aware rounds and multi-input/multi-output microkernels.
+           It does not rely on one global whole-shard traversal policy; it
+           chooses working-set sizes intended to keep the active inputs and
+           outputs useful in cache.
+
+Jerasure/GF: A GF-Complete multiply_region keeps one coefficient table resident
+             over a complete region. Jerasure matrix encoding naturally invokes
+             region operations for matrix rows and source contributions, so a
+             source region can be revisited for different outputs.
+
+CM256/gf256: Encoding one recovery block at a time also gives excellent
+             coefficient residency, but producing several recovery blocks
+             requires separate whole-region work for those outputs.
+
+For SnapRAID, copying the Jerasure/CM256 whole-region orientation would
+normally be the wrong trade. It could improve coefficient residency while
+increasing 256 KiB source rereads. Current GEN2/GEN3 table residency shows that
+SnapRAID can obtain part of the coefficient-residency benefit without changing
+the single-pass multi-output traversal.
+
+
+Generation strategy
+-------------------
+
+SnapRAID P: Pure XOR and a dedicated GEN1 path.
+
+SnapRAID Q: Generator-power structure. GFNI RAID paths use Horner with a fixed
+            multiply-by-2 affine matrix where register pressure permits it.
+            Other backends use the strategy that benchmarks best for that
+            parity count.
+
+SnapRAID 3..6: Higher extended-Cauchy rows use direct coefficient
+               multiplication. Current GEN2/GEN3 optimizations preload
+               coefficient tables or matrices into vector registers when the
+               register file permits it.
+
+Linux RAID6: P and Q are fused. Q is always the fixed Horner recurrence. The
+             result is exceptionally compact because there is no requirement to
+             support arbitrary third or later parity rows.
+
+OpenZFS RAIDZ: P, PQ and PQR have separate operations. Q and R exploit fixed
+               MUL2 and MUL4 recurrences, but parity buffers are updated in
+               cache as each data column is processed.
+
+ISA-L: Treats generation as generic matrix dot products. Up to six output rows
+       are fused, so one source load and one nibble split can feed several
+       parity accumulators.
+
+klauspost: Treats generation as generic matrix coding but uses generated NxM
+           microkernels and cache-sized rounds. This is a more general version
+           of multi-output fusion than a fixed GEN1..GEN6 family.
+
+Jerasure/GF: Matrix construction and region arithmetic are separated. This is
+             flexible and makes each coefficient operation simple, but does not
+             naturally provide the same fixed small-parity fusion as SnapRAID.
+
+CM256/gf256: Each recovery block is a Cauchy matrix row evaluated by
+             whole-region GF operations. The first all-one row can reduce to
+             XOR; remaining rows use generic coefficient multiply-add.
+
+
+Recovery strategy
+-----------------
+
+Recovery comparisons must separate the common single-failure case from rare
+multi-failure cases. A sophisticated general decoder can be useful without
+improving the normal SnapRAID recovery path.
+
+SnapRAID: With one missing data disk and P available, rec1of1 remaps pointers
+          and uses the XOR generator. No temporary syndrome buffer, GF multiply
+          or matrix solve is required. Generic REC1/REC2/RECX handle less
+          common parity selections and multiple failures.
+
+* Generic recovery first obtains the needed delta/syndrome information, builds
+  and inverts only the small N by N matrix for failed data, then runs
+  specialized SIMD recovery kernels.
+
+* N is at most six, so scalar matrix inversion setup is negligible compared
+  with processing 256 KiB blocks.
+
+Linux RAID6: Uses formulas specific to the RAID6 failure cases. Two-data
+             recovery temporarily substitutes zero pages, generates delta P/Q
+             using the normal syndrome engine, then solves the two equations
+             with precomputed multipliers. Data+P recovery has its own formula.
+
+* This is an algorithmic specialization made possible by exactly two parity
+  equations.
+
+* The recovery API limit of PAGE_SIZE makes additional passes much less costly
+  than they would be over a full SnapRAID block.
+
+OpenZFS RAIDZ: Dispatches directly among rec_p, rec_q, rec_r, rec_pq, rec_pr,
+               rec_qr and rec_pqr according to missing data count and available
+               parity. Recovery coefficients are calculated before the SIMD
+               loops.
+
+* The implementation computes syndromes from available columns and then applies
+  explicit one-, two- or three-failure equations.
+
+* Big/short RAIDZ column geometry can split the reconstruction into ranges so
+  conditional logic is kept out of the SIMD inner loops.
+
+ISA-L: Provides the GF matrix inversion and fast dot-product primitives needed
+       for decode, but the core fast path is intentionally generic: construct
+       decode coefficients and run the same multi-output coding engine on
+       surviving sources.
+
+klauspost: Selects surviving shards, constructs and inverts the decoding
+           matrix, then invokes the same multi-output coding machinery for the
+           requested missing shards. An inversion-tree cache can reuse previous
+           erasure patterns.
+
+Jerasure/GF: Selects surviving rows, constructs a decoding matrix and inverts
+             it for generic matrix decode. Bitmatrix modes can instead build
+             XOR schedules, including smart schedules intended to reduce XOR
+             operations.
+
+CM256/gf256: Uses the algebraic structure of its Cauchy matrix and a direct
+             Schur-type LDU solve. This avoids treating the decode matrix as a
+             completely unstructured large matrix, but the triangular solve
+             performs region multiply-add operations over the recovery blocks.
+
+The CM256 direct Cauchy solver is mathematically interesting if SnapRAID ever
+grows far beyond six parity levels. For the current N <= 6 domain, reducing
+matrix-setup complexity is not valuable enough to compensate for an unfavorable
+large-block traversal.
+
+
+SIMD and register strategy
+--------------------------
+
+SnapRAID: Uses parity-count-specific register allocation. Current recovery
+          keeps delta vectors in registers, reuses pre-split nibbles, and
+          precomputes coefficient table pointers or GFNI affine representations
+          before the hot loop. Current GEN2/GEN3 can keep multiplication tables
+          resident in vector registers where space permits.
+
+* REC1 has 64-byte spatial unrolling on selected AVX2/SSSE3/NEON paths.
+
+* NEON REC2 uses two 16-byte blocks per iteration.
+
+* AVX512 width/unroll is benchmark-driven; wider 128-byte processing is not
+  assumed to be faster.
+
+Linux RAID6: Uses fixed P/Q register state and multiple spatial-unroll
+             variants. AVX2 and AVX512 implementations explicitly prefetch
+             source data and use simple fixed MUL2 arithmetic rather than
+             arbitrary coefficient tables during generation.
+
+OpenZFS RAIDZ: Backend macro layers operate on multiple vector registers per
+               primitive and provide fixed MUL2/MUL4 plus general coefficient
+               multiplication. The surrounding algorithm is designed around 64
+               KiB cache chunks and ABD iteration rather than keeping parity
+               live across every data column.
+
+ISA-L: The 1..6 output kernels are a strong reference for generic multi-output
+       fusion. AVX2 can load one source, form low/high nibble indices once, and
+       apply several coefficient tables to several destination accumulators.
+
+* GFNI removes the nibble-shuffle multiply itself, but output-count and
+  register-pressure tradeoffs remain. AVX2 GFNI and AVX512 GFNI therefore do
+  not necessarily use identical maximum output group sizes.
+
+* Current SVE/SVE2 code can pre-detect an all-one coefficient output and use
+  direct XOR instead of table multiplication.
+
+klauspost: Generated NxM kernels use the register file for a broader generic
+           matrix tile. The trade is much more generated code in exchange for
+           specialized input/output combinations and fewer generic loops in the
+           hot path.
+
+Jerasure/GF: GF-Complete region kernels are optimized around one coefficient at
+             a time. The coefficient tables can remain resident for the entire
+             region, which minimizes setup but provides less simultaneous
+             output fusion.
+
+CM256/gf256: gf256 similarly optimizes region operations around one
+             coefficient. Its AVX2 representation can store already duplicated
+             vector-width low/high tables so the hot loop uses normal 256-bit
+             loads instead of broadcasts.
+
+
+Coefficient and table handling
+------------------------------
+
+Coefficient setup is one of the areas where several projects converge on the
+same principle: move address calculation, table expansion and matrix work out
+of the byte-processing loop whenever possible.
+
+SnapRAID non-GFNI RECX: Precomputes direct pointers to compact 2x16-byte
+                        shuffle tables for every inverse-matrix coefficient.
+                        The asm therefore avoids coefficient-byte index
+                        arithmetic in the hot loop.
+
+SnapRAID RAID GFNI RECX: Precomputes the complete 8-byte affine matrix
+                         representation of every inverse coefficient, removing
+                         the coefficient-to-global-table dependency from the
+                         hot loop.
+
+ISA-L: ec_init_tables expands every coefficient to a 32-byte representation
+       before encode/decode. The same high-level idea is used for both classic
+       shuffle kernels and GFNI-ready constants.
+
+GF-Complete: A region operation selects the coefficient tables once and reuses
+             them across the whole region.
+
+gf256: The standalone AVX2 path keeps 256-bit pre-expanded low/high tables.
+       Compared with a compact 2x16-byte representation, this removes
+       broadcasts but doubles bytes fetched per coefficient and increases table
+       footprint.
+
+For SnapRAID RECX, pre-expanding every AVX2 coefficient table to 2x32 bytes
+remains only a microbenchmark idea, not an assumed improvement. The larger
+representation doubles coefficient-table traffic. For AVX512 the footprint
+penalty becomes even less attractive.
+
+
+Memory, cache and store behavior
+--------------------------------
+
+SnapRAID: Large source blocks and queued parity favor streaming behavior.
+          Generation normally writes parity once with non-temporal stores.
+          Keeping many generated parity blocks resident in cache is not the
+          objective.
+
+Linux RAID6: Optimized generation is very similar: source prefetch and
+             non-temporal final P/Q stores are used in x86 paths. The separate
+             xor_syndrome update operation reads and modifies existing parity
+             and therefore uses normal cached stores.
+
+OpenZFS RAIDZ: Cached stores are integral to the traversal. P/Q/R are
+               intentionally loaded and updated again as later data columns are
+               processed inside the 64 KiB cache block. Non-temporal stores
+               would fight that reuse pattern.
+
+ISA-L: The public erasure-code API is a memory-buffer library and is not tied
+       to a disk-writer queue. x86 assembly includes different
+       aligned/unaligned load/store configurations, but its store policy should
+       not be copied into SnapRAID independently of the surrounding traversal
+       and consumer.
+
+klauspost: Cache-aware rounds are a first-class part of the generic
+           implementation. The library attempts to size active input/output
+           work to cache rather than assuming storage-style streaming parity
+           output.
+
+Jerasure/GF: Whole-region operations naturally use cached source/destination
+             buffers and may revisit them for other matrix rows.
+
+CM256/gf256: Whole-region multiply and multiply-add operations also assume
+             normal memory reuse. This is appropriate for a generic codec but
+             does not match SnapRAID final parity lifetime as closely as Linux
+             RAID6 does.
+
+OpenZFS is the clearest demonstration that store policy cannot be judged in
+isolation: cached stores are correct for an algorithm that immediately reloads
+parity, while SnapRAID MOVNT is appropriate when final parity is not consumed
+until later in a queue.
+
+
+Temporary memory and working state
+----------------------------------
+
+SnapRAID: Common rec1of1 uses no syndrome temporary. Generic recovery has small
+          N-by-N setup state and delta/syndrome buffers, with N <= 6. Current
+          RECX tries to keep vector deltas and their nibble splits in
+          registers.
+
+Linux RAID6: Two-disk recovery reuses the failed data pages themselves as
+             temporary delta P and delta Q storage, avoiding a separate large
+             allocation.
+
+OpenZFS RAIDZ: Works through ABDs and target/syndrome buffers whose geometry
+               may differ between big and short columns. Its working unit is
+               intentionally split to keep the SIMD loops regular.
+
+ISA-L: Requires caller-provided expanded coefficient tables of 32*k*rows bytes
+       for fast encode/decode, in addition to the source and destination
+       buffers.
+
+klauspost: Maintains matrix/decode setup state and cache-oriented work
+           partitioning. Recovery can also retain inversion information for
+           repeated erasure patterns.
+
+Jerasure/GF: Bitmatrix and schedule modes can introduce schedule data and
+             packetized intermediate work. Direct matrix/GF paths have
+             coefficient and matrix setup state plus the data regions.
+
+CM256/gf256: The direct Cauchy solve primarily transforms recovery blocks with
+             region operations and coefficient setup rather than allocating a
+             large generic decoding matrix for each data byte.
+
+
+Special cases and fast paths
+----------------------------
+
+SnapRAID: P is a dedicated XOR path. rec1of1 with P available reduces to GEN1.
+          Coefficient 0/1 simplifications are useful when they can be
+          established without adding harmful hot-loop branches.
+
+Linux RAID6: The entire implementation is a fixed special case: P+Q only.
+             Single failure can use RAID5-style reconstruction, while two-data
+             and data+P failure have explicit formulas.
+
+OpenZFS RAIDZ: Has explicit recovery functions for every P/Q/R combination
+               through three missing data columns. The dispatcher selects the
+               cheapest usable parity set.
+
+ISA-L: Current SVE/SVE2 recognizes coefficient-one destinations and replaces GF
+       lookup multiplication with XOR. Other paths benefit from fixed
+       1..6-output kernel families rather than RAID-specific formulas.
+
+klauspost: Can select generated special kernels based on matrix/output shape
+           and contains matrix-property-aware paths such as all-one first
+           parity rows on some generated backends.
+
+Jerasure/GF: GF-Complete handles coefficient 0 and 1 specially once per region.
+             Jerasure can exploit all-one rows and bitmatrix schedules at a
+             higher coding level.
+
+CM256/gf256: The normalized first recovery row is XOR. gf256 region
+             multiply-add also special-cases trivial coefficients outside the
+             inner byte loop.
+
+
+Incremental parity and update APIs
+----------------------------------
+
+SnapRAID: The RAID library hot generation path computes complete parity blocks
+          for the selected stripe/block. A generic single-source MAD update API
+          is not the main optimization target.
+
+Linux RAID6: raid6_xor_syndrome explicitly supports in-place P/Q parity
+             updates. The old contribution can be removed, data changed, and
+             the new contribution added using the same syndrome structure.
+
+OpenZFS RAIDZ: The RAIDZ math engine is integrated with copy-on-write
+               filesystem row generation/reconstruction rather than exposed as
+               a generic single-source erasure-code update primitive.
+
+ISA-L: ec_encode_data_update and the gf_*vect_mad family are explicit
+       single-source update operations that can update several destinations.
+
+klauspost: The library supports broader shard update/reconstruction workflows,
+           but its main optimized coding engine remains generic matrix coding
+           rather than a storage-specific parity-delta API.
+
+Jerasure/GF: GF region multiply with add semantics can be used to accumulate a
+             single source contribution, although the higher-level matrix API
+             is not built around SnapRAID-style block synchronization.
+
+CM256/gf256: gf256 multiply-add is naturally usable as an update primitive,
+             while the CM256 encoding API normally constructs complete recovery
+             blocks.
+
+
+Runtime dispatch and calibration
+--------------------------------
+
+SnapRAID: Selects implementations from CPU capabilities and the configured
+          backend. Broad startup microbenchmark calibration is intentionally
+          not part of the normal design.
+
+Linux RAID6: Can benchmark registered generation algorithms at boot using
+             PAGE_SIZE buffers and select the fastest result. Recovery
+             selection is more directly tied to architecture capability
+             priority.
+
+OpenZFS RAIDZ: Benchmarks generation and recovery operations independently and
+               builds a fastest implementation whose gen_p, gen_pq, gen_pqr and
+               recovery functions may come from different SIMD backends.
+
+ISA-L: Uses multibinary runtime dispatch to choose the best implementation for
+       the detected instruction-set capabilities.
+
+klauspost: Detects CPU capabilities and chooses generated SIMD functions, cache
+           strategy and parallel work according to the active platform/options.
+
+Jerasure/GF: GF-Complete initializes a field implementation appropriate for the
+             selected technique and available SIMD capabilities rather than
+             microbenchmarking all alternatives for each operation.
+
+CM256/gf256: gf256 selects available SIMD support during initialization. The
+             codec does not use a Linux/OpenZFS-style per-operation startup
+             benchmark.
+
+Linux and OpenZFS are useful references for runtime benchmarking, but their
+existence does not by itself justify adding calibration to SnapRAID. SnapRAID
+has fewer known kernels and a stable large-block workload; calibration adds
+startup work, complexity and another source of platform-dependent behavior.
+
+
+Scalability and implementation constraints
+------------------------------------------
+
+SnapRAID: One to six parity levels. This small fixed N is a central
+          optimization assumption: it bounds register pressure, recovery matrix
+          size and the number of specialized kernels.
+
+Linux RAID6: Exactly two parity levels. It is the most specialized
+             implementation in the comparison and therefore the least suitable
+             model for parity counts above Q.
+
+OpenZFS RAIDZ: One to three parity levels. The implementation is specialized
+               around P/Q/R rather than arbitrary Reed-Solomon parity counts.
+
+ISA-L: Generic matrix coding. Fast functions fuse a bounded number of outputs
+       at a time, and larger parity counts are decomposed into several kernel
+       groups.
+
+klauspost: Normal GF(2^8) Reed-Solomon supports the usual byte-field shard
+           regime; Leopard provides a different path for much larger shard
+           counts, up to tens of thousands.
+
+Jerasure/GF: General matrix/bitmatrix framework with field-width choices beyond
+             the fixed small-parity RAID engines. Its algorithms prioritize
+             generality over a six-parity register budget.
+
+CM256/gf256: Designed for a total original+recovery block count within the
+             GF(2^8) index space and is comfortable with substantially more
+             recovery blocks than SnapRAID.
+
+This explains why structured solvers, schedule caches or O(n log n) coding can
+be important elsewhere while being unnecessary for current SnapRAID. With N <=
+6, arithmetic setup complexity is tiny relative to moving the data.
+
+
+What each implementation teaches SnapRAID
+-----------------------------------------
+
+Linux RAID6: The strongest reference for P+Q streaming generation. It confirms
+             single-pass source traversal, live parity accumulators,
+             fixed-generator Horner arithmetic and non-temporal final stores as
+             sensible storage techniques. Its x1/x2/x4 unrolling and prefetch
+             are ideas to benchmark, not assumptions to copy.
+
+OpenZFS RAIDZ: The strongest counterexample for memory policy. Its 64 KiB L2
+               blocking and cached parity stores are coherent because parity is
+               deliberately reused after every data column. The same technique
+               would increase SnapRAID parity traffic and conflicts with the
+               queued final-output lifetime.
+
+ISA-L: The strongest generic reference for multi-output SIMD coding. It
+       demonstrates that source reuse, nibble reuse and several live output
+       accumulators are useful even without RAID-specific matrices. GFNI Horner
+       and coefficient precomputation ideas have already influenced SnapRAID.
+
+klauspost: Shows how far a generic Reed-Solomon engine can push specialization
+           through generated NxM kernels, cache-aware rounds and parallelism.
+           It is a useful contrast to SnapRAID hand-specializing GEN1..GEN6
+           around known RAID semantics.
+
+Jerasure/GF: Provides historical matrix, Cauchy and GF implementation
+             references. Its coefficient residency is useful to understand, but
+             packetized smart schedules, good-Cauchy bitmatrix one-count
+             minimization and repeated whole-region passes do not map directly
+             to current SnapRAID SIMD coding.
+
+CM256/gf256: Provides a compact Cauchy codec reference. The direct Cauchy LDU
+             solver is interesting for a hypothetical much larger parity count.
+             Its pre-expanded AVX2 shuffle tables are a clean microbenchmark
+             idea, but their larger footprint is not automatically favorable
+             for RECX.
+
+
+Ideas already represented in current SnapRAID
+---------------------------------------------
+
+* Fuse several parity outputs so a source chunk can update all of them before
+  it is discarded.
+
+* Use fixed-generator Horner arithmetic where the matrix structure and backend
+  make it advantageous.
+
+* Use low/high nibble shuffle multiplication for general GF(2^8) coefficients
+  on appropriate SIMD backends.
+
+* Use GFNI with precomputed coefficient representations when hardware support
+  makes it profitable.
+
+* Move coefficient address/matrix setup out of the hot data loop.
+
+* Keep recovery deltas and reused nibble splits in registers where register
+  pressure permits it.
+
+* Spatially unroll simple kernels where independent chains improve throughput
+  without creating excessive register pressure.
+
+* Use a direct XOR fast path for P and for the common one-data recovery case
+  when P is available.
+
+* Use non-temporal final parity stores for the normal large-block generation
+  pipeline.
+
+
+Ideas worth keeping as references
+---------------------------------
+
+* Linux-style alternative spatial unroll factors are useful benchmark
+  references for specific kernels, but wider is not assumed faster.
+
+* Linux/OpenZFS runtime benchmarking is a reference if future CPU diversity
+  makes static dispatch insufficient.
+
+* ISA-L and klauspost multi-output kernels remain good references for register
+  allocation and output grouping, especially as new GFNI/SVE backends evolve.
+
+* ISA-L coefficient-one detection is worth considering only where the
+  coefficient can be classified outside the hot loop and the resulting
+  branching/register cost is favorable.
+
+* gf256 pre-expanded AVX2 shuffle tables are a small, isolated RECX
+  microbenchmark candidate. They should be tested against the extra L1 table
+  traffic, not accepted from instruction count alone.
+
+* CM256 structured Cauchy LDU is a useful future reference if SnapRAID ever
+  supports parity counts large enough for decoding-matrix setup to matter
+  materially.
+
+* klauspost cache tiling and generated NxM specialization are useful
+  architectural references if SnapRAID ever moves toward much larger parity
+  counts or more generic coding matrices.
+
+
+Ideas that do not transfer directly
+-----------------------------------
+
+* Do not adopt a source/output loop orientation that requires another full pass
+  over each 256 KiB source merely to keep one coefficient table resident
+  longer.
+
+* Do not adopt OpenZFS cached parity update loops without also adopting the
+  cache-blocked repeated-parity-reuse workload that makes them sensible.
+
+* Do not replace direct byte-wise GF SIMD with Jerasure smart bitmatrix
+  schedules merely because those schedules reduce XOR count. Their cost model
+  includes packetization and memory traffic that SnapRAID does not currently
+  need.
+
+* Do not change the SnapRAID extended Cauchy matrix to a Jerasure good-Cauchy
+  matrix just to reduce bitmatrix one-count. That metric does not reduce
+  PSHUFB/GFNI instruction count for a general coefficient.
+
+* Do not introduce a large generic field object or generic matrix framework
+  when fixed <=6 parity specialization provides simpler hot paths.
+
+* Do not trade register pressure for a second full source pass unless a real
+  large-block benchmark proves that the saved arithmetic is larger than the
+  added memory traffic.
+
+* Do not assume pre-expanded vector-width coefficient tables are faster. They
+  replace broadcasts with extra table bytes and can consume a large fraction of
+  L1, especially at AVX512 width.
+
+* Do not optimize recovery-matrix setup at the expense of extra 256 KiB data
+  passes while the matrix dimension remains at most six.
+
+
+Overall conclusions
+-------------------
+
+No external implementation is a universally better model for SnapRAID. The
+useful comparison is to identify which project is closest for a particular
+design question.
+
+    P+Q streaming and final stores:
+        Linux RAID6
+
+    Filesystem/cache-blocked RAID with repeated parity reuse:
+        OpenZFS RAIDZ
+
+    Modern generic multi-output SIMD erasure coding:
+        Intel ISA-L
+
+    Generated generic NxM kernels and cache-aware Reed-Solomon:
+        klauspost/reedsolomon
+
+    General coding matrices, bitmatrices and historical GF techniques:
+        Jerasure/GF-Complete
+
+    Compact Cauchy codec and structured Cauchy decoding:
+        CM256/gf256
+
+The current SnapRAID engine occupies a distinct point in this design space: it
+is more general than Linux RAID6 and OpenZFS RAIDZ in parity count, but much
+more specialized than ISA-L, klauspost, Jerasure or CM256 in coding matrix and
+workload.
+
+That specialization is valuable because SnapRAID normally processes large 256
+KiB regions. The dominant design objective is therefore not merely to minimize
+GF instructions. It is to combine low arithmetic cost with low memory traffic:
+read large sources as few times as possible, advance all required parity
+together, keep reusable state in registers, and write final parity once.
+
+When evaluating a new external optimization, first ask whether it preserves
+those properties. If it does not, the burden of proof is a full SnapRAID
+large-block benchmark, not a smaller microkernel instruction count.
