@@ -61,6 +61,16 @@ int raid_test_poly(unsigned mode);
 int raid_test_rec(unsigned mode, int nd, size_t size);
 
 /**
+ * Tests recovering functions on the tail data disks.
+ *
+ * All the recovering functions are tested by recovering the last 1, 2, ..., np
+ * data disks for each disk count from 1 to nd.
+ *
+ * Returns 0 on success.
+ */
+int raid_test_tail(unsigned mode, int nd, size_t size);
+
+/**
  * Tests parity generation functions.
  *
  * All the parity generation functions are tested with the specified

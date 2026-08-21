@@ -1183,6 +1183,12 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+	if (raid_test_tail(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Vandermonde RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed POLY Cauchy RAID test\n");
@@ -1198,6 +1204,12 @@ void selftest(void)
 	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed REC Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Cauchy RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1225,6 +1237,12 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+	if (raid_test_tail(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* verify raid_mode get/set behavior */
 	int cur = raid_mode(RAID_MODE_GET);
@@ -1241,7 +1259,7 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	
+
 	/* restore default mode */
 	raid_mode(RAID_MODE_CAUCHY_RAID);
 }

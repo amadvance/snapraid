@@ -356,10 +356,10 @@ int raid_test_rec(int mode, int nd, size_t size)
 	int np;
 
 	raid_mode(mode);
-	if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES)
-		np = RAID_PARITY_MAX;
-	else
+	if (mode == RAID_MODE_VANDERMONDE_RAID)
 		np = 3;
+	else
+		np = RAID_PARITY_MAX;
 
 	nv = nd + np * 2 + 2;
 
@@ -550,6 +550,233 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
+int raid_test_tail(int mode, int nd_max, size_t size)
+{
+	void (*f[RAID_PARITY_MAX][32])(int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
+	void *v_alloc;
+	void **v;
+	void **data;
+	void **parity;
+	void **test;
+	void *data_save[RAID_PARITY_MAX];
+	void *parity_save[RAID_PARITY_MAX];
+	void *waste;
+	int nv;
+	int id[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
+	int i;
+	int j;
+	int nr;
+	int nf[RAID_PARITY_MAX];
+	int np;
+	int nd;
+
+	raid_mode(mode);
+	if (mode == RAID_MODE_VANDERMONDE_RAID)
+		np = 3;
+	else
+		np = RAID_PARITY_MAX;
+
+	nv = nd_max + np * 2 + 2;
+
+	v = raid_malloc_vector(nv, size, &v_alloc);
+	if (!v) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	data = v;
+	parity = v + nd_max;
+	test = v + nd_max + np;
+
+	for (i = 0; i < np; ++i)
+		parity_save[i] = parity[i];
+
+	memset(v[nv - 2], 0, size);
+	raid_zero(v[nv - 2]);
+
+	waste = v[nv - 1];
+
+	/* fill with pseudo-random data with the arbitrary seed "1" */
+	raid_mrand_vector(1, nd_max, size, v);
+
+	/* counters of functions for each parity level */
+	for (i = 0; i < np; ++i)
+		nf[i] = 0;
+
+	/* setup recov functions */
+	for (i = 1; i <= np; ++i) {
+		if (i == 1) {
+			test_setup(i) = raid_rec1_int8;
+#ifdef CONFIG_X86
+			if (raid_cpu_has_ssse3())
+				test_setup(i) = raid_rec1_ssse3;
+			if (raid_cpu_has_avx2())
+				test_setup(i) = raid_rec1_avx2;
+#ifdef CONFIG_X86_64
+			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
+				if (raid_cpu_has_avx2gfni()) {
+					if (mode == RAID_MODE_CAUCHY_AES)
+						test_setup(i) = raid_rec1_avx2gfni_aes;
+					else
+						test_setup(i) = raid_rec1_avx2gfni_raid;
+				}
+				if (raid_cpu_has_avx512gfni()) {
+					if (mode == RAID_MODE_CAUCHY_AES)
+						test_setup(i) = raid_rec1_avx512gfni_aes;
+					else
+						test_setup(i) = raid_rec1_avx512gfni_raid;
+				}
+			}
+#endif
+#endif
+#ifdef CONFIG_NEON
+			test_setup(i) = raid_rec1_neon;
+#endif
+#ifdef CONFIG_NEON32
+			test_setup(i) = raid_rec1_neon32;
+#endif
+		} else if (i == 2) {
+			test_setup(i) = raid_rec2_int8;
+#ifdef CONFIG_X86
+			if (raid_cpu_has_ssse3())
+				test_setup(i) = raid_rec2_ssse3;
+			if (raid_cpu_has_avx2())
+				test_setup(i) = raid_rec2_avx2;
+#ifdef CONFIG_X86_64
+			if (raid_cpu_has_avx512bw())
+				test_setup(i) = raid_rec2_avx512bw;
+			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
+				if (raid_cpu_has_avx2gfni()) {
+					if (mode == RAID_MODE_CAUCHY_AES)
+						test_setup(i) = raid_rec2_avx2gfni_aes;
+					else
+						test_setup(i) = raid_rec2_avx2gfni_raid;
+				}
+				if (raid_cpu_has_avx512gfni()) {
+					if (mode == RAID_MODE_CAUCHY_AES)
+						test_setup(i) = raid_rec2_avx512gfni_aes;
+					else
+						test_setup(i) = raid_rec2_avx512gfni_raid;
+				}
+			}
+#endif
+#endif
+#ifdef CONFIG_NEON
+			test_setup(i) = raid_rec2_neon;
+#endif
+#ifdef CONFIG_NEON32
+			test_setup(i) = raid_rec2_neon32;
+#endif
+		} else {
+			test_setup(i) = raid_recX_int8;
+#ifdef CONFIG_X86
+			if (raid_cpu_has_ssse3())
+				test_setup(i) = raid_recX_ssse3;
+			if (raid_cpu_has_avx2())
+				test_setup(i) = raid_recX_avx2;
+#ifdef CONFIG_X86_64
+			if (raid_cpu_has_avx512bw())
+				test_setup(i) = raid_recX_avx512bw;
+			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
+				if (raid_cpu_has_avx2gfni()) {
+					if (mode == RAID_MODE_CAUCHY_AES)
+						test_setup(i) = raid_recX_avx2gfni_aes;
+					else
+						test_setup(i) = raid_recX_avx2gfni_raid;
+				}
+				if (raid_cpu_has_avx512gfni()) {
+					if (mode == RAID_MODE_CAUCHY_AES)
+						test_setup(i) = raid_recX_avx512gfni_aes;
+					else
+						test_setup(i) = raid_recX_avx512gfni_raid;
+				}
+			}
+#endif
+#endif
+#ifdef CONFIG_NEON
+			test_setup(i) = raid_recX_neon;
+#endif
+#ifdef CONFIG_NEON32
+			test_setup(i) = raid_recX_neon32;
+#endif
+		}
+	}
+
+	/* test all disk counts from 1 to nd_max */
+	for (nd = 1; nd <= nd_max; ++nd) {
+		/* set data pointers */
+		for (i = 0; i < nd; ++i)
+			v[i] = data[i];
+
+		/* set parity pointers */
+		for (i = 0; i < np; ++i)
+			v[nd + i] = parity_save[i];
+
+		/* compute the parity for this disk count */
+		raid_gen_ref(nd, np, size, v);
+
+		/* set all the parity in v to the waste v */
+		for (i = 0; i < np; ++i)
+			v[nd + i] = waste;
+
+		/* all parity levels up to min(nd, np) */
+		for (nr = 1; nr <= np && nr <= nd; ++nr) {
+			/* only test the tail: the last nr data disks */
+			for (i = 0; i < nr; ++i)
+				id[i] = nd - nr + i;
+
+			/* all combinations (nr of np) parities */
+			combination_first(nr, np, ip);
+			do {
+				/* for each recover function */
+				for (j = 0; j < nf[nr - 1]; ++j) {
+					/* set */
+					for (i = 0; i < nr; ++i) {
+						/* remove the missing data */
+						data_save[i] = data[id[i]];
+						v[id[i]] = test[i];
+						/* set the parity to use */
+						v[nd + ip[i]] = parity_save[ip[i]];
+					}
+
+					/* recover */
+					f[nr - 1][j](nr, id, ip, nd, size, v);
+
+					/* check */
+					for (i = 0; i < nr; ++i) {
+						if (memcmp(test[i], data_save[i], size) != 0) {
+							/* LCOV_EXCL_START */
+							goto bail;
+							/* LCOV_EXCL_STOP */
+						}
+					}
+
+					/* restore */
+					for (i = 0; i < nr; ++i) {
+						/* restore the data */
+						v[id[i]] = data_save[i];
+						/* restore the parity to waste */
+						v[nd + ip[i]] = waste;
+					}
+				}
+			} while (combination_next(nr, np, ip));
+		}
+	}
+
+	free(v_alloc);
+	free(v);
+	return 0;
+
+bail:
+	/* LCOV_EXCL_START */
+	free(v_alloc);
+	free(v);
+	return -1;
+	/* LCOV_EXCL_STOP */
+}
+
 int raid_test_par(int mode, int nd, size_t size)
 {
 	void (*f[RAID_PARITY_MAX][32])(int nd, size_t size, void **vbuf);
@@ -561,10 +788,10 @@ int raid_test_par(int mode, int nd, size_t size)
 	int np;
 
 	raid_mode(mode);
-	if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES)
-		np = RAID_PARITY_MAX;
-	else
+	if (mode == RAID_MODE_VANDERMONDE_RAID)
 		np = 3;
+	else
+		np = RAID_PARITY_MAX;
 
 	nv = nd + np * 2;
 
