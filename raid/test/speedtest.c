@@ -232,12 +232,7 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 	printf("%8s", raid_gen_tag(RAID_ALGO_CAUCHY_PAR2));
 	fflush(stdout);
 
-	SPEED_START {
-		raid_gen2_int8(nd, size, v);
-	} SPEED_STOP
-
-	printf("%8" PRIu64, ds / dt);
-	fflush(stdout);
+	printf("%8s", "");
 
 	if (mode == RAID_MODE_CAUCHY_AES) {
 		SPEED_START {

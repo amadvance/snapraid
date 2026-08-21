@@ -60,9 +60,9 @@ void raid_gen1_neon(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy NEON implementation using the active Q transition
+ * GEN2 Cauchy NEON implementation using only Q *= 2.
  */
-static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, int g23)
+static __always_inline void raid_gen2_neon_x2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -81,12 +81,8 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 		:
 		: "m" (gfconst16.poly[0])
 	);
-	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 32) {
-		int g23_count = g23_start;
-		int g23_x3;
-
 		asm volatile (
 			"ldr q0, %0\n"
 			"ldr q1, %1\n"
@@ -97,20 +93,6 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 		);
 
 		for (d = l - 1; d >= 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
-			if (g23 && g23_x3) {
-				/* v14-v15 are otherwise unused and preserve Q across the AES xtime. */
-				asm volatile (
-					"mov v14.16b, v2.16b\n"
-					"mov v15.16b, v3.16b\n"
-				);
-			}
 			asm volatile (
 				/* double Q0-Q1 */
 				"sshr v16.16b, v2.16b, #7\n"
@@ -133,12 +115,142 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 				:
 				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
-			if (g23 && g23_x3) {
+		}
+
+		asm volatile (
+			"str q0, %0\n"
+			"str q1, %1\n"
+			"str q2, %2\n"
+			"str q3, %3\n"
+			: "=m" (p[i]), "=m" (p[i + 16]),
+			"=m" (q[i]), "=m" (q[i + 16])
+		);
+	}
+
+	raid_neon_end();
+}
+
+/*
+ * GEN2 Cauchy NEON implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_gen2_neon_g23(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_neon_begin();
+
+	asm volatile (
+		"ldr q29, %0\n"
+		:
+		: "m" (gfconst16.poly[0])
+	);
+
+	for (i = 0; i < size; i += 32) {
+		int boundary = g23_boundary;
+
+		asm volatile (
+			"ldr q0, %0\n"
+			"ldr q1, %1\n"
+			"mov v2.16b, v0.16b\n"
+			"mov v3.16b, v1.16b\n"
+			:
+			: "m" (v[l][i]), "m" (v[l][i + 16])
+		);
+
+		d = l - 1;
+
+		for (;;) {
+			/*
+			 * All transitions above 'boundary' are x2.
+			 */
+			for (; d > boundary; --d) {
 				asm volatile (
-					"eor v2.16b, v2.16b, v14.16b\n"
-					"eor v3.16b, v3.16b, v15.16b\n"
+					/* double Q0-Q1 */
+					"sshr v16.16b, v2.16b, #7\n"
+					"shl v2.16b, v2.16b, #1\n"
+					"and v16.16b, v16.16b, v29.16b\n"
+					"eor v2.16b, v2.16b, v16.16b\n"
+
+					"sshr v16.16b, v3.16b, #7\n"
+					"shl v3.16b, v3.16b, #1\n"
+					"and v16.16b, v16.16b, v29.16b\n"
+					"eor v3.16b, v3.16b, v16.16b\n"
+
+					/* load and XOR */
+					"ldr q12, %0\n"
+					"ldr q13, %1\n"
+					"eor v0.16b, v0.16b, v12.16b\n"
+					"eor v1.16b, v1.16b, v13.16b\n"
+					"eor v2.16b, v2.16b, v12.16b\n"
+					"eor v3.16b, v3.16b, v13.16b\n"
+					:
+					: "m" (v[d][i]), "m" (v[d][i + 16])
 				);
 			}
+
+			/*
+			 * boundary == -1 identifies the final x2-only segment.
+			 * At this point all remaining disks have been consumed.
+			 */
+			if (boundary < 0)
+				break;
+
+			/*
+			 * d == boundary.
+			 *
+			 * Perform the fixed G23 x3 transition and then add
+			 * the current disk to P and Q.
+			 */
+			asm volatile (
+				/* preserve Q for Q *= 3 */
+				"mov v14.16b, v2.16b\n"
+				"mov v15.16b, v3.16b\n"
+
+				/* double Q0-Q1 */
+				"sshr v16.16b, v2.16b, #7\n"
+				"shl v2.16b, v2.16b, #1\n"
+				"and v16.16b, v16.16b, v29.16b\n"
+				"eor v2.16b, v2.16b, v16.16b\n"
+
+				"sshr v16.16b, v3.16b, #7\n"
+				"shl v3.16b, v3.16b, #1\n"
+				"and v16.16b, v16.16b, v29.16b\n"
+				"eor v3.16b, v3.16b, v16.16b\n"
+
+				/* load and XOR */
+				"ldr q12, %0\n"
+				"ldr q13, %1\n"
+				"eor v0.16b, v0.16b, v12.16b\n"
+				"eor v1.16b, v1.16b, v13.16b\n"
+				"eor v2.16b, v2.16b, v12.16b\n"
+				"eor v3.16b, v3.16b, v13.16b\n"
+
+				/* complete Q *= 3 */
+				"eor v2.16b, v2.16b, v14.16b\n"
+				"eor v3.16b, v3.16b, v15.16b\n"
+				:
+				: "m" (v[d][i]), "m" (v[d][i + 16])
+			);
+
+			--d;
+
+			/*
+			 * G23 boundaries are exactly 51 transitions apart.
+			 * After d = 50 there are no more x3 transitions.
+			 */
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
 		}
 
 		asm volatile (
@@ -156,12 +268,15 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 
 void raid_gen2_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon_gen(nd, size, vv, 0);
+	raid_gen2_neon_x2(nd, size, vv);
 }
 
 void raid_gen2_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon_gen(nd, size, vv, 1);
+	if (nd <= 51)
+		raid_gen2_neon_x2(nd, size, vv);
+	else
+		raid_gen2_neon_g23(nd, size, vv);
 }
 
 /*
@@ -259,9 +374,10 @@ void raid_genz_neon_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GENX NEON implementation
+ * GENX NEON implementation using only Q *= 2.
  */
-static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int np, int g23)
+static __always_inline void raid_genX_neon_x2(int nd, size_t size,
+	void **vv, int np)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -275,7 +391,6 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			memcpy(v[1 + d], v[0], size);
 		return;
 	}
-	int g23_start = raid_g23_count(l - 1);
 
 	raid_neon_begin();
 
@@ -288,9 +403,6 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 	);
 
 	for (i = 0; i < size; i += 32) {
-		int g23_count = g23_start;
-		int g23_x3;
-
 		/* last disk without the generator multiplication */
 		asm volatile (
 			"ldr q0, %0\n"
@@ -323,9 +435,11 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v5.16b, v5.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][1][0][0]), "m" (raid_gfcauchypshufb[l][1][1][0])
+				: "m" (raid_gfcauchypshufb[l][1][0][0]),
+				  "m" (raid_gfcauchypshufb[l][1][1][0])
 			);
 		}
+
 		if (np >= 4) {
 			asm volatile (
 				"ldr q22, %0\n"
@@ -338,9 +452,11 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v7.16b, v7.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][2][0][0]), "m" (raid_gfcauchypshufb[l][2][1][0])
+				: "m" (raid_gfcauchypshufb[l][2][0][0]),
+				  "m" (raid_gfcauchypshufb[l][2][1][0])
 			);
 		}
+
 		if (np >= 5) {
 			asm volatile (
 				"ldr q22, %0\n"
@@ -353,9 +469,11 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v9.16b, v9.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][3][0][0]), "m" (raid_gfcauchypshufb[l][3][1][0])
+				: "m" (raid_gfcauchypshufb[l][3][0][0]),
+				  "m" (raid_gfcauchypshufb[l][3][1][0])
 			);
 		}
+
 		if (np >= 6) {
 			asm volatile (
 				"ldr q22, %0\n"
@@ -368,25 +486,13 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v11.16b, v11.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][4][0][0]), "m" (raid_gfcauchypshufb[l][4][1][0])
+				: "m" (raid_gfcauchypshufb[l][4][0][0]),
+				  "m" (raid_gfcauchypshufb[l][4][1][0])
 			);
 		}
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
-			if (g23 && g23_x3) {
-				asm volatile (
-					"mov v14.16b, v2.16b\n"
-					"mov v15.16b, v3.16b\n"
-				);
-			}
 			asm volatile (
 				/* double Q0-Q1 */
 				"sshr v20.16b, v2.16b, #7\n"
@@ -409,12 +515,6 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				:
 				: "m" (v[d][i]), "m" (v[d][i + 16])
 			);
-			if (g23 && g23_x3) {
-				asm volatile (
-					"eor v2.16b, v2.16b, v14.16b\n"
-					"eor v3.16b, v3.16b, v15.16b\n"
-				);
-			}
 
 			if (np >= 3) {
 				asm volatile (
@@ -440,9 +540,11 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v5.16b, v5.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][1][0][0]), "m" (raid_gfcauchypshufb[d][1][1][0])
+					: "m" (raid_gfcauchypshufb[d][1][0][0]),
+					  "m" (raid_gfcauchypshufb[d][1][1][0])
 				);
 			}
+
 			if (np >= 4) {
 				asm volatile (
 					"ldr q22, %0\n"
@@ -457,9 +559,11 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v7.16b, v7.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][2][0][0]), "m" (raid_gfcauchypshufb[d][2][1][0])
+					: "m" (raid_gfcauchypshufb[d][2][0][0]),
+					  "m" (raid_gfcauchypshufb[d][2][1][0])
 				);
 			}
+
 			if (np >= 5) {
 				asm volatile (
 					"ldr q22, %0\n"
@@ -474,9 +578,11 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v9.16b, v9.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][3][0][0]), "m" (raid_gfcauchypshufb[d][3][1][0])
+					: "m" (raid_gfcauchypshufb[d][3][0][0]),
+					  "m" (raid_gfcauchypshufb[d][3][1][0])
 				);
 			}
+
 			if (np >= 6) {
 				asm volatile (
 					"ldr q22, %0\n"
@@ -491,25 +597,13 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v11.16b, v11.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][4][0][0]), "m" (raid_gfcauchypshufb[d][4][1][0])
+					: "m" (raid_gfcauchypshufb[d][4][0][0]),
+					  "m" (raid_gfcauchypshufb[d][4][1][0])
 				);
 			}
 		}
 
 		/* first disk with all coefficients at 1 */
-		g23_x3 = 0;
-		if (g23) {
-			g23_x3 = --g23_count == 0;
-			if (g23_x3)
-				g23_count = 51;
-		}
-
-		if (g23 && g23_x3) {
-			asm volatile (
-				"mov v14.16b, v2.16b\n"
-				"mov v15.16b, v3.16b\n"
-			);
-		}
 		asm volatile (
 			/* double Q0-Q1 */
 			"sshr v20.16b, v2.16b, #7\n"
@@ -532,12 +626,6 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			:
 			: "m" (v[0][i]), "m" (v[0][i + 16])
 		);
-		if (g23 && g23_x3) {
-			asm volatile (
-				"eor v2.16b, v2.16b, v14.16b\n"
-				"eor v3.16b, v3.16b, v15.16b\n"
-			);
-		}
 
 		if (np >= 3) {
 			asm volatile (
@@ -564,13 +652,560 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			);
 		}
 
+		/* write parity in increasing order */
 		asm volatile (
 			"str q0, %0\n"
 			"str q1, %1\n"
 			"str q2, %2\n"
 			"str q3, %3\n"
 			: "=m" (v[nd][i]), "=m" (v[nd][i + 16]),
-			"=m" (v[nd + 1][i]), "=m" (v[nd + 1][i + 16])
+			  "=m" (v[nd + 1][i]), "=m" (v[nd + 1][i + 16])
+		);
+
+		if (np >= 3) {
+			asm volatile (
+				"str q4, %0\n"
+				"str q5, %1\n"
+				: "=m" (v[nd + 2][i]), "=m" (v[nd + 2][i + 16])
+			);
+		}
+		if (np >= 4) {
+			asm volatile (
+				"str q6, %0\n"
+				"str q7, %1\n"
+				: "=m" (v[nd + 3][i]), "=m" (v[nd + 3][i + 16])
+			);
+		}
+		if (np >= 5) {
+			asm volatile (
+				"str q8, %0\n"
+				"str q9, %1\n"
+				: "=m" (v[nd + 4][i]), "=m" (v[nd + 4][i + 16])
+			);
+		}
+		if (np >= 6) {
+			asm volatile (
+				"str q10, %0\n"
+				"str q11, %1\n"
+				: "=m" (v[nd + 5][i]), "=m" (v[nd + 5][i + 16])
+			);
+		}
+	}
+
+	raid_neon_end();
+}
+
+/*
+ * GENX NEON implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_genX_neon_g23(int nd, size_t size,
+	void **vv, int np)
+{
+	uint8_t **v = (uint8_t **)vv;
+	size_t i;
+	int d, l;
+
+	l = nd - 1;
+
+	/* special case with only one data disk */
+	if (l == 0) {
+		for (d = 0; d < np; ++d)
+			memcpy(v[1 + d], v[0], size);
+		return;
+	}
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_neon_begin();
+
+	asm volatile (
+		"ldr q29, %0\n"
+		"ldr q28, %1\n"
+		:
+		: "m" (gfconst16.poly[0]), "m" (gfconst16.low4[0])
+	);
+
+	for (i = 0; i < size; i += 32) {
+		int boundary = g23_boundary;
+
+		/* last disk without the generator multiplication */
+		asm volatile (
+			"ldr q0, %0\n"
+			"ldr q1, %1\n"
+			"mov v2.16b, v0.16b\n"
+			"mov v3.16b, v1.16b\n"
+			:
+			: "m" (v[l][i]), "m" (v[l][i + 16])
+		);
+
+		if (np >= 3) {
+			asm volatile (
+				"ushr v17.16b, v0.16b, #4\n"
+				"and v16.16b, v0.16b, v28.16b\n"
+				"and v17.16b, v17.16b, v28.16b\n"
+				"ushr v19.16b, v1.16b, #4\n"
+				"and v18.16b, v1.16b, v28.16b\n"
+				"and v19.16b, v19.16b, v28.16b\n"
+			);
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v4.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v4.16b, v4.16b, v20.16b\n"
+				"tbl v5.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v5.16b, v5.16b, v20.16b\n"
+				:
+				: "m" (raid_gfcauchypshufb[l][1][0][0]),
+				  "m" (raid_gfcauchypshufb[l][1][1][0])
+			);
+		}
+
+		if (np >= 4) {
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v6.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v6.16b, v6.16b, v20.16b\n"
+				"tbl v7.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v7.16b, v7.16b, v20.16b\n"
+				:
+				: "m" (raid_gfcauchypshufb[l][2][0][0]),
+				  "m" (raid_gfcauchypshufb[l][2][1][0])
+			);
+		}
+
+		if (np >= 5) {
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v8.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v8.16b, v8.16b, v20.16b\n"
+				"tbl v9.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v9.16b, v9.16b, v20.16b\n"
+				:
+				: "m" (raid_gfcauchypshufb[l][3][0][0]),
+				  "m" (raid_gfcauchypshufb[l][3][1][0])
+			);
+		}
+
+		if (np >= 6) {
+			asm volatile (
+				"ldr q22, %0\n"
+				"ldr q23, %1\n"
+				"tbl v10.16b, {v22.16b}, v16.16b\n"
+				"tbl v20.16b, {v23.16b}, v17.16b\n"
+				"eor v10.16b, v10.16b, v20.16b\n"
+				"tbl v11.16b, {v22.16b}, v18.16b\n"
+				"tbl v20.16b, {v23.16b}, v19.16b\n"
+				"eor v11.16b, v11.16b, v20.16b\n"
+				:
+				: "m" (raid_gfcauchypshufb[l][4][0][0]),
+				  "m" (raid_gfcauchypshufb[l][4][1][0])
+			);
+		}
+
+		d = l - 1;
+
+		while (boundary >= 0) {
+			/*
+			 * All transitions above the next G23 boundary use Q *= 2.
+			 */
+			for (; d > boundary; --d) {
+				asm volatile (
+					"sshr v20.16b, v2.16b, #7\n"
+					"shl v2.16b, v2.16b, #1\n"
+					"and v20.16b, v20.16b, v29.16b\n"
+					"eor v2.16b, v2.16b, v20.16b\n"
+
+					"sshr v20.16b, v3.16b, #7\n"
+					"shl v3.16b, v3.16b, #1\n"
+					"and v20.16b, v20.16b, v29.16b\n"
+					"eor v3.16b, v3.16b, v20.16b\n"
+
+					"ldr q12, %0\n"
+					"ldr q13, %1\n"
+					"eor v0.16b, v0.16b, v12.16b\n"
+					"eor v1.16b, v1.16b, v13.16b\n"
+					"eor v2.16b, v2.16b, v12.16b\n"
+					"eor v3.16b, v3.16b, v13.16b\n"
+					:
+					: "m" (v[d][i]), "m" (v[d][i + 16])
+				);
+
+				if (np >= 3) {
+					asm volatile (
+						"ushr v17.16b, v12.16b, #4\n"
+						"and v16.16b, v12.16b, v28.16b\n"
+						"and v17.16b, v17.16b, v28.16b\n"
+						"ushr v19.16b, v13.16b, #4\n"
+						"and v18.16b, v13.16b, v28.16b\n"
+						"and v19.16b, v19.16b, v28.16b\n"
+					);
+
+					asm volatile (
+						"ldr q22, %0\n"
+						"ldr q23, %1\n"
+						"tbl v20.16b, {v22.16b}, v16.16b\n"
+						"tbl v21.16b, {v23.16b}, v17.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v4.16b, v4.16b, v20.16b\n"
+						"tbl v20.16b, {v22.16b}, v18.16b\n"
+						"tbl v21.16b, {v23.16b}, v19.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v5.16b, v5.16b, v20.16b\n"
+						:
+						: "m" (raid_gfcauchypshufb[d][1][0][0]),
+						  "m" (raid_gfcauchypshufb[d][1][1][0])
+					);
+				}
+
+				if (np >= 4) {
+					asm volatile (
+						"ldr q22, %0\n"
+						"ldr q23, %1\n"
+						"tbl v20.16b, {v22.16b}, v16.16b\n"
+						"tbl v21.16b, {v23.16b}, v17.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v6.16b, v6.16b, v20.16b\n"
+						"tbl v20.16b, {v22.16b}, v18.16b\n"
+						"tbl v21.16b, {v23.16b}, v19.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v7.16b, v7.16b, v20.16b\n"
+						:
+						: "m" (raid_gfcauchypshufb[d][2][0][0]),
+						  "m" (raid_gfcauchypshufb[d][2][1][0])
+					);
+				}
+
+				if (np >= 5) {
+					asm volatile (
+						"ldr q22, %0\n"
+						"ldr q23, %1\n"
+						"tbl v20.16b, {v22.16b}, v16.16b\n"
+						"tbl v21.16b, {v23.16b}, v17.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v8.16b, v8.16b, v20.16b\n"
+						"tbl v20.16b, {v22.16b}, v18.16b\n"
+						"tbl v21.16b, {v23.16b}, v19.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v9.16b, v9.16b, v20.16b\n"
+						:
+						: "m" (raid_gfcauchypshufb[d][3][0][0]),
+						  "m" (raid_gfcauchypshufb[d][3][1][0])
+					);
+				}
+
+				if (np >= 6) {
+					asm volatile (
+						"ldr q22, %0\n"
+						"ldr q23, %1\n"
+						"tbl v20.16b, {v22.16b}, v16.16b\n"
+						"tbl v21.16b, {v23.16b}, v17.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v10.16b, v10.16b, v20.16b\n"
+						"tbl v20.16b, {v22.16b}, v18.16b\n"
+						"tbl v21.16b, {v23.16b}, v19.16b\n"
+						"eor v20.16b, v20.16b, v21.16b\n"
+						"eor v11.16b, v11.16b, v20.16b\n"
+						:
+						: "m" (raid_gfcauchypshufb[d][4][0][0]),
+						  "m" (raid_gfcauchypshufb[d][4][1][0])
+					);
+				}
+			}
+
+			/*
+			 * d == boundary.
+			 *
+			 * Preserve Q in v14/v15, perform Q *= 2, then XOR
+			 * the old value back to obtain Q *= 3.
+			 */
+			asm volatile (
+				"mov v14.16b, v2.16b\n"
+				"mov v15.16b, v3.16b\n"
+
+				"sshr v20.16b, v2.16b, #7\n"
+				"shl v2.16b, v2.16b, #1\n"
+				"and v20.16b, v20.16b, v29.16b\n"
+				"eor v2.16b, v2.16b, v20.16b\n"
+
+				"sshr v20.16b, v3.16b, #7\n"
+				"shl v3.16b, v3.16b, #1\n"
+				"and v20.16b, v20.16b, v29.16b\n"
+				"eor v3.16b, v3.16b, v20.16b\n"
+
+				"ldr q12, %0\n"
+				"ldr q13, %1\n"
+				"eor v0.16b, v0.16b, v12.16b\n"
+				"eor v1.16b, v1.16b, v13.16b\n"
+				"eor v2.16b, v2.16b, v12.16b\n"
+				"eor v3.16b, v3.16b, v13.16b\n"
+
+				"eor v2.16b, v2.16b, v14.16b\n"
+				"eor v3.16b, v3.16b, v15.16b\n"
+				:
+				: "m" (v[d][i]), "m" (v[d][i + 16])
+			);
+
+			if (np >= 3) {
+				asm volatile (
+					"ushr v17.16b, v12.16b, #4\n"
+					"and v16.16b, v12.16b, v28.16b\n"
+					"and v17.16b, v17.16b, v28.16b\n"
+					"ushr v19.16b, v13.16b, #4\n"
+					"and v18.16b, v13.16b, v28.16b\n"
+					"and v19.16b, v19.16b, v28.16b\n"
+				);
+
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v4.16b, v4.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v5.16b, v5.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][1][0][0]),
+					  "m" (raid_gfcauchypshufb[d][1][1][0])
+				);
+			}
+
+			if (np >= 4) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v6.16b, v6.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v7.16b, v7.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][2][0][0]),
+					  "m" (raid_gfcauchypshufb[d][2][1][0])
+				);
+			}
+
+			if (np >= 5) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v8.16b, v8.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v9.16b, v9.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][3][0][0]),
+					  "m" (raid_gfcauchypshufb[d][3][1][0])
+				);
+			}
+
+			if (np >= 6) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v10.16b, v10.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v11.16b, v11.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][4][0][0]),
+					  "m" (raid_gfcauchypshufb[d][4][1][0])
+				);
+			}
+
+			--d;
+
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
+		}
+
+		/*
+		 * No G23 boundaries remain. Process D[d] ... D1 using
+		 * only Q *= 2.
+		 */
+		for (; d > 0; --d) {
+			asm volatile (
+				"sshr v20.16b, v2.16b, #7\n"
+				"shl v2.16b, v2.16b, #1\n"
+				"and v20.16b, v20.16b, v29.16b\n"
+				"eor v2.16b, v2.16b, v20.16b\n"
+
+				"sshr v20.16b, v3.16b, #7\n"
+				"shl v3.16b, v3.16b, #1\n"
+				"and v20.16b, v20.16b, v29.16b\n"
+				"eor v3.16b, v3.16b, v20.16b\n"
+
+				"ldr q12, %0\n"
+				"ldr q13, %1\n"
+				"eor v0.16b, v0.16b, v12.16b\n"
+				"eor v1.16b, v1.16b, v13.16b\n"
+				"eor v2.16b, v2.16b, v12.16b\n"
+				"eor v3.16b, v3.16b, v13.16b\n"
+				:
+				: "m" (v[d][i]), "m" (v[d][i + 16])
+			);
+
+			if (np >= 3) {
+				asm volatile (
+					"ushr v17.16b, v12.16b, #4\n"
+					"and v16.16b, v12.16b, v28.16b\n"
+					"and v17.16b, v17.16b, v28.16b\n"
+					"ushr v19.16b, v13.16b, #4\n"
+					"and v18.16b, v13.16b, v28.16b\n"
+					"and v19.16b, v19.16b, v28.16b\n"
+				);
+
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v4.16b, v4.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v5.16b, v5.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][1][0][0]),
+					  "m" (raid_gfcauchypshufb[d][1][1][0])
+				);
+			}
+
+			if (np >= 4) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v6.16b, v6.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v7.16b, v7.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][2][0][0]),
+					  "m" (raid_gfcauchypshufb[d][2][1][0])
+				);
+			}
+
+			if (np >= 5) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v8.16b, v8.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v9.16b, v9.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][3][0][0]),
+					  "m" (raid_gfcauchypshufb[d][3][1][0])
+				);
+			}
+
+			if (np >= 6) {
+				asm volatile (
+					"ldr q22, %0\n"
+					"ldr q23, %1\n"
+					"tbl v20.16b, {v22.16b}, v16.16b\n"
+					"tbl v21.16b, {v23.16b}, v17.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v10.16b, v10.16b, v20.16b\n"
+					"tbl v20.16b, {v22.16b}, v18.16b\n"
+					"tbl v21.16b, {v23.16b}, v19.16b\n"
+					"eor v20.16b, v20.16b, v21.16b\n"
+					"eor v11.16b, v11.16b, v20.16b\n"
+					:
+					: "m" (raid_gfcauchypshufb[d][4][0][0]),
+					  "m" (raid_gfcauchypshufb[d][4][1][0])
+				);
+			}
+		}
+
+		/*
+		 * D0 always follows Q *= 2. The lowest G23 boundary is 50.
+		 */
+		asm volatile (
+			"sshr v20.16b, v2.16b, #7\n"
+			"shl v2.16b, v2.16b, #1\n"
+			"and v20.16b, v20.16b, v29.16b\n"
+			"eor v2.16b, v2.16b, v20.16b\n"
+
+			"sshr v20.16b, v3.16b, #7\n"
+			"shl v3.16b, v3.16b, #1\n"
+			"and v20.16b, v20.16b, v29.16b\n"
+			"eor v3.16b, v3.16b, v20.16b\n"
+
+			"ldr q12, %0\n"
+			"ldr q13, %1\n"
+			"eor v0.16b, v0.16b, v12.16b\n"
+			"eor v1.16b, v1.16b, v13.16b\n"
+			"eor v2.16b, v2.16b, v12.16b\n"
+			"eor v3.16b, v3.16b, v13.16b\n"
+			:
+			: "m" (v[0][i]), "m" (v[0][i + 16])
+		);
+
+		if (np >= 3) {
+			asm volatile (
+				"eor v4.16b, v4.16b, v12.16b\n"
+				"eor v5.16b, v5.16b, v13.16b\n"
+			);
+		}
+		if (np >= 4) {
+			asm volatile (
+				"eor v6.16b, v6.16b, v12.16b\n"
+				"eor v7.16b, v7.16b, v13.16b\n"
+			);
+		}
+		if (np >= 5) {
+			asm volatile (
+				"eor v8.16b, v8.16b, v12.16b\n"
+				"eor v9.16b, v9.16b, v13.16b\n"
+			);
+		}
+		if (np >= 6) {
+			asm volatile (
+				"eor v10.16b, v10.16b, v12.16b\n"
+				"eor v11.16b, v11.16b, v13.16b\n"
+			);
+		}
+
+		/* write parity in increasing order */
+		asm volatile (
+			"str q0, %0\n"
+			"str q1, %1\n"
+			"str q2, %2\n"
+			"str q3, %3\n"
+			: "=m" (v[nd][i]), "=m" (v[nd][i + 16]),
+			  "=m" (v[nd + 1][i]), "=m" (v[nd + 1][i + 16])
 		);
 
 		if (np >= 3) {
@@ -611,12 +1246,15 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
  */
 void raid_gen3_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 3, 0);
+	raid_genX_neon_x2(nd, size, vv, 3);
 }
 
 void raid_gen3_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 3, 1);
+	if (nd <= 51)
+		raid_genX_neon_x2(nd, size, vv, 3);
+	else
+		raid_genX_neon_g23(nd, size, vv, 3);
 }
 
 /*
@@ -624,12 +1262,15 @@ void raid_gen3_neon_aes(int nd, size_t size, void **vv)
  */
 void raid_gen4_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 4, 0);
+	raid_genX_neon_x2(nd, size, vv, 4);
 }
 
 void raid_gen4_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 4, 1);
+	if (nd <= 51)
+		raid_genX_neon_x2(nd, size, vv, 4);
+	else
+		raid_genX_neon_g23(nd, size, vv, 4);
 }
 
 /*
@@ -637,12 +1278,15 @@ void raid_gen4_neon_aes(int nd, size_t size, void **vv)
  */
 void raid_gen5_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 5, 0);
+	raid_genX_neon_x2(nd, size, vv, 5);
 }
 
 void raid_gen5_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 5, 1);
+	if (nd <= 51)
+		raid_genX_neon_x2(nd, size, vv, 5);
+	else
+		raid_genX_neon_g23(nd, size, vv, 5);
 }
 
 /*
@@ -650,12 +1294,15 @@ void raid_gen5_neon_aes(int nd, size_t size, void **vv)
  */
 void raid_gen6_neon_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 6, 0);
+	raid_genX_neon_x2(nd, size, vv, 6);
 }
 
 void raid_gen6_neon_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon(nd, size, vv, 6, 1);
+	if (nd <= 51)
+		raid_genX_neon_x2(nd, size, vv, 6);
+	else
+		raid_genX_neon_g23(nd, size, vv, 6);
 }
 
 /*

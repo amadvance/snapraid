@@ -8,8 +8,9 @@
 #ifdef CONFIG_X86
 /*
  * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
+ * using only Q *= 2.
  */
-static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, int g23)
+static __always_inline void raid_gen3_ssse3_x2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -29,7 +30,6 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 			memcpy(v[1 + i], v[0], size);
 		return;
 	}
-	int g23_start = raid_g23_count(l - 1);
 
 	raid_sse_begin();
 
@@ -38,9 +38,6 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
-		int g23_count = g23_start;
-		int g23_x3;
-
 		/* last disk without the generator multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
@@ -60,24 +57,14 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 
-			if (g23 && g23_x3)
-				asm volatile ("movdqa %xmm1,%xmm6");
+			/* Q *= 2 */
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pcmpgtb %xmm1,%xmm5");
 			asm volatile ("paddb %xmm1,%xmm1");
 			asm volatile ("pand %xmm3,%xmm5");
 			asm volatile ("pxor %xmm5,%xmm1");
-			if (g23 && g23_x3)
-				asm volatile ("pxor %xmm6,%xmm1");
 
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm4,%xmm1");
@@ -98,22 +85,190 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 
-		g23_x3 = 0;
-		if (g23) {
-			g23_x3 = --g23_count == 0;
-			if (g23_x3)
-				g23_count = 51;
-		}
-
-		if (g23 && g23_x3)
-			asm volatile ("movdqa %xmm1,%xmm6");
+		/* final Q *= 2 */
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pcmpgtb %xmm1,%xmm5");
 		asm volatile ("paddb %xmm1,%xmm1");
 		asm volatile ("pand %xmm3,%xmm5");
 		asm volatile ("pxor %xmm5,%xmm1");
-		if (g23 && g23_x3)
+
+		asm volatile ("pxor %xmm4,%xmm0");
+		asm volatile ("pxor %xmm4,%xmm1");
+		asm volatile ("pxor %xmm4,%xmm2");
+
+		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+	}
+
+	raid_sse_end();
+}
+
+/*
+ * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
+ * using the AES G23 Q transition.
+ */
+static __always_inline void raid_gen3_ssse3_g23(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+	r = v[nd + 2];
+
+	/* special case with only one data disk */
+	if (l == 0) {
+		for (i = 0; i < 3; ++i)
+			memcpy(v[1 + i], v[0], size);
+		return;
+	}
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_sse_begin();
+
+	/* generic case with at least two data disks */
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+
+	for (i = 0; i < size; i += 16) {
+		int boundary = g23_boundary;
+
+		/* last disk without the generator multiplication */
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
+
+		asm volatile ("movdqa %xmm4,%xmm0");
+		asm volatile ("movdqa %xmm4,%xmm1");
+
+		asm volatile ("movdqa %xmm4,%xmm5");
+		asm volatile ("psrlw  $4,%xmm5");
+		asm volatile ("pand   %xmm7,%xmm4");
+		asm volatile ("pand   %xmm7,%xmm5");
+
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("pshufb %xmm4,%xmm2");
+		asm volatile ("pshufb %xmm5,%xmm6");
+		asm volatile ("pxor   %xmm6,%xmm2");
+
+		d = l - 1;
+
+		/*
+		 * Process each G23 segment. Everything above a boundary uses
+		 * Q *= 2, while the boundary itself uses Q *= 3.
+		 */
+		while (boundary >= 0) {
+			for (; d > boundary; --d) {
+				asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
+
+				/* Q *= 2 */
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm1,%xmm5");
+				asm volatile ("paddb %xmm1,%xmm1");
+				asm volatile ("pand %xmm3,%xmm5");
+				asm volatile ("pxor %xmm5,%xmm1");
+
+				asm volatile ("pxor %xmm4,%xmm0");
+				asm volatile ("pxor %xmm4,%xmm1");
+
+				asm volatile ("movdqa %xmm4,%xmm5");
+				asm volatile ("psrlw  $4,%xmm5");
+				asm volatile ("pand   %xmm7,%xmm4");
+				asm volatile ("pand   %xmm7,%xmm5");
+
+				asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+				asm volatile ("pshufb %xmm4,%xmm6");
+				asm volatile ("pxor   %xmm6,%xmm2");
+				asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+				asm volatile ("pshufb %xmm5,%xmm6");
+				asm volatile ("pxor   %xmm6,%xmm2");
+			}
+
+			/*
+			 * d == boundary.
+			 *
+			 * Save the old Q, perform Q *= 2, then XOR the old
+			 * value to obtain Q *= 3.
+			 */
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
+
+			asm volatile ("movdqa %xmm1,%xmm6");
+			asm volatile ("pxor %xmm5,%xmm5");
+			asm volatile ("pcmpgtb %xmm1,%xmm5");
+			asm volatile ("paddb %xmm1,%xmm1");
+			asm volatile ("pand %xmm3,%xmm5");
+			asm volatile ("pxor %xmm5,%xmm1");
 			asm volatile ("pxor %xmm6,%xmm1");
+
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm4,%xmm1");
+
+			asm volatile ("movdqa %xmm4,%xmm5");
+			asm volatile ("psrlw  $4,%xmm5");
+			asm volatile ("pand   %xmm7,%xmm4");
+			asm volatile ("pand   %xmm7,%xmm5");
+
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+			asm volatile ("pshufb %xmm4,%xmm6");
+			asm volatile ("pxor   %xmm6,%xmm2");
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("pshufb %xmm5,%xmm6");
+			asm volatile ("pxor   %xmm6,%xmm2");
+
+			--d;
+
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
+		}
+
+		/*
+		 * No G23 boundaries remain. Process the remaining intermediate
+		 * disks using only Q *= 2.
+		 */
+		for (; d > 0; --d) {
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
+
+			/* Q *= 2 */
+			asm volatile ("pxor %xmm5,%xmm5");
+			asm volatile ("pcmpgtb %xmm1,%xmm5");
+			asm volatile ("paddb %xmm1,%xmm1");
+			asm volatile ("pand %xmm3,%xmm5");
+			asm volatile ("pxor %xmm5,%xmm1");
+
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm4,%xmm1");
+
+			asm volatile ("movdqa %xmm4,%xmm5");
+			asm volatile ("psrlw  $4,%xmm5");
+			asm volatile ("pand   %xmm7,%xmm4");
+			asm volatile ("pand   %xmm7,%xmm5");
+
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+			asm volatile ("pshufb %xmm4,%xmm6");
+			asm volatile ("pxor   %xmm6,%xmm2");
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("pshufb %xmm5,%xmm6");
+			asm volatile ("pxor   %xmm6,%xmm2");
+		}
+
+		/*
+		 * D0 always follows an x2 transition. G23 boundaries never
+		 * occur below d = 50.
+		 */
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
+
+		asm volatile ("pxor %xmm5,%xmm5");
+		asm volatile ("pcmpgtb %xmm1,%xmm5");
+		asm volatile ("paddb %xmm1,%xmm1");
+		asm volatile ("pand %xmm3,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm1");
 
 		asm volatile ("pxor %xmm4,%xmm0");
 		asm volatile ("pxor %xmm4,%xmm1");
@@ -129,12 +284,15 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 
 void raid_gen3_ssse3_raid(int nd, size_t size, void **vv)
 {
-	raid_gen3_ssse3_gen(nd, size, vv, 0);
+	raid_gen3_ssse3_x2(nd, size, vv);
 }
 
 void raid_gen3_ssse3_aes(int nd, size_t size, void **vv)
 {
-	raid_gen3_ssse3_gen(nd, size, vv, 1);
+	if (nd <= 51)
+		raid_gen3_ssse3_x2(nd, size, vv);
+	else
+		raid_gen3_ssse3_g23(nd, size, vv);
 }
 
 #ifdef CONFIG_X86_64

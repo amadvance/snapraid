@@ -887,7 +887,6 @@ int raid_test_par(int mode, int nd, size_t size)
 	/* setup all the available functions */
 	test_setup(1) = raid_gen1_int32;
 	test_setup(1) = raid_gen1_int64;
-	test_setup(2) = raid_gen2_int8;
 	if (mode == RAID_MODE_CAUCHY_AES) {
 		test_setup(2) = raid_gen2_int32_aes;
 		test_setup(2) = raid_gen2_int64_aes;

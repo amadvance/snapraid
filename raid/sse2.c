@@ -137,9 +137,9 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy SSE2 implementation using the active Q transition
+ * GEN2 Cauchy SSE2 implementation using only Q *= 2.
  */
-static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, int g23)
+static __always_inline void raid_gen2_sse2_x2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -154,53 +154,25 @@ static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, i
 	raid_sse_begin();
 
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 32) {
-		int g23_count = g23_start;
-		int g23_x3;
-
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
 		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
 		asm volatile ("movdqa %xmm0,%xmm2");
 		asm volatile ("movdqa %xmm1,%xmm3");
 
 		for (d = l - 1; d >= 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
 			/* scale Q before adding the current disk */
-			if (g23 && g23_x3) {
-				asm volatile ("movdqa %xmm2,%xmm4");
-				asm volatile ("movdqa %xmm3,%xmm5");
-				asm volatile ("pxor %xmm6,%xmm6");
-				asm volatile ("pcmpgtb %xmm4,%xmm6");
-				asm volatile ("paddb %xmm2,%xmm2");
-				asm volatile ("paddb %xmm3,%xmm3");
-				asm volatile ("pxor %xmm4,%xmm2");
-				asm volatile ("pxor %xmm4,%xmm4");
-				asm volatile ("pcmpgtb %xmm5,%xmm4");
-				asm volatile ("pand %xmm7,%xmm6");
-				asm volatile ("pand %xmm7,%xmm4");
-				asm volatile ("pxor %xmm6,%xmm2");
-				asm volatile ("pxor %xmm4,%xmm3");
-				asm volatile ("pxor %xmm5,%xmm3");
-			} else {
-				asm volatile ("pxor %xmm4,%xmm4");
-				asm volatile ("pxor %xmm5,%xmm5");
-				asm volatile ("pcmpgtb %xmm2,%xmm4");
-				asm volatile ("pcmpgtb %xmm3,%xmm5");
-				asm volatile ("paddb %xmm2,%xmm2");
-				asm volatile ("paddb %xmm3,%xmm3");
-				asm volatile ("pand %xmm7,%xmm4");
-				asm volatile ("pand %xmm7,%xmm5");
-				asm volatile ("pxor %xmm4,%xmm2");
-				asm volatile ("pxor %xmm5,%xmm3");
-			}
+			asm volatile ("pxor %xmm4,%xmm4");
+			asm volatile ("pxor %xmm5,%xmm5");
+			asm volatile ("pcmpgtb %xmm2,%xmm4");
+			asm volatile ("pcmpgtb %xmm3,%xmm5");
+			asm volatile ("paddb %xmm2,%xmm2");
+			asm volatile ("paddb %xmm3,%xmm3");
+			asm volatile ("pand %xmm7,%xmm4");
+			asm volatile ("pand %xmm7,%xmm5");
+			asm volatile ("pxor %xmm4,%xmm2");
+			asm volatile ("pxor %xmm5,%xmm3");
 
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm5" : : "m" (v[d][i + 16]));
@@ -219,23 +191,137 @@ static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, i
 	raid_sse_end();
 }
 
+/*
+ * GEN2 Cauchy SSE2 implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_gen2_sse2_g23(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_sse_begin();
+
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+
+	for (i = 0; i < size; i += 32) {
+		int boundary = g23_boundary;
+
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
+		asm volatile ("movdqa %xmm0,%xmm2");
+		asm volatile ("movdqa %xmm1,%xmm3");
+
+		d = l - 1;
+
+		for (;;) {
+			/*
+			 * All transitions above 'boundary' are x2.
+			 */
+			for (; d > boundary; --d) {
+				/* scale Q before adding the current disk */
+				asm volatile ("pxor %xmm4,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm2,%xmm4");
+				asm volatile ("pcmpgtb %xmm3,%xmm5");
+				asm volatile ("paddb %xmm2,%xmm2");
+				asm volatile ("paddb %xmm3,%xmm3");
+				asm volatile ("pand %xmm7,%xmm4");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm4,%xmm2");
+				asm volatile ("pxor %xmm5,%xmm3");
+
+				asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
+				asm volatile ("movdqa %0,%%xmm5" : : "m" (v[d][i + 16]));
+				asm volatile ("pxor %xmm4,%xmm0");
+				asm volatile ("pxor %xmm5,%xmm1");
+				asm volatile ("pxor %xmm4,%xmm2");
+				asm volatile ("pxor %xmm5,%xmm3");
+			}
+
+			/*
+			 * boundary == -1 identifies the final x2-only segment.
+			 * At this point all remaining disks have been consumed.
+			 */
+			if (boundary < 0)
+				break;
+
+			/*
+			 * d == boundary.
+			 *
+			 * Perform the fixed G23 x3 transition and then add
+			 * the current disk to P and Q.
+			 */
+			asm volatile ("movdqa %xmm2,%xmm4");
+			asm volatile ("movdqa %xmm3,%xmm5");
+			asm volatile ("pxor %xmm6,%xmm6");
+			asm volatile ("pcmpgtb %xmm4,%xmm6");
+			asm volatile ("paddb %xmm2,%xmm2");
+			asm volatile ("paddb %xmm3,%xmm3");
+			asm volatile ("pxor %xmm4,%xmm2");
+			asm volatile ("pxor %xmm4,%xmm4");
+			asm volatile ("pcmpgtb %xmm5,%xmm4");
+			asm volatile ("pand %xmm7,%xmm6");
+			asm volatile ("pand %xmm7,%xmm4");
+			asm volatile ("pxor %xmm6,%xmm2");
+			asm volatile ("pxor %xmm4,%xmm3");
+			asm volatile ("pxor %xmm5,%xmm3");
+
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (v[d][i + 16]));
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm5,%xmm1");
+			asm volatile ("pxor %xmm4,%xmm2");
+			asm volatile ("pxor %xmm5,%xmm3");
+
+			--d;
+
+			/*
+			 * G23 boundaries are exactly 51 transitions apart.
+			 * After d = 50 there are no more x3 transitions.
+			 */
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
+		}
+
+		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+		asm volatile ("movntdq %%xmm2,%0" : "=m" (q[i]));
+		asm volatile ("movntdq %%xmm3,%0" : "=m" (q[i + 16]));
+	}
+
+	raid_sse_end();
+}
+
 void raid_gen2_sse2_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_sse2_gen(nd, size, vv, 0);
+	raid_gen2_sse2_x2(nd, size, vv);
 }
 
 void raid_gen2_sse2_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_sse2_gen(nd, size, vv, 1);
+	if (nd <= 51)
+		raid_gen2_sse2_x2(nd, size, vv);
+	else
+		raid_gen2_sse2_g23(nd, size, vv);
 }
 
 #ifdef CONFIG_X86_64
 /*
- * GEN2 Cauchy SSE2 implementation using the active Q transition
+ * GEN2 Cauchy SSE2 implementation using only Q *= 2.
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv, int g23)
+static __always_inline void raid_gen2_sse2ext_x2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -250,13 +336,8 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 	raid_sse_begin();
 
 	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.poly[0]));
-	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 64) {
-		int g23_count = g23_start;
-		int g23_x3_d;
-		int g23_x3_d1;
-
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
 		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
 		asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i + 32]));
@@ -268,41 +349,22 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 
 		/* process two disks per iteration */
 		for (d = l - 1; d >= 1; d -= 2) {
-			g23_x3_d = 0;
-			g23_x3_d1 = 0;
-			if (g23) {
-				g23_x3_d = --g23_count == 0;
-				if (g23_x3_d)
-					g23_count = 51;
-				g23_x3_d1 = --g23_count == 0;
-				if (g23_x3_d1)
-					g23_count = 51;
-			}
-
 			/* lane 0 */
 			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i]));
 
-			if (g23 && g23_x3_d)
-				asm volatile ("movdqa %xmm4,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm4,%xmm11");
 			asm volatile ("paddb %xmm4,%xmm4");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm4");
-			if (g23 && g23_x3_d)
-				asm volatile ("pxor %xmm10,%xmm4");
 			asm volatile ("pxor %xmm8,%xmm4");
 
-			if (g23 && g23_x3_d1)
-				asm volatile ("movdqa %xmm4,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm4,%xmm11");
 			asm volatile ("paddb %xmm4,%xmm4");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm4");
-			if (g23 && g23_x3_d1)
-				asm volatile ("pxor %xmm10,%xmm4");
 			asm volatile ("pxor %xmm9,%xmm4");
 
 			asm volatile ("pxor %xmm8,%xmm0");
@@ -312,26 +374,18 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 16]));
 			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i + 16]));
 
-			if (g23 && g23_x3_d)
-				asm volatile ("movdqa %xmm5,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm5,%xmm11");
 			asm volatile ("paddb %xmm5,%xmm5");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm5");
-			if (g23 && g23_x3_d)
-				asm volatile ("pxor %xmm10,%xmm5");
 			asm volatile ("pxor %xmm8,%xmm5");
 
-			if (g23 && g23_x3_d1)
-				asm volatile ("movdqa %xmm5,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm5,%xmm11");
 			asm volatile ("paddb %xmm5,%xmm5");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm5");
-			if (g23 && g23_x3_d1)
-				asm volatile ("pxor %xmm10,%xmm5");
 			asm volatile ("pxor %xmm9,%xmm5");
 
 			asm volatile ("pxor %xmm8,%xmm1");
@@ -341,26 +395,18 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 32]));
 			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i + 32]));
 
-			if (g23 && g23_x3_d)
-				asm volatile ("movdqa %xmm6,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm6,%xmm11");
 			asm volatile ("paddb %xmm6,%xmm6");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm6");
-			if (g23 && g23_x3_d)
-				asm volatile ("pxor %xmm10,%xmm6");
 			asm volatile ("pxor %xmm8,%xmm6");
 
-			if (g23 && g23_x3_d1)
-				asm volatile ("movdqa %xmm6,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm6,%xmm11");
 			asm volatile ("paddb %xmm6,%xmm6");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm6");
-			if (g23 && g23_x3_d1)
-				asm volatile ("pxor %xmm10,%xmm6");
 			asm volatile ("pxor %xmm9,%xmm6");
 
 			asm volatile ("pxor %xmm8,%xmm2");
@@ -370,26 +416,18 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 48]));
 			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i + 48]));
 
-			if (g23 && g23_x3_d)
-				asm volatile ("movdqa %xmm7,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm7,%xmm11");
 			asm volatile ("paddb %xmm7,%xmm7");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm7");
-			if (g23 && g23_x3_d)
-				asm volatile ("pxor %xmm10,%xmm7");
 			asm volatile ("pxor %xmm8,%xmm7");
 
-			if (g23 && g23_x3_d1)
-				asm volatile ("movdqa %xmm7,%xmm10");
 			asm volatile ("pxor %xmm11,%xmm11");
 			asm volatile ("pcmpgtb %xmm7,%xmm11");
 			asm volatile ("paddb %xmm7,%xmm7");
 			asm volatile ("pand %xmm15,%xmm11");
 			asm volatile ("pxor %xmm11,%xmm7");
-			if (g23 && g23_x3_d1)
-				asm volatile ("pxor %xmm10,%xmm7");
 			asm volatile ("pxor %xmm9,%xmm7");
 
 			asm volatile ("pxor %xmm8,%xmm3");
@@ -398,66 +436,26 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 
 		/* single remaining disk */
 		if (d == 0) {
-			int g23_x3;
-
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
-			if (g23 && g23_x3) {
-				asm volatile ("movdqa %xmm4,%xmm8");
-				asm volatile ("movdqa %xmm5,%xmm9");
-				asm volatile ("movdqa %xmm6,%xmm10");
-				asm volatile ("movdqa %xmm7,%xmm11");
-				asm volatile ("pxor %xmm12,%xmm12");
-				asm volatile ("pxor %xmm13,%xmm13");
-				asm volatile ("pxor %xmm14,%xmm14");
-				asm volatile ("pcmpgtb %xmm8,%xmm12");
-				asm volatile ("pcmpgtb %xmm9,%xmm13");
-				asm volatile ("pcmpgtb %xmm10,%xmm14");
-				asm volatile ("paddb %xmm4,%xmm4");
-				asm volatile ("paddb %xmm5,%xmm5");
-				asm volatile ("paddb %xmm6,%xmm6");
-				asm volatile ("paddb %xmm7,%xmm7");
-				asm volatile ("pxor %xmm8,%xmm4");
-				asm volatile ("pxor %xmm8,%xmm8");
-				asm volatile ("pcmpgtb %xmm11,%xmm8");
-				asm volatile ("pand %xmm15,%xmm12");
-				asm volatile ("pand %xmm15,%xmm13");
-				asm volatile ("pand %xmm15,%xmm14");
-				asm volatile ("pand %xmm15,%xmm8");
-				asm volatile ("pxor %xmm12,%xmm4");
-				asm volatile ("pxor %xmm13,%xmm5");
-				asm volatile ("pxor %xmm14,%xmm6");
-				asm volatile ("pxor %xmm8,%xmm7");
-				asm volatile ("pxor %xmm9,%xmm5");
-				asm volatile ("pxor %xmm10,%xmm6");
-				asm volatile ("pxor %xmm11,%xmm7");
-			} else {
-				asm volatile ("pxor %xmm8,%xmm8");
-				asm volatile ("pxor %xmm9,%xmm9");
-				asm volatile ("pxor %xmm10,%xmm10");
-				asm volatile ("pxor %xmm11,%xmm11");
-				asm volatile ("pcmpgtb %xmm4,%xmm8");
-				asm volatile ("pcmpgtb %xmm5,%xmm9");
-				asm volatile ("pcmpgtb %xmm6,%xmm10");
-				asm volatile ("pcmpgtb %xmm7,%xmm11");
-				asm volatile ("paddb %xmm4,%xmm4");
-				asm volatile ("paddb %xmm5,%xmm5");
-				asm volatile ("paddb %xmm6,%xmm6");
-				asm volatile ("paddb %xmm7,%xmm7");
-				asm volatile ("pand %xmm15,%xmm8");
-				asm volatile ("pand %xmm15,%xmm9");
-				asm volatile ("pand %xmm15,%xmm10");
-				asm volatile ("pand %xmm15,%xmm11");
-				asm volatile ("pxor %xmm8,%xmm4");
-				asm volatile ("pxor %xmm9,%xmm5");
-				asm volatile ("pxor %xmm10,%xmm6");
-				asm volatile ("pxor %xmm11,%xmm7");
-			}
+			asm volatile ("pxor %xmm8,%xmm8");
+			asm volatile ("pxor %xmm9,%xmm9");
+			asm volatile ("pxor %xmm10,%xmm10");
+			asm volatile ("pxor %xmm11,%xmm11");
+			asm volatile ("pcmpgtb %xmm4,%xmm8");
+			asm volatile ("pcmpgtb %xmm5,%xmm9");
+			asm volatile ("pcmpgtb %xmm6,%xmm10");
+			asm volatile ("pcmpgtb %xmm7,%xmm11");
+			asm volatile ("paddb %xmm4,%xmm4");
+			asm volatile ("paddb %xmm5,%xmm5");
+			asm volatile ("paddb %xmm6,%xmm6");
+			asm volatile ("paddb %xmm7,%xmm7");
+			asm volatile ("pand %xmm15,%xmm8");
+			asm volatile ("pand %xmm15,%xmm9");
+			asm volatile ("pand %xmm15,%xmm10");
+			asm volatile ("pand %xmm15,%xmm11");
+			asm volatile ("pxor %xmm8,%xmm4");
+			asm volatile ("pxor %xmm9,%xmm5");
+			asm volatile ("pxor %xmm10,%xmm6");
+			asm volatile ("pxor %xmm11,%xmm7");
 
 			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[0][i]));
 			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[0][i + 16]));
@@ -486,14 +484,266 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 	raid_sse_end();
 }
 
+/*
+ * GEN2 Cauchy SSE2 implementation using the AES G23 Q transition.
+ *
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+static __always_inline void raid_gen2_sse2ext_g23(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_sse_begin();
+
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.poly[0]));
+
+	for (i = 0; i < size; i += 64) {
+		int boundary = g23_boundary;
+
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i + 32]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (v[l][i + 48]));
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("movdqa %xmm2,%xmm6");
+		asm volatile ("movdqa %xmm3,%xmm7");
+
+		d = l - 1;
+
+		for (;;) {
+			/*
+			 * All transitions above 'boundary' are x2.
+			 * Do not let a two-disk iteration cross the boundary.
+			 */
+			for (; d >= boundary + 2; d -= 2) {
+				/* lane 0 */
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i]));
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm4,%xmm11");
+				asm volatile ("paddb %xmm4,%xmm4");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm4");
+				asm volatile ("pxor %xmm8,%xmm4");
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm4,%xmm11");
+				asm volatile ("paddb %xmm4,%xmm4");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm4");
+				asm volatile ("pxor %xmm9,%xmm4");
+
+				asm volatile ("pxor %xmm8,%xmm0");
+				asm volatile ("pxor %xmm9,%xmm0");
+
+				/* lane 1 */
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 16]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i + 16]));
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm5,%xmm11");
+				asm volatile ("paddb %xmm5,%xmm5");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm5");
+				asm volatile ("pxor %xmm8,%xmm5");
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm5,%xmm11");
+				asm volatile ("paddb %xmm5,%xmm5");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm5");
+				asm volatile ("pxor %xmm9,%xmm5");
+
+				asm volatile ("pxor %xmm8,%xmm1");
+				asm volatile ("pxor %xmm9,%xmm1");
+
+				/* lane 2 */
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 32]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i + 32]));
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm6,%xmm11");
+				asm volatile ("paddb %xmm6,%xmm6");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm6");
+				asm volatile ("pxor %xmm8,%xmm6");
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm6,%xmm11");
+				asm volatile ("paddb %xmm6,%xmm6");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm6");
+				asm volatile ("pxor %xmm9,%xmm6");
+
+				asm volatile ("pxor %xmm8,%xmm2");
+				asm volatile ("pxor %xmm9,%xmm2");
+
+				/* lane 3 */
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 48]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d - 1][i + 48]));
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm7,%xmm11");
+				asm volatile ("paddb %xmm7,%xmm7");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm7");
+				asm volatile ("pxor %xmm8,%xmm7");
+
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm7,%xmm11");
+				asm volatile ("paddb %xmm7,%xmm7");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm11,%xmm7");
+				asm volatile ("pxor %xmm9,%xmm7");
+
+				asm volatile ("pxor %xmm8,%xmm3");
+				asm volatile ("pxor %xmm9,%xmm3");
+			}
+
+			/*
+			 * The first x2 segment can have odd length.
+			 * Consume its last x2 transition separately.
+			 */
+			if (d > boundary) {
+				asm volatile ("pxor %xmm8,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pxor %xmm10,%xmm10");
+				asm volatile ("pxor %xmm11,%xmm11");
+				asm volatile ("pcmpgtb %xmm4,%xmm8");
+				asm volatile ("pcmpgtb %xmm5,%xmm9");
+				asm volatile ("pcmpgtb %xmm6,%xmm10");
+				asm volatile ("pcmpgtb %xmm7,%xmm11");
+				asm volatile ("paddb %xmm4,%xmm4");
+				asm volatile ("paddb %xmm5,%xmm5");
+				asm volatile ("paddb %xmm6,%xmm6");
+				asm volatile ("paddb %xmm7,%xmm7");
+				asm volatile ("pand %xmm15,%xmm8");
+				asm volatile ("pand %xmm15,%xmm9");
+				asm volatile ("pand %xmm15,%xmm10");
+				asm volatile ("pand %xmm15,%xmm11");
+				asm volatile ("pxor %xmm8,%xmm4");
+				asm volatile ("pxor %xmm9,%xmm5");
+				asm volatile ("pxor %xmm10,%xmm6");
+				asm volatile ("pxor %xmm11,%xmm7");
+
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d][i + 16]));
+				asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i + 32]));
+				asm volatile ("movdqa %0,%%xmm11" : : "m" (v[d][i + 48]));
+				asm volatile ("pxor %xmm8,%xmm0");
+				asm volatile ("pxor %xmm9,%xmm1");
+				asm volatile ("pxor %xmm10,%xmm2");
+				asm volatile ("pxor %xmm11,%xmm3");
+				asm volatile ("pxor %xmm8,%xmm4");
+				asm volatile ("pxor %xmm9,%xmm5");
+				asm volatile ("pxor %xmm10,%xmm6");
+				asm volatile ("pxor %xmm11,%xmm7");
+
+				--d;
+			}
+
+			/*
+			 * boundary == -1 identifies the final x2-only segment.
+			 * At this point all remaining disks have been consumed.
+			 */
+			if (boundary < 0)
+				break;
+
+			/*
+			 * d == boundary.
+			 *
+			 * Perform the fixed G23 x3 transition and then add
+			 * the current disk to P and Q.
+			 */
+			asm volatile ("movdqa %xmm4,%xmm8");
+			asm volatile ("movdqa %xmm5,%xmm9");
+			asm volatile ("movdqa %xmm6,%xmm10");
+			asm volatile ("movdqa %xmm7,%xmm11");
+			asm volatile ("pxor %xmm12,%xmm12");
+			asm volatile ("pxor %xmm13,%xmm13");
+			asm volatile ("pxor %xmm14,%xmm14");
+			asm volatile ("pcmpgtb %xmm8,%xmm12");
+			asm volatile ("pcmpgtb %xmm9,%xmm13");
+			asm volatile ("pcmpgtb %xmm10,%xmm14");
+			asm volatile ("paddb %xmm4,%xmm4");
+			asm volatile ("paddb %xmm5,%xmm5");
+			asm volatile ("paddb %xmm6,%xmm6");
+			asm volatile ("paddb %xmm7,%xmm7");
+			asm volatile ("pxor %xmm8,%xmm4");
+			asm volatile ("pxor %xmm8,%xmm8");
+			asm volatile ("pcmpgtb %xmm11,%xmm8");
+			asm volatile ("pand %xmm15,%xmm12");
+			asm volatile ("pand %xmm15,%xmm13");
+			asm volatile ("pand %xmm15,%xmm14");
+			asm volatile ("pand %xmm15,%xmm8");
+			asm volatile ("pxor %xmm12,%xmm4");
+			asm volatile ("pxor %xmm13,%xmm5");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm8,%xmm7");
+			asm volatile ("pxor %xmm9,%xmm5");
+			asm volatile ("pxor %xmm10,%xmm6");
+			asm volatile ("pxor %xmm11,%xmm7");
+
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i]));
+			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d][i + 16]));
+			asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i + 32]));
+			asm volatile ("movdqa %0,%%xmm11" : : "m" (v[d][i + 48]));
+			asm volatile ("pxor %xmm8,%xmm0");
+			asm volatile ("pxor %xmm9,%xmm1");
+			asm volatile ("pxor %xmm10,%xmm2");
+			asm volatile ("pxor %xmm11,%xmm3");
+			asm volatile ("pxor %xmm8,%xmm4");
+			asm volatile ("pxor %xmm9,%xmm5");
+			asm volatile ("pxor %xmm10,%xmm6");
+			asm volatile ("pxor %xmm11,%xmm7");
+
+			--d;
+
+			/*
+			 * G23 boundaries are exactly 51 transitions apart.
+			 * After d = 50 there are no more x3 transitions.
+			 */
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
+		}
+
+		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
+		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
+		asm volatile ("movntdq %%xmm4,%0" : "=m" (q[i]));
+		asm volatile ("movntdq %%xmm5,%0" : "=m" (q[i + 16]));
+		asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i + 32]));
+		asm volatile ("movntdq %%xmm7,%0" : "=m" (q[i + 48]));
+	}
+
+	raid_sse_end();
+}
+
 void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_sse2ext_gen(nd, size, vv, 0);
+	raid_gen2_sse2ext_x2(nd, size, vv);
 }
 
 void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_sse2ext_gen(nd, size, vv, 1);
+	if (nd <= 51)
+		raid_gen2_sse2ext_x2(nd, size, vv);
+	else
+		raid_gen2_sse2ext_g23(nd, size, vv);
 }
 #endif
 

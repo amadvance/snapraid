@@ -63,10 +63,9 @@ void raid_gen1_neon32(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AArch32 NEON implementation using the active Q transition.
+ * GEN2 Cauchy AArch32 NEON implementation using only Q *= 2.
  */
-static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
-	void **vv, int g23)
+static __always_inline void raid_gen2_neon32_x2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -86,12 +85,8 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 		:
 		: "Q" (gfconst16.poly[0])
 	);
-	int g23_start = raid_g23_count(l - 1);
 
 	for (i = 0; i < size; i += 32) {
-		int g23_count = g23_start;
-		int g23_x3;
-
 		asm volatile (
 			"vld1.8 {q0}, %0\n"
 			"vld1.8 {q1}, %1\n"
@@ -102,28 +97,19 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 		);
 
 		for (d = l - 1; d >= 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
-			if (g23 && g23_x3) {
-				asm volatile (
-					"vmov q10, q2\n"
-					"vmov q11, q3\n"
-				);
-			}
 			asm volatile (
+				/* double Q0-Q1 */
 				"vshr.s8 q8, q2, #7\n"
 				"vshl.i8 q2, q2, #1\n"
 				"vand q8, q8, q14\n"
 				"veor q2, q2, q8\n"
+
 				"vshr.s8 q8, q3, #7\n"
 				"vshl.i8 q3, q3, #1\n"
 				"vand q8, q8, q14\n"
 				"veor q3, q3, q8\n"
+
+				/* load and XOR */
 				"vld1.8 {q12}, %0\n"
 				"vld1.8 {q13}, %1\n"
 				"veor q0, q0, q12\n"
@@ -133,12 +119,143 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 				:
 				: "Q" (v[d][i]), "Q" (v[d][i + 16])
 			);
-			if (g23 && g23_x3) {
+		}
+
+		asm volatile (
+			"vst1.8 {q0}, %0\n"
+			"vst1.8 {q1}, %1\n"
+			"vst1.8 {q2}, %2\n"
+			"vst1.8 {q3}, %3\n"
+			: "=Q" (p[i]), "=Q" (p[i + 16]),
+			"=Q" (q[i]), "=Q" (q[i + 16])
+		);
+	}
+
+	raid_neon32_end();
+}
+
+/*
+ * GEN2 Cauchy AArch32 NEON implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_gen2_neon32_g23(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_neon32_begin();
+
+	/* q14 contains the active reduction polynomial. */
+	asm volatile (
+		"vld1.8 {q14}, %0\n"
+		:
+		: "Q" (gfconst16.poly[0])
+	);
+
+	for (i = 0; i < size; i += 32) {
+		int boundary = g23_boundary;
+
+		asm volatile (
+			"vld1.8 {q0}, %0\n"
+			"vld1.8 {q1}, %1\n"
+			"vmov q2, q0\n"
+			"vmov q3, q1\n"
+			:
+			: "Q" (v[l][i]), "Q" (v[l][i + 16])
+		);
+
+		d = l - 1;
+
+		for (;;) {
+			/*
+			 * All transitions above 'boundary' are x2.
+			 */
+			for (; d > boundary; --d) {
 				asm volatile (
-					"veor q2, q2, q10\n"
-					"veor q3, q3, q11\n"
+					/* double Q0-Q1 */
+					"vshr.s8 q8, q2, #7\n"
+					"vshl.i8 q2, q2, #1\n"
+					"vand q8, q8, q14\n"
+					"veor q2, q2, q8\n"
+
+					"vshr.s8 q8, q3, #7\n"
+					"vshl.i8 q3, q3, #1\n"
+					"vand q8, q8, q14\n"
+					"veor q3, q3, q8\n"
+
+					/* load and XOR */
+					"vld1.8 {q12}, %0\n"
+					"vld1.8 {q13}, %1\n"
+					"veor q0, q0, q12\n"
+					"veor q1, q1, q13\n"
+					"veor q2, q2, q12\n"
+					"veor q3, q3, q13\n"
+					:
+					: "Q" (v[d][i]), "Q" (v[d][i + 16])
 				);
 			}
+
+			/*
+			 * boundary == -1 identifies the final x2-only segment.
+			 * At this point all remaining disks have been consumed.
+			 */
+			if (boundary < 0)
+				break;
+
+			/*
+			 * d == boundary.
+			 *
+			 * Perform the fixed G23 x3 transition and then add
+			 * the current disk to P and Q.
+			 */
+			asm volatile (
+				/* preserve Q for Q *= 3 */
+				"vmov q10, q2\n"
+				"vmov q11, q3\n"
+
+				/* double Q0-Q1 */
+				"vshr.s8 q8, q2, #7\n"
+				"vshl.i8 q2, q2, #1\n"
+				"vand q8, q8, q14\n"
+				"veor q2, q2, q8\n"
+
+				"vshr.s8 q8, q3, #7\n"
+				"vshl.i8 q3, q3, #1\n"
+				"vand q8, q8, q14\n"
+				"veor q3, q3, q8\n"
+
+				/* load and XOR */
+				"vld1.8 {q12}, %0\n"
+				"vld1.8 {q13}, %1\n"
+				"veor q0, q0, q12\n"
+				"veor q1, q1, q13\n"
+				"veor q2, q2, q12\n"
+				"veor q3, q3, q13\n"
+
+				/* complete Q *= 3 */
+				"veor q2, q2, q10\n"
+				"veor q3, q3, q11\n"
+				:
+				: "Q" (v[d][i]), "Q" (v[d][i + 16])
+			);
+
+			--d;
+
+			/*
+			 * G23 boundaries are exactly 51 transitions apart.
+			 * After d = 50 there are no more x3 transitions.
+			 */
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
 		}
 
 		asm volatile (
@@ -156,12 +273,15 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 
 void raid_gen2_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon32_gen(nd, size, vv, 0);
+	raid_gen2_neon32_x2(nd, size, vv);
 }
 
 void raid_gen2_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_neon32_gen(nd, size, vv, 1);
+	if (nd <= 51)
+		raid_gen2_neon32_x2(nd, size, vv);
+	else
+		raid_gen2_neon32_g23(nd, size, vv);
 }
 
 /*
@@ -252,10 +372,10 @@ void raid_genz_neon32_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GENX AArch32 NEON implementation.
+ * GENX AArch32 NEON implementation using only Q *= 2.
  */
-static __always_inline void raid_genX_neon32(int nd, size_t size,
-	void **vv, int np, int g23)
+static __always_inline void raid_genX_neon32_x2(int nd, size_t size,
+	void **vv, int np)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -269,7 +389,6 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 			memcpy(v[1 + d], v[0], size);
 		return;
 	}
-	int g23_start = raid_g23_count(l - 1);
 
 	raid_neon32_begin();
 
@@ -281,9 +400,6 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	);
 
 	for (i = 0; i < size; i += 16) {
-		int g23_count = g23_start;
-		int g23_x3;
-
 		/* last disk without the generator multiplication */
 		asm volatile (
 			"vld1.8 {q0}, %0\n"
@@ -311,7 +427,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 				"veor q2, q11, q12\n"
 				:
 				: "Q" (raid_gfcauchypshufb[l][1][0][0]),
-				"Q" (raid_gfcauchypshufb[l][1][1][0])
+				  "Q" (raid_gfcauchypshufb[l][1][1][0])
 			);
 		}
 
@@ -328,7 +444,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 				"veor q3, q11, q12\n"
 				:
 				: "Q" (raid_gfcauchypshufb[l][2][0][0]),
-				"Q" (raid_gfcauchypshufb[l][2][1][0])
+				  "Q" (raid_gfcauchypshufb[l][2][1][0])
 			);
 		}
 
@@ -345,7 +461,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 				"veor q4, q11, q12\n"
 				:
 				: "Q" (raid_gfcauchypshufb[l][3][0][0]),
-				"Q" (raid_gfcauchypshufb[l][3][1][0])
+				  "Q" (raid_gfcauchypshufb[l][3][1][0])
 			);
 		}
 
@@ -362,40 +478,26 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 				"veor q5, q11, q12\n"
 				:
 				: "Q" (raid_gfcauchypshufb[l][4][0][0]),
-				"Q" (raid_gfcauchypshufb[l][4][1][0])
+				  "Q" (raid_gfcauchypshufb[l][4][1][0])
 			);
 		}
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
-			}
-
-			if (g23 && g23_x3) {
-				asm volatile (
-					"vmov q13, q1\n"
-				);
-			}
 			asm volatile (
+				/* Q *= 2 */
 				"vshr.s8 q11, q1, #7\n"
 				"vshl.i8 q1, q1, #1\n"
 				"vand q11, q11, q14\n"
 				"veor q1, q1, q11\n"
+
+				/* load disk and update P/Q */
 				"vld1.8 {q6}, %0\n"
 				"veor q0, q0, q6\n"
 				"veor q1, q1, q6\n"
 				:
 				: "Q" (v[d][i])
 			);
-			if (g23 && g23_x3) {
-				asm volatile (
-					"veor q1, q1, q13\n"
-				);
-			}
 
 			if (np >= 3) {
 				asm volatile (
@@ -403,6 +505,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"vand q7, q6, q15\n"
 					"vand q8, q8, q15\n"
 				);
+
 				asm volatile (
 					"vld1.8 {q9}, %0\n"
 					"vld1.8 {q10}, %1\n"
@@ -416,7 +519,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q2, q2, q11\n"
 					:
 					: "Q" (raid_gfcauchypshufb[d][1][0][0]),
-					"Q" (raid_gfcauchypshufb[d][1][1][0])
+					  "Q" (raid_gfcauchypshufb[d][1][1][0])
 				);
 			}
 
@@ -432,7 +535,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q3, q3, q11\n"
 					:
 					: "Q" (raid_gfcauchypshufb[d][2][0][0]),
-					"Q" (raid_gfcauchypshufb[d][2][1][0])
+					  "Q" (raid_gfcauchypshufb[d][2][1][0])
 				);
 			}
 
@@ -448,7 +551,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q4, q4, q11\n"
 					:
 					: "Q" (raid_gfcauchypshufb[d][3][0][0]),
-					"Q" (raid_gfcauchypshufb[d][3][1][0])
+					  "Q" (raid_gfcauchypshufb[d][3][1][0])
 				);
 			}
 
@@ -464,94 +567,484 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q5, q5, q11\n"
 					:
 					: "Q" (raid_gfcauchypshufb[d][4][0][0]),
-					"Q" (raid_gfcauchypshufb[d][4][1][0])
+					  "Q" (raid_gfcauchypshufb[d][4][1][0])
 				);
 			}
 		}
 
 		/* first disk with all coefficients at 1 */
-		g23_x3 = 0;
-		if (g23) {
-			g23_x3 = --g23_count == 0;
-			if (g23_x3)
-				g23_count = 51;
-		}
-
-		if (g23 && g23_x3) {
-			asm volatile (
-				"vmov q13, q1\n"
-			);
-		}
 		asm volatile (
 			"vshr.s8 q11, q1, #7\n"
 			"vshl.i8 q1, q1, #1\n"
 			"vand q11, q11, q14\n"
 			"veor q1, q1, q11\n"
+
 			"vld1.8 {q6}, %0\n"
 			"veor q0, q0, q6\n"
 			"veor q1, q1, q6\n"
 			:
 			: "Q" (v[0][i])
 		);
-		if (g23 && g23_x3) {
-			asm volatile (
-				"veor q1, q1, q13\n"
-			);
-		}
 
-		if (np >= 3) {
-			asm volatile (
-				"veor q2, q2, q6\n"
-			);
-		}
-		if (np >= 4) {
-			asm volatile (
-				"veor q3, q3, q6\n"
-			);
-		}
-		if (np >= 5) {
-			asm volatile (
-				"veor q4, q4, q6\n"
-			);
-		}
-		if (np >= 6) {
-			asm volatile (
-				"veor q5, q5, q6\n"
-			);
-		}
+		if (np >= 3)
+			asm volatile ("veor q2, q2, q6\n");
+		if (np >= 4)
+			asm volatile ("veor q3, q3, q6\n");
+		if (np >= 5)
+			asm volatile ("veor q4, q4, q6\n");
+		if (np >= 6)
+			asm volatile ("veor q5, q5, q6\n");
 
 		/* write parity in increasing order */
 		asm volatile (
 			"vst1.8 {q0}, %0\n"
 			"vst1.8 {q1}, %1\n"
 			: "=Q" (v[nd][i]),
-			"=Q" (v[nd + 1][i])
+			  "=Q" (v[nd + 1][i])
+		);
+
+		if (np >= 3)
+			asm volatile ("vst1.8 {q2}, %0\n" : "=Q" (v[nd + 2][i]));
+		if (np >= 4)
+			asm volatile ("vst1.8 {q3}, %0\n" : "=Q" (v[nd + 3][i]));
+		if (np >= 5)
+			asm volatile ("vst1.8 {q4}, %0\n" : "=Q" (v[nd + 4][i]));
+		if (np >= 6)
+			asm volatile ("vst1.8 {q5}, %0\n" : "=Q" (v[nd + 5][i]));
+	}
+
+	raid_neon32_end();
+}
+
+/*
+ * GENX AArch32 NEON implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_genX_neon32_g23(int nd, size_t size,
+	void **vv, int np)
+{
+	uint8_t **v = (uint8_t **)vv;
+	size_t i;
+	int d, l;
+
+	l = nd - 1;
+
+	/* special case with only one data disk */
+	if (l == 0) {
+		for (d = 0; d < np; ++d)
+			memcpy(v[1 + d], v[0], size);
+		return;
+	}
+
+	int g23_boundary = raid_g23_boundary(l - 1);
+
+	raid_neon32_begin();
+
+	asm volatile (
+		"vld1.8 {q14}, %0\n"
+		"vld1.8 {q15}, %1\n"
+		:
+		: "Q" (gfconst16.poly[0]), "Q" (gfconst16.low4[0])
+	);
+
+	for (i = 0; i < size; i += 16) {
+		int boundary = g23_boundary;
+
+		/* last disk without the generator multiplication */
+		asm volatile (
+			"vld1.8 {q0}, %0\n"
+			"vld1.8 {q1}, %0\n"
+			:
+			: "Q" (v[l][i])
 		);
 
 		if (np >= 3) {
 			asm volatile (
-				"vst1.8 {q2}, %0\n"
-				: "=Q" (v[nd + 2][i])
+				"vshr.u8 q8, q0, #4\n"
+				"vand q7, q0, q15\n"
+				"vand q8, q8, q15\n"
+			);
+
+			asm volatile (
+				"vld1.8 {q9}, %0\n"
+				"vld1.8 {q10}, %1\n"
+				"vtbl.8 d22, {d18-d19}, d14\n"
+				"vtbl.8 d23, {d18-d19}, d15\n"
+				"vtbl.8 d24, {d20-d21}, d16\n"
+				"vtbl.8 d25, {d20-d21}, d17\n"
+				"veor q2, q11, q12\n"
+				:
+				: "Q" (raid_gfcauchypshufb[l][1][0][0]),
+				  "Q" (raid_gfcauchypshufb[l][1][1][0])
 			);
 		}
+
 		if (np >= 4) {
 			asm volatile (
-				"vst1.8 {q3}, %0\n"
-				: "=Q" (v[nd + 3][i])
+				"vld1.8 {q9}, %0\n"
+				"vld1.8 {q10}, %1\n"
+				"vtbl.8 d22, {d18-d19}, d14\n"
+				"vtbl.8 d23, {d18-d19}, d15\n"
+				"vtbl.8 d24, {d20-d21}, d16\n"
+				"vtbl.8 d25, {d20-d21}, d17\n"
+				"veor q3, q11, q12\n"
+				:
+				: "Q" (raid_gfcauchypshufb[l][2][0][0]),
+				  "Q" (raid_gfcauchypshufb[l][2][1][0])
 			);
 		}
+
 		if (np >= 5) {
 			asm volatile (
-				"vst1.8 {q4}, %0\n"
-				: "=Q" (v[nd + 4][i])
+				"vld1.8 {q9}, %0\n"
+				"vld1.8 {q10}, %1\n"
+				"vtbl.8 d22, {d18-d19}, d14\n"
+				"vtbl.8 d23, {d18-d19}, d15\n"
+				"vtbl.8 d24, {d20-d21}, d16\n"
+				"vtbl.8 d25, {d20-d21}, d17\n"
+				"veor q4, q11, q12\n"
+				:
+				: "Q" (raid_gfcauchypshufb[l][3][0][0]),
+				  "Q" (raid_gfcauchypshufb[l][3][1][0])
 			);
 		}
+
 		if (np >= 6) {
 			asm volatile (
-				"vst1.8 {q5}, %0\n"
-				: "=Q" (v[nd + 5][i])
+				"vld1.8 {q9}, %0\n"
+				"vld1.8 {q10}, %1\n"
+				"vtbl.8 d22, {d18-d19}, d14\n"
+				"vtbl.8 d23, {d18-d19}, d15\n"
+				"vtbl.8 d24, {d20-d21}, d16\n"
+				"vtbl.8 d25, {d20-d21}, d17\n"
+				"veor q5, q11, q12\n"
+				:
+				: "Q" (raid_gfcauchypshufb[l][4][0][0]),
+				  "Q" (raid_gfcauchypshufb[l][4][1][0])
 			);
 		}
+
+		d = l - 1;
+
+		while (boundary >= 0) {
+			/*
+			 * Everything above the next G23 boundary is Q *= 2.
+			 */
+			for (; d > boundary; --d) {
+				asm volatile (
+					"vshr.s8 q11, q1, #7\n"
+					"vshl.i8 q1, q1, #1\n"
+					"vand q11, q11, q14\n"
+					"veor q1, q1, q11\n"
+
+					"vld1.8 {q6}, %0\n"
+					"veor q0, q0, q6\n"
+					"veor q1, q1, q6\n"
+					:
+					: "Q" (v[d][i])
+				);
+
+				if (np >= 3) {
+					asm volatile (
+						"vshr.u8 q8, q6, #4\n"
+						"vand q7, q6, q15\n"
+						"vand q8, q8, q15\n"
+					);
+
+					asm volatile (
+						"vld1.8 {q9}, %0\n"
+						"vld1.8 {q10}, %1\n"
+						"vtbl.8 d22, {d18-d19}, d14\n"
+						"vtbl.8 d23, {d18-d19}, d15\n"
+						"vtbl.8 d24, {d20-d21}, d16\n"
+						"vtbl.8 d25, {d20-d21}, d17\n"
+						"veor q11, q11, q12\n"
+						"veor q2, q2, q11\n"
+						:
+						: "Q" (raid_gfcauchypshufb[d][1][0][0]),
+						  "Q" (raid_gfcauchypshufb[d][1][1][0])
+					);
+				}
+
+				if (np >= 4) {
+					asm volatile (
+						"vld1.8 {q9}, %0\n"
+						"vld1.8 {q10}, %1\n"
+						"vtbl.8 d22, {d18-d19}, d14\n"
+						"vtbl.8 d23, {d18-d19}, d15\n"
+						"vtbl.8 d24, {d20-d21}, d16\n"
+						"vtbl.8 d25, {d20-d21}, d17\n"
+						"veor q11, q11, q12\n"
+						"veor q3, q3, q11\n"
+						:
+						: "Q" (raid_gfcauchypshufb[d][2][0][0]),
+						  "Q" (raid_gfcauchypshufb[d][2][1][0])
+					);
+				}
+
+				if (np >= 5) {
+					asm volatile (
+						"vld1.8 {q9}, %0\n"
+						"vld1.8 {q10}, %1\n"
+						"vtbl.8 d22, {d18-d19}, d14\n"
+						"vtbl.8 d23, {d18-d19}, d15\n"
+						"vtbl.8 d24, {d20-d21}, d16\n"
+						"vtbl.8 d25, {d20-d21}, d17\n"
+						"veor q11, q11, q12\n"
+						"veor q4, q4, q11\n"
+						:
+						: "Q" (raid_gfcauchypshufb[d][3][0][0]),
+						  "Q" (raid_gfcauchypshufb[d][3][1][0])
+					);
+				}
+
+				if (np >= 6) {
+					asm volatile (
+						"vld1.8 {q9}, %0\n"
+						"vld1.8 {q10}, %1\n"
+						"vtbl.8 d22, {d18-d19}, d14\n"
+						"vtbl.8 d23, {d18-d19}, d15\n"
+						"vtbl.8 d24, {d20-d21}, d16\n"
+						"vtbl.8 d25, {d20-d21}, d17\n"
+						"veor q11, q11, q12\n"
+						"veor q5, q5, q11\n"
+						:
+						: "Q" (raid_gfcauchypshufb[d][4][0][0]),
+						  "Q" (raid_gfcauchypshufb[d][4][1][0])
+					);
+				}
+			}
+
+			/*
+			 * d == boundary: Q *= 3.
+			 *
+			 * q13 is otherwise unused here, so preserve the old Q
+			 * there and XOR it back after the normal x2 transition.
+			 */
+			asm volatile (
+				"vmov q13, q1\n"
+
+				"vshr.s8 q11, q1, #7\n"
+				"vshl.i8 q1, q1, #1\n"
+				"vand q11, q11, q14\n"
+				"veor q1, q1, q11\n"
+
+				"vld1.8 {q6}, %0\n"
+				"veor q0, q0, q6\n"
+				"veor q1, q1, q6\n"
+
+				/* complete Q *= 3 */
+				"veor q1, q1, q13\n"
+				:
+				: "Q" (v[d][i])
+			);
+
+			if (np >= 3) {
+				asm volatile (
+					"vshr.u8 q8, q6, #4\n"
+					"vand q7, q6, q15\n"
+					"vand q8, q8, q15\n"
+				);
+
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q2, q2, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][1][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][1][1][0])
+				);
+			}
+
+			if (np >= 4) {
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q3, q3, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][2][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][2][1][0])
+				);
+			}
+
+			if (np >= 5) {
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q4, q4, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][3][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][3][1][0])
+				);
+			}
+
+			if (np >= 6) {
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q5, q5, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][4][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][4][1][0])
+				);
+			}
+
+			--d;
+
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
+		}
+
+		/*
+		 * Remaining intermediate disks contain no more G23
+		 * boundaries, so this loop is pure x2.
+		 */
+		for (; d > 0; --d) {
+			asm volatile (
+				"vshr.s8 q11, q1, #7\n"
+				"vshl.i8 q1, q1, #1\n"
+				"vand q11, q11, q14\n"
+				"veor q1, q1, q11\n"
+
+				"vld1.8 {q6}, %0\n"
+				"veor q0, q0, q6\n"
+				"veor q1, q1, q6\n"
+				:
+				: "Q" (v[d][i])
+			);
+
+			if (np >= 3) {
+				asm volatile (
+					"vshr.u8 q8, q6, #4\n"
+					"vand q7, q6, q15\n"
+					"vand q8, q8, q15\n"
+				);
+
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q2, q2, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][1][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][1][1][0])
+				);
+			}
+
+			if (np >= 4) {
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q3, q3, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][2][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][2][1][0])
+				);
+			}
+
+			if (np >= 5) {
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q4, q4, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][3][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][3][1][0])
+				);
+			}
+
+			if (np >= 6) {
+				asm volatile (
+					"vld1.8 {q9}, %0\n"
+					"vld1.8 {q10}, %1\n"
+					"vtbl.8 d22, {d18-d19}, d14\n"
+					"vtbl.8 d23, {d18-d19}, d15\n"
+					"vtbl.8 d24, {d20-d21}, d16\n"
+					"vtbl.8 d25, {d20-d21}, d17\n"
+					"veor q11, q11, q12\n"
+					"veor q5, q5, q11\n"
+					:
+					: "Q" (raid_gfcauchypshufb[d][4][0][0]),
+					  "Q" (raid_gfcauchypshufb[d][4][1][0])
+				);
+			}
+		}
+
+		/*
+		 * D0 always follows Q *= 2. The lowest G23 boundary is 50.
+		 */
+		asm volatile (
+			"vshr.s8 q11, q1, #7\n"
+			"vshl.i8 q1, q1, #1\n"
+			"vand q11, q11, q14\n"
+			"veor q1, q1, q11\n"
+
+			"vld1.8 {q6}, %0\n"
+			"veor q0, q0, q6\n"
+			"veor q1, q1, q6\n"
+			:
+			: "Q" (v[0][i])
+		);
+
+		if (np >= 3)
+			asm volatile ("veor q2, q2, q6\n");
+		if (np >= 4)
+			asm volatile ("veor q3, q3, q6\n");
+		if (np >= 5)
+			asm volatile ("veor q4, q4, q6\n");
+		if (np >= 6)
+			asm volatile ("veor q5, q5, q6\n");
+
+		/* write parity in increasing order */
+		asm volatile (
+			"vst1.8 {q0}, %0\n"
+			"vst1.8 {q1}, %1\n"
+			: "=Q" (v[nd][i]),
+			  "=Q" (v[nd + 1][i])
+		);
+
+		if (np >= 3)
+			asm volatile ("vst1.8 {q2}, %0\n" : "=Q" (v[nd + 2][i]));
+		if (np >= 4)
+			asm volatile ("vst1.8 {q3}, %0\n" : "=Q" (v[nd + 3][i]));
+		if (np >= 5)
+			asm volatile ("vst1.8 {q4}, %0\n" : "=Q" (v[nd + 4][i]));
+		if (np >= 6)
+			asm volatile ("vst1.8 {q5}, %0\n" : "=Q" (v[nd + 5][i]));
 	}
 
 	raid_neon32_end();
@@ -562,12 +1055,15 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
  */
 void raid_gen3_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 3, 0);
+	raid_genX_neon32_x2(nd, size, vv, 3);
 }
 
 void raid_gen3_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 3, 1);
+	if (nd <= 51)
+		raid_genX_neon32_x2(nd, size, vv, 3);
+	else
+		raid_genX_neon32_g23(nd, size, vv, 3);
 }
 
 /*
@@ -575,12 +1071,15 @@ void raid_gen3_neon32_aes(int nd, size_t size, void **vv)
  */
 void raid_gen4_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 4, 0);
+	raid_genX_neon32_x2(nd, size, vv, 4);
 }
 
 void raid_gen4_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 4, 1);
+	if (nd <= 51)
+		raid_genX_neon32_x2(nd, size, vv, 4);
+	else
+		raid_genX_neon32_g23(nd, size, vv, 4);
 }
 
 /*
@@ -588,12 +1087,15 @@ void raid_gen4_neon32_aes(int nd, size_t size, void **vv)
  */
 void raid_gen5_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 5, 0);
+	raid_genX_neon32_x2(nd, size, vv, 5);
 }
 
 void raid_gen5_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 5, 1);
+	if (nd <= 51)
+		raid_genX_neon32_x2(nd, size, vv, 5);
+	else
+		raid_genX_neon32_g23(nd, size, vv, 5);
 }
 
 /*
@@ -601,12 +1103,15 @@ void raid_gen5_neon32_aes(int nd, size_t size, void **vv)
  */
 void raid_gen6_neon32_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 6, 0);
+	raid_genX_neon32_x2(nd, size, vv, 6);
 }
 
 void raid_gen6_neon32_aes(int nd, size_t size, void **vv)
 {
-	raid_genX_neon32(nd, size, vv, 6, 1);
+	if (nd <= 51)
+		raid_genX_neon32_x2(nd, size, vv, 6);
+	else
+		raid_genX_neon32_g23(nd, size, vv, 6);
 }
 
 /*

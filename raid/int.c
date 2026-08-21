@@ -61,9 +61,53 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 (double parity) 32bit C implementation
+ * GEN2 (double parity) 32bit C implementation using only Q *= 2.
  */
-static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, int g23)
+static __always_inline void raid_gen2_int32_x2(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+	const uint32_t poly_32 = raid_poly_32;
+
+	uint32_t d0, q0, p0;
+	uint32_t d1, q1, p1;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	for (i = 0; i < size; i += 8) {
+		q0 = p0 = v_read32(&v[l][i]);
+		q1 = p1 = v_read32(&v[l][i + 4]);
+
+		for (d = l - 1; d >= 0; --d) {
+			d0 = v_read32(&v[d][i]);
+			d1 = v_read32(&v[d][i + 4]);
+
+			p0 ^= d0;
+			p1 ^= d1;
+
+			q0 = x2_32(q0, poly_32);
+			q1 = x2_32(q1, poly_32);
+
+			q0 ^= d0;
+			q1 ^= d1;
+		}
+
+		v_write32(&p[i], p0);
+		v_write32(&p[i + 4], p1);
+		v_write32(&q[i], q0);
+		v_write32(&q[i + 4], q1);
+	}
+}
+
+/*
+ * GEN2 (double parity) 32bit C implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_gen2_int32_g23(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -79,43 +123,76 @@ static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, 
 	l = nd - 1;
 	p = v[nd];
 	q = v[nd + 1];
-	int g23_start = raid_g23_count(l - 1);
+
+	int g23_boundary = raid_g23_boundary(l - 1);
 
 	for (i = 0; i < size; i += 8) {
-		int g23_count = g23_start;
-		int g23_x3;
+		int boundary = g23_boundary;
 
 		q0 = p0 = v_read32(&v[l][i]);
 		q1 = p1 = v_read32(&v[l][i + 4]);
-		for (d = l - 1; d >= 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
+
+		d = l - 1;
+
+		for (;;) {
+			/*
+			 * All transitions above 'boundary' are x2.
+			 */
+			for (; d > boundary; --d) {
+				d0 = v_read32(&v[d][i]);
+				d1 = v_read32(&v[d][i + 4]);
+
+				p0 ^= d0;
+				p1 ^= d1;
+
+				q0 = x2_32(q0, poly_32);
+				q1 = x2_32(q1, poly_32);
+
+				q0 ^= d0;
+				q1 ^= d1;
 			}
 
+			/*
+			 * boundary == -1 identifies the final x2-only segment.
+			 * At this point all remaining disks have been consumed.
+			 */
+			if (boundary < 0)
+				break;
+
+			/*
+			 * d == boundary.
+			 *
+			 * Perform the fixed G23 x3 transition and then add
+			 * the current disk to P and Q.
+			 */
 			d0 = v_read32(&v[d][i]);
 			d1 = v_read32(&v[d][i + 4]);
 
 			p0 ^= d0;
 			p1 ^= d1;
 
-			if (g23 && g23_x3) {
-				qold = q0;
-				q0 = x2_32(q0, poly_32);
-				q0 ^= qold;
-				qold = q1;
-				q1 = x2_32(q1, poly_32);
-				q1 ^= qold;
-			} else {
-				q0 = x2_32(q0, poly_32);
-				q1 = x2_32(q1, poly_32);
-			}
+			qold = q0;
+			q0 = x2_32(q0, poly_32);
+			q0 ^= qold;
+
+			qold = q1;
+			q1 = x2_32(q1, poly_32);
+			q1 ^= qold;
 
 			q0 ^= d0;
 			q1 ^= d1;
+
+			--d;
+
+			/*
+			 * G23 boundaries are exactly 51 transitions apart.
+			 * After d = 50 there are no more x3 transitions.
+			 */
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
 		}
+
 		v_write32(&p[i], p0);
 		v_write32(&p[i + 4], p1);
 		v_write32(&q[i], q0);
@@ -125,18 +202,65 @@ static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, 
 
 void raid_gen2_int32_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_int32_gen(nd, size, vv, 0);
+	raid_gen2_int32_x2(nd, size, vv);
 }
 
 void raid_gen2_int32_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_int32_gen(nd, size, vv, 1);
+	if (nd <= 51)
+		raid_gen2_int32_x2(nd, size, vv);
+	else
+		raid_gen2_int32_g23(nd, size, vv);
 }
 
 /*
- * GEN2 (double parity) 64bit C implementation
+ * GEN2 (double parity) 64bit C implementation using only Q *= 2.
  */
-static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, int g23)
+static __always_inline void raid_gen2_int64_x2(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+	const uint64_t poly_64 = raid_poly_64;
+
+	uint64_t d0, q0, p0;
+	uint64_t d1, q1, p1;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd + 1];
+
+	for (i = 0; i < size; i += 16) {
+		q0 = p0 = v_read64(&v[l][i]);
+		q1 = p1 = v_read64(&v[l][i + 8]);
+
+		for (d = l - 1; d >= 0; --d) {
+			d0 = v_read64(&v[d][i]);
+			d1 = v_read64(&v[d][i + 8]);
+
+			p0 ^= d0;
+			p1 ^= d1;
+
+			q0 = x2_64(q0, poly_64);
+			q1 = x2_64(q1, poly_64);
+
+			q0 ^= d0;
+			q1 ^= d1;
+		}
+
+		v_write64(&p[i], p0);
+		v_write64(&p[i + 8], p1);
+		v_write64(&q[i], q0);
+		v_write64(&q[i + 8], q1);
+	}
+}
+
+/*
+ * GEN2 (double parity) 64bit C implementation using the AES G23 Q transition.
+ */
+static __always_inline void raid_gen2_int64_g23(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -152,43 +276,76 @@ static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, 
 	l = nd - 1;
 	p = v[nd];
 	q = v[nd + 1];
-	int g23_start = raid_g23_count(l - 1);
+
+	int g23_boundary = raid_g23_boundary(l - 1);
 
 	for (i = 0; i < size; i += 16) {
-		int g23_count = g23_start;
-		int g23_x3;
+		int boundary = g23_boundary;
 
 		q0 = p0 = v_read64(&v[l][i]);
 		q1 = p1 = v_read64(&v[l][i + 8]);
-		for (d = l - 1; d >= 0; --d) {
-			g23_x3 = 0;
-			if (g23) {
-				g23_x3 = --g23_count == 0;
-				if (g23_x3)
-					g23_count = 51;
+
+		d = l - 1;
+
+		for (;;) {
+			/*
+			 * All transitions above 'boundary' are x2.
+			 */
+			for (; d > boundary; --d) {
+				d0 = v_read64(&v[d][i]);
+				d1 = v_read64(&v[d][i + 8]);
+
+				p0 ^= d0;
+				p1 ^= d1;
+
+				q0 = x2_64(q0, poly_64);
+				q1 = x2_64(q1, poly_64);
+
+				q0 ^= d0;
+				q1 ^= d1;
 			}
 
+			/*
+			 * boundary == -1 identifies the final x2-only segment.
+			 * At this point all remaining disks have been consumed.
+			 */
+			if (boundary < 0)
+				break;
+
+			/*
+			 * d == boundary.
+			 *
+			 * Perform the fixed G23 x3 transition and then add
+			 * the current disk to P and Q.
+			 */
 			d0 = v_read64(&v[d][i]);
 			d1 = v_read64(&v[d][i + 8]);
 
 			p0 ^= d0;
 			p1 ^= d1;
 
-			if (g23 && g23_x3) {
-				qold = q0;
-				q0 = x2_64(q0, poly_64);
-				q0 ^= qold;
-				qold = q1;
-				q1 = x2_64(q1, poly_64);
-				q1 ^= qold;
-			} else {
-				q0 = x2_64(q0, poly_64);
-				q1 = x2_64(q1, poly_64);
-			}
+			qold = q0;
+			q0 = x2_64(q0, poly_64);
+			q0 ^= qold;
+
+			qold = q1;
+			q1 = x2_64(q1, poly_64);
+			q1 ^= qold;
 
 			q0 ^= d0;
 			q1 ^= d1;
+
+			--d;
+
+			/*
+			 * G23 boundaries are exactly 51 transitions apart.
+			 * After d = 50 there are no more x3 transitions.
+			 */
+			boundary -= 51;
+			if (boundary < 50)
+				boundary = -1;
 		}
+
 		v_write64(&p[i], p0);
 		v_write64(&p[i + 8], p1);
 		v_write64(&q[i], q0);
@@ -198,17 +355,15 @@ static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, 
 
 void raid_gen2_int64_raid(int nd, size_t size, void **vv)
 {
-	raid_gen2_int64_gen(nd, size, vv, 0);
+	raid_gen2_int64_x2(nd, size, vv);
 }
 
 void raid_gen2_int64_aes(int nd, size_t size, void **vv)
 {
-	raid_gen2_int64_gen(nd, size, vv, 1);
-}
-
-void raid_gen2_int8(int nd, size_t size, void **vv)
-{
-	raid_gen_ref(nd, 2, size, vv);
+	if (nd <= 51)
+		raid_gen2_int64_x2(nd, size, vv);
+	else
+		raid_gen2_int64_g23(nd, size, vv);
 }
 
 /*
@@ -720,7 +875,6 @@ void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 void raid_register_int(void)
 {
-	raid_gen_register(RAID_ALGO_CAUCHY_PAR2, "int8", raid_gen2_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR3, "int8", raid_gen3_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR4, "int8", raid_gen4_int8, RAID_POLY_ANY);
 	raid_gen_register(RAID_ALGO_CAUCHY_PAR5, "int8", raid_gen5_int8, RAID_POLY_ANY);
