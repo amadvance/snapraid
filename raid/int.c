@@ -533,7 +533,7 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	(void)nr; /* unused, it's always 1 */
 
-	/* if it's RAID5, use the faster function */
+	/* if recovering with P uses the delta function */
 	if (ip[0] == 0) {
 		raid_rec1of1(id, nd, size, vv);
 		return;

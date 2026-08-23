@@ -103,6 +103,11 @@ sdecovtest:
 
 # Use this target to run a complete test on Ice Lake simulator
 sdetest:
+	$(SDE) -p4p -- ./selftest
+	$(SDE) -mrm -- ./selftest
+	$(SDE) -nhm -- ./selftest
+	$(SDE) -hsw -- ./selftest
+	$(SDE) -skx -- ./selftest
 	$(SDE) -icl -- ./selftest
 	$(SDE) -icl -- ./fulltest
 

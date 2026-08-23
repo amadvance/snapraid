@@ -70,6 +70,19 @@ int raid_test_gfaffine(void)
 			if (raid_gfaffine_mul((uint8_t)c, (uint8_t)x) != raid_gfmul_raid[c][x])
 				return -1;
 
+#ifdef CONFIG_X86_64
+	int d, p;
+
+	for (d = 0; d < RAID_DATA_MAX; ++d) {
+		for (p = 1; p < RAID_PARITY_MAX; ++p) {
+			if (memcmp(raid_gfcauchyaffine_raid[d][p - 1],
+				raid_gfaffine_raid[raid_gfcauchy_raid[p][d]],
+				8) != 0)
+				return -1;
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -391,101 +404,245 @@ int raid_test_rec(int mode, int nd, size_t size)
 
 	/* setup recov functions */
 	for (i = 1; i <= np; ++i) {
-		if (i == 1) {
+		switch (i) {
+		case 1:
 			test_setup(i) = raid_rec1_int8;
-#ifdef CONFIG_X86
-			if (raid_cpu_has_ssse3())
-				test_setup(i) = raid_rec1_ssse3;
-			if (raid_cpu_has_avx2())
-				test_setup(i) = raid_rec1_avx2;
-#ifdef CONFIG_X86_64
-			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-				if (raid_cpu_has_avx2gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec1_avx2gfni_aes;
-					else
-						test_setup(i) = raid_rec1_avx2gfni_raid;
-				}
-				if (raid_cpu_has_avx512gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec1_avx512gfni_aes;
-					else
-						test_setup(i) = raid_rec1_avx512gfni_raid;
-				}
-			}
-#endif
-#endif
-#ifdef CONFIG_NEON
-			test_setup(i) = raid_rec1_neon;
-#endif
-#ifdef CONFIG_NEON32
-			test_setup(i) = raid_rec1_neon32;
-#endif
-		} else if (i == 2) {
+			break;
+		case 2:
 			test_setup(i) = raid_rec2_int8;
-#ifdef CONFIG_X86
-			if (raid_cpu_has_ssse3())
-				test_setup(i) = raid_rec2_ssse3;
-			if (raid_cpu_has_avx2())
-				test_setup(i) = raid_rec2_avx2;
-#ifdef CONFIG_X86_64
-			if (raid_cpu_has_avx512bw())
-				test_setup(i) = raid_rec2_avx512bw;
-			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-				if (raid_cpu_has_avx2gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec2_avx2gfni_aes;
-					else
-						test_setup(i) = raid_rec2_avx2gfni_raid;
-				}
-				if (raid_cpu_has_avx512gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec2_avx512gfni_aes;
-					else
-						test_setup(i) = raid_rec2_avx512gfni_raid;
-				}
-			}
-#endif
-#endif
-#ifdef CONFIG_NEON
-			test_setup(i) = raid_rec2_neon;
-#endif
-#ifdef CONFIG_NEON32
-			test_setup(i) = raid_rec2_neon32;
-#endif
-		} else {
+			break;
+		default:
 			test_setup(i) = raid_recX_int8;
+			break;
+		}
 #ifdef CONFIG_X86
-			if (raid_cpu_has_ssse3())
-				test_setup(i) = raid_recX_ssse3;
-			if (raid_cpu_has_avx2())
-				test_setup(i) = raid_recX_avx2;
-#ifdef CONFIG_X86_64
-			if (raid_cpu_has_avx512bw())
-				test_setup(i) = raid_recX_avx512bw;
-			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-				if (raid_cpu_has_avx2gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_recX_avx2gfni_aes;
-					else
-						test_setup(i) = raid_recX_avx2gfni_raid;
-				}
-				if (raid_cpu_has_avx512gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_recX_avx512gfni_aes;
-					else
-						test_setup(i) = raid_recX_avx512gfni_raid;
-				}
+		if (raid_cpu_has_ssse3()) {
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_ssse3;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_ssse3;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_ssse3;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_ssse3;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_ssse3;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_ssse3;
+				break;
 			}
-#endif
-#endif
-#ifdef CONFIG_NEON
-			test_setup(i) = raid_recX_neon;
-#endif
-#ifdef CONFIG_NEON32
-			test_setup(i) = raid_recX_neon32;
+#ifdef CONFIG_X86_64
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_ssse3ext;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_ssse3ext;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_ssse3ext;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_ssse3ext;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_ssse3ext;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_ssse3ext;
+				break;
+			}
 #endif
 		}
+		if (raid_cpu_has_avx2()) {
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_avx2;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_avx2;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_avx2;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_avx2;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_avx2;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_avx2;
+				break;
+			}
+		}
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx512bw()) {
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_avx512bw;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_avx512bw;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_avx512bw;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_avx512bw;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_avx512bw;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_avx512bw;
+				break;
+			}
+		}
+		if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
+			if (raid_cpu_has_avx2gfni()) {
+				if (mode == RAID_MODE_CAUCHY_AES) {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx2gfni_aes;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx2gfni_aes;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx2gfni_aes;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx2gfni_aes;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx2gfni_aes;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx2gfni_aes;
+						break;
+					}
+				} else {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx2gfni_raid;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx2gfni_raid;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx2gfni_raid;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx2gfni_raid;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx2gfni_raid;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx2gfni_raid;
+						break;
+					}
+				}
+			}
+			if (raid_cpu_has_avx512gfni()) {
+				if (mode == RAID_MODE_CAUCHY_AES) {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx512gfni_aes;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx512gfni_aes;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx512gfni_aes;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx512gfni_aes;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx512gfni_aes;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx512gfni_aes;
+						break;
+					}
+				} else {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx512gfni_raid;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx512gfni_raid;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx512gfni_raid;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx512gfni_raid;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx512gfni_raid;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx512gfni_raid;
+						break;
+					}
+				}
+			}
+		}
+#endif
+#endif
+#ifdef CONFIG_NEON
+		switch (i) {
+		case 1:
+			test_setup(i) = raid_rec1_neon;
+			break;
+		case 2:
+			test_setup(i) = raid_rec2_neon;
+			break;
+		case 3:
+			test_setup(i) = raid_rec3_neon;
+			break;
+		case 4:
+			test_setup(i) = raid_rec4_neon;
+			break;
+		case 5:
+			test_setup(i) = raid_rec5_neon;
+			break;
+		case 6:
+			test_setup(i) = raid_rec6_neon;
+			break;
+		}
+#endif
+#ifdef CONFIG_NEON32
+		switch (i) {
+		case 1:
+			test_setup(i) = raid_rec1_neon32;
+			break;
+		case 2:
+			test_setup(i) = raid_rec2_neon32;
+			break;
+		case 3:
+			test_setup(i) = raid_rec3_neon32;
+			break;
+		case 4:
+			test_setup(i) = raid_rec4_neon32;
+			break;
+		case 5:
+			test_setup(i) = raid_rec5_neon32;
+			break;
+		case 6:
+			test_setup(i) = raid_rec6_neon32;
+			break;
+		}
+#endif
 	}
 
 	/* compute the parity */
@@ -607,101 +764,245 @@ int raid_test_tail(int mode, int nd_max, size_t size)
 
 	/* setup recov functions */
 	for (i = 1; i <= np; ++i) {
-		if (i == 1) {
+		switch (i) {
+		case 1:
 			test_setup(i) = raid_rec1_int8;
-#ifdef CONFIG_X86
-			if (raid_cpu_has_ssse3())
-				test_setup(i) = raid_rec1_ssse3;
-			if (raid_cpu_has_avx2())
-				test_setup(i) = raid_rec1_avx2;
-#ifdef CONFIG_X86_64
-			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-				if (raid_cpu_has_avx2gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec1_avx2gfni_aes;
-					else
-						test_setup(i) = raid_rec1_avx2gfni_raid;
-				}
-				if (raid_cpu_has_avx512gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec1_avx512gfni_aes;
-					else
-						test_setup(i) = raid_rec1_avx512gfni_raid;
-				}
-			}
-#endif
-#endif
-#ifdef CONFIG_NEON
-			test_setup(i) = raid_rec1_neon;
-#endif
-#ifdef CONFIG_NEON32
-			test_setup(i) = raid_rec1_neon32;
-#endif
-		} else if (i == 2) {
+			break;
+		case 2:
 			test_setup(i) = raid_rec2_int8;
-#ifdef CONFIG_X86
-			if (raid_cpu_has_ssse3())
-				test_setup(i) = raid_rec2_ssse3;
-			if (raid_cpu_has_avx2())
-				test_setup(i) = raid_rec2_avx2;
-#ifdef CONFIG_X86_64
-			if (raid_cpu_has_avx512bw())
-				test_setup(i) = raid_rec2_avx512bw;
-			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-				if (raid_cpu_has_avx2gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec2_avx2gfni_aes;
-					else
-						test_setup(i) = raid_rec2_avx2gfni_raid;
-				}
-				if (raid_cpu_has_avx512gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_rec2_avx512gfni_aes;
-					else
-						test_setup(i) = raid_rec2_avx512gfni_raid;
-				}
-			}
-#endif
-#endif
-#ifdef CONFIG_NEON
-			test_setup(i) = raid_rec2_neon;
-#endif
-#ifdef CONFIG_NEON32
-			test_setup(i) = raid_rec2_neon32;
-#endif
-		} else {
+			break;
+		default:
 			test_setup(i) = raid_recX_int8;
+			break;
+		}
 #ifdef CONFIG_X86
-			if (raid_cpu_has_ssse3())
-				test_setup(i) = raid_recX_ssse3;
-			if (raid_cpu_has_avx2())
-				test_setup(i) = raid_recX_avx2;
-#ifdef CONFIG_X86_64
-			if (raid_cpu_has_avx512bw())
-				test_setup(i) = raid_recX_avx512bw;
-			if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-				if (raid_cpu_has_avx2gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_recX_avx2gfni_aes;
-					else
-						test_setup(i) = raid_recX_avx2gfni_raid;
-				}
-				if (raid_cpu_has_avx512gfni()) {
-					if (mode == RAID_MODE_CAUCHY_AES)
-						test_setup(i) = raid_recX_avx512gfni_aes;
-					else
-						test_setup(i) = raid_recX_avx512gfni_raid;
-				}
+		if (raid_cpu_has_ssse3()) {
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_ssse3;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_ssse3;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_ssse3;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_ssse3;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_ssse3;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_ssse3;
+				break;
 			}
-#endif
-#endif
-#ifdef CONFIG_NEON
-			test_setup(i) = raid_recX_neon;
-#endif
-#ifdef CONFIG_NEON32
-			test_setup(i) = raid_recX_neon32;
+#ifdef CONFIG_X86_64
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_ssse3ext;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_ssse3ext;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_ssse3ext;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_ssse3ext;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_ssse3ext;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_ssse3ext;
+				break;
+			}
 #endif
 		}
+		if (raid_cpu_has_avx2()) {
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_avx2;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_avx2;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_avx2;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_avx2;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_avx2;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_avx2;
+				break;
+			}
+		}
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx512bw()) {
+			switch (i) {
+			case 1:
+				test_setup(i) = raid_rec1_avx512bw;
+				break;
+			case 2:
+				test_setup(i) = raid_rec2_avx512bw;
+				break;
+			case 3:
+				test_setup(i) = raid_rec3_avx512bw;
+				break;
+			case 4:
+				test_setup(i) = raid_rec4_avx512bw;
+				break;
+			case 5:
+				test_setup(i) = raid_rec5_avx512bw;
+				break;
+			case 6:
+				test_setup(i) = raid_rec6_avx512bw;
+				break;
+			}
+		}
+		if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
+			if (raid_cpu_has_avx2gfni()) {
+				if (mode == RAID_MODE_CAUCHY_AES) {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx2gfni_aes;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx2gfni_aes;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx2gfni_aes;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx2gfni_aes;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx2gfni_aes;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx2gfni_aes;
+						break;
+					}
+				} else {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx2gfni_raid;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx2gfni_raid;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx2gfni_raid;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx2gfni_raid;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx2gfni_raid;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx2gfni_raid;
+						break;
+					}
+				}
+			}
+			if (raid_cpu_has_avx512gfni()) {
+				if (mode == RAID_MODE_CAUCHY_AES) {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx512gfni_aes;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx512gfni_aes;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx512gfni_aes;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx512gfni_aes;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx512gfni_aes;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx512gfni_aes;
+						break;
+					}
+				} else {
+					switch (i) {
+					case 1:
+						test_setup(i) = raid_rec1_avx512gfni_raid;
+						break;
+					case 2:
+						test_setup(i) = raid_rec2_avx512gfni_raid;
+						break;
+					case 3:
+						test_setup(i) = raid_rec3_avx512gfni_raid;
+						break;
+					case 4:
+						test_setup(i) = raid_rec4_avx512gfni_raid;
+						break;
+					case 5:
+						test_setup(i) = raid_rec5_avx512gfni_raid;
+						break;
+					case 6:
+						test_setup(i) = raid_rec6_avx512gfni_raid;
+						break;
+					}
+				}
+			}
+		}
+#endif
+#endif
+#ifdef CONFIG_NEON
+		switch (i) {
+		case 1:
+			test_setup(i) = raid_rec1_neon;
+			break;
+		case 2:
+			test_setup(i) = raid_rec2_neon;
+			break;
+		case 3:
+			test_setup(i) = raid_rec3_neon;
+			break;
+		case 4:
+			test_setup(i) = raid_rec4_neon;
+			break;
+		case 5:
+			test_setup(i) = raid_rec5_neon;
+			break;
+		case 6:
+			test_setup(i) = raid_rec6_neon;
+			break;
+		}
+#endif
+#ifdef CONFIG_NEON32
+		switch (i) {
+		case 1:
+			test_setup(i) = raid_rec1_neon32;
+			break;
+		case 2:
+			test_setup(i) = raid_rec2_neon32;
+			break;
+		case 3:
+			test_setup(i) = raid_rec3_neon32;
+			break;
+		case 4:
+			test_setup(i) = raid_rec4_neon32;
+			break;
+		case 5:
+			test_setup(i) = raid_rec5_neon32;
+			break;
+		case 6:
+			test_setup(i) = raid_rec6_neon32;
+			break;
+		}
+#endif
 	}
 
 	/* test all disk counts from 1 to nd_max */

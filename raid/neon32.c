@@ -6,7 +6,6 @@
 #include "cpu.h"
 
 #ifdef CONFIG_NEON32
-
 /*
  * GEN1 (RAID5 with xor) AArch32 NEON implementation
  */
@@ -63,7 +62,7 @@ void raid_gen1_neon32(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AArch32 NEON implementation using the active generator.
+ * GEN2 Cauchy AArch32 NEON implementation using the active generator
  */
 static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 	void **vv, int generator)
@@ -80,7 +79,7 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 
 	raid_neon32_begin();
 
-	/* q14 contains the active reduction polynomial. */
+	/* q14 contains the active reduction polynomial */
 	asm volatile (
 		"vld1.8 {q14}, %0\n"
 		:
@@ -141,16 +140,6 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 	}
 
 	raid_neon32_end();
-}
-
-void raid_gen2_neon32_raid(int nd, size_t size, void **vv)
-{
-	raid_gen2_neon32_gen(nd, size, vv, 2);
-}
-
-void raid_gen2_neon32_aes(int nd, size_t size, void **vv)
-{
-	raid_gen2_neon32_gen(nd, size, vv, 3);
 }
 
 /*
@@ -241,7 +230,7 @@ void raid_genz_neon32_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GENX AArch32 NEON implementation.
+ * GENX AArch32 NEON implementation
  */
 static __always_inline void raid_genX_neon32(int nd, size_t size,
 	void **vv, int np, int generator)
@@ -261,6 +250,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 
 	raid_neon32_begin();
 
+	/* generic case with at least two data disks */
 	asm volatile (
 		"vld1.8 {q14}, %0\n"
 		"vld1.8 {q15}, %1\n"
@@ -528,6 +518,648 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	raid_neon32_end();
 }
 
+static __always_inline void raid_recX_neon32_123(int nr, int *id, int *ip,
+	int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p[RAID_PARITY_MAX];
+	uint8_t *pa[RAID_PARITY_MAX];
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *S[RAID_DATA_MAX][RAID_PARITY_MAX];
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
+	size_t i;
+	int d, j, k, s;
+	int ns;
+	int has_p;
+
+	BUG_ON(nr < 1 || nr > 3);
+
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			G[j * nr + k] = A(ip[j], id[k]);
+
+	raid_invert(G, V, nr);
+
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
+	}
+
+	has_p = ip[0] == 0;
+
+	ns = 0;
+	k = 0;
+
+	for (d = 0; d < nd; ++d) {
+		if (k < nr && d == id[k]) {
+			++k;
+			continue;
+		}
+
+		src[ns] = v[d];
+
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = &raid_gfmulpshufb[A(ip[j], d)][0][0];
+
+		++ns;
+	}
+
+	BUG_ON(k != nr);
+	BUG_ON(ns != nd - nr);
+
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
+
+	raid_neon32_begin();
+
+	for (i = 0; i < size; i += 32) {
+		/*
+		 * Q15 is the low-nibble mask during generation/splitting.
+		 * Reconstruction later reuses q15 as the second accumulator,
+		 * therefore reload it on every iteration.
+		 */
+		asm volatile ("vld1.8 {q15}, %0" : : "Q" (gfconst16.low4[0]));
+
+		/* selected stored parity */
+		asm volatile ("vld1.8 {q0}, %0" : : "Q" (p[0][i]));
+		asm volatile ("vld1.8 {q1}, %0" : : "Q" (p[0][i + 16]));
+
+		if (nr >= 2) {
+			asm volatile ("vld1.8 {q2}, %0" : : "Q" (p[1][i]));
+			asm volatile ("vld1.8 {q3}, %0" : : "Q" (p[1][i + 16]));
+		}
+
+		if (nr >= 3) {
+			asm volatile ("vld1.8 {q4}, %0" : : "Q" (p[2][i]));
+			asm volatile ("vld1.8 {q5}, %0" : : "Q" (p[2][i + 16]));
+		}
+
+		for (s = 0; s < ns; ++s) {
+			const uint8_t **t = S[s];
+
+			asm volatile ("vld1.8 {q6}, %0" : : "Q" (src[s][i]));
+			asm volatile ("vld1.8 {q7}, %0" : : "Q" (src[s][i + 16]));
+
+			if (has_p) {
+				asm volatile ("veor q0, q0, q6");
+				asm volatile ("veor q1, q1, q7");
+
+				asm volatile ("vshr.u8 q8, q6, #4");
+				asm volatile ("vshr.u8 q9, q7, #4");
+				asm volatile ("vand q6, q6, q15");
+				asm volatile ("vand q7, q7, q15");
+				asm volatile ("vand q8, q8, q15");
+				asm volatile ("vand q9, q9, q15");
+			} else {
+				asm volatile ("vshr.u8 q8, q6, #4");
+				asm volatile ("vshr.u8 q9, q7, #4");
+				asm volatile ("vand q6, q6, q15");
+				asm volatile ("vand q7, q7, q15");
+				asm volatile ("vand q8, q8, q15");
+				asm volatile ("vand q9, q9, q15");
+
+				/*
+				 * Q10 = low table
+				 * q11 = high table
+				 * q12/q13 = multiplication temporaries
+				 */
+				asm volatile ("vld1.8 {q10}, %0" : : "Q" (t[0][0]));
+				asm volatile ("vld1.8 {q11}, %0" : : "Q" (t[0][16]));
+
+				asm volatile ("vtbl.8 d24, {d20-d21}, d12");
+				asm volatile ("vtbl.8 d25, {d20-d21}, d13");
+				asm volatile ("vtbl.8 d26, {d22-d23}, d16");
+				asm volatile ("vtbl.8 d27, {d22-d23}, d17");
+				asm volatile ("veor q12, q12, q13");
+				asm volatile ("veor q0, q0, q12");
+
+				asm volatile ("vtbl.8 d24, {d20-d21}, d14");
+				asm volatile ("vtbl.8 d25, {d20-d21}, d15");
+				asm volatile ("vtbl.8 d26, {d22-d23}, d18");
+				asm volatile ("vtbl.8 d27, {d22-d23}, d19");
+				asm volatile ("veor q12, q12, q13");
+				asm volatile ("veor q1, q1, q12");
+			}
+
+			if (nr >= 2) {
+				asm volatile ("vld1.8 {q10}, %0" : : "Q" (t[1][0]));
+				asm volatile ("vld1.8 {q11}, %0" : : "Q" (t[1][16]));
+
+				asm volatile ("vtbl.8 d24, {d20-d21}, d12");
+				asm volatile ("vtbl.8 d25, {d20-d21}, d13");
+				asm volatile ("vtbl.8 d26, {d22-d23}, d16");
+				asm volatile ("vtbl.8 d27, {d22-d23}, d17");
+				asm volatile ("veor q12, q12, q13");
+				asm volatile ("veor q2, q2, q12");
+
+				asm volatile ("vtbl.8 d24, {d20-d21}, d14");
+				asm volatile ("vtbl.8 d25, {d20-d21}, d15");
+				asm volatile ("vtbl.8 d26, {d22-d23}, d18");
+				asm volatile ("vtbl.8 d27, {d22-d23}, d19");
+				asm volatile ("veor q12, q12, q13");
+				asm volatile ("veor q3, q3, q12");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("vld1.8 {q10}, %0" : : "Q" (t[2][0]));
+				asm volatile ("vld1.8 {q11}, %0" : : "Q" (t[2][16]));
+
+				asm volatile ("vtbl.8 d24, {d20-d21}, d12");
+				asm volatile ("vtbl.8 d25, {d20-d21}, d13");
+				asm volatile ("vtbl.8 d26, {d22-d23}, d16");
+				asm volatile ("vtbl.8 d27, {d22-d23}, d17");
+				asm volatile ("veor q12, q12, q13");
+				asm volatile ("veor q4, q4, q12");
+
+				asm volatile ("vtbl.8 d24, {d20-d21}, d14");
+				asm volatile ("vtbl.8 d25, {d20-d21}, d15");
+				asm volatile ("vtbl.8 d26, {d22-d23}, d18");
+				asm volatile ("vtbl.8 d27, {d22-d23}, d19");
+				asm volatile ("veor q12, q12, q13");
+				asm volatile ("veor q5, q5, q12");
+			}
+		}
+
+		/*
+		 * Expand raw syndromes backwards.
+		 *
+		 * Final layout:
+		 *
+		 * S0:
+		 *   q0 = lane0 low
+		 *   q1 = lane0 high
+		 *   q2 = lane1 low
+		 *   q3 = lane1 high
+		 *
+		 * S1:
+		 *   q4/q5 = lane0 low/high
+		 *   q6/q7 = lane1 low/high
+		 *
+		 * S2:
+		 *   q8/q9   = lane0 low/high
+		 *   q10/q11 = lane1 low/high
+		 */
+
+		if (nr >= 3) {
+			asm volatile ("vshr.u8 q9, q4, #4");
+			asm volatile ("vand q8, q4, q15");
+			asm volatile ("vand q9, q9, q15");
+
+			asm volatile ("vshr.u8 q11, q5, #4");
+			asm volatile ("vand q10, q5, q15");
+			asm volatile ("vand q11, q11, q15");
+		}
+
+		if (nr >= 2) {
+			asm volatile ("vshr.u8 q5, q2, #4");
+			asm volatile ("vand q4, q2, q15");
+			asm volatile ("vand q5, q5, q15");
+
+			asm volatile ("vshr.u8 q7, q3, #4");
+			asm volatile ("vand q6, q3, q15");
+			asm volatile ("vand q7, q7, q15");
+		}
+
+		/*
+		 * Raw S0 lane1 is q1, so process it before q1 is overwritten
+		 * by the high nibble of lane0.
+		 */
+		asm volatile ("vshr.u8 q3, q1, #4");
+		asm volatile ("vand q2, q1, q15");
+		asm volatile ("vand q3, q3, q15");
+
+		asm volatile ("vshr.u8 q1, q0, #4");
+		asm volatile ("vand q0, q0, q15");
+		asm volatile ("vand q1, q1, q15");
+
+		/*
+		 * Reconstruction.
+		 *
+		 * q12 = multiplication table
+		 * q13 = temporary result
+		 * q14 = lane0 accumulator
+		 * q15 = lane1 accumulator
+		 */
+		for (j = 0; j < nr; ++j) {
+			const uint8_t **t = R[j];
+
+			/* coefficient 0 initializes both accumulators */
+			asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[0][0]));
+
+			asm volatile ("vtbl.8 d28, {d24-d25}, d0");
+			asm volatile ("vtbl.8 d29, {d24-d25}, d1");
+			asm volatile ("vtbl.8 d30, {d24-d25}, d4");
+			asm volatile ("vtbl.8 d31, {d24-d25}, d5");
+
+			asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[0][16]));
+
+			asm volatile ("vtbl.8 d26, {d24-d25}, d2");
+			asm volatile ("vtbl.8 d27, {d24-d25}, d3");
+			asm volatile ("veor q14, q14, q13");
+
+			asm volatile ("vtbl.8 d26, {d24-d25}, d6");
+			asm volatile ("vtbl.8 d27, {d24-d25}, d7");
+			asm volatile ("veor q15, q15, q13");
+
+			if (nr >= 2) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[1][0]));
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d8");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d9");
+				asm volatile ("veor q14, q14, q13");
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d12");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d13");
+				asm volatile ("veor q15, q15, q13");
+
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[1][16]));
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d10");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d11");
+				asm volatile ("veor q14, q14, q13");
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d14");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d15");
+				asm volatile ("veor q15, q15, q13");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[2][0]));
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d16");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d17");
+				asm volatile ("veor q14, q14, q13");
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d20");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d21");
+				asm volatile ("veor q15, q15, q13");
+
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[2][16]));
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d18");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d19");
+				asm volatile ("veor q14, q14, q13");
+
+				asm volatile ("vtbl.8 d26, {d24-d25}, d22");
+				asm volatile ("vtbl.8 d27, {d24-d25}, d23");
+				asm volatile ("veor q15, q15, q13");
+			}
+
+			asm volatile ("vst1.8 {q14}, %0" : "=Q" (pa[j][i]));
+			asm volatile ("vst1.8 {q15}, %0" : "=Q" (pa[j][i + 16]));
+		}
+	}
+
+	raid_neon32_end();
+}
+
+static __always_inline void raid_recX_neon32(int nr, int *id, int *ip,
+	int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p[RAID_PARITY_MAX];
+	uint8_t *pa[RAID_PARITY_MAX];
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *S[RAID_DATA_MAX][RAID_PARITY_MAX];
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
+	size_t i;
+	int d, j, k, s;
+	int ns;
+	int has_p;
+
+	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
+
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			G[j * nr + k] = A(ip[j], id[k]);
+
+	raid_invert(G, V, nr);
+
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
+	}
+
+	has_p = ip[0] == 0;
+
+	ns = 0;
+	k = 0;
+
+	for (d = 0; d < nd; ++d) {
+		if (k < nr && d == id[k]) {
+			++k;
+			continue;
+		}
+
+		src[ns] = v[d];
+
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = &raid_gfmulpshufb[A(ip[j], d)][0][0];
+
+		++ns;
+	}
+
+	BUG_ON(k != nr);
+	BUG_ON(ns != nd - nr);
+
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
+
+	raid_neon32_begin();
+
+	for (i = 0; i < size; i += 16) {
+		/*
+		 * Q15 is the low-nibble mask during generation/splitting.
+		 * Reconstruction later reuses q15 as a multiplication temporary.
+		 */
+		asm volatile ("vld1.8 {q15}, %0" : : "Q" (gfconst16.low4[0]));
+
+		/*
+		 * Raw syndrome registers:
+		 *
+		 * q0 = syndrome 0
+		 * q1 = syndrome 1
+		 * q2 = syndrome 2
+		 * q3 = syndrome 3
+		 * q4 = syndrome 4
+		 * q5 = syndrome 5
+		 */
+
+		asm volatile ("vld1.8 {q0}, %0" : : "Q" (p[0][i]));
+
+		if (nr >= 2)
+			asm volatile ("vld1.8 {q1}, %0" : : "Q" (p[1][i]));
+
+		if (nr >= 3)
+			asm volatile ("vld1.8 {q2}, %0" : : "Q" (p[2][i]));
+
+		if (nr >= 4)
+			asm volatile ("vld1.8 {q3}, %0" : : "Q" (p[3][i]));
+
+		if (nr >= 5)
+			asm volatile ("vld1.8 {q4}, %0" : : "Q" (p[4][i]));
+
+		if (nr >= 6)
+			asm volatile ("vld1.8 {q5}, %0" : : "Q" (p[5][i]));
+
+		/*
+		 * During survivor generation:
+		 *
+		 * q6  = source low
+		 * q7  = source high
+		 * q8  = low table
+		 * q9  = high table
+		 * q10 = low result
+		 * q11 = high result
+		 */
+
+		for (s = 0; s < ns; ++s) {
+			const uint8_t **t = S[s];
+
+			asm volatile ("vld1.8 {q6}, %0" : : "Q" (src[s][i]));
+
+			if (has_p) {
+				asm volatile ("veor q0, q0, q6");
+
+				asm volatile ("vshr.u8 q7, q6, #4");
+				asm volatile ("vand q6, q6, q15");
+				asm volatile ("vand q7, q7, q15");
+			} else {
+				asm volatile ("vshr.u8 q7, q6, #4");
+				asm volatile ("vand q6, q6, q15");
+				asm volatile ("vand q7, q7, q15");
+
+				asm volatile ("vld1.8 {q8}, %0" : : "Q" (t[0][0]));
+				asm volatile ("vld1.8 {q9}, %0" : : "Q" (t[0][16]));
+
+				asm volatile ("vtbl.8 d20, {d16-d17}, d12");
+				asm volatile ("vtbl.8 d21, {d16-d17}, d13");
+				asm volatile ("vtbl.8 d22, {d18-d19}, d14");
+				asm volatile ("vtbl.8 d23, {d18-d19}, d15");
+				asm volatile ("veor q10, q10, q11");
+				asm volatile ("veor q0, q0, q10");
+			}
+
+			if (nr >= 2) {
+				asm volatile ("vld1.8 {q8}, %0" : : "Q" (t[1][0]));
+				asm volatile ("vld1.8 {q9}, %0" : : "Q" (t[1][16]));
+
+				asm volatile ("vtbl.8 d20, {d16-d17}, d12");
+				asm volatile ("vtbl.8 d21, {d16-d17}, d13");
+				asm volatile ("vtbl.8 d22, {d18-d19}, d14");
+				asm volatile ("vtbl.8 d23, {d18-d19}, d15");
+				asm volatile ("veor q10, q10, q11");
+				asm volatile ("veor q1, q1, q10");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("vld1.8 {q8}, %0" : : "Q" (t[2][0]));
+				asm volatile ("vld1.8 {q9}, %0" : : "Q" (t[2][16]));
+
+				asm volatile ("vtbl.8 d20, {d16-d17}, d12");
+				asm volatile ("vtbl.8 d21, {d16-d17}, d13");
+				asm volatile ("vtbl.8 d22, {d18-d19}, d14");
+				asm volatile ("vtbl.8 d23, {d18-d19}, d15");
+				asm volatile ("veor q10, q10, q11");
+				asm volatile ("veor q2, q2, q10");
+			}
+
+			if (nr >= 4) {
+				asm volatile ("vld1.8 {q8}, %0" : : "Q" (t[3][0]));
+				asm volatile ("vld1.8 {q9}, %0" : : "Q" (t[3][16]));
+
+				asm volatile ("vtbl.8 d20, {d16-d17}, d12");
+				asm volatile ("vtbl.8 d21, {d16-d17}, d13");
+				asm volatile ("vtbl.8 d22, {d18-d19}, d14");
+				asm volatile ("vtbl.8 d23, {d18-d19}, d15");
+				asm volatile ("veor q10, q10, q11");
+				asm volatile ("veor q3, q3, q10");
+			}
+
+			if (nr >= 5) {
+				asm volatile ("vld1.8 {q8}, %0" : : "Q" (t[4][0]));
+				asm volatile ("vld1.8 {q9}, %0" : : "Q" (t[4][16]));
+
+				asm volatile ("vtbl.8 d20, {d16-d17}, d12");
+				asm volatile ("vtbl.8 d21, {d16-d17}, d13");
+				asm volatile ("vtbl.8 d22, {d18-d19}, d14");
+				asm volatile ("vtbl.8 d23, {d18-d19}, d15");
+				asm volatile ("veor q10, q10, q11");
+				asm volatile ("veor q4, q4, q10");
+			}
+
+			if (nr >= 6) {
+				asm volatile ("vld1.8 {q8}, %0" : : "Q" (t[5][0]));
+				asm volatile ("vld1.8 {q9}, %0" : : "Q" (t[5][16]));
+
+				asm volatile ("vtbl.8 d20, {d16-d17}, d12");
+				asm volatile ("vtbl.8 d21, {d16-d17}, d13");
+				asm volatile ("vtbl.8 d22, {d18-d19}, d14");
+				asm volatile ("vtbl.8 d23, {d18-d19}, d15");
+				asm volatile ("veor q10, q10, q11");
+				asm volatile ("veor q5, q5, q10");
+			}
+		}
+
+		/*
+		 * Expand raw syndromes backwards.
+		 *
+		 * Final layout:
+		 *
+		 * q0/q1   syndrome 0 low/high
+		 * q2/q3   syndrome 1 low/high
+		 * q4/q5   syndrome 2 low/high
+		 * q6/q7   syndrome 3 low/high
+		 * q8/q9   syndrome 4 low/high
+		 * q10/q11 syndrome 5 low/high
+		 */
+
+		if (nr >= 6) {
+			asm volatile ("vshr.u8 q11, q5, #4");
+			asm volatile ("vand q10, q5, q15");
+			asm volatile ("vand q11, q11, q15");
+		}
+
+		if (nr >= 5) {
+			asm volatile ("vshr.u8 q9, q4, #4");
+			asm volatile ("vand q8, q4, q15");
+			asm volatile ("vand q9, q9, q15");
+		}
+
+		if (nr >= 4) {
+			asm volatile ("vshr.u8 q7, q3, #4");
+			asm volatile ("vand q6, q3, q15");
+			asm volatile ("vand q7, q7, q15");
+		}
+
+		if (nr >= 3) {
+			asm volatile ("vshr.u8 q5, q2, #4");
+			asm volatile ("vand q4, q2, q15");
+			asm volatile ("vand q5, q5, q15");
+		}
+
+		if (nr >= 2) {
+			asm volatile ("vshr.u8 q3, q1, #4");
+			asm volatile ("vand q2, q1, q15");
+			asm volatile ("vand q3, q3, q15");
+		}
+
+		asm volatile ("vshr.u8 q1, q0, #4");
+		asm volatile ("vand q0, q0, q15");
+		asm volatile ("vand q1, q1, q15");
+
+		/*
+		 * Reconstruction:
+		 *
+		 * q12 = low table
+		 * q13 = high table
+		 * q14 = output accumulator
+		 * q15 = multiplication temporary
+		 */
+
+		for (j = 0; j < nr; ++j) {
+			const uint8_t **t = R[j];
+
+			/* coefficient 0 initializes q14 */
+			asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[0][0]));
+			asm volatile ("vld1.8 {q13}, %0" : : "Q" (t[0][16]));
+
+			asm volatile ("vtbl.8 d28, {d24-d25}, d0");
+			asm volatile ("vtbl.8 d29, {d24-d25}, d1");
+
+			asm volatile ("vtbl.8 d30, {d26-d27}, d2");
+			asm volatile ("vtbl.8 d31, {d26-d27}, d3");
+
+			asm volatile ("veor q14, q14, q15");
+
+			if (nr >= 2) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[1][0]));
+				asm volatile ("vld1.8 {q13}, %0" : : "Q" (t[1][16]));
+
+				asm volatile ("vtbl.8 d30, {d24-d25}, d4");
+				asm volatile ("vtbl.8 d31, {d24-d25}, d5");
+				asm volatile ("veor q14, q14, q15");
+
+				asm volatile ("vtbl.8 d30, {d26-d27}, d6");
+				asm volatile ("vtbl.8 d31, {d26-d27}, d7");
+				asm volatile ("veor q14, q14, q15");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[2][0]));
+				asm volatile ("vld1.8 {q13}, %0" : : "Q" (t[2][16]));
+
+				asm volatile ("vtbl.8 d30, {d24-d25}, d8");
+				asm volatile ("vtbl.8 d31, {d24-d25}, d9");
+				asm volatile ("veor q14, q14, q15");
+
+				asm volatile ("vtbl.8 d30, {d26-d27}, d10");
+				asm volatile ("vtbl.8 d31, {d26-d27}, d11");
+				asm volatile ("veor q14, q14, q15");
+			}
+
+			if (nr >= 4) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[3][0]));
+				asm volatile ("vld1.8 {q13}, %0" : : "Q" (t[3][16]));
+
+				asm volatile ("vtbl.8 d30, {d24-d25}, d12");
+				asm volatile ("vtbl.8 d31, {d24-d25}, d13");
+				asm volatile ("veor q14, q14, q15");
+
+				asm volatile ("vtbl.8 d30, {d26-d27}, d14");
+				asm volatile ("vtbl.8 d31, {d26-d27}, d15");
+				asm volatile ("veor q14, q14, q15");
+			}
+
+			if (nr >= 5) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[4][0]));
+				asm volatile ("vld1.8 {q13}, %0" : : "Q" (t[4][16]));
+
+				asm volatile ("vtbl.8 d30, {d24-d25}, d16");
+				asm volatile ("vtbl.8 d31, {d24-d25}, d17");
+				asm volatile ("veor q14, q14, q15");
+
+				asm volatile ("vtbl.8 d30, {d26-d27}, d18");
+				asm volatile ("vtbl.8 d31, {d26-d27}, d19");
+				asm volatile ("veor q14, q14, q15");
+			}
+
+			if (nr >= 6) {
+				asm volatile ("vld1.8 {q12}, %0" : : "Q" (t[5][0]));
+				asm volatile ("vld1.8 {q13}, %0" : : "Q" (t[5][16]));
+
+				asm volatile ("vtbl.8 d30, {d24-d25}, d20");
+				asm volatile ("vtbl.8 d31, {d24-d25}, d21");
+				asm volatile ("veor q14, q14, q15");
+
+				asm volatile ("vtbl.8 d30, {d26-d27}, d22");
+				asm volatile ("vtbl.8 d31, {d26-d27}, d23");
+				asm volatile ("veor q14, q14, q15");
+			}
+
+			asm volatile ("vst1.8 {q14}, %0" : "=Q" (pa[j][i]));
+		}
+	}
+
+	raid_neon32_end();
+}
+
+void raid_gen2_neon32_raid(int nd, size_t size, void **vv)
+{
+	raid_gen2_neon32_gen(nd, size, vv, 2);
+}
+
+void raid_gen2_neon32_aes(int nd, size_t size, void **vv)
+{
+	raid_gen2_neon32_gen(nd, size, vv, 3);
+}
+
 /*
  * GEN3 (triple parity with Cauchy matrix) AArch32 NEON implementation
  */
@@ -580,333 +1212,47 @@ void raid_gen6_neon32_aes(int nd, size_t size, void **vv)
 	raid_genX_neon32(nd, size, vv, 6, 3);
 }
 
-/*
- * RAID recovering for one disk AArch32 NEON implementation
- */
-void raid_rec1_neon32(int nr, int *id, int *ip, int nd,
-	size_t size, void **vv)
+void raid_rec1_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t G;
-	uint8_t V;
-	size_t i;
+	BUG_ON(nr != 1);
 
-	(void)nr; /* unused, it's always 1 */
-
-	/* if it's RAID5 use the faster function */
+	/* if recovering with P uses the delta function */
 	if (ip[0] == 0) {
 		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
-	/* setup the coefficients matrix */
-	G = A(ip[0], id[0]);
-
-	/* invert it to solve the system of linear equations */
-	V = inv(G);
-
-	/* compute delta parity */
-	raid_delta_gen(1, id, ip, nd, size, vv);
-
-	p = v[nd + ip[0]];
-	pa = v[id[0]];
-
-	raid_neon32_begin();
-
-	/*
-	 * Preload the mask and multiplication tables, just as neon.c does.
-	 *
-	 * q12 = low table
-	 * q13 = high table
-	 * q14 = low4 mask
-	 */
-	asm volatile (
-		"vld1.8 {q14}, %0\n"
-		"vld1.8 {q12}, %1\n"
-		"vld1.8 {q13}, %2\n"
-		:
-		: "Q" (gfconst16.low4[0]),
-		"Q" (raid_gfmulpshufb[V][0][0]),
-		"Q" (raid_gfmulpshufb[V][1][0])
-	);
-
-	for (i = 0; i < size; i += 32) {
-		asm volatile (
-			"vld1.8 {q0}, %2\n"
-			"vld1.8 {q1}, %3\n"
-			"vld1.8 {q2}, %4\n"
-			"vld1.8 {q3}, %5\n"
-
-			"veor q0, q0, q2\n"
-			"veor q1, q1, q3\n"
-
-			"vshr.u8 q4, q0, #4\n"
-			"vshr.u8 q5, q1, #4\n"
-
-			"vand q0, q0, q14\n"
-			"vand q1, q1, q14\n"
-			"vand q4, q4, q14\n"
-			"vand q5, q5, q14\n"
-
-			/* low nibbles */
-			"vtbl.8 d12, {d24-d25}, d0\n"
-			"vtbl.8 d13, {d24-d25}, d1\n"
-			"vtbl.8 d14, {d24-d25}, d2\n"
-			"vtbl.8 d15, {d24-d25}, d3\n"
-
-			/* high nibbles */
-			"vtbl.8 d16, {d26-d27}, d8\n"
-			"vtbl.8 d17, {d26-d27}, d9\n"
-			"vtbl.8 d18, {d26-d27}, d10\n"
-			"vtbl.8 d19, {d26-d27}, d11\n"
-
-			"veor q6, q6, q8\n"
-			"veor q7, q7, q9\n"
-
-			"vst1.8 {q6}, %0\n"
-			"vst1.8 {q7}, %1\n"
-			: "=Q" (pa[i]), "=Q" (pa[i + 16])
-			: "Q" (p[i]), "Q" (p[i + 16]),
-			"Q" (pa[i]), "Q" (pa[i + 16])
-		);
-	}
-
-	raid_neon32_end();
+	raid_recX_neon32_123(1, id, ip, nd, size, vv);
 }
 
-/*
- * RAID recovering for two disks AArch32 NEON implementation
- */
-void raid_rec2_neon32(int nr, int *id, int *ip, int nd,
-	size_t size, void **vv)
+void raid_rec2_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[2];
-	uint8_t *pa[2];
-	uint8_t G[2 * 2];
-	uint8_t V[2 * 2];
-	size_t i;
-	int j, k;
-
-	(void)nr; /* unused, it's always 2 */
-
-	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
-
-	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
-
-	for (j = 0; j < N; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
-	}
-
-	raid_neon32_begin();
-
-	/*
-	 * q4-q11 contain the four low/high multiplication table pairs.
-	 * q15 contains low4.
-	 */
-	asm volatile (
-		"vld1.8 {q15}, %0\n"
-
-		"vld1.8 {q4}, %1\n"
-		"vld1.8 {q5}, %2\n"
-
-		"vld1.8 {q6}, %3\n"
-		"vld1.8 {q7}, %4\n"
-
-		"vld1.8 {q8}, %5\n"
-		"vld1.8 {q9}, %6\n"
-
-		"vld1.8 {q10}, %7\n"
-		"vld1.8 {q11}, %8\n"
-		:
-		: "Q" (gfconst16.low4[0]),
-		"Q" (raid_gfmulpshufb[V[0]][0][0]),
-		"Q" (raid_gfmulpshufb[V[0]][1][0]),
-		"Q" (raid_gfmulpshufb[V[1]][0][0]),
-		"Q" (raid_gfmulpshufb[V[1]][1][0]),
-		"Q" (raid_gfmulpshufb[V[2]][0][0]),
-		"Q" (raid_gfmulpshufb[V[2]][1][0]),
-		"Q" (raid_gfmulpshufb[V[3]][0][0]),
-		"Q" (raid_gfmulpshufb[V[3]][1][0])
-	);
-
-	for (i = 0; i < size; i += 16) {
-		asm volatile (
-			/* delta 0 */
-			"vld1.8 {q0}, %2\n"
-			"vld1.8 {q12}, %4\n"
-			"veor q0, q0, q12\n"
-			"vshr.u8 q1, q0, #4\n"
-			"vand q0, q0, q15\n"
-			"vand q1, q1, q15\n"
-
-			/* delta 1 */
-			"vld1.8 {q2}, %3\n"
-			"vld1.8 {q12}, %5\n"
-			"veor q2, q2, q12\n"
-			"vshr.u8 q3, q2, #4\n"
-			"vand q2, q2, q15\n"
-			"vand q3, q3, q15\n"
-
-			/* pa[0] = V[0] * delta0 */
-
-			"vtbl.8 d24, {d8-d9}, d0\n"
-			"vtbl.8 d25, {d8-d9}, d1\n"
-			"vtbl.8 d26, {d10-d11}, d2\n"
-			"vtbl.8 d27, {d10-d11}, d3\n"
-			"veor q14, q12, q13\n"
-
-			/* ^ V[1] * delta1 */
-
-			"vtbl.8 d24, {d12-d13}, d4\n"
-			"vtbl.8 d25, {d12-d13}, d5\n"
-			"vtbl.8 d26, {d14-d15}, d6\n"
-			"vtbl.8 d27, {d14-d15}, d7\n"
-			"veor q12, q12, q13\n"
-			"veor q14, q14, q12\n"
-
-			"vst1.8 {q14}, %0\n"
-
-			/* pa[1] = V[2] * delta0 */
-
-			"vtbl.8 d24, {d16-d17}, d0\n"
-			"vtbl.8 d25, {d16-d17}, d1\n"
-			"vtbl.8 d26, {d18-d19}, d2\n"
-			"vtbl.8 d27, {d18-d19}, d3\n"
-			"veor q14, q12, q13\n"
-
-			/* ^ V[3] * delta1 */
-
-			"vtbl.8 d24, {d20-d21}, d4\n"
-			"vtbl.8 d25, {d20-d21}, d5\n"
-			"vtbl.8 d26, {d22-d23}, d6\n"
-			"vtbl.8 d27, {d22-d23}, d7\n"
-			"veor q12, q12, q13\n"
-			"veor q14, q14, q12\n"
-
-			"vst1.8 {q14}, %1\n"
-			: "=Q" (pa[0][i]), "=Q" (pa[1][i])
-			: "Q" (p[0][i]), "Q" (p[1][i]),
-			"Q" (pa[0][i]), "Q" (pa[1][i])
-		);
-	}
-
-	raid_neon32_end();
+	BUG_ON(nr != 2);
+	raid_recX_neon32_123(2, id, ip, nd, size, vv);
 }
 
-/*
- * RAID recovering AArch32 NEON implementation
- */
-void raid_recX_neon32(int nr, int *id, int *ip, int nd,
-	size_t size, void **vv)
+void raid_rec3_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	int N = nr;
-	uint8_t *p[RAID_PARITY_MAX];
-	uint8_t *pa[RAID_PARITY_MAX];
-	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	const uint8_t *T[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t D[RAID_PARITY_MAX][2][16] __aligned(16);
-	size_t i;
-	int j, k;
+	BUG_ON(nr != 3);
+	raid_recX_neon32_123(3, id, ip, nd, size, vv);
+}
 
-	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+void raid_rec4_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 4);
+	raid_recX_neon32(4, id, ip, nd, size, vv);
+}
 
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+void raid_rec5_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 5);
+	raid_recX_neon32(5, id, ip, nd, size, vv);
+}
 
-	/* precompute shuffle table pointers */
-	for (j = 0; j < N * N; ++j)
-		T[j] = &raid_gfmulpshufb[V[j]][0][0];
-
-	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
-
-	for (j = 0; j < N; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
-	}
-
-	raid_neon32_begin();
-
-	/* preload mask */
-	asm volatile (
-		"vld1.8 {q15}, %0\n"
-		:
-		: "Q" (gfconst16.low4[0])
-	);
-
-	for (i = 0; i < size; i += 16) {
-		for (k = 0; k < N; ++k) {
-			asm volatile (
-				"vld1.8 {q0}, %2\n"
-				"vld1.8 {q1}, %3\n"
-				"veor q0, q0, q1\n"
-
-				"vshr.u8 q1, q0, #4\n"
-				"vand q0, q0, q15\n"
-				"vand q1, q1, q15\n"
-
-				"vst1.8 {q0}, %0\n"
-				"vst1.8 {q1}, %1\n"
-				: "=Q" (D[k][0][0]), "=Q" (D[k][1][0])
-				: "Q" (p[k][i]), "Q" (pa[k][i])
-			);
-		}
-
-		/* reconstruct */
-		for (j = 0; j < N; ++j) {
-			asm volatile (
-				"veor q0, q0, q0\n"
-			);
-
-			for (k = 0; k < N; ++k) {
-				asm volatile (
-					"vld1.8 {q2}, %0\n"
-					"vld1.8 {q3}, %1\n"
-
-					"vld1.8 {q4}, %2\n"
-					"vld1.8 {q5}, %3\n"
-
-					"vtbl.8 d12, {d8-d9}, d4\n"
-					"vtbl.8 d13, {d8-d9}, d5\n"
-
-					"vtbl.8 d14, {d10-d11}, d6\n"
-					"vtbl.8 d15, {d10-d11}, d7\n"
-
-					"veor q6, q6, q7\n"
-					"veor q0, q0, q6\n"
-					:
-					: "Q" (D[k][0][0]),
-					"Q" (D[k][1][0]),
-					"Q" (T[j * N + k][0]),
-					"Q" (T[j * N + k][16])
-				);
-			}
-
-			asm volatile (
-				"vst1.8 {q0}, %0\n"
-				: "=Q" (pa[j][i])
-			);
-		}
-	}
-
-	raid_neon32_end();
+void raid_rec6_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 6);
+	raid_recX_neon32(6, id, ip, nd, size, vv);
 }
 
 void raid_register_neon32(void)
@@ -932,10 +1278,10 @@ void raid_register_neon32(void)
 
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "neon32", raid_rec1_neon32, RAID_POLY_ANY);
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "neon32", raid_rec2_neon32, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "neon32", raid_recX_neon32, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "neon32", raid_recX_neon32, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon32", raid_recX_neon32, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon32", raid_recX_neon32, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "neon32", raid_rec3_neon32, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "neon32", raid_rec4_neon32, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon32", raid_rec5_neon32, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon32", raid_rec6_neon32, RAID_POLY_ANY);
 }
 
 #endif

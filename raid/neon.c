@@ -6,7 +6,6 @@
 #include "cpu.h"
 
 #ifdef CONFIG_NEON
-
 /*
  * GEN1 (RAID5 with xor) NEON implementation
  */
@@ -94,7 +93,7 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 
 		for (d = l - 1; d >= 0; --d) {
 			if (generator == 3) {
-				/* v14-v15 are otherwise unused and preserve Q across the AES xtime. */
+				/* v14-v15 are otherwise unused and preserve Q across the AES xtime */
 				asm volatile (
 					"mov v14.16b, v2.16b\n"
 					"mov v15.16b, v3.16b\n"
@@ -141,16 +140,6 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 	}
 
 	raid_neon_end();
-}
-
-void raid_gen2_neon_raid(int nd, size_t size, void **vv)
-{
-	raid_gen2_neon_gen(nd, size, vv, 2);
-}
-
-void raid_gen2_neon_aes(int nd, size_t size, void **vv)
-{
-	raid_gen2_neon_gen(nd, size, vv, 3);
 }
 
 /*
@@ -577,6 +566,420 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 	raid_neon_end();
 }
 
+static __always_inline void raid_recX_neon(int nr, int *id, int *ip,
+	int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p[RAID_PARITY_MAX];
+	uint8_t *pa[RAID_PARITY_MAX];
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *S[RAID_DATA_MAX][RAID_PARITY_MAX];
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
+	size_t i;
+	int d, j, k, s;
+	int ns;
+	int has_p;
+
+	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
+
+	/* setup the coefficients matrix */
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			G[j * nr + k] = A(ip[j], id[k]);
+
+	/* invert it to solve the system of linear equations */
+	raid_invert(G, V, nr);
+
+	/* setup selected parity and destination pointers */
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
+	}
+
+	/* ip[] is ordered. If P is available, it is always ip[0] */
+	has_p = ip[0] == 0;
+
+	/*
+	 * Build the compact list of surviving data blocks and precompute
+	 * the multiplication-table pointers for each selected syndrome.
+	 */
+	ns = 0;
+	k = 0;
+
+	for (d = 0; d < nd; ++d) {
+		if (k < nr && d == id[k]) {
+			++k;
+			continue;
+		}
+
+		src[ns] = v[d];
+
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = &raid_gfmulpshufb[A(ip[j], d)][0][0];
+
+		++ns;
+	}
+
+	BUG_ON(k != nr);
+	BUG_ON(ns != nd - nr);
+
+	/* precompute inverse-matrix multiplication table pointers */
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
+
+	raid_neon_begin();
+
+	for (i = 0; i < size; i += 32) {
+		/*
+		 * V31 is reused during reconstruction, so reload the nibble mask
+		 * at the beginning of every iteration.
+		 */
+		asm volatile ("ldr q31, %0" : : "m" (gfconst16.low4[0]));
+
+		/* start all selected syndromes from the stored parity */
+		asm volatile ("ldr q0, %0" : : "m" (p[0][i]));
+		asm volatile ("ldr q1, %0" : : "m" (p[0][i + 16]));
+
+		if (nr >= 2) {
+			asm volatile ("ldr q2, %0" : : "m" (p[1][i]));
+			asm volatile ("ldr q3, %0" : : "m" (p[1][i + 16]));
+		}
+
+		if (nr >= 3) {
+			asm volatile ("ldr q4, %0" : : "m" (p[2][i]));
+			asm volatile ("ldr q5, %0" : : "m" (p[2][i + 16]));
+		}
+
+		if (nr >= 4) {
+			asm volatile ("ldr q6, %0" : : "m" (p[3][i]));
+			asm volatile ("ldr q7, %0" : : "m" (p[3][i + 16]));
+		}
+
+		if (nr >= 5) {
+			asm volatile ("ldr q8, %0" : : "m" (p[4][i]));
+			asm volatile ("ldr q9, %0" : : "m" (p[4][i + 16]));
+		}
+
+		if (nr >= 6) {
+			asm volatile ("ldr q10, %0" : : "m" (p[5][i]));
+			asm volatile ("ldr q11, %0" : : "m" (p[5][i + 16]));
+		}
+
+		/*
+		 * Add all surviving data contributions.
+		 * All source reads for this chunk occur before any destination
+		 * write.
+		 */
+		for (s = 0; s < ns; ++s) {
+			const uint8_t **t = S[s];
+
+			asm volatile ("ldr q12, %0" : : "m" (src[s][i]));
+			asm volatile ("ldr q13, %0" : : "m" (src[s][i + 16]));
+
+			/*
+			 * P has coefficient 1. Use the original source before
+			 * destructively splitting it into nibbles.
+			 */
+			if (has_p) {
+				asm volatile ("eor v0.16b, v0.16b, v12.16b");
+				asm volatile ("eor v1.16b, v1.16b, v13.16b");
+
+				/* split the source lanes */
+				asm volatile ("ushr v14.16b, v12.16b, #4");
+				asm volatile ("ushr v15.16b, v13.16b, #4");
+				asm volatile ("and v12.16b, v12.16b, v31.16b");
+				asm volatile ("and v13.16b, v13.16b, v31.16b");
+				asm volatile ("and v14.16b, v14.16b, v31.16b");
+				asm volatile ("and v15.16b, v15.16b, v31.16b");
+			} else {
+				/* split the source lanes */
+				asm volatile ("ushr v14.16b, v12.16b, #4");
+				asm volatile ("ushr v15.16b, v13.16b, #4");
+				asm volatile ("and v12.16b, v12.16b, v31.16b");
+				asm volatile ("and v13.16b, v13.16b, v31.16b");
+				asm volatile ("and v14.16b, v14.16b, v31.16b");
+				asm volatile ("and v15.16b, v15.16b, v31.16b");
+
+				/* syndrome 0 */
+				asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v0.16b, v0.16b, v26.16b");
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v13.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v1.16b, v1.16b, v26.16b");
+			}
+
+			/* syndrome 1 */
+			if (nr >= 2) {
+				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v2.16b, v2.16b, v26.16b");
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v13.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v3.16b, v3.16b, v26.16b");
+			}
+
+			/* syndrome 2 */
+			if (nr >= 3) {
+				asm volatile ("ldr q24, %0" : : "m" (t[2][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[2][16]));
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v4.16b, v4.16b, v26.16b");
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v13.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v5.16b, v5.16b, v26.16b");
+			}
+
+			/* syndrome 3 */
+			if (nr >= 4) {
+				asm volatile ("ldr q24, %0" : : "m" (t[3][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[3][16]));
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v6.16b, v6.16b, v26.16b");
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v13.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v7.16b, v7.16b, v26.16b");
+			}
+
+			/* syndrome 4 */
+			if (nr >= 5) {
+				asm volatile ("ldr q24, %0" : : "m" (t[4][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[4][16]));
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v8.16b, v8.16b, v26.16b");
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v13.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v9.16b, v9.16b, v26.16b");
+			}
+
+			/* syndrome 5 */
+			if (nr >= 6) {
+				asm volatile ("ldr q24, %0" : : "m" (t[5][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[5][16]));
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v10.16b, v10.16b, v26.16b");
+
+				asm volatile ("tbl v26.16b, {v24.16b}, v13.16b");
+				asm volatile ("tbl v27.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v26.16b, v26.16b, v27.16b");
+				asm volatile ("eor v11.16b, v11.16b, v26.16b");
+			}
+		}
+
+		/*
+		 * Expand raw syndromes backwards into:
+		 *
+		 *   S0 = v0..v3
+		 *   S1 = v4..v7
+		 *   S2 = v8..v11
+		 *   S3 = v12..v15
+		 *   S4 = v16..v19
+		 *   S5 = v20..v23
+		 */
+
+		if (nr >= 6) {
+			asm volatile ("ushr v21.16b, v10.16b, #4");
+			asm volatile ("and v20.16b, v10.16b, v31.16b");
+			asm volatile ("and v21.16b, v21.16b, v31.16b");
+			asm volatile ("ushr v23.16b, v11.16b, #4");
+			asm volatile ("and v22.16b, v11.16b, v31.16b");
+			asm volatile ("and v23.16b, v23.16b, v31.16b");
+		}
+
+		if (nr >= 5) {
+			asm volatile ("ushr v17.16b, v8.16b, #4");
+			asm volatile ("and v16.16b, v8.16b, v31.16b");
+			asm volatile ("and v17.16b, v17.16b, v31.16b");
+			asm volatile ("ushr v19.16b, v9.16b, #4");
+			asm volatile ("and v18.16b, v9.16b, v31.16b");
+			asm volatile ("and v19.16b, v19.16b, v31.16b");
+		}
+
+		if (nr >= 4) {
+			asm volatile ("ushr v13.16b, v6.16b, #4");
+			asm volatile ("and v12.16b, v6.16b, v31.16b");
+			asm volatile ("and v13.16b, v13.16b, v31.16b");
+			asm volatile ("ushr v15.16b, v7.16b, #4");
+			asm volatile ("and v14.16b, v7.16b, v31.16b");
+			asm volatile ("and v15.16b, v15.16b, v31.16b");
+		}
+
+		if (nr >= 3) {
+			asm volatile ("ushr v9.16b, v4.16b, #4");
+			asm volatile ("and v8.16b, v4.16b, v31.16b");
+			asm volatile ("and v9.16b, v9.16b, v31.16b");
+			asm volatile ("ushr v11.16b, v5.16b, #4");
+			asm volatile ("and v10.16b, v5.16b, v31.16b");
+			asm volatile ("and v11.16b, v11.16b, v31.16b");
+		}
+
+		if (nr >= 2) {
+			asm volatile ("ushr v5.16b, v2.16b, #4");
+			asm volatile ("and v4.16b, v2.16b, v31.16b");
+			asm volatile ("and v5.16b, v5.16b, v31.16b");
+			asm volatile ("ushr v7.16b, v3.16b, #4");
+			asm volatile ("and v6.16b, v3.16b, v31.16b");
+			asm volatile ("and v7.16b, v7.16b, v31.16b");
+		}
+
+		/*
+		 * S0 overlaps its original raw lane registers.
+		 * Process raw lane 1 before overwriting v1.
+		 */
+		asm volatile ("ushr v3.16b, v1.16b, #4");
+		asm volatile ("and v2.16b, v1.16b, v31.16b");
+		asm volatile ("and v3.16b, v3.16b, v31.16b");
+		asm volatile ("ushr v1.16b, v0.16b, #4");
+		asm volatile ("and v0.16b, v0.16b, v31.16b");
+		asm volatile ("and v1.16b, v1.16b, v31.16b");
+
+		/*
+		 * Reconstruct all missing blocks.
+		 *
+		 * v24/v25 = low/high tables
+		 * v26/v27 = lane-0 low/high accumulators
+		 * v28/v29 = lane-1 low/high accumulators
+		 * v30/v31 = low/high multiplication temporaries
+		 */
+		for (j = 0; j < nr; ++j) {
+			const uint8_t **t = R[j];
+
+			/* coefficient 0 initializes both lane accumulators */
+			asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
+			asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+			asm volatile ("tbl v26.16b, {v24.16b}, v0.16b");
+			asm volatile ("tbl v27.16b, {v25.16b}, v1.16b");
+			asm volatile ("tbl v28.16b, {v24.16b}, v2.16b");
+			asm volatile ("tbl v29.16b, {v25.16b}, v3.16b");
+
+			if (nr >= 2) {
+				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v4.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v5.16b");
+				asm volatile ("eor v26.16b, v26.16b, v30.16b");
+				asm volatile ("eor v27.16b, v27.16b, v31.16b");
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v6.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v7.16b");
+				asm volatile ("eor v28.16b, v28.16b, v30.16b");
+				asm volatile ("eor v29.16b, v29.16b, v31.16b");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("ldr q24, %0" : : "m" (t[2][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[2][16]));
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v8.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v9.16b");
+				asm volatile ("eor v26.16b, v26.16b, v30.16b");
+				asm volatile ("eor v27.16b, v27.16b, v31.16b");
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v10.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v11.16b");
+				asm volatile ("eor v28.16b, v28.16b, v30.16b");
+				asm volatile ("eor v29.16b, v29.16b, v31.16b");
+			}
+
+			if (nr >= 4) {
+				asm volatile ("ldr q24, %0" : : "m" (t[3][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[3][16]));
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v12.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v13.16b");
+				asm volatile ("eor v26.16b, v26.16b, v30.16b");
+				asm volatile ("eor v27.16b, v27.16b, v31.16b");
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v14.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v15.16b");
+				asm volatile ("eor v28.16b, v28.16b, v30.16b");
+				asm volatile ("eor v29.16b, v29.16b, v31.16b");
+			}
+
+			if (nr >= 5) {
+				asm volatile ("ldr q24, %0" : : "m" (t[4][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[4][16]));
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v16.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v17.16b");
+				asm volatile ("eor v26.16b, v26.16b, v30.16b");
+				asm volatile ("eor v27.16b, v27.16b, v31.16b");
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v18.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v19.16b");
+				asm volatile ("eor v28.16b, v28.16b, v30.16b");
+				asm volatile ("eor v29.16b, v29.16b, v31.16b");
+			}
+
+			if (nr >= 6) {
+				asm volatile ("ldr q24, %0" : : "m" (t[5][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[5][16]));
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v20.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v21.16b");
+				asm volatile ("eor v26.16b, v26.16b, v30.16b");
+				asm volatile ("eor v27.16b, v27.16b, v31.16b");
+
+				asm volatile ("tbl v30.16b, {v24.16b}, v22.16b");
+				asm volatile ("tbl v31.16b, {v25.16b}, v23.16b");
+				asm volatile ("eor v28.16b, v28.16b, v30.16b");
+				asm volatile ("eor v29.16b, v29.16b, v31.16b");
+			}
+
+			asm volatile ("eor v26.16b, v26.16b, v27.16b");
+			asm volatile ("eor v28.16b, v28.16b, v29.16b");
+			asm volatile ("str q26, %0" : "=m" (pa[j][i]));
+			asm volatile ("str q28, %0" : "=m" (pa[j][i + 16]));
+		}
+	}
+
+	raid_neon_end();
+}
+
+void raid_gen2_neon_raid(int nd, size_t size, void **vv)
+{
+	raid_gen2_neon_gen(nd, size, vv, 2);
+}
+
+void raid_gen2_neon_aes(int nd, size_t size, void **vv)
+{
+	raid_gen2_neon_gen(nd, size, vv, 3);
+}
+
 /*
  * GEN3 (triple parity with Cauchy matrix) NEON implementation
  */
@@ -629,431 +1032,47 @@ void raid_gen6_neon_aes(int nd, size_t size, void **vv)
 	raid_genX_neon(nd, size, vv, 6, 3);
 }
 
-/*
- * RAID recovering for one disk NEON implementation
- */
 void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t G;
-	uint8_t V;
-	size_t i;
+	BUG_ON(nr != 1);
 
-	(void)nr; /* unused, it's always 1 */
-
-	/* if it's RAID5 uses the faster function */
+	/* if recovering with P uses the delta function */
 	if (ip[0] == 0) {
 		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
-	/* setup the coefficients matrix */
-	G = A(ip[0], id[0]);
-
-	/* invert it to solve the system of linear equations */
-	V = inv(G);
-
-	/* compute delta parity */
-	raid_delta_gen(1, id, ip, nd, size, vv);
-
-	p = v[nd + ip[0]];
-	pa = v[id[0]];
-
-	raid_neon_begin();
-
-	/* preload tables */
-	asm volatile (
-		"ldr q28, %0\n" /* low4 */
-		"ldr q24, %1\n" /* v low table */
-		"ldr q25, %2\n" /* v high table */
-		:
-		: "m" (gfconst16.low4[0]),
-		"m" (raid_gfmulpshufb[V][0][0]), "m" (raid_gfmulpshufb[V][1][0])
-	);
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile (
-			"ldr q0, %4\n"
-			"ldr q1, %5\n"
-			"ldr q2, %6\n"
-			"ldr q3, %7\n"
-
-			"ldr q8, %8\n"
-			"ldr q9, %9\n"
-			"ldr q10, %10\n"
-			"ldr q11, %11\n"
-
-			"eor v0.16b, v0.16b, v8.16b\n"
-			"eor v1.16b, v1.16b, v9.16b\n"
-			"eor v2.16b, v2.16b, v10.16b\n"
-			"eor v3.16b, v3.16b, v11.16b\n"
-
-			"ushr v8.16b, v0.16b, #4\n"
-			"ushr v9.16b, v1.16b, #4\n"
-			"ushr v10.16b, v2.16b, #4\n"
-			"ushr v11.16b, v3.16b, #4\n"
-
-			"and v0.16b, v0.16b, v28.16b\n"
-			"and v1.16b, v1.16b, v28.16b\n"
-			"and v2.16b, v2.16b, v28.16b\n"
-			"and v3.16b, v3.16b, v28.16b\n"
-
-			"and v8.16b, v8.16b, v28.16b\n"
-			"and v9.16b, v9.16b, v28.16b\n"
-			"and v10.16b, v10.16b, v28.16b\n"
-			"and v11.16b, v11.16b, v28.16b\n"
-
-			"tbl v12.16b, {v24.16b}, v0.16b\n"
-			"tbl v13.16b, {v24.16b}, v1.16b\n"
-			"tbl v14.16b, {v24.16b}, v2.16b\n"
-			"tbl v15.16b, {v24.16b}, v3.16b\n"
-
-			"tbl v8.16b, {v25.16b}, v8.16b\n"
-			"tbl v9.16b, {v25.16b}, v9.16b\n"
-			"tbl v10.16b, {v25.16b}, v10.16b\n"
-			"tbl v11.16b, {v25.16b}, v11.16b\n"
-
-			"eor v0.16b, v12.16b, v8.16b\n"
-			"eor v1.16b, v13.16b, v9.16b\n"
-			"eor v2.16b, v14.16b, v10.16b\n"
-			"eor v3.16b, v15.16b, v11.16b\n"
-
-			"str q0, %0\n"
-			"str q1, %1\n"
-			"str q2, %2\n"
-			"str q3, %3\n"
-			: "=m" (pa[i]), "=m" (pa[i + 16]), "=m" (pa[i + 32]), "=m" (pa[i + 48])
-			: "m" (p[i]), "m" (p[i + 16]), "m" (p[i + 32]), "m" (p[i + 48]),
-			"m" (pa[i]), "m" (pa[i + 16]), "m" (pa[i + 32]), "m" (pa[i + 48])
-		);
-	}
-
-	raid_neon_end();
+	raid_recX_neon(1, id, ip, nd, size, vv);
 }
 
-/*
- * RAID recovering for two disks NEON implementation
- */
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[2];
-	uint8_t *pa[2];
-	uint8_t G[2 * 2];
-	uint8_t V[2 * 2];
-	size_t i;
-	int j, k;
-
-	(void)nr; /* unused, it's always 2 */
-
-	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
-
-	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
-
-	for (j = 0; j < N; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
-	}
-
-	raid_neon_begin();
-
-	/* preload tables */
-	asm volatile (
-		"ldr q28, %0\n" /* low4 */
-		"ldr q20, %1\n" /* v[0] low table */
-		"ldr q21, %2\n" /* v[0] high table */
-		"ldr q22, %3\n" /* v[1] low table */
-		"ldr q23, %4\n" /* v[1] high table */
-		"ldr q24, %5\n" /* v[2] low table */
-		"ldr q25, %6\n" /* v[2] high table */
-		"ldr q26, %7\n" /* v[3] low table */
-		"ldr q27, %8\n" /* v[3] high table */
-		:
-		: "m" (gfconst16.low4[0]),
-		"m" (raid_gfmulpshufb[V[0]][0][0]), "m" (raid_gfmulpshufb[V[0]][1][0]),
-		"m" (raid_gfmulpshufb[V[1]][0][0]), "m" (raid_gfmulpshufb[V[1]][1][0]),
-		"m" (raid_gfmulpshufb[V[2]][0][0]), "m" (raid_gfmulpshufb[V[2]][1][0]),
-		"m" (raid_gfmulpshufb[V[3]][0][0]), "m" (raid_gfmulpshufb[V[3]][1][0])
-	);
-
-	for (i = 0; i < size; i += 32) {
-		asm volatile (
-			/* load delta 0 block 0 & 1 */
-			"ldr q0, %4\n"
-			"ldr q2, %5\n"
-			"ldr q8, %8\n"
-			"ldr q9, %9\n"
-			"eor v0.16b, v0.16b, v8.16b\n"
-			"eor v2.16b, v2.16b, v9.16b\n"
-
-			/* load delta 1 block 0 & 1 */
-			"ldr q4, %6\n"
-			"ldr q6, %7\n"
-			"ldr q10, %10\n"
-			"ldr q11, %11\n"
-			"eor v4.16b, v4.16b, v10.16b\n"
-			"eor v6.16b, v6.16b, v11.16b\n"
-
-			/* split delta 0 (v0, v2 -> v0 low, v1 high, v2 low, v3 high) */
-			"ushr v1.16b, v0.16b, #4\n"
-			"ushr v3.16b, v2.16b, #4\n"
-			"and v0.16b, v0.16b, v28.16b\n"
-			"and v1.16b, v1.16b, v28.16b\n"
-			"and v2.16b, v2.16b, v28.16b\n"
-			"and v3.16b, v3.16b, v28.16b\n"
-
-			/* split delta 1 (v4, v6 -> v4 low, v5 high, v6 low, v7 high) */
-			"ushr v5.16b, v4.16b, #4\n"
-			"ushr v7.16b, v6.16b, #4\n"
-			"and v4.16b, v4.16b, v28.16b\n"
-			"and v5.16b, v5.16b, v28.16b\n"
-			"and v6.16b, v6.16b, v28.16b\n"
-			"and v7.16b, v7.16b, v28.16b\n"
-
-			/* reconstruct pa[0] (v8 = block 0, v9 = block 1) */
-			/* V[0] * delta 0 */
-			"tbl v8.16b, {v20.16b}, v0.16b\n"
-			"tbl v9.16b, {v20.16b}, v2.16b\n"
-			"tbl v12.16b, {v21.16b}, v1.16b\n"
-			"tbl v13.16b, {v21.16b}, v3.16b\n"
-			"eor v8.16b, v8.16b, v12.16b\n"
-			"eor v9.16b, v9.16b, v13.16b\n"
-
-			/* V[1] * delta 1 */
-			"tbl v12.16b, {v22.16b}, v4.16b\n"
-			"tbl v13.16b, {v22.16b}, v6.16b\n"
-			"tbl v14.16b, {v23.16b}, v5.16b\n"
-			"tbl v15.16b, {v23.16b}, v7.16b\n"
-			"eor v12.16b, v12.16b, v14.16b\n"
-			"eor v13.16b, v13.16b, v15.16b\n"
-			"eor v8.16b, v8.16b, v12.16b\n"
-			"eor v9.16b, v9.16b, v13.16b\n"
-			"str q8, %0\n"
-			"str q9, %1\n"
-
-			/* reconstruct pa[1] (v10 = block 0, v11 = block 1) */
-			/* V[2] * delta 0 */
-			"tbl v10.16b, {v24.16b}, v0.16b\n"
-			"tbl v11.16b, {v24.16b}, v2.16b\n"
-			"tbl v12.16b, {v25.16b}, v1.16b\n"
-			"tbl v13.16b, {v25.16b}, v3.16b\n"
-			"eor v10.16b, v10.16b, v12.16b\n"
-			"eor v11.16b, v11.16b, v13.16b\n"
-
-			/* V[3] * delta 1 */
-			"tbl v12.16b, {v26.16b}, v4.16b\n"
-			"tbl v13.16b, {v26.16b}, v6.16b\n"
-			"tbl v14.16b, {v27.16b}, v5.16b\n"
-			"tbl v15.16b, {v27.16b}, v7.16b\n"
-			"eor v12.16b, v12.16b, v14.16b\n"
-			"eor v13.16b, v13.16b, v15.16b\n"
-			"eor v10.16b, v10.16b, v12.16b\n"
-			"eor v11.16b, v11.16b, v13.16b\n"
-			"str q10, %2\n"
-			"str q11, %3\n"
-			: "=m" (pa[0][i]), "=m" (pa[0][i + 16]),
-			"=m" (pa[1][i]), "=m" (pa[1][i + 16])
-			: "m" (p[0][i]), "m" (p[0][i + 16]),
-			"m" (p[1][i]), "m" (p[1][i + 16]),
-			"m" (pa[0][i]), "m" (pa[0][i + 16]),
-			"m" (pa[1][i]), "m" (pa[1][i + 16])
-		);
-	}
-
-	raid_neon_end();
+	BUG_ON(nr != 2);
+	raid_recX_neon(2, id, ip, nd, size, vv);
 }
 
-/*
- * RAID recovering NEON implementation
- */
-void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+void raid_rec3_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
-	int N = nr;
-	uint8_t *p[RAID_PARITY_MAX];
-	uint8_t *pa[RAID_PARITY_MAX];
-	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	const uint8_t *T[RAID_PARITY_MAX * RAID_PARITY_MAX];
-	size_t i;
-	int j, k;
+	BUG_ON(nr != 3);
+	raid_recX_neon(3, id, ip, nd, size, vv);
+}
 
-	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+void raid_rec4_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 4);
+	raid_recX_neon(4, id, ip, nd, size, vv);
+}
 
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+void raid_rec5_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 5);
+	raid_recX_neon(5, id, ip, nd, size, vv);
+}
 
-	/* precompute shuffle table pointers */
-	for (j = 0; j < N * N; ++j)
-		T[j] = &raid_gfmulpshufb[V[j]][0][0];
-
-	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
-
-	for (j = 0; j < N; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
-	}
-
-	raid_neon_begin();
-
-	/* preload mask */
-	asm volatile (
-		"ldr q28, %0\n" /* low4 */
-		:
-		: "m" (gfconst16.low4[0])
-	);
-
-	for (i = 0; i < size; i += 16) {
-		/* delta */
-		asm volatile (
-			"ldr x4, [%2, #0]\n"
-			"ldr x5, [%3, #0]\n"
-			"ldr q0, [x4, %1]\n"
-			"ldr q14, [x5, %1]\n"
-			"eor v0.16b, v0.16b, v14.16b\n"
-			"ushr v1.16b, v0.16b, #4\n"
-			"and v0.16b, v0.16b, v28.16b\n"
-			"and v1.16b, v1.16b, v28.16b\n"
-			"cmp %0, #1\n"
-			"b.ls 1f\n"
-
-			"ldr x4, [%2, #8]\n"
-			"ldr x5, [%3, #8]\n"
-			"ldr q2, [x4, %1]\n"
-			"ldr q14, [x5, %1]\n"
-			"eor v2.16b, v2.16b, v14.16b\n"
-			"ushr v3.16b, v2.16b, #4\n"
-			"and v2.16b, v2.16b, v28.16b\n"
-			"and v3.16b, v3.16b, v28.16b\n"
-			"cmp %0, #2\n"
-			"b.ls 1f\n"
-
-			"ldr x4, [%2, #16]\n"
-			"ldr x5, [%3, #16]\n"
-			"ldr q4, [x4, %1]\n"
-			"ldr q14, [x5, %1]\n"
-			"eor v4.16b, v4.16b, v14.16b\n"
-			"ushr v5.16b, v4.16b, #4\n"
-			"and v4.16b, v4.16b, v28.16b\n"
-			"and v5.16b, v5.16b, v28.16b\n"
-			"cmp %0, #3\n"
-			"b.ls 1f\n"
-
-			"ldr x4, [%2, #24]\n"
-			"ldr x5, [%3, #24]\n"
-			"ldr q6, [x4, %1]\n"
-			"ldr q14, [x5, %1]\n"
-			"eor v6.16b, v6.16b, v14.16b\n"
-			"ushr v7.16b, v6.16b, #4\n"
-			"and v6.16b, v6.16b, v28.16b\n"
-			"and v7.16b, v7.16b, v28.16b\n"
-			"cmp %0, #4\n"
-			"b.ls 1f\n"
-
-			"ldr x4, [%2, #32]\n"
-			"ldr x5, [%3, #32]\n"
-			"ldr q8, [x4, %1]\n"
-			"ldr q14, [x5, %1]\n"
-			"eor v8.16b, v8.16b, v14.16b\n"
-			"ushr v9.16b, v8.16b, #4\n"
-			"and v8.16b, v8.16b, v28.16b\n"
-			"and v9.16b, v9.16b, v28.16b\n"
-			"cmp %0, #5\n"
-			"b.ls 1f\n"
-
-			"ldr x4, [%2, #40]\n"
-			"ldr x5, [%3, #40]\n"
-			"ldr q10, [x4, %1]\n"
-			"ldr q14, [x5, %1]\n"
-			"eor v10.16b, v10.16b, v14.16b\n"
-			"ushr v11.16b, v10.16b, #4\n"
-			"and v10.16b, v10.16b, v28.16b\n"
-			"and v11.16b, v11.16b, v28.16b\n"
-
-			"1:\n"
-			:
-			: "r" ((uint64_t)N), "r" (i), "r" (p), "r" (pa)
-			: "x4", "x5", "cc", "memory"
-		);
-
-		/* reconstruct */
-		for (j = 0; j < N; ++j) {
-			asm volatile (
-				"ldr x5, [%2, #0]\n"
-				"ldp q24, q25, [x5]\n"
-				"tbl v12.16b, {v24.16b}, v0.16b\n"
-				"tbl v13.16b, {v25.16b}, v1.16b\n"
-				"cmp %0, #1\n"
-				"b.ls 1f\n"
-
-				"ldr x5, [%2, #8]\n"
-				"ldp q24, q25, [x5]\n"
-				"tbl v14.16b, {v24.16b}, v2.16b\n"
-				"tbl v15.16b, {v25.16b}, v3.16b\n"
-				"eor v12.16b, v12.16b, v14.16b\n"
-				"eor v13.16b, v13.16b, v15.16b\n"
-				"cmp %0, #2\n"
-				"b.ls 1f\n"
-
-				"ldr x5, [%2, #16]\n"
-				"ldp q24, q25, [x5]\n"
-				"tbl v14.16b, {v24.16b}, v4.16b\n"
-				"tbl v15.16b, {v25.16b}, v5.16b\n"
-				"eor v12.16b, v12.16b, v14.16b\n"
-				"eor v13.16b, v13.16b, v15.16b\n"
-				"cmp %0, #3\n"
-				"b.ls 1f\n"
-
-				"ldr x5, [%2, #24]\n"
-				"ldp q24, q25, [x5]\n"
-				"tbl v14.16b, {v24.16b}, v6.16b\n"
-				"tbl v15.16b, {v25.16b}, v7.16b\n"
-				"eor v12.16b, v12.16b, v14.16b\n"
-				"eor v13.16b, v13.16b, v15.16b\n"
-				"cmp %0, #4\n"
-				"b.ls 1f\n"
-
-				"ldr x5, [%2, #32]\n"
-				"ldp q24, q25, [x5]\n"
-				"tbl v14.16b, {v24.16b}, v8.16b\n"
-				"tbl v15.16b, {v25.16b}, v9.16b\n"
-				"eor v12.16b, v12.16b, v14.16b\n"
-				"eor v13.16b, v13.16b, v15.16b\n"
-				"cmp %0, #5\n"
-				"b.ls 1f\n"
-
-				"ldr x5, [%2, #40]\n"
-				"ldp q24, q25, [x5]\n"
-				"tbl v14.16b, {v24.16b}, v10.16b\n"
-				"tbl v15.16b, {v25.16b}, v11.16b\n"
-				"eor v12.16b, v12.16b, v14.16b\n"
-				"eor v13.16b, v13.16b, v15.16b\n"
-
-				"1:\n"
-				"eor v12.16b, v12.16b, v13.16b\n"
-				"str q12, [%3, %1]\n"
-				:
-				: "r" ((uint64_t)N), "r" (i), "r" (&T[j * N]), "r" (pa[j])
-				: "x4", "x5", "cc", "memory"
-			);
-		}
-	}
-
-	raid_neon_end();
+void raid_rec6_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 6);
+	raid_recX_neon(6, id, ip, nd, size, vv);
 }
 
 void raid_register_neon(void)
@@ -1073,9 +1092,10 @@ void raid_register_neon(void)
 
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR1, "neon", raid_rec1_neon, RAID_POLY_ANY);
 	raid_rec_register(RAID_ALGO_CAUCHY_PAR2, "neon", raid_rec2_neon, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_recX_neon, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_recX_neon, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_recX_neon, RAID_POLY_ANY);
-	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_recX_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR3, "neon", raid_rec3_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR4, "neon", raid_rec4_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR5, "neon", raid_rec5_neon, RAID_POLY_ANY);
+	raid_rec_register(RAID_ALGO_CAUCHY_PAR6, "neon", raid_rec6_neon, RAID_POLY_ANY);
 }
+
 #endif
