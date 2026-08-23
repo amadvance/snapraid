@@ -8,7 +8,7 @@
  * Galois field reduction polynomials.
  *
  * RAID_POLY_RAID - Standard RAID polynomial 0x1d (x^8 + x^4 + x^3 + x^2 + 1).
- * RAID_POLY_AES  - AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1) for GFNI acceleration.
+ * RAID_POLY_AES  - AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1), using generator g=3.
  */
 #define RAID_POLY_RAID 0x1d
 #define RAID_POLY_AES 0x1b

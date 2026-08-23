@@ -35,18 +35,22 @@
  *
  *   On CPUs supporting Intel GFNI, generation and recovery can use the
  *   vgf2p8mulb instruction, which performs GF(2^8) multiplication directly
- *   in hardware using this polynomial. This native multiplication is
- *   typically faster than the affine GFNI implementation required for the
- *   standard RAID polynomial.
+ *   using this polynomial.
+ *
+ *   This mode also provides a useful comparison with
+ *   RAID_MODE_CAUCHY_RAID, where multiplication by a fixed coefficient in
+ *   GF(2^8)/0x11d is implemented directly with vgf2p8affineqb and a
+ *   precomputed 8x8 GF(2) matrix. Relative performance depends on the CPU,
+ *   backend, parity count, and workload.
  *
  *   The trade-off is that parity data is not compatible with arrays using
  *   the standard 0x11d polynomial (g=2), so all data must be generated and
  *   recovered using the same operating mode.
  *
  * Both Cauchy modes can therefore use GFNI acceleration. The standard RAID
- * mode preserves compatibility by using affine GFNI transformations, while
- * the AES mode trades compatibility for the typically faster native GFNI
- * multiplication instruction.
+ * mode uses affine transformations for fixed-coefficient multiplication in
+ * the 0x11d field, while the AES mode can use native vgf2p8mulb
+ * multiplication in the 0x11b field.
  */
 
 /**
@@ -76,12 +80,17 @@
 #define RAID_MODE_VANDERMONDE_RAID 1
 
 /**
- * RAID mode supporting up to 6 parities using AES polynomial 0x1b (0x11b) and primitive generator g=3.
+ * RAID mode supporting up to 6 parities using AES polynomial 0x1b (0x11b)
+ * and primitive generator g=3.
  *
- * It has slightly lower performance than RAID_MODE_CAUCHY_RAID on CPUs without GFNI due
- * to the additional cost of generator g=3. On CPUs supporting GFNI, it uses native
- * VGF2P8MULB multiplication and is typically faster than the affine GFNI implementation
- * required by RAID_MODE_CAUCHY_RAID.
+ * It has slightly lower performance than RAID_MODE_CAUCHY_RAID on CPUs
+ * without GFNI due to the additional cost of generator g=3.
+ *
+ * On CPUs supporting GFNI, it uses native VGF2P8MULB multiplication. This
+ * mode also provides a useful benchmark and reference implementation for
+ * comparing native AES-field GFNI multiplication with the affine GFNI
+ * implementation used by RAID_MODE_CAUCHY_RAID. Relative performance
+ * depends on the CPU, backend, parity count, and workload.
  *
  * Parity data is incompatible with RAID_MODE_CAUCHY_RAID.
  */

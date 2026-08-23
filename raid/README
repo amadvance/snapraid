@@ -122,15 +122,21 @@ Operating Modes and Polynomials
   RAID_MODE_CAUCHY_AES (Mode = 2)
     Uses Cauchy matrix with AES polynomial 0x1b (x^8 + x^4 + x^3 + x + 1,
     0x11b) and primitive generator g = 3. On CPUs supporting Intel GFNI,
-    generation and recovery are accelerated directly using VGF2P8MULB.
-    This native GFNI multiplication is typically faster than the affine GFNI
-    implementation required by the standard RAID polynomial. Parity data is
+    generation and recovery can use VGF2P8MULB directly for multiplication
+    in the AES field. This mode also provides a useful benchmark and
+    reference implementation for comparison with RAID_MODE_CAUCHY_RAID,
+    where fixed-coefficient multiplication in the 0x11d field is implemented
+    with VGF2P8AFFINEQB and precomputed affine matrices. Relative performance
+    depends on the CPU, backend, parity count, and workload. Parity data is
     incompatible with standard 0x11d polynomial arrays.
 
-  Both Cauchy modes use the same Extended Cauchy construction with coefficients
-  based on powers of their respective primitive generator. GFNI acceleration
-  is available for both fields: the RAID field uses affine transformations,
-  while the AES field uses the native GFNI multiplication instruction.
+  Both Cauchy modes use the same Extended Cauchy construction with
+  coefficients based on powers of their respective primitive generators.
+  GFNI acceleration is available for both fields: the RAID field uses
+  VGF2P8AFFINEQB for fixed-coefficient multiplication, while the AES field
+  can use native VGF2P8MULB. Neither instruction should be assumed to be
+  faster in general; relative performance is hardware and workload
+  dependent.
 
 
 Implementation Structure
