@@ -362,6 +362,9 @@ extern const uint8_t raid_gfinv_raid[256] __aligned(256);
 extern const uint8_t raid_gfvandermonde_raid[3][256] __aligned(256);
 extern const uint8_t raid_gfcauchy_raid[6][256] __aligned(256);
 extern const uint8_t raid_gfaffine_raid[256][8] __aligned(256);
+#ifdef CONFIG_X86_64
+extern const uint8_t raid_gfcauchyaffine_raid[251][5][8] __aligned(256);
+#endif
 #if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 extern const uint8_t raid_gfcauchypshufb_raid[251][5][2][16] __aligned(256);
 extern const uint8_t raid_gfmulpshufb_raid[256][2][16] __aligned(256);

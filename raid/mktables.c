@@ -352,6 +352,39 @@ void tables(uint8_t poly, uint8_t generator, const char *tag)
 	}
 	printf("};\n\n");
 
+	if (poly == RAID_POLY_RAID) {
+		uint8_t affine[8];
+
+		printf("#ifdef CONFIG_X86_64\n");
+		printf("/**\n");
+		printf(" * GFNI affine matrices for the RAID Cauchy coefficients.\n");
+		printf(" *\n");
+		printf(" * Indexes are [DISK][PARITY - 1][8].\n");
+		printf(" * Where DISK is from 0 to %u and PARITY is from 2 to %u.\n", DISK - 1, PARITY);
+		printf(" * The last index contains the 8 bytes of the affine matrix.\n");
+		printf(" */\n");
+		printf("const uint8_t __aligned(256) raid_gfcauchyaffine_raid[%u][%u][8] =\n",
+			DISK, PARITY - 1);
+		printf("{\n");
+		for (i = 0; i < DISK; ++i) {
+			printf("\t{\n");
+			for (p = 1; p < PARITY; ++p) {
+				set_affine(poly, matrix[p * DISK + i], affine);
+
+				printf("\t\t{ ");
+				for (j = 0; j < 8; ++j) {
+					printf("0x%02x", (unsigned)affine[j]);
+					if (j != 7)
+						printf(", ");
+				}
+				printf(" },\n");
+			}
+			printf("\t},\n");
+		}
+		printf("};\n");
+		printf("#endif\n\n");
+	}
+
 	printf("#if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for the Cauchy matrix.\n");
