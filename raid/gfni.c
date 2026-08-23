@@ -7,863 +7,8 @@
 
 #ifdef CONFIG_X86_64
 /*
- * GEN2 Cauchy AVX2 GFNI implementation
- */
-void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	size_t i;
-	int d;
-
-	if (nd == 1) {
-		memcpy(v[1], v[0], size);
-		memcpy(v[2], v[0], size);
-		return;
-	}
-
-	raid_avx_begin();
-
-	/* preload as many Q coefficient tables as possible */
-	asm volatile ("vpbroadcastb %0,%%ymm4" : : "m" (raid_gfcauchy[1][1]));
-	asm volatile ("vpbroadcastb %0,%%ymm5" : : "m" (raid_gfcauchy[1][2]));
-	asm volatile ("vpbroadcastb %0,%%ymm6" : : "m" (raid_gfcauchy[1][3]));
-	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (raid_gfcauchy[1][4]));
-	asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (raid_gfcauchy[1][5]));
-	asm volatile ("vpbroadcastb %0,%%ymm9" : : "m" (raid_gfcauchy[1][6]));
-	asm volatile ("vpbroadcastb %0,%%ymm10" : : "m" (raid_gfcauchy[1][7]));
-	asm volatile ("vpbroadcastb %0,%%ymm11" : : "m" (raid_gfcauchy[1][8]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[0][i + 32]));
-		asm volatile ("vmovdqa %ymm0,%ymm2");
-		asm volatile ("vmovdqa %ymm1,%ymm3");
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[1][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[1][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm4,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm4,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 2)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[2][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[2][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm5,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm5,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 3)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[3][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[3][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm6,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm6,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 4)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[4][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[4][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm7,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm7,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 5)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[5][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[5][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm8,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm8,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 6)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[6][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[6][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm9,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm9,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 7)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[7][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[7][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm10,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm10,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 8)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[8][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[8][i + 32]));
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm12,%ymm11,%ymm14");
-		asm volatile ("vgf2p8mulb %ymm13,%ymm11,%ymm15");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		if (nd == 9)
-			goto store;
-
-		/*
-		 * No more registers are available for resident coefficient
-		 * tables. Process D9 and later with the normal loop.
-		 */
-		for (d = 9; d < nd; ++d) {
-			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i]));
-			asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[d][i + 32]));
-
-			asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-			asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-
-			asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[1][d]));
-			asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm15");
-			asm volatile ("vpxor %ymm15,%ymm2,%ymm2");
-			asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm15");
-			asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		}
-
-store:
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * GEN2 Cauchy GFNI implementation
- */
-void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	size_t i;
-	int d;
-
-	if (nd == 1) {
-		memcpy(v[1], v[0], size);
-		memcpy(v[2], v[0], size);
-		return;
-	}
-
-	raid_avx_begin();
-
-	/* preload as many Q coefficient tables as possible */
-	asm volatile ("vpbroadcastb %0,%%zmm4" : : "m" (raid_gfcauchy[1][1]));
-	asm volatile ("vpbroadcastb %0,%%zmm5" : : "m" (raid_gfcauchy[1][2]));
-	asm volatile ("vpbroadcastb %0,%%zmm6" : : "m" (raid_gfcauchy[1][3]));
-	asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (raid_gfcauchy[1][4]));
-	asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (raid_gfcauchy[1][5]));
-	asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (raid_gfcauchy[1][6]));
-	asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (raid_gfcauchy[1][7]));
-	asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (raid_gfcauchy[1][8]));
-	asm volatile ("vpbroadcastb %0,%%zmm12" : : "m" (raid_gfcauchy[1][9]));
-	asm volatile ("vpbroadcastb %0,%%zmm13" : : "m" (raid_gfcauchy[1][10]));
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (raid_gfcauchy[1][11]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (raid_gfcauchy[1][12]));
-	asm volatile ("vpbroadcastb %0,%%zmm16" : : "m" (raid_gfcauchy[1][13]));
-	asm volatile ("vpbroadcastb %0,%%zmm17" : : "m" (raid_gfcauchy[1][14]));
-	asm volatile ("vpbroadcastb %0,%%zmm18" : : "m" (raid_gfcauchy[1][15]));
-	asm volatile ("vpbroadcastb %0,%%zmm19" : : "m" (raid_gfcauchy[1][16]));
-	asm volatile ("vpbroadcastb %0,%%zmm20" : : "m" (raid_gfcauchy[1][17]));
-	asm volatile ("vpbroadcastb %0,%%zmm21" : : "m" (raid_gfcauchy[1][18]));
-	asm volatile ("vpbroadcastb %0,%%zmm22" : : "m" (raid_gfcauchy[1][19]));
-	asm volatile ("vpbroadcastb %0,%%zmm23" : : "m" (raid_gfcauchy[1][20]));
-	asm volatile ("vpbroadcastb %0,%%zmm24" : : "m" (raid_gfcauchy[1][21]));
-	asm volatile ("vpbroadcastb %0,%%zmm25" : : "m" (raid_gfcauchy[1][22]));
-	asm volatile ("vpbroadcastb %0,%%zmm26" : : "m" (raid_gfcauchy[1][23]));
-	asm volatile ("vpbroadcastb %0,%%zmm27" : : "m" (raid_gfcauchy[1][24]));
-	asm volatile ("vpbroadcastb %0,%%zmm28" : : "m" (raid_gfcauchy[1][25]));
-	asm volatile ("vpbroadcastb %0,%%zmm29" : : "m" (raid_gfcauchy[1][26]));
-	asm volatile ("vpbroadcastb %0,%%zmm30" : : "m" (raid_gfcauchy[1][27]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa64 %zmm0,%zmm1");
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[1][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm4,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 2)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[2][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm5,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 3)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[3][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm6,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 4)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[4][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm7,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 5)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[5][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm8,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 6)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[6][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm9,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 7)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[7][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm10,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 8)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[8][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm11,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 9)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[9][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm12,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 10)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[10][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm13,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 11)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[11][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm14,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 12)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[12][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm15,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 13)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[13][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm16,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 14)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[14][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm17,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 15)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[15][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm18,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 16)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[16][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm19,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 17)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[17][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm20,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 18)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[18][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm21,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 19)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[19][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm22,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 20)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[20][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm23,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 21)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[21][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm24,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 22)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[22][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm25,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 23)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[23][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm26,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 24)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[24][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm27,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 25)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[25][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm28,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 26)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[26][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm29,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 27)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[27][i]));
-		asm volatile ("vgf2p8mulb %zmm2,%zmm30,%zmm3");
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		if (nd == 28)
-			goto store;
-
-		/*
-		 * No more registers are available for resident coefficient
-		 * tables. Process D28 and later with the normal loop.
-		 */
-		for (d = 28; d < nd; ++d) {
-			asm volatile ("vmovdqa64 %0,%%zmm2" : : "m" (v[d][i]));
-
-			asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (raid_gfcauchy[1][d]));
-			asm volatile ("vgf2p8mulb %zmm2,%zmm31,%zmm3");
-
-			asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-			asm volatile ("vpxorq %zmm3,%zmm1,%zmm1");
-		}
-
-store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * GEN3 (triple parity with Cauchy matrix) AVX2 GFNI implementation
- */
-void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	size_t i;
-	int d;
-
-	if (nd == 1) {
-		memcpy(v[1], v[0], size);
-		memcpy(v[2], v[0], size);
-		memcpy(v[3], v[0], size);
-		return;
-	}
-
-	raid_avx_begin();
-
-	/* preload as many Q and R coefficient tables as possible */
-	asm volatile ("vpbroadcastb %0,%%ymm8" : : "m" (raid_gfcauchy[1][1]));
-	asm volatile ("vpbroadcastb %0,%%ymm9" : : "m" (raid_gfcauchy[2][1]));
-	asm volatile ("vpbroadcastb %0,%%ymm10" : : "m" (raid_gfcauchy[1][2]));
-	asm volatile ("vpbroadcastb %0,%%ymm11" : : "m" (raid_gfcauchy[2][2]));
-	asm volatile ("vpbroadcastb %0,%%ymm12" : : "m" (raid_gfcauchy[1][3]));
-	asm volatile ("vpbroadcastb %0,%%ymm13" : : "m" (raid_gfcauchy[2][3]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[0][i + 32]));
-		asm volatile ("vmovdqa %ymm0,%ymm2");
-		asm volatile ("vmovdqa %ymm1,%ymm3");
-		asm volatile ("vmovdqa %ymm0,%ymm4");
-		asm volatile ("vmovdqa %ymm1,%ymm5");
-
-		asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[1][i]));
-		asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[1][i + 32]));
-		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm7,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm8,%ymm14");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm8,%ymm15");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm9,%ymm14");
-		asm volatile ("vpxor %ymm14,%ymm4,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm9,%ymm15");
-		asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
-		if (nd == 2)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[2][i]));
-		asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[2][i + 32]));
-		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm7,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm10,%ymm14");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm10,%ymm15");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm11,%ymm14");
-		asm volatile ("vpxor %ymm14,%ymm4,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm11,%ymm15");
-		asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
-		if (nd == 3)
-			goto store;
-
-		asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[3][i]));
-		asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[3][i + 32]));
-		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm7,%ymm1,%ymm1");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm12,%ymm14");
-		asm volatile ("vpxor %ymm14,%ymm2,%ymm2");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm12,%ymm15");
-		asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-		asm volatile ("vgf2p8mulb %ymm6,%ymm13,%ymm14");
-		asm volatile ("vpxor %ymm14,%ymm4,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm7,%ymm13,%ymm15");
-		asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
-		if (nd == 4)
-			goto store;
-
-		/*
-		 * No more registers are available for resident coefficient
-		 * tables. Process D4 and later with the normal loop.
-		 */
-		for (d = 4; d < nd; ++d) {
-			asm volatile ("vmovdqa %0,%%ymm6" : : "m" (v[d][i]));
-			asm volatile ("vmovdqa %0,%%ymm7" : : "m" (v[d][i + 32]));
-			asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
-			asm volatile ("vpxor %ymm7,%ymm1,%ymm1");
-
-			asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[1][d]));
-			asm volatile ("vgf2p8mulb %ymm6,%ymm14,%ymm15");
-			asm volatile ("vpxor %ymm15,%ymm2,%ymm2");
-			asm volatile ("vgf2p8mulb %ymm7,%ymm14,%ymm15");
-			asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
-
-			asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[2][d]));
-			asm volatile ("vgf2p8mulb %ymm6,%ymm14,%ymm15");
-			asm volatile ("vpxor %ymm15,%ymm4,%ymm4");
-			asm volatile ("vgf2p8mulb %ymm7,%ymm14,%ymm15");
-			asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
-		}
-
-store:
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
-		asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
-		asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * GEN3 (triple parity with Cauchy matrix) GFNI implementation
- */
-void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	size_t i;
-	int d;
-
-	if (nd == 1) {
-		memcpy(v[1], v[0], size);
-		memcpy(v[2], v[0], size);
-		memcpy(v[3], v[0], size);
-		return;
-	}
-
-	raid_avx_begin();
-
-	/* preload as many Q and R coefficient tables as possible */
-	asm volatile ("vpbroadcastb %0,%%zmm6" : : "m" (raid_gfcauchy[1][1]));
-	asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (raid_gfcauchy[2][1]));
-	asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (raid_gfcauchy[1][2]));
-	asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (raid_gfcauchy[2][2]));
-	asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (raid_gfcauchy[1][3]));
-	asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (raid_gfcauchy[2][3]));
-	asm volatile ("vpbroadcastb %0,%%zmm12" : : "m" (raid_gfcauchy[1][4]));
-	asm volatile ("vpbroadcastb %0,%%zmm13" : : "m" (raid_gfcauchy[2][4]));
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (raid_gfcauchy[1][5]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (raid_gfcauchy[2][5]));
-	asm volatile ("vpbroadcastb %0,%%zmm16" : : "m" (raid_gfcauchy[1][6]));
-	asm volatile ("vpbroadcastb %0,%%zmm17" : : "m" (raid_gfcauchy[2][6]));
-	asm volatile ("vpbroadcastb %0,%%zmm18" : : "m" (raid_gfcauchy[1][7]));
-	asm volatile ("vpbroadcastb %0,%%zmm19" : : "m" (raid_gfcauchy[2][7]));
-	asm volatile ("vpbroadcastb %0,%%zmm20" : : "m" (raid_gfcauchy[1][8]));
-	asm volatile ("vpbroadcastb %0,%%zmm21" : : "m" (raid_gfcauchy[2][8]));
-	asm volatile ("vpbroadcastb %0,%%zmm22" : : "m" (raid_gfcauchy[1][9]));
-	asm volatile ("vpbroadcastb %0,%%zmm23" : : "m" (raid_gfcauchy[2][9]));
-	asm volatile ("vpbroadcastb %0,%%zmm24" : : "m" (raid_gfcauchy[1][10]));
-	asm volatile ("vpbroadcastb %0,%%zmm25" : : "m" (raid_gfcauchy[2][10]));
-	asm volatile ("vpbroadcastb %0,%%zmm26" : : "m" (raid_gfcauchy[1][11]));
-	asm volatile ("vpbroadcastb %0,%%zmm27" : : "m" (raid_gfcauchy[2][11]));
-	asm volatile ("vpbroadcastb %0,%%zmm28" : : "m" (raid_gfcauchy[1][12]));
-	asm volatile ("vpbroadcastb %0,%%zmm29" : : "m" (raid_gfcauchy[2][12]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa64 %zmm0,%zmm1");
-		asm volatile ("vmovdqa64 %zmm0,%zmm2");
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[1][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm6,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm7,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 2)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[2][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm8,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm9,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 3)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[3][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm10,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm11,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 4)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[4][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm12,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm13,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 5)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[5][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm14,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm15,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 6)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[6][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm16,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm17,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 7)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[7][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm18,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm19,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 8)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[8][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm20,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm21,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 9)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[9][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm22,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm23,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 10)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[10][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm24,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm25,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 11)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[11][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm26,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm27,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 12)
-			goto store;
-
-		asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[12][i]));
-		asm volatile ("vgf2p8mulb %zmm3,%zmm28,%zmm4");
-		asm volatile ("vgf2p8mulb %zmm3,%zmm29,%zmm5");
-		asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-		asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		if (nd == 13)
-			goto store;
-
-		/*
-		 * No more registers are available for resident coefficient
-		 * tables. Process D13 and later with the normal loop.
-		 */
-		for (d = 13; d < nd; ++d) {
-			asm volatile ("vmovdqa64 %0,%%zmm3" : : "m" (v[d][i]));
-
-			asm volatile ("vpbroadcastb %0,%%zmm30" : : "m" (raid_gfcauchy[1][d]));
-			asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (raid_gfcauchy[2][d]));
-
-			asm volatile ("vgf2p8mulb %zmm3,%zmm30,%zmm4");
-			asm volatile ("vgf2p8mulb %zmm3,%zmm31,%zmm5");
-
-			asm volatile ("vpxorq %zmm3,%zmm0,%zmm0");
-			asm volatile ("vpxorq %zmm4,%zmm1,%zmm1");
-			asm volatile ("vpxorq %zmm5,%zmm2,%zmm2");
-		}
-
-store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * GENX AVX2 GFNI implementation for the RAID polynomial with Horner evaluation.
- *
- * Q is evaluated with Horner's rule using the fixed multiply-by-2 affine
- * matrix. The remaining Cauchy parities use their per-disk coefficients.
- *
- * Only supported up to GEN5 (np <= 5), where ymm11 remains available for the
- * fixed Q multiply-by-2 matrix.
- */
-static __always_inline void raid_genX_avx2gfni_horner_raid(int nd, size_t size, void **vv, int np)
-{
-	uint8_t **v = (uint8_t **)vv;
-	size_t i;
-	int d, l;
-
-	if (nd == 1) {
-		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
-		return;
-	}
-
-	l = nd - 1;
-
-	raid_avx_begin();
-
-	/* Fixed GF(2^8) multiply-by-2 matrix used by the Q Horner recurrence. */
-	asm volatile ("vpbroadcastq %0,%%ymm11" : : "m" (raid_gfaffine_raid[2][0]));
-
-	for (i = 0; i < size; i += 64) {
-		/* Start P and Q from the last data disk, as in Horner evaluation. */
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[l][i + 32]));
-
-		asm volatile ("vmovdqa %ymm12,%ymm0");
-		asm volatile ("vmovdqa %ymm13,%ymm1");
-		asm volatile ("vmovdqa %ymm12,%ymm2");
-		asm volatile ("vmovdqa %ymm13,%ymm3");
-
-		/*
-		 * Initialize R/S/T with the contribution of the last disk.
-		 * Unlike P and Q, their coefficients are not powers forming a
-		 * fixed Horner recurrence.
-		 */
-		if (np >= 3) {
-			asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[2][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm4");
-			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm5");
-		}
-		if (np >= 4) {
-			asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[3][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm6");
-			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm7");
-		}
-		if (np >= 5) {
-			asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[4][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm8");
-			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm9");
-		}
-
-		/* Process all remaining disks except D0. */
-		for (d = l - 1; d >= 1; --d) {
-			/* Q = 2 * Q. */
-			asm volatile ("vgf2p8affineqb $0,%ymm11,%ymm2,%ymm2");
-			asm volatile ("vgf2p8affineqb $0,%ymm11,%ymm3,%ymm3");
-
-			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i]));
-			asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[d][i + 32]));
-
-			/* P ^= D[d], Q ^= D[d]. */
-			asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-			asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-			asm volatile ("vpxor %ymm12,%ymm2,%ymm2");
-			asm volatile ("vpxor %ymm13,%ymm3,%ymm3");
-
-			if (np >= 3) {
-				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[2][d]][0]));
-				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor %ymm15,%ymm4,%ymm4");
-				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
-			}
-			if (np >= 4) {
-				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[3][d]][0]));
-				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor %ymm15,%ymm6,%ymm6");
-				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor %ymm15,%ymm7,%ymm7");
-			}
-			if (np >= 5) {
-				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[4][d]][0]));
-				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor %ymm15,%ymm8,%ymm8");
-				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor %ymm15,%ymm9,%ymm9");
-			}
-		}
-
-		/*
-		 * Final Horner step with D0.
-		 *
-		 * All Cauchy rows are normalized to coefficient 1 for D0,
-		 * so R/S/T require only XOR and no affine multiplication.
-		 */
-		asm volatile ("vgf2p8affineqb $0,%ymm11,%ymm2,%ymm2");
-		asm volatile ("vgf2p8affineqb $0,%ymm11,%ymm3,%ymm3");
-
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[0][i + 32]));
-
-		asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
-		asm volatile ("vpxor %ymm12,%ymm2,%ymm2");
-		asm volatile ("vpxor %ymm13,%ymm3,%ymm3");
-
-		if (np >= 3) {
-			asm volatile ("vpxor %ymm12,%ymm4,%ymm4");
-			asm volatile ("vpxor %ymm13,%ymm5,%ymm5");
-		}
-		if (np >= 4) {
-			asm volatile ("vpxor %ymm12,%ymm6,%ymm6");
-			asm volatile ("vpxor %ymm13,%ymm7,%ymm7");
-		}
-		if (np >= 5) {
-			asm volatile ("vpxor %ymm12,%ymm8,%ymm8");
-			asm volatile ("vpxor %ymm13,%ymm9,%ymm9");
-		}
-
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
-		if (np >= 3) {
-			asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
-			asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
-		}
-		if (np >= 4) {
-			asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
-			asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
-		}
-		if (np >= 5) {
-			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
-			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
-		}
-	}
-
-	raid_avx_end();
-}
-
-/*
- * GENX AVX2 GFNI implementation
+ * GENX AVX2 GFNI implementation for the RAID polynomial using direct
+ * Cauchy coefficients.
  */
 static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **vv, int np)
 {
@@ -903,68 +48,69 @@ static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **
 			asm volatile ("vmovdqa %ymm1,%ymm11");
 		}
 
-		/* all other disks */
+		/* all other disks use their direct Cauchy coefficients */
 		for (d = 1; d < nd; ++d) {
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[d][i + 32]));
 
-			asm volatile ("vpxor     %ymm12,%ymm0,%ymm0");
-			asm volatile ("vpxor     %ymm13,%ymm1,%ymm1");
+			asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
+			asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
 
 			asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[1][d]][0]));
 			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-			asm volatile ("vpxor    %ymm15,%ymm2,%ymm2");
+			asm volatile ("vpxor %ymm15,%ymm2,%ymm2");
 			asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-			asm volatile ("vpxor    %ymm15,%ymm3,%ymm3");
+			asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
+
 			if (np >= 3) {
 				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[2][d]][0]));
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm4,%ymm4");
+				asm volatile ("vpxor %ymm15,%ymm4,%ymm4");
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm5,%ymm5");
+				asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
 			}
 			if (np >= 4) {
 				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[3][d]][0]));
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm6,%ymm6");
+				asm volatile ("vpxor %ymm15,%ymm6,%ymm6");
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm7,%ymm7");
+				asm volatile ("vpxor %ymm15,%ymm7,%ymm7");
 			}
 			if (np >= 5) {
 				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[4][d]][0]));
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm8,%ymm8");
+				asm volatile ("vpxor %ymm15,%ymm8,%ymm8");
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm9,%ymm9");
+				asm volatile ("vpxor %ymm15,%ymm9,%ymm9");
 			}
 			if (np >= 6) {
 				asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[5][d]][0]));
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm12,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm10,%ymm10");
+				asm volatile ("vpxor %ymm15,%ymm10,%ymm10");
 				asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm13,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm11,%ymm11");
+				asm volatile ("vpxor %ymm15,%ymm11,%ymm11");
 			}
 		}
 
-		asm volatile ("vmovntdq  %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq  %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq  %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq  %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
+		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
+		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
+		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
 		if (np >= 3) {
-			asm volatile ("vmovntdq  %%ymm4,%0" : "=m" (v[nd + 2][i]));
-			asm volatile ("vmovntdq  %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
+			asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
+			asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
 		}
 		if (np >= 4) {
-			asm volatile ("vmovntdq  %%ymm6,%0" : "=m" (v[nd + 3][i]));
-			asm volatile ("vmovntdq  %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
+			asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
+			asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
 		}
 		if (np >= 5) {
-			asm volatile ("vmovntdq  %%ymm8,%0" : "=m" (v[nd + 4][i]));
-			asm volatile ("vmovntdq  %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
+			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
+			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
 		}
 		if (np >= 6) {
-			asm volatile ("vmovntdq  %%ymm10,%0" : "=m" (v[nd + 5][i]));
-			asm volatile ("vmovntdq  %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (v[nd + 5][i]));
+			asm volatile ("vmovntdq %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
 		}
 	}
 
@@ -972,16 +118,14 @@ static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **
 }
 
 /*
- * GENX AVX512 GFNI implementation for the RAID polynomial.
- *
- * Q is evaluated with Horner's rule using the fixed multiply-by-2 affine
- * matrix. The remaining Cauchy parities use their per-disk coefficients.
+ * GENX AVX512 GFNI implementation for the RAID polynomial using direct
+ * Cauchy coefficients.
  */
-static __always_inline void raid_genX_avx512gfni_horner_raid(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void **vv, int np)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
-	int d, l;
+	int d;
 
 	if (nd == 1) {
 		for (d = 0; d < np; ++d)
@@ -989,48 +133,27 @@ static __always_inline void raid_genX_avx512gfni_horner_raid(int nd, size_t size
 		return;
 	}
 
-	l = nd - 1;
-
 	raid_avx_begin();
 
-	/* Fixed GF(2^8) multiply-by-2 matrix used by the Q Horner recurrence. */
-	asm volatile ("vpbroadcastq %0,%%zmm7" : : "m" (raid_gfaffine_raid[2][0]));
-
 	for (i = 0; i < size; i += 64) {
-		/* Start P and Q from the last data disk. */
-		asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa64 %zmm6,%zmm0");
-		asm volatile ("vmovdqa64 %zmm6,%zmm1");
+		/* first disk with all coefficients at 1 */
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[0][i]));
 
-		/* Initialize R/S/T/U with the contribution of the last disk. */
-		if (np >= 3) {
-			asm volatile ("vpbroadcastq %0,%%zmm8" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[2][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%zmm8,%zmm6,%zmm2");
-		}
-		if (np >= 4) {
-			asm volatile ("vpbroadcastq %0,%%zmm9" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[3][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%zmm9,%zmm6,%zmm3");
-		}
-		if (np >= 5) {
-			asm volatile ("vpbroadcastq %0,%%zmm10" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[4][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%zmm10,%zmm6,%zmm4");
-		}
-		if (np >= 6) {
-			asm volatile ("vpbroadcastq %0,%%zmm11" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[5][l]][0]));
-			asm volatile ("vgf2p8affineqb $0,%zmm11,%zmm6,%zmm5");
-		}
+		asm volatile ("vmovdqa64 %zmm0,%zmm1");
+		if (np >= 3)
+			asm volatile ("vmovdqa64 %zmm0,%zmm2");
+		if (np >= 4)
+			asm volatile ("vmovdqa64 %zmm0,%zmm3");
+		if (np >= 5)
+			asm volatile ("vmovdqa64 %zmm0,%zmm4");
+		if (np >= 6)
+			asm volatile ("vmovdqa64 %zmm0,%zmm5");
 
-		/* Process all remaining disks except D0. */
-		for (d = l - 1; d >= 1; --d) {
-			/* Q = 2 * Q. */
-			asm volatile ("vgf2p8affineqb $0,%zmm7,%zmm1,%zmm1");
-
+		/* all other disks use their direct Cauchy coefficients */
+		for (d = 1; d < nd; ++d) {
 			asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[d][i]));
 
-			/* P ^= D[d], Q ^= D[d]. */
-			asm volatile ("vpxorq %zmm6,%zmm0,%zmm0");
-			asm volatile ("vpxorq %zmm6,%zmm1,%zmm1");
-
+			asm volatile ("vpbroadcastq %0,%%zmm7" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[1][d]][0]));
 			if (np >= 3)
 				asm volatile ("vpbroadcastq %0,%%zmm8" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[2][d]][0]));
 			if (np >= 4)
@@ -1040,44 +163,27 @@ static __always_inline void raid_genX_avx512gfni_horner_raid(int nd, size_t size
 			if (np >= 6)
 				asm volatile ("vpbroadcastq %0,%%zmm11" : : "m" (raid_gfaffine_raid[raid_gfcauchy_raid[5][d]][0]));
 
-			if (np >= 3) {
-				asm volatile ("vgf2p8affineqb $0,%zmm8,%zmm6,%zmm12");
-				asm volatile ("vpxorq %zmm12,%zmm2,%zmm2");
-			}
-			if (np >= 4) {
-				asm volatile ("vgf2p8affineqb $0,%zmm9,%zmm6,%zmm13");
-				asm volatile ("vpxorq %zmm13,%zmm3,%zmm3");
-			}
-			if (np >= 5) {
-				asm volatile ("vgf2p8affineqb $0,%zmm10,%zmm6,%zmm14");
-				asm volatile ("vpxorq %zmm14,%zmm4,%zmm4");
-			}
-			if (np >= 6) {
-				asm volatile ("vgf2p8affineqb $0,%zmm11,%zmm6,%zmm15");
-				asm volatile ("vpxorq %zmm15,%zmm5,%zmm5");
-			}
+			asm volatile ("vgf2p8affineqb $0,%zmm7,%zmm6,%zmm12");
+			if (np >= 3)
+				asm volatile ("vgf2p8affineqb $0,%zmm8,%zmm6,%zmm13");
+			if (np >= 4)
+				asm volatile ("vgf2p8affineqb $0,%zmm9,%zmm6,%zmm14");
+			if (np >= 5)
+				asm volatile ("vgf2p8affineqb $0,%zmm10,%zmm6,%zmm15");
+			if (np >= 6)
+				asm volatile ("vgf2p8affineqb $0,%zmm11,%zmm6,%zmm16");
+
+			asm volatile ("vpxorq %zmm6,%zmm0,%zmm0");
+			asm volatile ("vpxorq %zmm12,%zmm1,%zmm1");
+			if (np >= 3)
+				asm volatile ("vpxorq %zmm13,%zmm2,%zmm2");
+			if (np >= 4)
+				asm volatile ("vpxorq %zmm14,%zmm3,%zmm3");
+			if (np >= 5)
+				asm volatile ("vpxorq %zmm15,%zmm4,%zmm4");
+			if (np >= 6)
+				asm volatile ("vpxorq %zmm16,%zmm5,%zmm5");
 		}
-
-		/*
-		 * Final Horner step with D0.
-		 *
-		 * All Cauchy rows have coefficient 1 for D0.
-		 */
-		asm volatile ("vgf2p8affineqb $0,%zmm7,%zmm1,%zmm1");
-
-		asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[0][i]));
-
-		asm volatile ("vpxorq %zmm6,%zmm0,%zmm0");
-		asm volatile ("vpxorq %zmm6,%zmm1,%zmm1");
-
-		if (np >= 3)
-			asm volatile ("vpxorq %zmm6,%zmm2,%zmm2");
-		if (np >= 4)
-			asm volatile ("vpxorq %zmm6,%zmm3,%zmm3");
-		if (np >= 5)
-			asm volatile ("vpxorq %zmm6,%zmm4,%zmm4");
-		if (np >= 6)
-			asm volatile ("vpxorq %zmm6,%zmm5,%zmm5");
 
 		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
 		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
@@ -1095,7 +201,8 @@ static __always_inline void raid_genX_avx512gfni_horner_raid(int nd, size_t size
 }
 
 /*
- * GENX AVX2 GFNI implementation
+ * GENX AVX2 GFNI implementation for the AES polynomial using direct
+ * Cauchy coefficients.
  */
 static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **vv, int np)
 {
@@ -1135,68 +242,76 @@ static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **v
 			asm volatile ("vmovdqa %ymm1,%ymm11");
 		}
 
-		/* all other disks */
+		/* all other disks use their direct Cauchy coefficients */
 		for (d = 1; d < nd; ++d) {
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm13" : : "m" (v[d][i + 32]));
 
-			asm volatile ("vpxor     %ymm12,%ymm0,%ymm0");
-			asm volatile ("vpxor     %ymm13,%ymm1,%ymm1");
+			asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
+			asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
 
-			asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[1][d]));
+			asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy_aes[1][d]));
 			asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm15");
-			asm volatile ("vpxor    %ymm15,%ymm2,%ymm2");
+			asm volatile ("vpxor %ymm15,%ymm2,%ymm2");
 			asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm15");
-			asm volatile ("vpxor    %ymm15,%ymm3,%ymm3");
+			asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
+
 			if (np >= 3) {
-				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[2][d]));
+				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy_aes[2][d]));
 				asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm4,%ymm4");
+				asm volatile ("vpxor %ymm15,%ymm4,%ymm4");
 				asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm5,%ymm5");
+				asm volatile ("vpxor %ymm15,%ymm5,%ymm5");
 			}
+
 			if (np >= 4) {
-				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[3][d]));
+				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy_aes[3][d]));
 				asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm6,%ymm6");
+				asm volatile ("vpxor %ymm15,%ymm6,%ymm6");
 				asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm7,%ymm7");
+				asm volatile ("vpxor %ymm15,%ymm7,%ymm7");
 			}
+
 			if (np >= 5) {
-				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[4][d]));
+				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy_aes[4][d]));
 				asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm8,%ymm8");
+				asm volatile ("vpxor %ymm15,%ymm8,%ymm8");
 				asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm9,%ymm9");
+				asm volatile ("vpxor %ymm15,%ymm9,%ymm9");
 			}
+
 			if (np >= 6) {
-				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy[5][d]));
+				asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (raid_gfcauchy_aes[5][d]));
 				asm volatile ("vgf2p8mulb %ymm12,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm10,%ymm10");
+				asm volatile ("vpxor %ymm15,%ymm10,%ymm10");
 				asm volatile ("vgf2p8mulb %ymm13,%ymm14,%ymm15");
-				asm volatile ("vpxor    %ymm15,%ymm11,%ymm11");
+				asm volatile ("vpxor %ymm15,%ymm11,%ymm11");
 			}
 		}
 
-		asm volatile ("vmovntdq  %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq  %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq  %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq  %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
+		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
+		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
+		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+
 		if (np >= 3) {
-			asm volatile ("vmovntdq  %%ymm4,%0" : "=m" (v[nd + 2][i]));
-			asm volatile ("vmovntdq  %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
+			asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
+			asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
 		}
+
 		if (np >= 4) {
-			asm volatile ("vmovntdq  %%ymm6,%0" : "=m" (v[nd + 3][i]));
-			asm volatile ("vmovntdq  %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
+			asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
+			asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
 		}
+
 		if (np >= 5) {
-			asm volatile ("vmovntdq  %%ymm8,%0" : "=m" (v[nd + 4][i]));
-			asm volatile ("vmovntdq  %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
+			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
+			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
 		}
+
 		if (np >= 6) {
-			asm volatile ("vmovntdq  %%ymm10,%0" : "=m" (v[nd + 5][i]));
-			asm volatile ("vmovntdq  %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (v[nd + 5][i]));
+			asm volatile ("vmovntdq %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
 		}
 	}
 
@@ -1204,7 +319,8 @@ static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **v
 }
 
 /*
- * GENX AVX512 GFNI implementation
+ * GENX AVX512 GFNI implementation for the AES polynomial using direct
+ * Cauchy coefficients.
  */
 static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void **vv, int np)
 {
@@ -1224,29 +340,29 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 		/* first disk with all coefficients at 1 */
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[0][i]));
 
-		asm volatile ("vmovdqa64  %zmm0,%zmm1");
+		asm volatile ("vmovdqa64 %zmm0,%zmm1");
 		if (np >= 3)
-			asm volatile ("vmovdqa64  %zmm0,%zmm2");
+			asm volatile ("vmovdqa64 %zmm0,%zmm2");
 		if (np >= 4)
-			asm volatile ("vmovdqa64  %zmm0,%zmm3");
+			asm volatile ("vmovdqa64 %zmm0,%zmm3");
 		if (np >= 5)
-			asm volatile ("vmovdqa64  %zmm0,%zmm4");
+			asm volatile ("vmovdqa64 %zmm0,%zmm4");
 		if (np >= 6)
-			asm volatile ("vmovdqa64  %zmm0,%zmm5");
+			asm volatile ("vmovdqa64 %zmm0,%zmm5");
 
-		/* all other disks */
+		/* all other disks use their direct Cauchy coefficients */
 		for (d = 1; d < nd; ++d) {
 			asm volatile ("vmovdqa64 %0,%%zmm6" : : "m" (v[d][i]));
 
-			asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (raid_gfcauchy[1][d]));
+			asm volatile ("vpbroadcastb %0,%%zmm7" : : "m" (raid_gfcauchy_aes[1][d]));
 			if (np >= 3)
-				asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (raid_gfcauchy[2][d]));
+				asm volatile ("vpbroadcastb %0,%%zmm8" : : "m" (raid_gfcauchy_aes[2][d]));
 			if (np >= 4)
-				asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (raid_gfcauchy[3][d]));
+				asm volatile ("vpbroadcastb %0,%%zmm9" : : "m" (raid_gfcauchy_aes[3][d]));
 			if (np >= 5)
-				asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (raid_gfcauchy[4][d]));
+				asm volatile ("vpbroadcastb %0,%%zmm10" : : "m" (raid_gfcauchy_aes[4][d]));
 			if (np >= 6)
-				asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (raid_gfcauchy[5][d]));
+				asm volatile ("vpbroadcastb %0,%%zmm11" : : "m" (raid_gfcauchy_aes[5][d]));
 
 			asm volatile ("vgf2p8mulb %zmm6,%zmm7,%zmm12");
 			if (np >= 3)
@@ -1258,28 +374,28 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 			if (np >= 6)
 				asm volatile ("vgf2p8mulb %zmm6,%zmm11,%zmm16");
 
-			asm volatile ("vpxorq     %zmm6,%zmm0,%zmm0");
-			asm volatile ("vpxorq    %zmm12,%zmm1,%zmm1");
+			asm volatile ("vpxorq %zmm6,%zmm0,%zmm0");
+			asm volatile ("vpxorq %zmm12,%zmm1,%zmm1");
 			if (np >= 3)
-				asm volatile ("vpxorq    %zmm13,%zmm2,%zmm2");
+				asm volatile ("vpxorq %zmm13,%zmm2,%zmm2");
 			if (np >= 4)
-				asm volatile ("vpxorq    %zmm14,%zmm3,%zmm3");
+				asm volatile ("vpxorq %zmm14,%zmm3,%zmm3");
 			if (np >= 5)
-				asm volatile ("vpxorq    %zmm15,%zmm4,%zmm4");
+				asm volatile ("vpxorq %zmm15,%zmm4,%zmm4");
 			if (np >= 6)
-				asm volatile ("vpxorq    %zmm16,%zmm5,%zmm5");
+				asm volatile ("vpxorq %zmm16,%zmm5,%zmm5");
 		}
 
-		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq  %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
 		if (np >= 3)
-			asm volatile ("vmovntdq  %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
 		if (np >= 4)
-			asm volatile ("vmovntdq  %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			asm volatile ("vmovntdq %%zmm3,%0" : "=m" (v[nd + 3][i]));
 		if (np >= 5)
-			asm volatile ("vmovntdq  %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			asm volatile ("vmovntdq %%zmm4,%0" : "=m" (v[nd + 4][i]));
 		if (np >= 6)
-			asm volatile ("vmovntdq  %%zmm5,%0" : "=m" (v[nd + 5][i]));
+			asm volatile ("vmovntdq %%zmm5,%0" : "=m" (v[nd + 5][i]));
 	}
 
 	raid_avx_end();
@@ -1290,7 +406,7 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
  */
 void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni_horner_raid(nd, size, vv, 2);
+	raid_genX_avx2gfni_raid(nd, size, vv, 2);
 }
 
 /*
@@ -1298,7 +414,7 @@ void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni_horner_raid(nd, size, vv, 2);
+	raid_genX_avx512gfni_raid(nd, size, vv, 2);
 }
 
 /*
@@ -1306,7 +422,7 @@ void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni_horner_raid(nd, size, vv, 3);
+	raid_genX_avx2gfni_raid(nd, size, vv, 3);
 }
 
 /*
@@ -1314,7 +430,7 @@ void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni_horner_raid(nd, size, vv, 3);
+	raid_genX_avx512gfni_raid(nd, size, vv, 3);
 }
 
 /*
@@ -1322,7 +438,7 @@ void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni_horner_raid(nd, size, vv, 4);
+	raid_genX_avx2gfni_raid(nd, size, vv, 4);
 }
 
 /*
@@ -1330,7 +446,7 @@ void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni_horner_raid(nd, size, vv, 4);
+	raid_genX_avx512gfni_raid(nd, size, vv, 4);
 }
 
 /*
@@ -1338,7 +454,7 @@ void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx2gfni_horner_raid(nd, size, vv, 5);
+	raid_genX_avx2gfni_raid(nd, size, vv, 5);
 }
 
 /*
@@ -1346,7 +462,7 @@ void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen5_avx512gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni_horner_raid(nd, size, vv, 5);
+	raid_genX_avx512gfni_raid(nd, size, vv, 5);
 }
 
 /*
@@ -1362,7 +478,39 @@ void raid_gen6_avx2gfni_raid(int nd, size_t size, void **vv)
  */
 void raid_gen6_avx512gfni_raid(int nd, size_t size, void **vv)
 {
-	raid_genX_avx512gfni_horner_raid(nd, size, vv, 6);
+	raid_genX_avx512gfni_raid(nd, size, vv, 6);
+}
+
+/*
+ * GEN2 (RAID6 with powers of 3) AVX2 GFNI implementation
+ */
+void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_avx2gfni_aes(nd, size, vv, 2);
+}
+
+/*
+ * GEN2 (RAID6 with powers of 3) GFNI implementation
+ */
+void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_avx512gfni_aes(nd, size, vv, 2);
+}
+
+/*
+ * GEN3 (triple parity with Cauchy matrix) AVX2 GFNI implementation
+ */
+void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_avx2gfni_aes(nd, size, vv, 3);
+}
+
+/*
+ * GEN3 (triple parity with Cauchy matrix) GFNI implementation
+ */
+void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv)
+{
+	raid_genX_avx512gfni_aes(nd, size, vv, 3);
 }
 
 /*
