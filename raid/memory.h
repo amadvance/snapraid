@@ -5,6 +5,19 @@
 #define __RAID_MEMORY_H
 
 /**
+ * Memory allocation and benchmark layout helpers.
+ *
+ * This module provides optional utility functions to allocate SIMD-aligned and
+ * cache-displaced memory buffers for test suites, benchmarks, and Direct I/O.
+ * The core RAID engine (raid.h) remains zero-allocation and operates on
+ * preallocated buffers.
+ *
+ * Like other internal helpers in this library, these functions intentionally do
+ * not validate against arithmetic overflow. Callers are responsible for passing
+ * reasonable and bounded arguments.
+ */
+
+/**
  * Memory alignment provided by raid_malloc().
  *
  * It should guarantee good cache performance everywhere.
@@ -64,26 +77,36 @@
 unsigned raid_optimal_displacement(int n);
 
 /**
- * Aligned malloc.
- * Use an alignment suitable for the raid functions.
+ * Aligned malloc with default RAID alignment (256 bytes).
+ *
+ * Stores the base allocation address in @freeptr to be passed to free().
  */
 void *raid_malloc(size_t size, void **freeptr);
 
 /**
  * Arbitrary aligned malloc.
+ *
+ * Allocates a buffer of @size bytes aligned to @align_size bytes.
+ * Stores the base allocation address in @freeptr to be passed to free().
  */
 void *raid_malloc_align(size_t size, size_t align_size, void **freeptr);
 
 /**
  * Aligned vector allocation.
- * Use an alignment suitable for the raid functions.
- * Returns a vector of @n pointers, each one pointing to a block of
- * the specified @size.
+ *
+ * Allocates an array of @n pointers, each one pointing to a block of
+ * the specified @size with optimal L1 displacement and stride perturbation.
+ *
+ * Freeing requires two calls: free(*freeptr) for the data buffer,
+ * and free(v) for the pointer vector.
  */
 void **raid_malloc_vector(int n, size_t size, void **freeptr);
 
 /**
  * Arbitrary aligned vector allocation.
+ *
+ * Freeing requires two calls: free(*freeptr) for the data buffer,
+ * and free(v) for the pointer vector.
  */
 void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, ssize_t wrap_size, void **freeptr);
 
