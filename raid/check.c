@@ -138,6 +138,9 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 	BUG_ON(nr > 0 && ir[0] < 0);
 	BUG_ON(nr > 0 && ir[nr - 1] >= nd + np);
 
+	if (size == 0)
+		return -1;
+
 	/* count failed data disk */
 	rd = 0;
 	while (rd < nr && ir[rd] < nd)
@@ -177,6 +180,9 @@ int raid_scan(int *ir, int nd, int np, size_t size, void **v)
 	/* enforce valid vectors */
 	BUG_ON(v == 0);
 	BUG_ON(np > 1 && ir == 0);
+
+	if (size == 0)
+		return -1;
 
 	/* check the special case of no failure */
 	if (np != 0 && raid_check(0, 0, nd, np, size, v) == 0)
