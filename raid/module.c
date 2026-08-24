@@ -779,6 +779,12 @@ int raid_selftest(void)
 	ret = 0;
 
 bail:
+	/*
+	 * Reset the global zero buffer so that it does not point to
+	 * the deallocated memory.
+	 */
+	raid_zero(0);
+
 	free(v);
 	free(v_alloc);
 

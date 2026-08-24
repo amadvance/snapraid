@@ -161,6 +161,10 @@ int raid_mode(int mode);
  * The test modifies global RAID state and must not be called concurrently
  * with any other RAID function.
  *
+ * The test resets the zero buffer to 0 via raid_zero(0) upon completion.
+ * A valid zero buffer must be set with raid_zero() afterwards before calling
+ * recovery functions (raid_rec(), raid_data()).
+ *
  * It returns 0 on success.
  */
 int raid_selftest(void);
