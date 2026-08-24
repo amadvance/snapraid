@@ -348,55 +348,11 @@ int raid_test_poly(unsigned mode)
 
 #define test_setup(i) f[i - 1][nf[i - 1]++]
 
-int raid_test_rec(int mode, int nd, size_t size)
+static void raid_test_setup_rec(int mode, int np, raid_rec_fn *f[RAID_PARITY_MAX][32], int nf[RAID_PARITY_MAX])
 {
-	void (*f[RAID_PARITY_MAX][32])(int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
-	void *v_alloc;
-	void **v;
-	void **data;
-	void **parity;
-	void **test;
-	void *data_save[RAID_PARITY_MAX];
-	void *parity_save[RAID_PARITY_MAX];
-	void *waste;
-	int nv;
-	int id[RAID_PARITY_MAX];
-	int ip[RAID_PARITY_MAX];
 	int i;
-	int j;
-	int nr;
-	int nf[RAID_PARITY_MAX];
-	int np;
 
-	raid_mode(mode);
-	if (mode == RAID_MODE_VANDERMONDE_RAID)
-		np = 3;
-	else
-		np = RAID_PARITY_MAX;
-
-	nv = nd + np * 2 + 2;
-
-	v = raid_malloc_vector(nv, size, &v_alloc);
-	if (!v) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	data = v;
-	parity = v + nd;
-	test = v + nd + np;
-
-	for (i = 0; i < np; ++i)
-		parity_save[i] = parity[i];
-
-	memset(v[nv - 2], 0, size);
-	raid_zero(v[nv - 2]);
-
-	waste = v[nv - 1];
-
-	/* fill with pseudo-random data with the arbitrary seed "1" */
-	raid_mrand_vector(1, nd, size, v);
+	(void)mode;
 
 	/* counters of functions for each parity level */
 	for (i = 0; i < np; ++i)
@@ -644,6 +600,60 @@ int raid_test_rec(int mode, int nd, size_t size)
 		}
 #endif
 	}
+}
+
+int raid_test_rec(int mode, int nd, size_t size)
+{
+	raid_rec_fn *f[RAID_PARITY_MAX][32];
+	void *v_alloc;
+	void **v;
+	void **data;
+	void **parity;
+	void **test;
+	void *data_save[RAID_PARITY_MAX];
+	void *parity_save[RAID_PARITY_MAX];
+	void *waste;
+	int nv;
+	int id[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
+	int i;
+	int j;
+	int nr;
+	int nf[RAID_PARITY_MAX];
+	int np;
+
+	raid_mode(mode);
+	if (mode == RAID_MODE_VANDERMONDE_RAID)
+		np = 3;
+	else
+		np = RAID_PARITY_MAX;
+
+	nv = nd + np * 2 + 2;
+
+	v = raid_malloc_vector(nv, size, &v_alloc);
+	if (!v) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	data = v;
+	parity = v + nd;
+	test = v + nd + np;
+
+	for (i = 0; i < np; ++i)
+		parity_save[i] = parity[i];
+
+	memset(v[nv - 2], 0, size);
+	raid_zero(v[nv - 2]);
+
+	waste = v[nv - 1];
+
+	/* fill with pseudo-random data with the arbitrary seed "1" */
+	raid_mrand_vector(1, nd, size, v);
+
+	/* setup recov functions */
+	raid_test_setup_rec(mode, np, f, nf);
 
 	/* compute the parity */
 	raid_gen_ref(nd, np, size, v);
@@ -709,7 +719,7 @@ bail:
 
 int raid_test_tail(int mode, int nd_max, size_t size)
 {
-	void (*f[RAID_PARITY_MAX][32])(int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
+	raid_rec_fn *f[RAID_PARITY_MAX][32];
 	void *v_alloc;
 	void **v;
 	void **data;
@@ -758,252 +768,8 @@ int raid_test_tail(int mode, int nd_max, size_t size)
 	/* fill with pseudo-random data with the arbitrary seed "1" */
 	raid_mrand_vector(1, nd_max, size, v);
 
-	/* counters of functions for each parity level */
-	for (i = 0; i < np; ++i)
-		nf[i] = 0;
-
 	/* setup recov functions */
-	for (i = 1; i <= np; ++i) {
-		switch (i) {
-		case 1:
-			test_setup(i) = raid_rec1_int8;
-			break;
-		case 2:
-			test_setup(i) = raid_rec2_int8;
-			break;
-		default:
-			test_setup(i) = raid_recX_int8;
-			break;
-		}
-#ifdef CONFIG_X86
-		if (raid_cpu_has_ssse3()) {
-			switch (i) {
-			case 1:
-				test_setup(i) = raid_rec1_ssse3;
-				break;
-			case 2:
-				test_setup(i) = raid_rec2_ssse3;
-				break;
-			case 3:
-				test_setup(i) = raid_rec3_ssse3;
-				break;
-			case 4:
-				test_setup(i) = raid_rec4_ssse3;
-				break;
-			case 5:
-				test_setup(i) = raid_rec5_ssse3;
-				break;
-			case 6:
-				test_setup(i) = raid_rec6_ssse3;
-				break;
-			}
-#ifdef CONFIG_X86_64
-			switch (i) {
-			case 1:
-				test_setup(i) = raid_rec1_ssse3ext;
-				break;
-			case 2:
-				test_setup(i) = raid_rec2_ssse3ext;
-				break;
-			case 3:
-				test_setup(i) = raid_rec3_ssse3ext;
-				break;
-			case 4:
-				test_setup(i) = raid_rec4_ssse3ext;
-				break;
-			case 5:
-				test_setup(i) = raid_rec5_ssse3ext;
-				break;
-			case 6:
-				test_setup(i) = raid_rec6_ssse3ext;
-				break;
-			}
-#endif
-		}
-		if (raid_cpu_has_avx2()) {
-			switch (i) {
-			case 1:
-				test_setup(i) = raid_rec1_avx2;
-				break;
-			case 2:
-				test_setup(i) = raid_rec2_avx2;
-				break;
-			case 3:
-				test_setup(i) = raid_rec3_avx2;
-				break;
-			case 4:
-				test_setup(i) = raid_rec4_avx2;
-				break;
-			case 5:
-				test_setup(i) = raid_rec5_avx2;
-				break;
-			case 6:
-				test_setup(i) = raid_rec6_avx2;
-				break;
-			}
-		}
-#ifdef CONFIG_X86_64
-		if (raid_cpu_has_avx512bw()) {
-			switch (i) {
-			case 1:
-				test_setup(i) = raid_rec1_avx512bw;
-				break;
-			case 2:
-				test_setup(i) = raid_rec2_avx512bw;
-				break;
-			case 3:
-				test_setup(i) = raid_rec3_avx512bw;
-				break;
-			case 4:
-				test_setup(i) = raid_rec4_avx512bw;
-				break;
-			case 5:
-				test_setup(i) = raid_rec5_avx512bw;
-				break;
-			case 6:
-				test_setup(i) = raid_rec6_avx512bw;
-				break;
-			}
-		}
-		if (mode == RAID_MODE_CAUCHY_RAID || mode == RAID_MODE_CAUCHY_AES) {
-			if (raid_cpu_has_avx2gfni()) {
-				if (mode == RAID_MODE_CAUCHY_AES) {
-					switch (i) {
-					case 1:
-						test_setup(i) = raid_rec1_avx2gfni_aes;
-						break;
-					case 2:
-						test_setup(i) = raid_rec2_avx2gfni_aes;
-						break;
-					case 3:
-						test_setup(i) = raid_rec3_avx2gfni_aes;
-						break;
-					case 4:
-						test_setup(i) = raid_rec4_avx2gfni_aes;
-						break;
-					case 5:
-						test_setup(i) = raid_rec5_avx2gfni_aes;
-						break;
-					case 6:
-						test_setup(i) = raid_rec6_avx2gfni_aes;
-						break;
-					}
-				} else {
-					switch (i) {
-					case 1:
-						test_setup(i) = raid_rec1_avx2gfni_raid;
-						break;
-					case 2:
-						test_setup(i) = raid_rec2_avx2gfni_raid;
-						break;
-					case 3:
-						test_setup(i) = raid_rec3_avx2gfni_raid;
-						break;
-					case 4:
-						test_setup(i) = raid_rec4_avx2gfni_raid;
-						break;
-					case 5:
-						test_setup(i) = raid_rec5_avx2gfni_raid;
-						break;
-					case 6:
-						test_setup(i) = raid_rec6_avx2gfni_raid;
-						break;
-					}
-				}
-			}
-			if (raid_cpu_has_avx512gfni()) {
-				if (mode == RAID_MODE_CAUCHY_AES) {
-					switch (i) {
-					case 1:
-						test_setup(i) = raid_rec1_avx512gfni_aes;
-						break;
-					case 2:
-						test_setup(i) = raid_rec2_avx512gfni_aes;
-						break;
-					case 3:
-						test_setup(i) = raid_rec3_avx512gfni_aes;
-						break;
-					case 4:
-						test_setup(i) = raid_rec4_avx512gfni_aes;
-						break;
-					case 5:
-						test_setup(i) = raid_rec5_avx512gfni_aes;
-						break;
-					case 6:
-						test_setup(i) = raid_rec6_avx512gfni_aes;
-						break;
-					}
-				} else {
-					switch (i) {
-					case 1:
-						test_setup(i) = raid_rec1_avx512gfni_raid;
-						break;
-					case 2:
-						test_setup(i) = raid_rec2_avx512gfni_raid;
-						break;
-					case 3:
-						test_setup(i) = raid_rec3_avx512gfni_raid;
-						break;
-					case 4:
-						test_setup(i) = raid_rec4_avx512gfni_raid;
-						break;
-					case 5:
-						test_setup(i) = raid_rec5_avx512gfni_raid;
-						break;
-					case 6:
-						test_setup(i) = raid_rec6_avx512gfni_raid;
-						break;
-					}
-				}
-			}
-		}
-#endif
-#endif
-#ifdef CONFIG_NEON
-		switch (i) {
-		case 1:
-			test_setup(i) = raid_rec1_neon;
-			break;
-		case 2:
-			test_setup(i) = raid_rec2_neon;
-			break;
-		case 3:
-			test_setup(i) = raid_rec3_neon;
-			break;
-		case 4:
-			test_setup(i) = raid_rec4_neon;
-			break;
-		case 5:
-			test_setup(i) = raid_rec5_neon;
-			break;
-		case 6:
-			test_setup(i) = raid_rec6_neon;
-			break;
-		}
-#endif
-#ifdef CONFIG_NEON32
-		switch (i) {
-		case 1:
-			test_setup(i) = raid_rec1_neon32;
-			break;
-		case 2:
-			test_setup(i) = raid_rec2_neon32;
-			break;
-		case 3:
-			test_setup(i) = raid_rec3_neon32;
-			break;
-		case 4:
-			test_setup(i) = raid_rec4_neon32;
-			break;
-		case 5:
-			test_setup(i) = raid_rec5_neon32;
-			break;
-		case 6:
-			test_setup(i) = raid_rec6_neon32;
-			break;
-		}
-#endif
-	}
+	raid_test_setup_rec(mode, np, f, nf);
 
 	/* test all disk counts from 1 to nd_max */
 	for (nd = 1; nd <= nd_max; ++nd) {
@@ -1078,47 +844,9 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-int raid_test_par(int mode, int nd, size_t size)
+static void raid_test_setup_par(int mode, int np, raid_gen_fn *f[RAID_PARITY_MAX][32], int nf[RAID_PARITY_MAX])
 {
-	void (*f[RAID_PARITY_MAX][32])(int nd, size_t size, void **vbuf);
-	void *v_alloc;
-	void **v;
-	int nv;
-	int i, j, k;
-	int nf[RAID_PARITY_MAX];
-	int np;
-
-	raid_mode(mode);
-	if (mode == RAID_MODE_VANDERMONDE_RAID)
-		np = 3;
-	else
-		np = RAID_PARITY_MAX;
-
-	nv = nd + np * 2;
-
-	v = raid_malloc_vector(nv, size, &v_alloc);
-	if (!v) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* check memory */
-	if (raid_mtest_vector(nv, size, v) != 0) {
-		/* LCOV_EXCL_START */
-		goto bail;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* fill with pseudo-random data with the arbitrary seed "2" */
-	raid_mrand_vector(2, nv, size, v);
-
-	/* compute the parity */
-	raid_gen_ref(nd, np, size, v);
-
-	/* copy in back buffers */
-	for (i = 0; i < np; ++i)
-		memcpy(v[nd + np + i], v[nd + i], size);
+	int i;
 
 	/* counters of functions for each parity level */
 	for (i = 0; i < np; ++i)
@@ -1328,6 +1056,52 @@ int raid_test_par(int mode, int nd, size_t size)
 #endif
 #endif
 	}
+}
+
+int raid_test_par(int mode, int nd, size_t size)
+{
+	raid_gen_fn *f[RAID_PARITY_MAX][32];
+	void *v_alloc;
+	void **v;
+	int nv;
+	int i, j, k;
+	int nf[RAID_PARITY_MAX];
+	int np;
+
+	raid_mode(mode);
+	if (mode == RAID_MODE_VANDERMONDE_RAID)
+		np = 3;
+	else
+		np = RAID_PARITY_MAX;
+
+	nv = nd + np * 2;
+
+	v = raid_malloc_vector(nv, size, &v_alloc);
+	if (!v) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* check memory */
+	if (raid_mtest_vector(nv, size, v) != 0) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* fill with pseudo-random data with the arbitrary seed "2" */
+	raid_mrand_vector(2, nv, size, v);
+
+	/* compute the parity */
+	raid_gen_ref(nd, np, size, v);
+
+	/* copy in back buffers */
+	for (i = 0; i < np; ++i)
+		memcpy(v[nd + np + i], v[nd + i], size);
+
+	/* setup parity generation functions */
+	raid_test_setup_par(mode, np, f, nf);
 
 	/* check all the functions */
 	for (k = 0; k < np; ++k) {
