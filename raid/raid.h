@@ -111,6 +111,9 @@
  *
  * You must call this function before any other RAID function.
  *
+ * After selecting the RAID mode to use, raid_selftest() should be called
+ * before using the RAID system.
+ *
  * Initialization modifies global RAID state and must not be called
  * concurrently with any other RAID function.
  *
@@ -140,12 +143,18 @@ int raid_mode(int mode);
  *
  * raid_init() must be called before this function.
  *
- * If a mode different from the default is required, raid_mode() must be
- * called before this function. The self test verifies the currently selected
- * RAID mode.
+ * The RAID mode to use must be selected before calling this function.
+ * raid_init() selects RAID_MODE_CAUCHY_RAID by default; raid_mode() may be
+ * used to select a different mode. The self test verifies only the currently
+ * selected RAID mode.
  *
- * The test is immediate, and it's intended to be run at application
- * startup to check the integrity of the RAID system.
+ * The test is immediate and is intended to be run at every application
+ * startup after the RAID mode has been selected. It verifies the RAID
+ * implementation selected for the current mode, CPU, compiler, and ABI
+ * before it is used.
+ *
+ * If the RAID mode is changed later, this function should be called again
+ * before using the new mode.
  *
  * The test modifies global RAID state and must not be called concurrently
  * with any other RAID function.

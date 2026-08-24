@@ -16,7 +16,10 @@ Public API
 Header: #include "raid.h"
 
 Before invoking any generation or recovery functions, call raid_init() once to
-detect CPU capabilities and initialize mode dispatch.
+detect CPU capabilities and initialize mode dispatch. Then select the RAID mode
+to use, if different from the default, and call raid_selftest(). raid_selftest()
+verifies only the currently selected mode and is intended to be run at every
+library startup before normal RAID operations.
 
   void raid_init(void)
     Initializes algorithm tables and detects hardware SIMD instruction sets
@@ -71,7 +74,12 @@ detect CPU capabilities and initialize mode dispatch.
 
   int raid_selftest(void)
     Runs startup verification tests for parity generation, recovery, and
-    scanning across parity levels 1..6. Returns 0 on success, < 0 on failure.
+    scanning across parity levels supported by the currently selected mode.
+    It is intended to be called at every library startup after the RAID mode
+    has been selected, to verify the selected implementation on the current
+    CPU, compiler, and ABI. If the mode is changed later, the self test should
+    be run again before using the new mode. Returns 0 on success, < 0 on
+    failure.
 
 
 Memory, Alignment and Aliasing Requirements
@@ -166,7 +174,7 @@ Testing and Benchmarks
 Standalone test applications located in raid/test/ provide verification and
 performance evaluation:
 
-  raid/test/selftest   Quick startup self-test verifying basic correctness.
+  raid/test/selftest   Quick startup self-test exercising raid_selftest().
   raid/test/fulltest   Exhaustive test suite testing all combinations of data
                        disks (1..251) and single/multi-disk failure recovery.
   raid/test/invtest    Matrix inversion test verifying non-singularity for all
