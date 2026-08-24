@@ -18,7 +18,8 @@ static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **
 
 	if (nd == 1) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
@@ -129,7 +130,8 @@ static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void 
 
 	if (nd == 1) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
@@ -212,7 +214,8 @@ static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **v
 
 	if (nd == 1) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
@@ -330,7 +333,8 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 
 	if (nd == 1) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
@@ -779,7 +783,7 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 
 	raid_avx_end();
 }
- 
+
 static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;

@@ -57,8 +57,10 @@ void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 	int d;
 
 	if (nd == 1) {
-		memcpy(v[1], v[0], size);
-		memcpy(v[2], v[0], size);
+		if (v[1] != v[0])
+			memcpy(v[1], v[0], size);
+		if (v[2] != v[0])
+			memcpy(v[2], v[0], size);
 		return;
 	}
 
@@ -281,9 +283,12 @@ void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 	int d;
 
 	if (nd == 1) {
-		memcpy(v[1], v[0], size);
-		memcpy(v[2], v[0], size);
-		memcpy(v[3], v[0], size);
+		if (v[1] != v[0])
+			memcpy(v[1], v[0], size);
+		if (v[2] != v[0])
+			memcpy(v[2], v[0], size);
+		if (v[3] != v[0])
+			memcpy(v[3], v[0], size);
 		return;
 	}
 
@@ -450,7 +455,8 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
 
 	if (nd == 1) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 

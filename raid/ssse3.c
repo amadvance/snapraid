@@ -26,7 +26,8 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -131,7 +132,8 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -257,7 +259,8 @@ void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 5; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -394,7 +397,8 @@ void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 6; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -545,7 +549,8 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -805,7 +810,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -995,7 +1001,8 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
@@ -1773,7 +1780,7 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip, int nd, si
  *
  * Process two 16-byte blocks per iteration, grouping equal operations across
  * both lanes to expose instruction-level parallelism.
- * 
+ *
  * A four-way 64-byte unroll was tested but is slower than this two-way 32-byte
  * implementation.
  */

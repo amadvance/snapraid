@@ -317,7 +317,8 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 3; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -574,7 +575,8 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 4; ++i)
-			memcpy(v[1 + i], v[0], size);
+			if (v[1 + i] != v[0])
+				memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -736,7 +738,8 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 

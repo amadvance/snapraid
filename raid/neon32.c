@@ -244,7 +244,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (d = 0; d < np; ++d)
-			memcpy(v[1 + d], v[0], size);
+			if (v[1 + d] != v[0])
+				memcpy(v[1 + d], v[0], size);
 		return;
 	}
 
