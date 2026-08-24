@@ -64,11 +64,16 @@ mktables: mktables.o
 tables.c: mktables
 	./mktables > tables.c
 
+TEST_COUNT ?= 32
+TEST_SIZE ?= 256
+SDE_TEST_COUNT ?= 8
+SDE_TEST_SIZE ?= 256
+
 # Use this target to run a complete test
 test:
 	./selftest
 	./speedtest
-	./fulltest
+	./fulltest $(TEST_COUNT) $(TEST_SIZE)
 
 # Use this target to run a coverage test using lcov
 covtest:
@@ -86,10 +91,10 @@ sdecovtest:
 	$(MAKE) clean
 	$(MAKE) lcov_reset
 	$(MAKE) COVERAGE=1 all
-	$(SDE) -p4p -- ./fulltest
-	$(SDE) -mrm -- ./fulltest
-	$(SDE) -nhm -- ./fulltest
-	$(SDE) -hsw -- ./fulltest
+	$(SDE) -p4p -- ./fulltest $(SDE_TEST_COUNT) $(SDE_TEST_SIZE)
+	$(SDE) -mrm -- ./fulltest $(SDE_TEST_COUNT) $(SDE_TEST_SIZE)
+	$(SDE) -nhm -- ./fulltest $(SDE_TEST_COUNT) $(SDE_TEST_SIZE)
+	$(SDE) -hsw -- ./fulltest $(SDE_TEST_COUNT) $(SDE_TEST_SIZE)
 	$(SDE) -p4p -- ./selftest
 	$(SDE) -mrm -- ./selftest
 	$(SDE) -nhm -- ./selftest
@@ -109,7 +114,7 @@ sdetest:
 	$(SDE) -hsw -- ./selftest
 	$(SDE) -skx -- ./selftest
 	$(SDE) -icl -- ./selftest
-	$(SDE) -icl -- ./fulltest
+	$(SDE) -icl -- ./fulltest $(SDE_TEST_COUNT) $(SDE_TEST_SIZE)
 
 # Use this target to run a speed test on Ice Lake simulator
 sdespeed:

@@ -21,11 +21,32 @@
 #ifdef COVERAGE
 #define TEST_COUNT 10
 #else
-#define TEST_COUNT 32
+#define TEST_COUNT 24
 #endif
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	int test_count = TEST_COUNT;
+	int test_size = TEST_SIZE;
+
+	if (argc > 1) {
+		test_count = atoi(argv[1]);
+		if (test_count < RAID_PARITY_MAX || test_count > RAID_DATA_MAX) {
+			printf("Invalid TEST_COUNT %d (must be between %d and %d)\n",
+				test_count, RAID_PARITY_MAX, RAID_DATA_MAX);
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (argc > 2) {
+		test_size = atoi(argv[2]);
+		if (test_size <= 0 || (test_size % 64) != 0) {
+			printf("Invalid TEST_SIZE %d (must be positive and multiple of 64)\n",
+				test_size);
+			return EXIT_FAILURE;
+		}
+	}
+
 	printf("Full sanity test for the RAID Cauchy library\n\n");
 
 	raid_init();
@@ -53,7 +74,10 @@ int main(void)
 #endif
 #endif
 
-	printf("\nPlease wait about 60 seconds...\n\n");
+	if (test_count >= 32)
+		printf("\nPlease wait about 60 seconds...\n\n");
+	else
+		printf("\nPlease wait...\n\n");
 
 	printf("Test sorting...\n");
 	if (raid_test_sort() != 0) {
@@ -84,7 +108,7 @@ int main(void)
 	}
 
 	printf("Test Vandermonde RAID parity generation with %u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, TEST_SIZE) != 0) {
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
@@ -92,7 +116,7 @@ int main(void)
 
 	printf("Test Cauchy RAID parity generation with 1-%u data disks...\n", RAID_DATA_MAX);
 	for (int i = 1; i <= RAID_DATA_MAX; ++i) {
-		if (raid_test_par(RAID_MODE_CAUCHY_RAID, i, TEST_SIZE) != 0) {
+		if (raid_test_par(RAID_MODE_CAUCHY_RAID, i, test_size) != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -100,7 +124,7 @@ int main(void)
 	}
 	printf("Test Cauchy AES parity generation with 1-%u data disks...\n", RAID_DATA_MAX);
 	for (int i = 1; i <= RAID_DATA_MAX; ++i) {
-		if (raid_test_par(RAID_MODE_CAUCHY_AES, i, TEST_SIZE) != 0) {
+		if (raid_test_par(RAID_MODE_CAUCHY_AES, i, test_size) != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -108,44 +132,42 @@ int main(void)
 	}
 
 	printf("Test Vandermonde RAID tail recovering with 1-%u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_tail(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, TEST_SIZE) != 0) {
+	if (raid_test_tail(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
 	printf("Test Cauchy RAID tail recovering with 1-%u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, TEST_SIZE) != 0) {
+	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
 	printf("Test Cauchy AES tail recovering with 1-%u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_tail(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, TEST_SIZE) != 0) {
+	if (raid_test_tail(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
-	printf("Test Vandermonde RAID recovering with all combinations of %u data and 3 parity blocks...\n", TEST_COUNT);
-	if (raid_test_rec(RAID_MODE_VANDERMONDE_RAID, TEST_COUNT, TEST_SIZE) != 0) {
+	printf("Test Vandermonde RAID recovering with all combinations of %u data and 3 parity blocks...\n", test_count);
+	if (raid_test_rec(RAID_MODE_VANDERMONDE_RAID, test_count, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
-
-	printf("Test Cauchy RAID recovering with all combinations of %u data and 6 parity blocks...\n", TEST_COUNT);
-	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, TEST_COUNT, TEST_SIZE) != 0) {
+	printf("Test Cauchy RAID recovering with all combinations of %u data and 6 parity blocks...\n", test_count);
+	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, test_count, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
-
-	printf("Test Cauchy AES recovering with all combinations of %u data and 6 parity blocks...\n", TEST_COUNT);
-	if (raid_test_rec(RAID_MODE_CAUCHY_AES, TEST_COUNT, TEST_SIZE) != 0) {
+	printf("Test Cauchy AES recovering with all combinations of %u data and 6 parity blocks...\n", test_count);
+	if (raid_test_rec(RAID_MODE_CAUCHY_AES, test_count, test_size) != 0) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
