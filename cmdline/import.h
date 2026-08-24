@@ -44,7 +44,7 @@ struct snapraid_import_file {
 /**
  * Deallocate an import file.
  */
-void import_file_free(struct snapraid_import_file* file);
+void import_file_free(void* void_file);
 
 /**
  * Fetch a block from the specified hash.

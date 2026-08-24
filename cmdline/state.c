@@ -202,19 +202,19 @@ void state_init(struct snapraid_state* state)
 
 void state_done(struct snapraid_state* state)
 {
-	tommy_list_foreach(&state->disklist, (tommy_foreach_func*)disk_free);
-	tommy_list_foreach(&state->extralist, (tommy_foreach_func*)extra_free);
-	tommy_list_foreach(&state->maplist, (tommy_foreach_func*)map_free);
-	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
-	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
-	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
-	tommy_list_foreach(&state->thermallist, (tommy_foreach_func*)thermal_free);
-	tommy_hashdyn_foreach(&state->searchset, (tommy_foreach_func*)search_file_free);
+	tommy_list_foreach(&state->disklist, disk_free);
+	tommy_list_foreach(&state->extralist, extra_free);
+	tommy_list_foreach(&state->maplist, map_free);
+	tommy_list_foreach(&state->contentlist, content_free);
+	tommy_list_foreach(&state->filterlist, filter_free);
+	tommy_list_foreach(&state->importlist, import_file_free);
+	tommy_list_foreach(&state->thermallist, thermal_free);
+	tommy_hashdyn_foreach(&state->searchset, search_file_free);
 	tommy_hashdyn_done(&state->importset);
 	tommy_hashdyn_done(&state->previmportset);
 	tommy_hashdyn_done(&state->searchset);
 	tommy_arrayblkof_done(&state->infoarr);
-	tommy_list_foreach(&state->bucketlist, (tommy_foreach_func*)bucket_free);
+	tommy_list_foreach(&state->bucketlist, bucket_free);
 }
 
 /**
@@ -4149,7 +4149,7 @@ static void* state_write_thread(void* arg)
 	return 0;
 
 bail:
-	tommy_hashdyn_foreach(&bucket_hash, (tommy_foreach_func*)bucket_free);
+	tommy_hashdyn_foreach(&bucket_hash, bucket_free);
 	tommy_hashdyn_done(&bucket_hash);
 	return context;
 }
@@ -5017,7 +5017,7 @@ void state_commit(struct snapraid_state* state)
 
 		if (!tommy_list_empty(&disk->dealloclist)) {
 			/* clear the dealloc list */
-			tommy_list_foreach(&disk->dealloclist, (tommy_foreach_func*)dealloc_free);
+			tommy_list_foreach(&disk->dealloclist, dealloc_free);
 			tommy_list_init(&disk->dealloclist);
 
 			/* mark the state as needing write */

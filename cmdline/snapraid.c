@@ -2131,8 +2131,8 @@ int snapraid_main(int argc, char* argv[])
 #endif
 
 	state_done(&state);
-	tommy_list_foreach(&filterlist_file, (tommy_foreach_func*)filter_free);
-	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
+	tommy_list_foreach(&filterlist_file, filter_free);
+	tommy_list_foreach(&filterlist_disk, filter_free);
 
 	app_done();
 	os_done();

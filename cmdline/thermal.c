@@ -22,8 +22,10 @@ struct snapraid_thermal* thermal_alloc(uint64_t dev, const char* name)
 	return thermal;
 }
 
-void thermal_free(struct snapraid_thermal* thermal)
+void thermal_free(void* void_thermal)
 {
+	struct snapraid_thermal* thermal = void_thermal;
+
 	free(thermal);
 }
 

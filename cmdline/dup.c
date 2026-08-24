@@ -60,8 +60,10 @@ static inline tommy_uint32_t hash_hash(struct snapraid_hash* hash)
 	return tommy_hash_u32(0, hash->hash, HASH_MAX);
 }
 
-void hash_free(struct snapraid_hash* hash)
+static void hash_free(void* void_hash)
 {
+	struct snapraid_hash* hash = void_hash;
+
 	free(hash);
 }
 
@@ -122,7 +124,7 @@ void state_dup(struct snapraid_state* state)
 		}
 	}
 
-	tommy_hashdyn_foreach(&hashset, (tommy_foreach_func*)hash_free);
+	tommy_hashdyn_foreach(&hashset, hash_free);
 	tommy_hashdyn_done(&hashset);
 
 	msg_status("\n");

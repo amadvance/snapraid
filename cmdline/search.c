@@ -25,8 +25,10 @@ static void search_file(struct snapraid_state* state, const char* path, data_off
 	tommy_hashdyn_insert(&state->searchset, &file->node, file, file_hash);
 }
 
-void search_file_free(struct snapraid_search_file* file)
+void search_file_free(void* void_file)
 {
+	struct snapraid_search_file* file = void_file;
+
 	free(file->path);
 	free(file);
 }

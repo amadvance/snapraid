@@ -24,8 +24,10 @@ struct snapraid_content* content_alloc(const char* path, uint64_t dev)
 	return content;
 }
 
-void content_free(struct snapraid_content* content)
+void content_free(void* void_content)
 {
+	struct snapraid_content* content = void_content;
+
 	free(content);
 }
 
@@ -453,8 +455,10 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	return file;
 }
 
-void file_free(struct snapraid_file* file)
+void file_free(void* void_file)
 {
+	struct snapraid_file* file = void_file;
+
 	free(file->sub);
 	file->sub = 0;
 	free(file->blockvec);
@@ -679,8 +683,10 @@ struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_fil
 	return extent;
 }
 
-void extent_free(struct snapraid_extent* extent)
+void extent_free(void* void_extent)
 {
+	struct snapraid_extent* extent = void_extent;
+
 	free(extent);
 }
 
@@ -730,8 +736,10 @@ struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned l
 	return slink;
 }
 
-void link_free(struct snapraid_link* slink)
+void link_free(void* void_link)
 {
+	struct snapraid_link* slink = void_link;
+
 	free(slink->sub);
 	free(slink->linkto);
 	free(slink);
@@ -764,8 +772,10 @@ struct snapraid_dir* dir_alloc(const char* sub)
 	return dir;
 }
 
-void dir_free(struct snapraid_dir* dir)
+void dir_free(void* void_dir)
 {
+	struct snapraid_dir* dir = void_dir;
+
 	free(dir->sub);
 	free(dir);
 }
@@ -820,8 +830,10 @@ void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file
 	}
 }
 
-void dealloc_free(struct snapraid_dealloc* dealloc)
+void dealloc_free(void* void_dealloc)
 {
+	struct snapraid_dealloc* dealloc = void_dealloc;
+
 	free(dealloc->sub);
 	free(dealloc->blockhash);
 	free(dealloc);
@@ -890,19 +902,21 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	return disk;
 }
 
-void disk_free(struct snapraid_disk* disk)
+void disk_free(void* void_disk)
 {
-	tommy_list_foreach(&disk->filelist, (tommy_foreach_func*)file_free);
-	tommy_list_foreach(&disk->deletedlist, (tommy_foreach_func*)file_free);
-	tommy_tree_foreach(&disk->fs_file, (tommy_foreach_func*)extent_free);
+	struct snapraid_disk* disk = void_disk;
+
+	tommy_list_foreach(&disk->filelist, file_free);
+	tommy_list_foreach(&disk->deletedlist, file_free);
+	tommy_tree_foreach(&disk->fs_file, extent_free);
 	tommy_hashdyn_done(&disk->inodeset);
 	tommy_hashdyn_done(&disk->pathset);
 	tommy_hashdyn_done(&disk->stampset);
-	tommy_list_foreach(&disk->linklist, (tommy_foreach_func*)link_free);
+	tommy_list_foreach(&disk->linklist, link_free);
 	tommy_hashdyn_done(&disk->linkset);
-	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
+	tommy_list_foreach(&disk->dirlist, dir_free);
 	tommy_hashdyn_done(&disk->dirset);
-	tommy_list_foreach(&disk->dealloclist, (tommy_foreach_func*)dealloc_free);
+	tommy_list_foreach(&disk->dealloclist, dealloc_free);
 
 #if HAVE_THREAD
 	thread_mutex_destroy(&disk->fs_mutex);
@@ -937,8 +951,10 @@ struct snapraid_extra* extra_alloc(const char* name, const char* dir, uint64_t d
 	return extra;
 }
 
-void extra_free(struct snapraid_extra* extra)
+void extra_free(void* void_extra)
 {
+	struct snapraid_extra* extra = void_extra;
+
 	free(extra);
 }
 
@@ -1565,8 +1581,10 @@ struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t 
 	return map;
 }
 
-void map_free(struct snapraid_map* map)
+void map_free(void* void_map)
 {
+	struct snapraid_map* map = void_map;
+
 	free(map);
 }
 
@@ -1584,8 +1602,10 @@ static int bucket_cmp(const void* void_a, const void* void_b)
 	return 0;
 }
 
-void bucket_free(struct snapraid_bucket* bucket)
+void bucket_free(void* void_bucket)
 {
+	struct snapraid_bucket* bucket = void_bucket;
+
 	free(bucket);
 }
 
@@ -1621,7 +1641,7 @@ void bucket_insert(tommy_hashdyn* bucket_hash, time_t time_at, block_off_t count
 void bucket_to_list(tommy_hashdyn* bucket_hash, tommy_list* bucket_list, block_off_t* bucketcount)
 {
 	/* clear previous list */
-	tommy_list_foreach(bucket_list, (tommy_foreach_func*)bucket_free);
+	tommy_list_foreach(bucket_list, bucket_free);
 	tommy_list_init(bucket_list);
 
 	log_tag("list:bucket_begin\n");

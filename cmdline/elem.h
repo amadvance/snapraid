@@ -574,7 +574,7 @@ struct snapraid_content* content_alloc(const char* path, uint64_t dev);
 /**
  * Deallocate a content.
  */
-void content_free(struct snapraid_content* content);
+void content_free(void* void_content);
 
 /**
  * Allocate a filter pattern for files and directories.
@@ -850,7 +850,7 @@ struct snapraid_file* file_dup(struct snapraid_file* copy);
 /**
  * Deallocate a file.
  */
-void file_free(struct snapraid_file* file);
+void file_free(void* void_file);
 
 /**
  * Rename a file.
@@ -955,7 +955,7 @@ struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_fil
 /**
  * Deallocate a extent.
  */
-void extent_free(struct snapraid_extent* extent);
+void extent_free(void* void_extent);
 
 /**
  * Compare extent by parity position.
@@ -1001,7 +1001,7 @@ struct snapraid_link* link_alloc(const char* name, const char* slink, unsigned l
 /**
  * Deallocate a link.
  */
-void link_free(struct snapraid_link* slink);
+void link_free(void* void_link);
 
 /**
  * Compare a link with a name.
@@ -1044,7 +1044,7 @@ struct snapraid_dir* dir_alloc(const char* name);
 /**
  * Deallocate a dir.
  */
-void dir_free(struct snapraid_dir* dir);
+void dir_free(void* void_dir);
 
 /**
  * Compare a dir with a name.
@@ -1067,7 +1067,7 @@ struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, dat
 /**
  * Deallocate a dealloc.
  */
-void dealloc_free(struct snapraid_dealloc* dealloc);
+void dealloc_free(void* void_dealloc);
 
 /**
  * Import file hash in the dealloc.
@@ -1082,7 +1082,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 /**
  * Deallocate a disk.
  */
-void disk_free(struct snapraid_disk* disk);
+void disk_free(void* void_disk);
 
 /**
  * Allocate a extra disk.
@@ -1092,7 +1092,7 @@ struct snapraid_extra* extra_alloc(const char* name, const char* dir, uint64_t d
 /**
  * Deallocate a other disk.
  */
-void extra_free(struct snapraid_extra* other);
+void extra_free(void* void_extra);
 
 /**
  * Get the size of the disk in blocks.
@@ -1219,7 +1219,7 @@ struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t 
 /**
  * Deallocate a disk mapping.
  */
-void map_free(struct snapraid_map* map);
+void map_free(void* void_map);
 
 /**
  * Mask used to store additional information in the info bits.
@@ -1335,7 +1335,7 @@ struct snapraid_bucket {
 	tommy_node node;
 };
 
-void bucket_free(struct snapraid_bucket* bucket);
+void bucket_free(void* void_bucket);
 
 /**
  * Insert an bucket record into the hashtable

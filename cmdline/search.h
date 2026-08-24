@@ -28,7 +28,7 @@ struct snapraid_search_file {
 /**
  * Deallocate a search file.
  */
-void search_file_free(struct snapraid_search_file* file);
+void search_file_free(void* void_file);
 
 /**
  * Fetch a file from the size, timestamp and name.

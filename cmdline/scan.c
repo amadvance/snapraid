@@ -74,8 +74,9 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	return scan;
 }
 
-static void scan_free(struct snapraid_scan* scan)
+static void scan_free(void* void_scan)
 {
+	struct snapraid_scan* scan = void_scan;
 #if HAVE_THREAD
 	thread_mutex_destroy(&scan->disk->stamp_mutex);
 #endif
@@ -2249,7 +2250,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 	log_flush();
 
-	tommy_list_foreach(&scanlist, (tommy_foreach_func*)scan_free);
+	tommy_list_foreach(&scanlist, scan_free);
 
 	/* check the file-system on all disks */
 	state_fscheck(state, "after scan");

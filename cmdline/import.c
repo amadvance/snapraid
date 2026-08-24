@@ -204,8 +204,10 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 	tommy_list_insert_tail(&state->importlist, &file->nodelist, file);
 }
 
-void import_file_free(struct snapraid_import_file* file)
+void import_file_free(void* void_file)
 {
+	struct snapraid_import_file* file = void_file;
+
 	free(file->path);
 	free(file->blockimp);
 	free(file);

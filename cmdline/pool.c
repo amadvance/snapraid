@@ -35,8 +35,10 @@ static inline tommy_uint32_t pool_hash(const char* file)
 	return tommy_hash_u32(0, file, strlen(file));
 }
 
-void pool_free(struct snapraid_pool* pool)
+static void pool_free(void* void_pool)
 {
+	struct snapraid_pool* pool = void_pool;
+
 	free(pool);
 }
 
@@ -442,12 +444,12 @@ void state_pool(struct snapraid_state* state)
 	msg_progress("Cleaning...\n");
 
 	/* delete all the remaining links */
-	tommy_hashdyn_foreach_arg(&poolset, (tommy_foreach_arg_func*)remove_link, pool_dir);
+	tommy_hashdyn_foreach_arg(&poolset, remove_link, pool_dir);
 
 	/* delete empty dirs */
 	clean_dir(pool_dir);
 
-	tommy_hashdyn_foreach(&poolset, (tommy_foreach_func*)pool_free);
+	tommy_hashdyn_foreach(&poolset, pool_free);
 	tommy_hashdyn_done(&poolset);
 
 	if (count)

@@ -56,7 +56,7 @@ struct snapraid_thermal* thermal_alloc(uint64_t dev, const char* name);
 /**
  * Deallocate a thermal state.
  */
-void thermal_free(struct snapraid_thermal* thermal);
+void thermal_free(void* void_thermal);
 
 #endif
 
