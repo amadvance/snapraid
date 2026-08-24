@@ -20,8 +20,8 @@
  *
  *   The polynomial used by the original RAID-6 specification and the
  *   Linux kernel RAID implementation, used with primitive generator g=2.
- *   Choosing this polynomial ensures on-disk compatibility with existing
- *   RAID arrays and interchange with other RAID implementations.
+ *   For identically ordered data blocks, the generated P/Q syndrome bytes
+ *   match the Linux RAID6 implementation.
  *
  *   On CPUs supporting Intel GFNI (Galois Field New Instructions),
  *   generation and recovery are accelerated with vgf2p8affineqb.
@@ -63,7 +63,7 @@
  *
  * Provides high performance on modern CPUs with SSSE3, AVX2, AVX-512, GFNI, or NEON support.
  * On GFNI CPUs, the standard RAID field is accelerated using affine transformations.
- * Ensures maximum compatibility with standard Linux RAID arrays.
+ * Uses Linux RAID6-compatible P/Q coefficients.
  *
  * This is the default mode set after calling raid_init().
  */
@@ -331,7 +331,10 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  * first one encountered is returned. This function does not check that the
  * returned combination is unique.
  *
- * It uses a brute force method, and then the call can be expensive.
+ * This function is primarily intended as a reference implementation and to
+ * demonstrate how raid_check() can be used to locate failed blocks. It uses
+ * an exhaustive brute force search and is not intended for production use.
+ *
  * The expected execution time is proportional to the binomial coefficient
  * @np + @nd choose @np - 1, usually written as:
  *

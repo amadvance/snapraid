@@ -26,12 +26,10 @@
  * and divisions by 2 in GF(2^8) are very fast. It is similar to ZFS RAIDZ3,
  * which uses powers of 4 instead of 2^-1.
  *
- * Unfortunately, this method does not extend beyond triple parity because
- * no choice of power coefficients guarantees solvable equations for all
- * combinations of missing disks. This is expected: a Vandermonde matrix,
- * used in this method, does not ensure that all submatrices are nonsingular
- * [2, Chap. 11, Problem 7], which is required for an MDS (Maximum Distance
- * Separable) code [2, Chap. 11, Theorem 8].
+ * Unfortunately, this method does not extend reliably beyond triple parity.
+ * Vandermonde matrices do not guarantee that all square submatrices are
+ * nonsingular, which is required to recover every possible combination of
+ * missing disks [2, Chap. 11, Problem 7][2, Chap. 11, Theorem 8].
  *
  * To overcome this limitation, a Cauchy matrix [3][4] is used for parity
  * computation. A Cauchy matrix ensures that all square submatrices are
@@ -121,9 +119,9 @@
  * data disks, one for each column. All the 377,342,351,231 square submatrices
  * are nonsingular, verified also by brute-force testing.
  *
- * This matrix can be extended to support any number of parities by simply
- * adding additional rows and removing one column for each new row to maintain
- * the condition i + j < 255.
+ * The construction can be extended to additional parity rows while reducing
+ * the maximum number of data columns accordingly. In GF(2^8), the Extended
+ * Cauchy construction requires data + parity <= 257
  * (See mktables.c for more details on how the matrix is generated.)
  *
  * The downside is that generic multiplications are required to compute the

@@ -44,7 +44,9 @@
 #include <string.h>
 
 /*
- * Inverse assert.
+ * Inverse assert used to check internal invariants and API preconditions.
+ * It is intentionally based on assert() so that all checks can be disabled
+ * with NDEBUG. When disabled, callers must satisfy all documented preconditions.
  */
 #define BUG_ON(a) assert(!(a))
 
