@@ -91,6 +91,11 @@ static inline int raid_cpu_match_avx(uint32_t leaf_1_ecx, uint32_t leaf_7_ebx, u
 {
 	uint32_t reg[4];
 
+	/* check that leaf 7 is supported */
+	raid_cpuid(0, 0, reg);
+	if (reg[0] < 7)
+		return 0;
+
 	raid_cpuid(1, 0, reg);
 	if ((reg[2] & leaf_1_ecx) != leaf_1_ecx)
 		return 0;
