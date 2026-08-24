@@ -1304,6 +1304,83 @@ static __always_inline void raid_rec2_ssse3_delta(int nr, int *id, int *ip, int 
 	raid_sse_end();
 }
 
+/*
+ * Recover failure of two data blocks using P and Q SSSE3 implementation.
+ */
+static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *pa;
+	uint8_t *q;
+	uint8_t *qa;
+	uint8_t C[2];
+	size_t i;
+
+	/* get multiplication coefficients */
+	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
+	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+
+	/* compute delta parity */
+	raid_delta_gen(2, id, ip, nd, size, vv);
+
+	p = v[nd];
+	q = v[nd + 1];
+	pa = v[id[0]];
+	qa = v[id[1]];
+
+	raid_sse_begin();
+
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+
+	for (i = 0; i < size; i += 16) {
+		/* Pd */
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
+		asm volatile ("pxor %0,%%xmm0" : : "m" (pa[i]));
+
+		/* Qd */
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (q[i]));
+		asm volatile ("pxor %0,%%xmm1" : : "m" (qa[i]));
+
+		/* split Pd and Qd into low/high nibbles */
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("movdqa %xmm0,%xmm2");
+		asm volatile ("movdqa %xmm1,%xmm3");
+		asm volatile ("psrlw $4,%xmm2");
+		asm volatile ("psrlw $4,%xmm3");
+		asm volatile ("pand %xmm7,%xmm4");
+		asm volatile ("pand %xmm7,%xmm5");
+		asm volatile ("pand %xmm7,%xmm2");
+		asm volatile ("pand %xmm7,%xmm3");
+
+		/* C0 * Pd */
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
+		asm volatile ("pshufb %xmm4,%xmm6");
+
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
+		asm volatile ("pshufb %xmm2,%xmm4");
+		asm volatile ("pxor %xmm4,%xmm6");
+
+		/* C1 * Qd */
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
+		asm volatile ("pshufb %xmm5,%xmm4");
+		asm volatile ("pxor %xmm4,%xmm6");
+
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
+		asm volatile ("pshufb %xmm3,%xmm4");
+		asm volatile ("pxor %xmm4,%xmm6");
+
+		/* xmm6 = Dy, xmm0 = Pd, so Dx = Pd ^ Dy */
+		asm volatile ("pxor %xmm6,%xmm0");
+
+		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm6,%0" : "=m" (qa[i]));
+	}
+
+	raid_sse_end();
+}
+
 static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip,
 	int nd, size_t size, void **vv)
 {
@@ -1853,6 +1930,87 @@ static __always_inline void raid_rec2_ssse3ext_delta(int nr, int *id, int *ip, i
 		asm volatile ("pxor %xmm5,%xmm4");
 
 		asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[1][i]));
+	}
+
+	raid_sse_end();
+}
+
+/*
+ * Recover failure of two data blocks using P and Q SSSE3 extended implementation.
+ */
+static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *pa;
+	uint8_t *q;
+	uint8_t *qa;
+	uint8_t C[2];
+	size_t i;
+
+	/* get multiplication coefficients */
+	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
+	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+
+	/* compute delta parity */
+	raid_delta_gen(2, id, ip, nd, size, vv);
+
+	p = v[nd];
+	q = v[nd + 1];
+	pa = v[id[0]];
+	qa = v[id[1]];
+
+	raid_sse_begin();
+
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+
+	/* keep the four multiplication tables resident */
+	asm volatile ("movdqa %0,%%xmm8" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
+	asm volatile ("movdqa %0,%%xmm9" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
+	asm volatile ("movdqa %0,%%xmm10" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
+
+	for (i = 0; i < size; i += 16) {
+		/* Pd */
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
+		asm volatile ("pxor %0,%%xmm0" : : "m" (pa[i]));
+
+		/* Qd */
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (q[i]));
+		asm volatile ("pxor %0,%%xmm1" : : "m" (qa[i]));
+
+		/* split Pd and Qd */
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("movdqa %xmm0,%xmm2");
+		asm volatile ("movdqa %xmm1,%xmm3");
+		asm volatile ("psrlw $4,%xmm2");
+		asm volatile ("psrlw $4,%xmm3");
+		asm volatile ("pand %xmm7,%xmm4");
+		asm volatile ("pand %xmm7,%xmm5");
+		asm volatile ("pand %xmm7,%xmm2");
+		asm volatile ("pand %xmm7,%xmm3");
+
+		/* C0 * Pd */
+		asm volatile ("movdqa %xmm8,%xmm6");
+		asm volatile ("pshufb %xmm4,%xmm6");
+		asm volatile ("movdqa %xmm9,%xmm12");
+		asm volatile ("pshufb %xmm2,%xmm12");
+		asm volatile ("pxor %xmm12,%xmm6");
+
+		/* C1 * Qd */
+		asm volatile ("movdqa %xmm10,%xmm12");
+		asm volatile ("pshufb %xmm5,%xmm12");
+		asm volatile ("pxor %xmm12,%xmm6");
+		asm volatile ("movdqa %xmm11,%xmm12");
+		asm volatile ("pshufb %xmm3,%xmm12");
+		asm volatile ("pxor %xmm12,%xmm6");
+
+		/* Dy = xmm6, Dx = Pd ^ Dy */
+		asm volatile ("pxor %xmm6,%xmm0");
+
+		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm6,%0" : "=m" (qa[i]));
 	}
 
 	raid_sse_end();
@@ -2459,6 +2617,13 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
+
+	/* if recovering with P,Q use the specialized function */
+	if (ip[0] == 0 && ip[1] == 1) {
+		raid_rec2of2_ssse3(id, ip, nd, size, vv);
+		return;
+	}
+
 	raid_rec2_ssse3_delta(2, id, ip, nd, size, vv);
 }
 
@@ -2503,6 +2668,13 @@ void raid_rec1_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 void raid_rec2_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
+
+	/* if recovering with P,Q use the specialized function */
+	if (ip[0] == 0 && ip[1] == 1) {
+		raid_rec2of2_ssse3ext(id, ip, nd, size, vv);
+		return;
+	}
+
 	raid_rec2_ssse3ext_delta(2, id, ip, nd, size, vv);
 }
 

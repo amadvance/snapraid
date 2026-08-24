@@ -1040,6 +1040,79 @@ static __always_inline void raid_rec2_avx2_delta(int nr, int *id, int *ip, int n
 }
 
 /*
+ * Recover failure of two data blocks using P and Q AVX2 implementation.
+ */
+static __always_inline void raid_rec2of2_avx2(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *pa;
+	uint8_t *q;
+	uint8_t *qa;
+	uint8_t C[2];
+	size_t i;
+
+	/* get multiplication coefficients */
+	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
+	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+
+	/* compute delta parity */
+	raid_delta_gen(2, id, ip, nd, size, vv);
+
+	p = v[nd];
+	q = v[nd + 1];
+	pa = v[id[0]];
+	qa = v[id[1]];
+
+	raid_avx_begin();
+
+	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
+
+	for (i = 0; i < size; i += 32) {
+		/* Pd */
+		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
+		asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (pa[i]));
+
+		/* Qd */
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (q[i]));
+		asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (qa[i]));
+
+		/* split Pd and Qd */
+		asm volatile ("vpsrlw $4,%ymm0,%ymm2");
+		asm volatile ("vpsrlw $4,%ymm1,%ymm3");
+		asm volatile ("vpand %ymm7,%ymm0,%ymm4");
+		asm volatile ("vpand %ymm7,%ymm1,%ymm5");
+		asm volatile ("vpand %ymm7,%ymm2,%ymm2");
+		asm volatile ("vpand %ymm7,%ymm3,%ymm3");
+
+		/* C0 * Pd */
+		asm volatile ("vbroadcasti128 %0,%%ymm6" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
+		asm volatile ("vpshufb %ymm4,%ymm6,%ymm6");
+
+		asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
+		asm volatile ("vpshufb %ymm2,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm4,%ymm6,%ymm6");
+
+		/* C1 * Qd */
+		asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
+		asm volatile ("vpshufb %ymm5,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm4,%ymm6,%ymm6");
+
+		asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
+		asm volatile ("vpshufb %ymm3,%ymm4,%ymm4");
+		asm volatile ("vpxor %ymm4,%ymm6,%ymm6");
+
+		/* Dy = ymm6, Dx = Pd ^ Dy */
+		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
+
+		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
+		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (qa[i]));
+	}
+
+	raid_avx_end();
+}
+
+/*
  * RAID recovering AVX2 implementation optimized for up to four failures.
  *
  * Compute all selected syndromes in one scan of the surviving data, then
@@ -1440,7 +1513,7 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 /*
  * RAID recovering for two disks AVX2 extended implementation
  */
-static __always_inline void raid_rec2_avx2ext_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec2_avx2ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	const int N = 2;
@@ -1450,8 +1523,6 @@ static __always_inline void raid_rec2_avx2ext_delta(int nr, int *id, int *ip, in
 	uint8_t V[N * N];
 	size_t i;
 	int j, k;
-
-	(void)nr; /* unused, it's always 2 */
 
 	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
@@ -1532,6 +1603,79 @@ static __always_inline void raid_rec2_avx2ext_delta(int nr, int *id, int *ip, in
 		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
 
 		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[1][i]));
+	}
+
+	raid_avx_end();
+}
+
+/*
+ * RAID recovering for two disks with P and Q AVX2 implementation
+ */
+static __always_inline void raid_rec2of2_avx2ext(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	const int N = 2;
+	uint8_t *p[N];
+	uint8_t *pa[N];
+	uint8_t C[N];
+	size_t i;
+
+	/* get multiplication coefficients */
+	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
+	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+
+	/* compute delta parity */
+	raid_delta_gen(N, id, ip, nd, size, vv);
+
+	p[0] = v[nd];
+	p[1] = v[nd + 1];
+	pa[0] = v[id[0]];
+	pa[1] = v[id[1]];
+
+	raid_avx_begin();
+
+	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
+
+	/* the multiplication tables are constant for the whole recovery */
+	asm volatile ("vbroadcasti128 %0,%%ymm8" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm9" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm10" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm11" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
+
+	for (i = 0; i < size; i += 32) {
+		/* d0 = p[0] ^ pa[0] */
+		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[0][i]));
+		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[0][i]));
+		asm volatile ("vpxor %ymm2,%ymm0,%ymm0");
+
+		/* d1 = p[1] ^ pa[1] */
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[1][i]));
+		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[1][i]));
+		asm volatile ("vpxor %ymm3,%ymm1,%ymm1");
+
+		/* C[0] * d0 */
+		asm volatile ("vpsrlw $4,%ymm0,%ymm5");
+		asm volatile ("vpand %ymm7,%ymm0,%ymm4");
+		asm volatile ("vpand %ymm7,%ymm5,%ymm5");
+		asm volatile ("vpshufb %ymm4,%ymm8,%ymm2");
+		asm volatile ("vpshufb %ymm5,%ymm9,%ymm3");
+		asm volatile ("vpxor %ymm3,%ymm2,%ymm6");
+
+		/* C[1] * d1 */
+		asm volatile ("vpsrlw $4,%ymm1,%ymm5");
+		asm volatile ("vpand %ymm7,%ymm1,%ymm4");
+		asm volatile ("vpand %ymm7,%ymm5,%ymm5");
+		asm volatile ("vpshufb %ymm4,%ymm10,%ymm2");
+		asm volatile ("vpshufb %ymm5,%ymm11,%ymm3");
+		asm volatile ("vpxor %ymm2,%ymm6,%ymm6");
+		asm volatile ("vpxor %ymm3,%ymm6,%ymm6");
+
+		/* pa[1] = C[0] * d0 ^ C[1] * d1 */
+		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[1][i]));
+
+		/* pa[0] = d0 ^ pa[1] */
+		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
+		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[0][i]));
 	}
 
 	raid_avx_end();
@@ -2224,6 +2368,13 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
+
+	/* if recovering with P,Q use the specialized function */
+	if (ip[0] == 0 && ip[1] == 1) {
+		raid_rec2of2_avx2(id, ip, nd, size, vv);
+		return;
+	}
+
 	raid_rec2_avx2_delta(2, id, ip, nd, size, vv);
 }
 
@@ -2277,7 +2428,7 @@ void raid_rec2_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if recovering with P,Q uses the delta function */
 	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2_avx2ext_delta(2, id, ip, nd, size, vv);
+		raid_rec2of2_avx2ext(id, ip, nd, size, vv);
 		return;
 	}
 

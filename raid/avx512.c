@@ -887,9 +887,89 @@ void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 	raid_recX_avx512bw(1, id, ip, nd, size, vv);
 }
 
+/*
+ * Recover failure of two data blocks using P and Q AVX512BW implementation.
+ */
+static __always_inline void raid_rec2of2_avx512bw(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *pa;
+	uint8_t *q;
+	uint8_t *qa;
+	uint8_t C[2];
+	size_t i;
+
+	/* get multiplication coefficients */
+	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
+	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+
+	/* compute delta parity */
+	raid_delta_gen(2, id, ip, nd, size, vv);
+
+	p = v[nd];
+	q = v[nd + 1];
+	pa = v[id[0]];
+	qa = v[id[1]];
+
+	raid_avx_begin();
+
+	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
+
+	/* keep both multiplication-table pairs resident */
+	asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
+
+	for (i = 0; i < size; i += 64) {
+		/* Pd */
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
+		asm volatile ("vpxord %0,%%zmm0,%%zmm0" : : "m" (pa[i]));
+
+		/* Qd */
+		asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (q[i]));
+		asm volatile ("vpxord %0,%%zmm1,%%zmm1" : : "m" (qa[i]));
+
+		/* split Pd and Qd */
+		asm volatile ("vpsrlw $4,%zmm0,%zmm2");
+		asm volatile ("vpsrlw $4,%zmm1,%zmm3");
+		asm volatile ("vpandq %zmm31,%zmm0,%zmm4");
+		asm volatile ("vpandq %zmm31,%zmm1,%zmm5");
+		asm volatile ("vpandq %zmm31,%zmm2,%zmm2");
+		asm volatile ("vpandq %zmm31,%zmm3,%zmm3");
+
+		/* C0 * Pd */
+		asm volatile ("vpshufb %zmm4,%zmm16,%zmm6");
+		asm volatile ("vpshufb %zmm2,%zmm17,%zmm7");
+		asm volatile ("vpxord %zmm7,%zmm6,%zmm6");
+
+		/* C1 * Qd */
+		asm volatile ("vpshufb %zmm5,%zmm18,%zmm7");
+		asm volatile ("vpxord %zmm7,%zmm6,%zmm6");
+		asm volatile ("vpshufb %zmm3,%zmm19,%zmm7");
+		asm volatile ("vpxord %zmm7,%zmm6,%zmm6");
+
+		/* Dy = zmm6, Dx = Pd ^ Dy */
+		asm volatile ("vpxord %zmm6,%zmm0,%zmm0");
+
+		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
+		asm volatile ("vmovdqa64 %%zmm6,%0" : "=m" (qa[i]));
+	}
+
+	raid_avx_end();
+}
+
 void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
+
+	/* if recovering with P,Q use the specialized function */
+	if (ip[0] == 0 && ip[1] == 1) {
+		raid_rec2of2_avx512bw(id, ip, nd, size, vv);
+		return;
+	}
+
 	raid_recX_avx512bw(2, id, ip, nd, size, vv);
 }
 

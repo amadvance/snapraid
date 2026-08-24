@@ -24,11 +24,6 @@ All done ?
 
 * Enable MuseAir and disable random seed
 
-* Optimize rec2of2 SIMD recovery for P+Q: add specialized AVX2, AVX512 and GFNI
-  fast paths for recovering two failed data disks when ip[0] == 0 && ip[1] == 1.
-  Exploit the RAID6 closed-form solution to reduce recovery from 4 generic GF
-  multiplications to 2 GF multiplications plus XOR (Dy = C0*Pd ^ C1*Qd, Dx = Pd ^ Dy).
-
 * Check Reliability Test. We can derive Failure probability from MBTF
 https://github.com/linuxhw/SMART
 https://github.com/linuxhw/EnterpriseDrive

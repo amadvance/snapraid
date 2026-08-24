@@ -1045,9 +1045,132 @@ void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_recX_neon(1, id, ip, nd, size, vv);
 }
 
+/*
+ * Recover failure of two data blocks using P and Q AArch64 NEON implementation.
+ */
+static __always_inline void raid_rec2of2_neon(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *pa;
+	uint8_t *q;
+	uint8_t *qa;
+	uint8_t C[2];
+	size_t i;
+
+	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
+	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+
+	raid_delta_gen(2, id, ip, nd, size, vv);
+
+	p = v[nd];
+	q = v[nd + 1];
+	pa = v[id[0]];
+	qa = v[id[1]];
+
+	raid_neon_begin();
+
+	asm volatile (
+		"ldr q28, %0\n"
+		"ldr q20, %1\n"
+		"ldr q21, %2\n"
+		"ldr q22, %3\n"
+		"ldr q23, %4\n"
+		:
+		: "m" (gfconst16.low4[0]),
+		"m" (raid_gfmulpshufb[C[0]][0][0]),
+		"m" (raid_gfmulpshufb[C[0]][1][0]),
+		"m" (raid_gfmulpshufb[C[1]][0][0]),
+		"m" (raid_gfmulpshufb[C[1]][1][0])
+	);
+
+	for (i = 0; i < size; i += 32) {
+		asm volatile (
+			/* Pd, two lanes */
+			"ldr q0, %4\n"
+			"ldr q1, %5\n"
+			"ldr q12, %8\n"
+			"ldr q13, %9\n"
+			"eor v0.16b, v0.16b, v12.16b\n"
+			"eor v1.16b, v1.16b, v13.16b\n"
+
+			/* preserve Pd for Dx */
+			"mov v8.16b, v0.16b\n"
+			"mov v9.16b, v1.16b\n"
+
+			/* Qd, two lanes */
+			"ldr q2, %6\n"
+			"ldr q3, %7\n"
+			"ldr q12, %10\n"
+			"ldr q13, %11\n"
+			"eor v2.16b, v2.16b, v12.16b\n"
+			"eor v3.16b, v3.16b, v13.16b\n"
+
+			/* split Pd */
+			"ushr v4.16b, v0.16b, #4\n"
+			"ushr v5.16b, v1.16b, #4\n"
+			"and v0.16b, v0.16b, v28.16b\n"
+			"and v1.16b, v1.16b, v28.16b\n"
+			"and v4.16b, v4.16b, v28.16b\n"
+			"and v5.16b, v5.16b, v28.16b\n"
+
+			/* split Qd */
+			"ushr v6.16b, v2.16b, #4\n"
+			"ushr v7.16b, v3.16b, #4\n"
+			"and v2.16b, v2.16b, v28.16b\n"
+			"and v3.16b, v3.16b, v28.16b\n"
+			"and v6.16b, v6.16b, v28.16b\n"
+			"and v7.16b, v7.16b, v28.16b\n"
+
+			/* C0 * Pd */
+			"tbl v10.16b, {v20.16b}, v0.16b\n"
+			"tbl v11.16b, {v20.16b}, v1.16b\n"
+			"tbl v12.16b, {v21.16b}, v4.16b\n"
+			"tbl v13.16b, {v21.16b}, v5.16b\n"
+			"eor v10.16b, v10.16b, v12.16b\n"
+			"eor v11.16b, v11.16b, v13.16b\n"
+
+			/* C1 * Qd */
+			"tbl v12.16b, {v22.16b}, v2.16b\n"
+			"tbl v13.16b, {v22.16b}, v3.16b\n"
+			"tbl v14.16b, {v23.16b}, v6.16b\n"
+			"tbl v15.16b, {v23.16b}, v7.16b\n"
+			"eor v12.16b, v12.16b, v14.16b\n"
+			"eor v13.16b, v13.16b, v15.16b\n"
+
+			/* Dy */
+			"eor v10.16b, v10.16b, v12.16b\n"
+			"eor v11.16b, v11.16b, v13.16b\n"
+
+			/* Dx = Pd ^ Dy */
+			"eor v8.16b, v8.16b, v10.16b\n"
+			"eor v9.16b, v9.16b, v11.16b\n"
+
+			"str q8, %0\n"
+			"str q9, %1\n"
+			"str q10, %2\n"
+			"str q11, %3\n"
+			: "=m" (pa[i]), "=m" (pa[i + 16]),
+			"=m" (qa[i]), "=m" (qa[i + 16])
+			: "m" (p[i]), "m" (p[i + 16]),
+			"m" (q[i]), "m" (q[i + 16]),
+			"m" (pa[i]), "m" (pa[i + 16]),
+			"m" (qa[i]), "m" (qa[i + 16])
+		);
+	}
+
+	raid_neon_end();
+}
+
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
+
+	if (ip[0] == 0 && ip[1] == 1) {
+		raid_rec2of2_neon(id, ip, nd, size, vv);
+		return;
+	}
+
 	raid_recX_neon(2, id, ip, nd, size, vv);
 }
 
