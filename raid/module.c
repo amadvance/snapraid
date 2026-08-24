@@ -172,8 +172,35 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 	}
 
 	/* recompute all the parities up to the last bad one */
-	if (nrp != 0)
-		raid_gen(nd, ir[nr - 1] - nd + 1, size, v);
+	if (nrp != 0) {
+		void *v_gen[RAID_DATA_MAX + RAID_PARITY_MAX];
+		int max_p = ir[nr - 1] - nd + 1;
+		int i, j;
+
+		/* copy data block pointers */
+		for (i = 0; i < nd; ++i)
+			v_gen[i] = v[i];
+
+		/*
+		 * Setup parity pointers.
+		 * To avoid writing into healthy parity blocks (which may be read-only),
+		 * redirect each healthy parity to the buffer of the next bad parity.
+		 * Because raid_gen() generates and writes parities in increasing order,
+		 * the subsequent bad parity will overwrite any intermediate data.
+		 */
+		for (i = 0, j = 0; i < max_p; ++i) {
+			if (j < nrp && ir[nrd + j] == nd + i) {
+				/* this parity has to be recovered */
+				v_gen[nd + i] = v[nd + i];
+				++j;
+			} else {
+				/* this parity is healthy, redirect to the next bad parity */
+				v_gen[nd + i] = v[ir[nrd + j]];
+			}
+		}
+
+		raid_gen(nd, max_p, size, v_gen);
+	}
 }
 
 void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
