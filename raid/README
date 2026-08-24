@@ -175,8 +175,10 @@ Standalone test applications located in raid/test/ provide verification and
 performance evaluation:
 
   raid/test/selftest   Quick startup self-test exercising raid_selftest().
-  raid/test/fulltest   Exhaustive test suite testing all combinations of data
-                       disks (1..251) and single/multi-disk failure recovery.
+  raid/test/fulltest   Comprehensive test suite verifying parity generation and
+                       tail recovery for 1..251 data disks, and all multi-disk
+                       failure recovery combinations for up to TEST_COUNT disks
+                       (default 24/32).
   raid/test/invtest    Matrix inversion test verifying non-singularity for all
                        square submatrices of the Cauchy matrix.
   raid/test/speedtest  Benchmark measuring single-thread throughput (MiB/s)
