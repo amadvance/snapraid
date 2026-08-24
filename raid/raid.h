@@ -4,6 +4,8 @@
 #ifndef __RAID_H
 #define __RAID_H
 
+#include <stddef.h>
+
 /*
  * GF(2^8) reducing polynomial selection.
  *
