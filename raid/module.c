@@ -78,9 +78,15 @@ void raid_gen(int nd, int np, size_t size, void **v)
 	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
 
-	/* enforce limit on number of failures */
+	/* enforce limit on number of data blocks */
+	BUG_ON(nd < 1 || nd > RAID_DATA_MAX);
+
+	/* enforce limit on number of parity blocks */
 	BUG_ON(np < 1);
 	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
+
+	/* enforce valid vector */
+	BUG_ON(v == 0);
 
 	BUG_ON(raid_gen_ptr[np - 1] == 0);
 	raid_gen_ptr[np - 1](nd, size, v);
@@ -103,9 +109,19 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
 
-	/* enforce limit on number of failures */
-	BUG_ON(nr > np);
+	/* enforce limit on number of data blocks */
+	BUG_ON(nd < 1 || nd > RAID_DATA_MAX);
+
+	/* enforce limit on number of parity blocks */
+	BUG_ON(np < 1);
 	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
+
+	/* enforce limit on number of failures */
+	BUG_ON(nr < 0 || nr > np);
+
+	/* enforce valid vectors */
+	BUG_ON(v == 0);
+	BUG_ON(nr > 0 && ir == 0);
 
 	/* enforce order in index vector */
 	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
@@ -115,6 +131,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
 
 	/* enforce limit on index vector */
+	BUG_ON(nr > 0 && ir[0] < 0);
 	BUG_ON(nr > 0 && ir[nr - 1] >= nd + np);
 
 	/* count the number of data blocks to recover */
@@ -150,6 +167,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 		 * Recover the nrd data blocks specified in ir[],
 		 * using the first nrd parity in ip[] for recovering
 		 */
+		BUG_ON(raid_rec_ptr[nrd - 1] == 0);
 		raid_rec_ptr[nrd - 1](nrd, ir, ip, nd, size, v);
 	}
 
@@ -163,9 +181,17 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
 
+	/* enforce limit on number of data blocks */
+	BUG_ON(nd < 1 || nd > RAID_DATA_MAX);
+
 	/* enforce limit on number of failures */
-	BUG_ON(nr > nd);
+	BUG_ON(nr < 0 || nr > nd);
 	BUG_ON(nr > RAID_PARITY_MAX);
+
+	/* enforce valid vectors */
+	BUG_ON(v == 0);
+	BUG_ON(nr > 0 && id == 0);
+	BUG_ON(nr > 0 && ip == 0);
 
 	/* enforce order in index vector for data */
 	BUG_ON(nr >= 2 && id[0] >= id[1]);
@@ -175,6 +201,7 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	BUG_ON(nr >= 6 && id[4] >= id[5]);
 
 	/* enforce limit on index vector for data */
+	BUG_ON(nr > 0 && id[0] < 0);
 	BUG_ON(nr > 0 && id[nr - 1] >= nd);
 
 	/* enforce order in index vector for parity */
@@ -185,6 +212,7 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	BUG_ON(nr >= 6 && ip[4] >= ip[5]);
 
 	/* enforce limit on index vector for parity */
+	BUG_ON(nr > 0 && ip[0] < 0);
 	BUG_ON(nr > 0 && (ip[nr - 1] >= RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && ip[nr - 1] >= 3)));
 
 	/* if failed data is present */

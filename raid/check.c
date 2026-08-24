@@ -113,9 +113,19 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
 
-	/* enforce limit on number of failures */
-	BUG_ON(nr >= np); /* >= because we check with extra parity */
+	/* enforce limit on number of data blocks */
+	BUG_ON(nd < 1 || nd > RAID_DATA_MAX);
+
+	/* enforce limit on number of parity blocks */
+	BUG_ON(np < 1);
 	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
+
+	/* enforce limit on number of failures */
+	BUG_ON(nr < 0 || nr >= np); /* >= because we check with extra parity */
+
+	/* enforce valid vectors */
+	BUG_ON(v == 0);
+	BUG_ON(nr > 0 && ir == 0);
 
 	/* enforce order in index vector */
 	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
@@ -125,6 +135,7 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
 
 	/* enforce limit on index vector */
+	BUG_ON(nr > 0 && ir[0] < 0);
 	BUG_ON(nr > 0 && ir[nr - 1] >= nd + np);
 
 	/* count failed data disk */
@@ -152,6 +163,20 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 int raid_scan(int *ir, int nd, int np, size_t size, void **v)
 {
 	int r;
+
+	/* enforce limit on size */
+	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of data blocks */
+	BUG_ON(nd < 1 || nd > RAID_DATA_MAX);
+
+	/* enforce limit on number of parity blocks */
+	BUG_ON(np < 0);
+	BUG_ON(np > RAID_PARITY_MAX || (raid_mode_active == RAID_MODE_VANDERMONDE_RAID && np > 3));
+
+	/* enforce valid vectors */
+	BUG_ON(v == 0);
+	BUG_ON(np > 1 && ir == 0);
 
 	/* check the special case of no failure */
 	if (np != 0 && raid_check(0, 0, nd, np, size, v) == 0)

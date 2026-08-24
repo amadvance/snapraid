@@ -198,8 +198,9 @@ void raid_zero(void *zero);
  *
  * Each parity block allows to recover one data block.
  *
- * @nd Number of data blocks.
- * @np Number of parity blocks to compute.
+ * @nd Number of data blocks. It must be between 1 and RAID_DATA_MAX.
+ * @np Number of parity blocks to compute. It must be between 1 and
+ *   RAID_PARITY_MAX. RAID_MODE_VANDERMONDE_RAID supports at most 3.
  * @size Size of the blocks pointed to by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks for
@@ -230,13 +231,16 @@ void raid_gen(int nd, int np, size_t size, void **v);
  * This happens even in the case you have more parity blocks than needed,
  * and some form of integrity verification would be possible.
  *
- * @nr Number of failed data and parity blocks to recover.
+ * @nr Number of failed data and parity blocks to recover. It must be
+ *   between 0 and @np.
  * @ir[] Vector of @nr indexes of the failed data and parity blocks.
  *   The indexes start from 0. They must be in order.
+ *   All indexes must be nonnegative and smaller than @nd + @np.
  *   The first parity is represented with value @nd, the second with value
  *   @nd + 1, just like positions in the @v vector.
- * @nd Number of data blocks.
- * @np Number of parity blocks.
+ * @nd Number of data blocks. It must be between 1 and RAID_DATA_MAX.
+ * @np Number of parity blocks. It must be between 1 and RAID_PARITY_MAX.
+ *   RAID_MODE_VANDERMONDE_RAID supports at most 3.
  * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
@@ -253,12 +257,16 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  * This function recovers all the data blocks marked as bad in the @id vector.
  * The parity blocks are not modified.
  *
- * @nr Number of failed data blocks to recover.
+ * @nr Number of failed data blocks to recover. It must be nonnegative,
+ *   not greater than @nd, and not greater than RAID_PARITY_MAX.
  * @id[] Vector of @nr indexes of the data blocks to recover.
  *   The indexes start from 0. They must be in order.
+ *   All indexes must be nonnegative and smaller than @nd.
  * @ip[] Vector of @nr indexes of the parity blocks to use for recovery.
  *   The indexes start from 0. They must be in order.
- * @nd Number of data blocks.
+ *   All indexes must be nonnegative and smaller than RAID_PARITY_MAX.
+ *   In RAID_MODE_VANDERMONDE_RAID they must be smaller than 3.
+ * @nd Number of data blocks. It must be between 1 and RAID_DATA_MAX.
  * @size Size of the blocks pointed to by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nr - 1] + 1) elements. The starting elements are the
@@ -281,13 +289,16 @@ void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
  *
  * No data or parity blocks are modified.
  *
- * @nr Number of failed data and parity blocks.
+ * @nr Number of failed data and parity blocks. It must be nonnegative and
+ *   strictly smaller than @np.
  * @ir[] Vector of @nr indexes of the failed data and parity blocks.
  *   The indexes start from 0. They must be in order.
+ *   All indexes must be nonnegative and smaller than @nd + @np.
  *   The first parity is represented with value @nd, the second with value
  *   @nd + 1, just like positions in the @v vector.
- * @nd Number of data blocks.
- * @np Number of parity blocks.
+ * @nd Number of data blocks. It must be between 1 and RAID_DATA_MAX.
+ * @np Number of parity blocks. It must be between 1 and RAID_PARITY_MAX.
+ *   RAID_MODE_VANDERMONDE_RAID supports at most 3.
  * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
@@ -331,8 +342,9 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
  *   The indexes start from 0 and they are in order.
  *   The first parity is represented with value @nd, the second with value
  *   @nd + 1, just like positions in the @v vector.
- * @nd Number of data blocks.
- * @np Number of parity blocks.
+ * @nd Number of data blocks. It must be between 1 and RAID_DATA_MAX.
+ * @np Number of parity blocks. It must be between 0 and RAID_PARITY_MAX.
+ *   RAID_MODE_VANDERMONDE_RAID supports at most 3.
  * @size Size of the blocks pointed by @v. It must be a multiple of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
