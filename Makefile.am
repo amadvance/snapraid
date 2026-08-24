@@ -195,11 +195,16 @@ EXTRA_DIST = \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	m4/ax_pthread.m4 \
 	m4/m4_ax_check_compile_flag.m4 \
+	raid/README \
+	raid/NOTES \
+	raid/OTHERS \
+	raid/mktables.c \
 	raid/test/Makefile \
 	raid/test/fulltest.c \
 	raid/test/selftest.c \
 	raid/test/speedtest.c \
 	raid/test/invtest.c \
+	raid/test/invtestx.c \
 	makeslackware.sh.in \
 	makeslackdist.sh.in \
 	pkg/snapraid.SlackBuild.in \
