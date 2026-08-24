@@ -882,7 +882,7 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 /*
  * RAID recovering for one disk AVX2 implementation
  */
-static __always_inline void raid_rec1_avx2_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_avx2_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -890,8 +890,6 @@ static __always_inline void raid_rec1_avx2_delta(int nr, int *id, int *ip, int n
 	uint8_t G;
 	uint8_t V;
 	size_t i;
-
-	(void)nr; /* unused, it's always 1 */
 
 	/* setup the coefficients matrix */
 	G = A(ip[0], id[0]);
@@ -946,31 +944,28 @@ static __always_inline void raid_rec1_avx2_delta(int nr, int *id, int *ip, int n
 /*
  * RAID recovering for two disks AVX2 implementation
  */
-static __always_inline void raid_rec2_avx2_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec2_avx2_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[N];
-	uint8_t *pa[N];
-	uint8_t G[N * N];
-	uint8_t V[N * N];
+	uint8_t *p[2];
+	uint8_t *pa[2];
+	uint8_t G[2 * 2];
+	uint8_t V[2 * 2];
 	size_t i;
 	int j, k;
 
-	(void)nr; /* unused, it's always 2 */
-
 	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+	for (j = 0; j < 2; ++j)
+		for (k = 0; k < 2; ++k)
+			G[j * 2 + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+	raid_invert(G, V, 2);
 
 	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
+	raid_delta_gen(2, id, ip, nd, size, vv);
 
-	for (j = 0; j < N; ++j) {
+	for (j = 0; j < 2; ++j) {
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
@@ -1516,26 +1511,25 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 static __always_inline void raid_rec2_avx2ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[N];
-	uint8_t *pa[N];
-	uint8_t G[N * N];
-	uint8_t V[N * N];
+	uint8_t *p[2];
+	uint8_t *pa[2];
+	uint8_t G[2 * 2];
+	uint8_t V[2 * 2];
 	size_t i;
 	int j, k;
 
 	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+	for (j = 0; j < 2; ++j)
+		for (k = 0; k < 2; ++k)
+			G[j * 2 + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+	raid_invert(G, V, 2);
 
 	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
+	raid_delta_gen(2, id, ip, nd, size, vv);
 
-	for (j = 0; j < N; ++j) {
+	for (j = 0; j < 2; ++j) {
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
@@ -1614,10 +1608,9 @@ static __always_inline void raid_rec2_avx2ext_delta(int *id, int *ip, int nd, si
 static __always_inline void raid_rec2of2_avx2ext(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[N];
-	uint8_t *pa[N];
-	uint8_t C[N];
+	uint8_t *p[2];
+	uint8_t *pa[2];
+	uint8_t C[2];
 	size_t i;
 
 	/* get multiplication coefficients */
@@ -1625,7 +1618,7 @@ static __always_inline void raid_rec2of2_avx2ext(int *id, int *ip, int nd, size_
 	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
 
 	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
+	raid_delta_gen(2, id, ip, nd, size, vv);
 
 	p[0] = v[nd];
 	p[1] = v[nd + 1];
@@ -2362,7 +2355,7 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec1_avx2_delta(1, id, ip, nd, size, vv);
+	raid_rec1_avx2_delta(id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2375,7 +2368,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec2_avx2_delta(2, id, ip, nd, size, vv);
+	raid_rec2_avx2_delta(id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2415,7 +2408,7 @@ void raid_rec1_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if recovering with Q uses the delta function */
 	if (ip[0] == 1) {
-		raid_rec1_avx2_delta(1, id, ip, nd, size, vv);
+		raid_rec1_avx2_delta(id, ip, nd, size, vv);
 		return;
 	}
 

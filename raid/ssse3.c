@@ -1152,7 +1152,7 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 /*
  * RAID recovering for one disk SSSE3 implementation
  */
-static __always_inline void raid_rec1_ssse3_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_ssse3_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1160,8 +1160,6 @@ static __always_inline void raid_rec1_ssse3_delta(int nr, int *id, int *ip, int 
 	uint8_t G;
 	uint8_t V;
 	size_t i;
-
-	(void)nr; /* unused, it's always 1 */
 
 	/* setup the coefficients matrix */
 	G = A(ip[0], id[0]);
@@ -1203,31 +1201,28 @@ static __always_inline void raid_rec1_ssse3_delta(int nr, int *id, int *ip, int 
 /*
  * RAID recovering for two disks SSSE3 implementation
  */
-static __always_inline void raid_rec2_ssse3_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec2_ssse3_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[N];
-	uint8_t *pa[N];
-	uint8_t G[N * N];
-	uint8_t V[N * N];
+	uint8_t *p[2];
+	uint8_t *pa[2];
+	uint8_t G[2 * 2];
+	uint8_t V[2 * 2];
 	size_t i;
 	int j, k;
 
-	(void)nr; /* unused, it's always 2 */
-
 	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+	for (j = 0; j < 2; ++j)
+		for (k = 0; k < 2; ++k)
+			G[j * 2 + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+	raid_invert(G, V, 2);
 
 	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
+	raid_delta_gen(2, id, ip, nd, size, vv);
 
-	for (j = 0; j < N; ++j) {
+	for (j = 0; j < 2; ++j) {
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
@@ -1726,7 +1721,7 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip,
 /*
  * RAID recovering for one disk SSSE3 extended implementation
  */
-static __always_inline void raid_rec1_ssse3ext_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_ssse3ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1734,8 +1729,6 @@ static __always_inline void raid_rec1_ssse3ext_delta(int nr, int *id, int *ip, i
 	uint8_t G;
 	uint8_t V;
 	size_t i;
-
-	(void)nr; /* unused, it's always 1 */
 
 	/* setup the coefficients matrix */
 	G = A(ip[0], id[0]);
@@ -1828,31 +1821,28 @@ static __always_inline void raid_rec1_ssse3ext_delta(int nr, int *id, int *ip, i
 /*
  * RAID recovering for two disks SSSE3 extended implementation
  */
-static __always_inline void raid_rec2_ssse3ext_delta(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec2_ssse3ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
-	const int N = 2;
-	uint8_t *p[N];
-	uint8_t *pa[N];
-	uint8_t G[N * N];
-	uint8_t V[N * N];
+	uint8_t *p[2];
+	uint8_t *pa[2];
+	uint8_t G[2 * 2];
+	uint8_t V[2 * 2];
 	size_t i;
 	int j, k;
 
-	(void)nr; /* unused, it's always 2 */
-
 	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+	for (j = 0; j < 2; ++j)
+		for (k = 0; k < 2; ++k)
+			G[j * 2 + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+	raid_invert(G, V, 2);
 
 	/* compute delta parity */
-	raid_delta_gen(N, id, ip, nd, size, vv);
+	raid_delta_gen(2, id, ip, nd, size, vv);
 
-	for (j = 0; j < N; ++j) {
+	for (j = 0; j < 2; ++j) {
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
@@ -2611,7 +2601,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec1_ssse3_delta(1, id, ip, nd, size, vv);
+	raid_rec1_ssse3_delta(id, ip, nd, size, vv);
 }
 
 void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2624,7 +2614,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec2_ssse3_delta(2, id, ip, nd, size, vv);
+	raid_rec2_ssse3_delta(id, ip, nd, size, vv);
 }
 
 void raid_rec3_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2662,7 +2652,7 @@ void raid_rec1_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 		return;
 	}
 
-	raid_rec1_ssse3ext_delta(1, id, ip, nd, size, vv);
+	raid_rec1_ssse3ext_delta(id, ip, nd, size, vv);
 }
 
 void raid_rec2_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2675,7 +2665,7 @@ void raid_rec2_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 		return;
 	}
 
-	raid_rec2_ssse3ext_delta(2, id, ip, nd, size, vv);
+	raid_rec2_ssse3ext_delta(id, ip, nd, size, vv);
 }
 
 void raid_rec3_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)

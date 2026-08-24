@@ -581,7 +581,6 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t *pa;
 	uint8_t *q;
 	uint8_t *qa;
-	const int N = 2;
 	const uint8_t *T[2][2];
 	uint8_t G[2 * 2];
 	uint8_t V[2 * 2];
@@ -597,17 +596,17 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	}
 
 	/* setup the coefficients matrix */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			G[j * N + k] = A(ip[j], id[k]);
+	for (j = 0; j < 2; ++j)
+		for (k = 0; k < 2; ++k)
+			G[j * 2 + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, N);
+	raid_invert(G, V, 2);
 
 	/* get multiplication tables */
-	for (j = 0; j < N; ++j)
-		for (k = 0; k < N; ++k)
-			T[j][k] = table(V[j * N + k]);
+	for (j = 0; j < 2; ++j)
+		for (k = 0; k < 2; ++k)
+			T[j][k] = table(V[j * 2 + k]);
 
 	/* compute delta parity */
 	raid_delta_gen(2, id, ip, nd, size, vv);
