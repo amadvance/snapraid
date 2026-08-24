@@ -544,10 +544,10 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
 }
 
 /*
- * RAID recovering AVX512BW implementation.
+ * Recover multiple data failures using selected parity blocks with AVX512BW.
  *
- * Compute only the selected syndromes directly from the stored parity
- * and surviving data. This avoids raid_delta_gen(), temporary delta
+ * Compute only the selected syndromes, keeping them in registers.
+ * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
  * parity blocks, and generation of unused parity rows.
  *
  * AVX512 provides enough registers to keep all six supported syndromes
@@ -611,8 +611,11 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 	BUG_ON(k != nr);
 	BUG_ON(ns != nd - nr);
 
-	/* precompute inverse-matrix multiplication table pointers */
-	for (j = 0; j < nr; ++j)
+	/*
+	 * If P is available, the last missing block is reconstructed
+	 * directly from Pdelta, so the last inverse row isn't needed.
+	 */
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
@@ -632,6 +635,7 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 	 *   zmm13  source high nibble
 	 *   zmm14  low multiplication table / result
 	 *   zmm15  high multiplication table / result
+	 *   zmm30  remaining P delta, if has_p
 	 *   zmm31  low-nibble mask
 	 *
 	 * After syndrome splitting:
@@ -740,6 +744,13 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 			}
 		}
 
+		/*
+		 * Preserve the complete P delta before syndrome 0 is
+		 * destructively split into low/high nibbles.
+		 */
+		if (has_p)
+			asm volatile ("vmovdqa64 %zmm0,%zmm30");
+
 		/* split every completed syndrome once into low/high nibbles */
 		asm volatile ("vpsrlw $4,%zmm0,%zmm1");
 		asm volatile ("vpandq %zmm31,%zmm0,%zmm0");
@@ -776,7 +787,11 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 		}
 
 		/*
-		 * Reconstruct every missing data block.
+		 * Reconstruct the missing data blocks.
+		 *
+		 * If P is available, reconstruct only nr - 1 blocks through
+		 * the inverse matrix. XOR each result out of zmm30, leaving
+		 * the final missing block in zmm30.
 		 *
 		 * Keep independent low/high dependency chains:
 		 *
@@ -784,11 +799,12 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 		 *   zmm13 high accumulator
 		 *   zmm14 low multiplication table/result
 		 *   zmm15 high multiplication table/result
+		 *   zmm30 remaining P delta, if has_p
 		 *
 		 * This is intentional. Do not serialize low/high products
 		 * through a single temporary register.
 		 */
-		for (j = 0; j < nr; ++j) {
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			/* coefficient 0 initializes both accumulators */
@@ -842,9 +858,22 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 				asm volatile ("vpxorq %zmm15,%zmm13,%zmm13");
 			}
 
+			/* combine low/high products into the reconstructed block */
 			asm volatile ("vpxorq %zmm13,%zmm12,%zmm12");
+
+			/*
+			 * Remove the reconstructed block from Pdelta.
+			 * After nr - 1 iterations zmm30 contains the final
+			 * missing data block.
+			 */
+			if (has_p)
+				asm volatile ("vpxorq %zmm12,%zmm30,%zmm30");
+
 			asm volatile ("vmovdqa64 %%zmm12,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("vmovdqa64 %%zmm30,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_avx_end();

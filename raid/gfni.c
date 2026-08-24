@@ -599,6 +599,16 @@ static __always_inline void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, in
 	raid_avx_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with AVX512 GFNI.
+ *
+ * Compute only the selected syndromes, keeping them in registers.
+ * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * parity blocks, and generation of unused parity rows.
+ *
+ * If P is available, reconstruct only nr - 1 missing blocks through the
+ * inverse matrix and derive the last missing block from the P delta by XOR.
+ */
 static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -649,7 +659,8 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 	BUG_ON(k != nr);
 	BUG_ON(ns != nd - nr);
 
-	for (j = 0; j < nr; ++j)
+	/* the last inverse row isn't needed when P is available */
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = raid_gfaffine_raid[V[j * nr + k]];
 
@@ -712,7 +723,15 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 			}
 		}
 
-		for (j = 0; j < nr; ++j) {
+		/* preserve the complete P delta */
+		if (has_p)
+			asm volatile ("vmovdqa64 %zmm0,%zmm30");
+
+		/*
+		 * If P is available, reconstruct only nr - 1 blocks through
+		 * the inverse matrix. The final block remains in zmm30.
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			asm volatile ("vpbroadcastq %0,%%zmm6" : : "m" (t[0][0]));
@@ -748,13 +767,19 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 				asm volatile ("vpxorq %zmm8,%zmm7,%zmm7");
 			}
 
+			if (has_p)
+				asm volatile ("vpxorq %zmm7,%zmm30,%zmm30");
+
 			asm volatile ("vmovdqa64 %%zmm7,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("vmovdqa64 %%zmm30,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_avx_end();
 }
-
+ 
 static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -944,6 +969,17 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int
 	raid_avx_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with AVX512 GFNI
+ * and the AES polynomial.
+ *
+ * Compute only the selected syndromes, keeping them in registers.
+ * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * parity blocks, and generation of unused parity rows.
+ *
+ * If P is available, reconstruct only nr - 1 missing blocks through the
+ * inverse matrix and derive the last missing block from the P delta by XOR.
+ */
 static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -1050,7 +1086,11 @@ static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, i
 			}
 		}
 
-		for (j = 0; j < nr; ++j) {
+		/* preserve the complete P delta */
+		if (has_p)
+			asm volatile ("vmovdqa64 %zmm0,%zmm30");
+
+		for (j = 0; j < nr - has_p; ++j) {
 			asm volatile ("vpbroadcastb %0,%%zmm6" : : "m" (V[j * nr]));
 			asm volatile ("vgf2p8mulb %zmm6,%zmm0,%zmm7");
 
@@ -1084,8 +1124,14 @@ static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, i
 				asm volatile ("vpxorq %zmm8,%zmm7,%zmm7");
 			}
 
+			if (has_p)
+				asm volatile ("vpxorq %zmm7,%zmm30,%zmm30");
+
 			asm volatile ("vmovdqa64 %%zmm7,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("vmovdqa64 %%zmm30,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_avx_end();

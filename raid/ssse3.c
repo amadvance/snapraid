@@ -1376,8 +1376,17 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 	raid_sse_end();
 }
 
-static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+/*
+ * RAID recovering SSSE3 implementation optimized for up to four failures.
+ *
+ * If P is available, keep the complete P delta syndrome in xmm6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ *
+ * After the survivor scan xmm6 is no longer needed, leaving it available
+ * for the P delta accumulator.
+ */
+static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1431,7 +1440,7 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip,
 	BUG_ON(k != nr);
 	BUG_ON(ns != nd - nr);
 
-	for (j = 0; j < nr; ++j)
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
@@ -1505,6 +1514,10 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip,
 			}
 		}
 
+		/* preserve the complete P delta before splitting syndrome 0 */
+		if (has_p)
+			asm volatile ("movdqa %xmm0,%xmm6");
+
 		/*
 		 * Split completed syndromes once and store the low/high nibbles.
 		 * The survivor scan is already complete.
@@ -1548,7 +1561,11 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip,
 			asm volatile ("movdqa %%xmm5,%0" : "=m" (pd_high[48]));
 		}
 
-		for (j = 0; j < nr; ++j) {
+		/*
+		 * Reconstruct all but the last missing block when P is
+		 * available. xmm6 keeps the remaining P delta.
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			asm volatile ("movdqa %0,%%xmm0" : : "m" (t[0][0]));
@@ -1570,15 +1587,31 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip,
 			}
 
 			asm volatile ("pxor %xmm1,%xmm0");
+
+			if (has_p)
+				asm volatile ("pxor %xmm0,%xmm6");
+
 			asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_sse_end();
 }
 
-static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+/*
+ * RAID recovering SSSE3 implementation.
+ *
+ * If P is available, keep the complete P delta syndrome in xmm6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ *
+ * The completed syndromes are kept in temporary memory, leaving xmm6
+ * available for the P delta accumulator during reconstruction.
+ */
+static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1632,7 +1665,7 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip,
 	BUG_ON(k != nr);
 	BUG_ON(ns != nd - nr);
 
-	for (j = 0; j < nr; ++j)
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
@@ -1676,6 +1709,13 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip,
 			}
 		}
 
+		/*
+		 * Preserve the complete P delta before pd_low[0] is converted
+		 * to its low-nibble representation.
+		 */
+		if (has_p)
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (pd_low[0]));
+
 		/* convert all completed raw syndromes to low/high nibble form */
 		for (k = 0; k < nr; ++k) {
 			asm volatile ("movdqa %0,%%xmm0" : : "m" (pd_low[k * 16]));
@@ -1687,8 +1727,11 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip,
 			asm volatile ("movdqa %%xmm1,%0" : "=m" (pd_high[k * 16]));
 		}
 
-		/* reconstruct */
-		for (j = 0; j < nr; ++j) {
+		/*
+		 * Reconstruct all but the last missing block when P is
+		 * available. xmm6 keeps the remaining P delta.
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			asm volatile ("movdqa %0,%%xmm0" : : "m" (t[0][0]));
@@ -1710,8 +1753,15 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip,
 			}
 
 			asm volatile ("pxor %xmm1,%xmm0");
+
+			if (has_p)
+				asm volatile ("pxor %xmm0,%xmm6");
+
 			asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_sse_end();
@@ -2006,8 +2056,7 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 	raid_sse_end();
 }
 
-static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -2256,8 +2305,308 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip,
 	raid_sse_end();
 }
 
-static __always_inline void raid_recX_ssse3ext(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+/*
+ * RAID recovering SSSE3 extended implementation optimized for up to five
+ * failures.
+ *
+ * If P is available, keep the complete P delta syndrome in xmm10.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ *
+ * With at most five failures the low/high syndrome pairs use xmm0..xmm9,
+ * leaving xmm10 available for the P delta accumulator.
+ */
+static __always_inline void raid_recX_ssse3ext_12345(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p[RAID_PARITY_MAX];
+	uint8_t *pa[RAID_PARITY_MAX];
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *S[RAID_DATA_MAX][RAID_PARITY_MAX];
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
+	size_t i;
+	int d, j, k, s;
+	int ns;
+	int has_p;
+
+	BUG_ON(nr < 1 || nr > 5);
+
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			G[j * nr + k] = A(ip[j], id[k]);
+
+	raid_invert(G, V, nr);
+
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
+	}
+
+	/* ip[] is ordered. If P is available, it is always ip[0] */
+	has_p = ip[0] == 0;
+
+	ns = 0;
+	k = 0;
+
+	for (d = 0; d < nd; ++d) {
+		if (k < nr && d == id[k]) {
+			++k;
+			continue;
+		}
+
+		src[ns] = v[d];
+
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = &raid_gfmulpshufb[A(ip[j], d)][0][0];
+
+		++ns;
+	}
+
+	BUG_ON(k != nr);
+	BUG_ON(ns != nd - nr);
+
+	/*
+	 * If P is available the last inverse-matrix row isn't needed.
+	 * The corresponding missing block is obtained by XOR.
+	 */
+	for (j = 0; j < nr - has_p; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
+
+	raid_sse_begin();
+
+	for (i = 0; i < size; i += 16) {
+		/*
+		 * xmm15 is reused by reconstruction, therefore reload the
+		 * nibble mask on every iteration.
+		 */
+		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+
+		/*
+		 * Raw syndrome accumulators:
+		 *
+		 *   xmm0  syndrome 0
+		 *   xmm1  syndrome 1
+		 *   xmm2  syndrome 2
+		 *   xmm3  syndrome 3
+		 *   xmm4  syndrome 4
+		 *
+		 * xmm10 remains free for Pdelta.
+		 */
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
+
+		if (nr >= 2)
+			asm volatile ("movdqa %0,%%xmm1" : : "m" (p[1][i]));
+
+		if (nr >= 3)
+			asm volatile ("movdqa %0,%%xmm2" : : "m" (p[2][i]));
+
+		if (nr >= 4)
+			asm volatile ("movdqa %0,%%xmm3" : : "m" (p[3][i]));
+
+		if (nr >= 5)
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (p[4][i]));
+
+		/* add all surviving data contributions */
+		for (s = 0; s < ns; ++s) {
+			const uint8_t **t = S[s];
+
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (src[s][i]));
+
+			/*
+			 * P has coefficient 1 for every data disk.
+			 * XOR the original source before splitting it.
+			 */
+			if (has_p) {
+				asm volatile ("pxor %xmm6,%xmm0");
+
+				asm volatile ("movdqa %xmm6,%xmm7");
+				asm volatile ("psrlw $4,%xmm7");
+				asm volatile ("pand %xmm15,%xmm6");
+				asm volatile ("pand %xmm15,%xmm7");
+			} else {
+				asm volatile ("movdqa %xmm6,%xmm7");
+				asm volatile ("psrlw $4,%xmm7");
+				asm volatile ("pand %xmm15,%xmm6");
+				asm volatile ("pand %xmm15,%xmm7");
+
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (t[0][0]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (t[0][16]));
+				asm volatile ("pshufb %xmm6,%xmm8");
+				asm volatile ("pshufb %xmm7,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm0");
+				asm volatile ("pxor %xmm9,%xmm0");
+			}
+
+			if (nr >= 2) {
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (t[1][0]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (t[1][16]));
+				asm volatile ("pshufb %xmm6,%xmm8");
+				asm volatile ("pshufb %xmm7,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm1");
+				asm volatile ("pxor %xmm9,%xmm1");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (t[2][0]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (t[2][16]));
+				asm volatile ("pshufb %xmm6,%xmm8");
+				asm volatile ("pshufb %xmm7,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm2");
+				asm volatile ("pxor %xmm9,%xmm2");
+			}
+
+			if (nr >= 4) {
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (t[3][0]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (t[3][16]));
+				asm volatile ("pshufb %xmm6,%xmm8");
+				asm volatile ("pshufb %xmm7,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm3");
+				asm volatile ("pxor %xmm9,%xmm3");
+			}
+
+			if (nr >= 5) {
+				asm volatile ("movdqa %0,%%xmm8" : : "m" (t[4][0]));
+				asm volatile ("movdqa %0,%%xmm9" : : "m" (t[4][16]));
+				asm volatile ("pshufb %xmm6,%xmm8");
+				asm volatile ("pshufb %xmm7,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm4");
+				asm volatile ("pxor %xmm9,%xmm4");
+			}
+		}
+
+		/*
+		 * Preserve the complete P delta before splitting syndrome 0.
+		 *
+		 * xmm10 = M0 ^ M1 ^ ... ^ M(nr-1)
+		 */
+		if (has_p)
+			asm volatile ("movdqa %xmm0,%xmm10");
+
+		/*
+		 * Expand backwards to low/high syndrome pairs:
+		 *
+		 *   xmm0/xmm1  syndrome 0 low/high
+		 *   xmm2/xmm3  syndrome 1 low/high
+		 *   xmm4/xmm5  syndrome 2 low/high
+		 *   xmm6/xmm7  syndrome 3 low/high
+		 *   xmm8/xmm9  syndrome 4 low/high
+		 *
+		 * xmm10 remains the complete remaining P delta.
+		 */
+		if (nr >= 5) {
+			asm volatile ("movdqa %xmm4,%xmm8");
+			asm volatile ("movdqa %xmm4,%xmm9");
+			asm volatile ("psrlw $4,%xmm9");
+			asm volatile ("pand %xmm15,%xmm8");
+			asm volatile ("pand %xmm15,%xmm9");
+		}
+
+		if (nr >= 4) {
+			asm volatile ("movdqa %xmm3,%xmm6");
+			asm volatile ("movdqa %xmm3,%xmm7");
+			asm volatile ("psrlw $4,%xmm7");
+			asm volatile ("pand %xmm15,%xmm6");
+			asm volatile ("pand %xmm15,%xmm7");
+		}
+
+		if (nr >= 3) {
+			asm volatile ("movdqa %xmm2,%xmm4");
+			asm volatile ("movdqa %xmm2,%xmm5");
+			asm volatile ("psrlw $4,%xmm5");
+			asm volatile ("pand %xmm15,%xmm4");
+			asm volatile ("pand %xmm15,%xmm5");
+		}
+
+		if (nr >= 2) {
+			asm volatile ("movdqa %xmm1,%xmm2");
+			asm volatile ("movdqa %xmm1,%xmm3");
+			asm volatile ("psrlw $4,%xmm3");
+			asm volatile ("pand %xmm15,%xmm2");
+			asm volatile ("pand %xmm15,%xmm3");
+		}
+
+		asm volatile ("movdqa %xmm0,%xmm1");
+		asm volatile ("psrlw $4,%xmm1");
+		asm volatile ("pand %xmm15,%xmm0");
+		asm volatile ("pand %xmm15,%xmm1");
+
+		/*
+		 * Reconstruct all but the last missing block when P is
+		 * available.
+		 *
+		 * xmm12/xmm13 = low/high output accumulators
+		 * xmm14/xmm15 = multiplication temporaries
+		 * xmm10       = remaining P delta
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
+			const uint8_t **t = R[j];
+
+			/* coefficient 0 initializes both accumulators */
+			asm volatile ("movdqa %0,%%xmm12" : : "m" (t[0][0]));
+			asm volatile ("movdqa %0,%%xmm13" : : "m" (t[0][16]));
+			asm volatile ("pshufb %xmm0,%xmm12");
+			asm volatile ("pshufb %xmm1,%xmm13");
+
+			if (nr >= 2) {
+				asm volatile ("movdqa %0,%%xmm14" : : "m" (t[1][0]));
+				asm volatile ("movdqa %0,%%xmm15" : : "m" (t[1][16]));
+				asm volatile ("pshufb %xmm2,%xmm14");
+				asm volatile ("pshufb %xmm3,%xmm15");
+				asm volatile ("pxor %xmm14,%xmm12");
+				asm volatile ("pxor %xmm15,%xmm13");
+			}
+
+			if (nr >= 3) {
+				asm volatile ("movdqa %0,%%xmm14" : : "m" (t[2][0]));
+				asm volatile ("movdqa %0,%%xmm15" : : "m" (t[2][16]));
+				asm volatile ("pshufb %xmm4,%xmm14");
+				asm volatile ("pshufb %xmm5,%xmm15");
+				asm volatile ("pxor %xmm14,%xmm12");
+				asm volatile ("pxor %xmm15,%xmm13");
+			}
+
+			if (nr >= 4) {
+				asm volatile ("movdqa %0,%%xmm14" : : "m" (t[3][0]));
+				asm volatile ("movdqa %0,%%xmm15" : : "m" (t[3][16]));
+				asm volatile ("pshufb %xmm6,%xmm14");
+				asm volatile ("pshufb %xmm7,%xmm15");
+				asm volatile ("pxor %xmm14,%xmm12");
+				asm volatile ("pxor %xmm15,%xmm13");
+			}
+
+			if (nr >= 5) {
+				asm volatile ("movdqa %0,%%xmm14" : : "m" (t[4][0]));
+				asm volatile ("movdqa %0,%%xmm15" : : "m" (t[4][16]));
+				asm volatile ("pshufb %xmm8,%xmm14");
+				asm volatile ("pshufb %xmm9,%xmm15");
+				asm volatile ("pxor %xmm14,%xmm12");
+				asm volatile ("pxor %xmm15,%xmm13");
+			}
+
+			asm volatile ("pxor %xmm13,%xmm12");
+
+			/*
+			 * Remove the reconstructed block from Pdelta.
+			 * After nr - 1 iterations xmm10 contains the final
+			 * missing block.
+			 */
+			if (has_p)
+				asm volatile ("pxor %xmm12,%xmm10");
+
+			asm volatile ("movdqa %%xmm12,%0" : "=m" (pa[j][i]));
+		}
+
+		if (has_p)
+			asm volatile ("movdqa %%xmm10,%0" : "=m" (pa[nr - 1][i]));
+	}
+
+	raid_sse_end();
+}
+
+static __always_inline void raid_recX_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -2677,13 +3026,13 @@ void raid_rec3_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 void raid_rec4_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_ssse3ext(4, id, ip, nd, size, vv);
+	raid_recX_ssse3ext_12345(4, id, ip, nd, size, vv);
 }
 
 void raid_rec5_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_ssse3ext(5, id, ip, nd, size, vv);
+	raid_recX_ssse3ext_12345(5, id, ip, nd, size, vv);
 }
 
 void raid_rec6_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2691,7 +3040,6 @@ void raid_rec6_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 	BUG_ON(nr != 6);
 	raid_recX_ssse3ext(6, id, ip, nd, size, vv);
 }
-
 #endif
 
 void raid_register_ssse3(void)

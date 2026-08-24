@@ -518,8 +518,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	raid_neon32_end();
 }
 
-static __always_inline void raid_recX_neon32_123(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+static __always_inline void raid_recX_neon32_123(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -816,8 +815,7 @@ static __always_inline void raid_recX_neon32_123(int nr, int *id, int *ip,
 	raid_neon32_end();
 }
 
-static __always_inline void raid_recX_neon32(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+static __always_inline void raid_recX_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];

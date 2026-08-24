@@ -1112,6 +1112,10 @@ static __always_inline void raid_rec2of2_avx2(int *id, int *ip, int nd, size_t s
  *
  * Compute all selected syndromes in one scan of the surviving data, then
  * retain only their low/high nibbles while reconstructing the missing data.
+ *
+ * If P is available, keep the complete P delta syndrome in ymm6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
  */
 static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1170,7 +1174,7 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 	BUG_ON(ns != nd - nr);
 
 	/* precompute inverse-matrix multiplication table pointers */
-	for (j = 0; j < nr; ++j)
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
@@ -1240,7 +1244,11 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 			}
 		}
 
-		/* preserve only aligned low/high nibbles, never full delta blocks */
+		/* preserve the complete P delta before splitting syndrome 0 */
+		if (has_p)
+			asm volatile ("vmovdqa %ymm0,%ymm6");
+
+		/* preserve only aligned low/high nibbles */
 		asm volatile ("vpsrlw $4,%ymm0,%ymm4");
 		asm volatile ("vpand %ymm7,%ymm0,%ymm0");
 		asm volatile ("vpand %ymm7,%ymm4,%ymm4");
@@ -1271,8 +1279,8 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 			asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pd_high[96]));
 		}
 
-		/* reconstruct every missing block, initializing from coefficient zero */
-		for (j = 0; j < nr; ++j) {
+		/* reconstruct all but the last missing block when P is available */
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			asm volatile ("vbroadcasti128 %0,%%ymm0" : : "m" (t[0][0]));
@@ -1294,8 +1302,15 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 			}
 
 			asm volatile ("vpxor %ymm1,%ymm0,%ymm0");
+
+			if (has_p)
+				asm volatile ("vpxor %ymm0,%ymm6,%ymm6");
+
 			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_avx_end();
@@ -1306,6 +1321,10 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
  *
  * Compute all selected syndromes in a single pass over the surviving data.
  * Syndrome accumulators are kept in memory to minimize register pressure.
+ *
+ * If P is available, keep the complete P delta syndrome in ymm6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
  */
 static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1367,7 +1386,7 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 	BUG_ON(ns != nd - nr);
 
 	/* precompute inverse-matrix multiplication table pointers */
-	for (j = 0; j < nr; ++j)
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
@@ -1443,6 +1462,13 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 		}
 
 		/*
+		 * Preserve the complete P delta before pd_low[0] is
+		 * destructively converted to low/high nibble form.
+		 */
+		if (has_p)
+			asm volatile ("vmovdqa %0,%%ymm6" : : "m" (pd_low[0]));
+
+		/*
 		 * All survivor reads for this chunk are now complete.
 		 *
 		 * Convert each raw syndrome once to low/high nibble form.
@@ -1458,7 +1484,8 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 		}
 
 		/*
-		 * Reconstruct each missing block.
+		 * Reconstruct all but the last missing block when P is
+		 * available.
 		 *
 		 * Keep independent low/high accumulation chains:
 		 *
@@ -1468,8 +1495,9 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 		 * ymm3 = high table/result
 		 * ymm4 = syndrome low
 		 * ymm5 = syndrome high
+		 * ymm6 = remaining P delta
 		 */
-		for (j = 0; j < nr; ++j) {
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			/* coefficient 0 initializes the accumulators */
@@ -1497,111 +1525,21 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 			}
 
 			asm volatile ("vpxor %ymm1,%ymm0,%ymm0");
+
+			if (has_p)
+				asm volatile ("vpxor %ymm0,%ymm6,%ymm6");
+
 			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_avx_end();
 }
 
 #ifdef CONFIG_X86_64
-/*
- * RAID recovering for two disks AVX2 extended implementation
- */
-static __always_inline void raid_rec2_avx2ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p[2];
-	uint8_t *pa[2];
-	uint8_t G[2 * 2];
-	uint8_t V[2 * 2];
-	size_t i;
-	int j, k;
-
-	/* setup the coefficients matrix */
-	for (j = 0; j < 2; ++j)
-		for (k = 0; k < 2; ++k)
-			G[j * 2 + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, 2);
-
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	for (j = 0; j < 2; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
-	}
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastb %0,%%ymm6" : : "m" (gfconst16.low4[0]));
-
-	/* the inverse matrix V[] is constant for the whole recovery */
-	asm volatile ("vbroadcasti128 %0,%%ymm8" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm9" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
-
-	for (i = 0; i < size; i += 32) {
-		/* d0 = p[0] ^ pa[0] */
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pa[0][i]));
-		asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
-
-		/* d1 = p[1] ^ pa[1] */
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[1][i]));
-		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pa[1][i]));
-		asm volatile ("vpxor %ymm4,%ymm1,%ymm1");
-
-		/*
-		 * Split both deltas into low/high nibbles once.
-		 *
-		 * ymm0 = d0 low
-		 * ymm2 = d0 high
-		 * ymm1 = d1 low
-		 * ymm3 = d1 high
-		 */
-		asm volatile ("vpsrlw $4,%ymm0,%ymm2");
-		asm volatile ("vpsrlw $4,%ymm1,%ymm3");
-		asm volatile ("vpand %ymm6,%ymm0,%ymm0");
-		asm volatile ("vpand %ymm6,%ymm2,%ymm2");
-		asm volatile ("vpand %ymm6,%ymm1,%ymm1");
-		asm volatile ("vpand %ymm6,%ymm3,%ymm3");
-
-		/* pa[0] = V[0] * d0 ^ V[1] * d1 */
-		asm volatile ("vpshufb %ymm0,%ymm8,%ymm4");
-		asm volatile ("vpshufb %ymm2,%ymm9,%ymm5");
-		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
-
-		asm volatile ("vpshufb %ymm1,%ymm10,%ymm5");
-		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
-		asm volatile ("vpshufb %ymm3,%ymm11,%ymm5");
-		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
-
-		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[0][i]));
-
-		/* pa[1] = V[2] * d0 ^ V[3] * d1 */
-		asm volatile ("vpshufb %ymm0,%ymm12,%ymm4");
-		asm volatile ("vpshufb %ymm2,%ymm13,%ymm5");
-		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
-
-		asm volatile ("vpshufb %ymm1,%ymm14,%ymm5");
-		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
-		asm volatile ("vpshufb %ymm3,%ymm15,%ymm5");
-		asm volatile ("vpxor %ymm5,%ymm4,%ymm4");
-
-		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[1][i]));
-	}
-
-	raid_avx_end();
-}
-
 /*
  * RAID recovering for two disks with P and Q AVX2 implementation
  */
@@ -1978,11 +1916,16 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int *id, int *ip, int 
 }
 
 /*
- * RAID recovering AVX2 implementation.
+ * RAID recovering AVX2 extended implementation.
  *
  * Compute only the selected syndromes, keeping them in registers.
  * This avoids raid_delta_gen(), temporary syndrome buffers, and the
  * generation of unused parity rows.
+ *
+ * If P is available, preserve the complete P delta syndrome and
+ * reconstruct only nr - 1 missing blocks through the inverse matrix.
+ * The last missing block is obtained by XORing the reconstructed blocks
+ * out of Pdelta.
  */
 static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1998,6 +1941,8 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 	int d, j, k, s;
 	int ns;
 	int has_p;
+
+	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
 	/* setup the coefficients matrix */
 	for (j = 0; j < nr; ++j)
@@ -2037,16 +1982,18 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 	BUG_ON(k != nr);
 	BUG_ON(ns != nd - nr);
 
-	/* precompute inverse-matrix multiplication table pointers */
-	for (j = 0; j < nr; ++j)
+	/*
+	 * If P is available, the last inverse-matrix row is not needed.
+	 * The corresponding missing block is reconstructed by XOR.
+	 */
+	for (j = 0; j < nr - has_p; ++j)
 		for (k = 0; k < nr; ++k)
 			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
 	raid_avx_begin();
 
-	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.low4[0]));
-
 	for (i = 0; i < size; i += 32) {
+		asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 		/*
 		 * Start each syndrome with the corresponding stored parity.
 		 *
@@ -2161,6 +2108,16 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 		}
 
 		/*
+		 * Preserve the complete P delta before splitting syndrome 0.
+		 *
+		 * ymm14 is no longer needed by syndrome generation and is not
+		 * used by the split. After the split, Pdelta is moved to ymm15,
+		 * freeing ymm14 again for reconstruction.
+		 */
+		if (has_p)
+			asm volatile ("vmovdqa %ymm0,%ymm14");
+
+		/*
 		 * Split every completed syndrome once.
 		 *
 		 * After this:
@@ -2206,8 +2163,30 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 			asm volatile ("vpand %ymm15,%ymm11,%ymm11");
 		}
 
-		/* reconstruct every missing data block */
-		for (j = 0; j < nr; ++j) {
+		/*
+		 * The nibble mask is no longer needed.
+		 *
+		 * Move the complete P delta from the temporary register to
+		 * ymm15, which remains the P accumulator for reconstruction.
+		 * ymm14 is now free again as the multiplication temporary.
+		 */
+		if (has_p)
+			asm volatile ("vmovdqa %ymm14,%ymm15");
+
+		/*
+		 * Reconstruct the missing data blocks.
+		 *
+		 * If P is available, only nr - 1 outputs are reconstructed
+		 * through the inverse matrix. Each reconstructed output is
+		 * XORed out of ymm15. The remaining value is the final
+		 * missing block.
+		 *
+		 *   ymm12 = low accumulator
+		 *   ymm13 = high accumulator
+		 *   ymm14 = multiplication table / result
+		 *   ymm15 = remaining Pdelta, if has_p
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
 			const uint8_t **t = R[j];
 
 			/* first coefficient initializes the low/high accumulators */
@@ -2256,20 +2235,25 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 				asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (t[5][0]));
 				asm volatile ("vpshufb %ymm10,%ymm14,%ymm14");
 				asm volatile ("vpxor %ymm14,%ymm12,%ymm12");
-
 				asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (t[5][16]));
 				asm volatile ("vpshufb %ymm11,%ymm14,%ymm14");
 				asm volatile ("vpxor %ymm14,%ymm13,%ymm13");
 			}
 
 			asm volatile ("vpxor %ymm13,%ymm12,%ymm12");
+
+			if (has_p)
+				asm volatile ("vpxor %ymm12,%ymm15,%ymm15");
+
 			asm volatile ("vmovdqa %%ymm12,%0" : "=m" (pa[j][i]));
 		}
+
+		if (has_p)
+			asm volatile ("vmovdqa %%ymm15,%0" : "=m" (pa[nr - 1][i]));
 	}
 
 	raid_avx_end();
 }
-
 #endif
 
 void raid_gen2_avx2_raid(int nd, size_t size, void **vv)

@@ -566,8 +566,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 	raid_neon_end();
 }
 
-static __always_inline void raid_recX_neon(int nr, int *id, int *ip,
-	int nd, size_t size, void **vv)
+static __always_inline void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
