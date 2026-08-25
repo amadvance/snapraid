@@ -521,6 +521,12 @@ static __always_inline void raid_neon_begin(void)
 static __always_inline void raid_neon_end(void)
 {
 	/*
+	 * Compiler memory barrier to ensure memory operations are not
+	 * reordered across the end of SIMD operations.
+	 */
+	asm volatile ("" : : : "memory");
+
+	/*
 	 * Clobbers registers used in NEON asm operations.
 	 *
 	 * The inner asm statements intentionally keep NEON state in fixed
@@ -551,6 +557,12 @@ static __always_inline void raid_neon32_begin(void)
 
 static __always_inline void raid_neon32_end(void)
 {
+	/*
+	 * Compiler memory barrier to ensure memory operations are not
+	 * reordered across the end of SIMD operations.
+	 */
+	asm volatile ("" : : : "memory");
+
 	/*
 	 * Clobbers registers used in AArch32 NEON asm operations.
 	 *
