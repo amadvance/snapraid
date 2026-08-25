@@ -76,8 +76,9 @@ struct fssnapshot_struct {
 	/**
 	 * Root directory of the volume/dataset mountpoint.
 	 * It ALWAYS terminates with /
-	 * - Btrfs/Bcachefs: subvolume root
-	 * - ZFS: dataset mountpoint
+	 * - Btrfs/Bcachefs: subvolume root (canonical path via realpath)
+	 * - ZFS: dataset mountpoint (canonical path via realpath)
+	 * - Windows: volume mountpoint (via GetVolumePathName)
 	 */
 	char root_dir[PATH_MAX];
 
@@ -86,12 +87,24 @@ struct fssnapshot_struct {
 	 * It ALWAYS terminates with /
 	 * - Btrfs/Bcachefs: real directory (e.g. <root>/.snapraid/)
 	 * - ZFS: virtual directory (e.g. <root>/.zfs/snapshot/)
+	 * - Windows: symlink container directory (e.g. <root>/.snapraid/)
 	 */
 	char snapshot_dir[PATH_MAX];
 
+	/**
+	 * Data directory relative to root_dir in snapshots.
+	 *
+	 * It NEVER starts with '/'.
+	 * It is empty if the configured data directory is exactly root_dir.
+	 * If non-empty, it ALWAYS terminates with '/'.
+	 * - Unix: relative suffix computed from the realpath() canonical representation
+	 * - Windows: relative suffix computed from the configured path
+	 */
+	char sub_dir[PATH_MAX];
+
 	/*
 	 * Dataset name for ZFS (e.g. "pool/data")
-	 * or VolumeName in Windows.
+	 * or VolumeName in Windows (e.g. "\\?\Volume{guid}\").
 	 * Empty string for filesystems where not applicable.
 	 */
 	char dataset[PATH_MAX];

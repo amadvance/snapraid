@@ -2144,9 +2144,14 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 #if HAVE_LINUX_DEVICE
 static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inode, struct fssnapshot_struct* fss)
 {
+	char resolved[PATH_MAX];
 	char current_path[PATH_MAX];
 
-	pathcpy(current_path, sizeof(current_path), path);
+	if (realpath(path, resolved) == 0)
+		return -1;
+
+	pathslash(resolved, sizeof(resolved));
+	pathcpy(current_path, sizeof(current_path), resolved);
 
 	/* walk up the directory tree to find the subvolume root (Inode 256) */
 	while (1) {
@@ -2171,6 +2176,15 @@ static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inod
 				return -1;
 			}
 
+			size_t root_len = strlen(fss->root_dir);
+
+			if (pathncmp(fss->root_dir, resolved, root_len) != 0) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			pathcpy(fss->sub_dir, sizeof(fss->sub_dir), resolved + root_len);
+
 			fss->magic = magic;
 			return 0;
 		}
@@ -2191,10 +2205,30 @@ static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inod
 #if HAVE_LINUX_DEVICE
 static int fssnapshot_zfs(const char* dir, uint32_t magic, struct fssnapshot_struct* fss)
 {
+	char resolved[PATH_MAX];
+	char root[PATH_MAX];
+
+	if (realpath(dir, resolved) == 0)
+		return -1;
+
 	if (extract_zfs(dir, fss->dataset, sizeof(fss->dataset), 0, 0, fss->root_dir, sizeof(fss->root_dir)) != 0)
 		return -1;
 
-	pathslash(fss->root_dir, sizeof(fss->root_dir));
+	if (realpath(fss->root_dir, root) == 0)
+		return -1;
+
+	pathslash(resolved, sizeof(resolved));
+	pathslash(root, sizeof(root));
+
+	size_t root_len = strlen(root);
+	if (pathncmp(root, resolved, root_len) != 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	pathcpy(fss->sub_dir, sizeof(fss->sub_dir), resolved + root_len);
+	pathcpy(fss->root_dir, sizeof(fss->root_dir), root);
+
 	pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), fss->root_dir);
 	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), ".zfs/snapshot/");
 

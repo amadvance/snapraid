@@ -532,6 +532,9 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 		return -1;
 	}
 
+	size_t root_len = strlen(fss->root_dir);
+	pathcpy(fss->sub_dir, sizeof(fss->sub_dir), dir + root_len);
+
 	pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), fss->root_dir);
 	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), SNAPSHOT_CONTAINER "/");
 
