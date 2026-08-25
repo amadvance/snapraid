@@ -377,13 +377,6 @@ void raid_register_avx512gfni(void);
 const char * raid_gen_tag(int na);
 const char * raid_rec_tag(int na);
 
-/**
- * Basic functionality self test.
- *
- * Returns 0 on success.
- */
-int raid_selftest(void);
-
 #if defined(CONFIG_X86) || defined(CONFIG_NEON) || defined(CONFIG_NEON32)
 struct gfconst16 {
 	uint8_t poly[16];

@@ -453,11 +453,13 @@ void raid_gen_ref(int nd, int np, size_t size, void **vv)
 
 /*
  * Size of the blocks to test.
+ *
+ * Slicing the 64 KiB GF multiplication table into 2048-byte blocks tests 32 data disks.
  */
-#define TEST_SIZE 4096
+#define TEST_SIZE 2048
 
 /*
- * Number of data blocks to test.
+ * Number of data blocks to test (32 data disks).
  */
 #define TEST_COUNT (65536 / TEST_SIZE)
 
@@ -474,8 +476,10 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 		t[i] = ref[i];
 
 	/* setup parity */
-	for (i = 0; i < np; ++i)
+	for (i = 0; i < np; ++i) {
+		memset(v[nd + i], 0x55, size);
 		t[nd + i] = v[nd + i];
+	}
 
 	raid_gen(nd, np, size, t);
 
@@ -503,6 +507,7 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 	for (i = 0, j = 0; i < nd + np; ++i) {
 		if (j < nr && ir[j] == i) {
 			/* this block has to be recovered */
+			memset(v[i], 0x55, size);
 			t[i] = v[i];
 			++j;
 		} else {
@@ -538,6 +543,7 @@ static int raid_test_data(int nr, int *id, int *ip, int nd, int np, size_t size,
 	for (i = 0, j = 0; i < nd; ++i) {
 		if (j < nr && id[j] == i) {
 			/* this block has to be recovered */
+			memset(v[i], 0x55, size);
 			t[i] = v[i];
 			++j;
 		} else {
@@ -686,6 +692,88 @@ int raid_selftest(void)
 			/* LCOV_EXCL_START */
 			goto bail;
 			/* LCOV_EXCL_STOP */
+		}
+
+		/* test recovering with no failures */
+		ret = raid_test_rec(0, 0, nd, np, size, v, ref);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* test recovering with each single broken parity */
+		for (i = 0; i < np; ++i) {
+			ir[0] = nd + i;
+
+			ret = raid_test_rec(1, ir, nd, np, size, v, ref);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		/* test recovering with all broken parities */
+		for (i = 0; i < np; ++i)
+			ir[i] = nd + i;
+
+		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* test recovering with one broken data and one broken parity */
+		if (np >= 2) {
+			for (i = 0; i < np; ++i) {
+				/* bad data */
+				ir[0] = 0;
+
+				/* bad parity */
+				ir[1] = nd + i;
+
+				ret = raid_test_rec(2, ir, nd, np, size, v, ref);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					goto bail;
+					/* LCOV_EXCL_STOP */
+				}
+			}
+		}
+
+		/* test recovering with broken alternating parities */
+		if (np >= 3) {
+			/* bad data */
+			ir[0] = 0;
+
+			/* bad parity P (index 0) and R (index 2) */
+			ir[1] = nd + 0;
+			ir[2] = nd + 2;
+
+			ret = raid_test_rec(3, ir, nd, np, size, v, ref);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		/* test recovering with np - 1 broken data and 1 broken parity */
+		if (np >= 2) {
+			for (i = 0; i < np - 1; ++i)
+				ir[i] = i;
+
+			/* bad parity P */
+			ir[np - 1] = nd + 0;
+
+			ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
 		}
 
 		/* test recovering with broken leading data and broken leading parity */
