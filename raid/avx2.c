@@ -7,7 +7,9 @@
 
 #ifdef CONFIG_X86
 /*
- * GEN1 (RAID5 with xor) AVX2 implementation
+ * Generate one parity block (RAID5 with XOR) using AVX2 implementation.
+ *
+ * Uses 64-byte chunks across two 32-byte YMM lanes.
  */
 void raid_gen1_avx2(int nd, size_t size, void **vv)
 {
@@ -38,7 +40,9 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AVX2 implementation using the active generator
+ * Generate two parity blocks (RAID6 with Cauchy matrix) using AVX2 implementation.
+ *
+ * Uses Horner's method with 64-byte chunks across two 32-byte YMM lanes.
  */
 static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, int generator)
 {
@@ -107,7 +111,7 @@ static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, i
 
 #ifdef CONFIG_X86_64
 /*
- * GEN2 Cauchy AVX2 implementation using the extended register set.
+ * Generate two parity blocks (RAID6 with Cauchy matrix) using AVX2 extended implementation.
  *
  * Process two data disks at a time and process the two 32-byte lanes
  * sequentially.
@@ -221,7 +225,7 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size, void **vv
 }
 
 /*
- * GENz (triple parity with powers of 2^-1) AVX2 implementation
+ * Generate three parity blocks with powers of 2^-1 using AVX2 extended implementation.
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -296,7 +300,10 @@ void raid_genz_avx2ext_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN3 (triple parity with Cauchy matrix) AVX2 implementation
+ * Generate three parity blocks with Cauchy matrix using AVX2 extended implementation.
+ *
+ * Uses the extended register set (16 YMM registers) and processes two disks
+ * per iteration across two 32-byte YMM lanes (64 bytes/step).
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -552,7 +559,10 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 }
 
 /*
- * GEN4 (quad parity with Cauchy matrix) AVX2 implementation
+ * Generate four parity blocks with Cauchy matrix using AVX2 extended implementation.
+ *
+ * Uses the extended register set (16 YMM registers) and processes two disks
+ * per iteration across two 32-byte YMM lanes (64 bytes/step).
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -725,7 +735,7 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 }
 
 /*
- * GENX AVX2EXT implementation
+ * Generate N parity blocks with Cauchy matrix using AVX2 extended implementation.
  */
 static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, int np, int generator)
 {
@@ -883,7 +893,9 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 #endif
 
 /*
- * RAID recovering for one disk AVX2 implementation
+ * Recover failure of one data block using AVX2 delta implementation.
+ *
+ * Uses raid_delta_gen() and multiplies by the inverted coefficient table.
  */
 static __always_inline void raid_rec1_avx2_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -945,7 +957,9 @@ static __always_inline void raid_rec1_avx2_delta(int *id, int *ip, int nd, size_
 }
 
 /*
- * RAID recovering for two disks AVX2 implementation
+ * Recover failure of two data blocks using AVX2 delta implementation.
+ *
+ * Uses raid_delta_gen() and solves the 2x2 system directly on delta blocks.
  */
 static __always_inline void raid_rec2_avx2_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1039,6 +1053,8 @@ static __always_inline void raid_rec2_avx2_delta(int *id, int *ip, int nd, size_
 
 /*
  * Recover failure of two data blocks using P and Q AVX2 implementation.
+ *
+ * Uses raid_delta_gen() and computes the analytical solution.
  */
 static __always_inline void raid_rec2of2_avx2(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1111,7 +1127,7 @@ static __always_inline void raid_rec2of2_avx2(int *id, int *ip, int nd, size_t s
 }
 
 /*
- * RAID recovering AVX2 implementation optimized for up to four failures.
+ * Recover multiple data failures using selected parity blocks with AVX2 optimized for up to four failures.
  *
  * Compute all selected syndromes in one scan of the surviving data, then
  * retain only their low/high nibbles while reconstructing the missing data.
@@ -1320,7 +1336,7 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 }
 
 /*
- * RAID recovering AVX2 implementation with all syndromes in memory.
+ * Recover multiple data failures using selected parity blocks with AVX2 and all syndromes in memory.
  *
  * Compute all selected syndromes in a single pass over the surviving data.
  * Syndrome accumulators are kept in memory to minimize register pressure.
@@ -1544,7 +1560,10 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 
 #ifdef CONFIG_X86_64
 /*
- * RAID recovering for two disks with P and Q AVX2 implementation
+ * Recover failure of two data blocks using P and Q AVX2 extended implementation.
+ *
+ * Uses raid_delta_gen() and keeps all four multiplication tables resident
+ * in YMM registers (ymm8..ymm11).
  */
 static __always_inline void raid_rec2of2_avx2ext(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1616,7 +1635,7 @@ static __always_inline void raid_rec2of2_avx2ext(int *id, int *ip, int nd, size_
 }
 
 /*
- * RAID recovering AVX2 implementation optimized for up to three failures.
+ * Recover multiple data failures using selected parity blocks with AVX2 extended optimized for up to three failures.
  *
  * Process 64 bytes at a time as two independent 32-byte lanes.
  * Multiplication tables are broadcast once and shared between both lanes.
@@ -1919,7 +1938,7 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int *id, int *ip, int 
 }
 
 /*
- * RAID recovering AVX2 extended implementation.
+ * Recover multiple data failures using selected parity blocks with AVX2 extended.
  *
  * Compute only the selected syndromes, keeping them in registers.
  * This avoids raid_delta_gen(), temporary syndrome buffers, and the
@@ -2300,11 +2319,6 @@ void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv)
 	raid_gen4_avx2ext_gen(nd, size, vv, 3);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) AVX2 implementation
- *
- * Note that it uses 16 registers, meaning that x64 is required.
- */
 void raid_gen5_avx2ext_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2ext(nd, size, vv, 5, 2);
@@ -2315,11 +2329,6 @@ void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv)
 	raid_genX_avx2ext(nd, size, vv, 5, 3);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) AVX2 implementation
- *
- * Note that it uses 16 registers, meaning that x64 is required.
- */
 void raid_gen6_avx2ext_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2ext(nd, size, vv, 6, 2);

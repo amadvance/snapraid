@@ -100,7 +100,9 @@
  */
 
 /*
- * GEN1 (RAID5 with xor) SSE2 implementation
+ * Generate one parity block (RAID5 with XOR) using SSE2 implementation.
+ *
+ * Uses 64-byte chunks across four 16-byte XMM vectors.
  */
 void raid_gen1_sse2(int nd, size_t size, void **vv)
 {
@@ -137,7 +139,7 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy SSE2 implementation using the active generator
+ * Generate two parity blocks (RAID6 with Cauchy matrix) using SSE2 implementation.
  */
 static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, int generator)
 {
@@ -220,7 +222,10 @@ void raid_gen2_sse2_aes(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * GEN2 Cauchy SSE2 implementation using the active generator
+ * Generate two parity blocks (RAID6 with Cauchy matrix) using SSE2 extended implementation.
+ *
+ * Uses the extended register set (16 XMM registers), unrolling 64-byte chunks
+ * across four 16-byte lanes and processing two disks per iteration.
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -458,7 +463,7 @@ void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv)
 #endif
 
 /*
- * GENz (triple parity with powers of 2^-1) SSE2 implementation
+ * Generate three parity blocks with powers of 2^-1 using SSE2 implementation.
  */
 void raid_genz_sse2_raid(int nd, size_t size, void **vv)
 {
@@ -515,7 +520,7 @@ void raid_genz_sse2_raid(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * GENz (triple parity with powers of 2^-1) SSE2 implementation
+ * Generate three parity blocks with powers of 2^-1 using SSE2 extended implementation.
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */

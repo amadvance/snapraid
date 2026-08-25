@@ -7,7 +7,9 @@
 
 #ifdef CONFIG_NEON32
 /*
- * GEN1 (RAID5 with xor) AArch32 NEON implementation
+ * Generate one parity block (RAID5 with XOR) using AArch32 NEON implementation.
+ *
+ * Uses 64-byte chunks across four 16-byte vectors.
  */
 void raid_gen1_neon32(int nd, size_t size, void **vv)
 {
@@ -62,7 +64,7 @@ void raid_gen1_neon32(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AArch32 NEON implementation using the active generator
+ * Generate two parity blocks (RAID6 with Cauchy matrix) using AArch32 NEON implementation.
  */
 static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 	void **vv, int generator)
@@ -143,7 +145,7 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 }
 
 /*
- * GENz (triple parity with powers of 2^-1) AArch32 NEON implementation
+ * Generate three parity blocks with powers of 2^-1 using AArch32 NEON implementation.
  */
 void raid_genz_neon32_raid(int nd, size_t size, void **vv)
 {
@@ -230,7 +232,7 @@ void raid_genz_neon32_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GENX AArch32 NEON implementation
+ * Generate N parity blocks with Cauchy matrix using AArch32 NEON implementation.
  */
 static __always_inline void raid_genX_neon32(int nd, size_t size,
 	void **vv, int np, int generator)
@@ -519,6 +521,13 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	raid_neon32_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with AArch32 NEON optimized for up to three failures.
+ *
+ * If P is available, keep the complete P delta syndrome in q6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ */
 static __always_inline void raid_recX_neon32_123(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -816,6 +825,17 @@ static __always_inline void raid_recX_neon32_123(int nr, int *id, int *ip, int n
 	raid_neon32_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with AArch32 NEON.
+ *
+ * This avoids raid_delta_gen(), temporary syndrome buffers, and the
+ * generation of unused parity rows.
+ *
+ * If P is available, preserve the complete P delta syndrome and
+ * reconstruct only nr - 1 missing blocks through the inverse matrix.
+ * The last missing block is obtained by XORing the reconstructed blocks
+ * out of Pdelta.
+ */
 static __always_inline void raid_recX_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -1159,9 +1179,6 @@ void raid_gen2_neon32_aes(int nd, size_t size, void **vv)
 	raid_gen2_neon32_gen(nd, size, vv, 3);
 }
 
-/*
- * GEN3 (triple parity with Cauchy matrix) AArch32 NEON implementation
- */
 void raid_gen3_neon32_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_neon32(nd, size, vv, 3, 2);
@@ -1172,9 +1189,6 @@ void raid_gen3_neon32_aes(int nd, size_t size, void **vv)
 	raid_genX_neon32(nd, size, vv, 3, 3);
 }
 
-/*
- * GEN4 (quad parity with Cauchy matrix) AArch32 NEON implementation
- */
 void raid_gen4_neon32_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_neon32(nd, size, vv, 4, 2);
@@ -1185,9 +1199,6 @@ void raid_gen4_neon32_aes(int nd, size_t size, void **vv)
 	raid_genX_neon32(nd, size, vv, 4, 3);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) AArch32 NEON implementation
- */
 void raid_gen5_neon32_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_neon32(nd, size, vv, 5, 2);
@@ -1198,9 +1209,6 @@ void raid_gen5_neon32_aes(int nd, size_t size, void **vv)
 	raid_genX_neon32(nd, size, vv, 5, 3);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) AArch32 NEON implementation
- */
 void raid_gen6_neon32_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_neon32(nd, size, vv, 6, 2);
@@ -1226,6 +1234,8 @@ void raid_rec1_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 /*
  * Recover failure of two data blocks using P and Q AArch32 NEON implementation.
+ *
+ * Uses raid_delta_gen() and computes the analytical solution with polynomial reduction.
  */
 static __always_inline void raid_rec2of2_neon32(int *id, int *ip, int nd, size_t size, void **vv)
 {

@@ -7,7 +7,7 @@
 
 #ifdef CONFIG_X86
 /*
- * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
+ * Generate three parity blocks with Cauchy matrix using SSSE3 implementation.
  */
 static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, int generator)
 {
@@ -111,7 +111,7 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 }
 
 /*
- * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
+ * Generate four parity blocks with Cauchy matrix using SSSE3 implementation.
  */
 static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, int generator)
 {
@@ -234,7 +234,9 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 }
 
 /*
- * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
+ * Generate five parity blocks with Cauchy matrix using SSSE3 implementation.
+ *
+ * Uses an aligned stack buffer for parity accumulators under 8-register pressure.
  */
 void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
 {
@@ -370,7 +372,9 @@ void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
+ * Generate six parity blocks with Cauchy matrix using SSSE3 implementation.
+ *
+ * Uses an aligned stack buffer for parity accumulators under 8-register pressure.
  */
 void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
 {
@@ -528,7 +532,10 @@ void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
+ * Generate three parity blocks with Cauchy matrix using SSSE3 extended implementation.
+ *
+ * Uses the extended register set (16 XMM registers) and processes two disks
+ * per iteration across two 16-byte XMM lanes (32 bytes/step).
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -787,7 +794,10 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 }
 
 /*
- * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
+ * Generate four parity blocks with Cauchy matrix using SSSE3 extended implementation.
+ *
+ * Uses the extended register set (16 XMM registers) and processes two disks
+ * per iteration across two 16-byte XMM lanes (32 bytes/step).
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -975,7 +985,7 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 }
 
 /*
- * GENX SSSE3ext implementation
+ * Generate N parity blocks with Cauchy matrix using SSSE3 extended implementation.
  */
 static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, int np, int generator)
 {
@@ -1157,7 +1167,9 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 #endif
 
 /*
- * RAID recovering for one disk SSSE3 implementation
+ * Recover failure of one data block using SSSE3 delta implementation.
+ *
+ * Uses raid_delta_gen() and multiplies by the inverted coefficient table.
  */
 static __always_inline void raid_rec1_ssse3_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1206,7 +1218,9 @@ static __always_inline void raid_rec1_ssse3_delta(int *id, int *ip, int nd, size
 }
 
 /*
- * RAID recovering for two disks SSSE3 implementation
+ * Recover failure of two data blocks using SSSE3 delta implementation.
+ *
+ * Uses raid_delta_gen() and solves the 2x2 system directly on delta blocks.
  */
 static __always_inline void raid_rec2_ssse3_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1308,6 +1322,8 @@ static __always_inline void raid_rec2_ssse3_delta(int *id, int *ip, int nd, size
 
 /*
  * Recover failure of two data blocks using P and Q SSSE3 implementation.
+ *
+ * Uses raid_delta_gen() and computes the analytical solution.
  */
 static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1384,7 +1400,7 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 }
 
 /*
- * RAID recovering SSSE3 implementation optimized for up to four failures.
+ * Recover multiple data failures using selected parity blocks with SSSE3 optimized for up to four failures.
  *
  * If P is available, keep the complete P delta syndrome in xmm6.
  * Reconstruct only nr - 1 missing blocks through the inverse matrix and
@@ -1609,7 +1625,7 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip, int n
 }
 
 /*
- * RAID recovering SSSE3 implementation.
+ * Recover multiple data failures using selected parity blocks with SSSE3.
  *
  * If P is available, keep the complete P delta syndrome in xmm6.
  * Reconstruct only nr - 1 missing blocks through the inverse matrix and
@@ -1776,7 +1792,7 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip, int nd, si
 
 #ifdef CONFIG_X86_64
 /*
- * RAID recovering for one disk SSSE3 extended implementation.
+ * Recover failure of one data block using SSSE3 extended delta implementation.
  *
  * Process two 16-byte blocks per iteration, grouping equal operations across
  * both lanes to expose instruction-level parallelism.
@@ -1856,7 +1872,10 @@ static __always_inline void raid_rec1_ssse3ext_delta(int *id, int *ip, int nd, s
 }
 
 /*
- * RAID recovering for two disks SSSE3 extended implementation
+ * Recover failure of two data blocks using SSSE3 extended delta implementation.
+ *
+ * Uses raid_delta_gen() and keeps all 8 inverse-matrix tables resident
+ * in XMM registers (xmm8..xmm15).
  */
 static __always_inline void raid_rec2_ssse3ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1964,6 +1983,9 @@ static __always_inline void raid_rec2_ssse3ext_delta(int *id, int *ip, int nd, s
 
 /*
  * Recover failure of two data blocks using P and Q SSSE3 extended implementation.
+ *
+ * Uses raid_delta_gen() and keeps all four multiplication tables resident
+ * in XMM registers (xmm8..xmm11).
  */
 static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -2043,6 +2065,13 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 	raid_sse_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with SSSE3 extended optimized for up to three failures.
+ *
+ * If P is available, keep the complete P delta syndrome in xmm6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ */
 static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -2293,8 +2322,7 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int
 }
 
 /*
- * RAID recovering SSSE3 extended implementation optimized for up to five
- * failures.
+ * Recover multiple data failures using selected parity blocks with SSSE3 extended optimized for up to five failures.
  *
  * If P is available, keep the complete P delta syndrome in xmm10.
  * Reconstruct only nr - 1 missing blocks through the inverse matrix and
@@ -2593,6 +2621,17 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int *id, int *ip, i
 	raid_sse_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with SSSE3 extended.
+ *
+ * This avoids raid_delta_gen(), temporary syndrome buffers, and the
+ * generation of unused parity rows.
+ *
+ * If P is available, preserve the complete P delta syndrome and
+ * reconstruct only nr - 1 missing blocks through the inverse matrix.
+ * The last missing block is obtained by XORing the reconstructed blocks
+ * out of Pdelta.
+ */
 static __always_inline void raid_recX_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -2895,11 +2934,6 @@ void raid_gen4_ssse3ext_aes(int nd, size_t size, void **vv)
 	raid_gen4_ssse3ext_gen(nd, size, vv, 3);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
- *
- * Note that it uses 16 registers, meaning that x64 is required.
- */
 void raid_gen5_ssse3ext_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_ssse3ext(nd, size, vv, 5, 2);
@@ -2910,11 +2944,6 @@ void raid_gen5_ssse3ext_aes(int nd, size_t size, void **vv)
 	raid_genX_ssse3ext(nd, size, vv, 5, 3);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
- *
- * Note that it uses 16 registers, meaning that x64 is required.
- */
 void raid_gen6_ssse3ext_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_ssse3ext(nd, size, vv, 6, 2);

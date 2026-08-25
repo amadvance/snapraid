@@ -7,8 +7,7 @@
 
 #ifdef CONFIG_X86_64
 /*
- * GENX AVX2 GFNI implementation for the RAID polynomial using direct
- * Cauchy coefficients.
+ * Generate N parity blocks for the RAID polynomial using direct Cauchy coefficients with AVX2 GFNI.
  */
 static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **vv, int np)
 {
@@ -119,7 +118,10 @@ static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **
 }
 
 /*
- * GEN2 (RAID6 with powers of 2) AVX512 GFNI implementation
+ * Generate two parity blocks (RAID6 with powers of 2) using AVX512 GFNI implementation.
+ *
+ * Preloads up to 28 Q affine matrix coefficients in ZMM registers (zmm4..zmm31)
+ * with an unrolled disk loop and early exits.
  */
 static __always_inline void raid_gen2_avx512gfni_raid_gen(int nd, size_t size, void **vv)
 {
@@ -388,7 +390,10 @@ store:
 }
 
 /*
- * GEN3 (triple parity with Cauchy matrix) AVX512 GFNI implementation
+ * Generate three parity blocks with Cauchy matrix using AVX512 GFNI implementation.
+ *
+ * Preloads up to 13 pairs of Q and R affine matrix coefficients in ZMM
+ * registers (zmm6..zmm31) with an unrolled disk loop and early exits.
  */
 static __always_inline void raid_gen3_avx512gfni_raid_gen(int nd, size_t size, void **vv)
 {
@@ -585,8 +590,7 @@ store:
 }
 
 /*
- * GENX AVX512 GFNI implementation for the RAID polynomial using direct
- * Cauchy coefficients.
+ * Generate N parity blocks for the RAID polynomial using direct Cauchy coefficients with AVX512 GFNI.
  */
 static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void **vv, int np)
 {
@@ -669,8 +673,7 @@ static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void 
 }
 
 /*
- * GENX AVX2 GFNI implementation for the AES polynomial using direct
- * Cauchy coefficients.
+ * Generate N parity blocks for the AES polynomial using direct Cauchy coefficients with AVX2 GFNI.
  */
 static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **vv, int np)
 {
@@ -788,7 +791,10 @@ static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **v
 }
 
 /*
- * GEN2 (RAID6 with powers of 3) AVX512 GFNI implementation
+ * Generate two parity blocks (RAID6 with powers of 3) using AVX512 GFNI implementation.
+ *
+ * Preloads up to 28 Q multiplier coefficients in ZMM registers (zmm4..zmm31)
+ * with an unrolled disk loop and early exits.
  */
 static __always_inline void raid_gen2_avx512gfni_aes_gen(int nd, size_t size, void **vv)
 {
@@ -1057,7 +1063,10 @@ store:
 }
 
 /*
- * GEN3 (triple parity with Cauchy matrix) AVX512 GFNI implementation
+ * Generate three parity blocks with Cauchy matrix using AVX512 GFNI implementation.
+ *
+ * Preloads up to 13 pairs of Q and R multiplier coefficients in ZMM
+ * registers (zmm6..zmm31) with an unrolled disk loop and early exits.
  */
 static __always_inline void raid_gen3_avx512gfni_aes_gen(int nd, size_t size, void **vv)
 {
@@ -1254,8 +1263,7 @@ store:
 }
 
 /*
- * GENX AVX512 GFNI implementation for the AES polynomial using direct
- * Cauchy coefficients.
+ * Generate N parity blocks for the AES polynomial using direct Cauchy coefficients with AVX512 GFNI.
  */
 static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void **vv, int np)
 {
@@ -1337,6 +1345,16 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 	raid_avx_end();
 }
 
+/*
+ * Recover multiple data failures using selected parity blocks with AVX2 GFNI.
+ *
+ * Compute only the selected syndromes, keeping them in registers.
+ * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * parity blocks, and generation of unused parity rows.
+ *
+ * If P is available, reconstruct only nr - 1 missing blocks through the
+ * inverse matrix and derive the last missing block from the P delta by XOR.
+ */
 static __always_inline void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -1716,6 +1734,16 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 	raid_avx_end();
 }
 
+/*
+ * Recover multiple data failures for the AES polynomial using selected parity blocks with AVX2 GFNI.
+ *
+ * Compute only the selected syndromes, keeping them in registers.
+ * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * parity blocks, and generation of unused parity rows.
+ *
+ * If P is available, reconstruct only nr - 1 missing blocks through the
+ * inverse matrix and derive the last missing block from the P delta by XOR.
+ */
 static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -1906,8 +1934,7 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int
 }
 
 /*
- * Recover multiple data failures using selected parity blocks with AVX512 GFNI
- * and the AES polynomial.
+ * Recover multiple data failures for the AES polynomial using selected parity blocks with AVX512 GFNI.
  *
  * Compute only the selected syndromes, keeping them in registers.
  * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
@@ -2073,161 +2100,101 @@ static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, i
 	raid_avx_end();
 }
 
-/*
- * GEN2 (RAID6 with powers of 2) AVX2 GFNI implementation
- */
 void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_raid(nd, size, vv, 2);
 }
 
-/*
- * GEN2 (RAID6 with powers of 2) AVX512 GFNI implementation
- */
 void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_gen2_avx512gfni_raid_gen(nd, size, vv);
 }
 
-/*
- * GEN3 (triple parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_raid(nd, size, vv, 3);
 }
 
-/*
- * GEN3 (triple parity with Cauchy matrix) AVX512 GFNI implementation
- */
 void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_gen3_avx512gfni_raid_gen(nd, size, vv);
 }
 
-/*
- * GEN4 (quad parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_raid(nd, size, vv, 4);
 }
 
-/*
- * GEN4 (quad parity with Cauchy matrix) GFNI implementation
- */
 void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512gfni_raid(nd, size, vv, 4);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_raid(nd, size, vv, 5);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) GFNI implementation
- */
 void raid_gen5_avx512gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512gfni_raid(nd, size, vv, 5);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen6_avx2gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_raid(nd, size, vv, 6);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) GFNI implementation
- */
 void raid_gen6_avx512gfni_raid(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512gfni_raid(nd, size, vv, 6);
 }
 
-/*
- * GEN2 (RAID6 with powers of 3) AVX2 GFNI implementation
- */
 void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_aes(nd, size, vv, 2);
 }
 
-/*
- * GEN2 (RAID6 with powers of 3) AVX512 GFNI implementation
- */
 void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_gen2_avx512gfni_aes_gen(nd, size, vv);
 }
 
-/*
- * GEN3 (triple parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_aes(nd, size, vv, 3);
 }
 
-/*
- * GEN3 (triple parity with Cauchy matrix) AVX512 GFNI implementation
- */
 void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_gen3_avx512gfni_aes_gen(nd, size, vv);
 }
 
-/*
- * GEN4 (quad parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen4_avx2gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_aes(nd, size, vv, 4);
 }
 
-/*
- * GEN4 (quad parity with Cauchy matrix) GFNI implementation
- */
 void raid_gen4_avx512gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512gfni_aes(nd, size, vv, 4);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen5_avx2gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_aes(nd, size, vv, 5);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) GFNI implementation
- */
 void raid_gen5_avx512gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512gfni_aes(nd, size, vv, 5);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) AVX2 GFNI implementation
- */
 void raid_gen6_avx2gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx2gfni_aes(nd, size, vv, 6);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) GFNI implementation
- */
 void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512gfni_aes(nd, size, vv, 6);
@@ -2248,6 +2215,8 @@ void raid_rec1_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 
 /*
  * Recover failure of two data blocks using P and Q AVX2 RAID GFNI implementation.
+ *
+ * Uses raid_delta_gen() and keeps both affine matrices resident in YMM registers.
  */
 static __always_inline void raid_rec2of2_avx2gfni_raid(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -2364,6 +2333,8 @@ void raid_rec1_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 
 /*
  * Recover failure of two data blocks using P and Q AVX512 RAID GFNI implementation.
+ *
+ * Uses raid_delta_gen() and keeps both affine matrices resident in ZMM registers.
  */
 static __always_inline void raid_rec2of2_avx512gfni_raid(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -2466,6 +2437,8 @@ void raid_rec1_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 
 /*
  * Recover failure of two data blocks using P and Q AVX2 AES GFNI implementation.
+ *
+ * Uses raid_delta_gen() and keeps both byte multipliers resident in YMM registers.
  */
 static __always_inline void raid_rec2of2_avx2gfni_aes(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -2573,6 +2546,8 @@ void raid_rec1_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 
 /*
  * Recover failure of two data blocks using P and Q AVX512 AES GFNI implementation.
+ *
+ * Uses raid_delta_gen() and keeps both byte multipliers resident in ZMM registers.
  */
 static __always_inline void raid_rec2of2_avx512gfni_aes(int *id, int *ip, int nd, size_t size, void **vv)
 {

@@ -7,7 +7,9 @@
 
 #ifdef CONFIG_X86_64
 /*
- * GEN1 (RAID5 with xor) AVX512BW implementation
+ * Generate one parity block (RAID5 with XOR) using AVX512BW implementation.
+ *
+ * Processes two disks per iteration using vpternlogq over 64-byte blocks.
  *
  * Note that in true AVX512F would suffice, but we don't want to add
  * specific support for AVX512F because this would be the only function
@@ -48,7 +50,10 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 Cauchy AVX512BW implementation
+ * Generate two parity blocks (RAID6 with Cauchy matrix) using AVX512BW implementation.
+ *
+ * Preloads 13 pairs of Q coefficient tables in ZMM registers (zmm4..zmm29)
+ * with an unrolled disk loop and early exits.
  */
 void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 {
@@ -274,7 +279,10 @@ store:
 }
 
 /*
- * GEN3 (triple parity with Cauchy matrix) AVX512BW implementation
+ * Generate three parity blocks with Cauchy matrix using AVX512BW implementation.
+ *
+ * Preloads 6 sets of Q and R coefficient tables in ZMM registers (zmm7..zmm30)
+ * with an unrolled disk loop and early exits.
  */
 void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 {
@@ -445,7 +453,7 @@ store:
 }
 
 /*
- * GENX AVX512BW implementation
+ * Generate N parity blocks with Cauchy matrix using AVX512BW implementation.
  */
 static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, int np)
 {
@@ -885,25 +893,16 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 	raid_avx_end();
 }
 
-/*
- * GEN4 (quad parity with Cauchy matrix) AVX512BW implementation
- */
 void raid_gen4_avx512bw(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512bw(nd, size, vv, 4);
 }
 
-/*
- * GEN5 (penta parity with Cauchy matrix) AVX512BW implementation
- */
 void raid_gen5_avx512bw(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512bw(nd, size, vv, 5);
 }
 
-/*
- * GEN6 (hexa parity with Cauchy matrix) AVX512BW implementation
- */
 void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512bw(nd, size, vv, 6);
@@ -924,6 +923,9 @@ void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 /*
  * Recover failure of two data blocks using P and Q AVX512BW implementation.
+ *
+ * Uses raid_delta_gen() and keeps both multiplication-table pairs resident
+ * in ZMM registers (zmm16..zmm19).
  */
 static __always_inline void raid_rec2of2_avx512bw(int *id, int *ip, int nd, size_t size, void **vv)
 {

@@ -5,7 +5,7 @@
 #include "gf.h"
 
 /*
- * GEN1 (RAID5 with xor) 32bit C implementation
+ * Generate one parity block (RAID5 with XOR) using 32bit C implementation.
  */
 void raid_gen1_int32(int nd, size_t size, void **vv)
 {
@@ -33,7 +33,7 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN1 (RAID5 with xor) 64bit C implementation
+ * Generate one parity block (RAID5 with XOR) using 64bit C implementation.
  */
 void raid_gen1_int64(int nd, size_t size, void **vv)
 {
@@ -61,7 +61,7 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 (double parity) 32bit C implementation
+ * Generate two parity blocks (RAID6 with powers of 2 or 3) using 32bit C implementation.
  */
 static __always_inline void raid_gen2_int32_gen(int nd, size_t size, void **vv, int generator)
 {
@@ -121,7 +121,7 @@ void raid_gen2_int32_aes(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN2 (double parity) 64bit C implementation
+ * Generate two parity blocks (RAID6 with powers of 2 or 3) using 64bit C implementation.
  */
 static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, int generator)
 {
@@ -186,7 +186,7 @@ void raid_gen2_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * GENz (triple parity with powers of 2^-1) 32bit C implementation
+ * Generate three parity blocks with powers of 2^-1 using 32bit C implementation.
  */
 void raid_genz_int32_raid(int nd, size_t size, void **vv)
 {
@@ -239,7 +239,7 @@ void raid_genz_int32_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GENz (triple parity with powers of 2^-1) 64bit C implementation
+ * Generate three parity blocks with powers of 2^-1 using 64bit C implementation.
  */
 void raid_genz_int64_raid(int nd, size_t size, void **vv)
 {
@@ -292,7 +292,7 @@ void raid_genz_int64_raid(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN3 (triple parity with Cauchy matrix) 8bit C implementation
+ * Generate three parity blocks with Cauchy matrix using 8bit C implementation.
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
@@ -339,7 +339,7 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN4 (quad parity with Cauchy matrix) 8bit C implementation
+ * Generate four parity blocks with Cauchy matrix using 8bit C implementation.
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
@@ -391,7 +391,7 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN5 (penta parity with Cauchy matrix) 8bit C implementation
+ * Generate five parity blocks with Cauchy matrix using 8bit C implementation.
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
@@ -448,7 +448,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * GEN6 (hexa parity with Cauchy matrix) 8bit C implementation
+ * Generate six parity blocks with Cauchy matrix using 8bit C implementation.
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
