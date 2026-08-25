@@ -6187,7 +6187,8 @@ void state_snapshot_read(struct snapraid_state* state)
 		if (res > 0)
 			continue;
 		if (res < 0) {
-			log_error(0, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem...\n", disk->name);
+			log_error(EUSER, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem.\n", disk->name);
+			log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
 			continue;
 		}
 
@@ -6200,7 +6201,8 @@ void state_snapshot_read(struct snapraid_state* state)
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
 			} else {
 				/* fallback to standard mount point */
-				log_error(0, "WARNING! Disk %s snapshot missing, falling back to live filesystem...\n", disk->name);
+				log_error(EUSER, "WARNING! Disk %s snapshot missing, falling back to live filesystem.\n", disk->name);
+				log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
@@ -6226,7 +6228,8 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 		if (res > 0)
 			continue;
 		if (res < 0) {
-			log_error(0, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem...\n", disk->name);
+			log_error(EUSER, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem.\n", disk->name);
+			log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
 			continue;
 		}
 
@@ -6261,7 +6264,8 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 				msg_progress("Using disk %s stable snapshot...\n", disk->name);
 			} else {
 				/* fallback to standard mount point */
-				log_error(0, "WARNING! Disk %s snapshot missing, falling back to live filesystem...\n", disk->name);
+				log_error(EUSER, "WARNING! Disk %s snapshot missing, falling back to live filesystem.\n", disk->name);
+				log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
 				msg_progress("Using disk %s live filesystem...\n", disk->name);
 			}
 		}
