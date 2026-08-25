@@ -466,7 +466,7 @@ void raid_gen_ref(int nd, int np, size_t size, void **vv)
 /*
  * Parity generation test.
  */
-static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
+static int selftest_par(int nd, int np, size_t size, void **v, void **ref)
 {
 	int i;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
@@ -498,7 +498,7 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 /*
  * Recovering test.
  */
-static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v, void **ref)
+static int selftest_rec(int nr, int *ir, int nd, int np, size_t size, void **v, void **ref)
 {
 	int i, j;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
@@ -534,7 +534,7 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 /*
  * Recovering test for data.
  */
-static int raid_test_data(int nr, int *id, int *ip, int nd, int np, size_t size, void **v, void **ref)
+static int selftest_data(int nr, int *id, int *ip, int nd, int np, size_t size, void **v, void **ref)
 {
 	int i, j;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
@@ -583,7 +583,7 @@ static int raid_test_data(int nr, int *id, int *ip, int nd, int np, size_t size,
 /*
  * Scan test.
  */
-static int raid_test_scan(int nr, int *ir, int nd, int np, size_t size, void **v, void **ref)
+static int selftest_scan(int nr, int *ir, int nd, int np, size_t size, void **v, void **ref)
 {
 	int i, j, ret;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
@@ -664,7 +664,7 @@ int raid_selftest(void)
 	/* test for each parity level */
 	for (np = 1; np <= np_max; ++np) {
 		/* test parity generation */
-		ret = raid_test_par(nd, np, size, v, ref);
+		ret = selftest_par(nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -680,14 +680,14 @@ int raid_selftest(void)
 			ip[i] = i;
 		}
 
-		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		ret = selftest_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
-		ret = raid_test_data(np, ir, ip, nd, np, size, v, ref);
+		ret = selftest_data(np, ir, ip, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -695,7 +695,7 @@ int raid_selftest(void)
 		}
 
 		/* test recovering with no failures */
-		ret = raid_test_rec(0, 0, nd, np, size, v, ref);
+		ret = selftest_rec(0, 0, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -706,7 +706,7 @@ int raid_selftest(void)
 		for (i = 0; i < np; ++i) {
 			ir[0] = nd + i;
 
-			ret = raid_test_rec(1, ir, nd, np, size, v, ref);
+			ret = selftest_rec(1, ir, nd, np, size, v, ref);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
 				goto bail;
@@ -718,7 +718,7 @@ int raid_selftest(void)
 		for (i = 0; i < np; ++i)
 			ir[i] = nd + i;
 
-		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		ret = selftest_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -734,7 +734,7 @@ int raid_selftest(void)
 				/* bad parity */
 				ir[1] = nd + i;
 
-				ret = raid_test_rec(2, ir, nd, np, size, v, ref);
+				ret = selftest_rec(2, ir, nd, np, size, v, ref);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					goto bail;
@@ -752,7 +752,7 @@ int raid_selftest(void)
 			ir[1] = nd + 0;
 			ir[2] = nd + 2;
 
-			ret = raid_test_rec(3, ir, nd, np, size, v, ref);
+			ret = selftest_rec(3, ir, nd, np, size, v, ref);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
 				goto bail;
@@ -768,7 +768,7 @@ int raid_selftest(void)
 			/* bad parity P */
 			ir[np - 1] = nd + 0;
 
-			ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+			ret = selftest_rec(np, ir, nd, np, size, v, ref);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
 				goto bail;
@@ -789,14 +789,14 @@ int raid_selftest(void)
 		for (i = 0; i < (np + 1) / 2; ++i)
 			ir[np / 2 + i] = nd + i;
 
-		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		ret = selftest_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
-		ret = raid_test_data(np / 2, ir, ip, nd, np, size, v, ref);
+		ret = selftest_data(np / 2, ir, ip, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -816,14 +816,14 @@ int raid_selftest(void)
 		for (i = 0; i < (np + 1) / 2; ++i)
 			ir[np / 2 + i] = nd + np - (np + 1) / 2 + i;
 
-		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		ret = selftest_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
-		ret = raid_test_data(np / 2, ir, ip, nd, np, size, v, ref);
+		ret = selftest_data(np / 2, ir, ip, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -848,7 +848,7 @@ int raid_selftest(void)
 			memset(v[ir[i]], 0x55, size);
 		}
 
-		ret = raid_test_scan(np - 1, ir, nd, np, size, v, ref);
+		ret = selftest_scan(np - 1, ir, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -857,7 +857,7 @@ int raid_selftest(void)
 	}
 
 	/* scan test with no parity */
-	ret = raid_test_scan(0, 0, nd, 0, size, v, ref);
+	ret = selftest_scan(0, 0, nd, 0, size, v, ref);
 	if (ret != -1) {
 		/* LCOV_EXCL_START */
 		goto bail;
