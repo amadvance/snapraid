@@ -1112,20 +1112,39 @@ void selftest(void)
 		/* LCOV_EXCL_STOP */
 	}
 
+	/* utilities and low-level helpers */
 	if (util_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed UTIL test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* non-cryptographic hash functions (murmur3, spooky2, museair) */
 	test_hash();
+
+	/* hardware and software crc32c */
 	test_crc32c();
+
+	/* split parity layout and size calculations */
 	test_parity();
+
+	/* tommyds data structures (hash tables, lists, search, sort) */
 	test_tommy();
+
+	/* buffered streaming i/o and crc verification */
 	test_stream();
+
+	/* wildcard and path pattern matching */
 	test_wnmatch();
+
+	/* smartctl output parsing */
 	test_parse_smartctl();
+
+	/* smart attribute ignore rules */
 	test_smart_ignore();
+
+	/* cauchy raid module self-test */
 	raid_mode(RAID_MODE_CAUCHY_RAID);
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
@@ -1133,6 +1152,8 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy aes module self-test */
 	raid_mode(RAID_MODE_CAUCHY_AES);
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
@@ -1140,6 +1161,8 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* vandermonde raid module self-test */
 	raid_mode(RAID_MODE_VANDERMONDE_RAID);
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
@@ -1147,96 +1170,168 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* array sorting helper */
 	if (raid_test_sort() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed SORT test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* sorted array insertion helper */
 	if (raid_test_insert() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed INSERT test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* permutation and combination generators */
 	if (raid_test_combo() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed COMBO test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* gfni affine transformation matrices */
 	if (raid_test_gfaffine() != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GFNI AFFINE test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* vandermonde raid parity generation with 32 data disks */
 	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* vandermonde raid parity generation with a single data disk */
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 1, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test single data disk\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* vandermonde raid parity generation with maximum data disks */
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test max data disks\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* vandermonde raid recovery with combinations of missing data disks and parities */
 	if (raid_test_rec(RAID_MODE_VANDERMONDE_RAID, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed REC Vandermonde RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* vandermonde raid tail recovery across all data disk counts up to maximum */
 	if (raid_test_tail(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed TAIL Vandermonde RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy raid matrix invertibility and polynomial checks */
 	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed POLY Cauchy RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy raid parity generation with 32 data disks */
 	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, 12, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed REC Cauchy RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed TAIL Cauchy RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+
+	/* cauchy raid parity generation with a single data disk */
 	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 1, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test single data disk\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy raid parity generation with maximum data disks */
+	if (raid_test_par(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test max data disks\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid recovery with combinations of missing data disks and parities */
+	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed REC Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid tail recovery across all data disk counts up to maximum */
+	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes matrix invertibility and polynomial checks */
 	if (raid_test_poly(RAID_MODE_CAUCHY_AES) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed POLY Cauchy AES test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy aes parity generation with 32 data disks */
 	if (raid_test_par(RAID_MODE_CAUCHY_AES, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy aes parity generation with a single data disk */
+	if (raid_test_par(RAID_MODE_CAUCHY_AES, 1, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test single data disk\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes parity generation with maximum data disks */
+	if (raid_test_par(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test max data disks\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes recovery with combinations of missing data disks and parities */
 	if (raid_test_rec(RAID_MODE_CAUCHY_AES, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed REC Cauchy AES test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* cauchy aes tail recovery across all data disk counts up to maximum */
 	if (raid_test_tail(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Failed TAIL Cauchy AES test\n");
