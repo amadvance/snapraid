@@ -478,6 +478,17 @@ void test(int argc, char* argv[])
 	assert(random_u8() == 0xAF);
 	assert(random_u64() == 0x6E789E6AA1B965F4ULL);
 
+	raid_init();
+
+	raid_mode(RAID_MODE_CAUCHY_RAID);
+	assert(raid_selftest() == 0);
+
+	raid_mode(RAID_MODE_CAUCHY_AES);
+	assert(raid_selftest() == 0);
+
+	raid_mode(RAID_MODE_VANDERMONDE_RAID);
+	assert(raid_selftest() == 0);
+
 	printf("Everything OK\n");
 
 	lock_done();
