@@ -743,6 +743,16 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 	return 0;
 }
 
+int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char* path, size_t path_size)
+{
+	pathcpy(path, path_size, fss->snapshot_dir);
+	pathcat(path, path_size, name);
+	pathcatc(path, path_size, '/');
+	pathcat(path, path_size, fss->sub_dir);
+
+	return 0;
+}
+
 void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 {
 	/*

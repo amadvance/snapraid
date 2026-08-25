@@ -2294,13 +2294,24 @@ static int fssnapshot_stat_fs(const struct fssnapshot_struct* fss, const char* n
 }
 #endif
 
+/*
+ * Native ZFS snapshots use a SnapRAID-specific prefix to avoid
+ * deleting or renaming unrelated user snapshots with generic
+ * names such as @scan, @pending, or @stable.
+ */
+#define ZFS_SNAPSHOT_PREFIX "snapraid-"
+
 #if HAVE_LINUX_DEVICE
 static int fssnapshot_stat_zfs(const struct fssnapshot_struct* fss, const char* name, struct stat* st)
 {
+	char native_name[PATH_MAX];
 	char target_path[PATH_MAX];
 
+	pathcpy(native_name, sizeof(native_name), ZFS_SNAPSHOT_PREFIX);
+	pathcat(native_name, sizeof(native_name), name);
+
 	pathcpy(target_path, sizeof(target_path), fss->snapshot_dir);
-	pathcat(target_path, sizeof(target_path), name);
+	pathcat(target_path, sizeof(target_path), native_name);
 
 	/*
 	 * Ensure to get into into the snapshot
@@ -2351,7 +2362,7 @@ static int fssnapshot_stat_zfs(const struct fssnapshot_struct* fss, const char* 
 		if (!entry)
 			break;
 
-		if (strcmp(entry->d_name, name) == 0) {
+		if (strcmp(entry->d_name, native_name) == 0) {
 			closedir(d);
 			return 0;
 		}
@@ -2480,7 +2491,7 @@ static int fssnapshot_zfs_create(const struct fssnapshot_struct* fss, const char
 		/* LCOV_EXCL_STOP */
 	}
 
-	snprintf(snapshot, sizeof(snapshot), "%s@%s", fss->dataset, name);
+	snprintf(snapshot, sizeof(snapshot), "%s@" ZFS_SNAPSHOT_PREFIX "%s", fss->dataset, name);
 
 	if (os_validate_exec_input(snapshot) != 0) {
 		/* LCOV_EXCL_START */
@@ -2609,7 +2620,7 @@ static int fssnapshot_zfs_delete(const struct fssnapshot_struct* fss, const char
 		/* LCOV_EXCL_STOP */
 	}
 
-	snprintf(snapshot, sizeof(snapshot), "%s@%s", fss->dataset, name);
+	snprintf(snapshot, sizeof(snapshot), "%s@" ZFS_SNAPSHOT_PREFIX "%s", fss->dataset, name);
 
 	if (os_validate_exec_input(snapshot) != 0) {
 		/* LCOV_EXCL_START */
@@ -2689,8 +2700,8 @@ static int fssnapshot_zfs_rename(const struct fssnapshot_struct* fss, const char
 		/* LCOV_EXCL_STOP */
 	}
 
-	snprintf(old_snapshot, sizeof(old_snapshot), "%s@%s", fss->dataset, old_name);
-	snprintf(new_snapshot, sizeof(new_snapshot), "%s@%s", fss->dataset, new_name);
+	snprintf(old_snapshot, sizeof(old_snapshot), "%s@" ZFS_SNAPSHOT_PREFIX "%s", fss->dataset, old_name);
+	snprintf(new_snapshot, sizeof(new_snapshot), "%s@" ZFS_SNAPSHOT_PREFIX "%s", fss->dataset, new_name);
 
 	if (os_validate_exec_input(old_snapshot) != 0 || os_validate_exec_input(new_snapshot) != 0) {
 		/* LCOV_EXCL_START */
@@ -2735,10 +2746,23 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 #endif
 }
 
+int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char* path, size_t path_size)
+{
+	pathcpy(path, path_size, fss->snapshot_dir);
+	if (fss->magic == ZFS_SUPER_MAGIC)
+		pathcat(path, path_size, ZFS_SNAPSHOT_PREFIX);
+	pathcat(path, path_size, name);
+	pathcatc(path, path_size, '/');
+	pathcat(path, path_size, fss->sub_dir);
+
+	return 0;
+}
+
 void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 {
 	(void)fss;
 }
+
 
 /****************************************************************************/
 /* dev */

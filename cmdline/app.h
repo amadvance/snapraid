@@ -166,6 +166,17 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name);
  */
 int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name);
 
+/**
+ * Get the path where a logical snapshot is accessible.
+ *
+ * @param fss Snapshot context
+ * @param name Logical snapshot name
+ * @param path Output path
+ * @param path_size Size of path
+ * @return 0 on success, -1 on failure
+ */
+int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char* path, size_t path_size);
+
 /*
  * Log file.
  *

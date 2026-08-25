@@ -6036,10 +6036,9 @@ static int state_snapshot_dir(struct fssnapshot_struct* fss, const char* name, s
 
 	if (disk) {
 		char vol[PATH_MAX];
-		pathcpy(vol, sizeof(vol), fss->snapshot_dir);
-		pathcat(vol, sizeof(vol), name);
-		pathcatc(vol, sizeof(vol), '/');
-		pathcat(vol, sizeof(vol), fss->sub_dir);
+
+		if (fssnapshot_path(fss, name, vol, sizeof(vol)) != 0)
+			return -1;
 
 		pathcpy(disk->dir, sizeof(disk->dir), vol);
 		disk->dir_device = st.st_dev;
@@ -6245,10 +6244,8 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 
 					/* set where to find deallocated files */
 					char vol[PATH_MAX];
-					pathcpy(vol, sizeof(vol), disk->fss.snapshot_dir);
-					pathcat(vol, sizeof(vol), SNAPSHOT_STABLE "/");
-					pathcat(vol, sizeof(vol), disk->fss.sub_dir);
-					state_dealloc(state, vol, &disk->dealloclist);
+					if (fssnapshot_path(&disk->fss, SNAPSHOT_STABLE, vol, sizeof(vol)) == 0)
+						state_dealloc(state, vol, &disk->dealloclist);
 				}
 			}
 		} else {
