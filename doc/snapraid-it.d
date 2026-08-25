@@ -1205,6 +1205,11 @@ Configurazione (Configuration)
 	È possibile cambiare il punto di montaggio secondo necessità,
 	purché si mantenga fisso NAME.
 
+	Tuttavia, il percorso configurato deve puntare costantemente agli
+	stessi dati sottostanti. Se il percorso contiene collegamenti simbolici,
+	le loro destinazioni devono rimanere stabili. La modifica di tali symlink
+	per cambiare la directory dei dati al volo non è supportata.
+
 	Si dovrebbe utilizzare un'opzione per ogni disco dati nell'array.
 
 	È possibile rinominare un disco in seguito modificando NAME

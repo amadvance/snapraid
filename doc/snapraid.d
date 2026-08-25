@@ -1140,6 +1140,11 @@ Configuration
 	You can change the mount point as needed, as long as
 	you keep the NAME fixed.
 
+	However, the configured path must consistently resolve to the
+	same underlying data. If the path contains symbolic links,
+	their targets must remain stable. Retargeting such symlinks
+	to switch the data directory on the fly is unsupported.
+
 	You should use one option for each data disk in the array.
 
 	You can rename a disk later by changing the NAME directly

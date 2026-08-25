@@ -1194,6 +1194,11 @@ Configuración (Configuration)
 	Puede cambiar el punto de montaje según sea necesario, siempre que
 	mantenga el NAME fijo.
 
+	Sin embargo, la ruta configurada debe apuntar consistentemente a los
+	mismos datos subyacentes. Si la ruta contiene enlaces simbólicos,
+	sus destinos deben permanecer estables. No se admite cambiar el destino
+	de dichos symlinks para cambiar el directorio de datos sobre la marcha.
+
 	Debe usar una opción para cada disco de datos en el array.
 
 	Puede cambiar el nombre de un disco más tarde cambiando el NAME

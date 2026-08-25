@@ -1138,6 +1138,11 @@ Konfiguracja (Configuration)
 	Możesz zmieniać punkt montowania w razie potrzeby, o ile
 	zachowasz stałą nazwę NAME.
 
+	Jednak skonfigurowana ścieżka musi spójnie wskazywać na te same
+	dane bazowe. Jeśli ścieżka zawiera dowiązania symboliczne,
+	ich cele muszą pozostać stabilne. Zmiana takich dowiązań w celu
+	przełączenia katalogu danych w locie jest nieobsługiwana.
+
 	Powinieneś użyć jednej opcji dla każdego dysku danych w macierzy.
 
 	Możesz później zmienić nazwę dysku, zmieniając bezpośrednio nazwę NAME

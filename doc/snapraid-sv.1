@@ -1426,6 +1426,11 @@ filsystemet.
 Du kan ändra monteringspunkten vid behov, så länge
 du behåller NAME fixerat.
 .PP
+Den konfigurerade sökvägen måste dock konsekvent matcha samma
+underliggande data. Om sökvägen innehåller symboliska länkar
+måste deras mål förbli stabila. Att ändra sådana symlänkar för
+att byta datakatalog i farten stöds inte.
+.PP
 Du bör använda ett alternativ för varje datadisk i arrayen.
 .PP
 Du kan byta namn på en disk senare genom att ändra NAME direkt

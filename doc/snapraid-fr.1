@@ -1516,6 +1516,12 @@ système de fichiers.
 Vous pouvez modifier le point de montage au besoin, tant que
 vous gardez le NAME fixe.
 .PP
+Cependant, le chemin configuré doit pointer de manière cohérente vers
+les mêmes données sous\-jacentes. Si le chemin contient des liens
+symboliques, leurs cibles doivent rester stables. La modification de ces
+liens symboliques pour changer le répertoire de données à la volée n\'est
+pas prise en charge.
+.PP
 Vous devriez utiliser une option pour chaque disque de données
 de la baie.
 .PP

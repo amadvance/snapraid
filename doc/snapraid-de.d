@@ -1229,6 +1229,12 @@ Konfiguration (Configuration)
 	Sie können den Einhängepunkt nach Bedarf ändern, solange Sie
 	den NAME unverändert lassen.
 
+	Der konfigurierte Pfad muss jedoch durchgehend auf dieselben
+	zugrunde liegenden Daten verweisen. Wenn der Pfad symbolische Links
+	enthält, müssen deren Ziele stabil bleiben. Das Ändern solcher Symlinks,
+	um das Datenverzeichnis im laufenden Betrieb zu wechseln, wird nicht
+	unterstützt.
+
 	Sie sollten eine Option für jede Datenfestplatte im Array verwenden.
 
 	Sie können eine Festplatte später umbenennen, indem Sie den NAME

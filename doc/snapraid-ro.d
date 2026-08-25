@@ -1133,6 +1133,11 @@ Configurare (Configuration)
 	Puteți schimba punctul de montare după cum este necesar, atâta timp cât
 	păstrați NAME fix.
 
+	Cu toate acestea, calea configurată trebuie să indice în mod consecvent
+	aceleași date subiacente. Dacă calea conține legături simbolice,
+	țintele acestora trebuie să rămână stabile. Redirecționarea acestor linkuri
+	pentru a schimba directorul de date din mers nu este acceptată.
+
 	Ar trebui să utilizați o opțiune pentru fiecare disc de date din matrice.
 
 	Puteți redenumi un disc mai târziu schimbând NAME direct

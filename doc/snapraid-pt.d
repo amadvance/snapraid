@@ -1167,6 +1167,11 @@ Configuração (Configuration)
 	Você pode alterar o ponto de montagem conforme necessário, desde que
 	mantenha o NAME fixo.
 
+	No entanto, o caminho configurado deve apontar consistentemente para os
+	mesmos dados subjacentes. Se o caminho contiver links simbólicos,
+	seus destinos devem permanecer estáveis. A alteração desses links simbólicos
+	para alternar o diretório de dados em tempo real não é suportada.
+
 	Você deve usar uma opção para cada disco de dados no array.
 
 	Você pode renomear um disco mais tarde alterando o NAME diretamente
