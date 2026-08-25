@@ -1543,6 +1543,12 @@ Livscykel för ögonblicksbilder (Snapshots Lifecycle)
 	Om en `sync` startas om efter ett avbrott raderas den befintliga
 	vilande (pending) ögonblicksbilden och en ny skapas för att
 	fånga det aktuella tillståndet för det aktiva filsystemet.
+	Om en `sync` avbryts bör du dock undvika att modifiera, ta bort,
+	ersätta eller flytta filer tills en efterföljande `sync` slutförs
+	framgångsrikt. Pariteten kan fortfarande innehålla block som beräknats från
+	ögonblicksbilden som användes av den avbrutna synkroniseringen. En senare
+	synkronisering kan ersätta den ögonblicksbilden, vilket gör mellanliggande
+	filversioner otillgängliga för återställning.
 
 Mönster (Pattern)
 	Mönster ger ett flexibelt sätt att filtrera filer för inkludering eller

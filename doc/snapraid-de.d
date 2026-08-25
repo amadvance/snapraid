@@ -1650,6 +1650,12 @@ Lebenszyklus von Snapshots (Snapshots Lifecycle)
 	Wenn ein `sync` nach einer Unterbrechung neu gestartet wird, wird der vorhandene
 	ausstehende (pending) Snapshot gelöscht und ein neuer erstellt, um den
 	aktuellen Zustand des Live-Dateisystems zu erfassen.
+	Wenn ein `sync` jedoch unterbrochen wird, vermeiden Sie es, Dateien zu
+	ändern, zu löschen, zu ersetzen oder zu verschieben, bis ein nachfolgender
+	`sync` erfolgreich abgeschlossen ist. Die Parität kann noch Blöcke enthalten,
+	die aus dem vom unterbrochenen Sync verwendeten Snapshot berechnet wurden.
+	Ein späterer Sync könnte diesen Snapshot ersetzen, wodurch Zwischenversionen
+	von Dateien für die Wiederherstellung nicht mehr verfügbar sind.
 
 Muster (Pattern)
 	Muster bieten eine flexible Möglichkeit, Dateien für die Einbeziehung oder

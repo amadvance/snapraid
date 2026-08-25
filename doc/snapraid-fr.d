@@ -1658,6 +1658,12 @@ Cycle de vie des instantanés (Snapshots Lifecycle)
 	Si un `sync` est redémarré après une interruption, l'instantané pending existant
 	est supprimé et un nouveau est créé pour
 	capturer l'état actuel du système de fichiers actif.
+	Cependant, si un `sync` est interrompu, évitez de modifier, supprimer,
+	remplacer ou déplacer des fichiers jusqu'à ce qu'un `sync` ultérieur se termine
+	avec succès. La parité peut encore contenir des blocs calculés à partir de
+	l'instantané utilisé par le sync interrompu. Un sync ultérieur peut remplacer
+	cet instantané, rendant les versions intermédiaires des fichiers indisponibles
+	pour la récupération.
 
 Motif (Pattern)
 	Les motifs offrent un moyen flexible de filtrer les fichiers à inclure ou

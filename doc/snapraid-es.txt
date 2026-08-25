@@ -1732,6 +1732,12 @@ con éxito y se guarda la versión final del archivo .content.
 Si un `sync` se reinicia después de una interrupción, la instantánea pending existente
 se elimina y se crea una nueva para
 capturar el estado actual del sistema de archivos activo.
+Sin embargo, si un `sync` se interrumpe, evite modificar, eliminar,
+reemplazar o mover archivos hasta que un `sync` posterior se complete
+con éxito. La paridad aún puede contener bloques calculados a partir de
+la instantánea utilizada por el sync interrumpido. Un sync posterior puede
+reemplazar esa instantánea, haciendo que las versiones intermedias de los
+archivos no estén disponibles para la recuperación.
 
 
 10 PATRONES (PATTERN)

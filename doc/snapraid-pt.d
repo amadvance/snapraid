@@ -1580,6 +1580,12 @@ Ciclo de Vida dos Instantâneos (Snapshots Lifecycle)
 	Se um `sync` for reiniciado após uma interrupção, o instantâneo pending existente
 	é excluído e um novo é criado para
 	capturar o estado atual do sistema de arquivos ativo.
+	No entanto, se um `sync` for interrompido, evite modificar, excluir,
+	substituir ou mover arquivos até que um `sync` subsequente seja concluído
+	com sucesso. A paridade ainda pode conter blocos calculados a partir do
+	instantâneo usado pelo sync interrompido. Um sync posterior pode substituir
+	esse instantâneo, tornando as versões intermediárias dos arquivos indisponíveis
+	para recuperação.
 
 Padrão (Pattern)
 	Os padrões fornecem uma maneira flexível de filtrar arquivos para inclusão ou

@@ -1549,6 +1549,12 @@ Snapshots Lifecycle
 	If a `sync` is restarted after an interruption, the existing
 	pending snapshot is deleted and a new one is created to
 	capture the current state of the live filesystem.
+	However, if a `sync` is interrupted, avoid modifying, deleting,
+	replacing, or moving files until a subsequent `sync` completes
+	successfully. Parity may still contain blocks computed from the
+	snapshot used by the interrupted sync. A later sync may replace
+	that snapshot, making intermediate file versions unavailable for
+	recovery.
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in

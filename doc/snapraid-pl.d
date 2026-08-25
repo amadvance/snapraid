@@ -1543,6 +1543,11 @@ Cykl życia migawek (Snapshots Lifecycle)
 	Jeśli operacja `sync` zostanie zrestartowana po przerwaniu, istniejąca
 	oczekująca (pending) migawka jest usuwana, a tworzona jest nowa, aby
 	uchwycić bieżący stan aktywnego systemu plików.
+	Jeśli jednak operacja `sync` zostanie przerwana, należy unikać modyfikowania,
+	usuwania, zastępowania lub przenoszenia plików do momentu pomyślnego ukończenia
+	kolejnej operacji `sync`. Parzystość może nadal zawierać bloki obliczone na podstawie
+	migawki użytej przez przerwaną synchronizację. Późniejsza synchronizacja może zastąpić
+	tę migawkę, uniemożliwiając odzyskanie pośrednich wersji plików.
 
 Wzorce (Pattern)
 	Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub

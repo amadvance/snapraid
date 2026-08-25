@@ -1633,6 +1633,12 @@ Ciclo di vita degli snapshot (Snapshots Lifecycle)
 	Se un `sync` viene riavviato dopo un'interruzione, lo snapshot pending esistente
 	viene eliminato e ne viene creato uno nuovo per
 	acquisire lo stato corrente del file system live.
+	Tuttavia, se un `sync` viene interrotto, evitare di modificare, eliminare,
+	sostituire o spostare i file finché un `sync` successivo non viene completato
+	con successo. La parità potrebbe ancora contenere blocchi calcolati dallo
+	snapshot utilizzato dal sync interrotto. Un sync successivo potrebbe sostituire
+	tale snapshot, rendendo le versioni intermedie dei file non disponibili per il
+	recupero.
 
 Pattern
 	I pattern offrono un modo flessibile per filtrare i file da includere o

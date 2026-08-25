@@ -1540,6 +1540,12 @@ Ciclul de viață al snapshot-urilor (Snapshots Lifecycle)
 	Dacă un `sync` este repornit după o întrerupere, snapshot-ul pending existent
 	este șters și se creează unul nou pentru
 	a captura starea curentă a sistemului de fișiere live.
+	Cu toate acestea, dacă un `sync` este întrerupt, evitați modificarea, ștergerea,
+	înlocuirea sau mutarea fișierelor până când un `sync` ulterior se finalizează
+	cu succes. Paritatea poate conține în continuare blocuri calculate din
+	snapshot-ul utilizat de sync-ul întrerupt. Un sync ulterior poate înlocui
+	acel snapshot, făcând versiunile intermediare ale fișierelor indisponibile
+	pentru recuperare.
 
 Model (Pattern)
 	Modelele oferă o modalitate flexibilă de a filtra fișierele pentru includere sau
