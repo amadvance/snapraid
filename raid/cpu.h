@@ -360,25 +360,19 @@ static inline int raid_cpu_has_slow_extendedreg(void)
  * optimized AVX-2 path will outperform the native AVX-512 path for this
  * specific parity kernel, which is dominated by vpshufb (AVX-512BW).
  *
- * Three distinct hardware conditions cause this:
+ * Hardware condition causing this:
  *
- * 1. Narrow Shuffle Port + Frequency Offset (Intel Skylake-X / Cannon Lake):
- *    The shuffle execution port (port 5) on these cores is only 256-bit wide.
- *    vpshufb zmm therefore decomposes into 2 µops through the same port,
- *    delivering identical bytes-per-cycle throughput as vpshufb ymm, there
- *    is zero computational gain from the wider register. On top of this, any
- *    active 512-bit instruction triggers a core frequency downclocking license
- *    (100-400 MHz under sustained load). The result is measurably worse
- *    throughput than AVX-2 for this workload.
- *    Note: Ice Lake, Tiger Lake, and Rocket Lake are intentionally excluded,
- *    their port 5 is natively 512-bit wide (1 µop, genuine 2× vpshufb
- *    throughput), which outweighs their smaller frequency offsets.
- *
- * 2. Double-Pumped 256-bit Datapath (AMD Zen 4, Zen 5 mobile):
- *    These processors execute all AVX-512 instructions, including vpshufb zmm,
- *    internally as two sequential 256-bit operations. This doubles the µop
- *    count and execution cycles for no gain in output bytes, making the
- *    AVX-512 path strictly slower than AVX-2.
+ * Narrow Shuffle Port + Frequency Offset (Intel Skylake-X / Cannon Lake):
+ * The shuffle execution port (port 5) on these cores is only 256-bit wide.
+ * vpshufb zmm therefore decomposes into 2 µops through the same port,
+ * delivering identical bytes-per-cycle throughput as vpshufb ymm, there
+ * is zero computational gain from the wider register. On top of this, any
+ * active 512-bit instruction triggers a core frequency downclocking license
+ * (100-400 MHz under sustained load). The result is measurably worse
+ * throughput than AVX-2 for this workload.
+ * Note: Ice Lake, Tiger Lake, and Rocket Lake are intentionally excluded,
+ * their port 5 is natively 512-bit wide (1 µop, genuine 2× vpshufb
+ * throughput), which outweighs their smaller frequency offsets.
  */
 static inline int raid_cpu_has_slow_avx512(void)
 {
@@ -387,31 +381,6 @@ static inline int raid_cpu_has_slow_avx512(void)
 	unsigned model;
 
 	raid_cpu_info(vendor, &family, &model);
-
-	if (strcmp(vendor, "AuthenticAMD") == 0) {
-		/*
-		 * Zen 4 (Family 0x19): ALL models use a double-pumped 256-bit
-		 * datapath for AVX-512, desktop, mobile, and server alike.
-		 */
-		if (family == 25)
-			return 1;
-
-		/*
-		 * Zen 5 (Family 0x1A):
-		 *   True 512-bit: Granite Ridge desktop (0x44), Turin server (0x00–0x0F)
-		 *   256-bit mobile: Strix Point / Strix Halo (0x20–0x2F),
-		 *   256-bit mobile: Krackan Point and variants (0x60–0x6F)
-		 *
-		 * CAUTION: if AMD places a future desktop/server SKU in 0x20–0x2F,
-		 * this becomes a false positive. Re-validate against AMD's PPR on
-		 * each new family 0x1A product.
-		 */
-		if (family == 26) {
-			if ((model >= 0x20 && model <= 0x2F) /* Strix Point / Strix Halo */
-				|| (model >= 0x60 && model <= 0x6F)) /* Krackan Point and variants */
-				return 1;
-		}
-	}
 
 	if (strcmp(vendor, "GenuineIntel") == 0) {
 		/*
