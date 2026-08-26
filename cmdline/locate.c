@@ -104,14 +104,14 @@ static void collect_parity_block_file(uint32_t block_size, struct snapraid_disk*
 	tommy_list_insert_tail(file_list, &entry->node, entry);
 }
 
-void state_locate_info(struct snapraid_state* state, uint64_t parity_tail, struct snapraid_locate_info* info)
+static void state_locate_info(struct snapraid_state* state, uint64_t parity_tail, struct snapraid_locate_info* info)
 {
 	uint32_t block_size = state->block_size;
 
 	info->block_max = parity_allocated_size(state);
 	info->parity_size = info->block_max * (uint64_t)block_size;
 
-	info->tail_block = (parity_tail + block_size - 1) / block_size;
+	info->tail_block = (parity_tail / block_size) + (parity_tail % block_size != 0);
 
 	if (info->tail_block > info->block_max)
 		info->low_to_free_tail_block = 0;
