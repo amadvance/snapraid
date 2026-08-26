@@ -900,6 +900,14 @@ struct {
 	const char* pattern;
 	int valid;
 } FILTER_TEST[] = {
+	/* invalid empty pattern and path components */
+	{ "", 0 },
+	{ "foo//bar", 0 },
+	{ "foo/./bar", 0 },
+	{ "foo/../bar", 0 },
+	{ "foo/.", 0 },
+	{ "foo/..", 0 },
+
 	/* invalid standalone root and standalone double-star patterns */
 	{ "/", 0 },
 	{ "/**/", 0 },
@@ -923,11 +931,25 @@ struct {
 	{ "foo/**/", 1 },
 	{ "**", 1 },
 	{ "**/", 1 },
+	{ "foo/.hidden", 1 },
+	{ "foo/..hidden", 1 },
 
 	{ 0, 0 }
 };
 
-static void test_filter(void)
+static const struct {
+	const char* pattern;
+	int valid;
+} FILTER_DISK_TEST[] = {
+	{ "", 0 },
+	{ "disk/path", 0 },
+	{ "disk", 1 },
+	{ "disk?", 1 },
+	{ "data*", 1 },
+	{ 0, 0 }
+};
+
+static void test_filter_validity(void)
 {
 	for (int i = 0; FILTER_TEST[i].pattern; ++i) {
 		struct snapraid_filter* f = filter_alloc_file(1, "", FILTER_TEST[i].pattern);
@@ -941,6 +963,329 @@ static void test_filter(void)
 		if (f != 0)
 			filter_free(f);
 	}
+
+	for (int i = 0; FILTER_DISK_TEST[i].pattern; ++i) {
+		struct snapraid_filter* f = filter_alloc_disk(1, FILTER_DISK_TEST[i].pattern);
+		if ((f != 0) != FILTER_DISK_TEST[i].valid) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed disk filter test '%s', expected %s\n",
+				FILTER_DISK_TEST[i].pattern, FILTER_DISK_TEST[i].valid ? "valid" : "invalid");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (f != 0)
+			filter_free(f);
+	}
+}
+
+struct filter_rule_spec {
+	int direction;      /* 1 = include, -1 = exclude, 0 = end of rules */
+	int is_disk;        /* 1 = disk rule, 0 = file/dir rule */
+	const char* root;   /* "" for global, or "dir/" for scoped */
+	const char* pattern;
+};
+
+struct filter_test_case {
+	const char* disk;
+	const char* path;
+	int exp_path;       /* expected return from filter_path: 0 = include, -1 = exclude */
+	int exp_subdir;     /* expected return from filter_subdir: 0 = include (traverse), -1 = exclude */
+	int exp_emptydir;   /* expected return from filter_emptydir: 0 = include, -1 = exclude */
+};
+
+struct filter_scenario {
+	const char* desc;
+	struct filter_rule_spec rules[8];
+	struct filter_test_case cases[12];
+};
+
+static const struct filter_scenario FILTER_SCENARIOS[] = {
+	{
+		"empty filter list (default include)",
+		{ { 0 } },
+		{
+			{ "d1", "file.txt", 0, 0, 0 },
+			{ "d1", "sub/file.txt", 0, 0, 0 },
+			{ "d1", "dir", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"only exclude rules",
+		{
+			{ -1, 0, "", "*.tmp" },
+			{ -1, 0, "", "/cache/" },
+			{ -1, 0, "", "tmp/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "file.tmp", -1, 0, 0 },
+			{ "d1", "sub/file.tmp", -1, 0, 0 },
+			{ "d1", "cache", 0, -1, -1 },
+			{ "d1", "cache/data.bin", -1, 0, 0 },
+			{ "d1", "sub/tmp/data.bin", -1, 0, 0 },
+			{ "d1", "sub/tmp", 0, -1, -1 },
+			{ "d1", "doc.pdf", 0, 0, 0 },
+			{ "d1", "other/doc.pdf", 0, 0, 0 },
+			{ "d1", "other", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"only include rules",
+		{
+			{ 1, 0, "", "*.mp3" },
+			{ 1, 0, "", "/music/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "song.mp3", 0, 0, -1 },
+			{ "d1", "audio/song.mp3", 0, 0, -1 },
+			{ "d1", "music/track.flac", 0, 0, -1 },
+			{ "d1", "music", -1, 0, 0 },
+			{ "d1", "photo.jpg", -1, 0, -1 },
+			{ "d1", "photos/photo.jpg", -1, 0, -1 },
+			{ "d1", "photos", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"directory exclude prunes scanner before file include can match",
+		{
+			{ 1, 0, "", "/keep/file.dat" },
+			{ -1, 0, "", "/keep/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "keep", 0, -1, -1 },
+			{ "d1", "keep/file.dat", 0, 0, 0 },
+			{ "d1", "keep/other.dat", -1, 0, 0 },
+			{ "d1", "other/file.txt", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"file exclude inside directory allows scanner to find specific file include",
+		{
+			{ 1, 0, "", "/keep/file.dat" },
+			{ -1, 0, "", "/keep/*" },
+			{ 0 }
+		},
+		{
+			{ "d1", "keep", 0, 0, 0 },
+			{ "d1", "keep/file.dat", 0, 0, 0 },
+			{ "d1", "keep/other.dat", -1, 0, 0 },
+			{ "d1", "other/file.txt", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"include exception before exclude rule",
+		{
+			{ 1, 0, "", "/logs/important.log" },
+			{ -1, 0, "", "*.log" },
+			{ 0 }
+		},
+		{
+			{ "d1", "logs/important.log", 0, 0, 0 },
+			{ "d1", "logs/app.log", -1, 0, 0 },
+			{ "d1", "logs/readme.txt", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"exclude rule before include exception",
+		{
+			{ -1, 0, "", "*.log" },
+			{ 1, 0, "", "/logs/important.log" },
+			{ 0 }
+		},
+		{
+			{ "d1", "logs/important.log", -1, 0, -1 },
+			{ "d1", "logs/app.log", -1, 0, -1 },
+			{ "d1", "logs/readme.txt", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"last unmatched rule defines mixed-list default",
+		{
+			{ -1, 0, "", "*.tmp" },
+			{ 1, 0, "", "/media/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "cache.tmp", -1, 0, -1 },
+			{ "d1", "media", -1, 0, 0 },
+			{ "d1", "media/movie.mkv", 0, 0, -1 },
+			{ "d1", "docs/readme.txt", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"directory rule vs file rule semantics",
+		{
+			{ -1, 0, "", "/logs/" },
+			{ -1, 0, "", "/report" },
+			{ 0 }
+		},
+		{
+			{ "d1", "logs", 0, -1, -1 },
+			{ "d1", "logs/a.txt", -1, 0, 0 },
+			{ "d1", "report", -1, 0, 0 },
+			{ "d1", "report/a.txt", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"absolute vs relative rules",
+		{
+			{ -1, 0, "", "/abs_tmp/" },
+			{ -1, 0, "", "rel_tmp/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "abs_tmp", 0, -1, -1 },
+			{ "d1", "abs_tmp/file.txt", -1, 0, 0 },
+			{ "d1", "sub/abs_tmp/file.txt", 0, 0, 0 },
+			{ "d1", "rel_tmp", 0, -1, -1 },
+			{ "d1", "rel_tmp/file.txt", -1, 0, 0 },
+			{ "d1", "sub/rel_tmp", 0, -1, -1 },
+			{ "d1", "sub/rel_tmp/file.txt", -1, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"disk filters",
+		{
+			{ 1, 1, "", "d1" },
+			{ -1, 1, "", "d2" },
+			{ 0 }
+		},
+		{
+			{ "d1", "file.txt", 0, 0, 0 },
+			{ "d2", "file.txt", -1, -1, -1 },
+			{ "d3", "file.txt", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"scoped local root filter",
+		{
+			{ -1, 0, "projects/sub/", "*.o" },
+			{ 0 }
+		},
+		{
+			{ "d1", "projects/sub/main.o", -1, 0, 0 },
+			{ "d1", "projects/main.o", 0, 0, 0 },
+			{ "d1", "other/main.o", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"scoped root boundary and local absolute rule",
+		{
+			{ -1, 0, "projects/sub/", "/build/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "projects/sub/build", 0, -1, -1 },
+			{ "d1", "projects/sub/build/output.o", -1, 0, 0 },
+			{ "d1", "projects/sub/nested/build", 0, 0, 0 },
+			{ "d1", "projects/sub/nested/build/output.o", 0, 0, 0 },
+			{ "d1", "projects/submarine/build", 0, 0, 0 },
+			{ "d1", "projects/submarine/build/output.o", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"double-star wildcard combinations",
+		{
+			{ -1, 0, "", "src/**/test/" },
+			{ 1, 0, "", "src/**.js" },
+			{ 0 }
+		},
+		{
+			{ "d1", "src/app.js", 0, 0, -1 },
+			{ "d1", "src/components/ui/button.js", 0, 0, -1 },
+			{ "d1", "src/test", -1, -1, -1 },
+			{ "d1", "src/components/test", -1, -1, -1 },
+			{ "d1", "src/test/app.js", -1, 0, -1 },
+			{ "d1", "src/components/test/app.js", -1, 0, -1 },
+			{ "d1", "src/app.css", -1, 0, -1 },
+			{ 0 }
+		}
+	}
+};
+
+static void test_filter_scenarios(void)
+{
+	for (unsigned s = 0; s < sizeof(FILTER_SCENARIOS) / sizeof(FILTER_SCENARIOS[0]); ++s) {
+		const struct filter_scenario* sc = &FILTER_SCENARIOS[s];
+		tommy_list filterlist;
+		tommy_list_init(&filterlist);
+
+		for (int r = 0; sc->rules[r].direction != 0; ++r) {
+			struct snapraid_filter* f;
+			if (sc->rules[r].is_disk)
+				f = filter_alloc_disk(sc->rules[r].direction, sc->rules[r].pattern);
+			else
+				f = filter_alloc_file(sc->rules[r].direction, sc->rules[r].root, sc->rules[r].pattern);
+
+			if (!f) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Failed to allocate filter in scenario '%s'\n", sc->desc);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			tommy_list_insert_tail(&filterlist, &f->node, f);
+		}
+
+		for (int c = 0; sc->cases[c].disk != 0; ++c) {
+			const struct filter_test_case* tc = &sc->cases[c];
+			struct snapraid_filter* reason = 0;
+
+			int res_path = filter_path(&filterlist, &reason, tc->disk, tc->path);
+			if (res_path != tc->exp_path) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Scenario '%s': filter_path('%s', '%s') = %d, expected %d\n",
+					sc->desc, tc->disk, tc->path, res_path, tc->exp_path);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			int res_subdir = filter_subdir(&filterlist, &reason, tc->disk, tc->path);
+			if (res_subdir != tc->exp_subdir) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Scenario '%s': filter_subdir('%s', '%s') = %d, expected %d\n",
+					sc->desc, tc->disk, tc->path, res_subdir, tc->exp_subdir);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			int res_emptydir = filter_emptydir(&filterlist, &reason, tc->disk, tc->path);
+			if (res_emptydir != tc->exp_emptydir) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Scenario '%s': filter_emptydir('%s', '%s') = %d, expected %d\n",
+					sc->desc, tc->disk, tc->path, res_emptydir, tc->exp_emptydir);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		tommy_node* node = tommy_list_head(&filterlist);
+		while (node) {
+			struct snapraid_filter* f = node->data;
+			node = node->next;
+			filter_free(f);
+		}
+	}
+}
+
+static void test_filter(void)
+{
+	test_filter_validity();
+	test_filter_scenarios();
 }
 
 static void test_parse_smartctl(void)

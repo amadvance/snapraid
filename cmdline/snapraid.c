@@ -92,6 +92,7 @@ void test(int argc, char* argv[])
 		return;
 
 	lock_init();
+	crc32c_init();
 
 	assert(strcmp(strpolish(strcpy(buffer, "\r \n\xFF")), "    ") == 0);
 	assert(strcmp(strtrim(strcpy(buffer, " trim trim \n\r")), "trim trim") == 0);
@@ -488,6 +489,8 @@ void test(int argc, char* argv[])
 
 	raid_mode(RAID_MODE_VANDERMONDE_RAID);
 	assert(raid_selftest() == 0);
+
+	selftest();
 
 	printf("Everything OK\n");
 
