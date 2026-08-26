@@ -224,6 +224,18 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 {
 	tommy_node* i;
 	unsigned l, s;
+	size_t disk_count;
+
+	/* check total memory budget for block buffers (max 256 MiB) */
+	disk_count = tommy_list_count(&state->disklist) + state->level;
+	if (disk_count > (256 * 1024) / (state->block_size / KIBI)) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "The combination of %zu disks and %u KiB 'blocksize' in '%s' exceeds the 256 MiB limit.\n",
+			disk_count, state->block_size / KIBI, path);
+		log_fatal(EUSER, "Please reduce the 'blocksize' or the number of disks.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* check for parity level */
 	if (state->raid_mode == RAID_MODE_VANDERMONDE_RAID) {
