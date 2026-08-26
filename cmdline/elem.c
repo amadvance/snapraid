@@ -1117,6 +1117,38 @@ static void extent_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 	}
 }
 
+static void extent_file_check_end_unlock(struct extent_check* arg, const struct snapraid_extent* prev)
+{
+	/* stop reporting if too many errors */
+	if (arg->result > 100) {
+		/* LCOV_EXCL_START */
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (file_flag_has(prev->file, FILE_IS_DELETED)) {
+		/* check that the extent doesn't overflow the file */
+		if (prev->count > prev->file->blockmax || prev->file_pos > prev->file->blockmax - prev->count) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Internal inconsistency: Delete end for file '%s' at '%" PRIu64 ":%" PRIu64 "' overflowing size '%" PRIu64 "'\n",
+				prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
+			++arg->result;
+			return;
+			/* LCOV_EXCL_STOP */
+		}
+	} else {
+		/* check that the extent ends the file */
+		if (prev->file_pos + prev->count != prev->file->blockmax) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Internal inconsistency: File end for file '%s' at '%" PRIu64 ":%" PRIu64 "' instead of size '%" PRIu64 "'\n",
+				prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
+			++arg->result;
+			return;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+}
+
 static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 {
 	struct extent_check* arg = void_arg;
@@ -1146,29 +1178,8 @@ static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 
 	/* if the files are different */
 	if (!prev || prev->file != obj->file) {
-		if (prev != 0) {
-			if (file_flag_has(prev->file, FILE_IS_DELETED)) {
-				/* check that the extent doesn't overflow the file */
-				if (prev->count > prev->file->blockmax || prev->file_pos > prev->file->blockmax - prev->count) {
-					/* LCOV_EXCL_START */
-					log_fatal(EINTERNAL, "Internal inconsistency: Delete end for file '%s' at '%" PRIu64 ":%" PRIu64 "' overflowing size '%" PRIu64 "'\n",
-						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
-					++arg->result;
-					return;
-					/* LCOV_EXCL_STOP */
-				}
-			} else {
-				/* check that the extent ends the file */
-				if (prev->file_pos + prev->count != prev->file->blockmax) {
-					/* LCOV_EXCL_START */
-					log_fatal(EINTERNAL, "Internal inconsistency: File end for file '%s' at '%" PRIu64 ":%" PRIu64 "' instead of size '%" PRIu64 "'\n",
-						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
-					++arg->result;
-					return;
-					/* LCOV_EXCL_STOP */
-				}
-			}
-		}
+		if (prev != 0)
+			extent_file_check_end_unlock(arg, prev);
 
 		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
 			/* check that the extent doesn't overflow the file */
@@ -1242,6 +1253,8 @@ int fs_check(struct snapraid_disk* disk)
 	/* check file sequence */
 	arg.prev = 0;
 	tommy_tree_foreach_arg(&disk->fs_file, extent_file_check_foreach_unlock, &arg);
+	if (arg.prev != 0)
+		extent_file_check_end_unlock(&arg, arg.prev);
 
 	fs_unlock(disk);
 
