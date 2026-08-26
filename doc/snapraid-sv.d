@@ -1576,18 +1576,17 @@ Mönster (Pattern)
 	sökvägskomponent. Detta är det standardbeteende för jokertecken som är
 	bekant från skal-globbing.
 
-	Den dubbla stjärnan `**` är mer kraftfull; den matchar valfri teckensekvens
-	inklusive katalogavgränsare. Detta gör att mönster kan matcha över
-	flera katalognivåer. När `**` förekommer direkt i ett mönster kan det
-	matcha noll eller fler tecken inklusive snedstreck mellan den
-	omkringliggande bokstavliga texten.
+	Jokertecknet med dubbelstjärna `**` matchar över katalogavgränsare endast när
+	det gränsar till en katalogavgränsare (föregås eller efterföljs av ett
+	snedstreck). I denna form matchar det noll eller fler tecken över flera
+	katalognivåer. Till exempel matchar `foo/**/bar` sökvägarna `foo/bar`,
+	`foo/a/bar` och `foo/a/b/bar`; `**/build` matchar `build` och `foo/bar/build`;
+	och `src/**.js` matchar `src/main.js` och `src/ui/components/main.js`.
+	Den fristående formen `/**/` accepteras inte som ett fullständigt mönster.
 
-	Den viktigaste användningen av `**` är i den speciella formen `/**/`. Detta matchar
-	noll eller flera kompletta katalognivåer, vilket gör det möjligt att matcha filer
-	på valfritt djup i ett katalogträd utan att känna till den exakta sökvägsstrukturen.
-	Till exempel matchar mönstret `src/**/main.js` filerna `src/main.js` (hoppar över
-	noll kataloger), `src/ui/main.js` (hoppar över en katalog) och
-	`src/ui/components/main.js` (hoppar över två kataloger).
+	När `**` inte gränsar till ett snedstreck beter det sig som `*` och matchar
+	inte katalogavgränsare. Till exempel matchar `**.jpg` filen `photo.jpg` i den
+	aktuella katalogen, men inte `dir/photo.jpg`. Använd `**/*.jpg` för detta ändamål.
 
 	Teckenklasser som använder hakparenteser `[]` matchar ett enskilt tecken från en
 	angiven uppsättning eller ett intervall. Precis som de andra mönstren för enskilda
@@ -1596,8 +1595,8 @@ Mönster (Pattern)
 
 	Den grundläggande skillnaden att komma ihåg är att `*`, `?` och teckenklasser
 	alla respekterar kataloggränser och endast matchar inom en enskild
-	sökvägskomponent, medan `**` är det enda mönstret som kan matcha över
-	katalogavgränsare.
+	sökvägskomponent, medan `**` endast kan matcha över katalogavgränsare när det
+	gränsar till ett snedstreck.
 
 	Det finns fyra olika typer av mönster:
 

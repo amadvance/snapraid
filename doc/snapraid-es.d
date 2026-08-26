@@ -1655,18 +1655,19 @@ Patrones (Pattern)
 	componente de ruta. Este es el comportamiento estándar de los comodines familiar
 	del globbing de la shell.
 
-	el doble asterisco `**` es más potente, coincide con cualquier secuencia de
-	caracteres, incluidos los separadores de directorios. Esto permite que los patrones coincidan
-	a través de múltiples niveles de directorio. Cuando `**` aparece incrustado directamente en
-	un patrón, puede coincidir con cero o más caracteres, incluidas las barras diagonales entre
-	el texto literal circundante.
+	El comodín de doble asterisco `**` coincide a través de los separadores de
+	directorios solo cuando es adyacente a un separador de directorios (precedido
+	o seguido por una barra diagonal). En esta forma, coincide con cero o más
+	caracteres a través de niveles de directorio. Por ejemplo, `foo/**/bar`
+	coincide con `foo/bar`, `foo/a/bar` y `foo/a/b/bar`; `**/build` coincide con
+	`build` y `foo/bar/build`; y `src/**.js` coincide con `src/main.js` y
+	`src/ui/components/main.js`.
+	La forma independiente `/**/` no se acepta como un patrón completo.
 
-	El uso más importante de `**` es en la forma especial `/**/`. Esta coincide con
-	cero o más niveles de directorio completos, lo que permite que los archivos coincidan
-	a cualquier profundidad en un árbol de directorios sin conocer la estructura exacta de la ruta.
-	Por ejemplo, el patrón `src/**/main.js` coincide con `src/main.js` (saltando
-	cero directorios), `src/ui/main.js` (saltando un directorio) y
-	`src/ui/components/main.js` (saltando dos directorios).
+	Cuando `**` no es adyacente a una barra diagonal, se comporta como `*` y no
+	coincide con los separadores de directorios. Por ejemplo, `**.jpg` coincide
+	con `photo.jpg` en el directorio actual, pero no coincide con `dir/photo.jpg`.
+	Use `**/*.jpg` para ese propósito.
 
 	Las clases de caracteres que utilizan corchetes `[]` coinciden con un solo carácter de un
 	conjunto o rango especificado. Al igual que los otros patrones de un solo carácter,
@@ -1675,8 +1676,8 @@ Patrones (Pattern)
 
 	La distinción fundamental que debe recordar es que `*`, `?` y las clases de caracteres
 	respetan los límites de los directorios y solo coinciden dentro de un único
-	componente de ruta, mientras que `**` es el único patrón que puede coincidir a través de
-	los separadores de directorios.
+	componente de ruta, mientras que `**` solo puede coincidir a través de los separadores
+	de directorios cuando es adyacente a una barra diagonal.
 
 	Hay cuatro tipos diferentes de patrones:
 

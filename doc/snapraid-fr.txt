@@ -1806,18 +1806,19 @@ barre oblique, ce qui la rend adaptée à la recherche de correspondances au sei
 composant de chemin. Il s'agit du comportement standard des jokers familier du
 "globbing" shell.
 
-La double étoile `**` est plus puissante, elle correspond à n'importe quelle séquence de
-caractères, y compris les séparateurs de répertoires. Cela permet aux motifs de correspondre
-sur plusieurs niveaux de répertoires. Lorsque `**` apparaît directement intégré dans
-un motif, il peut correspondre à zéro ou plusieurs caractères, y compris les barres obliques entre
-le texte littéral environnant.
+Le caractère générique double étoile `**` ne correspond à travers les
+séparateurs de répertoires que lorsqu'il est adjacent à un séparateur de
+répertoires (précédé ou suivi d'une barre oblique). Sous cette forme, il
+correspond à zéro ou plusieurs caractères sur plusieurs niveaux de
+répertoires. Par exemple, `foo/**/bar` correspond à `foo/bar`, `foo/a/bar`
+et `foo/a/b/bar` ; `**/build` correspond à `build` et `foo/bar/build` ; et
+`src/**.js` correspond à `src/main.js` et `src/ui/components/main.js`.
+La forme autonome `/**/` n'est pas acceptée comme un motif complet.
 
-L'utilisation la plus importante de `**` est sous la forme spéciale `/**/`. Celle-ci correspond à
-zéro ou plusieurs niveaux de répertoires complets, ce qui permet de faire correspondre des fichiers
-à n'importe quelle profondeur dans une arborescence de répertoires sans connaître la structure exacte du chemin.
-Par exemple, le motif `src/**/main.js` correspond à `src/main.js` (saut de
-zéro répertoire), `src/ui/main.js` (saut d'un répertoire), et
-`src/ui/components/main.js` (saut de deux répertoires).
+Lorsque `**` n'est pas adjacent à une barre oblique, il se comporte comme `*`
+et ne correspond pas aux séparateurs de répertoires. Par exemple, `**.jpg`
+correspond à `photo.jpg` dans le répertoire actuel, mais ne correspond pas à
+`dir/photo.jpg`. Utilisez `**/*.jpg` à cette fin.
 
 Les classes de caractères utilisant des crochets `[]` correspondent à un seul caractère d'un
 ensemble ou d'une plage spécifiés. Comme les autres motifs à caractère unique, elles
@@ -1826,8 +1827,8 @@ d'un point d'exclamation.
 
 La distinction fondamentale à retenir est que `*`, `?` et les classes de caractères
 respectent tous les limites des répertoires et ne correspondent qu'au sein d'un seul
-composant de chemin, alors que `**` est le seul motif qui peut correspondre à travers
-les séparateurs de répertoires.
+composant de chemin, alors que `**` ne peut correspondre à travers les séparateurs
+de répertoires que lorsqu'il est adjacent à une barre oblique.
 
 Il existe quatre types de motifs différents :
 

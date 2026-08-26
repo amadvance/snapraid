@@ -1688,18 +1688,18 @@ ukośniku, co czyni ją odpowiednią do dopasowywania w obrębie jednego
 składnika ścieżki. Jest to standardowe zachowanie symboli wieloznacznych znane
 z globbingu powłoki (shell).
 
-Podwójna gwiazdka `**` jest potężniejsza, dopasowuje dowolną sekwencję
-znaków, w tym separatory katalogów. Pozwala to wzorcom dopasowywać się
-na wielu poziomach katalogów. Gdy `**` pojawia się bezpośrednio wewnątrz
-wzorca, może dopasować zero lub więcej znaków, w tym ukośniki między
-otaczającym tekstem dosłownym.
+Symbol wieloznaczny podwójnej gwiazdki `**` dopasowuje się poprzez separatory
+katalogów tylko wtedy, gdy sąsiaduje z separatorem katalogów (jest poprzedzony
+lub zakończony ukośnikiem). W tej formie dopasowuje zero lub więcej znaków
+na wielu poziomach katalogów. Na przykład `foo/**/bar` dopasowuje `foo/bar`,
+`foo/a/bar` oraz `foo/a/b/bar`; `**/build` dopasowuje `build` oraz
+`foo/bar/build`; a `src/**.js` dopasowuje `src/main.js` oraz
+`src/ui/components/main.js`.
+Samodzielna forma `/**/` nie jest akceptowana jako kompletny wzorzec.
 
-Najważniejszym zastosowaniem `**` jest specjalna forma `/**/`. Dopasowuje ona
-zero lub więcej pełnych poziomów katalogów, umożliwiając dopasowanie plików
-na dowolnej głębokości w drzewie katalogów bez znajomości dokładnej struktury ścieżki.
-Na przykład wzorzec `src/**/main.js` pasuje do `src/main.js` (pomijając
-zero katalogów), `src/ui/main.js` (pomijając jeden katalog) oraz
-`src/ui/components/main.js` (pomijając dwa katalogi).
+Gdy `**` nie sąsiaduje z ukośnikiem, zachowuje się jak `*` i nie dopasowuje
+separatorów katalogów. Na przykład `**.jpg` dopasowuje `photo.jpg` w bieżącym
+katalogu, ale nie pasuje do `dir/photo.jpg`. W tym celu należy użyć `**/*.jpg`.
 
 Klasy znaków używające nawiasów kwadratowych `[]` dopasowują pojedynczy znak z
 określonego zestawu lub zakresu. Podobnie jak inne wzorce pojedynczych znaków,
@@ -1708,8 +1708,8 @@ wykrzyknika.
 
 Podstawową różnicą, o której należy pamiętać, jest to, że `*`, `?` i klasy znaków
 wszystkie respektują granice katalogów i dopasowują się tylko w obrębie jednego
-składnika ścieżki, podczas gdy `**` jest jedynym wzorcem, który może dopasowywać się poprzez
-separatory katalogów.
+składnika ścieżki, podczas gdy `**` może dopasowywać się poprzez separatory
+katalogów tylko wtedy, gdy sąsiaduje z ukośnikiem.
 
 Istnieją cztery różne typy wzorców:
 

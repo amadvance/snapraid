@@ -1613,18 +1613,19 @@ Padrão (Pattern)
 	componente de caminho. Este é o comportamento padrão de curinga familiar do
 	globbing de shell.
 
-	O asterisco duplo `**` é mais poderoso, ele corresponde a qualquer sequência de
-	caracteres, incluindo separadores de diretórios. Isso permite que os padrões correspondam
-	em vários níveis de diretório. Quando o `**` aparece incorporado diretamente em
-	um padrão, ele pode corresponder a zero ou mais caracteres, incluindo barras entre
-	o texto literal circundante.
+	O curinga de asterisco duplo `**` corresponde através de separadores de
+	diretório apenas quando for adjacente a um separador de diretório (precedido
+	ou seguido por uma barra). Nessa forma, ele corresponde a zero ou mais
+	caracteres através de níveis de diretório. Por exemplo, `foo/**/bar`
+	corresponde a `foo/bar`, `foo/a/bar` e `foo/a/b/bar`; `**/build` corresponde a
+	`build` e `foo/bar/build`; e `src/**.js` corresponde a `src/main.js` e
+	`src/ui/components/main.js`.
+	A forma avulsa `/**/` não é aceita como um padrão completo.
 
-	O uso mais importante do `**` é na forma especial `/**/`. Isso corresponde a
-	zero ou mais níveis de diretório completos, tornando possível corresponder arquivos
-	em qualquer profundidade em uma árvore de diretórios sem conhecer a estrutura exata do caminho.
-	Por exemplo, o padrão `src/**/main.js` corresponde a `src/main.js` (pulando
-	zero diretórios), `src/ui/main.js` (pulando um diretório) e
-	`src/ui/components/main.js` (pulando dois diretórios).
+	Quando `**` não for adjacente a uma barra, ele se comporta como `*` e não
+	corresponde a separadores de diretório. Por exemplo, `**.jpg` corresponde a
+	`photo.jpg` no diretório atual, mas não corresponde a `dir/photo.jpg`. Use
+	`**/*.jpg` para essa finalidade.
 
 	Classes de caracteres usando colchetes `[]` correspondem a um único caractere de um
 	conjunto ou intervalo especificado. Como os outros padrões de caractere único, elas
@@ -1633,8 +1634,8 @@ Padrão (Pattern)
 
 	A distinção fundamental a ser lembrada é que `*`, `?` e classes de caracteres
 	respeitam os limites do diretório e correspondem apenas dentro de um único
-	componente de caminho, enquanto `**` é o único padrão que pode corresponder através de
-	separadores de diretório.
+	componente de caminho, enquanto `**` só pode corresponder através de separadores
+	de diretório quando for adjacente a uma barra.
 
 	Existem quatro tipos diferentes de padrões:
 

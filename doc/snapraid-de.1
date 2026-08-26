@@ -2091,18 +2091,19 @@ Schrägstrich, was ihn für den Abgleich innerhalb einer einzelnen Pfadkomponent
 geeignet macht. Dies ist das Standardverhalten von Wildcards, das vom Shell\-
 Globbing bekannt ist.
 .PP
-Der Doppelstern \`**\` ist mächtiger; er entspricht jeder Folge von
-Zeichen einschließlich Verzeichnistrennzeichen. Dies ermöglicht es Mustern, über
-mehrere Verzeichnisebenen hinweg übereinzustimmen. Wenn \`**\` direkt in
-ein Muster eingebettet ist, kann es null oder mehr Zeichen einschließlich Schrägstrichen zwischen
-dem umgebenden wörtlichen Text entsprechen.
+Der Doppelstern\-Platzhalter \`**\` entspricht nur dann über Verzeichnistrennzeichen
+hinweg, wenn er an ein Verzeichnistrennzeichen angrenzt (einem Schrägstrich
+vorangestellt oder nachgestellt). In dieser Form entspricht er null oder mehr
+Zeichen über Verzeichnisebenen hinweg. Zum Beispiel entspricht \`foo/**/bar\` den
+Pfaden \`foo/bar\`, \`foo/a/bar\` und \`foo/a/b/bar\`; \`**/build\` entspricht \`build\`
+und \`foo/bar/build\`; und \`src/**.js\` entspricht \`src/main.js\` und
+\`src/ui/components/main.js\`.
+Die alleinstehende Form \`/**/\` wird nicht als vollständiges Muster akzeptiert.
 .PP
-Die wichtigste Verwendung von \`**\` ist in der speziellen Form \`/**/\`. Dies entspricht
-null oder mehr vollständigen Verzeichnisebenen, was es möglich macht, Dateien
-in jeder Tiefe eines Verzeichnisbaums abzugleichen, ohne die genaue Pfadstruktur zu kennen.
-Zum Beispiel entspricht das Muster \`src/**/main.js\` dem Pfad \`src/main.js\` (Überspringen
-von null Verzeichnissen), \`src/ui/main.js\` (Überspringen eines Verzeichnisses) und
-\`src/ui/components/main.js\` (Überspringen von zwei Verzeichnissen).
+Wenn \`**\` nicht an einen Schrägstrich angrenzt, verhält er sich wie \`*\` und
+entspricht keinen Verzeichnistrennzeichen. Zum Beispiel entspricht \`**.jpg\`
+der Datei \`photo.jpg\` im aktuellen Verzeichnis, nicht jedoch \`dir/photo.jpg\`.
+Verwenden Sie für diesen Zweck \`**/*.jpg\`.
 .PP
 Zeichenklassen mit eckigen Klammern \`[]\` entsprechen einem einzelnen Zeichen aus einer
 bestimmten Menge oder einem Bereich. Wie die anderen Einzelzeichenmuster
@@ -2111,8 +2112,8 @@ ein Ausrufezeichen.
 .PP
 Der grundlegende Unterschied, den man sich merken sollte, ist, dass \`*\`, \`?\` und Zeichenklassen
 alle Verzeichnisgrenzen respektieren und nur innerhalb einer einzelnen Pfadkomponente
-übereinstimmen, während \`**\` das einzige Muster ist, das über Verzeichnistrennzeichen
-hinweg übereinstimmen kann.
+übereinstimmen, während \`**\` nur dann über Verzeichnistrennzeichen hinweg übereinstimmen kann,
+wenn es an einen Schrägstrich angrenzt.
 .PP
 Es gibt vier verschiedene Arten von Mustern:
 .TP

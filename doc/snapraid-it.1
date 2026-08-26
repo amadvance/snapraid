@@ -2072,18 +2072,19 @@ slash in avanti, rendendolo adatto per la corrispondenza all\'interno di un sing
 componente del percorso. Questo è il comportamento standard dei wildcard familiare
 dal globbing della shell.
 .PP
-Il doppio asterisco \`**\` è più potente, corrisponde a qualsiasi sequenza di
-caratteri inclusi i separatori di directory. Ciò consente ai pattern di corrispondere
-attraverso più livelli di directory. Quando \`**\` appare inserito direttamente in
-un pattern, può corrispondere a zero o più caratteri inclusi gli slash tra
-il testo letterale circostante.
+Il carattere jolly doppio asterisco \`**\` corrisponde attraverso i separatori
+di directory solo quando è adiacente a un separatore di directory (preceduto
+o seguito da uno slash). In questa forma, corrisponde a zero o più caratteri
+attraverso i livelli di directory. Per esempio, \`foo/**/bar\` corrisponde a
+\`foo/bar\`, \`foo/a/bar\` e \`foo/a/b/bar\`; \`**/build\` corrisponde a \`build\` e
+\`foo/bar/build\`; e \`src/**.js\` corrisponde a \`src/main.js\` e
+\`src/ui/components/main.js\`.
+La forma autonoma \`/**/\` non è accettata come pattern completo.
 .PP
-L\'uso più importante di \`**\` è nella forma speciale \`/**/\`. Questa corrisponde a
-zero o più livelli di directory completi, rendendo possibile la corrispondenza di file
-a qualsiasi profondità in un albero di directory senza conoscere l\'esatta struttura del percorso.
-Per esempio, il pattern \`src/**/main.js\` corrisponde a \`src/main.js\` (saltando
-zero directory), \`src/ui/main.js\` (saltando una directory), e
-\`src/ui/components/main.js\` (saltando due directory).
+Quando \`**\` non è adiacente a uno slash, si comporta come \`*\` e non
+corrisponde ai separatori di directory. Per esempio, \`**.jpg\` corrisponde a
+\`photo.jpg\` nella directory corrente, ma non corrisponde a \`dir/photo.jpg\`.
+Usa \`**/*.jpg\` per questo scopo.
 .PP
 Le classi di caratteri che usano le parentesi quadre \`[]\` corrispondono a un singolo carattere da un
 set o intervallo specificato. Come gli altri pattern a carattere singolo, esse
@@ -2092,8 +2093,8 @@ un punto esclamativo.
 .PP
 La distinzione fondamentale da ricordare è che \`*\`, \`?\` e le classi di caratteri
 rispettano tutti i confini delle directory e corrispondono solo all\'interno di un singolo
-componente del percorso, mentre \`**\` è l\'unico pattern che può corrispondere attraverso
-i separatori di directory.
+componente del percorso, mentre \`**\` può corrispondere attraverso i separatori di directory
+solo quando è adiacente a uno slash.
 .PP
 Esistono quattro diversi tipi di pattern:
 .TP

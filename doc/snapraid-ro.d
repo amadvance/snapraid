@@ -1573,18 +1573,19 @@ Model (Pattern)
 	componente a căii. Acesta este comportamentul standard al metacaracterelor, familiar
 	din shell globbing.
 
-	Asteriscul dublu `**` este mai puternic, se potrivește cu orice secvență de
-	caractere, inclusiv separatori de directoare. Acest lucru permite modelelor să se potrivească
-	pe mai multe niveluri de directoare. Când `**` apare inserat direct într-un
-	model, se poate potrivi cu zero sau mai multe caractere, inclusiv slash-uri între
-	textul literal înconjurător.
+	Metacaracterul asterisc dublu `**` se potrivește peste separatorii de
+	directoare numai atunci când este adiacent unui separator de directoare
+	(precedat sau urmat de o bară oblică). În această formă, se potrivește cu
+	zero sau mai multe caractere pe mai multe niveluri de directoare. De exemplu,
+	`foo/**/bar` se potrivește cu `foo/bar`, `foo/a/bar` și `foo/a/b/bar`;
+	`**/build` se potrivește cu `build` și `foo/bar/build`; iar `src/**.js` se
+	potrivește cu `src/main.js` și `src/ui/components/main.js`.
+	Forma de sine stătătoare `/**/` nu este acceptată ca un model complet.
 
-	Cea mai importantă utilizare a lui `**` este în forma specială `/**/`. Aceasta se potrivește cu
-	zero sau mai multe niveluri complete de directoare, făcând posibilă potrivirea fișierelor
-	la orice adâncime într-un arbore de directoare fără a cunoaște structura exactă a căii.
-	De exemplu, modelul `src/**/main.js` se potrivește cu `src/main.js` (sărind
-	peste zero directoare), `src/ui/main.js` (sărind peste un director) și
-	`src/ui/components/main.js` (sărind peste două directoare).
+	Când `**` nu este adiacent unei bare oblice, se comportă ca `*` și nu se
+	potrivește cu separatorii de directoare. De exemplu, `**.jpg` se potrivește cu
+	`photo.jpg` în directorul curent, dar nu se potrivește cu `dir/photo.jpg`.
+	Folosiți `**/*.jpg` în acest scop.
 
 	Clasele de caractere care utilizează paranteze pătrate `[]` se potrivesc cu un singur caracter dintr-un
 	set sau interval specificat. La fel ca și celelalte modele de un singur caracter, acestea
@@ -1593,8 +1594,8 @@ Model (Pattern)
 
 	Distincția fundamentală de reținut este că `*`, `?` și clasele de caractere
 	respectă toate limitele directoarelor și se potrivesc doar în cadrul unei singure
-	componente a căii, în timp ce `**` este singurul model care se poate potrivi peste
-	separatorii de directoare.
+	componente a căii, în timp ce `**` se poate potrivi peste separatorii de directoare
+	numai atunci când este adiacent unei bare oblice.
 
 	Există patru tipuri diferite de modele:
 
