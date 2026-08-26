@@ -1094,19 +1094,10 @@ void pathimport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/*
-	 * Convert the Windows dir separator '\' to C '/',
-	 * and the Windows escaping char '^' to the fnmatch '\'
-	 */
+	/* Convert the Windows dir separator '\' to C '/' */
 	while (*dst) {
-		switch (*dst) {
-		case '\\' :
+		if (*dst == '\\')
 			*dst = '/';
-			break;
-		case '^' :
-			*dst = '\\';
-			break;
-		}
 		++dst;
 	}
 #endif
@@ -1117,16 +1108,10 @@ void pathexport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/* invert the import */
+	/* Convert C '/' to Windows dir separator '\' */
 	while (*dst) {
-		switch (*dst) {
-		case '/' :
+		if (*dst == '/')
 			*dst = '\\';
-			break;
-		case '\\' :
-			*dst = '^';
-			break;
-		}
 		++dst;
 	}
 #endif

@@ -864,6 +864,25 @@ struct {
 	{ "Movies*", "Movies4/file.mkv", 0, 1 },
 
 	/* escaping of wildcard metacharacters */
+#ifdef _WIN32
+	{ "foo^*bar", "foo*bar", 0, 0 },
+	{ "foo^?bar", "foo?bar", 0, 0 },
+	{ "foo^[bar", "foo[bar", 0, 0 },
+	{ "foo^]bar", "foo]bar", 0, 0 },
+	{ "foo^^bar", "foo^bar", 0, 0 },
+	{ "foo^*bar", "fooXXXbar", 0, 1 },
+	{ "foo^?bar", "fooXbar", 0, 1 },
+	{ "foo^[bar", "fooXbar", 0, 1 },
+	{ "foo^]bar", "fooXbar", 0, 1 },
+	{ "foo*bar", "fooXXXbar", 0, 0 },
+	{ "foo?bar", "fooXbar", 0, 0 },
+	{ "foo[abc]bar", "fooabar", 0, 0 },
+	{ "foo^abar", "foo^abar", 0, 0 },
+	{ "foo^abar", "fooabar", 0, 1 },
+	{ "foo^", "foo^", 0, 0 },
+	{ "foo^", "foo", 0, 1 },
+	{ "foo^bar", "foo^bar", 0, 0 },
+#else
 	{ "foo\\*bar", "foo*bar", 0, 0 },
 	{ "foo\\?bar", "foo?bar", 0, 0 },
 	{ "foo\\[bar", "foo[bar", 0, 0 },
@@ -880,6 +899,8 @@ struct {
 	{ "foo\\abar", "fooabar", 0, 1 },
 	{ "foo\\", "foo\\", 0, 0 },
 	{ "foo\\", "foo", 0, 1 },
+	{ "foo^bar", "foo^bar", 0, 0 },
+#endif
 
 	{ 0 }
 };
@@ -894,6 +915,82 @@ static void test_wnmatch(void)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+}
+
+static void test_path(void)
+{
+	char dst[PATH_MAX];
+
+	/*
+	 * Use strcmp instead of pathcmp because pathcmp on Windows treats
+	 * '/' and '\' as equivalent, which would prevent detecting bugs in
+	 * separator conversion by pathimport/pathexport.
+	 */
+#ifdef _WIN32
+	pathimport(dst, sizeof(dst), "foo\\bar");
+	if (strcmp(dst, "foo/bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathimport Windows separator test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathimport(dst, sizeof(dst), "foo^bar");
+	if (strcmp(dst, "foo^bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathimport Windows caret test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathexport(dst, sizeof(dst), "foo/bar");
+	if (strcmp(dst, "foo\\bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathexport Windows separator test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathexport(dst, sizeof(dst), "foo^bar");
+	if (strcmp(dst, "foo^bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathexport Windows caret test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#else
+	pathimport(dst, sizeof(dst), "foo/bar");
+	if (strcmp(dst, "foo/bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathimport Unix test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathimport(dst, sizeof(dst), "foo^bar");
+	if (strcmp(dst, "foo^bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathimport Unix caret test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathexport(dst, sizeof(dst), "foo/bar");
+	if (strcmp(dst, "foo/bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathexport Unix test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathexport(dst, sizeof(dst), "foo^bar");
+	if (strcmp(dst, "foo^bar") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed pathexport Unix caret test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#endif
 }
 
 struct {
@@ -1213,6 +1310,21 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 			{ "d1", "src/test/app.js", -1, 0, -1 },
 			{ "d1", "src/components/test/app.js", -1, 0, -1 },
 			{ "d1", "src/app.css", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"filter with literal caret in pattern and root",
+		{
+			{ 1, 0, "", "/foo^bar" },
+			{ -1, 0, "proj^ect/sub/", "*.tmp" },
+			{ 0 }
+		},
+		{
+			{ "d1", "foo^bar", 0, 0, 0 },
+			{ "d1", "foo_bar", 0, 0, 0 },
+			{ "d1", "proj^ect/sub/file.tmp", -1, 0, 0 },
+			{ "d1", "proj^ect/sub/file.txt", 0, 0, 0 },
 			{ 0 }
 		}
 	}
@@ -1563,6 +1675,9 @@ void selftest(void)
 
 	/* filter pattern parsing */
 	test_filter();
+
+	/* pathname import and export */
+	test_path();
 
 	/* smartctl output parsing */
 	test_parse_smartctl();

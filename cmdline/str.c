@@ -366,7 +366,11 @@ static inline int is_wild_escape(char c)
 	       || c == '?'
 	       || c == '['
 	       || c == ']'
+#ifdef _WIN32
+	       || c == '^';
+#else
 	       || c == '\\';
+#endif
 }
 
 int wnmatch_sub(const char* p, const char* t, int match_sub)
@@ -375,13 +379,16 @@ int wnmatch_sub(const char* p, const char* t, int match_sub)
 	while (*p) {
 		char p0 = *p;
 		switch (p0) {
+#ifdef _WIN32
+		case '^' :
+#else
 		case '\\' :
+#endif
 			/*
 			 * Escape wildcard metacharacters.
 			 *
-			 * '\' is the canonical internal escape character.
-			 * On Windows, pathimport() converts the external '^'
-			 * escape syntax to this form before matching.
+			 * If the following character is not escapable, the
+			 * escape character itself is matched literally.
 			 */
 			if (is_wild_escape(p[1]))
 				++p;
