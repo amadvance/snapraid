@@ -127,8 +127,8 @@ struct snapraid_filter* filter_alloc_disk(int direction, const char* pattern)
 	filter->is_abs = 0;
 	filter->is_dir = 0;
 
-	/* no slash allowed in disk names */
-	if (strchr(filter->pattern, '/') != 0) {
+	/* no empty pattern or slash allowed in disk names */
+	if (filter->pattern[0] == 0 || strchr(filter->pattern, '/') != 0) {
 		/* LCOV_EXCL_START */
 		free(filter);
 		return 0;
