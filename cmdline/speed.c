@@ -1265,8 +1265,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		/* raid_rec1of1() internally calls raid_gen() */
-		raid_gen_force(1, raid_gen1_neon);
 		raid_rec1_neon(1, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1332,8 +1330,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512bw()) {
 		SPEED_START {
-			/* raid_rec1of1() internally calls raid_gen() */
-			raid_gen_force(1, raid_gen1_avx512bw);
 			raid_rec1_avx512bw(1, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1342,8 +1338,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2gfni()) {
 		SPEED_START {
-			/* raid_rec1of1() internally calls raid_gen() */
-			raid_gen_force(1, raid_gen1_avx2);
 			raid_rec1_avx2gfni_raid(1, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1352,8 +1346,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx512gfni()) {
 		SPEED_START {
-			/* raid_rec1of1() internally calls raid_gen() */
-			raid_gen_force(1, raid_gen1_avx512bw); /* there is no raid_gen1_avx512gfni */
 			raid_rec1_avx512gfni_raid(1, id, ip, nd, size, v);
 		} SPEED_STOP
 

@@ -2203,94 +2203,12 @@ void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv)
 void raid_rec1_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-
-	/* if recovering with P uses the delta function */
-	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx2gfni_raid(1, id, ip, nd, size, vv);
-}
-
-/*
- * Recover failure of two data blocks using P and Q AVX2 RAID GFNI implementation.
- *
- * Uses raid_delta_gen() and keeps both affine matrices resident in YMM registers.
- */
-static __always_inline void raid_rec2of2_avx2gfni_raid(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t *q;
-	uint8_t *qa;
-	const uint8_t *T[2];
-	uint8_t C[2];
-	size_t i;
-
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
-
-	T[0] = raid_gfaffine_raid[C[0]];
-	T[1] = raid_gfaffine_raid[C[1]];
-
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd];
-	q = v[nd + 1];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastq %0,%%ymm14" : : "m" (T[0][0]));
-	asm volatile ("vpbroadcastq %0,%%ymm15" : : "m" (T[1][0]));
-
-	for (i = 0; i < size; i += 64) {
-		/* Pd, two 32-byte lanes */
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
-		asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (pa[i]));
-		asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (pa[i + 32]));
-
-		/* Qd, two 32-byte lanes */
-		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (q[i]));
-		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (q[i + 32]));
-		asm volatile ("vpxor %0,%%ymm2,%%ymm2" : : "m" (qa[i]));
-		asm volatile ("vpxor %0,%%ymm3,%%ymm3" : : "m" (qa[i + 32]));
-
-		/* Dy = C0 * Pd ^ C1 * Qd */
-		asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm0,%ymm4");
-		asm volatile ("vgf2p8affineqb $0,%ymm14,%ymm1,%ymm5");
-		asm volatile ("vgf2p8affineqb $0,%ymm15,%ymm2,%ymm6");
-		asm volatile ("vgf2p8affineqb $0,%ymm15,%ymm3,%ymm7");
-		asm volatile ("vpxor %ymm6,%ymm4,%ymm4");
-		asm volatile ("vpxor %ymm7,%ymm5,%ymm5");
-
-		/* Dx = Pd ^ Dy */
-		asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-
-		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
-		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (qa[i]));
-		asm volatile ("vmovdqa %%ymm5,%0" : "=m" (qa[i + 32]));
-	}
-
-	raid_avx_end();
 }
 
 void raid_rec2_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_avx2gfni_raid(id, ip, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx2gfni_raid(2, id, ip, nd, size, vv);
 }
 
@@ -2321,80 +2239,12 @@ void raid_rec6_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 void raid_rec1_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-
-	/* if recovering with P uses the delta function */
-	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx512gfni_raid(1, id, ip, nd, size, vv);
-}
-
-/*
- * Recover failure of two data blocks using P and Q AVX512 RAID GFNI implementation.
- *
- * Uses raid_delta_gen() and keeps both affine matrices resident in ZMM registers.
- */
-static __always_inline void raid_rec2of2_avx512gfni_raid(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t *q;
-	uint8_t *qa;
-	const uint8_t *T[2];
-	uint8_t C[2];
-	size_t i;
-
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
-
-	T[0] = raid_gfaffine_raid[C[0]];
-	T[1] = raid_gfaffine_raid[C[1]];
-
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd];
-	q = v[nd + 1];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastq %0,%%zmm14" : : "m" (T[0][0]));
-	asm volatile ("vpbroadcastq %0,%%zmm15" : : "m" (T[1][0]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
-		asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (pa[i]));
-
-		asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (q[i]));
-		asm volatile ("vpxorq %0,%%zmm1,%%zmm1" : : "m" (qa[i]));
-
-		asm volatile ("vgf2p8affineqb $0,%zmm14,%zmm0,%zmm2");
-		asm volatile ("vgf2p8affineqb $0,%zmm15,%zmm1,%zmm3");
-		asm volatile ("vpxorq %zmm3,%zmm2,%zmm2");
-
-		/* Dx = Pd ^ Dy */
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-
-		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (qa[i]));
-	}
-
-	raid_avx_end();
 }
 
 void raid_rec2_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_avx512gfni_raid(id, ip, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx512gfni_raid(2, id, ip, nd, size, vv);
 }
 
@@ -2425,85 +2275,12 @@ void raid_rec6_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 void raid_rec1_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-
-	/* if recovering with P uses the delta function */
-	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx2gfni_aes(1, id, ip, nd, size, vv);
-}
-
-/*
- * Recover failure of two data blocks using P and Q AVX2 AES GFNI implementation.
- *
- * Uses raid_delta_gen() and keeps both byte multipliers resident in YMM registers.
- */
-static __always_inline void raid_rec2of2_avx2gfni_aes(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t *q;
-	uint8_t *qa;
-	uint8_t C[2];
-	size_t i;
-
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
-
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd];
-	q = v[nd + 1];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastb %0,%%ymm14" : : "m" (C[0]));
-	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (C[1]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
-		asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (pa[i]));
-		asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (pa[i + 32]));
-
-		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (q[i]));
-		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (q[i + 32]));
-		asm volatile ("vpxor %0,%%ymm2,%%ymm2" : : "m" (qa[i]));
-		asm volatile ("vpxor %0,%%ymm3,%%ymm3" : : "m" (qa[i + 32]));
-
-		asm volatile ("vgf2p8mulb %ymm14,%ymm0,%ymm4");
-		asm volatile ("vgf2p8mulb %ymm14,%ymm1,%ymm5");
-		asm volatile ("vgf2p8mulb %ymm15,%ymm2,%ymm6");
-		asm volatile ("vgf2p8mulb %ymm15,%ymm3,%ymm7");
-		asm volatile ("vpxor %ymm6,%ymm4,%ymm4");
-		asm volatile ("vpxor %ymm7,%ymm5,%ymm5");
-
-		asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
-		asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
-
-		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
-		asm volatile ("vmovdqa %%ymm4,%0" : "=m" (qa[i]));
-		asm volatile ("vmovdqa %%ymm5,%0" : "=m" (qa[i + 32]));
-	}
-
-	raid_avx_end();
 }
 
 void raid_rec2_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_avx2gfni_aes(id, ip, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx2gfni_aes(2, id, ip, nd, size, vv);
 }
 
@@ -2534,75 +2311,12 @@ void raid_rec6_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 void raid_rec1_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-
-	/* if recovering with P uses the delta function */
-	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx512gfni_aes(1, id, ip, nd, size, vv);
-}
-
-/*
- * Recover failure of two data blocks using P and Q AVX512 AES GFNI implementation.
- *
- * Uses raid_delta_gen() and keeps both byte multipliers resident in ZMM registers.
- */
-static __always_inline void raid_rec2of2_avx512gfni_aes(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t *q;
-	uint8_t *qa;
-	uint8_t C[2];
-	size_t i;
-
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
-
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd];
-	q = v[nd + 1];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastb %0,%%zmm14" : : "m" (C[0]));
-	asm volatile ("vpbroadcastb %0,%%zmm15" : : "m" (C[1]));
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
-		asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (pa[i]));
-
-		asm volatile ("vmovdqa64 %0,%%zmm1" : : "m" (q[i]));
-		asm volatile ("vpxorq %0,%%zmm1,%%zmm1" : : "m" (qa[i]));
-
-		asm volatile ("vgf2p8mulb %zmm14,%zmm0,%zmm2");
-		asm volatile ("vgf2p8mulb %zmm15,%zmm1,%zmm3");
-		asm volatile ("vpxorq %zmm3,%zmm2,%zmm2");
-
-		asm volatile ("vpxorq %zmm2,%zmm0,%zmm0");
-
-		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (qa[i]));
-	}
-
-	raid_avx_end();
 }
 
 void raid_rec2_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_avx512gfni_aes(id, ip, nd, size, vv);
-		return;
-	}
-
 	raid_recX_avx512gfni_aes(2, id, ip, nd, size, vv);
 }
 
