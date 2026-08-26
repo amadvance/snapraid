@@ -1409,10 +1409,17 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* exclude hidden files even before calling lstat() */
+		/*
+		 * Exclude hidden files even before calling lstat().
+		 * Note that .snapraidignore is an exception because it is a control file
+		 * that defines local exclusion rules, and must also be preserved as array
+		 * data so that exclusion rules survive disaster recovery.
+		 */
 		if (filter_hidden(state->filter_hidden, dd) != 0) {
-			msg_verbose("Excluding hidden '%s'\n", path_next);
-			continue;
+			if (pathcmp(".snapraidignore", dd->d_name) != 0) {
+				msg_verbose("Excluding hidden '%s'\n", path_next);
+				continue;
+			}
 		}
 
 		/* exclude content files even before calling lstat() */
@@ -1449,7 +1456,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		tommy_list_insert_tail(&list, &entry->node, entry);
 
 		/* process ignore files */
-		if (strcmp(".snapraidignore", dd->d_name) == 0)
+		if (pathcmp(".snapraidignore", dd->d_name) == 0)
 			state_load_ignore_file(&scan->local_filter_list, path_next, sub_next);
 	}
 
@@ -1547,8 +1554,13 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		}
 
 		if (type == 0) { /* REG */
-			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
-				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
+			/*
+			 * Note that .snapraidignore is an exception from filtering because it
+			 * is a control file that must be preserved as array data.
+			 */
+			if (pathcmp(".snapraidignore", name) == 0
+				|| (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
+				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0)) {
 
 				/* late stat, if not yet called */
 				if (!st)
@@ -1576,8 +1588,13 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
 		} else if (type == 1) { /* LNK */
-			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
-				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
+			/*
+			 * Note that .snapraidignore is an exception from filtering because it
+			 * is a control file that must be preserved as array data.
+			 */
+			if (pathcmp(".snapraidignore", name) == 0
+				|| (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
+				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0)) {
 				ssize_t ret;
 
 				ret = readlink(path_next, tmp, PATH_MAX);
