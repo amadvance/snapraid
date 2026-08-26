@@ -362,7 +362,7 @@ static volatile sig_atomic_t child_pid = 0;
 static void forward_signal(int sig)
 {
 	if (child_pid > 0) {
-		kill(child_pid, sig);
+		kill((pid_t)child_pid, sig);
 	}
 }
 /* LCOV_EXCL_STOP */
