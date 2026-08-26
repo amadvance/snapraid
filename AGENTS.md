@@ -81,10 +81,10 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 - `linux.cfg`: Code formatting rules for `raid/` directory and its subdirectories
 - Run `make doc` to regenerate all manual pages (`*.1`) and text manuals (`*.txt`)
 - Always use parallel compilation with `make -j$(nproc)` instead of plain `make`
-- To cross-compile for Windows x64: run `make clean && ./configure.windows-x64 && make -j$(nproc)`
+- To cross-compile for Windows x64: build out-of-tree in `/tmp` so the Linux configuration is preserved:
+  `mkdir -p /tmp/snapraid-windows && (cd /tmp/snapraid-windows && /path/to/configure.windows-x64 && make -j$(nproc))`
+  Subsequent Windows rebuilds only require: `(cd /tmp/snapraid-windows && make -j$(nproc))`
 - The Windows build needs to be tested only when modifying Windows-specific code (e.g., `os/mingw.*`, `cmdline/mingwapp.c`, or Windows-specific `#ifdef` paths)
-- After configuring for Windows (`./configure.windows-x64`), it is not necessary to reconfigure back for Linux; you can leave it configured for Windows
-- Always run `make clean` when switching build configurations or targets between Linux (`./configure`) and Windows (`./configure.windows-x64`)
 
 ## Code Style Guidelines
 
