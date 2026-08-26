@@ -2319,6 +2319,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* ensure the unsigned serialized size fits in signed data_off_t before conversion. */
+			if (v_size > INT64_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ECONTENT, "Internal inconsistency: Invalid file size %" PRIu64 "!\n", v_size);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			if (state->block_size == 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2755,6 +2764,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* ensure the unsigned serialized size fits in signed data_off_t before conversion. */
+				if (v_size > INT64_MAX) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Internal inconsistency: Invalid deallocated file size %" PRIu64 "!\n", v_size);
+					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -3357,6 +3375,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* ensure the unsigned serialized size fits in signed data_off_t before conversion. */
+				if (v_size > INT64_MAX) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Internal inconsistency: Invalid split file size %" PRIu64 "!\n", v_size);
+					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 
