@@ -2398,10 +2398,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
-			if (!*sub) {
+			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Null file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid file '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2774,10 +2774,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
-				if (!*sub) {
+				if (!path_is_sub(sub)) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Null dealloc!\n");
+					log_fatal(EINTERNAL, "Internal inconsistency: Invalid dealloc '%s'!\n", sub);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2868,10 +2868,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (!*sub) {
+			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Null symlink!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid symlink '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2919,10 +2919,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (!*sub) {
+			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Null hardlink!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid hardlink '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2935,10 +2935,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (!*linkto) {
+			if (!path_is_sub(linkto)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Empty hardlink '%s'!\n", sub);
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid hardlink target '%s' for '%s'!\n", linkto, sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2977,10 +2977,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (!*sub) {
+			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Null dir!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid dir '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}

@@ -369,6 +369,18 @@ int pathncmp(const char* a, const char* b, size_t n);
  */
 int path_is_root_of(const char* root, const char* path);
 
+/**
+ * Check if the path is a canonical relative sub-path.
+ *
+ * A valid sub-path must:
+ * - Not be empty
+ * - Not start or end with a slash '/'
+ * - Not contain backslashes '\\' (on Windows)
+ * - Not start with a drive letter (e.g., "C:" on Windows)
+ * - Not contain empty components ("//"), "." or ".."
+ */
+int path_is_sub(const char* sub);
+
 /****************************************************************************/
 /* file-system */
 

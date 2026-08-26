@@ -1027,6 +1027,57 @@ static void test_path(void)
 		/* LCOV_EXCL_STOP */
 	}
 #endif
+
+	static const struct {
+		const char* path;
+		int expected;
+	} sub_tests[] = {
+		{ "", 0 },
+		{ "/", 0 },
+		{ "/a", 0 },
+		{ "a/", 0 },
+		{ "a//b", 0 },
+		{ ".", 0 },
+		{ "..", 0 },
+		{ "./a", 0 },
+		{ "../a", 0 },
+		{ "a/.", 0 },
+		{ "a/..", 0 },
+		{ "a/./b", 0 },
+		{ "a/../b", 0 },
+#ifdef _WIN32
+		{ "\\a", 0 },
+		{ "a\\b", 0 },
+		{ "C:a", 0 },
+		{ "C:/a", 0 },
+		{ "d:file.txt", 0 },
+#else
+		{ "\\a", 1 },
+		{ "a\\b", 1 },
+		{ "C:a", 1 },
+		{ "C:/a", 1 },
+		{ "d:file.txt", 1 },
+#endif
+		{ "a", 1 },
+		{ "file.txt", 1 },
+		{ "dir/file.txt", 1 },
+		{ "a/b/c/d.txt", 1 },
+		{ ".hidden", 1 },
+		{ "dir/.hidden", 1 },
+		{ ".../file", 1 },
+		{ "..file", 1 },
+		{ "file..", 1 },
+		{ "a/b:c/d", 1 },
+	};
+	for (unsigned i = 0; i < sizeof(sub_tests) / sizeof(sub_tests[0]); ++i) {
+		if (path_is_sub(sub_tests[i].path) != sub_tests[i].expected) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed path_is_sub test for '%s', expected %d\n",
+				sub_tests[i].path, sub_tests[i].expected);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
 }
 
 struct {

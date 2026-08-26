@@ -1267,6 +1267,54 @@ int path_is_root_of(const char* root, const char* path)
 	return *root == 0 && *path != 0;
 }
 
+int path_is_sub(const char* sub)
+{
+	const char* p;
+	size_t len;
+
+#ifdef _WIN32
+	/* cannot start with a Windows drive letter like C: */
+	if (isalpha((unsigned char)sub[0]) && sub[1] == ':')
+		return 0;
+#endif
+
+	len = 0;
+	p = sub;
+	while (1) {
+		char c = *p;
+
+		if (c == '/' || c == 0) {
+			/* empty component (leading, consecutive, trailing slash, or empty string) */
+			if (len == 0)
+				return 0;
+
+			/* dot component */
+			if (len == 1 && *(p - 1) == '.')
+				return 0;
+
+			/* dot-dot component */
+			if (len == 2 && *(p - 2) == '.' && *(p - 1) == '.')
+				return 0;
+
+			if (c == 0)
+				break;
+
+			len = 0;
+#ifdef _WIN32
+		} else if (c == '\\') {
+			/* cannot contain backslash in Windows */
+			return 0;
+#endif
+		} else {
+			++len;
+		}
+
+		++p;
+	}
+
+	return 1;
+}
+
 /****************************************************************************/
 /* file-system */
 
