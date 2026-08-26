@@ -45,6 +45,12 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 	pathimport(filter->root, sizeof(filter->root), root);
 	filter->direction = direction;
 
+	/* reject the root directory as an invalid pattern */
+	if (pathcmp(filter->pattern, "/") == 0) {
+		free(filter);
+		return 0;
+	}
+
 	/* find first and last slash */
 	first = 0;
 	last = 0;
