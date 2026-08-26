@@ -1487,6 +1487,11 @@ If no pattern matches, the file is excluded if the last pattern
 specified is an \`include\`, or included if the last pattern
 specified is an \`exclude\`.
 .PP
+Note that filtering occurs hierarchically during directory traversal.
+If a directory matches an \`exclude\` rule, the entire directory is
+skipped (pruned), and any \`include\` rules for files or subdirectories
+inside it will not be evaluated.
+.PP
 See the PATTERN section for more details on pattern
 specifications.
 .PP
@@ -2114,6 +2119,45 @@ include /musics/
 .PP
 .PD
 include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+Note that excluding a directory (using DIR/ or /PATH/DIR/) prevents
+SnapRAID from entering and scanning that directory. Consequently, it is
+not possible to re\-include a file or subdirectory located inside an
+excluded parent directory, because the scanner never traverses into it.
+.PP
+For example, the following configuration will NOT include \`file.dat\`
+because \`/keep/\` is pruned before \`file.dat\` can be seen:
+.PP
+.RS 4
+# Does NOT work: /keep/ is skipped entirely
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/
+.PD 0
+.PD
+.RE
+.PP
+To exclude files inside a directory while keeping specific ones, match
+the files within the directory rather than excluding the directory itself:
+.PP
+.RS 4
+# Works: /keep/ is traversed, but other files inside are excluded
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/*
 .PD 0
 .PD
 .RE

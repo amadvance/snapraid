@@ -1377,6 +1377,12 @@ wird die Datei ausgeschlossen, wenn das zuletzt angegebene Muster
 ein `include` ist, oder eingeschlossen, wenn das zuletzt angegebene
 Muster ein `exclude` ist.
 
+Beachten Sie, dass die Filterung hierarchisch beim Durchlaufen der
+Verzeichnisse erfolgt. Wenn ein Verzeichnis mit einer `exclude`-Regel
+übereinstimmt, wird das gesamte Verzeichnis übersprungen (verworfen),
+und alle `include`-Regeln für darin enthaltene Dateien oder
+Unterverzeichnisse werden nicht ausgewertet.
+
 Weitere Details zu Musterspezifikationen finden Sie im Abschnitt
 PATTERN.
 
@@ -1886,6 +1892,29 @@ dann alle `include`-Regeln auflisten. Zum Beispiel:
     include /movies/
     include /musics/
     include /pictures/
+
+Beachten Sie, dass das Ausschließen eines Verzeichnisses (mit DIR/
+oder /PFAD/DIR/) verhindert, dass SnapRAID dieses Verzeichnis betritt
+und durchsucht. Daher ist es nicht möglich, eine Datei oder ein
+Unterverzeichnis innerhalb eines ausgeschlossenen übergeordneten
+Verzeichnisses wieder einzuschließen, da der Scanner dieses niemals
+durchläuft.
+
+Beispielsweise wird bei folgender Konfiguration `file.dat` NICHT
+eingeschlossen, da `/keep/` verworfen wird, bevor `file.dat` gesehen
+werden kann:
+
+    # Funktioniert NICHT: /keep/ wird vollständig übersprungen
+    include /keep/file.dat
+    exclude /keep/
+
+Um Dateien innerhalb eines Verzeichnisses auszuschließen und bestimmte
+Dateien beizubehalten, schließen Sie die Dateien im Verzeichnis aus,
+anstatt das Verzeichnis selbst auszuschließen:
+
+    # Funktioniert: /keep/ wird durchlaufen, aber andere Dateien darin werden ausgeschlossen
+    include /keep/file.dat
+    exclude /keep/*
 
 In der Befehlszeile können Sie mit der Option -f nur `include`-Muster
 verwenden. Zum Beispiel:

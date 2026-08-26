@@ -1205,6 +1205,11 @@ Configuration
 	specified is an `include`, or included if the last pattern
 	specified is an `exclude`.
 
+	Note that filtering occurs hierarchically during directory traversal.
+	If a directory matches an `exclude` rule, the entire directory is
+	skipped (pruned), and any `include` rules for files or subdirectories
+	inside it will not be evaluated.
+
 	See the PATTERN section for more details on pattern
 	specifications.
 
@@ -1665,6 +1670,25 @@ Pattern
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	Note that excluding a directory (using DIR/ or /PATH/DIR/) prevents
+	SnapRAID from entering and scanning that directory. Consequently, it is
+	not possible to re-include a file or subdirectory located inside an
+	excluded parent directory, because the scanner never traverses into it.
+
+	For example, the following configuration will NOT include `file.dat`
+	because `/keep/` is pruned before `file.dat` can be seen:
+
+		:# Does NOT work: /keep/ is skipped entirely
+		:include /keep/file.dat
+		:exclude /keep/
+
+	To exclude files inside a directory while keeping specific ones, match
+	the files within the directory rather than excluding the directory itself:
+
+		:# Works: /keep/ is traversed, but other files inside are excluded
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	On the command line, using the -f option, you can only use `include`
 	patterns. For example:

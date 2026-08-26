@@ -1564,6 +1564,11 @@ Se nessun pattern corrisponde, il file viene escluso se l\'ultimo
 pattern specificato è un \`include\`, o incluso se l\'ultimo pattern
 specificato è un \`exclude\`.
 .PP
+Si noti che il filtraggio avviene gerarchicamente durante l\'attraversamento
+delle directory. Se una directory corrisponde a una regola \`exclude\`,
+l\'intero sottoalbero viene saltato (potato), e le regole \`include\` per file
+o sottocartelle al suo interno non verranno valutate.
+.PP
 Vedere la sezione PATTERN per maggiori dettagli sulle specifiche
 del pattern.
 .PP
@@ -2215,6 +2220,47 @@ include /musics/
 .PP
 .PD
 include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+Si noti che l\'esclusione di una directory (utilizzando DIR/ o /PATH/DIR/)
+impedisce a SnapRAID di entrare e scansionare quella directory.
+Pertanto, non è possibile re\-includere un file o una sottodirectory
+all\'interno di una cartella genitore esclusa, poiché il suo contenuto
+non viene mai scansionato.
+.PP
+Ad esempio, la seguente configurazione NON includerà \`file.dat\` perché
+\`/keep/\` viene saltata prima che \`file.dat\` possa essere esaminato:
+.PP
+.RS 4
+# NON funziona: /keep/ viene saltata completamente
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/
+.PD 0
+.PD
+.RE
+.PP
+Per escludere i file all\'interno di una cartella mantenendone alcuni
+specifici, specificare il pattern dei file anziché escludere la directory
+stessa:
+.PP
+.RS 4
+# Funziona: /keep/ viene attraversata, ma gli altri file sono esclusi
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/*
 .PD 0
 .PD
 .RE

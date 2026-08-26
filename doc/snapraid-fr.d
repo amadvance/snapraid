@@ -1297,6 +1297,12 @@ Configuration
 	spécifié est un `include`, ou inclus si le dernier motif
 	spécifié est un `exclude`.
 
+	Notez que le filtrage s'effectue de manière hiérarchique lors du
+	parcours des répertoires. Si un répertoire correspond à une règle
+	`exclude`, l'ensemble du répertoire est ignoré (élagué), et aucune règle
+	`include` pour les fichiers ou sous-répertoires qu'il contient ne sera
+	évaluée.
+
 	Voir la section PATTERN pour plus de détails sur les
 	spécifications de motifs.
 
@@ -1782,6 +1788,26 @@ Motif (Pattern)
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	Notez que l'exclusion d'un répertoire (en utilisant DIR/ ou /CHEMIN/DIR/)
+	empêche SnapRAID d'entrer et de parcourir ce répertoire. Par conséquent,
+	il n'est pas possible de réinclure un fichier ou un sous-répertoire situé
+	dans un répertoire parent exclu, car le scanner ne le parcourt jamais.
+
+	Par exemple, la configuration suivante n'inclura PAS `file.dat` car
+	`/keep/` est élagué avant que `file.dat` ne puisse être examiné :
+
+		:# Ne fonctionne PAS : /keep/ est entièrement ignoré
+		:include /keep/file.dat
+		:exclude /keep/
+
+	Pour exclure les fichiers d'un répertoire tout en conservant certains
+	fichiers spécifiques, appliquez le motif d'exclusion aux fichiers du
+	répertoire plutôt que d'exclure le répertoire lui-même :
+
+		:# Fonctionne : /keep/ est parcouru, mais les autres fichiers qu'il contient sont exclus
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	Sur la ligne de commande, en utilisant l'option -f, vous ne pouvez
 	utiliser que des motifs `include`. Par exemple :

@@ -1047,6 +1047,9 @@ Name{number}
 	如果没有模式匹配，则如果指定的最后一个模式是 `include`，则排除该文件，
 	或者如果指定的最后一个模式是 `exclude`，则包含该文件。
 
+	请注意，过滤是在目录遍历期间分层进行的。如果目录匹配 `exclude` 规则，
+	则整个目录将被跳过（修剪），并且不会评估其内部文件或子目录的任何 `include` 规则。
+
 	有关模式规范的更多详细信息，请参阅 PATTERN 部分。
 
 	此选项可以多次使用。
@@ -1447,6 +1450,22 @@ Name{number}
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	请注意，排除目录（使用 DIR/ 或 /PATH/DIR/）会阻止 SnapRAID 进入并扫描该目录。
+	因此，无法使用 `include` 规则重新包含位于已排除父目录内的文件或子目录，
+	因为扫描器根本不会遍历到该目录中。
+
+	例如，以下配置将不会包含 `file.dat`，因为 `/keep/` 在看到 `file.dat` 之前已被修剪：
+
+		:# 无法按预期工作: /keep/ 会被完全跳过
+		:include /keep/file.dat
+		:exclude /keep/
+
+	若要排除目录中的文件但保留特定文件，请匹配目录内的文件模式，而不是排除目录本身：
+
+		:# 可以正常工作: 会遍历 /keep/，但其中的其他文件会被排除
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	在命令行上，使用 -f 选项，您只能使用 `include`
 	模式。例如：

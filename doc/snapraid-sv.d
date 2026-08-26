@@ -1204,6 +1204,11 @@ Konfiguration (Configuration)
 	som specificerats är ett `include`-mönster, eller inkluderas om det sista mönstret
 	som specificerats är ett `exclude`-mönster.
 
+	Observera att filtrering sker hierarkiskt under kataloggenomgång.
+	Om en katalog matchar en `exclude`-regel hoppas hela katalogen över
+	(beskärs), och eventuella `include`-regler för filer eller underkataloger
+	inuti den kommer inte att utvärderas.
+
 	Se avsnittet PATTERN för mer information om mönster-
 	specifikationer.
 
@@ -1660,6 +1665,26 @@ Mönster (Pattern)
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	Observera att exkludering av en katalog (med DIR/ eller /SÖKVÄG/DIR/)
+	förhindrar SnapRAID från att gå in i och skanna den katalogen.
+	Följaktligen är det inte möjligt att åter inkludera en fil eller
+	underkatalog som finns i en exkluderad överordnad katalog, eftersom
+	skannern aldrig går in i den.
+
+	Till exempel kommer följande konfiguration INTE att inkludera `file.dat`
+	eftersom `/keep/` beskärs innan `file.dat` kan utvärderas:
+
+		:# Fungerar INTE: /keep/ hoppas över helt
+		:include /keep/file.dat
+		:exclude /keep/
+
+	För att exkludera filer i en katalog men behålla specifika filer,
+	matcha filmönstret inuti katalogen istället för att exkludera själva katalogen:
+
+		:# Fungerar: /keep/ genomsöks, men övriga filer inuti exkluderas
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	På kommandoraden, med hjälp av alternativet -f, kan du bara använda `include`-
 	mönster. Till exempel:

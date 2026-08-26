@@ -1514,6 +1514,11 @@ Se nenhum padrão corresponder, o arquivo é excluído se o último padrão
 especificado for um \`include\`, ou incluído se o último padrão
 especificado for um \`exclude\`.
 .PP
+Observe que a filtragem ocorre hierarquicamente durante o percurso
+dos diretórios. Se um diretório corresponder a uma regra \`exclude\`,
+todo o diretório será ignorado (podado) e nenhuma regra \`include\` para
+arquivos ou subdiretórios dentro dele será avaliada.
+.PP
 Consulte a seção PATTERN para obter mais detalhes sobre
 especificações de padrão.
 .PP
@@ -2146,6 +2151,46 @@ include /musics/
 .PP
 .PD
 include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+Observe que a exclusão de um diretório (usando DIR/ ou /CAMINHO/DIR/)
+impede que o SnapRAID entre e examine esse diretório. Consequentemente,
+não é possível reincluir um arquivo ou subdiretório localizado dentro
+de um diretório pai excluído, porque o verificador nunca entra nele.
+.PP
+Por exemplo, a seguinte configuração NÃO incluirá \`file.dat\` porque
+\`/keep/\` é podado antes que \`file.dat\` possa ser examinado:
+.PP
+.RS 4
+# NÃO funciona: /keep/ é ignorado completamente
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/
+.PD 0
+.PD
+.RE
+.PP
+Para excluir arquivos dentro de um diretório mantendo arquivos específicos,
+aplique o padrão aos arquivos dentro do diretório em vez de excluir o
+próprio diretório:
+.PP
+.RS 4
+# Funciona: /keep/ é percorrido, mas os outros arquivos nele são excluídos
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/*
 .PD 0
 .PD
 .RE

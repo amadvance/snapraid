@@ -1483,6 +1483,11 @@ jest wykluczony. Jeśli jest to \`include\`, plik jest włączony.
 Jeśli żaden wzorzec nie pasuje, plik jest wykluczony, jeśli ostatni określony
 wzorzec to \`include\`, lub włączony, jeśli ostatni określony wzorzec to \`exclude\`.
 .PP
+Należy pamiętać, że filtrowanie odbywa się hierarchicznie podczas
+przechodzenia katalogów. Jeśli katalog pasuje do reguły \`exclude\`, cały
+katalog jest pomijany (odrzucany), a wszelkie reguły \`include\` dla plików
+lub podkatalogów w nim zawartych nie będą oceniane.
+.PP
 Zobacz sekcję PATTERN, aby uzyskać więcej szczegółów na temat specyfikacji
 wzorców.
 .PP
@@ -2108,6 +2113,47 @@ include /musics/
 .PP
 .PD
 include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+Należy pamiętać, że wykluczenie katalogu (za pomocą DIR/ lub /PATH/DIR/)
+uniemożliwia programowi SnapRAID wejście i skanowanie tego katalogu.
+W konsekwencji nie jest możliwe ponowne włączenie pliku lub podkatalogu
+znajdującego się w wykluczonym katalogu nadrzędnym, ponieważ skaner nigdy
+do niego nie przechodzi.
+.PP
+Na przykład poniższa konfiguracja NIE uwzględni pliku \`file.dat\`,
+ponieważ katalog \`/keep/\` zostanie odrzucony, zanim \`file.dat\` będzie
+mógł zostać sprawdzony:
+.PP
+.RS 4
+# NIE działa zgodnie z oczekiwaniami: /keep/ jest całkowicie pomijany
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/
+.PD 0
+.PD
+.RE
+.PP
+Aby wykluczyć pliki wewnątrz katalogu, zachowując wybrane, należy dopasować
+wzorzec plików wewnątrz katalogu, zamiast wykluczać sam katalog:
+.PP
+.RS 4
+# Działa: /keep/ jest przeszukiwany, ale pozostałe pliki są wykluczane
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/*
 .PD 0
 .PD
 .RE

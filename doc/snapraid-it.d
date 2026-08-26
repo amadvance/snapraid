@@ -1271,6 +1271,11 @@ Configurazione (Configuration)
 	pattern specificato è un `include`, o incluso se l'ultimo pattern
 	specificato è un `exclude`.
 
+	Si noti che il filtraggio avviene gerarchicamente durante l'attraversamento
+	delle directory. Se una directory corrisponde a una regola `exclude`,
+	l'intero sottoalbero viene saltato (potato), e le regole `include` per file
+	o sottocartelle al suo interno non verranno valutate.
+
 	Vedere la sezione PATTERN per maggiori dettagli sulle specifiche
 	del pattern.
 
@@ -1755,6 +1760,27 @@ Pattern
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	Si noti che l'esclusione di una directory (utilizzando DIR/ o /PATH/DIR/)
+	impedisce a SnapRAID di entrare e scansionare quella directory.
+	Pertanto, non è possibile re-includere un file o una sottodirectory
+	all'interno di una cartella genitore esclusa, poiché il suo contenuto
+	non viene mai scansionato.
+
+	Ad esempio, la seguente configurazione NON includerà `file.dat` perché
+	`/keep/` viene saltata prima che `file.dat` possa essere esaminato:
+
+		:# NON funziona: /keep/ viene saltata completamente
+		:include /keep/file.dat
+		:exclude /keep/
+
+	Per escludere i file all'interno di una cartella mantenendone alcuni
+	specifici, specificare il pattern dei file anziché escludere la directory
+	stessa:
+
+		:# Funziona: /keep/ viene attraversata, ma gli altri file sono esclusi
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	Sulla riga di comando, utilizzando l'opzione -f, è possibile utilizzare
 	solo pattern `include`. Ad esempio:

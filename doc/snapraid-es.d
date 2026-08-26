@@ -1259,6 +1259,11 @@ Configuración (Configuration)
 	patrón especificado es un `include`, o se incluye si el último
 	patrón especificado es un `exclude`.
 
+	Tenga en cuenta que el filtrado se produce jerárquicamente durante
+	el recorrido de los directorios. Si un directorio coincide con una
+	regla `exclude`, se omite (poda) todo el directorio y no se evaluará
+	ninguna regla `include` para los archivos o subdirectorios que contenga.
+
 	Consulte la sección PATTERN para obtener más detalles sobre
 	las especificaciones de patrones.
 
@@ -1743,6 +1748,27 @@ Patrones (Pattern)
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	Tenga en cuenta que excluir un directorio (usando DIR/ o /RUTA/DIR/)
+	impide que SnapRAID entre y examine ese directorio. En consecuencia,
+	no es posible volver a incluir un archivo o subdirectorio ubicado
+	dentro de un directorio principal excluido, ya que el escáner nunca lo
+	recorre.
+
+	Por ejemplo, la siguiente configuración NO incluirá `file.dat`
+	porque `/keep/` se poda antes de que `file.dat` pueda ser evaluado:
+
+		:# NO funciona: /keep/ se omite por completo
+		:include /keep/file.dat
+		:exclude /keep/
+
+	Para excluir archivos dentro de un directorio conservando algunos
+	específicos, excluya el patrón de archivos dentro del directorio en
+	lugar de excluir el directorio en sí:
+
+		:# Funciona: /keep/ se recorre, pero los demás archivos dentro se excluyen
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	En la línea de comandos, usando la opción -f, solo puede usar
 	patrones `include`. Por ejemplo:

@@ -1232,6 +1232,11 @@ Configuração (Configuration)
 	especificado for um `include`, ou incluído se o último padrão
 	especificado for um `exclude`.
 
+	Observe que a filtragem ocorre hierarquicamente durante o percurso
+	dos diretórios. Se um diretório corresponder a uma regra `exclude`,
+	todo o diretório será ignorado (podado) e nenhuma regra `include` para
+	arquivos ou subdiretórios dentro dele será avaliada.
+
 	Consulte a seção PATTERN para obter mais detalhes sobre
 	especificações de padrão.
 
@@ -1697,6 +1702,26 @@ Padrão (Pattern)
 		:include /movies/
 		:include /musics/
 		:include /pictures/
+
+	Observe que a exclusão de um diretório (usando DIR/ ou /CAMINHO/DIR/)
+	impede que o SnapRAID entre e examine esse diretório. Consequentemente,
+	não é possível reincluir um arquivo ou subdiretório localizado dentro
+	de um diretório pai excluído, porque o verificador nunca entra nele.
+
+	Por exemplo, a seguinte configuração NÃO incluirá `file.dat` porque
+	`/keep/` é podado antes que `file.dat` possa ser examinado:
+
+		:# NÃO funciona: /keep/ é ignorado completamente
+		:include /keep/file.dat
+		:exclude /keep/
+
+	Para excluir arquivos dentro de um diretório mantendo arquivos específicos,
+	aplique o padrão aos arquivos dentro do diretório em vez de excluir o
+	próprio diretório:
+
+		:# Funciona: /keep/ é percorrido, mas os outros arquivos nele são excluídos
+		:include /keep/file.dat
+		:exclude /keep/*
 
 	Na linha de comando, usando a opção -f, você pode usar apenas padrões `include`.
 	Por exemplo:

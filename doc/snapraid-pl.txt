@@ -1283,6 +1283,11 @@ jest wykluczony. Jeśli jest to `include`, plik jest włączony.
 Jeśli żaden wzorzec nie pasuje, plik jest wykluczony, jeśli ostatni określony
 wzorzec to `include`, lub włączony, jeśli ostatni określony wzorzec to `exclude`.
 
+Należy pamiętać, że filtrowanie odbywa się hierarchicznie podczas
+przechodzenia katalogów. Jeśli katalog pasuje do reguły `exclude`, cały
+katalog jest pomijany (odrzucany), a wszelkie reguły `include` dla plików
+lub podkatalogów w nim zawartych nie będą oceniane.
+
 Zobacz sekcję PATTERN, aby uzyskać więcej szczegółów na temat specyfikacji
 wzorców.
 
@@ -1772,6 +1777,27 @@ wszystkie reguły `include`. Na przykład:
     include /movies/
     include /musics/
     include /pictures/
+
+Należy pamiętać, że wykluczenie katalogu (za pomocą DIR/ lub /PATH/DIR/)
+uniemożliwia programowi SnapRAID wejście i skanowanie tego katalogu.
+W konsekwencji nie jest możliwe ponowne włączenie pliku lub podkatalogu
+znajdującego się w wykluczonym katalogu nadrzędnym, ponieważ skaner nigdy
+do niego nie przechodzi.
+
+Na przykład poniższa konfiguracja NIE uwzględni pliku `file.dat`,
+ponieważ katalog `/keep/` zostanie odrzucony, zanim `file.dat` będzie
+mógł zostać sprawdzony:
+
+    # NIE działa zgodnie z oczekiwaniami: /keep/ jest całkowicie pomijany
+    include /keep/file.dat
+    exclude /keep/
+
+Aby wykluczyć pliki wewnątrz katalogu, zachowując wybrane, należy dopasować
+wzorzec plików wewnątrz katalogu, zamiast wykluczać sam katalog:
+
+    # Działa: /keep/ jest przeszukiwany, ale pozostałe pliki są wykluczane
+    include /keep/file.dat
+    exclude /keep/*
 
 W wierszu poleceń, używając opcji -f, możesz użyć tylko wzorców `include`.
 Na przykład:

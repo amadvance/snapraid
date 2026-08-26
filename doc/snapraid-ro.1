@@ -1480,6 +1480,11 @@ Dacă niciun model nu se potrivește, fișierul este exclus dacă ultimul model
 specificat este un \`include\`, sau inclus dacă ultimul model
 specificat este un \`exclude\`.
 .PP
+Rețineți că filtrarea se produce ierarhic în timpul parcurgerii
+directoarelor. Dacă un director se potrivește cu o regulă \`exclude\`,
+întregul director este omis (eliminat), iar regulile \`include\` pentru
+fișierele sau subdirectoarele din interiorul său nu vor fi evaluate.
+.PP
 Vedeți secțiunea PATTERN pentru mai multe detalii despre
 specificațiile modelului.
 .PP
@@ -2106,6 +2111,46 @@ include /musics/
 .PP
 .PD
 include /pictures/
+.PD 0
+.PD
+.RE
+.PP
+Rețineți că excluderea unui director (folosind DIR/ sau /CALE/DIR/)
+împiedică SnapRAID să intre și să scaneze acel director. Prin urmare,
+nu este posibil să reincludeți un fișier sau un subdirector situat
+într\-un director părinte exclus, deoarece scanerul nu îl parcurge niciodată.
+.PP
+De exemplu, următoarea configurație NU va include \`file.dat\` deoarece
+\`/keep/\` este eliminat înainte ca \`file.dat\` să poată fi examinat:
+.PP
+.RS 4
+# NU funcționează: /keep/ este omis complet
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/
+.PD 0
+.PD
+.RE
+.PP
+Pentru a exclude fișierele dintr\-un director păstrând anumite fișiere
+specifice, excludeți modelul fișierelor din interiorul directorului,
+în loc să excludeți directorul în sine:
+.PP
+.RS 4
+# Funcționează: /keep/ este parcurs, dar celelalte fișiere din interior sunt excluse
+.PD 0
+.PP
+.PD
+include /keep/file.dat
+.PD 0
+.PP
+.PD
+exclude /keep/*
 .PD 0
 .PD
 .RE
