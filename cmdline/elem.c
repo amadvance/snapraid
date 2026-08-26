@@ -1414,6 +1414,19 @@ block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* f
 	return ret;
 }
 
+/**
+ * Allocate a file block mapping it to a parity position.
+ *
+ * If the block is contiguous with the previous block of the file and follows
+ * the current extent in parity space, the existing extent is extended in-place.
+ * Otherwise, a new extent is created and inserted into the parity and file trees.
+ *
+ * Callers ensure allocations are sequential and do not overwrite live blocks.
+ * To keep per-block allocation fast, full overlap checks across all existing
+ * extents are omitted here; global non-overlap and complete coverage invariants
+ * are verified in batch by fs_check() at major checkpoints (after read/scan,
+ * before write).
+ */
 void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
 {
 	struct snapraid_extent* extent;
