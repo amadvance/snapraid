@@ -226,16 +226,47 @@ static int state_import_fetch_candidate(struct snapraid_state* state, int rehash
 	path = block->file->path;
 	read_size = block->size;
 
+	if (!block->file->is_runtime) {
+		struct stat st;
+
+		/*
+		 * A deallocated candidate is historical and may be stale or shorter.
+		 * Validate metadata to ensure the file exists, is regular, and contains data at the offset.
+		 */
+		if (stat(path, &st) != 0) {
+			if (errno == ENOENT) {
+				log_error(EUSER, "WARNING! Unexpected missing deallocated file '%s'.\n", path);
+			} else {
+				log_error(errno, "WARNING! Error stating deallocated file '%s'. %s.\n", path, strerror(errno));
+			}
+			return -1;
+		}
+
+		if (!S_ISREG(st.st_mode)) {
+			log_error(EUSER, "WARNING! Unexpected non-regular deallocated file '%s'.\n", path);
+			return -1;
+		}
+
+		if ((data_off_t)st.st_size < block->offset || (data_off_t)st.st_size - block->offset < (data_off_t)read_size) {
+			log_error(EUSER, "WARNING! Unexpected short deallocated file '%s'.\n", path);
+			return -1;
+		}
+	}
+
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
 		/*
-		 * A deallocated source is historical and may be stale, so ENOENT is a
+		 * A deallocated source is historical and may be stale, so failure to open is a
 		 * best-effort miss that lets the caller try another matching candidate.
 		 * A runtime import was hashed in this run; its disappearance violates
 		 * that invariant and must remain fatal.
 		 */
-		if (errno == ENOENT && !block->file->is_runtime) {
-			log_error(EUSER, "WARNING! Unexpected missing deallocated file '%s'.\n", path);
+		if (!block->file->is_runtime) {
+			if (errno == ENOENT) {
+				log_error(EUSER, "WARNING! Unexpected missing deallocated file '%s'.\n", path);
+			} else {
+				log_error(errno, "WARNING! Error opening deallocated file '%s'. %s.\n", path, strerror(errno));
+			}
 			return -1;
 		}
 
@@ -257,12 +288,24 @@ static int state_import_fetch_candidate(struct snapraid_state* state, int rehash
 			if (errno == EINTR)
 				continue;
 
+			if (!block->file->is_runtime) {
+				close(f);
+				log_error(errno, "WARNING! Error reading deallocated file '%s'. %s.\n", path, strerror(errno));
+				return -1;
+			}
+
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (ret == 0) {
+			if (!block->file->is_runtime) {
+				close(f);
+				log_error(EUSER, "WARNING! Unexpected end of file in deallocated file '%s'.\n", path);
+				return -1;
+			}
+
 			/* LCOV_EXCL_START */
 			errno = ENXIO;
 			log_fatal(errno, "Unexpected end of file '%s'. %s.\n", path, strerror(errno));
