@@ -31,6 +31,38 @@ void content_free(void* void_content)
 	free(content);
 }
 
+/**
+ * Check that all wildcard character classes are terminated.
+ *
+ * Escaped '[' characters are literals and don't start a class.
+ * Escape characters inside a class are literals, consistently with
+ * match_class().
+ */
+static int filter_pattern_class_valid(const char* pattern)
+{
+	const char* i;
+	int in_class = 0;
+
+	for (i = pattern; *i; ++i) {
+		if (in_class) {
+			if (*i == ']')
+				in_class = 0;
+		} else {
+#ifdef _WIN32
+			if (*i == '^' && i[1] != 0) {
+#else
+			if (*i == '\\' && i[1] != 0) {
+#endif
+				++i;
+			} else if (*i == '[') {
+				in_class = 1;
+			}
+		}
+	}
+
+	return !in_class;
+}
+
 struct snapraid_filter* filter_alloc_file(int direction, const char* root, const char* pattern)
 {
 	struct snapraid_filter* filter;
@@ -45,6 +77,12 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
 	pathimport(filter->root, sizeof(filter->root), root);
 	filter->direction = direction;
+
+	/* reject unterminated wildcard character classes */
+	if (!filter_pattern_class_valid(filter->pattern)) {
+		free(filter);
+		return 0;
+	}
 
 	/* reject the root directory and standalone absolute directory wildcard as invalid patterns */
 	if (pathcmp(filter->pattern, "/") == 0 || pathcmp(filter->pattern, "/**/") == 0) {
@@ -127,6 +165,12 @@ struct snapraid_filter* filter_alloc_disk(int direction, const char* pattern)
 	filter = malloc_nofail(sizeof(struct snapraid_filter));
 	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
 	filter->direction = direction;
+
+	/* reject unterminated wildcard character classes */
+	if (!filter_pattern_class_valid(filter->pattern)) {
+		free(filter);
+		return 0;
+	}
 
 	/* it's a disk filter */
 	filter->is_disk = 1;

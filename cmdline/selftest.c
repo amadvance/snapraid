@@ -1031,6 +1031,34 @@ struct {
 	{ "foo/.hidden", 1 },
 	{ "foo/..hidden", 1 },
 
+	/* invalid unterminated character classes */
+	{ "[", 0 },
+	{ "foo[", 0 },
+	{ "[abc", 0 },
+	{ "foo/[ab", 0 },
+	{ "/foo/[ab/bar", 0 },
+	{ "foo/[a-z", 0 },
+
+	/* valid character classes */
+	{ "[abc]", 1 },
+	{ "foo[abc]", 1 },
+	{ "foo/[ab]/bar", 1 },
+	{ "foo/[a-z]/bar", 1 },
+
+#ifdef _WIN32
+	/* escaped '[' is literal */
+	{ "foo^[bar", 1 },
+
+	/* escaped '^' followed by '[' starts a class */
+	{ "foo^^[bar", 0 },
+#else
+	/* escaped '[' is literal */
+	{ "foo\\[bar", 1 },
+
+	/* escaped '\' followed by '[' starts a class */
+	{ "foo\\\\[bar", 0 },
+#endif
+
 	{ 0, 0 }
 };
 
@@ -1043,6 +1071,9 @@ static const struct {
 	{ "disk", 1 },
 	{ "disk?", 1 },
 	{ "data*", 1 },
+	{ "[ab", 0 },
+	{ "disk[12", 0 },
+	{ "disk[12]", 1 },
 	{ 0, 0 }
 };
 
