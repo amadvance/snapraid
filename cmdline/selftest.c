@@ -1632,6 +1632,559 @@ static void test_stream(void)
 	}
 }
 
+static void test_raid(void)
+{
+	/* vandermonde raid parity generation with 32 data disks */
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 32, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* vandermonde raid parity generation with a single data disk */
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 1, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test single data disk\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* vandermonde raid parity generation with maximum data disks */
+	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test max data disks\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* vandermonde raid recovery with combinations of missing data disks and parities */
+	if (raid_test_rec(RAID_MODE_VANDERMONDE_RAID, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed REC Vandermonde RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* vandermonde raid tail recovery across all data disk counts up to maximum */
+	if (raid_test_tail(RAID_MODE_VANDERMONDE_RAID, 64, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Vandermonde RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid matrix invertibility and polynomial checks */
+	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed POLY Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid parity generation with 32 data disks */
+	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 32, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid parity generation with a single data disk */
+	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 1, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test single data disk\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid parity generation with maximum data disks */
+	if (raid_test_par(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test max data disks\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid recovery with combinations of missing data disks and parities */
+	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed REC Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy raid tail recovery across all data disk counts up to maximum */
+	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, 64, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Cauchy RAID test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes matrix invertibility and polynomial checks */
+	if (raid_test_poly(RAID_MODE_CAUCHY_AES) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed POLY Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes parity generation with 32 data disks */
+	if (raid_test_par(RAID_MODE_CAUCHY_AES, 32, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes parity generation with a single data disk */
+	if (raid_test_par(RAID_MODE_CAUCHY_AES, 1, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test single data disk\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes parity generation with maximum data disks */
+	if (raid_test_par(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test max data disks\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes recovery with combinations of missing data disks and parities */
+	if (raid_test_rec(RAID_MODE_CAUCHY_AES, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed REC Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* cauchy aes tail recovery across all data disk counts up to maximum */
+	if (raid_test_tail(RAID_MODE_CAUCHY_AES, 64, 256) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed TAIL Cauchy AES test\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* verify raid_mode get/set behavior */
+	int cur = raid_mode(RAID_MODE_GET);
+	int prev = raid_mode(RAID_MODE_CAUCHY_AES);
+	if (prev != cur) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode set did not return previous mode\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (raid_mode(RAID_MODE_GET) != RAID_MODE_CAUCHY_AES) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "raid_mode GET did not return active mode\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* restore default mode */
+	raid_mode(RAID_MODE_CAUCHY_RAID);
+}
+
+static void test_misc(int argc, char* argv[])
+{
+	int i;
+	char buffer[ESC_MAX];
+
+	assert(strcmp(strpolish(strcpy(buffer, "\r \n\xFF")), "    ") == 0);
+	assert(strcmp(strtrim(strcpy(buffer, " trim trim \n\r")), "trim trim") == 0);
+	assert(strcmp(strlwr(strcpy(buffer, " LoWer\n\r")), " lower\n\r") == 0);
+
+	assert(worddigitstr("longneedlestring", "needle") == 0);
+	assert(worddigitstr("longneedlestring", "") == 0);
+	assert(worddigitstr("long needle string", "needle") != 0);
+	assert(worddigitstr("long1needle2string", "needle") != 0);
+	assert(worddigitstr("long\rneedle3string", "needle") != 0);
+	assert(worddigitstr("long1needle", "needle") != 0);
+	assert(worddigitstr("needle2string", "needle") != 0);
+	assert(worddigitstr("needle", "needle") != 0);
+
+	assert(strcmp(esc_tag("simple"), "simple") == 0);
+	assert(strcmp(esc_tag("line1\nline2"), "line1\\nline2") == 0);
+	assert(strcmp(esc_tag("line1\rline2"), "line1\\rline2") == 0);
+	assert(strcmp(esc_tag("key:value"), "key\\dvalue") == 0);
+	assert(strcmp(esc_tag("C:\\path\\file"), "C\\d\\\\path\\\\file") == 0);
+	assert(strcmp(esc_tag("A\nB\rC:D\\E"), "A\\nB\\rC\\dD\\\\E") == 0);
+	assert(strcmp(esc_tag("endwith\\"), "endwith\\\\") == 0);
+	assert(strcmp(esc_tag(""), "") == 0);
+	assert(strcmp(esc_tag("\n\r:\\\\"), "\\n\\r\\d\\\\\\\\") == 0);
+
+	for (i = 2; i < argc; ++i) {
+		printf("argv[%d]\n", i);
+		printf("\t#%s#\n", argv[i]);
+		printf("\t#%s#\n", esc_shell(argv[i], buffer));
+	}
+
+#ifdef _WIN32
+	/* basic cases - no special characters, no quotes needed */
+	assert(strcmp(esc_shell("simple", buffer), "simple") == 0);
+	assert(strcmp(esc_shell("file.txt", buffer), "file.txt") == 0);
+	assert(strcmp(esc_shell("file123", buffer), "file123") == 0);
+	assert(strcmp(esc_shell("file_name-test.doc", buffer), "file_name-test.doc") == 0);
+	assert(strcmp(esc_shell(",._+:@/-", buffer), ",._+:@/-") == 0);
+	assert(strcmp(esc_shell("C:\\Users\\test", buffer), "C:\\Users\\test") == 0);
+
+	/* space - requires quoting */
+	assert(strcmp(esc_shell(" ", buffer), "\" \"") == 0);
+	assert(strcmp(esc_shell("file name.txt", buffer), "\"file name.txt\"") == 0);
+	assert(strcmp(esc_shell("my document.doc", buffer), "\"my document.doc\"") == 0);
+	assert(strcmp(esc_shell("  multiple  spaces  ", buffer), "\"  multiple  spaces  \"") == 0);
+
+	/* tab - requires quoting */
+	assert(strcmp(esc_shell("\t", buffer), "\"\t\"") == 0);
+	assert(strcmp(esc_shell("file\tname", buffer), "\"file\tname\"") == 0);
+
+	/* newline - requires quoting */
+	assert(strcmp(esc_shell("\n", buffer), "\"\n\"") == 0);
+	assert(strcmp(esc_shell("line1\nline2", buffer), "\"line1\nline2\"") == 0);
+
+	/* carriage return - requires quoting */
+	assert(strcmp(esc_shell("\r", buffer), "\"\r\"") == 0);
+	assert(strcmp(esc_shell("text\r\n", buffer), "\"text\r\n\"") == 0);
+
+	/* double quote - requires quoting and escaping with backslash */
+	assert(strcmp(esc_shell("\"", buffer), "\"\\\"\"") == 0);
+	assert(strcmp(esc_shell("file\"name", buffer), "\"file\\\"name\"") == 0);
+	assert(strcmp(esc_shell("\"quoted\"", buffer), "\"\\\"quoted\\\"\"") == 0);
+	assert(strcmp(esc_shell("say \"hello\"", buffer), "\"say \\\"hello\\\"\"") == 0);
+
+	/* ampersand - requires quoting */
+	assert(strcmp(esc_shell("&", buffer), "\"&\"") == 0);
+	assert(strcmp(esc_shell("file&name", buffer), "\"file&name\"") == 0);
+	assert(strcmp(esc_shell("a&b&c", buffer), "\"a&b&c\"") == 0);
+	assert(strcmp(esc_shell("file & name", buffer), "\"file & name\"") == 0);
+
+	/* pipe - requires quoting */
+	assert(strcmp(esc_shell("|", buffer), "\"|\"") == 0);
+	assert(strcmp(esc_shell("file|name", buffer), "\"file|name\"") == 0);
+	assert(strcmp(esc_shell("a | b", buffer), "\"a | b\"") == 0);
+
+	/* parentheses - requires quoting */
+	assert(strcmp(esc_shell("(", buffer), "\"(\"") == 0);
+	assert(strcmp(esc_shell(")", buffer), "\")\"") == 0);
+	assert(strcmp(esc_shell("(test)", buffer), "\"(test)\"") == 0);
+	assert(strcmp(esc_shell("file (1)", buffer), "\"file (1)\"") == 0);
+	assert(strcmp(esc_shell("file(copy)", buffer), "\"file(copy)\"") == 0);
+
+	/* angle brackets - requires quoting */
+	assert(strcmp(esc_shell("<", buffer), "\"<\"") == 0);
+	assert(strcmp(esc_shell(">", buffer), "\">\"") == 0);
+	assert(strcmp(esc_shell("a<b>c", buffer), "\"a<b>c\"") == 0);
+	assert(strcmp(esc_shell("file > output", buffer), "\"file > output\"") == 0);
+
+	/* caret - requires quoting */
+	assert(strcmp(esc_shell("^", buffer), "\"^\"") == 0);
+	assert(strcmp(esc_shell("test^test", buffer), "\"test^test\"") == 0);
+	assert(strcmp(esc_shell("a ^ b", buffer), "\"a ^ b\"") == 0);
+
+	/* multiple special chars - requires quoting */
+	assert(strcmp(esc_shell("&|()<>^", buffer), "\"&|()<>^\"") == 0);
+	assert(strcmp(esc_shell("test&|test", buffer), "\"test&|test\"") == 0);
+	assert(strcmp(esc_shell("a & b | c", buffer), "\"a & b | c\"") == 0);
+
+	/* percent sign - requires quoting */
+	assert(strcmp(esc_shell("%", buffer), "\"%\"") == 0);
+	assert(strcmp(esc_shell("%%", buffer), "\"%%\"") == 0);
+	assert(strcmp(esc_shell("%PATH%", buffer), "\"%PATH%\"") == 0);
+	assert(strcmp(esc_shell("test%var%test", buffer), "\"test%var%test\"") == 0);
+	assert(strcmp(esc_shell("%PATH% file", buffer), "\"%PATH% file\"") == 0);
+
+	/* exclamation mark - requires quoting */
+	assert(strcmp(esc_shell("!", buffer), "\"!\"") == 0);
+	assert(strcmp(esc_shell("!VAR!", buffer), "\"!VAR!\"") == 0);
+	assert(strcmp(esc_shell("test!test", buffer), "\"test!test\"") == 0);
+	assert(strcmp(esc_shell("hello !world!", buffer), "\"hello !world!\"") == 0);
+
+	/* equals sign - requires quoting */
+	assert(strcmp(esc_shell("=", buffer), "\"=\"") == 0);
+	assert(strcmp(esc_shell("VAR=value", buffer), "\"VAR=value\"") == 0);
+	assert(strcmp(esc_shell("a=b", buffer), "\"a=b\"") == 0);
+
+	/* semicolon - requires quoting */
+	assert(strcmp(esc_shell(";", buffer), "\";\"") == 0);
+	assert(strcmp(esc_shell("cmd1;cmd2", buffer), "\"cmd1;cmd2\"") == 0);
+
+	/* backslash - no quotes needed when alone or in path */
+	assert(strcmp(esc_shell("\\", buffer), "\\") == 0);
+	assert(strcmp(esc_shell("C:\\", buffer), "C:\\") == 0);
+	assert(strcmp(esc_shell("C:\\Users", buffer), "C:\\Users") == 0);
+	assert(strcmp(esc_shell("path\\to\\file", buffer), "path\\to\\file") == 0);
+	assert(strcmp(esc_shell("C:\\folder\\", buffer), "C:\\folder\\") == 0);
+
+	/* backslash with space - requires quoting, normal backslash inside */
+	assert(strcmp(esc_shell("\\ ", buffer), "\"\\ \"") == 0);
+	assert(strcmp(esc_shell("C:\\ ", buffer), "\"C:\\ \"") == 0);
+	assert(strcmp(esc_shell("C:\\Program Files", buffer), "\"C:\\Program Files\"") == 0);
+
+	/* trailing backslash with quotes - backslashes before closing quote must be doubled */
+	assert(strcmp(esc_shell("C:\\folder\\ ", buffer), "\"C:\\folder\\ \"") == 0);
+	assert(strcmp(esc_shell("path\\ ", buffer), "\"path\\ \"") == 0);
+	assert(strcmp(esc_shell("C:\\My Documents\\", buffer), "\"C:\\My Documents\\\\\"") == 0);
+
+	/* backslash before embedded quote - backslash before quote must be doubled */
+	assert(strcmp(esc_shell("C:\\\"test\"", buffer), "\"C:\\\\\\\"test\\\"\"") == 0);
+	assert(strcmp(esc_shell("path\\\"file\"", buffer), "\"path\\\\\\\"file\\\"\"") == 0);
+
+	/* multiple trailing backslashes before end with quotes */
+	assert(strcmp(esc_shell("test\\\\ ", buffer), "\"test\\\\ \"") == 0);
+	assert(strcmp(esc_shell("path\\\\\\\\ ", buffer), "\"path\\\\\\\\ \"") == 0);
+
+	/* backslash NOT before quote - normal backslash */
+	assert(strcmp(esc_shell("test\\file ", buffer), "\"test\\file \"") == 0);
+	assert(strcmp(esc_shell("a\\b c", buffer), "\"a\\b c\"") == 0);
+
+	/* control characters - require quoting */
+	assert(strcmp(esc_shell("\x01", buffer), "\"\x01\"") == 0);
+	assert(strcmp(esc_shell("\x1F", buffer), "\"\x1F\"") == 0);
+	assert(strcmp(esc_shell("\x7F", buffer), "\"\x7F\"") == 0); /* DEL character */
+	assert(strcmp(esc_shell("test\x01test", buffer), "\"test\x01test\"") == 0);
+
+	/* complex real-world examples */
+	assert(strcmp(esc_shell("C:\\Program Files\\App", buffer), "\"C:\\Program Files\\App\"") == 0);
+	assert(strcmp(esc_shell("C:\\Program Files (x86)\\", buffer), "\"C:\\Program Files (x86)\\\\\"") == 0);
+	assert(strcmp(esc_shell("file (copy).txt", buffer), "\"file (copy).txt\"") == 0);
+	assert(strcmp(esc_shell("setup-v1.0.exe", buffer), "setup-v1.0.exe") == 0);
+	assert(strcmp(esc_shell("setup v1.0.exe", buffer), "\"setup v1.0.exe\"") == 0);
+
+	/* mixed quotes and special chars */
+	assert(strcmp(esc_shell("say \"hi\" & exit", buffer), "\"say \\\"hi\\\" & exit\"") == 0);
+	assert(strcmp(esc_shell("test \"a|b\"", buffer), "\"test \\\"a|b\\\"\"") == 0);
+
+	/* empty string */
+	assert(strcmp(esc_shell("", buffer), "") == 0);
+
+	/* all safe characters that don't need escaping */
+	assert(strcmp(esc_shell("abcdefghijklmnopqrstuvwxyz", buffer), "abcdefghijklmnopqrstuvwxyz") == 0);
+	assert(strcmp(esc_shell("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buffer), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0);
+	assert(strcmp(esc_shell("0123456789", buffer), "0123456789") == 0);
+	assert(strcmp(esc_shell("._-+,@:", buffer), "._-+,@:") == 0);
+#else
+	/* basic cases - no special characters */
+	assert(strcmp(esc_shell("simple", buffer), "simple") == 0);
+	assert(strcmp(esc_shell("file.txt", buffer), "file.txt") == 0);
+	assert(strcmp(esc_shell("file123", buffer), "file123") == 0);
+	assert(strcmp(esc_shell("file_name-test.doc", buffer), "file_name-test.doc") == 0);
+	assert(strcmp(esc_shell(",._+:@/-", buffer), ",._+:@/-") == 0);
+	assert(strcmp(esc_shell("/usr/local/bin", buffer), "/usr/local/bin") == 0);
+
+	/* empty string */
+	assert(strcmp(esc_shell("", buffer), "") == 0);
+
+	/* space - escape with backslash */
+	assert(strcmp(esc_shell(" ", buffer), "\\ ") == 0);
+	assert(strcmp(esc_shell("file name.txt", buffer), "file\\ name.txt") == 0);
+	assert(strcmp(esc_shell("my document.doc", buffer), "my\\ document.doc") == 0);
+	assert(strcmp(esc_shell("  spaces  ", buffer), "\\ \\ spaces\\ \\ ") == 0);
+	assert(strcmp(esc_shell("a b c", buffer), "a\\ b\\ c") == 0);
+
+	/* tab - escape with backslash */
+	assert(strcmp(esc_shell("\t", buffer), "\\\t") == 0);
+	assert(strcmp(esc_shell("file\tname", buffer), "file\\\tname") == 0);
+	assert(strcmp(esc_shell("\t\t", buffer), "\\\t\\\t") == 0);
+
+	/* newline - escape with backslash */
+	assert(strcmp(esc_shell("\n", buffer), "\\\n") == 0);
+	assert(strcmp(esc_shell("line1\nline2", buffer), "line1\\\nline2") == 0);
+	assert(strcmp(esc_shell("\n\n", buffer), "\\\n\\\n") == 0);
+
+	/* carriage return - escape with backslash */
+	assert(strcmp(esc_shell("\r", buffer), "\\\r") == 0);
+	assert(strcmp(esc_shell("text\r\n", buffer), "text\\\r\\\n") == 0);
+
+	/* tilde (home directory expansion) */
+	assert(strcmp(esc_shell("~", buffer), "\\~") == 0);
+	assert(strcmp(esc_shell("~/file", buffer), "\\~/file") == 0);
+	assert(strcmp(esc_shell("file~name", buffer), "file\\~name") == 0);
+	assert(strcmp(esc_shell("~user", buffer), "\\~user") == 0);
+
+	/* backtick (command substitution) */
+	assert(strcmp(esc_shell("`", buffer), "\\`") == 0);
+	assert(strcmp(esc_shell("`command`", buffer), "\\`command\\`") == 0);
+	assert(strcmp(esc_shell("test`test", buffer), "test\\`test") == 0);
+	assert(strcmp(esc_shell("``", buffer), "\\`\\`") == 0);
+
+	/* hash (comment) */
+	assert(strcmp(esc_shell("#", buffer), "\\#") == 0);
+	assert(strcmp(esc_shell("#comment", buffer), "\\#comment") == 0);
+	assert(strcmp(esc_shell("file#name", buffer), "file\\#name") == 0);
+	assert(strcmp(esc_shell("test#123", buffer), "test\\#123") == 0);
+
+	/* dollar sign (variable expansion) */
+	assert(strcmp(esc_shell("$", buffer), "\\$") == 0);
+	assert(strcmp(esc_shell("$$", buffer), "\\$\\$") == 0);
+	assert(strcmp(esc_shell("$VAR", buffer), "\\$VAR") == 0);
+	assert(strcmp(esc_shell("${VAR}", buffer), "\\$\\{VAR\\}") == 0);
+	assert(strcmp(esc_shell("test$test", buffer), "test\\$test") == 0);
+	assert(strcmp(esc_shell("$1", buffer), "\\$1") == 0);
+	assert(strcmp(esc_shell("$PATH", buffer), "\\$PATH") == 0);
+
+	/* ampersand (background job) */
+	assert(strcmp(esc_shell("&", buffer), "\\&") == 0);
+	assert(strcmp(esc_shell("&&", buffer), "\\&\\&") == 0);
+	assert(strcmp(esc_shell("file&name", buffer), "file\\&name") == 0);
+	assert(strcmp(esc_shell("a&b&c", buffer), "a\\&b\\&c") == 0);
+	assert(strcmp(esc_shell("cmd1 & cmd2", buffer), "cmd1\\ \\&\\ cmd2") == 0);
+
+	/* asterisk (wildcard) */
+	assert(strcmp(esc_shell("*", buffer), "\\*") == 0);
+	assert(strcmp(esc_shell("**", buffer), "\\*\\*") == 0);
+	assert(strcmp(esc_shell("*.txt", buffer), "\\*.txt") == 0);
+	assert(strcmp(esc_shell("file*name", buffer), "file\\*name") == 0);
+	assert(strcmp(esc_shell("test*", buffer), "test\\*") == 0);
+
+	/* parentheses (subshell) */
+	assert(strcmp(esc_shell("(", buffer), "\\(") == 0);
+	assert(strcmp(esc_shell(")", buffer), "\\)") == 0);
+	assert(strcmp(esc_shell("()", buffer), "\\(\\)") == 0);
+	assert(strcmp(esc_shell("(test)", buffer), "\\(test\\)") == 0);
+	assert(strcmp(esc_shell("file(1)", buffer), "file\\(1\\)") == 0);
+	assert(strcmp(esc_shell("(a)(b)", buffer), "\\(a\\)\\(b\\)") == 0);
+
+	/* backslash (escape character) */
+	assert(strcmp(esc_shell("\\", buffer), "\\\\") == 0);
+	assert(strcmp(esc_shell("\\\\", buffer), "\\\\\\\\") == 0);
+	assert(strcmp(esc_shell("path\\to\\file", buffer), "path\\\\to\\\\file") == 0);
+	assert(strcmp(esc_shell("test\\test", buffer), "test\\\\test") == 0);
+	assert(strcmp(esc_shell("a\\b\\c", buffer), "a\\\\b\\\\c") == 0);
+
+	/* pipe (pipeline) */
+	assert(strcmp(esc_shell("|", buffer), "\\|") == 0);
+	assert(strcmp(esc_shell("||", buffer), "\\|\\|") == 0);
+	assert(strcmp(esc_shell("file|name", buffer), "file\\|name") == 0);
+	assert(strcmp(esc_shell("a|b|c", buffer), "a\\|b\\|c") == 0);
+	assert(strcmp(esc_shell("cmd1 | cmd2", buffer), "cmd1\\ \\|\\ cmd2") == 0);
+
+	/* square brackets (wildcard) */
+	assert(strcmp(esc_shell("[", buffer), "\\[") == 0);
+	assert(strcmp(esc_shell("]", buffer), "\\]") == 0);
+	assert(strcmp(esc_shell("[]", buffer), "\\[\\]") == 0);
+	assert(strcmp(esc_shell("[abc]", buffer), "\\[abc\\]") == 0);
+	assert(strcmp(esc_shell("file[1]", buffer), "file\\[1\\]") == 0);
+	assert(strcmp(esc_shell("[0-9]", buffer), "\\[0-9\\]") == 0);
+
+	/* curly braces (brace expansion) */
+	assert(strcmp(esc_shell("{", buffer), "\\{") == 0);
+	assert(strcmp(esc_shell("}", buffer), "\\}") == 0);
+	assert(strcmp(esc_shell("{}", buffer), "\\{\\}") == 0);
+	assert(strcmp(esc_shell("{a,b,c}", buffer), "\\{a,b,c\\}") == 0);
+	assert(strcmp(esc_shell("file{1,2}", buffer), "file\\{1,2\\}") == 0);
+	assert(strcmp(esc_shell("{1..10}", buffer), "\\{1..10\\}") == 0);
+
+	/* semicolon (command separator) */
+	assert(strcmp(esc_shell(";", buffer), "\\;") == 0);
+	assert(strcmp(esc_shell(";;", buffer), "\\;\\;") == 0);
+	assert(strcmp(esc_shell("cmd1;cmd2", buffer), "cmd1\\;cmd2") == 0);
+	assert(strcmp(esc_shell("test;test", buffer), "test\\;test") == 0);
+	assert(strcmp(esc_shell("a; b", buffer), "a\\;\\ b") == 0);
+
+	/* single quote */
+	assert(strcmp(esc_shell("'", buffer), "\\'") == 0);
+	assert(strcmp(esc_shell("''", buffer), "\\'\\'") == 0);
+	assert(strcmp(esc_shell("'test'", buffer), "\\'test\\'") == 0);
+	assert(strcmp(esc_shell("file'name", buffer), "file\\'name") == 0);
+	assert(strcmp(esc_shell("it's", buffer), "it\\'s") == 0);
+
+	/* double quote */
+	assert(strcmp(esc_shell("\"", buffer), "\\\"") == 0);
+	assert(strcmp(esc_shell("\"\"", buffer), "\\\"\\\"") == 0);
+	assert(strcmp(esc_shell("\"test\"", buffer), "\\\"test\\\"") == 0);
+	assert(strcmp(esc_shell("file\"name", buffer), "file\\\"name") == 0);
+	assert(strcmp(esc_shell("say \"hi\"", buffer), "say\\ \\\"hi\\\"") == 0);
+
+	/* angle brackets (redirection) */
+	assert(strcmp(esc_shell("<", buffer), "\\<") == 0);
+	assert(strcmp(esc_shell(">", buffer), "\\>") == 0);
+	assert(strcmp(esc_shell("<<", buffer), "\\<\\<") == 0);
+	assert(strcmp(esc_shell(">>", buffer), "\\>\\>") == 0);
+	assert(strcmp(esc_shell("a<b>c", buffer), "a\\<b\\>c") == 0);
+	assert(strcmp(esc_shell("file>output", buffer), "file\\>output") == 0);
+	assert(strcmp(esc_shell("cmd < in > out", buffer), "cmd\\ \\<\\ in\\ \\>\\ out") == 0);
+
+	/* question mark (wildcard) */
+	assert(strcmp(esc_shell("?", buffer), "\\?") == 0);
+	assert(strcmp(esc_shell("??", buffer), "\\?\\?") == 0);
+	assert(strcmp(esc_shell("file?.txt", buffer), "file\\?.txt") == 0);
+	assert(strcmp(esc_shell("test?test", buffer), "test\\?test") == 0);
+	assert(strcmp(esc_shell("file??", buffer), "file\\?\\?") == 0);
+
+	/* equals sign (assignment in some contexts) */
+	assert(strcmp(esc_shell("=", buffer), "\\=") == 0);
+	assert(strcmp(esc_shell("==", buffer), "\\=\\=") == 0);
+	assert(strcmp(esc_shell("VAR=value", buffer), "VAR\\=value") == 0);
+	assert(strcmp(esc_shell("a=b", buffer), "a\\=b") == 0);
+	assert(strcmp(esc_shell("PATH=/usr/bin", buffer), "PATH\\=/usr/bin") == 0);
+
+	/* exclamation mark (history expansion) */
+	assert(strcmp(esc_shell("!", buffer), "\\!") == 0);
+	assert(strcmp(esc_shell("!!", buffer), "\\!\\!") == 0);
+	assert(strcmp(esc_shell("test!test", buffer), "test\\!test") == 0);
+	assert(strcmp(esc_shell("!$", buffer), "\\!\\$") == 0);
+	assert(strcmp(esc_shell("!123", buffer), "\\!123") == 0);
+
+	/* control characters (0x01-0x1F) - escape with backslash */
+	assert(strcmp(esc_shell("\x01", buffer), "\\\x01") == 0);
+	assert(strcmp(esc_shell("\x02", buffer), "\\\x02") == 0);
+	assert(strcmp(esc_shell("\x1F", buffer), "\\\x1F") == 0);
+	assert(strcmp(esc_shell("test\x01test", buffer), "test\\\x01test") == 0);
+
+	/* DEL character (0x7F) */
+	assert(strcmp(esc_shell("\x7F", buffer), "\\\x7F") == 0);
+	assert(strcmp(esc_shell("test\x7Ftest", buffer), "test\\\x7Ftest") == 0);
+
+	/* multiple special characters combined */
+	assert(strcmp(esc_shell("$VAR & $OTHER", buffer), "\\$VAR\\ \\&\\ \\$OTHER") == 0);
+	assert(strcmp(esc_shell("*.txt | grep test", buffer), "\\*.txt\\ \\|\\ grep\\ test") == 0);
+	assert(strcmp(esc_shell("file (1) [copy].txt", buffer), "file\\ \\(1\\)\\ \\[copy\\].txt") == 0);
+	assert(strcmp(esc_shell("a & b | c", buffer), "a\\ \\&\\ b\\ \\|\\ c") == 0);
+	assert(strcmp(esc_shell("cmd1; cmd2 && cmd3", buffer), "cmd1\\;\\ cmd2\\ \\&\\&\\ cmd3") == 0);
+
+	/* complex real-world examples */
+	assert(strcmp(esc_shell("/home/user/My Documents", buffer), "/home/user/My\\ Documents") == 0);
+	assert(strcmp(esc_shell("/path/to/file (copy).txt", buffer), "/path/to/file\\ \\(copy\\).txt") == 0);
+	assert(strcmp(esc_shell("~/project/file-v1.0.tar.gz", buffer), "\\~/project/file-v1.0.tar.gz") == 0);
+	assert(strcmp(esc_shell("$(whoami)@$(hostname)", buffer), "\\$\\(whoami\\)@\\$\\(hostname\\)") == 0);
+	assert(strcmp(esc_shell("test && echo 'done'", buffer), "test\\ \\&\\&\\ echo\\ \\'done\\'") == 0);
+	assert(strcmp(esc_shell("file #1 [important].txt", buffer), "file\\ \\#1\\ \\[important\\].txt") == 0);
+	assert(strcmp(esc_shell("/tmp/test (1).txt", buffer), "/tmp/test\\ \\(1\\).txt") == 0);
+	assert(strcmp(esc_shell("var=$HOME/bin:$PATH", buffer), "var\\=\\$HOME/bin:\\$PATH") == 0);
+
+	/* edge cases with multiple escapes */
+	assert(strcmp(esc_shell("a\\ b", buffer), "a\\\\\\ b") == 0);
+	assert(strcmp(esc_shell("'\"test\"'", buffer), "\\'\\\"test\\\"\\'") == 0);
+	assert(strcmp(esc_shell("$(echo \"test\")", buffer), "\\$\\(echo\\ \\\"test\\\"\\)") == 0);
+
+	/* all safe characters that don't need escaping */
+	assert(strcmp(esc_shell("abcdefghijklmnopqrstuvwxyz", buffer), "abcdefghijklmnopqrstuvwxyz") == 0);
+	assert(strcmp(esc_shell("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buffer), "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0);
+	assert(strcmp(esc_shell("0123456789", buffer), "0123456789") == 0);
+	assert(strcmp(esc_shell("._-+,@:", buffer), "._-+,@:") == 0);
+	assert(strcmp(esc_shell("/path/to/file", buffer), "/path/to/file") == 0);
+	assert(strcmp(esc_shell("simple_file-name.txt", buffer), "simple_file-name.txt") == 0);
+
+	/* file extensions and versions */
+	assert(strcmp(esc_shell("file.tar.gz", buffer), "file.tar.gz") == 0);
+	assert(strcmp(esc_shell("app-v1.2.3.deb", buffer), "app-v1.2.3.deb") == 0);
+	assert(strcmp(esc_shell("test_2024-01-01.log", buffer), "test_2024-01-01.log") == 0);
+#endif
+
+	random_seed(0);
+	assert(random_u8() == 0xAF);
+	assert(random_u64() == 0x6E789E6AA1B965F4ULL);
+}
+
+/**
+ * Runs a fast self-test for functionality that could be miscompiled,
+ * primarily to verify inline assembly clobber and ABI requirements.
+ */
 void selftest(void)
 {
 	log_tag("selftest:\n");
@@ -1661,29 +2214,8 @@ void selftest(void)
 	/* hardware and software crc32c */
 	test_crc32c();
 
-	/* split parity layout and size calculations */
-	test_parity();
-
 	/* tommyds data structures (hash tables, lists, search, sort) */
 	test_tommy();
-
-	/* buffered streaming i/o and crc verification */
-	test_stream();
-
-	/* wildcard and path pattern matching */
-	test_wnmatch();
-
-	/* filter pattern parsing */
-	test_filter();
-
-	/* pathname import and export */
-	test_path();
-
-	/* smartctl output parsing */
-	test_parse_smartctl();
-
-	/* smart attribute ignore rules */
-	test_smart_ignore();
 
 	/* cauchy raid module self-test */
 	raid_mode(RAID_MODE_CAUCHY_RAID);
@@ -1744,159 +2276,66 @@ void selftest(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* vandermonde raid parity generation with 32 data disks */
-	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 32, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* vandermonde raid parity generation with a single data disk */
-	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, 1, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test single data disk\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* vandermonde raid parity generation with maximum data disks */
-	if (raid_test_par(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Vandermonde RAID test max data disks\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* vandermonde raid recovery with combinations of missing data disks and parities */
-	if (raid_test_rec(RAID_MODE_VANDERMONDE_RAID, 12, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed REC Vandermonde RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* vandermonde raid tail recovery across all data disk counts up to maximum */
-	if (raid_test_tail(RAID_MODE_VANDERMONDE_RAID, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed TAIL Vandermonde RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy raid matrix invertibility and polynomial checks */
-	if (raid_test_poly(RAID_MODE_CAUCHY_RAID) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed POLY Cauchy RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy raid parity generation with 32 data disks */
-	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 32, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy raid parity generation with a single data disk */
-	if (raid_test_par(RAID_MODE_CAUCHY_RAID, 1, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test single data disk\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy raid parity generation with maximum data disks */
-	if (raid_test_par(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy RAID test max data disks\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy raid recovery with combinations of missing data disks and parities */
-	if (raid_test_rec(RAID_MODE_CAUCHY_RAID, 12, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed REC Cauchy RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy raid tail recovery across all data disk counts up to maximum */
-	if (raid_test_tail(RAID_MODE_CAUCHY_RAID, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed TAIL Cauchy RAID test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy aes matrix invertibility and polynomial checks */
-	if (raid_test_poly(RAID_MODE_CAUCHY_AES) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed POLY Cauchy AES test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy aes parity generation with 32 data disks */
-	if (raid_test_par(RAID_MODE_CAUCHY_AES, 32, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy aes parity generation with a single data disk */
-	if (raid_test_par(RAID_MODE_CAUCHY_AES, 1, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test single data disk\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy aes parity generation with maximum data disks */
-	if (raid_test_par(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed GEN Cauchy AES test max data disks\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy aes recovery with combinations of missing data disks and parities */
-	if (raid_test_rec(RAID_MODE_CAUCHY_AES, 12, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed REC Cauchy AES test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* cauchy aes tail recovery across all data disk counts up to maximum */
-	if (raid_test_tail(RAID_MODE_CAUCHY_AES, RAID_DATA_MAX, 256) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Failed TAIL Cauchy AES test\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* verify raid_mode get/set behavior */
-	int cur = raid_mode(RAID_MODE_GET);
-	int prev = raid_mode(RAID_MODE_CAUCHY_AES);
-	if (prev != cur) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "raid_mode set did not return previous mode\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-	if (raid_mode(RAID_MODE_GET) != RAID_MODE_CAUCHY_AES) {
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "raid_mode GET did not return active mode\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
 	/* restore default mode */
 	raid_mode(RAID_MODE_CAUCHY_RAID);
+}
+
+/**
+ * Runs the extensive test suite, including all unit tests and selftest.
+ */
+void test(int argc, char* argv[])
+{
+	uint64_t t_start;
+	uint64_t t_selftest_start;
+	uint64_t t_selftest_end;
+
+	/* special testing code */
+	if (argc < 2 || strcmp(argv[1], "test") != 0)
+		return;
+
+	t_start = os_tick_ms();
+
+	lock_init();
+	crc32c_init();
+	raid_init();
+
+	msg_progress("Test...\n");
+
+	test_misc(argc, argv);
+
+	test_raid();
+
+	/* split parity layout and size calculations */
+	test_parity();
+
+	/* buffered streaming i/o and crc verification */
+	test_stream();
+
+	/* wildcard and path pattern matching */
+	test_wnmatch();
+
+	/* filter pattern parsing */
+	test_filter();
+
+	/* pathname import and export */
+	test_path();
+
+	/* smartctl output parsing */
+	test_parse_smartctl();
+
+	/* smart attribute ignore rules */
+	test_smart_ignore();
+
+	t_selftest_start = os_tick_ms();
+	selftest();
+	t_selftest_end = os_tick_ms();
+
+	printf("Test: %" PRIu64 " ms\n", (t_selftest_start - t_start));
+	printf("Selftest: %" PRIu64 " ms\n", (t_selftest_end - t_selftest_start));
+	printf("Everything OK\n");
+
+	lock_done();
+
+	exit(EXIT_SUCCESS);
 }
 
