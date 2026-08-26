@@ -2370,7 +2370,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			ret = sgetb32(f, &v_mtime_nsec);
-			if (ret < 0) {
+			if (ret < 0 || v_mtime_nsec > 1000000000) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				os_abort();
@@ -2808,7 +2808,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				}
 
 				ret = sgetb32(f, &v_mtime_nsec);
-				if (ret < 0) {
+				if (ret < 0 || v_mtime_nsec > 1000000000) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					os_abort();
