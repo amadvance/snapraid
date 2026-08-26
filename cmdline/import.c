@@ -183,10 +183,16 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 			/* if we are in a rehash state */
 			if (state->prevhash != HASH_UNDEFINED) {
 				/*
-				 * The deallocation record doesn't identify which hash algorithm
-				 * produced the stored digest, so index it under both algorithms.
-				 * This is safe because state_import_fetch() hashes the candidate
-				 * bytes with the requested algorithm before accepting them.
+				 * The deallocation record stores only one digest per block without
+				 * recording which hash algorithm generated it. To avoid disk I/O at
+				 * startup, index the stored digest under both algorithms.
+				 *
+				 * This is safe against false positives because state_import_fetch()
+				 * validates candidate bytes with the requested algorithm upon read.
+				 *
+				 * Note that cross-generation matches (an old-hash deallocation supplying
+				 * a new-hash block, or vice-versa) will miss in hash lookup and fall
+				 * back to parity reconstruction. Only same-generation matches will succeed.
 				 */
 				memcpy(block->prevhash, block->hash, BLOCK_HASH_SIZE);
 				tommy_hashdyn_insert(&state->previmportset, &block->prevnodeset, block, import_block_hash(block->prevhash));
