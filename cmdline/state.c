@@ -2018,7 +2018,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 
 #if SIZE_MAX == UINT32_MAX
 	block_off_t blockmax = parity_allocated_size(state);
-	if (blockmax > (block_off_t)(SIZE_MAX - 4096)) {
+	if (blockmax > (block_off_t)(SIZE_MAX / sizeof(snapraid_info))) {
 		/* LCOV_EXCL_START */
 		log_fatal(ESOFT, "Array with %" PRIu64 " blocks in '%s' is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", blockmax, path);
 		exit(EXIT_FAILURE);
@@ -2601,38 +2601,45 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					}
 
 					info = info_make(t64 + v_oldest, bad, rehash, justsynced);
+					if (!info) {
+						/* LCOV_EXCL_START */
+						decoding_error(path, f);
+						log_fatal(EINTERNAL, "Internal inconsistency: Missing info!\n");
+						os_abort();
+						/* LCOV_EXCL_STOP */
+					}
 
 					bucket_insert(&bucket_hash, t64 + v_oldest, v_count, justsynced);
+
+					while (v_count) {
+						/* insert the info in the array */
+						info_set(&state->infoarr, v_pos, info);
+
+						if (fs_is_block_unsynced(state, v_pos))
+							++count_unsynced;
+
+						/* go to next block */
+						++v_pos;
+						--v_count;
+					}
 				} else {
-					info = 0;
-				}
-
-				while (v_count) {
-					/* insert the info in the array */
-					info_set(&state->infoarr, v_pos, info);
-
-					/* ensure that an info is present only for used positions */
-					if (fs_info_is_required(state, v_pos)) {
-						if (!info) {
+					while (v_count) {
+						/* ensure that an info is present only for used positions */
+						if (fs_info_is_required(state, v_pos)) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
 							log_fatal(EINTERNAL, "Internal inconsistency: Missing info!\n");
 							os_abort();
 							/* LCOV_EXCL_STOP */
 						}
-					} else {
-						/*
-						 * Extra info are accepted for backward compatibility
-						 * they are discarded at the first write
-						 */
+
+						if (fs_is_block_unsynced(state, v_pos))
+							++count_unsynced;
+
+						/* go to next block */
+						++v_pos;
+						--v_count;
 					}
-
-					if (fs_is_block_unsynced(state, v_pos))
-						++count_unsynced;
-
-					/* go to next block */
-					++v_pos;
-					--v_count;
 				}
 			}
 		} else if (c == 'h') {
@@ -3131,6 +3138,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+#if SIZE_MAX == UINT32_MAX
+			if (blockmax > (block_off_t)(SIZE_MAX / sizeof(snapraid_info))) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ESOFT, "Array with %" PRIu64 " blocks in '%s' is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", blockmax, path);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+#endif
 		} else if (c == 'm' || c == 'M') {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
