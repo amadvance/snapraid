@@ -70,4 +70,16 @@ jobs:
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
       - run: make all dist check
-
+  build-freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y autoconf automake gmake
+          run: |
+            autoreconf -i
+            ./configure --enable-warning-as-error MAKE=gmake
+            gmake all dist check

@@ -28,8 +28,8 @@ SDE = sde
 else
 SDE = sde64
 endif
-CC = gcc
-LD = ld
+CC ?= cc
+LD ?= ld
 CFLAGS = -I.. -Wall -Wextra -g
 ifeq ($(COVERAGE),)
 CFLAGS += -O2
