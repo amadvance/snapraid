@@ -1593,6 +1593,7 @@ Pattern
 	For example, the pattern `src/**/main.js` matches `src/main.js` (skipping
 	zero directories), `src/ui/main.js` (skipping one directory), and
 	`src/ui/components/main.js` (skipping two directories).
+	The standalone form `/**/` is not accepted as a complete pattern.
 
 	Character classes using square brackets match a single character from a
 	specified set or range. Like the other single character patterns, they do

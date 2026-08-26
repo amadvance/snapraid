@@ -45,8 +45,8 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 	pathimport(filter->root, sizeof(filter->root), root);
 	filter->direction = direction;
 
-	/* reject the root directory as an invalid pattern */
-	if (pathcmp(filter->pattern, "/") == 0) {
+	/* reject the root directory and standalone absolute directory wildcard as invalid patterns */
+	if (pathcmp(filter->pattern, "/") == 0 || pathcmp(filter->pattern, "/**/") == 0) {
 		free(filter);
 		return 0;
 	}

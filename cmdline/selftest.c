@@ -896,6 +896,44 @@ static void test_wnmatch(void)
 	}
 }
 
+struct {
+	const char* pattern;
+	int valid;
+} FILTER_TEST[] = {
+	/* invalid standalone root and standalone double-star patterns */
+	{ "/", 0 },
+	{ "/**/", 0 },
+
+	/* valid single and multi-level patterns */
+	{ "/foo/", 1 },
+	{ "/foo/**/", 1 },
+	{ "/**/foo/", 1 },
+	{ "/foo/**/bar", 1 },
+	{ "/foo/**/bar/", 1 },
+	{ "foo/**/bar", 1 },
+	{ "foo/**/", 1 },
+	{ "**", 1 },
+	{ "**/", 1 },
+
+	{ 0, 0 }
+};
+
+static void test_filter(void)
+{
+	for (int i = 0; FILTER_TEST[i].pattern; ++i) {
+		struct snapraid_filter* f = filter_alloc_file(1, "", FILTER_TEST[i].pattern);
+		if ((f != 0) != FILTER_TEST[i].valid) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed filter test '%s', expected %s\n",
+				FILTER_TEST[i].pattern, FILTER_TEST[i].valid ? "valid" : "invalid");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		if (f != 0)
+			filter_free(f);
+	}
+}
+
 static void test_parse_smartctl(void)
 {
 	char smartctl[SMART_MAX];
@@ -1168,6 +1206,9 @@ void selftest(void)
 
 	/* wildcard and path pattern matching */
 	test_wnmatch();
+
+	/* filter pattern parsing */
+	test_filter();
 
 	/* smartctl output parsing */
 	test_parse_smartctl();
