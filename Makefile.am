@@ -8,7 +8,7 @@ if HAVE_DISK_ARBITRATION
 snapraid_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
 mktest_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
 mkstream_LDFLAGS = -framework CoreFoundation -framework DiskArbitration
-endif
+endif # HAVE_DISK_ARBITRATION
 
 # Windows
 if HOST_WINDOWS
@@ -20,7 +20,7 @@ resource_res.o: cmdline/resource.rc cmdline/resource.manifest
 	$(WINDRES) --include-dir=. --include-dir=$(srcdir) $< -o $@
 
 CLEANFILES += resource_res.o
-endif
+endif # HOST_WINDOWS
 
 snapraid_SOURCES = \
 	raid/raid.c \
@@ -304,15 +304,15 @@ CHECKFLAGS_SNAP = --test-skip-device --test-skip-self --test-io-advise-none --te
 # Short check options
 if HAVE_MEMORY_CHECKER
 SHORTCHECK = 1
-endif
+endif # HAVE_MEMORY_CHECKER
 SHORTCHECK ?= 0
 
 # Number of files to create
 if HAVE_POSIX
 CHECKCOUNT_DEFAULT = 1000
-else
+else # HAVE_POSIX
 CHECKCOUNT_DEFAULT = 500
-endif
+endif # HAVE_POSIX
 
 CHECKCOUNT = $(if $(filter 1,$(SHORTCHECK)),500,$(CHECKCOUNT_DEFAULT))
 CHECKSIZE = $(if $(filter 1,$(SHORTCHECK)),100,4000)
@@ -344,7 +344,7 @@ if !HAVE_POSIX
 	ln -sf $$(which rm) rm.exe
 	ln -sf $$(which mv) mv.exe
 	ln -sf $$(which touch) touch.exe
-endif
+endif # !HAVE_POSIX
 
 # Not included in main check because it requires root permissions
 snapcheck: mktest checker setupcheck
@@ -465,7 +465,7 @@ if HAVE_THREAD_CHECKER
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) scrub -p full --test-io-cache 128
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync -F --test-io-cache 1
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) scrub -p full --test-io-cache 1
-else
+else # HAVE_THREAD_CHECKER
 #### COMMAND LINE ####
 	$(MSG) Pre test
 	$(TESTENV) $(SNAPRAID) --test-skip-device -H
@@ -483,13 +483,13 @@ if HAVE_EMULATOR
 	$(TESTENV_SSE42) $(SNAPRAID) --test-skip-device -T
 	$(TESTENV_AVX2) $(SNAPRAID) --test-skip-device -T
 	$(TESTENV_AVX512) $(SNAPRAID) --test-skip-device -T
-else
+else # HAVE_EMULATOR
 # Run the self test natively
 	$(TESTENV) $(SNAPRAID) --test-skip-device -c $(CONF) status
 # Run the speed test natively
 	$(TESTENV) $(SNAPRAID) --test-skip-device -T
-endif
-endif
+endif # HAVE_EMULATOR
+endif # !HAVE_MEMORY_CHECKER
 #### EMPTY ####
 	$(MSG) Some commands with empty array
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff
@@ -507,11 +507,11 @@ endif
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) probe --test-fake-device
 if !CROSS_COMPILING
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) probe --test-fake-device -s
-endif
+endif # !CROSS_COMPILING
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --test-fake-device --test-expect-failure
 if HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) pool
-endif
+endif # HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -a check
 #### CONTROLLED ####
@@ -609,7 +609,7 @@ endif
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) status -l test.log
 if HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) pool
-endif
+endif # HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) check
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -a check
@@ -641,7 +641,7 @@ if HAVE_POSIX
 # Only in real unix, as with MingW the * trigger path replacement
 # Like /b/a* -> B:/a* and SnapRAID then complain
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) -f \\*a -f a/ -f /b/a\\* check > output.log
-endif
+endif # HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f . check > output.log
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f ./ check > output.log
 	$(MSG) Delete some files and sync
@@ -680,7 +680,7 @@ if HAVE_POSIX
 	ln -s bench/disk1/target1 bench/disk1/file_symlink1
 	ln -s bench/disk1/target1 bench/disk1/file_symlink2
 	ln -s bench/disk1/target1 bench/disk1/file_symlink3
-endif
+endif # HAVE_POSIX
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) sync
 	$(MSG) Modified hardlink scan and recovery
@@ -703,7 +703,7 @@ endif
 	cmp bench/hardlink-expected bench/disk1/b-hardlink-link
 if HAVE_POSIX
 	test bench/disk1/a-hardlink-main -ef bench/disk1/b-hardlink-link
-endif
+endif # HAVE_POSIX
 	rm bench/hardlink-expected bench/disk1/a-hardlink-main bench/disk1/b-hardlink-link
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) status
@@ -722,7 +722,7 @@ endif
 if HAVE_POSIX
 	rm bench/disk1/file_symlink1
 	ln -s bench/disk1/target2 bench/disk1/file_symlink1
-endif
+endif # HAVE_POSIX
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) sync -l ">&1"
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) check -l ">&1"
@@ -736,7 +736,7 @@ endif
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_VERBOSE) -c $(PAR1) locate -t 10K --test-fmt path > output.log
 if HAVE_POSIX
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) pool
-endif
+endif # HAVE_POSIX
 	$(MSG) Extend PAR1 to max parity with fix and check
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) fix -d 2-parity -d 3-parity -d 4-parity -d 5-parity -d 6-parity -l test.log
@@ -765,7 +765,7 @@ if HAVE_POSIX
 	if test "$$EUID" -ne 0; then \
 		$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync; \
 	fi
-endif
+endif # HAVE_POSIX
 	echo RUN > bench/disk1/RUN-SIZE
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-run "echo RUNRUN > bench/disk1/RUN-SIZE" --test-expect-failure sync
 	echo RUN > bench/disk1/RUN-TOUCH
@@ -785,7 +785,7 @@ if HAVE_POSIX
 	if test "$$EUID" -ne 0; then \
 		$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync; \
 	fi
-endif
+endif # HAVE_POSIX
 	echo HASH > bench/disk1/HASH-SIZE
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-run "echo HASHHASH > bench/disk1/HASH-SIZE" --test-expect-failure -h sync
 	echo HASH > bench/disk1/HASH-TOUCH
@@ -1028,7 +1028,7 @@ if !HAVE_MEMORY_CHECKER
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR6) fix -l test.log
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
-endif
+endif # !HAVE_MEMORY_CHECKER
 #### MULTI STEP ####
 	$(MSG) Delete some files and create some new, sync and check in multiple steps
 	rm bench/disk1/a/4*
@@ -1252,7 +1252,7 @@ endif
 	$(MSG) Sync after all the fixes
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
-endif
+endif # HAVE_THREAD_CHECKER
 	$(MSG) Regression test completed with SUCCESS!
 	$(MSG) Please ignore any error message printed above, they are expected!
 	$(MSG) Everything OK
@@ -1328,7 +1328,7 @@ if HAVE_ADVD2
 
 %.xml : %.d
 	advd2 xml < $< > $@
-endif
+endif # HAVE_ADVD2
 
 # Web distribution
 
