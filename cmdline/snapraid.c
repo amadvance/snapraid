@@ -1327,6 +1327,9 @@ int snapraid_main(int argc, char* argv[])
 	case OPERATION_LIST :
 	case OPERATION_DUP :
 	case OPERATION_POOL :
+	case OPERATION_STATUS :
+	case OPERATION_REWRITE :
+	case OPERATION_READ :
 	case OPERATION_TOUCH :
 	case OPERATION_SPINUP :
 	case OPERATION_SPINDOWN :
@@ -1334,6 +1337,7 @@ int snapraid_main(int argc, char* argv[])
 	case OPERATION_DEVICES :
 	case OPERATION_SMART :
 	case OPERATION_PROBE :
+	case OPERATION_LOCATE :
 		opt.skip_self = 1;
 		break;
 	}
