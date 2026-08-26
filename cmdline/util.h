@@ -269,7 +269,7 @@ typedef unsigned char bit_vect_t;
 
 static inline size_t bit_vect_size(size_t max)
 {
-	return (max + BIT_VECT_SIZE - 1) / BIT_VECT_SIZE;
+	return (max / BIT_VECT_SIZE) + ((max % BIT_VECT_SIZE) != 0);
 }
 
 static inline void bit_vect_set(bit_vect_t* bit_vect, size_t off)

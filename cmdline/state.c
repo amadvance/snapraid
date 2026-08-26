@@ -2004,6 +2004,16 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
 
+#if SIZE_MAX == UINT32_MAX
+	block_off_t blockmax = parity_allocated_size(state);
+	if (blockmax > (block_off_t)(SIZE_MAX - 4096)) {
+		/* LCOV_EXCL_START */
+		log_fatal(ESOFT, "Array with %" PRIu64 " blocks in '%s' is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", blockmax, path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#endif
+
 	/* check that any map has different name and position */
 	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;

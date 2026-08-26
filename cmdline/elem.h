@@ -866,7 +866,7 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
  *
  * Note that the block size if a runtime value.
  */
-static inline struct snapraid_block* file_block(struct snapraid_file* file, size_t pos)
+static inline struct snapraid_block* file_block(struct snapraid_file* file, block_off_t pos)
 {
 	unsigned char* ptr = (unsigned char*)file->blockvec;
 

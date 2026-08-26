@@ -49,12 +49,24 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	int flags;
 	unsigned block_size = state->block_size;
 	struct advise_struct advise;
+	block_off_t blockmax;
+
+	blockmax = size / block_size;
+	if (size % block_size != 0)
+		++blockmax;
+
+#if SIZE_MAX == UINT32_MAX
+	if (blockmax > (block_off_t)(SIZE_MAX / sizeof(struct snapraid_import_block))) {
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", path, blockmax);
+		exit(EXIT_FAILURE);
+	}
+#endif
 
 	file = malloc_nofail(sizeof(struct snapraid_import_file));
 	file->path = strdup_nofail(path);
 	file->size = size;
-	file->blockmax = (size + block_size - 1) / block_size;
-	file->blockimp = nalloc_nofail(file->blockmax, sizeof(struct snapraid_import_block));
+	file->blockmax = blockmax;
+	file->blockimp = nalloc_nofail((size_t)file->blockmax, sizeof(struct snapraid_import_block));
 	file->is_runtime = 1;
 
 	buffer = malloc_nofail(block_size);
@@ -148,6 +160,7 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 	char path[PATH_MAX];
 	struct snapraid_import_file* file;
 	block_off_t i;
+	block_off_t blockmax;
 	data_off_t offset;
 	data_off_t size;
 	unsigned block_size = state->block_size;
@@ -156,11 +169,22 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 	pathcat(path, sizeof(path), dealloc->sub);
 	size = dealloc->size;
 
+	blockmax = size / block_size;
+	if (size % block_size != 0)
+		++blockmax;
+
+#if SIZE_MAX == UINT32_MAX
+	if (blockmax > (block_off_t)(SIZE_MAX / sizeof(struct snapraid_import_block))) {
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", path, blockmax);
+		exit(EXIT_FAILURE);
+	}
+#endif
+
 	file = malloc_nofail(sizeof(struct snapraid_import_file));
 	file->path = strdup_nofail(path);
 	file->size = size;
-	file->blockmax = (size + block_size - 1) / block_size;
-	file->blockimp = nalloc_nofail(file->blockmax, sizeof(struct snapraid_import_block));
+	file->blockmax = blockmax;
+	file->blockimp = nalloc_nofail((size_t)file->blockmax, sizeof(struct snapraid_import_block));
 	file->is_runtime = 0;
 
 	offset = 0;
