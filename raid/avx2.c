@@ -892,235 +892,108 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 
 #endif
 
+
+
 /*
- * Recover failure of one data block using AVX2 delta implementation.
+ * Recover one data failure using selected parity with AVX2.
  *
- * Uses raid_delta_gen() and multiplies by the inverted coefficient table.
+ * Process 64 bytes per iteration (two 32-byte lanes) using only 8 YMM registers (ymm0..ymm7),
+ * sharing table broadcasts across both lanes.
  */
-static __always_inline void raid_rec1_avx2_delta(int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_avx2_1(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
-	uint8_t G;
-	uint8_t V;
+	uint8_t *src[RAID_DATA_MAX];
+	const uint8_t *S[RAID_DATA_MAX];
+	const uint8_t *R[2];
+	uint8_t G, V;
 	size_t i;
+	int d, s, ns, k;
 
-	/* setup the coefficients matrix */
+	/* setup the coefficient and invert it */
 	G = A(ip[0], id[0]);
-
-	/* invert it to solve the system of linear equations */
 	V = inv(G);
-
-	/* compute delta parity */
-	raid_delta_gen(1, id, ip, nd, size, vv);
 
 	p = v[nd + ip[0]];
 	pa = v[id[0]];
 
+	/* build the compact surviving-data list and its syndrome tables */
+	ns = 0;
+	k = 0;
+	for (d = 0; d < nd; ++d) {
+		if (k < 1 && d == id[0]) {
+			++k;
+			continue;
+		}
+		src[ns] = v[d];
+		S[ns] = &raid_gfmulpshufb[A(ip[0], d)][0][0];
+		++ns;
+	}
+	BUG_ON(k != 1);
+	BUG_ON(ns != nd - 1);
+
+	R[0] = &raid_gfmulpshufb[V][0][0];
+	R[1] = &raid_gfmulpshufb[V][1][0];
+
 	raid_avx_begin();
 
 	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm5" : : "m" (raid_gfmulpshufb[V][1][0]));
 
 	for (i = 0; i < size; i += 64) {
+		/* start syndrome with stored parity for both 32-byte lanes */
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
 		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
-		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[i]));
-		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[i + 32]));
 
-		asm volatile ("vpxor   %ymm2,%ymm0,%ymm0");
-		asm volatile ("vpxor   %ymm3,%ymm1,%ymm1");
+		for (s = 0; s < ns; ++s) {
+			const uint8_t *t = S[s];
 
-		asm volatile ("vpsrlw  $4,%ymm0,%ymm2");
-		asm volatile ("vpsrlw  $4,%ymm1,%ymm3");
+			asm volatile ("vmovdqa %0,%%ymm2" : : "m" (src[s][i]));
+			asm volatile ("vmovdqa %0,%%ymm3" : : "m" (src[s][i + 32]));
 
-		asm volatile ("vpand   %ymm7,%ymm0,%ymm0");
-		asm volatile ("vpand   %ymm7,%ymm1,%ymm1");
-		asm volatile ("vpand   %ymm7,%ymm2,%ymm2");
-		asm volatile ("vpand   %ymm7,%ymm3,%ymm3");
+			asm volatile ("vpsrlw $4,%ymm2,%ymm4");
+			asm volatile ("vpsrlw $4,%ymm3,%ymm5");
+			asm volatile ("vpand %ymm7,%ymm2,%ymm2");
+			asm volatile ("vpand %ymm7,%ymm3,%ymm3");
+			asm volatile ("vpand %ymm7,%ymm4,%ymm4");
+			asm volatile ("vpand %ymm7,%ymm5,%ymm5");
 
-		asm volatile ("vpshufb %ymm0,%ymm4,%ymm0");
-		asm volatile ("vpshufb %ymm1,%ymm4,%ymm1");
-		asm volatile ("vpshufb %ymm2,%ymm5,%ymm2");
-		asm volatile ("vpshufb %ymm3,%ymm5,%ymm3");
+			asm volatile ("vbroadcasti128 %0,%%ymm6" : : "m" (t[0]));
+			asm volatile ("vpshufb %ymm2,%ymm6,%ymm2");
+			asm volatile ("vpshufb %ymm3,%ymm6,%ymm3");
+			asm volatile ("vpxor %ymm2,%ymm0,%ymm0");
+			asm volatile ("vpxor %ymm3,%ymm1,%ymm1");
 
-		asm volatile ("vpxor   %ymm2,%ymm0,%ymm0");
-		asm volatile ("vpxor   %ymm3,%ymm1,%ymm1");
+			asm volatile ("vbroadcasti128 %0,%%ymm6" : : "m" (t[16]));
+			asm volatile ("vpshufb %ymm4,%ymm6,%ymm4");
+			asm volatile ("vpshufb %ymm5,%ymm6,%ymm5");
+			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
+			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
+		}
+
+		/* split completed syndrome in ymm0 and ymm1 */
+		asm volatile ("vpsrlw $4,%ymm0,%ymm4");
+		asm volatile ("vpsrlw $4,%ymm1,%ymm5");
+		asm volatile ("vpand %ymm7,%ymm0,%ymm0");
+		asm volatile ("vpand %ymm7,%ymm1,%ymm1");
+		asm volatile ("vpand %ymm7,%ymm4,%ymm4");
+		asm volatile ("vpand %ymm7,%ymm5,%ymm5");
+
+		/* multiply by inverse matrix V (table R) */
+		asm volatile ("vbroadcasti128 %0,%%ymm6" : : "m" (R[0][0]));
+		asm volatile ("vpshufb %ymm0,%ymm6,%ymm0");
+		asm volatile ("vpshufb %ymm1,%ymm6,%ymm1");
+
+		asm volatile ("vbroadcasti128 %0,%%ymm6" : : "m" (R[1][0]));
+		asm volatile ("vpshufb %ymm4,%ymm6,%ymm4");
+		asm volatile ("vpshufb %ymm5,%ymm6,%ymm5");
+
+		asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
+		asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
 
 		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
 		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * Recover failure of two data blocks using AVX2 delta implementation.
- *
- * Uses raid_delta_gen() and solves the 2x2 system directly on delta blocks.
- */
-static __always_inline void raid_rec2_avx2_delta(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p[2];
-	uint8_t *pa[2];
-	uint8_t G[2 * 2];
-	uint8_t V[2 * 2];
-	size_t i;
-	int j, k;
-
-	/* setup the coefficients matrix */
-	for (j = 0; j < 2; ++j)
-		for (k = 0; k < 2; ++k)
-			G[j * 2 + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, 2);
-
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	for (j = 0; j < 2; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
-	}
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
-
-	for (i = 0; i < size; i += 32) {
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[1][i]));
-		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[1][i]));
-		asm volatile ("vpxor   %ymm2,%ymm0,%ymm0");
-		asm volatile ("vpxor   %ymm3,%ymm1,%ymm1");
-
-		asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
-
-		asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
-		asm volatile ("vpsrlw  $4,%ymm0,%ymm5");
-		asm volatile ("vpand   %ymm7,%ymm0,%ymm4");
-		asm volatile ("vpand   %ymm7,%ymm5,%ymm5");
-		asm volatile ("vpshufb %ymm4,%ymm2,%ymm2");
-		asm volatile ("vpshufb %ymm5,%ymm3,%ymm3");
-		asm volatile ("vpxor   %ymm2,%ymm6,%ymm6");
-		asm volatile ("vpxor   %ymm3,%ymm6,%ymm6");
-
-		asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
-		asm volatile ("vpsrlw  $4,%ymm1,%ymm5");
-		asm volatile ("vpand   %ymm7,%ymm1,%ymm4");
-		asm volatile ("vpand   %ymm7,%ymm5,%ymm5");
-		asm volatile ("vpshufb %ymm4,%ymm2,%ymm2");
-		asm volatile ("vpshufb %ymm5,%ymm3,%ymm3");
-		asm volatile ("vpxor   %ymm2,%ymm6,%ymm6");
-		asm volatile ("vpxor   %ymm3,%ymm6,%ymm6");
-
-		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[0][i]));
-
-		asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
-
-		asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
-		asm volatile ("vpsrlw  $4,%ymm0,%ymm5");
-		asm volatile ("vpand   %ymm7,%ymm0,%ymm4");
-		asm volatile ("vpand   %ymm7,%ymm5,%ymm5");
-		asm volatile ("vpshufb %ymm4,%ymm2,%ymm2");
-		asm volatile ("vpshufb %ymm5,%ymm3,%ymm3");
-		asm volatile ("vpxor   %ymm2,%ymm6,%ymm6");
-		asm volatile ("vpxor   %ymm3,%ymm6,%ymm6");
-
-		asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
-		asm volatile ("vpsrlw  $4,%ymm1,%ymm5");
-		asm volatile ("vpand   %ymm7,%ymm1,%ymm4");
-		asm volatile ("vpand   %ymm7,%ymm5,%ymm5");
-		asm volatile ("vpshufb %ymm4,%ymm2,%ymm2");
-		asm volatile ("vpshufb %ymm5,%ymm3,%ymm3");
-		asm volatile ("vpxor   %ymm2,%ymm6,%ymm6");
-		asm volatile ("vpxor   %ymm3,%ymm6,%ymm6");
-
-		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[1][i]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * Recover failure of two data blocks using P and Q AVX2 implementation.
- *
- * Uses raid_delta_gen() and computes the analytical solution.
- */
-static __always_inline void raid_rec2of2_avx2(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t *q;
-	uint8_t *qa;
-	uint8_t C[2];
-	size_t i;
-
-	/* get multiplication coefficients */
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
-
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd];
-	q = v[nd + 1];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	raid_avx_begin();
-
-	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
-
-	for (i = 0; i < size; i += 32) {
-		/* Pd */
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
-		asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (pa[i]));
-
-		/* Qd */
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (q[i]));
-		asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (qa[i]));
-
-		/* split Pd and Qd */
-		asm volatile ("vpsrlw $4,%ymm0,%ymm2");
-		asm volatile ("vpsrlw $4,%ymm1,%ymm3");
-		asm volatile ("vpand %ymm7,%ymm0,%ymm4");
-		asm volatile ("vpand %ymm7,%ymm1,%ymm5");
-		asm volatile ("vpand %ymm7,%ymm2,%ymm2");
-		asm volatile ("vpand %ymm7,%ymm3,%ymm3");
-
-		/* C0 * Pd */
-		asm volatile ("vbroadcasti128 %0,%%ymm6" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
-		asm volatile ("vpshufb %ymm4,%ymm6,%ymm6");
-
-		asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
-		asm volatile ("vpshufb %ymm2,%ymm4,%ymm4");
-		asm volatile ("vpxor %ymm4,%ymm6,%ymm6");
-
-		/* C1 * Qd */
-		asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
-		asm volatile ("vpshufb %ymm5,%ymm4,%ymm4");
-		asm volatile ("vpxor %ymm4,%ymm6,%ymm6");
-
-		asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
-		asm volatile ("vpshufb %ymm3,%ymm4,%ymm4");
-		asm volatile ("vpxor %ymm4,%ymm6,%ymm6");
-
-		/* Dy = ymm6, Dx = Pd ^ Dy */
-		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
-
-		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (qa[i]));
 	}
 
 	raid_avx_end();
@@ -1559,76 +1432,277 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 }
 
 #ifdef CONFIG_X86_64
+
+
 /*
- * Recover failure of two data blocks using P and Q AVX2 extended implementation.
+ * Recover multiple data failures using selected parity blocks with AVX2 extended optimized for up to two failures.
  *
- * Uses raid_delta_gen() and keeps all four multiplication tables resident
- * in YMM registers (ymm8..ymm11).
+ * Process 64 bytes at a time as two independent 32-byte lanes.
+ * Multiplication tables are broadcast once and shared between both lanes.
+ *
+ * If P is available, keep the complete P delta syndrome in ymm6.
+ * Reconstruct only nr - 1 missing blocks through the inverse matrix and
+ * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ *
+ * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_rec2of2_avx2ext(int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2ext_12(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p[2];
-	uint8_t *pa[2];
-	uint8_t C[2];
+	uint8_t *p[RAID_PARITY_MAX];
+	uint8_t *pa[RAID_PARITY_MAX];
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *S[RAID_DATA_MAX][RAID_PARITY_MAX];
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
 	size_t i;
+	int d, j, k, s;
+	int ns;
+	int has_p;
 
-	/* get multiplication coefficients */
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
+	BUG_ON(nr < 1 || nr > 2);
 
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
+	/* setup the coefficients matrix */
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			G[j * nr + k] = A(ip[j], id[k]);
 
-	p[0] = v[nd];
-	p[1] = v[nd + 1];
-	pa[0] = v[id[0]];
-	pa[1] = v[id[1]];
+	/* invert it to solve the system of linear equations */
+	raid_invert(G, V, nr);
+
+	/* setup selected parity and destination pointers */
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
+	}
+
+	/* ip[] is ordered. If P is available, it is always ip[0] */
+	has_p = ip[0] == 0;
+
+	/* build the compact surviving-data list and its syndrome tables */
+	ns = 0;
+	k = 0;
+
+	for (d = 0; d < nd; ++d) {
+		if (k < nr && d == id[k]) {
+			++k;
+			continue;
+		}
+
+		src[ns] = v[d];
+
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = &raid_gfmulpshufb[A(ip[j], d)][0][0];
+
+		++ns;
+	}
+
+	BUG_ON(k != nr);
+	BUG_ON(ns != nd - nr);
+
+	/* precompute inverse-matrix multiplication table pointers for required outputs */
+	for (j = 0; j < nr - has_p; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
 
 	raid_avx_begin();
 
-	asm volatile ("vpbroadcastb %0,%%ymm7" : : "m" (gfconst16.low4[0]));
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 
-	/* the multiplication tables are constant for the whole recovery */
-	asm volatile ("vbroadcasti128 %0,%%ymm8" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm9" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm10" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm11" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
-
-	for (i = 0; i < size; i += 32) {
-		/* d0 = p[0] ^ pa[0] */
+		/*
+		 * Start each syndrome with the corresponding stored parity.
+		 *
+		 * During syndrome computation:
+		 *
+		 *   ymm0/ymm1   syndrome 0, first/second 32 bytes
+		 *   ymm2/ymm3   syndrome 1, first/second 32 bytes
+		 *
+		 *   ymm6/ymm7   source low, first/second 32 bytes
+		 *   ymm8/ymm9   source high, first/second 32 bytes
+		 *   ymm12/ymm13 multiplication table / temporary
+		 *   ymm15       low-nibble mask
+		 */
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm2" : : "m" (pa[0][i]));
-		asm volatile ("vpxor %ymm2,%ymm0,%ymm0");
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[0][i + 32]));
 
-		/* d1 = p[1] ^ pa[1] */
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[1][i]));
-		asm volatile ("vmovdqa %0,%%ymm3" : : "m" (pa[1][i]));
-		asm volatile ("vpxor %ymm3,%ymm1,%ymm1");
+		if (nr >= 2) {
+			asm volatile ("vmovdqa %0,%%ymm2" : : "m" (p[1][i]));
+			asm volatile ("vmovdqa %0,%%ymm3" : : "m" (p[1][i + 32]));
+		}
 
-		/* C[0] * d0 */
-		asm volatile ("vpsrlw $4,%ymm0,%ymm5");
-		asm volatile ("vpand %ymm7,%ymm0,%ymm4");
-		asm volatile ("vpand %ymm7,%ymm5,%ymm5");
-		asm volatile ("vpshufb %ymm4,%ymm8,%ymm2");
-		asm volatile ("vpshufb %ymm5,%ymm9,%ymm3");
-		asm volatile ("vpxor %ymm3,%ymm2,%ymm6");
+		/* add all surviving data contributions */
+		for (s = 0; s < ns; ++s) {
+			const uint8_t **t = S[s];
 
-		/* C[1] * d1 */
-		asm volatile ("vpsrlw $4,%ymm1,%ymm5");
-		asm volatile ("vpand %ymm7,%ymm1,%ymm4");
-		asm volatile ("vpand %ymm7,%ymm5,%ymm5");
-		asm volatile ("vpshufb %ymm4,%ymm10,%ymm2");
-		asm volatile ("vpshufb %ymm5,%ymm11,%ymm3");
-		asm volatile ("vpxor %ymm2,%ymm6,%ymm6");
-		asm volatile ("vpxor %ymm3,%ymm6,%ymm6");
+			asm volatile ("vmovdqa %0,%%ymm6" : : "m" (src[s][i]));
+			asm volatile ("vmovdqa %0,%%ymm7" : : "m" (src[s][i + 32]));
 
-		/* pa[1] = C[0] * d0 ^ C[1] * d1 */
-		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[1][i]));
+			/*
+			 * P has coefficient 1 for every data disk.
+			 * Do the XOR before destroying the original source
+			 * while splitting it into low/high nibbles.
+			 */
+			if (has_p) {
+				asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
+				asm volatile ("vpxor %ymm7,%ymm1,%ymm1");
 
-		/* pa[0] = d0 ^ pa[1] */
-		asm volatile ("vpxor %ymm6,%ymm0,%ymm0");
-		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[0][i]));
+				/* split both 32-byte source lanes */
+				asm volatile ("vpsrlw $4,%ymm6,%ymm8");
+				asm volatile ("vpsrlw $4,%ymm7,%ymm9");
+				asm volatile ("vpand %ymm15,%ymm6,%ymm6");
+				asm volatile ("vpand %ymm15,%ymm7,%ymm7");
+				asm volatile ("vpand %ymm15,%ymm8,%ymm8");
+				asm volatile ("vpand %ymm15,%ymm9,%ymm9");
+			} else {
+				/* split both 32-byte source lanes */
+				asm volatile ("vpsrlw $4,%ymm6,%ymm8");
+				asm volatile ("vpsrlw $4,%ymm7,%ymm9");
+				asm volatile ("vpand %ymm15,%ymm6,%ymm6");
+				asm volatile ("vpand %ymm15,%ymm7,%ymm7");
+				asm volatile ("vpand %ymm15,%ymm8,%ymm8");
+				asm volatile ("vpand %ymm15,%ymm9,%ymm9");
+
+				/*
+				 * Syndrome 0.
+				 *
+				 * Share each table broadcast between the two
+				 * 32-byte lanes.
+				 */
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[0][0]));
+				asm volatile ("vmovdqa %ymm12,%ymm13");
+				asm volatile ("vpshufb %ymm6,%ymm12,%ymm12");
+				asm volatile ("vpshufb %ymm7,%ymm13,%ymm13");
+				asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
+				asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
+
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[0][16]));
+				asm volatile ("vmovdqa %ymm12,%ymm13");
+				asm volatile ("vpshufb %ymm8,%ymm12,%ymm12");
+				asm volatile ("vpshufb %ymm9,%ymm13,%ymm13");
+				asm volatile ("vpxor %ymm12,%ymm0,%ymm0");
+				asm volatile ("vpxor %ymm13,%ymm1,%ymm1");
+			}
+
+			/* syndrome 1 */
+			if (nr >= 2) {
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[1][0]));
+				asm volatile ("vmovdqa %ymm12,%ymm13");
+				asm volatile ("vpshufb %ymm6,%ymm12,%ymm12");
+				asm volatile ("vpshufb %ymm7,%ymm13,%ymm13");
+				asm volatile ("vpxor %ymm12,%ymm2,%ymm2");
+				asm volatile ("vpxor %ymm13,%ymm3,%ymm3");
+
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[1][16]));
+				asm volatile ("vmovdqa %ymm12,%ymm13");
+				asm volatile ("vpshufb %ymm8,%ymm12,%ymm12");
+				asm volatile ("vpshufb %ymm9,%ymm13,%ymm13");
+				asm volatile ("vpxor %ymm12,%ymm2,%ymm2");
+				asm volatile ("vpxor %ymm13,%ymm3,%ymm3");
+			}
+		}
+
+		/* preserve raw P delta in ymm4/ymm5 before splitting syndrome 0 */
+		if (has_p) {
+			asm volatile ("vmovdqa %ymm0,%ymm4");
+			asm volatile ("vmovdqa %ymm1,%ymm5");
+		}
+
+		/*
+		 * Split all completed syndromes.
+		 *
+		 * After this:
+		 *
+		 *   syndrome 0:
+		 *     ymm0 / ymm6   first  32 bytes low/high
+		 *     ymm1 / ymm7   second 32 bytes low/high
+		 *
+		 *   syndrome 1:
+		 *     ymm2 / ymm8   first  32 bytes low/high
+		 *     ymm3 / ymm9   second 32 bytes low/high
+		 */
+		asm volatile ("vpsrlw $4,%ymm0,%ymm6");
+		asm volatile ("vpsrlw $4,%ymm1,%ymm7");
+		asm volatile ("vpand %ymm15,%ymm0,%ymm0");
+		asm volatile ("vpand %ymm15,%ymm1,%ymm1");
+		asm volatile ("vpand %ymm15,%ymm6,%ymm6");
+		asm volatile ("vpand %ymm15,%ymm7,%ymm7");
+
+		if (nr >= 2) {
+			asm volatile ("vpsrlw $4,%ymm2,%ymm8");
+			asm volatile ("vpsrlw $4,%ymm3,%ymm9");
+			asm volatile ("vpand %ymm15,%ymm2,%ymm2");
+			asm volatile ("vpand %ymm15,%ymm3,%ymm3");
+			asm volatile ("vpand %ymm15,%ymm8,%ymm8");
+			asm volatile ("vpand %ymm15,%ymm9,%ymm9");
+		}
+
+		/*
+		 * Reconstruct missing data blocks through the inverse matrix.
+		 * If P is available, reconstruct only nr - 1 blocks.
+		 *
+		 * ymm12/ymm13 are a shared multiplication table pair.
+		 * ymm14/ymm15 accumulate the two 32-byte output lanes.
+		 *
+		 * At this point ymm15 is no longer needed as the nibble mask,
+		 * so all 16 YMM registers are available.
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
+			const uint8_t **t = R[j];
+
+			/*
+			 * First coefficient.
+			 * Initialize both output accumulators from the low
+			 * nibble products.
+			 */
+			asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[0][0]));
+			asm volatile ("vmovdqa %ymm12,%ymm13");
+			asm volatile ("vpshufb %ymm0,%ymm12,%ymm12");
+			asm volatile ("vpshufb %ymm1,%ymm13,%ymm13");
+			asm volatile ("vmovdqa %ymm12,%ymm14");
+			asm volatile ("vmovdqa %ymm13,%ymm15");
+
+			asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[0][16]));
+			asm volatile ("vmovdqa %ymm12,%ymm13");
+			asm volatile ("vpshufb %ymm6,%ymm12,%ymm12");
+			asm volatile ("vpshufb %ymm7,%ymm13,%ymm13");
+			asm volatile ("vpxor %ymm12,%ymm14,%ymm14");
+			asm volatile ("vpxor %ymm13,%ymm15,%ymm15");
+
+			/* second coefficient */
+			if (nr >= 2) {
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[1][0]));
+				asm volatile ("vmovdqa %ymm12,%ymm13");
+				asm volatile ("vpshufb %ymm2,%ymm12,%ymm12");
+				asm volatile ("vpshufb %ymm3,%ymm13,%ymm13");
+				asm volatile ("vpxor %ymm12,%ymm14,%ymm14");
+				asm volatile ("vpxor %ymm13,%ymm15,%ymm15");
+
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (t[1][16]));
+				asm volatile ("vmovdqa %ymm12,%ymm13");
+				asm volatile ("vpshufb %ymm8,%ymm12,%ymm12");
+				asm volatile ("vpshufb %ymm9,%ymm13,%ymm13");
+				asm volatile ("vpxor %ymm12,%ymm14,%ymm14");
+				asm volatile ("vpxor %ymm13,%ymm15,%ymm15");
+			}
+
+			asm volatile ("vmovdqa %%ymm14,%0" : "=m" (pa[j][i]));
+			asm volatile ("vmovdqa %%ymm15,%0" : "=m" (pa[j][i + 32]));
+		}
+
+		/* derive the final missing block from raw Pdelta when P is available */
+		if (has_p) {
+			if (nr >= 2) {
+				asm volatile ("vpxor %0,%%ymm4,%%ymm4" : : "m" (pa[0][i]));
+				asm volatile ("vpxor %0,%%ymm5,%%ymm5" : : "m" (pa[0][i + 32]));
+				asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[1][i]));
+				asm volatile ("vmovdqa %%ymm5,%0" : "=m" (pa[1][i + 32]));
+			} else {
+				asm volatile ("vmovdqa %%ymm4,%0" : "=m" (pa[0][i]));
+				asm volatile ("vmovdqa %%ymm5,%0" : "=m" (pa[0][i + 32]));
+			}
+		}
 	}
 
 	raid_avx_end();
@@ -2351,20 +2425,13 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec1_avx2_delta(id, ip, nd, size, vv);
+	raid_rec1_avx2_1(id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	/* if recovering with P,Q use the specialized function */
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_avx2(id, ip, nd, size, vv);
-		return;
-	}
-
-	raid_rec2_avx2_delta(id, ip, nd, size, vv);
+	raid_recX_avx2_1234(2, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2402,26 +2469,13 @@ void raid_rec1_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	/* if recovering with Q uses the delta function */
-	if (ip[0] == 1) {
-		raid_rec1_avx2_delta(id, ip, nd, size, vv);
-		return;
-	}
-
-	raid_recX_avx2ext_123(1, id, ip, nd, size, vv);
+	raid_rec1_avx2_1(id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	/* if recovering with P,Q uses the delta function */
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_avx2ext(id, ip, nd, size, vv);
-		return;
-	}
-
-	raid_recX_avx2ext_123(2, id, ip, nd, size, vv);
+	raid_recX_avx2ext_12(2, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)

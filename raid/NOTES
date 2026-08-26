@@ -56,7 +56,7 @@ Recovery:
 
 * The normal one-data-disk recovery with P available is handled directly by the
   fused 1-pass SIMD kernel on AVX512BW, GFNI, and AArch64 NEON (pure XOR
-  streaming), or by raid_rec1of1() on scalar and older SIMD paths.
+  streaming), or by raid_rec1of1() on scalar, SSSE3, and AVX2.
 
 * SIMD recovery has parity-count-specific REC1..REC6 entry points. Fused paths
   compute exactly the selected syndromes in one scan of the surviving data and
@@ -64,11 +64,12 @@ Recovery:
 
 * AVX512BW, GFNI (AVX2 and AVX512), and AArch64 NEON use fused syndrome
   generation for all REC1..REC6 cases, including P (rec1of1) and P+Q (rec2of2).
+  AVX2 uses fused syndrome generation for all non-P REC1 cases and all
+  REC2..REC6 cases (including P+Q in the fused kernel).
   AArch32 NEON uses fused syndrome generation for all non-P REC1 and REC2 cases
-  and for REC3..REC6. SSSE3 and AVX2 use it for REC3..REC6, with additional
-  fused cases in the extended AVX2 path.
+  and for REC3..REC6. SSSE3 and SSSE3 extended use it for REC3..REC6.
 
-* Scalar recovery and selected SSSE3/AVX2 REC1/REC2 paths continue to use
+* Scalar recovery, SSSE3 REC1/REC2, and AArch32 NEON P+Q continue to use
   raid_delta_gen().
 
 * Non-GFNI fused recovery splits every completed syndrome into low/high nibbles
@@ -84,9 +85,9 @@ Recovery:
   or broadcasting inside the data loop.
 
 * Specialized P+Q rec2of2 recovery reduces 4 GF multiplications to 2 GF
-  multiplications and 1 XOR; AVX512BW, GFNI, and AArch64 NEON handle this
-  directly inside the 1-pass fused kernel, while scalar int8, SSSE3, AVX2, and
-  AArch32 NEON backends implement dedicated rec2of2 helpers.
+  multiplications and 1 XOR; AVX512BW, GFNI, AVX2, and AArch64 NEON handle this
+  directly inside the 1-pass fused kernel, while scalar int8, SSSE3, SSSE3ext,
+  and AArch32 NEON backends implement dedicated rec2of2 helpers.
 
 * When P is among the selected parity blocks, optimized SIMD RECX paths
   reconstruct only nr - 1 missing blocks through the inverse matrix and derive
@@ -190,7 +191,7 @@ Typical recovery case
 
 * REC1 implementations on AVX512BW, GFNI, and AArch64 NEON execute directly
   inside the fused streaming kernel (reducing to a single-pass pure XOR stream
-  without memory swapping), while scalar and older SIMD paths call
+  without memory swapping), while scalar, SSSE3, and AVX2 paths call
   raid_rec1of1().
 
 * raid_rec1of1() remaps pointers so that P is used as an XOR input and the
@@ -232,7 +233,7 @@ REC1OF1:
   inside the fused 1-pass kernel, streaming surviving data blocks and P in a
   single pass.
 
-* For scalar and older SIMD wrappers, REC1 enters raid_rec1of1() to recompute P
+* For scalar, SSSE3, and AVX2 wrappers, REC1 enters raid_rec1of1() to recompute P
   using the generation backend.
 
 REC1OF2 and REC1OF3:
@@ -246,11 +247,11 @@ REC2OF2:
 
 * The row uses ip = { 0, 1 }, meaning P and Q.
 
-* On AVX512BW, GFNI (AVX2 and AVX512), and AArch64 NEON, REC2 executes
+* On AVX2, AVX512BW, GFNI (AVX2 and AVX512), and AArch64 NEON, REC2 executes
   directly in the 1-pass fused kernel, which computes P with XOR, Q with GF
   multiplication, and derives the second missing block via XOR.
 
-* Scalar int8, SSSE3, AVX2, and AArch32 NEON call their specialized
+* Scalar int8, SSSE3, SSSE3ext, and AArch32 NEON call their specialized
   raid_rec2of2_*() delta helpers.
 
 * This makes the row a direct benchmark for the specialized P+Q recovery
@@ -311,12 +312,12 @@ raid_delta_gen() fusion
   according to register pressure; they do not allocate full-size syndrome
   buffers.
 
-* The common rec1of1/P case on AVX512BW and GFNI executes as pure XOR streaming
-  within the fused kernel (no GF matrix multiplication), while on older backends
-  it uses the raid_rec1of1() pointer remapping path.
+* The common rec1of1/P case on AVX512BW, GFNI, and AArch64 NEON executes as pure
+  XOR streaming within the fused kernel (no GF matrix multiplication), while on
+  scalar, SSSE3, and AVX2 it uses the raid_rec1of1() pointer remapping path.
 
-* raid_delta_gen() remains in the scalar implementation and selected
-  SSSE3/AVX2 REC1/REC2 paths.
+* raid_delta_gen() remains in the scalar implementation, SSSE3 REC1/REC2, and
+  AArch32 NEON P+Q.
 
 
 Generation: AVX512 width and unrolling
@@ -646,17 +647,14 @@ REC1 optimizations
 
 The normal REC1 case with P is handled either directly in the fused 1-pass SIMD
 kernel (AVX512BW, GFNI, AArch64 NEON) as pure XOR streaming, or via
-raid_rec1of1() (scalar, legacy SIMD).
+raid_rec1of1() (scalar, SSSE3, AVX2).
 
 For generic REC1, used when P is unavailable:
 
-* AVX512BW, GFNI, AArch64 NEON, and AArch32 NEON use the fused recovery kernel.
+* AVX2, AVX512BW, GFNI, AArch64 NEON, and AArch32 NEON use the fused recovery
+  kernel.
 
-* AVX2 extended uses its delta kernel for Q and fused recovery for later parity
-  rows.
-
-* Scalar, SSSE3, base AVX2, and SSSE3 extended use their delta-based REC1
-  kernels.
+* Scalar, SSSE3, and SSSE3 extended use their delta-based REC1 kernels.
 
 REC1 status:
 
@@ -674,14 +672,12 @@ REC2 optimizations
 
 REC2 has both fused and delta-based implementations.
 
-* AVX512BW, GFNI, and AArch64 NEON use fused syndrome generation for every
-  selected parity pair (including P+Q). AArch32 NEON uses fused generation for
-  non-P pairs and REC3..REC6.
+* AVX2, AVX512BW, GFNI, and AArch64 NEON use fused syndrome generation for every
+  selected parity pair (including P+Q in the fused kernel). AArch32 NEON uses
+  fused generation for non-P pairs and REC3..REC6.
 
-* AVX2 extended uses its delta kernel for P+Q and fused recovery for other
-  parity pairs.
-
-* Scalar, SSSE3, base AVX2, and SSSE3 extended use delta-based REC2 kernels.
+* Scalar int8, SSSE3, SSSE3 extended, and AArch32 NEON use delta-based REC2
+  kernels.
 
 * Delta-based non-GFNI kernels split both deltas once per chunk and reuse the
   split values for both recovered outputs.
@@ -696,11 +692,10 @@ Important portability result:
 
 REC2 status:
 
-* Generic REC2 uses the fused path where available and retains local split reuse
-  in the delta-based paths.
+* Generic REC2 uses the fused path across AVX2, AVX512BW, GFNI, and NEON.
 
-* AVX512BW, GFNI, and AArch64 NEON handle P+Q recovery directly inside the
-  1-pass fused kernel, while scalar int8, SSSE3, AVX2, and AArch32 NEON
+* AVX2, AVX512BW, GFNI, and AArch64 NEON handle P+Q recovery directly inside the
+  1-pass fused kernel, while scalar int8, SSSE3, SSSE3ext, and AArch32 NEON
   backends implement dedicated rec2of2 delta helpers.
 
 
@@ -718,13 +713,12 @@ instead of the generic 2x2 reconstruction with four GF multiplications.
 
 Backends implement this specialization as follows:
 
-* AVX512BW, GFNI (AVX2 and AVX512), and AArch64 NEON integrate this derivation
-  directly into the unified 1-pass fused kernel (P is accumulated via XOR, Q via
-  GF multiplication, Dy is solved with inverse coefficients, and Dx derived by
-  XOR with Pdelta).
+* AVX2, AVX512BW, GFNI (AVX2 and AVX512), and AArch64 NEON integrate this
+  derivation directly into the unified 1-pass fused kernel (P is accumulated via
+  XOR, Q via GF multiplication, Dy is solved with inverse coefficients, and Dx
+  derived by XOR with Pdelta).
 * Scalar int8 (raid_rec2of2_int8)
 * SSSE3 and SSSE3 ext (raid_rec2of2_ssse3, raid_rec2of2_ssse3ext)
-* AVX2 and AVX2 ext (raid_rec2of2_avx2, raid_rec2of2_avx2ext)
 * AArch32 NEON (raid_rec2of2_neon32)
 
 The rec2of2 benchmark row directly measures this specialized P+Q fast path.
@@ -1034,8 +1028,9 @@ Short list of ideas already tried or rejected
   existing traversal instead.
 
 * raid_delta_gen() + REC fusion:
-  implemented for SIMD REC3..REC6 and for REC1/REC2 on AVX512BW, GFNI, and NEON;
-  selected SSSE3/AVX2 REC1/REC2 and scalar paths retain raid_delta_gen().
+  implemented for all SIMD REC1..REC6 on AVX512BW, GFNI, and AArch64 NEON, and for
+  all AVX2 REC except rec1of1; SSSE3 retains delta for REC1/REC2; only scalar
+  paths, SSSE3 REC1/REC2, and AArch32 NEON P+Q retain raid_delta_gen().
 
 * Software prefetch:
   no strong reason to add it given the existing long streams and proven
