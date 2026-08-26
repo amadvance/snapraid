@@ -127,6 +127,7 @@ unsigned strtou(const char* nptr, char** endptr, int base);
  * - ** (not near a /) like *
  * - ##/ reduces to nothing in addition to the normal matching of ** (using # instead of * to not mess the C comment)
  * - [...] matches character classes with support for ranges and negation lile [!...] or [^...], except /
+ * - \ escapes *, ?, [, ], and \
  *
  * \return 0 if it matches
  */

@@ -863,6 +863,24 @@ struct {
 	{ "Movies*", "Movies4", 0, 0 },
 	{ "Movies*", "Movies4/file.mkv", 0, 1 },
 
+	/* escaping of wildcard metacharacters */
+	{ "foo\\*bar", "foo*bar", 0, 0 },
+	{ "foo\\?bar", "foo?bar", 0, 0 },
+	{ "foo\\[bar", "foo[bar", 0, 0 },
+	{ "foo\\]bar", "foo]bar", 0, 0 },
+	{ "foo\\\\bar", "foo\\bar", 0, 0 },
+	{ "foo\\*bar", "fooXXXbar", 0, 1 },
+	{ "foo\\?bar", "fooXbar", 0, 1 },
+	{ "foo\\[bar", "fooXbar", 0, 1 },
+	{ "foo\\]bar", "fooXbar", 0, 1 },
+	{ "foo*bar", "fooXXXbar", 0, 0 },
+	{ "foo?bar", "fooXbar", 0, 0 },
+	{ "foo[abc]bar", "fooabar", 0, 0 },
+	{ "foo\\abar", "foo\\abar", 0, 0 },
+	{ "foo\\abar", "fooabar", 0, 1 },
+	{ "foo\\", "foo\\", 0, 0 },
+	{ "foo\\", "foo", 0, 1 },
+
 	{ 0 }
 };
 
