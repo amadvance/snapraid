@@ -25,7 +25,7 @@ volatile sig_atomic_t global_interrupt = 0;
 
 int os_signal_interrupt(void)
 {
-	return global_interrupt;
+	return (int)global_interrupt;
 }
 
 /* LCOV_EXCL_START */
