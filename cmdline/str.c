@@ -346,6 +346,20 @@ static const char* match_class(const char* p, char t)
 	return p;
 }
 
+/**
+ * Helper function to check end of match condition
+ */
+static inline int wnmatch_end(const char* t, int match_sub)
+{
+	if (match_sub) {
+		/* match successfully only if we are at a directory border */
+		return *t != '/';
+	} else {
+		/* match successfully if we've consumed all text */
+		return *t != 0;
+	}
+}
+
 int wnmatch_sub(const char* p, const char* t, int match_sub)
 {
 	char p1 = 0; /* previous char */
@@ -411,7 +425,7 @@ int wnmatch_sub(const char* p, const char* t, int match_sub)
 			if (*p == 0) {
 				while (*t && *t != '/')
 					++t;
-				return *t != 0;
+				return wnmatch_end(t, match_sub);
 			}
 
 			/* try matching with 0 or more characters */
@@ -445,13 +459,6 @@ int wnmatch_sub(const char* p, const char* t, int match_sub)
 		p1 = p0;
 	}
 
-	/* if we match sub directory */
-	if (match_sub) {
-		/* match successfully only if we are at a directory border */
-		return *t != '/';
-	} else {
-		/* match successfully if we've consumed all text */
-		return *t != 0;
-	}
+	return wnmatch_end(t, match_sub);
 }
 
