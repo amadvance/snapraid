@@ -1827,6 +1827,23 @@ Kända problem (Known Issues)
 	kommer skillnaden endast att upptäckas som en hash-avvikelse under en
 	efterföljande "scrub" eller "check".
 
+  Icke-ASCII skiftlägesmatchning i Windows
+	SnapRAID använder standardiserad, förutsägbar UTF-8-kodning på alla plattformar
+	och begränsar skiftlägesokänslig matchning till ASCII-tecken.
+
+	Windows filsystem lider av den föråldrade designen att tvinga fram
+	skiftlägesokänslighet över Unicode-filnamn via godtyckliga, systemberoende
+	konverteringstabeller. Följaktligen döljer Windows filsystemets verklighet genom
+	att behandla helt olika Unicode-bytesekvenser som om de vore samma fil.
+
+	Till exempel är `À.txt` och `à.txt` distinkta Unicode-namn, men Windows behandlar
+	dem ologiskt som identiska, medan SnapRAID bevarar deras verkliga åtskillnad.
+
+	Denna begränsning orsakas av Windows inkonsekventa hantering av Unicode-filnamn
+	och dess insisterande på skiftlägesokänslig aliasning. För att förhindra
+	avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
+	skiftläget för eventuella icke-ASCII-tecken i konfigurationssökvägar och filter.
+
 Översättning (Translation)
 	Detta dokument är en automatisk översättning av den engelska manualen.
 	Se den engelska manualen för den officiella versionen.

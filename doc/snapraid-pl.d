@@ -1829,6 +1829,27 @@ Znane problemy (Known Issues)
 	zostanie wykryta dopiero jako niezgodność skrótu podczas kolejnego "scrub"
 	lub "check".
 
+  Dopasowywanie wielkości liter znaków spoza ASCII w systemie Windows
+	SnapRAID używa standardowego, przewidywalnego kodowania UTF-8 na wszystkich
+	platformach, ograniczając dopasowywanie bez uwzględniania wielkości liter do
+	znaków ASCII.
+
+	Systemy plików Windows cierpią z powodu przestarzałego projektu narzucania
+	braku rozróżniania wielkości liter w nazwach plików Unicode za pomocą
+	arbitralnych, zależnych od systemu tabel składania znaków (folding tables).
+	W rezultacie Windows zaciera rzeczywistość systemu plików, traktując zupełnie
+	różne sekwencje bajtów Unicode tak, jakby były tym samym plikiem.
+
+	Na przykład `À.txt` i `à.txt` to odrębne nazwy Unicode, a jednak Windows
+	nielogicznie traktuje je jako identyczne, podczas gdy SnapRAID zachowuje ich
+	rzeczywiste rozróżnienie.
+
+	Ograniczenie to wynika z niespójnej obsługi nazw plików Unicode przez system
+	Windows oraz jego uporczywego stosowania aliasów bez uwzględniania wielkości
+	liter. Aby zapobiec rozbieżnościom wynikającym ze składania znaków przez
+	Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
+	w ścieżkach konfiguracyjnych i filtrach.
+
 Tłumaczenie (Translation)
 	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 	Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.

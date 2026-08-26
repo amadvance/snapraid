@@ -2466,6 +2466,26 @@ Pour vous assurer que SnapRAID reconnaît ces modifications, mettez à jour
 l\'horodatage de modification du fichier (par exemple avec l\'utilitaire
 \[dq]touch\[dq]). Sinon, la différence ne sera détectée que sous la forme d\'une
 non\-concordance de hachage lors d\'un \[dq]scrub\[dq] ou \[dq]check\[dq] ultérieur.
+.SS Correspondance de casse non\-ASCII sous Windows 
+SnapRAID utilise un encodage UTF\-8 standard et prévisible sur toutes les
+plates\-formes, limitant la correspondance insensible à la casse aux caractères
+ASCII.
+.PP
+Les systèmes de fichiers Windows souffrent d\'une conception héritée du passé
+qui impose l\'insensibilité à la casse sur les noms de fichiers Unicode via des
+tables de correspondance arbitraires et dépendantes du système. Par conséquent,
+Windows masque la réalité du système de fichiers en traitant des séquences d\'octets
+Unicode complètement différentes comme s\'il s\'agissait du même fichier.
+.PP
+Par exemple, \`À.txt\` et \`à.txt\` sont des noms Unicode distincts, pourtant Windows
+les traite illogiquement comme identiques, tandis que SnapRAID préserve leur
+véritable distinction.
+.PP
+Cette limitation est causée par la gestion incohérente des noms de fichiers
+Unicode par Windows et son insistance sur l\'aliasement insensible à la casse.
+Pour éviter les écarts causés par le repliement de casse de Windows, spécifiez
+toujours la casse exacte de tous les caractères non\-ASCII dans les chemins de
+configuration et les filtres.
 .SH TRADUCTION (TRANSLATION) 
 Ce document est une traduction automatique du manuel en anglais.
 Veuillez vous référer au manuel en anglais pour la version officielle.

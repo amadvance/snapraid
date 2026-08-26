@@ -2367,6 +2367,26 @@ Para garantir que o SnapRAID reconheça essas alterações, atualize o carimbo
 de data/hora de modificação do arquivo (por exemplo, com o utilitário \[dq]touch\[dq]).
 Caso contrário, a diferença só será detectada como uma incompatibilidade de
 hash durante um \[dq]scrub\[dq] ou \[dq]check\[dq] subsequente.
+.SS Correspondência de maiúsculas/minúsculas não\-ASCII no Windows 
+O SnapRAID utiliza codificação UTF\-8 padrão e previsível em todas as plataformas,
+limitando a correspondência insensível a maiúsculas e minúsculas a caracteres
+ASCII.
+.PP
+Os sistemas de arquivos do Windows sofrem com o design legado de forçar a
+insensibilidade a maiúsculas e minúsculas em nomes de arquivo Unicode por meio
+de tabelas de conversão arbitrárias e dependentes do sistema. Consequentemente,
+o Windows oculta a realidade do sistema de arquivos ao tratar sequências de bytes
+Unicode completamente diferentes como se fossem o mesmo arquivo.
+.PP
+Por exemplo, \`À.txt\` e \`à.txt\` são nomes Unicode distintos, mas o Windows os
+trata ilogicamente como idênticos, enquanto o SnapRAID preserva sua verdadeira
+distinção.
+.PP
+Essa limitação é causada pelo tratamento inconsistente de nomes de arquivo
+Unicode pelo Windows e por sua insistência no uso de aliases sem diferenciação de
+maiúsculas/minúsculas. Para evitar discrepâncias decorrentes da conversão do
+Windows, sempre especifique a combinação exata de maiúsculas e minúsculas para
+caracteres não\-ASCII em caminhos de configuração e filtros.
 .SH TRADUçãO (TRANSLATION) 
 Este documento é uma tradução automática do manual em inglês.
 Consulte o manual em inglês para a versão oficial.

@@ -2333,6 +2333,24 @@ To ensure SnapRAID recognizes such changes, update the file\'s
 modification timestamp (for example, with the \[dq]touch\[dq] utility).
 Otherwise, the difference will only be detected as a hash mismatch
 during a subsequent \[dq]scrub\[dq] or \[dq]check\[dq].
+.SS Windows non\-ASCII case matching 
+SnapRAID uses standard, predictable UTF\-8 encoding across all platforms,
+limiting case\-insensitive matching to ASCII characters.
+.PP
+Windows filesystems suffer from the legacy design of enforcing case
+insensitivity across Unicode filenames via arbitrary, system\-dependent
+folding tables. Consequently, Windows obscures the reality of the
+filesystem by treating completely different Unicode byte sequences as if
+they were the same file.
+.PP
+For example, \`À.txt\` and \`à.txt\` are distinct Unicode names, yet Windows
+illogically treats them as identical, while SnapRAID preserves their true
+distinction.
+.PP
+This limitation is caused by Windows\'s inconsistent handling of Unicode
+filenames and its insistence on case\-insensitive aliasing. To prevent
+discrepancies arising from Windows\'s case folding, always specify the
+exact case for any non\-ASCII characters in configuration paths and filters.
 .SH COPYRIGHT 
 This file is Copyright (C) 2026 Andrea Mazzoleni
 .SH SEE ALSO 

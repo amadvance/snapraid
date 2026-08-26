@@ -2327,6 +2327,22 @@ För att säkerställa att SnapRAID känner igen sådana ändringar, uppdatera
 filens ändringstidsstämpel (till exempel med verktyget \[dq]touch\[dq]). Annars
 kommer skillnaden endast att upptäckas som en hash\-avvikelse under en
 efterföljande \[dq]scrub\[dq] eller \[dq]check\[dq].
+.SS Icke\-ASCII skiftlägesmatchning i Windows 
+SnapRAID använder standardiserad, förutsägbar UTF\-8\-kodning på alla plattformar
+och begränsar skiftlägesokänslig matchning till ASCII\-tecken.
+.PP
+Windows filsystem lider av den föråldrade designen att tvinga fram
+skiftlägesokänslighet över Unicode\-filnamn via godtyckliga, systemberoende
+konverteringstabeller. Följaktligen döljer Windows filsystemets verklighet genom
+att behandla helt olika Unicode\-bytesekvenser som om de vore samma fil.
+.PP
+Till exempel är \`À.txt\` och \`à.txt\` distinkta Unicode\-namn, men Windows behandlar
+dem ologiskt som identiska, medan SnapRAID bevarar deras verkliga åtskillnad.
+.PP
+Denna begränsning orsakas av Windows inkonsekventa hantering av Unicode\-filnamn
+och dess insisterande på skiftlägesokänslig aliasning. För att förhindra
+avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
+skiftläget för eventuella icke\-ASCII\-tecken i konfigurationssökvägar och filter.
 .SH ÖVERSäTTNING (TRANSLATION) 
 Detta dokument är en automatisk översättning av den engelska manualen.
 Se den engelska manualen för den officiella versionen.

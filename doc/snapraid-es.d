@@ -1919,6 +1919,28 @@ Problemas conocidos (Known Issues)
 	De lo contrario, la diferencia solo se detectará como una falta de
 	coincidencia de hash durante un "scrub" o "check" posterior.
 
+  Coincidencia de mayúsculas y minúsculas no ASCII en Windows
+	SnapRAID utiliza una codificación UTF-8 estándar y predecible en todas las
+	plataformas, limitando la coincidencia insensible a mayúsculas y minúsculas
+	a los caracteres ASCII.
+
+	Los sistemas de archivos de Windows adolecen del diseño heredado de imponer
+	la insensibilidad a mayúsculas y minúsculas en nombres de archivo Unicode a
+	través de tablas de plegado arbitrarias y dependientes del sistema. En
+	consecuencia, Windows distorsiona la realidad del sistema de archivos al
+	tratar secuencias de bytes Unicode completamente diferentes como si fueran el
+	mismo archivo.
+
+	Por ejemplo, `À.txt` y `à.txt` son nombres Unicode distintos; sin embargo,
+	Windows los trata ilógicamente como idénticos, mientras que SnapRAID conserva
+	su verdadera distinción.
+
+	Esta limitación se debe al manejo inconsistente de los nombres de archivo
+	Unicode por parte de Windows y a su insistencia en aplicar alias que ignoran
+	mayúsculas y minúsculas. Para evitar discrepancias derivadas del plegado de
+	mayúsculas y minúsculas de Windows, especifique siempre la grafía exacta de
+	los caracteres no ASCII en las rutas de configuración y filtros.
+
 Traducción (Translation)
 	Este documento es una traducción automática del manual en inglés.
 	Consulte el manual en inglés para obtener la versión oficial.

@@ -1965,6 +1965,29 @@ marcajul temporal de modificare al fișierului (de exemplu, cu utilitarul
 "touch"). În caz contrar, diferența va fi detectată doar ca o neconcordanță
 de hash în timpul unui "scrub" sau "check" ulterior.
 
+16.5 Potrivirea majusculelor/minusculelor non-ASCII în Windows
+--------------------------------------------------------------
+
+SnapRAID utilizează codificarea UTF-8 standard și previzibilă pe toate
+platformele, limitând potrivirea fără distincție între majuscule și minuscule
+la caracterele ASCII.
+
+Sistemele de fișiere Windows suferă din cauza designului moștenit de a impune
+insensibilitatea la majuscule/minuscule asupra numelor de fișiere Unicode prin
+tabele arbitrare de conversie dependente de sistem. În consecință, Windows
+maschează realitatea sistemului de fișiere tratând secvențe de octeți Unicode
+complet diferite ca și cum ar fi același fișier.
+
+De exemplu, `À.txt` și `à.txt` sunt nume Unicode distincte, însă Windows le
+tratează în mod ilogic ca fiind identice, în timp ce SnapRAID le păstrează
+distincția reală.
+
+Această limitare este cauzată de gestionarea incoerentă a numelor de fișiere
+Unicode de către Windows și de insistența sa asupra aplicării de aliasuri fără
+distincție între majuscule și minuscule. Pentru a preveni discrepanțele apărute
+din conversia efectuată de Windows, specificați întotdeauna forma exactă a
+caracterelor non-ASCII în căile de configurare și filtre.
+
 
 17 TRADUCERE (TRANSLATION)
 ==========================

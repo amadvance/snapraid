@@ -1927,6 +1927,28 @@ Problemi noti (Known Issues)
 	differenza verrà rilevata solo come mancata corrispondenza dell'hash durante
 	un successivo "scrub" o "check".
 
+  Corrispondenza maiuscole/minuscole non ASCII in Windows
+	SnapRAID utilizza la codifica UTF-8 standard e prevedibile su tutte le
+	piattaforme, limitando la corrispondenza senza distinzione tra maiuscole e
+	minuscole ai caratteri ASCII.
+
+	I filesystem di Windows soffrono della scelta progettuale obsoleta di imporre
+	l'insensibilità al maiuscolo/minuscolo sui nomi di file Unicode tramite tabelle
+	di conversione arbitrarie e dipendenti dal sistema. Di conseguenza, Windows
+	maschera la realtà del filesystem trattando sequenze di byte Unicode
+	completamente diverse come se fossero lo stesso file.
+
+	Ad esempio, `À.txt` e `à.txt` sono nomi Unicode distinti, eppure Windows
+	illogicamente li tratta come identici, mentre SnapRAID ne preserva la reale
+	distinzione.
+
+	Questa limitazione è causata dalla gestione incoerente dei nomi di file Unicode
+	da parte di Windows e dalla sua insistenza nell'applicare alias insensibili al
+	maiuscolo/minuscolo. Per prevenire discrepanze dovute alla conversione del
+	maiuscolo/minuscolo di Windows, specificare sempre l'esatta combinazione di
+	maiuscole/minuscole per qualsiasi carattere non ASCII nei percorsi di
+	configurazione e nei filtri.
+
 Traduzione (Translation)
 	Questo documento è una traduzione automatica del manuale in inglese.
 	Fare riferimento al manuale in inglese per la versione ufficiale.

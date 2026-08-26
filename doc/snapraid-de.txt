@@ -2093,6 +2093,29 @@ Sie den Änderungszeitstempel der Datei (z. B. mit dem Dienstprogramm "touch").
 Andernfalls wird der Unterschied erst bei einem nachfolgenden "scrub" oder
 "check" als Hash-Fehlübereinstimmung erkannt.
 
+16.5 Nicht-ASCII-Groß-/Kleinschreibung unter Windows
+----------------------------------------------------
+
+SnapRAID verwendet auf allen Plattformen eine standardmäßige, vorhersehbare
+UTF-8-Kodierung und beschränkt den Vergleich ohne Berücksichtigung der
+Groß-/Kleinschreibung auf ASCII-Zeichen.
+
+Windows-Dateisysteme leiden unter dem veralteten Konzept, die Unempfindlichkeit
+gegenüber der Groß-/Kleinschreibung bei Unicode-Dateinamen über willkürliche,
+systemabhängige Folding-Tabellen zu erzwingen. Infolgedessen verschleiert Windows
+die Realität des Dateisystems, indem es völlig unterschiedliche
+Unicode-Bytesequenzen so behandelt, als wären sie dieselbe Datei.
+
+Beispielsweise sind `À.txt` und `à.txt` unterschiedliche Unicode-Namen, dennoch
+behandelt Windows sie unlogischerweise als identisch, während SnapRAID ihre
+tatsächliche Unterscheidung beibehält.
+
+Diese Einschränkung wird durch den inkonsistenten Umgang von Windows mit
+Unicode-Dateinamen und das Beharren auf einer Groß-/Kleinschreibungs-Aliasing
+verursacht. Um Abweichungen durch das Case-Folding von Windows zu vermeiden,
+geben Sie für alle Nicht-ASCII-Zeichen in Konfigurationspfaden und Filtern
+stets die exakte Groß-/Kleinschreibung an.
+
 
 17 ÜBERSETZUNG (TRANSLATION)
 ============================
