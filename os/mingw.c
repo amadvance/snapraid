@@ -748,6 +748,15 @@ int windows_lstat(const char* file, struct windows_stat* st)
 	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
 	WIN32_FIND_DATAW data;
+	size_t len = strlen(file);
+
+	/*
+	 * A trailing slash requires resolving the final component as a directory.
+	 * Use the handle-based implementation because FindFirstFileW() rejects the
+	 * trailing slash, while preserving its faster path for all normal entries.
+	 */
+	if (len != 0 && is_slash(file[len - 1]))
+		return windows_stat(file, st);
 
 	/* FindFirstFileW by default gets information of symbolic links and not of their targets */
 	h = FindFirstFileW(convert(conv_buf, file), &data);
