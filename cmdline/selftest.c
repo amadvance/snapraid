@@ -903,8 +903,17 @@ struct {
 	/* invalid standalone root and standalone double-star patterns */
 	{ "/", 0 },
 	{ "/**/", 0 },
+	{ ".", 0 },
+	{ "..", 0 },
+	{ "/./", 0 },
+	{ "/../", 0 },
 
 	/* valid single and multi-level patterns */
+	{ "...", 1 },
+	{ ".../", 1 },
+	{ "/.../", 1 },
+	{ "....", 1 },
+	{ "/foo/.../bar", 1 },
 	{ "/foo/", 1 },
 	{ "/foo/**/", 1 },
 	{ "/**/foo/", 1 },

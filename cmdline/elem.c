@@ -39,6 +39,7 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 	char* last;
 	int token_is_valid;
 	int token_is_filled;
+	int token_dot_count;
 
 	filter = malloc_nofail(sizeof(struct snapraid_filter));
 	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
@@ -55,9 +56,10 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 	first = 0;
 	last = 0;
 
-	/* reject invalid tokens, like "<empty>", ".", ".." and more dots */
+	/* reject invalid tokens, like "<empty>", "." and ".." */
 	token_is_valid = 0;
 	token_is_filled = 0;
+	token_dot_count = 0;
 	for (i = filter->pattern; *i; ++i) {
 		if (*i == '/') {
 			/* reject invalid tokens, but accept an empty one as first */
@@ -67,6 +69,7 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 			}
 			token_is_valid = 0;
 			token_is_filled = 0;
+			token_dot_count = 0;
 
 			/* update slash position */
 			if (!first)
@@ -77,6 +80,9 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* root, const
 			token_is_filled = 1;
 		} else {
 			token_is_filled = 1;
+			++token_dot_count;
+			if (token_dot_count >= 3)
+				token_is_valid = 1;
 		}
 	}
 
