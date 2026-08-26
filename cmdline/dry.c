@@ -343,6 +343,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 			state_progress_stop(state);
 
+			/* complete all read-ahead without consuming the results */
+			io_quiesce(&io);
+
 			state_thermal_cooldown(state);
 
 			state_progress_restart(state);

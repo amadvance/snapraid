@@ -638,6 +638,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			state_progress_stop(state);
 
+			/* complete all read-ahead without consuming the results */
+			io_quiesce(&io);
+
 			state_thermal_cooldown(state);
 
 			state_progress_restart(state);
