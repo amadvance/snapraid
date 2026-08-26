@@ -373,9 +373,15 @@ static inline int is_wild_escape(char c)
 #endif
 }
 
-int wnmatch_sub(const char* p, const char* t, int match_sub)
+/*
+ * Match with the previous pattern character provided in prev.
+ *
+ * An initial '**' needs to know if it was preceded by '/' to distinguish
+ * between multi-directory recursive matching (like /##.ext) and single-directory
+ * matching (like ##.ext).
+ */
+int wnmatch_sub_prev(const char* p, const char* t, int match_sub, char prev)
 {
-	char p1 = 0; /* previous char */
 	while (*p) {
 		char p0 = *p;
 		switch (p0) {
@@ -417,7 +423,7 @@ int wnmatch_sub(const char* p, const char* t, int match_sub)
 					++p;
 
 				/* if its not near a slash, it's like a single * */
-				if (p1 == '/' || *p == '/') {
+				if (prev == '/' || *p == '/') {
 					/* a ** at end matches everything */
 					if (*p == 0)
 						return 0;
@@ -432,7 +438,7 @@ int wnmatch_sub(const char* p, const char* t, int match_sub)
 					 * "##/file.txt" matching "file.txt"
 					 * "x##/file.txt" NOT matching "xfile.txt"
 					 */
-					if (*p == '/' && (p1 == 0 || p1 == '/')) {
+					if (*p == '/' && (prev == 0 || prev == '/')) {
 						/* try reducing to nothing */
 						if (wnmatch_sub(p + 1, t, match_sub) == 0)
 							return 0;
@@ -489,9 +495,14 @@ int wnmatch_sub(const char* p, const char* t, int match_sub)
 			++t;
 			break;
 		}
-		p1 = p0;
+		prev = p0;
 	}
 
 	return wnmatch_end(t, match_sub);
+}
+
+int wnmatch_sub(const char* p, const char* t, int match_sub)
+{
+	return wnmatch_sub_prev(p, t, match_sub, 0);
 }
 

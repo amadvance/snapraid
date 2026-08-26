@@ -133,6 +133,20 @@ unsigned strtou(const char* nptr, char** endptr, int base);
  */
 int wnmatch_sub(const char* p, const char* t, int match_sub);
 
+/**
+ * Match with the pattern character immediately before p provided as prev context.
+ *
+ * This is needed for absolute filters where the leading '/' in the filter pattern
+ * is stripped before calling match (because target paths do not have a leading slash).
+ * Providing prev='/' preserves the information that an initial '**' was preceded by
+ * a slash, enabling recursive multi-directory matching (e.g. /##.ext or /##foo,
+ * using # instead of * to avoid C comment delimiter collision).
+ *
+ * Recursive sub-matches intentionally start with prev=0 because intermediate matching
+ * evaluates suffixes where preceding pattern characters are tracked in the loop.
+ */
+int wnmatch_sub_prev(const char* p, const char* t, int match_sub, char prev);
+
 static inline int wnmatch(const char* p, const char* t)
 {
 	return wnmatch_sub(p, t, 0);

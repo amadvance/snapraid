@@ -247,8 +247,8 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 	int ret = 0;
 
 	if (filter->is_abs) {
-		/* skip initial slash, as always missing in the path */
-		if (wnmatch_sub(filter->pattern + 1, path, match_sub) == 0)
+		/* preserve the skipped slash because it gives an initial ** its recursive meaning */
+		if (wnmatch_sub_prev(filter->pattern + 1, path, match_sub, '/') == 0)
 			ret = filter->direction;
 	} else {
 		/* the path is relative, first try to match from the root */

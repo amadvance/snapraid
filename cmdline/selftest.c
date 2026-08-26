@@ -791,6 +791,10 @@ struct {
 	{ "**pkg/init.py", "libs/core/pkg/init.py", 0, 1 },
 	{ "**.log", "error.log", 0, 0 },
 	{ "**.log", "var/log/sys.log", 0, 1 },
+	{ "**.jpg", "photo.jpg", 0, 0 },
+	{ "**.jpg", "dir/photo.jpg", 0, 1 },
+	{ "foo/*.jpg", "foo/photo.jpg", 0, 0 },
+	{ "foo/*.jpg", "foo/a/photo.jpg", 0, 1 },
 	{ "src/**.js", "src/app.js", 0, 0 },
 	{ "src/**.js", "src/components/ui/button.js", 0, 0 }, /* <<<<< .GITIGNORE DIFFERS */
 	{ "a**b.txt", "ab.txt", 0, 0 },
@@ -905,12 +909,44 @@ struct {
 	{ 0 }
 };
 
+static const struct {
+	const char* pattern;
+	const char* text;
+	int match_sub;
+	int result;
+} WNMATCH_ABSOLUTE_TEST[] = {
+	/* an absolute filter skips its slash but preserves it as initial context */
+	{ "**.jpg", "photo.jpg", 0, 0 },
+	{ "**.jpg", "dir/photo.jpg", 0, 0 },
+	{ "**.jpg", "a/b/photo.jpg", 0, 0 },
+	{ "**.jpg", "a/b/photo.png", 0, 1 },
+	{ "**foo", "foo", 0, 0 },
+	{ "**foo", "a/b/foo", 0, 0 },
+	{ "**foo", "a/b/bar", 0, 1 },
+	{ "**", "a/b/file", 0, 0 },
+	{ "**foo", "a/b/foo/file", 1, 0 },
+	{ "**foo", "a/b/bar/file", 1, 1 },
+	{ "**/foo", "foo", 0, 0 },
+	{ "**/foo", "a/b/foo", 0, 0 },
+	{ "foo/**/bar", "foo/a/b/bar", 0, 0 },
+	{ 0 }
+};
+
 static void test_wnmatch(void)
 {
 	for (int i = 0; WNMATCH_TEST[i].pattern; ++i) {
 		if (wnmatch_sub(WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text, WNMATCH_TEST[i].match_sub) != WNMATCH_TEST[i].result) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Failed wnmatch test %s %s, expected %d\n", WNMATCH_TEST[i].pattern, WNMATCH_TEST[i].text, WNMATCH_TEST[i].result);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	for (int i = 0; WNMATCH_ABSOLUTE_TEST[i].pattern; ++i) {
+		if (wnmatch_sub_prev(WNMATCH_ABSOLUTE_TEST[i].pattern, WNMATCH_ABSOLUTE_TEST[i].text, WNMATCH_ABSOLUTE_TEST[i].match_sub, '/') != WNMATCH_ABSOLUTE_TEST[i].result) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed absolute wnmatch test %s %s, expected %d\n", WNMATCH_ABSOLUTE_TEST[i].pattern, WNMATCH_ABSOLUTE_TEST[i].text, WNMATCH_ABSOLUTE_TEST[i].result);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1341,6 +1377,108 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 			{ "d1", "src/test/app.js", -1, 0, -1 },
 			{ "d1", "src/components/test/app.js", -1, 0, -1 },
 			{ "d1", "src/app.css", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"absolute leading double-star include",
+		{
+			{ 1, 0, "", "/**.jpg" },
+			{ 0 }
+		},
+		{
+			{ "d1", "photo.jpg", 0, 0, -1 },
+			{ "d1", "dir/photo.jpg", 0, 0, -1 },
+			{ "d1", "a/b/photo.jpg", 0, 0, -1 },
+			{ "d1", "photo.png", -1, 0, -1 },
+			{ "d1", "dir/photo.png", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"absolute leading double-star exclude",
+		{
+			{ -1, 0, "", "/**.tmp" },
+			{ 0 }
+		},
+		{
+			{ "d1", "file.tmp", -1, 0, 0 },
+			{ "d1", "a/file.tmp", -1, 0, 0 },
+			{ "d1", "a/b/file.tmp", -1, 0, 0 },
+			{ "d1", "file.txt", 0, 0, 0 },
+			{ "d1", "a/b/file.txt", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"local absolute leading double-star exclude",
+		{
+			{ -1, 0, "projects/sub/", "/**.tmp" },
+			{ 0 }
+		},
+		{
+			{ "d1", "projects/sub/file.tmp", -1, 0, 0 },
+			{ "d1", "projects/sub/a/file.tmp", -1, 0, 0 },
+			{ "d1", "projects/sub/a/b/file.tmp", -1, 0, 0 },
+			{ "d1", "projects/file.tmp", 0, 0, 0 },
+			{ "d1", "projects/submarine/file.tmp", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"absolute leading double-star suffix",
+		{
+			{ 1, 0, "", "/**foo" },
+			{ 0 }
+		},
+		{
+			{ "d1", "foo", 0, 0, -1 },
+			{ "d1", "dir/foo", 0, 0, -1 },
+			{ "d1", "a/b/foo", 0, 0, -1 },
+			{ "d1", "bar", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"absolute trailing double-star",
+		{
+			{ 1, 0, "", "/**" },
+			{ 0 }
+		},
+		{
+			{ "d1", "file", 0, 0, -1 },
+			{ "d1", "dir/file", 0, 0, -1 },
+			{ "d1", "a/b/file", 0, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"absolute leading double-star directory",
+		{
+			{ -1, 0, "", "/**foo/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "foo", 0, -1, -1 },
+			{ "d1", "a/b/foo", 0, -1, -1 },
+			{ "d1", "a/b/foo/file", -1, 0, 0 },
+			{ "d1", "a/b/bar", 0, 0, 0 },
+			{ 0 }
+		}
+	},
+	{
+		"established absolute double-star forms",
+		{
+			{ 1, 0, "", "/**/foo" },
+			{ 1, 0, "", "/foo/**/bar" },
+			{ 0 }
+		},
+		{
+			{ "d1", "foo", 0, 0, -1 },
+			{ "d1", "a/b/foo", 0, 0, -1 },
+			{ "d1", "foo/bar", 0, 0, -1 },
+			{ "d1", "foo/a/b/bar", 0, 0, -1 },
+			{ "d1", "other/bar", -1, 0, -1 },
 			{ 0 }
 		}
 	},
