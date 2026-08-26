@@ -2229,6 +2229,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	uint64_t count_unsynced;
 	uint64_t count_unscrubbed;
 	int crc_checked;
+	int has_block_size;
+	int has_hash_size;
 	char buffer[PATH_MAX];
 	int ret;
 	tommy_array disk_mapping;
@@ -2245,6 +2247,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	count_unsynced = 0;
 	count_unscrubbed = 0;
 	crc_checked = 0;
+	has_block_size = 0;
+	has_hash_size = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
@@ -3040,6 +3044,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else if (c == 'z') {
 			uint32_t block_size;
 
+			if (has_block_size || mapping_max != 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'blocksize' in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			has_block_size = 1;
+
 			ret = sgetb32(f, &block_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
@@ -3072,6 +3085,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else if (c == 'y') {
 			uint64_t hash_size;
 
+			if (has_hash_size || mapping_max != 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'hashsize' in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			has_hash_size = 1;
+
 			ret = sgetb64(f, &hash_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
@@ -3088,7 +3110,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* without configuration, auto assign the block size */
+			/* without configuration, auto assign the hash size */
 			if (state->no_conf) {
 				BLOCK_HASH_SIZE = hash_size;
 			}
