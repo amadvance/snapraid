@@ -11,6 +11,8 @@
  */
 #include "tommyds/tommylist.h"
 
+#define STATIC_ASSERT(name, cond) typedef char static_assert_ ## name[(cond) ? 1 : -1]
+
 #define EINTERNAL EFAULT /**< Internal assertion failed. */
 #define EDATA EIO /**< Silent data corruption. */
 #define ESOFT EINVAL /**< Software error, like permission denied. */
@@ -44,6 +46,27 @@ static inline int hardlink(const char* a, const char* b)
  * Return 0 on success.
  */
 int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t size);
+
+/**
+ * Filesystem identity for directory boundary checks.
+ */
+struct fsidentity {
+	uint64_t device; /**< Device identifier (st_dev). */
+	uint64_t mnt_id; /**< Mount identifier (stx_mnt_id or 0). */
+	uint64_t subvol; /**< Subvolume identifier (stx_subvol or 0). */
+};
+
+/**
+ * Get the filesystem identity of a path.
+ *
+ * The caller already provides the normal stat information.
+ * This function must NOT repeat lstat()/stat() for normal metadata.
+ *
+ * mnt_id and subvol are set to zero when unavailable.
+ *
+ * Return 0 on success, -1 on error.
+ */
+int fsidentity(const char* path, const struct stat* st, struct fsidentity* identity);
 
 /**
  * Check if the underline file-system support persistent inodes.

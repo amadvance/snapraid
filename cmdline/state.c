@@ -278,7 +278,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				continue;
 
 #ifdef _WIN32
-			if (disk->dir_device == 0) {
+			if (disk->mount_device == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(ESOFT, "Disk '%s' has a zero serial number.\n", disk->dir);
 				log_fatal(ESOFT, "This is not necessarily wrong, but for using SnapRAID\n");
@@ -304,7 +304,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						/* LCOV_EXCL_START */
 						log_fatal(ESOFT, "Disks '%s' and '%s' are on the same device.\n", disk->mount_point, other->mount_point);
 #ifdef _WIN32
-						log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->dir_device);
+						log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->mount_device);
 						log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 						log_fatal(ESOFT, "to change one of the disk serial.\n");
 #endif
@@ -336,7 +336,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 								/* LCOV_EXCL_START */
 								log_fatal(ESOFT, "Disk '%s' and %s '%s' are on the same device.\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
 #ifdef _WIN32
-								log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->dir_device);
+								log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->mount_device);
 								log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 								log_fatal(ESOFT, "to change one of the disk serial.\n");
 #endif
@@ -352,7 +352,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				/* LCOV_EXCL_START */
 				log_fatal(ESOFT, "Disk '%s' and pool '%s' are on the same device.\n", disk->mount_point, state->pool);
 #ifdef _WIN32
-				log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->dir_device);
+				log_fatal(ESOFT, "Both have the serial number '%" PRIx64 "'.\n", disk->mount_device);
 				log_fatal(ESOFT, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 				log_fatal(ESOFT, "to change one of the disk serial.\n");
 #endif
@@ -6041,7 +6041,6 @@ static int state_snapshot_dir(struct fssnapshot_struct* fss, const char* name, s
 			return -1;
 
 		pathcpy(disk->dir, sizeof(disk->dir), vol);
-		disk->dir_device = st.st_dev;
 	}
 
 	return 0;

@@ -40,6 +40,7 @@ struct snapraid_scan {
 	tommy_list link_insert_list; /**< Links to insert. */
 	tommy_list dir_insert_list; /**< Dirs to insert. */
 	tommy_list local_filter_list; /**< Filter list specific for the disk. */
+	struct fsidentity dir_identity; /**< Effective scan root identity. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -64,6 +65,9 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	tommy_list_init(&scan->link_insert_list);
 	tommy_list_init(&scan->dir_insert_list);
 	tommy_list_init(&scan->local_filter_list);
+	scan->dir_identity.device = 0;
+	scan->dir_identity.mnt_id = 0;
+	scan->dir_identity.subvol = 0;
 	scan->is_diff = is_diff;
 	scan->need_write = 0;
 
@@ -1611,13 +1615,31 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
+				struct fsidentity identity;
+				if (fsidentity(path_next, st, &identity) != 0) {
+					/* LCOV_EXCL_START */
+					/* restore removing additions */
+					path_next[path_len] = 0;
+					sub_next[sub_len] = 0;
+					log_tag("%s:%u:%s:%s: Statx error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
+					log_fatal(errno, "Error accessing directory '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
 				/*
-				 * In Unix don't follow mount points in different devices
+				 * In Unix don't follow mount points in different devices or subvolumes
 				 * in Windows we are already skipping them reporting them as special files
 				 */
-				if ((uint64_t)st->st_dev != disk->dir_device) {
+				if (identity.device != scan->dir_identity.device) {
 					log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
 					log_error(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+				} else if (identity.mnt_id != scan->dir_identity.mnt_id) {
+					log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
+					log_error(ESOFT, "WARNING! Ignoring mount point '%s' because it belongs to a different mount\n", path_next);
+				} else if (identity.subvol != scan->dir_identity.subvol) {
+					log_tag("%s:%u:%s:%s: Ignoring nested subvolume.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
+					log_error(ESOFT, "WARNING! Ignoring nested subvolume '%s' because it belongs to a different subvolume\n", path_next);
 				} else
 #endif
 				{
@@ -1726,6 +1748,23 @@ static void* scan_disk(void* arg)
 	}
 
 	start = os_tick_ms();
+
+	struct stat st;
+	if (lstat(disk->dir, &st) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(disk->dir), strerror(errno));
+		log_fatal(errno, "Error accessing directory '%s'. %s.\n", disk->dir, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (fsidentity(disk->dir, &st, &scan->dir_identity) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("%s:%u:%s:%s: Statx error. %s.\n", es(errno), 0, disk->name, esc_tag(disk->dir), strerror(errno));
+		log_fatal(errno, "Error accessing directory '%s'. %s.\n", disk->dir, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	scan_dir(scan, 0, scan->is_diff, disk->dir, "");
 

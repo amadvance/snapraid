@@ -2139,6 +2139,107 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 }
 
 /****************************************************************************/
+/* identity */
+
+#if HAVE_STATX
+
+#ifndef STATX_MNT_ID
+#define STATX_MNT_ID 0x00001000U
+#endif
+#ifndef STATX_SUBVOL
+#define STATX_SUBVOL 0x00008000U
+#endif
+
+struct snapraid_statx_timestamp_abi {
+	int64_t tv_sec;
+	uint32_t tv_nsec;
+	int32_t reserved;
+};
+
+struct snapraid_statx_abi {
+	/* 0x00 */
+	uint32_t stx_mask;
+	uint32_t stx_blksize;
+	uint64_t stx_attributes;
+
+	/* 0x10 */
+	uint32_t stx_nlink;
+	uint32_t stx_uid;
+	uint32_t stx_gid;
+	uint16_t stx_mode;
+	uint16_t spare0;
+
+	/* 0x20 */
+	uint64_t stx_ino;
+	uint64_t stx_size;
+	uint64_t stx_blocks;
+	uint64_t stx_attributes_mask;
+
+	/* 0x40 */
+	struct snapraid_statx_timestamp_abi stx_atime;
+	struct snapraid_statx_timestamp_abi stx_btime;
+	struct snapraid_statx_timestamp_abi stx_ctime;
+	struct snapraid_statx_timestamp_abi stx_mtime;
+
+	/* 0x80 */
+	uint32_t stx_rdev_major;
+	uint32_t stx_rdev_minor;
+	uint32_t stx_dev_major;
+	uint32_t stx_dev_minor;
+
+	/* 0x90 */
+	uint64_t stx_mnt_id;
+	uint32_t stx_dio_mem_align;
+	uint32_t stx_dio_offset_align;
+
+	/* 0xa0 */
+	uint64_t stx_subvol;
+
+	/* ABI continues to 0x100. */
+	unsigned char tail[0x100 - 0xa8];
+};
+
+STATIC_ASSERT(statx_abi_size, sizeof(struct snapraid_statx_abi) == 0x100);
+STATIC_ASSERT(statx_abi_mnt_id, offsetof(struct snapraid_statx_abi, stx_mnt_id) == 0x90);
+STATIC_ASSERT(statx_abi_subvol, offsetof(struct snapraid_statx_abi, stx_subvol) == 0xa0);
+#endif
+
+int fsidentity(const char* path, const struct stat* st, struct fsidentity* identity)
+{
+	(void)path;
+
+	identity->device = st->st_dev;
+	identity->mnt_id = 0;
+	identity->subvol = 0;
+
+#if HAVE_STATX
+	struct statx stx;
+
+	/* query mount ID and subvolume ID without following symlinks */
+	if (statx(AT_FDCWD, path, AT_SYMLINK_NOFOLLOW, STATX_MNT_ID | STATX_SUBVOL, &stx) != 0) {
+		/*
+		 * Fall back if statx is unsupported by the kernel (ENOSYS) or blocked
+		 * by a seccomp/security sandbox filter (EPERM/EACCES in older Docker/OCI).
+		 */
+		if (errno == ENOSYS || errno == EPERM || errno == EACCES)
+			return 0;
+		return -1;
+	}
+
+	/* copy to fixed ABI representation to support libc headers lacking named fields */
+	struct snapraid_statx_abi abi;
+	memcpy(&abi, &stx, sizeof(abi));
+
+	if ((abi.stx_mask & STATX_MNT_ID) != 0)
+		identity->mnt_id = abi.stx_mnt_id;
+	if ((abi.stx_mask & STATX_SUBVOL) != 0)
+		identity->subvol = abi.stx_subvol;
+#endif
+
+	return 0;
+}
+
+/****************************************************************************/
 /* snapshot */
 
 #if HAVE_LINUX_DEVICE

@@ -171,6 +171,20 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 }
 
 /****************************************************************************/
+/* identity */
+
+int fsidentity(const char* path, const struct stat* st, struct fsidentity* identity)
+{
+	(void)path;
+
+	identity->device = st->st_dev;
+	identity->mnt_id = 0;
+	identity->subvol = 0;
+
+	return 0;
+}
+
+/****************************************************************************/
 /* snapshot */
 
 size_t windows_direct_size(void)
