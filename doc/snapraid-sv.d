@@ -1755,6 +1755,54 @@ Slutkod (Exit Code)
 	1 - Kommandot stötte på fel.
 	2 - Kommandot `diff` fann att allt är OK, men en `sync` behövs.
 
+Kända problem (Known Issues)
+  Filsystemgränser
+	SnapRAID korsar inte filsystems-, monterings- eller undervolymsgränser vid
+	skanning av en datadisk. När en sådan gräns upptäcks rapporterar SnapRAID
+	en VARNING och skannar inte bortom den.
+
+	Filer som finns bortom sådana gränser inkluderas inte i datadisken och
+	måste konfigureras separat om de ska skyddas.
+
+  Monteringspunkter med filsystemögonblicksbilder
+	När filsystemögonblicksbilder är aktiverade stöds inte kapslade
+	monteringspunkter och bind-monteringar inuti en datadisk.
+
+	Monteringspunkter är en del av det aktiva systemets monteringsnamnrymd och
+	bevaras inte i filsystemögonblicksbilder. Följaktligen kan en katalog som
+	dolts av en monteringspunkt i det aktiva filsystemet bli synlig vid
+	skanning av en ögonblicksbild.
+
+	Placera inte kapslade monteringspunkter eller bind-monteringar inuti
+	datadiskar när filsystemögonblicksbilder är aktiverade.
+
+  Hårda länkar (Hard links)
+	SnapRAID identifierar en hård länk som originalfilen och representerar de
+	andra hårda länkarna som referenser till den. Vilken länk som väljs som
+	originalfil beror på i vilken ordning katalogposterna skannas.
+
+	Om denna ordning ändras, till exempel efter att filer bytt namn, återställts
+	eller kataloger återskapats, kan "diff" rapportera skenbara flyttar,
+	uppdateringar, tillägg eller borttagningar även när de länkade filerna
+	fortfarande representerar samma data.
+
+	Detta indikerar inte datakorruption, men de rapporterade skillnaderna kan
+	vara förvirrande och kanske inte direkt motsvarar de filsystemsoperationer
+	som utfördes.
+
+  Filändringar på plats utan tidsstämpeländringar
+	SnapRAID upptäcker filändringar genom att jämföra filstorlekar och
+	ändringstidsstämplar (mtime).
+
+	Om ett program ändrar en fil på plats utan att ändra dess storlek eller
+	uppdatera dess ändringstidsstämpel, kommer "diff" och "sync" inte att
+	upptäcka att filen har ändrats, och dess paritet kommer inte att uppdateras.
+
+	För att säkerställa att SnapRAID känner igen sådana ändringar, uppdatera
+	filens ändringstidsstämpel (till exempel med verktyget "touch"). Annars
+	kommer skillnaden endast att upptäckas som en hash-avvikelse under en
+	efterföljande "scrub" eller "check".
+
 Översättning (Translation)
 	Detta dokument är en automatisk översättning av den engelska manualen.
 	Se den engelska manualen för den officiella versionen.

@@ -2239,6 +2239,50 @@ Polecenie napotkało błędy.
 Polecenie \`diff\` wykazało, że wszystko jest w porządku, ale wymagane jest \`sync\`.
 .PD
 .RE
+.SH ZNANE PROBLEMY (KNOWN ISSUES) 
+.SS Granice systemu plików 
+SnapRAID nie przekracza granic systemów plików, punktów montowania ani
+podwolumenów podczas skanowania dysku z danymi. Po wykryciu takiej granicy
+SnapRAID zgłasza OSTRZEŻENIE i nie skanuje dalej.
+.PP
+Pliki znajdujące się poza takimi granicami nie są uwzględniane na dysku
+z danymi i muszą zostać skonfigurowane oddzielnie, jeśli mają być chronione.
+.SS Punkty montowania z migawkami systemu plików 
+Gdy migawki systemu plików są włączone, zagnieżdżone punkty montowania oraz
+montowania bind wewnątrz dysku z danymi nie są obsługiwane.
+.PP
+Punkty montowania są częścią przestrzeni nazw montowania działającego
+systemu i nie są zachowywane w migawkach systemu plików. W związku z tym
+podczas skanowania migawki katalog ukryty przez punkt montowania w aktywnym
+systemie plików może stać się widoczny.
+.PP
+Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
+dysków z danymi, gdy migawki systemu plików są włączone.
+.SS Twarde dowiązania (Hard links) 
+SnapRAID identyfikuje jedno twarde dowiązanie jako plik oryginalny, a
+pozostałe twarde dowiązania reprezentuje jako odwołania do niego. To, które
+dowiązanie zostanie wybrane jako plik oryginalny, zależy od kolejności
+skanowania wpisów w katalogu.
+.PP
+Jeśli ta kolejność ulegnie zmianie, na przykład po zmianie nazwy,
+przywróceniu plików lub ponownym utworzeniu katalogów, polecenie \[dq]diff\[dq]
+może zgłaszać pozorne przeniesienia, aktualizacje, dodania lub usunięcia,
+nawet jeśli dowiązane pliki nadal reprezentują te same dane.
+.PP
+Nie oznacza to uszkodzenia danych, ale zgłaszane różnice mogą być mylące i
+mogą nie odpowiadać bezpośrednio operacjom wykonanym w systemie plików.
+.SS Modyfikacje plików w miejscu bez zmiany znacznika czasu 
+SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
+znaczniki czasu modyfikacji (mtime).
+.PP
+Jeśli aplikacja modyfikuje plik w miejscu bez zmiany jego rozmiaru ani
+aktualizacji znacznika czasu modyfikacji, polecenia \[dq]diff\[dq] i \[dq]sync\[dq] nie
+wykryją zmiany pliku, a jego parzystość nie zostanie zaktualizowana.
+.PP
+Aby SnapRAID rozpoznał takie zmiany, zaktualizuj znacznik czasu modyfikacji
+pliku (na przykład za pomocą narzędzia \[dq]touch\[dq]). W przeciwnym razie różnica
+zostanie wykryta dopiero jako niezgodność skrótu podczas kolejnego \[dq]scrub\[dq]
+lub \[dq]check\[dq].
 .SH TłUMACZENIE (TRANSLATION) 
 Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.

@@ -1751,6 +1751,55 @@ Cod de ieșire (Exit Code)
 	1 - Comanda a întâmpinat unele erori.
 	2 - Comanda `diff` a constatat că totul este OK, dar este necesar un `sync`.
 
+Probleme Cunoscute (Known Issues)
+  Limitele sistemului de fișiere
+	SnapRAID nu traversează limitele sistemului de fișiere, punctelor de montare
+	sau subvolumelor în timpul scanării unui disc de date. Când este detectată
+	o astfel de limită, SnapRAID raportează un AVERTISMENT și nu scanează dincolo de ea.
+
+	Fișierele situate dincolo de aceste limite nu sunt incluse pe discul de date
+	și trebuie configurate separat dacă trebuie protejate.
+
+  Puncte de montare cu instantanee ale sistemului de fișiere
+	Când instantanee ale sistemului de fișiere sunt activate, punctele de montare
+	imbricate și montările bind din interiorul unui disc de date nu sunt acceptate.
+
+	Punctele de montare fac parte din spațiul de nume de montare al sistemului
+	activ și nu sunt păstrate în instantaneele sistemului de fișiere. În consecință,
+	la scanarea unui instantaneu, un director ascuns de un punct de montare în
+	sistemul de fișiere activ poate deveni vizibil.
+
+	Nu plasați puncte de montare imbricate sau montări bind în interiorul discurilor
+	de date când instantaneele sistemului de fișiere sunt activate.
+
+  Legături dure (Hard links)
+	SnapRAID identifică o legătură dură ca fișier original și reprezintă celelalte
+	legături dure ca referințe la acesta. Care legătură este selectată ca fișier
+	original depinde de ordinea în care sunt scanate intrările din director.
+
+	Dacă această ordine se modifică, de exemplu după redenumirea, restaurarea
+	fișierelor sau recrearea directoarelor, "diff" poate raporta mutări,
+	actualizări, adăugiri sau eliminări aparente chiar și atunci când fișierele
+	legate reprezintă în continuare aceleași date.
+
+	Acest lucru nu indică coruperea datelor, dar diferențele raportate pot fi
+	confuze și s-ar putea să nu corespundă direct operațiunilor efectuate în
+	sistemul de fișiere.
+
+  Modificări ale fișierelor pe loc fără schimbarea marcajului temporal
+	SnapRAID detectează modificările fișierelor comparând dimensiunile fișierelor
+	și marcajele temporale de modificare (mtime).
+
+	Dacă o aplicație modifică un fișier pe loc fără a-i modifica dimensiunea
+	și fără a-i actualiza marcajul temporal de modificare, "diff" și "sync" nu
+	vor detecta că fișierul s-a modificat, iar paritatea acestuia nu va fi
+	actualizată.
+
+	Pentru a vă asigura că SnapRAID recunoaște astfel de modificări, actualizați
+	marcajul temporal de modificare al fișierului (de exemplu, cu utilitarul
+	"touch"). În caz contrar, diferența va fi detectată doar ca o neconcordanță
+	de hash în timpul unui "scrub" sau "check" ulterior.
+
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.
 	Consultați manualul în limba engleză pentru versiunea oficială.

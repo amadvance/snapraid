@@ -1890,13 +1890,72 @@ SnapRAID terminates with the following error codes:
     needed.
 
 
-16 COPYRIGHT
+16 KNOWN ISSUES
+===============
+
+16.1 Filesystem boundaries
+--------------------------
+
+SnapRAID does not cross filesystem, mount, or subvolume boundaries while
+scanning a data disk. When such a boundary is detected, SnapRAID reports
+a WARNING and does not scan beyond it.
+
+Files located beyond such boundaries are not included in the data disk and
+must be configured separately if they have to be protected.
+
+16.2 Mount points with filesystem snapshots
+-------------------------------------------
+
+When filesystem snapshots are enabled, nested mount points and bind mounts
+inside a data disk are not supported.
+
+Mount points are part of the live system mount namespace and are not
+preserved in filesystem snapshots. Consequently, when scanning a snapshot,
+a directory hidden by a mount point in the live filesystem may become
+visible.
+
+Do not place nested mount points or bind mounts inside data disks when
+filesystem snapshots are enabled.
+
+16.3 Hard links
+---------------
+
+SnapRAID identifies one hard link as the original file and represents the
+other hard links as references to it. Which link is selected as the original
+file depends on the order in which directory entries are scanned.
+
+If this order changes, for example after files are renamed, restored, or
+directories are recreated, "diff" may report apparent moves, updates,
+additions, or removals even when the hard-linked files still represent the
+same data.
+
+This does not indicate data corruption, but the reported differences may be
+confusing and may not correspond directly to the filesystem operations that
+were performed.
+
+16.4 In-place file modifications without timestamp changes
+----------------------------------------------------------
+
+SnapRAID detects file modifications by comparing file sizes and
+modification timestamps (mtime).
+
+If an application modifies a file in-place without altering its size
+or updating its modification timestamp, "diff" and "sync" will not
+detect that the file has changed, and its parity will not be updated.
+
+To ensure SnapRAID recognizes such changes, update the file's
+modification timestamp (for example, with the "touch" utility).
+Otherwise, the difference will only be detected as a hash mismatch
+during a subsequent "scrub" or "check".
+
+
+17 COPYRIGHT
 ============
 
 This file is Copyright (C) 2026 Andrea Mazzoleni
 
 
-17 SEE ALSO
+18 SEE ALSO
 ===========
 
 snapraid_log(1), snapraidd(1), rsync(1)

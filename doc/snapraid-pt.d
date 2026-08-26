@@ -1791,6 +1791,56 @@ Código de Saída (Exit Code)
 	1 - O comando encontrou alguns erros.
 	2 - O comando `diff` determinou que tudo está OK, mas é necessário um `sync`.
 
+Problemas Conhecidos (Known Issues)
+  Limites do sistema de arquivos
+	O SnapRAID não cruza limites de sistema de arquivos, pontos de montagem ou
+	subvolumes ao verificar um disco de dados. Quando tal limite é detectado,
+	o SnapRAID relata um AVISO e não verifica além dele.
+
+	Arquivos localizados além desses limites não são incluídos no disco de
+	dados e devem ser configurados separadamente se precisarem ser protegidos.
+
+  Pontos de montagem com instantâneos do sistema de arquivos
+	Quando os instantâneos do sistema de arquivos estão ativados, pontos de
+	montagem aninhados e montagens bind dentro de um disco de dados não são
+	suportados.
+
+	Os pontos de montagem fazem parte do namespace de montagem do sistema ativo
+	e não são preservados em instantâneos do sistema de arquivos. Consequentemente,
+	ao verificar um instantâneo, um diretório oculto por um ponto de montagem no
+	sistema de arquivos ativo pode se tornar visível.
+
+	Não coloque pontos de montagem aninhados ou montagens bind dentro de discos
+	de dados quando os instantâneos do sistema de arquivos estiverem ativados.
+
+  Links físicos (Hard links)
+	O SnapRAID identifica um link físico como o arquivo original e representa
+	os outros links físicos como referências a ele. Qual link é selecionado
+	como o arquivo original depende da ordem em que as entradas do diretório
+	são verificadas.
+
+	Se essa ordem mudar, por exemplo, após arquivos serem renomeados,
+	restaurados ou diretórios serem recriados, o "diff" poderá relatar aparentes
+	movimentações, atualizações, adições ou remoções, mesmo quando os arquivos
+	vinculados ainda representarem os mesmos dados.
+
+	Isso não indica corrupção de dados, mas as diferenças relatadas podem ser
+	confusas e podem não corresponder diretamente às operações executadas no
+	sistema de arquivos.
+
+  Modificações de arquivo no local sem alteração de data/hora
+	O SnapRAID detecta modificações em arquivos comparando tamanhos de arquivo e
+	carimbos de data/hora de modificação (mtime).
+
+	Se um aplicativo modificar um arquivo no local sem alterar seu tamanho nem
+	atualizar seu carimbo de data/hora de modificação, o "diff" e o "sync" não
+	detectarão que o arquivo foi alterado e sua paridade não será atualizada.
+
+	Para garantir que o SnapRAID reconheça essas alterações, atualize o carimbo
+	de data/hora de modificação do arquivo (por exemplo, com o utilitário "touch").
+	Caso contrário, a diferença só será detectada como uma incompatibilidade de
+	hash durante um "scrub" ou "check" subsequente.
+
 Tradução (Translation)
 	Este documento é uma tradução automática do manual em inglês.
 	Consulte o manual em inglês para a versão oficial.

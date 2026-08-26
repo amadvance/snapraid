@@ -1841,6 +1841,57 @@ Código de salida (Exit Code)
 	1 - El comando encontró algunos errores.
 	2 - El comando `diff` determinó que todo está bien, pero se necesita un `sync`.
 
+Problemas conocidos (Known Issues)
+  Límites del sistema de archivos
+	SnapRAID no cruza los límites del sistema de archivos, puntos de montaje o
+	subvolúmenes al escanear un disco de datos. Cuando se detecta dicho límite,
+	SnapRAID emite una ADVERTENCIA y no escanea más allá de él.
+
+	Los archivos ubicados más allá de dichos límites no se incluyen en el disco
+	de datos y deben configurarse por separado si se desea protegerlos.
+
+  Puntos de montaje con instantáneas del sistema de archivos
+	Cuando las instantáneas del sistema de archivos están habilitadas, no se
+	admiten puntos de montaje anidados ni montajes bind dentro de un disco de
+	datos.
+
+	Los puntos de montaje forman parte del espacio de nombres de montaje del
+	sistema en vivo y no se conservan en las instantáneas del sistema de
+	archivos. En consecuencia, al escanear una instantánea, un directorio
+	oculto por un punto de montaje en el sistema de archivos en vivo puede
+	hacerse visible.
+
+	No coloque puntos de montaje anidados ni montajes bind dentro de los discos
+	de datos cuando las instantáneas del sistema de archivos estén habilitadas.
+
+  Enlaces duros
+	SnapRAID identifica un enlace duro como el archivo original y representa
+	los demás enlaces duros como referencias a él. El enlace que se selecciona
+	como archivo original depende del orden en que se escanean las entradas del
+	directorio.
+
+	Si este orden cambia, por ejemplo después de renombrar, restaurar archivos o
+	recrear directorios, "diff" puede informar movimientos, actualizaciones,
+	adiciones o eliminaciones aparentes incluso cuando los archivos vinculados
+	siguen representando los mismos datos.
+
+	Esto no indica corrupción de datos, pero las diferencias informadas pueden
+	resultar confusas y no corresponder directamente con las operaciones
+	realizadas en el sistema de archivos.
+
+  Modificaciones de archivos in situ sin cambios de marca de tiempo
+	SnapRAID detecta modificaciones de archivos comparando tamaños de archivo y
+	marcas de tiempo de modificación (mtime).
+
+	Si una aplicación modifica un archivo in situ sin alterar su tamaño ni
+	actualizar su marca de tiempo de modificación, "diff" y "sync" no detectarán
+	que el archivo ha cambiado y su paridad no se actualizará.
+
+	Para asegurarse de que SnapRAID reconozca dichos cambios, actualice la marca
+	de tiempo de modificación del archivo (por ejemplo, con la utilidad "touch").
+	De lo contrario, la diferencia solo se detectará como una falta de
+	coincidencia de hash durante un "scrub" o "check" posterior.
+
 Traducción (Translation)
 	Este documento es una traducción automática del manual en inglés.
 	Consulte el manual en inglés para obtener la versión oficial.

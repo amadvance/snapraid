@@ -2239,6 +2239,50 @@ Kommandot stötte på fel.
 Kommandot \`diff\` fann att allt är OK, men en \`sync\` behövs.
 .PD
 .RE
+.SH KäNDA PROBLEM (KNOWN ISSUES) 
+.SS Filsystemgränser 
+SnapRAID korsar inte filsystems\-, monterings\- eller undervolymsgränser vid
+skanning av en datadisk. När en sådan gräns upptäcks rapporterar SnapRAID
+en VARNING och skannar inte bortom den.
+.PP
+Filer som finns bortom sådana gränser inkluderas inte i datadisken och
+måste konfigureras separat om de ska skyddas.
+.SS Monteringspunkter med filsystemögonblicksbilder 
+När filsystemögonblicksbilder är aktiverade stöds inte kapslade
+monteringspunkter och bind\-monteringar inuti en datadisk.
+.PP
+Monteringspunkter är en del av det aktiva systemets monteringsnamnrymd och
+bevaras inte i filsystemögonblicksbilder. Följaktligen kan en katalog som
+dolts av en monteringspunkt i det aktiva filsystemet bli synlig vid
+skanning av en ögonblicksbild.
+.PP
+Placera inte kapslade monteringspunkter eller bind\-monteringar inuti
+datadiskar när filsystemögonblicksbilder är aktiverade.
+.SS Hårda länkar (Hard links) 
+SnapRAID identifierar en hård länk som originalfilen och representerar de
+andra hårda länkarna som referenser till den. Vilken länk som väljs som
+originalfil beror på i vilken ordning katalogposterna skannas.
+.PP
+Om denna ordning ändras, till exempel efter att filer bytt namn, återställts
+eller kataloger återskapats, kan \[dq]diff\[dq] rapportera skenbara flyttar,
+uppdateringar, tillägg eller borttagningar även när de länkade filerna
+fortfarande representerar samma data.
+.PP
+Detta indikerar inte datakorruption, men de rapporterade skillnaderna kan
+vara förvirrande och kanske inte direkt motsvarar de filsystemsoperationer
+som utfördes.
+.SS Filändringar på plats utan tidsstämpeländringar 
+SnapRAID upptäcker filändringar genom att jämföra filstorlekar och
+ändringstidsstämplar (mtime).
+.PP
+Om ett program ändrar en fil på plats utan att ändra dess storlek eller
+uppdatera dess ändringstidsstämpel, kommer \[dq]diff\[dq] och \[dq]sync\[dq] inte att
+upptäcka att filen har ändrats, och dess paritet kommer inte att uppdateras.
+.PP
+För att säkerställa att SnapRAID känner igen sådana ändringar, uppdatera
+filens ändringstidsstämpel (till exempel med verktyget \[dq]touch\[dq]). Annars
+kommer skillnaden endast att upptäckas som en hash\-avvikelse under en
+efterföljande \[dq]scrub\[dq] eller \[dq]check\[dq].
 .SH ÖVERSäTTNING (TRANSLATION) 
 Detta dokument är en automatisk översättning av den engelska manualen.
 Se den engelska manualen för den officiella versionen.

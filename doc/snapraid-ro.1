@@ -2235,6 +2235,51 @@ Comanda a întâmpinat unele erori.
 Comanda \`diff\` a constatat că totul este OK, dar este necesar un \`sync\`.
 .PD
 .RE
+.SH PROBLEME CUNOSCUTE (KNOWN ISSUES) 
+.SS Limitele sistemului de fișiere 
+SnapRAID nu traversează limitele sistemului de fișiere, punctelor de montare
+sau subvolumelor în timpul scanării unui disc de date. Când este detectată
+o astfel de limită, SnapRAID raportează un AVERTISMENT și nu scanează dincolo de ea.
+.PP
+Fișierele situate dincolo de aceste limite nu sunt incluse pe discul de date
+și trebuie configurate separat dacă trebuie protejate.
+.SS Puncte de montare cu instantanee ale sistemului de fișiere 
+Când instantanee ale sistemului de fișiere sunt activate, punctele de montare
+imbricate și montările bind din interiorul unui disc de date nu sunt acceptate.
+.PP
+Punctele de montare fac parte din spațiul de nume de montare al sistemului
+activ și nu sunt păstrate în instantaneele sistemului de fișiere. În consecință,
+la scanarea unui instantaneu, un director ascuns de un punct de montare în
+sistemul de fișiere activ poate deveni vizibil.
+.PP
+Nu plasați puncte de montare imbricate sau montări bind în interiorul discurilor
+de date când instantaneele sistemului de fișiere sunt activate.
+.SS Legături dure (Hard links) 
+SnapRAID identifică o legătură dură ca fișier original și reprezintă celelalte
+legături dure ca referințe la acesta. Care legătură este selectată ca fișier
+original depinde de ordinea în care sunt scanate intrările din director.
+.PP
+Dacă această ordine se modifică, de exemplu după redenumirea, restaurarea
+fișierelor sau recrearea directoarelor, \[dq]diff\[dq] poate raporta mutări,
+actualizări, adăugiri sau eliminări aparente chiar și atunci când fișierele
+legate reprezintă în continuare aceleași date.
+.PP
+Acest lucru nu indică coruperea datelor, dar diferențele raportate pot fi
+confuze și s\-ar putea să nu corespundă direct operațiunilor efectuate în
+sistemul de fișiere.
+.SS Modificări ale fișierelor pe loc fără schimbarea marcajului temporal 
+SnapRAID detectează modificările fișierelor comparând dimensiunile fișierelor
+și marcajele temporale de modificare (mtime).
+.PP
+Dacă o aplicație modifică un fișier pe loc fără a\-i modifica dimensiunea
+și fără a\-i actualiza marcajul temporal de modificare, \[dq]diff\[dq] și \[dq]sync\[dq] nu
+vor detecta că fișierul s\-a modificat, iar paritatea acestuia nu va fi
+actualizată.
+.PP
+Pentru a vă asigura că SnapRAID recunoaște astfel de modificări, actualizați
+marcajul temporal de modificare al fișierului (de exemplu, cu utilitarul
+\[dq]touch\[dq]). În caz contrar, diferența va fi detectată doar ca o neconcordanță
+de hash în timpul unui \[dq]scrub\[dq] sau \[dq]check\[dq] ulterior.
 .SH TRADUCERE (TRANSLATION) 
 Acest document este o traducere automată a manualului în limba engleză.
 Consultați manualul în limba engleză pentru versiunea oficială.

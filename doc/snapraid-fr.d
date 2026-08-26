@@ -1883,6 +1883,59 @@ Code de sortie (Exit Code)
 	1 - La commande a rencontré des erreurs.
 	2 - La commande `diff` a trouvé que tout est OK, mais un `sync` est requis.
 
+Problèmes connus (Known Issues)
+  Limites du système de fichiers
+	SnapRAID ne franchit pas les limites de système de fichiers, de point de
+	montage ou de sous-volume lors de l'analyse d'un disque de données.
+	Lorsqu'une telle limite est détectée, SnapRAID signale un AVERTISSEMENT
+	et n'analyse pas au-delà.
+
+	Les fichiers situés au-delà de ces limites ne sont pas inclus dans le disque
+	de données et doivent être configurés séparément s'ils doivent être protégés.
+
+  Points de montage avec instantanés du système de fichiers
+	Lorsque les instantanés du système de fichiers sont activés, les points de
+	montage imbriqués et les montages bind à l'intérieur d'un disque de données
+	ne sont pas pris en charge.
+
+	Les points de montage font partie de l'espace de noms de montage du système
+	en direct et ne sont pas conservés dans les instantanés du système de
+	fichiers. Par conséquent, lors de l'analyse d'un instantané, un répertoire
+	masqué par un point de montage dans le système de fichiers en direct peut
+	devenir visible.
+
+	Ne placez pas de points de montage imbriqués ou de montages bind dans les
+	disques de données lorsque les instantanés du système de fichiers sont
+	activés.
+
+  Liens matériels
+	SnapRAID identifie un lien matériel comme le fichier d'origine et représente
+	les autres liens matériels comme des références à celui-ci. Le lien sélectionné
+	comme fichier d'origine dépend de l'ordre dans lequel les entrées de
+	répertoire sont analysées.
+
+	Si cet ordre change, par exemple après le renommage, la restauration de
+	fichiers ou la recréation de répertoires, "diff" peut signaler des
+	déplacements, mises à jour, ajouts ou suppressions apparents même lorsque
+	les fichiers liés représentent toujours les mêmes données.
+
+	Cela n'indique pas une corruption des données, mais les différences
+	signalées peuvent prêter à confusion et ne pas correspondre directement aux
+	opérations effectuées sur le système de fichiers.
+
+  Modifications de fichiers sur place sans changement d'horodatage
+	SnapRAID détecte les modifications de fichiers en comparant la taille des
+	fichiers et les horodatages de modification (mtime).
+
+	Si une application modifie un fichier sur place sans modifier sa taille ni
+	mettre à jour son horodatage de modification, "diff" et "sync" ne détecteront
+	pas que le fichier a changé et sa parité ne sera pas mise à jour.
+
+	Pour vous assurer que SnapRAID reconnaît ces modifications, mettez à jour
+	l'horodatage de modification du fichier (par exemple avec l'utilitaire
+	"touch"). Sinon, la différence ne sera détectée que sous la forme d'une
+	non-concordance de hachage lors d'un "scrub" ou "check" ultérieur.
+
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.
 	Veuillez vous référer au manuel en anglais pour la version officielle.

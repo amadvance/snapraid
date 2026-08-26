@@ -1872,6 +1872,58 @@ Exit-Code (Exit Code)
 	1 - Der Befehl ist auf Fehler gestoßen.
 	2 - Der Befehl `diff` hat festgestellt, dass alles OK ist, aber ein `sync` erforderlich ist.
 
+Bekannte Probleme (Known Issues)
+  Dateisystemgrenzen
+	SnapRAID überschreitet beim Scannen einer Datenfestplatte keine Dateisystem-,
+	Mount- oder Subvolume-Grenzen. Wenn eine solche Grenze erkannt wird, gibt
+	SnapRAID eine WARNUNG aus und scannt nicht darüber hinaus.
+
+	Dateien, die sich jenseits solcher Grenzen befinden, sind nicht in der
+	Datenfestplatte enthalten und müssen separat konfiguriert werden, wenn sie
+	geschützt werden sollen.
+
+  Mount-Punkte mit Dateisystem-Snapshots
+	Wenn Dateisystem-Snapshots aktiviert sind, werden verschachtelte Mount-Punkte
+	und Bind-Mounts innerhalb einer Datenfestplatte nicht unterstützt.
+
+	Mount-Punkte sind Teil des Mount-Namespace des laufenden Systems und werden
+	in Dateisystem-Snapshots nicht beibehalten. Folglich kann beim Scannen eines
+	Snapshots ein Verzeichnis sichtbar werden, das im Live-Dateisystem durch
+	einen Mount-Punkt verdeckt war.
+
+	Platzieren Sie keine verschachtelten Mount-Punkte oder Bind-Mounts innerhalb
+	von Datenfestplatten, wenn Dateisystem-Snapshots aktiviert sind.
+
+  Hardlinks
+	SnapRAID identifiziert einen Hardlink als Originaldatei und stellt die
+	anderen Hardlinks als Verweise darauf dar. Welcher Link als Originaldatei
+	ausgewählt wird, hängt von der Reihenfolge ab, in der Verzeichniseinträge
+	gescannt werden.
+
+	Wenn sich diese Reihenfolge ändert, beispielsweise nach dem Umbenennen,
+	Wiederherstellen von Dateien oder Neuerstellen von Verzeichnissen, meldet
+	"diff" möglicherweise scheinbare Verschiebungen, Aktualisierungen,
+	Hinzufügungen oder Entfernungen, selbst wenn die fest verknüpften Dateien
+	immer noch dieselben Daten darstellen.
+
+	Dies deutet nicht auf eine Datenbeschädigung hin, aber die gemeldeten
+	Unterschiede können verwirrend sein und stimmen möglicherweise nicht direkt
+	mit den ausgeführten Dateisystemoperationen überein.
+
+  In-Place-Dateimodifikationen ohne Zeitstempeländerungen
+	SnapRAID erkennt Dateimodifikationen durch den Vergleich von Dateigrößen
+	und Änderungszeitstempeln (mtime).
+
+	Wenn eine Anwendung eine Datei in-place ändert, ohne deren Größe zu verändern
+	oder ihren Änderungszeitstempel zu aktualisieren, erkennen "diff" und "sync"
+	nicht, dass sich die Datei geändert hat, und ihre Parität wird nicht
+	aktualisiert.
+
+	Um sicherzustellen, dass SnapRAID solche Änderungen erkennt, aktualisieren
+	Sie den Änderungszeitstempel der Datei (z. B. mit dem Dienstprogramm "touch").
+	Andernfalls wird der Unterschied erst bei einem nachfolgenden "scrub" oder
+	"check" als Hash-Fehlübereinstimmung erkannt.
+
 Übersetzung (Translation)
 	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
 	Die maßgebliche Version finden Sie im englischen Handbuch.

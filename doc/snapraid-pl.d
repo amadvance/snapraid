@@ -1755,6 +1755,54 @@ Kod wyjścia (Exit Code)
 	1 - Polecenie napotkało błędy.
 	2 - Polecenie `diff` wykazało, że wszystko jest w porządku, ale wymagane jest `sync`.
 
+Znane problemy (Known Issues)
+  Granice systemu plików
+	SnapRAID nie przekracza granic systemów plików, punktów montowania ani
+	podwolumenów podczas skanowania dysku z danymi. Po wykryciu takiej granicy
+	SnapRAID zgłasza OSTRZEŻENIE i nie skanuje dalej.
+
+	Pliki znajdujące się poza takimi granicami nie są uwzględniane na dysku
+	z danymi i muszą zostać skonfigurowane oddzielnie, jeśli mają być chronione.
+
+  Punkty montowania z migawkami systemu plików
+	Gdy migawki systemu plików są włączone, zagnieżdżone punkty montowania oraz
+	montowania bind wewnątrz dysku z danymi nie są obsługiwane.
+
+	Punkty montowania są częścią przestrzeni nazw montowania działającego
+	systemu i nie są zachowywane w migawkach systemu plików. W związku z tym
+	podczas skanowania migawki katalog ukryty przez punkt montowania w aktywnym
+	systemie plików może stać się widoczny.
+
+	Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
+	dysków z danymi, gdy migawki systemu plików są włączone.
+
+  Twarde dowiązania (Hard links)
+	SnapRAID identyfikuje jedno twarde dowiązanie jako plik oryginalny, a
+	pozostałe twarde dowiązania reprezentuje jako odwołania do niego. To, które
+	dowiązanie zostanie wybrane jako plik oryginalny, zależy od kolejności
+	skanowania wpisów w katalogu.
+
+	Jeśli ta kolejność ulegnie zmianie, na przykład po zmianie nazwy,
+	przywróceniu plików lub ponownym utworzeniu katalogów, polecenie "diff"
+	może zgłaszać pozorne przeniesienia, aktualizacje, dodania lub usunięcia,
+	nawet jeśli dowiązane pliki nadal reprezentują te same dane.
+
+	Nie oznacza to uszkodzenia danych, ale zgłaszane różnice mogą być mylące i
+	mogą nie odpowiadać bezpośrednio operacjom wykonanym w systemie plików.
+
+  Modyfikacje plików w miejscu bez zmiany znacznika czasu
+	SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
+	znaczniki czasu modyfikacji (mtime).
+
+	Jeśli aplikacja modyfikuje plik w miejscu bez zmiany jego rozmiaru ani
+	aktualizacji znacznika czasu modyfikacji, polecenia "diff" i "sync" nie
+	wykryją zmiany pliku, a jego parzystość nie zostanie zaktualizowana.
+
+	Aby SnapRAID rozpoznał takie zmiany, zaktualizuj znacznik czasu modyfikacji
+	pliku (na przykład za pomocą narzędzia "touch"). W przeciwnym razie różnica
+	zostanie wykryta dopiero jako niezgodność skrótu podczas kolejnego "scrub"
+	lub "check".
+
 Tłumaczenie (Translation)
 	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 	Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.

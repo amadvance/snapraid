@@ -2275,6 +2275,52 @@ O comando encontrou alguns erros.
 O comando \`diff\` determinou que tudo está OK, mas é necessário um \`sync\`.
 .PD
 .RE
+.SH PROBLEMAS CONHECIDOS (KNOWN ISSUES) 
+.SS Limites do sistema de arquivos 
+O SnapRAID não cruza limites de sistema de arquivos, pontos de montagem ou
+subvolumes ao verificar um disco de dados. Quando tal limite é detectado,
+o SnapRAID relata um AVISO e não verifica além dele.
+.PP
+Arquivos localizados além desses limites não são incluídos no disco de
+dados e devem ser configurados separadamente se precisarem ser protegidos.
+.SS Pontos de montagem com instantâneos do sistema de arquivos 
+Quando os instantâneos do sistema de arquivos estão ativados, pontos de
+montagem aninhados e montagens bind dentro de um disco de dados não são
+suportados.
+.PP
+Os pontos de montagem fazem parte do namespace de montagem do sistema ativo
+e não são preservados em instantâneos do sistema de arquivos. Consequentemente,
+ao verificar um instantâneo, um diretório oculto por um ponto de montagem no
+sistema de arquivos ativo pode se tornar visível.
+.PP
+Não coloque pontos de montagem aninhados ou montagens bind dentro de discos
+de dados quando os instantâneos do sistema de arquivos estiverem ativados.
+.SS Links físicos (Hard links) 
+O SnapRAID identifica um link físico como o arquivo original e representa
+os outros links físicos como referências a ele. Qual link é selecionado
+como o arquivo original depende da ordem em que as entradas do diretório
+são verificadas.
+.PP
+Se essa ordem mudar, por exemplo, após arquivos serem renomeados,
+restaurados ou diretórios serem recriados, o \[dq]diff\[dq] poderá relatar aparentes
+movimentações, atualizações, adições ou remoções, mesmo quando os arquivos
+vinculados ainda representarem os mesmos dados.
+.PP
+Isso não indica corrupção de dados, mas as diferenças relatadas podem ser
+confusas e podem não corresponder diretamente às operações executadas no
+sistema de arquivos.
+.SS Modificações de arquivo no local sem alteração de data/hora 
+O SnapRAID detecta modificações em arquivos comparando tamanhos de arquivo e
+carimbos de data/hora de modificação (mtime).
+.PP
+Se um aplicativo modificar um arquivo no local sem alterar seu tamanho nem
+atualizar seu carimbo de data/hora de modificação, o \[dq]diff\[dq] e o \[dq]sync\[dq] não
+detectarão que o arquivo foi alterado e sua paridade não será atualizada.
+.PP
+Para garantir que o SnapRAID reconheça essas alterações, atualize o carimbo
+de data/hora de modificação do arquivo (por exemplo, com o utilitário \[dq]touch\[dq]).
+Caso contrário, a diferença só será detectada como uma incompatibilidade de
+hash durante um \[dq]scrub\[dq] ou \[dq]check\[dq] subsequente.
 .SH TRADUçãO (TRANSLATION) 
 Este documento é uma tradução automática do manual em inglês.
 Consulte o manual em inglês para a versão oficial.

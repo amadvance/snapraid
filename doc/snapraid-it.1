@@ -2350,6 +2350,50 @@ Il comando ha riscontrato alcuni errori.
 Il comando \`diff\` ha rilevato che tutto è OK, ma è necessario un \`sync\`.
 .PD
 .RE
+.SH PROBLEMI NOTI (KNOWN ISSUES) 
+.SS Limiti del filesystem 
+SnapRAID non attraversa i confini di filesystem, punti di mount o subvolume
+durante la scansione di un disco dati. Quando viene rilevato un tale confine,
+SnapRAID segnala un WARNING e non prosegue la scansione al suo interno.
+.PP
+I file che si trovano oltre tali confini non sono inclusi nel disco dati e
+devono essere configurati separatamente se devono essere protetti.
+.SS Punti di mount con snapshot del filesystem 
+Quando le snapshot del filesystem sono abilitate, i punti di mount annidati
+e i bind mount all\'interno di un disco dati non sono supportati.
+.PP
+I punti di mount fanno parte del namespace di mount del sistema in esecuzione
+e non vengono preservati nelle snapshot del filesystem. Di conseguenza,
+durante la scansione di una snapshot, una directory nascosta da un punto di
+mount nel filesystem live potrebbe diventare visibile.
+.PP
+Non inserire punti di mount annidati o bind mount all\'interno dei dischi dati
+quando le snapshot del filesystem sono abilitate.
+.SS Hard link 
+SnapRAID identifica un hard link come file originale e rappresenta gli altri
+hard link come riferimenti ad esso. Quale link viene selezionato come file
+originale dipende dall\'ordine in cui vengono scansionate le voci di directory.
+.PP
+Se questo ordine cambia, ad esempio dopo che i file vengono rinominati,
+ripristinati o le directory vengono ricreate, \[dq]diff\[dq] può segnalare apparenti
+spostamenti, aggiornamenti, aggiunte o rimozioni anche quando i file collegati
+rappresentano ancora gli stessi dati.
+.PP
+Ciò non indica corruzione dei dati, ma le differenze segnalate possono
+generare confusione e potrebbero non corrispondere direttamente alle
+operazioni eseguite sul filesystem.
+.SS Modifiche ai file sul posto senza variazione di data/ora 
+SnapRAID rileva le modifiche ai file confrontando le dimensioni dei file e
+i timestamp di modifica (mtime).
+.PP
+Se un\'applicazione modifica un file in\-place senza alterarne la dimensione
+o aggiornarne il timestamp di modifica, \[dq]diff\[dq] e \[dq]sync\[dq] non rileveranno che
+il file è cambiato e la sua parità non verrà aggiornata.
+.PP
+Per garantire che SnapRAID riconosca tali modifiche, aggiornare il timestamp
+di modifica del file (ad esempio con l\'utilità \[dq]touch\[dq]). Altrimenti, la
+differenza verrà rilevata solo come mancata corrispondenza dell\'hash durante
+un successivo \[dq]scrub\[dq] o \[dq]check\[dq].
 .SH TRADUZIONE (TRANSLATION) 
 Questo documento è una traduzione automatica del manuale in inglese.
 Fare riferimento al manuale in inglese per la versione ufficiale.

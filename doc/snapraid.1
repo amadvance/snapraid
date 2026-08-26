@@ -2245,6 +2245,50 @@ The \`diff\` command found everything is OK, but a \`sync\` is
 needed.
 .PD
 .RE
+.SH KNOWN ISSUES 
+.SS Filesystem boundaries 
+SnapRAID does not cross filesystem, mount, or subvolume boundaries while
+scanning a data disk. When such a boundary is detected, SnapRAID reports
+a WARNING and does not scan beyond it.
+.PP
+Files located beyond such boundaries are not included in the data disk and
+must be configured separately if they have to be protected.
+.SS Mount points with filesystem snapshots 
+When filesystem snapshots are enabled, nested mount points and bind mounts
+inside a data disk are not supported.
+.PP
+Mount points are part of the live system mount namespace and are not
+preserved in filesystem snapshots. Consequently, when scanning a snapshot,
+a directory hidden by a mount point in the live filesystem may become
+visible.
+.PP
+Do not place nested mount points or bind mounts inside data disks when
+filesystem snapshots are enabled.
+.SS Hard links 
+SnapRAID identifies one hard link as the original file and represents the
+other hard links as references to it. Which link is selected as the original
+file depends on the order in which directory entries are scanned.
+.PP
+If this order changes, for example after files are renamed, restored, or
+directories are recreated, \[dq]diff\[dq] may report apparent moves, updates,
+additions, or removals even when the hard\-linked files still represent the
+same data.
+.PP
+This does not indicate data corruption, but the reported differences may be
+confusing and may not correspond directly to the filesystem operations that
+were performed.
+.SS In\-place file modifications without timestamp changes 
+SnapRAID detects file modifications by comparing file sizes and
+modification timestamps (mtime).
+.PP
+If an application modifies a file in\-place without altering its size
+or updating its modification timestamp, \[dq]diff\[dq] and \[dq]sync\[dq] will not
+detect that the file has changed, and its parity will not be updated.
+.PP
+To ensure SnapRAID recognizes such changes, update the file\'s
+modification timestamp (for example, with the \[dq]touch\[dq] utility).
+Otherwise, the difference will only be detected as a hash mismatch
+during a subsequent \[dq]scrub\[dq] or \[dq]check\[dq].
 .SH COPYRIGHT 
 This file is Copyright (C) 2026 Andrea Mazzoleni
 .SH SEE ALSO 
