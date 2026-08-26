@@ -301,23 +301,21 @@ CHECKFLAGS = $(CHECKFLAGS_ALPHA) -q -q -q
 # Snapshots with no parity limit
 CHECKFLAGS_SNAP = --test-skip-device --test-skip-self --test-io-advise-none --test-force-order-alpha -q -q -q
 
-# Number of files to create
-if !HAVE_MEMORY_CHECKER
-if HAVE_POSIX
-CHECKCOUNT = 1000
-else
-CHECKCOUNT = 500
+# Short check options
+if HAVE_MEMORY_CHECKER
+SHORTCHECK = 1
 endif
+SHORTCHECK ?= 0
+
+# Number of files to create
+if HAVE_POSIX
+CHECKCOUNT_DEFAULT = 1000
 else
-CHECKCOUNT = 500
+CHECKCOUNT_DEFAULT = 500
 endif
 
-# Size of files to create
-if !HAVE_MEMORY_CHECKER
-CHECKSIZE = 4000
-else
-CHECKSIZE = 100
-endif
+CHECKCOUNT = $(if $(filter 1,$(SHORTCHECK)),500,$(CHECKCOUNT_DEFAULT))
+CHECKSIZE = $(if $(filter 1,$(SHORTCHECK)),100,4000)
 
 CONF = $(srcdir)/test/test-par6.conf
 THERMAL = $(srcdir)/test/test-par6-thermal.conf

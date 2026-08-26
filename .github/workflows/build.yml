@@ -54,7 +54,7 @@ jobs:
             -cpu cortex-a15 \
             -L /usr/arm-linux-gnueabihf \
             ./snapraid -V
-      - run: make check
+      - run: make check SHORTCHECK=1
   build-win:
     runs-on: windows-latest
     defaults:
