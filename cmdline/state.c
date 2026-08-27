@@ -3234,6 +3234,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			block_off_t v_free_blocks;
 			struct snapraid_disk* disk;
 
+			if (mapping_max >= RAID_DATA_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ECONTENT, "Too many data disk mappings in the content file!\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			ret = sgetbs(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
