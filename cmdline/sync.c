@@ -187,7 +187,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* check if the file is changed */
+			/*
+			 * Check if the file changed between scan and open. Stat info is cached
+			 * on open; further changes will be detected in the next sync by mtime.
+			 */
 			if (handle[j].st.st_size != file->size
 				|| handle[j].st.st_mtime != file->mtime_sec
 				|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
@@ -209,8 +212,8 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				++soft_error;
 
 				/*
-				 * If the file is changed, it means that it was modified during sync
-				 * this isn't a serious error, so we skip this block, and continue with others
+				 * File changed between scan and open; this isn't a serious error,
+				 * so we skip this block, and continue with others
 				 */
 				continue;
 			}
@@ -562,7 +565,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* check if the file is changed */
+	/*
+	 * Check if the file changed between scan and open. Stat info is cached
+	 * on open; further changes will be detected in the next sync by mtime.
+	 */
 	if (handle->st.st_size != task->file->size
 		|| handle->st.st_mtime != task->file->mtime_sec
 		|| STAT_NSEC(&handle->st) != task->file->mtime_nsec
@@ -580,8 +586,8 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		log_error_errno(ENOENT, disk->name); /* same message for ENOENT */
 
 		/*
-		 * If the file is changed, it means that it was modified during sync
-		 * this isn't a serious error, so we skip this block, and continue with others
+		 * File changed between scan and open; this isn't a serious error,
+		 * so we skip this block, and continue with others
 		 */
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
