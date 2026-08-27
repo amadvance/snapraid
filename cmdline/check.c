@@ -2082,63 +2082,6 @@ bail:
 		}
 	}
 
-	/*
-	 * Remove all the files created from scratch that have not finished the processing
-	 * it happens only when aborting pressing Ctrl+C or other reason.
-	 */
-	if (fix) {
-		/* for each disk */
-		for (i = 0; i < diskmax; ++i) {
-			tommy_node* node;
-			struct snapraid_disk* disk;
-
-			if (!handle[i].disk)
-				continue;
-
-			/* for each file in the disk */
-			disk = handle[i].disk;
-			node = disk->filelist;
-			while (node) {
-				char path[PATH_MAX];
-				struct snapraid_file* file;
-
-				file = node->data;
-				node = node->next; /* next node */
-
-				/* if the file was not created, meaning that it was already existing */
-				if (!file_flag_has(file, FILE_IS_CREATED)) {
-					/* nothing to do */
-					continue;
-				}
-
-				/* if processing was finished */
-				if (file_flag_has(file, FILE_IS_FINISHED)) {
-					/* nothing to do */
-					continue;
-				}
-
-				/*
-				 * If the file was originally missing, and processing not yet finished
-				 * we have to throw it away  to ensure that at the next run we will retry
-				 * to fix it, in case we select to undelete missing files
-				 */
-				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
-
-				ret = remove(path);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal(errno, "Error removing '%s'. %s.\n", path, strerror(errno));
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-
-					++unrecoverable_error;
-					/* continue, as we are already exiting */
-					/* LCOV_EXCL_STOP */
-				}
-			}
-		}
-	}
-
 	if (soft_error || io_error || silent_error || recovered_error || unrecoverable_error) {
 		msg_status("\n");
 		msg_status("%8u soft errors\n", soft_error);
@@ -2399,3 +2342,4 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	return 0;
 }
+

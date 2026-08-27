@@ -74,11 +74,26 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 			handle->is_unrecoverable = 1;
 			pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
 		} else if (errno == ENOENT) {
-			/* create it */
-			handle->f = open(handle->path, flags | O_RDWR | O_CREAT, 0600);
+			/*
+			 * Create missing file as .unrecoverable so that an interruption or
+			 * crash (e.g. SIGKILL) during recovery never leaves a partially recovered
+			 * file visible under its final name.
+			 */
+			handle->f = open(path_unrecoverable, flags | O_RDWR | O_CREAT | O_EXCL, 0600);
 			if (handle->f != -1) {
-				/* mark it as created if really done */
-				handle->created = 1;
+				handle->is_unrecoverable = 1;
+				pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+			} else if (errno == EEXIST) {
+				/* if created concurrently, reopen safely */
+				handle->f = open(path_unrecoverable, flags | O_RDWR);
+				if (handle->f != -1) {
+					handle->is_unrecoverable = 1;
+					pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+				} else {
+					pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+				}
+			} else {
+				pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
 			}
 		} else {
 			/* report the path that failed to open */
