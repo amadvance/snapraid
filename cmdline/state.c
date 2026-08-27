@@ -2677,6 +2677,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				case 'o' :
 					/* if it's a run of deleted blocks */
 
+					/* ensure the converted byte size fits in signed data_off_t without overflow */
+					if (v_count > INT64_MAX / (uint64_t)state->block_size) {
+						/* LCOV_EXCL_START */
+						decoding_error(path, f);
+						log_fatal(ECONTENT, "Internal inconsistency: Invalid deleted block count %" PRIu64 "!\n", v_count);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+
 					/* allocate a fake deleted file */
 					deleted = file_alloc(state->block_size, "<deleted>", v_count * (data_off_t)state->block_size, 0, 0, 0, 0);
 
