@@ -6,6 +6,7 @@
 #ifdef __MINGW32__ /* Only for MingW */
 
 #include "support.h"
+#include "raid/cpu.h"
 
 /****************************************************************************/
 /* global */
@@ -1928,6 +1929,164 @@ void app_default_conf(char* conf, size_t conf_size, const char* argv0)
 		pathcat(conf, conf_size, PACKAGE ".conf");
 	} else {
 		pathcpy(conf, conf_size, PACKAGE ".conf");
+	}
+}
+
+/****************************************************************************/
+/* machine */
+
+#ifdef CONFIG_X86
+static void format_freq(char* buf, size_t size, unsigned mhz)
+{
+	if (mhz >= 1000)
+		snprintf(buf, size, "%.2f GHz", mhz / 1000.0);
+	else
+		snprintf(buf, size, "%u MHz", mhz);
+}
+#endif
+
+void machineinfo(struct machineinfo_struct* info)
+{
+	memset(info, 0, sizeof(*info));
+
+#if defined(__x86_64__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "x86_64");
+#elif defined(__i386__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "x86_32");
+#elif defined(__aarch64__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "aarch64");
+#elif defined(__arm__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "arm");
+#endif
+
+#ifdef CONFIG_X86
+	raid_cpu_info(info->cpu_vendor, &info->cpu_family, &info->cpu_model);
+
+	uint32_t reg[4];
+	raid_cpuid(1, 0, reg);
+	info->cpu_stepping = reg[0] & 0xF;
+
+	/* brand string from extended CPUID leaves 0x80000002..0x80000004 */
+	raid_cpuid(0x80000000, 0, reg);
+	if (reg[0] >= 0x80000004) {
+		raid_cpuid(0x80000002, 0, reg);
+		memcpy(info->cpu_brand + 0, reg, sizeof(reg));
+		raid_cpuid(0x80000003, 0, reg);
+		memcpy(info->cpu_brand + 16, reg, sizeof(reg));
+		raid_cpuid(0x80000004, 0, reg);
+		memcpy(info->cpu_brand + 32, reg, sizeof(reg));
+		info->cpu_brand[48] = 0;
+		strtrim(info->cpu_brand);
+	}
+
+	/* base and maximum frequency from CPUID leaf 0x16 */
+	raid_cpuid(0, 0, reg);
+	if (reg[0] >= 0x16) {
+		raid_cpuid(0x16, 0, reg);
+		unsigned base_mhz = reg[0] & 0xFFFF;
+		unsigned max_mhz = reg[1] & 0xFFFF;
+		if (base_mhz > 0 && max_mhz > 0 && base_mhz != max_mhz) {
+			char base_str[32], max_str[32];
+			format_freq(base_str, sizeof(base_str), base_mhz);
+			format_freq(max_str, sizeof(max_str), max_mhz);
+			snprintf(info->cpu_clock, sizeof(info->cpu_clock), "%s (max %s)", base_str, max_str);
+		} else if (base_mhz > 0) {
+			format_freq(info->cpu_clock, sizeof(info->cpu_clock), base_mhz);
+		} else if (max_mhz > 0) {
+			format_freq(info->cpu_clock, sizeof(info->cpu_clock), max_mhz);
+		}
+	}
+
+	/* hypervisor detection */
+	raid_cpuid(1, 0, reg);
+	if (reg[2] & (1U << 31)) {
+		raid_cpuid(0x40000000, 0, reg);
+		memcpy(info->hypervisor + 0, &reg[1], 4);
+		memcpy(info->hypervisor + 4, &reg[2], 4);
+		memcpy(info->hypervisor + 8, &reg[3], 4);
+		info->hypervisor[12] = 0;
+		strtrim(info->hypervisor);
+	}
+#endif
+
+	MEMORYSTATUSEX ms;
+	memset(&ms, 0, sizeof(ms));
+	ms.dwLength = sizeof(ms);
+	if (GlobalMemoryStatusEx(&ms)) {
+		info->memory_total_bytes = ms.ullTotalPhys;
+	}
+
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	info->memory_page_size = si.dwPageSize;
+	info->cpu_cores_logical = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+
+	/* Query processor topology and cache hierarchy via GetLogicalProcessorInformationEx */
+	DWORD len = 0;
+	GetLogicalProcessorInformationEx(RelationAll, 0, &len);
+	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER && len > 0) {
+		SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buf = malloc_nofail(len);
+		if (GetLogicalProcessorInformationEx(RelationAll, buf, &len)) {
+			DWORD offset = 0;
+			while (offset < len) {
+				SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* info_ex = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*)((char*)buf + offset);
+				if (info_ex->Relationship == RelationProcessorCore) {
+					++info->cpu_cores_physical;
+				} else if (info_ex->Relationship == RelationCache) {
+					CACHE_RELATIONSHIP* cache = &info_ex->Cache;
+					/*
+					 * Select the coherent cache hierarchy associated with the primary
+					 * core (Core 0). This prevents mixing cache levels from different
+					 * core types on hybrid architectures (e.g. L1 from P-core, L2 from E-cluster).
+					 */
+					int matches_core0 = 0;
+					if (cache->GroupCount == 0) {
+						if (cache->GroupMask.Group == 0 && (cache->GroupMask.Mask & 1) != 0)
+							matches_core0 = 1;
+					} else {
+						for (WORD g = 0; g < cache->GroupCount; ++g) {
+							if (cache->GroupMasks[g].Group == 0 && (cache->GroupMasks[g].Mask & 1) != 0) {
+								matches_core0 = 1;
+								break;
+							}
+						}
+					}
+
+					if (matches_core0) {
+						if (cache->Level == 1) {
+							if (cache->Type == CacheData || cache->Type == CacheUnified)
+								info->cache_l1_data = cache->CacheSize;
+							else if (cache->Type == CacheInstruction)
+								info->cache_l1_instruction = cache->CacheSize;
+						} else if (cache->Level == 2) {
+							info->cache_l2 = cache->CacheSize;
+						} else if (cache->Level == 3) {
+							info->cache_l3 = cache->CacheSize;
+						}
+					}
+				}
+				if (info_ex->Size == 0)
+					break;
+				offset += info_ex->Size;
+			}
+		}
+		free(buf);
+	}
+
+	/* OS version via RtlGetVersion */
+	typedef LONG (WINAPI* RtlGetVersionPtr)(LPOSVERSIONINFOW);
+	HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+	if (ntdll) {
+		RtlGetVersionPtr pRtlGetVersion = (RtlGetVersionPtr)(void*)GetProcAddress(ntdll, "RtlGetVersion");
+		if (pRtlGetVersion) {
+			OSVERSIONINFOW vi;
+			memset(&vi, 0, sizeof(vi));
+			vi.dwOSVersionInfoSize = sizeof(vi);
+			if (pRtlGetVersion(&vi) == 0) {
+				snprintf(info->os_name, sizeof(info->os_name), "Windows %lu.%lu (Build %lu)",
+					(unsigned long)vi.dwMajorVersion, (unsigned long)vi.dwMinorVersion, (unsigned long)vi.dwBuildNumber);
+			}
+		}
 	}
 }
 

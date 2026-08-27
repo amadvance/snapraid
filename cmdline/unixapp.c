@@ -7,6 +7,7 @@
 
 #include "app.h"
 #include "support.h"
+#include "raid/cpu.h"
 
 /****************************************************************************/
 /* global */
@@ -502,70 +503,106 @@ static long long syslong(const char* path)
 }
 
 /*
- * Parse a sysfs hexadecimal bitmask string (e.g. thread_siblings).
+ * Parse Linux cpulist format (e.g. "0-3,5,8-11") into an array of CPU IDs.
  *
- * Linux sysfs outputs bitmasks in big-endian 32-bit hex word groups
- * (highest CPUs on the left, lowest CPUs on the right).
- *
- * Left-shifting digits into a 64-bit unsigned long long operates modulo 2^64,
- * discarding any high-order hex words (CPUs >= 64) and leaving bits 0..63
- * containing the exact mask for CPUs 0..63. Since CPUS_MAX is 64, this mask
- * is always accurate for all evaluated CPUs even on systems with > 64 CPUs.
+ * Returns the total number of CPUs in the list. Stores up to max_cpus entries.
  */
-static unsigned long long syshex(const char* path)
+static unsigned parse_cpulist(const char* str, unsigned* cpus, unsigned max_cpus)
 {
-	char buf[1152]; /* enough for 1024 CPUs */
-	if (sysattr(path, buf, sizeof(buf)) != 0)
-		return 0;
+	const char* p = str;
+	unsigned count = 0;
 
-	unsigned long long v = 0;
-	for (char* p = buf; *p != 0 && *p != '\n'; ++p) {
+	while (*p != 0) {
+		while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
+			++p;
+		if (*p == 0)
+			break;
+
+		char* end;
+		unsigned long start = strtoul(p, &end, 10);
+		if (end == p)
+			break;
+
+		unsigned long stop = start;
+		p = end;
+		if (*p == '-') {
+			++p;
+			stop = strtoul(p, &end, 10);
+			if (end == p)
+				break;
+			p = end;
+		}
+
+		if (stop < start || stop >= CPU_SETSIZE)
+			break;
+
+		for (unsigned long i = start;; ++i) {
+			if (cpus != 0 && count < max_cpus)
+				cpus[count] = (unsigned)i;
+			++count;
+
+			if (i == stop)
+				break;
+		}
+
 		if (*p == ',')
-			continue;
-
-		v <<= 4;
-		if (*p >= '0' && *p <= '9')
-			v |= *p - '0';
-		else if (*p >= 'a' && *p <= 'f')
-			v |= *p - 'a' + 10;
-		else if (*p >= 'A' && *p <= 'F')
-			v |= *p - 'A' + 10;
-		else
-			break; /* hit unexpected character */
+			++p;
 	}
 
-	return v;
+	return count;
 }
 
-static int cpu_is_online(int i)
+/*
+ * Read online CPU IDs from /sys/devices/system/cpu/online.
+ *
+ * Falls back to consecutive 0..N-1 IDs if sysfs is unavailable.
+ * Returns the total number of online CPUs. Stores up to max_cpus entries in cpus.
+ */
+static unsigned read_online_cpus(unsigned* cpus, unsigned max_cpus)
 {
-	char path[256];
-	snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/online", i);
-	long long v = syslong(path);
-	if (v < 0)
-		return 1; /* cpu0 has no "online" knob — always on */
-	return v;
+	char buf[1024];
+	if (sysattr("/sys/devices/system/cpu/online", buf, sizeof(buf)) == 0) {
+		unsigned count = parse_cpulist(buf, cpus, max_cpus);
+		if (count > 0)
+			return count;
+	}
+
+	/* fallback: consecutive IDs from 0 */
+	long n = sysconf(_SC_NPROCESSORS_ONLN);
+	if (n <= 0)
+		n = sysconf(_SC_NPROCESSORS_CONF);
+	if (n <= 0)
+		n = 1;
+
+	unsigned count = (unsigned)n;
+	unsigned store = count < max_cpus ? count : max_cpus;
+	for (unsigned i = 0; i < store; ++i) {
+		if (cpus != 0)
+			cpus[i] = i;
+	}
+	return count;
 }
 
 /*
  * Returns 1 if the specified cpu is the lowest-numbered logical CPU in its
  * physical core's SMT sibling set.
- *
- * thread_siblings is a hex bitmask where bit N = logical cpu N.
- * The lowest set bit identifies the primary sibling.
- * Safe for up to 64 logical CPUs (fits in unsigned long).
  */
-static int cpu_is_primary_sibling(int i)
+static int cpu_is_primary_sibling(unsigned i)
 {
 	char path[256];
-	snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/topology/thread_siblings", i);
-	unsigned long long mask = syshex(path);
-	if (mask == 0) /* assume primary */
-		return 1;
-	return __builtin_ctzll(mask) == i;
-}
+	char buf[256];
 
-#define CPUS_MAX 64
+	snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/topology/thread_siblings_list", i);
+	if (sysattr(path, buf, sizeof(buf)) != 0)
+		return 1; /* assume primary */
+
+	unsigned siblings[16];
+	unsigned count = parse_cpulist(buf, siblings, sizeof(siblings) / sizeof(siblings[0]));
+	if (count == 0)
+		return 1;
+
+	return i == siblings[0];
+}
 
 /**
  * os_get_optimal_cpu() – returns the logical CPU index of the "fastest"
@@ -578,27 +615,25 @@ static int cpu_is_primary_sibling(int i)
 int os_get_optimal_cpu(void)
 {
 	char path[256];
-
-	int num_cpus = sysconf(_SC_NPROCESSORS_CONF);
-	if (num_cpus <= 0)
+	unsigned cpus[CPU_SETSIZE];
+	unsigned total_cpus = read_online_cpus(cpus, CPU_SETSIZE);
+	unsigned num_cpus = total_cpus < CPU_SETSIZE ? total_cpus : CPU_SETSIZE;
+	if (num_cpus == 0)
 		return -1;
-	if (num_cpus > CPUS_MAX)
-		num_cpus = CPUS_MAX;
 
 	/* ACPI CPPC: highest_perf with nominal_perf tiebreaker */
 	long long max_highest = -1;
 	long long max_nominal = -1;
 	int best_cppc = -1;
-	for (int i = 0; i < num_cpus; ++i) {
-		if (!cpu_is_online(i))
-			continue;
+	for (unsigned k = 0; k < num_cpus; ++k) {
+		unsigned i = cpus[k];
 
-		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/acpi_cppc/highest_perf", i);
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/acpi_cppc/highest_perf", i);
 		long long hp = syslong(path);
 		if (hp < 0)
 			continue;
 
-		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/acpi_cppc/nominal_perf", i);
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/acpi_cppc/nominal_perf", i);
 		long long np = syslong(path);
 		/* np may be missing */
 
@@ -620,11 +655,10 @@ int os_get_optimal_cpu(void)
 
 	/* find the global maximum frequency among online CPUs */
 	long long global_max_freq = -1;
-	for (int i = 0; i < num_cpus; ++i) {
-		if (!cpu_is_online(i))
-			continue;
+	for (unsigned k = 0; k < num_cpus; ++k) {
+		unsigned i = cpus[k];
 
-		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i);
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/cpufreq/cpuinfo_max_freq", i);
 		long long freq = syslong(path);
 		if (freq < 0)
 			continue;
@@ -638,12 +672,11 @@ int os_get_optimal_cpu(void)
 	int best_any = -1;        /* any matching CPU, not CPU 0 */
 	int best_c0 = -1;         /* CPU 0 fallback (always a primary sibling) */
 
-	for (int i = 0; i < num_cpus; ++i) {
-		if (!cpu_is_online(i))
-			continue;
+	for (unsigned k = 0; k < num_cpus; ++k) {
+		unsigned i = cpus[k];
 
 		if (global_max_freq != -1) {
-			snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i);
+			snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/cpufreq/cpuinfo_max_freq", i);
 			if (syslong(path) != global_max_freq)
 				continue;
 		}
@@ -4222,6 +4255,387 @@ void app_default_conf(char* conf, size_t conf_size, const char* argv0)
 	{
 		pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
 	}
+}
+
+#ifdef __linux__
+static void read_os_release(char* distro, size_t distro_size)
+{
+	distro[0] = 0;
+
+	char buf[1024];
+	ssize_t len = sysread("/etc/os-release", buf, sizeof(buf) - 1);
+	if (len <= 0)
+		len = sysread("/usr/lib/os-release", buf, sizeof(buf) - 1);
+	if (len <= 0)
+		return;
+	buf[len] = 0;
+
+	char* p = buf;
+	while ((p = strstr(p, "PRETTY_NAME=")) != 0) {
+		if (p == buf || *(p - 1) == '\n')
+			break;
+		++p;
+	}
+	if (!p)
+		return;
+
+	p += 12;
+	char q = 0;
+	if (*p == '"' || *p == '\'') {
+		q = *p++;
+	}
+
+	size_t d = 0;
+	while (*p != 0 && *p != '\n' && (q != 0 ? *p != q : 1)) {
+		if (*p == '\\' && *(p + 1) != 0 && *(p + 1) != '\n') {
+			++p;
+		}
+		if (d + 1 < distro_size) {
+			distro[d++] = *p;
+		}
+		++p;
+	}
+	distro[d] = 0;
+	strtrim(distro);
+}
+#endif
+
+/****************************************************************************/
+/* machine */
+
+#if defined(__linux__) || defined(__APPLE__)
+static void format_freq(char* buf, size_t size, unsigned mhz)
+{
+	if (mhz >= 1000)
+		snprintf(buf, size, "%.2f GHz", mhz / 1000.0);
+	else
+		snprintf(buf, size, "%u MHz", mhz);
+}
+#endif
+
+#ifdef __APPLE__
+static int sysctl_string(const char* name, char* buf, size_t size)
+{
+	size_t len = size;
+
+	if (sysctlbyname(name, buf, &len, 0, 0) != 0) {
+		buf[0] = 0;
+		return -1;
+	}
+
+	buf[size - 1] = 0;
+	strtrim(buf);
+	return 0;
+}
+#endif
+
+void machineinfo(struct machineinfo_struct* info)
+{
+	memset(info, 0, sizeof(*info));
+
+#if defined(__x86_64__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "x86_64");
+#elif defined(__i386__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "x86_32");
+#elif defined(__aarch64__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "aarch64");
+#elif defined(__arm__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "arm");
+#elif defined(__powerpc64__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "ppc64");
+#elif defined(__powerpc__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "ppc");
+#elif defined(__riscv)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "riscv");
+#elif defined(__s390x__)
+	snprintf(info->cpu_arch, sizeof(info->cpu_arch), "s390x");
+#endif
+
+#ifdef CONFIG_X86
+	raid_cpu_info(info->cpu_vendor, &info->cpu_family, &info->cpu_model);
+
+	uint32_t reg[4];
+	raid_cpuid(1, 0, reg);
+	info->cpu_stepping = reg[0] & 0xF;
+
+	/* brand string from extended CPUID leaves 0x80000002..0x80000004 */
+	raid_cpuid(0x80000000, 0, reg);
+	if (reg[0] >= 0x80000004) {
+		raid_cpuid(0x80000002, 0, reg);
+		memcpy(info->cpu_brand + 0, reg, sizeof(reg));
+		raid_cpuid(0x80000003, 0, reg);
+		memcpy(info->cpu_brand + 16, reg, sizeof(reg));
+		raid_cpuid(0x80000004, 0, reg);
+		memcpy(info->cpu_brand + 32, reg, sizeof(reg));
+		info->cpu_brand[48] = 0;
+		strtrim(info->cpu_brand);
+	}
+
+	/* hypervisor detection */
+	raid_cpuid(1, 0, reg);
+	if (reg[2] & (1U << 31)) {
+		raid_cpuid(0x40000000, 0, reg);
+		memcpy(info->hypervisor + 0, &reg[1], 4);
+		memcpy(info->hypervisor + 4, &reg[2], 4);
+		memcpy(info->hypervisor + 8, &reg[3], 4);
+		info->hypervisor[12] = 0;
+		strtrim(info->hypervisor);
+	}
+#endif
+
+	struct utsname un;
+	if (uname(&un) == 0) {
+		snprintf(info->os_name, sizeof(info->os_name), "%s %s", un.sysname, un.release);
+	}
+
+	long ps = sysconf(_SC_PAGESIZE);
+	if (ps > 0)
+		info->memory_page_size = (uint32_t)ps;
+
+#ifdef _SC_NPROCESSORS_ONLN
+	long num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+	if (num_cpus <= 0)
+		num_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	if (num_cpus > 0)
+		info->cpu_cores_logical = (unsigned)num_cpus;
+#elif defined(_SC_NPROCESSORS_CONF)
+	long num_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	if (num_cpus > 0)
+		info->cpu_cores_logical = (unsigned)num_cpus;
+#endif
+
+#ifdef _SC_LEVEL1_DCACHE_SIZE
+	long l1_d = sysconf(_SC_LEVEL1_DCACHE_SIZE);
+	if (l1_d > 0)
+		info->cache_l1_data = (uint64_t)l1_d;
+#endif
+#ifdef _SC_LEVEL1_ICACHE_SIZE
+	long l1_i = sysconf(_SC_LEVEL1_ICACHE_SIZE);
+	if (l1_i > 0)
+		info->cache_l1_instruction = (uint64_t)l1_i;
+#endif
+#ifdef _SC_LEVEL2_CACHE_SIZE
+	long l2 = sysconf(_SC_LEVEL2_CACHE_SIZE);
+	if (l2 > 0)
+		info->cache_l2 = (uint64_t)l2;
+#endif
+#ifdef _SC_LEVEL3_CACHE_SIZE
+	long l3 = sysconf(_SC_LEVEL3_CACHE_SIZE);
+	if (l3 > 0)
+		info->cache_l3 = (uint64_t)l3;
+#endif
+
+#ifdef __linux__
+	struct sysinfo si;
+	if (sysinfo(&si) == 0) {
+		info->memory_total_bytes = (uint64_t)si.totalram * si.mem_unit;
+	}
+
+	/*
+	 * Group CPUs by distinct maximum frequency rather than relying on
+	 * consecutive ID ranges. This handles non-consecutive ID layouts cleanly
+	 * and avoids artificial cluster fragmentation.
+	 */
+	struct {
+		unsigned mhz;
+		unsigned count;
+		unsigned cpu;
+	} clusters[8];
+	unsigned cluster_count = 0;
+
+	unsigned cpus[CPU_SETSIZE];
+	unsigned online_total = read_online_cpus(cpus, sizeof(cpus) / sizeof(cpus[0]));
+	unsigned scan_cpus = online_total < sizeof(cpus) / sizeof(cpus[0]) ? online_total : sizeof(cpus) / sizeof(cpus[0]);
+
+	if (scan_cpus > 0) {
+		for (unsigned k = 0; k < scan_cpus; ++k) {
+			unsigned i = cpus[k];
+			char path[PATH_MAX];
+			snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/cpufreq/cpuinfo_max_freq", i);
+			long long khz = syslong(path);
+			if (khz > 0) {
+				unsigned mhz = (unsigned)(khz / 1000);
+				int found = 0;
+				for (unsigned c = 0; c < cluster_count; ++c) {
+					if (clusters[c].mhz == mhz) {
+						++clusters[c].count;
+						found = 1;
+						break;
+					}
+				}
+				if (!found && cluster_count < sizeof(clusters) / sizeof(clusters[0])) {
+					clusters[cluster_count].mhz = mhz;
+					clusters[cluster_count].count = 1;
+					clusters[cluster_count].cpu = i;
+					++cluster_count;
+				}
+			}
+		}
+
+		/* sort clusters by frequency descending (fastest cores first) */
+		for (unsigned i = 0; i < cluster_count; ++i) {
+			for (unsigned j = i + 1; j < cluster_count; ++j) {
+				if (clusters[j].mhz > clusters[i].mhz) {
+					unsigned tmp_mhz = clusters[i].mhz;
+					unsigned tmp_count = clusters[i].count;
+					unsigned tmp_cpu = clusters[i].cpu;
+					clusters[i].mhz = clusters[j].mhz;
+					clusters[i].count = clusters[j].count;
+					clusters[i].cpu = clusters[j].cpu;
+					clusters[j].mhz = tmp_mhz;
+					clusters[j].count = tmp_count;
+					clusters[j].cpu = tmp_cpu;
+				}
+			}
+		}
+	}
+
+	if (cluster_count > 1) {
+		info->cpu_clock[0] = 0;
+		size_t pos = 0;
+		for (unsigned c = 0; c < cluster_count; ++c) {
+			char freq_str[32];
+			format_freq(freq_str, sizeof(freq_str), clusters[c].mhz);
+			char part[64];
+			if (clusters[c].count == 1)
+				snprintf(part, sizeof(part), "%s%s (1 cpu)", c > 0 ? ", " : "", freq_str);
+			else
+				snprintf(part, sizeof(part), "%s%s (%u cpus)", c > 0 ? ", " : "", freq_str, clusters[c].count);
+			if (pos < sizeof(info->cpu_clock)) {
+				int n = snprintf(info->cpu_clock + pos, sizeof(info->cpu_clock) - pos, "%s", part);
+				if (n > 0)
+					pos += (size_t)n;
+			}
+		}
+	} else if (cluster_count == 1) {
+		char path[PATH_MAX];
+		snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/cpufreq/base_frequency", clusters[0].cpu);
+		long long base_khz = syslong(path);
+		unsigned base_mhz = base_khz > 0 ? (unsigned)(base_khz / 1000) : 0;
+		unsigned max_mhz = clusters[0].mhz;
+		char max_str[32];
+		char base_str[32];
+		format_freq(max_str, sizeof(max_str), max_mhz);
+		if (base_mhz > 0 && base_mhz != max_mhz) {
+			format_freq(base_str, sizeof(base_str), base_mhz);
+			snprintf(info->cpu_clock, sizeof(info->cpu_clock), "%s (max %s)", base_str, max_str);
+		} else {
+			snprintf(info->cpu_clock, sizeof(info->cpu_clock), "%s", max_str);
+		}
+	}
+
+	/* Fallback if sysfs cpufreq is unavailable (e.g. Cloud VM) */
+	if (info->cpu_clock[0] == 0) {
+#ifdef CONFIG_X86
+		raid_cpuid(0, 0, reg);
+		if (reg[0] >= 0x16) {
+			raid_cpuid(0x16, 0, reg);
+			unsigned base_mhz = reg[0] & 0xFFFF;
+			unsigned max_mhz = reg[1] & 0xFFFF;
+			if (base_mhz > 0 && max_mhz > 0 && base_mhz != max_mhz) {
+				char base_str[32], max_str[32];
+				format_freq(base_str, sizeof(base_str), base_mhz);
+				format_freq(max_str, sizeof(max_str), max_mhz);
+				snprintf(info->cpu_clock, sizeof(info->cpu_clock), "%s (max %s)", base_str, max_str);
+			} else if (base_mhz > 0) {
+				format_freq(info->cpu_clock, sizeof(info->cpu_clock), base_mhz);
+			} else if (max_mhz > 0) {
+				format_freq(info->cpu_clock, sizeof(info->cpu_clock), max_mhz);
+			}
+		}
+#endif
+	}
+
+	if (info->cpu_clock[0] == 0) {
+		char buf[1024];
+		ssize_t len = sysread("/proc/cpuinfo", buf, sizeof(buf) - 1);
+		if (len > 0) {
+			buf[len] = 0;
+			char* p = strstr(buf, "cpu MHz");
+			if (p) {
+				p = strchr(p, ':');
+				if (p) {
+					double mhz = strtod(p + 1, 0);
+					if (mhz > 0)
+						format_freq(info->cpu_clock, sizeof(info->cpu_clock), (unsigned)(mhz + 0.5));
+				}
+			}
+		}
+	}
+
+	char model_buf[128];
+	if (sysattr("/sys/class/dmi/id/product_name", model_buf, sizeof(model_buf)) == 0 && model_buf[0]) {
+		char vendor_buf[128];
+		if (sysattr("/sys/class/dmi/id/sys_vendor", vendor_buf, sizeof(vendor_buf)) == 0 && vendor_buf[0]) {
+			snprintf(info->system_model, sizeof(info->system_model), "%s %s", vendor_buf, model_buf);
+		} else {
+			snprintf(info->system_model, sizeof(info->system_model), "%s", model_buf);
+		}
+	} else if (sysattr("/proc/device-tree/model", model_buf, sizeof(model_buf)) == 0 && model_buf[0]) {
+		snprintf(info->system_model, sizeof(info->system_model), "%s", model_buf);
+	}
+
+	read_os_release(info->os_distribution, sizeof(info->os_distribution));
+#endif
+
+#ifdef __APPLE__
+	size_t len;
+
+	if (info->cpu_brand[0] == 0)
+		sysctl_string("machdep.cpu.brand_string", info->cpu_brand, sizeof(info->cpu_brand));
+
+	sysctl_string("hw.model", info->system_model, sizeof(info->system_model));
+
+	unsigned val = 0;
+	len = sizeof(val);
+	if (sysctlbyname("hw.physicalcpu", &val, &len, 0, 0) == 0)
+		info->cpu_cores_physical = val;
+
+	len = sizeof(val);
+	if (sysctlbyname("hw.logicalcpu", &val, &len, 0, 0) == 0)
+		info->cpu_cores_logical = val;
+
+	uint64_t hz = 0;
+	len = sizeof(hz);
+	if (sysctlbyname("hw.cpufrequency", &hz, &len, 0, 0) == 0 && hz > 0)
+		format_freq(info->cpu_clock, sizeof(info->cpu_clock), (unsigned)(hz / 1000000));
+
+	unsigned long clen = 0;
+	len = sizeof(clen);
+	if (sysctlbyname("hw.l1dcachesize", &clen, &len, 0, 0) == 0)
+		info->cache_l1_data = clen;
+
+	len = sizeof(clen);
+	if (sysctlbyname("hw.l1icachesize", &clen, &len, 0, 0) == 0)
+		info->cache_l1_instruction = clen;
+
+	len = sizeof(clen);
+	if (sysctlbyname("hw.l2cachesize", &clen, &len, 0, 0) == 0)
+		info->cache_l2 = clen;
+
+	len = sizeof(clen);
+	if (sysctlbyname("hw.l3cachesize", &clen, &len, 0, 0) == 0)
+		info->cache_l3 = clen;
+
+	uint64_t mem = 0;
+	len = sizeof(mem);
+	if (sysctlbyname("hw.memsize", &mem, &len, 0, 0) == 0)
+		info->memory_total_bytes = mem;
+
+	char osver[32];
+	sysctl_string("kern.osproductversion", osver, sizeof(osver));
+
+	char osrel[32];
+	sysctl_string("kern.osrelease", osrel, sizeof(osrel));
+
+	if (osver[0] && osrel[0]) {
+		snprintf(info->os_name, sizeof(info->os_name), "macOS %s (Darwin %s)", osver, osrel);
+	} else if (osver[0]) {
+		snprintf(info->os_name, sizeof(info->os_name), "macOS %s", osver);
+	} else if (osrel[0]) {
+		snprintf(info->os_name, sizeof(info->os_name), "Darwin %s", osrel);
+	}
+#endif
 }
 
 #endif

@@ -2278,14 +2278,16 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 void speed_affinity(void)
 {
 #if HAVE_LINUX_DEVICE
-	int num_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	int num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+	if (num_cpus <= 0)
+		num_cpus = sysconf(_SC_NPROCESSORS_CONF);
 	if (num_cpus <= 0)
 		return;
 
 	printf("Machine has %d cores\n", num_cpus);
 
 	int cpu = os_get_optimal_cpu();
-	if (cpu < 0)
+	if (cpu < 0 || cpu >= CPU_SETSIZE)
 		return;
 
 	cpu_set_t mask;
@@ -2293,7 +2295,7 @@ void speed_affinity(void)
 	CPU_SET(cpu, &mask);
 
 	if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) == 0) {
-		printf("Running on core %d\n", cpu);
+		printf("Running on cpu %d\n", cpu);
 	}
 #endif
 }
@@ -2304,7 +2306,7 @@ static int check_cpu_feature(const char* name)
 	int value = 0;
 	size_t len = sizeof(value);
 
-	if (sysctlbyname(name, &value, &len, NULL, 0) == 0) {
+	if (sysctlbyname(name, &value, &len, 0, 0) == 0) {
 		return value;
 	}
 
@@ -2319,24 +2321,26 @@ static const char* decode_cpufamily(uint32_t family)
 	case 0x462504d2 : return "Lightning/Thunder (A13)";
 	case 0x1b588bb3 : return "Firestorm/Icestorm (M1/A14)";
 	case 0xda33d83d : return "Blizzard/Avalanche (M2/A15)";
-	case 0x8765edea : return "Everest/Sawtooth (M3/A16)";
-	case 0xfa33415e : return "Ibiza (M4/A17)";
+	case 0x8765edea : return "Everest/Sawtooth (A16)";
+	case 0xfa33415e : return "Ibiza (M3)";
+	case 0x72015832 : return "Palma (M3 Pro)";
+	case 0x17d5e360 : return "Lobos (M3 Max)";
+	case 0x2876f5b5 : return "Coll (A17 Pro)";
+	case 0x6f5129ac : return "Donan (M4)";
+	case 0x1774f74e : return "Brava (M4 Pro)";
+	case 0x524c529b : return "Hidra (M4 Max)";
+	case 0x7843b821 : return "Tahiti (A18)";
+	case 0x6f64249a : return "Tupai (A18 Pro)";
 	case 0 : return "Unavailable";
 	default : return "Unknown";
 	}
 }
 
-void print_apple(void)
+void print_apple(const struct machineinfo_struct* info)
 {
-	char brand[128] = "Unknown Apple Silicon";
-	size_t len = sizeof(brand);
-	if (sysctlbyname("machdep.cpu.brand_string", &brand, &len, NULL, 0) != 0) {
-		sysctlbyname("hw.model", &brand, &len, NULL, 0);
-	}
-
 	uint32_t family = 0;
-	len = sizeof(uint32_t);
-	sysctlbyname("hw.cpufamily", &family, &len, NULL, 0);
+	size_t len = sizeof(uint32_t);
+	sysctlbyname("hw.cpufamily", &family, &len, 0, 0);
 
 	int has_aes = check_cpu_feature("hw.optional.arm.FEAT_AES");
 	int has_dotprod = check_cpu_feature("hw.optional.arm.FEAT_DotProd");
@@ -2344,44 +2348,27 @@ void print_apple(void)
 	int has_sve = check_cpu_feature("hw.optional.arm.FEAT_SVE");
 	int has_sme = check_cpu_feature("hw.optional.arm.FEAT_SME");
 
+	const char* name = info->cpu_brand[0] ? info->cpu_brand : (info->system_model[0] ? info->system_model : "Apple Silicon");
+
 	printf("CPU %s, family %s (0x%08x), flags%s%s%s%s%s\n",
-		brand, decode_cpufamily(family), family,
+		name, decode_cpufamily(family), family,
 		has_aes ? " aes" : "",
 		has_dotprod ? " dotprod" : "",
 		has_sha3 ? " sha3" : "",
 		has_sve ? " sve" : "",
 		has_sme ? " sme" : ""
 	);
-
-	unsigned long l1_d_bytes = 0;
-	unsigned long l2_bytes = 0;
-	unsigned long l3_bytes = 0;
-
-	len = sizeof(unsigned long);
-	sysctlbyname("hw.l1dcachesize", &l1_d_bytes, &len, 0, 0);
-	len = sizeof(unsigned long);
-	sysctlbyname("hw.l2cachesize", &l2_bytes, &len, 0, 0);
-	len = sizeof(unsigned long);
-	sysctlbyname("hw.l3cachesize", &l3_bytes, &len, 0, 0);
-
-	printf("Cache L1 Data %lu KB, L2 %lu KB", l1_d_bytes / 1024, l2_bytes / 1024);
-	if (l3_bytes > 0) {
-		printf(", L3 %lu KB", l3_bytes / 1024);
-	}
-	printf("\n");
 }
 #endif
 
 #ifdef CONFIG_X86
-void print_intel(void)
+void print_intel(const struct machineinfo_struct* info)
 {
-	char vendor[CPU_VENDOR_MAX];
-	unsigned family;
-	unsigned model;
-
-	raid_cpu_info(vendor, &family, &model);
-
-	printf("CPU %s, family %u, model %u (0x%x), flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model, model,
+	printf("CPU %s, family %u (0x%x), model %u (0x%x), stepping %u, flags%s%s%s%s%s%s%s%s%s%s\n",
+		info->cpu_vendor[0] ? info->cpu_vendor : "x86",
+		info->cpu_family, info->cpu_family,
+		info->cpu_model, info->cpu_model,
+		info->cpu_stepping,
 		raid_cpu_has_sse2() ? " sse2" : "",
 		raid_cpu_has_ssse3() ? " ssse3" : "",
 		raid_cpu_has_crc32() ? " crc32" : "",
@@ -2393,18 +2380,6 @@ void print_intel(void)
 		raid_cpu_has_slow_extendedreg() ? " slowext" : "",
 		raid_cpu_has_avx512bw() && raid_cpu_has_slow_avx512() ? " slowavx512" : ""
 	);
-
-#ifdef __linux__
-	long l1_d_bytes = sysconf(_SC_LEVEL1_DCACHE_SIZE);
-	long l2_bytes = sysconf(_SC_LEVEL2_CACHE_SIZE);
-	long l3_bytes = sysconf(_SC_LEVEL3_CACHE_SIZE);
-
-	printf("Cache L1 Data %lu KB, L2 %lu KB", l1_d_bytes / 1024, l2_bytes / 1024);
-	if (l3_bytes > 0) {
-		printf(", L3 %lu KB", l3_bytes / 1024);
-	}
-	printf("\n");
-#endif
 }
 #endif
 
@@ -2415,6 +2390,9 @@ void speed(int period, int nd, int size)
 	int nv;
 	void* v_alloc;
 	void** v;
+	struct machineinfo_struct minfo;
+
+	machineinfo(&minfo);
 
 	if (nd < 0)
 		nd = 8; /* default */
@@ -2448,20 +2426,20 @@ void speed(int period, int nd, int size)
 #endif
 
 #ifdef CONFIG_X86
-	print_intel();
+	print_intel(&minfo);
 #elif defined(__aarch64__) && defined(__APPLE__)
-	print_apple();
+	print_apple(&minfo);
 #elif defined(__aarch64__)
 #if defined(CONFIG_NEON)
-	printf("CPU 64-bit ARM (AArch64), flags neon\n");
+	printf("CPU %s, flags neon\n", minfo.cpu_brand[0] ? minfo.cpu_brand : "64-bit ARM (AArch64)");
 #else
-	printf("CPU 64-bit ARM (AArch64)\n");
+	printf("CPU %s\n", minfo.cpu_brand[0] ? minfo.cpu_brand : "64-bit ARM (AArch64)");
 #endif
 #elif defined(__arm__)
 #if defined(CONFIG_NEON32)
-	printf("CPU 32-bit ARM, flags neon\n");
+	printf("CPU %s, flags neon\n", minfo.cpu_brand[0] ? minfo.cpu_brand : "32-bit ARM");
 #else
-	printf("CPU 32-bit ARM\n");
+	printf("CPU %s\n", minfo.cpu_brand[0] ? minfo.cpu_brand : "32-bit ARM");
 #endif
 #elif defined(__powerpc64__)
 	printf("CPU 64-bit PowerPC\n");
@@ -2474,12 +2452,60 @@ void speed(int period, int nd, int size)
 #else
 	printf("CPU of unknown architecture\n");
 #endif
+
+	if (minfo.cpu_brand[0] != 0) {
+		const char* p = minfo.cpu_brand;
+		int in_space = 0;
+
+		printf("Model ");
+		while (*p != 0) {
+			if (*p == ' ') {
+				if (!in_space) {
+					putchar(' ');
+					in_space = 1;
+				}
+			} else {
+				putchar(*p);
+				in_space = 0;
+			}
+			++p;
+		}
+		printf("\n");
+	}
+
+	if (minfo.cpu_clock[0] != 0) {
+		printf("Clock %s\n", minfo.cpu_clock);
+	}
+
+	if (minfo.cache_l1_data > 0 || minfo.cache_l2 > 0) {
+		printf("Cache L1 Data %" PRIu64 " KB, L2 %" PRIu64 " KB",
+			minfo.cache_l1_data / 1024, minfo.cache_l2 / 1024);
+		if (minfo.cache_l3 > 0) {
+			printf(", L3 %" PRIu64 " KB", minfo.cache_l3 / 1024);
+		}
+		printf("\n");
+	}
+
 	speed_affinity();
+
+	if (minfo.memory_total_bytes > 0) {
+		printf("Memory %" PRIu64 " MB", minfo.memory_total_bytes / (1024 * 1024));
 #if WORDS_BIGENDIAN
-	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
+		printf(", big-endian %d-bit", (int)sizeof(void*) * 8);
 #else
-	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
+		printf(", little-endian %d-bit", (int)sizeof(void*) * 8);
 #endif
+		if (minfo.memory_page_size > 0)
+			printf(", page %u KB", minfo.memory_page_size / 1024);
+		printf("\n");
+	} else {
+#if WORDS_BIGENDIAN
+		printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
+#else
+		printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
+#endif
+	}
+
 #if defined(__SIZEOF_INT128__)
 	printf("128-bit integers are supported\n");
 #else
@@ -2495,6 +2521,20 @@ void speed(int period, int nd, int size)
 #else
 	printf("Does not support nanosecond timestamps\n");
 #endif
+
+	if (minfo.os_distribution[0] != 0 && minfo.os_name[0] != 0) {
+		printf("Host %s (%s)\n", minfo.os_distribution, minfo.os_name);
+	} else if (minfo.os_name[0] != 0) {
+		printf("Host %s\n", minfo.os_name);
+	}
+
+	if (minfo.system_model[0] != 0 || minfo.hypervisor[0] != 0) {
+		printf("System %s%s%s%s\n",
+			minfo.system_model[0] ? minfo.system_model : "Generic",
+			minfo.hypervisor[0] ? " [" : "",
+			minfo.hypervisor[0] ? minfo.hypervisor : "",
+			minfo.hypervisor[0] ? "]" : "");
+	}
 
 	printf("\n");
 

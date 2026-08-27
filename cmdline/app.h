@@ -462,5 +462,40 @@ void app_default_conf(char* dst, size_t dst_size, const char* argv0);
  */
 void app_signal_handler(int signum);
 
+/****************************************************************************/
+/* machine */
+
+#define MACHINEINFO_MAX 256
+
+/**
+ * Host machine and CPU information.
+ */
+struct machineinfo_struct {
+	char cpu_brand[MACHINEINFO_MAX]; /**< CPU model brand name. */
+	char cpu_vendor[MACHINEINFO_MAX]; /**< CPU vendor string (e.g. GenuineIntel, AuthenticAMD). */
+	char cpu_arch[MACHINEINFO_MAX]; /**< CPU architecture string. */
+	char cpu_clock[MACHINEINFO_MAX]; /**< CPU clock frequency description. */
+	unsigned cpu_family; /**< CPU family id. */
+	unsigned cpu_model; /**< CPU model id. */
+	unsigned cpu_stepping; /**< CPU stepping id. */
+	unsigned cpu_cores_physical; /**< Number of physical CPU cores (0 if unavailable). */
+	unsigned cpu_cores_logical; /**< Number of logical CPU threads (0 if unavailable). */
+	uint64_t cache_l1_data; /**< L1 data cache in bytes (0 if unavailable). */
+	uint64_t cache_l1_instruction; /**< L1 instruction cache in bytes (0 if unavailable). */
+	uint64_t cache_l2; /**< L2 cache in bytes (0 if unavailable). */
+	uint64_t cache_l3; /**< L3 cache in bytes (0 if unavailable). */
+	uint64_t memory_total_bytes; /**< Total system RAM in bytes (0 if unavailable). */
+	uint32_t memory_page_size; /**< Page size in bytes (0 if unavailable). */
+	char os_name[MACHINEINFO_MAX]; /**< Operating system name and kernel version. */
+	char os_distribution[MACHINEINFO_MAX]; /**< Operating system distribution name. */
+	char system_model[MACHINEINFO_MAX]; /**< Motherboard or system model name. */
+	char hypervisor[MACHINEINFO_MAX]; /**< Hypervisor name (empty if bare metal). */
+};
+
+/**
+ * Query host machine information.
+ */
+void machineinfo(struct machineinfo_struct* info);
+
 #endif
 
