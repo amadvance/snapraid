@@ -119,7 +119,7 @@ static const unsigned STRIDE_NOISE[16] = {
 	1, 4, 0, 7, 3, 6, 2, 5
 };
 
-void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, ssize_t wrap_size, void **freeptr)
+void **raid_malloc_vector_align(int n, size_t size, size_t align_size, size_t displacement_size, size_t wrap_size, void **freeptr)
 {
 	void **v;
 	unsigned char *va;

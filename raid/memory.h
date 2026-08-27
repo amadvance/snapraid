@@ -108,7 +108,7 @@ void **raid_malloc_vector(int n, size_t size, void **freeptr);
  * Freeing requires two calls: free(*freeptr) for the data buffer,
  * and free(v) for the pointer vector.
  */
-void **raid_malloc_vector_align(int n, size_t size, size_t align_size, ssize_t displacement_size, ssize_t wrap_size, void **freeptr);
+void **raid_malloc_vector_align(int n, size_t size, size_t align_size, size_t displacement_size, size_t wrap_size, void **freeptr);
 
 /**
  * Fills the memory vector with pseudo-random data based on the specified seed.
