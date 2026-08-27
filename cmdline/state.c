@@ -2221,6 +2221,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	int crc_checked;
 	int has_block_size;
 	int has_hash_size;
+	int has_hash;
+	int has_prevhash;
 	char buffer[PATH_MAX];
 	int ret;
 	tommy_array disk_mapping;
@@ -2239,6 +2241,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	crc_checked = 0;
 	has_block_size = 0;
 	has_hash_size = 0;
+	has_hash = 0;
+	has_prevhash = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
@@ -2994,6 +2998,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			/* stat */
 			++count_dir;
 		} else if (c == 'c') {
+			if (has_hash || mapping_max != 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'hash' in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			has_hash = 1;
+
 			/* get the subcommand */
 			c = sgetc(f);
 
@@ -3021,6 +3034,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'C') {
+			if (has_prevhash || mapping_max != 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'prevhash' in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			has_prevhash = 1;
+
 			/* get the sub-command */
 			c = sgetc(f);
 
