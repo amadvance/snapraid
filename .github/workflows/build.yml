@@ -83,3 +83,18 @@ jobs:
             autoreconf -i
             ./configure --enable-warning-as-error MAKE=gmake
             gmake all dist check
+  build-musl:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: |
+          apk add --no-cache \
+            autoconf \
+            automake \
+            build-base \
+            git \
+            linux-headers
+      - run: autoreconf -i
+      - run: ./configure --enable-warning-as-error
+      - run: make all dist check
