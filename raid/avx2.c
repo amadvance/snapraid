@@ -1009,7 +1009,7 @@ static __always_inline void raid_rec1_avx2_1(int *id, int *ip, int nd, size_t si
  * Reconstruct only nr - 1 missing blocks through the inverse matrix and
  * obtain the last block by XORing the reconstructed blocks out of Pdelta.
  */
-static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2_1234(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1026,7 +1026,6 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 4);
 
@@ -1043,9 +1042,6 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/* build the compact surviving-data list and its syndrome tables */
 	ns = 0;
@@ -1218,7 +1214,7 @@ static __always_inline void raid_recX_avx2_1234(int nr, int *id, int *ip, int nd
  * Reconstruct only nr - 1 missing blocks through the inverse matrix and
  * obtain the last block by XORing the reconstructed blocks out of Pdelta.
  */
-static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1235,7 +1231,6 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -1252,9 +1247,6 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/* build the compact surviving-data list and its syndrome tables */
 	ns = 0;
@@ -1446,7 +1438,7 @@ static __always_inline void raid_recX_avx2(int nr, int *id, int *ip, int nd, siz
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_recX_avx2ext_12(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2ext_12(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1459,7 +1451,6 @@ static __always_inline void raid_recX_avx2ext_12(int nr, int *id, int *ip, int n
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 2);
 
@@ -1476,9 +1467,6 @@ static __always_inline void raid_recX_avx2ext_12(int nr, int *id, int *ip, int n
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/* build the compact surviving-data list and its syndrome tables */
 	ns = 0;
@@ -1716,7 +1704,7 @@ static __always_inline void raid_recX_avx2ext_12(int nr, int *id, int *ip, int n
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_recX_avx2ext_123(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2ext_123(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1729,7 +1717,6 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int *id, int *ip, int 
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 3);
 
@@ -1746,9 +1733,6 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int *id, int *ip, int 
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/* build the compact surviving-data list and its syndrome tables */
 	ns = 0;
@@ -2023,7 +2007,7 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int *id, int *ip, int 
  * The last missing block is obtained by XORing the reconstructed blocks
  * out of Pdelta.
  */
-static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2ext(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -2036,7 +2020,6 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -2053,9 +2036,6 @@ static __always_inline void raid_recX_avx2ext(int nr, int *id, int *ip, int nd, 
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/* build the compact surviving-data list and its syndrome tables */
 	ns = 0;
@@ -2431,31 +2411,46 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx2_1234(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2_1234(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2_1234(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx2_1234(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2_1234(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2_1234(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx2_1234(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2_1234(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2_1234(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx2(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx2(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2(6, 0, id, ip, nd, size, vv);
 }
 
 #ifdef CONFIG_X86_64
@@ -2475,33 +2470,47 @@ void raid_rec1_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_rec2_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx2ext_12(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2ext_12(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2ext_12(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx2ext_123(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2ext_123(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2ext_123(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx2ext(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2ext(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2ext(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx2ext(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2ext(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2ext(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx2ext(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2ext(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2ext(6, 0, id, ip, nd, size, vv);
 }
-
 #endif
 
 void raid_register_avx2(void)

@@ -1355,7 +1355,7 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
  * If P is available, reconstruct only nr - 1 missing blocks through the
  * inverse matrix and derive the last missing block from the P delta by XOR.
  */
-static __always_inline void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2gfni_raid(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1368,7 +1368,6 @@ static __always_inline void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, in
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -1382,8 +1381,6 @@ static __always_inline void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, in
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -1563,7 +1560,7 @@ static __always_inline void raid_recX_avx2gfni_raid(int nr, int *id, int *ip, in
  * If P is available, reconstruct only nr - 1 missing blocks through the
  * inverse matrix and derive the last missing block from the P delta by XOR.
  */
-static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx512gfni_raid(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1576,7 +1573,6 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -1590,8 +1586,6 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -1744,7 +1738,7 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int *id, int *ip, 
  * If P is available, reconstruct only nr - 1 missing blocks through the
  * inverse matrix and derive the last missing block from the P delta by XOR.
  */
-static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx2gfni_aes(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1756,7 +1750,6 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -1770,8 +1763,6 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -1943,7 +1934,7 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int *id, int *ip, int
  * If P is available, reconstruct only nr - 1 missing blocks through the
  * inverse matrix and derive the last missing block from the P delta by XOR.
  */
-static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx512gfni_aes(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1955,7 +1946,6 @@ static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, i
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -1969,8 +1959,6 @@ static __always_inline void raid_recX_avx512gfni_aes(int nr, int *id, int *ip, i
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -2203,145 +2191,217 @@ void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv)
 void raid_rec1_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_avx2gfni_raid(1, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_raid(1, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_raid(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx2gfni_raid(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_raid(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_raid(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx2gfni_raid(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_raid(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_raid(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx2gfni_raid(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_raid(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_raid(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx2gfni_raid(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_raid(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_raid(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx2gfni_raid(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_raid(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_raid(6, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec1_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_avx512gfni_raid(1, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_raid(1, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_raid(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx512gfni_raid(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_raid(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_raid(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx512gfni_raid(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_raid(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_raid(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx512gfni_raid(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_raid(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_raid(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx512gfni_raid(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_raid(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_raid(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx512gfni_raid(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_raid(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_raid(6, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec1_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_avx2gfni_aes(1, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_aes(1, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_aes(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx2gfni_aes(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_aes(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_aes(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx2gfni_aes(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_aes(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_aes(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx2gfni_aes(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_aes(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_aes(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx2gfni_aes(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_aes(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_aes(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx2gfni_aes(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx2gfni_aes(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx2gfni_aes(6, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec1_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_avx512gfni_aes(1, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_aes(1, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_aes(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx512gfni_aes(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_aes(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_aes(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx512gfni_aes(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_aes(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_aes(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx512gfni_aes(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_aes(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_aes(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx512gfni_aes(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_aes(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_aes(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx512gfni_aes(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512gfni_aes(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512gfni_aes(6, 0, id, ip, nd, size, vv);
 }
 
 void raid_register_avx2gfni(void)

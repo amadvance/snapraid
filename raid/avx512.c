@@ -567,7 +567,7 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
  * AVX512 provides enough registers to keep all six supported syndromes
  * in registers in a single surviving-data scan.
  */
-static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_avx512bw(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -580,7 +580,6 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -597,9 +596,6 @@ static __always_inline void raid_recX_avx512bw(int nr, int *id, int *ip, int nd,
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/*
 	 * Build the compact list of surviving data blocks and precompute
@@ -911,37 +907,55 @@ void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_avx512bw(1, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512bw(1, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512bw(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_avx512bw(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512bw(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512bw(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_avx512bw(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512bw(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512bw(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_avx512bw(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512bw(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512bw(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_avx512bw(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512bw(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512bw(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_avx512bw(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_avx512bw(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_avx512bw(6, 0, id, ip, nd, size, vv);
 }
 
 void raid_register_avx512(void)

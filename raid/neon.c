@@ -580,7 +580,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
  * The last missing block is obtained by XORing the reconstructed blocks
  * out of Pdelta.
  */
-static __always_inline void raid_recX_neon_12(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -593,7 +593,6 @@ static __always_inline void raid_recX_neon_12(int nr, int *id, int *ip, int nd, 
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 2);
 
@@ -610,9 +609,6 @@ static __always_inline void raid_recX_neon_12(int nr, int *id, int *ip, int nd, 
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/*
 	 * Build the compact list of surviving data blocks and precompute
@@ -929,7 +925,7 @@ static __always_inline void raid_recX_neon_12(int nr, int *id, int *ip, int nd, 
  * The last missing block is obtained by XORing the reconstructed blocks
  * out of Pdelta.
  */
-static __always_inline void raid_recX_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -942,7 +938,6 @@ static __always_inline void raid_recX_neon(int nr, int *id, int *ip, int nd, siz
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -959,9 +954,6 @@ static __always_inline void raid_recX_neon(int nr, int *id, int *ip, int nd, siz
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	/*
 	 * Build the compact list of surviving data blocks and precompute
@@ -1385,37 +1377,55 @@ void raid_gen6_neon_aes(int nd, size_t size, void **vv)
 void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_neon_12(1, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_neon_12(1, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_neon_12(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_neon_12(2, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_neon_12(2, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_neon_12(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_neon(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_neon(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_neon(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_neon(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_neon(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_neon(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_neon(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_neon(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_neon(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_neon(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_neon(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_neon(6, 0, id, ip, nd, size, vv);
 }
 
 void raid_register_neon(void)

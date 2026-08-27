@@ -1409,7 +1409,7 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
  * After the survivor scan xmm6 is no longer needed, leaving it available
  * for the P delta accumulator.
  */
-static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_ssse3_1234(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1426,7 +1426,6 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip, int n
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 4);
 
@@ -1440,8 +1439,6 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip, int n
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -1634,7 +1631,7 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int *id, int *ip, int n
  * The completed syndromes are kept in temporary memory, leaving xmm6
  * available for the P delta accumulator during reconstruction.
  */
-static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_ssse3(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -1651,7 +1648,6 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip, int nd, si
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -1665,8 +1661,6 @@ static __always_inline void raid_recX_ssse3(int nr, int *id, int *ip, int nd, si
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -2072,7 +2066,7 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
  * Reconstruct only nr - 1 missing blocks through the inverse matrix and
  * obtain the last block by XORing the reconstructed blocks out of Pdelta.
  */
-static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_ssse3ext_123(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -2085,7 +2079,6 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 3);
 
@@ -2099,8 +2092,6 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -2331,7 +2322,7 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int *id, int *ip, int
  * With at most five failures the low/high syndrome pairs use xmm0..xmm9,
  * leaving xmm10 available for the P delta accumulator.
  */
-static __always_inline void raid_recX_ssse3ext_12345(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_ssse3ext_12345(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -2344,7 +2335,6 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int *id, int *ip, i
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > 5);
 
@@ -2358,9 +2348,6 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int *id, int *ip, i
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	/* ip[] is ordered. If P is available, it is always ip[0] */
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -2632,7 +2619,7 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int *id, int *ip, i
  * The last missing block is obtained by XORing the reconstructed blocks
  * out of Pdelta.
  */
-static __always_inline void raid_recX_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_recX_ssse3ext(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
@@ -2645,7 +2632,6 @@ static __always_inline void raid_recX_ssse3ext(int nr, int *id, int *ip, int nd,
 	size_t i;
 	int d, j, k, s;
 	int ns;
-	int has_p;
 
 	BUG_ON(nr < 1 || nr > RAID_PARITY_MAX);
 
@@ -2659,8 +2645,6 @@ static __always_inline void raid_recX_ssse3ext(int nr, int *id, int *ip, int nd,
 		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
-
-	has_p = ip[0] == 0;
 
 	ns = 0;
 	k = 0;
@@ -2985,25 +2969,37 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 void raid_rec3_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_ssse3_1234(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3_1234(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3_1234(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_ssse3_1234(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3_1234(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3_1234(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_ssse3(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_ssse3(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3(6, 0, id, ip, nd, size, vv);
 }
 
 #ifdef CONFIG_X86_64
@@ -3036,25 +3032,37 @@ void raid_rec2_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 void raid_rec3_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
-	raid_recX_ssse3ext_123(3, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3ext_123(3, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3ext_123(3, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec4_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
-	raid_recX_ssse3ext_12345(4, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3ext_12345(4, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3ext_12345(4, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec5_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
-	raid_recX_ssse3ext_12345(5, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3ext_12345(5, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3ext_12345(5, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec6_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);
-	raid_recX_ssse3ext(6, id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_recX_ssse3ext(6, 1, id, ip, nd, size, vv);
+	else
+		raid_recX_ssse3ext(6, 0, id, ip, nd, size, vv);
 }
 #endif
 
