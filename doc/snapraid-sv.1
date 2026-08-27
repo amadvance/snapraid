@@ -2343,6 +2343,22 @@ Denna begränsning orsakas av Windows inkonsekventa hantering av Unicode\-filnam
 och dess insisterande på skiftlägesokänslig aliasning. För att förhindra
 avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
 skiftläget för eventuella icke\-ASCII\-tecken i konfigurationssökvägar och filter.
+.SS Suffix för oåterkalleliga filer 
+När \`fix\` inte helt kan återställa en skadad fil sätter den filen i karantän
+genom att lägga till filändelsen \`.unrecoverable\` till dess namn.
+.PP
+Omvänt, om en saknad fil återställs och en motsvarande \`.unrecoverable\`\-fil
+redan finns, antar SnapRAID att den är resultatet av en tidigare ofullständig
+återställning och återupptar skrivningen direkt i den.
+.PP
+Eftersom SnapRAID identifierar karantänfiler enbart baserat på deras filnamn,
+kan alla befintliga filer som av en händelse använder suffixet \`.unrecoverable\`
+avhuggas, skrivas över eller ersättas om deras basnamn matchar en fil som
+håller på att återställas.
+.PP
+Undvik att använda filändelsen \`.unrecoverable\` för vanliga filer och se till
+att \`exclude *.unrecoverable\` ingår i din konfiguration för att förhindra att
+sådana filer spåras i paritetsdatamängden.
 .SH ÖVERSäTTNING (TRANSLATION) 
 Detta dokument är en automatisk översättning av den engelska manualen.
 Se den engelska manualen för den officiella versionen.

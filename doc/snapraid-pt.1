@@ -2387,6 +2387,22 @@ Unicode pelo Windows e por sua insistência no uso de aliases sem diferenciaçã
 maiúsculas/minúsculas. Para evitar discrepâncias decorrentes da conversão do
 Windows, sempre especifique a combinação exata de maiúsculas e minúsculas para
 caracteres não\-ASCII em caminhos de configuração e filtros.
+.SS Sufixo de arquivos irrecuperáveis 
+Quando o \`fix\` não consegue recuperar totalmente um arquivo danificado, ele o
+coloca em quarentena adicionando a extensão \`.unrecoverable\` ao seu nome.
+.PP
+Por outro lado, se um arquivo ausente estiver sendo restaurado e já existir
+um arquivo \`.unrecoverable\` correspondente, o SnapRAID assume que é o resultado
+de uma recuperação incompleta anterior e retoma a gravação diretamente nele.
+.PP
+Como o SnapRAID identifica os arquivos de quarentena exclusivamente pelo nome
+do arquivo, qualquer arquivo pré\-existente que coincidentemente use o sufixo
+\`.unrecoverable\` pode ser truncado, sobrescrito ou substituído se seu nome
+base coincidir com o arquivo que está sendo restaurado.
+.PP
+Evite usar a extensão \`.unrecoverable\` para arquivos comuns e certifique\-se de
+que \`exclude *.unrecoverable\` esteja incluído na sua configuração para evitar que
+esses arquivos sejam rastreados no conjunto de dados de paridade.
 .SH TRADUçãO (TRANSLATION) 
 Este documento é uma tradução automática do manual em inglês.
 Consulte o manual em inglês para a versão oficial.

@@ -1850,6 +1850,23 @@ Znane problemy (Known Issues)
 	Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
 	w ścieżkach konfiguracyjnych i filtrach.
 
+  Sufiks plików niemożliwych do odzyskania
+	Gdy `fix` nie może w pełni odzyskać uszkodzonego pliku, poddaje go kwarantannie,
+	dodając do jego nazwy rozszerzenie `.unrecoverable`.
+
+	I odwrotnie, jeśli brakujący plik jest naprawiany, a odpowiedni plik
+	`.unrecoverable` już istnieje, SnapRAID zakłada, że jest to wynik poprzedniego
+	niepełnego odzyskiwania i wznawia zapis bezpośrednio w tym pliku.
+
+	Ponieważ SnapRAID identyfikuje pliki kwarantanny wyłącznie na podstawie ich
+	nazwy, każdy wcześniej istniejący plik, który przypadkowo używa sufiksu
+	`.unrecoverable`, może zostać obcięty, nadpisany lub zastąpiony, jeśli jego
+	nazwa bazowa odpowiada naprawianemu plikowi.
+
+	Unikaj używania rozszerzenia `.unrecoverable` dla zwykłych plików i upewnij się,
+	że w konfiguracji uwzględniono regułę `exclude *.unrecoverable`, aby zapobiec
+	śledzeniu takich plików w zbiorze danych parzystości.
+
 Tłumaczenie (Translation)
 	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 	Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.

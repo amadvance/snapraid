@@ -1847,6 +1847,23 @@ Probleme Cunoscute (Known Issues)
 	din conversia efectuată de Windows, specificați întotdeauna forma exactă a
 	caracterelor non-ASCII în căile de configurare și filtre.
 
+  Sufixul fișierelor nerecuperabile
+	Când `fix` nu poate recupera complet un fișier deteriorat, îl plasează în
+	carantină adăugând extensia `.unrecoverable` la numele său.
+
+	Dimpotrivă, dacă un fișier lipsă este în curs de reparare și există deja un
+	fișier `.unrecoverable` corespunzător, SnapRAID presupune că acesta este
+	rezultatul unei recuperări incomplete anterioare și reia scrierea direct în el.
+
+	Deoarece SnapRAID identifică fișierele de carantină exclusiv după numele lor,
+	orice fișier preexistent care folosește din coincidență sufixul `.unrecoverable`
+	poate fi trunchiat, suprascris sau înlocuit dacă numele său de bază corespunde
+	unui fișier în curs de reparare.
+
+	Evitați utilizarea extensiei `.unrecoverable` pentru fișiere obișnuite și
+	asigurați-vă că `exclude *.unrecoverable` este inclus în configurație pentru
+	a preveni urmărirea acestor fișiere în setul de date de paritate.
+
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.
 	Consultați manualul în limba engleză pentru versiunea oficială.

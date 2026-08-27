@@ -2462,6 +2462,22 @@ maiuscolo/minuscolo. Per prevenire discrepanze dovute alla conversione del
 maiuscolo/minuscolo di Windows, specificare sempre l\'esatta combinazione di
 maiuscole/minuscole per qualsiasi carattere non ASCII nei percorsi di
 configurazione e nei filtri.
+.SS Suffisso dei file irrecuperabili 
+Quando \`fix\` non riesce a recuperare completamente un file danneggiato,
+lo mette in quarantena aggiungendo l\'estensione \`.unrecoverable\` al suo nome.
+.PP
+Al contrario, se si sta ripristinando un file mancante ed esiste già un
+corrispondente file \`.unrecoverable\`, SnapRAID presume che sia il risultato
+di un precedente recupero incompleto e riprende a scrivervi sul posto.
+.PP
+Poiché SnapRAID identifica i file di quarantena esclusivamente dal nome del
+file, qualsiasi file preesistente che utilizzi casualmente il suffisso
+\`.unrecoverable\` potrebbe essere troncato, sovrascritto o sostituito se il
+suo nome di base corrisponde a un file in fase di ripristino.
+.PP
+Evitare di utilizzare l\'estensione \`.unrecoverable\` per i normali file e
+assicurarsi che la regola \`exclude *.unrecoverable\` sia inclusa nella
+configurazione per evitare che tali file vengano tracciati nel dataset di parità.
 .SH TRADUZIONE (TRANSLATION) 
 Questo documento è una traduzione automatica del manuale in inglese.
 Fare riferimento al manuale in inglese per la versione ufficiale.

@@ -1852,6 +1852,23 @@ Known Issues
 	discrepancies arising from Windows's case folding, always specify the
 	exact case for any non-ASCII characters in configuration paths and filters.
 
+  Unrecoverable files suffix
+	When `fix` cannot fully recover a damaged file, it quarantines it by
+	appending the `.unrecoverable` extension to its name.
+
+	Conversely, if a missing file is being fixed and a corresponding
+	`.unrecoverable` file already exists, SnapRAID assumes it is the result
+	of a previous incomplete recovery and resumes writing to it in-place.
+
+	Because SnapRAID identifies quarantine files solely by their filename,
+	any pre-existing file that coincidentally uses the `.unrecoverable`
+	suffix may be truncated, overwritten, or replaced if its base name
+	matches a file being fixed.
+
+	Avoid using the `.unrecoverable` extension for regular files, and ensure
+	that `exclude *.unrecoverable` is included in your configuration to
+	prevent such files from being tracked in the parity dataset.
+
 Copyright
 	This file is Copyright (C) 2026 Andrea Mazzoleni
 

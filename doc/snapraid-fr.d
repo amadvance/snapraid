@@ -1984,6 +1984,25 @@ Problèmes connus (Known Issues)
 	toujours la casse exacte de tous les caractères non-ASCII dans les chemins de
 	configuration et les filtres.
 
+  Suffixe des fichiers irrécupérables
+	Lorsque `fix` ne peut pas récupérer entièrement un fichier endommagé, il le
+	place en quarantaine en ajoutant l'extension `.unrecoverable` à son nom.
+
+	Inversement, si un fichier manquant est en cours de restauration et qu'un
+	fichier `.unrecoverable` correspondant existe déjà, SnapRAID suppose qu'il
+	s'agit du résultat d'une récupération incomplète antérieure et reprend
+	l'écriture directement dans ce fichier.
+
+	Étant donné que SnapRAID identifie les fichiers en quarantaine uniquement par
+	leur nom de fichier, tout fichier préexistant utilisant par coïncidence le
+	suffixe `.unrecoverable` peut être tronqué, écrasé ou remplacé si son nom de
+	base correspond à un fichier en cours de réparation.
+
+	Évitez d'utiliser l'extension `.unrecoverable` pour les fichiers normaux et
+	assurez-vous que la règle `exclude *.unrecoverable` est incluse dans votre
+	configuration afin d'empêcher le suivi de ces fichiers dans le jeu de données
+	de parité.
+
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.
 	Veuillez vous référer au manuel en anglais pour la version officielle.

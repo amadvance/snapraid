@@ -1975,6 +1975,26 @@ Bekannte Probleme (Known Issues)
 	geben Sie für alle Nicht-ASCII-Zeichen in Konfigurationspfaden und Filtern
 	stets die exakte Groß-/Kleinschreibung an.
 
+  Dateiendung für nicht wiederherstellbare Dateien
+	Wenn `fix` eine beschädigte Datei nicht vollständig wiederherstellen kann,
+	wird sie unter Quarantäne gestellt, indem die Erweiterung `.unrecoverable`
+	an ihren Namen angehängt wird.
+
+	Umgekehrt gilt: Wenn eine fehlende Datei wiederhergestellt wird und bereits
+	eine entsprechende `.unrecoverable`-Datei vorhanden ist, nimmt SnapRAID an,
+	dass es sich um das Ergebnis einer früheren unvollständigen Wiederherstellung
+	handelt, und setzt das Schreiben direkt in dieser Datei fort.
+
+	Da SnapRAID Quarantänedateien ausschließlich anhand ihres Dateinamens
+	identifiziert, kann jede bereits vorhandene Datei, die zufällig die Endung
+	`.unrecoverable` verwendet, abgeschnitten, überschrieben oder ersetzt werden,
+	wenn ihr Basisname mit einer gerade wiederherzustellenden Datei übereinstimmt.
+
+	Vermeiden Sie die Verwendung der Erweiterung `.unrecoverable` für reguläre
+	Dateien und stellen Sie sicher, dass `exclude *.unrecoverable` in Ihrer
+	Konfiguration enthalten ist, um zu verhindern, dass solche Dateien im
+	Paritätsdatensatz erfasst werden.
+
 Übersetzung (Translation)
 	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
 	Die maßgebliche Version finden Sie im englischen Handbuch.
