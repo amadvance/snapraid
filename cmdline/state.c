@@ -2220,6 +2220,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	uint64_t count_unscrubbed;
 	int crc_checked;
 	int has_block_size;
+	int has_blockmax;
 	int has_hash_size;
 	int has_hash;
 	int has_prevhash;
@@ -2241,6 +2242,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	count_unscrubbed = 0;
 	crc_checked = 0;
 	has_block_size = 0;
+	has_blockmax = 0;
 	has_hash_size = 0;
 	has_hash = 0;
 	has_prevhash = 0;
@@ -2345,6 +2347,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				decoding_error(path, f);
 				log_fatal(EINTERNAL, "Internal inconsistency: Zero blocksize\n");
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (!has_blockmax) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Missing 'blockmax' before file in the content file!\n");
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2524,10 +2534,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			block_off_t v_pos;
 			uint64_t v_oldest;
 
-			if (has_info) {
+			if (has_info || !has_blockmax) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate 'info' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'info' in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2680,6 +2690,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
+
+			if (!has_blockmax) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Missing 'blockmax' before hole in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
 
 			v_pos = 0;
 			while (v_pos < blockmax) {
@@ -3181,6 +3199,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'x') {
+			if (has_blockmax || mapping_max != 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'blockmax' in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			has_blockmax = 1;
+
 			ret = sgetb64(f, &blockmax);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
@@ -3614,6 +3641,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		log_fatal(ECONTENT, "To recover, rename or delete it and rerun the command.\n");
 		log_fatal(ECONTENT, "SnapRAID will automatically fall back to the next healthy copy.\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (!has_blockmax) {
+		/* LCOV_EXCL_START */
+		decoding_error(path, f);
+		log_fatal(EINTERNAL, "Internal inconsistency: Missing 'blockmax' in the content file!\n");
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
