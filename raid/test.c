@@ -367,8 +367,17 @@ static void raid_test_setup_rec(int mode, int np, raid_rec_fn *f[RAID_PARITY_MAX
 		case 2:
 			test_setup(i) = raid_rec2_int8;
 			break;
-		default:
-			test_setup(i) = raid_recX_int8;
+		case 3:
+			test_setup(i) = raid_rec3_int8;
+			break;
+		case 4:
+			test_setup(i) = raid_rec4_int8;
+			break;
+		case 5:
+			test_setup(i) = raid_rec5_int8;
+			break;
+		case 6:
+			test_setup(i) = raid_rec6_int8;
 			break;
 		}
 #ifdef CONFIG_X86

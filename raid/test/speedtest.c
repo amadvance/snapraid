@@ -1114,7 +1114,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	printf("RAID polynomial functions used for recovering:\n");
 	printf("%8s", "");
 	printf("%8s", "best");
-	printf("%8s", "int8");
+	printf("%8s", "int");
 #ifdef CONFIG_NEON
 	printf("%8s", "neon");
 #endif
@@ -1796,7 +1796,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 	SPEED_START {
 		raid_gen_force(3, raid_gen3_int8);
-		raid_recX_int8(3, id, ip, nd, size, v);
+		raid_rec3_int8(3, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -1889,7 +1889,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 	SPEED_START {
 		raid_gen_force(4, raid_gen4_int8);
-		raid_recX_int8(4, id, ip, nd, size, v);
+		raid_rec4_int8(4, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -1982,7 +1982,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 	SPEED_START {
 		raid_gen_force(5, raid_gen5_int8);
-		raid_recX_int8(5, id, ip, nd, size, v);
+		raid_rec5_int8(5, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -2075,7 +2075,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 	SPEED_START {
 		raid_gen_force(6, raid_gen6_int8);
-		raid_recX_int8(6, id, ip, nd, size, v);
+		raid_rec6_int8(6, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
