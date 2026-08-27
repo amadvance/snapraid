@@ -2541,6 +2541,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* ensure the unsigned serialized timestamp fits in signed time_t before conversion. */
+			if (v_oldest > INT64_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ECONTENT, "Internal inconsistency: Invalid info oldest timestamp %" PRIu64 "!\n", v_oldest);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			v_pos = 0;
 			while (v_pos < blockmax) {
 				int bad;
@@ -2582,6 +2591,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
 						os_abort();
+						/* LCOV_EXCL_STOP */
+					}
+
+					/* ensure the timestamp addition fits in signed time_t without overflow. */
+					if (t64 > INT64_MAX - v_oldest) {
+						/* LCOV_EXCL_START */
+						decoding_error(path, f);
+						log_fatal(ECONTENT, "Internal inconsistency: Invalid info timestamp %" PRIu64 "!\n", t64);
+						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
 
