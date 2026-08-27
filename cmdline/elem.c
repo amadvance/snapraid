@@ -468,12 +468,14 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	if (size % block_size != 0)
 		++blockmax;
 
+	if (blockmax > BLOCK_MAX) {
 #if SIZE_MAX == UINT32_MAX
-	if (blockmax > (block_off_t)(SIZE_MAX / block_sizeof())) {
 		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", sub, blockmax);
+#else
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large. Increase the block size.\n", sub, blockmax);
+#endif
 		exit(EXIT_FAILURE);
 	}
-#endif
 
 	file = malloc_nofail(sizeof(struct snapraid_file));
 	file->sub = strdup_nofail(sub);
@@ -501,12 +503,14 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	struct snapraid_file* file;
 	block_off_t i;
 
+	if (copy->blockmax > BLOCK_MAX) {
 #if SIZE_MAX == UINT32_MAX
-	if (copy->blockmax > (block_off_t)(SIZE_MAX / block_sizeof())) {
 		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", copy->sub, copy->blockmax);
+#else
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large. Increase the block size.\n", copy->sub, copy->blockmax);
+#endif
 		exit(EXIT_FAILURE);
 	}
-#endif
 
 	file = malloc_nofail(sizeof(struct snapraid_file));
 	file->sub = strdup_nofail(copy->sub);
@@ -872,12 +876,14 @@ struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, dat
 	if (size % block_size != 0)
 		++blockmax;
 
+	if (blockmax > BLOCK_MAX) {
 #if SIZE_MAX == UINT32_MAX
-	if (blockmax > (block_off_t)(SIZE_MAX / BLOCK_HASH_SIZE)) {
 		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", sub, blockmax);
+#else
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large. Increase the block size.\n", sub, blockmax);
+#endif
 		exit(EXIT_FAILURE);
 	}
-#endif
 
 	dealloc = malloc_nofail(sizeof(struct snapraid_dealloc));
 	dealloc->sub = strdup_nofail(sub);
@@ -1519,14 +1525,16 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	struct snapraid_extent* parity_extent;
 	struct snapraid_extent* file_extent;
 
-#if SIZE_MAX == UINT32_MAX
-	if (parity_pos > (block_off_t)(SIZE_MAX - 4096)) {
+	if (parity_pos >= BLOCK_MAX) {
 		/* LCOV_EXCL_START */
+#if SIZE_MAX == UINT32_MAX
 		log_fatal(ESOFT, "Parity position %" PRIu64 " is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", parity_pos);
+#else
+		log_fatal(ESOFT, "Parity position %" PRIu64 " is too large. Increase the block size.\n", parity_pos);
+#endif
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-#endif
 
 	fs_lock(disk);
 

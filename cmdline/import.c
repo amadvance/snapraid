@@ -55,12 +55,18 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	if (size % block_size != 0)
 		++blockmax;
 
+	if (blockmax > BLOCK_MAX
 #if SIZE_MAX == UINT32_MAX
-	if (blockmax > (block_off_t)(SIZE_MAX / sizeof(struct snapraid_import_block))) {
+		|| blockmax > (block_off_t)(SIZE_MAX / sizeof(struct snapraid_import_block))
+#endif
+	) {
+#if SIZE_MAX == UINT32_MAX
 		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", path, blockmax);
+#else
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large. Increase the block size.\n", path, blockmax);
+#endif
 		exit(EXIT_FAILURE);
 	}
-#endif
 
 	file = malloc_nofail(sizeof(struct snapraid_import_file));
 	file->path = strdup_nofail(path);
@@ -173,12 +179,18 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 	if (size % block_size != 0)
 		++blockmax;
 
+	if (blockmax > BLOCK_MAX
 #if SIZE_MAX == UINT32_MAX
-	if (blockmax > (block_off_t)(SIZE_MAX / sizeof(struct snapraid_import_block))) {
+		|| blockmax > (block_off_t)(SIZE_MAX / sizeof(struct snapraid_import_block))
+#endif
+	) {
+#if SIZE_MAX == UINT32_MAX
 		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", path, blockmax);
+#else
+		log_fatal(ESOFT, "File '%s' with %" PRIu64 " blocks is too large. Increase the block size.\n", path, blockmax);
+#endif
 		exit(EXIT_FAILURE);
 	}
-#endif
 
 	file = malloc_nofail(sizeof(struct snapraid_import_file));
 	file->path = strdup_nofail(path);

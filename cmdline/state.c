@@ -2016,16 +2016,6 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
 
-#if SIZE_MAX == UINT32_MAX
-	block_off_t blockmax = parity_allocated_size(state);
-	if (blockmax > (block_off_t)(SIZE_MAX / sizeof(snapraid_info))) {
-		/* LCOV_EXCL_START */
-		log_fatal(ESOFT, "Array with %" PRIu64 " blocks in '%s' is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", blockmax, path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-#endif
-
 	/* check that any map has different name and position */
 	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
@@ -3138,15 +3128,17 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
-#if SIZE_MAX == UINT32_MAX
-			if (blockmax > (block_off_t)(SIZE_MAX / sizeof(snapraid_info))) {
+			if (blockmax > BLOCK_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+#if SIZE_MAX == UINT32_MAX
 				log_fatal(ESOFT, "Array with %" PRIu64 " blocks in '%s' is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", blockmax, path);
+#else
+				log_fatal(ESOFT, "Array with %" PRIu64 " blocks in '%s' is too large. Increase the block size.\n", blockmax, path);
+#endif
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-#endif
 		} else if (c == 'm' || c == 'M') {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];

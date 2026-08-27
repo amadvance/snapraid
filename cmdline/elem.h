@@ -16,6 +16,35 @@
 /****************************************************************************/
 /* snapraid */
 
+/*
+ * Maximum number of block positions in a data/parity disk span.
+ *
+ * With the default 256 KiB block size, this limits the maximum supported
+ * size of the largest data/parity disk to:
+ *
+ *   32-bit:  2^27 blocks = 32 TiB
+ *   64-bit:  2^42 blocks =  1 EiB
+ *
+ * The limit scales linearly with the configured block size. For example,
+ * on 64-bit systems a 512 KiB block size allows 2 EiB per disk.
+ *
+ * This is an architectural sanity limit, not a memory-usage limit.
+ * SnapRAID stores per-block metadata in memory, so practical configurations
+ * will reach memory constraints long before BLOCK_MAX. The actual memory
+ * requirement depends on block size, hash size, number of data disks, and
+ * array layout.
+ *
+ * Based on historical HDD capacity growth, single disks are not expected
+ * to approach 1 EiB before approximately the year 2100. If necessary,
+ * larger disks can still be supported without changing BLOCK_MAX simply
+ * by increasing the configured block size.
+ */
+#if SIZE_MAX == UINT32_MAX
+#define BLOCK_MAX (1ULL << 27)
+#else
+#define BLOCK_MAX (1ULL << 42)
+#endif
+
 /**
  * Number of measures of the operation progress.
  */
