@@ -756,10 +756,83 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 				goto close_and_continue;
 			}
 
+			/* if the file is not fixed, meaning that it is untouched */
+			if (!file_flag_has(file, FILE_IS_FIXED) && !was_unrecoverable) {
+				/* nothing to do, but close the file */
+				goto close_and_continue;
+			}
+
+			/*
+			 * If the file is closed or different than the one expected, reopen it
+			 * a different open file could happen when filtering for bad blocks
+			 */
+			if (handle[j].file != file) {
+				/* keep a pointer at the file we are going to close for error reporting */
+				struct snapraid_file* report = handle[j].file;
+				ret = handle_close(&handle[j]);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
+					log_fatal_errno(errno, disk->name);
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* reopen the file for writing, as required to set the mtime on Windows */
+				ret = handle_create(&handle[j], file, state->file_mode);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_fatal_errno(errno, disk->name);
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			}
+
+			/* search for the corresponding inode */
+			uint64_t inode = handle[j].st.st_ino; /* don't know the exact type of st_ino and we cannot pass it by pointer in the search */
+			if (inode != INODE_INVALID)
+				collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+			else
+				collide_file = 0;
+
+			/*
+			 * If the inode is already in the database and it refers to a different file name,
+			 * we can fix the file time ONLY if the time and size allow to differentiate
+			 * between the two files
+			 *
+			 * For example, suppose we delete a bunch of files with all the same size and time,
+			 * when recreating them the inodes may be reused in a different order,
+			 * and at the next sync some files may have matching inode/size/time even if different name
+			 * not allowing sync to detect that the file is changed and not renamed
+			 */
+			if (!collide_file /* if not in the database, there is no collision */
+				|| strcmp(collide_file->sub, file->sub) == 0 /* if the name is the same, it's the right collision */
+				|| collide_file->size != file->size /* if the size is different, the collision is identified */
+				|| collide_file->mtime_sec != file->mtime_sec /* if the mtime is different, the collision is identified */
+				|| collide_file->mtime_nsec != file->mtime_nsec /* same for mtime_nsec */
+			) {
+				/* set the original modification time before promoting/renaming */
+				ret = handle_utime(&handle[j]);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					log_tag("%s:%" PRIu64 ":%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_fatal_errno(errno, disk->name);
+
+					/* mark the file as damaged */
+					file_flag_set(file, FILE_IS_DAMAGED);
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			} else {
+				log_tag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, esc_tag(file->sub), esc_tag(collide_file->sub));
+			}
+
 			/*
 			 * This rename is the file-level recovery commit point. Keep the file
-			 * quarantined until every block was processed without FILE_IS_DAMAGED;
-			 * block-by-block promotion could expose an incomplete recovery.
+			 * quarantined until every block and metadata was processed without error;
+			 * promoting only after setting the timestamp ensures the final file is
+			 * never exposed with incomplete data or provisional timestamp.
 			 */
 			if (was_unrecoverable) {
 				char path[PATH_MAX];
@@ -788,80 +861,8 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 				}
 			}
 
-			/* if the file is not fixed, meaning that it is untouched */
-			if (!file_flag_has(file, FILE_IS_FIXED) && !was_unrecoverable) {
-				/* nothing to do, but close the file */
-				goto close_and_continue;
-			}
-
-			/*
-			 * If the file is closed or different than the one expected, reopen it
-			 * a different open file could happen when filtering for bad blocks
-			 */
-			if (handle[j].file != file) {
-				/* keep a pointer at the file we are going to close for error reporting */
-				struct snapraid_file* report = handle[j].file;
-				ret = handle_close(&handle[j]);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-
-				/* reopen the promoted file for writing, as required to set the mtime on Windows */
-				ret = handle_create(&handle[j], file, state->file_mode);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-			}
-
 			log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub));
 			msg_info("recovered %s\n", fmt_term(disk, file->sub));
-
-			/* search for the corresponding inode */
-			uint64_t inode = handle[j].st.st_ino; /* don't know the exact type of st_ino and we cannot pass it by pointer in the search */
-			if (inode != INODE_INVALID)
-				collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
-			else
-				collide_file = 0;
-
-			/*
-			 * If the inode is already in the database and it refers to a different file name,
-			 * we can fix the file time ONLY if the time and size allow to differentiate
-			 * between the two files
-			 *
-			 * For example, suppose we delete a bunch of files with all the same size and time,
-			 * when recreating them the inodes may be reused in a different order,
-			 * and at the next sync some files may have matching inode/size/time even if different name
-			 * not allowing sync to detect that the file is changed and not renamed
-			 */
-			if (!collide_file /* if not in the database, there is no collision */
-				|| strcmp(collide_file->sub, file->sub) == 0 /* if the name is the same, it's the right collision */
-				|| collide_file->size != file->size /* if the size is different, the collision is identified */
-				|| collide_file->mtime_sec != file->mtime_sec /* if the mtime is different, the collision is identified */
-				|| collide_file->mtime_nsec != file->mtime_nsec /* same for mtime_nsec */
-			) {
-				/* set the original modification time */
-				ret = handle_utime(&handle[j]);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-
-					/* mark the file as damaged */
-					file_flag_set(file, FILE_IS_DAMAGED);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-			} else {
-				log_tag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, esc_tag(file->sub), esc_tag(collide_file->sub));
-			}
 		} else {
 			/*
 			 * We are not fixing, but only checking
