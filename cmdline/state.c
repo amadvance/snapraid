@@ -3163,6 +3163,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (v_idx >= RAID_DATA_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ECONTENT, "Invalid disk position '%u' in the content file!\n", v_idx);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* from SnapRAID 7.0 the 'M' command includes the free space */
 			if (c == 'M') {
 				ret = sgetb64(f, &v_total_blocks);
