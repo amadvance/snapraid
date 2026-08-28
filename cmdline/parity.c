@@ -168,6 +168,7 @@ void parity_physical_reach_size(struct snapraid_parity_handle* handle, data_off_
 int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size)
 {
 	unsigned s;
+	int zero_seen = 0;
 	data_off_t block_mask;
 
 	/* mask of bits used by the block size */
@@ -239,10 +240,27 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			/* ensure that the resulting size if block aligned */
 			if ((split->size & block_mask) != 0) {
 				/* LCOV_EXCL_START */
+				errno = ESOFT;
 				log_fatal(ESOFT, "Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
+		}
+
+		/*
+		 * Non-empty parity splits must form a contiguous prefix.
+		 * Once an empty split is found, all following splits must
+		 * also be empty. Otherwise logical parity would contain an
+		 * internal hole in the split layout.
+		 */
+		if (split->size == 0) {
+			zero_seen = 1;
+		} else if (zero_seen) {
+			/* LCOV_EXCL_START */
+			errno = ESOFT;
+			log_fatal(ESOFT, "Invalid parity split layout: parity file '%s' has size %" PRIu64 " after an empty split.\n", split->path, split->size);
+			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
 
 		ret = advise_open(&split->advise, split->f);
@@ -683,6 +701,23 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 				/* LCOV_EXCL_STOP */
 			}
 
+			/*
+			 * Non-empty parity splits must form a contiguous prefix.
+			 *
+			 * If this split cannot allocate even one block while
+			 * parity space is still required, do not skip it and
+			 * continue allocation in a later split. Doing so would
+			 * create an internal zero-sized split such as
+			 * [100, 0, 50].
+			 */
+			if (run == 0 && size != 0) {
+				/* LCOV_EXCL_START */
+				errno = ENXIO;
+				log_fatal(errno, "Failed to allocate all the required parity space. You miss %" PRIu64 " bytes.\n", size);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* store what we have allocated */
 			split->size = run;
 
@@ -720,6 +755,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size)
 {
 	unsigned s;
+	int zero_seen = 0;
 	data_off_t block_mask;
 
 	handle->level = level;
@@ -795,10 +831,27 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 			/* ensure that the resulting size if block aligned */
 			if ((split->size & block_mask) != 0) {
 				/* LCOV_EXCL_START */
+				errno = ESOFT;
 				log_fatal(ESOFT, "Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
+		}
+
+		/*
+		 * Non-empty parity splits must form a contiguous prefix.
+		 * Once an empty split is found, all following splits must
+		 * also be empty. Otherwise logical parity would contain an
+		 * internal hole in the split layout.
+		 */
+		if (split->size == 0) {
+			zero_seen = 1;
+		} else if (zero_seen) {
+			/* LCOV_EXCL_START */
+			errno = ESOFT;
+			log_fatal(ESOFT, "Invalid parity split layout: parity file '%s' has size %" PRIu64 " after an empty split.\n", split->path, split->size);
+			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
 
 		ret = advise_open(&split->advise, split->f);
