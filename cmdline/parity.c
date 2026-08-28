@@ -861,10 +861,6 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* update the valid range */
-	if (split->valid_size < offset + block_size)
-		split->valid_size = offset + block_size;
-
 	bw_limit(handle->bw, block_size);
 
 	count = 0;
@@ -893,6 +889,10 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 
 		count += write_ret;
 	} while (count < block_size);
+
+	/* update the valid range */
+	if (split->valid_size < offset + block_size)
+		split->valid_size = offset + block_size;
 
 	ret = advise_write(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
