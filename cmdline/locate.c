@@ -250,8 +250,13 @@ void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint
 					/*
 					 * Explicit force-realloc overrides an in-place REBUILD request.
 					 * REP makes the block eligible for the normal reallocation path.
+					 *
+					 * This transition changes persistent block-state semantics. Mark the
+					 * state dirty explicitly rather than relying on the following scan to
+					 * incidentally do so.
 					 */
 					block_state_set(block, BLOCK_STATE_REP);
+					state->need_write = 1;
 				}
 			}
 		}

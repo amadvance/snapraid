@@ -140,10 +140,14 @@
  *
  *   1. Scan creates CHG, REP and DELETED pending states.
  *      For --force-full, BLK blocks are marked REBUILD before parity resizing.
+ *      For --force-realloc, the scan also constructs the new data-to-parity
+ *      allocation before physical parity is resized.
  *
- *   2. The pending content state is durably written before parity is changed.
+ *   2. The pending content state and, when reallocating, the new allocation
+ *      are durably written before physical parity is changed.
  *      A crash after this point therefore leaves enough information to
- *      identify every parity position that may have been modified or needs rebuild.
+ *      identify every parity position that may be modified or rebuilt without
+ *      relying on a physical layout referenced only by an older content file.
  *
  *   3. Sync reads current data and computes new parity. Blocks may already be
  *      changed to BLK/EMPTY in memory while parity writes are still pending.
@@ -1966,30 +1970,36 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (!skip_sync) {
 		/*
-		 * Persist the full-rebuild intent before changing physical parity.
+		 * Persist the logical state required to recover from a crash before changing
+		 * the physical parity layout.
 		 *
-		 * parity_chsize() may enlarge a truncated parity file. While the parity handle
-		 * remains open, physical_reach_size intentionally does not advance merely because
-		 * of allocation: it is a physical read/truncation extent, not a parity-validity
-		 * marker.
+		 * For --force-full, BLK -> REBUILD records that the existing allocation must
+		 * be preserved but its physical parity must be regenerated.
 		 *
-		 * physical_reach_size is not persisted separately. After a crash and reopen, the
-		 * physical EOF becomes the reconstructed extent, so the previous short EOF can
-		 * no longer be used as evidence that positions beyond it still require work.
+		 * For --force-realloc, state_scan() has already completed the requested
+		 * reallocation before state_sync() is entered. The in-memory content state
+		 * therefore contains the new data-to-parity mapping, with REP/CHG/DELETED
+		 * states describing parity that is not yet synchronized.
 		 *
-		 * For --force-full, that rebuild requirement therefore has to be persisted in
-		 * the content state before resizing. BLK -> REBUILD records that physical
-		 * parity must be regenerated independently of what EOF or physical_reach_size says.
+		 * That post-scan state must be durable before parity_chsize() runs.
+		 * Reallocation can move data backward and reduce the required parity size.
+		 * If parity were truncated first and the process terminated before the new
+		 * mapping was persisted, the old content file could still reference parity
+		 * positions that had already been physically discarded.
 		 *
-		 * This ordering is about preserving rebuild intent across a crash. It is not
-		 * needed because bytes below physical_reach_size are assumed valid: parity
-		 * correctness is determined separately by block state and parity verification.
+		 * The opposite crash ordering is safe: if the new content state is written
+		 * and the process terminates before resizing or rewriting parity, its
+		 * REP/CHG/DELETED states prevent the old physical parity from being trusted
+		 * as synchronized with the new mapping.
 		 */
-		if (state->opt.force_full) {
+		if (state->opt.force_full)
 			state_sync_mark_rebuild(state);
 
-			if (!state->opt.skip_content_write && state->need_write)
-				state_write(state);
+		if ((state->opt.force_full || state->opt.force_realloc)
+			&& !state->opt.skip_content_write
+			&& state->need_write
+		) {
+			state_write(state);
 		}
 
 		msg_progress("Resizing...\n");
@@ -2016,6 +2026,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 			if (is_modified)
 				state->need_write = 1;
+		}
+
+		if (state->opt.kill_after_resize) {
+			log_fatal(EUSER, "WARNING! Killing due --test-kill-after-resize option.\n");
+			exit(EXIT_SUCCESS);
 		}
 
 		/* after resizing parity files, refresh again the free info */

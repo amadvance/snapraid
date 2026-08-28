@@ -1282,6 +1282,39 @@ endif # !HAVE_MEMORY_CHECKER
 	$(MSG) Sync after all the fixes
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+#### FORCE-REALLOC CRASH TESTS ####
+	$(MSG) Test interrupted force-realloc post-resize crash
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC_CRASH1
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC_CRASH2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	rm bench/disk1/REALLOC_CRASH1
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/realloc_crash_before.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -R --test-kill-after-resize sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/realloc_crash_after.txt
+	! diff bench/realloc_crash_before.txt bench/realloc_crash_after.txt > /dev/null
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/realloc_crash_final.txt
+	diff bench/realloc_crash_after.txt bench/realloc_crash_final.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	rm bench/disk1/REALLOC_CRASH2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(MSG) Test interrupted force-realloc-tail post-resize crash
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC_TAIL1
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC_TAIL2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	rm bench/disk1/REALLOC_TAIL1
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/realloc_tail_crash_before.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -W 10M --test-kill-after-resize sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/realloc_tail_crash_after.txt
+	! diff bench/realloc_tail_crash_before.txt bench/realloc_tail_crash_after.txt > /dev/null
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/realloc_tail_crash_final.txt
+	diff bench/realloc_tail_crash_after.txt bench/realloc_tail_crash_final.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	rm bench/disk1/REALLOC_TAIL2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 endif # HAVE_THREAD_CHECKER
 	$(MSG) Regression test completed with SUCCESS!
 	$(MSG) Please ignore any error message printed above, they are expected!
