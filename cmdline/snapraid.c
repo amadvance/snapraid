@@ -529,6 +529,8 @@ int snapraid_main(int argc, char* argv[])
 	int operation;
 	block_off_t blockstart;
 	block_off_t blockcount;
+	int blockstart_set;
+	int blockcount_set;
 	int ret;
 	tommy_list filterlist_file;
 	tommy_list filterlist_disk;
@@ -567,6 +569,8 @@ int snapraid_main(int argc, char* argv[])
 	opt.io_error_limit = 100;
 	blockstart = 0;
 	blockcount = 0;
+	blockstart_set = 0;
+	blockcount_set = 0;
 	tommy_list_init(&filterlist_file);
 	tommy_list_init(&filterlist_disk);
 	speed_test_period = -1;
@@ -690,6 +694,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'S' :
+			blockstart_set = 1;
 			blockstart = strtoull(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
@@ -699,6 +704,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'B' :
+			blockcount_set = 1;
 			blockcount = strtoull(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
@@ -1216,6 +1222,20 @@ int snapraid_main(int argc, char* argv[])
 	if (opt.force_realloc && opt.force_full) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You cannot use the -R, --force-realloc and -F, --force-full options simultaneously\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.force_full && blockstart_set) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use -S, --start with --force-full\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.force_full && blockcount_set) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use -B, --count with --force-full\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

@@ -909,6 +909,7 @@ void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file
 		switch (state) {
 		case BLOCK_STATE_BLK :
 		case BLOCK_STATE_REP :
+		case BLOCK_STATE_REBUILD :
 			memcpy(hash, block->hash, BLOCK_HASH_SIZE);
 			break;
 		case BLOCK_STATE_CHG :

@@ -43,6 +43,7 @@
  *   CHG        OLD/ZERO/INVALID   present            may be OLD or CURRENT
  *   REP        NEW                present            may be OLD or NEW
  *   DELETED    OLD/INVALID        none               may be OLD or zero
+ *   REBUILD    CURRENT            present            parity untrusted / rebuild pending
  *
  * BLK has a hash for the data that should currently be present and normally
  * represents a synchronized contribution.
@@ -528,6 +529,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 		case BLOCK_STATE_CHG : desc = "change"; break;
 		case BLOCK_STATE_REP : desc = "replace"; break;
 		case BLOCK_STATE_BLK : desc = "block"; break;
+		case BLOCK_STATE_REBUILD : desc = "rebuild"; break;
 		/* LCOV_EXCL_START */
 		default : desc = "unknown"; break;
 			/* LCOV_EXCL_STOP */
@@ -596,7 +598,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			 * A CHG hash identifies the OLD contents, so fetching data by that hash would
 			 * not prove that we recovered the current version required by this strategy.
 			 */
-			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
+			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP || block_state == BLOCK_STATE_REBUILD)
 			        /* try to fetch the block using the known hash */
 				&& (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0
 				|| state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)
@@ -641,7 +643,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * we have already checked their hash
 				 */
 				if (block_state != BLOCK_STATE_CHG) {
-					assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);
+					assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP || block_state == BLOCK_STATE_REBUILD);
 					continue;
 				}
 
@@ -788,7 +790,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			 * At this point, we can have only BLK ones
 			 */
 
-			assert(block_state == BLOCK_STATE_BLK);
+			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REBUILD);
 
 			/* we have something we are interested to recover */
 			something_to_recover = 1;
@@ -1610,7 +1612,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				continue;
 			}
 
-			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);
+			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP || block_state == BLOCK_STATE_REBUILD);
 
 			/* compute the hash of the block just read */
 			if (rehash) {

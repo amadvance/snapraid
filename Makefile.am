@@ -1153,6 +1153,36 @@ endif # !HAVE_MEMORY_CHECKER
 	mv bench/b bench/disk1/b
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+#### FORCE-FULL REBUILD TESTS ####
+	$(MSG) Test interrupted force-full with complete parity
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) list > bench/mapping_before.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --force-full --test-kill-before-sync sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) list > bench/mapping_rebuild.txt
+	diff bench/mapping_before.txt bench/mapping_rebuild.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) list > bench/mapping_after.txt
+	diff bench/mapping_before.txt bench/mapping_after.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	$(MSG) Test interrupted force-full with physically truncated parity
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) list > bench/mapping_trunc_before.txt
+	@ orig_size=$$(wc -c < bench/parity.0) && truncate -s $$(( orig_size / 2 )) bench/parity.0
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --force-full --test-kill-before-sync sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) list > bench/mapping_trunc_after.txt
+	diff bench/mapping_trunc_before.txt bench/mapping_trunc_after.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	$(MSG) Test check and status on interrupted REBUILD state
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --force-full --test-kill-before-sync sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) status
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	$(MSG) Test explicit force-realloc after REBUILD
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --force-full --test-kill-before-sync sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) -R sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
 #### RECOVER MISSING ####
 	$(MSG) Delete some files, fix with -m and check with PAR1
 	rm bench/disk1/a/8*

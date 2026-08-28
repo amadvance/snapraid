@@ -68,6 +68,7 @@ The platform abstraction layer is separated into `os/`. Note that `os/` acts as 
 | `BLOCK_STATE_CHG` | 2 | File block changed; hash may be old (pre-sync); parity not yet updated |
 | `BLOCK_STATE_REP` | 3 | File block hashed (from copy heuristic); parity not yet updated |
 | `BLOCK_STATE_DELETED` | 4 | File deleted; block retains old hash for parity recovery; parity not yet zeroed |
+| `BLOCK_STATE_REBUILD` | 5 | File block with valid hash; parity untrusted, rebuild in place without reallocation |
 
 ### Crash-Recovery Invariants
 

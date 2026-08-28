@@ -2275,7 +2275,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'y' for hash size.
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'Q' for multi parity file.
 	 *    The previous 'P' entry is now deprecated, but supported for importing.
-	 *  - SNAPCNT4/SnapRAID 15.0 Adds entry 'd' for dealloc file.
+	 *  - SNAPCNT4 adds:
+	 *    - entry 'd' for deallocated files;
+	 *    - block type 'r' / BLOCK_STATE_REBUILD for persistent in-place parity
+	 *      rebuilds.
 	 */
 	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0
 		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0
@@ -2413,7 +2416,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* allocate the file */
-			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, 0);
+			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, FILEPHY_UNREAD_OFFSET);
 
 			/* insert the file in the file containers */
 			if (file->inode != INODE_INVALID)
@@ -2470,6 +2473,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					switch (c) {
 					case 'b' :
 						block_state_set(block, BLOCK_STATE_BLK);
+						break;
+					case 'r' :
+						block_state_set(block, BLOCK_STATE_REBUILD);
 						break;
 					case 'n' :
 						/* deprecated NEW blocks are converted to CHG ones */
@@ -3703,12 +3709,37 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	tommy_hashdyn_done(&bucket_hash);
 }
 
+static int state_has_rbuild(struct snapraid_state* state)
+{
+	tommy_node* i;
+
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		tommy_node* j;
+
+		for (j = disk->filelist; j != 0; j = j->next) {
+			struct snapraid_file* file = j->data;
+			block_off_t f;
+
+			for (f = 0; f < file->blockmax; ++f) {
+				struct snapraid_block* block = fs_file2block_get(file, f);
+
+				if (block_state_get(block) == BLOCK_STATE_REBUILD)
+					return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 struct state_write_thread_context {
 	struct snapraid_state* state;
 #if HAVE_MT_WRITE
 	thread_id_t thread;
 #endif
 	/* input */
+	int content_version;
 	block_off_t blockmax;
 	time_t info_oldest;
 	time_t info_now;
@@ -3763,22 +3794,11 @@ static void* state_write_thread(void* arg)
 	count_unscrubbed = 0;
 	tommy_hashdyn_init(&bucket_hash);
 
-	/*
-	 * Force at least version 3 a we want to always store the parity size
-	 *
-	 * If there is a dealloc list, force version 4
-	 */
-	for (i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		if (!tommy_list_empty(&disk->dealloclist))
-			break;
-	}
-
 	/* write header */
-	if (i == 0)
-		swrite("SNAPCNT3\n\3\0\0", 12, f);
-	else
+	if (context->content_version >= 4)
 		swrite("SNAPCNT4\n\3\0\0", 12, f);
+	else
+		swrite("SNAPCNT3\n\3\0\0", 12, f);
 
 	/* write block size and block max */
 	sputc('z', f);
@@ -4009,6 +4029,9 @@ static void* state_write_thread(void* arg)
 				switch (v_state) {
 				case BLOCK_STATE_BLK :
 					sputc('b', f);
+					break;
+				case BLOCK_STATE_REBUILD :
+					sputc('r', f);
 					break;
 				case BLOCK_STATE_CHG :
 					sputc('g', f);
@@ -4443,6 +4466,24 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		}
 	}
 
+	int content_version = 3;
+
+	/*
+	 * Force at least version 3 as we want to always store the parity size.
+	 * If there is a REBUILD block or a dealloc list, force version 4.
+	 */
+	if (state_has_rbuild(state)) {
+		content_version = 4;
+	} else {
+		for (i = state->disklist; i != 0; i = i->next) {
+			struct snapraid_disk* disk = i->data;
+			if (!tommy_list_empty(&disk->dealloclist)) {
+				content_version = 4;
+				break;
+			}
+		}
+	}
+
 #if HAVE_MT_WRITE
 	/* start all writing threads */
 	first = 1;
@@ -4482,6 +4523,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 
 		/* initialize */
 		context->state = state;
+		context->content_version = content_version;
 		context->blockmax = blockmax;
 		context->info_oldest = info_oldest;
 		context->info_now = info_now;
@@ -4636,6 +4678,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 
 	/* initialize */
 	context->state = state;
+	context->content_version = content_version;
 	context->blockmax = blockmax;
 	context->info_oldest = info_oldest;
 	context->info_now = info_now;

@@ -62,12 +62,14 @@
  *   REP        yes      NEW                         invalid for current data
  *   BLK        yes      CURRENT                     synchronized contribution
  *   DELETED    no       OLD / INVALID               invalid for logical zero
+ *   REBUILD    yes      CURRENT                     physical parity untrusted, rebuild in place
  *
  * "Invalid" is conservative. It does not necessarily mean that the bytes in
  * parity are wrong. After an interrupted sync parity may still represent OLD
  * data, may already represent NEW data, or may have been only partly updated.
  * CHG, REP and DELETED mean that no particular physical parity state may be
- * assumed.
+ * assumed. REBUILD means current data and hash are known, but physical parity
+ * must be regenerated using the existing data-to-parity mapping.
  *
  * EMPTY contributes zero and does not by itself require an update. Therefore
  * a parity position containing only EMPTY and DELETED blocks may be skipped:
@@ -76,7 +78,7 @@
  *
  * BLK is a per-data-block property. It means that this block does not itself
  * require a parity update. It does not imply that the whole parity stripe is
- * valid if another disk at the same position contains CHG, REP or DELETED.
+ * valid if another disk at the same position contains CHG, REP, DELETED or REBUILD.
  *
  * The main state transitions are:
  *
@@ -87,9 +89,13 @@
  *   EMPTY   -> REP    NEW              represents the previous zero input
  *   DELETED -> REP    NEW              unknown and not trusted
  *
+ *   BLK     -> REBUILD CURRENT         parity is deliberately no longer trusted
+ *   REBUILD -> BLK    CURRENT          parity rebuilt and progress committed
+ *
  *   BLK     -> DELETED OLD             initially still represents OLD data
  *   CHG     -> DELETED unchanged       already unknown
  *   REP     -> DELETED INVALID         already unknown
+ *   REBUILD -> DELETED OLD             untrusted parity, CURRENT hash becomes OLD
  *
  *   REP     -> CHG    INVALID          unchanged and not trusted
  *   CHG     -> REP    NEW              unchanged and not trusted
@@ -101,6 +107,11 @@
  * EMPTY/DELETED -> CHG/REP and BLK/CHG/REP -> DELETED are normally produced
  * by the filesystem scan before sync starts modifying parity. REP -> CHG is
  * also used when a previously stored copy-derived hash is invalidated.
+ *
+ * BLK -> REBUILD is produced when --force-full sync is requested to make full
+ * parity reconstruction persistent across crashes before touching physical parity.
+ * BLK -> REBUILD does not itself change physical parity; it changes what SnapRAID
+ * is willing to trust.
  *
  * CHG -> REP is performed by the optional prehash pass. It means that NEW data
  * has been read and hashed, while parity remains explicitly invalid.
@@ -121,17 +132,18 @@
  * -----------------------
  *
  * State changes made by state_sync_process() are not immediate durability
- * guarantees. CHG/REP may become BLK, and DELETED may become EMPTY, in memory
+ * guarantees. CHG/REP/REBUILD may become BLK, and DELETED may become EMPTY, in memory
  * before the corresponding asynchronous parity write has completed.
  *
  * This is safe because completed state is not published to the content file
  * until parity has crossed a durability barrier. The ordering is:
  *
  *   1. Scan creates CHG, REP and DELETED pending states.
+ *      For --force-full, BLK blocks are marked REBUILD before parity resizing.
  *
  *   2. The pending content state is durably written before parity is changed.
  *      A crash after this point therefore leaves enough information to
- *      identify every parity position that may have been modified.
+ *      identify every parity position that may have been modified or needs rebuild.
  *
  *   3. Sync reads current data and computes new parity. Blocks may already be
  *      changed to BLK/EMPTY in memory while parity writes are still pending.
@@ -145,7 +157,13 @@
  * The persistent crash invariant is therefore:
  *
  *   CHG / REP / DELETED in content
- *       => physical parity must be treated as unknown.
+ *       => physical parity must be treated according to the existing interrupted
+ *          sync semantics.
+ *
+ *   REBUILD in content
+ *       => physical parity must not be trusted
+ *       => parity must be recomputed
+ *       => existing data-to-parity allocation must be preserved
  *
  *   BLK / EMPTY progress published by sync
  *       => the parity required by that progress was made durable before the
@@ -1794,6 +1812,44 @@ bail:
 	return 0;
 }
 
+/*
+ * Make a forced full parity rebuild persistent.
+ *
+ * REBUILD means that the current data and hash are known, but physical parity
+ * must be regenerated using the existing data-to-parity mapping.
+ *
+ * Only BLK blocks are converted. CHG, REP and DELETED already carry their own
+ * unsynchronized semantics and must not be rewritten merely because
+ * --force-full was requested.
+ */
+static void state_sync_mark_rebuild(struct snapraid_state* state)
+{
+	tommy_node* i;
+	int modified = 0;
+
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		tommy_node* j;
+
+		for (j = disk->filelist; j != 0; j = j->next) {
+			struct snapraid_file* file = j->data;
+			block_off_t f;
+
+			for (f = 0; f < file->blockmax; ++f) {
+				struct snapraid_block* block = fs_file2block_get(file, f);
+
+				if (block_state_get(block) == BLOCK_STATE_BLK) {
+					block_state_set(block, BLOCK_STATE_REBUILD);
+					modified = 1;
+				}
+			}
+		}
+	}
+
+	if (modified)
+		state->need_write = 1;
+}
+
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
@@ -1826,9 +1882,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	used_paritymax = parity_used_size(state);
 	used_parity_size = used_paritymax * (data_off_t)state->block_size;
 
-	/* effective size of the parity files */
-	file_parity_size = 0;
-
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "Error in the starting block %" PRIu64 ". It is larger than the parity size %" PRIu64 ".\n", blockstart, blockmax);
@@ -1840,6 +1893,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	if (blockcount != 0 && blockcount < blockmax - blockstart) {
 		blockmax = blockstart + blockcount;
 	}
+
+	/* effective size of the parity files */
+	file_parity_size = 0;
+
 	for (l = 0; l < state->level; ++l) {
 		data_off_t out_size;
 		block_off_t parityblocks;
@@ -1908,6 +1965,33 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (!skip_sync) {
+		/*
+		 * Persist the full-rebuild intent before changing physical parity.
+		 *
+		 * parity_chsize() may enlarge a truncated parity file. While the parity handle
+		 * remains open, physical_reach_size intentionally does not advance merely because
+		 * of allocation: it is a physical read/truncation extent, not a parity-validity
+		 * marker.
+		 *
+		 * physical_reach_size is not persisted separately. After a crash and reopen, the
+		 * physical EOF becomes the reconstructed extent, so the previous short EOF can
+		 * no longer be used as evidence that positions beyond it still require work.
+		 *
+		 * For --force-full, that rebuild requirement therefore has to be persisted in
+		 * the content state before resizing. BLK -> REBUILD records that physical
+		 * parity must be regenerated independently of what EOF or physical_reach_size says.
+		 *
+		 * This ordering is about preserving rebuild intent across a crash. It is not
+		 * needed because bytes below physical_reach_size are assumed valid: parity
+		 * correctness is determined separately by block state and parity verification.
+		 */
+		if (state->opt.force_full) {
+			state_sync_mark_rebuild(state);
+
+			if (!state->opt.skip_content_write && state->need_write)
+				state_write(state);
+		}
+
 		msg_progress("Resizing...\n");
 
 		/* now change the size of all parities */

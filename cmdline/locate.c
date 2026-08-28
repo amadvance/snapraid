@@ -242,8 +242,15 @@ void state_locate_mark_tail_blocks_for_resync(struct snapraid_state* state, uint
 				}
 
 				struct snapraid_block* block = fs_file2block_get(file, f);
-				if (block_state_get(block) == BLOCK_STATE_BLK) {
-					/* convert from BLK to REP */
+				unsigned block_state = block_state_get(block);
+
+				if (block_state == BLOCK_STATE_BLK
+					|| block_state == BLOCK_STATE_REBUILD
+				) {
+					/*
+					 * Explicit force-realloc overrides an in-place REBUILD request.
+					 * REP makes the block eligible for the normal reallocation path.
+					 */
 					block_state_set(block, BLOCK_STATE_REP);
 				}
 			}

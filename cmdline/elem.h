@@ -163,6 +163,25 @@ struct snapraid_filter {
 #define BLOCK_STATE_DELETED 4
 
 /**
+ * The block contains current data and a current hash, but its parity must be
+ * rebuilt in place.
+ *
+ * The block hash is the hash of the CURRENT data.
+ *
+ * Physical parity for this block MUST NOT be trusted. It may still be correct,
+ * may be missing, or may have been only partly rebuilt by an interrupted
+ * --force-full sync.
+ *
+ * Unlike CHG and REP, this state does not permit automatic parity
+ * reallocation. The existing data-to-parity mapping must be preserved.
+ *
+ * REBUILD is converted back to BLK only after the corresponding parity update
+ * has completed and the normal sync durability ordering allows that progress
+ * to be persisted.
+ */
+#define BLOCK_STATE_REBUILD 5
+
+/**
  * Block hash size.
  *
  * At max HASH_MAX.
@@ -797,7 +816,9 @@ static inline int block_has_updated_hash(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
-	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;
+	return state == BLOCK_STATE_BLK
+	       || state == BLOCK_STATE_REP
+	       || state == BLOCK_STATE_REBUILD;
 }
 
 /**
@@ -810,7 +831,9 @@ static inline int block_has_file(const struct snapraid_block* block)
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_BLK
-	       || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
+	       || state == BLOCK_STATE_CHG
+	       || state == BLOCK_STATE_REP
+	       || state == BLOCK_STATE_REBUILD;
 }
 
 /**
@@ -823,7 +846,9 @@ static inline int block_has_invalid_parity(const struct snapraid_block* block)
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_DELETED
-	       || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
+	       || state == BLOCK_STATE_CHG
+	       || state == BLOCK_STATE_REP
+	       || state == BLOCK_STATE_REBUILD;
 }
 
 /**
@@ -836,6 +861,21 @@ static inline int block_has_file_and_valid_parity(const struct snapraid_block* b
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_BLK;
+}
+
+/**
+ * Check if a live block with invalid parity may participate in automatic
+ * parity reallocation.
+ *
+ * REBUILD is deliberately excluded because it requires an in-place parity
+ * rebuild preserving the existing data-to-parity mapping.
+ */
+static inline int block_has_reallocatable_parity(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_CHG
+	       || state == BLOCK_STATE_REP;
 }
 
 static inline int file_flag_has(const struct snapraid_file* file, unsigned mask)

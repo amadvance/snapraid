@@ -359,6 +359,15 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 		case BLOCK_STATE_BLK :
 			/* we keep the hash making it an "old" hash, because the parity is still containing data for it */
 			break;
+		case BLOCK_STATE_REBUILD :
+			/*
+			 * The stored hash describes the current file contents and therefore
+			 * becomes a valid OLD hash after deletion.
+			 *
+			 * Physical parity was already untrusted, but DELETED already represents
+			 * that condition conservatively.
+			 */
+			break;
 		case BLOCK_STATE_CHG :
 			/*
 			 * In this cases we don't know if the old state is still the one
@@ -427,14 +436,14 @@ static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapra
 }
 
 /**
- * Check if a file is completely formed of blocks with invalid parity,
+ * Check if a file is completely formed of blocks with reallocatable parity,
  * and no rehash is tagged, and if it has at least one block.
  */
-static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+static int file_is_full_reallocatable_and_stable(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
 	block_off_t i;
 
-	/* with no block, it never has an invalid parity */
+	/* with no block, it never has reallocatable parity */
 	if (file->blockmax == 0)
 		return 0;
 
@@ -444,8 +453,8 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 		struct snapraid_block* block = fs_file2block_get(file, i);
 		block_off_t parity_pos;
 
-		/* exclude blocks with parity */
-		if (!block_has_invalid_parity(block))
+		/* exclude blocks without reallocatable parity */
+		if (!block_has_reallocatable_parity(block))
 			return 0;
 
 		/*
@@ -703,7 +712,7 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
  *
  * If the file is kept, nothing has to be done.
  *
- * But if a file contains only blocks with invalid parity, it's reallocated to ensure
+ * But if a file is fully reallocatable, it's reallocated to ensure
  * to always minimize the space used in the parity.
  *
  * This could happen after a failed sync, when some other files are deleted,
@@ -713,8 +722,8 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 {
 	struct snapraid_disk* disk = scan->disk;
 
-	/* if the file is full invalid, schedule a reinsert at later stage */
-	if (file_is_full_invalid_parity_and_stable(scan->state, disk, file)) {
+	/* if the file is fully reallocatable, schedule a reinsert at later stage */
+	if (file_is_full_reallocatable_and_stable(scan->state, disk, file)) {
 
 		struct snapraid_file* copy = file_dup(file);
 		file_flag_set(copy, FILE_IS_REALLOC_NEW);
@@ -1109,8 +1118,8 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			 *
 			 * This is safe to execute unlocked because:
 			 * 1. Modified files deallocations are deferred to Phase 2 (mono-threaded phase).
-			 * 2. file_is_full_invalid_parity_and_stable() only accepts files with complete
-			 *    invalid parity, preventing them from being selected by file_is_full_hashed_and_stable().
+			 * 2. file_is_full_reallocatable_and_stable() only accepts files with complete
+			 *    reallocatable parity, preventing them from being selected by file_is_full_hashed_and_stable().
 			 */
 			if (other_file && file_is_full_hashed_and_stable(scan->state, other_disk, other_file)) {
 				char path_other[PATH_MAX];
