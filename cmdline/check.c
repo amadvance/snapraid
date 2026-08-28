@@ -2534,7 +2534,18 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 					/* LCOV_EXCL_STOP */
 				}
 
-				ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
+				/*
+				 * Fix must preserve the split layout stored in the content file.
+				 *
+				 * Unlike sync, fix does not persist parity split boundary changes. Allowing a
+				 * partially restored elastic split to become shorter would move the remaining
+				 * logical parity into following splits, and repaired parity could then be
+				 * written using a transient mapping that is lost on the next invocation.
+				 *
+				 * An exception is made for new parity levels not yet present in the content
+				 * file (PARITY_SIZE_INVALID), which are being created from scratch.
+				 */
+				ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder, state->parity[l].split_map[0].size == PARITY_SIZE_INVALID);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					log_tag("parity_%s:%u:%s: Create error. %s.\n", es(errno), 0, lev_config_name(l), strerror(errno));

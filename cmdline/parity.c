@@ -594,7 +594,7 @@ static int parity_split_is_fixed(struct snapraid_parity_handle* handle, unsigned
 	return 1;
 }
 
-int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder)
+int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder, int allow_split_realloc)
 {
 	int ret;
 	unsigned s;
@@ -655,7 +655,18 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 			log_fatal(errno, "Unexpected over resizing parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);
 			return -1;
 			/* LCOV_EXCL_STOP */
-		} else if (is_fixed && split->st.st_size < run) {
+		} else if ((is_fixed || !allow_split_realloc) && split->st.st_size < run) {
+			/*
+			 * A fixed split must always reach its logical boundary because changing
+			 * it would shift the logical offsets of data already present in following
+			 * splits.
+			 *
+			 * Some callers also require the existing split layout to remain unchanged
+			 * even when this split would normally be elastic. In particular, fix does
+			 * not persist a changed split mapping. Accepting a partial allocation here
+			 * would make the remaining size move into a following split and fix could
+			 * then write parity using a transient layout that is lost on the next run.
+			 */
 			/* LCOV_EXCL_START */
 			errno = ENXIO;
 			log_fatal(errno, "Failed restoring parity file '%s' to size %" PRIu64 " resulting in size %" PRIu64 ".\n", split->path, run, (uint64_t)split->st.st_size);

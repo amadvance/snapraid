@@ -93,9 +93,16 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 
 /**
  * Change the parity size.
- * \param out_size Return the size of the parity file. The out_size is set also on error to reflect a partial resize.
+ *
+ * If allow_split_realloc is nonzero, an elastic split that cannot reach the
+ * requested size may keep the size actually allocated and leave the remaining
+ * space to following splits.
+ *
+ * If allow_split_realloc is zero, a partial allocation must fail instead of
+ * moving a logical split boundary. This is required by callers that cannot
+ * persist a changed split layout.
  */
-int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder);
+int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder, int allow_split_realloc);
 
 /**
  * Get the size of the parity.

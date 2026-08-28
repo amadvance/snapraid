@@ -129,6 +129,7 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 
 - Never run `make check` because it's too expansive
 - Run `./snapraid test` for the regression test
+- The `test` and `selftest` suites (in `cmdline/selftest.c` and `./snapraid test`) must be strictly memory-only without creating files or performing filesystem I/O
 - If running the speed benchmark (`./snapraid -T`), always use `--speed-test-period 100` (e.g. `./snapraid -T --speed-test-period 100`) to run it faster
 - The Windows build needs to be tested only when modifying Windows-specific code
 - Verify error paths and recovery scenarios (the test suite covers aborted sync, UUID changes, disk failures)
