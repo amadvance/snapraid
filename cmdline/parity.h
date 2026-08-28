@@ -26,14 +26,24 @@ struct snapraid_split_handle {
 	data_off_t size;
 
 	/**
-	 * Valid size of the parity split.
-	 * This is the size effectively written, and not the result of a chsize operation.
-	 * It's used to make read operations failing if read over that size.
+	 * High-water mark size of the parity split.
 	 *
-	 * Parity is also truncated to that size when fixing it, in case of a Break (Ctrl+C)
-	 * of the program.
+	 * This is the physical truncation and read limit of the split.
+	 *
+	 * physical_reach_size does NOT indicate that data below this offset is valid parity.
+	 * Parity may be invalid, stale, unwritten, or sparse at any point below this
+	 * boundary. Correctness is tracked independently per block in the content state
+	 * and verified through data hashes and recomputation.
+	 *
+	 * Data beyond physical_reach_size is disposable/preallocated and discarded by
+	 * parity_truncate(). A completed write advances physical_reach_size to the end of
+	 * the written block so it is not truncated away.
+	 *
+	 * Before closing writable parity handles during fix operations, parity_truncate()
+	 * persists this boundary into the physical EOF. On the next open, physical_reach_size can
+	 * therefore be initialized from st_size.
 	 */
-	data_off_t valid_size;
+	data_off_t physical_reach_size;
 
 	/**
 	 * Artificial size limit for testing.
@@ -95,13 +105,19 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
- * Get the size of the contiguous valid prefix of the parity.
+ * Get the physical reach of the logical parity file across splits.
  *
- * This returns the logical prefix covered by valid data in all consecutive splits.
- * For example, with two 100 GiB splits, if the first is truncated to 90 GiB
- * and the second is fully valid, the valid prefix is 90 GiB, not 190 GiB.
+ * This composes the physical_reach_size boundaries of consecutive splits.
+ * If the physical_reach_size of an earlier split is smaller than its logical size,
+ * later splits cannot extend the logical offset past that missing region.
+ *
+ * Parity within this range is not necessarily valid or synchronized;
+ * per-block validity is tracked independently in the content state.
+ *
+ * For example, with two 100 GiB splits, if the first has physical_reach_size 90 GiB
+ * and the second has physical_reach_size 100 GiB, the result is 90 GiB, not 190 GiB.
  */
-void parity_valid_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
+void parity_physical_reach_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
  * Open an already existing parity file.
@@ -114,7 +130,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 int parity_sync(struct snapraid_parity_handle* handle);
 
 /**
- * Truncate the parity file to the valid size.
+ * Truncate each split to its physical physical_reach_size boundary.
  */
 int parity_truncate(struct snapraid_parity_handle* handle);
 

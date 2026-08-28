@@ -11,6 +11,240 @@
 #include "io.h"
 #include "raid/raid.h"
 
+/*
+ * SnapRAID sync model
+ *
+ * Sync brings the stored parity and content metadata in line with the data
+ * files observed by SnapRAID.
+ *
+ * On the first sync there is no previously synchronized state. SnapRAID scans
+ * the filesystem, allocates parity blocks, reads the data, computes hashes,
+ * and generates parity. The resulting content file records the synchronized
+ * file metadata, block allocation and hashes.
+ *
+ * On subsequent syncs the filesystem is scanned again and compared with the
+ * previous content state. Added, removed, moved, restored or changed files
+ * invalidate only the parity positions affected by those changes.
+ *
+ * Content and parity are related but distinct persistent states. The content
+ * file records SnapRAID's logical knowledge of the array; the parity files
+ * contain the physically generated redundancy.
+ *
+ * They do not advance atomically. If a sync is interrupted, some parity
+ * positions may already have been updated while the content file still
+ * describes an intermediate state. CHG, REP, BLK and DELETED preserve enough
+ * information to handle these conditions safely on a later run.
+ *
+ * Consequently, content state must not be interpreted as an unconditional
+ * description of the bytes currently present in parity. In particular,
+ * CHG/REP/DELETED deliberately represent states for which physical parity
+ * cannot be trusted to correspond to the current logical data.
+ *
+ * Block state model
+ * -----------------
+ *
+ * A block state describes the relationship between:
+ *
+ * - the data currently associated with the parity position,
+ * - the hash stored in the content state,
+ * - the parity physically stored on disk.
+ *
+ * OLD and NEW below refer to generations of data, not necessarily to the hash
+ * algorithm. During rehashing, per-position information determines whether a
+ * hash belongs to the previous or current hash algorithm.
+ *
+ * The stable states are:
+ *
+ *   State      File     Stored hash                 Parity meaning
+ *   ------------------------------------------------------------------------
+ *   EMPTY      no       none                        logical input is zero
+ *   CHG        yes      OLD / ZERO / INVALID        invalid for current data
+ *   REP        yes      NEW                         invalid for current data
+ *   BLK        yes      CURRENT                     synchronized contribution
+ *   DELETED    no       OLD / INVALID               invalid for logical zero
+ *
+ * "Invalid" is conservative. It does not necessarily mean that the bytes in
+ * parity are wrong. After an interrupted sync parity may still represent OLD
+ * data, may already represent NEW data, or may have been only partly updated.
+ * CHG, REP and DELETED mean that no particular physical parity state may be
+ * assumed.
+ *
+ * EMPTY contributes zero and does not by itself require an update. Therefore
+ * a parity position containing only EMPTY and DELETED blocks may be skipped:
+ * no live file depends on it. A DELETED block alone does not necessarily mean
+ * that the array is considered unsynchronized.
+ *
+ * BLK is a per-data-block property. It means that this block does not itself
+ * require a parity update. It does not imply that the whole parity stripe is
+ * valid if another disk at the same position contains CHG, REP or DELETED.
+ *
+ * The main state transitions are:
+ *
+ *   Transition        Hash after       Physical parity
+ *   ------------------------------------------------------------------------
+ *   EMPTY   -> CHG    ZERO             represents the previous zero input
+ *   DELETED -> CHG    OLD/INVALID      unknown and not trusted
+ *   EMPTY   -> REP    NEW              represents the previous zero input
+ *   DELETED -> REP    NEW              unknown and not trusted
+ *
+ *   BLK     -> DELETED OLD             initially still represents OLD data
+ *   CHG     -> DELETED unchanged       already unknown
+ *   REP     -> DELETED INVALID         already unknown
+ *
+ *   REP     -> CHG    INVALID          unchanged and not trusted
+ *   CHG     -> REP    NEW              unchanged and not trusted
+ *
+ *   CHG     -> BLK    CURRENT          valid when sync progress is committed
+ *   REP     -> BLK    CURRENT          valid when sync progress is committed
+ *   DELETED -> EMPTY  none             valid when sync progress is committed
+ *
+ * EMPTY/DELETED -> CHG/REP and BLK/CHG/REP -> DELETED are normally produced
+ * by the filesystem scan before sync starts modifying parity. REP -> CHG is
+ * also used when a previously stored copy-derived hash is invalidated.
+ *
+ * CHG -> REP is performed by the optional prehash pass. It means that NEW data
+ * has been read and hashed, while parity remains explicitly invalid.
+ *
+ * CHG can become BLK in two ways. Normally parity is regenerated. However, if
+ * the previous sync completed normally, the OLD hash is unambiguous and the
+ * current data has the same hash, the existing parity contribution is already
+ * correct and no parity write is needed. This optimization is disabled after
+ * an interrupted sync because the stored OLD hash can no longer be reliably
+ * associated with the physical parity state.
+ *
+ * The table describes stable state semantics. During processing, a CHG hash
+ * may temporarily be replaced in memory by the hash just computed for current
+ * data before the block is promoted to BLK. Such temporary values are
+ * implementation state and do not redefine the persistent meaning of CHG.
+ *
+ * Crash consistency model
+ * -----------------------
+ *
+ * State changes made by state_sync_process() are not immediate durability
+ * guarantees. CHG/REP may become BLK, and DELETED may become EMPTY, in memory
+ * before the corresponding asynchronous parity write has completed.
+ *
+ * This is safe because completed state is not published to the content file
+ * until parity has crossed a durability barrier. The ordering is:
+ *
+ *   1. Scan creates CHG, REP and DELETED pending states.
+ *
+ *   2. The pending content state is durably written before parity is changed.
+ *      A crash after this point therefore leaves enough information to
+ *      identify every parity position that may have been modified.
+ *
+ *   3. Sync reads current data and computes new parity. Blocks may already be
+ *      changed to BLK/EMPTY in memory while parity writes are still pending.
+ *
+ *   4. Before an autosave publishes these completed states, state_barrier()
+ *      drains pending parity writes and synchronizes the parity files.
+ *
+ *   5. Only after that barrier may BLK/EMPTY progress be written to content.
+ *      Final content persistence follows the same ordering.
+ *
+ * The persistent crash invariant is therefore:
+ *
+ *   CHG / REP / DELETED in content
+ *       => physical parity must be treated as unknown.
+ *
+ *   BLK / EMPTY progress published by sync
+ *       => the parity required by that progress was made durable before the
+ *          content state was written.
+ *
+ * If a crash happens after parity was written but before completed content
+ * state was saved, content simply retains CHG/REP/DELETED. A later sync may
+ * repeat work, but it does not incorrectly trust the modified parity.
+ *
+ * DELETED has one additional persistence case. Trailing positions containing
+ * no live data can disappear when parity is shortened, because
+ * parity_allocated_size() excludes trailing positions without files. The
+ * subsequent content state therefore no longer needs to serialize those
+ * trailing DELETED entries.
+ *
+ * Parity stripe model
+ * -------------------
+ *
+ * Sync operates on parity positions. At each position, the blocks from all
+ * data disks form the data inputs of the same parity stripe and must therefore
+ * be considered together.
+ *
+ * A stripe requires sync processing only when it contains both an invalid
+ * parity contribution and at least one live data block. If no contribution is
+ * invalid, parity already represents all current live inputs. If no live block
+ * exists, the parity at that position is irrelevant to any file and may be
+ * left untouched even when DELETED blocks remain.
+ *
+ * In simplified form, the decision is:
+ *
+ *   no invalid block
+ *       => no parity update is required
+ *
+ *   invalid block, but no live block
+ *       => the stripe may be skipped
+ *
+ *   invalid block and at least one live block
+ *       => the stripe must be processed
+ *
+ * This is why a DELETED block alone does not necessarily make the array
+ * unsynchronized. Its old contribution only matters when the same parity
+ * position is still used by live data on another disk.
+ *
+ * Invalid blocks are also handled conservatively during silent-error
+ * recovery. CHG, REP and DELETED cannot in general be used as known inputs to
+ * the recovery equations because their current logical data may differ from
+ * the data represented by physical parity, especially after an interrupted
+ * sync.
+ *
+ * They are therefore treated as unknown inputs while reconstructing a
+ * suspected BLK block. A CHG whose stored OLD value is known to be zero is a
+ * special case: the old zero contribution can be supplied directly and does
+ * not consume a recovery equation.
+ *
+ * Any reconstructed values for CHG, REP or DELETED are only intermediate
+ * values needed to recover synchronized data and regenerate parity. Their
+ * current data buffers remain the authoritative inputs for completing sync.
+ *
+ * Live filesystem model
+ * ---------------------
+ *
+ * SnapRAID is not a real-time RAID system. A successful sync establishes a
+ * synchronized point in filesystem history, but data files remain writable
+ * before, during and after the operation.
+ *
+ * Sync does not require every file to remain unchanged for its whole duration
+ * and does not provide a transactional or atomic filesystem view.
+ *
+ * A file may therefore change while it is being processed. Such a change has
+ * essentially the same effect as changing the file immediately after it was
+ * synchronized: the parity generated by the current sync may describe an
+ * older or intermediate version while the live filesystem already contains a
+ * newer one.
+ *
+ * This is expected. Parity that no longer matches a file modified during or
+ * after sync is not by itself evidence of parity corruption. A later sync
+ * brings the parity back in line with the then-current filesystem state.
+ *
+ * A concurrent modification does not therefore have to be detected by that
+ * same sync to preserve the normal SnapRAID consistency model. If the change
+ * affects metadata used by normal change detection, such as size or mtime, a
+ * later scan will detect it and process the file again.
+ *
+ * The same applies to races around file access, including writes after open,
+ * between block reads, or immediately before or after the final read. These
+ * are equivalent, for consistency purposes, to modifying a file immediately
+ * after synchronization.
+ *
+ * Metadata checks performed during sync are therefore opportunistic checks,
+ * not a mechanism for freezing the filesystem or detecting every concurrent
+ * modification.
+ *
+ * This model relies on later changes being visible to normal change detection.
+ * An in-place modification that preserves all relevant metadata, for example
+ * both file size and modification time, may not be detected by a later scan.
+ * This is a general limitation of metadata-based change detection, not a
+ * special property of modifications occurring during sync.
+ */
+
 /****************************************************************************/
 /* hash */
 
@@ -275,6 +509,14 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* the only other case is BLOCK_STATE_CHG */
 				assert(block_state == BLOCK_STATE_CHG);
 
+				/*
+				 * Prehash is a persistent state transition: CHG -> REP records that
+				 * new data has been read and hashed while parity remains invalid.
+				 *
+				 * Persisting this state before parity writes preserves verified hashes
+				 * across interruptions without claiming synchronization.
+				 */
+
 				/* copy the hash in the block */
 				memcpy(block->hash, hash, BLOCK_HASH_SIZE);
 
@@ -463,7 +705,18 @@ static int block_is_enabled(struct snapraid_plan* plan, block_off_t i)
 			one_invalid = 1;
 	}
 
-	/* if none valid or none invalid, we don't need to update */
+	/*
+	 * A parity position needs processing only if it contains both:
+	 * - at least one live data block, and
+	 * - at least one block with invalid parity.
+	 *
+	 * Positions with only EMPTY/DELETED blocks are skipped even if parity
+	 * contains old non-zero data: no live file depends on it. Reused positions
+	 * become CHG/REP, forcing parity regeneration before becoming BLK.
+	 *
+	 * Requiring one_valid also avoids rewriting unused parity that will be
+	 * removed by parity truncation.
+	 */
 	if (!one_invalid || !one_valid)
 		return 0;
 
@@ -1064,9 +1317,21 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 
 		/*
-		 * If we have only silent errors we can try to fix them on-the-fly
-		 * note the fix is not written to disk, but used only to
-		 * compute the new parity
+		 * On silent errors, attempt on-the-fly recovery to avoid contaminating
+		 * new parity with bad data. Repaired data is kept in memory only.
+		 *
+		 * Recovery reconstructs the state represented by on-disk parity. For
+		 * CHG/REP/DELETED blocks, current buffers may differ from on-disk parity,
+		 * especially after an interrupted sync. Treating them as erasures prevents
+		 * raid_rec() from trusting their current contents to recover a bad BLK.
+		 *
+		 * CHG blocks with known ZERO old values supply zero directly without
+		 * consuming a parity equation. If an interrupted sync had already moved
+		 * parity to the new CHG value, hash validation fails and recovery is
+		 * discarded.
+		 *
+		 * After recovery, current buffers are restored for CHG/REP/DELETED:
+		 * reconstructed old values must not roll back pending filesystem changes.
 		 */
 		if (!error_on_this_block && !io_error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
@@ -1157,10 +1422,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* if no error in parity read */
 				if (!io_error_on_this_block) {
 					/*
-					 * Try to fix the data
-					 * note that this is a simple fix algorithm, that doesn't take into
-					 * account the case of a wrong parity
-					 * only 'fix' supports the most advanced fixing
+					 * Reconstruct data using on-disk parity. Unlike 'fix', this simple
+					 * recovery does not handle corrupt parity.
+					 *
+					 * Recovered BLK data is repaired in memory only to compute clean
+					 * parity without writing back to disk. The block remains bad on
+					 * disk for check/fix to repair later.
 					 */
 					raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
 
@@ -1542,6 +1809,16 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	msg_progress("Initializing...\n");
 
+	/*
+	 * Track two distinct parity extents:
+	 *
+	 * - allocated_size: extent required by the new layout, including live
+	 *   CHG/REP blocks whose parity is not yet generated.
+	 * - used_size: extent claimed valid by current content state (last BLK).
+	 *
+	 * Physical parity may be shorter than allocated_size (sync will extend it),
+	 * but must not be shorter than used_size (which indicates missing parity).
+	 */
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 
@@ -1578,7 +1855,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 
 		/* number of block in the parity file */
-		parity_valid_size(&parity_handle[l], &out_size);
+		parity_physical_reach_size(&parity_handle[l], &out_size);
 		parityblocks = out_size / state->block_size;
 
 		/* if the file is too small */
@@ -1586,7 +1863,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			log_fatal(ESOFT, "WARNING! The %s parity has only %" PRIu64 " blocks instead of %" PRIu64 ".\n", lev_name(l), parityblocks, used_paritymax);
 		}
 
-		/* keep the smallest valid parity size */
+		/* keep the smallest physical parity extent */
 		if (l == 0 || file_parity_size > out_size)
 			file_parity_size = out_size;
 	}
@@ -1722,6 +1999,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
+	/*
+	 * On close errors, abort without committing or persisting state,
+	 * keeping the previous content file intact for recovery on the next run.
+	 */
 	if (process_error != 0)
 		return -1;
 

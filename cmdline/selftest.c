@@ -303,7 +303,7 @@ static void test_parity(void)
 	static const struct {
 		unsigned split_mac;
 		data_off_t size[2];
-		data_off_t valid_size[2];
+		data_off_t physical_reach_size[2];
 		data_off_t expected;
 	} test[] = {
 		{ 1, { 100, 0 }, { 100, 0 }, 100 },
@@ -326,13 +326,13 @@ static void test_parity(void)
 		handle.split_mac = test[i].split_mac;
 		for (s = 0; s < handle.split_mac; ++s) {
 			handle.split_map[s].size = test[i].size[s];
-			handle.split_map[s].valid_size = test[i].valid_size[s];
+			handle.split_map[s].physical_reach_size = test[i].physical_reach_size[s];
 		}
 
-		parity_valid_size(&handle, &size);
+		parity_physical_reach_size(&handle, &size);
 		if (size != test[i].expected) {
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Failed parity valid size test\n");
+			log_fatal(EINTERNAL, "Failed parity physical reach size test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

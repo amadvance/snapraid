@@ -127,17 +127,29 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 	*out_size = size;
 }
 
-void parity_valid_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
+void parity_physical_reach_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 {
 	unsigned s;
 	data_off_t size;
 
-	/* compute the contiguous valid prefix of the logical parity layout */
+	/*
+	 * Compute the physical reach of the logical parity layout across splits.
+	 *
+	 * physical_reach_size represents physical file presence, not parity validity.
+	 * Parity is not necessarily contiguous or valid within this range: blocks
+	 * may be invalid, stale, unwritten, or modified. Correctness is determined
+	 * per-block by the content state and validated independently via data hashes
+	 * and recomputation.
+	 *
+	 * For split parity, splits concatenate linearly. If an earlier split is
+	 * physically shorter than its logical size, logical offsets beyond that
+	 * missing region cannot be addressed, so subsequent splits are not counted.
+	 */
 	size = 0;
 
 	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
-		data_off_t run = split->valid_size;
+		data_off_t run = split->physical_reach_size;
 
 		/* don't count physical data outside the logical split */
 		if (run > split->size)
@@ -145,7 +157,7 @@ void parity_valid_size(struct snapraid_parity_handle* handle, data_off_t* out_si
 
 		size += run;
 
-		/* later splits cannot compensate for a hole in this one */
+		/* later splits cannot extend the logical extent past this boundary */
 		if (run < split->size)
 			break;
 	}
@@ -196,8 +208,25 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* the initial valid size is the size on disk */
-		split->valid_size = split->st.st_size;
+		/*
+		 * Initialize the physical read/truncation boundary from the current EOF.
+		 *
+		 * physical_reach_size does NOT imply that parity below this offset is valid.
+		 * Parity may be invalid, stale, unwritten, or sparse in any region below
+		 * this boundary. It only records the physical EOF boundary for I/O and
+		 * truncation. Parity validity is tracked independently per block through
+		 * the content state, data hashes, and recomputation.
+		 *
+		 * While a handle is open, physical_reach_size can intentionally differ from EOF.
+		 * In particular, preallocation may extend EOF without extending physical_reach_size.
+		 * Writable fix paths normally truncate the file back to physical_reach_size before
+		 * closing.
+		 *
+		 * Across close/reopen there is no separate persistent physical_reach value, so EOF
+		 * is used to reconstruct this physical boundary. This reconstruction must not
+		 * be interpreted as validation of the parity contained below EOF.
+		 */
+		split->physical_reach_size = split->st.st_size;
 
 		/**
 		 * If the parity size is not yet set, set it now.
@@ -515,15 +544,42 @@ static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t 
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if we shrink, update the valid size, but don't update when growing */
-	if (split->valid_size > split->st.st_size)
-		split->valid_size = split->st.st_size;
+	/*
+	 * Keep the physical read/truncation boundary consistent with resizing.
+	 *
+	 * Shrinking reduces physical_reach_size because bytes beyond the new EOF no longer
+	 * exist physically and therefore cannot be read.
+	 *
+	 * Growing leaves physical_reach_size unchanged. Allocation or preallocation alone
+	 * does not make the newly created physical extent readable as parity; the
+	 * boundary is advanced only after a parity write has completed.
+	 *
+	 * This must not be confused with parity validity. Advancing physical_reach_size
+	 * after a completed write only records the physical offset reached by writes.
+	 * It does not certify preceding bytes as correct parity; parity may remain
+	 * invalid or unwritten in any region below this boundary.
+	 */
+	if (split->physical_reach_size > split->st.st_size)
+		split->physical_reach_size = split->st.st_size;
 
 	return 0;
 }
 
 static int parity_split_is_fixed(struct snapraid_parity_handle* handle, unsigned s)
 {
+	/*
+	 * Parity splits concatenate into a single logical file.
+	 *
+	 * Once a following split contains data, this split's boundary becomes
+	 * fixed: changing it would shift logical offsets in all subsequent
+	 * splits, invalidating their parity positions.
+	 *
+	 * Only the last active split may grow. If total parity shrinks into a
+	 * previously fixed split, that split becomes the new tail and may shrink.
+	 *
+	 * An elastic split may also grow partially; remaining space is allocated
+	 * in the next split.
+	 */
 	/* next one */
 	++s;
 
@@ -697,8 +753,25 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* the initial valid size is the size on disk */
-		split->valid_size = split->st.st_size;
+		/*
+		 * Initialize the physical read/truncation boundary from the current EOF.
+		 *
+		 * physical_reach_size does NOT imply that parity below this offset is valid.
+		 * Parity may be invalid, stale, unwritten, or sparse in any region below
+		 * this boundary. It only records the physical EOF boundary for I/O and
+		 * truncation. Parity validity is tracked independently per block through
+		 * the content state, data hashes, and recomputation.
+		 *
+		 * While a handle is open, physical_reach_size can intentionally differ from EOF.
+		 * In particular, preallocation may extend EOF without extending physical_reach_size.
+		 * Writable fix paths normally truncate the file back to physical_reach_size before
+		 * closing.
+		 *
+		 * Across close/reopen there is no separate persistent physical_reach value, so EOF
+		 * is used to reconstruct this physical boundary. This reconstruction must not
+		 * be interpreted as validation of the parity contained below EOF.
+		 */
+		split->physical_reach_size = split->st.st_size;
 
 		/**
 		 * If the parity size is not yet set, set it now.
@@ -766,6 +839,16 @@ int parity_sync(struct snapraid_parity_handle* handle)
 	return 0;
 }
 
+/*
+ * Truncate each split to its current physical_reach_size boundary.
+ *
+ * This removes preallocated or otherwise disposable data beyond physical_reach_size.
+ * It does not imply that parity blocks retained below physical_reach_size are
+ * valid; parity validity is tracked independently per block by the content state.
+ *
+ * Persisting this boundary in physical EOF allows the next open to restore
+ * physical_reach_size from st_size.
+ */
 int parity_truncate(struct snapraid_parity_handle* handle)
 {
 	unsigned s;
@@ -775,11 +858,18 @@ int parity_truncate(struct snapraid_parity_handle* handle)
 		struct snapraid_split_handle* split = &handle->split_map[s];
 		int ret;
 
-		/* truncate any data that we know it's not valid */
-		ret = ftruncate(split->f, split->valid_size);
+		/*
+		 * Discard physical space beyond the extent reached by parity writes
+		 * during this operation.
+		 *
+		 * The retained region below physical_reach_size is not thereby declared valid
+		 * parity. physical_reach_size is only a physical truncation boundary; parity
+		 * validity is tracked independently per block in the content state.
+		 */
+		ret = ftruncate(split->f, split->physical_reach_size);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal(errno, "Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->valid_size, strerror(errno));
+			log_fatal(errno, "Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->physical_reach_size, strerror(errno));
 			f_ret = -1;
 			/* LCOV_EXCL_STOP */
 
@@ -861,6 +951,11 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 		/* LCOV_EXCL_STOP */
 	}
 
+	/*
+	 * Parity blocks cannot cross split boundaries: offsets and split sizes
+	 * are block-aligned, so the entire block belongs to this split.
+	 */
+
 	bw_limit(handle->bw, block_size);
 
 	count = 0;
@@ -890,9 +985,17 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 		count += write_ret;
 	} while (count < block_size);
 
-	/* update the valid range */
-	if (split->valid_size < offset + block_size)
-		split->valid_size = offset + block_size;
+	/*
+	 * Extend the physical read/truncation limit only after the complete block
+	 * has been written.
+	 *
+	 * This is not a validity marker. In particular, writes may occur non-contiguously,
+	 * so bytes between the old boundary and this block are not implied to contain
+	 * valid parity. Parity correctness is tracked independently per block in the
+	 * content state.
+	 */
+	if (split->physical_reach_size < offset + block_size)
+		split->physical_reach_size = offset + block_size;
 
 	ret = advise_write(&split->advise, split->f, offset, block_size);
 	if (ret != 0) {
@@ -924,8 +1027,18 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if read is completely out of the valid range */
-	if (offset >= split->valid_size) {
+	/*
+	 * Parity blocks cannot cross split boundaries: offsets and split sizes
+	 * are block-aligned, so the entire block belongs to this split.
+	 */
+
+	/*
+	 * physical_reach_size only limits the physical offset that this handle considers
+	 * readable. Passing this check does not mean that the parity bytes are valid.
+	 * A readable region may contain stale, sparse, unwritten, or corrupted parity,
+	 * which higher-level check/recovery logic must validate independently.
+	 */
+	if (offset >= split->physical_reach_size) {
 		/* LCOV_EXCL_START */
 		errno = ENXIO;
 		log_error(errno, "Reading over the end from parity file '%s' at offset %" PRIu64 " for size %u.\n", split->path, offset, block_size);

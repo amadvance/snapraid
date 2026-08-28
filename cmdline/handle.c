@@ -123,7 +123,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	}
 
 	/* get the size of the existing data */
-	handle->valid_size = handle->st.st_size;
+	handle->physical_reach_size = handle->st.st_size;
 
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
@@ -164,7 +164,7 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 	}
 
 	/* adjust the size to the truncated size */
-	handle->valid_size = file->size;
+	handle->physical_reach_size = file->size;
 
 	return 0;
 }
@@ -224,7 +224,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	}
 
 	/* get the size of the existing data */
-	handle->valid_size = handle->st.st_size;
+	handle->physical_reach_size = handle->st.st_size;
 
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
@@ -254,7 +254,7 @@ int handle_close(struct snapraid_handle* handle)
 			/* invalidate for error */
 			handle->file = 0;
 			handle->f = -1;
-			handle->valid_size = 0;
+			handle->physical_reach_size = 0;
 			handle->is_unrecoverable = 0;
 			return -1;
 			/* LCOV_EXCL_STOP */
@@ -264,7 +264,7 @@ int handle_close(struct snapraid_handle* handle)
 	/* reset the descriptor */
 	handle->file = 0;
 	handle->f = -1;
-	handle->valid_size = 0;
+	handle->physical_reach_size = 0;
 	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
@@ -285,9 +285,9 @@ ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsign
 		out_missing = log_error;
 
 	/* check if we are going to read only not initialized data */
-	if (offset >= handle->valid_size) {
+	if (offset >= handle->physical_reach_size) {
 		/* if the file is missing, it's at 0 size, or it's rebuilt while reading */
-		if (offset == handle->valid_size || handle->valid_size == 0) {
+		if (offset == handle->physical_reach_size || handle->physical_reach_size == 0) {
 			errno = ENOENT;
 			if (offset == 0) {
 				out_missing(errno, "Missing file '%s'.\n", handle->path);
@@ -389,9 +389,9 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 		count += write_ret;
 	} while (count < write_size);
 
-	/* adjust the size of the valid data */
-	if (handle->valid_size < offset + write_size) {
-		handle->valid_size = offset + write_size;
+	/* adjust the size of the written/retained data */
+	if (handle->physical_reach_size < offset + write_size) {
+		handle->physical_reach_size = offset + write_size;
 	}
 
 	ret = advise_write(&handle->advise, handle->f, offset, block_size);
@@ -432,6 +432,16 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 	unsigned size = 0;
 	struct snapraid_handle* handle;
 
+	/*
+	 * The handle array is indexed by persistent parity mapping position,
+	 * not by data disk count or enumeration order.
+	 *
+	 * Mapping holes must remain as empty handles: they contribute zero data
+	 * to RAID while preserving the parity column of following disks.
+	 *
+	 * Do not compact this array: renumbering a disk changes its RAID column
+	 * and invalidates existing parity against the content file mapping.
+	 */
 	/* get the size of the mapping */
 	size = 0;
 	for (i = state->maplist; i != 0; i = i->next) {
@@ -448,7 +458,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		handle[j].disk = 0;
 		handle[j].file = 0;
 		handle[j].f = -1;
-		handle[j].valid_size = 0;
+		handle[j].physical_reach_size = 0;
 		handle[j].is_unrecoverable = 0;
 		handle[j].readonly_errno = 0;
 		handle[j].bw = 0;

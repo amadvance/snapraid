@@ -14,6 +14,176 @@
 #include "raid/raid.h"
 #include "raid/combo.h"
 
+/*
+ * SnapRAID check/fix model
+ *
+ * Check verifies the data described by the content file against the files
+ * currently present on the data disks. For blocks with a current hash, the
+ * data is verified directly by hashing it. Unless running in audit-only mode,
+ * parity is also read and can be used both to recover unreadable or corrupted
+ * data and to verify the stored parity itself.
+ *
+ * Fix uses the same verification and recovery logic as check, but writes
+ * validated recovered data and parity back to disk. Recovery is deliberately
+ * conservative: obtaining a solution from the RAID equations is not enough;
+ * the result must also be validated independently before it can be accepted.
+ *
+ * Block state model
+ * -----------------
+ *
+ * Check/fix must interpret block states differently because the content file
+ * may describe an incomplete sync. In that case, the logical block state and
+ * the physical parity on disk do not necessarily describe the same point in
+ * time.
+ *
+ *   State      Stored hash        Current file       Physical parity
+ *   ------------------------------------------------------------------------
+ *   EMPTY      none               none               zero contribution
+ *   BLK        CURRENT            present            synchronized
+ *   CHG        OLD/ZERO/INVALID   present            may be OLD or CURRENT
+ *   REP        NEW                present            may be OLD or NEW
+ *   DELETED    OLD/INVALID        none               may be OLD or zero
+ *
+ * BLK has a hash for the data that should currently be present and normally
+ * represents a synchronized contribution.
+ *
+ * REP also has a hash for the current data, so its current contents can be
+ * verified. However, parity is still invalid because an interrupted sync may
+ * have left physical parity representing either the old or the new block.
+ *
+ * CHG is different: its stored hash describes the OLD data, not the current
+ * file contents. A readable CHG block therefore cannot be validated against
+ * block->hash. Its current contents are kept as the best available copy, but
+ * the old hash is useful when considering parity that may still represent the
+ * state before sync.
+ *
+ * DELETED has no current file data. Its stored hash, when available, describes
+ * the previous contribution that may still be present in physical parity.
+ *
+ * Interrupted sync recovery model
+ * -------------------------------
+ *
+ * When CHG, REP or DELETED blocks are present, check/fix cannot know whether
+ * an interrupted sync updated the physical parity before stopping. Recovery
+ * therefore tries two different interpretations of the same parity.
+ *
+ * The first strategy assumes that parity represents the CURRENT state:
+ *
+ *   BLK       -> current data is represented
+ *   CHG       -> current data is represented
+ *   REP       -> new/current data is represented
+ *   DELETED   -> contributes zero
+ *
+ * Under this assumption, readable current data can be used directly and only
+ * blocks known to be bad or missing have to be reconstructed. BLK and REP
+ * recovery can be validated with their stored current hashes. CHG recovery is
+ * more subtle because only its OLD hash is available; a recovered CHG may
+ * therefore remain ambiguous and be marked out-of-date.
+ *
+ * If that strategy cannot produce a validated recovery, a second strategy
+ * assumes that parity still represents the state BEFORE the interrupted sync:
+ *
+ *   BLK       -> synchronized data is represented
+ *   CHG       -> OLD data is represented
+ *   REP       -> OLD data is represented
+ *   DELETED   -> OLD data is represented
+ *
+ * Under this assumption, the current contents of CHG and REP cannot be used
+ * as parity inputs even when they are perfectly readable. CHG, REP and
+ * DELETED must instead be treated as unknown old contributions, reconstructed
+ * only as needed to make recovery of a bad BLK possible.
+ *
+ * These reconstructed old contributions are auxiliary recovery state, not
+ * current user data. They are marked out-of-date so they cannot validate the
+ * recovery and so an old CHG/REP result is never promoted as known-good
+ * current data.
+ *
+ * A CHG whose OLD hash is ZERO is a useful special case: its old contribution
+ * is known exactly and can be supplied as an all-zero block without consuming
+ * a RAID recovery equation. Similarly, if an old CHG or DELETED block can be
+ * obtained from the import set using its stored OLD hash, that known old
+ * contribution reduces the number of unknowns. REP cannot use this shortcut
+ * because its stored hash describes the NEW data, not the old contribution.
+ *
+ * Recovery validation model
+ * -------------------------
+ *
+ * Solving the RAID equations does not by itself prove that the reconstructed
+ * data is correct. One of the parity blocks used for reconstruction may itself
+ * be damaged, and after an interrupted sync different parity levels may not
+ * necessarily provide the expected state.
+ *
+ * For F unknown data blocks, recovery therefore requires independent evidence:
+ *
+ * - If at least one recovered block has a trustworthy current hash, F parity
+ *   equations are sufficient. The candidate recovery is accepted only if all
+ *   available trustworthy hashes of recovered blocks match.
+ *
+ * - If no recovered block has a trustworthy hash, F+1 parity blocks are
+ *   required. F parity blocks are used to solve the data equations and the
+ *   remaining parity block is reserved as an independent check of the result.
+ *
+ * When more parity levels are available, repair_step() tries their different
+ * combinations. Missing parity levels are skipped, and a candidate obtained
+ * from a bad parity combination is rejected when its hash or independent
+ * parity check fails.
+ *
+ * This distinction is important: a successful RAID decode is only a candidate
+ * recovery. It becomes an accepted recovery only after independent validation.
+ *
+ * Parity validation model
+ * -----------------------
+ *
+ * Physical parity is checked or rewritten only when it is both meaningful and
+ * expected to be valid.
+ *
+ * used_parity means that at least one live data block uses the parity position.
+ * Parity for a position containing no live data is irrelevant and sync is not
+ * required to keep such unused parity updated.
+ *
+ * valid_parity means that no block at the position is CHG, REP or DELETED.
+ * When one of these states is present, parity may legitimately differ from
+ * parity recomputed from the current data because sync has not completed.
+ * Such a difference must not be reported or "fixed" by check/fix; the next
+ * sync is responsible for bringing that parity position to the current state.
+ *
+ * Parity is therefore compared and repaired only when:
+ *
+ *   used_parity && valid_parity
+ *
+ * A parity level excluded from fix is not necessarily useless. When accessible
+ * it is still opened for reading because it can provide an additional recovery
+ * equation or independent validation, while remaining protected from writes.
+ *
+ * Fix and quarantine model
+ * ------------------------
+ *
+ * failed_struct distinguishes two different properties of a recovery entry.
+ *
+ * is_bad means that the current file block is missing, unreadable or does not
+ * match its expected current hash and therefore needs recovery.
+ *
+ * is_outofdate means that the bytes currently associated with the entry cannot
+ * be proven to represent the required current data. This is used both for the
+ * auxiliary old CHG/REP/DELETED values of the pre-sync recovery strategy and
+ * for ambiguous recovered CHG blocks.
+ *
+ * An out-of-date candidate may still be the best data available. Fix may write
+ * such data, but the containing file remains marked damaged and is kept under
+ * the .unrecoverable name instead of being reported as successfully recovered.
+ *
+ * Missing files are created as .unrecoverable from the beginning, and an
+ * existing .unrecoverable file is reused by later fix runs. This allows a
+ * recovery to proceed over multiple runs without exposing a partially rebuilt
+ * file under its final name.
+ *
+ * Promotion to the final file name is a file-level commit operation. It happens
+ * only after the complete file has been processed successfully, its metadata
+ * has been restored, and no block remains damaged. A partial -S/-B fix operates
+ * only at block level and therefore never performs this file-level promotion
+ * or other finalization.
+ */
+
 /****************************************************************************/
 /* check */
 
@@ -26,26 +196,45 @@ static const char* es(int err)
 }
 
 /**
- * A block that failed the hash check, or that was deleted.
+ * A block participating in recovery.
+ *
+ * Entries include blocks that are actually missing or corrupted, but also
+ * readable CHG, REP and DELETED blocks whose old/current contribution may be
+ * needed to interpret parity left by an interrupted sync.
  */
 struct failed_struct {
 	/**
-	 * If we know for sure that the block is garbage or missing
-	 * and it needs to be recovered and rewritten to the disk.
+	 * If the current file block is known to require recovery because it is
+	 * missing, unreadable, or doesn't match its expected current hash.
+	 *
+	 * DELETED blocks and readable CHG/REP auxiliary entries are not bad even
+	 * though they may participate in the recovery equations.
 	 */
 	int is_bad;
 
 	/**
-	 * If what we have recovered may be not updated data,
-	 * an old version, or just garbage.
+	 * If the data associated with this entry cannot be proven to represent the
+	 * required CURRENT contents.
 	 *
-	 * Essentially, it means that we are not sure what we have recovered
-	 * is really correct. It's just our best guess.
+	 * This does not mean that the data is known to be wrong or actually old.
+	 * In particular, for a CHG block the stored hash describes the OLD contents,
+	 * but the block itself may not have changed even if the file was detected as
+	 * modified. Therefore data matching the OLD state may also be perfectly valid
+	 * CURRENT data.
 	 *
-	 * These "recovered" blocks are also written to the disk if the block is marked as ::is_bad.
-	 * But these files are marked also as FILE_IS_DAMAGED, and then renamed to .unrecoverable.
+	 * In the pre-sync parity strategy this is set on CHG, REP and DELETED entries
+	 * because their OLD contribution is being used or reconstructed as auxiliary
+	 * recovery state. Such data cannot be assumed to represent the required
+	 * CURRENT contents, even though in some cases OLD and CURRENT may actually be
+	 * identical.
 	 *
-	 * Note that this could happen only for CHG blocks.
+	 * It is also set on a bad CHG when the current-parity strategy recovers a
+	 * candidate that cannot be distinguished reliably from its OLD contents.
+	 *
+	 * Out-of-date entries are excluded from hash validation. If an out-of-date
+	 * block is also is_bad, fix may still preserve the recovered bytes as the best
+	 * available copy, but the containing file remains damaged and quarantined as
+	 * .unrecoverable.
 	 */
 	int is_outofdate;
 
@@ -77,7 +266,12 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 		return -1;
 	}
 
-	/* compare to the end of the block */
+	/*
+	 * The hash covers only the logical bytes belonging to the file, while RAID
+	 * operates on the complete zero-padded block. Verify the padding separately:
+	 * otherwise corruption confined to the reconstructed tail could pass the hash
+	 * check and later produce incorrect parity.
+	 */
 	if (pos_size < state->block_size) {
 		if (memcmp(buffer + pos_size, buffer_zero + pos_size, state->block_size - pos_size) != 0) {
 			return -1;
@@ -153,9 +347,15 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
 }
 
 /**
- * Repair errors.
- * Return <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
- * If success, the parity is computed in the buffer variable.
+ * Try to recover the selected failed inputs and independently validate the
+ * reconstructed result.
+ *
+ * Return:
+ *   0  if a recovery was successfully validated;
+ *  >0  if one or more recovery candidates were tried but all failed validation;
+ *  <0  if no usable recovery/validation strategy exists.
+ *
+ * On success all parity levels are recomputed in buffer.
  */
 static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
@@ -189,8 +389,12 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 		id[i] = failed[failed_map[i]].index;
 
 	/*
-	 * Check if there is at least a failed block that can be checked for correctness using the hash
-	 * if there isn't, we have to sacrifice a parity block to check that the result is correct
+	 * RAID decoding alone cannot tell whether the parity equations used for the
+	 * recovery were themselves correct.
+	 *
+	 * If at least one failed input has a trustworthy CURRENT hash, recovered data
+	 * can provide the independent validation. Otherwise one additional parity
+	 * equation must be reserved exclusively for checking the candidate result.
 	 */
 	has_hash = 0;
 	for (i = 0; i < failed_count; ++i) {
@@ -385,7 +589,13 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 
 			assert(block_state != BLOCK_STATE_DELETED); /* we cannot have bad DELETED blocks */
 
-			/* if we have the hash for it */
+			/*
+			 * Import/search can directly repair only states whose stored hash identifies
+			 * the desired CURRENT contents. This is true for BLK and REP.
+			 *
+			 * A CHG hash identifies the OLD contents, so fetching data by that hash would
+			 * not prove that we recovered the current version required by this strategy.
+			 */
 			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
 			        /* try to fetch the block using the known hash */
 				&& (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0
@@ -511,12 +721,15 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			|| block_state == BLOCK_STATE_REP
 		) {
 			/*
-			 * If the block is CHG, REP or DELETED, we don't have the original content of block,
-			 * and we must try to recover it.
-			 * This applies to CHG and REP blocks even if they are not marked bad,
-			 * because the parity is computed with old content, and not with the new one.
-			 * Note that this recovering is done just to make it possible to recover any other BLK one,
-			 * we are not really interested in DELETED, CHG (old version) and REP (old version).
+			 * Under the pre-sync hypothesis the readable buffer of a CHG or REP contains
+			 * CURRENT data, while physical parity was generated from its OLD data.
+			 *
+			 * Therefore every CHG, REP and DELETED contribution must be replaced by its
+			 * OLD value or treated as an unknown RAID input, even when the current file
+			 * block is perfectly readable and is_bad is false.
+			 *
+			 * These old values are reconstructed only to make recovery of bad BLK blocks
+			 * possible; recovering them is not itself a user-visible recovery goal.
 			 */
 			something_unsynced = 1;
 
@@ -534,7 +747,14 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * we can do this only because it's the last retry of recovering
 				 */
 
-				/* try to fetch the old block using the old hash for CHG and DELETED blocks */
+				/*
+				 * CHG and DELETED retain an OLD hash, so a matching imported block can supply
+				 * their exact pre-sync contribution and remove one unknown from the RAID
+				 * equations.
+				 *
+				 * REP cannot use this shortcut: its stored hash describes NEW data and gives
+				 * no direct way to identify the OLD contribution required by this strategy.
+				 */
 			} else if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_DELETED)
 				&& hash_is_unique(failed[j].block->hash)
 				&& state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0) {
@@ -580,8 +800,14 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	}
 
 	/*
-	 * If nothing to fix, we just don't try
-	 * if nothing unsynced we also don't retry, because it's the same try as before
+	 * Retry only when both conditions hold.
+	 *
+	 * Without a bad BLK there is no useful current data to recover: reconstructing
+	 * only OLD CHG/REP/DELETED values would have no user-visible purpose.
+	 *
+	 * Without any unsynced state this hypothesis is identical to the current-state
+	 * attempt already performed above, so repeating it cannot provide a different
+	 * solution.
 	 */
 	if (something_to_recover && something_unsynced) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
@@ -1146,10 +1372,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				memset(buffer[j], 0, state->block_size);
 
 				/*
-				 * Store it in the failed set, because potentially
-				 * the parity may be still computed with the previous content
+				 * DELETED is not a file repair target. It is kept only because its OLD
+				 * contribution may still be present in parity and may be required by the
+				 * pre-sync recovery hypothesis.
 				 */
-				failed[failed_count].is_bad = 0; /* note that is_bad==0 <=> file==0 */
+				failed[failed_count].is_bad = 0;
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
@@ -1270,7 +1497,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				}
 
-				/* if it's the first open, and not excluded and larger */
+				/*
+				 * Missing data inside a short file is handled block by block by normal
+				 * recovery writes, which extend the file as needed.
+				 *
+				 * Extra data past the expected end is different: it has no content block and
+				 * therefore no later block recovery can remove it. Fix must truncate that
+				 * untracked tail explicitly.
+				 */
 				if (!file_flag_has(file, FILE_IS_OPENED)
 					&& !file_flag_has(file, FILE_IS_EXCLUDED)
 					&& !(state->opt.syncedonly && file_flag_has(file, FILE_IS_UNSYNCED))
@@ -1406,9 +1640,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/*
-			 * Always insert REP blocks, the repair functions needs all of them
-			 * because the parity may be still referring at the old state
-			 * and the repair must be aware of it
+			 * A readable REP has already passed its NEW/current hash check, so its current
+			 * data is known good. It must nevertheless participate in repair because an
+			 * interrupted sync may have left physical parity containing its OLD
+			 * contribution.
+			 *
+			 * Unlike CHG, the REP stored hash cannot identify that OLD contribution
+			 * because it describes the NEW data.
 			 */
 			if (block_state == BLOCK_STATE_REP) {
 				failed[failed_count].is_bad = 0; /* it's not bad */
@@ -1445,7 +1683,15 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret == -1) {
 						log_tag("parity_%s:%" PRIu64 ":%s: Read error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
 
-						buffer_recov[l] = 0; /* no parity to use */
+						/*
+						 * NULL means that this parity level cannot be trusted as an input to recovery.
+						 * The same marker is later used for a parity block that was read successfully
+						 * but failed comparison with recomputed parity.
+						 *
+						 * During fix, an accessible non-excluded parity marked this way is also the
+						 * one that needs to be rewritten from the recomputed value.
+						 */
+						buffer_recov[l] = 0;
 
 						if (is_hw(errno)) {
 							++io_error;
@@ -1479,9 +1725,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 			} else {
 				/*
-				 * Now counts partial recovers
-				 * note that this could happen only when we have an incomplete 'sync'
-				 * and that we have recovered is the state before the 'sync'
+				 * repair() returning success means that a RAID solution was validated under
+				 * one of the parity-history hypotheses. It does not necessarily mean that
+				 * every bad unsynced block was recovered to its CURRENT version.
+				 *
+				 * A bad block marked is_outofdate is therefore still an unrecoverable current
+				 * data error even though the stripe-level RAID recovery succeeded.
 				 */
 				int partial_recover_error = 0;
 
@@ -1534,6 +1783,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							|| (state->opt.syncedonly && file_flag_has(failed[j].file, FILE_IS_UNSYNCED)))
 							continue;
 
+						/*
+						 * Write the best recovered candidate even when it is out-of-date. Such data
+						 * may still be useful to the user or to a later multistep recovery.
+						 *
+						 * An out-of-date write is not considered a successful fix: the file is marked
+						 * damaged below and file_post() keeps or moves it to .unrecoverable instead
+						 * of promoting it as recovered.
+						 */
 						ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
@@ -1664,6 +1921,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		}
 	}
 
+	/*
+	 * These objects have no parity block position, so an explicit -S/-B block
+	 * range cannot select them. Check/fix them separately after block processing,
+	 * including during an otherwise partial block-range operation.
+	 */
 	/* for each disk, recover empty files, symlinks and empty dirs */
 	for (i = 0; i < diskmax; ++i) {
 		tommy_node* node;
@@ -2197,8 +2459,16 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	msg_progress("Initializing...\n");
 
 	/*
-	 * partial follows the explicit -S/-B request, not its clipped effective
-	 * coverage; a nonzero -B remains partial even if it reaches the parity end.
+	 * -S/--start and -B/--count allow check/fix to operate on an arbitrary
+	 * parity range instead of processing from the beginning. In particular,
+	 * recovery of a later section can be retried while an earlier section is
+	 * missing or damaged.
+	 *
+	 * A partial fix therefore does not establish that preceding or following
+	 * parity is valid; it covers only the requested range.
+	 *
+	 * Keep partial based on the explicit -S/-B request rather than the clipped
+	 * range: a nonzero -B remains partial even if it reaches the end of parity.
 	 */
 	partial = blockstart != 0 || blockcount != 0;
 
@@ -2233,7 +2503,13 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 			/* if the parity is excluded */
 			if (state->parity[l].is_excluded_by_filter) {
-				/* open for reading, and ignore error */
+				/*
+				 * Excluded means "do not modify", not "do not use".
+				 *
+				 * An excluded parity can still provide a recovery equation or the independent
+				 * parity check required when recovered data has no trustworthy hash, so keep
+				 * it available read-only whenever possible.
+				 */
 				ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 				if (ret == -1) {
 					log_tag("parity_%s:%" PRIu64 ":%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
@@ -2309,7 +2585,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	/* try to close only if opened */
 	for (l = 0; l < state->level; ++l) {
 		if (parity_ptr[l]) {
-			/* if fixing and not excluded, truncate parity not valid */
+			/* if fixing and not excluded, truncate parity to physical_reach_size */
 			if (fix && !state->parity[l].is_excluded_by_filter) {
 				ret = parity_truncate(parity_ptr[l]);
 				if (ret == -1) {

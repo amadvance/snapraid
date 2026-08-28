@@ -11,6 +11,198 @@
 #include "io.h"
 #include "raid/raid.h"
 
+/*
+ * SnapRAID scrub model
+ *
+ * Scrub periodically verifies data and parity without modifying either of
+ * them. It reads selected parity positions, checks the data blocks against
+ * their stored hashes when a current hash is available, recomputes all parity
+ * levels from the data read, and compares the result with physical parity.
+ *
+ * The unit of scrub processing is a parity position, not an individual file
+ * block. Selecting one position means considering all mapped data blocks and
+ * all parity levels belonging to the same stripe.
+ *
+ * Scrub does modify the content state. For each processed position it records
+ * when the position was last verified, maintains the persistent bad flag, and
+ * can progressively migrate block hashes while a rehash is in progress.
+ *
+ * Verification model
+ * ------------------
+ *
+ * The block states have different meanings for scrub:
+ *
+ *   State      File     Stored hash        Data verification    Parity
+ *   ------------------------------------------------------------------------
+ *   EMPTY      no       none               zero input           expected
+ *   BLK        yes      CURRENT            hash checked         expected
+ *   CHG        yes      OLD                not hash checked     unsynced
+ *   REP        yes      NEW                hash checked         unsynced
+ *   DELETED    no       OLD/INVALID        zero input           unsynced
+ *
+ * BLK and REP have a hash describing their current file data and can therefore
+ * be checked directly.
+ *
+ * CHG is deliberately different. Its stored hash describes the OLD data, so
+ * comparing the current file contents against block->hash would not validate
+ * the current block. Scrub still reads the current data because it is needed
+ * to recompute parity, but does not use the CHG hash as a current-data check.
+ *
+ * EMPTY and DELETED have no current file contribution and are supplied to the
+ * RAID computation as zero. DELETED still makes the position unsynced because
+ * physical parity may contain its previous contribution.
+ *
+ * A position is also considered unsynced when a file's current size or
+ * modification time differs from the metadata recorded in the content state.
+ * This does not by itself abort scrub. It changes how a later data or parity
+ * mismatch is classified.
+ *
+ * Parity is recomputed only when every required data input was read without an
+ * error and every applicable current hash matched. Without a complete and
+ * trustworthy set of data inputs, a parity comparison would not identify
+ * whether an error belongs to data or parity.
+ *
+ * Error classification model
+ * --------------------------
+ *
+ * A hash or parity mismatch is a silent data error only when the corresponding
+ * data and parity position are expected to be synchronized.
+ *
+ * If the file metadata differs from the content state, or any block at the
+ * position is CHG, REP or DELETED, a mismatch can be the normal consequence
+ * of an unsynchronized array. It is therefore reported as a soft error rather
+ * than as silent corruption.
+ *
+ * The unsynced classification is conservative and affects only the meaning of
+ * a mismatch. It does not make the position fail automatically. If the data
+ * that can be checked is correct and physical parity already agrees with the
+ * current logical inputs, the scrub of that position can still complete.
+ *
+ * I/O errors are tracked separately from logical or hash mismatches. A
+ * recoverable per-position I/O failure marks the position bad; errors severe
+ * enough to abort processing may terminate the command before normal
+ * per-position bookkeeping is completed.
+ *
+ * Scrub plan model
+ * ----------------
+ *
+ * Scrub selection is based on the per-position snapraid_info stored in the
+ * content file. An info entry records:
+ *
+ * - the last time the position was known to be correct,
+ * - whether the position is marked bad,
+ * - whether its hashes still use the previous hash algorithm,
+ * - whether it was just synchronized and has never been scrubbed.
+ *
+ * Positions without an info entry are not scrub candidates.
+ *
+ * Bad positions override every scrub plan and are always selected. This makes
+ * the persistent bad flag self-checking: a later scrub rechecks the complete
+ * position regardless of its age or the requested normal plan.
+ *
+ * The explicit plans otherwise select positions as follows:
+ *
+ *   full       all tracked positions
+ *   even       even parity positions
+ *   new        positions never scrubbed since synchronization
+ *   bad        only positions marked bad
+ *
+ * The automatic plan selects the oldest positions first. The bucket list
+ * groups positions by their last-known-good timestamp and is sorted from the
+ * oldest timestamp to the newest.
+ *
+ * Selection is limited by both the requested amount and the optional age
+ * limit. When the requested count ends inside a timestamp bucket, timelimit
+ * identifies that bucket and lastlimit specifies how many positions from that
+ * exact timestamp may be selected. block_is_enabled() is called in increasing
+ * parity-position order, providing a deterministic tie break inside the
+ * bucket.
+ *
+ * Bad positions do not consume this boundary quota: they are selected before
+ * normal plan filtering and may therefore make the actual scrub count larger
+ * than the requested automatic amount.
+ *
+ * The complete block selection is materialized before I/O starts. Autosaves
+ * performed during the run may rebuild the scrub-time bucket list in the
+ * content state, but they do not change the set of positions selected for the
+ * current scrub.
+ *
+ * Bad state and persistence model
+ * -------------------------------
+ *
+ * The bad flag belongs to the whole parity position. It does not identify a
+ * specific data disk or parity level. A silent data/parity error or a
+ * continuable I/O error at any contribution makes the complete position bad,
+ * because scrub cannot safely reduce that observation to a single trusted
+ * component.
+ *
+ * When a position fails with a silent or I/O error, info_set_bad() preserves
+ * its previous timestamp and all other flags. In particular, a failed scrub
+ * does not make the position appear recently verified and does not discard
+ * pending rehash or just-synchronized state.
+ *
+ * A generic soft error also leaves the previous info unchanged. Such a
+ * position has not completed a successful scrub and therefore retains its
+ * previous scrub age.
+ *
+ * Only a completely successful position is replaced with:
+ *
+ *   info_make(now, 0, 0, 0)
+ *
+ * This records the new last-known-good time and clears bad, rehash and
+ * just-synchronized state. Consequently, "scrub -p bad" clears a bad position
+ * only after the whole position can again be verified successfully.
+ *
+ * Scrub writes only content metadata and hashes; it never writes user data or
+ * parity. Autosave can therefore persist completed scrub positions
+ * independently. A crash before the next content save may lose some scrub
+ * progress, causing those positions to be checked again, but cannot leave a
+ * partially repaired data/parity state because scrub performs no such repair.
+ *
+ * Rehash model
+ * ------------
+ *
+ * Rehash state is also tracked per parity position. While rehash is pending,
+ * hashes that can be validated are checked with the previous hash algorithm,
+ * while hashes using the new algorithm are computed into temporary storage.
+ *
+ * The new hashes are not committed independently for each disk. They are
+ * staged until the complete parity position has passed data reads, applicable
+ * hash checks, and parity verification. Only then are the staged hashes copied
+ * into the block state and the per-position rehash flag cleared.
+ *
+ * This keeps the hash generation and its info flag consistent across content
+ * saves: a persisted rehash flag means the previous algorithm must still be
+ * used for that position, while clearing the flag publishes the newly computed
+ * hashes at the same successful scrub checkpoint.
+ *
+ * A CHG block has no current hash to validate. If such a position passes scrub,
+ * physical parity has nevertheless been verified against the bytes just read.
+ * The newly computed hash can then describe that verified parity baseline
+ * using the new algorithm, while the block itself remains CHG and is still
+ * conservatively treated as unsynchronized.
+ *
+ * Live filesystem model
+ * ---------------------
+ *
+ * Scrub does not freeze the data filesystem. Files can be modified while the
+ * command is running.
+ *
+ * A size or modification-time difference observed when opening a file marks
+ * that file and parity position as unsynced for error classification. Scrub
+ * continues reading so that it can still report the state actually observed.
+ *
+ * If the changed file later produces a hash or parity mismatch, the mismatch
+ * is treated as a soft synchronization error rather than silent corruption.
+ * If its bytes still agree with the stored hash and parity, scrub may complete
+ * successfully even though the metadata difference remains for a later sync
+ * to process.
+ *
+ * As with other metadata-based operations, a concurrent modification that
+ * preserves all metadata used for change detection cannot be distinguished
+ * reliably from silent corruption by metadata checks alone.
+ */
+
 /****************************************************************************/
 /* scrub */
 
@@ -23,7 +215,11 @@ static const char* es(int err)
 }
 
 /**
- * Buffer for storing the new hashes.
+ * Staged hashes for a rehash operation.
+ *
+ * New hashes are kept here until the complete parity position has passed
+ * verification. They are copied into the block state only together with
+ * clearing the per-position rehash flag.
  */
 struct snapraid_rehash {
 	unsigned char hash[HASH_MAX];
@@ -32,12 +228,16 @@ struct snapraid_rehash {
 
 /**
  * Scrub plan to use.
+ *
+ * AUTO selects complete buckets older than timelimit and, when the requested
+ * count cuts through the boundary bucket, at most lastlimit positions whose
+ * timestamp is exactly timelimit.
  */
 struct snapraid_plan {
 	struct snapraid_state* state;
 	int plan; /**< One of the SCRUB_*. */
 	time_t timelimit; /**< Time limit. Valid only with SCRUB_AUTO. */
-	block_off_t lastlimit; /**< Number of blocks allowed with time exactly at ::timelimit. Valid only with SCRUB_AUTO. */
+	block_off_t lastlimit; /**< Maximum number of normal AUTO selections whose timestamp is exactly timelimit. */
 };
 
 /**
@@ -53,7 +253,13 @@ static int block_is_enabled(struct snapraid_plan* plan, block_off_t* countlast, 
 	if (info == 0)
 		return 0;
 
-	/* bad blocks are always scrubbed in all plans */
+	/*
+	 * Bad is an override, not a normal plan criterion.
+	 *
+	 * Always recheck bad positions so a successful scrub can clear the persistent
+	 * bad flag even if the position would normally be excluded by age, parity,
+	 * NEW, or any other plan.
+	 */
 	if (info_get_bad(info))
 		return 1;
 
@@ -65,7 +271,7 @@ static int block_is_enabled(struct snapraid_plan* plan, block_off_t* countlast, 
 		/* in 'even' plan, scrub only even blocks */
 		return i % 2 == 0;
 	case SCRUB_NEW :
-		/* in 'sync' plan, only blocks never scrubbed */
+		/* in 'new' plan, only positions never scrubbed after sync */
 		return info_get_justsynced(info);
 	case SCRUB_BAD :
 		/* in 'bad' plan, only bad blocks (already reported) */
@@ -80,8 +286,12 @@ static int block_is_enabled(struct snapraid_plan* plan, block_off_t* countlast, 
 	}
 
 	/*
-	 * If the time is less than the limit, always include
-	 * otherwise, check if we reached the last limit count
+	 * AUTO buckets have timestamp granularity, so the count limit may end inside
+	 * a bucket shared by many positions.
+	 *
+	 * All positions older than timelimit are selected. At timelimit select only
+	 * lastlimit normal positions; block_is_enabled() is called in ascending parity
+	 * order, which provides the deterministic tie break.
 	 */
 	if (blocktime == plan->timelimit) {
 		/* if we reached the count limit */
@@ -281,8 +491,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	silent_error = 0;
 	io_error = 0;
 
-	msg_progress("Selecting...\n");
-
+	/*
+	 * Materialize the complete selection before starting I/O.
+	 *
+	 * Autosave may later rebuild state->bucketlist as scrub timestamps change, but
+	 * the current run must continue using the plan computed from the state that
+	 * existed at startup.
+	 */
 	/* first count the number of blocks to process */
 	countmax = 0;
 	countlast = 0;
@@ -295,9 +510,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	}
 
 	/*
-	 * Compute the autosave size for all disk, even if not read
-	 * this makes sense because the speed should be almost the same
-	 * if the disks are read in parallel
+	 * Convert the byte autosave interval to parity positions.
+	 *
+	 * A selected position normally reads all data columns in parallel, so use the
+	 * aggregate data width rather than the actual serialized number of bytes read.
+	 * Autosave only persists scrub metadata/hashes; data and parity are read-only.
 	 */
 	autosavelimit = state->autosave / (diskmax * state->block_size);
 	autosavemissing = countmax; /* blocks to do */
@@ -403,7 +620,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			state_usage_file(state, disk, file);
 
-			/* if the block is unsynced, errors are expected */
+			/*
+			 * Do this before skipping blocks without a current file.
+			 *
+			 * DELETED has no file contribution but still has invalid parity: physical
+			 * parity may contain its OLD data. It must therefore make the whole position
+			 * unsynced so a later parity mismatch is not reported as silent corruption.
+			 */
 			if (block_has_invalid_parity(block)) {
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
@@ -415,7 +638,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (!block_has_file(block))
 				continue;
 
-			/* if the block is unsynced, errors are expected */
+			/*
+			 * Metadata mismatch does not itself make this scrub position bad.
+			 *
+			 * It only tells us that the current file is not the version described by the
+			 * content metadata. Any later data/parity mismatch is therefore an expected
+			 * synchronization error, not evidence of silent corruption.
+			 */
 			if (task->is_timestamp_different) {
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
@@ -464,7 +693,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			countsize += read_size;
 
-			/* now compute the hash */
+			/*
+			 * During rehash, validate the existing content state with the previous hash
+			 * algorithm and stage the digest for the new algorithm separately.
+			 *
+			 * Do not publish the new digest yet: another data block or parity level at the
+			 * same position may still fail verification.
+			 */
 			if (rehash) {
 				memhash(state->prevhash, state->prevhashseed, hash, buffer[diskcur], read_size);
 
@@ -478,12 +713,26 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* until now is hash */
 			state_usage_hash(state);
 
+			/*
+			 * Only BLK and REP contain a hash for the current file data.
+			 *
+			 * CHG deliberately skips this comparison because block->hash describes its
+			 * OLD parity contribution. A CHG can still participate in the parity check
+			 * using the current bytes read from disk.
+			 */
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 					unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 
-					/* it's a silent error only if we are dealing with synced files */
+					/*
+					 * A mismatch is evidence of silent corruption only when this file is expected
+					 * to match the synchronized content state.
+					 *
+					 * For an already unsynced file the difference may simply be the legitimate
+					 * file modification that requires the next sync, so report it as soft and do
+					 * not mark the parity position bad.
+					 */
 					if (file_is_unsynced) {
 						log_tag("error:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 						++soft_error;
@@ -564,7 +813,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 		}
 
-		/* if we have read all the data required and it's correct, proceed with the parity check */
+		/*
+		 * Recomputed parity is meaningful only with a complete trusted set of current
+		 * data inputs.
+		 *
+		 * If any data read or applicable hash check failed, skip parity comparison:
+		 * a mismatch could be caused entirely by the missing/bad data input and would
+		 * not identify a parity error.
+		 */
 		if (!error_on_this_block && !silent_error_on_this_block && !io_error_on_this_block) {
 
 			/* compute the parity */
@@ -575,7 +831,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
 					unsigned diff = memdiff(buffer[diskmax + l], buffer_recov[l], state->block_size);
 
-					/* it's a silent error only if we are dealing with synced blocks */
+					/*
+					 * Invalid block states or changed file metadata mean that physical parity is
+					 * not required to match parity recomputed from the current filesystem.
+					 *
+					 * Report such a mismatch as a synchronization error. Only a mismatch on a
+					 * position expected to be fully synchronized is a silent parity error.
+					 */
 					if (block_is_unsynced) {
 						log_tag("parity_error:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", blockcur, lev_config_name(l), diff, state->block_size * 8);
 						++soft_error;
@@ -594,15 +856,33 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		}
 
 		if (silent_error_on_this_block || io_error_on_this_block) {
-			/* set the error status keeping other info */
+			/*
+			 * Mark the complete parity position bad, preserving its previous time,
+			 * rehash state and just-synced state.
+			 *
+			 * A failed scrub must not refresh the last-known-good time or make pending
+			 * metadata work appear completed.
+			 */
 			info_set(&state->infoarr, blockcur, info_set_bad(info));
 		} else if (error_on_this_block) {
 			/*
-			 * Do nothing, as this is a generic error
-			 * likely caused by a not synced array
+			 * A soft error does not establish either success or corruption.
+			 *
+			 * Keep the previous info unchanged: do not mark the position bad, but also do
+			 * not refresh its scrub time, clear justsynced, or complete a pending rehash.
 			 */
 		} else {
-			/* if rehash is needed */
+			/*
+			 * Publish staged hashes before clearing the rehash flag. Both changes are then
+			 * persisted by the same content write, so a saved position is interpreted
+			 * consistently with either the previous or the current hash algorithm.
+			 *
+			 * For a CHG block there was no current hash to validate directly. Reaching
+			 * this point nevertheless means parity agrees with the current bytes just
+			 * read, so these bytes form the verified parity baseline represented by the
+			 * newly stored digest. The block remains CHG and therefore still conservatively
+			 * requires sync.
+			 */
 			if (rehash) {
 				/* store all the new hash already computed */
 				for (j = 0; j < diskmax; ++j) {
@@ -612,8 +892,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/*
-			 * Update the time info of the block
-			 * and clear any other flag
+			 * A completely clean scrub establishes a new last-known-good checkpoint for
+			 * the whole parity position.
+			 *
+			 * Refresh the time and clear bad, rehash and justsynced together. In
+			 * particular this is the only normal scrub path that clears a previous bad
+			 * mark.
 			 */
 			info_set(&state->infoarr, blockcur, info_make(now, 0, 0, 0));
 		}
@@ -874,6 +1158,14 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 
 		tommy_node* j = tommy_list_head(&state->bucketlist);
 		block_off_t processed_count = 0;
+
+		/*
+		 * Buckets are sorted oldest first. Walk them until either the age cutoff or
+		 * requested count is reached.
+		 *
+		 * If the count ends inside a bucket, timelimit identifies that bucket and
+		 * lastlimit records how many positions from it may be selected.
+		 */
 		while (j) {
 			struct snapraid_bucket* bucket = j->data;
 			block_off_t bucket_count = bucket->count_justsynced + bucket->count_scrubbed;
@@ -895,7 +1187,13 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 			j = j->next;
 		}
 
-		/* if nothing to scrub, disable also other limits */
+		/*
+		 * Disable selection completely when no normal AUTO position is eligible.
+		 * Leaving timelimit initialized to 'now' would otherwise make the subsequent
+		 * per-position filter appear permissive.
+		 *
+		 * Bad positions are unaffected because they bypass AUTO limits.
+		 */
 		if (processed_count == 0) {
 			ps.timelimit = 0;
 			ps.lastlimit = 0;

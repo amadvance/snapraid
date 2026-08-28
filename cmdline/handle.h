@@ -18,7 +18,17 @@ struct snapraid_handle {
 	int f; /**< Handle of the file. */
 	struct stat st; /**< Stat info of the opened file. */
 	struct advise_struct advise; /**< Advise information. */
-	data_off_t valid_size; /**< Size of the valid data. */
+
+	/**
+	 * High-water mark size of the written/retained data.
+	 *
+	 * High-water size does not indicate that data below this offset is valid;
+	 * it only marks the physical boundary beyond which data is known to be invalid
+	 * and can be discarded upon truncation. Data within the physical_reach_size may
+	 * or may not be valid. Final verification is determined independently by
+	 * block states and hashes.
+	 */
+	data_off_t physical_reach_size;
 	int created; /**< If the file was created, otherwise it was already existing. */
 	int is_unrecoverable; /**< If the open descriptor refers to the .unrecoverable path. */
 	int readonly_errno; /**< Non-zero if opened read-only as fallback. */
