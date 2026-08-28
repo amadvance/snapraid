@@ -143,11 +143,18 @@
  *      For --force-realloc, the scan also constructs the new data-to-parity
  *      allocation before physical parity is resized.
  *
- *   2. The pending content state and, when reallocating, the new allocation
- *      are durably written before physical parity is changed.
- *      A crash after this point therefore leaves enough information to
- *      identify every parity position that may be modified or rebuilt without
- *      relying on a physical layout referenced only by an older content file.
+ *   2. Before a destructive parity resize, the pending logical state is made
+ *      durable. This includes --force-full, --force-realloc, and normal syncs
+ *      whose new logical parity size is smaller than the previously persisted
+ *      one.
+ *
+ *      Persisting this state before a shrink guarantees that parity positions
+ *      physically discarded by the resize are no longer referenced by an
+ *      older durable mapping.
+ *
+ *      Non-destructive growth does not require this extra barrier. The normal
+ *      post-resize content write persists the resulting physical split sizes
+ *      before parity synchronization starts.
  *
  *   3. Sync reads current data and computes new parity. Blocks may already be
  *      changed to BLK/EMPTY in memory while parity writes are still pending.
@@ -1866,6 +1873,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unsigned process_error;
 	unsigned l;
 	int skip_sync = 0;
+	int parity_shrink = 0;
 
 	msg_progress("Initializing...\n");
 
@@ -1903,6 +1911,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	for (l = 0; l < state->level; ++l) {
 		data_off_t out_size;
+		data_off_t current_size;
 		block_off_t parityblocks;
 
 		/* create the file and open for writing */
@@ -1914,6 +1923,23 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+
+		/*
+		 * Detect a destructive logical parity shrink before changing the physical
+		 * parity files.
+		 *
+		 * parity_size() describes the logical split layout loaded from the current
+		 * content state. If the new allocated size is smaller, parity_chsize() may
+		 * discard parity positions that are still referenced by the previously
+		 * persisted content file.
+		 *
+		 * This comparison deliberately does not use physical_reach_size or physical EOF.
+		 * Those describe physical I/O extent, not the logical parity layout whose
+		 * crash-consistency relationship with the content file must be preserved.
+		 */
+		parity_size(&parity_handle[l], &current_size);
+		if (size < current_size)
+			parity_shrink = 1;
 
 		/* number of block in the parity file */
 		parity_physical_reach_size(&parity_handle[l], &out_size);
@@ -1970,32 +1996,37 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (!skip_sync) {
 		/*
-		 * Persist the logical state required to recover from a crash before changing
-		 * the physical parity layout.
+		 * Persist the logical state required to recover from a crash before a
+		 * destructive physical parity change.
 		 *
 		 * For --force-full, BLK -> REBUILD records that the existing allocation must
 		 * be preserved but its physical parity must be regenerated.
 		 *
-		 * For --force-realloc, state_scan() has already completed the requested
-		 * reallocation before state_sync() is entered. The in-memory content state
-		 * therefore contains the new data-to-parity mapping, with REP/CHG/DELETED
-		 * states describing parity that is not yet synchronized.
+		 * For --force-realloc, state_scan() has already constructed the new
+		 * data-to-parity allocation. That new mapping and its REP/CHG/DELETED states
+		 * must be durable before parity_chsize() can alter the old physical layout.
 		 *
-		 * That post-scan state must be durable before parity_chsize() runs.
-		 * Reallocation can move data backward and reduce the required parity size.
-		 * If parity were truncated first and the process terminated before the new
-		 * mapping was persisted, the old content file could still reference parity
-		 * positions that had already been physically discarded.
+		 * A normal sync needs the same ordering when the new logical parity size is
+		 * smaller than the old one. A shrink may discard parity positions still
+		 * referenced by the previously persisted content state. Persisting the
+		 * post-scan state first guarantees that, after the physical truncation, no
+		 * durable mapping still depends on the discarded tail.
 		 *
-		 * The opposite crash ordering is safe: if the new content state is written
-		 * and the process terminates before resizing or rewriting parity, its
-		 * REP/CHG/DELETED states prevent the old physical parity from being trusted
-		 * as synchronized with the new mapping.
+		 * Non-destructive parity growth does not require this additional barrier.
+		 * Newly allocated positions are represented by pending block states, and the
+		 * existing post-resize content write persists the resulting split sizes before
+		 * parity synchronization begins.
+		 *
+		 * This decision uses the logical parity size, not physical_reach_size or physical
+		 * EOF. physical_reach_size is only a physical I/O extent and does not represent
+		 * parity validity or the persisted logical mapping.
 		 */
 		if (state->opt.force_full)
 			state_sync_mark_rebuild(state);
 
-		if ((state->opt.force_full || state->opt.force_realloc)
+		if ((state->opt.force_full
+			|| state->opt.force_realloc
+			|| parity_shrink)
 			&& !state->opt.skip_content_write
 			&& state->need_write
 		) {

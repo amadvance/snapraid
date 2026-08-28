@@ -1315,6 +1315,23 @@ endif # !HAVE_MEMORY_CHECKER
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
 	rm bench/disk1/REALLOC_TAIL2
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+#### NORMAL SHRINK CRASH TESTS ####
+	$(MSG) Test interrupted normal shrink post-resize crash
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/SHRINK_CRASH1
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/SHRINK_CRASH2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/shrink_crash_before.txt
+	rm bench/disk1/SHRINK_CRASH2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-kill-after-resize sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/shrink_crash_after.txt
+	! diff bench/shrink_crash_before.txt bench/shrink_crash_after.txt > /dev/null
+	! grep SHRINK_CRASH2 bench/shrink_crash_after.txt > /dev/null
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) locate > bench/shrink_crash_final.txt
+	diff bench/shrink_crash_after.txt bench/shrink_crash_final.txt
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	rm bench/disk1/SHRINK_CRASH1
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 endif # HAVE_THREAD_CHECKER
 	$(MSG) Regression test completed with SUCCESS!
 	$(MSG) Please ignore any error message printed above, they are expected!
