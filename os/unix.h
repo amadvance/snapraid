@@ -8,6 +8,7 @@
 #define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
 #define HAVE_DIRECT_IO 1 /**< Support O_DIRECT in open(). */
 #include <sys/syscall.h>
+#include <sched.h>
 #endif
 
 #define SYSLOG "syslog"
