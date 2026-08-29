@@ -14,6 +14,8 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 {
 	int ret;
 	int flags;
+	char path[PATH_MAX];
+	char path_unrecoverable[PATH_MAX];
 
 	/* if it's the same file, and already opened, nothing to do */
 	if (handle->file == file && handle->f != -1) {
@@ -21,9 +23,11 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	}
 
 	advise_init(&handle->advise, mode);
-	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 
-	ret = mkancestor(handle->path);
+	pathprint(path, sizeof(path), "%s%s", handle->disk->dir, file->sub);
+	pathprint(path_unrecoverable, sizeof(path_unrecoverable), "%s.unrecoverable", path);
+
+	ret = mkancestor(path);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -32,7 +36,6 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	/* initial values, changed later if required */
 	handle->created = 0;
-	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
 	/*
@@ -42,63 +45,67 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	 */
 	flags = O_BINARY | O_NOFOLLOW | advise_flags(&handle->advise);
 
-	/* open for read write */
-	handle->f = open(handle->path, flags | O_RDWR);
-
-	/* if failed for missing write permission */
-	if (handle->f == -1 && (errno == EACCES || errno == EROFS)) {
-		int saved_errno = errno;
-		/* open for read-only */
-		handle->f = open(handle->path, flags | O_RDONLY);
-		if (handle->f != -1) {
-			handle->readonly_errno = saved_errno;
-		}
-	}
-
-	/* if failed for missing file */
-	if (handle->f == -1 && errno == ENOENT) {
-		char path_unrecoverable[PATH_MAX];
-
-		/* check if exists a .unrecoverable copy */
-		pathprint(path_unrecoverable, sizeof(path_unrecoverable), "%s.unrecoverable", handle->path);
-
-		/*
-		 * Open a previous recovery directly as .unrecoverable, keeping it
-		 * quarantined until the whole file is processed successfully. Promoting
-		 * it now could expose an incomplete or unverified file if this fix aborts
-		 * or fails again. Reuse it for a multistep fix, preserving readable CHG
-		 * blocks because their current hash is not available.
-		 */
+	/*
+	 * If this recovery attempt was actually quarantined during the current fix run,
+	 * continue operating on its .unrecoverable copy.
+	 *
+	 * FILE_IS_QUARANTINED is runtime state and is not carried to a later fix.
+	 * FILE_IS_DAMAGED alone does not imply that the file was physically quarantined,
+	 * because some fix modes deliberately keep damaged files under their normal name.
+	 */
+	if (file_flag_has(file, FILE_IS_QUARANTINED)) {
 		handle->f = open(path_unrecoverable, flags | O_RDWR);
-		if (handle->f != -1) {
-			handle->is_unrecoverable = 1;
-			pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
-		} else if (errno == ENOENT) {
-			/*
-			 * Create missing file as .unrecoverable so that an interruption or
-			 * crash (e.g. SIGKILL) during recovery never leaves a partially recovered
-			 * file visible under its final name.
-			 */
-			handle->f = open(path_unrecoverable, flags | O_RDWR | O_CREAT | O_EXCL, 0600);
+
+		/* if failed for missing write permission */
+		if (handle->f == -1 && (errno == EACCES || errno == EROFS)) {
+			int saved_errno = errno;
+			/* open for read-only */
+			handle->f = open(path_unrecoverable, flags | O_RDONLY);
 			if (handle->f != -1) {
-				handle->is_unrecoverable = 1;
-				pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+				handle->readonly_errno = saved_errno;
+			}
+		}
+
+		pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+	} else {
+		/*
+		 * Start every recovery attempt from the normal filename.
+		 *
+		 * Do not reuse an .unrecoverable file left by a previous fix. It may
+		 * contain recovered CHG blocks whose CURRENT generation could not be
+		 * proven. That ambiguity is runtime state and is not persisted with
+		 * the file. Reopening such a file in a later fix would make those CHG
+		 * blocks appear merely readable and could incorrectly treat them as
+		 * valid CURRENT data.
+		 *
+		 * A previous .unrecoverable file is therefore kept only as the
+		 * best-effort result of that recovery attempt, not as input for a
+		 * subsequent one.
+		 */
+		handle->f = open(path, flags | O_RDWR);
+
+		/* if failed for missing write permission */
+		if (handle->f == -1 && (errno == EACCES || errno == EROFS)) {
+			int saved_errno = errno;
+			/* open for read-only */
+			handle->f = open(path, flags | O_RDONLY);
+			if (handle->f != -1) {
+				handle->readonly_errno = saved_errno;
+			}
+		}
+
+		/* if failed for missing file */
+		if (handle->f == -1 && errno == ENOENT) {
+			handle->f = open(path, flags | O_RDWR | O_CREAT | O_EXCL, 0600);
+			if (handle->f != -1) {
+				handle->created = 1;
 			} else if (errno == EEXIST) {
 				/* if created concurrently, reopen safely */
-				handle->f = open(path_unrecoverable, flags | O_RDWR);
-				if (handle->f != -1) {
-					handle->is_unrecoverable = 1;
-					pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
-				} else {
-					pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
-				}
-			} else {
-				pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
+				handle->f = open(path, flags | O_RDWR);
 			}
-		} else {
-			/* report the path that failed to open */
-			pathcpy(handle->path, sizeof(handle->path), path_unrecoverable);
 		}
+
+		pathcpy(handle->path, sizeof(handle->path), path);
 	}
 
 	if (handle->f == -1) {
@@ -130,6 +137,95 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
 		handle_close(handle);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
+/**
+ * Move an opened file to its persistent .unrecoverable name.
+ */
+int handle_quarantine(struct snapraid_handle* handle, struct snapraid_file* file, int mode)
+{
+	char path[PATH_MAX];
+	char path_to[PATH_MAX];
+	int ret;
+
+	(void)mode;
+
+	/* already quarantined during the current fix run */
+	if (file_flag_has(file, FILE_IS_QUARANTINED))
+		return 0;
+
+	/* mark this recovery attempt as damaged */
+	file_flag_set(file, FILE_IS_DAMAGED);
+
+	pathprint(path, sizeof(path), "%s%s", handle->disk->dir, file->sub);
+	pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle->disk->dir, file->sub);
+
+#ifdef _WIN32
+	/*
+	 * Windows may not allow renaming an opened file. Close it before
+	 * replacing the previous quarantine and renaming the current file.
+	 */
+	ret = handle_close(handle);
+	if (ret != 0)
+		return -1;
+
+	ret = rename(path, path_to);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Error renaming file '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	file_flag_set(file, FILE_IS_QUARANTINED);
+
+	/*
+	 * FILE_IS_QUARANTINED is set, so handle_create() reopens the
+	 * .unrecoverable file belonging to the current recovery attempt.
+	 */
+	ret = handle_create(handle, file, mode);
+	if (ret != 0)
+		return -1;
+#else
+	/*
+	 * POSIX rename() atomically replaces an existing destination file.
+	 * The opened descriptor continues to reference the renamed inode, so
+	 * no close/reopen is required.
+	 */
+	ret = rename(path, path_to);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Error renaming file '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	file_flag_set(file, FILE_IS_QUARANTINED);
+	pathcpy(handle->path, sizeof(handle->path), path_to);
+#endif
+
+	return 0;
+}
+
+/**
+ * Remove an .unrecoverable file left by a previous recovery attempt.
+ */
+int handle_unrecoverable_remove(struct snapraid_handle* handle, struct snapraid_file* file)
+{
+	char path[PATH_MAX];
+	int ret;
+
+	pathprint(path, sizeof(path), "%s%s.unrecoverable", handle->disk->dir, file->sub);
+
+	ret = remove(path);
+	if (ret != 0 && errno != ENOENT) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Error removing file '%s'. %s.\n", path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -187,7 +283,6 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 
 	/* for sure not created */
 	handle->created = 0;
-	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
 	/*
@@ -255,7 +350,6 @@ int handle_close(struct snapraid_handle* handle)
 			handle->file = 0;
 			handle->f = -1;
 			handle->physical_reach_size = 0;
-			handle->is_unrecoverable = 0;
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -265,7 +359,6 @@ int handle_close(struct snapraid_handle* handle)
 	handle->file = 0;
 	handle->f = -1;
 	handle->physical_reach_size = 0;
-	handle->is_unrecoverable = 0;
 	handle->readonly_errno = 0;
 
 	return 0;
@@ -459,7 +552,6 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		handle[j].file = 0;
 		handle[j].f = -1;
 		handle[j].physical_reach_size = 0;
-		handle[j].is_unrecoverable = 0;
 		handle[j].readonly_errno = 0;
 		handle[j].bw = 0;
 	}
@@ -490,4 +582,3 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 	*handlemax = size;
 	return handle;
 }
-

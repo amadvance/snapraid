@@ -1988,15 +1988,18 @@ Problèmes connus (Known Issues)
 	Lorsque `fix` ne peut pas récupérer entièrement un fichier endommagé, il le
 	place en quarantaine en ajoutant l'extension `.unrecoverable` à son nom.
 
-	Inversement, si un fichier manquant est en cours de restauration et qu'un
-	fichier `.unrecoverable` correspondant existe déjà, SnapRAID suppose qu'il
-	s'agit du résultat d'une récupération incomplète antérieure et reprend
-	l'écriture directement dans ce fichier.
+	Si une commande `fix` ultérieure réessaie la récupération, elle crée un
+	nouveau fichier sous le nom normal et conserve l'ancien fichier
+	`.unrecoverable` pendant la récupération. Si la nouvelle tentative échoue,
+	le nouveau résultat infructueux remplace l'ancienne quarantaine. Si la
+	nouvelle tentative réussit complètement, SnapRAID supprime le fichier
+	`.unrecoverable` obsolète. Une quarantaine n'est jamais promue à nouveau
+	vers le nom de fichier normal.
 
 	Étant donné que SnapRAID identifie les fichiers en quarantaine uniquement par
 	leur nom de fichier, tout fichier préexistant utilisant par coïncidence le
-	suffixe `.unrecoverable` peut être tronqué, écrasé ou remplacé si son nom de
-	base correspond à un fichier en cours de réparation.
+	suffixe `.unrecoverable` peut être tronqué, écrasé, remplacé ou supprimé si son
+	nom de base correspond à un fichier en cours de réparation.
 
 	Évitez d'utiliser l'extension `.unrecoverable` pour les fichiers normaux et
 	assurez-vous que la règle `exclude *.unrecoverable` est incluse dans votre

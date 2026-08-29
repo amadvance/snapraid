@@ -188,16 +188,28 @@
  * such data, but the containing file remains marked damaged and is kept under
  * the .unrecoverable name instead of being reported as successfully recovered.
  *
- * Missing files are created as .unrecoverable from the beginning, and an
- * existing .unrecoverable file is reused by later fix runs. This allows a
- * recovery to proceed over multiple runs without exposing a partially rebuilt
- * file under its final name.
+ * Missing files are created under their normal names. They are quarantined only
+ * if recovery produces data that cannot be certified as CURRENT.
  *
- * Promotion to the final file name is a file-level commit operation. It happens
- * only after the complete file has been processed successfully, its metadata
- * has been restored, and no block remains damaged. A partial -S/-B fix operates
- * only at block level and therefore never performs this file-level promotion
- * or other finalization.
+ * A later fix starts a new recovery attempt under the normal filename even if a
+ * previous .unrecoverable file exists. A previous quarantine cannot safely be
+ * reused as recovery input because it may contain an ambiguous recovered CHG.
+ * Such a CHG may have caused the file to be quarantined precisely because its
+ * CURRENT generation could not be proven. That provenance is runtime state and
+ * is not persisted in the .unrecoverable file. Reopening it in a later fix would
+ * make the CHG merely appear readable and could incorrectly accept it as CURRENT.
+ *
+ * The previous quarantine is therefore kept separate while the new recovery is
+ * in progress. If the new attempt succeeds completely, the obsolete quarantine
+ * is removed. If the new attempt also becomes unrecoverable, it replaces the
+ * previous quarantine.
+ *
+ * A quarantined file may be reopened later during the same fix run. In that case
+ * FILE_IS_QUARANTINED identifies it as belonging to the current failed recovery and
+ * handle_create() continues operating on its .unrecoverable file.
+ *
+ * A partial -S/-B fix operates only at block level and therefore never performs
+ * file-level finalization.
  */
 
 /****************************************************************************/
@@ -244,8 +256,10 @@ struct failed_struct {
 	 * CURRENT contents, even though in some cases OLD and CURRENT may actually be
 	 * identical.
 	 *
-	 * It is also set on a bad CHG when the current-parity strategy recovers a
-	 * candidate that cannot be distinguished reliably from its OLD contents.
+	 * This provenance exists only for the current check/fix run. It is not encoded
+	 * in the recovered file itself, which is why a later fix cannot safely infer
+	 * that a readable CHG from a previous .unrecoverable file represents CURRENT
+	 * data.
 	 *
 	 * Out-of-date entries are excluded from hash validation. If an out-of-date
 	 * block is also is_bad, fix may still preserve the recovered bytes as the best
@@ -364,8 +378,9 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
 }
 
 /**
- * Try to recover the selected failed inputs and independently validate the
- * reconstructed result.
+ * Try to recover the selected failed inputs and validate the reconstructed
+ * result using either a CURRENT hash or an additional RAID equation not used
+ * for reconstruction.
  *
  * Return:
  *   0  if a recovery was successfully validated;
@@ -410,8 +425,16 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 	 * recovery were themselves correct.
 	 *
 	 * If at least one failed input has a trustworthy CURRENT hash, recovered data
-	 * can provide the independent validation. Otherwise one additional parity
-	 * equation must be reserved exclusively for checking the candidate result.
+	 * can provide independent validation. Otherwise one additional parity equation
+	 * is reserved exclusively for checking the candidate result.
+	 *
+	 * The additional parity is an independent RAID equation, not an independent
+	 * hash of the recovered data. The candidate is accepted only if the complete
+	 * reconstructed block set satisfies this extra equation for the whole block.
+	 * Therefore an accidental false match requires the data differences to satisfy
+	 * the corresponding RAID relation at every byte position. Such correlated
+	 * differences are possible in principle because RAID equations are linear, but
+	 * are extremely unlikely for unrelated data corruption.
 	 */
 	has_hash = 0;
 	for (i = 0; i < failed_count; ++i) {
@@ -1280,8 +1303,6 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 
 		/* finish the fix process if it's the last block of the files */
 		if (fix) {
-			int was_unrecoverable;
-
 			if (handle[j].file != file) {
 				/* LCOV_EXCL_START */
 				log_fatal(EINTERNAL, "Internal inconsistency in file handle '%s' instead of '%s'\n",
@@ -1289,13 +1310,11 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
-			was_unrecoverable = handle[j].is_unrecoverable;
-
 			/*
 			 * A partial fix operates only at block level. Reaching the last block of a
 			 * file doesn't imply that the whole file was processed, so don't perform any
-			 * file-level finalization, including marking it finished, promoting an
-			 * .unrecoverable file, reporting it recovered, or restoring its timestamp.
+			 * file-level finalization, including marking it finished, reporting its final
+			 * status, or restoring its timestamp.
 			 * This is intentional also when an explicit block range happens to cover all
 			 * the parity blocks, to keep -S/-B behavior independent of the parity size.
 			 */
@@ -1310,35 +1329,6 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 
 			/* if the file is damaged, meaning that a fix failed */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
-				char path[PATH_MAX];
-				char path_to[PATH_MAX];
-
-				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
-				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
-
-				/* ensure to close the file before renaming */
-				ret = handle_close(&handle[j]);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-
-				/* a previous recovery is already quarantined */
-				if (!was_unrecoverable) {
-					ret = rename(path, path_to);
-					if (ret != 0) {
-						/* LCOV_EXCL_START */
-						log_fatal(errno, "Error renaming '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-						log_tag("%s:%" PRIu64 ":%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-						log_fatal_errno(errno, disk->name);
-						return -1;
-						/* LCOV_EXCL_STOP */
-					}
-				}
-
 				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub));
 				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub));
 
@@ -1347,7 +1337,7 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 			}
 
 			/* if the file is not fixed, meaning that it is untouched */
-			if (!file_flag_has(file, FILE_IS_FIXED) && !was_unrecoverable) {
+			if (!file_flag_has(file, FILE_IS_FIXED)) {
 				/* nothing to do, but close the file */
 				goto close_and_continue;
 			}
@@ -1402,7 +1392,7 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 				|| collide_file->mtime_sec != file->mtime_sec /* if the mtime is different, the collision is identified */
 				|| collide_file->mtime_nsec != file->mtime_nsec /* same for mtime_nsec */
 			) {
-				/* set the original modification time before promoting/renaming */
+				/* set the original modification time */
 				ret = handle_utime(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
@@ -1419,36 +1409,30 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 			}
 
 			/*
-			 * This rename is the file-level recovery commit point. Keep the file
-			 * quarantined until every block and metadata was processed without error;
-			 * promoting only after setting the timestamp ensures the final file is
-			 * never exposed with incomplete data or provisional timestamp.
+			 * Close the normal file before removing the previous quarantine.
+			 * A delayed close error means that recovery is not yet successful,
+			 * and the previous .unrecoverable file must remain available.
 			 */
-			if (was_unrecoverable) {
-				char path[PATH_MAX];
-				char path_from[PATH_MAX];
+			ret = handle_close(&handle[j]);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+				log_fatal_errno(errno, disk->name);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 
-				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
-				pathprint(path_from, sizeof(path_from), "%s%s.unrecoverable", disk->dir, file->sub);
-
-				ret = handle_close(&handle[j]);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-
-				ret = rename(path_from, path);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal(errno, "Error renaming '%s'. %s.\n", path_from, strerror(errno));
-					log_tag("%s:%" PRIu64 ":%s:%s: Rename error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-					log_fatal_errno(errno, disk->name);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
+			/*
+			 * The normal file has now been completely recovered, finalized, and closed.
+			 * Remove any quarantine left by an earlier failed recovery attempt.
+			 */
+			ret = handle_unrecoverable_remove(&handle[j], file);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				log_tag("%s:%" PRIu64 ":%s:%s: Remove unrecoverable error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+				log_fatal_errno(errno, disk->name);
+				return -1;
+				/* LCOV_EXCL_STOP */
 			}
 
 			log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub));
@@ -1891,6 +1875,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* LCOV_EXCL_STOP */
 						}
 
+						file_flag_set(file, FILE_IS_FIXED);
+
 						log_tag("fixed:%" PRIu64 ":%s:%s: Fixed size\n", i, disk->name, esc_tag(file->sub));
 						++recovered_error;
 					}
@@ -1957,10 +1943,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				 * against block->hash, as a match would only identify the old data
 				 * and a mismatch would not prove that the current data is correct.
 				 *
-				 * This also intentionally applies to data reused from a previous
-				 * multistep fix through an .unrecoverable file: already readable CHG
-				 * data is preserved, while fix attempts to recover only missing or
-				 * unreadable blocks.
+				 * This assumption applies only to data belonging to the current recovery
+				 * attempt. A CHG from a previous .unrecoverable file cannot safely be reused:
+				 * it may itself be an ambiguous recovery result whose CURRENT generation was
+				 * not proven. Once persisted, that provenance cannot be inferred from the
+				 * bytes alone.
 				 */
 				failed[failed_count].is_bad = 0; /* we assume the CHG block correct */
 				failed[failed_count].is_outofdate = 0;
@@ -2084,8 +2071,33 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* keep track of damaged files */
 				for (j = 0; j < failed_count; ++j) {
-					if (failed[j].is_bad)
-						file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+					if (!failed[j].is_bad)
+						continue;
+
+					file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+
+					/*
+					 * Persist the unrecoverable state immediately for a full fix.
+					 * Quarantine is a file-level operation because it renames the whole file.
+					 * A partial -S/-B fix operates only at block level, so keep FILE_IS_DAMAGED
+					 * but leave the file under its normal name when partial is set.
+					 */
+					if (fix 
+						&& !file_flag_has(failed[j].file, FILE_IS_EXCLUDED) 
+						&& !(state->opt.syncedonly && file_flag_has(failed[j].file, FILE_IS_UNSYNCED))
+						&& !partial
+					) {
+						ret = handle_quarantine(failed[j].handle, failed[j].file, state->file_mode);
+						if (ret == -1) {
+							/* LCOV_EXCL_START */
+							log_tag("%s:%" PRIu64 ":%s:%s: Quarantine error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
+							log_fatal_errno(errno, failed[j].disk->name);
+							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
+							++unrecoverable_error;
+							goto bail;
+							/* LCOV_EXCL_STOP */
+						}
+					}
 				}
 			} else {
 				/*
@@ -2150,20 +2162,61 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/*
 						 * Write the best recovered candidate even when it is out-of-date. Such data
 						 * may still be useful to the user or to a later multistep recovery.
-						 *
-						 * An out-of-date write is not considered a successful fix: the file is marked
-						 * damaged below and file_post() keeps or moves it to .unrecoverable instead
-						 * of promoting it as recovered.
 						 */
+						/*
+						 * An out-of-date candidate is useful best-effort data,
+						 * but it cannot be certified as the required CURRENT
+						 * contents. Persist this fact before modifying the file
+						 * so that a SIGKILL cannot leave unproven recovered data
+						 * under the normal filename.
+						 */
+						if (failed[j].is_outofdate) {
+							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+
+							/*
+							 * Quarantine is a file-level operation because it renames the whole file.
+							 * A partial -S/-B fix may still write the selected best-effort block, but it
+							 * must not rename or quarantine the complete file outside the requested range.
+							 */
+							if (!partial) {
+								ret = handle_quarantine(failed[j].handle, failed[j].file, state->file_mode);
+								if (ret == -1) {
+									/* LCOV_EXCL_START */
+									log_tag("%s:%" PRIu64 ":%s:%s: Quarantine error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
+									log_fatal_errno(errno, failed[j].disk->name);
+									log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
+									++unrecoverable_error;
+									goto bail;
+									/* LCOV_EXCL_STOP */
+								}
+							}
+						}
+
 						ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
-							log_tag("%s:%" PRIu64 ":%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
-							log_fatal_errno(errno, failed[j].disk->name);
-							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
+							int saved_errno = errno;
 
 							/* mark the file as damaged */
 							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+
+							/*
+							 * Quarantine is a file-level operation because it renames the whole file.
+							 * A partial -S/-B fix must leave the complete file under its normal name even
+							 * when a selected block write fails; FILE_IS_DAMAGED still records the failure.
+							 */
+							if (!partial) {
+								ret = handle_quarantine(failed[j].handle, failed[j].file, state->file_mode);
+								if (ret == -1) {
+									log_tag("%s:%" PRIu64 ":%s:%s: Quarantine error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
+									log_fatal_errno(errno, failed[j].disk->name);
+								}
+							}
+
+							errno = saved_errno;
+							log_tag("%s:%" PRIu64 ":%s:%s: Write error. %s.\n", es(errno), i, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
+							log_fatal_errno(errno, failed[j].disk->name);
+							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
 							++unrecoverable_error;
 							goto bail;
@@ -2171,11 +2224,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						}
 
 						/* if we are not sure that the recovered content is uptodate */
-						if (failed[j].is_outofdate) {
-							/* mark the file as damaged */
-							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+						if (failed[j].is_outofdate)
 							continue;
-						}
 
 						/*
 						 * Mark the file as containing some fixes
@@ -3003,4 +3053,3 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	return 0;
 }
-

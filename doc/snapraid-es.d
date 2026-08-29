@@ -1945,14 +1945,17 @@ Problemas conocidos (Known Issues)
 	Cuando `fix` no puede recuperar por completo un archivo dañado, lo pone en
 	cuarentena añadiendo la extensión `.unrecoverable` a su nombre.
 
-	Por el contrario, si se está recuperando un archivo que falta y ya existe
-	un archivo `.unrecoverable` correspondiente, SnapRAID asume que es el
-	resultado de una recuperación incompleta anterior y reanuda la escritura en él.
+	Si un `fix` posterior reintenta la recuperación, crea un nuevo archivo con el
+	nombre de archivo normal y conserva el antiguo archivo `.unrecoverable`
+	mientras la recuperación está en curso. Si el reintento falla, el nuevo
+	resultado fallido reemplaza la antigua cuarentena. Si el reintento tiene éxito
+	por completo, SnapRAID elimina el archivo `.unrecoverable` obsoleto. Una
+	cuarentena nunca se promueve de nuevo al nombre de archivo normal.
 
 	Dado que SnapRAID identifica los archivos en cuarentena únicamente por su
 	nombre de archivo, cualquier archivo preexistente que utilice casualmente el
-	sufijo `.unrecoverable` puede truncarse, sobrescribirse o reemplazarse si su
-	nombre base coincide con un archivo que se está reparando.
+	sufijo `.unrecoverable` puede truncarse, sobrescribirse, reemplazarse o eliminarse
+	si su nombre base coincide con un archivo que se está reparando.
 
 	Evite utilizar la extensión `.unrecoverable` para archivos normales y asegúrese
 	de incluir `exclude *.unrecoverable` en su configuración para evitar que dichos

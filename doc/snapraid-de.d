@@ -1980,15 +1980,19 @@ Bekannte Probleme (Known Issues)
 	wird sie unter Quarantäne gestellt, indem die Erweiterung `.unrecoverable`
 	an ihren Namen angehängt wird.
 
-	Umgekehrt gilt: Wenn eine fehlende Datei wiederhergestellt wird und bereits
-	eine entsprechende `.unrecoverable`-Datei vorhanden ist, nimmt SnapRAID an,
-	dass es sich um das Ergebnis einer früheren unvollständigen Wiederherstellung
-	handelt, und setzt das Schreiben direkt in dieser Datei fort.
+	Wenn ein späterer `fix`-Vorgang die Wiederherstellung wiederholt, erstellt
+	er eine neue Datei unter dem normalen Dateinamen und behält die alte
+	`.unrecoverable`-Datei bei, während die Wiederherstellung läuft. Wenn der
+	erneute Versuch fehlschlägt, ersetzt das neue fehlgeschlagene Ergebnis die
+	alte Quarantäne. Wenn der erneute Versuch vollständig erfolgreich ist, löscht
+	SnapRAID die veraltete `.unrecoverable`-Datei. Eine Quarantänedatei wird
+	niemals wieder in den normalen Dateinamen umbenannt.
 
 	Da SnapRAID Quarantänedateien ausschließlich anhand ihres Dateinamens
 	identifiziert, kann jede bereits vorhandene Datei, die zufällig die Endung
-	`.unrecoverable` verwendet, abgeschnitten, überschrieben oder ersetzt werden,
-	wenn ihr Basisname mit einer gerade wiederherzustellenden Datei übereinstimmt.
+	`.unrecoverable` verwendet, abgeschnitten, überschrieben, ersetzt oder gelöscht
+	werden, wenn ihr Basisname mit einer gerade wiederherzustellenden Datei
+	übereinstimmt.
 
 	Vermeiden Sie die Verwendung der Erweiterung `.unrecoverable` für reguläre
 	Dateien und stellen Sie sicher, dass `exclude *.unrecoverable` in Ihrer

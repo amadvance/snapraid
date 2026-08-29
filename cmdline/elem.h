@@ -261,6 +261,12 @@ struct snapraid_block {
  */
 #define FILE_IS_UNSYNCED 0x100
 
+/**
+ * If the current recovery attempt was actually moved to the .unrecoverable name.
+ * It's used only in fix to track the physical quarantine state independently
+ * from FILE_IS_DAMAGED.
+ */
+#define FILE_IS_QUARANTINED 0x200
 
 /**
  * The file is deleted.

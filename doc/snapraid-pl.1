@@ -2353,14 +2353,17 @@ w ścieżkach konfiguracyjnych i filtrach.
 Gdy \`fix\` nie może w pełni odzyskać uszkodzonego pliku, poddaje go kwarantannie,
 dodając do jego nazwy rozszerzenie \`.unrecoverable\`.
 .PP
-I odwrotnie, jeśli brakujący plik jest naprawiany, a odpowiedni plik
-\`.unrecoverable\` już istnieje, SnapRAID zakłada, że jest to wynik poprzedniego
-niepełnego odzyskiwania i wznawia zapis bezpośrednio w tym pliku.
+Jeśli późniejsze polecenie \`fix\` ponowi próbę odzyskania, tworzy ono nowy
+plik pod normalną nazwą i zachowuje stary plik \`.unrecoverable\` podczas trwania
+odzyskiwania. Jeśli ponowna próba się nie powiedzie, nowy nieudany wynik
+zastępuje starą kwarantannę. Jeśli ponowna próba zakończy się całkowitym
+sukcesem, SnapRAID usuwa przestarzały plik \`.unrecoverable\`. Kwarantanna nigdy
+nie jest przywracana do normalnej nazwy pliku.
 .PP
 Ponieważ SnapRAID identyfikuje pliki kwarantanny wyłącznie na podstawie ich
 nazwy, każdy wcześniej istniejący plik, który przypadkowo używa sufiksu
-\`.unrecoverable\`, może zostać obcięty, nadpisany lub zastąpiony, jeśli jego
-nazwa bazowa odpowiada naprawianemu plikowi.
+\`.unrecoverable\`, może zostać obcięty, nadpisany, zastąpiony lub usunięty, jeśli
+jego nazwa bazowa odpowiada naprawianemu plikowi.
 .PP
 Unikaj używania rozszerzenia \`.unrecoverable\` dla zwykłych plików i upewnij się,
 że w konfiguracji uwzględniono regułę \`exclude *.unrecoverable\`, aby zapobiec

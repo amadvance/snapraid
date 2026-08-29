@@ -2347,14 +2347,17 @@ skiftläget för eventuella icke\-ASCII\-tecken i konfigurationssökvägar och f
 När \`fix\` inte helt kan återställa en skadad fil sätter den filen i karantän
 genom att lägga till filändelsen \`.unrecoverable\` till dess namn.
 .PP
-Omvänt, om en saknad fil återställs och en motsvarande \`.unrecoverable\`\-fil
-redan finns, antar SnapRAID att den är resultatet av en tidigare ofullständig
-återställning och återupptar skrivningen direkt i den.
+Om en senare \`fix\` försöker återställa filen igen skapar den en ny fil under
+det normala filnamnet och bevarar den gamla \`.unrecoverable\`\-filen medan
+återställningen pågår. Om det nya försöket misslyckas ersätter det nya
+misslyckade resultatet den gamla karantänen. Om det nya försöket lyckas helt
+raderar SnapRAID den föråldrade \`.unrecoverable\`\-filen. En karantänfil
+befordras aldrig tillbaka till det normala filnamnet.
 .PP
 Eftersom SnapRAID identifierar karantänfiler enbart baserat på deras filnamn,
 kan alla befintliga filer som av en händelse använder suffixet \`.unrecoverable\`
-avhuggas, skrivas över eller ersättas om deras basnamn matchar en fil som
-håller på att återställas.
+avhuggas, skrivas över, ersättas eller raderas om deras basnamn matchar en fil
+som håller på att återställas.
 .PP
 Undvik att använda filändelsen \`.unrecoverable\` för vanliga filer och se till
 att \`exclude *.unrecoverable\` ingår i din konfiguration för att förhindra att

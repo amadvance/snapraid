@@ -30,21 +30,35 @@ struct snapraid_handle {
 	 */
 	data_off_t physical_reach_size;
 	int created; /**< If the file was created, otherwise it was already existing. */
-	int is_unrecoverable; /**< If the open descriptor refers to the .unrecoverable path. */
 	int readonly_errno; /**< Non-zero if opened read-only as fallback. */
 	struct snapraid_bw* bw; /**< Context for bandwidth limiting. */
 };
 
 /**
- * Create a file.
- * The file is created if missing, and opened with write access.
- * If the file is created, the handle->created is set.
- * If a previous .unrecoverable file is opened, the handle->is_unrecoverable is set.
+ * Create or reopen a recovery file.
+ * A new recovery attempt always uses the normal filename, even if a previous .unrecoverable file exists.
+ * FILE_IS_QUARANTINED determines whether the .unrecoverable filename is opened in the current run.
+ * If the normal file is created, the handle->created is set.
  * The initial size of the file is stored in the file->st struct.
  * If the file cannot be opened for write access, it's opened with read-only access.
  * The read-only access works only if the file has already the correct size and doesn't need to be modified.
  */
 int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode);
+
+/**
+ * Move an opened file to its persistent .unrecoverable name.
+ * A previous .unrecoverable from an older recovery attempt is replaced.
+ * If already quarantined in the current run, do nothing.
+ * On error, log the failure and return -1 with errno set.
+ */
+int handle_quarantine(struct snapraid_handle* handle, struct snapraid_file* file, int mode);
+
+/**
+ * Remove an .unrecoverable file left by a previous recovery attempt.
+ * A missing .unrecoverable file is not an error.
+ * On error, log the failure and return -1 with errno set.
+ */
+int handle_unrecoverable_remove(struct snapraid_handle* handle, struct snapraid_file* file);
 
 /**
  * Truncate a file if required.
@@ -86,4 +100,3 @@ int handle_utime(struct snapraid_handle* handle);
 struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* diskmax);
 
 #endif
-
