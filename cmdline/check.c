@@ -74,6 +74,7 @@
  *   CHG       -> current data is represented
  *   REP       -> new/current data is represented
  *   DELETED   -> contributes zero
+ *   REBUILD   -> data and hash are CURRENT, but physical parity remains untrusted
  *
  * Under this assumption, readable current data can be used directly and only
  * blocks known to be bad or missing have to be reconstructed. BLK and REP
@@ -88,6 +89,14 @@
  *   CHG       -> OLD data is represented
  *   REP       -> OLD data is represented
  *   DELETED   -> OLD data is represented
+ *   REBUILD   -> data and hash remain CURRENT; only physical parity is untrusted
+ * 
+ *
+ * REBUILD is orthogonal to the OLD/CURRENT sync-history distinction. Unlike
+ * CHG, REP and DELETED, it does not represent a different data generation.
+ * Its data and stored hash are CURRENT in both strategies. Only its physical
+ * parity is untrusted because an in-place --force-full rebuild may have been
+ * interrupted.
  *
  * Under this assumption, the current contents of CHG and REP cannot be used
  * as parity inputs even when they are perfectly readable. CHG, REP and
@@ -142,7 +151,13 @@
  * Parity for a position containing no live data is irrelevant and sync is not
  * required to keep such unused parity updated.
  *
- * valid_parity means that no block at the position is CHG, REP or DELETED.
+ * valid_parity means that no block at the position is CHG, REP, DELETED or
+ * REBUILD.
+ *
+ * For CHG, REP and DELETED, parity is invalid because its data-generation
+ * relationship is uncertain after an interrupted sync. For REBUILD the reason
+ * is different: the data and hash are CURRENT, but physical parity itself is
+ * deliberately untrusted until the in-place rebuild completes.
  * When one of these states is present, parity may legitimately differ from
  * parity recomputed from the current data because sync has not completed.
  * Such a difference must not be reported or "fixed" by check/fix; the next
@@ -500,6 +515,134 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 	return -1;
 }
 
+/**
+ * Try to recover all the bad blocks of a parity stripe.
+ *
+ * Recovery after an interrupted sync is ambiguous because physical parity may
+ * represent either the CURRENT filesystem state or the OLD state that existed
+ * before the interrupted sync. For this reason two recovery strategies are
+ * attempted.
+ *
+ * This recovery logic relies on the following invariant:
+ *
+ *   After an interrupted sync, the data-disk filesystem must not be changed
+ *   before running recovery or before a subsequent sync completes successfully.
+ *
+ * Re-running sync without changing the filesystem is allowed, even if that sync
+ * is interrupted again. Under this invariant an unsynchronized CHG has only two
+ * relevant generations:
+ *
+ *   OLD       identified by the stored CHG hash;
+ *   CURRENT   represented by the unchanged live filesystem contents.
+ *
+ * Physical parity may contain either generation because the interrupted sync
+ * may or may not have updated it, but there cannot be a third intermediate data
+ * generation created by a later filesystem change.
+ *
+ * This invariant is essential for CHG generation inference. If the filesystem
+ * is changed after an interrupted sync, for example by adding, deleting,
+ * replacing or modifying files, a stored CHG/DELETED OLD hash may no longer
+ * identify the generation actually represented by physical parity. In that
+ * situation candidate != stored OLD would not be sufficient to prove CURRENT.
+ *
+ *   1. CURRENT strategy.
+ *
+ *      Assume that parity was already updated by the interrupted sync.
+ *      Readable blocks are therefore used as their CURRENT values and only bad
+ *      blocks are reconstructed.
+ *
+ *      BLK, REP and REBUILD have hashes identifying their required CURRENT
+ *      contents and can therefore be independently validated.
+ *
+ *      CHG is different: its stored hash identifies the OLD contents, not the
+ *      CURRENT ones. After repair_step() has independently validated the RAID
+ *      solution, the recovered CHGs are examined as a group.
+ *
+ *      Under the recovery invariant above, a recovered CHG candidate different
+ *      from its stored OLD contents cannot belong to the OLD generation and
+ *      therefore proves that the validated RAID solution is CURRENT.
+ *
+ *      All CHGs reconstructed by the same repair_step() belong to that same
+ *      validated RAID solution. Consequently, if at least one recovered CHG
+ *      proves that the solution is CURRENT, all CHGs reconstructed by that
+ *      solution are CURRENT, including CHGs whose OLD hash is INVALID or whose
+ *      OLD and CURRENT contents happen to be identical.
+ *
+ *      If no recovered CHG distinguishes the solution from OLD, all recovered
+ *      CHGs remain is_outofdate. This does not mean that their contents are
+ *      necessarily wrong or actually old, only that CURRENT cannot be proven.
+ *
+ *   2. OLD strategy.
+ *
+ *      If the CURRENT strategy fails, assume that physical parity still
+ *      represents the state before the interrupted sync.
+ *
+ *      CHG, REP and DELETED entries are therefore converted to their OLD
+ *      contribution when possible, or reconstructed as auxiliary RAID unknowns.
+ *      This strategy is useful only when there is bad BLK/REBUILD data to
+ *      recover. Any bad CHG/REP reconstructed under this strategy remains
+ *      is_outofdate because it cannot be certified as the required CURRENT data.
+ *
+ * REBUILD is orthogonal to the OLD/CURRENT sync-history distinction. Its data
+ * and stored hash are always CURRENT, while its physical parity is untrusted
+ * because an in-place --force-full rebuild may have been interrupted. REBUILD
+ * therefore never requires conversion to an OLD data contribution and does not
+ * participate in the CHG generation inference. A matching REBUILD hash proves
+ * the recovered REBUILD data, but does not prove whether CHG/REP/DELETED parity
+ * belongs to the OLD or CURRENT sync generation.
+ *
+ * repair_step() is responsible only for solving and independently validating
+ * the RAID equations. This function is responsible for interpreting the
+ * resulting solution according to the OLD/CURRENT history of unsynchronized
+ * blocks and the recovery invariant described above.
+ *
+ * Parameters:
+ *
+ *   state         SnapRAID state and configuration.
+ *
+ *   rehash        If non-zero, hashes must be computed using the previous hash
+ *                 algorithm/seed while processing a rehash operation.
+ *
+ *   pos           Parity block position being recovered. Used for logging.
+ *
+ *   diskmax       Number of data disks participating in the RAID stripe.
+ *
+ *   failed        Array describing all blocks relevant to recovery. Entries may
+ *                 represent actually bad blocks, but also readable CHG/REP or
+ *                 DELETED blocks needed by the OLD recovery strategy.
+ *
+ *   failed_map    Temporary array used to select which failed[] entries are RAID
+ *                 unknowns for each call to repair_step().
+ *
+ *   failed_count  Number of valid entries in failed[].
+ *
+ *   buffer        Data and generated parity buffers. Data buffers are indexed by
+ *                 disk, followed by generated parity buffers.
+ *
+ *   buffer_recov  Physical parity blocks read from disk. A NULL entry means that
+ *                 the corresponding parity level is unavailable or cannot be
+ *                 trusted for recovery.
+ *
+ *   buffer_zero   A full block containing zeroes, used both for ZERO-state CHGs
+ *                 and for validating zero padding.
+ *
+ * Return value:
+ *
+ *   0   A RAID solution was successfully validated under one of the two history
+ *       hypotheses. Some originally bad CHG/REP entries may still have
+ *       is_outofdate set, meaning that their required CURRENT contents could not
+ *       be proven. The caller must inspect is_outofdate before considering such
+ *       blocks successfully recovered.
+ *
+ *  >0   One or more recovery candidates were attempted but failed independent
+ *       validation. The value is the accumulated number of failed attempts.
+ *
+ *  <0   No usable recovery strategy could be attempted successfully, for example
+ *       because there were too many failures or insufficient usable parity.
+ *
+ * On successful return buffer[] contains the recovered data and parity
+ * recomputed from that data.
+ */
 static int repair(struct snapraid_state* state, int rehash, block_off_t pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
 	int ret;
@@ -508,15 +651,28 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	int n;
 	int something_to_recover;
 	int something_unsynced;
+
 	error = 0;
 
-	/* if nothing failed, just recompute the parity */
+	/*
+	 * Nothing is missing or damaged.
+	 *
+	 * repair() is also responsible for leaving buffer[] with parity
+	 * recomputed from the data buffers, so do that even if there is no
+	 * actual recovery to perform.
+	 */
 	if (failed_count == 0) {
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 0;
 	}
 
-	/* logs the status */
+	/*
+	 * Log all entries participating in recovery.
+	 *
+	 * failed[] contains more than just bad blocks. Readable CHG/REP and
+	 * DELETED entries may also be present because their OLD contribution can
+	 * be needed by the pre-sync recovery strategy below.
+	 */
 	for (j = 0; j < failed_count; ++j) {
 		const char* desc;
 		const char* hash;
@@ -562,138 +718,284 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	}
 
 	/*
-	 * Here we have to try two different strategies to recover, because in case the 'sync'
-	 * process is aborted, we don't know if the parity data is really updated just like after 'sync',
-	 * or if it still represents the state before the 'sync'.
+	 * Under the recovery invariant documented above, an interrupted sync leaves
+	 * exactly two possible data generations for unsynchronized blocks:
+	 *
+	 *   OLD       the state identified by the pre-sync metadata;
+	 *   CURRENT   the unchanged live filesystem state.
+	 *
+	 * The content file tells us which blocks were not fully synchronized, but it
+	 * cannot tell us whether physical parity had already advanced from OLD to
+	 * CURRENT before the interruption.
+	 *
+	 * We therefore try the only two possible history hypotheses:
+	 *
+	 *   1. parity represents CURRENT data;
+	 *   2. parity still represents OLD data.
+	 *
+	 * Repeated interrupted sync attempts do not add another generation as long as
+	 * the filesystem remains unchanged between them.
+	 *
+	 * REBUILD does not introduce another data-generation hypothesis. Its data is
+	 * CURRENT in both cases; only the physical parity associated with it is
+	 * independently untrusted.
+	 *
+	 * If sync completed normally there are no CHG/REP/DELETED states and the
+	 * distinction disappears.
 	 */
+
+	/************************************************************************/
+	/* First strategy: parity represents CURRENT data.                      */
+	/************************************************************************/
 
 	/*
-	 * Note that if the 'sync' ends normally, we don't have any DELETED, REP and CHG blocks
-	 * and the two strategies are identical
+	 * Under the CURRENT hypothesis:
+	 *
+	 *   BLK       hash CURRENT, parity normally synchronized
+	 *   REP       hash CURRENT, parity may represent OLD or CURRENT
+	 *   REBUILD   hash CURRENT, data CURRENT, physical parity untrusted
+	 *   CHG       hash OLD, parity may represent OLD or CURRENT
+	 *   DELETED   no CURRENT data, parity may represent OLD or zero
+	 *
+	 * Readable blocks already contain their CURRENT filesystem contents, so
+	 * only bad blocks have to be reconstructed.
+	 *
+	 * BLK/REP/REBUILD can first be fetched from import/search because their
+	 * stored hash identifies exactly the contents required by this strategy.
+	 *
+	 * CHG cannot use this shortcut because fetching its stored hash would
+	 * retrieve OLD contents.
 	 */
-
-	/*
-	 * As first, we assume that the parity IS updated for the current state
-	 * and that we are going to recover the state after the last 'sync'.
-	 * In this case, parity contains info from BLK, REP and CHG blocks,
-	 * but not for DELETED.
-	 * We need to put in the recovering process only the bad blocks, because all the
-	 * others already contains the correct data read from disk, and the parity is correctly computed for them.
-	 * We are interested to recover BLK, REP and CHG blocks if they are marked as bad,
-	 * but we are not interested in DELETED ones.
-	 */
-
 	n = 0;
-	something_to_recover = 0; /* keep track if there is at least one block to fix */
+	something_to_recover = 0;
+
 	for (j = 0; j < failed_count; ++j) {
 		if (failed[j].is_bad) {
 			unsigned block_state = block_state_get(failed[j].block);
 
-			assert(block_state != BLOCK_STATE_DELETED); /* we cannot have bad DELETED blocks */
+			assert(block_state != BLOCK_STATE_DELETED);
 
-			/*
-			 * Import/search can directly repair only states whose stored hash identifies
-			 * the desired CURRENT contents. This is true for BLK and REP.
-			 *
-			 * A CHG hash identifies the OLD contents, so fetching data by that hash would
-			 * not prove that we recovered the current version required by this strategy.
-			 */
 			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP || block_state == BLOCK_STATE_REBUILD)
-			        /* try to fetch the block using the known hash */
 				&& (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0
 				|| state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)
 			) {
-				/* we already have corrected it! */
+				/*
+				 * The required CURRENT contents were obtained directly
+				 * using their CURRENT hash, so this block no longer
+				 * consumes a RAID recovery equation.
+				 */
 				log_tag("repair_hash_import:%u: Fixed by import\n", j);
 			} else {
-				/* otherwise try to recover it */
+				/*
+				 * Otherwise reconstruct the block from parity.
+				 */
 				failed_map[n] = j;
 				++n;
-
-				/* we have something to try to recover */
 				something_to_recover = 1;
 			}
 		}
 	}
 
-	/* if nothing to fix */
+	/*
+	 * All originally bad blocks were recovered through import/search.
+	 */
 	if (!something_to_recover) {
 		log_tag("recover_sync:%" PRIu64 ":%u: Skipped for already recovered\n", pos, n);
 
-		/* recompute only the parity */
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 0;
 	}
 
+	/*
+	 * Recover the selected bad blocks and independently validate the RAID
+	 * solution.
+	 *
+	 * repair_step() validates the reconstructed vector either using one or
+	 * more trustworthy CURRENT hashes, or, when no such hash exists, using
+	 * one additional independent parity equation.
+	 *
+	 * BLK, REP and REBUILD have CURRENT hashes and can therefore validate
+	 * their own recovered data directly. In particular, a REBUILD hash is
+	 * trustworthy even though the physical parity used to obtain the candidate
+	 * is not.
+	 *
+	 * Recovered CHGs require an additional history interpretation because
+	 * they have no stored CURRENT hash. Under the recovery invariant there are
+	 * only OLD and CURRENT generations, allowing their generation to be inferred
+	 * after the RAID solution itself has been validated.
+	 */
 	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
+
 	if (ret == 0) {
+		int has_recovered_chg;
+		int current_generation_proven;
+
+		has_recovered_chg = 0;
+		current_generation_proven = 0;
+
 		/*
-		 * Reprocess the CHG blocks, for which we don't have a hash to check
-		 * if they were BAD we have to use some heuristics to ensure that we have recovered
-		 * the state after the sync. If unsure, we assume the worst case
+		 * Determine the generation of all CHGs reconstructed by this RAID
+		 * solution as a group.
+		 *
+		 * This inference relies on the recovery invariant documented by repair():
+		 * the filesystem has not changed since the interrupted sync. Therefore the
+		 * only possible CHG data generations are OLD and CURRENT, and the stored CHG
+		 * hash identifies OLD.
+		 *
+		 * Under this invariant:
+		 *
+		 *   candidate != OLD
+		 *
+		 * proves that this particular candidate cannot belong to the OLD generation.
+		 * Since no third generation is possible, it therefore proves CURRENT.
+		 *
+		 * This would NOT be valid if the filesystem had been changed after the
+		 * interrupted sync. For example, deleting and later reallocating a parity
+		 * position may preserve a historical CHG/DELETED hash while physical parity
+		 * represents another generation. In such a history candidate != stored hash
+		 * would only prove that the candidate differs from that historical hash, not
+		 * that it is CURRENT.
+		 *
+		 * All CHGs reconstructed by this repair_step() belong to the same validated
+		 * RAID solution. Consequently, once one recovered CHG proves that the
+		 * solution is CURRENT, that generation classification applies to every CHG
+		 * reconstructed by the same solution.
+		 *
+		 * This is intentionally a solution-level decision rather than a block-level
+		 * one.
+		 *
+		 * For example:
+		 *
+		 *   CHG A has an INVALID OLD hash;
+		 *   CHG B has candidate != OLD.
+		 *
+		 * CHG B identifies the validated RAID solution as CURRENT, so CHG A is also
+		 * CURRENT despite being unable to make that determination by itself.
+		 *
+		 * Similarly:
+		 *
+		 *   CHG A candidate == OLD;
+		 *   CHG B candidate != OLD.
+		 *
+		 * CHG A may simply have identical OLD and CURRENT bytes. Matching OLD is
+		 * therefore not evidence that CHG A is out-of-date once another CHG has
+		 * identified the whole solution as CURRENT.
+		 *
+		 * REBUILD does not participate in this generation inference. Its recovered
+		 * contents may be independently proven CURRENT by its hash, but this only
+		 * validates REBUILD itself and says nothing about whether CHG parity belongs
+		 * to the OLD or CURRENT sync generation.
+		 *
+		 * If no recovered CHG distinguishes the solution from OLD, the RAID solution
+		 * remains valid but its generation is ambiguous. In that case all recovered
+		 * CHGs are marked is_outofdate together.
 		 */
-
 		for (j = 0; j < failed_count; ++j) {
-			/* we take care only of BAD blocks we have to write back */
-			if (failed[j].is_bad) {
-				unsigned block_state = block_state_get(failed[j].block);
+			unsigned block_state;
+
+			if (!failed[j].is_bad)
+				continue;
+
+			block_state = block_state_get(failed[j].block);
+
+			if (block_state != BLOCK_STATE_CHG) {
+				/*
+				 * BLK, REP and REBUILD have CURRENT hashes, so their own
+				 * recovered contents can be validated directly and don't
+				 * need this OLD/CURRENT generation inference.
+				 *
+				 * REBUILD is deliberately not a generation discriminator:
+				 * its data is CURRENT independently from the state of its
+				 * physical parity.
+				 */
+				assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP || block_state == BLOCK_STATE_REBUILD);
+				continue;
+			}
+
+			has_recovered_chg = 1;
+
+			/*
+			 * With an INVALID OLD hash this CHG cannot tell us whether
+			 * the candidate differs from OLD. It neither proves CURRENT
+			 * nor disproves it.
+			 */
+			if (hash_is_invalid(failed[j].block->hash))
+				continue;
+
+			if (hash_is_zero(failed[j].block->hash)) {
+				/*
+				 * ZERO exactly identifies the OLD contribution under the
+				 * recovery invariant.
+				 *
+				 * A non-zero candidate therefore proves candidate != OLD and,
+				 * since no third generation is possible, identifies the solution
+				 * as CURRENT.
+				 *
+				 * A zero candidate is ambiguous because OLD and CURRENT
+				 * may legitimately contain the same zero block.
+				 */
+				if (memcmp(buffer[failed[j].index], buffer_zero, state->block_size) != 0)
+					current_generation_proven = 1;
+			} else {
+				size_t pos_size;
+
+				pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
 
 				/*
-				 * BLK and REP blocks are always OK, because at this point
-				 * we have already checked their hash
+				 * blockcmp() compares against the stored CHG hash, which identifies
+				 * OLD contents under the recovery invariant.
+				 *
+				 * With only OLD and CURRENT generations possible, a mismatch proves
+				 * candidate != OLD and therefore identifies this validated RAID
+				 * solution as CURRENT.
 				 */
-				if (block_state != BLOCK_STATE_CHG) {
-					assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP || block_state == BLOCK_STATE_REBUILD);
-					continue;
-				}
+				if (blockcmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index], buffer_zero) != 0)
+					current_generation_proven = 1;
+			}
+		}
 
-				/* for CHG blocks we have to 'guess' if they are correct or not */
-
+		if (has_recovered_chg) {
+			if (current_generation_proven) {
 				/*
-				 * If the hash is invalid we cannot check the result
-				 * this could happen if we have lost this information
-				 * after an aborted sync
+				 * At least one recovered CHG distinguishes this validated
+				 * RAID solution from OLD.
+				 *
+				 * Under the recovery invariant this proves that the solution
+				 * is CURRENT. The CURRENT classification therefore applies to
+				 * every CHG reconstructed by the same solution, including CHGs
+				 * with an INVALID OLD hash or with OLD == CURRENT contents.
 				 */
-				if (hash_is_invalid(failed[j].block->hash)) {
-					/* it may contain garbage */
-					failed[j].is_outofdate = 1;
-
-					log_tag("repair:hash_unknown:%u: Unknown hash\n", j);
-				} else if (hash_is_zero(failed[j].block->hash)) {
-					/*
-					 * If the block is not filled with 0, we are sure to have
-					 * restored it to the state after the 'sync'
-					 * instead, if the block is filled with 0, it could be either that the
-					 * block after the sync is really filled by 0, or that
-					 * we restored the block before the 'sync'.
-					 */
-					if (memcmp(buffer[failed[j].index], buffer_zero, state->block_size) == 0) {
-						/* it may contain garbage */
-						failed[j].is_outofdate = 1;
-
-						log_tag("repair_hash_unknown:%u: Maybe old zero\n", j);
-					}
-				} else {
-					/*
-					 * If the hash is different than the previous one, we are sure to have
-					 * restored it to the state after the 'sync'
-					 * instead, if the hash matches, it could be either that the
-					 * block after the sync has this hash, or that
-					 * we restored the block before the 'sync'.
-					 */
-					size_t pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
-					if (blockcmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index], buffer_zero) == 0) {
-						/* it may contain garbage */
-						failed[j].is_outofdate = 1;
-
-						log_tag("repair_hash_unknown:%u: Maybe old data\n", j);
-					}
+				for (j = 0; j < failed_count; ++j) {
+					if (failed[j].is_bad && block_state_get(failed[j].block) == BLOCK_STATE_CHG)
+						failed[j].is_outofdate = 0;
 				}
+
+				log_tag("repair_generation_current:%" PRIu64 ": Recovered CHG proves CURRENT generation\n", pos);
+			} else {
+				/*
+				 * The RAID solution itself was successfully validated,
+				 * but none of its recovered CHGs distinguishes CURRENT
+				 * from OLD.
+				 *
+				 * This does not prove that the bytes are actually old or
+				 * wrong. It only means that CURRENT cannot be proven.
+				 *
+				 * Preserve all recovered CHGs as best-effort data but
+				 * mark them out-of-date so the caller does not report
+				 * them as successfully recovered CURRENT contents.
+				 */
+				for (j = 0; j < failed_count; ++j) {
+					if (failed[j].is_bad && block_state_get(failed[j].block) == BLOCK_STATE_CHG)
+						failed[j].is_outofdate = 1;
+				}
+
+				log_tag("repair_generation_unknown:%" PRIu64 ": Recovered CHG generation is ambiguous\n", pos);
 			}
 		}
 
 		return 0;
 	}
+
 	if (ret > 0)
 		error += ret;
 
@@ -702,36 +1004,70 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	else
 		log_tag("recover_sync:%" PRIu64 ":%u: Failed with %d attempts\n", pos, n, ret);
 
+	/************************************************************************/
+	/* Second strategy: parity still represents OLD data.                  */
+	/************************************************************************/
+
 	/*
-	 * Now assume that the parity IS NOT updated at the current state,
-	 * but still represent the state before the last 'sync' process.
-	 * In this case, parity contains info from BLK, REP (old version), CHG (old version) and DELETED blocks,
-	 * but not for REP (new version) and CHG (new version).
-	 * We are interested to recover BLK ones marked as bad,
-	 * but we are not interested to recover CHG (new version) and REP (new version) blocks,
-	 * even if marked as bad, because we don't have parity for them and it's just impossible,
-	 * and we are not interested to recover DELETED ones.
+	 * The CURRENT attempt failed, so retry under the opposite history
+	 * hypothesis: physical parity still represents the state before the
+	 * interrupted sync.
+	 *
+	 * This interpretation also relies on the recovery invariant. Because no
+	 * filesystem changes occurred after the interruption, CHG/DELETED OLD
+	 * hashes still refer to the only pre-CURRENT generation that physical
+	 * parity may represent.
+	 *
+	 * Under this hypothesis:
+	 *
+	 *   BLK          OLD parity contains the synchronized data we want to
+	 *                recover;
+	 *
+	 *   REBUILD      data and hash are CURRENT and unchanged by this history
+	 *                choice. Physical parity remains independently untrusted;
+	 *
+	 *   CHG          parity contains OLD while the readable file contains
+	 *                CURRENT;
+	 *
+	 *   REP          parity contains OLD while its stored hash describes
+	 *                CURRENT;
+	 *
+	 *   DELETED      parity contains OLD contents that are no longer present
+	 *                in the current filesystem.
+	 *
+	 * Every CHG/REP/DELETED contribution must therefore be converted to OLD
+	 * when possible, or reconstructed as an auxiliary RAID unknown.
+	 *
+	 * REBUILD does not require such conversion because it has no alternate OLD
+	 * data contribution associated with this state. If REBUILD itself is bad,
+	 * it is recovered as required CURRENT data and independently validated
+	 * through its CURRENT hash.
+	 *
+	 * The reconstructed OLD CHG/REP/DELETED values exist only to make recovery
+	 * of bad BLK/REBUILD data possible. They are not themselves considered a
+	 * successful recovery of CURRENT unsynchronized data.
 	 */
 	n = 0;
-	something_to_recover = 0; /* keep track if there is at least one block to fix */
-	something_unsynced = 0; /* keep track if we have some unsynced info to process */
+	something_to_recover = 0;
+	something_unsynced = 0;
+
 	for (j = 0; j < failed_count; ++j) {
 		unsigned block_state = block_state_get(failed[j].block);
 
-		if (block_state == BLOCK_STATE_DELETED
-			|| block_state == BLOCK_STATE_CHG
-			|| block_state == BLOCK_STATE_REP
-		) {
+		/*
+		 * Only CHG/REP/DELETED make the OLD strategy different from the
+		 * CURRENT one because they have different OLD and CURRENT data
+		 * contributions.
+		 *
+		 * REBUILD is deliberately excluded. Its data contribution is CURRENT
+		 * in both history hypotheses; only its physical parity is untrusted,
+		 * and repair_step() deals with that through independent validation.
+		 */
+		if (block_state == BLOCK_STATE_DELETED || block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_REP) {
 			/*
-			 * Under the pre-sync hypothesis the readable buffer of a CHG or REP contains
-			 * CURRENT data, while physical parity was generated from its OLD data.
-			 *
-			 * Therefore every CHG, REP and DELETED contribution must be replaced by its
-			 * OLD value or treated as an unknown RAID input, even when the current file
-			 * block is perfectly readable and is_bad is false.
-			 *
-			 * These old values are reconstructed only to make recovery of bad BLK blocks
-			 * possible; recovering them is not itself a user-visible recovery goal.
+			 * There is at least one entry whose OLD and CURRENT parity
+			 * contributions may differ, making this history hypothesis
+			 * distinct from the CURRENT attempt.
 			 */
 			something_unsynced = 1;
 
@@ -739,108 +1075,130 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				&& hash_is_zero(failed[j].block->hash)
 			) {
 				/*
-				 * If the block was a ZERO block, restore it to the original 0 as before the 'sync'
-				 * We do this to just allow recovering of other BLK ones
-				 */
-
-				memset(buffer[failed[j].index], 0, state->block_size);
-				/*
-				 * Note that from now the buffer is definitely lost
-				 * we can do this only because it's the last retry of recovering
-				 */
-
-				/*
-				 * CHG and DELETED retain an OLD hash, so a matching imported block can supply
-				 * their exact pre-sync contribution and remove one unknown from the RAID
-				 * equations.
+				 * ZERO exactly identifies the OLD CHG contribution under
+				 * the recovery invariant.
 				 *
-				 * REP cannot use this shortcut: its stored hash describes NEW data and gives
-				 * no direct way to identify the OLD contribution required by this strategy.
+				 * Supply it directly without consuming a RAID equation.
+				 *
+				 * For a readable CHG, is_bad is false, so this temporary
+				 * OLD buffer will not later be written back to the file.
 				 */
+				memset(buffer[failed[j].index], 0, state->block_size);
 			} else if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_DELETED)
 				&& hash_is_unique(failed[j].block->hash)
 				&& state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0) {
-
 				/*
-				 * Note that from now the buffer is definitely lost
-				 * we can do this only because it's the last retry of recovering
+				 * CHG and DELETED retain a hash identifying OLD contents
+				 * under the recovery invariant, so import can provide their
+				 * exact pre-sync contribution.
+				 *
+				 * REP cannot use this shortcut because its stored hash
+				 * identifies CURRENT/NEW contents instead.
+				 *
+				 * Again, readable auxiliary entries have is_bad == 0 and
+				 * this OLD value will not be written to the user file.
 				 */
 			} else {
-				/* otherwise try to recover it */
+				/*
+				 * The required OLD contribution is unavailable directly,
+				 * so recover it as another RAID unknown.
+				 */
 				failed_map[n] = j;
 				++n;
 
 				/*
-				 * Note that we don't set something_to_recover, because we are
-				 * not really interested to recover *only* old blocks.
+				 * Do not set something_to_recover.
+				 *
+				 * Reconstructing only OLD CHG/REP/DELETED values has no
+				 * user-visible purpose. They are useful only as auxiliary
+				 * state for recovering a BLK/REBUILD block.
 				 */
 			}
 
 			/*
-			 * Avoid using the hash of this block to verify the recovering
-			 * this applies to REP blocks because we are going to recover the old state
-			 * and the REP hash represents the new one
-			 * it also applies to CHG and DELETE blocks because we want to have
-			 * a successful recovering only if a BLK one is matching
+			 * Data associated with this entry is being interpreted as OLD.
+			 *
+			 * A readable entry has is_bad == 0 and therefore won't be
+			 * written back.
+			 *
+			 * If the entry itself was bad, this value may still be saved
+			 * as best-effort data, but it cannot be certified CURRENT.
 			 */
 			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
 			/*
-			 * If the block is bad we don't know its content, and we try to recover it
-			 * At this point, we can have only BLK ones
+			 * All generation-dependent unsynchronized states were handled
+			 * above.
+			 *
+			 * A bad BLK is synchronized data represented by the pre-sync
+			 * parity.
+			 *
+			 * A bad REBUILD also belongs here because its required data and
+			 * hash are CURRENT and do not have a separate OLD version. Its
+			 * physical parity is untrusted, but repair_step() accepts the
+			 * candidate only after independent validation.
 			 */
-
 			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REBUILD);
 
-			/* we have something we are interested to recover */
 			something_to_recover = 1;
 
-			/* we try to recover it */
 			failed_map[n] = j;
 			++n;
 		}
 	}
 
 	/*
-	 * Retry only when both conditions hold.
+	 * Retry only when:
 	 *
-	 * Without a bad BLK there is no useful current data to recover: reconstructing
-	 * only OLD CHG/REP/DELETED values would have no user-visible purpose.
+	 *   - there is BLK/REBUILD data that we actually need to recover; and
 	 *
-	 * Without any unsynced state this hypothesis is identical to the current-state
-	 * attempt already performed above, so repeating it cannot provide a different
-	 * solution.
+	 *   - there is some generation-dependent CHG/REP/DELETED state making
+	 *     this strategy different from the CURRENT attempt.
+	 *
+	 * REBUILD alone does not justify this retry because changing from the
+	 * CURRENT to the OLD history hypothesis does not change its data input.
+	 *
+	 * Otherwise this strategy either has no useful CURRENT data to recover
+	 * or would just repeat the same recovery equations already attempted.
 	 */
 	if (something_to_recover && something_unsynced) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
+
 		if (ret == 0) {
 			/*
-			 * Reprocess the REP and CHG blocks, for which we have recovered an old state
-			 * that we don't want to save into disk
-			 * we have already marked them, but we redo it for logging
+			 * The RAID solution is valid under the OLD-history hypothesis.
+			 *
+			 * Recovered BLK data is useful CURRENT data because its
+			 * synchronized contents are represented by OLD parity.
+			 *
+			 * Recovered REBUILD data is also required CURRENT data, but for
+			 * a different reason: REBUILD has no alternate OLD data
+			 * generation and its candidate is independently validated by
+			 * its CURRENT hash despite its untrusted physical parity.
+			 *
+			 * Any bad CHG/REP reconstructed here is OLD-compatible
+			 * auxiliary data and cannot be certified as CURRENT.
 			 */
-
 			for (j = 0; j < failed_count; ++j) {
-				/* we take care only of BAD blocks we have to write back */
 				if (failed[j].is_bad) {
 					unsigned block_state = block_state_get(failed[j].block);
 
-					if (block_state == BLOCK_STATE_CHG
-						|| block_state == BLOCK_STATE_REP
-					) {
-						/*
-						 * Mark that we have restored an old state
-						 * and we don't want to write it to the disk
-						 */
+					if (block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_REP) {
 						failed[j].is_outofdate = 1;
-
 						log_tag("repair_hash_unknown:%u: Surely old data\n", j);
 					}
 				}
 			}
 
+			/*
+			 * Returning success means that the RAID solution was validated.
+			 *
+			 * is_outofdate still tells the caller which originally bad
+			 * entries could not be proven to contain required CURRENT data.
+			 */
 			return 0;
 		}
+
 		if (ret > 0)
 			error += ret;
 
@@ -849,13 +1207,16 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 		else
 			log_tag("recover_unsync:%" PRIu64 ":%u: Failed with %d attempts\n", pos, n, ret);
 	} else {
-		log_tag("recover_unsync:%" PRIu64 ":%u: Skipped for%s%s\n", pos, n,
-			!something_to_recover ? " nothing to recover" : "",
-			!something_unsynced ? " nothing unsynced" : ""
-		);
+		log_tag("recover_unsync:%" PRIu64 ":%u: Skipped for%s%s\n", pos, n, !something_to_recover ? " nothing to recover" : "", !something_unsynced ? " nothing unsynced" : "");
 	}
 
-	/* return the number of failed attempts, or -1 if no strategy */
+	/*
+	 * Neither history hypothesis produced a usable RAID solution.
+	 *
+	 * Return the accumulated number of failed validation attempts when at
+	 * least one candidate was actually tried. Otherwise return -1 to indicate
+	 * that no usable recovery strategy was available.
+	 */
 	if (error)
 		return error;
 	else
