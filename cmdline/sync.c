@@ -1861,6 +1861,37 @@ static void state_sync_mark_rebuild(struct snapraid_state* state)
 		state->need_write = 1;
 }
 
+/*
+ * Initialize persistent parity split sizes resolved while opening parity.
+ *
+ * parity_create() resolves PARITY_SIZE_INVALID in the parity handles using
+ * the current physical file size, but intentionally doesn't modify the
+ * persistent parity state.
+ *
+ * Before writing a pre-resize recovery checkpoint, copy only these resolved
+ * initial sizes into the persistent state. Existing valid sizes must be
+ * preserved because they describe the previously persisted logical split
+ * layout.
+ */
+static void state_sync_parity_size(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle)
+{
+	unsigned l;
+	unsigned s;
+	int modified = 0;
+
+	for (l = 0; l < state->level; ++l) {
+		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			if (state->parity[l].split_map[s].size == PARITY_SIZE_INVALID) {
+				state->parity[l].split_map[s].size = parity_handle[l].split_map[s].size;
+				modified = 1;
+			}
+		}
+	}
+
+	if (modified)
+		state->need_write = 1;
+}
+
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
@@ -2023,6 +2054,9 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		 */
 		if (state->opt.force_full)
 			state_sync_mark_rebuild(state);
+
+		if (state->opt.force_full || state->opt.force_realloc || parity_shrink)
+			state_sync_parity_size(state, parity_handle);
 
 		if ((state->opt.force_full
 			|| state->opt.force_realloc

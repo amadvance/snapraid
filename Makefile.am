@@ -185,6 +185,10 @@ EXTRA_DIST = \
 	test/test-par4.conf \
 	test/test-par5.conf \
 	test/test-par6.conf \
+	test/test-realloc-level1.conf \
+	test/test-realloc-level2.conf \
+	test/test-realloc-split1.conf \
+	test/test-realloc-split2.conf \
 	test/test-par6-hole.conf \
 	test/test-par6-noaccess.conf \
 	test/test-par6-rename.conf \
@@ -329,6 +333,10 @@ PARZ = $(srcdir)/test/test-parz.conf
 PAR4 = $(srcdir)/test/test-par4.conf
 PAR5 = $(srcdir)/test/test-par5.conf
 PAR6 = $(srcdir)/test/test-par6.conf
+REALLOC_LEVEL1 = $(srcdir)/test/test-realloc-level1.conf
+REALLOC_LEVEL2 = $(srcdir)/test/test-realloc-level2.conf
+REALLOC_SPLIT1 = $(srcdir)/test/test-realloc-split1.conf
+REALLOC_SPLIT2 = $(srcdir)/test/test-realloc-split2.conf
 SNAP = $(srcdir)/test/test-snap.conf
 MSG = @echo =====
 SNAPRAID = ./checker$(EXEEXT)
@@ -1282,6 +1290,53 @@ endif # !HAVE_MEMORY_CHECKER
 	$(MSG) Sync after all the fixes
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) check
+	rm -rf bench/realloc-level
+	mkdir -p bench/realloc-level/disk1
+	mkdir -p bench/realloc-level/disk2
+	mkdir -p bench/realloc-level/disk3
+	mkdir -p bench/realloc-level/disk4
+	mkdir -p bench/realloc-level/disk5
+	mkdir -p bench/realloc-level/disk6
+	dd bs=1024 count=2048 if=/dev/urandom of=bench/realloc-level/disk1/data
+#### NEW PARITY CONFIGURATION CRASH TESTS ####
+	$(MSG) Test interrupted force-realloc after adding a parity level
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL1) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) -R --test-kill-after-resize sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) locate > /dev/null
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) check
+	rm -rf bench/realloc-split
+	mkdir -p bench/realloc-split/disk1
+	mkdir -p bench/realloc-split/disk2
+	mkdir -p bench/realloc-split/disk3
+	mkdir -p bench/realloc-split/disk4
+	mkdir -p bench/realloc-split/disk5
+	mkdir -p bench/realloc-split/disk6
+	dd bs=1024 count=2048 if=/dev/urandom of=bench/realloc-split/disk1/data1
+	$(MSG) Test interrupted force-realloc after adding a parity split
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT1) sync
+	dd bs=1024 count=2048 if=/dev/urandom of=bench/realloc-split/disk1/data2
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) -R --test-kill-after-resize sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) locate > /dev/null
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) check
+	$(MSG) Test interrupted normal shrink after adding a parity split
+	rm -rf bench/realloc-split
+	mkdir -p bench/realloc-split/disk1
+	mkdir -p bench/realloc-split/disk2
+	mkdir -p bench/realloc-split/disk3
+	mkdir -p bench/realloc-split/disk4
+	mkdir -p bench/realloc-split/disk5
+	mkdir -p bench/realloc-split/disk6
+	dd bs=1024 count=2048 if=/dev/urandom of=bench/realloc-split/disk1/data
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT1) sync
+	dd bs=1024 count=1024 if=/dev/urandom of=bench/realloc-split/disk1/NORMAL_SPLIT_SHRINK
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT1) sync
+	rm bench/realloc-split/disk1/NORMAL_SPLIT_SHRINK
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) --test-kill-after-resize sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) locate > /dev/null
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) check
 #### FORCE-REALLOC CRASH TESTS ####
 	$(MSG) Test interrupted force-realloc post-resize crash
 	dd bs=1024 count=1024 if=/dev/urandom of=bench/disk1/REALLOC_CRASH1
