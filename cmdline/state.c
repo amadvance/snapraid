@@ -5216,10 +5216,109 @@ static void state_rename_content(struct snapraid_state* state)
 #endif
 }
 
+/*
+ * Check if a modification time nanosecond value can be represented in the
+ * content format.
+ *
+ * STAT_NSEC_INVALID is encoded as 0. Valid nanoseconds in the range
+ * 0..999999999 are encoded as 1..1000000000.
+ */
+static int state_write_mtime_nsec_valid(int mtime_nsec)
+{
+	return mtime_nsec == STAT_NSEC_INVALID || (mtime_nsec >= 0 && mtime_nsec < 1000000000);
+}
+
+/*
+ * Validate invariants required by the persistent content format.
+ *
+ * state_write() must never serialize a state that state_read() would reject.
+ * In particular, some internal values use signed types or sentinel values but
+ * are stored in the content file using unsigned encodings. If such values are
+ * outside their valid domain, serializing them may produce a syntactically
+ * valid content file that cannot be read back.
+ *
+ * Keep this check limited to serialization invariants. More complex consistency
+ * checks on the filesystem and block mappings are performed separately by
+ * state_fscheck().
+ */
+static void state_write_check(struct snapraid_state* state)
+{
+	tommy_node* i;
+	unsigned l;
+	unsigned s;
+	block_off_t blockmax;
+
+	if (state->block_size == 0) {
+		log_fatal(EINTERNAL, "Internal inconsistency: Zero block size before state write!\n");
+		os_abort();
+	}
+
+	if (state->level == 0 || state->level > LEV_MAX) {
+		log_fatal(EINTERNAL, "Internal inconsistency: Invalid parity level count %u!\n", state->level);
+		os_abort();
+	}
+
+	blockmax = parity_allocated_size(state);
+	if (blockmax > BLOCK_MAX) {
+		log_fatal(EINTERNAL, "Internal inconsistency: Parity size %" PRIu64 " is too large!\n", blockmax);
+		os_abort();
+	}
+
+	for (l = 0; l < state->level; ++l) {
+		if (state->parity[l].split_mac == 0 || state->parity[l].split_mac > SPLIT_MAX) {
+			log_fatal(EINTERNAL, "Internal inconsistency: Invalid parity split count %u!\n", state->parity[l].split_mac);
+			os_abort();
+		}
+
+		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			if (state->parity[l].split_map[s].size < 0) {
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid parity split size %" PRIi64 "!\n", state->parity[l].split_map[s].size);
+				os_abort();
+			}
+		}
+	}
+
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		tommy_node* j;
+
+		for (j = disk->filelist; j != 0; j = j->next) {
+			struct snapraid_file* file = j->data;
+
+			if (file->size < 0) {
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid file size %" PRIi64 "!\n", file->size);
+				os_abort();
+			}
+
+			if (!state_write_mtime_nsec_valid(file->mtime_nsec)) {
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid file mtime nanoseconds %d!\n", file->mtime_nsec);
+				os_abort();
+			}
+		}
+
+		for (j = disk->dealloclist; j != 0; j = j->next) {
+			struct snapraid_dealloc* dealloc = j->data;
+
+			if (dealloc->size < 0) {
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid deallocated file size %" PRIi64 "!\n", dealloc->size);
+				os_abort();
+			}
+
+			if (!state_write_mtime_nsec_valid(dealloc->mtime_nsec)) {
+				log_fatal(EINTERNAL, "Internal inconsistency: Invalid deallocated file mtime nanoseconds %d!\n", dealloc->mtime_nsec);
+				os_abort();
+			}
+		}
+	}
+}
+
 void state_write(struct snapraid_state* state)
 {
 	uint32_t crc;
 	time_t now;
+
+	/* verify that all persistent values are serializable */
+	state_write_check(state);
 
 	/* write all the content files */
 	state_write_content(state, &crc);
