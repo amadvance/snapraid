@@ -262,9 +262,9 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 	/* generic case with at least two data disks */
 	asm volatile (
 		"ldr q29, %0\n"
-		"ldr q28, %1\n"
+		"movi v28.16b, #0x0f\n"
 		:
-		: "m" (gfconst16.poly[0]), "m" (gfconst16.low4[0])
+		: "m" (gfconst16.poly[0])
 	);
 
 	for (i = 0; i < size; i += 32) {
@@ -641,9 +641,9 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
 
 	raid_neon_begin();
 
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("ldr q31, %0" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movi v31.16b, #0x0f");
 
+	for (i = 0; i < size; i += 64) {
 		/* start all selected syndromes from the stored parity */
 		asm volatile ("ldr q0, %0" : : "m" (p[0][i]));
 		asm volatile ("ldr q1, %0" : : "m" (p[0][i + 16]));
@@ -991,7 +991,7 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 		 * V31 is reused during reconstruction, so reload the nibble mask
 		 * at the beginning of every iteration.
 		 */
-		asm volatile ("ldr q31, %0" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movi v31.16b, #0x0f");
 
 		/* start all selected syndromes from the stored parity */
 		asm volatile ("ldr q0, %0" : : "m" (p[0][i]));

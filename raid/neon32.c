@@ -256,9 +256,9 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 	/* generic case with at least two data disks */
 	asm volatile (
 		"vld1.8 {q14}, %0\n"
-		"vld1.8 {q15}, %1\n"
+		"vmov.i8 q15, #0x0f\n"
 		:
-		: "Q" (gfconst16.poly[0]), "Q" (gfconst16.low4[0])
+		: "Q" (gfconst16.poly[0])
 	);
 
 	for (i = 0; i < size; i += 16) {
@@ -587,7 +587,7 @@ static __always_inline void raid_recX_neon32_123(int nr, int has_p, int *id, int
 		 * Reconstruction later reuses q15 as the second accumulator,
 		 * therefore reload it on every iteration.
 		 */
-		asm volatile ("vld1.8 {q15}, %0" : : "Q" (gfconst16.low4[0]));
+		asm volatile ("vmov.i8 q15, #0x0f");
 
 		/* selected stored parity */
 		asm volatile ("vld1.8 {q0}, %0" : : "Q" (p[0][i]));
@@ -891,7 +891,7 @@ static __always_inline void raid_recX_neon32(int nr, int has_p, int *id, int *ip
 		 * Q15 is the low-nibble mask during generation/splitting.
 		 * Reconstruction later reuses q15 as a multiplication temporary.
 		 */
-		asm volatile ("vld1.8 {q15}, %0" : : "Q" (gfconst16.low4[0]));
+		asm volatile ("vmov.i8 q15, #0x0f");
 
 		/*
 		 * Raw syndrome registers:
@@ -1255,14 +1255,13 @@ static __always_inline void raid_rec2of2_neon32(int *id, int *ip, int nd, size_t
 
 	/* q15 = nibble mask, q9-q12 = C0/C1 low/high tables */
 	asm volatile (
-		"vld1.8 {q15}, %0\n"
-		"vld1.8 {q9}, %1\n"
-		"vld1.8 {q10}, %2\n"
-		"vld1.8 {q11}, %3\n"
-		"vld1.8 {q12}, %4\n"
+		"vmov.i8 q15, #0x0f\n"
+		"vld1.8 {q9}, %0\n"
+		"vld1.8 {q10}, %1\n"
+		"vld1.8 {q11}, %2\n"
+		"vld1.8 {q12}, %3\n"
 		:
-		: "Q" (gfconst16.low4[0]),
-		"Q" (raid_gfmulpshufb[C[0]][0][0]),
+		: "Q" (raid_gfmulpshufb[C[0]][0][0]),
 		"Q" (raid_gfmulpshufb[C[0]][1][0]),
 		"Q" (raid_gfmulpshufb[C[1]][0][0]),
 		"Q" (raid_gfmulpshufb[C[1]][1][0])
