@@ -2225,13 +2225,22 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else {
 					/*
-					 * If we are not fixing, we just set the FIXED flag
-					 * meaning that we could fix this file if we try
+					 * In check mode, report as recoverable only blocks whose
+					 * recovered contents can be certified as the required CURRENT data.
+					 *
+					 * repair() may return success after validating the RAID solution while
+					 * leaving an unsynchronized bad block marked is_outofdate. Such a block
+					 * is still unrecoverable as CURRENT data and must make the containing
+					 * file DAMAGED rather than FIXED.
 					 */
 					for (j = 0; j < failed_count; ++j) {
-						if (failed[j].is_bad) {
+						if (!failed[j].is_bad)
+							continue;
+
+						if (failed[j].is_outofdate)
+							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+						else
 							file_flag_set(failed[j].file, FILE_IS_FIXED);
-						}
 					}
 				}
 			}
