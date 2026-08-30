@@ -38,6 +38,16 @@ void state_rehash(struct snapraid_state* state)
 		/* LCOV_EXCL_STOP */
 	}
 
+	/* a rehash can start only from a fully synchronized state */
+	if (state->unsynced_blocks != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("summary:exit:sync_required\n");
+		log_fatal(EUSER, "You cannot start a rehash with an incomplete sync.\n");
+		log_fatal(EUSER, "Run 'snapraid sync' first.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	/* copy the present hash as previous one */
 	state->prevhash = state->hash;
 	memcpy(state->prevhashseed, state->hashseed, HASH_MAX);
