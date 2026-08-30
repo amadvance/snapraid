@@ -226,10 +226,30 @@ unsigned membesthash(void);
 const char* memhashname(unsigned kind);
 
 /**
- * Compute the HASH of a memory block.
+ * Compute the HASH of a memory buffer.
  * Seed is a 128 bit vector.
+ *
+ * This is the raw hash primitive. It hashes exactly size bytes and does not
+ * apply SnapRAID block semantics.
  */
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size);
+
+/**
+ * Compute the hash of a SnapRAID data block.
+ *
+ * logical_size is the number of bytes logically belonging to the file.
+ * block_size is the complete zero-padded RAID block size.
+ *
+ * Legacy hashes preserve their historical semantics and hash only
+ * logical_size bytes.
+ *
+ * MuseAir hashes the complete canonical RAID block, including the zero
+ * padding up to block_size.
+ *
+ * The caller must guarantee that logical_size <= block_size and, when
+ * logical_size < block_size, src[logical_size .. block_size-1] == 0.
+ */
+void memhash_block(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t logical_size, size_t block_size);
 
 /**
  * Return the hash name.

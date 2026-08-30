@@ -128,17 +128,20 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 			count += ret;
 		} while (count < read_size);
 
+		if (read_size < block_size)
+			memset((unsigned char*)buffer + read_size, 0, block_size - read_size);
+
 		block->file = file;
 		block->offset = offset;
 		block->size = read_size;
 
-		memhash(state->hash, state->hashseed, block->hash, buffer, read_size);
+		memhash_block(state->hash, state->hashseed, block->hash, buffer, read_size, block_size);
 		tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
 
 		/* if we are in a rehash state */
 		if (state->prevhash != HASH_UNDEFINED) {
 			/* compute also the previous hash */
-			memhash(state->prevhash, state->prevhashseed, block->prevhash, buffer, read_size);
+			memhash_block(state->prevhash, state->prevhashseed, block->prevhash, buffer, read_size, block_size);
 			tommy_hashdyn_insert(&state->previmportset, &block->prevnodeset, block, import_block_hash(block->prevhash));
 		}
 
@@ -373,9 +376,9 @@ static int state_import_fetch_candidate(struct snapraid_state* state, int rehash
 
 	/* recheck the hash */
 	if (rehash)
-		memhash(state->prevhash, state->prevhashseed, buffer_hash, buffer, read_size);
+		memhash_block(state->prevhash, state->prevhashseed, buffer_hash, buffer, read_size, block_size);
 	else
-		memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
+		memhash_block(state->hash, state->hashseed, buffer_hash, buffer, read_size, block_size);
 
 	if (memcmp(buffer_hash, hash, BLOCK_HASH_SIZE) != 0) {
 		/*

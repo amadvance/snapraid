@@ -507,9 +507,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 			/* now compute the hash */
 			if (rehash) {
-				memhash(state->prevhash, state->prevhashseed, hash, buffer, read_size);
+				memhash_block(state->prevhash, state->prevhashseed, hash, buffer, read_size, state->block_size);
 			} else {
-				memhash(state->hash, state->hashseed, hash, buffer, read_size);
+				memhash_block(state->hash, state->hashseed, hash, buffer, read_size, state->block_size);
 			}
 
 			/* until now is hash */
@@ -1219,13 +1219,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* now compute the hash */
 			if (rehash) {
-				memhash(state->prevhash, state->prevhashseed, hash, buffer[diskcur], read_size);
+				memhash_block(state->prevhash, state->prevhashseed, hash, buffer[diskcur], read_size, state->block_size);
 
 				/* compute the new hash, and store it */
 				rehandle[diskcur].block = block;
-				memhash(state->hash, state->hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size);
+				memhash_block(state->hash, state->hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size, state->block_size);
 			} else {
-				memhash(state->hash, state->hashseed, hash, buffer[diskcur], read_size);
+				memhash_block(state->hash, state->hashseed, hash, buffer[diskcur], read_size, state->block_size);
 			}
 
 			/* until now is hash */
@@ -1475,9 +1475,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 							/* compute the hash of the recovered block */
 							if (rehash) {
-								memhash(state->prevhash, state->prevhashseed, hash, block_buffer, size);
+								memhash_block(state->prevhash, state->prevhashseed, hash, block_buffer, size, state->block_size);
 							} else {
-								memhash(state->hash, state->hashseed, hash, block_buffer, size);
+								memhash_block(state->hash, state->hashseed, hash, block_buffer, size, state->block_size);
 							}
 
 							/* until now is hash */

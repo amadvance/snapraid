@@ -270,11 +270,11 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 {
 	unsigned char hash[HASH_MAX];
 
-	/* now compute the hash of the valid part */
+	/* compute the hash according to the block-hash semantics */
 	if (rehash) {
-		memhash(state->prevhash, state->prevhashseed, hash, buffer, pos_size);
+		memhash_block(state->prevhash, state->prevhashseed, hash, buffer, pos_size, state->block_size);
 	} else {
-		memhash(state->hash, state->hashseed, hash, buffer, pos_size);
+		memhash_block(state->hash, state->hashseed, hash, buffer, pos_size, state->block_size);
 	}
 
 	/* compare the hash */
@@ -283,10 +283,11 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 	}
 
 	/*
-	 * The hash covers only the logical bytes belonging to the file, while RAID
+	 * Legacy hashes cover only the logical bytes belonging to the file, while RAID
 	 * operates on the complete zero-padded block. Verify the padding separately:
-	 * otherwise corruption confined to the reconstructed tail could pass the hash
-	 * check and later produce incorrect parity.
+	 * otherwise corruption confined to the reconstructed tail could pass a legacy
+	 * hash check and later produce incorrect parity. This is redundant for MuseAir,
+	 * but also makes the canonical-block invariant explicit.
 	 */
 	if (pos_size < state->block_size) {
 		if (memcmp(buffer + pos_size, buffer_zero + pos_size, state->block_size - pos_size) != 0) {
@@ -1977,9 +1978,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			/* compute the hash of the block just read */
 			if (rehash) {
-				memhash(state->prevhash, state->prevhashseed, hash, buffer[j], read_size);
+				memhash_block(state->prevhash, state->prevhashseed, hash, buffer[j], read_size, state->block_size);
 			} else {
-				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
+				memhash_block(state->hash, state->hashseed, hash, buffer[j], read_size, state->block_size);
 			}
 
 			/* compare the hash */

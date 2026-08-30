@@ -22,18 +22,31 @@ struct snapraid_hash {
 	tommy_hashdyn_node node;
 };
 
+static void hash_size_store(unsigned char* ptr, uint64_t size)
+{
+	ptr[0] = (unsigned char)(size >> 0);
+	ptr[1] = (unsigned char)(size >> 8);
+	ptr[2] = (unsigned char)(size >> 16);
+	ptr[3] = (unsigned char)(size >> 24);
+	ptr[4] = (unsigned char)(size >> 32);
+	ptr[5] = (unsigned char)(size >> 40);
+	ptr[6] = (unsigned char)(size >> 48);
+	ptr[7] = (unsigned char)(size >> 56);
+}
+
 struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
 	struct snapraid_hash* hash;
 	block_off_t i;
 	unsigned char* buf;
 	size_t hash_size = BLOCK_HASH_SIZE;
+	size_t data_size = file->blockmax * hash_size;
 
 	hash = malloc_nofail(sizeof(struct snapraid_hash));
 	hash->disk = disk;
 	hash->file = file;
 
-	buf = nalloc_nofail(file->blockmax, hash_size);
+	buf = malloc_nofail(data_size + sizeof(uint64_t));
 
 	/* set the back pointer */
 	for (i = 0; i < file->blockmax; ++i) {
@@ -48,7 +61,9 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 		}
 	}
 
-	memhash(state->besthash, state->hashseed, hash->hash, buf, file->blockmax * hash_size);
+	hash_size_store(buf + data_size, (uint64_t)file->size);
+
+	memhash(state->besthash, state->hashseed, hash->hash, buf, data_size + sizeof(uint64_t));
 
 	free(buf);
 

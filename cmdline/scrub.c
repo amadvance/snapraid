@@ -701,13 +701,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			 * same position may still fail verification.
 			 */
 			if (rehash) {
-				memhash(state->prevhash, state->prevhashseed, hash, buffer[diskcur], read_size);
+				memhash_block(state->prevhash, state->prevhashseed, hash, buffer[diskcur], read_size, state->block_size);
 
 				/* compute the new hash, and store it */
 				rehandle[diskcur].block = block;
-				memhash(state->hash, state->hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size);
+				memhash_block(state->hash, state->hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size, state->block_size);
 			} else {
-				memhash(state->hash, state->hashseed, hash, buffer[diskcur], read_size);
+				memhash_block(state->hash, state->hashseed, hash, buffer[diskcur], read_size, state->block_size);
 			}
 
 			/* until now is hash */

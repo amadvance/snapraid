@@ -109,20 +109,20 @@ int search_file_compare(const void* void_arg, const void* void_data)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* compute the hash */
-	if (arg->prevhash)
-		memhash(state->prevhash, state->prevhashseed, buffer_hash, arg->buffer, arg->read_size);
-	else
-		memhash(state->hash, state->hashseed, buffer_hash, arg->buffer, arg->read_size);
-
-	/* check if the hash is matching */
-	if (memcmp(buffer_hash, arg->block->hash, BLOCK_HASH_SIZE) != 0)
-		return -1;
-
 	if (arg->read_size != state->block_size) {
 		/* fill the remaining with 0 */
 		memset(arg->buffer + arg->read_size, 0, state->block_size - arg->read_size);
 	}
+
+	/* compute the block hash from the canonical buffer */
+	if (arg->prevhash)
+		memhash_block(state->prevhash, state->prevhashseed, buffer_hash, arg->buffer, arg->read_size, state->block_size);
+	else
+		memhash_block(state->hash, state->hashseed, buffer_hash, arg->buffer, arg->read_size, state->block_size);
+
+	/* check if the hash is matching */
+	if (memcmp(buffer_hash, arg->block->hash, BLOCK_HASH_SIZE) != 0)
+		return -1;
 
 	return 0;
 }
