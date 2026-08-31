@@ -2223,6 +2223,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	int has_hash_size;
 	int has_hash;
 	int has_prevhash;
+	int has_info;
 	char buffer[PATH_MAX];
 	int ret;
 	tommy_array disk_mapping;
@@ -2243,6 +2244,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	has_hash_size = 0;
 	has_hash = 0;
 	has_prevhash = 0;
+	has_info = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
@@ -2521,6 +2523,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			snapraid_info info;
 			block_off_t v_pos;
 			uint64_t v_oldest;
+
+			if (has_info) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate 'info' in the content file!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+			has_info = 1;
 
 			ret = sgetb64(f, &v_oldest);
 			if (ret < 0) {
