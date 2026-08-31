@@ -1167,85 +1167,290 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 #endif
 
 /*
- * Recover failure of one data block using SSSE3 delta implementation.
+ * Recover failure of one data block using selected parity with SSSE3, optimized for one failure.
  *
- * Uses raid_delta_gen() and multiplies by the inverted coefficient table.
+ * Computes the selected syndrome in a single survivor scan and reconstructs
+ * the missing block directly, avoiding raid_delta_gen() and the extra pass.
  */
-static __always_inline void raid_rec1_ssse3_delta(int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_ssse3_1(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
+	uint8_t *src[RAID_DATA_MAX];
+	const uint8_t *S[RAID_DATA_MAX];
 	uint8_t G;
 	uint8_t V;
 	size_t i;
+	int d, s;
+	int ns;
 
-	/* setup the coefficients matrix */
 	G = A(ip[0], id[0]);
-
-	/* invert it to solve the system of linear equations */
 	V = inv(G);
-
-	/* compute delta parity */
-	raid_delta_gen(1, id, ip, nd, size, vv);
 
 	p = v[nd + ip[0]];
 	pa = v[id[0]];
 
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d == id[0])
+			continue;
+
+		src[ns] = v[d];
+		S[ns] = &raid_gfmulpshufb[A(ip[0], d)][0][0];
+		++ns;
+	}
+
+	BUG_ON(ns != nd - 1);
+
 	raid_sse_begin();
 
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
-	asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("movdqa %0,%%xmm5" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V][0][0]));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V][1][0]));
 
 	for (i = 0; i < size; i += 16) {
+		/* start from the selected parity block */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (pa[i]));
-		asm volatile ("movdqa %xmm4,%xmm2");
-		asm volatile ("movdqa %xmm5,%xmm3");
-		asm volatile ("pxor %xmm0,%xmm1");
-		asm volatile ("movdqa %xmm1,%xmm0");
-		asm volatile ("psrlw $4,%xmm1");
-		asm volatile ("pand %xmm7,%xmm0");
-		asm volatile ("pand %xmm7,%xmm1");
-		asm volatile ("pshufb %xmm0,%xmm2");
-		asm volatile ("pshufb %xmm1,%xmm3");
-		asm volatile ("pxor %xmm3,%xmm2");
-		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i]));
+
+		/* compute only the selected syndrome */
+		for (s = 0; s < ns; ++s) {
+			const uint8_t *t = S[s];
+
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (src[s][i]));
+			asm volatile ("movdqa %xmm4,%xmm5");
+			asm volatile ("psrlw $4,%xmm5");
+			asm volatile ("pand %xmm7,%xmm4");
+			asm volatile ("pand %xmm7,%xmm5");
+
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (t[0]));
+			asm volatile ("pshufb %xmm4,%xmm6");
+			asm volatile ("pxor %xmm6,%xmm0");
+
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (t[16]));
+			asm volatile ("pshufb %xmm5,%xmm6");
+			asm volatile ("pxor %xmm6,%xmm0");
+		}
+
+		/* multiply the syndrome by the inverse coefficient */
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm0,%xmm5");
+		asm volatile ("psrlw $4,%xmm5");
+		asm volatile ("pand %xmm7,%xmm4");
+		asm volatile ("pand %xmm7,%xmm5");
+
+		asm volatile ("movdqa %xmm2,%xmm6");
+		asm volatile ("movdqa %xmm3,%xmm1");
+		asm volatile ("pshufb %xmm4,%xmm6");
+		asm volatile ("pshufb %xmm5,%xmm1");
+		asm volatile ("pxor %xmm1,%xmm6");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[i]));
 	}
 
 	raid_sse_end();
 }
 
 /*
- * Recover failure of two data blocks using SSSE3 delta implementation.
+ * Recover failure of one data block using Q with SSSE3.
  *
- * Uses raid_delta_gen() and solves the 2x2 system directly on delta blocks.
+ * Computes Q of all surviving data directly with Horner's method and
+ * reconstructs the missing block from Qdelta.
+ *
+ * Processes two 16-byte lanes per iteration, avoiding raid_delta_gen(),
+ * temporary parity buffers, and the extra pass over the data.
  */
-static __always_inline void raid_rec2_ssse3_delta(int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *q;
+	uint8_t *pa;
+	uint8_t V;
+	int generator;
+	int l;
+	int d;
+	size_t i;
+
+	BUG_ON(ip[0] != 1);
+
+	V = inv(A(1, id[0]));
+
+	generator = powgen(1);
+	BUG_ON(generator != 2 && generator != 3);
+
+	l = nd - 1;
+
+	q = v[nd + 1];
+	pa = v[id[0]];
+
+	raid_sse_begin();
+
+	/* keep the inverse coefficient resident */
+	asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V][0][0]));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V][1][0]));
+
+	/* keep the active reduction polynomial resident */
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+
+	for (i = 0; i < size; i += 32) {
+		/* last disk starts Horner without generator multiplication */
+		if (l == id[0]) {
+			asm volatile ("pxor %xmm0,%xmm0");
+			asm volatile ("pxor %xmm1,%xmm1");
+		} else {
+			asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
+			asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
+		}
+
+		for (d = l - 1; d >= 0; --d) {
+			/* multiply both Q lanes by the active generator */
+			if (generator == 3) {
+				/* lane 0 */
+				asm volatile ("movdqa %xmm0,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm0,%xmm5");
+				asm volatile ("paddb %xmm0,%xmm0");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm5,%xmm0");
+				asm volatile ("pxor %xmm4,%xmm0");
+
+				/* lane 1 */
+				asm volatile ("movdqa %xmm1,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm1,%xmm5");
+				asm volatile ("paddb %xmm1,%xmm1");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm5,%xmm1");
+				asm volatile ("pxor %xmm4,%xmm1");
+			} else {
+				/* multiply both lanes by 2 in parallel */
+				asm volatile ("pxor %xmm4,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm0,%xmm4");
+				asm volatile ("pcmpgtb %xmm1,%xmm5");
+				asm volatile ("paddb %xmm0,%xmm0");
+				asm volatile ("paddb %xmm1,%xmm1");
+				asm volatile ("pand %xmm7,%xmm4");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm4,%xmm0");
+				asm volatile ("pxor %xmm5,%xmm1");
+			}
+
+			/* missing disk contributes zero */
+			if (d == id[0])
+				continue;
+
+			asm volatile ("pxor %0,%%xmm0" : : "m" (v[d][i]));
+			asm volatile ("pxor %0,%%xmm1" : : "m" (v[d][i + 16]));
+		}
+
+		/* Qdelta = stored Q ^ Q of all surviving data */
+		asm volatile ("pxor %0,%%xmm0" : : "m" (q[i]));
+		asm volatile ("pxor %0,%%xmm1" : : "m" (q[i + 16]));
+
+		/* low-nibble mask */
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low4[0]));
+
+		/* split both Qdelta lanes into low/high nibbles */
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("psrlw $4,%xmm0");
+		asm volatile ("psrlw $4,%xmm1");
+		asm volatile ("pand %xmm6,%xmm4");
+		asm volatile ("pand %xmm6,%xmm5");
+		asm volatile ("pand %xmm6,%xmm0");
+		asm volatile ("pand %xmm6,%xmm1");
+
+		/* low-nibble products */
+		asm volatile ("movdqa %xmm2,%xmm6");
+		asm volatile ("movdqa %xmm2,%xmm7");
+		asm volatile ("pshufb %xmm4,%xmm6");
+		asm volatile ("pshufb %xmm5,%xmm7");
+
+		/* high-nibble products */
+		asm volatile ("movdqa %xmm3,%xmm4");
+		asm volatile ("movdqa %xmm3,%xmm5");
+		asm volatile ("pshufb %xmm0,%xmm4");
+		asm volatile ("pshufb %xmm1,%xmm5");
+		asm volatile ("pxor %xmm4,%xmm6");
+		asm volatile ("pxor %xmm5,%xmm7");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm7,%0" : "=m" (pa[i + 16]));
+
+		/* restore the active reduction polynomial */
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+	}
+
+	raid_sse_end();
+}
+
+/*
+ * Recover failure of two data blocks using selected parity with SSSE3,
+ * optimized specifically for two failures.
+ *
+ * Computes only the two selected syndromes in a single survivor scan and
+ * reconstructs the missing blocks directly, avoiding raid_delta_gen(),
+ * temporary syndrome buffers, and the generation of unused parity rows.
+ *
+ * has_p is expected to be a compile-time constant after inlining.
+ *
+ * If P is available, reconstructs only the first missing block through the
+ * inverse matrix and obtains the second one by XORing it out of Pdelta.
+ */
+static __always_inline void raid_rec2_ssse3_2(int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[2];
 	uint8_t *pa[2];
+	uint8_t *src[RAID_DATA_MAX];
+	const uint8_t *S0[RAID_DATA_MAX];
+	const uint8_t *S1[RAID_DATA_MAX];
+	const uint8_t *R[4];
 	uint8_t G[2 * 2];
 	uint8_t V[2 * 2];
 	size_t i;
-	int j, k;
+	int d, s;
+	int ns;
 
-	/* setup the coefficients matrix */
-	for (j = 0; j < 2; ++j)
-		for (k = 0; k < 2; ++k)
-			G[j * 2 + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
+	/* setup and invert the 2x2 coefficients matrix */
+	G[0] = A(ip[0], id[0]);
+	G[1] = A(ip[0], id[1]);
+	G[2] = A(ip[1], id[0]);
+	G[3] = A(ip[1], id[1]);
 	raid_invert(G, V, 2);
 
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
+	p[0] = v[nd + ip[0]];
+	p[1] = v[nd + ip[1]];
+	pa[0] = v[id[0]];
+	pa[1] = v[id[1]];
 
-	for (j = 0; j < 2; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
+	/* collect surviving data blocks and their selected coefficients */
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d == id[0] || d == id[1])
+			continue;
+
+		src[ns] = v[d];
+
+		if (!has_p)
+			S0[ns] = &raid_gfmulpshufb[A(ip[0], d)][0][0];
+
+		S1[ns] = &raid_gfmulpshufb[A(ip[1], d)][0][0];
+		++ns;
+	}
+
+	BUG_ON(ns != nd - 2);
+
+	/* inverse-matrix multiplication tables */
+	R[0] = &raid_gfmulpshufb[V[0]][0][0];
+	R[1] = &raid_gfmulpshufb[V[1]][0][0];
+
+	if (!has_p) {
+		R[2] = &raid_gfmulpshufb[V[2]][0][0];
+		R[3] = &raid_gfmulpshufb[V[3]][0][0];
 	}
 
 	raid_sse_begin();
@@ -1253,94 +1458,159 @@ static __always_inline void raid_rec2_ssse3_delta(int *id, int *ip, int nd, size
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for (i = 0; i < size; i += 16) {
+		/* start from the two selected parity blocks */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (pa[0][i]));
 		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[1][i]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (pa[1][i]));
-		asm volatile ("pxor %xmm2,%xmm0");
-		asm volatile ("pxor %xmm3,%xmm1");
 
-		asm volatile ("pxor %xmm6,%xmm6");
+		/* compute only the two selected syndromes */
+		for (s = 0; s < ns; ++s) {
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (src[s][i]));
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
-		asm volatile ("movdqa %xmm0,%xmm4");
-		asm volatile ("movdqa %xmm0,%xmm5");
-		asm volatile ("psrlw $4,%xmm5");
-		asm volatile ("pand %xmm7,%xmm4");
-		asm volatile ("pand %xmm7,%xmm5");
-		asm volatile ("pshufb %xmm4,%xmm2");
-		asm volatile ("pshufb %xmm5,%xmm3");
-		asm volatile ("pxor %xmm2,%xmm6");
-		asm volatile ("pxor %xmm3,%xmm6");
+			/* P has coefficient 1 */
+			if (has_p)
+				asm volatile ("pxor %xmm4,%xmm0");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
-		asm volatile ("movdqa %xmm1,%xmm4");
-		asm volatile ("movdqa %xmm1,%xmm5");
-		asm volatile ("psrlw $4,%xmm5");
-		asm volatile ("pand %xmm7,%xmm4");
-		asm volatile ("pand %xmm7,%xmm5");
-		asm volatile ("pshufb %xmm4,%xmm2");
-		asm volatile ("pshufb %xmm5,%xmm3");
-		asm volatile ("pxor %xmm2,%xmm6");
-		asm volatile ("pxor %xmm3,%xmm6");
+			/* split source into low/high nibbles once */
+			asm volatile ("movdqa %xmm4,%xmm5");
+			asm volatile ("psrlw $4,%xmm5");
+			asm volatile ("pand %xmm7,%xmm4");
+			asm volatile ("pand %xmm7,%xmm5");
 
-		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[0][i]));
+			if (!has_p) {
+				const uint8_t *t = S0[s];
 
-		asm volatile ("pxor %xmm6,%xmm6");
+				asm volatile ("movdqa %0,%%xmm6" : : "m" (t[0]));
+				asm volatile ("pshufb %xmm4,%xmm6");
+				asm volatile ("pxor %xmm6,%xmm0");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
-		asm volatile ("movdqa %xmm0,%xmm4");
-		asm volatile ("movdqa %xmm0,%xmm5");
-		asm volatile ("psrlw $4,%xmm5");
-		asm volatile ("pand %xmm7,%xmm4");
-		asm volatile ("pand %xmm7,%xmm5");
-		asm volatile ("pshufb %xmm4,%xmm2");
-		asm volatile ("pshufb %xmm5,%xmm3");
-		asm volatile ("pxor %xmm2,%xmm6");
-		asm volatile ("pxor %xmm3,%xmm6");
+				asm volatile ("movdqa %0,%%xmm6" : : "m" (t[16]));
+				asm volatile ("pshufb %xmm5,%xmm6");
+				asm volatile ("pxor %xmm6,%xmm0");
+			}
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
-		asm volatile ("movdqa %xmm1,%xmm4");
-		asm volatile ("movdqa %xmm1,%xmm5");
-		asm volatile ("psrlw $4,%xmm5");
-		asm volatile ("pand %xmm7,%xmm4");
-		asm volatile ("pand %xmm7,%xmm5");
-		asm volatile ("pshufb %xmm4,%xmm2");
-		asm volatile ("pshufb %xmm5,%xmm3");
-		asm volatile ("pxor %xmm2,%xmm6");
-		asm volatile ("pxor %xmm3,%xmm6");
+			{
+				const uint8_t *t = S1[s];
 
-		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
+				asm volatile ("movdqa %0,%%xmm6" : : "m" (t[0]));
+				asm volatile ("pshufb %xmm4,%xmm6");
+				asm volatile ("pxor %xmm6,%xmm1");
+
+				asm volatile ("movdqa %0,%%xmm6" : : "m" (t[16]));
+				asm volatile ("pshufb %xmm5,%xmm6");
+				asm volatile ("pxor %xmm6,%xmm1");
+			}
+		}
+
+		/*
+		 * Keep the complete P delta before splitting the syndromes.
+		 * xmm6 is no longer needed by the survivor scan.
+		 */
+		if (has_p)
+			asm volatile ("movdqa %xmm0,%xmm6");
+
+		/*
+		 * xmm0 = syndrome 0 low
+		 * xmm2 = syndrome 0 high
+		 * xmm1 = syndrome 1 low
+		 * xmm3 = syndrome 1 high
+		 */
+		asm volatile ("movdqa %xmm0,%xmm2");
+		asm volatile ("movdqa %xmm1,%xmm3");
+		asm volatile ("psrlw $4,%xmm2");
+		asm volatile ("psrlw $4,%xmm3");
+		asm volatile ("pand %xmm7,%xmm0");
+		asm volatile ("pand %xmm7,%xmm2");
+		asm volatile ("pand %xmm7,%xmm1");
+		asm volatile ("pand %xmm7,%xmm3");
+
+		/* pa[0] = V[0] * syndrome0 ^ V[1] * syndrome1 */
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (R[0][0]));
+		asm volatile ("movdqa %0,%%xmm5" : : "m" (R[0][16]));
+		asm volatile ("pshufb %xmm0,%xmm4");
+		asm volatile ("pshufb %xmm2,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		asm volatile ("movdqa %0,%%xmm5" : : "m" (R[1][0]));
+		asm volatile ("pshufb %xmm1,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		asm volatile ("movdqa %0,%%xmm5" : : "m" (R[1][16]));
+		asm volatile ("pshufb %xmm3,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm4");
+
+		if (has_p) {
+			/*
+			 * Pdelta = pa[0] ^ pa[1].
+			 * xmm4 is pa[0], so obtain pa[1] directly.
+			 */
+			asm volatile ("pxor %xmm4,%xmm6");
+
+			/* recovery data must remain cacheable */
+			asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[0][i]));
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
+		} else {
+			/* recovery data must remain cacheable */
+			asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[0][i]));
+
+			/* pa[1] = V[2] * syndrome0 ^ V[3] * syndrome1 */
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (R[2][0]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (R[2][16]));
+			asm volatile ("pshufb %xmm0,%xmm4");
+			asm volatile ("pshufb %xmm2,%xmm5");
+			asm volatile ("pxor %xmm5,%xmm4");
+
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (R[3][0]));
+			asm volatile ("pshufb %xmm1,%xmm5");
+			asm volatile ("pxor %xmm5,%xmm4");
+
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (R[3][16]));
+			asm volatile ("pshufb %xmm3,%xmm5");
+			asm volatile ("pxor %xmm5,%xmm4");
+
+			/* recovery data must remain cacheable */
+			asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[1][i]));
+		}
 	}
 
 	raid_sse_end();
 }
 
 /*
- * Recover failure of two data blocks using P and Q SSSE3 implementation.
+ * Recover failure of two data blocks using P and Q with SSSE3.
  *
- * Uses raid_delta_gen() and computes the analytical solution.
+ * Computes Pdelta and Qdelta directly in a single survivor scan.
+ * Q is computed with Horner's method using the active field generator.
+ *
+ * Processes two 16-byte lanes per iteration, avoiding raid_delta_gen(),
+ * temporary parity buffers, and the second pass over the data.
  */
 static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
-	uint8_t *pa;
 	uint8_t *q;
+	uint8_t *pa;
 	uint8_t *qa;
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
 	uint8_t C[2];
+	int generator;
+	int l;
+	int d;
 	size_t i;
+
+	BUG_ON(ip[0] != 0 || ip[1] != 1);
 
 	/* get multiplication coefficients */
 	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
 	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
 
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
+	R[0][0] = &raid_gfmulpshufb[C[0]][0][0];
+	R[0][1] = &raid_gfmulpshufb[C[1]][0][0];
+
+	generator = powgen(1);
+	BUG_ON(generator != 2 && generator != 3);
+
+	l = nd - 1;
 
 	p = v[nd];
 	q = v[nd + 1];
@@ -1349,51 +1619,187 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	/*
+	 * During the survivor scan:
+	 *
+	 * xmm0  Pdelta lane 0
+	 * xmm1  Pdelta lane 1
+	 * xmm2  Qa lane 0
+	 * xmm3  Qa lane 1
+	 * xmm4-xmm6 temporaries
+	 * xmm7  active reduction polynomial
+	 */
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
-	for (i = 0; i < size; i += 16) {
-		/* Pd */
+	for (i = 0; i < size; i += 32) {
+		/* Pdelta starts directly from stored P */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
-		asm volatile ("pxor %0,%%xmm0" : : "m" (pa[i]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[i + 16]));
 
-		/* Qd */
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (q[i]));
-		asm volatile ("pxor %0,%%xmm1" : : "m" (qa[i]));
+		/* Qa starts at zero for both lanes */
+		asm volatile ("pxor %xmm2,%xmm2");
+		asm volatile ("pxor %xmm3,%xmm3");
 
-		/* split Pd and Qd into low/high nibbles */
+		/* last disk starts Horner without generator multiplication */
+		if (l != id[0] && l != id[1]) {
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (v[l][i + 16]));
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm5,%xmm1");
+			asm volatile ("pxor %xmm4,%xmm2");
+			asm volatile ("pxor %xmm5,%xmm3");
+		}
+
+		for (d = l - 1; d >= 0; --d) {
+			/* multiply both Qa lanes by the active generator */
+			if (generator == 3) {
+				/* lane 0: Qa = 3 * Qa */
+				asm volatile ("movdqa %xmm2,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm2,%xmm5");
+				asm volatile ("paddb %xmm2,%xmm2");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm5,%xmm2");
+				asm volatile ("pxor %xmm4,%xmm2");
+
+				/* lane 1: Qa = 3 * Qa */
+				asm volatile ("movdqa %xmm3,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm3,%xmm5");
+				asm volatile ("paddb %xmm3,%xmm3");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm5,%xmm3");
+				asm volatile ("pxor %xmm4,%xmm3");
+			} else {
+				/* multiply both lanes by 2 in parallel */
+				asm volatile ("pxor %xmm4,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pcmpgtb %xmm2,%xmm4");
+				asm volatile ("pcmpgtb %xmm3,%xmm5");
+				asm volatile ("paddb %xmm2,%xmm2");
+				asm volatile ("paddb %xmm3,%xmm3");
+				asm volatile ("pand %xmm7,%xmm4");
+				asm volatile ("pand %xmm7,%xmm5");
+				asm volatile ("pxor %xmm4,%xmm2");
+				asm volatile ("pxor %xmm5,%xmm3");
+			}
+
+			/* missing disks contribute zero */
+			if (d == id[0] || d == id[1])
+				continue;
+
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (v[d][i + 16]));
+
+			/* Pdelta */
+			asm volatile ("pxor %xmm4,%xmm0");
+			asm volatile ("pxor %xmm5,%xmm1");
+
+			/* Horner contribution to Qa */
+			asm volatile ("pxor %xmm4,%xmm2");
+			asm volatile ("pxor %xmm5,%xmm3");
+		}
+
+		/* Qdelta = Q ^ Qa */
+		asm volatile ("pxor %0,%%xmm2" : : "m" (q[i]));
+		asm volatile ("pxor %0,%%xmm3" : : "m" (q[i + 16]));
+
+		/*
+		 * The survivor scan is complete, so xmm7 can now hold
+		 * the low-nibble mask instead of the polynomial.
+		 */
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+
+		/*
+		 * Lane 0.
+		 *
+		 * xmm0 = Pdelta and must remain intact until Dx is computed.
+		 * xmm2 = Qdelta and may be destroyed during reconstruction.
+		 */
+
+		/* split Pdelta */
 		asm volatile ("movdqa %xmm0,%xmm4");
-		asm volatile ("movdqa %xmm1,%xmm5");
-		asm volatile ("movdqa %xmm0,%xmm2");
-		asm volatile ("movdqa %xmm1,%xmm3");
-		asm volatile ("psrlw $4,%xmm2");
-		asm volatile ("psrlw $4,%xmm3");
+		asm volatile ("movdqa %xmm0,%xmm5");
+		asm volatile ("psrlw $4,%xmm5");
 		asm volatile ("pand %xmm7,%xmm4");
 		asm volatile ("pand %xmm7,%xmm5");
-		asm volatile ("pand %xmm7,%xmm2");
-		asm volatile ("pand %xmm7,%xmm3");
 
-		/* C0 * Pd */
-		asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
+		/* Dy = C0 * Pdelta */
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (R[0][0][0]));
 		asm volatile ("pshufb %xmm4,%xmm6");
-
-		asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
-		asm volatile ("pshufb %xmm2,%xmm4");
-		asm volatile ("pxor %xmm4,%xmm6");
-
-		/* C1 * Qd */
-		asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (R[0][0][16]));
 		asm volatile ("pshufb %xmm5,%xmm4");
 		asm volatile ("pxor %xmm4,%xmm6");
 
-		asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
-		asm volatile ("pshufb %xmm3,%xmm4");
-		asm volatile ("pxor %xmm4,%xmm6");
+		/* split Qdelta */
+		asm volatile ("movdqa %xmm2,%xmm4");
+		asm volatile ("movdqa %xmm2,%xmm5");
+		asm volatile ("psrlw $4,%xmm5");
+		asm volatile ("pand %xmm7,%xmm4");
+		asm volatile ("pand %xmm7,%xmm5");
 
-		/* xmm6 = Dy, xmm0 = Pd, so Dx = Pd ^ Dy */
+		/* Dy ^= C1 * Qdelta */
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (R[0][1][0]));
+		asm volatile ("pshufb %xmm4,%xmm2");
+		asm volatile ("pxor %xmm2,%xmm6");
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (R[0][1][16]));
+		asm volatile ("pshufb %xmm5,%xmm2");
+		asm volatile ("pxor %xmm2,%xmm6");
+
+		/* Dx = Pdelta ^ Dy */
 		asm volatile ("pxor %xmm6,%xmm0");
 
+		/* recovery data must remain cacheable */
 		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
 		asm volatile ("movdqa %%xmm6,%0" : "=m" (qa[i]));
+
+		/*
+		 * Lane 1.
+		 *
+		 * xmm1 = Pdelta and must remain intact until Dx is computed.
+		 * xmm3 = Qdelta and may be destroyed during reconstruction.
+		 */
+
+		/* split Pdelta */
+		asm volatile ("movdqa %xmm1,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("psrlw $4,%xmm5");
+		asm volatile ("pand %xmm7,%xmm4");
+		asm volatile ("pand %xmm7,%xmm5");
+
+		/* Dy = C0 * Pdelta */
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (R[0][0][0]));
+		asm volatile ("pshufb %xmm4,%xmm6");
+		asm volatile ("movdqa %0,%%xmm4" : : "m" (R[0][0][16]));
+		asm volatile ("pshufb %xmm5,%xmm4");
+		asm volatile ("pxor %xmm4,%xmm6");
+
+		/* split Qdelta */
+		asm volatile ("movdqa %xmm3,%xmm4");
+		asm volatile ("movdqa %xmm3,%xmm5");
+		asm volatile ("psrlw $4,%xmm5");
+		asm volatile ("pand %xmm7,%xmm4");
+		asm volatile ("pand %xmm7,%xmm5");
+
+		/* Dy ^= C1 * Qdelta */
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (R[0][1][0]));
+		asm volatile ("pshufb %xmm4,%xmm3");
+		asm volatile ("pxor %xmm3,%xmm6");
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (R[0][1][16]));
+		asm volatile ("pshufb %xmm5,%xmm3");
+		asm volatile ("pxor %xmm3,%xmm6");
+
+		/* Dx = Pdelta ^ Dy */
+		asm volatile ("pxor %xmm6,%xmm1");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[i + 16]));
+		asm volatile ("movdqa %%xmm6,%0" : "=m" (qa[i + 16]));
+
+		/*
+		 * Restore the polynomial for the next 32-byte iteration.
+		 */
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 	}
 
 	raid_sse_end();
@@ -1786,217 +2192,675 @@ static __always_inline void raid_recX_ssse3(int nr, int has_p, int *id, int *ip,
 
 #ifdef CONFIG_X86_64
 /*
- * Recover failure of one data block using SSSE3 extended delta implementation.
+ * Recover failure of one data block using selected parity with SSSE3 extended,
+ * optimized specifically for one failure.
  *
- * Process two 16-byte blocks per iteration, grouping equal operations across
- * both lanes to expose instruction-level parallelism.
- *
- * A four-way 64-byte unroll was tested but is slower than this two-way 32-byte
- * implementation.
+ * Computes only the selected syndrome in a single survivor scan and processes
+ * two 16-byte lanes per iteration to expose instruction-level parallelism.
  */
-static __always_inline void raid_rec1_ssse3ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_ssse3ext_1(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
+	uint8_t *src[RAID_DATA_MAX];
+	const uint8_t *S[RAID_DATA_MAX];
 	uint8_t G;
 	uint8_t V;
 	size_t i;
+	int d, s;
+	int ns;
 
-	/* setup the coefficients matrix */
 	G = A(ip[0], id[0]);
-
-	/* invert it to solve the system of linear equations */
 	V = inv(G);
-
-	/* compute delta parity */
-	raid_delta_gen(1, id, ip, nd, size, vv);
 
 	p = v[nd + ip[0]];
 	pa = v[id[0]];
 
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d == id[0])
+			continue;
+
+		src[ns] = v[d];
+		S[ns] = &raid_gfmulpshufb[A(ip[0], d)][0][0];
+		++ns;
+	}
+
+	BUG_ON(ns != nd - 1);
+
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
-	asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("movdqa %0,%%xmm5" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+
+	/* keep the inverse coefficient resident */
+	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V][0][0]));
+	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V][1][0]));
 
 	for (i = 0; i < size; i += 32) {
+		/* start both lanes from the selected parity block */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
 		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[i + 16]));
 
-		asm volatile ("movdqa %0,%%xmm8" : : "m" (pa[i]));
-		asm volatile ("movdqa %0,%%xmm9" : : "m" (pa[i + 16]));
+		/* compute only the selected syndrome */
+		for (s = 0; s < ns; ++s) {
+			const uint8_t *t = S[s];
 
-		asm volatile ("pxor %xmm8,%xmm0");
-		asm volatile ("pxor %xmm9,%xmm1");
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (src[s][i]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (src[s][i + 16]));
 
-		asm volatile ("movdqa %xmm0,%xmm8");
-		asm volatile ("movdqa %xmm1,%xmm9");
+			/* split both source lanes into low/high nibbles */
+			asm volatile ("movdqa %xmm4,%xmm6");
+			asm volatile ("movdqa %xmm5,%xmm7");
+			asm volatile ("psrlw $4,%xmm6");
+			asm volatile ("psrlw $4,%xmm7");
+			asm volatile ("pand %xmm15,%xmm4");
+			asm volatile ("pand %xmm15,%xmm5");
+			asm volatile ("pand %xmm15,%xmm6");
+			asm volatile ("pand %xmm15,%xmm7");
 
-		asm volatile ("psrlw $4,%xmm8");
-		asm volatile ("psrlw $4,%xmm9");
+			/* low-nibble products, both lanes */
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (t[0]));
+			asm volatile ("movdqa %xmm8,%xmm9");
+			asm volatile ("pshufb %xmm4,%xmm8");
+			asm volatile ("pshufb %xmm5,%xmm9");
+			asm volatile ("pxor %xmm8,%xmm0");
+			asm volatile ("pxor %xmm9,%xmm1");
 
-		asm volatile ("pand %xmm7,%xmm0");
-		asm volatile ("pand %xmm7,%xmm1");
+			/* high-nibble products, both lanes */
+			asm volatile ("movdqa %0,%%xmm10" : : "m" (t[16]));
+			asm volatile ("movdqa %xmm10,%xmm11");
+			asm volatile ("pshufb %xmm6,%xmm10");
+			asm volatile ("pshufb %xmm7,%xmm11");
+			asm volatile ("pxor %xmm10,%xmm0");
+			asm volatile ("pxor %xmm11,%xmm1");
+		}
 
-		asm volatile ("pand %xmm7,%xmm8");
-		asm volatile ("pand %xmm7,%xmm9");
+		/* split both completed syndromes */
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("movdqa %xmm0,%xmm6");
+		asm volatile ("movdqa %xmm1,%xmm7");
+		asm volatile ("psrlw $4,%xmm6");
+		asm volatile ("psrlw $4,%xmm7");
+		asm volatile ("pand %xmm15,%xmm4");
+		asm volatile ("pand %xmm15,%xmm5");
+		asm volatile ("pand %xmm15,%xmm6");
+		asm volatile ("pand %xmm15,%xmm7");
 
-		asm volatile ("movdqa %xmm4,%xmm10");
-		asm volatile ("movdqa %xmm4,%xmm11");
+		/* multiply both lanes by the inverse coefficient */
+		asm volatile ("movdqa %xmm12,%xmm8");
+		asm volatile ("movdqa %xmm12,%xmm9");
+		asm volatile ("pshufb %xmm4,%xmm8");
+		asm volatile ("pshufb %xmm5,%xmm9");
 
-		asm volatile ("pshufb %xmm0,%xmm10");
-		asm volatile ("pshufb %xmm1,%xmm11");
+		asm volatile ("movdqa %xmm13,%xmm10");
+		asm volatile ("movdqa %xmm13,%xmm11");
+		asm volatile ("pshufb %xmm6,%xmm10");
+		asm volatile ("pshufb %xmm7,%xmm11");
+		asm volatile ("pxor %xmm10,%xmm8");
+		asm volatile ("pxor %xmm11,%xmm9");
 
-		asm volatile ("movdqa %xmm5,%xmm0");
-		asm volatile ("movdqa %xmm5,%xmm1");
-
-		asm volatile ("pshufb %xmm8,%xmm0");
-		asm volatile ("pshufb %xmm9,%xmm1");
-
-		asm volatile ("pxor %xmm10,%xmm0");
-		asm volatile ("pxor %xmm11,%xmm1");
-
-		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
-		asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[i + 16]));
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm8,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm9,%0" : "=m" (pa[i + 16]));
 	}
 
 	raid_sse_end();
 }
 
 /*
- * Recover failure of two data blocks using SSSE3 extended delta implementation.
+ * Recover failure of one data block using Q with SSSE3 extended.
  *
- * Uses raid_delta_gen() and keeps all 8 inverse-matrix tables resident
- * in XMM registers (xmm8..xmm15).
+ * Computes Q of all surviving data directly with Horner's method and
+ * reconstructs the missing block from Qdelta.
+ *
+ * Processes four 16-byte lanes per iteration, avoiding raid_delta_gen(),
+ * temporary parity buffers, and the extra pass over the data.
  */
-static __always_inline void raid_rec2_ssse3ext_delta(int *id, int *ip, int nd, size_t size, void **vv)
+static __always_inline void raid_rec1_ssse3ext_q(int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *q;
+	uint8_t *pa;
+	uint8_t V;
+	int generator;
+	int l;
+	int d;
+	size_t i;
+
+	BUG_ON(ip[0] != 1);
+
+	V = inv(A(1, id[0]));
+
+	generator = powgen(1);
+	BUG_ON(generator != 2 && generator != 3);
+
+	l = nd - 1;
+
+	q = v[nd + 1];
+	pa = v[id[0]];
+
+	raid_sse_begin();
+
+	/*
+	 * xmm0-xmm3   Q accumulators
+	 * xmm4-xmm11  temporaries
+	 * xmm12       inverse coefficient low table
+	 * xmm13       inverse coefficient high table
+	 * xmm14       active reduction polynomial
+	 * xmm15       low-nibble mask
+	 */
+	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V][0][0]));
+	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+
+	for (i = 0; i < size; i += 64) {
+		/* last disk starts Horner without generator multiplication */
+		if (l == id[0]) {
+			asm volatile ("pxor %xmm0,%xmm0");
+			asm volatile ("pxor %xmm1,%xmm1");
+			asm volatile ("pxor %xmm2,%xmm2");
+			asm volatile ("pxor %xmm3,%xmm3");
+		} else {
+			asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
+			asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
+			asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i + 32]));
+			asm volatile ("movdqa %0,%%xmm3" : : "m" (v[l][i + 48]));
+		}
+
+		for (d = l - 1; d >= 0; --d) {
+			/* multiply all four Q lanes by the active generator */
+			if (generator == 3) {
+				asm volatile ("movdqa %xmm0,%xmm8");
+				asm volatile ("movdqa %xmm1,%xmm9");
+				asm volatile ("movdqa %xmm2,%xmm10");
+				asm volatile ("movdqa %xmm3,%xmm11");
+
+				asm volatile ("pxor %xmm4,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pxor %xmm6,%xmm6");
+				asm volatile ("pxor %xmm7,%xmm7");
+
+				asm volatile ("pcmpgtb %xmm0,%xmm4");
+				asm volatile ("pcmpgtb %xmm1,%xmm5");
+				asm volatile ("pcmpgtb %xmm2,%xmm6");
+				asm volatile ("pcmpgtb %xmm3,%xmm7");
+
+				asm volatile ("paddb %xmm0,%xmm0");
+				asm volatile ("paddb %xmm1,%xmm1");
+				asm volatile ("paddb %xmm2,%xmm2");
+				asm volatile ("paddb %xmm3,%xmm3");
+
+				asm volatile ("pand %xmm14,%xmm4");
+				asm volatile ("pand %xmm14,%xmm5");
+				asm volatile ("pand %xmm14,%xmm6");
+				asm volatile ("pand %xmm14,%xmm7");
+
+				asm volatile ("pxor %xmm4,%xmm0");
+				asm volatile ("pxor %xmm5,%xmm1");
+				asm volatile ("pxor %xmm6,%xmm2");
+				asm volatile ("pxor %xmm7,%xmm3");
+
+				asm volatile ("pxor %xmm8,%xmm0");
+				asm volatile ("pxor %xmm9,%xmm1");
+				asm volatile ("pxor %xmm10,%xmm2");
+				asm volatile ("pxor %xmm11,%xmm3");
+			} else {
+				asm volatile ("pxor %xmm4,%xmm4");
+				asm volatile ("pxor %xmm5,%xmm5");
+				asm volatile ("pxor %xmm6,%xmm6");
+				asm volatile ("pxor %xmm7,%xmm7");
+
+				asm volatile ("pcmpgtb %xmm0,%xmm4");
+				asm volatile ("pcmpgtb %xmm1,%xmm5");
+				asm volatile ("pcmpgtb %xmm2,%xmm6");
+				asm volatile ("pcmpgtb %xmm3,%xmm7");
+
+				asm volatile ("paddb %xmm0,%xmm0");
+				asm volatile ("paddb %xmm1,%xmm1");
+				asm volatile ("paddb %xmm2,%xmm2");
+				asm volatile ("paddb %xmm3,%xmm3");
+
+				asm volatile ("pand %xmm14,%xmm4");
+				asm volatile ("pand %xmm14,%xmm5");
+				asm volatile ("pand %xmm14,%xmm6");
+				asm volatile ("pand %xmm14,%xmm7");
+
+				asm volatile ("pxor %xmm4,%xmm0");
+				asm volatile ("pxor %xmm5,%xmm1");
+				asm volatile ("pxor %xmm6,%xmm2");
+				asm volatile ("pxor %xmm7,%xmm3");
+			}
+
+			/* missing disk contributes zero */
+			if (d == id[0])
+				continue;
+
+			asm volatile ("pxor %0,%%xmm0" : : "m" (v[d][i]));
+			asm volatile ("pxor %0,%%xmm1" : : "m" (v[d][i + 16]));
+			asm volatile ("pxor %0,%%xmm2" : : "m" (v[d][i + 32]));
+			asm volatile ("pxor %0,%%xmm3" : : "m" (v[d][i + 48]));
+		}
+
+		/* Qdelta = stored Q ^ Q of all surviving data */
+		asm volatile ("pxor %0,%%xmm0" : : "m" (q[i]));
+		asm volatile ("pxor %0,%%xmm1" : : "m" (q[i + 16]));
+		asm volatile ("pxor %0,%%xmm2" : : "m" (q[i + 32]));
+		asm volatile ("pxor %0,%%xmm3" : : "m" (q[i + 48]));
+
+		/* keep low nibbles in xmm4-xmm7 and high nibbles in xmm0-xmm3 */
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("movdqa %xmm2,%xmm6");
+		asm volatile ("movdqa %xmm3,%xmm7");
+
+		asm volatile ("psrlw $4,%xmm0");
+		asm volatile ("psrlw $4,%xmm1");
+		asm volatile ("psrlw $4,%xmm2");
+		asm volatile ("psrlw $4,%xmm3");
+
+		asm volatile ("pand %xmm15,%xmm4");
+		asm volatile ("pand %xmm15,%xmm5");
+		asm volatile ("pand %xmm15,%xmm6");
+		asm volatile ("pand %xmm15,%xmm7");
+
+		asm volatile ("pand %xmm15,%xmm0");
+		asm volatile ("pand %xmm15,%xmm1");
+		asm volatile ("pand %xmm15,%xmm2");
+		asm volatile ("pand %xmm15,%xmm3");
+
+		/* low-nibble products */
+		asm volatile ("movdqa %xmm12,%xmm8");
+		asm volatile ("movdqa %xmm12,%xmm9");
+		asm volatile ("movdqa %xmm12,%xmm10");
+		asm volatile ("movdqa %xmm12,%xmm11");
+
+		asm volatile ("pshufb %xmm4,%xmm8");
+		asm volatile ("pshufb %xmm5,%xmm9");
+		asm volatile ("pshufb %xmm6,%xmm10");
+		asm volatile ("pshufb %xmm7,%xmm11");
+
+		/* high-nibble products */
+		asm volatile ("movdqa %xmm13,%xmm4");
+		asm volatile ("movdqa %xmm13,%xmm5");
+		asm volatile ("movdqa %xmm13,%xmm6");
+		asm volatile ("movdqa %xmm13,%xmm7");
+
+		asm volatile ("pshufb %xmm0,%xmm4");
+		asm volatile ("pshufb %xmm1,%xmm5");
+		asm volatile ("pshufb %xmm2,%xmm6");
+		asm volatile ("pshufb %xmm3,%xmm7");
+
+		asm volatile ("pxor %xmm4,%xmm8");
+		asm volatile ("pxor %xmm5,%xmm9");
+		asm volatile ("pxor %xmm6,%xmm10");
+		asm volatile ("pxor %xmm7,%xmm11");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm8,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm9,%0" : "=m" (pa[i + 16]));
+		asm volatile ("movdqa %%xmm10,%0" : "=m" (pa[i + 32]));
+		asm volatile ("movdqa %%xmm11,%0" : "=m" (pa[i + 48]));
+	}
+
+	raid_sse_end();
+}
+
+/*
+ * Recover failure of two data blocks using selected parity with SSSE3 extended,
+ * optimized specifically for two failures.
+ *
+ * Computes only the two selected syndromes in a single survivor scan and
+ * processes two 16-byte lanes per iteration.
+ *
+ * Keeps the first inverse-matrix row resident for the complete recovery loop.
+ * When P is available this is the only inverse row required, because the
+ * second missing block is obtained directly from Pdelta. Without P, the
+ * second inverse row is loaded only during reconstruction and each table
+ * load is shared between both lanes.
+ *
+ * has_p is expected to be a compile-time constant after inlining.
+ *
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[2];
 	uint8_t *pa[2];
+	uint8_t *src[RAID_DATA_MAX];
+	const uint8_t *S0[RAID_DATA_MAX];
+	const uint8_t *S1[RAID_DATA_MAX];
 	uint8_t G[2 * 2];
 	uint8_t V[2 * 2];
 	size_t i;
-	int j, k;
+	int d, s;
+	int ns;
 
-	/* setup the coefficients matrix */
-	for (j = 0; j < 2; ++j)
-		for (k = 0; k < 2; ++k)
-			G[j * 2 + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
+	/* setup and invert the 2x2 coefficients matrix */
+	G[0] = A(ip[0], id[0]);
+	G[1] = A(ip[0], id[1]);
+	G[2] = A(ip[1], id[0]);
+	G[3] = A(ip[1], id[1]);
 	raid_invert(G, V, 2);
 
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
+	p[0] = v[nd + ip[0]];
+	p[1] = v[nd + ip[1]];
+	pa[0] = v[id[0]];
+	pa[1] = v[id[1]];
 
-	for (j = 0; j < 2; ++j) {
-		p[j] = v[nd + ip[j]];
-		pa[j] = v[id[j]];
+	/* collect surviving data blocks and selected coefficient tables */
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d == id[0] || d == id[1])
+			continue;
+
+		src[ns] = v[d];
+
+		if (!has_p)
+			S0[ns] = &raid_gfmulpshufb[A(ip[0], d)][0][0];
+
+		S1[ns] = &raid_gfmulpshufb[A(ip[1], d)][0][0];
+
+		++ns;
 	}
+
+	BUG_ON(ns != nd - 2);
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low4[0]));
+	/*
+	 * Register allocation during the survivor scan:
+	 *
+	 * xmm0/xmm1   syndrome 0, lanes 0/1
+	 * xmm2/xmm3   syndrome 1, lanes 0/1
+	 * xmm4/xmm5   source low nibbles
+	 * xmm6/xmm7   source high nibbles
+	 * xmm8-xmm11  resident first inverse-matrix row
+	 * xmm12/xmm13 multiplication table/results for both lanes
+	 * xmm14       low-nibble mask
+	 * xmm15       temporary
+	 */
 
-	/* the inverse matrix V[] is constant for the whole recovery */
+	/* keep the first inverse-matrix row resident */
 	asm volatile ("movdqa %0,%%xmm8" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
 	asm volatile ("movdqa %0,%%xmm9" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
 	asm volatile ("movdqa %0,%%xmm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
 	asm volatile ("movdqa %0,%%xmm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
-	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
-	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
-	asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
-	asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
 
-	for (i = 0; i < size; i += 16) {
-		/* d0 = p[0] ^ pa[0] */
+	for (i = 0; i < size; i += 32) {
+		/* xmm14 is reused during reconstruction, therefore restore the mask for each iteration */
+		asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.low4[0]));
+
+		/* start both syndrome lanes from the selected stored parity blocks */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
-		asm volatile ("movdqa %0,%%xmm4" : : "m" (pa[0][i]));
-		asm volatile ("pxor %xmm4,%xmm0");
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[0][i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (p[1][i]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (p[1][i + 16]));
 
-		/* d1 = p[1] ^ pa[1] */
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[1][i]));
-		asm volatile ("movdqa %0,%%xmm4" : : "m" (pa[1][i]));
-		asm volatile ("pxor %xmm4,%xmm1");
+		/* compute both selected syndromes in a single survivor scan */
+		for (s = 0; s < ns; ++s) {
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (src[s][i]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (src[s][i + 16]));
+
+			/* P has coefficient 1 and must use the original source before nibble splitting */
+			if (has_p) {
+				asm volatile ("pxor %xmm4,%xmm0");
+				asm volatile ("pxor %xmm5,%xmm1");
+			}
+
+			/* split both source lanes into low/high nibbles */
+			asm volatile ("movdqa %xmm4,%xmm6");
+			asm volatile ("movdqa %xmm5,%xmm7");
+			asm volatile ("psrlw $4,%xmm6");
+			asm volatile ("psrlw $4,%xmm7");
+			asm volatile ("pand %xmm14,%xmm4");
+			asm volatile ("pand %xmm14,%xmm5");
+			asm volatile ("pand %xmm14,%xmm6");
+			asm volatile ("pand %xmm14,%xmm7");
+
+			/* syndrome 0 only needs multiplication when it is not P */
+			if (!has_p) {
+				const uint8_t *t = S0[s];
+
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (t[0]));
+				asm volatile ("movdqa %xmm12,%xmm13");
+				asm volatile ("pshufb %xmm4,%xmm12");
+				asm volatile ("pshufb %xmm5,%xmm13");
+				asm volatile ("pxor %xmm12,%xmm0");
+				asm volatile ("pxor %xmm13,%xmm1");
+
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (t[16]));
+				asm volatile ("movdqa %xmm12,%xmm13");
+				asm volatile ("pshufb %xmm6,%xmm12");
+				asm volatile ("pshufb %xmm7,%xmm13");
+				asm volatile ("pxor %xmm12,%xmm0");
+				asm volatile ("pxor %xmm13,%xmm1");
+			}
+
+			/* syndrome 1 */
+			{
+				const uint8_t *t = S1[s];
+
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (t[0]));
+				asm volatile ("movdqa %xmm12,%xmm13");
+				asm volatile ("pshufb %xmm4,%xmm12");
+				asm volatile ("pshufb %xmm5,%xmm13");
+				asm volatile ("pxor %xmm12,%xmm2");
+				asm volatile ("pxor %xmm13,%xmm3");
+
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (t[16]));
+				asm volatile ("movdqa %xmm12,%xmm13");
+				asm volatile ("pshufb %xmm6,%xmm12");
+				asm volatile ("pshufb %xmm7,%xmm13");
+				asm volatile ("pxor %xmm12,%xmm2");
+				asm volatile ("pxor %xmm13,%xmm3");
+			}
+		}
+
+		/* preserve the complete Pdelta for both lanes */
+		if (has_p) {
+			asm volatile ("movdqa %xmm0,%xmm6");
+			asm volatile ("movdqa %xmm1,%xmm7");
+		}
 
 		/*
-		 * Split both deltas into low/high nibbles once.
+		 * Split the completed syndromes:
 		 *
-		 * xmm0 = d0 low
-		 * xmm2 = d0 high
-		 * xmm1 = d1 low
-		 * xmm3 = d1 high
+		 * xmm0/xmm1   syndrome 0 low, lanes 0/1
+		 * xmm4/xmm5   syndrome 0 high, lanes 0/1
+		 * xmm2/xmm3   syndrome 1 low, lanes 0/1
+		 * xmm12/xmm13 syndrome 1 high, lanes 0/1
 		 */
-		asm volatile ("movdqa %xmm0,%xmm2");
-		asm volatile ("movdqa %xmm1,%xmm3");
-		asm volatile ("psrlw $4,%xmm2");
-		asm volatile ("psrlw $4,%xmm3");
-		asm volatile ("pand %xmm6,%xmm0");
-		asm volatile ("pand %xmm6,%xmm2");
-		asm volatile ("pand %xmm6,%xmm1");
-		asm volatile ("pand %xmm6,%xmm3");
+		asm volatile ("movdqa %xmm0,%xmm4");
+		asm volatile ("movdqa %xmm1,%xmm5");
+		asm volatile ("movdqa %xmm2,%xmm12");
+		asm volatile ("movdqa %xmm3,%xmm13");
+		asm volatile ("psrlw $4,%xmm4");
+		asm volatile ("psrlw $4,%xmm5");
+		asm volatile ("psrlw $4,%xmm12");
+		asm volatile ("psrlw $4,%xmm13");
+		asm volatile ("pand %xmm14,%xmm0");
+		asm volatile ("pand %xmm14,%xmm1");
+		asm volatile ("pand %xmm14,%xmm2");
+		asm volatile ("pand %xmm14,%xmm3");
+		asm volatile ("pand %xmm14,%xmm4");
+		asm volatile ("pand %xmm14,%xmm5");
+		asm volatile ("pand %xmm14,%xmm12");
+		asm volatile ("pand %xmm14,%xmm13");
 
-		/* pa[0] = V[0] * d0 ^ V[1] * d1 */
-		asm volatile ("movdqa %xmm8,%xmm4");
-		asm volatile ("pshufb %xmm0,%xmm4");
-		asm volatile ("movdqa %xmm9,%xmm5");
-		asm volatile ("pshufb %xmm2,%xmm5");
-		asm volatile ("pxor %xmm5,%xmm4");
+		if (has_p) {
+			/*
+			 * Reconstruct pa[0] for both lanes.
+			 *
+			 * The syndrome nibbles can be destroyed because the second
+			 * missing block is obtained directly from Pdelta.
+			 */
 
-		asm volatile ("movdqa %xmm10,%xmm5");
-		asm volatile ("pshufb %xmm1,%xmm5");
-		asm volatile ("pxor %xmm5,%xmm4");
-		asm volatile ("movdqa %xmm11,%xmm5");
-		asm volatile ("pshufb %xmm3,%xmm5");
-		asm volatile ("pxor %xmm5,%xmm4");
+			/* V[0] * syndrome0 low */
+			asm volatile ("movdqa %xmm8,%xmm14");
+			asm volatile ("movdqa %xmm8,%xmm15");
+			asm volatile ("pshufb %xmm0,%xmm14");
+			asm volatile ("pshufb %xmm1,%xmm15");
+			asm volatile ("movdqa %xmm14,%xmm0");
+			asm volatile ("movdqa %xmm15,%xmm1");
 
-		asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[0][i]));
+			/* V[0] * syndrome0 high */
+			asm volatile ("movdqa %xmm9,%xmm14");
+			asm volatile ("movdqa %xmm9,%xmm15");
+			asm volatile ("pshufb %xmm4,%xmm14");
+			asm volatile ("pshufb %xmm5,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm0");
+			asm volatile ("pxor %xmm15,%xmm1");
 
-		/* pa[1] = V[2] * d0 ^ V[3] * d1 */
-		asm volatile ("movdqa %xmm12,%xmm4");
-		asm volatile ("pshufb %xmm0,%xmm4");
-		asm volatile ("movdqa %xmm13,%xmm5");
-		asm volatile ("pshufb %xmm2,%xmm5");
-		asm volatile ("pxor %xmm5,%xmm4");
+			/* V[1] * syndrome1 low */
+			asm volatile ("movdqa %xmm10,%xmm14");
+			asm volatile ("movdqa %xmm10,%xmm15");
+			asm volatile ("pshufb %xmm2,%xmm14");
+			asm volatile ("pshufb %xmm3,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm0");
+			asm volatile ("pxor %xmm15,%xmm1");
 
-		asm volatile ("movdqa %xmm14,%xmm5");
-		asm volatile ("pshufb %xmm1,%xmm5");
-		asm volatile ("pxor %xmm5,%xmm4");
-		asm volatile ("movdqa %xmm15,%xmm5");
-		asm volatile ("pshufb %xmm3,%xmm5");
-		asm volatile ("pxor %xmm5,%xmm4");
+			/* V[1] * syndrome1 high */
+			asm volatile ("movdqa %xmm11,%xmm14");
+			asm volatile ("movdqa %xmm11,%xmm15");
+			asm volatile ("pshufb %xmm12,%xmm14");
+			asm volatile ("pshufb %xmm13,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm0");
+			asm volatile ("pxor %xmm15,%xmm1");
 
-		asm volatile ("movdqa %%xmm4,%0" : "=m" (pa[1][i]));
+			/* pa[1] = Pdelta ^ pa[0] */
+			asm volatile ("pxor %xmm0,%xmm6");
+			asm volatile ("pxor %xmm1,%xmm7");
+
+			/* recovery data must remain cacheable */
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[0][i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[0][i + 16]));
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
+			asm volatile ("movdqa %%xmm7,%0" : "=m" (pa[1][i + 16]));
+		} else {
+			/*
+			 * Reconstruct pa[0] using the resident first inverse row.
+			 * Keep all syndrome nibbles intact because they are needed
+			 * again for pa[1].
+			 */
+
+			asm volatile ("movdqa %xmm8,%xmm6");
+			asm volatile ("movdqa %xmm8,%xmm7");
+			asm volatile ("pshufb %xmm0,%xmm6");
+			asm volatile ("pshufb %xmm1,%xmm7");
+
+			asm volatile ("movdqa %xmm9,%xmm14");
+			asm volatile ("movdqa %xmm9,%xmm15");
+			asm volatile ("pshufb %xmm4,%xmm14");
+			asm volatile ("pshufb %xmm5,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm15,%xmm7");
+
+			asm volatile ("movdqa %xmm10,%xmm14");
+			asm volatile ("movdqa %xmm10,%xmm15");
+			asm volatile ("pshufb %xmm2,%xmm14");
+			asm volatile ("pshufb %xmm3,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm15,%xmm7");
+
+			asm volatile ("movdqa %xmm11,%xmm14");
+			asm volatile ("movdqa %xmm11,%xmm15");
+			asm volatile ("pshufb %xmm12,%xmm14");
+			asm volatile ("pshufb %xmm13,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm15,%xmm7");
+
+			/* recovery data must remain cacheable */
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[0][i]));
+			asm volatile ("movdqa %%xmm7,%0" : "=m" (pa[0][i + 16]));
+
+			/*
+			 * Reconstruct pa[1].
+			 *
+			 * The second inverse row is not kept resident. Each table is
+			 * loaded once for the 32-byte iteration and shared by both lanes.
+			 */
+
+			/* V[2] * syndrome0 low */
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
+			asm volatile ("movdqa %xmm14,%xmm15");
+			asm volatile ("pshufb %xmm0,%xmm14");
+			asm volatile ("pshufb %xmm1,%xmm15");
+			asm volatile ("movdqa %xmm14,%xmm6");
+			asm volatile ("movdqa %xmm15,%xmm7");
+
+			/* V[2] * syndrome0 high */
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
+			asm volatile ("movdqa %xmm14,%xmm15");
+			asm volatile ("pshufb %xmm4,%xmm14");
+			asm volatile ("pshufb %xmm5,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm15,%xmm7");
+
+			/* V[3] * syndrome1 low */
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
+			asm volatile ("movdqa %xmm14,%xmm15");
+			asm volatile ("pshufb %xmm2,%xmm14");
+			asm volatile ("pshufb %xmm3,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm15,%xmm7");
+
+			/* V[3] * syndrome1 high */
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
+			asm volatile ("movdqa %xmm14,%xmm15");
+			asm volatile ("pshufb %xmm12,%xmm14");
+			asm volatile ("pshufb %xmm13,%xmm15");
+			asm volatile ("pxor %xmm14,%xmm6");
+			asm volatile ("pxor %xmm15,%xmm7");
+
+			/* recovery data must remain cacheable */
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
+			asm volatile ("movdqa %%xmm7,%0" : "=m" (pa[1][i + 16]));
+		}
 	}
 
 	raid_sse_end();
 }
 
 /*
- * Recover failure of two data blocks using P and Q SSSE3 extended implementation.
+ * Recover failure of two data blocks using P and Q with SSSE3 extended.
  *
- * Uses raid_delta_gen() and keeps all four multiplication tables resident
- * in XMM registers (xmm8..xmm11).
+ * Computes Pdelta and Qdelta directly in a single survivor scan.
+ * Q is computed with Horner's method using the active field generator.
+ *
+ * Processes four 16-byte lanes per iteration and keeps all four
+ * multiplication tables used by the analytical solution resident.
  */
 static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
-	uint8_t *pa;
 	uint8_t *q;
+	uint8_t *pa;
 	uint8_t *qa;
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
 	uint8_t C[2];
+	int generator;
+	int l;
+	int d;
 	size_t i;
+
+	BUG_ON(ip[0] != 0 || ip[1] != 1);
 
 	/* get multiplication coefficients */
 	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
 	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
 
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
+	R[0][0] = &raid_gfmulpshufb[C[0]][0][0];
+	R[0][1] = &raid_gfmulpshufb[C[1]][0][0];
+
+	generator = powgen(1);
+	BUG_ON(generator != 2 && generator != 3);
+
+	l = nd - 1;
 
 	p = v[nd];
 	q = v[nd + 1];
@@ -2005,55 +2869,299 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	/*
+	 * During the survivor scan:
+	 *
+	 * xmm0-xmm3  Pdelta lanes
+	 * xmm4-xmm7  Qa lanes
+	 * xmm8-xmm10 temporaries
+	 * xmm11      active reduction polynomial
+	 * xmm12-xmm15 analytical multiplication tables
+	 */
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly[0]));
 
-	/* keep the four multiplication tables resident */
-	asm volatile ("movdqa %0,%%xmm8" : : "m" (raid_gfmulpshufb[C[0]][0][0]));
-	asm volatile ("movdqa %0,%%xmm9" : : "m" (raid_gfmulpshufb[C[0]][1][0]));
-	asm volatile ("movdqa %0,%%xmm10" : : "m" (raid_gfmulpshufb[C[1]][0][0]));
-	asm volatile ("movdqa %0,%%xmm11" : : "m" (raid_gfmulpshufb[C[1]][1][0]));
+	/* keep the analytical multiplication tables resident */
+	asm volatile ("movdqa %0,%%xmm12" : : "m" (R[0][0][0]));
+	asm volatile ("movdqa %0,%%xmm13" : : "m" (R[0][0][16]));
+	asm volatile ("movdqa %0,%%xmm14" : : "m" (R[0][1][0]));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (R[0][1][16]));
 
-	for (i = 0; i < size; i += 16) {
-		/* Pd */
+	for (i = 0; i < size; i += 64) {
+		/* Pdelta starts directly from stored P */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
-		asm volatile ("pxor %0,%%xmm0" : : "m" (pa[i]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (p[i + 32]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (p[i + 48]));
 
-		/* Qd */
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (q[i]));
-		asm volatile ("pxor %0,%%xmm1" : : "m" (qa[i]));
+		/* Qa starts at zero for all four lanes */
+		asm volatile ("pxor %xmm4,%xmm4");
+		asm volatile ("pxor %xmm5,%xmm5");
+		asm volatile ("pxor %xmm6,%xmm6");
+		asm volatile ("pxor %xmm7,%xmm7");
 
-		/* split Pd and Qd */
-		asm volatile ("movdqa %xmm0,%xmm4");
-		asm volatile ("movdqa %xmm1,%xmm5");
-		asm volatile ("movdqa %xmm0,%xmm2");
-		asm volatile ("movdqa %xmm1,%xmm3");
-		asm volatile ("psrlw $4,%xmm2");
-		asm volatile ("psrlw $4,%xmm3");
-		asm volatile ("pand %xmm7,%xmm4");
-		asm volatile ("pand %xmm7,%xmm5");
-		asm volatile ("pand %xmm7,%xmm2");
-		asm volatile ("pand %xmm7,%xmm3");
+		/* last disk starts Horner without generator multiplication */
+		if (l != id[0] && l != id[1]) {
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[l][i]));
+			asm volatile ("pxor %xmm8,%xmm0");
+			asm volatile ("pxor %xmm8,%xmm4");
 
-		/* C0 * Pd */
-		asm volatile ("movdqa %xmm8,%xmm6");
-		asm volatile ("pshufb %xmm4,%xmm6");
-		asm volatile ("movdqa %xmm9,%xmm12");
-		asm volatile ("pshufb %xmm2,%xmm12");
-		asm volatile ("pxor %xmm12,%xmm6");
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[l][i + 16]));
+			asm volatile ("pxor %xmm8,%xmm1");
+			asm volatile ("pxor %xmm8,%xmm5");
 
-		/* C1 * Qd */
-		asm volatile ("movdqa %xmm10,%xmm12");
-		asm volatile ("pshufb %xmm5,%xmm12");
-		asm volatile ("pxor %xmm12,%xmm6");
-		asm volatile ("movdqa %xmm11,%xmm12");
-		asm volatile ("pshufb %xmm3,%xmm12");
-		asm volatile ("pxor %xmm12,%xmm6");
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[l][i + 32]));
+			asm volatile ("pxor %xmm8,%xmm2");
+			asm volatile ("pxor %xmm8,%xmm6");
 
-		/* Dy = xmm6, Dx = Pd ^ Dy */
-		asm volatile ("pxor %xmm6,%xmm0");
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[l][i + 48]));
+			asm volatile ("pxor %xmm8,%xmm3");
+			asm volatile ("pxor %xmm8,%xmm7");
+		}
 
+		for (d = l - 1; d >= 0; --d) {
+			/* multiply all four Qa lanes by the active generator */
+			if (generator == 3) {
+				/* lane 0 */
+				asm volatile ("movdqa %xmm4,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pcmpgtb %xmm4,%xmm9");
+				asm volatile ("paddb %xmm4,%xmm4");
+				asm volatile ("pand %xmm11,%xmm9");
+				asm volatile ("pxor %xmm9,%xmm4");
+				asm volatile ("pxor %xmm8,%xmm4");
+
+				/* lane 1 */
+				asm volatile ("movdqa %xmm5,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pcmpgtb %xmm5,%xmm9");
+				asm volatile ("paddb %xmm5,%xmm5");
+				asm volatile ("pand %xmm11,%xmm9");
+				asm volatile ("pxor %xmm9,%xmm5");
+				asm volatile ("pxor %xmm8,%xmm5");
+
+				/* lane 2 */
+				asm volatile ("movdqa %xmm6,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pcmpgtb %xmm6,%xmm9");
+				asm volatile ("paddb %xmm6,%xmm6");
+				asm volatile ("pand %xmm11,%xmm9");
+				asm volatile ("pxor %xmm9,%xmm6");
+				asm volatile ("pxor %xmm8,%xmm6");
+
+				/* lane 3 */
+				asm volatile ("movdqa %xmm7,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pcmpgtb %xmm7,%xmm9");
+				asm volatile ("paddb %xmm7,%xmm7");
+				asm volatile ("pand %xmm11,%xmm9");
+				asm volatile ("pxor %xmm9,%xmm7");
+				asm volatile ("pxor %xmm8,%xmm7");
+			} else {
+				/* lanes 0 and 1 */
+				asm volatile ("pxor %xmm8,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pcmpgtb %xmm4,%xmm8");
+				asm volatile ("pcmpgtb %xmm5,%xmm9");
+				asm volatile ("paddb %xmm4,%xmm4");
+				asm volatile ("paddb %xmm5,%xmm5");
+				asm volatile ("pand %xmm11,%xmm8");
+				asm volatile ("pand %xmm11,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm4");
+				asm volatile ("pxor %xmm9,%xmm5");
+
+				/* lanes 2 and 3 */
+				asm volatile ("pxor %xmm8,%xmm8");
+				asm volatile ("pxor %xmm9,%xmm9");
+				asm volatile ("pcmpgtb %xmm6,%xmm8");
+				asm volatile ("pcmpgtb %xmm7,%xmm9");
+				asm volatile ("paddb %xmm6,%xmm6");
+				asm volatile ("paddb %xmm7,%xmm7");
+				asm volatile ("pand %xmm11,%xmm8");
+				asm volatile ("pand %xmm11,%xmm9");
+				asm volatile ("pxor %xmm8,%xmm6");
+				asm volatile ("pxor %xmm9,%xmm7");
+			}
+
+			/* missing disks contribute zero */
+			if (d == id[0] || d == id[1])
+				continue;
+
+			/* lane 0 */
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i]));
+			asm volatile ("pxor %xmm8,%xmm0");
+			asm volatile ("pxor %xmm8,%xmm4");
+
+			/* lane 1 */
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 16]));
+			asm volatile ("pxor %xmm8,%xmm1");
+			asm volatile ("pxor %xmm8,%xmm5");
+
+			/* lane 2 */
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 32]));
+			asm volatile ("pxor %xmm8,%xmm2");
+			asm volatile ("pxor %xmm8,%xmm6");
+
+			/* lane 3 */
+			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i + 48]));
+			asm volatile ("pxor %xmm8,%xmm3");
+			asm volatile ("pxor %xmm8,%xmm7");
+		}
+
+		/* Qdelta = Q ^ Qa */
+		asm volatile ("pxor %0,%%xmm4" : : "m" (q[i]));
+		asm volatile ("pxor %0,%%xmm5" : : "m" (q[i + 16]));
+		asm volatile ("pxor %0,%%xmm6" : : "m" (q[i + 32]));
+		asm volatile ("pxor %0,%%xmm7" : : "m" (q[i + 48]));
+
+		/* the polynomial is no longer needed during reconstruction */
+		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low4[0]));
+
+		/* lane 0: split Pdelta */
+		asm volatile ("movdqa %xmm0,%xmm8");
+		asm volatile ("movdqa %xmm0,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 0: Dy = C0 * Pdelta */
+		asm volatile ("movdqa %xmm12,%xmm10");
+		asm volatile ("pshufb %xmm8,%xmm10");
+		asm volatile ("movdqa %xmm13,%xmm8");
+		asm volatile ("pshufb %xmm9,%xmm8");
+		asm volatile ("pxor %xmm8,%xmm10");
+
+		/* lane 0: split Qdelta */
+		asm volatile ("movdqa %xmm4,%xmm8");
+		asm volatile ("movdqa %xmm4,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 0: Dy ^= C1 * Qdelta */
+		asm volatile ("movdqa %xmm14,%xmm4");
+		asm volatile ("pshufb %xmm8,%xmm4");
+		asm volatile ("pxor %xmm4,%xmm10");
+		asm volatile ("movdqa %xmm15,%xmm4");
+		asm volatile ("pshufb %xmm9,%xmm4");
+		asm volatile ("pxor %xmm4,%xmm10");
+
+		/* lane 0: Dx = Pdelta ^ Dy */
+		asm volatile ("pxor %xmm10,%xmm0");
+
+		/* recovery data must remain cacheable */
 		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
-		asm volatile ("movdqa %%xmm6,%0" : "=m" (qa[i]));
+		asm volatile ("movdqa %%xmm10,%0" : "=m" (qa[i]));
+
+		/* lane 1: split Pdelta */
+		asm volatile ("movdqa %xmm1,%xmm8");
+		asm volatile ("movdqa %xmm1,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 1: Dy = C0 * Pdelta */
+		asm volatile ("movdqa %xmm12,%xmm10");
+		asm volatile ("pshufb %xmm8,%xmm10");
+		asm volatile ("movdqa %xmm13,%xmm8");
+		asm volatile ("pshufb %xmm9,%xmm8");
+		asm volatile ("pxor %xmm8,%xmm10");
+
+		/* lane 1: split Qdelta */
+		asm volatile ("movdqa %xmm5,%xmm8");
+		asm volatile ("movdqa %xmm5,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 1: Dy ^= C1 * Qdelta */
+		asm volatile ("movdqa %xmm14,%xmm5");
+		asm volatile ("pshufb %xmm8,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm10");
+		asm volatile ("movdqa %xmm15,%xmm5");
+		asm volatile ("pshufb %xmm9,%xmm5");
+		asm volatile ("pxor %xmm5,%xmm10");
+
+		/* lane 1: Dx = Pdelta ^ Dy */
+		asm volatile ("pxor %xmm10,%xmm1");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[i + 16]));
+		asm volatile ("movdqa %%xmm10,%0" : "=m" (qa[i + 16]));
+
+		/* lane 2: split Pdelta */
+		asm volatile ("movdqa %xmm2,%xmm8");
+		asm volatile ("movdqa %xmm2,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 2: Dy = C0 * Pdelta */
+		asm volatile ("movdqa %xmm12,%xmm10");
+		asm volatile ("pshufb %xmm8,%xmm10");
+		asm volatile ("movdqa %xmm13,%xmm8");
+		asm volatile ("pshufb %xmm9,%xmm8");
+		asm volatile ("pxor %xmm8,%xmm10");
+
+		/* lane 2: split Qdelta */
+		asm volatile ("movdqa %xmm6,%xmm8");
+		asm volatile ("movdqa %xmm6,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 2: Dy ^= C1 * Qdelta */
+		asm volatile ("movdqa %xmm14,%xmm6");
+		asm volatile ("pshufb %xmm8,%xmm6");
+		asm volatile ("pxor %xmm6,%xmm10");
+		asm volatile ("movdqa %xmm15,%xmm6");
+		asm volatile ("pshufb %xmm9,%xmm6");
+		asm volatile ("pxor %xmm6,%xmm10");
+
+		/* lane 2: Dx = Pdelta ^ Dy */
+		asm volatile ("pxor %xmm10,%xmm2");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i + 32]));
+		asm volatile ("movdqa %%xmm10,%0" : "=m" (qa[i + 32]));
+
+		/* lane 3: split Pdelta */
+		asm volatile ("movdqa %xmm3,%xmm8");
+		asm volatile ("movdqa %xmm3,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 3: Dy = C0 * Pdelta */
+		asm volatile ("movdqa %xmm12,%xmm10");
+		asm volatile ("pshufb %xmm8,%xmm10");
+		asm volatile ("movdqa %xmm13,%xmm8");
+		asm volatile ("pshufb %xmm9,%xmm8");
+		asm volatile ("pxor %xmm8,%xmm10");
+
+		/* lane 3: split Qdelta */
+		asm volatile ("movdqa %xmm7,%xmm8");
+		asm volatile ("movdqa %xmm7,%xmm9");
+		asm volatile ("psrlw $4,%xmm9");
+		asm volatile ("pand %xmm11,%xmm8");
+		asm volatile ("pand %xmm11,%xmm9");
+
+		/* lane 3: Dy ^= C1 * Qdelta */
+		asm volatile ("movdqa %xmm14,%xmm7");
+		asm volatile ("pshufb %xmm8,%xmm7");
+		asm volatile ("pxor %xmm7,%xmm10");
+		asm volatile ("movdqa %xmm15,%xmm7");
+		asm volatile ("pshufb %xmm9,%xmm7");
+		asm volatile ("pxor %xmm7,%xmm10");
+
+		/* lane 3: Dx = Pdelta ^ Dy */
+		asm volatile ("pxor %xmm10,%xmm3");
+
+		/* recovery data must remain cacheable */
+		asm volatile ("movdqa %%xmm3,%0" : "=m" (pa[i + 48]));
+		asm volatile ("movdqa %%xmm10,%0" : "=m" (qa[i + 48]));
+
+		/* restore the polynomial for the next 64-byte iteration */
+		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly[0]));
 	}
 
 	raid_sse_end();
@@ -2950,7 +4058,13 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec1_ssse3_delta(id, ip, nd, size, vv);
+	/* if recovering with Q use the specialized function */
+	if (ip[0] == 1) {
+		raid_rec1_ssse3_q(id, ip, nd, size, vv);
+		return;
+	}
+
+	raid_rec1_ssse3_1(id, ip, nd, size, vv);
 }
 
 void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2963,7 +4077,10 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		return;
 	}
 
-	raid_rec2_ssse3_delta(id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_rec2_ssse3_2(1, id, ip, nd, size, vv);
+	else
+		raid_rec2_ssse3_2(0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -3013,7 +4130,13 @@ void raid_rec1_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 		return;
 	}
 
-	raid_rec1_ssse3ext_delta(id, ip, nd, size, vv);
+	/* if recovering with Q use the specialized function */
+	if (ip[0] == 1) {
+		raid_rec1_ssse3ext_q(id, ip, nd, size, vv);
+		return;
+	}
+
+	raid_rec1_ssse3ext_1(id, ip, nd, size, vv);
 }
 
 void raid_rec2_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -3026,7 +4149,10 @@ void raid_rec2_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 		return;
 	}
 
-	raid_rec2_ssse3ext_delta(id, ip, nd, size, vv);
+	if (ip[0] == 0)
+		raid_rec2_ssse3ext_2(1, id, ip, nd, size, vv);
+	else
+		raid_rec2_ssse3ext_2(0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)

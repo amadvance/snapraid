@@ -1392,8 +1392,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(2, raid_gen2_sse2_raid);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1403,8 +1401,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(2, raid_gen2_sse2ext_raid);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_ssse3ext(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1500,8 +1496,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(3, raid_gen3_ssse3_raid);
 			/* +2 to select R instead of Q */
 			raid_rec1_ssse3(1, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1511,8 +1505,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(3, raid_gen3_ssse3ext_raid);
 			/* +2 to select R instead of Q */
 			raid_rec1_ssse3ext(1, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1708,8 +1700,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(3, raid_gen3_ssse3_raid);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1719,8 +1709,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(3, raid_gen3_ssse3ext_raid);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_ssse3ext(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1816,8 +1804,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(4, raid_gen4_ssse3_raid);
 			/* +2 to select R,S instead of Q,R */
 			raid_rec2_ssse3(2, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1827,8 +1813,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(4, raid_gen4_ssse3ext_raid);
 			/* +2 to select R,S instead of Q,R */
 			raid_rec2_ssse3ext(2, id, ip + 2, nd, size, v);
 		} SPEED_STOP
