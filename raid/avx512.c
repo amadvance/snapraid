@@ -889,6 +889,62 @@ static __always_inline void raid_recX_avx512bw(int nr, int has_p, int *id, int *
 	raid_avx_end();
 }
 
+/*
+ * Recover one data failure using P with AVX512BW.
+ *
+ * The missing block is:
+ *
+ *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
+ *
+ * Process two surviving data blocks per iteration using vpternlogq.
+ */
+static __always_inline void raid_rec1of1_avx512bw(int *id, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t *p;
+	uint8_t *pa;
+	size_t i;
+	int d, s, ns;
+
+	p = v[nd];
+	pa = v[id[0]];
+
+	/* build the compact list of surviving data blocks */
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d != id[0])
+			src[ns++] = v[d];
+	}
+
+	BUG_ON(ns != nd - 1);
+
+	raid_avx_begin();
+
+	for (i = 0; i < size; i += 64) {
+		/* start from the stored P block */
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
+
+		/* XOR two surviving data blocks at a time */
+		for (s = 0; s <= ns - 2; s += 2) {
+			asm volatile (
+				"vmovdqa64 %0,%%zmm1\n\t"
+				"vpternlogq $0x96,%1,%%zmm1,%%zmm0"
+				:
+				: "m" (src[s][i]), "m" (src[s + 1][i])
+			);
+		}
+
+		/* remaining odd survivor */
+		if (s < ns)
+			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (src[s][i]));
+
+		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
+	}
+
+	raid_avx_end();
+}
+
 void raid_gen4_avx512bw(int nd, size_t size, void **vv)
 {
 	raid_genX_avx512bw(nd, size, vv, 4);
@@ -907,10 +963,14 @@ void raid_gen6_avx512bw(int nd, size_t size, void **vv)
 void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	if (ip[0] == 0)
-		raid_recX_avx512bw(1, 1, id, ip, nd, size, vv);
-	else
-		raid_recX_avx512bw(1, 0, id, ip, nd, size, vv);
+
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
+	if (ip[0] == 0) {
+		raid_rec1of1_avx512bw(id, nd, size, vv);
+		return;
+	}
+
+	raid_recX_avx512bw(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
