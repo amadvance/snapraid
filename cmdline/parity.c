@@ -187,8 +187,11 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		split->size = parity->split_map[s].size;
 		split->limit_size = PARITY_LIMIT(limit_size, s, level);
 
-		/* opening in sequential mode in Windows */
-		flags = O_RDWR | O_CREAT | O_BINARY | advise_flags(&split->advise);
+		/*
+		 * Open for writing.
+		 * O_NOFOLLOW: do not follow links to ensure to open the real parity file.
+		 */
+		flags = O_RDWR | O_CREAT | O_BINARY | O_NOFOLLOW | advise_flags(&split->advise);
 		split->f = open(split->path, flags, 0600);
 		if (split->f == -1) {
 			/* LCOV_EXCL_START */
@@ -777,8 +780,9 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		/*
 		 * Open for read
 		 * O_NOATIME: do not change access time
+		 * O_NOFOLLOW: do not follow links to ensure to open the real parity file
 		 */
-		flags = O_RDONLY | O_BINARY | advise_flags(&split->advise);
+		flags = O_RDONLY | O_BINARY | O_NOFOLLOW | advise_flags(&split->advise);
 
 		split->f = open_noatime(split->path, flags);
 		if (split->f == -1) {
