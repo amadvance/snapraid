@@ -1377,10 +1377,14 @@ void raid_gen6_neon_aes(int nd, size_t size, void **vv)
 void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	if (ip[0] == 0)
-		raid_recX_neon_12(1, 1, id, ip, nd, size, vv);
-	else
-		raid_recX_neon_12(1, 0, id, ip, nd, size, vv);
+
+	/* if recovering with P uses the delta function */
+	if (ip[0] == 0) {
+		raid_rec1of1(id, nd, size, vv);
+		return;
+	}
+
+	raid_recX_neon_12(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
