@@ -1151,6 +1151,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
+		/* force the parity generator used by raid_rec1of1() */
 		raid_gen_force(1, sizeof(void *) == 8 ? raid_gen1_int64 : raid_gen1_int32);
 		raid_rec1_int8(1, id, ip, nd, size, v);
 	} SPEED_STOP
@@ -1160,7 +1161,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_NEON
 	SPEED_START {
-		/* raid_rec1of1() internally calls raid_gen() */
+		/* force the parity generator used by raid_rec1of1() */
 		raid_gen_force(1, raid_gen1_neon);
 		raid_rec1_neon(1, id, ip, nd, size, v);
 	} SPEED_STOP
@@ -1170,6 +1171,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #endif
 #ifdef CONFIG_NEON32
 	SPEED_START {
+		/* force the parity generator used by raid_rec1of1() */
 		raid_gen_force(1, raid_gen1_neon32);
 		raid_rec1_neon32(1, id, ip, nd, size, v);
 	} SPEED_STOP
@@ -1181,7 +1183,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* raid_rec1of1() internally calls raid_gen() */
+			/* force the parity generator used by raid_rec1of1() */
 			raid_gen_force(1, raid_gen1_sse2);
 			raid_rec1_ssse3(1, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1191,7 +1193,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* raid_rec1of1() internally calls raid_gen() */
+			/* force the parity generator used by raid_rec1of1() */
 			raid_gen_force(1, raid_gen1_sse2);
 			raid_rec1_ssse3ext(1, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1202,6 +1204,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
+			/* force the parity generator used by raid_rec1of1() */
 			raid_gen_force(1, raid_gen1_avx2);
 			raid_rec1_avx2(1, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1212,10 +1215,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/*
-			 * raid_rec1_avx2ext() uses raid_rec1of1() for P,
-			 * which internally calls raid_gen().
-			 */
+			/* force the parity generator used by raid_rec1of1() */
 			raid_gen_force(1, raid_gen1_avx2);
 			raid_rec1_avx2ext(1, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1257,7 +1257,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		raid_gen_force(1, sizeof(void *) == 8 ? raid_gen1_int64 : raid_gen1_int32);
+		/* force the parity generator used by raid_delta_gen() */
+		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
 		/* +1 to avoid GEN1 optimized case */
 		raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -1287,8 +1288,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(1, raid_gen1_sse2);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(2, raid_gen2_sse2_raid);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1298,8 +1299,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(1, raid_gen1_sse2);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(2, raid_gen2_sse2ext_raid);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_ssse3ext(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1310,7 +1311,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(1, raid_gen1_avx2);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_avx2(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1321,8 +1321,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(1, raid_gen1_avx2);
 			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_avx2ext(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1367,7 +1365,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		raid_gen_force(1, sizeof(void *) == 8 ? raid_gen1_int64 : raid_gen1_int32);
+		/* force the parity generator used by raid_delta_gen() */
+		raid_gen_force(3, raid_gen3_int8);
 		/* +2 to select R instead of Q */
 		raid_rec1_int8(1, id, ip + 2, nd, size, v);
 	} SPEED_STOP
@@ -1397,8 +1396,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(1, raid_gen1_sse2);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(3, raid_gen3_ssse3_raid);
 			/* +2 to select R instead of Q */
 			raid_rec1_ssse3(1, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1408,8 +1407,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(1, raid_gen1_sse2);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(3, raid_gen3_ssse3ext_raid);
 			/* +2 to select R instead of Q */
 			raid_rec1_ssse3ext(1, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1420,7 +1419,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(1, raid_gen1_avx2);
 			/* +2 to select R instead of Q */
 			raid_rec1_avx2(1, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1431,8 +1429,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(1, raid_gen1_avx2);
 			/* +2 to select R instead of Q */
 			raid_rec1_avx2ext(1, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1477,6 +1473,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
+		/* force the parity generator used by raid_delta_gen() */
 		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
 		raid_rec2_int8(2, id, ip, nd, size, v);
 	} SPEED_STOP
@@ -1494,6 +1491,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #endif
 #ifdef CONFIG_NEON32
 	SPEED_START {
+		/* force the parity generator used by raid_delta_gen() */
+		raid_gen_force(2, raid_gen2_neon32_raid);
 		raid_rec2_neon32(2, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1504,7 +1503,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
+			/* force the parity generator used by raid_delta_gen() */
 			raid_gen_force(2, raid_gen2_sse2_raid);
 			raid_rec2_ssse3(2, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1514,7 +1513,7 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
+			/* force the parity generator used by raid_delta_gen() */
 			raid_gen_force(2, raid_gen2_sse2ext_raid);
 			raid_rec2_ssse3ext(2, id, ip, nd, size, v);
 		} SPEED_STOP
@@ -1525,7 +1524,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(2, raid_gen2_avx2_raid);
 			raid_rec2_avx2(2, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1535,8 +1533,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_avx2ext_raid);
 			raid_rec2_avx2ext(2, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1577,7 +1573,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
+		/* force the parity generator used by raid_delta_gen() */
+		raid_gen_force(3, raid_gen3_int8);
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -1607,8 +1604,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_sse2_raid);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(3, raid_gen3_ssse3_raid);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1618,8 +1615,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_sse2ext_raid);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(3, raid_gen3_ssse3ext_raid);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_ssse3ext(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1630,7 +1627,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(2, raid_gen2_avx2_raid);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_avx2(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1641,8 +1637,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_avx2ext_raid);
 			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_avx2ext(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -1687,7 +1681,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		raid_gen_force(2, sizeof(void *) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
+		/* force the parity generator used by raid_delta_gen() */
+		raid_gen_force(4, raid_gen4_int8);
 		/* +2 to select R,S instead of Q,R */
 		raid_rec2_int8(2, id, ip + 2, nd, size, v);
 	} SPEED_STOP
@@ -1717,8 +1712,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_sse2_raid);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(4, raid_gen4_ssse3_raid);
 			/* +2 to select R,S instead of Q,R */
 			raid_rec2_ssse3(2, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1728,8 +1723,8 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_sse2ext_raid);
+			/* force the parity generator used by raid_delta_gen() */
+			raid_gen_force(4, raid_gen4_ssse3ext_raid);
 			/* +2 to select R,S instead of Q,R */
 			raid_rec2_ssse3ext(2, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1740,7 +1735,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			raid_gen_force(2, raid_gen2_avx2_raid);
 			/* +2 to select R,S instead of Q,R */
 			raid_rec2_avx2(2, id, ip + 2, nd, size, v);
 		} SPEED_STOP
@@ -1751,8 +1745,6 @@ void speed_rec(int nd, void **v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* ensure to use same hardware in the delta step */
-			raid_gen_force(2, raid_gen2_avx2ext_raid);
 			/* +2 to select R,S instead of Q,R */
 			raid_rec2_avx2ext(2, id, ip + 2, nd, size, v);
 		} SPEED_STOP
