@@ -1167,6 +1167,60 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 #endif
 
 /*
+ * Recover one data failure using P with SSSE3.
+ *
+ * The missing block is:
+ *
+ *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
+ *
+ * Use temporal stores because recovered data is consumed immediately by
+ * validation and parity regeneration.
+ */
+static __always_inline void raid_rec1of1_ssse3(int *id, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t *p;
+	uint8_t *pa;
+	size_t i;
+	int d, s, ns;
+
+	p = v[nd];
+	pa = v[id[0]];
+
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d != id[0])
+			src[ns++] = v[d];
+	}
+
+	BUG_ON(ns != nd - 1);
+
+	raid_sse_begin();
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (p[i + 32]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (p[i + 48]));
+
+		for (s = 0; s < ns; ++s) {
+			asm volatile ("pxor %0,%%xmm0" : : "m" (src[s][i]));
+			asm volatile ("pxor %0,%%xmm1" : : "m" (src[s][i + 16]));
+			asm volatile ("pxor %0,%%xmm2" : : "m" (src[s][i + 32]));
+			asm volatile ("pxor %0,%%xmm3" : : "m" (src[s][i + 48]));
+		}
+
+		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
+		asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[i + 16]));
+		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i + 32]));
+		asm volatile ("movdqa %%xmm3,%0" : "=m" (pa[i + 48]));
+	}
+
+	raid_sse_end();
+}
+
+/*
  * Recover failure of one data block using selected parity with SSSE3, optimized for one failure.
  *
  * Computes the selected syndrome in a single survivor scan and reconstructs
@@ -4052,9 +4106,9 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
 
-	/* if recovering with P uses the delta function */
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
+		raid_rec1of1_ssse3(id, nd, size, vv);
 		return;
 	}
 
@@ -4124,9 +4178,9 @@ void raid_rec1_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 {
 	BUG_ON(nr != 1);
 
-	/* if recovering with P uses the delta function */
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
+		raid_rec1of1_ssse3(id, nd, size, vv);
 		return;
 	}
 

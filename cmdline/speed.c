@@ -1287,8 +1287,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* force the parity generator used by raid_rec1of1() */
-			raid_gen_force(1, raid_gen1_sse2);
 			raid_rec1_ssse3(1, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1297,8 +1295,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* force the parity generator used by raid_rec1of1() */
-			raid_gen_force(1, raid_gen1_sse2);
 			raid_rec1_ssse3ext(1, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1308,8 +1304,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	}
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* force the parity generator used by raid_rec1of1() */
-			raid_gen_force(1, raid_gen1_avx2);
 			raid_rec1_avx2(1, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1319,8 +1313,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
-			/* force the parity generator used by raid_rec1of1() */
-			raid_gen_force(1, raid_gen1_avx2);
 			raid_rec1_avx2ext(1, id, ip, nd, size, v);
 		} SPEED_STOP
 
