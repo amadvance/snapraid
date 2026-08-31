@@ -1346,6 +1346,109 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 }
 
 /*
+ * Recover one data failure using P with AVX2 GFNI.
+ *
+ * The missing block is:
+ *
+ *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
+ */
+static __always_inline void raid_rec1of1_avx2gfni(int *id, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t *p;
+	uint8_t *pa;
+	size_t i;
+	int d, s, ns;
+
+	p = v[nd];
+	pa = v[id[0]];
+
+	/* build the compact list of surviving data blocks */
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d != id[0])
+			src[ns++] = v[d];
+	}
+
+	BUG_ON(ns != nd - 1);
+
+	raid_avx_begin();
+
+	for (i = 0; i < size; i += 64) {
+		/* start from the stored P block */
+		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
+
+		for (s = 0; s < ns; ++s) {
+			asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (src[s][i]));
+			asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (src[s][i + 32]));
+		}
+
+		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
+		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
+	}
+
+	raid_avx_end();
+}
+
+/*
+ * Recover one data failure using P with AVX512 GFNI.
+ *
+ * The missing block is:
+ *
+ *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
+ *
+ * Process two surviving data blocks per iteration using vpternlogq.
+ */
+static __always_inline void raid_rec1of1_avx512gfni(int *id, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t *p;
+	uint8_t *pa;
+	size_t i;
+	int d, s, ns;
+
+	p = v[nd];
+	pa = v[id[0]];
+
+	/* build the compact list of surviving data blocks */
+	ns = 0;
+	for (d = 0; d < nd; ++d) {
+		if (d != id[0])
+			src[ns++] = v[d];
+	}
+
+	BUG_ON(ns != nd - 1);
+
+	raid_avx_begin();
+
+	for (i = 0; i < size; i += 64) {
+		/* start from the stored P block */
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
+
+		/* XOR two surviving data blocks at a time */
+		for (s = 0; s <= ns - 2; s += 2) {
+			asm volatile (
+				"vmovdqa64 %0,%%zmm1\n\t"
+				"vpternlogq $0x96,%1,%%zmm1,%%zmm0"
+				:
+				: "m" (src[s][i]), "m" (src[s + 1][i])
+			);
+		}
+
+		/* remaining odd survivor */
+		if (s < ns)
+			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (src[s][i]));
+
+		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
+	}
+
+	raid_avx_end();
+}
+
+/*
  * Recover multiple data failures using selected parity blocks with AVX2 GFNI.
  *
  * Compute only the selected syndromes, keeping them in registers.
@@ -2210,10 +2313,14 @@ void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv)
 void raid_rec1_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	if (ip[0] == 0)
-		raid_recX_avx2gfni_raid(1, 1, id, ip, nd, size, vv);
-	else
-		raid_recX_avx2gfni_raid(1, 0, id, ip, nd, size, vv);
+
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
+	if (ip[0] == 0) {
+		raid_rec1of1_avx2gfni(id, nd, size, vv);
+		return;
+	}
+
+	raid_recX_avx2gfni_raid(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2264,10 +2371,14 @@ void raid_rec6_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 void raid_rec1_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	if (ip[0] == 0)
-		raid_recX_avx512gfni_raid(1, 1, id, ip, nd, size, vv);
-	else
-		raid_recX_avx512gfni_raid(1, 0, id, ip, nd, size, vv);
+
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
+	if (ip[0] == 0) {
+		raid_rec1of1_avx512gfni(id, nd, size, vv);
+		return;
+	}
+
+	raid_recX_avx512gfni_raid(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2318,10 +2429,14 @@ void raid_rec6_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 void raid_rec1_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	if (ip[0] == 0)
-		raid_recX_avx2gfni_aes(1, 1, id, ip, nd, size, vv);
-	else
-		raid_recX_avx2gfni_aes(1, 0, id, ip, nd, size, vv);
+
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
+	if (ip[0] == 0) {
+		raid_rec1of1_avx2gfni(id, nd, size, vv);
+		return;
+	}
+
+	raid_recX_avx2gfni_aes(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2372,10 +2487,14 @@ void raid_rec6_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 void raid_rec1_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	if (ip[0] == 0)
-		raid_recX_avx512gfni_aes(1, 1, id, ip, nd, size, vv);
-	else
-		raid_recX_avx512gfni_aes(1, 0, id, ip, nd, size, vv);
+
+	/* if recovering with P, use a custom XOR-only path with temporal stores */
+	if (ip[0] == 0) {
+		raid_rec1of1_avx512gfni(id, nd, size, vv);
+		return;
+	}
+
+	raid_recX_avx512gfni_aes(1, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec2_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv)
