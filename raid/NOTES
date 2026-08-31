@@ -828,7 +828,11 @@ NEON:
 
 * selected syndromes are accumulated in one surviving-data scan
 * S[][] and R[][] provide direct pointers to low/high multiplication tables
-* reconstruction still loads each coefficient table pair as needed
+* reconstruction loads each coefficient table pair as needed
+* AArch64 NEON unrolls REC1 and REC2 to 64-byte chunks across four 16-byte vector
+  lanes, keeping all syndrome accumulators and Pdelta resident in registers
+  without temporary memory buffers
+* AArch64 NEON REC3..REC6 use the 32-byte generic kernel across two 16-byte lanes
 
 
 RECX coefficient residency

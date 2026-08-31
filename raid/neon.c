@@ -570,6 +570,355 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 }
 
 /*
+ * Recover multiple data failures using selected parity blocks with NEON
+ * optimized for up to two failures.
+ *
+ * Process 64 bytes at a time across four 16-byte lanes.
+ *
+ * If P is available, preserve the complete P delta syndrome and
+ * reconstruct only nr - 1 missing blocks through the inverse matrix.
+ * The last missing block is obtained by XORing the reconstructed blocks
+ * out of Pdelta.
+ */
+static __always_inline void raid_recX_neon_12(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p[RAID_PARITY_MAX];
+	uint8_t *pa[RAID_PARITY_MAX];
+	uint8_t *src[RAID_DATA_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	const uint8_t *S[RAID_DATA_MAX][RAID_PARITY_MAX];
+	const uint8_t *R[RAID_PARITY_MAX][RAID_PARITY_MAX];
+	size_t i;
+	int d, j, k, s;
+	int ns;
+	int has_p;
+
+	BUG_ON(nr < 1 || nr > 2);
+
+	/* setup the coefficients matrix */
+	for (j = 0; j < nr; ++j)
+		for (k = 0; k < nr; ++k)
+			G[j * nr + k] = A(ip[j], id[k]);
+
+	/* invert it to solve the system of linear equations */
+	raid_invert(G, V, nr);
+
+	/* setup selected parity and destination pointers */
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
+	}
+
+	/* ip[] is ordered. If P is available, it is always ip[0] */
+	has_p = ip[0] == 0;
+
+	/*
+	 * Build the compact list of surviving data blocks and precompute
+	 * the multiplication-table pointers for each selected syndrome.
+	 */
+	ns = 0;
+	k = 0;
+
+	for (d = 0; d < nd; ++d) {
+		if (k < nr && d == id[k]) {
+			++k;
+			continue;
+		}
+
+		src[ns] = v[d];
+
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = &raid_gfmulpshufb[A(ip[j], d)][0][0];
+
+		++ns;
+	}
+
+	BUG_ON(k != nr);
+	BUG_ON(ns != nd - nr);
+
+	/* precompute inverse-matrix multiplication table pointers for required outputs */
+	for (j = 0; j < nr - has_p; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = &raid_gfmulpshufb[V[j * nr + k]][0][0];
+
+	raid_neon_begin();
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("ldr q31, %0" : : "m" (gfconst16.low4[0]));
+
+		/* start all selected syndromes from the stored parity */
+		asm volatile ("ldr q0, %0" : : "m" (p[0][i]));
+		asm volatile ("ldr q1, %0" : : "m" (p[0][i + 16]));
+		asm volatile ("ldr q2, %0" : : "m" (p[0][i + 32]));
+		asm volatile ("ldr q3, %0" : : "m" (p[0][i + 48]));
+
+		if (nr >= 2) {
+			asm volatile ("ldr q4, %0" : : "m" (p[1][i]));
+			asm volatile ("ldr q5, %0" : : "m" (p[1][i + 16]));
+			asm volatile ("ldr q6, %0" : : "m" (p[1][i + 32]));
+			asm volatile ("ldr q7, %0" : : "m" (p[1][i + 48]));
+		}
+
+		/*
+		 * Add all surviving data contributions.
+		 * All source reads for this chunk occur before any destination
+		 * write.
+		 */
+		for (s = 0; s < ns; ++s) {
+			const uint8_t **t = S[s];
+
+			asm volatile ("ldr q8, %0" : : "m" (src[s][i]));
+			asm volatile ("ldr q9, %0" : : "m" (src[s][i + 16]));
+			asm volatile ("ldr q10, %0" : : "m" (src[s][i + 32]));
+			asm volatile ("ldr q11, %0" : : "m" (src[s][i + 48]));
+
+			/*
+			 * P has coefficient 1. Use the original source before
+			 * destructively splitting it into nibbles.
+			 */
+			if (has_p) {
+				asm volatile ("eor v0.16b, v0.16b, v8.16b");
+				asm volatile ("eor v1.16b, v1.16b, v9.16b");
+				asm volatile ("eor v2.16b, v2.16b, v10.16b");
+				asm volatile ("eor v3.16b, v3.16b, v11.16b");
+
+				/* split the source lanes */
+				asm volatile ("ushr v12.16b, v8.16b, #4");
+				asm volatile ("ushr v13.16b, v9.16b, #4");
+				asm volatile ("ushr v14.16b, v10.16b, #4");
+				asm volatile ("ushr v15.16b, v11.16b, #4");
+				asm volatile ("and v8.16b, v8.16b, v31.16b");
+				asm volatile ("and v9.16b, v9.16b, v31.16b");
+				asm volatile ("and v10.16b, v10.16b, v31.16b");
+				asm volatile ("and v11.16b, v11.16b, v31.16b");
+				asm volatile ("and v12.16b, v12.16b, v31.16b");
+				asm volatile ("and v13.16b, v13.16b, v31.16b");
+				asm volatile ("and v14.16b, v14.16b, v31.16b");
+				asm volatile ("and v15.16b, v15.16b, v31.16b");
+			} else {
+				/* split the source lanes */
+				asm volatile ("ushr v12.16b, v8.16b, #4");
+				asm volatile ("ushr v13.16b, v9.16b, #4");
+				asm volatile ("ushr v14.16b, v10.16b, #4");
+				asm volatile ("ushr v15.16b, v11.16b, #4");
+				asm volatile ("and v8.16b, v8.16b, v31.16b");
+				asm volatile ("and v9.16b, v9.16b, v31.16b");
+				asm volatile ("and v10.16b, v10.16b, v31.16b");
+				asm volatile ("and v11.16b, v11.16b, v31.16b");
+				asm volatile ("and v12.16b, v12.16b, v31.16b");
+				asm volatile ("and v13.16b, v13.16b, v31.16b");
+				asm volatile ("and v14.16b, v14.16b, v31.16b");
+				asm volatile ("and v15.16b, v15.16b, v31.16b");
+
+				/* syndrome 0 */
+				asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+
+				asm volatile ("tbl v16.16b, {v24.16b}, v8.16b");
+				asm volatile ("tbl v17.16b, {v24.16b}, v9.16b");
+				asm volatile ("tbl v18.16b, {v24.16b}, v10.16b");
+				asm volatile ("tbl v19.16b, {v24.16b}, v11.16b");
+
+				asm volatile ("tbl v20.16b, {v25.16b}, v12.16b");
+				asm volatile ("tbl v21.16b, {v25.16b}, v13.16b");
+				asm volatile ("tbl v22.16b, {v25.16b}, v14.16b");
+				asm volatile ("tbl v23.16b, {v25.16b}, v15.16b");
+
+				asm volatile ("eor v16.16b, v16.16b, v20.16b");
+				asm volatile ("eor v17.16b, v17.16b, v21.16b");
+				asm volatile ("eor v18.16b, v18.16b, v22.16b");
+				asm volatile ("eor v19.16b, v19.16b, v23.16b");
+
+				asm volatile ("eor v0.16b, v0.16b, v16.16b");
+				asm volatile ("eor v1.16b, v1.16b, v17.16b");
+				asm volatile ("eor v2.16b, v2.16b, v18.16b");
+				asm volatile ("eor v3.16b, v3.16b, v19.16b");
+			}
+
+			/* syndrome 1 */
+			if (nr >= 2) {
+				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+
+				asm volatile ("tbl v16.16b, {v24.16b}, v8.16b");
+				asm volatile ("tbl v17.16b, {v24.16b}, v9.16b");
+				asm volatile ("tbl v18.16b, {v24.16b}, v10.16b");
+				asm volatile ("tbl v19.16b, {v24.16b}, v11.16b");
+
+				asm volatile ("tbl v20.16b, {v25.16b}, v12.16b");
+				asm volatile ("tbl v21.16b, {v25.16b}, v13.16b");
+				asm volatile ("tbl v22.16b, {v25.16b}, v14.16b");
+				asm volatile ("tbl v23.16b, {v25.16b}, v15.16b");
+
+				asm volatile ("eor v16.16b, v16.16b, v20.16b");
+				asm volatile ("eor v17.16b, v17.16b, v21.16b");
+				asm volatile ("eor v18.16b, v18.16b, v22.16b");
+				asm volatile ("eor v19.16b, v19.16b, v23.16b");
+
+				asm volatile ("eor v4.16b, v4.16b, v16.16b");
+				asm volatile ("eor v5.16b, v5.16b, v17.16b");
+				asm volatile ("eor v6.16b, v6.16b, v18.16b");
+				asm volatile ("eor v7.16b, v7.16b, v19.16b");
+			}
+		}
+
+		/* preserve raw P delta in v16..v19 before splitting syndrome 0 */
+		if (has_p) {
+			asm volatile ("mov v16.16b, v0.16b");
+			asm volatile ("mov v17.16b, v1.16b");
+			asm volatile ("mov v18.16b, v2.16b");
+			asm volatile ("mov v19.16b, v3.16b");
+		}
+
+		/*
+		 * Split all completed syndromes.
+		 *
+		 * After this:
+		 *
+		 *   syndrome 0:
+		 *     v0..v3    low nibbles (lanes 0..3)
+		 *     v8..v11   high nibbles (lanes 0..3)
+		 *
+		 *   syndrome 1:
+		 *     v4..v7    low nibbles (lanes 0..3)
+		 *     v12..v15  high nibbles (lanes 0..3)
+		 */
+		asm volatile ("ushr v8.16b, v0.16b, #4");
+		asm volatile ("ushr v9.16b, v1.16b, #4");
+		asm volatile ("ushr v10.16b, v2.16b, #4");
+		asm volatile ("ushr v11.16b, v3.16b, #4");
+		asm volatile ("and v0.16b, v0.16b, v31.16b");
+		asm volatile ("and v1.16b, v1.16b, v31.16b");
+		asm volatile ("and v2.16b, v2.16b, v31.16b");
+		asm volatile ("and v3.16b, v3.16b, v31.16b");
+		asm volatile ("and v8.16b, v8.16b, v31.16b");
+		asm volatile ("and v9.16b, v9.16b, v31.16b");
+		asm volatile ("and v10.16b, v10.16b, v31.16b");
+		asm volatile ("and v11.16b, v11.16b, v31.16b");
+
+		if (nr >= 2) {
+			asm volatile ("ushr v12.16b, v4.16b, #4");
+			asm volatile ("ushr v13.16b, v5.16b, #4");
+			asm volatile ("ushr v14.16b, v6.16b, #4");
+			asm volatile ("ushr v15.16b, v7.16b, #4");
+			asm volatile ("and v4.16b, v4.16b, v31.16b");
+			asm volatile ("and v5.16b, v5.16b, v31.16b");
+			asm volatile ("and v6.16b, v6.16b, v31.16b");
+			asm volatile ("and v7.16b, v7.16b, v31.16b");
+			asm volatile ("and v12.16b, v12.16b, v31.16b");
+			asm volatile ("and v13.16b, v13.16b, v31.16b");
+			asm volatile ("and v14.16b, v14.16b, v31.16b");
+			asm volatile ("and v15.16b, v15.16b, v31.16b");
+		}
+
+		/*
+		 * Reconstruct missing data blocks through the inverse matrix.
+		 * If P is available, reconstruct only nr - 1 blocks.
+		 *
+		 * v24/v25 are a multiplication table pair.
+		 * v26..v29 accumulate the four 16-byte output lanes.
+		 */
+		for (j = 0; j < nr - has_p; ++j) {
+			const uint8_t **t = R[j];
+
+			/*
+			 * First coefficient.
+			 * Initialize output accumulators from low-nibble products.
+			 */
+			asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
+			asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+
+			asm volatile ("tbl v26.16b, {v24.16b}, v0.16b");
+			asm volatile ("tbl v27.16b, {v24.16b}, v1.16b");
+			asm volatile ("tbl v28.16b, {v24.16b}, v2.16b");
+			asm volatile ("tbl v29.16b, {v24.16b}, v3.16b");
+
+			asm volatile ("tbl v20.16b, {v25.16b}, v8.16b");
+			asm volatile ("tbl v21.16b, {v25.16b}, v9.16b");
+			asm volatile ("tbl v22.16b, {v25.16b}, v10.16b");
+			asm volatile ("tbl v23.16b, {v25.16b}, v11.16b");
+
+			asm volatile ("eor v26.16b, v26.16b, v20.16b");
+			asm volatile ("eor v27.16b, v27.16b, v21.16b");
+			asm volatile ("eor v28.16b, v28.16b, v22.16b");
+			asm volatile ("eor v29.16b, v29.16b, v23.16b");
+
+			/* second coefficient */
+			if (nr >= 2) {
+				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
+				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+
+				asm volatile ("tbl v20.16b, {v24.16b}, v4.16b");
+				asm volatile ("tbl v21.16b, {v24.16b}, v5.16b");
+				asm volatile ("tbl v22.16b, {v24.16b}, v6.16b");
+				asm volatile ("tbl v23.16b, {v24.16b}, v7.16b");
+
+				asm volatile ("eor v26.16b, v26.16b, v20.16b");
+				asm volatile ("eor v27.16b, v27.16b, v21.16b");
+				asm volatile ("eor v28.16b, v28.16b, v22.16b");
+				asm volatile ("eor v29.16b, v29.16b, v23.16b");
+
+				asm volatile ("tbl v20.16b, {v25.16b}, v12.16b");
+				asm volatile ("tbl v21.16b, {v25.16b}, v13.16b");
+				asm volatile ("tbl v22.16b, {v25.16b}, v14.16b");
+				asm volatile ("tbl v23.16b, {v25.16b}, v15.16b");
+
+				asm volatile ("eor v26.16b, v26.16b, v20.16b");
+				asm volatile ("eor v27.16b, v27.16b, v21.16b");
+				asm volatile ("eor v28.16b, v28.16b, v22.16b");
+				asm volatile ("eor v29.16b, v29.16b, v23.16b");
+			}
+
+			asm volatile (
+				"str q26, %0\n"
+				"str q27, %1\n"
+				"str q28, %2\n"
+				"str q29, %3\n"
+				: "=m" (pa[j][i]), "=m" (pa[j][i + 16]),
+				"=m" (pa[j][i + 32]), "=m" (pa[j][i + 48])
+			);
+		}
+
+		/* derive the final missing block from raw P delta when P is available */
+		if (has_p) {
+			if (nr >= 2) {
+				asm volatile (
+					"ldr q20, %4\n"
+					"ldr q21, %5\n"
+					"ldr q22, %6\n"
+					"ldr q23, %7\n"
+					"eor v16.16b, v16.16b, v20.16b\n"
+					"eor v17.16b, v17.16b, v21.16b\n"
+					"eor v18.16b, v18.16b, v22.16b\n"
+					"eor v19.16b, v19.16b, v23.16b\n"
+					"str q16, %0\n"
+					"str q17, %1\n"
+					"str q18, %2\n"
+					"str q19, %3\n"
+					: "=m" (pa[1][i]), "=m" (pa[1][i + 16]),
+					"=m" (pa[1][i + 32]), "=m" (pa[1][i + 48])
+					: "m" (pa[0][i]), "m" (pa[0][i + 16]),
+					"m" (pa[0][i + 32]), "m" (pa[0][i + 48])
+				);
+			} else {
+				asm volatile (
+					"str q16, %0\n"
+					"str q17, %1\n"
+					"str q18, %2\n"
+					"str q19, %3\n"
+					: "=m" (pa[0][i]), "=m" (pa[0][i + 16]),
+					"=m" (pa[0][i + 32]), "=m" (pa[0][i + 48])
+				);
+			}
+		}
+	}
+
+	raid_neon_end();
+}
+
+/*
  * Recover multiple data failures using selected parity blocks with NEON.
  *
  * This avoids raid_delta_gen(), temporary syndrome buffers, and the
@@ -1036,13 +1385,13 @@ void raid_gen6_neon_aes(int nd, size_t size, void **vv)
 void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
-	raid_recX_neon(1, id, ip, nd, size, vv);
+	raid_recX_neon_12(1, id, ip, nd, size, vv);
 }
 
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-	raid_recX_neon(2, id, ip, nd, size, vv);
+	raid_recX_neon_12(2, id, ip, nd, size, vv);
 }
 
 void raid_rec3_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv)
