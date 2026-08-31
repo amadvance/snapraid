@@ -146,8 +146,6 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
 #define AT_SYMLINK_NOFOLLOW 1
 #undef utimensat
 #define utimensat windows_utimensat
-#define O_NOFOLLOW 0
-#define O_CLOEXEC 0
 #define dirent_hidden windows_dirent_hidden
 #define HAVE_STRUCT_DIRENT_D_STAT 1
 #undef HAVE_STRUCT_DIRENT_D_INO
@@ -185,6 +183,8 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
 #define HAVE_DIRECT_IO 1
 #define O_DIRECT 0x10000000
 #define O_DSYNC 0x20000000
+#define O_NOFOLLOW 0x40000000
+#define O_CLOEXEC 0
 #undef gmtime_r
 #define gmtime_r windows_gmtime_r
 #undef localtime_r

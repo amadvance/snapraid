@@ -1248,6 +1248,8 @@ int windows_open(const char* file, int flags, ...)
 	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
 	int f;
+	int truncate;
+	int delete_on_close;
 	DWORD access;
 	DWORD share;
 	DWORD create;
@@ -1270,6 +1272,8 @@ int windows_open(const char* file, int flags, ...)
 
 	share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 
+	truncate = 0;
+	delete_on_close = 0;
 	switch (flags & (O_CREAT | O_EXCL | O_TRUNC)) {
 	case 0 :
 		create = OPEN_EXISTING;
@@ -1282,10 +1286,20 @@ int windows_open(const char* file, int flags, ...)
 		create = CREATE_NEW;
 		break;
 	case O_CREAT | O_TRUNC :
-		create = CREATE_ALWAYS;
+		if ((flags & O_NOFOLLOW) != 0) {
+			create = OPEN_ALWAYS;
+			truncate = 1;
+		} else {
+			create = CREATE_ALWAYS;
+		}
 		break;
 	case O_TRUNC :
-		create = TRUNCATE_EXISTING;
+		if ((flags & O_NOFOLLOW) != 0) {
+			create = OPEN_EXISTING;
+			truncate = 1;
+		} else {
+			create = TRUNCATE_EXISTING;
+		}
 		break;
 	default :
 		errno = EINVAL;
@@ -1303,8 +1317,16 @@ int windows_open(const char* file, int flags, ...)
 		attr |= FILE_FLAG_SEQUENTIAL_SCAN;
 	if ((flags & _O_SHORT_LIVED) != 0)
 		attr |= FILE_ATTRIBUTE_TEMPORARY;
-	if ((flags & O_TEMPORARY) != 0)
-		attr |= FILE_FLAG_DELETE_ON_CLOSE;
+	if ((flags & O_TEMPORARY) != 0) {
+		if ((flags & O_NOFOLLOW) != 0) {
+			access |= DELETE;
+			delete_on_close = 1;
+		} else {
+			attr |= FILE_FLAG_DELETE_ON_CLOSE;
+		}
+	}
+	if ((flags & O_NOFOLLOW) != 0)
+		attr |= FILE_FLAG_OPEN_REPARSE_POINT;
 
 	h = CreateFileW(convert(conv_buf, file), access, share, 0, create, attr, 0);
 	if (h == INVALID_HANDLE_VALUE) {
@@ -1312,8 +1334,94 @@ int windows_open(const char* file, int flags, ...)
 		return -1;
 	}
 
+	if ((flags & O_NOFOLLOW) != 0) {
+		BY_HANDLE_FILE_INFORMATION info;
+		FILE_ATTRIBUTE_TAG_INFO tag;
+
+		if (!GetFileInformationByHandle(h, &info)) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
+
+		if (!GetReparseTagInfoByHandle(h, &tag, info.dwFileAttributes)) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
+
+		if ((tag.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+			if (tag.ReparseTag != IO_REPARSE_TAG_DEDUP) {
+				CloseHandle(h);
+				errno = ELOOP;
+				return -1;
+			}
+
+			/*
+			 * Deduplicated files are reparse points, but they must be opened
+			 * with normal reparse processing to access their logical data.
+			 * Reopening by path intentionally accepts a TOCTOU window only
+			 * for deduplicated files.
+			 */
+			if (!CloseHandle(h)) {
+				windows_errno(GetLastError());
+				return -1;
+			}
+
+			attr &= ~FILE_FLAG_OPEN_REPARSE_POINT;
+			h = CreateFileW(convert(conv_buf, file), access, share, 0, create, attr, 0);
+			if (h == INVALID_HANDLE_VALUE) {
+				windows_errno(GetLastError());
+				return -1;
+			}
+		}
+	}
+
+	/*
+	 * With O_NOFOLLOW delete-on-close must be enabled only after the opened
+	 * object has been validated, otherwise closing a rejected reparse point
+	 * could delete it.
+	 */
+	if (delete_on_close) {
+		FILE_DISPOSITION_INFO disposition;
+
+		disposition.DeleteFile = TRUE;
+		if (!SetFileInformationByHandle(h, FileDispositionInfo, &disposition, sizeof(disposition))) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
+	}
+
+	/*
+	 * With O_NOFOLLOW truncation must happen only after the opened object
+	 * has been validated, otherwise a symbolic link target could already
+	 * have been truncated before detecting the link.
+	 */
+	if (truncate) {
+		LARGE_INTEGER pos;
+
+		pos.QuadPart = 0;
+		if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
+
+		if (!SetEndOfFile(h)) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
+	}
+
 	/* mask out flags unknown by Windows */
-	flags &= ~(O_DIRECT | O_DSYNC);
+	flags &= ~(O_DIRECT | O_DSYNC | O_NOFOLLOW);
 
 	f = _open_osfhandle((intptr_t)h, flags);
 	if (f == -1) {
