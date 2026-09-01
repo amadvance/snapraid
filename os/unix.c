@@ -845,6 +845,32 @@ static void os_user_drop_privileges(const struct os_user* user)
 	}
 }
 
+static int pipe_cloexec(int pipefd[2])
+{
+#ifdef HAVE_PIPE2
+	return pipe2(pipefd, O_CLOEXEC);
+#else
+	if (pipe(pipefd) < 0)
+		return -1;
+
+	for (int i = 0; i < 2; i++) {
+		int flags = fcntl(pipefd[i], F_GETFD);
+		if (flags < 0)
+			goto bail;
+
+		if (fcntl(pipefd[i], F_SETFD, flags | FD_CLOEXEC) < 0)
+			goto bail;
+	}
+
+	return 0;
+
+bail:
+	close(pipefd[0]);
+	close(pipefd[1]);
+	return -1;
+#endif
+}
+
 /**
  * Executes a script directly via its file descriptor.
  */
@@ -1035,7 +1061,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	/* create pipe only if we have text to send */
 	if (stdin_text != NULL) {
-		if (pipe(pipe_fds) < 0) {
+		if (pipe_cloexec(pipe_fds) < 0) {
 			os_syslog(OS_LVL_INFO, "failed to create input pipe, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
@@ -1197,32 +1223,6 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds for unknown reason, status=%d", command, execution_time, status);
 		return -1;
 	}
-}
-
-static int pipe_cloexec(int pipefd[2])
-{
-#ifdef HAVE_PIPE2
-	return pipe2(pipefd, O_CLOEXEC);
-#else
-	if (pipe(pipefd) < 0)
-		return -1;
-
-	for (int i = 0; i < 2; i++) {
-		int flags = fcntl(pipefd[i], F_GETFD);
-		if (flags < 0)
-			goto bail;
-
-		if (fcntl(pipefd[i], F_SETFD, flags | FD_CLOEXEC) < 0)
-			goto bail;
-	}
-
-	return 0;
-
-bail:
-	close(pipefd[0]);
-	close(pipefd[1]);
-	return -1;
-#endif
 }
 
 /**
