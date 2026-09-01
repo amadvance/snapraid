@@ -2769,6 +2769,74 @@ static int scriptcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 
 static HANDLE os_job_handle = 0;
 
+struct process_startup {
+	STARTUPINFOEXW si;
+	LPPROC_THREAD_ATTRIBUTE_LIST attribute_list;
+	HANDLE handle_list[3];
+};
+
+static void process_startup_done(struct process_startup* startup)
+{
+	if (startup->attribute_list != 0) {
+		DeleteProcThreadAttributeList(startup->attribute_list);
+		free(startup->attribute_list);
+		startup->attribute_list = 0;
+	}
+}
+
+static int process_startup_init(struct process_startup* startup, HANDLE stdin_handle, HANDLE stdout_handle, HANDLE stderr_handle)
+{
+	HANDLE std_handles[3];
+	SIZE_T attribute_size = 0;
+	DWORD handle_count = 0;
+
+	ZeroMemory(startup, sizeof(*startup));
+	startup->si.StartupInfo.cb = sizeof(startup->si);
+	startup->si.StartupInfo.hStdInput = stdin_handle;
+	startup->si.StartupInfo.hStdOutput = stdout_handle;
+	startup->si.StartupInfo.hStdError = stderr_handle;
+	startup->si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+	std_handles[0] = stdin_handle;
+	std_handles[1] = stdout_handle;
+	std_handles[2] = stderr_handle;
+	for (DWORD i = 0; i < 3; ++i) {
+		int found = 0;
+		for (DWORD j = 0; j < handle_count; ++j) {
+			if (std_handles[i] == startup->handle_list[j]) {
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+			startup->handle_list[handle_count++] = std_handles[i];
+	}
+
+	InitializeProcThreadAttributeList(0, 1, 0, &attribute_size);
+	startup->attribute_list = malloc(attribute_size);
+	if (startup->attribute_list == 0) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	if (!InitializeProcThreadAttributeList(startup->attribute_list, 1, 0, &attribute_size)) {
+		windows_errno(GetLastError());
+		free(startup->attribute_list);
+		startup->attribute_list = 0;
+		return -1;
+	}
+
+	startup->si.lpAttributeList = startup->attribute_list;
+	if (!UpdateProcThreadAttribute(startup->attribute_list, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+		startup->handle_list, handle_count * sizeof(HANDLE), 0, 0)) {
+		windows_errno(GetLastError());
+		process_startup_done(startup);
+		return -1;
+	}
+
+	return 0;
+}
+
 pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const char* run_as_user)
 {
 	wchar_t conv[CONV_MAX];
@@ -2778,8 +2846,9 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	HANDLE stderr_read_handle = INVALID_HANDLE_VALUE;
 	SECURITY_ATTRIBUTES sa;
 	PROCESS_INFORMATION pi;
-	STARTUPINFOW si;
+	struct process_startup startup;
 	BOOL ret;
+	DWORD create_error = ERROR_SUCCESS;
 	int has_out = (stdout_read_int != NULL);
 	int has_err = (stderr_read_int != NULL);
 	int out_f = -1;
@@ -2894,14 +2963,23 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	}
 	cmd_buffer[pos] = 0;
 
-	/* set up members of the STARTUPINFO structure */
+	/* set up standard handles and the explicit inheritance whitelist */
 	ZeroMemory(&pi, sizeof(pi));
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-	si.hStdInput = nul_handle;
-	si.hStdOutput = has_out ? stdout_write_handle : nul_handle;
-	si.hStdError = has_err ? stderr_write_handle : nul_handle;
-	si.dwFlags |= STARTF_USESTDHANDLES;
+	if (process_startup_init(&startup, nul_handle,
+		has_out ? stdout_write_handle : nul_handle,
+		has_err ? stderr_write_handle : nul_handle) != 0) {
+		os_syslog(OS_LVL_INFO, "failed to create handle list for spawn, errno=%s(%d)", strerror(errno), errno);
+		CloseHandle(nul_handle);
+		if (has_out) {
+			CloseHandle(stdout_write_handle);
+			close(out_f);
+		}
+		if (has_err) {
+			CloseHandle(stderr_write_handle);
+			close(err_f);
+		}
+		return -1;
+	}
 
 	/*
 	 * Set the Working Directory to the root of the C drive.
@@ -2915,11 +2993,13 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			NULL,
 			cmd_buffer,
 			NULL, NULL,
-			TRUE, /* inherit pipe handles */
-			CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW,
+			TRUE, /* inherit handles from the explicit list */
+			CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
 			NULL, cwd,
-			&si, &pi
+			&startup.si.StartupInfo, &pi
 		);
+		if (!ret)
+			create_error = GetLastError();
 	} else {
 		/* Drop to restricted service account */
 		HANDLE h_token = NULL;
@@ -2927,6 +3007,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* Validate that the requested user is actually a supported Service Account before attempting logon */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			process_startup_done(&startup);
 			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
@@ -2942,6 +3023,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			process_startup_done(&startup);
 			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
@@ -2960,6 +3042,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			CloseHandle(h_token);
+			process_startup_done(&startup);
 			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
@@ -2977,18 +3060,21 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			NULL,
 			cmd_buffer,
 			NULL, NULL,
-			TRUE, /* inherit pipe handles */
-			CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW,
+			TRUE, /* inherit handles from the explicit list */
+			CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
 			env, cwd,
-			&si, &pi
+			&startup.si.StartupInfo, &pi
 		);
+		if (!ret)
+			create_error = GetLastError();
 
 		if (env)
 			DestroyEnvironmentBlock(env);
 		CloseHandle(h_token);
 	}
+	process_startup_done(&startup);
 	if (!ret) {
-		windows_errno(GetLastError());
+		windows_errno(create_error);
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
 		CloseHandle(nul_handle);
 		if (has_out) {
@@ -3163,8 +3249,9 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	HANDLE stdin_write_handle;
 	SECURITY_ATTRIBUTES sa;
 	PROCESS_INFORMATION pi;
-	STARTUPINFOW si;
+	struct process_startup startup;
 	BOOL ret;
+	DWORD create_error = ERROR_SUCCESS;
 	int64_t start, stop;
 
 	start = os_tick_sec();
@@ -3207,12 +3294,13 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	}
 
 	ZeroMemory(&pi, sizeof(pi));
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-	si.hStdInput = stdin_read_handle;
-	si.hStdOutput = nul;
-	si.hStdError = nul;
-	si.dwFlags |= STARTF_USESTDHANDLES;
+	if (process_startup_init(&startup, stdin_read_handle, nul, nul) != 0) {
+		os_syslog(OS_LVL_INFO, "failed to create handle list for command, errno=%s(%d)", strerror(errno), errno);
+		CloseHandle(stdin_read_handle);
+		CloseHandle(stdin_write_handle);
+		CloseHandle(nul);
+		return -1;
+	}
 
 	/*
 	 * Set the Working Directory to the root of the C drive.
@@ -3230,11 +3318,13 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			NULL,
 			u8tou16(conv, command),
 			NULL, NULL,
-			TRUE, /* inherit pipe handles */
-			CREATE_NO_WINDOW,
+			TRUE, /* inherit handles from the explicit list */
+			CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
 			NULL, cwd,
-			&si, &pi
+			&startup.si.StartupInfo, &pi
 		);
+		if (!ret)
+			create_error = GetLastError();
 	} else {
 		/*
 		 * Drop to restricted service account.
@@ -3247,6 +3337,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		 */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
 			CloseHandle(stdin_write_handle);
 			CloseHandle(nul);
@@ -3256,6 +3347,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
 			CloseHandle(stdin_write_handle);
 			CloseHandle(nul);
@@ -3269,6 +3361,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
 			CloseHandle(stdin_write_handle);
 			CloseHandle(nul);
@@ -3281,18 +3374,21 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			NULL,
 			u8tou16(conv, command),
 			NULL, NULL,
-			TRUE, /* inherit pipe handles */
-			CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+			TRUE, /* inherit handles from the explicit list */
+			CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT,
 			env, cwd,
-			&si, &pi
+			&startup.si.StartupInfo, &pi
 		);
+		if (!ret)
+			create_error = GetLastError();
 
 		if (env)
 			DestroyEnvironmentBlock(env);
 		CloseHandle(h_token);
 	}
+	process_startup_done(&startup);
 	if (!ret) {
-		windows_errno(GetLastError());
+		windows_errno(create_error);
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for command, errno=%s(%d)", command, strerror(errno), errno);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
