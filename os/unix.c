@@ -798,15 +798,50 @@ static int os_user_lookup(const char* run_as_user, struct os_user* user)
 	return 0;
 }
 
+#if defined(__linux__)
+#if defined(SYS_setgroups32)
+#define SYS_SETGROUPS SYS_setgroups32
+#else
+#define SYS_SETGROUPS SYS_setgroups
+#endif
+
+#if defined(SYS_setgid32)
+#define SYS_SETGID SYS_setgid32
+#else
+#define SYS_SETGID SYS_setgid
+#endif
+
+#if defined(SYS_setuid32)
+#define SYS_SETUID SYS_setuid32
+#else
+#define SYS_SETUID SYS_setuid
+#endif
+#endif
+
 static void os_user_drop_privileges(const struct os_user* user)
 {
 	if (user->enabled) {
+#if defined(__linux__) && defined(SYS_SETGROUPS) && defined(SYS_SETGID) && defined(SYS_SETUID)
+		/*
+		 * This function is called only in the single-threaded child after fork().
+		 * Use raw Linux syscalls to avoid the glibc NPTL setxid machinery.
+		 * Prefer the 32-bit credential syscalls on architectures that still
+		 * provide legacy 16-bit UID/GID syscall entry points.
+		 */
+		if (syscall(SYS_SETGROUPS, (size_t)user->ngroups, user->groups) != 0)
+			_exit(126);
+		if (syscall(SYS_SETGID, user->gid) != 0)
+			_exit(126);
+		if (syscall(SYS_SETUID, user->uid) != 0)
+			_exit(126);
+#else
 		if (setgroups(user->ngroups, user->groups) != 0)
 			_exit(126);
 		if (setgid(user->gid) != 0)
 			_exit(126);
 		if (setuid(user->uid) != 0)
 			_exit(126);
+#endif
 	}
 }
 
@@ -1849,7 +1884,7 @@ void os_abort(void)
 	const char* platform;
 	const char* compiler;
 
-#ifdef __linux__
+#if defined(__linux__)
 	platform = ", linux";
 #elif defined(__APPLE__)
 	platform = ", macOS";
