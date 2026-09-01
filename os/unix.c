@@ -1559,7 +1559,13 @@ int os_pclose(OS_FILE* stream)
 
 static uid_t unpriv_uid = -1;
 static gid_t unpriv_gid = -1;
-static int can_switch = 0;
+
+static int uid_dropped = 0;
+static int gid_dropped = 0;
+static int groups_dropped = 0;
+
+static gid_t* privileged_groups = 0;
+static int privileged_group_count = 0;
 
 void os_privileges_drop(void)
 {
@@ -1567,7 +1573,7 @@ void os_privileges_drop(void)
 	 * Detect if running as root
 	 *
 	 * Note that all calls to os_privileges_release() and os_privileges_acquire()
-	 * are no-ops before this detection.
+	 * are no-ops before a privilege is actually dropped.
 	 */
 	if (getuid() == 0 || geteuid() == 0) {
 		/* find the unprivileged user "nobody" */
@@ -1575,31 +1581,74 @@ void os_privileges_drop(void)
 		if (pw) {
 			unpriv_uid = pw->pw_uid;
 			unpriv_gid = pw->pw_gid;
-			can_switch = 1;
-		}
-	}
 
-	if (can_switch) {
-		if (setegid(unpriv_gid) != 0) {
-			if (errno == EPERM) {
-				/*
-				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
-				 */
-				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
-			} else {
-				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+			/*
+			 * Save the supplementary groups before dropping them.
+			 * They must be restored by os_privileges_acquire() because
+			 * spawned user scripts may depend on them.
+			 */
+			privileged_group_count = getgroups(0, 0);
+			if (privileged_group_count < 0) {
+				os_syslog(OS_LVL_INFO, "failed to get supplementary group count, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
-		}
-		if (seteuid(unpriv_uid) != 0) {
-			if (errno == EPERM) {
-				/*
-				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
-				 */
-				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
+
+			if (privileged_group_count != 0) {
+				privileged_groups = malloc(privileged_group_count * sizeof(gid_t));
+				if (!privileged_groups) {
+					os_syslog(OS_LVL_CRITICAL, "failed to allocate supplementary group list");
+					os_abort();
+				}
+
+				if (getgroups(privileged_group_count, privileged_groups) != privileged_group_count) {
+					os_syslog(OS_LVL_INFO, "failed to get supplementary groups, errno=%s(%d)", strerror(errno), errno);
+					os_abort();
+				}
+
+				if (setgroups(0, 0) != 0) {
+					if (errno == EPERM) {
+						/*
+						 * If EPERM, process lacks permission to switch
+						 * supplementary groups. Continue with them active.
+						 */
+						os_syslog(OS_LVL_INFO, "permission denied to release supplementary group privileges, continuing with active privileges");
+					} else {
+						os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+						os_abort();
+					}
+				} else {
+					groups_dropped = 1;
+				}
+			}
+
+			if (setegid(unpriv_gid) != 0) {
+				if (errno == EPERM) {
+					/*
+					 * If EPERM, process lacks permission to switch privileges
+					 * (e.g. dropped capabilities); continue with active privileges.
+					 */
+					os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
+				} else {
+					os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+					os_abort();
+				}
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
-				os_abort();
+				gid_dropped = 1;
+			}
+
+			if (seteuid(unpriv_uid) != 0) {
+				if (errno == EPERM) {
+					/*
+					 * If EPERM, process lacks permission to switch privileges
+					 * (e.g. dropped capabilities); continue with active privileges.
+					 */
+					os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
+				} else {
+					os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+					os_abort();
+				}
+			} else {
+				uid_dropped = 1;
 			}
 		}
 	}
@@ -1607,115 +1656,162 @@ void os_privileges_drop(void)
 
 void os_privileges_acquire(void)
 {
-	if (can_switch) {
 #if defined(__linux__) && defined(SYS_setresuid) && defined(SYS_setresgid)
-		/*
-		 * On Linux with glibc/NPTL, calling standard POSIX seteuid()/setegid() triggers an
-		 * internal SIGSETXID signal broadcast to all threads in the process to enforce process-wide
-		 * credential consistency. This causes two major issues:
-		 * 1. Security: Acquiring privileges in the task runner thread temporarily elevates ALL threads
-		 *    (including CivetWeb REST API threads handling HTTP requests) to root.
-		 * 2. Concurrency: Intermittent EAGAIN/EPERM errors or signal contention when multiple threads switch credentials.
-		 *
-		 * Using raw Linux syscalls (SYS_setresuid / SYS_setresgid) bypasses the glibc NPTL signal broadcast,
-		 * performing thread-local privilege escalation strictly for the calling thread while keeping WebUI
-		 * worker threads securely unprivileged.
-		 */
+	/*
+	 * On Linux with glibc/NPTL, the libc credential functions synchronize
+	 * credentials across all threads using SIGSETXID.
+	 *
+	 * Use raw syscalls instead so privilege changes remain local to the
+	 * calling thread. This applies to supplementary groups as well as UID/GID.
+	 */
+
+	/*
+	 * Restore UID first so that CAP_SETGID is available when restoring
+	 * the effective GID and supplementary groups.
+	 */
+	if (uid_dropped) {
 		if (syscall(SYS_setresuid, (uid_t)-1, (uid_t)0, (uid_t)-1) != 0) {
 			if (errno == EPERM) {
-				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
 				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
+	}
+
+	if (gid_dropped) {
 		if (syscall(SYS_setresgid, (gid_t)-1, (gid_t)0, (gid_t)-1) != 0) {
 			if (errno == EPERM) {
-				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
 				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
+	}
+
+	if (groups_dropped) {
+		if (syscall(SYS_SETGROUPS, privileged_group_count, privileged_groups) != 0) {
+			if (errno == EPERM) {
+				os_syslog(OS_LVL_INFO, "permission denied to acquire supplementary group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+	}
 #else
+	if (uid_dropped) {
 		if (seteuid(0) != 0) {
 			if (errno == EPERM) {
-				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
 				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
+	}
+
+	if (gid_dropped) {
 		if (setegid(0) != 0) {
 			if (errno == EPERM) {
-				/* If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges */
 				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
-#endif
 	}
+
+	if (groups_dropped) {
+		if (setgroups(privileged_group_count, privileged_groups) != 0) {
+			if (errno == EPERM) {
+				os_syslog(OS_LVL_INFO, "permission denied to acquire supplementary group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to acquire supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+	}
+#endif
 }
 
 void os_privileges_release(void)
 {
-	if (can_switch) {
 #if defined(__linux__) && defined(SYS_setresuid) && defined(SYS_setresgid)
-		/*
-		 * Use raw Linux syscalls for thread-local privilege dropping to match os_privileges_acquire.
-		 */
+	/*
+	 * Drop supplementary groups first while the calling thread still has
+	 * the privileges required to change them.
+	 */
+	if (groups_dropped) {
+		if (syscall(SYS_SETGROUPS, (size_t)0, (gid_t*)0) != 0) {
+			if (errno == EPERM) {
+				os_syslog(OS_LVL_INFO, "permission denied to release supplementary group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+	}
+
+	if (gid_dropped) {
 		if (syscall(SYS_setresgid, (gid_t)-1, (gid_t)unpriv_gid, (gid_t)-1) != 0) {
 			if (errno == EPERM) {
-				/*
-				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
-				 */
 				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
+	}
+
+	/* Drop UID last. */
+	if (uid_dropped) {
 		if (syscall(SYS_setresuid, (uid_t)-1, (uid_t)unpriv_uid, (uid_t)-1) != 0) {
 			if (errno == EPERM) {
-				/*
-				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
-				 */
 				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
+	}
 #else
+	if (groups_dropped) {
+		if (setgroups(0, 0) != 0) {
+			if (errno == EPERM) {
+				os_syslog(OS_LVL_INFO, "permission denied to release supplementary group privileges, continuing with active privileges");
+			} else {
+				os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_abort();
+			}
+		}
+	}
+
+	if (gid_dropped) {
 		if (setegid(unpriv_gid) != 0) {
 			if (errno == EPERM) {
-				/*
-				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
-				 */
 				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
+	}
+
+	/* Drop UID last. */
+	if (uid_dropped) {
 		if (seteuid(unpriv_uid) != 0) {
 			if (errno == EPERM) {
-				/*
-				 * If EPERM, process lacks permission to switch privileges (e.g. dropped capabilities); continue with active privileges
-				 */
 				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
 			} else {
 				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
-#endif
 	}
+#endif
 }
 
 /****************************************************************************/
