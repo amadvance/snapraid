@@ -3151,6 +3151,17 @@ pid_t os_wait(pid_t pid, int* status)
  * process with no console support. For a console application it provides a
  * windowless console, so the process can still receive console control events.
  *
+ * Note that the Microsoft documentation is somewhat ambiguous here: it says
+ * that with CREATE_NO_WINDOW "the console handle for the application is not
+ * set", which can be misread as meaning that the process has no console at all.
+ * In practice, CREATE_NO_WINDOW creates a console session without a visible
+ * console window, and is distinct from DETACHED_PROCESS, which creates a
+ * process with no attached console.
+ *
+ * This behavior is documented and experimentally verified here:
+ * https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
+ * https://github.com/rprichard/win32-console-docs
+ * 
  * CREATE_NEW_PROCESS_GROUP creates a new process group whose identifier is
  * the process ID of the child created by CreateProcess(). This allows
  * CTRL_BREAK_EVENT to be directed specifically to the child's process group:
