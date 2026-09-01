@@ -745,8 +745,8 @@ int os_validate_exec_input(const char* str)
 /****************************************************************************/
 /* user credential management */
 
-#define GROUPS_MAX 64
-#define PASSWD_MAX 2048
+#define GROUPS_MAX 1024
+#define PASSWD_MAX 8192
 
 struct os_user {
 	int enabled;
