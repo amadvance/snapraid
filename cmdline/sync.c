@@ -940,8 +940,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned diskmax;
 	block_off_t blockcur;
 	unsigned j;
-	void* zero_alloc;
-	void** zero;
 	void* copy_alloc;
 	void** copy;
 	unsigned buffermax;
@@ -980,11 +978,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	/* allocate the copy buffer */
 	copy = malloc_nofail_vector_align(diskmax, state->block_size, &copy_alloc);
-
-	/* allocate and fill the zero buffer */
-	zero = malloc_nofail_align(state->block_size, &zero_alloc);
-	memset(zero, 0, state->block_size);
-	raid_zero(zero);
 
 	failed = nalloc_nofail(diskmax, sizeof(struct failed_struct));
 	failed_map = nalloc_nofail(diskmax, sizeof(unsigned));
@@ -1799,7 +1792,6 @@ bail:
 	}
 
 	free(handle);
-	free(zero_alloc);
 	free(copy_alloc);
 	free(copy);
 	free(rehandle_alloc);

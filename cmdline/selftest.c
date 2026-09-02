@@ -2038,6 +2038,26 @@ static void test_misc(int argc, char* argv[])
 	assert(strcmp(esc_tag(""), "") == 0);
 	assert(strcmp(esc_tag("\n\r:\\\\"), "\\n\\r\\d\\\\\\\\") == 0);
 
+	{
+		unsigned char zbuf[64];
+		unsigned zi, zj;
+
+		memset(zbuf, 0, sizeof(zbuf));
+		assert(mem_is_zero(zbuf, 0) != 0);
+
+		for (zi = 0; zi < sizeof(zbuf); ++zi) {
+			for (zj = zi; zj <= sizeof(zbuf); ++zj) {
+				assert(mem_is_zero(zbuf + zi, zj - zi) != 0);
+			}
+		}
+
+		for (zi = 0; zi < sizeof(zbuf); ++zi) {
+			zbuf[zi] = 1;
+			assert(mem_is_zero(zbuf, sizeof(zbuf)) == 0);
+			zbuf[zi] = 0;
+		}
+	}
+
 	for (i = 2; i < argc; ++i) {
 		printf("argv[%d]\n", i);
 		printf("\t#%s#\n", argv[i]);

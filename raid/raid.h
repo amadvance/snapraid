@@ -161,31 +161,9 @@ int raid_mode(int mode);
  * The test modifies global RAID state and must not be called concurrently
  * with any other RAID function.
  *
- * The test resets the zero buffer to 0 via raid_zero(0) upon completion.
- * A valid zero buffer must be set with raid_zero() afterwards before calling
- * recovery functions (raid_rec(), raid_data()).
- *
  * It returns 0 on success.
  */
 int raid_selftest(void);
-
-/**
- * Sets the zero buffer to use during recovery.
- *
- * Before calling raid_rec() and raid_data() you must provide a memory
- * buffer filled with zeros of the same size as the blocks to recover.
- *
- * The buffer pointed to by @zero must be aligned to a 64-byte boundary.
- *
- * This buffer is only read and never written.
- *
- * The selected zero buffer is global to the RAID library. raid_zero() must
- * not be called concurrently with any other RAID function.
- *
- * Once set, the buffer must remain valid and unchanged while it is being
- * used by recovery operations.
- */
-void raid_zero(void *zero);
 
 /**
  * Block aliasing

@@ -2362,17 +2362,13 @@ void speed(int period, int nd, int size)
 
 	delta = period >= 1000 ? 10 : 1;
 
-	nv = nd + RAID_PARITY_MAX + 1;
+	nv = nd + RAID_PARITY_MAX;
 
 	v = malloc_nofail_vector_align(nv, size, &v_alloc);
 
 	/* initialize disks with fixed data */
 	for (i = 0; i < nd; ++i)
 		memset(v[i], i, size);
-
-	/* zero buffer */
-	memset(v[nd + RAID_PARITY_MAX], 0, size);
-	raid_zero(v[nd + RAID_PARITY_MAX]);
 
 	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 

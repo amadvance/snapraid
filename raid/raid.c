@@ -215,15 +215,7 @@
  * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
-/**
- * Buffer filled with 0 used in recovering.
- */
-static void *raid_zero_block;
 
-void raid_zero(void *zero)
-{
-	raid_zero_block = zero;
-}
 
 /**
  * Inverts the square matrix M of size nxn into V.

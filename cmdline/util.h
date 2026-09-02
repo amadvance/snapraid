@@ -43,6 +43,37 @@ void* malloc_nofail_test(size_t size);
  */
 void mtest_vector(int n, size_t size, void** vv);
 
+/**
+ * Return !=0 if the memory region is completely filled with zeros.
+ */
+static inline int mem_is_zero(const void* ptr, size_t size)
+{
+	const unsigned char* p = ptr;
+
+	while (size != 0 && ((uintptr_t)p % sizeof(size_t)) != 0) {
+		if (*p != 0)
+			return 0;
+		++p;
+		--size;
+	}
+
+	while (size >= sizeof(size_t)) {
+		if (*(const size_t*)p != 0)
+			return 0;
+		p += sizeof(size_t);
+		size -= sizeof(size_t);
+	}
+
+	while (size != 0) {
+		if (*p != 0)
+			return 0;
+		++p;
+		--size;
+	}
+
+	return 1;
+}
+
 /****************************************************************************/
 /* crc */
 
