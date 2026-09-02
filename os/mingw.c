@@ -2998,7 +2998,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			cmd_buffer,
 			NULL, NULL,
 			TRUE, /* inherit handles from the explicit list */
-			CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
+			CREATE_SUSPENDED | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
 			NULL, cwd,
 			&startup.si.StartupInfo, &pi
 		);
@@ -3065,7 +3065,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			cmd_buffer,
 			NULL, NULL,
 			TRUE, /* inherit handles from the explicit list */
-			CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
+			CREATE_SUSPENDED | CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
 			env, cwd,
 			&startup.si.StartupInfo, &pi
 		);
@@ -3103,7 +3103,37 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to assign process to job object, errno=%s(%d)", strerror(errno), errno);
+			TerminateProcess(pi.hProcess, 1);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			if (has_err) {
+				CloseHandle(stderr_write_handle);
+				close(err_f);
+			}
+			return -1;
 		}
+	}
+
+	/* resume the primary thread now that the process is assigned to the job object */
+	if (ResumeThread(pi.hThread) == (DWORD)-1) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to resume thread for spawn, errno=%s(%d)", strerror(errno), errno);
+		TerminateProcess(pi.hProcess, 1);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		if (has_out) {
+			CloseHandle(stdout_write_handle);
+			close(out_f);
+		}
+		if (has_err) {
+			CloseHandle(stderr_write_handle);
+			close(err_f);
+		}
+		return -1;
 	}
 
 	/* close the write end of the pipes in the parent */
@@ -4027,9 +4057,14 @@ void os_init(unsigned opt)
 		ZeroMemory(&info, sizeof(info));
 		info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 		if (!SetInformationJobObject(os_job_handle, JobObjectExtendedLimitInformation, &info, sizeof(info))) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_WARNING, "failed to configure job object, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(os_job_handle);
 			os_job_handle = 0;
 		}
+	} else {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_WARNING, "failed to create job object, errno=%s(%d)", strerror(errno), errno);
 	}
 
 	/* check for Wine presence */
