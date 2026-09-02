@@ -145,14 +145,6 @@ static __always_inline void raid_gen1_sse2_gen(int nd, size_t size, void **vv, i
 	raid_sse_end(streaming);
 }
 
-void raid_gen1_sse2(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen1_sse2_gen(nd, size, vv, 1);
-	else
-		raid_gen1_sse2_gen(nd, size, vv, 0);
-}
-
 /*
  * Generate two parity blocks (RAID6 with Cauchy matrix) using SSE2 implementation.
  */
@@ -230,22 +222,6 @@ static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, i
 	}
 
 	raid_sse_end(streaming);
-}
-
-void raid_gen2_sse2_raid(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen2_sse2_gen(nd, size, vv, 2, 1);
-	else
-		raid_gen2_sse2_gen(nd, size, vv, 2, 0);
-}
-
-void raid_gen2_sse2_aes(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen2_sse2_gen(nd, size, vv, 3, 1);
-	else
-		raid_gen2_sse2_gen(nd, size, vv, 3, 0);
 }
 
 #ifdef CONFIG_X86_64
@@ -489,22 +465,6 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 
 	raid_sse_end(streaming);
 }
-
-void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen2_sse2ext_gen(nd, size, vv, 2, 1);
-	else
-		raid_gen2_sse2ext_gen(nd, size, vv, 2, 0);
-}
-
-void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen2_sse2ext_gen(nd, size, vv, 3, 1);
-	else
-		raid_gen2_sse2ext_gen(nd, size, vv, 3, 0);
-}
 #endif
 
 /*
@@ -567,14 +527,6 @@ static __always_inline void raid_genz_sse2_gen(int nd, size_t size, void **vv, i
 	}
 
 	raid_sse_end(streaming);
-}
-
-void raid_genz_sse2_raid(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_genz_sse2_gen(nd, size, vv, 1);
-	else
-		raid_genz_sse2_gen(nd, size, vv, 0);
 }
 
 #ifdef CONFIG_X86_64
@@ -665,6 +617,56 @@ static __always_inline void raid_genz_sse2ext_gen(int nd, size_t size, void **vv
 	}
 
 	raid_sse_end(streaming);
+}
+#endif
+
+void raid_gen1_sse2(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen1_sse2_gen(nd, size, vv, 1);
+	else
+		raid_gen1_sse2_gen(nd, size, vv, 0);
+}
+
+void raid_gen2_sse2_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen2_sse2_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen2_sse2_gen(nd, size, vv, 2, 0);
+}
+
+void raid_gen2_sse2_aes(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen2_sse2_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen2_sse2_gen(nd, size, vv, 3, 0);
+}
+
+void raid_genz_sse2_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_genz_sse2_gen(nd, size, vv, 1);
+	else
+		raid_genz_sse2_gen(nd, size, vv, 0);
+}
+
+#ifdef CONFIG_X86_64
+void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen2_sse2ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen2_sse2ext_gen(nd, size, vv, 2, 0);
+}
+
+void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen2_sse2ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen2_sse2ext_gen(nd, size, vv, 3, 0);
 }
 
 void raid_genz_sse2ext_raid(int nd, size_t size, void **vv, int streaming)

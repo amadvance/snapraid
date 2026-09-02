@@ -44,14 +44,6 @@ static __always_inline void raid_gen1_avx2_gen(int nd, size_t size, void **vv, i
 	raid_avx_end(streaming);
 }
 
-void raid_gen1_avx2(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen1_avx2_gen(nd, size, vv, 1);
-	else
-		raid_gen1_avx2_gen(nd, size, vv, 0);
-}
-
 /*
  * Generate two parity blocks (RAID6 with Cauchy matrix) using AVX2 implementation.
  *
@@ -333,14 +325,6 @@ static __always_inline void raid_genz_avx2ext_gen(int nd, size_t size, void **vv
 	}
 
 	raid_avx_end(streaming);
-}
-
-void raid_genz_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_genz_avx2ext_gen(nd, size, vv, 1);
-	else
-		raid_genz_avx2ext_gen(nd, size, vv, 0);
 }
 
 /*
@@ -2706,6 +2690,14 @@ static __always_inline void raid_recX_avx2ext(int nr, int has_p, int *id, int *i
 }
 #endif
 
+void raid_gen1_avx2(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen1_avx2_gen(nd, size, vv, 1);
+	else
+		raid_gen1_avx2_gen(nd, size, vv, 0);
+}
+
 void raid_gen2_avx2_raid(int nd, size_t size, void **vv, int streaming)
 {
 	if (streaming)
@@ -2801,6 +2793,14 @@ void raid_gen6_avx2ext_aes(int nd, size_t size, void **vv, int streaming)
 		raid_genX_avx2ext(nd, size, vv, 6, 3, 1);
 	else
 		raid_genX_avx2ext(nd, size, vv, 6, 3, 0);
+}
+
+void raid_genz_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_genz_avx2ext_gen(nd, size, vv, 1);
+	else
+		raid_genz_avx2ext_gen(nd, size, vv, 0);
 }
 
 #endif

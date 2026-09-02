@@ -11,14 +11,12 @@
  *
  * Uses 64-byte chunks across four 16-byte vectors.
  */
-void raid_gen1_neon(int nd, size_t size, void **vv, int streaming)
+static __always_inline void raid_gen1_neon_gen(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
-
-	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -150,7 +148,7 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 /*
  * Generate three parity blocks with powers of 2^-1 using NEON implementation.
  */
-void raid_genz_neon_raid(int nd, size_t size, void **vv, int streaming)
+static __always_inline void raid_genz_neon_gen(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -158,8 +156,6 @@ void raid_genz_neon_raid(int nd, size_t size, void **vv, int streaming)
 	uint8_t *r;
 	int d, l;
 	size_t i;
-
-	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -1329,6 +1325,12 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 	raid_neon_end();
 }
 
+void raid_gen1_neon(int nd, size_t size, void **vv, int streaming)
+{
+	(void)streaming;
+	raid_gen1_neon_gen(nd, size, vv);
+}
+
 void raid_gen2_neon_raid(int nd, size_t size, void **vv, int streaming)
 {
 	(void)streaming;
@@ -1339,6 +1341,12 @@ void raid_gen2_neon_aes(int nd, size_t size, void **vv, int streaming)
 {
 	(void)streaming;
 	raid_gen2_neon_gen(nd, size, vv, 3);
+}
+
+void raid_genz_neon_raid(int nd, size_t size, void **vv, int streaming)
+{
+	(void)streaming;
+	raid_genz_neon_gen(nd, size, vv);
 }
 
 void raid_gen3_neon_raid(int nd, size_t size, void **vv, int streaming)

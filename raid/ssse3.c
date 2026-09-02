@@ -392,14 +392,6 @@ static __always_inline void raid_gen5_ssse3_gen(int nd, size_t size, void **vv, 
 	raid_sse_end(streaming);
 }
 
-void raid_gen5_ssse3_raid(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen5_ssse3_gen(nd, size, vv, 1);
-	else
-		raid_gen5_ssse3_gen(nd, size, vv, 0);
-}
-
 /*
  * Generate six parity blocks with Cauchy matrix using SSSE3 implementation.
  *
@@ -566,14 +558,6 @@ static __always_inline void raid_gen6_ssse3_gen(int nd, size_t size, void **vv, 
 	}
 
 	raid_sse_end(streaming);
-}
-
-void raid_gen6_ssse3_raid(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen6_ssse3_gen(nd, size, vv, 1);
-	else
-		raid_gen6_ssse3_gen(nd, size, vv, 0);
 }
 
 #ifdef CONFIG_X86_64
@@ -4095,6 +4079,22 @@ void raid_gen4_ssse3_aes(int nd, size_t size, void **vv, int streaming)
 		raid_gen4_ssse3_gen(nd, size, vv, 3, 1);
 	else
 		raid_gen4_ssse3_gen(nd, size, vv, 3, 0);
+}
+
+void raid_gen5_ssse3_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen5_ssse3_gen(nd, size, vv, 1);
+	else
+		raid_gen5_ssse3_gen(nd, size, vv, 0);
+}
+
+void raid_gen6_ssse3_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen6_ssse3_gen(nd, size, vv, 1);
+	else
+		raid_gen6_ssse3_gen(nd, size, vv, 0);
 }
 
 #ifdef CONFIG_X86_64

@@ -52,14 +52,6 @@ static __always_inline void raid_gen1_avx512bw_gen(int nd, size_t size, void **v
 	raid_avx_end(streaming);
 }
 
-void raid_gen1_avx512bw(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen1_avx512bw_gen(nd, size, vv, 1);
-	else
-		raid_gen1_avx512bw_gen(nd, size, vv, 0);
-}
-
 /*
  * Generate two parity blocks (RAID6 with Cauchy matrix) using AVX512BW implementation.
  *
@@ -294,14 +286,6 @@ store:
 	raid_avx_end(streaming);
 }
 
-void raid_gen2_avx512bw(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen2_avx512bw_gen(nd, size, vv, 1);
-	else
-		raid_gen2_avx512bw_gen(nd, size, vv, 0);
-}
-
 /*
  * Generate three parity blocks with Cauchy matrix using AVX512BW implementation.
  *
@@ -480,14 +464,6 @@ store:
 	}
 
 	raid_avx_end(streaming);
-}
-
-void raid_gen3_avx512bw(int nd, size_t size, void **vv, int streaming)
-{
-	if (streaming)
-		raid_gen3_avx512bw_gen(nd, size, vv, 1);
-	else
-		raid_gen3_avx512bw_gen(nd, size, vv, 0);
 }
 
 /*
@@ -938,6 +914,30 @@ static __always_inline void raid_recX_avx512bw(int nr, int has_p, int *id, int *
 	}
 
 	raid_avx_end(0);
+}
+
+void raid_gen1_avx512bw(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen1_avx512bw_gen(nd, size, vv, 1);
+	else
+		raid_gen1_avx512bw_gen(nd, size, vv, 0);
+}
+
+void raid_gen2_avx512bw(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen2_avx512bw_gen(nd, size, vv, 1);
+	else
+		raid_gen2_avx512bw_gen(nd, size, vv, 0);
+}
+
+void raid_gen3_avx512bw(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen3_avx512bw_gen(nd, size, vv, 1);
+	else
+		raid_gen3_avx512bw_gen(nd, size, vv, 0);
 }
 
 void raid_gen4_avx512bw(int nd, size_t size, void **vv, int streaming)
