@@ -366,7 +366,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	 * Recompute the parity, note that np may be smaller than the
 	 * total number of parities available
 	 */
-	raid_gen(nd, np, size, v);
+	raid_gen(nd, np, size, v, 0);
 
 	/* restore data buffers as before */
 	for (j = 0; j < nr; ++j)
@@ -407,7 +407,7 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v)
 	v[nd] = pa;
 
 	/* compute */
-	raid_gen(nd, 1, size, v);
+	raid_gen(nd, 1, size, v, 0);
 
 	/* restore as before */
 	v[id[0]] = pa;

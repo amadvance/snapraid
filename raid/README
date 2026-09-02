@@ -38,11 +38,14 @@ library startup before normal RAID operations.
     The buffer must be aligned to a 64-byte boundary. Required prior to
     calling raid_rec() or raid_data() for delta parity computation.
 
-  void raid_gen(int nd, int np, size_t size, void **v)
+  void raid_gen(int nd, int np, size_t size, void **v, int streaming)
     Computes 'np' parity blocks from 'nd' data blocks. Vector 'v' contains
     'nd + np' block pointers (data blocks v[0..nd-1], parity blocks
     v[nd..nd+np-1]). Each block must be aligned to a 64-byte boundary.
-    Data blocks are read-only; parity blocks are written.
+    Data blocks are read-only; parity blocks are written. If 'streaming' is
+    non-zero, non-temporal streaming stores are used where supported to avoid
+    polluting the CPU cache when parity is written directly to disk. If
+    'streaming' is zero, normal cached stores are used.
 
   void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
     Recovers 'nr' failed blocks (data or parity) listed in sorted index array

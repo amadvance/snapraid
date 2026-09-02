@@ -222,9 +222,12 @@ void raid_zero(void *zero);
  *   data, following with the parity blocks.
  *   Data entries are used as inputs and parity entries as outputs.
  *   Entries may point to the same block buffer.
- *   Each block has @size bytes and must be aligned to a 64-byte boundary.
+ * @streaming Store policy hint: nonzero for streaming / non-temporal stores
+ *   (bypassing cache) where supported, or 0 for normal cached / temporal stores.
+ *   Both modes produce bit-identical parity data. Backends without streaming
+ *   stores ignore this hint.
  */
-void raid_gen(int nd, int np, size_t size, void **v);
+void raid_gen(int nd, int np, size_t size, void **v, int streaming);
 
 /**
  * Recovers failures in data and parity blocks.

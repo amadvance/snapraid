@@ -90,7 +90,7 @@
  *   REP       -> OLD data is represented
  *   DELETED   -> OLD data is represented
  *   REBUILD   -> data and hash remain CURRENT; only physical parity is untrusted
- * 
+ *
  *
  * REBUILD is orthogonal to the OLD/CURRENT sync-history distinction. Unlike
  * CHG, REP and DELETED, it does not represent a different data generation.
@@ -355,7 +355,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 	 * If we checked something, and no block failed the check
 	 * recompute all the redundancy information
 	 */
-	raid_gen(diskmax, state->level, state->block_size, buffer);
+	raid_gen(diskmax, state->level, state->block_size, buffer, 0);
 	return 1;
 }
 
@@ -365,12 +365,12 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, void** buffer, void** buffer_recov)
 {
 	/* recompute parity, note that we don't need parity over i */
-	raid_gen(diskmax, i + 1, state->block_size, buffer);
+	raid_gen(diskmax, i + 1, state->block_size, buffer, 0);
 
 	/* if the recovered parity block matches */
 	if (memcmp(buffer[diskmax + i], buffer_recov[i], state->block_size) == 0) {
 		/* recompute all the redundancy information */
-		raid_gen(diskmax, state->level, state->block_size, buffer);
+		raid_gen(diskmax, state->level, state->block_size, buffer, 0);
 		return 1;
 	}
 
@@ -401,7 +401,7 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 	if (failed_count == 0) {
 		/* LCOV_EXCL_START */
 		/* recompute only the parity */
-		raid_gen(diskmax, state->level, state->block_size, buffer);
+		raid_gen(diskmax, state->level, state->block_size, buffer, 0);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -686,7 +686,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	 * actual recovery to perform.
 	 */
 	if (failed_count == 0) {
-		raid_gen(diskmax, state->level, state->block_size, buffer);
+		raid_gen(diskmax, state->level, state->block_size, buffer, 0);
 		return 0;
 	}
 
@@ -826,7 +826,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	if (!something_to_recover) {
 		log_tag("recover_sync:%" PRIu64 ":%u: Skipped for already recovered\n", pos, n);
 
-		raid_gen(diskmax, state->level, state->block_size, buffer);
+		raid_gen(diskmax, state->level, state->block_size, buffer, 0);
 		return 0;
 	}
 
@@ -2082,8 +2082,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					 * A partial -S/-B fix operates only at block level, so keep FILE_IS_DAMAGED
 					 * but leave the file under its normal name when partial is set.
 					 */
-					if (fix 
-						&& !file_flag_has(failed[j].file, FILE_IS_EXCLUDED) 
+					if (fix
+						&& !file_flag_has(failed[j].file, FILE_IS_EXCLUDED)
 						&& !(state->opt.syncedonly && file_flag_has(failed[j].file, FILE_IS_UNSYNCED))
 						&& !partial
 					) {
@@ -3053,3 +3053,4 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	return 0;
 }
+

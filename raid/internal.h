@@ -91,80 +91,80 @@ void raid_gen_ref(int nd, int np, size_t size, void **vv);
 void raid_invert(uint8_t *M, uint8_t *V, int n);
 void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v);
 void raid_rec1of1(int *id, int nd, size_t size, void **v);
-void raid_gen1_int32(int nd, size_t size, void **vv);
-void raid_gen1_int64(int nd, size_t size, void **vv);
-void raid_gen1_sse2(int nd, size_t size, void **vv);
-void raid_gen1_avx2(int nd, size_t size, void **vv);
-void raid_gen1_avx512bw(int nd, size_t size, void **vv);
-void raid_gen2_int8(int nd, size_t size, void **vv);
-void raid_gen2_int32_raid(int nd, size_t size, void **vv);
-void raid_gen2_int32_aes(int nd, size_t size, void **vv);
-void raid_gen2_int64_raid(int nd, size_t size, void **vv);
-void raid_gen2_int64_aes(int nd, size_t size, void **vv);
-void raid_gen2_sse2_raid(int nd, size_t size, void **vv);
-void raid_gen2_sse2_aes(int nd, size_t size, void **vv);
-void raid_gen2_avx2_raid(int nd, size_t size, void **vv);
-void raid_gen2_avx2_aes(int nd, size_t size, void **vv);
-void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv);
-void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv);
-void raid_gen2_avx2ext_raid(int nd, size_t size, void **vv);
-void raid_gen2_avx2ext_aes(int nd, size_t size, void **vv);
-void raid_gen2_avx512bw(int nd, size_t size, void **vv);
-void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv);
-void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv);
-void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv);
-void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv);
-void raid_genz_int32_raid(int nd, size_t size, void **vv);
-void raid_genz_int64_raid(int nd, size_t size, void **vv);
-void raid_genz_sse2_raid(int nd, size_t size, void **vv);
-void raid_genz_sse2ext_raid(int nd, size_t size, void **vv);
-void raid_genz_avx2ext_raid(int nd, size_t size, void **vv);
-void raid_gen3_int8(int nd, size_t size, void **vv);
-void raid_gen3_ssse3_raid(int nd, size_t size, void **vv);
-void raid_gen3_ssse3_aes(int nd, size_t size, void **vv);
-void raid_gen3_ssse3ext_raid(int nd, size_t size, void **vv);
-void raid_gen3_ssse3ext_aes(int nd, size_t size, void **vv);
-void raid_gen3_avx2ext_raid(int nd, size_t size, void **vv);
-void raid_gen3_avx2ext_aes(int nd, size_t size, void **vv);
-void raid_gen3_avx512bw(int nd, size_t size, void **vv);
-void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv);
-void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv);
-void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv);
-void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv);
-void raid_gen4_int8(int nd, size_t size, void **vv);
-void raid_gen4_ssse3_raid(int nd, size_t size, void **vv);
-void raid_gen4_ssse3_aes(int nd, size_t size, void **vv);
-void raid_gen4_ssse3ext_raid(int nd, size_t size, void **vv);
-void raid_gen4_ssse3ext_aes(int nd, size_t size, void **vv);
-void raid_gen4_avx2ext_raid(int nd, size_t size, void **vv);
-void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv);
-void raid_gen4_avx512bw(int nd, size_t size, void **vv);
-void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv);
-void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv);
-void raid_gen4_avx2gfni_aes(int nd, size_t size, void **vv);
-void raid_gen4_avx512gfni_aes(int nd, size_t size, void **vv);
-void raid_gen5_int8(int nd, size_t size, void **vv);
-void raid_gen5_ssse3_raid(int nd, size_t size, void **vv);
-void raid_gen5_ssse3ext_raid(int nd, size_t size, void **vv);
-void raid_gen5_ssse3ext_aes(int nd, size_t size, void **vv);
-void raid_gen5_avx2ext_raid(int nd, size_t size, void **vv);
-void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv);
-void raid_gen5_avx512bw(int nd, size_t size, void **vv);
-void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv);
-void raid_gen5_avx512gfni_raid(int nd, size_t size, void **vv);
-void raid_gen5_avx2gfni_aes(int nd, size_t size, void **vv);
-void raid_gen5_avx512gfni_aes(int nd, size_t size, void **vv);
-void raid_gen6_int8(int nd, size_t size, void **vv);
-void raid_gen6_ssse3_raid(int nd, size_t size, void **vv);
-void raid_gen6_ssse3ext_raid(int nd, size_t size, void **vv);
-void raid_gen6_ssse3ext_aes(int nd, size_t size, void **vv);
-void raid_gen6_avx2ext_raid(int nd, size_t size, void **vv);
-void raid_gen6_avx2ext_aes(int nd, size_t size, void **vv);
-void raid_gen6_avx512bw(int nd, size_t size, void **vv);
-void raid_gen6_avx2gfni_raid(int nd, size_t size, void **vv);
-void raid_gen6_avx512gfni_raid(int nd, size_t size, void **vv);
-void raid_gen6_avx2gfni_aes(int nd, size_t size, void **vv);
-void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv);
+void raid_gen1_int32(int nd, size_t size, void **vv, int streaming);
+void raid_gen1_int64(int nd, size_t size, void **vv, int streaming);
+void raid_gen1_sse2(int nd, size_t size, void **vv, int streaming);
+void raid_gen1_avx2(int nd, size_t size, void **vv, int streaming);
+void raid_gen1_avx512bw(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_int8(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_int32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_int32_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_int64_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_int64_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_sse2_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_sse2_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx2_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx2_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx2ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx512bw(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_genz_int32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_genz_int64_raid(int nd, size_t size, void **vv, int streaming);
+void raid_genz_sse2_raid(int nd, size_t size, void **vv, int streaming);
+void raid_genz_sse2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_genz_avx2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_int8(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_ssse3_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_ssse3_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_ssse3ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_ssse3ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx2ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx512bw(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_int8(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_ssse3_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_ssse3_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_ssse3ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_ssse3ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx512bw(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx2gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_avx512gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_int8(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_ssse3_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_ssse3ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_ssse3ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx512bw(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx512gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx2gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_avx512gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_int8(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_ssse3_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_ssse3ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_ssse3ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx2ext_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx2ext_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx512bw(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx2gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx512gfni_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx2gfni_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv, int streaming);
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec3_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -225,36 +225,36 @@ void raid_rec3_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 void raid_rec4_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec5_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec6_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void **vv);
-void raid_gen1_neon(int nd, size_t size, void **vv);
-void raid_gen2_neon_raid(int nd, size_t size, void **vv);
-void raid_gen2_neon_aes(int nd, size_t size, void **vv);
-void raid_genz_neon_raid(int nd, size_t size, void **vv);
-void raid_gen3_neon_raid(int nd, size_t size, void **vv);
-void raid_gen3_neon_aes(int nd, size_t size, void **vv);
-void raid_gen4_neon_raid(int nd, size_t size, void **vv);
-void raid_gen4_neon_aes(int nd, size_t size, void **vv);
-void raid_gen5_neon_raid(int nd, size_t size, void **vv);
-void raid_gen5_neon_aes(int nd, size_t size, void **vv);
-void raid_gen6_neon_raid(int nd, size_t size, void **vv);
-void raid_gen6_neon_aes(int nd, size_t size, void **vv);
+void raid_gen1_neon(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_neon_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_neon_aes(int nd, size_t size, void **vv, int streaming);
+void raid_genz_neon_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_neon_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_neon_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_neon_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_neon_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_neon_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_neon_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_neon_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_neon_aes(int nd, size_t size, void **vv, int streaming);
 void raid_rec1_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec3_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec4_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec5_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec6_neon(int nr, int *id, int *ip, int nd, size_t size, void **vv);
-void raid_gen1_neon32(int nd, size_t size, void **vv);
-void raid_gen2_neon32_raid(int nd, size_t size, void **vv);
-void raid_gen2_neon32_aes(int nd, size_t size, void **vv);
-void raid_genz_neon32_raid(int nd, size_t size, void **vv);
-void raid_gen3_neon32_raid(int nd, size_t size, void **vv);
-void raid_gen3_neon32_aes(int nd, size_t size, void **vv);
-void raid_gen4_neon32_raid(int nd, size_t size, void **vv);
-void raid_gen4_neon32_aes(int nd, size_t size, void **vv);
-void raid_gen5_neon32_raid(int nd, size_t size, void **vv);
-void raid_gen5_neon32_aes(int nd, size_t size, void **vv);
-void raid_gen6_neon32_raid(int nd, size_t size, void **vv);
-void raid_gen6_neon32_aes(int nd, size_t size, void **vv);
+void raid_gen1_neon32(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_neon32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen2_neon32_aes(int nd, size_t size, void **vv, int streaming);
+void raid_genz_neon32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_neon32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen3_neon32_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_neon32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen4_neon32_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_neon32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen5_neon32_aes(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_neon32_raid(int nd, size_t size, void **vv, int streaming);
+void raid_gen6_neon32_aes(int nd, size_t size, void **vv, int streaming);
 void raid_rec1_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec3_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -283,8 +283,9 @@ void raid_rec6_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
  *   It has (@nd + #parities) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
  *   Each block has @size bytes.
+ * @streaming Nonzero for streaming/non-temporal stores where supported, 0 for cached stores.
  */
-typedef void (raid_gen_fn)(int nd, size_t size, void **vv);
+typedef void (raid_gen_fn)(int nd, size_t size, void **vv, int streaming);
 
 /*
  * Functions for data recovery.
@@ -444,15 +445,16 @@ static __always_inline void raid_sse_begin(void)
 {
 }
 
-static __always_inline void raid_sse_end(void)
+static __always_inline void raid_sse_end(int streaming)
 {
 	/*
-	 * SSE and AVX code uses non-temporal writes, like MOVNTDQ,
-	 * that use a weak memory model. To ensure that other processors
-	 * see correctly the data written, we use a store-store memory
-	 * barrier at the end of the asm code
+	 * Non-temporal streaming stores, like MOVNTDQ, use a weak memory model.
+	 * To ensure that other processors correctly observe data written with
+	 * streaming stores, execute a store-store memory barrier. Cached stores
+	 * maintain normal cache-coherent ordering and do not require sfence.
 	 */
-	asm volatile ("sfence" : : : "memory");
+	if (streaming)
+		asm volatile ("sfence" : : : "memory");
 
 	/*
 	 * Clobbers registers used in the asm code.
@@ -495,9 +497,9 @@ static __always_inline void raid_avx_begin(void)
 	raid_sse_begin();
 }
 
-static __always_inline void raid_avx_end(void)
+static __always_inline void raid_avx_end(int streaming)
 {
-	raid_sse_end();
+	raid_sse_end(streaming);
 
 	/*
 	 * Clear the upper parts of the vector registers before returning.

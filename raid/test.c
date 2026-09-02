@@ -1115,19 +1115,23 @@ int raid_test_par(int mode, int nd, size_t size)
 	/* check all the functions */
 	for (k = 0; k < np; ++k) {
 		for (j = 0; j < nf[k]; ++j) {
-			/* change the buffers incrementing all values */
-			for (i = 0; i <= k; ++i)
-				meminc(v[nd + i], size);
+			int streaming;
 
-			/* compute parity */
-			f[k][j](nd, size, v);
+			for (streaming = 0; streaming <= 1; ++streaming) {
+				/* change the buffers incrementing all values */
+				for (i = 0; i <= k; ++i)
+					meminc(v[nd + i], size);
 
-			/* check it */
-			for (i = 0; i < np; ++i) {
-				if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {
-					/* LCOV_EXCL_START */
-					goto bail;
-					/* LCOV_EXCL_STOP */
+				/* compute parity */
+				f[k][j](nd, size, v, streaming);
+
+				/* check it */
+				for (i = 0; i < np; ++i) {
+					if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {
+						/* LCOV_EXCL_START */
+						goto bail;
+						/* LCOV_EXCL_STOP */
+					}
 				}
 			}
 		}

@@ -73,7 +73,7 @@ struct gfconst16 __aligned(16) gfconst16 =
 };
 #endif
 
-void raid_gen(int nd, int np, size_t size, void **v)
+void raid_gen(int nd, int np, size_t size, void **v, int streaming)
 {
 	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
@@ -88,8 +88,11 @@ void raid_gen(int nd, int np, size_t size, void **v)
 	/* enforce valid vector */
 	BUG_ON(v == 0);
 
+	/* enforce valid streaming flag */
+	BUG_ON(streaming != 0 && streaming != 1);
+
 	BUG_ON(raid_gen_ptr[np - 1] == 0);
-	raid_gen_ptr[np - 1](nd, size, v);
+	raid_gen_ptr[np - 1](nd, size, v, streaming);
 }
 
 /**
@@ -199,7 +202,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 			}
 		}
 
-		raid_gen(nd, max_p, size, v_gen);
+		raid_gen(nd, max_p, size, v_gen, 0);
 	}
 }
 
@@ -468,27 +471,30 @@ void raid_gen_ref(int nd, int np, size_t size, void **vv)
  */
 static int selftest_par(int nd, int np, size_t size, void **v, void **ref)
 {
-	int i;
+	int i, streaming;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
 
 	/* setup data */
 	for (i = 0; i < nd; ++i)
 		t[i] = ref[i];
 
-	/* setup parity */
-	for (i = 0; i < np; ++i) {
-		memset(v[nd + i], 0x55, size);
-		t[nd + i] = v[nd + i];
-	}
+	/* test both cached and streaming generation */
+	for (streaming = 0; streaming <= 1; ++streaming) {
+		/* setup parity */
+		for (i = 0; i < np; ++i) {
+			memset(v[nd + i], 0x55, size);
+			t[nd + i] = v[nd + i];
+		}
 
-	raid_gen(nd, np, size, t);
+		raid_gen(nd, np, size, t, streaming);
 
-	/* compare parity */
-	for (i = 0; i < np; ++i) {
-		if (memcmp(t[nd + i], ref[nd + i], size) != 0) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
+		/* compare parity */
+		for (i = 0; i < np; ++i) {
+			if (memcmp(t[nd + i], ref[nd + i], size) != 0) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 		}
 	}
 

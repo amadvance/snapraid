@@ -9,7 +9,7 @@
 /*
  * Generate N parity blocks for the RAID polynomial using direct Cauchy coefficients with AVX2 GFNI.
  */
-static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **vv, int np, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -92,29 +92,52 @@ static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **
 			}
 		}
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
-		if (np >= 3) {
-			asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
-			asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
-		}
-		if (np >= 4) {
-			asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
-			asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
-		}
-		if (np >= 5) {
-			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
-			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
-		}
-		if (np >= 6) {
-			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (v[nd + 5][i]));
-			asm volatile ("vmovntdq %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+			if (np >= 3) {
+				asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
+				asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
+			}
+			if (np >= 4) {
+				asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
+				asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
+			}
+			if (np >= 5) {
+				asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
+				asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
+			}
+			if (np >= 6) {
+				asm volatile ("vmovntdq %%ymm10,%0" : "=m" (v[nd + 5][i]));
+				asm volatile ("vmovntdq %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			}
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (v[nd][i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovdqa %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+			if (np >= 3) {
+				asm volatile ("vmovdqa %%ymm4,%0" : "=m" (v[nd + 2][i]));
+				asm volatile ("vmovdqa %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
+			}
+			if (np >= 4) {
+				asm volatile ("vmovdqa %%ymm6,%0" : "=m" (v[nd + 3][i]));
+				asm volatile ("vmovdqa %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
+			}
+			if (np >= 5) {
+				asm volatile ("vmovdqa %%ymm8,%0" : "=m" (v[nd + 4][i]));
+				asm volatile ("vmovdqa %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
+			}
+			if (np >= 6) {
+				asm volatile ("vmovdqa %%ymm10,%0" : "=m" (v[nd + 5][i]));
+				asm volatile ("vmovdqa %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			}
 		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -123,7 +146,7 @@ static __always_inline void raid_genX_avx2gfni_raid(int nd, size_t size, void **
  * Preloads up to 28 Q affine matrix coefficients in ZMM registers (zmm4..zmm31)
  * with an unrolled disk loop and early exits.
  */
-static __always_inline void raid_gen2_avx512gfni_raid_gen(int nd, size_t size, void **vv)
+static __always_inline void raid_gen2_avx512gfni_raid_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -382,11 +405,16 @@ static __always_inline void raid_gen2_avx512gfni_raid_gen(int nd, size_t size, v
 		}
 
 store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -395,7 +423,7 @@ store:
  * Preloads up to 13 pairs of Q and R affine matrix coefficients in ZMM
  * registers (zmm6..zmm31) with an unrolled disk loop and early exits.
  */
-static __always_inline void raid_gen3_avx512gfni_raid_gen(int nd, size_t size, void **vv)
+static __always_inline void raid_gen3_avx512gfni_raid_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -581,18 +609,24 @@ static __always_inline void raid_gen3_avx512gfni_raid_gen(int nd, size_t size, v
 		}
 
 store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
  * Generate N parity blocks for the RAID polynomial using direct Cauchy coefficients with AVX512 GFNI.
  */
-static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void **vv, int np, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -657,25 +691,38 @@ static __always_inline void raid_genX_avx512gfni_raid(int nd, size_t size, void 
 				asm volatile ("vpxorq %zmm16,%zmm5,%zmm5");
 		}
 
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		if (np >= 3)
-			asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
-		if (np >= 4)
-			asm volatile ("vmovntdq %%zmm3,%0" : "=m" (v[nd + 3][i]));
-		if (np >= 5)
-			asm volatile ("vmovntdq %%zmm4,%0" : "=m" (v[nd + 4][i]));
-		if (np >= 6)
-			asm volatile ("vmovntdq %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovntdq %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovntdq %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovntdq %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovdqa64 %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovdqa64 %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovdqa64 %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
  * Generate N parity blocks for the AES polynomial using direct Cauchy coefficients with AVX2 GFNI.
  */
-static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **vv, int np, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -761,33 +808,60 @@ static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **v
 			}
 		}
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd][i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
 
-		if (np >= 3) {
-			asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
-			asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
-		}
+			if (np >= 3) {
+				asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 2][i]));
+				asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
+			}
 
-		if (np >= 4) {
-			asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
-			asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
-		}
+			if (np >= 4) {
+				asm volatile ("vmovntdq %%ymm6,%0" : "=m" (v[nd + 3][i]));
+				asm volatile ("vmovntdq %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
+			}
 
-		if (np >= 5) {
-			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
-			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
-		}
+			if (np >= 5) {
+				asm volatile ("vmovntdq %%ymm8,%0" : "=m" (v[nd + 4][i]));
+				asm volatile ("vmovntdq %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
+			}
 
-		if (np >= 6) {
-			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (v[nd + 5][i]));
-			asm volatile ("vmovntdq %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			if (np >= 6) {
+				asm volatile ("vmovntdq %%ymm10,%0" : "=m" (v[nd + 5][i]));
+				asm volatile ("vmovntdq %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			}
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (v[nd][i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovdqa %%ymm3,%0" : "=m" (v[nd + 1][i + 32]));
+
+			if (np >= 3) {
+				asm volatile ("vmovdqa %%ymm4,%0" : "=m" (v[nd + 2][i]));
+				asm volatile ("vmovdqa %%ymm5,%0" : "=m" (v[nd + 2][i + 32]));
+			}
+
+			if (np >= 4) {
+				asm volatile ("vmovdqa %%ymm6,%0" : "=m" (v[nd + 3][i]));
+				asm volatile ("vmovdqa %%ymm7,%0" : "=m" (v[nd + 3][i + 32]));
+			}
+
+			if (np >= 5) {
+				asm volatile ("vmovdqa %%ymm8,%0" : "=m" (v[nd + 4][i]));
+				asm volatile ("vmovdqa %%ymm9,%0" : "=m" (v[nd + 4][i + 32]));
+			}
+
+			if (np >= 6) {
+				asm volatile ("vmovdqa %%ymm10,%0" : "=m" (v[nd + 5][i]));
+				asm volatile ("vmovdqa %%ymm11,%0" : "=m" (v[nd + 5][i + 32]));
+			}
 		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -796,7 +870,7 @@ static __always_inline void raid_genX_avx2gfni_aes(int nd, size_t size, void **v
  * Preloads up to 28 Q multiplier coefficients in ZMM registers (zmm4..zmm31)
  * with an unrolled disk loop and early exits.
  */
-static __always_inline void raid_gen2_avx512gfni_aes_gen(int nd, size_t size, void **vv)
+static __always_inline void raid_gen2_avx512gfni_aes_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -1055,11 +1129,16 @@ static __always_inline void raid_gen2_avx512gfni_aes_gen(int nd, size_t size, vo
 		}
 
 store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -1068,7 +1147,7 @@ store:
  * Preloads up to 13 pairs of Q and R multiplier coefficients in ZMM
  * registers (zmm6..zmm31) with an unrolled disk loop and early exits.
  */
-static __always_inline void raid_gen3_avx512gfni_aes_gen(int nd, size_t size, void **vv)
+static __always_inline void raid_gen3_avx512gfni_aes_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -1254,18 +1333,24 @@ static __always_inline void raid_gen3_avx512gfni_aes_gen(int nd, size_t size, vo
 		}
 
 store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
  * Generate N parity blocks for the AES polynomial using direct Cauchy coefficients with AVX512 GFNI.
  */
-static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void **vv, int np, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -1330,123 +1415,34 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 				asm volatile ("vpxorq %zmm16,%zmm5,%zmm5");
 		}
 
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		if (np >= 3)
-			asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
-		if (np >= 4)
-			asm volatile ("vmovntdq %%zmm3,%0" : "=m" (v[nd + 3][i]));
-		if (np >= 5)
-			asm volatile ("vmovntdq %%zmm4,%0" : "=m" (v[nd + 4][i]));
-		if (np >= 6)
-			asm volatile ("vmovntdq %%zmm5,%0" : "=m" (v[nd + 5][i]));
-	}
-
-	raid_avx_end();
-}
-
-/*
- * Recover one data failure using P with AVX2 GFNI.
- *
- * The missing block is:
- *
- *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
- */
-static __always_inline void raid_rec1of1_avx2gfni(int *id, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *src[RAID_DATA_MAX];
-	uint8_t *p;
-	uint8_t *pa;
-	size_t i;
-	int d, s, ns;
-
-	p = v[nd];
-	pa = v[id[0]];
-
-	/* build the compact list of surviving data blocks */
-	ns = 0;
-	for (d = 0; d < nd; ++d) {
-		if (d != id[0])
-			src[ns++] = v[d];
-	}
-
-	BUG_ON(ns != nd - 1);
-
-	raid_avx_begin();
-
-	for (i = 0; i < size; i += 64) {
-		/* start from the stored P block */
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
-
-		for (s = 0; s < ns; ++s) {
-			asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (src[s][i]));
-			asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (src[s][i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovntdq %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovntdq %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovntdq %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovdqa64 %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovdqa64 %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovdqa64 %%zmm5,%0" : "=m" (v[nd + 5][i]));
 		}
-
-		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
-/*
- * Recover one data failure using P with AVX512 GFNI.
- *
- * The missing block is:
- *
- *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
- *
- * Process two surviving data blocks per iteration using vpternlogq.
- */
-static __always_inline void raid_rec1of1_avx512gfni(int *id, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *src[RAID_DATA_MAX];
-	uint8_t *p;
-	uint8_t *pa;
-	size_t i;
-	int d, s, ns;
-
-	p = v[nd];
-	pa = v[id[0]];
-
-	/* build the compact list of surviving data blocks */
-	ns = 0;
-	for (d = 0; d < nd; ++d) {
-		if (d != id[0])
-			src[ns++] = v[d];
-	}
-
-	BUG_ON(ns != nd - 1);
-
-	raid_avx_begin();
-
-	for (i = 0; i < size; i += 64) {
-		/* start from the stored P block */
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
-
-		/* XOR two surviving data blocks at a time */
-		for (s = 0; s <= ns - 2; s += 2) {
-			asm volatile (
-				"vmovdqa64 %0,%%zmm1\n\t"
-				"vpternlogq $0x96,%1,%%zmm1,%%zmm0"
-				:
-				: "m" (src[s][i]), "m" (src[s + 1][i])
-			);
-		}
-
-		/* remaining odd survivor */
-		if (s < ns)
-			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (src[s][i]));
-
-		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
-	}
-
-	raid_avx_end();
-}
 
 /*
  * Recover multiple data failures using selected parity blocks with AVX2 GFNI.
@@ -1660,7 +1656,7 @@ static __always_inline void raid_recX_avx2gfni_raid(int nr, int has_p, int *id, 
 		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -1838,7 +1834,7 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int has_p, int *id
 			asm volatile ("vmovdqa64 %%zmm30,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -2043,7 +2039,7 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int has_p, int *id, i
 		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -2207,107 +2203,167 @@ static __always_inline void raid_recX_avx512gfni_aes(int nr, int has_p, int *id,
 			asm volatile ("vmovdqa64 %%zmm30,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
-void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv)
+void raid_gen2_avx2gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_raid(nd, size, vv, 2);
+	if (streaming)
+		raid_genX_avx2gfni_raid(nd, size, vv, 2, 1);
+	else
+		raid_genX_avx2gfni_raid(nd, size, vv, 2, 0);
 }
 
-void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv)
+void raid_gen2_avx512gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_avx512gfni_raid_gen(nd, size, vv);
+	if (streaming)
+		raid_gen2_avx512gfni_raid_gen(nd, size, vv, 1);
+	else
+		raid_gen2_avx512gfni_raid_gen(nd, size, vv, 0);
 }
 
-void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv)
+void raid_gen3_avx2gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_raid(nd, size, vv, 3);
+	if (streaming)
+		raid_genX_avx2gfni_raid(nd, size, vv, 3, 1);
+	else
+		raid_genX_avx2gfni_raid(nd, size, vv, 3, 0);
 }
 
-void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv)
+void raid_gen3_avx512gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_avx512gfni_raid_gen(nd, size, vv);
+	if (streaming)
+		raid_gen3_avx512gfni_raid_gen(nd, size, vv, 1);
+	else
+		raid_gen3_avx512gfni_raid_gen(nd, size, vv, 0);
 }
 
-void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv)
+void raid_gen4_avx2gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_raid(nd, size, vv, 4);
+	if (streaming)
+		raid_genX_avx2gfni_raid(nd, size, vv, 4, 1);
+	else
+		raid_genX_avx2gfni_raid(nd, size, vv, 4, 0);
 }
 
-void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv)
+void raid_gen4_avx512gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512gfni_raid(nd, size, vv, 4);
+	if (streaming)
+		raid_genX_avx512gfni_raid(nd, size, vv, 4, 1);
+	else
+		raid_genX_avx512gfni_raid(nd, size, vv, 4, 0);
 }
 
-void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv)
+void raid_gen5_avx2gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_raid(nd, size, vv, 5);
+	if (streaming)
+		raid_genX_avx2gfni_raid(nd, size, vv, 5, 1);
+	else
+		raid_genX_avx2gfni_raid(nd, size, vv, 5, 0);
 }
 
-void raid_gen5_avx512gfni_raid(int nd, size_t size, void **vv)
+void raid_gen5_avx512gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512gfni_raid(nd, size, vv, 5);
+	if (streaming)
+		raid_genX_avx512gfni_raid(nd, size, vv, 5, 1);
+	else
+		raid_genX_avx512gfni_raid(nd, size, vv, 5, 0);
 }
 
-void raid_gen6_avx2gfni_raid(int nd, size_t size, void **vv)
+void raid_gen6_avx2gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_raid(nd, size, vv, 6);
+	if (streaming)
+		raid_genX_avx2gfni_raid(nd, size, vv, 6, 1);
+	else
+		raid_genX_avx2gfni_raid(nd, size, vv, 6, 0);
 }
 
-void raid_gen6_avx512gfni_raid(int nd, size_t size, void **vv)
+void raid_gen6_avx512gfni_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512gfni_raid(nd, size, vv, 6);
+	if (streaming)
+		raid_genX_avx512gfni_raid(nd, size, vv, 6, 1);
+	else
+		raid_genX_avx512gfni_raid(nd, size, vv, 6, 0);
 }
 
-void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv)
+void raid_gen2_avx2gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_aes(nd, size, vv, 2);
+	if (streaming)
+		raid_genX_avx2gfni_aes(nd, size, vv, 2, 1);
+	else
+		raid_genX_avx2gfni_aes(nd, size, vv, 2, 0);
 }
 
-void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv)
+void raid_gen2_avx512gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_avx512gfni_aes_gen(nd, size, vv);
+	if (streaming)
+		raid_gen2_avx512gfni_aes_gen(nd, size, vv, 1);
+	else
+		raid_gen2_avx512gfni_aes_gen(nd, size, vv, 0);
 }
 
-void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv)
+void raid_gen3_avx2gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_aes(nd, size, vv, 3);
+	if (streaming)
+		raid_genX_avx2gfni_aes(nd, size, vv, 3, 1);
+	else
+		raid_genX_avx2gfni_aes(nd, size, vv, 3, 0);
 }
 
-void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv)
+void raid_gen3_avx512gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_avx512gfni_aes_gen(nd, size, vv);
+	if (streaming)
+		raid_gen3_avx512gfni_aes_gen(nd, size, vv, 1);
+	else
+		raid_gen3_avx512gfni_aes_gen(nd, size, vv, 0);
 }
 
-void raid_gen4_avx2gfni_aes(int nd, size_t size, void **vv)
+void raid_gen4_avx2gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_aes(nd, size, vv, 4);
+	if (streaming)
+		raid_genX_avx2gfni_aes(nd, size, vv, 4, 1);
+	else
+		raid_genX_avx2gfni_aes(nd, size, vv, 4, 0);
 }
 
-void raid_gen4_avx512gfni_aes(int nd, size_t size, void **vv)
+void raid_gen4_avx512gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512gfni_aes(nd, size, vv, 4);
+	if (streaming)
+		raid_genX_avx512gfni_aes(nd, size, vv, 4, 1);
+	else
+		raid_genX_avx512gfni_aes(nd, size, vv, 4, 0);
 }
 
-void raid_gen5_avx2gfni_aes(int nd, size_t size, void **vv)
+void raid_gen5_avx2gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_aes(nd, size, vv, 5);
+	if (streaming)
+		raid_genX_avx2gfni_aes(nd, size, vv, 5, 1);
+	else
+		raid_genX_avx2gfni_aes(nd, size, vv, 5, 0);
 }
 
-void raid_gen5_avx512gfni_aes(int nd, size_t size, void **vv)
+void raid_gen5_avx512gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512gfni_aes(nd, size, vv, 5);
+	if (streaming)
+		raid_genX_avx512gfni_aes(nd, size, vv, 5, 1);
+	else
+		raid_genX_avx512gfni_aes(nd, size, vv, 5, 0);
 }
 
-void raid_gen6_avx2gfni_aes(int nd, size_t size, void **vv)
+void raid_gen6_avx2gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2gfni_aes(nd, size, vv, 6);
+	if (streaming)
+		raid_genX_avx2gfni_aes(nd, size, vv, 6, 1);
+	else
+		raid_genX_avx2gfni_aes(nd, size, vv, 6, 0);
 }
 
-void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv)
+void raid_gen6_avx512gfni_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512gfni_aes(nd, size, vv, 6);
+	if (streaming)
+		raid_genX_avx512gfni_aes(nd, size, vv, 6, 1);
+	else
+		raid_genX_avx512gfni_aes(nd, size, vv, 6, 0);
 }
 
 void raid_rec1_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -2316,7 +2372,7 @@ void raid_rec1_avx2gfni_raid(int nr, int *id, int *ip, int nd, size_t size, void
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx2gfni(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
@@ -2374,7 +2430,7 @@ void raid_rec1_avx512gfni_raid(int nr, int *id, int *ip, int nd, size_t size, vo
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx512gfni(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
@@ -2432,7 +2488,7 @@ void raid_rec1_avx2gfni_aes(int nr, int *id, int *ip, int nd, size_t size, void 
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx2gfni(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
@@ -2490,7 +2546,7 @@ void raid_rec1_avx512gfni_aes(int nr, int *id, int *ip, int nd, size_t size, voi
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx512gfni(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 

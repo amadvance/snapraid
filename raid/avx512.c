@@ -15,7 +15,7 @@
  * specific support for AVX512F because this would be the only function
  * to benefit from that.
  */
-void raid_gen1_avx512bw(int nd, size_t size, void **vv)
+static __always_inline void raid_gen1_avx512bw_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -43,10 +43,21 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (v[l][i]));
 		}
 
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
+		if (streaming)
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
+		else
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (p[i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
+}
+
+void raid_gen1_avx512bw(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen1_avx512bw_gen(nd, size, vv, 1);
+	else
+		raid_gen1_avx512bw_gen(nd, size, vv, 0);
 }
 
 /*
@@ -55,7 +66,7 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
  * Preloads 13 pairs of Q coefficient tables in ZMM registers (zmm4..zmm29)
  * with an unrolled disk loop and early exits.
  */
-void raid_gen2_avx512bw(int nd, size_t size, void **vv)
+static __always_inline void raid_gen2_avx512bw_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -271,11 +282,24 @@ void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 		}
 
 store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
+}
+
+void raid_gen2_avx512bw(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen2_avx512bw_gen(nd, size, vv, 1);
+	else
+		raid_gen2_avx512bw_gen(nd, size, vv, 0);
 }
 
 /*
@@ -284,7 +308,7 @@ store:
  * Preloads 6 sets of Q and R coefficient tables in ZMM registers (zmm7..zmm30)
  * with an unrolled disk loop and early exits.
  */
-void raid_gen3_avx512bw(int nd, size_t size, void **vv)
+static __always_inline void raid_gen3_avx512bw_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -444,18 +468,32 @@ void raid_gen3_avx512bw(int nd, size_t size, void **vv)
 		}
 
 store:
-		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovntdq %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (v[nd + 2][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
+}
+
+void raid_gen3_avx512bw(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen3_avx512bw_gen(nd, size, vv, 1);
+	else
+		raid_gen3_avx512bw_gen(nd, size, vv, 0);
 }
 
 /*
  * Generate N parity blocks with Cauchy matrix using AVX512BW implementation.
  */
-static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, int np)
+static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, int np, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -542,19 +580,32 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
 				asm volatile ("vpternlogq $0x96,%zmm20,%zmm21,%zmm5");
 		}
 
-		asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq  %%zmm1,%0" : "=m" (v[nd + 1][i]));
-		if (np >= 3)
-			asm volatile ("vmovntdq  %%zmm2,%0" : "=m" (v[nd + 2][i]));
-		if (np >= 4)
-			asm volatile ("vmovntdq  %%zmm3,%0" : "=m" (v[nd + 3][i]));
-		if (np >= 5)
-			asm volatile ("vmovntdq  %%zmm4,%0" : "=m" (v[nd + 4][i]));
-		if (np >= 6)
-			asm volatile ("vmovntdq  %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq  %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq  %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovntdq  %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovntdq  %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovntdq  %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovntdq  %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		} else {
+			asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa64 %%zmm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovdqa64 %%zmm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovdqa64 %%zmm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovdqa64 %%zmm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovdqa64 %%zmm5,%0" : "=m" (v[nd + 5][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -886,78 +937,31 @@ static __always_inline void raid_recX_avx512bw(int nr, int has_p, int *id, int *
 			asm volatile ("vmovdqa64 %%zmm30,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
-/*
- * Recover one data failure using P with AVX512BW.
- *
- * The missing block is:
- *
- *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
- *
- * Process two surviving data blocks per iteration using vpternlogq.
- */
-static __always_inline void raid_rec1of1_avx512bw(int *id, int nd, size_t size, void **vv)
+void raid_gen4_avx512bw(int nd, size_t size, void **vv, int streaming)
 {
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *src[RAID_DATA_MAX];
-	uint8_t *p;
-	uint8_t *pa;
-	size_t i;
-	int d, s, ns;
-
-	p = v[nd];
-	pa = v[id[0]];
-
-	/* build the compact list of surviving data blocks */
-	ns = 0;
-	for (d = 0; d < nd; ++d) {
-		if (d != id[0])
-			src[ns++] = v[d];
-	}
-
-	BUG_ON(ns != nd - 1);
-
-	raid_avx_begin();
-
-	for (i = 0; i < size; i += 64) {
-		/* start from the stored P block */
-		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (p[i]));
-
-		/* XOR two surviving data blocks at a time */
-		for (s = 0; s <= ns - 2; s += 2) {
-			asm volatile (
-				"vmovdqa64 %0,%%zmm1\n\t"
-				"vpternlogq $0x96,%1,%%zmm1,%%zmm0"
-				:
-				: "m" (src[s][i]), "m" (src[s + 1][i])
-			);
-		}
-
-		/* remaining odd survivor */
-		if (s < ns)
-			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (src[s][i]));
-
-		asm volatile ("vmovdqa64 %%zmm0,%0" : "=m" (pa[i]));
-	}
-
-	raid_avx_end();
+	if (streaming)
+		raid_genX_avx512bw(nd, size, vv, 4, 1);
+	else
+		raid_genX_avx512bw(nd, size, vv, 4, 0);
 }
 
-void raid_gen4_avx512bw(int nd, size_t size, void **vv)
+void raid_gen5_avx512bw(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512bw(nd, size, vv, 4);
+	if (streaming)
+		raid_genX_avx512bw(nd, size, vv, 5, 1);
+	else
+		raid_genX_avx512bw(nd, size, vv, 5, 0);
 }
 
-void raid_gen5_avx512bw(int nd, size_t size, void **vv)
+void raid_gen6_avx512bw(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx512bw(nd, size, vv, 5);
-}
-
-void raid_gen6_avx512bw(int nd, size_t size, void **vv)
-{
-	raid_genX_avx512bw(nd, size, vv, 6);
+	if (streaming)
+		raid_genX_avx512bw(nd, size, vv, 6, 1);
+	else
+		raid_genX_avx512bw(nd, size, vv, 6, 0);
 }
 
 void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv)
@@ -966,7 +970,7 @@ void raid_rec1_avx512bw(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx512bw(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 

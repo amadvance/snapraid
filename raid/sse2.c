@@ -104,7 +104,7 @@
  *
  * Uses 64-byte chunks across four 16-byte XMM vectors.
  */
-void raid_gen1_sse2(int nd, size_t size, void **vv)
+static __always_inline void raid_gen1_sse2_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -129,19 +129,34 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 			asm volatile ("pxor %0,%%xmm3" : : "m" (v[d][i + 48]));
 		}
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (p[i + 16]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (p[i + 32]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (p[i + 48]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
+}
+
+void raid_gen1_sse2(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen1_sse2_gen(nd, size, vv, 1);
+	else
+		raid_gen1_sse2_gen(nd, size, vv, 0);
 }
 
 /*
  * Generate two parity blocks (RAID6 with Cauchy matrix) using SSE2 implementation.
  */
-static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -201,23 +216,36 @@ static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, i
 			asm volatile ("pxor %xmm5,%xmm3");
 		}
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (q[i + 16]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (q[i + 16]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (p[i + 16]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (q[i + 16]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
-void raid_gen2_sse2_raid(int nd, size_t size, void **vv)
+void raid_gen2_sse2_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_sse2_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen2_sse2_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen2_sse2_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen2_sse2_aes(int nd, size_t size, void **vv)
+void raid_gen2_sse2_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_sse2_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen2_sse2_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen2_sse2_gen(nd, size, vv, 3, 0);
 }
 
 #ifdef CONFIG_X86_64
@@ -229,7 +257,7 @@ void raid_gen2_sse2_aes(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -438,34 +466,51 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("pxor %xmm11,%xmm7");
 		}
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
-		asm volatile ("movntdq %%xmm4,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm5,%0" : "=m" (q[i + 16]));
-		asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i + 32]));
-		asm volatile ("movntdq %%xmm7,%0" : "=m" (q[i + 48]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
+			asm volatile ("movntdq %%xmm4,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm5,%0" : "=m" (q[i + 16]));
+			asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i + 32]));
+			asm volatile ("movntdq %%xmm7,%0" : "=m" (q[i + 48]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (p[i + 16]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (p[i + 32]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (p[i + 48]));
+			asm volatile ("movdqa %%xmm4,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm5,%0" : "=m" (q[i + 16]));
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (q[i + 32]));
+			asm volatile ("movdqa %%xmm7,%0" : "=m" (q[i + 48]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
-void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv)
+void raid_gen2_sse2ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_sse2ext_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen2_sse2ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen2_sse2ext_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv)
+void raid_gen2_sse2ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_sse2ext_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen2_sse2ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen2_sse2ext_gen(nd, size, vv, 3, 0);
 }
 #endif
 
 /*
  * Generate three parity blocks with powers of 2^-1 using SSE2 implementation.
  */
-void raid_genz_sse2_raid(int nd, size_t size, void **vv)
+static __always_inline void raid_genz_sse2_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -510,12 +555,26 @@ void raid_genz_sse2_raid(int nd, size_t size, void **vv)
 			asm volatile ("pxor %xmm4,%xmm1");
 			asm volatile ("pxor %xmm4,%xmm2");
 		}
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
+}
+
+void raid_genz_sse2_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_genz_sse2_gen(nd, size, vv, 1);
+	else
+		raid_genz_sse2_gen(nd, size, vv, 0);
 }
 
 #ifdef CONFIG_X86_64
@@ -524,7 +583,7 @@ void raid_genz_sse2_raid(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_genz_sse2ext_raid(int nd, size_t size, void **vv)
+static __always_inline void raid_genz_sse2ext_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -588,15 +647,32 @@ void raid_genz_sse2ext_raid(int nd, size_t size, void **vv)
 			asm volatile ("pxor %xmm12,%xmm9");
 			asm volatile ("pxor %xmm12,%xmm10");
 		}
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm8,%0" : "=m" (p[i + 16]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm9,%0" : "=m" (q[i + 16]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movdqa %%xmm10,%0" : "=m" (r[i + 16]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
+}
+
+void raid_genz_sse2ext_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_genz_sse2ext_gen(nd, size, vv, 1);
+	else
+		raid_genz_sse2ext_gen(nd, size, vv, 0);
 }
 #endif
 

@@ -9,7 +9,7 @@
 /*
  * Generate three parity blocks with Cauchy matrix using SSSE3 implementation.
  */
-static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -102,18 +102,24 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 		asm volatile ("pxor %xmm4,%xmm1");
 		asm volatile ("pxor %xmm4,%xmm2");
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
 /*
  * Generate four parity blocks with Cauchy matrix using SSSE3 implementation.
  */
-static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -224,13 +230,20 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 		asm volatile ("pxor %xmm4,%xmm2");
 		asm volatile ("pxor %xmm4,%xmm3");
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (s[i]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
 /*
@@ -238,7 +251,7 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
  *
  * Uses an aligned stack buffer for parity accumulators under 8-register pressure.
  */
-void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
+static __always_inline void raid_gen5_ssse3_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -361,14 +374,30 @@ void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
 		asm volatile ("pxor %xmm4,%xmm3");
 		asm volatile ("pxor %xmm4,%xmm6");
 
-		asm volatile ("movntdq %%xmm6,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (s[i]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (t[i]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm6,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (r[i]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (s[i]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (t[i]));
+		} else {
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (r[i]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (s[i]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (t[i]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
+}
+
+void raid_gen5_ssse3_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen5_ssse3_gen(nd, size, vv, 1);
+	else
+		raid_gen5_ssse3_gen(nd, size, vv, 0);
 }
 
 /*
@@ -376,7 +405,7 @@ void raid_gen5_ssse3_raid(int nd, size_t size, void **vv)
  *
  * Uses an aligned stack buffer for parity accumulators under 8-register pressure.
  */
-void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
+static __always_inline void raid_gen6_ssse3_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -519,15 +548,32 @@ void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
 		asm volatile ("pxor %xmm4,%xmm5");
 		asm volatile ("pxor %xmm4,%xmm6");
 
-		asm volatile ("movntdq %%xmm5,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (s[i]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (t[i]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (u[i]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm5,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (r[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (s[i]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (t[i]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (u[i]));
+		} else {
+			asm volatile ("movdqa %%xmm5,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (r[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (s[i]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (t[i]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (u[i]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
+}
+
+void raid_gen6_ssse3_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen6_ssse3_gen(nd, size, vv, 1);
+	else
+		raid_gen6_ssse3_gen(nd, size, vv, 0);
 }
 
 #ifdef CONFIG_X86_64
@@ -539,7 +585,7 @@ void raid_gen6_ssse3_raid(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -782,15 +828,24 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 		asm volatile ("pxor %xmm12,%xmm9");
 		asm volatile ("pxor %xmm12,%xmm10");
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm8,%0" : "=m" (p[i + 16]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm9,%0" : "=m" (q[i + 16]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movdqa %%xmm10,%0" : "=m" (r[i + 16]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
 /*
@@ -801,7 +856,7 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -971,23 +1026,34 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 		asm volatile ("pxor %xmm12,%xmm10");
 		asm volatile ("pxor %xmm12,%xmm11");
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
-		asm volatile ("movntdq %%xmm11,%0" : "=m" (s[i + 16]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
+			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
+			asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
+			asm volatile ("movntdq %%xmm11,%0" : "=m" (s[i + 16]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm8,%0" : "=m" (p[i + 16]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			asm volatile ("movdqa %%xmm9,%0" : "=m" (q[i + 16]));
+			asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+			asm volatile ("movdqa %%xmm10,%0" : "=m" (r[i + 16]));
+			asm volatile ("movdqa %%xmm3,%0" : "=m" (s[i]));
+			asm volatile ("movdqa %%xmm11,%0" : "=m" (s[i + 16]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
 /*
  * Generate N parity blocks with Cauchy matrix using SSSE3 extended implementation.
  */
-static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, int np, int generator)
+static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, int np, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1149,76 +1215,36 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 		if (np >= 6)
 			asm volatile ("pxor %xmm10,%xmm5");
 
-		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		if (np >= 3)
-			asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		if (np >= 4)
-			asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
-		if (np >= 5)
-			asm volatile ("movntdq %%xmm4,%0" : "=m" (t[i]));
-		if (np >= 6)
-			asm volatile ("movntdq %%xmm5,%0" : "=m" (u[i]));
+		if (streaming) {
+			asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
+			if (np >= 3)
+				asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
+			if (np >= 4)
+				asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
+			if (np >= 5)
+				asm volatile ("movntdq %%xmm4,%0" : "=m" (t[i]));
+			if (np >= 6)
+				asm volatile ("movntdq %%xmm5,%0" : "=m" (u[i]));
+		} else {
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (p[i]));
+			asm volatile ("movdqa %%xmm1,%0" : "=m" (q[i]));
+			if (np >= 3)
+				asm volatile ("movdqa %%xmm2,%0" : "=m" (r[i]));
+			if (np >= 4)
+				asm volatile ("movdqa %%xmm3,%0" : "=m" (s[i]));
+			if (np >= 5)
+				asm volatile ("movdqa %%xmm4,%0" : "=m" (t[i]));
+			if (np >= 6)
+				asm volatile ("movdqa %%xmm5,%0" : "=m" (u[i]));
+		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(streaming);
 }
 
 #endif
 
-/*
- * Recover one data failure using P with SSSE3.
- *
- * The missing block is:
- *
- *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
- *
- * Use temporal stores because recovered data is consumed immediately by
- * validation and parity regeneration.
- */
-static __always_inline void raid_rec1of1_ssse3(int *id, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *src[RAID_DATA_MAX];
-	uint8_t *p;
-	uint8_t *pa;
-	size_t i;
-	int d, s, ns;
-
-	p = v[nd];
-	pa = v[id[0]];
-
-	ns = 0;
-	for (d = 0; d < nd; ++d) {
-		if (d != id[0])
-			src[ns++] = v[d];
-	}
-
-	BUG_ON(ns != nd - 1);
-
-	raid_sse_begin();
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[i]));
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[i + 16]));
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (p[i + 32]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (p[i + 48]));
-
-		for (s = 0; s < ns; ++s) {
-			asm volatile ("pxor %0,%%xmm0" : : "m" (src[s][i]));
-			asm volatile ("pxor %0,%%xmm1" : : "m" (src[s][i + 16]));
-			asm volatile ("pxor %0,%%xmm2" : : "m" (src[s][i + 32]));
-			asm volatile ("pxor %0,%%xmm3" : : "m" (src[s][i + 48]));
-		}
-
-		asm volatile ("movdqa %%xmm0,%0" : "=m" (pa[i]));
-		asm volatile ("movdqa %%xmm1,%0" : "=m" (pa[i + 16]));
-		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i + 32]));
-		asm volatile ("movdqa %%xmm3,%0" : "=m" (pa[i + 48]));
-	}
-
-	raid_sse_end();
-}
 
 /*
  * Recover failure of one data block using selected parity with SSSE3, optimized for one failure.
@@ -1303,7 +1329,7 @@ static __always_inline void raid_rec1_ssse3_1(int *id, int *ip, int nd, size_t s
 		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[i]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -1438,7 +1464,7 @@ static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t s
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -1626,7 +1652,7 @@ static __always_inline void raid_rec2_ssse3_2(int has_p, int *id, int *ip, int n
 		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -1856,7 +1882,7 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -2078,7 +2104,7 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int has_p, int *id, int
 			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -2241,7 +2267,7 @@ static __always_inline void raid_recX_ssse3(int nr, int has_p, int *id, int *ip,
 			asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 #ifdef CONFIG_X86_64
@@ -2360,7 +2386,7 @@ static __always_inline void raid_rec1_ssse3ext_1(int *id, int *ip, int nd, size_
 		asm volatile ("movdqa %%xmm9,%0" : "=m" (pa[i + 16]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -2559,7 +2585,7 @@ static __always_inline void raid_rec1_ssse3ext_q(int *id, int *ip, int nd, size_
 		asm volatile ("movdqa %%xmm11,%0" : "=m" (pa[i + 48]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -2876,7 +2902,7 @@ static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, in
 		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -3218,7 +3244,7 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly[0]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -3471,7 +3497,7 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int has_p, int *id, i
 		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -3767,7 +3793,7 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int has_p, int *id,
 			asm volatile ("movdqa %%xmm10,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 /*
@@ -4034,70 +4060,106 @@ static __always_inline void raid_recX_ssse3ext(int nr, int has_p, int *id, int *
 		}
 	}
 
-	raid_sse_end();
+	raid_sse_end(0);
 }
 
 #endif
 
-void raid_gen3_ssse3_raid(int nd, size_t size, void **vv)
+void raid_gen3_ssse3_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_ssse3_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen3_ssse3_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen3_ssse3_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen3_ssse3_aes(int nd, size_t size, void **vv)
+void raid_gen3_ssse3_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_ssse3_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen3_ssse3_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen3_ssse3_gen(nd, size, vv, 3, 0);
 }
 
-void raid_gen4_ssse3_raid(int nd, size_t size, void **vv)
+void raid_gen4_ssse3_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen4_ssse3_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen4_ssse3_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen4_ssse3_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen4_ssse3_aes(int nd, size_t size, void **vv)
+void raid_gen4_ssse3_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen4_ssse3_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen4_ssse3_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen4_ssse3_gen(nd, size, vv, 3, 0);
 }
 
 #ifdef CONFIG_X86_64
-void raid_gen3_ssse3ext_raid(int nd, size_t size, void **vv)
+void raid_gen3_ssse3ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_ssse3ext_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen3_ssse3ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen3_ssse3ext_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen3_ssse3ext_aes(int nd, size_t size, void **vv)
+void raid_gen3_ssse3ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_ssse3ext_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen3_ssse3ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen3_ssse3ext_gen(nd, size, vv, 3, 0);
 }
 
-void raid_gen4_ssse3ext_raid(int nd, size_t size, void **vv)
+void raid_gen4_ssse3ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen4_ssse3ext_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen4_ssse3ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen4_ssse3ext_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen4_ssse3ext_aes(int nd, size_t size, void **vv)
+void raid_gen4_ssse3ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen4_ssse3ext_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen4_ssse3ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen4_ssse3ext_gen(nd, size, vv, 3, 0);
 }
 
-void raid_gen5_ssse3ext_raid(int nd, size_t size, void **vv)
+void raid_gen5_ssse3ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_ssse3ext(nd, size, vv, 5, 2);
+	if (streaming)
+		raid_genX_ssse3ext(nd, size, vv, 5, 2, 1);
+	else
+		raid_genX_ssse3ext(nd, size, vv, 5, 2, 0);
 }
 
-void raid_gen5_ssse3ext_aes(int nd, size_t size, void **vv)
+void raid_gen5_ssse3ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_ssse3ext(nd, size, vv, 5, 3);
+	if (streaming)
+		raid_genX_ssse3ext(nd, size, vv, 5, 3, 1);
+	else
+		raid_genX_ssse3ext(nd, size, vv, 5, 3, 0);
 }
 
-void raid_gen6_ssse3ext_raid(int nd, size_t size, void **vv)
+void raid_gen6_ssse3ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_ssse3ext(nd, size, vv, 6, 2);
+	if (streaming)
+		raid_genX_ssse3ext(nd, size, vv, 6, 2, 1);
+	else
+		raid_genX_ssse3ext(nd, size, vv, 6, 2, 0);
 }
 
-void raid_gen6_ssse3ext_aes(int nd, size_t size, void **vv)
+void raid_gen6_ssse3ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_ssse3ext(nd, size, vv, 6, 3);
+	if (streaming)
+		raid_genX_ssse3ext(nd, size, vv, 6, 3, 1);
+	else
+		raid_genX_ssse3ext(nd, size, vv, 6, 3, 0);
 }
 
 #endif
@@ -4108,7 +4170,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_ssse3(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
@@ -4180,7 +4242,7 @@ void raid_rec1_ssse3ext(int nr, int *id, int *ip, int nd, size_t size, void **vv
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_ssse3(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 

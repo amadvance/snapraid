@@ -11,7 +11,7 @@
  *
  * Uses 64-byte chunks across two 32-byte YMM lanes.
  */
-void raid_gen1_avx2(int nd, size_t size, void **vv)
+static __always_inline void raid_gen1_avx2_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -32,11 +32,24 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 			asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (v[d][i + 32]));
 		}
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (p[i + 32]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
+}
+
+void raid_gen1_avx2(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_gen1_avx2_gen(nd, size, vv, 1);
+	else
+		raid_gen1_avx2_gen(nd, size, vv, 0);
 }
 
 /*
@@ -44,7 +57,7 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
  *
  * Uses Horner's method with 64-byte chunks across two 32-byte YMM lanes.
  */
-static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -100,13 +113,20 @@ static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, i
 			asm volatile ("vpxor %ymm5,%ymm3,%ymm3");
 		}
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (q[i]));
+			asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (q[i]));
+			asm volatile ("vmovdqa %%ymm3,%0" : "=m" (q[i + 32]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 #ifdef CONFIG_X86_64
@@ -118,7 +138,7 @@ static __always_inline void raid_gen2_avx2_gen(int nd, size_t size, void **vv, i
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -215,13 +235,20 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size, void **vv
 				asm volatile ("vpxor %ymm5,%ymm9,%ymm3");
 		}
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (q[i]));
+			asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (q[i]));
+			asm volatile ("vmovdqa %%ymm3,%0" : "=m" (q[i + 32]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -229,7 +256,7 @@ static __always_inline void raid_gen2_avx2ext_gen(int nd, size_t size, void **vv
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_genz_avx2ext_raid(int nd, size_t size, void **vv)
+static __always_inline void raid_genz_avx2ext_gen(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -288,15 +315,32 @@ void raid_genz_avx2ext_raid(int nd, size_t size, void **vv)
 			asm volatile ("vpxor %ymm12,%ymm9,%ymm9");
 			asm volatile ("vpxor %ymm12,%ymm10,%ymm10");
 		}
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
-		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
+			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
+			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovdqa %%ymm8,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (q[i]));
+			asm volatile ("vmovdqa %%ymm9,%0" : "=m" (q[i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (r[i]));
+			asm volatile ("vmovdqa %%ymm10,%0" : "=m" (r[i + 32]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
+}
+
+void raid_genz_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
+{
+	if (streaming)
+		raid_genz_avx2ext_gen(nd, size, vv, 1);
+	else
+		raid_genz_avx2ext_gen(nd, size, vv, 0);
 }
 
 /*
@@ -307,7 +351,7 @@ void raid_genz_avx2ext_raid(int nd, size_t size, void **vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -547,15 +591,24 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vpxor %ymm12,%ymm9,%ymm9");
 		asm volatile ("vpxor %ymm12,%ymm10,%ymm10");
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
-		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
+			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
+			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovdqa %%ymm8,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (q[i]));
+			asm volatile ("vmovdqa %%ymm9,%0" : "=m" (q[i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (r[i]));
+			asm volatile ("vmovdqa %%ymm10,%0" : "=m" (r[i + 32]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
@@ -566,7 +619,7 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv, int generator)
+static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -721,23 +774,34 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vpxor %ymm12,%ymm10,%ymm10");
 		asm volatile ("vpxor %ymm12,%ymm11,%ymm11");
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
-		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
-		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (s[i]));
-		asm volatile ("vmovntdq %%ymm11,%0" : "=m" (s[i + 32]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
+			asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
+			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
+			asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
+			asm volatile ("vmovntdq %%ymm3,%0" : "=m" (s[i]));
+			asm volatile ("vmovntdq %%ymm11,%0" : "=m" (s[i + 32]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (p[i]));
+			asm volatile ("vmovdqa %%ymm8,%0" : "=m" (p[i + 32]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (q[i]));
+			asm volatile ("vmovdqa %%ymm9,%0" : "=m" (q[i + 32]));
+			asm volatile ("vmovdqa %%ymm2,%0" : "=m" (r[i]));
+			asm volatile ("vmovdqa %%ymm10,%0" : "=m" (r[i + 32]));
+			asm volatile ("vmovdqa %%ymm3,%0" : "=m" (s[i]));
+			asm volatile ("vmovdqa %%ymm11,%0" : "=m" (s[i + 32]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 
 /*
  * Generate N parity blocks with Cauchy matrix using AVX2 extended implementation.
  */
-static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, int np, int generator)
+static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, int np, int generator, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -875,69 +939,35 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 		if (np >= 6)
 			asm volatile ("vpxor %ymm10,%ymm5,%ymm5");
 
-		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd + 1][i]));
-		if (np >= 3)
-			asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 2][i]));
-		if (np >= 4)
-			asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 3][i]));
-		if (np >= 5)
-			asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 4][i]));
-		if (np >= 6)
-			asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 5][i]));
+		if (streaming) {
+			asm volatile ("vmovntdq %%ymm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovntdq %%ymm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovntdq %%ymm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovntdq %%ymm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovntdq %%ymm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovntdq %%ymm5,%0" : "=m" (v[nd + 5][i]));
+		} else {
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (v[nd][i]));
+			asm volatile ("vmovdqa %%ymm1,%0" : "=m" (v[nd + 1][i]));
+			if (np >= 3)
+				asm volatile ("vmovdqa %%ymm2,%0" : "=m" (v[nd + 2][i]));
+			if (np >= 4)
+				asm volatile ("vmovdqa %%ymm3,%0" : "=m" (v[nd + 3][i]));
+			if (np >= 5)
+				asm volatile ("vmovdqa %%ymm4,%0" : "=m" (v[nd + 4][i]));
+			if (np >= 6)
+				asm volatile ("vmovdqa %%ymm5,%0" : "=m" (v[nd + 5][i]));
+		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(streaming);
 }
 #endif
 
-/*
- * Recover one data failure using P with AVX2.
- *
- * The missing block is:
- *
- *   Dx = P ^ D0 ^ ... ^ D(x-1) ^ D(x+1) ^ ... ^ Dn
- *
- * Use temporal stores because recovered data is consumed immediately by
- * validation and parity regeneration.
- */
-static __always_inline void raid_rec1of1_avx2(int *id, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *src[RAID_DATA_MAX];
-	uint8_t *p;
-	uint8_t *pa;
-	size_t i;
-	int d, s, ns;
-
-	p = v[nd];
-	pa = v[id[0]];
-
-	ns = 0;
-	for (d = 0; d < nd; ++d) {
-		if (d != id[0])
-			src[ns++] = v[d];
-	}
-
-	BUG_ON(ns != nd - 1);
-
-	raid_avx_begin();
-
-	for (i = 0; i < size; i += 64) {
-		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (p[i + 32]));
-
-		for (s = 0; s < ns; ++s) {
-			asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (src[s][i]));
-			asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (src[s][i + 32]));
-		}
-
-		asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pa[i]));
-		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
-	}
-
-	raid_avx_end();
-}
 
 /*
  * Recover one data failure using selected parity with AVX2.
@@ -1041,7 +1071,7 @@ static __always_inline void raid_rec1_avx2_1(int *id, int *ip, int nd, size_t si
 		asm volatile ("vmovdqa %%ymm1,%0" : "=m" (pa[i + 32]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -1161,7 +1191,7 @@ static __always_inline void raid_rec1_avx2_q(int *id, int *ip, int nd, size_t si
 		asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -1366,7 +1396,7 @@ static __always_inline void raid_recX_avx2_1234(int nr, int has_p, int *id, int 
 			asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -1585,7 +1615,7 @@ static __always_inline void raid_recX_avx2(int nr, int has_p, int *id, int *ip, 
 			asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 #ifdef CONFIG_X86_64
@@ -1767,7 +1797,7 @@ static __always_inline void raid_rec1_avx2ext_q(int *id, int *ip, int nd, size_t
 		asm volatile ("vmovdqa %%ymm7,%0" : "=m" (pa[i + 32]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -2037,7 +2067,7 @@ static __always_inline void raid_recX_avx2ext_12(int nr, int has_p, int *id, int
 		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -2336,7 +2366,7 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int has_p, int *id, in
 		}
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 
 /*
@@ -2672,69 +2702,105 @@ static __always_inline void raid_recX_avx2ext(int nr, int has_p, int *id, int *i
 			asm volatile ("vmovdqa %%ymm15,%0" : "=m" (pa[nr - 1][i]));
 	}
 
-	raid_avx_end();
+	raid_avx_end(0);
 }
 #endif
 
-void raid_gen2_avx2_raid(int nd, size_t size, void **vv)
+void raid_gen2_avx2_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_avx2_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen2_avx2_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen2_avx2_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen2_avx2_aes(int nd, size_t size, void **vv)
+void raid_gen2_avx2_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_avx2_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen2_avx2_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen2_avx2_gen(nd, size, vv, 3, 0);
 }
 
 #ifdef CONFIG_X86_64
-void raid_gen2_avx2ext_raid(int nd, size_t size, void **vv)
+void raid_gen2_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_avx2ext_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen2_avx2ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen2_avx2ext_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen2_avx2ext_aes(int nd, size_t size, void **vv)
+void raid_gen2_avx2ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen2_avx2ext_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen2_avx2ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen2_avx2ext_gen(nd, size, vv, 3, 0);
 }
 
-void raid_gen3_avx2ext_raid(int nd, size_t size, void **vv)
+void raid_gen3_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_avx2ext_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen3_avx2ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen3_avx2ext_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen3_avx2ext_aes(int nd, size_t size, void **vv)
+void raid_gen3_avx2ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen3_avx2ext_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen3_avx2ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen3_avx2ext_gen(nd, size, vv, 3, 0);
 }
 
-void raid_gen4_avx2ext_raid(int nd, size_t size, void **vv)
+void raid_gen4_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen4_avx2ext_gen(nd, size, vv, 2);
+	if (streaming)
+		raid_gen4_avx2ext_gen(nd, size, vv, 2, 1);
+	else
+		raid_gen4_avx2ext_gen(nd, size, vv, 2, 0);
 }
 
-void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv)
+void raid_gen4_avx2ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_gen4_avx2ext_gen(nd, size, vv, 3);
+	if (streaming)
+		raid_gen4_avx2ext_gen(nd, size, vv, 3, 1);
+	else
+		raid_gen4_avx2ext_gen(nd, size, vv, 3, 0);
 }
 
-void raid_gen5_avx2ext_raid(int nd, size_t size, void **vv)
+void raid_gen5_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2ext(nd, size, vv, 5, 2);
+	if (streaming)
+		raid_genX_avx2ext(nd, size, vv, 5, 2, 1);
+	else
+		raid_genX_avx2ext(nd, size, vv, 5, 2, 0);
 }
 
-void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv)
+void raid_gen5_avx2ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2ext(nd, size, vv, 5, 3);
+	if (streaming)
+		raid_genX_avx2ext(nd, size, vv, 5, 3, 1);
+	else
+		raid_genX_avx2ext(nd, size, vv, 5, 3, 0);
 }
 
-void raid_gen6_avx2ext_raid(int nd, size_t size, void **vv)
+void raid_gen6_avx2ext_raid(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2ext(nd, size, vv, 6, 2);
+	if (streaming)
+		raid_genX_avx2ext(nd, size, vv, 6, 2, 1);
+	else
+		raid_genX_avx2ext(nd, size, vv, 6, 2, 0);
 }
 
-void raid_gen6_avx2ext_aes(int nd, size_t size, void **vv)
+void raid_gen6_avx2ext_aes(int nd, size_t size, void **vv, int streaming)
 {
-	raid_genX_avx2ext(nd, size, vv, 6, 3);
+	if (streaming)
+		raid_genX_avx2ext(nd, size, vv, 6, 3, 1);
+	else
+		raid_genX_avx2ext(nd, size, vv, 6, 3, 0);
 }
 
 #endif
@@ -2745,7 +2811,7 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx2(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
@@ -2810,7 +2876,7 @@ void raid_rec1_avx2ext(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if recovering with P, use a custom XOR-only path with temporal stores */
 	if (ip[0] == 0) {
-		raid_rec1of1_avx2(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 

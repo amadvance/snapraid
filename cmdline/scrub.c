@@ -824,7 +824,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		if (!error_on_this_block && !silent_error_on_this_block && !io_error_on_this_block) {
 
 			/* compute the parity */
-			raid_gen(diskmax, state->level, state->block_size, buffer);
+			raid_gen(diskmax, state->level, state->block_size, buffer, 0);
 
 			/* compare the parity */
 			for (l = 0; l < state->level; ++l) {

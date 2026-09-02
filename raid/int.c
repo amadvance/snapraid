@@ -9,7 +9,7 @@
  *
  * Uses 16-byte chunks across four 32-bit words.
  */
-void raid_gen1_int32(int nd, size_t size, void **vv)
+void raid_gen1_int32(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -20,6 +20,8 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
 	uint32_t p1;
 	uint32_t p2;
 	uint32_t p3;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -47,7 +49,7 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
  *
  * Uses 32-byte chunks across four 64-bit words.
  */
-void raid_gen1_int64(int nd, size_t size, void **vv)
+void raid_gen1_int64(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -58,6 +60,8 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 	uint64_t p1;
 	uint64_t p2;
 	uint64_t p3;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -189,7 +193,7 @@ static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, 
  *
  * Uses Horner's method with 8-byte chunks across two 32-bit words.
  */
-void raid_genz_int32_raid(int nd, size_t size, void **vv)
+void raid_genz_int32_raid(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -202,6 +206,8 @@ void raid_genz_int32_raid(int nd, size_t size, void **vv)
 
 	uint32_t d0, r0, q0, p0;
 	uint32_t d1, r1, q1, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -244,7 +250,7 @@ void raid_genz_int32_raid(int nd, size_t size, void **vv)
  *
  * Uses Horner's method with 16-byte chunks across two 64-bit words.
  */
-void raid_genz_int64_raid(int nd, size_t size, void **vv)
+void raid_genz_int64_raid(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -257,6 +263,8 @@ void raid_genz_int64_raid(int nd, size_t size, void **vv)
 
 	uint64_t d0, r0, q0, p0;
 	uint64_t d1, r1, q1, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -299,7 +307,7 @@ void raid_genz_int64_raid(int nd, size_t size, void **vv)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
-void raid_gen2_int8(int nd, size_t size, void **vv)
+void raid_gen2_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -309,6 +317,8 @@ void raid_gen2_int8(int nd, size_t size, void **vv)
 	size_t i;
 
 	uint8_t d0, d1, q0, q1, p0, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -351,7 +361,7 @@ void raid_gen2_int8(int nd, size_t size, void **vv)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
-void raid_gen3_int8(int nd, size_t size, void **vv)
+void raid_gen3_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -362,6 +372,8 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
 	size_t i;
 
 	uint8_t d0, d1, r0, r1, q0, q1, p0, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -413,7 +425,7 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
-void raid_gen4_int8(int nd, size_t size, void **vv)
+void raid_gen4_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -425,6 +437,8 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
 	size_t i;
 
 	uint8_t d0, d1, s0, s1, r0, r1, q0, q1, p0, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -484,7 +498,7 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
-void raid_gen5_int8(int nd, size_t size, void **vv)
+void raid_gen5_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -497,6 +511,8 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 	size_t i;
 
 	uint8_t d0, d1, t0, t1, s0, s1, r0, r1, q0, q1, p0, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -564,7 +580,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
-void raid_gen6_int8(int nd, size_t size, void **vv)
+void raid_gen6_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -578,6 +594,8 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
 	size_t i;
 
 	uint8_t d0, d1, u0, u1, t0, t1, s0, s1, r0, r1, q0, q1, p0, p1;
+
+	(void)streaming;
 
 	l = nd - 1;
 	p = v[nd];
@@ -1217,23 +1235,27 @@ static __always_inline void raid_recX_int8(int nr, int has_p, int *id, int *ip, 
 	}
 }
 
-void raid_gen2_int32_raid(int nd, size_t size, void **vv)
+void raid_gen2_int32_raid(int nd, size_t size, void **vv, int streaming)
 {
+	(void)streaming;
 	raid_gen2_int32_gen(nd, size, vv, 2);
 }
 
-void raid_gen2_int32_aes(int nd, size_t size, void **vv)
+void raid_gen2_int32_aes(int nd, size_t size, void **vv, int streaming)
 {
+	(void)streaming;
 	raid_gen2_int32_gen(nd, size, vv, 3);
 }
 
-void raid_gen2_int64_raid(int nd, size_t size, void **vv)
+void raid_gen2_int64_raid(int nd, size_t size, void **vv, int streaming)
 {
+	(void)streaming;
 	raid_gen2_int64_gen(nd, size, vv, 2);
 }
 
-void raid_gen2_int64_aes(int nd, size_t size, void **vv)
+void raid_gen2_int64_aes(int nd, size_t size, void **vv, int streaming)
 {
+	(void)streaming;
 	raid_gen2_int64_gen(nd, size, vv, 3);
 }
 

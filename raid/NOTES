@@ -57,28 +57,25 @@ Generation:
 
 Recovery:
 
-* The normal one-data-disk recovery with P available is handled by dedicated
-  XOR-only 1-pass kernels on SSSE3, SSSE3 extended, AVX2, AVX2 extended,
-  AVX512BW, and GFNI (AVX2 and AVX512). Scalar, AArch64 NEON, and AArch32 NEON
-  continue to use raid_rec1of1().
+* The normal one-data-disk recovery with P available is handled via raid_rec1of1()
+  across all backends (Scalar, NEON, SSSE3, AVX2, AVX512BW, GFNI), invoking
+  raid_gen(nd, 1, size, v, 0) with temporal stores.
 
 * SIMD recovery has parity-count-specific REC1..REC6 entry points. Fused paths
   compute exactly the selected syndromes in one scan of the surviving data and
   reconstruct the missing blocks without full-size temporary syndrome buffers.
 
-* AVX512BW and GFNI (AVX2 and AVX512) use dedicated XOR-only kernels for
-  rec1of1/P and fused syndrome generation for non-P REC1 and all REC2..REC6
-  cases, including P+Q (rec2of2). AVX2 and AVX2 extended share a dedicated
-  XOR-only rec1of1/P kernel with temporal stores; AVX2 uses a specialized
-  1-pass Horner kernel for Q, while both use fused selected-syndrome recovery
-  for the other non-P REC1 cases and fused recovery for all REC2..REC6 cases.
-  SSSE3 and SSSE3 extended likewise share a dedicated XOR-only rec1of1/P kernel
-  with temporal stores, use specialized 1-pass Horner kernels for Q-only REC1
-  and P+Q REC2, and use fused selected-syndrome recovery for the remaining
-  REC1..REC6 cases. AArch64 NEON uses raid_rec1of1() for P and fused syndrome
-  generation for non-P REC1 and all REC2..REC6 cases. AArch32 NEON uses
-  raid_rec1of1() for P, fused syndrome generation for non-P REC1, all REC2
-  cases except P+Q, and REC3..REC6.
+* AVX512BW and GFNI (AVX2 and AVX512) use raid_rec1of1() for P and fused syndrome
+  generation for non-P REC1 and all REC2..REC6 cases, including P+Q (rec2of2).
+  AVX2 and AVX2 extended use raid_rec1of1() for P, use specialized 1-pass
+  Horner kernels for Q, and use fused selected-syndrome recovery for the other
+  non-P REC1 cases and fused recovery for all REC2..REC6 cases.
+  SSSE3 and SSSE3 extended likewise use raid_rec1of1() for P, use specialized
+  1-pass Horner kernels for Q-only REC1 and P+Q REC2, and use fused
+  selected-syndrome recovery for the remaining REC1..REC6 cases. AArch64 NEON
+  uses raid_rec1of1() for P and fused syndrome generation for non-P REC1 and all
+  REC2..REC6 cases. AArch32 NEON uses raid_rec1of1() for P, fused syndrome
+  generation for non-P REC1, all REC2 cases except P+Q, and REC3..REC6.
 
 * Scalar non-P REC1 and scalar REC2, plus AArch32 NEON P+Q, continue to use
   raid_delta_gen(), while scalar REC3..REC6 uses fused syndrome recovery.
@@ -160,43 +157,38 @@ Real workload assumptions
   in cache is therefore not necessarily useful.
 
 
-MOVNT / non-temporal stores
----------------------------
+MOVNT / non-temporal stores vs cached generation
+--------------------------------------------------
 
-* Generation backends use MOVNTDQ / VMOVNTDQ for parity output where applicable.
+* raid_gen(..., streaming) allows the caller to select between non-temporal
+  streaming stores (streaming != 0, using MOVNTDQ/VMOVNTDQ + sfence on x86) and
+  normal temporal/cached stores (streaming == 0, using MOVDQA/VMOVDQA without sfence).
+
+* Generation backends select MOVNTDQ / VMOVNTDQ for parity output when
+  streaming != 0 is requested.
 
 * The synthetic speedtest naturally favors non-temporal stores because generated
   parity is not consumed afterwards. This benchmark therefore measures producer
   throughput, not the complete producer -> queue -> writer pipeline.
 
-* However, the real SnapRAID queue makes the workload much closer to the
-  non-temporal case than to an immediate-consumer case.
+* In the real SnapRAID sync pipeline, parity blocks are queued to disk writers,
+  which makes the workload non-temporal (streaming = 1). At typical queue depths,
+  cached parity output would occupy many MiB of cache and evict useful input data;
+  MOVNT avoids normal cache allocation/write-allocate traffic and reduces cache
+  pressure.
 
-* Cached stores could potentially help only with very short queues, where the
-  writer consumes parity while it is still hot. Queue depths around 1..4 are the
-  most plausible area where this could happen.
-
-* Those very short queues were not representative of the fastest measured
-  SnapRAID disk pipeline in these tests. In that workload, increasing the queue
-  depth up to about 32 provided substantial throughput improvements.
-
-* At queue depths representative of those measurements, cached parity output
-  can occupy many MiB of cache and can evict useful input data. MOVNT avoids
-  normal cache allocation/write-allocate traffic for parity output and reduces
-  this source of cache pressure.
-
-* Conclusion: for the tested large-block, queued SnapRAID generation workload,
-  keep MOVNT as the default generation policy. Replacing MOVNT with cached
-  stores is not currently considered an open optimization. This conclusion
-  should be revisited if block size, queueing behavior, target CPU, or consumer
-  locality changes.
+* Conversely, in-memory parity verification in scrub and check, delta parity
+  generation in raid_delta_gen(), and single-parity recovery in raid_rec1of1()
+  use cached generation (streaming = 0) so that computed parity or recovered
+  data remains hot in cache for immediate CPU consumption.
 
 
 Recovery temporal stores
 ------------------------
 
-* Recovery output has a different lifetime from generated parity. A reconstructed
-  data block is an intermediate result that is consumed again immediately.
+* Recovery output has a different lifetime from generated parity written to disk.
+  A reconstructed data block is an intermediate result that is consumed again
+  immediately.
 
 * After raid_data() reconstructs a candidate, repair_step() immediately validates
   it. With a trustworthy hash, blockcmp()/memhash_block() reads the recovered
@@ -208,22 +200,21 @@ Recovery temporal stores
   so keeping recently produced cache lines available can also help the following
   write path.
 
-* For this reason optimized x86 REC1OF1/P kernels use ordinary temporal
-  MOVDQA/VMOVDQA stores for recovered data rather than MOVNTDQ/VMOVNTDQ. The
-  isolated REC1OF1 speed test may report lower producer-only throughput because
-  temporal stores allocate cache lines and create cache pressure, but that test
-  stops before the immediate consumers that motivate the policy.
+* For this reason, recovery uses ordinary temporal MOVDQA/VMOVDQA stores for
+  recovered data rather than MOVNTDQ/VMOVNTDQ. Single-disk recovery with P
+  (raid_rec1of1()) invokes raid_gen(nd, 1, size, v, 0) with streaming = 0,
+  ensuring temporal stores and omitting sfence across all backends.
 
 * With typical 256 KiB blocks and roughly 8..12 data disks, the full recovery
   working set may fit in L2 on some CPUs and exceed it on others. Do not switch
   store policy at an architecture-specific disk-count/cache-size threshold: the
   recovered block itself has strong immediate reuse on all of these machines,
-  while a generated parity block is normally queued and consumed later. Temporal
-  recovery stores are therefore the general compromise.
+  while generated parity written during sync is normally queued and consumed later.
+  Temporal recovery stores are therefore the general compromise.
 
-* Store policy is deliberately asymmetric: generation uses non-temporal stores
-  for final queued parity output, while recovery uses temporal stores for data
-  that immediately becomes input to validation and parity regeneration.
+* Store policy is deliberately selectable: generation for disk writing (sync)
+  uses non-temporal stores (streaming = 1), while recovery and in-memory
+  verification use temporal stores (streaming = 0).
 
 
 Typical recovery case
@@ -235,15 +226,12 @@ Typical recovery case
 * raid_rec() selects the first available parity. Therefore, for a single data
   failure with P available, recovery uses P.
 
-* REC1 implementations on SSSE3, SSSE3 extended, AVX2, AVX2 extended,
-  AVX512BW, and GFNI (AVX2 and AVX512) use dedicated XOR-only kernels for the P
-  case and temporal stores for the recovered data. Scalar, AArch64 NEON, and
-  AArch32 NEON paths call raid_rec1of1().
+* All backends (Scalar, NEON, SSSE3, AVX2, AVX512BW, GFNI) route the P case
+  through raid_rec1of1().
 
 * raid_rec1of1() remaps pointers so that P is used as an XOR input and the
-  failed data buffer is used as the GEN1 output, then calls raid_gen(nd, 1, ...).
-  This generic path therefore inherits the store policy of the selected GEN1
-  backend; optimized x86 recovery avoids that coupling with dedicated P kernels.
+  failed data buffer is used as the GEN1 output, then calls raid_gen(nd, 1, ..., 0).
+  All backends use this path with temporal stores for optimal P single-disk recovery.
 
 * Therefore the common single-disk recovery path does NOT call
   raid_delta_gen().
@@ -276,13 +264,8 @@ REC1OF1:
 
 * The row uses ip[0] == 0.
 
-* On SSSE3, SSSE3 extended, AVX2, AVX2 extended, AVX512BW, and GFNI (AVX2
-  and AVX512), REC1 uses a dedicated XOR-only 1-pass kernel that streams P and
-  the surviving data blocks directly into the recovered block using temporal
-  stores.
-
-* Scalar, AArch64 NEON, and AArch32 NEON wrappers enter raid_rec1of1() to
-  recompute P using the generation backend.
+* All backends use raid_rec1of1(), calling the GEN1 backend with streaming = 0
+  to reconstruct the missing block directly into cache using temporal stores.
 
 * Because the row measures only the recovery producer and does not include the
   immediate validation/parity-regeneration consumers, temporal-store x86
@@ -371,10 +354,9 @@ raid_delta_gen() fusion
   according to register pressure; they do not allocate full-size syndrome
   buffers.
 
-* The common rec1of1/P case on SSSE3, SSSE3 extended, AVX2, AVX2 extended,
-  AVX512BW, and GFNI (AVX2 and AVX512) executes in dedicated XOR-only streaming
-  kernels, with no syndrome or GF recovery setup. Scalar, AArch64 NEON, and
-  AArch32 NEON use the raid_rec1of1() pointer remapping path.
+* The common rec1of1/P case executes via raid_rec1of1() across all backends,
+  calling the GEN1 generator with streaming = 0 to write the recovered data
+  block using temporal stores with no syndrome or GF recovery setup.
 
 * raid_delta_gen() remains in scalar non-P REC1, scalar REC2, and AArch32 NEON
   P+Q.
@@ -462,8 +444,10 @@ Generation: coefficient residency
 Recent GEN2/GEN3 work established coefficient residency as a practical
 generation optimization, not only a theoretical one.
 
-* Non-GFNI SIMD GEN2/GEN3 kernels preload useful low/high multiplication tables
-  into vector registers when the register file has enough space.
+* Non-GFNI SIMD GEN2/GEN3 kernels (such as AVX512BW) preload useful low/high
+  multiplication tables into vector registers when the register file has enough
+  space. AVX512 GFNI kernels similarly preload Cauchy affine matrices (for RAID)
+  or constant multiplier bytes (for AES).
 
 * The resident set can be partial. When there are more data disks than can be
   covered by spare registers, later disks fall back to loading their
@@ -710,9 +694,9 @@ Memory layout, displacement and stride noise
 REC1 optimizations
 ------------------
 
-The normal REC1 case with P is handled by dedicated XOR-only 1-pass kernels on
-AVX512BW and GFNI (AVX2 and AVX512), or via raid_rec1of1() on scalar, SSSE3,
-AVX2, AArch64 NEON, and AArch32 NEON.
+The normal REC1 case with P is handled via raid_rec1of1() across all backends
+(scalar, SSSE3, AVX2, AVX512BW, GFNI, AArch64 NEON, and AArch32 NEON), using
+streaming = 0 for temporal stores.
 
 For generic REC1, used when P is unavailable:
 
@@ -726,7 +710,7 @@ For generic REC1, used when P is unavailable:
 REC1 status:
 
 * For the current large-block SnapRAID workload and implemented backends,
-  single-pass XOR streaming achieves optimal memory saturation for rec1of1/P.
+  raid_rec1of1() achieves optimal memory saturation for rec1of1/P.
 
 * Generic non-P REC1 is selected per parity count and backend, so single-pass
   SIMD and delta-based scalar implementations are benchmarked independently.
@@ -1108,8 +1092,7 @@ Short list of ideas already tried or rejected
   SSSE3, SSSE3ext, AArch64 NEON, and AArch32 NEON. AVX2/AVX2ext and
   SSSE3/SSSE3ext use dedicated 1-pass Horner kernels for Q-only REC1, and
   SSSE3/SSSE3ext also use dedicated 1-pass Horner kernels for P+Q REC2.
-  AVX512BW and GFNI use dedicated XOR-only kernels for rec1of1, while the
-  other SIMD backends use raid_rec1of1(). Only scalar non-P REC1/scalar REC2
+  All backends use raid_rec1of1() for rec1of1. Only scalar non-P REC1/scalar REC2
   and AArch32 NEON P+Q retain raid_delta_gen().
 
 * Software prefetch:

@@ -91,8 +91,13 @@ SnapRAID: A storage-oriented RAID engine specialized for large fixed-size
 * Current optimized backends include x86 SSSE3, AVX2, AVX512BW and GFNI, plus
   AArch64 and AArch32 NEON.
 
-* Generation uses non-temporal parity stores where appropriate because parity
-  normally enters a queue before the disk writer consumes it.
+* Parity generation for disk sync uses non-temporal stores (VMOVNTDQ on x86)
+  because the writer queue is long enough that generated parity is evicted from
+  cache before being written to disk; temporal stores would pay Read-For-Ownership
+  (RFO) allocation, writeback, and later reload penalties without any useful cache hit.
+  Conversely, in-memory verification in scrub/check, delta parity generation, and
+  data recovery use temporal stores so the data remains cache-hot for immediate
+  CPU consumption.
 
 Linux RAID6: A kernel RAID6 P+Q engine. It is much less general than a
              Reed-Solomon library and therefore can specialize very
@@ -104,8 +109,10 @@ Linux RAID6: A kernel RAID6 P+Q engine. It is much less general than a
 * Generation keeps P and Q in registers while walking all data disks for the
   current vector position, then writes both parity vectors once.
 
-* x86 generation contains spatial x1/x2/x4 variants, explicit prefetch, and
-  non-temporal final stores in optimized paths.
+* x86 generation (gen_syndrome) contains spatial x1/x2/x4 variants, explicit
+  prefetch, and non-temporal final stores (VMOVNTDQ) in optimized paths,
+  avoiding write-allocate because P/Q are write-only outputs destined for
+  storage I/O via DMA.
 
 * Recovery is specifically designed for one or two failures. Although the
   public RAID6 recovery interface accepts an arbitrary byte count, it is
@@ -460,12 +467,13 @@ SnapRAID. For large blocks, the number of full source and destination passes
 can dominate small instruction-count savings.
 
 SnapRAID: The preferred organization is vector-offset outer, source-disk inner,
-          with all required parity accumulators live. A source chunk is loaded
-          once and contributes to all parity outputs before the next source is
-          loaded.
+          with all required parity accumulators live in vector registers. A
+          source chunk is loaded once from memory and contributes to all parity
+          outputs before the next source is loaded. Parity accumulators incur zero
+          intermediate memory traffic and are stored to RAM/disk exactly once.
 
     for each SIMD chunk:
-        initialize P/Q/R/... accumulators
+        initialize P/Q/R/... accumulators in SIMD registers (zero memory traffic)
         for each source disk:
             load source chunk once
             update all parity accumulators
@@ -482,16 +490,21 @@ Linux RAID6: Very similar for P+Q generation. P and Q stay live while the
 
 OpenZFS RAIDZ: Processes 64 KiB cache-blocked regions. Within a region, each
                data column updates parity buffers that are loaded and stored
-               repeatedly. This deliberately trades more parity memory
-               operations for L2 locality and compatibility with RAIDZ/ABD
-               geometry.
+               repeatedly. This approach is dictated by ZFS software design
+               (handling scattered ABD kernel pages and dynamic variable-width
+               stripes column-by-column), but is computationally sub-optimal:
+               for N data disks and P parities, parity buffers are loaded and
+               stored N*P times. Even with a 100% L1/L2 cache hit rate, these
+               repeated passes consume CPU load and store execution ports, saturate
+               store buffers, and waste cache bandwidth compared to keeping
+               accumulators resident in vector registers.
 
     for each 64 KiB region:
         initialize parity region
         for each data column:
             load data
-            load/update/store P
-            load/update/store Q/R as required
+            load/update/store P                 <-- repeated memory & cache traffic
+            load/update/store Q/R as required   <-- repeated memory & cache traffic
 
 ISA-L: Multi-output dot-product kernels load a source vector chunk, split it
        once, and apply several coefficient tables to several live destination
@@ -512,11 +525,13 @@ CM256/gf256: Encoding one recovery block at a time also gives excellent
              coefficient residency, but producing several recovery blocks
              requires separate whole-region work for those outputs.
 
-For SnapRAID, copying the Jerasure/CM256 whole-region orientation would
-normally be the wrong trade. It could improve coefficient residency while
-increasing 256 KiB source rereads. Current GEN2/GEN3 table residency shows that
-SnapRAID can obtain part of the coefficient-residency benefit without changing
-the single-pass multi-output traversal.
+For SnapRAID, copying the Jerasure/CM256 whole-region orientation or the
+OpenZFS column-by-column update loops would be strictly the wrong trade.
+Rereading and rewriting intermediate parity across multiple passes wastes CPU
+memory ports and cache bandwidth that SnapRAID completely avoids by holding
+accumulators in vector registers. Current GEN2/GEN3 table residency shows that
+SnapRAID can obtain coefficient residency while strictly preserving the optimal
+single-pass multi-output traversal.
 
 
 Generation strategy
@@ -728,15 +743,27 @@ penalty becomes even less attractive.
 Memory, cache and store behavior
 --------------------------------
 
-SnapRAID: Large source blocks and queued parity favor streaming behavior.
-          Generation normally writes parity once with non-temporal stores.
-          Keeping many generated parity blocks resident in cache is not the
-          objective.
+SnapRAID: During sync, large source blocks and a deep writer queue make
+          parity output non-temporal. Parity blocks generated during sync are
+          queued and will likely be evicted from cache before the writer thread
+          consumes them; temporal stores would pay Read-For-Ownership (RFO)
+          line allocation, cache eviction/writeback, and later reload penalties
+          without achieving a useful cache hit. Non-temporal stores (VMOVNTDQ)
+          bypass write-allocate and avoid cache pollution.
+          Conversely, in-memory parity verification during scrub and check,
+          delta parity generation in raid_delta_gen(), and data recovery in
+          raid_rec1of1() use temporal cached stores (streaming = 0) so that
+          computed parity or reconstructed data remains hot in cache for
+          immediate CPU consumption.
 
-Linux RAID6: Optimized generation is very similar: source prefetch and
-             non-temporal final P/Q stores are used in x86 paths. The separate
+Linux RAID6: Optimized generation (gen_syndrome) is very similar: source
+             prefetch and non-temporal final P/Q stores (VMOVNTDQ) are used in
+             x86 paths because P and Q are write-only outputs destined for
+             storage I/O, where the ultimate consumer is the block device via
+             DMA. Keeping them cache-hot for subsequent CPU reads is unnecessary,
+             and non-temporal stores avoid write-allocate overhead. The separate
              xor_syndrome update operation reads and modifies existing parity
-             and therefore uses normal cached stores.
+             in-place and therefore uses normal cached stores.
 
 OpenZFS RAIDZ: Cached stores are integral to the traversal. P/Q/R are
                intentionally loaded and updated again as later data columns are
@@ -941,9 +968,9 @@ What each implementation teaches SnapRAID
 
 Linux RAID6: The strongest reference for P+Q streaming generation. It confirms
              single-pass source traversal, live parity accumulators,
-             fixed-generator Horner arithmetic and non-temporal final stores as
-             sensible storage techniques. Its x1/x2/x4 unrolling and prefetch
-             are ideas to benchmark, not assumptions to copy.
+             fixed-generator Horner arithmetic and DMA-bound non-temporal final
+             stores as sensible storage techniques. Its x1/x2/x4 unrolling and
+             prefetch are ideas to benchmark, not assumptions to copy.
 
 OpenZFS RAIDZ: The strongest counterexample for memory policy. Its 64 KiB L2
                blocking and cached parity stores are coherent because parity is
