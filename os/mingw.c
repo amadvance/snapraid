@@ -683,6 +683,10 @@ void windows_errno(DWORD error)
 	case ERROR_CRC : /* in ReadFile() */
 		errno = EIO;
 		break;
+	case ERROR_BROKEN_PIPE : /* in ReadFile() and WriteFile() */
+	case ERROR_NO_DATA :
+		errno = EPIPE;
+		break;
 	case WSAEADDRINUSE :
 		errno = EADDRINUSE;
 		break;
@@ -3161,7 +3165,7 @@ pid_t os_wait(pid_t pid, int* status)
  * This behavior is documented and experimentally verified here:
  * https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
  * https://github.com/rprichard/win32-console-docs
- * 
+ *
  * CREATE_NEW_PROCESS_GROUP creates a new process group whose identifier is
  * the process ID of the child created by CreateProcess(). This allows
  * CTRL_BREAK_EVENT to be directed specifically to the child's process group:
@@ -3414,9 +3418,21 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	CloseHandle(stdin_read_handle);
 
 	/* write the string to the child's STDIN */
-	if (stdin_text && strlen(stdin_text) > 0) {
-		DWORD written;
-		WriteFile(stdin_write_handle, stdin_text, (DWORD)strlen(stdin_text), &written, NULL);
+	if (stdin_text != 0) {
+		size_t len = strlen(stdin_text);
+		size_t written = 0;
+		while (written < len) {
+			DWORD count;
+			if (!WriteFile(stdin_write_handle, stdin_text + written, len - written, &count, 0)) {
+				DWORD error = GetLastError();
+				if (error == ERROR_BROKEN_PIPE || error == ERROR_NO_DATA)
+					break; /* child closed stdin early */
+				windows_errno(error);
+				os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(errno), errno);
+				break;
+			}
+			written += count;
+		}
 	}
 
 	/* closing the write handle sends EOF to the child */
