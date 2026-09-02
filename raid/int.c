@@ -667,121 +667,6 @@ void raid_gen6_int8(int nd, size_t size, void **vv, int streaming)
 }
 
 /*
- * Recover failure of one data block at index id[0] using parity at index
- * ip[0] for any RAID level using 8bit C implementation.
- *
- * Starting from the equation:
- *
- * Pd = A[ip[0],id[0]] * Dx
- *
- * and solving we get:
- *
- * Dx = A[ip[0],id[0]]^-1 * Pd
- */
-void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	const uint8_t *T;
-	uint8_t G;
-	uint8_t V;
-	size_t i;
-
-	(void)nr; /* unused, it's always 1 */
-
-	/* if recovering with P uses the delta function */
-	if (ip[0] == 0) {
-		raid_rec1of1(id, nd, size, vv);
-		return;
-	}
-
-	/* setup the coefficients matrix */
-	G = A(ip[0], id[0]);
-
-	/* invert it to solve the system of linear equations */
-	V = inv(G);
-
-	/* get multiplication tables */
-	T = table(V);
-
-	/* compute delta parity */
-	raid_delta_gen(1, id, ip, nd, size, vv);
-
-	p = v[nd + ip[0]];
-	pa = v[id[0]];
-
-	for (i = 0; i < size; ++i) {
-		/* delta */
-		uint8_t Pd = p[i] ^ pa[i];
-
-		/* reconstruct */
-		pa[i] = T[Pd];
-	}
-}
-
-/*
- * Recover failure of two data blocks at indexes id[0],id[1] using parity at
- * indexes ip[0],ip[1] for any RAID level using 8bit C implementation.
- *
- * If P is available, reconstructs only the first missing block through the
- * inverse matrix and derives the second missing block from the P delta by XOR.
- */
-static __always_inline void raid_rec2_int8_gen(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *q;
-	uint8_t *pa;
-	uint8_t *qa;
-	const uint8_t *T[2][2];
-	uint8_t G[2 * 2];
-	uint8_t V[2 * 2];
-	size_t i;
-	int j, k;
-
-	(void)nr; /* unused, it's always 2 */
-
-	/* setup the coefficients matrix */
-	for (j = 0; j < 2; ++j)
-		for (k = 0; k < 2; ++k)
-			G[j * 2 + k] = A(ip[j], id[k]);
-
-	/* invert it to solve the system of linear equations */
-	raid_invert(G, V, 2);
-
-	/* get multiplication tables */
-	for (j = 0; j < 2 - has_p; ++j)
-		for (k = 0; k < 2; ++k)
-			T[j][k] = table(V[j * 2 + k]);
-
-	/* compute delta parity */
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd + ip[0]];
-	q = v[nd + ip[1]];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	for (i = 0; i < size; ++i) {
-		/* delta */
-		uint8_t Pd = p[i] ^ pa[i];
-		uint8_t Qd = q[i] ^ qa[i];
-
-		/* reconstruct */
-		if (has_p) {
-			uint8_t Dx = T[0][0][Pd] ^ T[0][1][Qd];
-
-			pa[i] = Dx;
-			qa[i] = Pd ^ Dx;
-		} else {
-			pa[i] = T[0][0][Pd] ^ T[0][1][Qd];
-			qa[i] = T[1][0][Pd] ^ T[1][1][Qd];
-		}
-	}
-}
-
-/*
  * Recover failure of N data blocks at indexes id[N] using parity at indexes
  * ip[N] for any RAID level using 8bit C implementation.
  *
@@ -1259,14 +1144,24 @@ void raid_gen2_int64_aes(int nd, size_t size, void **vv, int streaming)
 	raid_gen2_int64_gen(nd, size, vv, 3);
 }
 
+void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
+{
+	BUG_ON(nr != 1);
+
+	if (ip[0] == 0)
+		raid_rec1of1(id, nd, size, vv);
+	else
+		raid_recX_int8(1, 0, id, ip, nd, size, vv);
+}
+
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
 
 	if (ip[0] == 0)
-		raid_rec2_int8_gen(2, 1, id, ip, nd, size, vv);
+		raid_recX_int8(2, 1, id, ip, nd, size, vv);
 	else
-		raid_rec2_int8_gen(2, 0, id, ip, nd, size, vv);
+		raid_recX_int8(2, 0, id, ip, nd, size, vv);
 }
 
 void raid_rec3_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)

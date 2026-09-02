@@ -592,9 +592,10 @@ SnapRAID: With one missing data disk and P available, rec1of1 remaps pointers
   exactly the selected syndromes from stored parity and one scan of the
   surviving data, and reconstructs all missing blocks in the same kernel.
 
-* The fused paths avoid raid_delta_gen(), generation of unused parity-prefix
-  rows, and full-size temporary syndrome buffers. Scalar and selected
-  SSSE3/AVX2 REC1/REC2 paths retain delta-based recovery.
+* The fused paths avoid the two-pass delta generation approach, generation of
+  unused parity-prefix rows, and full-size temporary syndrome buffers. All
+  recovery backends (SIMD and scalar) use single-pass fused or specialized
+  Horner kernels.
 
 * N is at most six, so scalar matrix inversion setup is negligible compared
   with processing 256 KiB blocks.
@@ -751,10 +752,9 @@ SnapRAID: During sync, large source blocks and a deep writer queue make
           without achieving a useful cache hit. Non-temporal stores (VMOVNTDQ)
           bypass write-allocate and avoid cache pollution.
           Conversely, in-memory parity verification during scrub and check,
-          delta parity generation in raid_delta_gen(), and data recovery in
-          raid_rec1of1() use temporal cached stores (streaming = 0) so that
-          computed parity or reconstructed data remains hot in cache for
-          immediate CPU consumption.
+          and data recovery in raid_rec1of1() use temporal cached stores
+          (streaming = 0) so that computed parity or reconstructed data remains
+          hot in cache for immediate CPU consumption.
 
 Linux RAID6: Optimized generation (gen_syndrome) is very similar: source
              prefetch and non-temporal final P/Q stores (VMOVNTDQ) are used in

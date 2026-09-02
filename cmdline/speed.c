@@ -1367,8 +1367,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		/* force the parity generator used by raid_delta_gen() */
-		raid_gen_force(2, sizeof(void*) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
 		/* +1 to avoid GEN1 optimized case */
 		raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -1471,8 +1469,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		/* force the parity generator used by raid_delta_gen() */
-		raid_gen_force(3, raid_gen3_int8);
 		/* +2 to select R instead of Q */
 		raid_rec1_int8(1, id, ip + 2, nd, size, v);
 	} SPEED_STOP
@@ -1575,8 +1571,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		/* force the parity generator used by raid_delta_gen() */
-		raid_gen_force(2, sizeof(void*) == 8 ? raid_gen2_int64_raid : raid_gen2_int32_raid);
 		raid_rec2_int8(2, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1593,8 +1587,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #endif
 #ifdef CONFIG_NEON32
 	SPEED_START {
-		/* force the parity generator used by raid_delta_gen() */
-		raid_gen_force(2, raid_gen2_neon32_raid);
 		raid_rec2_neon32(2, id, ip, nd, size, v);
 	} SPEED_STOP
 
@@ -1605,8 +1597,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(2, raid_gen2_sse2_raid);
 			raid_rec2_ssse3(2, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1615,8 +1605,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			/* force the parity generator used by raid_delta_gen() */
-			raid_gen_force(2, raid_gen2_sse2ext_raid);
 			raid_rec2_ssse3ext(2, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -1675,8 +1663,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		/* force the parity generator used by raid_delta_gen() */
-		raid_gen_force(3, raid_gen3_int8);
 		/* +1 to avoid GEN2 optimized case */
 		raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -1779,8 +1765,6 @@ void speed_rec(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		/* force the parity generator used by raid_delta_gen() */
-		raid_gen_force(4, raid_gen4_int8);
 		/* +2 to select R,S instead of Q,R */
 		raid_rec2_int8(2, id, ip + 2, nd, size, v);
 	} SPEED_STOP

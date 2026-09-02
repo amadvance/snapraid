@@ -73,12 +73,11 @@ Recovery:
   SSSE3 and SSSE3 extended likewise use raid_rec1of1() for P, use specialized
   1-pass Horner kernels for Q-only REC1 and P+Q REC2, and use fused
   selected-syndrome recovery for the remaining REC1..REC6 cases. AArch64 NEON
-  uses raid_rec1of1() for P and fused syndrome generation for non-P REC1 and all
-  REC2..REC6 cases. AArch32 NEON uses raid_rec1of1() for P, fused syndrome
-  generation for non-P REC1, all REC2 cases except P+Q, and REC3..REC6.
+  and AArch32 NEON use raid_rec1of1() for P and fused syndrome generation for
+  non-P REC1 and all REC2..REC6 cases.
 
-* Scalar non-P REC1 and scalar REC2, plus AArch32 NEON P+Q, continue to use
-  raid_delta_gen(), while scalar REC3..REC6 uses fused syndrome recovery.
+* Scalar recovery uses raid_rec1of1() for P and fused syndrome recovery for
+  non-P REC1 and all REC2..REC6 cases. raid_delta_gen() is completely eliminated.
 
 * Non-GFNI fused recovery splits every completed syndrome into low/high nibbles
   once and reuses the split values across all reconstructed outputs.
@@ -177,10 +176,10 @@ MOVNT / non-temporal stores vs cached generation
   MOVNT avoids normal cache allocation/write-allocate traffic and reduces cache
   pressure.
 
-* Conversely, in-memory parity verification in scrub and check, delta parity
-  generation in raid_delta_gen(), and single-parity recovery in raid_rec1of1()
-  use cached generation (streaming = 0) so that computed parity or recovered
-  data remains hot in cache for immediate CPU consumption.
+* Conversely, in-memory parity verification in scrub and check, and
+  single-parity recovery in raid_rec1of1() use cached generation (streaming = 0)
+  so that computed parity or recovered data remains hot in cache for immediate
+  CPU consumption.
 
 
 Recovery temporal stores
@@ -233,8 +232,8 @@ Typical recovery case
   failed data buffer is used as the GEN1 output, then calls raid_gen(nd, 1, ..., 0).
   All backends use this path with temporal stores for optimal P single-disk recovery.
 
-* Therefore the common single-disk recovery path does NOT call
-  raid_delta_gen().
+* Therefore the common single-disk recovery path executes with no syndrome or GF
+  overhead.
 
 * The data traffic is already close to the minimum:
 
@@ -276,24 +275,22 @@ REC1OF2 and REC1OF3:
 
 * The rows use Q and R respectively, avoiding the PAR1 fast path.
 
-* SIMD backends use single-pass recovery for these non-P cases. AVX2,
+* All backends use single-pass recovery for these non-P cases. AVX2,
   AVX2 extended, SSSE3, and SSSE3 extended use specialized Horner kernels for
   Q and fused selected-syndrome kernels for the other parity rows. AVX512BW,
-  GFNI, and NEON use their fused recovery paths. Scalar REC1 remains
-  delta-based.
+  GFNI, NEON, AArch32 NEON, and Scalar use their fused recovery paths.
 
 REC2OF2:
 
 * The row uses ip = { 0, 1 }, meaning P and Q.
 
-* On AVX2, AVX512BW, GFNI (AVX2 and AVX512), and AArch64 NEON, REC2 executes
-  directly in the 1-pass fused kernel, which computes P with XOR, Q with GF
-  multiplication, and derives the second missing block via XOR.
+* On AVX2, AVX512BW, GFNI (AVX2 and AVX512), AArch64 NEON, AArch32 NEON, and
+  Scalar int8, REC2 executes directly in the 1-pass fused kernel, which computes
+  P with XOR, Q with GF multiplication, and derives the second missing block
+  via XOR.
 
 * SSSE3 and SSSE3ext call dedicated 1-pass Horner raid_rec2of2_*() helpers that
-  compute P and Q directly from the surviving data without raid_delta_gen().
-  AArch32 NEON uses its specialized delta-based raid_rec2of2_neon32() helper,
-  while scalar int8 leverages has_p in raid_rec2_int8.
+  compute P and Q directly from the surviving data in a single pass.
 
 * This makes the row a direct benchmark for the specialized P+Q recovery
   implementation.
@@ -306,8 +303,7 @@ REC2OF3 and REC2OF4:
   ip = { 0, 1 } and therefore continue to exercise the generic REC2 paths.
 
 * They measure generic 2x2 recovery with different selected-parity positions,
-  exposing the difference between exact selected-syndrome fusion and
-  prefix-based delta generation.
+  verifying exact selected-syndrome fusion.
 
 REC3OF3 through REC6OF6:
 
@@ -318,32 +314,29 @@ REC3OF3 through REC6OF6:
 Delta generation:
 
 * A benchmark forces a matching generation backend only when the measured
-  wrapper can call raid_rec1of1() or raid_delta_gen().
+  wrapper can call raid_rec1of1() (specifically in REC1OF1).
 
 * Fused and specialized single-pass recovery rows do not depend on raid_gen()
   because they generate the required syndromes directly inside the recovery
   kernel.
 
 
-raid_delta_gen() fusion
------------------------
+Single-pass fused recovery
+--------------------------
 
 * Fused SIMD recovery accumulates exactly the parity rows selected by ip[]
   directly from the stored parity and surviving data.
 
-* This avoids the prefix constraint of raid_delta_gen(), which computes:
-
-      np = ip[nr - 1] + 1
-
-  and raid_gen() can generate only a prefix of parity rows.
+* This avoids the prefix constraint of the old delta-based approach, which
+  computed np = ip[nr - 1] + 1 via raid_gen().
 
 * Example:
 
       nr = 3
       ip = { 0, 2, 5 }
 
-  makes a delta-based path generate through GEN6, while a fused path calculates
-  only P, R and U.
+  makes an old delta-based path generate through GEN6, while a fused path
+  calculates only P, R and U.
 
 * For each SIMD chunk, the fused path starts the selected syndrome accumulators
   from stored parity, scans every surviving data source once, and then applies
@@ -358,8 +351,7 @@ raid_delta_gen() fusion
   calling the GEN1 generator with streaming = 0 to write the recovered data
   block using temporal stores with no syndrome or GF recovery setup.
 
-* raid_delta_gen() remains in scalar non-P REC1, scalar REC2, and AArch32 NEON
-  P+Q.
+* raid_delta_gen() has been completely eliminated from the codebase.
 
 
 Generation: AVX512 width and unrolling
@@ -1087,13 +1079,11 @@ Short list of ideas already tried or rejected
   poor fit when they add source rereads. Use register residency inside the
   existing traversal instead.
 
-* raid_delta_gen() + REC fusion:
-  implemented for the generic SIMD recovery paths on AVX2, AVX512BW, GFNI,
-  SSSE3, SSSE3ext, AArch64 NEON, and AArch32 NEON. AVX2/AVX2ext and
-  SSSE3/SSSE3ext use dedicated 1-pass Horner kernels for Q-only REC1, and
-  SSSE3/SSSE3ext also use dedicated 1-pass Horner kernels for P+Q REC2.
-  All backends use raid_rec1of1() for rec1of1. Only scalar non-P REC1/scalar REC2
-  and AArch32 NEON P+Q retain raid_delta_gen().
+* Two-pass delta generation (raid_delta_gen()):
+  completely eliminated in favor of generic single-pass fused recovery and
+  dedicated 1-pass Horner kernels. All backends use raid_rec1of1() for rec1of1,
+  and fused/Horner recovery for all other combinations. raid_delta_gen() has
+  been removed.
 
 * Software prefetch:
   no strong reason to add it given the existing long streams and proven

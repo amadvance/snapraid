@@ -922,7 +922,7 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
 /*
  * Recover multiple data failures using selected parity blocks with NEON.
  *
- * This avoids raid_delta_gen(), temporary syndrome buffers, and the
+ * This avoids temporary syndrome buffers and the
  * generation of unused parity rows.
  *
  * If P is available, preserve the complete P delta syndrome and

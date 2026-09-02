@@ -612,7 +612,7 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
  * Recover multiple data failures using selected parity blocks with AVX512BW.
  *
  * Compute only the selected syndromes, keeping them in registers.
- * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * This avoids temporary syndrome buffers, recomputation of
  * parity blocks, and generation of unused parity rows.
  *
  * AVX512 provides enough registers to keep all six supported syndromes

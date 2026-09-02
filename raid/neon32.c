@@ -830,7 +830,7 @@ static __always_inline void raid_recX_neon32_123(int nr, int has_p, int *id, int
 /*
  * Recover multiple data failures using selected parity blocks with AArch32 NEON.
  *
- * This avoids raid_delta_gen(), temporary syndrome buffers, and the
+ * This avoids temporary syndrome buffers and the
  * generation of unused parity rows.
  *
  * If P is available, preserve the complete P delta syndrome and
@@ -1241,114 +1241,9 @@ void raid_rec1_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_recX_neon32_123(1, 0, id, ip, nd, size, vv);
 }
 
-/*
- * Recover failure of two data blocks using P and Q AArch32 NEON implementation.
- *
- * Uses raid_delta_gen() and computes the analytical solution with polynomial reduction.
- */
-static __always_inline void raid_rec2of2_neon32(int *id, int *ip, int nd, size_t size, void **vv)
-{
-	uint8_t **v = (uint8_t **)vv;
-	uint8_t *p;
-	uint8_t *pa;
-	uint8_t *q;
-	uint8_t *qa;
-	uint8_t C[2];
-	size_t i;
-
-	C[0] = inv(powgen(id[1] - id[0]) ^ 1);
-	C[1] = inv(powgen(id[0]) ^ powgen(id[1]));
-
-	raid_delta_gen(2, id, ip, nd, size, vv);
-
-	p = v[nd];
-	q = v[nd + 1];
-	pa = v[id[0]];
-	qa = v[id[1]];
-
-	raid_neon32_begin();
-
-	/* q15 = nibble mask, q9-q12 = C0/C1 low/high tables */
-	asm volatile (
-		"vmov.i8 q15, #0x0f\n"
-		"vld1.8 {q9}, %0\n"
-		"vld1.8 {q10}, %1\n"
-		"vld1.8 {q11}, %2\n"
-		"vld1.8 {q12}, %3\n"
-		:
-		: "Q" (raid_gfmulpshufb[C[0]][0][0]),
-		"Q" (raid_gfmulpshufb[C[0]][1][0]),
-		"Q" (raid_gfmulpshufb[C[1]][0][0]),
-		"Q" (raid_gfmulpshufb[C[1]][1][0])
-	);
-
-	for (i = 0; i < size; i += 16) {
-		asm volatile (
-			/* Pd */
-			"vld1.8 {q0}, %2\n"
-			"vld1.8 {q13}, %4\n"
-			"veor q0, q0, q13\n"
-
-			/* Qd */
-			"vld1.8 {q1}, %3\n"
-			"vld1.8 {q13}, %5\n"
-			"veor q1, q1, q13\n"
-
-			/* split Pd */
-			"vmov q2, q0\n"
-			"vshr.u8 q3, q0, #4\n"
-			"vand q2, q2, q15\n"
-			"vand q3, q3, q15\n"
-
-			/* split Qd */
-			"vmov q4, q1\n"
-			"vshr.u8 q5, q1, #4\n"
-			"vand q4, q4, q15\n"
-			"vand q5, q5, q15\n"
-
-			/* C0 low * Pd low -> q6 */
-			"vtbl.8 d12, {d18-d19}, d4\n"
-			"vtbl.8 d13, {d18-d19}, d5\n"
-
-			/* C0 high * Pd high -> q7 */
-			"vtbl.8 d14, {d20-d21}, d6\n"
-			"vtbl.8 d15, {d20-d21}, d7\n"
-			"veor q6, q6, q7\n"
-
-			/* C1 low * Qd low -> q7 */
-			"vtbl.8 d14, {d22-d23}, d8\n"
-			"vtbl.8 d15, {d22-d23}, d9\n"
-
-			/* C1 high * Qd high -> q8 */
-			"vtbl.8 d16, {d24-d25}, d10\n"
-			"vtbl.8 d17, {d24-d25}, d11\n"
-			"veor q7, q7, q8\n"
-
-			/* Dy */
-			"veor q6, q6, q7\n"
-
-			/* Dx = Pd ^ Dy */
-			"veor q0, q0, q6\n"
-
-			"vst1.8 {q0}, %0\n"
-			"vst1.8 {q6}, %1\n"
-			: "=Q" (pa[i]), "=Q" (qa[i])
-			: "Q" (p[i]), "Q" (q[i]),
-			"Q" (pa[i]), "Q" (qa[i])
-		);
-	}
-
-	raid_neon32_end();
-}
-
 void raid_rec2_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
-
-	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2of2_neon32(id, ip, nd, size, vv);
-		return;
-	}
 
 	if (ip[0] == 0)
 		raid_recX_neon32_123(2, 1, id, ip, nd, size, vv);

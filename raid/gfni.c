@@ -1448,7 +1448,7 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
  * Recover multiple data failures using selected parity blocks with AVX2 GFNI.
  *
  * Compute only the selected syndromes, keeping them in registers.
- * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * This avoids temporary syndrome buffers, recomputation of
  * parity blocks, and generation of unused parity rows.
  *
  * If recovering a single failure from P, the P delta directly contains
@@ -1663,7 +1663,7 @@ static __always_inline void raid_recX_avx2gfni_raid(int nr, int has_p, int *id, 
  * Recover multiple data failures using selected parity blocks with AVX512 GFNI.
  *
  * Compute only the selected syndromes, keeping them in registers.
- * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * This avoids temporary syndrome buffers, recomputation of
  * parity blocks, and generation of unused parity rows.
  *
  * If P is available, reconstruct only nr - 1 missing blocks through the
@@ -1841,7 +1841,7 @@ static __always_inline void raid_recX_avx512gfni_raid(int nr, int has_p, int *id
  * Recover multiple data failures for the AES polynomial using selected parity blocks with AVX2 GFNI.
  *
  * Compute only the selected syndromes, keeping them in registers.
- * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * This avoids temporary syndrome buffers, recomputation of
  * parity blocks, and generation of unused parity rows.
  *
  * If recovering a single failure from P, the P delta directly contains
@@ -2046,7 +2046,7 @@ static __always_inline void raid_recX_avx2gfni_aes(int nr, int has_p, int *id, i
  * Recover multiple data failures for the AES polynomial using selected parity blocks with AVX512 GFNI.
  *
  * Compute only the selected syndromes, keeping them in registers.
- * This avoids raid_delta_gen(), temporary syndrome buffers, recomputation of
+ * This avoids temporary syndrome buffers, recomputation of
  * parity blocks, and generation of unused parity rows.
  *
  * If P is available, reconstruct only nr - 1 missing blocks through the

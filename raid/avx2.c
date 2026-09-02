@@ -1079,7 +1079,7 @@ static __always_inline void raid_rec1_avx2_1(int *id, int *ip, int nd, size_t si
  *
  * Computes Q of all surviving data directly with Horner's method and reconstructs the missing block from Qdelta.
  *
- * Processes two 32-byte lanes per iteration, avoiding raid_delta_gen(), temporary parity buffers, and the extra pass over the data.
+ * Processes two 32-byte lanes per iteration, avoiding temporary parity buffers, and the extra pass over the data.
  */
 static __always_inline void raid_rec1_avx2_q(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1624,7 +1624,7 @@ static __always_inline void raid_recX_avx2(int nr, int has_p, int *id, int *ip, 
  *
  * Computes Q of all surviving data directly with Horner's method and reconstructs the missing block from Qdelta.
  *
- * Processes two 32-byte lanes and two data disks per Horner iteration, avoiding raid_delta_gen(), temporary parity buffers, and the extra pass over the data.
+ * Processes two 32-byte lanes and two data disks per Horner iteration, avoiding temporary parity buffers, and the extra pass over the data.
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
@@ -2373,7 +2373,7 @@ static __always_inline void raid_recX_avx2ext_123(int nr, int has_p, int *id, in
  * Recover multiple data failures using selected parity blocks with AVX2 extended.
  *
  * Compute only the selected syndromes, keeping them in registers.
- * This avoids raid_delta_gen(), temporary syndrome buffers, and the
+ * This avoids temporary syndrome buffers and the
  * generation of unused parity rows.
  *
  * If P is available, preserve the complete P delta syndrome and

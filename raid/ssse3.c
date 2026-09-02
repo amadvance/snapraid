@@ -1250,7 +1250,7 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
  * Recover failure of one data block using selected parity with SSSE3, optimized for one failure.
  *
  * Computes the selected syndrome in a single survivor scan and reconstructs
- * the missing block directly, avoiding raid_delta_gen() and the extra pass.
+ * the missing block directly, avoiding extra memory passes.
  */
 static __always_inline void raid_rec1_ssse3_1(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1338,8 +1338,8 @@ static __always_inline void raid_rec1_ssse3_1(int *id, int *ip, int nd, size_t s
  * Computes Q of all surviving data directly with Horner's method and
  * reconstructs the missing block from Qdelta.
  *
- * Processes two 16-byte lanes per iteration, avoiding raid_delta_gen(),
- * temporary parity buffers, and the extra pass over the data.
+ * Processes two 16-byte lanes per iteration, avoiding temporary parity
+ * buffers and the extra pass over the data.
  */
 static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -1472,8 +1472,8 @@ static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t s
  * optimized specifically for two failures.
  *
  * Computes only the two selected syndromes in a single survivor scan and
- * reconstructs the missing blocks directly, avoiding raid_delta_gen(),
- * temporary syndrome buffers, and the generation of unused parity rows.
+ * reconstructs the missing blocks directly, avoiding temporary syndrome
+ * buffers and the generation of unused parity rows.
  *
  * has_p is expected to be a compile-time constant after inlining.
  *
@@ -1661,8 +1661,8 @@ static __always_inline void raid_rec2_ssse3_2(int has_p, int *id, int *ip, int n
  * Computes Pdelta and Qdelta directly in a single survivor scan.
  * Q is computed with Horner's method using the active field generator.
  *
- * Processes two 16-byte lanes per iteration, avoiding raid_delta_gen(),
- * temporary parity buffers, and the second pass over the data.
+ * Processes two 16-byte lanes per iteration, avoiding temporary parity
+ * buffers and the second pass over the data.
  */
 static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -2395,8 +2395,8 @@ static __always_inline void raid_rec1_ssse3ext_1(int *id, int *ip, int nd, size_
  * Computes Q of all surviving data directly with Horner's method and
  * reconstructs the missing block from Qdelta.
  *
- * Processes four 16-byte lanes per iteration, avoiding raid_delta_gen(),
- * temporary parity buffers, and the extra pass over the data.
+ * Processes four 16-byte lanes per iteration, avoiding temporary parity
+ * buffers and the extra pass over the data.
  */
 static __always_inline void raid_rec1_ssse3ext_q(int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -3799,7 +3799,7 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int has_p, int *id,
 /*
  * Recover multiple data failures using selected parity blocks with SSSE3 extended.
  *
- * This avoids raid_delta_gen(), temporary syndrome buffers, and the
+ * This avoids temporary syndrome buffers and the
  * generation of unused parity rows.
  *
  * If P is available, preserve the complete P delta syndrome and

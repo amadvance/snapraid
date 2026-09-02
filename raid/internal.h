@@ -89,7 +89,6 @@ static __always_inline void * __align_ptr(void *ptr, uintptr_t size)
  */
 void raid_gen_ref(int nd, int np, size_t size, void **vv);
 void raid_invert(uint8_t *M, uint8_t *V, int n);
-void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v);
 void raid_rec1of1(int *id, int nd, size_t size, void **v);
 void raid_gen1_int32(int nd, size_t size, void **vv, int streaming);
 void raid_gen1_int64(int nd, size_t size, void **vv, int streaming);
@@ -272,10 +271,6 @@ void raid_rec6_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
  *
  * All these functions give the guarantee that parities are written
  * in order. First parity P, then parity Q, and so on.
- * This allows to specify the same memory buffer for multiple parities
- * knowing that you'll get the latest written one.
- * This characteristic is used by the raid_delta_gen() function to
- * avoid damaging unused parities during recovery.
  *
  * @nd Number of data blocks
  * @size Size of the blocks pointed to by @vv. It must be a multiple of 64.
