@@ -34,7 +34,7 @@ static int ipow(int n, int r)
 static void meminc(void *dst, size_t size)
 {
 	size_t i;
-	unsigned char *p = dst;
+	uint8_t *p = dst;
 
 	for (i = 0; i < size; ++i)
 		++p[i];
@@ -637,7 +637,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 	else
 		np = RAID_PARITY_MAX;
 
-	nv = nd + np * 2 + 2;
+	nv = nd + np * 2 + 1;
 
 	v = raid_malloc_vector(nv, size, &v_alloc);
 	if (!v) {
@@ -652,9 +652,6 @@ int raid_test_rec(int mode, int nd, size_t size)
 
 	for (i = 0; i < np; ++i)
 		parity_save[i] = parity[i];
-
-	memset(v[nv - 2], 0, size);
-	raid_zero(v[nv - 2]);
 
 	waste = v[nv - 1];
 
@@ -753,7 +750,7 @@ int raid_test_tail(int mode, int nd_max, size_t size)
 	else
 		np = RAID_PARITY_MAX;
 
-	nv = nd_max + np * 2 + 2;
+	nv = nd_max + np * 2 + 1;
 
 	v = raid_malloc_vector(nv, size, &v_alloc);
 	if (!v) {
@@ -768,9 +765,6 @@ int raid_test_tail(int mode, int nd_max, size_t size)
 
 	for (i = 0; i < np; ++i)
 		parity_save[i] = parity[i];
-
-	memset(v[nv - 2], 0, size);
-	raid_zero(v[nv - 2]);
 
 	waste = v[nv - 1];
 

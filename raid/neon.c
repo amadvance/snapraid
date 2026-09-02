@@ -576,10 +576,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
  *
  * Process 64 bytes at a time across four 16-byte lanes.
  *
- * If P is available, preserve the complete P delta syndrome and
- * reconstruct only nr - 1 missing blocks through the inverse matrix.
- * The last missing block is obtained by XORing the reconstructed blocks
- * out of Pdelta.
+ * If P is available, syndrome 0 is accumulated with XOR without table lookups.
  */
 static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -921,10 +918,7 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
  * This avoids temporary syndrome buffers and the
  * generation of unused parity rows.
  *
- * If P is available, preserve the complete P delta syndrome and
- * reconstruct only nr - 1 missing blocks through the inverse matrix.
- * The last missing block is obtained by XORing the reconstructed blocks
- * out of Pdelta.
+ * If P is available, syndrome 0 is accumulated with XOR without table lookups.
  */
 static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {

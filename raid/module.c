@@ -627,7 +627,7 @@ int raid_selftest(void)
 {
 	const int nd = TEST_COUNT;
 	const size_t size = TEST_SIZE;
-	const int nv = nd + RAID_PARITY_MAX * 2 + 1;
+	const int nv = nd + RAID_PARITY_MAX * 2;
 	void *v_alloc;
 	void **v;
 	void *ref[TEST_COUNT + RAID_PARITY_MAX];
@@ -652,9 +652,6 @@ int raid_selftest(void)
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
-
-	memset(v[nv - 1], 0, size);
-	raid_zero(v[nv - 1]);
 
 	/* use the multiplication table as data */
 	for (i = 0; i < nd; ++i)
@@ -873,12 +870,6 @@ int raid_selftest(void)
 	ret = 0;
 
 bail:
-	/*
-	 * Reset the global zero buffer so that it does not point to
-	 * the deallocated memory.
-	 */
-	raid_zero(0);
-
 	free(v);
 	free(v_alloc);
 

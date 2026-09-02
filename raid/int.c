@@ -704,27 +704,9 @@ static __always_inline void raid_recX_int8(int nr, int has_p, int *id, int *ip, 
 	raid_invert(G, V, nr);
 
 	/* setup selected parity and destination pointers */
-	p[0] = v[nd + ip[0]];
-	pa[0] = v[id[0]];
-	if (nr >= 2) {
-		p[1] = v[nd + ip[1]];
-		pa[1] = v[id[1]];
-	}
-	if (nr >= 3) {
-		p[2] = v[nd + ip[2]];
-		pa[2] = v[id[2]];
-	}
-	if (nr >= 4) {
-		p[3] = v[nd + ip[3]];
-		pa[3] = v[id[3]];
-	}
-	if (nr >= 5) {
-		p[4] = v[nd + ip[4]];
-		pa[4] = v[id[4]];
-	}
-	if (nr >= 6) {
-		p[5] = v[nd + ip[5]];
-		pa[5] = v[id[5]];
+	for (j = 0; j < nr; ++j) {
+		p[j] = v[nd + ip[j]];
+		pa[j] = v[id[j]];
 	}
 
 	/* build the compact surviving-data list and its syndrome tables */
@@ -738,17 +720,8 @@ static __always_inline void raid_recX_int8(int nr, int has_p, int *id, int *ip, 
 
 		src[ns] = v[d];
 
-		S[ns][0] = table(A(ip[0], d));
-		if (nr >= 2)
-			S[ns][1] = table(A(ip[1], d));
-		if (nr >= 3)
-			S[ns][2] = table(A(ip[2], d));
-		if (nr >= 4)
-			S[ns][3] = table(A(ip[3], d));
-		if (nr >= 5)
-			S[ns][4] = table(A(ip[4], d));
-		if (nr >= 6)
-			S[ns][5] = table(A(ip[5], d));
+		for (j = 0; j < nr; ++j)
+			S[ns][j] = table(A(ip[j], d));
 
 		++ns;
 	}
@@ -757,94 +730,9 @@ static __always_inline void raid_recX_int8(int nr, int has_p, int *id, int *ip, 
 	BUG_ON(ns != nd - nr);
 
 	/* precompute inverse-matrix multiplication table pointers */
-	if (!has_p) {
-		R[0][0] = table(V[0 * nr + 0]);
-		if (nr >= 2)
-			R[0][1] = table(V[0 * nr + 1]);
-		if (nr >= 3)
-			R[0][2] = table(V[0 * nr + 2]);
-		if (nr >= 4)
-			R[0][3] = table(V[0 * nr + 3]);
-		if (nr >= 5)
-			R[0][4] = table(V[0 * nr + 4]);
-		if (nr >= 6)
-			R[0][5] = table(V[0 * nr + 5]);
-	}
-	if (nr >= 2) {
-		int rj = 1 - has_p;
-
-		R[rj][0] = table(V[rj * nr + 0]);
-		if (nr >= 2)
-			R[rj][1] = table(V[rj * nr + 1]);
-		if (nr >= 3)
-			R[rj][2] = table(V[rj * nr + 2]);
-		if (nr >= 4)
-			R[rj][3] = table(V[rj * nr + 3]);
-		if (nr >= 5)
-			R[rj][4] = table(V[rj * nr + 4]);
-		if (nr >= 6)
-			R[rj][5] = table(V[rj * nr + 5]);
-	}
-	if (nr >= 3) {
-		int rj = 2 - has_p;
-
-		R[rj][0] = table(V[rj * nr + 0]);
-		if (nr >= 2)
-			R[rj][1] = table(V[rj * nr + 1]);
-		if (nr >= 3)
-			R[rj][2] = table(V[rj * nr + 2]);
-		if (nr >= 4)
-			R[rj][3] = table(V[rj * nr + 3]);
-		if (nr >= 5)
-			R[rj][4] = table(V[rj * nr + 4]);
-		if (nr >= 6)
-			R[rj][5] = table(V[rj * nr + 5]);
-	}
-	if (nr >= 4) {
-		int rj = 3 - has_p;
-
-		R[rj][0] = table(V[rj * nr + 0]);
-		if (nr >= 2)
-			R[rj][1] = table(V[rj * nr + 1]);
-		if (nr >= 3)
-			R[rj][2] = table(V[rj * nr + 2]);
-		if (nr >= 4)
-			R[rj][3] = table(V[rj * nr + 3]);
-		if (nr >= 5)
-			R[rj][4] = table(V[rj * nr + 4]);
-		if (nr >= 6)
-			R[rj][5] = table(V[rj * nr + 5]);
-	}
-	if (nr >= 5) {
-		int rj = 4 - has_p;
-
-		R[rj][0] = table(V[rj * nr + 0]);
-		if (nr >= 2)
-			R[rj][1] = table(V[rj * nr + 1]);
-		if (nr >= 3)
-			R[rj][2] = table(V[rj * nr + 2]);
-		if (nr >= 4)
-			R[rj][3] = table(V[rj * nr + 3]);
-		if (nr >= 5)
-			R[rj][4] = table(V[rj * nr + 4]);
-		if (nr >= 6)
-			R[rj][5] = table(V[rj * nr + 5]);
-	}
-	if (nr >= 6) {
-		int rj = 5 - has_p;
-
-		R[rj][0] = table(V[rj * nr + 0]);
-		if (nr >= 2)
-			R[rj][1] = table(V[rj * nr + 1]);
-		if (nr >= 3)
-			R[rj][2] = table(V[rj * nr + 2]);
-		if (nr >= 4)
-			R[rj][3] = table(V[rj * nr + 3]);
-		if (nr >= 5)
-			R[rj][4] = table(V[rj * nr + 4]);
-		if (nr >= 6)
-			R[rj][5] = table(V[rj * nr + 5]);
-	}
+	for (j = 0; j < nr - has_p; ++j)
+		for (k = 0; k < nr; ++k)
+			R[j][k] = table(V[j * nr + k]);
 
 	for (i = 0; i < size; i += 2) {
 		uint8_t syn0a, syn1a, syn2a, syn3a, syn4a, syn5a;

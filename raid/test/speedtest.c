@@ -2141,7 +2141,7 @@ void speed(void)
 	int delta = TEST_DELTA;
 	int period = TEST_PERIOD;
 
-	nv = nd + RAID_PARITY_MAX + 1;
+	nv = nd + RAID_PARITY_MAX;
 
 	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
 	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", raid_optimal_displacement(nv));
@@ -2154,10 +2154,6 @@ void speed(void)
 	/* initialize disks with fixed data */
 	for (i = 0; i < nd; ++i)
 		memset(v[i], i, size);
-
-	/* zero buffer */
-	memset(v[nd + RAID_PARITY_MAX], 0, size);
-	raid_zero(v[nd + RAID_PARITY_MAX]);
 
 	speed_mem(nd, v, size, delta, period);
 

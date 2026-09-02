@@ -525,9 +525,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 /*
  * Recover multiple data failures using selected parity blocks with AArch32 NEON optimized for up to three failures.
  *
- * If P is available, keep the complete P delta syndrome in q6.
- * Reconstruct only nr - 1 missing blocks through the inverse matrix and
- * obtain the last block by XORing the reconstructed blocks out of Pdelta.
+ * If P is available, syndrome 0 is accumulated with XOR without table lookups.
  */
 static __always_inline void raid_recX_neon32_123(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {
@@ -829,10 +827,7 @@ static __always_inline void raid_recX_neon32_123(int nr, int has_p, int *id, int
  * This avoids temporary syndrome buffers and the
  * generation of unused parity rows.
  *
- * If P is available, preserve the complete P delta syndrome and
- * reconstruct only nr - 1 missing blocks through the inverse matrix.
- * The last missing block is obtained by XORing the reconstructed blocks
- * out of Pdelta.
+ * If P is available, syndrome 0 is accumulated with XOR without table lookups.
  */
 static __always_inline void raid_recX_neon32(int nr, int has_p, int *id, int *ip, int nd, size_t size, void **vv)
 {

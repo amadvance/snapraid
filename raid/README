@@ -33,11 +33,6 @@ library startup before normal RAID operations.
       RAID_MODE_CAUCHY_AES to set mode.
     Returns the mode active prior to this call.
 
-  void raid_zero(void *zero)
-    Registers a read-only buffer filled with zeros of block size 'size'.
-    The buffer must be aligned to a 64-byte boundary. Required prior to
-    calling raid_rec() or raid_data() for delta parity computation.
-
   void raid_gen(int nd, int np, size_t size, void **v, int streaming)
     Computes 'np' parity blocks from 'nd' data blocks. Vector 'v' contains
     'nd + np' block pointers (data blocks v[0..nd-1], parity blocks
@@ -96,9 +91,8 @@ Memory, Alignment and Aliasing Requirements
     (size % 64 == 0).
 
   - Memory Alignment: All data and parity blocks pointed to by 'v[]'
-    (as well as the zero buffer passed to raid_zero()) MUST be aligned to
-    a 64-byte boundary. This requirement applies to each individual block
-    buffer, not to the pointer array 'v' itself.
+    MUST be aligned to a 64-byte boundary. This requirement applies to each
+    individual block buffer, not to the pointer array 'v' itself.
 
   - Buffer Aliasing: Entries in 'v[]' MAY point to the same block buffer.
     Blocks are processed from lower to higher offsets. For each processed
