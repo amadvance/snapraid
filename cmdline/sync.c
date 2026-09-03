@@ -701,8 +701,9 @@ int failed_compare_by_index(const void* void_a, const void* void_b)
  * Buffer for storing the new hashes.
  */
 struct snapraid_rehash {
-	unsigned char hash[HASH_MAX];
-	struct snapraid_block* block;
+	unsigned char new_hash[HASH_MAX]; /**< CURRENT hash computed with the new algorithm during rehash. */
+	unsigned char sync_hash[HASH_MAX]; /**< CURRENT hash staged until a CHG block is promoted to BLK. */
+	struct snapraid_block* block; /**< Block receiving new_hash when the stripe successfully commits rehash. */
 };
 
 /**
@@ -917,11 +918,11 @@ static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_t
 
 		if (is_hw(errno)) {
 			log_fatal_errno(errno, lev_config_name(level));
-			task->state = TASK_STATE_IOERROR;
+			task->state = TASK_STATE_IOABORT;
 		} else {
 			log_fatal_errno(errno, lev_config_name(level));
 			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
-			task->state = TASK_STATE_ERROR;
+			task->state = TASK_STATE_ABORT;
 		}
 		return;
 		/* LCOV_EXCL_STOP */
@@ -930,7 +931,7 @@ static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_t
 	task->state = TASK_STATE_DONE;
 }
 
-static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)
+static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax, int* sync_durable)
 {
 	struct snapraid_io io;
 	struct snapraid_plan plan;
@@ -960,6 +961,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned* waiting_map;
 	unsigned waiting_mac;
 	bit_vect_t* block_enabled;
+
+	*sync_durable = 0;
 
 	/* get the present time */
 	now = time(0);
@@ -1030,7 +1033,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	if (alert > 0)
 		goto end;
 	if (alert < 0)
-		goto bail;
+		goto bail_abort;
 
 	while (1) {
 		unsigned failed_count;
@@ -1170,16 +1173,31 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				continue;
 
 			/* handle error conditions */
+			if (task->state == TASK_STATE_IOABORT) {
+				/* LCOV_EXCL_START */
+				++io_error;
+				goto bail_abort;
+				/* LCOV_EXCL_STOP */
+			}
+			if (task->state == TASK_STATE_ABORT) {
+				/* LCOV_EXCL_START */
+				++soft_error;
+				goto bail_abort;
+				/* LCOV_EXCL_STOP */
+			}
 			if (task->state == TASK_STATE_IOERROR) {
 				/* LCOV_EXCL_START */
 				++io_error;
-				goto bail;
+				/* preserve the failing stripe before publishing partial sync progress */
+				info_set(&state->infoarr, blockcur, info_set_bad(info));
+				state->need_write = 1;
+				goto bail_durable;
 				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR) {
 				/* LCOV_EXCL_START */
 				++soft_error;
-				goto bail;
+				goto bail_durable;
 				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
@@ -1193,7 +1211,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* LCOV_EXCL_START */
 					log_fatal(EIO, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", disk->dir);
 					log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
-					goto bail;
+					/* preserve the error that triggered the durable bailout */
+					info_set(&state->infoarr, blockcur, info_set_bad(info));
+					state->need_write = 1;
+					goto bail_durable;
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1216,7 +1237,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* compute the new hash, and store it */
 				rehandle[diskcur].block = block;
-				memhash_block(state->hash, state->hashseed, rehandle[diskcur].hash, buffer[diskcur], read_size, state->block_size);
+				memhash_block(state->hash, state->hashseed, rehandle[diskcur].new_hash, buffer[diskcur], read_size, state->block_size);
 			} else {
 				memhash_block(state->hash, state->hashseed, hash, buffer[diskcur], read_size, state->block_size);
 			}
@@ -1326,15 +1347,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 
 				/*
-				 * Copy the hash in the block, but doesn't mark the block as hashed
-				 * this allow in case of skipped block to do not save the failed computation
+				 * Keep the CURRENT hash staged while the block is still CHG.
+				 * Its stored hash identifies OLD data for recovery and must remain
+				 * unchanged if another disk causes this stripe to be skipped.
+				 * During rehash this uses the previous hash algorithm and is
+				 * overwritten with the new hash below when rehash is committed.
 				 */
-				memcpy(block->hash, hash, BLOCK_HASH_SIZE);
-
-				/*
-				 * Note that in case of rehash, this is the wrong hash,
-				 * but it will be overwritten later
-				 */
+				memcpy(rehandle[diskcur].sync_hash, hash, BLOCK_HASH_SIZE);
 			}
 		}
 
@@ -1422,7 +1441,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 								log_fatal(errno, "DANGER! Too many input/output errors in the %s disk. It isn't possible to continue.\n", lev_config_name(l));
 								log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 								++io_error;
-								goto bail;
+								/* preserve the silent error before publishing partial sync progress */
+								info_set(&state->infoarr, blockcur, info_set_bad(info));
+								state->need_write = 1;
+								goto bail_durable;
 							}
 
 							++io_error;
@@ -1433,7 +1455,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						log_fatal_errno(errno, lev_config_name(l));
 						log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 						++soft_error;
-						goto bail;
+						/* preserve the silent error before publishing partial sync progress */
+						info_set(&state->infoarr, blockcur, info_set_bad(info));
+						state->need_write = 1;
+						goto bail_durable;
 						/* LCOV_EXCL_STOP */
 					}
 
@@ -1539,6 +1564,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					continue;
 				}
 
+				/*
+				 * Only CHG still stores the OLD hash while referring to CURRENT data.
+				 * BLK, REP and REBUILD already store a CURRENT hash, while DELETED
+				 * was handled above. Publish the staged hash atomically with CHG -> BLK.
+				 */
+				if (block_state_get(block) == BLOCK_STATE_CHG)
+					memcpy(block->hash, rehandle[j].sync_hash, BLOCK_HASH_SIZE);
+
 				/* now all the blocks have the hash and the parity computed */
 				block_state_set(block, BLOCK_STATE_BLK);
 			}
@@ -1558,7 +1591,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* store all the new hash already computed */
 					for (j = 0; j < diskmax; ++j) {
 						if (rehandle[j].block)
-							memcpy(rehandle[j].block->hash, rehandle[j].hash, BLOCK_HASH_SIZE);
+							memcpy(rehandle[j].block->hash, rehandle[j].new_hash, BLOCK_HASH_SIZE);
 					}
 				}
 
@@ -1608,28 +1641,15 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		for (j = 0; j < IO_WRITER_ERROR_MAX; ++j) {
 			if (writer_error[j]) {
 				switch (j + IO_WRITER_ERROR_BASE) {
-				case TASK_STATE_IOERROR_CONTINUE :
-					++io_error;
-					if (io_error >= state->opt.io_error_limit) {
-						/* LCOV_EXCL_START */
-						log_fatal(EIO, "DANGER! Too many input/output errors in a parity disk. It isn't possible to continue.\n");
-						log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
-					break;
-				case TASK_STATE_ERROR_CONTINUE :
-					++soft_error;
-					break;
-				case TASK_STATE_IOERROR :
+				case TASK_STATE_IOABORT :
 					/* LCOV_EXCL_START */
 					++io_error;
-					goto bail;
+					goto bail_abort;
 				/* LCOV_EXCL_STOP */
-				case TASK_STATE_ERROR :
+				case TASK_STATE_ABORT :
 					/* LCOV_EXCL_START */
 					++soft_error;
-					goto bail;
+					goto bail_abort;
 					/* LCOV_EXCL_STOP */
 				}
 			}
@@ -1662,7 +1682,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* LCOV_EXCL_START */
 				log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 				++io_error;
-				goto bail;
+				goto bail_abort;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1699,7 +1719,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* LCOV_EXCL_START */
 				log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
 				++io_error;
-				goto bail;
+				goto bail_abort;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1725,9 +1745,12 @@ end:
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 		++io_error;
-		goto bail;
+		goto bail_abort;
 		/* LCOV_EXCL_STOP */
 	}
+
+	*sync_durable = 1;
+
 	if (state->opt.kill_after_sync) {
 		log_fatal(EUSER, "WARNING! Killing due --test-kill-after-sync option.\n");
 		exit(EXIT_SUCCESS);
@@ -1764,7 +1787,26 @@ end:
 		log_tag("summary:exit:error\n");
 	log_flush();
 
-bail:
+	goto bail_abort;
+
+bail_durable:
+	/*
+	 * When aborting on data read or non-fatal errors, flush and sync all
+	 * parity generated up to the previous block so the partial progress
+	 * and any bad block markings can be made durable in the content file.
+	 */
+	ret = state_barrier(state, &io, parity_handle, blockcur);
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
+		++io_error;
+		goto bail_abort;
+		/* LCOV_EXCL_STOP */
+	}
+
+	*sync_durable = 1;
+
+bail_abort:
 	/* stop all the worker threads */
 	io_stop(&io);
 
@@ -1897,6 +1939,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unsigned l;
 	int skip_sync = 0;
 	int parity_shrink = 0;
+	int sync_durable = 0;
 
 	msg_progress("Initializing...\n");
 
@@ -2129,7 +2172,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			log_fatal(EUSER, "WARNING! Killing due --test-kill-before-sync option.\n");
 			exit(EXIT_SUCCESS);
 		} else if (blockstart < blockmax) {
-			ret = state_sync_process(state, parity_handle, blockstart, blockmax);
+			ret = state_sync_process(state, parity_handle, blockstart, blockmax, &sync_durable);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				++process_error;
@@ -2138,6 +2181,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			}
 		} else {
 			msg_status("Nothing to sync.\n");
+			sync_durable = 1;
 		}
 	}
 
@@ -2149,26 +2193,56 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			log_fatal_errno(errno, lev_config_name(l));
 
 			++process_error;
+			sync_durable = 0;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		}
 	}
 
 	/*
-	 * On close errors, abort without committing or persisting state,
-	 * keeping the previous content file intact for recovery on the next run.
+	 * Only a clean full sync makes all deallocation records obsolete.
+	 *
+	 * When process_error == 0, parity has been fully updated without the deleted
+	 * files, so state_commit() clears the dealloclist.
+	 *
+	 * If any error occurred, state_commit() is skipped so the dealloclist remains
+	 * intact. Calling state_write() below will then persist both the accumulated
+	 * deallocation records and any error markings to the content file, keeping
+	 * recovery data available across consecutive interrupted or failed runs.
 	 */
+	if (process_error == 0) {
+		state_commit(state);
+	}
+
+	/*
+	 * Persist progress, error markings, and pending deallocations only after
+	 * all parity handles are closed AND sync durability has been confirmed.
+	 *
+	 * If an asynchronous parity write, state_barrier(), or parity_close() failed,
+	 * parity on disk is uncertain or incomplete. In that case, we must not publish
+	 * in-memory BLK/EMPTY transitions to the content file, keeping the previous
+	 * content file intact for recovery on the next run.
+	 *
+	 * Similarly, if sync was skipped before parity modification (e.g. on prehash
+	 * failure), state_snapshot_pending() was bypassed (leaving SNAPSHOT_SCAN
+	 * unpromoted), and legacy parity splits or newly added levels may still have
+	 * split sizes set to PARITY_SIZE_INVALID (only resolved in the parity handles).
+	 * Requiring sync durability ensures that snapshots, split sizes, and physical
+	 * parity are completely consistent and serializable before invoking state_write().
+	 */
+
+	if (state->need_write || state->opt.force_content_write) {
+		if (sync_durable) {
+			state_write(state);
+		} else {
+			log_fatal(EUSER, "WARNING! Skipping saving the content file because the sync was not durable.\n");
+		}
+	}
+
 	if (process_error != 0)
 		return -1;
 
 	msg_status("Everything OK\n");
-
-	/* only a clean full sync makes all deallocation records obsolete */
-	state_commit(state);
-
-	/* persist progress and error markings only after all parity handles are closed */
-	if (state->need_write || state->opt.force_content_write)
-		state_write(state);
 
 	return 0;
 }

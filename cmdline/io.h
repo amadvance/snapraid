@@ -31,10 +31,12 @@
 /**
  * State of the task.
  */
-#define TASK_STATE_IOERROR_CONTINUE -4 /**< IO error. Continuation requested. */
-#define TASK_STATE_ERROR_CONTINUE -3 /**< Generic error. Continuation requested. */
-#define TASK_STATE_IOERROR -2 /**< IO error. Failure requested. */
-#define TASK_STATE_ERROR -1 /**< Generic error. Failure requested. */
+#define TASK_STATE_IOERROR_CONTINUE -6 /**< IO error. Continuation requested. */
+#define TASK_STATE_ERROR_CONTINUE -5 /**< Generic error. Continuation requested. */
+#define TASK_STATE_IOERROR -4 /**< IO error. Failure requested. */
+#define TASK_STATE_ERROR -3 /**< Generic error. Failure requested. */
+#define TASK_STATE_IOABORT -2 /**< IO error. Abort requested. */
+#define TASK_STATE_ABORT -1 /**< Generic error. Abort requested. */
 #define TASK_STATE_EMPTY 0 /**< Nothing to do. */
 #define TASK_STATE_READY 1 /**< Ready to start. */
 #define TASK_STATE_DONE 2 /**< Task completed. */
