@@ -128,6 +128,8 @@ void state_thermal(struct snapraid_state* state, time_t now)
 	if (state->thermal_temperature_limit == 0)
 		return;
 
+	state_devmap(state);
+
 	tommy_list_init(&high);
 	tommy_list_init(&low);
 

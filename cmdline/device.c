@@ -1082,6 +1082,15 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 	return 0;
 }
 
+void state_devmap(struct snapraid_state* state)
+{
+	/* map device if not already done */
+	if (!state->mapped_device) {
+		devmap();
+		state->mapped_device = 1;
+	}
+}
+
 int state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk)
 {
 	tommy_node* i;
@@ -1091,16 +1100,12 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 	int ret;
 	time_t now = time(0);
 
-	/* map device if not already done */
-	if (!state->mapped_device) {
-		devmap();
-		state->mapped_device = 1;
-	}
-
 	switch (operation) {
 	case DEVICE_UP : msg_progress("Spinup...\n"); break;
 	case DEVICE_DOWN : msg_progress("Spindown...\n"); break;
 	}
+
+	state_devmap(state);
 
 	tommy_list_init(&high);
 	tommy_list_init(&low);

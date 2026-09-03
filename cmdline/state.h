@@ -254,6 +254,11 @@ void state_scan(struct snapraid_state* state);
 void state_touch(struct snapraid_state* state);
 
 /**
+ * Map devices if not already done.
+ */
+void state_devmap(struct snapraid_state* state);
+
+/**
  * Devices operations.
  */
 int state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk);
