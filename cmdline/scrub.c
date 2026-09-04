@@ -958,10 +958,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 end:
 	state_progress_end(state, countpos, countmax, countsize, "Nothing to scrub. Use the -p PLAN option to select a different plan, like -p full.\n");
 
-	/* save the new state if required */
-	if (state->need_write || state->opt.force_content_write)
-		state_write(state);
-
 	state_usage_print(state);
 
 	if (soft_error || silent_error || io_error) {
@@ -1240,6 +1236,10 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	/* persist progress and error markings only after all parity handles are closed */
+	if (state->need_write || state->opt.force_content_write)
+		state_write(state);
 
 	if (process_error != 0)
 		return -1;
