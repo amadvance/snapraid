@@ -901,6 +901,55 @@ int parity_sync(struct snapraid_parity_handle* handle)
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
+
+#ifndef _WIN32
+		/*
+		 * Sync the parent directory to ensure the directory entry of a newly
+		 * created parity split is durable before content state is published.
+		 */
+		char dir[PATH_MAX];
+		char* slash;
+		int handle_dir;
+		int flags;
+
+		pathcpy(dir, sizeof(dir), split->path);
+
+		slash = strrchr(dir, '/');
+		if (slash)
+			slash[1] = 0;
+		else
+			pathcpy(dir, sizeof(dir), ".");
+
+		flags = O_RDONLY;
+#ifdef O_DIRECTORY
+		flags |= O_DIRECTORY;
+#endif
+
+		/* open the directory to get the handle */
+		handle_dir = open(dir, flags);
+		if (handle_dir < 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error opening the directory '%s'. %s.\n", dir, strerror(errno));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* sync the directory */
+		if (fsync(handle_dir) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error syncing the directory '%s'. %s.\n", dir, strerror(errno));
+			close(handle_dir);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (close(handle_dir) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error closing the directory '%s'. %s.\n", dir, strerror(errno));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+#endif
 	}
 #endif
 
