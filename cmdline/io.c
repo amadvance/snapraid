@@ -293,10 +293,16 @@ static void io_start_mono(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
 	bit_vect_t* block_enabled)
 {
+	unsigned i;
+
 	io->block_start = blockstart;
 	io->block_max = blockmax;
 	io->block_enabled = block_enabled;
 	io->block_next = blockstart;
+
+	/* clear writer errors */
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
+		io->writer_error[i] = 0;
 }
 
 static void io_stop_mono(struct snapraid_io* io)
