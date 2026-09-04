@@ -3165,14 +3165,18 @@ pid_t os_wait(pid_t pid, int* status)
 	WaitForSingleObject(h, INFINITE);
 
 	if (GetExitCodeProcess(h, &exit_code)) {
-		CloseHandle(h);
 		*status = exit_code;
 		return pid;
+	} else {
+		windows_errno(GetLastError());
+		return -1;
 	}
+}
 
-	CloseHandle(h);
-
-	return -1;
+void os_dispose(pid_t pid)
+{
+	if (pid > 0)
+		CloseHandle((HANDLE)(intptr_t)pid);
 }
 
 /**

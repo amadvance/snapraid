@@ -127,24 +127,33 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 
 /**
  * Wait for the child process to terminate.
- * \param pid Process ID of the child process.
+ * This function does not release the process reference returned by os_spawn().
+ * The caller must eventually call os_dispose().
+ * \param pid Process reference returned by os_spawn().
  * \param status Pointer to store the exit status.
- * \return Child PID on success, -1 on failure.
+ * \return Child process reference on success, -1 on failure.
  */
 pid_t os_wait(pid_t pid, int* status);
 
 /**
+ * Release the process reference returned by os_spawn().
+ * On Unix this is a no-op. On Windows this closes the process HANDLE.
+ * \param pid Process reference returned by os_spawn().
+ */
+void os_dispose(pid_t pid);
+
+/**
  * Terminate gracefully a process. Intended for daemon/service processes controlling child processes.
- * The caller must subsequently call os_wait() to reap process resources and close handles.
- * \param pid Process ID of the process to terminate.
+ * The caller retains ownership and must eventually call both os_wait() and os_dispose() as appropriate.
+ * \param pid Process reference of the process to terminate.
  * \return 0 on success, -1 on failure.
  */
 int os_term(pid_t pid);
 
 /**
  * Forcibly terminate a process.
- * The caller must subsequently call os_wait() to reap process resources and close handles.
- * \param pid Process ID of the process to kill.
+ * The caller retains ownership and must eventually call both os_wait() and os_dispose() as appropriate.
+ * \param pid Process reference of the process to kill.
  * \return 0 on success, -1 on failure.
  */
 int os_kill(pid_t pid);

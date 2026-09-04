@@ -1427,6 +1427,11 @@ pid_t os_wait(pid_t pid, int* status)
 	return ret;
 }
 
+void os_dispose(pid_t pid)
+{
+	(void)pid;
+}
+
 int os_term(pid_t pid)
 {
 	if (pid <= 0) {
@@ -1484,6 +1489,7 @@ int os_spawn_and_wait(const char** argv)
 
 	int status;
 	int ret = os_wait(pid, &status);
+	os_dispose(pid);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -1519,6 +1525,7 @@ OS_FILE* os_popen(const char** argv)
 		close(stdout_fd);
 		int status;
 		os_wait(pid, &status);
+		os_dispose(pid);
 		errno = saved_errno;
 		free(os_file);
 		return 0;
@@ -1547,7 +1554,9 @@ int os_pclose(OS_FILE* stream)
 	fclose(fp);
 
 	int status = 0;
-	if (os_wait(pid, &status) < 0) {
+	int ret = os_wait(pid, &status);
+	os_dispose(pid);
+	if (ret < 0) {
 		return -1;
 	}
 
