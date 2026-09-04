@@ -202,6 +202,10 @@ int raid_selftest(void);
  *   Entries may point to the same block buffer.
  * @streaming Store policy hint: nonzero for streaming / non-temporal stores
  *   (bypassing cache) where supported, or 0 for normal cached / temporal stores.
+ *   Use nonzero when generated output will not be read immediately by the CPU
+ *   (e.g., parity queued for disk writes during sync), avoiding cache pollution.
+ *   Use 0 when output will be consumed immediately by the CPU (e.g., in-memory
+ *   parity verification or single-disk data recovery).
  *   Both modes produce bit-identical parity data. Backends without streaming
  *   stores ignore this hint.
  */
