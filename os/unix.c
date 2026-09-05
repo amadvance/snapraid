@@ -317,6 +317,11 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 /****************************************************************************/
 /* exec */
 
+/**
+ * Maximum execution time for helper scripts and commands, in seconds.
+ */
+#define OS_EXEC_TIMEOUT_SEC 300
+
 /*
  * Scrubbed environment
  * Only provide the bare essentials.
@@ -872,6 +877,104 @@ bail:
 }
 
 /**
+ * Waits for a process with a timeout, killing the entire process group if exceeded.
+ * Optionally delivers input to input_fd using non-blocking writes.
+ */
+static pid_t waitpid_timeout_group(pid_t pid, int* status, int64_t start, int input_fd, const char* input, int* timed_out, int* input_error)
+{
+	size_t input_len = input != 0 ? strlen(input) : 0;
+	size_t input_pos = 0;
+	pid_t ret;
+
+	*timed_out = 0;
+
+	if (input_error != 0)
+		*input_error = 0;
+
+	while (1) {
+		ret = waitpid(pid, status, WNOHANG);
+
+		if (ret == pid) {
+			if (input_fd != -1)
+				close(input_fd);
+			return ret;
+		}
+
+		if (ret < 0) {
+			if (errno == EINTR)
+				continue;
+
+			int saved_errno = errno;
+
+			if (input_fd != -1)
+				close(input_fd);
+
+			errno = saved_errno;
+			return -1;
+		}
+
+		if (input_fd != -1) {
+			while (input_pos < input_len) {
+				ssize_t written = write(input_fd, input + input_pos, input_len - input_pos);
+
+				if (written > 0) {
+					input_pos += (size_t)written;
+					continue;
+				}
+
+				if (written == 0)
+					break;
+
+				if (errno == EINTR)
+					continue;
+
+				if (errno == EAGAIN || errno == EWOULDBLOCK)
+					break;
+
+				if (errno == EPIPE) {
+					close(input_fd);
+					input_fd = -1;
+					break;
+				}
+
+				if (input_error != 0)
+					*input_error = errno;
+
+				close(input_fd);
+				input_fd = -1;
+				break;
+			}
+
+			if (input_fd != -1 && input_pos == input_len) {
+				close(input_fd);
+				input_fd = -1;
+			}
+		}
+
+		if (os_tick_sec() - start >= OS_EXEC_TIMEOUT_SEC) {
+			*timed_out = 1;
+
+			if (input_fd != -1) {
+				close(input_fd);
+				input_fd = -1;
+			}
+
+			if (os_kill(pid) != 0 && errno != ESRCH)
+				return -1;
+
+			/* reap the process-group leader */
+			do {
+				ret = waitpid(pid, status, 0);
+			} while (ret < 0 && errno == EINTR);
+
+			return ret;
+		}
+
+		os_usleep(100000);
+	}
+}
+
+/**
  * Executes a script directly via its file descriptor.
  */
 int os_script(char** argv, char** envp, const char* run_as_user)
@@ -880,6 +983,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	pid_t pid;
 	int ret;
 	int status;
+	int timed_out;
 	int64_t start, stop;
 	struct os_user user;
 
@@ -966,9 +1070,6 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		/* restore and unblock signals */
 		os_signal_restore_after_fork();
 
-		/* child will receive SIGALRM in 300 seconds (5 minutes) as a timeout */
-		alarm(300);
-
 		/* use the resolved path for execution */
 		argv[0] = resolved_path;
 
@@ -1013,9 +1114,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	/* parent process */
 	close(fd);
 
-	do {
-		ret = waitpid(pid, &status, 0);
-	} while (ret == -1 && errno == EINTR);
+	ret = waitpid_timeout_group(pid, &status, start, -1, 0, &timed_out, 0);
 
 	if (ret == -1) {
 		os_syslog(OS_LVL_INFO, "failed to wait for script, path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
@@ -1024,6 +1123,13 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 
 	stop = os_tick_sec();
 	int64_t execution_time = stop - start;
+
+	if (timed_out) {
+		os_syslog(OS_LVL_INFO, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
+
+		return 128 + SIGALRM;
+	}
+
 	if (execution_time > 30)
 		os_syslog(OS_LVL_WARNING, "script %s took %" PRId64 " seconds", resolved_path, execution_time);
 
@@ -1037,11 +1143,8 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	} else if (WIFSIGNALED(status)) {
 		/* child died from a signal */
 		int sig = WTERMSIG(status);
-		if (sig == SIGALRM) {
-			os_syslog(OS_LVL_INFO, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
-		} else {
-			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
-		}
+
+		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
 		return 128 + sig;
 	} else {
 		/* in Linux it should never happen */
@@ -1055,14 +1158,25 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	pid_t pid;
 	int ret;
 	int status;
+	int timed_out;
+	int input_error;
 	int pipe_fds[2] = { -1, -1 };
 	int64_t start, stop;
 	struct os_user user;
 
 	/* create pipe only if we have text to send */
-	if (stdin_text != NULL) {
+	if (stdin_text != 0) {
 		if (pipe_cloexec(pipe_fds) < 0) {
 			os_syslog(OS_LVL_INFO, "failed to create input pipe, errno=%s(%d)", strerror(errno), errno);
+			return -1;
+		}
+
+		int flags = fcntl(pipe_fds[1], F_GETFL);
+
+		if (flags < 0 || fcntl(pipe_fds[1], F_SETFL, flags | O_NONBLOCK) < 0) {
+			os_syslog(OS_LVL_INFO, "failed to make input pipe non-blocking, errno=%s(%d)", strerror(errno), errno);
+			close(pipe_fds[0]);
+			close(pipe_fds[1]);
 			return -1;
 		}
 	}
@@ -1154,9 +1268,6 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		/* restore and unblock signals */
 		os_signal_restore_after_fork();
 
-		/* child will receive SIGALRM in 300 seconds (5 minutes) as a timeout */
-		alarm(300);
-
 		char* const argv[] = { "sh", "-c", (char*)command, 0 };
 
 		execve("/bin/sh", argv, envp_scrubbed);
@@ -1168,29 +1279,11 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	if (pipe_fds[0] != -1)
 		close(pipe_fds[0]); /* close unused read end */
 
-	if (pipe_fds[1] != -1) {
-		/* write text to child's stdin */
-		size_t len = strlen(stdin_text);
-		size_t written = 0;
-		while (written < len) {
-			ssize_t ret_write = write(pipe_fds[1], stdin_text + written, len - written);
-			if (ret_write < 0) {
-				if (errno == EINTR)
-					continue;
-				if (errno == EPIPE)
-					break; /* child closed stdin early */
-				os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(errno), errno);
-				break;
-			}
-			written += (size_t)ret_write;
-		}
-		/* closing the pipe sends EOF to the child (e.g., tells curl data is done) */
-		close(pipe_fds[1]);
-	}
+	ret = waitpid_timeout_group(pid, &status, start, pipe_fds[1], stdin_text, &timed_out, &input_error);
+	pipe_fds[1] = -1;
 
-	do {
-		ret = waitpid(pid, &status, 0);
-	} while (ret == -1 && errno == EINTR);
+	if (input_error != 0)
+		os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(input_error), input_error);
 
 	if (ret == -1) {
 		os_syslog(OS_LVL_INFO, "failed to wait for command, command=%s, errno=%s(%d)", command, strerror(errno), errno);
@@ -1199,6 +1292,12 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	stop = os_tick_sec();
 	int64_t execution_time = stop - start;
+
+	if (timed_out) {
+		os_syslog(OS_LVL_INFO, "command %s timeout after %" PRId64 " seconds", command, execution_time);
+		return 128 + SIGALRM;
+	}
+
 	if (execution_time > 30)
 		os_syslog(OS_LVL_WARNING, "command %s ran for %" PRId64 " seconds that is unexpectedly long", command, execution_time);
 
@@ -1212,11 +1311,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	} else if (WIFSIGNALED(status)) {
 		/* child died from a signal */
 		int sig = WTERMSIG(status);
-		if (sig == SIGALRM) {
-			os_syslog(OS_LVL_INFO, "command %s timeout after %" PRId64 " seconds", command, execution_time);
-		} else {
-			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
-		}
+		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
 		return 128 + sig;
 	} else {
 		/* in Linux it should never happen */
