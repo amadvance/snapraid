@@ -2181,7 +2181,20 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			}
 		} else {
 			msg_status("Nothing to sync.\n");
-			sync_durable = 1;
+
+			/*
+			 * Ensure any parity files created or resized prior to this branch
+			 * are physically committed to disk before declaring sync durable.
+			 */
+			ret = state_barrier(state, 0, parity_handle, blockmax);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				++process_error;
+				/* continue, as we are already exiting */
+				/* LCOV_EXCL_STOP */
+			} else {
+				sync_durable = 1;
+			}
 		}
 	}
 
