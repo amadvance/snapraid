@@ -5108,7 +5108,8 @@ static void state_rename_content(struct snapraid_state* state)
 	/*
 	 * This sequence relies on POSIX file-system semantics.
 	 *
-	 * The temporary content file has already been flushed and fsync'ed.
+	 * The temporary content file has already been flushed and fsync'ed in
+	 * ssync() (using F_FULLFSYNC on macOS to force a physical media flush).
 	 * rename()/renameat() atomically replaces the old content file, but the
 	 * directory entry update is not necessarily durable when the rename
 	 * returns.
@@ -5118,6 +5119,19 @@ static void state_rename_content(struct snapraid_state* state)
 	 * ordering is required for crash consistency because parity modifications
 	 * may start only after the pre-sync content state has been durably
 	 * published.
+	 *
+	 * On macOS, standard fsync() only pushes data from kernel buffers to the
+	 * drive's volatile cache without requesting a physical media flush. F_FULLFSYNC
+	 * forces the drive controller to commit all cached data to permanent storage.
+	 * Because F_FULLFSYNC is not supported on directory descriptors, the subsequent
+	 * directory fsync() only flushes to the drive cache and is not guaranteed to be
+	 * instantly persistent across power loss. However, major database engines such
+	 * as SQLite and PostgreSQL follow this exact same pattern on Darwin, making it
+	 * the standard industry practice.
+	 *
+	 * See:
+	 * https://github.com/sqlite/sqlite/blob/f3b9f74d81132426dee1ccc07a67fdad2ccfeaa9/src/os_unix.c#L3928-L3953
+	 * https://github.com/postgres/postgres/blob/74c77052bc20017076100f0649ca0f44b1b98c29/src/backend/storage/file/fd.c#L835-L852
 	 *
 	 * When renameat() is available, perform the rename relative to the same
 	 * directory descriptor that is subsequently fsync'ed. Use O_DIRECTORY

@@ -893,8 +893,27 @@ int parity_sync(struct snapraid_parity_handle* handle)
 		 * Ensure that data changes are written to disk.
 		 * This is required to ensure that parity is more updated than content
 		 * in case of a system crash.
+		 *
+		 * On macOS, standard fsync() only pushes data from kernel buffers to the
+		 * drive's volatile cache without requesting a physical media flush. F_FULLFSYNC
+		 * forces the drive controller to commit all cached data to permanent storage.
+		 * Because F_FULLFSYNC is not supported on directory descriptors, the subsequent
+		 * directory fsync() only flushes to the drive cache and is not guaranteed to be
+		 * instantly persistent across power loss. However, major database engines such
+		 * as SQLite and PostgreSQL follow this exact same pattern on Darwin, making it
+		 * the standard industry practice.
+		 *
+		 * See:
+		 * https://github.com/sqlite/sqlite/blob/f3b9f74d81132426dee1ccc07a67fdad2ccfeaa9/src/os_unix.c#L3928-L3953
+		 * https://github.com/postgres/postgres/blob/74c77052bc20017076100f0649ca0f44b1b98c29/src/backend/storage/file/fd.c#L835-L852
 		 */
+#if defined(__APPLE__) && defined(F_FULLFSYNC)
+		ret = fcntl(split->f, F_FULLFSYNC);
+		if (ret != 0 && (errno == ENOTSUP || errno == EINVAL))
+			ret = fsync(split->f);
+#else
 		ret = fsync(split->f);
+#endif
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error syncing parity file '%s'. %s.\n", split->path, strerror(errno));

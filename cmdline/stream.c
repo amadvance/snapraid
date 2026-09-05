@@ -835,7 +835,21 @@ int ssync(STREAM* s)
 	unsigned i;
 
 	for (i = 0; i < s->handle_size; ++i) {
-		if (fsync(s->handle[i].f) != 0) {
+		int ret;
+
+		/*
+		 * On macOS, standard fsync() only pushes data from kernel buffers to the
+		 * drive's volatile cache without requesting a physical media flush. F_FULLFSYNC
+		 * forces the drive controller to commit all cached data to permanent storage.
+		 */
+#if defined(__APPLE__) && defined(F_FULLFSYNC)
+		ret = fcntl(s->handle[i].f, F_FULLFSYNC);
+		if (ret != 0 && (errno == ENOTSUP || errno == EINVAL))
+			ret = fsync(s->handle[i].f);
+#else
+		ret = fsync(s->handle[i].f);
+#endif
+		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			s->state = STREAM_STATE_ERROR;
 			s->state_index = i;
