@@ -3157,6 +3157,15 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	return (intptr_t)pi.hProcess;
 }
 
+uint64_t os_display_pid(pid_t pid)
+{
+	if (pid <= 0)
+		return 0;
+
+	HANDLE h = (void*)pid;
+	return (uint64_t)GetProcessId(h);
+}
+
 pid_t os_wait(pid_t pid, int* status)
 {
 	HANDLE h = (void*)pid;

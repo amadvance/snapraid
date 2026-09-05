@@ -1507,6 +1507,14 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 	return pid;
 }
 
+uint64_t os_display_pid(pid_t pid)
+{
+	if (pid <= 0)
+		return 0;
+
+	return (uint64_t)pid;
+}
+
 pid_t os_wait(pid_t pid, int* status)
 {
 	pid_t ret;

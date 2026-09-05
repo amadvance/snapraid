@@ -121,9 +121,18 @@ int os_pclose(OS_FILE* stream);
  * \param stdout_read_fd Pointer to store file descriptor for stdout, or NULL to redirect to /dev/null.
  * \param stderr_read_fd Pointer to store file descriptor for stderr, or NULL to redirect to /dev/null.
  * \param run_as_user User to run script as (NULL for current user).
- * \return Process ID of spawned process, or -1 on failure.
+ * \return Process reference of spawned process, or -1 on failure.
  */
 pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char* run_as_user);
+
+/**
+ * Get the operating system process ID suitable for display.
+ * On Unix the process reference is already the PID.
+ * On Windows the process reference is a HANDLE and the actual PID is obtained with GetProcessId().
+ * \param pid Process reference returned by os_spawn().
+ * \return Operating system process ID, or 0 if unavailable.
+ */
+uint64_t os_display_pid(pid_t pid);
 
 /**
  * Wait for the child process to terminate.
