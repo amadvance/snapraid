@@ -117,7 +117,7 @@ struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_p
 	return model;
 }
 
-void state_thermal(struct snapraid_state* state, time_t now)
+int state_thermal(struct snapraid_state* state, time_t now)
 {
 	tommy_node* i;
 	unsigned j;
@@ -126,7 +126,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 	int ret;
 
 	if (state->thermal_temperature_limit == 0)
-		return;
+		return 0;
 
 	state_devmap(state);
 
@@ -186,11 +186,11 @@ void state_thermal(struct snapraid_state* state, time_t now)
 
 	/* on error, just disable thermal gathering */
 	if (ret != 0)
-		goto bail;
+		goto bail_error;
 
 	/* if the list is empty, it's not supported in this platform */
 	if (tommy_list_empty(&low))
-		goto bail;
+		goto bail_error;
 
 	/* report new attribute */
 	state_attr(state, &low);
@@ -215,6 +215,7 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		log_tag("thermal:system:final:%d\n", state->thermal_ambient_temperature);
 	}
 
+	int count = 0;
 	int highest_temperature = 0;
 	for (i = tommy_list_head(&low); i != 0; i = i->next) {
 		tommy_node* t;
@@ -225,6 +226,8 @@ void state_thermal(struct snapraid_state* state, time_t now)
 		int temperature = smart_temp(devinfo);
 		if (temperature < 0)
 			continue;
+
+		++count;
 
 		/* search of the entry */
 		found = 0;
@@ -293,15 +296,24 @@ void state_thermal(struct snapraid_state* state, time_t now)
 			found->params.rmse, found->params.r_squared, found->params.max_error);
 	}
 
+	/* if no valid temperature was collected, report failure */
+	if (count == 0)
+		goto bail_error;
+
 	/* always update the highest temperature */
 	state->thermal_highest_temperature = highest_temperature;
 
 	log_tag("thermal:highest:%d\n", highest_temperature);
 	log_flush();
 
-bail:
 	tommy_list_foreach(&high, free);
 	tommy_list_foreach(&low, free);
+	return 0;
+
+bail_error:
+	tommy_list_foreach(&high, free);
+	tommy_list_foreach(&low, free);
+	return -1;
 }
 
 int state_thermal_alarm(struct snapraid_state* state)

@@ -402,9 +402,11 @@ void state_usage_print(struct snapraid_state* state);
 void state_fscheck(struct snapraid_state* state, const char* ope);
 
 /**
- * Measure the temperature of all disks
+ * Measure the temperature of all disks.
+ * Return 0 if thermal information was successfully gathered, -1 if thermal gathering failed, is not supported, or no valid temperature is available.
+ * Individual disks without a valid temperature are ignored as long as at least one disk provides a valid temperature.
  */
-void state_thermal(struct snapraid_state* state, time_t now);
+int state_thermal(struct snapraid_state* state, time_t now);
 
 /**
  * Check if the temperature is outside the operating range
