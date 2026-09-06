@@ -371,7 +371,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		state_device(state, DEVICE_UP, 0);
 
 		/* log new thermal info */
-		if (state_thermal(state, 0) != 0)
+		if (state_thermal(state, time(0)) != 0)
 			break;
 
 		/* repeat the cooldown if the temperature is still outside the operating range */
