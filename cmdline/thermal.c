@@ -330,42 +330,52 @@ int state_thermal_alarm(struct snapraid_state* state)
 
 void state_thermal_cooldown(struct snapraid_state* state)
 {
-	int sleep_time = state->thermal_cooldown_time;
+	int cooldown_time = state->thermal_cooldown_time;
 
-	if (sleep_time == 0)
-		sleep_time = 5 * 60; /* default sleep time */
-	if (sleep_time < 3 * 60)
-		sleep_time = 3 * 60; /* minimum sleep time */
+	if (cooldown_time == 0)
+		cooldown_time = 5 * 60; /* default sleep time */
+	if (cooldown_time < 3 * 60)
+		cooldown_time = 3 * 60; /* minimum sleep time */
 
 	/* from now on, stop any further data gathering as the heating is interrupted */
 	state->thermal_stop_gathering = 1;
 
-	log_tag("thermal:spindown\n");
-	state_device(state, DEVICE_DOWN, 0);
+	for (;;) {
+		int sleep_time = cooldown_time;
 
-	msg_progress("Cooldown...\n");
+		log_tag("thermal:spindown\n");
+		state_device(state, DEVICE_DOWN, 0);
 
-	log_tag("thermal:cooldown:%d\n", sleep_time);
-	printf("Waiting for %d minutes...\n", sleep_time / 60);
+		msg_progress("Cooldown...\n");
 
-	log_flush();
+		log_tag("thermal:cooldown:%d\n", sleep_time);
+		printf("Waiting for %d minutes...\n", sleep_time / 60);
 
-	/* every 30 seconds spin down any disk that was spunup */
-	while (sleep_time > 0) {
-		state_device(state, DEVICE_DOWNIFUP, 0);
+		log_flush();
 
-		sleep(30);
-		sleep_time -= 30;
-	}
+		/* every 30 seconds spin down any disk that was spunup */
+		while (sleep_time > 0) {
+			state_device(state, DEVICE_DOWNIFUP, 0);
 
-	if (!os_signal_interrupt()) { /* don't wake-up if we are interrupting */
+			sleep(30);
+			sleep_time -= 30;
+		}
+
+		if (os_signal_interrupt())
+			break; /* don't wake-up if we are interrupting */
+
 		log_tag("thermal:spinup\n");
 
 		/* spinup */
 		state_device(state, DEVICE_UP, 0);
 
 		/* log new thermal info */
-		state_thermal(state, 0);
+		if (state_thermal(state, 0) != 0)
+			break;
+
+		/* repeat the cooldown if the temperature is still outside the operating range */
+		if (!state_thermal_alarm(state))
+			break;
 	}
 }
 
