@@ -345,6 +345,20 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		int sleep_time = cooldown_time;
 
 		log_tag("thermal:spindown\n");
+		
+		/*
+		 * Power management is best effort.
+		 *
+		 * Some devices may not support explicit spindown/spinup operations, or an
+		 * operation may fail only for a subset of the devices. This must not make the
+		 * whole thermal cooldown fail.
+		 *
+		 * Thermal safety is enforced by measuring the temperatures again after the
+		 * cooldown. If any disk is still above the configured limit, the cooldown is
+		 * repeated. Therefore failure to spin down a device only makes cooling less
+		 * effective; it does not allow the operation to resume while a measurable disk
+		 * is still above the temperature limit.
+		 */
 		state_device(state, DEVICE_DOWN, 0);
 
 		msg_progress("Cooldown...\n");
