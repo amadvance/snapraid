@@ -352,6 +352,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 			/* drop until now */
 			state_usage_waste(state);
+
+			if (os_signal_interrupt())
+				break;
 		}
 	}
 

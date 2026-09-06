@@ -354,7 +354,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		log_flush();
 
 		/* every 30 seconds spin down any disk that was spunup */
-		while (sleep_time > 0) {
+		while (sleep_time > 0 && !os_signal_interrupt()) {
 			state_device(state, DEVICE_DOWNIFUP, 0);
 
 			sleep(30);

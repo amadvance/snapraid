@@ -2313,7 +2313,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* progress */
 		if (state_progress(state, 0, i, countpos, countmax, countsize)) {
 			/* LCOV_EXCL_START */
-			break;
+			goto end;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -2330,6 +2330,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			/* drop until now */
 			state_usage_waste(state);
+
+			if (os_signal_interrupt())
+				goto end;
 		}
 	}
 

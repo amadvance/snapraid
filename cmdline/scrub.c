@@ -931,6 +931,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* drop until now */
 			state_usage_waste(state);
+
+			if (os_signal_interrupt())
+				break;
 		}
 
 		/* autosave */
