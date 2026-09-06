@@ -161,8 +161,8 @@ struct snapraid_state {
 	int thermal_stop_gathering; /**< If thermal data gathering is stopped */
 	int thermal_ambient_temperature; /**< Ambient themperature. 0 if not available */
 	int thermal_highest_temperature; /**< Current highest temperature */
-	time_t thermal_first; /**< Time of the first measure */
-	time_t thermal_latest; /**< Time of latest measure */
+	uint64_t thermal_first; /**< Monotonic time of the first measure */
+	uint64_t thermal_latest; /**< Monotonic time of latest measure */
 	int thermal_cooldown_time; /**< Cooldown wait time in seconds */
 	int thermal_temperature_limit; /**< Upper limit temperature of the operating range */
 

@@ -5839,13 +5839,15 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	time_t now;
+	uint64_t thermal_now;
 	int pred;
 
 	now = time(0);
+	thermal_now = os_tick_sec();
 
 	/* thermal measure */
-	if (now > state->thermal_latest + THERMAL_PERIOD_SECONDS || state->opt.fake_device) {
-		state->thermal_latest = now;
+	if (thermal_now > state->thermal_latest + THERMAL_PERIOD_SECONDS || state->opt.fake_device) {
+		state->thermal_latest = thermal_now;
 		state_thermal(state, now);
 	}
 

@@ -265,7 +265,7 @@ int state_thermal(struct snapraid_state* state, time_t now)
 
 		/* insert the new data point */
 		found->data[found->count].temperature = temperature;
-		found->data[found->count].time = now - state->thermal_first;
+		found->data[found->count].time = state->thermal_latest - state->thermal_first;
 		++found->count;
 
 		if (state->opt.fake_device) {
@@ -386,8 +386,8 @@ int state_thermal_begin(struct snapraid_state* state, time_t now)
 		return 1;
 
 	/* initial thermal measure */
-	state->thermal_first = now;
-	state->thermal_latest = now;
+	state->thermal_first = os_tick_sec();
+	state->thermal_latest = state->thermal_first;
 	state_thermal(state, now);
 
 	if (state->thermal_ambient_temperature != 0) {
