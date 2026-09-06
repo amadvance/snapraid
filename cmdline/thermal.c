@@ -17,6 +17,7 @@ struct snapraid_thermal* thermal_alloc(uint64_t dev, const char* name)
 	thermal->device = dev;
 	thermal->latest_temperature = 0;
 	thermal->count = 0;
+	memset(&thermal->params, 0, sizeof(thermal->params));
 	pathcpy(thermal->name, sizeof(thermal->name), name);
 
 	return thermal;
