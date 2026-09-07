@@ -779,29 +779,19 @@ void memhash_block(unsigned kind, const unsigned char* seed, void* digest, const
 {
 	assert(logical_size <= block_size);
 
-	switch (kind) {
-	case HASH_MUSEAIR :
+	if (memhash_is_block(kind)) {
 		/*
-		 * MuseAir defines the identity of the complete canonical RAID
-		 * block. The caller must have zero-padded the buffer after the
-		 * logical end of the file block.
+		 * Canonical block hashes define the identity of the complete
+		 * canonical RAID block. The caller must have zero-padded the
+		 * buffer after the logical end of the file block.
 		 */
 		memhash(kind, seed, digest, src, block_size);
-		break;
-	case HASH_MURMUR3 :
-	case HASH_SPOOKY2 :
+	} else {
 		/*
 		 * Preserve the historical SnapRAID hash semantics for content
 		 * files using legacy hashes.
 		 */
 		memhash(kind, seed, digest, src, logical_size);
-		break;
-	default :
-		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency in hash function %u\n", kind);
-		exit(EXIT_FAILURE);
-		break;
-		/* LCOV_EXCL_STOP */
 	}
 }
 

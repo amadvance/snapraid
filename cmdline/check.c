@@ -988,23 +988,33 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				if (!mem_is_zero(buffer[failed[j].index], state->block_size))
 					current_generation_proven = 1;
 			} else {
-				size_t pos_size;
+				unsigned hash_kind;
 
-				pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
+				hash_kind = rehash ? state->prevhash : state->hash;
 
 				/*
 				 * The stored CHG hash identifies OLD contents under the recovery invariant.
 				 * Generation detection must compare hash identity only and must not apply the
-				 * CURRENT logical-size padding requirement. With MuseAir the hash covers the
-				 * complete canonical RAID block, so a mismatch proves candidate != OLD and
-				 * therefore identifies this validated RAID solution as CURRENT.
+				 * CURRENT logical-size padding requirement.
 				 *
-				 * Legacy hashes still depend on the logical size used to compute the hash.
-				 * The OLD logical size is not available here, so size-changing CHG blocks may
-				 * remain subject to the historical ambiguity with Murmur3/Spooky2.
+				 * When the hash covers the complete canonical RAID block (memhash_is_block()),
+				 * candidate identity is independent of logical size: a mismatch proves
+				 * candidate != OLD and therefore identifies this validated RAID solution as CURRENT.
+				 *
+				 * For hashes that depend on the logical size (Murmur3/Spooky2), the OLD
+				 * logical size is not available. Because a mismatch against CURRENT pos_size
+				 * cannot distinguish candidate != OLD from a change in file size, the
+				 * conservative approach keeps the generation ambiguous and does not treat
+				 * the mismatch as proof of CURRENT.
 				 */
-				if (block_hash_cmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index]) != 0)
-					current_generation_proven = 1;
+				if (memhash_is_block(hash_kind)) {
+					size_t pos_size;
+
+					pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
+
+					if (block_hash_cmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index]) != 0)
+						current_generation_proven = 1;
+				}
 			}
 		}
 

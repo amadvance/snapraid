@@ -283,6 +283,19 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 void memhash_block(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t logical_size, size_t block_size);
 
 /**
+ * Return !=0 if the hash kind operates on the complete canonical RAID block.
+ *
+ * Legacy hashes (Murmur3, Spooky2) preserve historical semantics and hash
+ * only the logical file bytes.
+ * Modern hashes (MuseAir) hash the complete zero-padded RAID block up to
+ * block_size.
+ */
+static inline int memhash_is_block(unsigned kind)
+{
+	return kind == HASH_MUSEAIR;
+}
+
+/**
  * Return the hash name.
  */
 const char* hash_config_name(unsigned kind);
