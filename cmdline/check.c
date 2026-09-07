@@ -237,6 +237,9 @@ struct failed_struct {
 	 *
 	 * DELETED blocks and readable CHG/REP auxiliary entries are not bad even
 	 * though they may participate in the recovery equations.
+	 *
+	 * is_bad describes the state of the original file block. It may remain set
+	 * even when buffer[index] already contains valid replacement data.
 	 */
 	int is_bad;
 
@@ -265,8 +268,36 @@ struct failed_struct {
 	 * block is also is_bad, fix may still preserve the recovered bytes as the best
 	 * available copy, but the containing file remains damaged and quarantined as
 	 * .unrecoverable.
+	 *
+	 * is_outofdate and is_current are not boolean opposites:
+	 *
+	 *   is_outofdate == 0 && is_current == 0   not pre-validated via import/search
+	 *   is_outofdate == 0 && is_current == 1   buffer[index] pre-validated via import/search as CURRENT
+	 *   is_outofdate == 1 && is_current == 0   buffer[index] cannot be certified CURRENT
+	 *
+	 * is_outofdate == 1 && is_current == 1 is inconsistent and must never occur.
 	 */
 	int is_outofdate;
+
+	/**
+	 * If buffer[index] contains CURRENT data obtained and validated independently
+	 * through import/search and therefore reusable as a known input by another
+	 * recovery history strategy when the block generation is unchanged.
+	 *
+	 * This is independent from is_bad. A block obtained through import/search may
+	 * have is_bad == 1 because the original file still needs to be repaired while
+	 * is_current == 1 because buffer[index] already contains its validated CURRENT
+	 * contents.
+	 *
+	 * Such data can be reused as a known RAID input by another recovery history
+	 * strategy only when that block has the same data generation in both strategies,
+	 * as is the case for BLK and REBUILD.
+	 *
+	 * A value of zero does not imply OLD data or an invalid recovery; it simply
+	 * means that the buffer was not pre-validated by import/search for reuse across
+	 * strategies.
+	 */
+	int is_current;
 
 	unsigned index; /**< Index of the failed block. */
 	struct snapraid_block* block; /**< The failed block */
@@ -705,6 +736,9 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 
 	error = 0;
 
+	for (j = 0; j < failed_count; ++j)
+		failed[j].is_current = 0;
+
 	/*
 	 * Nothing is missing or damaged.
 	 *
@@ -834,7 +868,12 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * The required CURRENT contents were obtained directly
 				 * using their CURRENT hash, so this block no longer
 				 * consumes a RAID recovery equation.
+				 *
+				 * Keep is_bad set because the file block still needs to be
+				 * written back. is_current records that buffer[index] already
+				 * contains certified CURRENT data.
 				 */
+				failed[j].is_current = 1;
 				log_tag("repair_hash_import:%u: Fixed by import\n", j);
 			} else {
 				/*
@@ -1049,8 +1088,11 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * them as successfully recovered CURRENT contents.
 				 */
 				for (j = 0; j < failed_count; ++j) {
-					if (failed[j].is_bad && block_state_get(failed[j].block) == BLOCK_STATE_CHG)
+					if (failed[j].is_bad && block_state_get(failed[j].block) == BLOCK_STATE_CHG) {
+						/* out-of-date entries cannot be certified CURRENT */
+						failed[j].is_current = 0;
 						failed[j].is_outofdate = 1;
+					}
 				}
 
 				log_tag("repair_generation_unknown:%" PRIu64 ": Recovered CHG generation is ambiguous\n", pos);
@@ -1187,7 +1229,12 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			 *
 			 * If the entry itself was bad, this value may still be saved
 			 * as best-effort data, but it cannot be certified CURRENT.
+			 *
+			 * If buffer[index] was marked CURRENT in the first strategy
+			 * (e.g. an imported REP), clear is_current: the buffer is now
+			 * repurposed as OLD data and cannot remain certified CURRENT.
 			 */
+			failed[j].is_current = 0;
 			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
 			/*
@@ -1201,13 +1248,24 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			 * hash are CURRENT and do not have a separate OLD version. Its
 			 * physical parity is untrusted, but repair_step() accepts the
 			 * candidate only after independent validation.
+			 *
+			 * If CURRENT recovery already obtained this BLK/REBUILD through
+			 * import/search, buffer[index] contains certified CURRENT data.
+			 * BLK and REBUILD have the same required data contribution under
+			 * both history hypotheses, so that buffer remains a known RAID
+			 * input and must not consume another recovery equation.
+			 *
+			 * Keep is_bad unchanged because the original file block still
+			 * needs to be written back after the overall recovery succeeds.
 			 */
 			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REBUILD);
 
-			something_to_recover = 1;
+			if (!failed[j].is_current) {
+				something_to_recover = 1;
 
-			failed_map[n] = j;
-			++n;
+				failed_map[n] = j;
+				++n;
+			}
 		}
 	}
 
@@ -1248,6 +1306,8 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 					unsigned block_state = block_state_get(failed[j].block);
 
 					if (block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_REP) {
+						/* out-of-date entries cannot be certified CURRENT */
+						failed[j].is_current = 0;
 						failed[j].is_outofdate = 1;
 						log_tag("repair_hash_unknown:%u: Surely old data\n", j);
 					}
