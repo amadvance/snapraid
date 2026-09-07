@@ -645,9 +645,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* copy the options */
 	state->opt = *opt;
 
-	/* if unset, sort by physical order */
+	/* if unset, sort by directory order */
 	if (!state->opt.force_order)
-		state->opt.force_order = SORT_PHYSICAL;
+		state->opt.force_order = SORT_DIR;
 
 	/* adjust file mode */
 	if (state->opt.file_mode != ADVISE_DEFAULT) {
@@ -2417,7 +2417,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* allocate the file */
-			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, FILEPHY_UNREAD_OFFSET);
+			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
 
 			/* insert the file in the file containers */
 			if (file->inode != INODE_INVALID)
@@ -2745,7 +2745,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					}
 
 					/* allocate a fake deleted file */
-					deleted = file_alloc(state->block_size, "<deleted>", v_count * (data_off_t)state->block_size, 0, 0, 0, 0);
+					deleted = file_alloc(state->block_size, "<deleted>", v_count * (data_off_t)state->block_size, 0, 0, 0);
 
 					/* mark the file as deleted */
 					file_flag_set(deleted, FILE_IS_DELETED);

@@ -51,7 +51,7 @@ The platform abstraction layer is separated into `os/`. Note that `os/` acts as 
 | `snapraid_state` | `state.h` | Global program state: all disks, parity levels, filter list, options, hash kind, progress |
 | `snapraid_option` | `state.h` | Runtime options (force flags, sort order, IO advise mode, bandwidth limit, etc.) |
 | `snapraid_disk` | `elem.h` | One data disk: name, mount dir, device id, UUID, file/link/dir hash tables and lists, parity extent tree |
-| `snapraid_file` | `elem.h` | A tracked file: sub-path, size, mtime, inode, physical offset, block vector |
+| `snapraid_file` | `elem.h` | A tracked file: sub-path, size, mtime, inode, block vector |
 | `snapraid_block` | `elem.h` | One parity block: state (`BLK/CHG/REP/DELETED/EMPTY`) + hash |
 | `snapraid_extent` | `elem.h` | Contiguous run of file blocks mapped to contiguous parity positions |
 | `snapraid_filter` | `elem.h` | One include/exclude rule: pattern, root scope, `is_disk`, `is_abs`, `is_dir`, direction |

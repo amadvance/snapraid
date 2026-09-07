@@ -469,7 +469,7 @@ int filter_snapshot(int enable, const char* sub, const char* name)
 	return 0;
 }
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical)
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
 {
 	struct snapraid_file* file;
 	block_off_t i;
@@ -495,7 +495,6 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->mtime_sec = mtime_sec;
 	file->mtime_nsec = mtime_nsec;
 	file->inode = inode;
-	file->physical = physical;
 	file->flag = 0;
 	file->blockvec = nalloc_nofail((size_t)file->blockmax, block_sizeof());
 
@@ -529,7 +528,6 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->mtime_sec = copy->mtime_sec;
 	file->mtime_nsec = copy->mtime_nsec;
 	file->inode = copy->inode;
-	file->physical = copy->physical;
 	file->flag = copy->flag;
 	file->blockvec = nalloc_nofail((size_t)file->blockmax, block_sizeof());
 
@@ -668,18 +666,6 @@ int file_path_compare(const void* void_a, const void* void_b)
 	const struct snapraid_file* file_b = void_b;
 
 	return strcmp(file_a->sub, file_b->sub);
-}
-
-int file_physical_compare(const void* void_a, const void* void_b)
-{
-	const struct snapraid_file* file_a = void_a;
-	const struct snapraid_file* file_b = void_b;
-
-	if (file_a->physical < file_b->physical)
-		return -1;
-	if (file_a->physical > file_b->physical)
-		return 1;
-	return 0;
 }
 
 int file_path_compare_to_arg(const void* void_arg, const void* void_data)
@@ -981,7 +967,6 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->first_free_block = 0;
 	disk->has_volatile_inodes = 0;
 	disk->has_volatile_hardlinks = 0;
-	disk->has_unreliable_physical = 0;
 	disk->has_different_uuid = 0;
 	disk->has_unsupported_uuid = *uuid == 0; /* empty UUID means unsupported */
 	disk->had_empty_uuid = 0;

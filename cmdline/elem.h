@@ -329,7 +329,6 @@ struct snapraid_block {
 struct snapraid_file {
 	int64_t mtime_sec; /**< Modification time. */
 	uint64_t inode; /**< Inode. */
-	uint64_t physical; /**< Physical offset of the file. */
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
 	block_off_t blockmax; /**< Number of blocks. */
@@ -468,7 +467,6 @@ struct snapraid_disk {
 
 	int has_volatile_inodes; /**< If the underline file-system has not persistent inodes. */
 	int has_volatile_hardlinks; /**< If the underline file-system has not synchronized metadata for hardlink (NTFS). */
-	int has_unreliable_physical; /**< If the physical offset of files has duplicates. */
 	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same file-system. */
 	int has_unsupported_uuid; /**< If the disk doesn't report UUID, meaning it's not supported. */
 	int had_empty_uuid; /**< If the disk had an empty UUID, meaning that it's a new disk. */
@@ -887,7 +885,7 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 /**
  * Allocate a file.
  */
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode);
 
 /**
  * Duplicate a file.
@@ -951,11 +949,6 @@ int file_inode_compare(const void* void_a, const void* void_b);
  * Compare files by path.
  */
 int file_path_compare(const void* void_a, const void* void_b);
-
-/**
- * Compare files by physical address.
- */
-int file_physical_compare(const void* void_a, const void* void_b);
 
 /**
  * Compute the hash of a file inode.

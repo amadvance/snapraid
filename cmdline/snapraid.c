@@ -217,7 +217,6 @@ void log_close(const char* file)
 #define OPT_TEST_FORCE_MURMUR3 264
 #define OPT_TEST_FORCE_SPOOKY2 265
 #define OPT_TEST_SKIP_LOCK 266
-#define OPT_TEST_FORCE_ORDER_PHYSICAL 267
 #define OPT_TEST_FORCE_ORDER_INODE 268
 #define OPT_TEST_FORCE_ORDER_ALPHA 269
 #define OPT_TEST_FORCE_ORDER_DIR 270
@@ -347,7 +346,6 @@ static struct option long_options[] = {
 	{ "test-skip-lock", 0, 0, OPT_TEST_SKIP_LOCK },
 
 	/* Force a sort order for files */
-	{ "test-force-order-physical", 0, 0, OPT_TEST_FORCE_ORDER_PHYSICAL },
 	{ "test-force-order-inode", 0, 0, OPT_TEST_FORCE_ORDER_INODE },
 	{ "test-force-order-alpha", 0, 0, OPT_TEST_FORCE_ORDER_ALPHA },
 	{ "test-force-order-dir", 0, 0, OPT_TEST_FORCE_ORDER_DIR },
@@ -906,9 +904,6 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_LOCK :
 			opt.skip_lock = 1;
-			break;
-		case OPT_TEST_FORCE_ORDER_PHYSICAL :
-			opt.force_order = SORT_PHYSICAL;
 			break;
 		case OPT_TEST_FORCE_ORDER_INODE :
 			opt.force_order = SORT_INODE;

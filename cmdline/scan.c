@@ -42,7 +42,6 @@ struct snapraid_discovery {
 	data_off_t size; /**< Size discovered on disk. */
 	int64_t mtime_sec; /**< mtime sec discovered on disk. */
 	uint64_t inode; /**< Inode discovered on disk. */
-	uint64_t physical; /**< Physical offset. */
 	tommy_node nodelist; /**< Node for scan->file_discovery_list. */
 	tommy_node nodeset; /**< Node for scan->file_discovery_inodeset. */
 	int mtime_nsec; /**< mtime nsec discovered on disk. */
@@ -92,7 +91,6 @@ static struct snapraid_discovery* discovery_alloc(const char* sub, struct stat* 
 	disc->mtime_sec = st->st_mtime;
 	disc->mtime_nsec = STAT_NSEC(st);
 	disc->inode = st->st_ino;
-	disc->physical = FILEPHY_UNREAD_OFFSET;
 	disc->flag = 0;
 	memcpy(disc->sub, sub, sub_len + 1);
 
@@ -648,7 +646,7 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
  * This could happen after a failed sync, when some other files are deleted,
  * and then new ones can be moved backward to fill the hole created.
  */
-static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* file, struct snapraid_discovery* disc)
+static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* file)
 {
 	struct snapraid_disk* disk = scan->disk;
 
@@ -657,10 +655,6 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 
 		struct snapraid_file* copy = file_dup(file);
 		file_flag_set(copy, FILE_IS_REALLOC_NEW);
-
-		/* update physical offset if provided by discovery */
-		if (disc->physical != FILEPHY_UNREAD_OFFSET)
-			copy->physical = disc->physical;
 
 		/* insert in the delayed allocation list */
 		scan_file_delayed_allocate(scan, copy);
@@ -797,7 +791,7 @@ static void scan_file_apply(void* void_scan, void* void_disc)
 			}
 
 			/* mark the file as kept */
-			scan_file_keep(scan, file, disc);
+			scan_file_keep(scan, file);
 
 			/* nothing more to do */
 			return;
@@ -941,7 +935,7 @@ static void scan_file_apply(void* void_scan, void* void_disc)
 			}
 
 			/* mark the file as kept */
-			scan_file_keep(scan, file, disc);
+			scan_file_keep(scan, file);
 
 			/* nothing more to do */
 			return;
@@ -1001,7 +995,7 @@ static void scan_file_apply(void* void_scan, void* void_disc)
 #endif
 
 	/* insert it */
-	file = file_alloc(state->block_size, sub, disc->size, disc->mtime_sec, disc->mtime_nsec, disc->inode, disc->physical);
+	file = file_alloc(state->block_size, sub, disc->size, disc->mtime_sec, disc->mtime_nsec, disc->inode);
 
 	/* mark it as present and physically discovered during Phase 1 */
 	file_flag_set(file, FILE_IS_PRESENT);
@@ -1784,66 +1778,9 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	return scan_sub(scan, level, is_diff, path_next, sub_next, tmp);
 }
 
-/**
- * Resolve physical offset for a single discovered regular file entry.
- *
- * Hardlink aliases are skipped because they are never allocated in parity and do not
- * participate in physical ordering.
- */
-static void scan_discovery_physical_entry(void* void_scan, void* void_disc)
-{
-	struct snapraid_scan* scan = void_scan;
-	struct snapraid_state* state = scan->state;
-	struct snapraid_disk* disk = scan->disk;
-	struct snapraid_discovery* disc = void_disc;
-	struct snapraid_file* existing;
-	char path_next[PATH_MAX];
-
-	/* skip hardlink aliases; only canonical representatives or standalone files need physical offsets */
-	if (disc->inode != INODE_INVALID && (disc->flag & DISCOVERY_IS_CANONICAL) == 0)
-		return;
-
-	/* search existing file by path, or by inode if moved or promoted */
-	existing = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, disc->sub, file_path_hash(disc->sub));
-	if (!existing) {
-		if (!disk->has_volatile_inodes && !disk->has_different_uuid && !disk->has_unsupported_uuid && disc->inode != INODE_INVALID)
-			existing = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &disc->inode, file_inode_hash(disc->inode));
-	}
-
-	/* reuse physical offset if the file exists unchanged and is not being reallocated */
-	if (existing
-		&& existing->size == disc->size
-		&& existing->mtime_sec == disc->mtime_sec
-		&& existing->mtime_nsec == disc->mtime_nsec
-		&& !file_is_full_reallocatable_and_stable(state, disk, existing)
-	) {
-		disc->physical = existing->physical;
-		return;
-	}
-
-	pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, disc->sub);
-
-	if (filephy(path_next, disc->size, &disc->physical) != 0) {
-		/* LCOV_EXCL_START */
-		log_tag("%s:%u:%s:%s: File physycal offset error. %s.\n", es(errno), 0, disk->name, esc_tag(disc->sub), strerror(errno));
-		log_fatal(errno, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-}
-
-/**
- * Resolve physical offsets for canonical files and standalone regular files in Phase 1B.
- */
-static void scan_discovery_physical(struct snapraid_scan* scan)
-{
-	tommy_list_foreach_arg(&scan->file_discovery_list, scan_discovery_physical_entry, scan);
-}
-
 static void* scan_disk(void* arg)
 {
 	struct snapraid_scan* scan = arg;
-	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	int ret;
 	int has_persistent_inodes;
@@ -1909,9 +1846,6 @@ static void* scan_disk(void* arg)
 	}
 
 	scan_dir(scan, 0, scan->is_diff, disk->dir, "");
-
-	if (state->opt.force_order == SORT_PHYSICAL)
-		scan_discovery_physical(scan);
 
 	if (!scan->is_diff)
 		msg_progress("Scanned %s in %" PRIu64 " seconds\n", disk->name, (os_tick_ms() - start) / 1000);
@@ -2033,9 +1967,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		struct snapraid_scan* scan = i->data;
 		struct snapraid_disk* disk = scan->disk;
 		tommy_node* node;
-		unsigned phy_dup;
-		uint64_t phy_last;
-		struct snapraid_file* phy_file_last;
 
 		/*
 		 * Phase 3: Removals (deleted files and old versions of modified files)
@@ -2144,13 +2075,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		 *   state_fscheck() validates the resulting structures after all disks finish.
 		 *
 		 * Sort the files before inserting them
-		 * we use a stable sort to ensure that if the reported physical offset/inode
+		 * we use a stable sort to ensure that if the reported inode
 		 * are always 0, we keep at least the directory order
 		 */
 		switch (state->opt.force_order) {
-		case SORT_PHYSICAL :
-			tommy_list_sort(&scan->file_insert_list, file_physical_compare);
-			break;
 		case SORT_INODE :
 			tommy_list_sort(&scan->file_insert_list, file_inode_compare);
 			break;
@@ -2165,33 +2093,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		/*
 		 * Insert all the new files, we insert them only after the deletion
 		 * to reuse the just freed space
-		 * also check if the physical offset reported are fakes or not
 		 */
 		node = scan->file_insert_list;
-		phy_dup = 0;
-		phy_last = FILEPHY_UNREAD_OFFSET;
-		phy_file_last = 0;
 		while (node) {
 			struct snapraid_file* file = node->data;
-
-			/* if the file is not empty, count duplicate physical offsets */
-			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
-				if (phy_file_last != 0 && file->physical == phy_last
-				        /* files without offset are expected to have duplicates */
-					&& phy_last != FILEPHY_WITHOUT_OFFSET
-				) {
-					/*
-					 * If verbose, print the list of duplicates real offsets
-					 * other cases are for offsets not supported, so we don't need to report them file by file
-					 */
-					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						log_info(ESOFT, "WARNING! Files '%s%s' and '%s%s' share the same physical offset %" PRId64 ".\n", disk->mount_point, phy_file_last->sub, disk->mount_point, file->sub, phy_last);
-					}
-					++phy_dup;
-				}
-				phy_file_last = file;
-				phy_last = file->physical;
-			}
 
 			/* next node */
 			node = node->next;
@@ -2211,14 +2116,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 			/* insert in the parity */
 			scan_file_allocate(scan, file);
-		}
-
-		/*
-		 * Mark the disk without reliable physical offset if it has duplicates
-		 * here it should never happen because we already sorted out hardlinks
-		 */
-		if (state->opt.force_order == SORT_PHYSICAL && phy_dup > 0) {
-			disk->has_unreliable_physical = 1;
 		}
 
 		/* insert all the new links */
@@ -2301,26 +2198,6 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				log_fatal(ESOFT, "If you want to '%s' anyway, use 'snapraid --force-empty %s'.\n", state->command, state->command);
 				exit(EXIT_FAILURE);
 			}
-		}
-	}
-
-	/* check for disks without the physical offset support */
-	if (state->opt.force_order == SORT_PHYSICAL) {
-		done = 0;
-		for (i = state->disklist; i != 0; i = i->next) {
-			struct snapraid_disk* disk = i->data;
-
-			if (disk->has_unreliable_physical) {
-				if (!done) {
-					done = 1;
-					log_info(ESOFT, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
-				} else {
-					log_info(ESOFT, ", '%s'", disk->name);
-				}
-			}
-		}
-		if (done) {
-			log_info(ESOFT, ". The order of files won't be optimal.\n");
 		}
 	}
 

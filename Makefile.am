@@ -293,8 +293,8 @@ CHECKFLAGS_COMMON = --test-skip-device --test-skip-self --test-force-progress --
 # the inode, physical location, and dir order assigned by the OS.
 CHECKFLAGS_ALPHA = $(CHECKFLAGS_COMMON) --test-force-order-alpha
 
-# Physical offset options
-CHECKFLAGS_PHYSICAL = $(CHECKFLAGS_COMMON) --test-force-order-physical -q -q -q
+# Directory order options
+CHECKFLAGS_DIR = $(CHECKFLAGS_COMMON) --test-force-order-dir -q -q -q
 
 # Verbose options
 CHECKFLAGS_VERBOSE = $(CHECKFLAGS_ALPHA) -v --gui
@@ -601,9 +601,9 @@ endif # HAVE_POSIX
 	echo DUP > bench/disk1/DUP2
 	echo -n > bench/disk1/ZERO
 	$(MSG) Some commands with a not empty array
-# Run a sync using physical offset
-	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_PHYSICAL) -c $(CONF) --test-expect-need-sync diff > output.log
-	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_PHYSICAL) -c $(CONF) sync
+# Run a sync using directory order
+	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS_DIR) -c $(CONF) --test-expect-need-sync diff > output.log
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_DIR) -c $(CONF) sync
 # Now reset the array, as we normally test with alpha order and murmur3
 	rm bench/content bench/?-content
 # Now rebuild the array with alpha order and murmur3 and do some commands

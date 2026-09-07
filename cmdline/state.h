@@ -42,10 +42,9 @@ const char* lev_config_name(unsigned level);
 #define GIBI (1024 * 1024 * 1024)
 #define TEBI (1024 * 1024 * 1024 * (uint64_t)1024)
 
-#define SORT_PHYSICAL 1 /**< Sort by physical order. */
+#define SORT_DIR 1 /**< Sort by directory order. */
 #define SORT_INODE 2 /**< Sort by inode. */
 #define SORT_ALPHA 3 /**< Sort by alphabetic order. */
-#define SORT_DIR 4 /**< Sort by directory order. */
 
 /**
  * Options set only at startup.
