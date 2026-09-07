@@ -4383,6 +4383,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	block_off_t blockmax;
 	time_t info_oldest;
 	time_t info_now;
+	time_t content_mtime;
 	int info_has_rehash;
 	int mapping_idx;
 	block_off_t idx;
@@ -4537,18 +4538,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		i = i->next;
 	}
 
-	/* join all thread */
+	/* join all threads before starting the durable finalization */
 	fail = 0;
-	first = 1;
-	crc = 0;
-	count_file = 0;
-	count_hardlink = 0;
-	count_symlink = 0;
-	count_dir = 0;
-	count_bad = 0;
-	count_rehash = 0;
-	count_unsynced = 0;
-	count_unscrubbed = 0;
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
@@ -4561,69 +4552,102 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 			/* LCOV_EXCL_START */
 			fail = 1;
 			/* LCOV_EXCL_STOP */
-		} else {
-			STREAM* f = context->f;
+		}
 
-			/*
-			 * Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure
-			 * than even in a system crash event we have one valid copy of the file.
-			 */
-			if (sflush(f) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal(errno, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
+		i = i->next;
+	}
+
+	/* abort on failure before finalizing any temporary content file */
+	if (fail) {
+		/* LCOV_EXCL_START */
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/*
+	 * All temporary content files of this publication use the same modification time.
+	 * SnapRAID guarantees that two state_write() publications cannot occur in the
+	 * same second due to synchronization delays and the overall execution model.
+	 */
+	content_mtime = time(0);
+
+	first = 1;
+	crc = 0;
+	count_file = 0;
+	count_hardlink = 0;
+	count_symlink = 0;
+	count_dir = 0;
+	count_bad = 0;
+	count_rehash = 0;
+	count_unsynced = 0;
+	count_unscrubbed = 0;
+
+	/* make all temporary content files durable only after all writers have terminated */
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		struct state_write_thread_context* context = content->context;
+		STREAM* f = context->f;
+
+		/*
+		 * Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure
+		 * than even in a system crash event we have one valid copy of the file.
+		 */
+		if (sflush(f) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (smtime(f, content_mtime, 0) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error setting the modification time of the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 
 #if HAVE_FSYNC
-			if (ssync(f) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal(errno, "Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
+		if (ssync(f) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 #endif
 
-			if (sclose(f) != 0) {
+		if (sclose(f) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error closing the content file. %s.\n", strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (first) {
+			first = 0;
+			crc = context->crc;
+			count_file = context->count_file;
+			count_hardlink = context->count_hardlink;
+			count_symlink = context->count_symlink;
+			count_dir = context->count_dir;
+			count_bad = context->count_bad;
+			count_rehash = context->count_rehash;
+			count_unsynced = context->count_unsynced;
+			count_unscrubbed = context->count_unscrubbed;
+		} else {
+			if (crc != context->crc) {
 				/* LCOV_EXCL_START */
-				log_fatal(errno, "Error closing the content file. %s.\n", strerror(errno));
+				log_fatal(ECONTENT, "Different CRCs writing content streams.\n");
+				log_fatal(ECONTENT, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+				log_fatal(ECONTENT, "Try running a memory test like http://www.memtest86.com/\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
-			}
-
-			if (first) {
-				first = 0;
-				crc = context->crc;
-				count_file = context->count_file;
-				count_hardlink = context->count_hardlink;
-				count_symlink = context->count_symlink;
-				count_dir = context->count_dir;
-				count_bad = context->count_bad;
-				count_rehash = context->count_rehash;
-				count_unsynced = context->count_unsynced;
-				count_unscrubbed = context->count_unscrubbed;
-			} else {
-				if (crc != context->crc) {
-					/* LCOV_EXCL_START */
-					log_fatal(ECONTENT, "Different CRCs writing content streams.\n");
-					log_fatal(ECONTENT, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
-					log_fatal(ECONTENT, "Try running a memory test like http://www.memtest86.com/\n");
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
 			}
 		}
 
 		free(context);
 
 		i = i->next;
-	}
-
-	/* abort on failure */
-	if (fail) {
-		/* LCOV_EXCL_START */
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
 	}
 #else
 	/* count the content files */
@@ -4696,12 +4720,26 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	}
 
 	/*
+	 * All temporary content files of this publication use the same modification time.
+	 * SnapRAID guarantees that two state_write() publications cannot occur in the
+	 * same second due to synchronization delays and the overall execution model.
+	 */
+	content_mtime = time(0);
+
+	/*
 	 * Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure
 	 * than even in a system crash event we have one valid copy of the file.
 	 */
 	if (sflush(f) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (smtime(f, content_mtime, 0) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Error setting the modification time of the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4889,10 +4927,10 @@ void state_read(struct snapraid_state* state)
 			/* ensure to rewrite all the content files */
 			state->need_write = 1;
 		} else {
-			/* if the size is different */
-			if (other_st.st_size != st.st_size) {
-				log_error(ECONTENT, "WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
-				log_error(ECONTENT, "Likely one of the two is broken!\n");
+			/* different size or modification time means that the replicas are not from the same publication */
+			if (other_st.st_size != st.st_size || other_st.st_mtime != st.st_mtime) {
+				log_error(ECONTENT, "WARNING! Content files '%s' and '%s' have a different size or modification time!\n", path, other_path);
+				log_error(ECONTENT, "Likely the content replicas are from different publications or one of them is broken!\n");
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;

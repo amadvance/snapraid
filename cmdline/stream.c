@@ -862,3 +862,20 @@ int ssync(STREAM* s)
 }
 #endif
 
+int smtime(STREAM* s, int64_t mtime_sec, int mtime_nsec)
+{
+	unsigned i;
+
+	for (i = 0; i < s->handle_size; ++i) {
+		if (s->handle[i].f != -1 && fmtime(s->handle[i].f, mtime_sec, mtime_nsec) != 0) {
+			/* LCOV_EXCL_START */
+			s->state = STREAM_STATE_ERROR;
+			s->state_index = i;
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	return 0;
+}
+

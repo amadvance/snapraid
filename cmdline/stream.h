@@ -211,6 +211,11 @@ static inline const char* serrorfile(STREAM* s)
  */
 int ssync(STREAM* s);
 
+/**
+ * Change the modification time of all files in the stream.
+ */
+int smtime(STREAM* s, int64_t mtime_sec, int mtime_nsec);
+
 /****************************************************************************/
 /* get */
 
