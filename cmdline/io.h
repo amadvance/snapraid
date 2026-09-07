@@ -321,6 +321,11 @@ struct snapraid_io {
 	int done;
 
 	/**
+	 * If worker threads have been started.
+	 */
+	int started;
+
+	/**
 	 * The worker task index currently used by the operation in
 	 * progress. It's the position in all the reader task_map[].
 	 *

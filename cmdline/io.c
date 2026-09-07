@@ -295,6 +295,7 @@ static void io_start_mono(struct snapraid_io* io,
 {
 	unsigned i;
 
+	io->started = 1;
 	io->block_start = blockstart;
 	io->block_max = blockmax;
 	io->block_enabled = block_enabled;
@@ -307,7 +308,10 @@ static void io_start_mono(struct snapraid_io* io,
 
 static void io_stop_mono(struct snapraid_io* io)
 {
-	(void)io;
+	if (!io->started)
+		return;
+
+	io->started = 0;
 }
 
 /*****************************************************************************/
@@ -579,6 +583,11 @@ static void io_flush_thread(struct snapraid_io* io, int* writer_error)
 {
 	unsigned i;
 
+	if (!io->started) {
+		io_writer_error_get(io, writer_error);
+		return;
+	}
+
 	while (1) {
 		int all_done = 1;
 
@@ -627,6 +636,9 @@ static void io_flush_thread(struct snapraid_io* io, int* writer_error)
 static void io_quiesce_thread(struct snapraid_io* io)
 {
 	unsigned i;
+
+	if (!io->started)
+		return;
 
 	while (1) {
 		int all_done = 1;
@@ -923,6 +935,7 @@ static void io_start_thread(struct snapraid_io* io,
 {
 	unsigned i;
 
+	io->started = 1;
 	io->block_start = blockstart;
 	io->block_max = blockmax;
 	io->block_enabled = block_enabled;
@@ -975,6 +988,11 @@ static void io_start_thread(struct snapraid_io* io,
 static void io_stop_thread(struct snapraid_io* io)
 {
 	unsigned i;
+
+	if (!io->started)
+		return;
+
+	io->started = 0;
 
 	thread_mutex_lock(&io->io_mutex);
 
@@ -1033,6 +1051,9 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	io_op_t parity_op_default = IO_OP_NONE;
 
 	io->state = state;
+	io->started = 0;
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
+		io->writer_error[i] = 0;
 
 	assert(buffer_max >= handle_max + parity_handle_max);
 

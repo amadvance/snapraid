@@ -1026,14 +1026,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	msg_progress("Syncing...\n");
 
-	/* start all the worker threads */
-	io_start(&io, blockstart, blockmax, block_enabled);
-
 	int alert = state_progress_begin(state, blockstart, blockmax, countmax);
 	if (alert > 0)
 		goto end;
 	if (alert < 0)
 		goto bail_abort;
+
+	/* start all the worker threads */
+	io_start(&io, blockstart, blockmax, block_enabled);
 
 	while (1) {
 		unsigned failed_count;

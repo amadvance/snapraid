@@ -345,7 +345,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		int sleep_time = cooldown_time;
 
 		log_tag("thermal:spindown\n");
-		
+
 		/*
 		 * Power management is best effort.
 		 *
@@ -417,11 +417,8 @@ int state_thermal_begin(struct snapraid_state* state, time_t now)
 	}
 
 	if (state_thermal_alarm(state)) {
-		/* LCOV_EXCL_START */
-		log_fatal(EENVIRONMENT, "DANGER! Hard disk temperature of %d degrees is already outside the operating range. Unable to proceed!\n", state->thermal_highest_temperature);
-		log_flush();
-		return 0;
-		/* LCOV_EXCL_STOP */
+		msg_progress("Hard disk temperature of %d degrees is already outside the operating range. Cooling down before starting...\n", state->thermal_highest_temperature);
+		state_thermal_cooldown(state);
 	}
 
 	return 1;
