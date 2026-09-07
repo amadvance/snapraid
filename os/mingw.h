@@ -409,11 +409,13 @@ int windows_closedir(windows_dir* dirstream);
  * Specifically this happens if we are using GetFileInformationByHandleEx()
  * to read the directory stream.
  *
- * The st_ino field may be 0 if it's not possible to read it in a fast way.
- * Specifically this happens if we are using FindFirst/FindNext to enumerate
- * the directory.
+ * The st_ino and st_nlink fields may be 0 if the fast directory enumeration
+ * API does not provide them. Specifically, st_ino is 0 with FindFirst/FindNext,
+ * while st_nlink is 0 with both directory streams and FindFirst/FindNext.
  *
- * In such cases, call lstat_sync() to fill the missing fields.
+ * If a missing field is actually needed by the caller, call lstat_sync()
+ * to retrieve it from the file handle. Otherwise, avoid calling lstat_sync()
+ * to preserve fast directory scanning performance.
  */
 void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* st);
 

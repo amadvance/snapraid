@@ -1577,10 +1577,13 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 
 #if HAVE_LSTAT_SYNC
 				/*
-				 * If the st_ino field is missing, takes care to fill it using the extended lstat()
-				 * this can happen only in Windows
+				 * In Windows fast directory enumeration, st_ino and st_nlink may be
+				 * missing (0). If a field is needed, lstat_sync() must be called to
+				 * retrieve it. Here only st_ino is required for file identity and
+				 * hardlink tracking, while st_nlink is not; we call lstat_sync() only
+				 * when st_ino is missing to avoid expensive file opens.
 				 */
-				if (st->st_ino == INODE_INVALID || st->st_nlink == 0) {
+				if (st->st_ino == INODE_INVALID) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
 						log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));

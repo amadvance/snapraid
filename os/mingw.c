@@ -547,7 +547,12 @@ static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FIL
 
 	st->st_ino = stream->FileId.QuadPart;
 
-	st->st_nlink = info->nNumberOfLinks;
+	/*
+	 * FILE_ID_BOTH_DIR_INFO doesn't provide the hardlink count of the entry.
+	 * The BY_HANDLE_FILE_INFORMATION refers to the directory itself, so its
+	 * nNumberOfLinks cannot be used for the child.
+	 */
+	st->st_nlink = 0;
 
 	st->st_dev = info->dwVolumeSerialNumber;
 
