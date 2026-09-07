@@ -6450,6 +6450,8 @@ int state_snapshot_scan(struct snapraid_state* state)
 			return -1;
 		}
 
+		msg_progress("Creating disk %s scan snapshot...\n", disk->name);
+
 		/* delete a potential previous scan snapshot */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_SCAN, 0) == 0) {
 			if (fssnapshot_delete(&disk->fss, SNAPSHOT_SCAN) != 0) {
@@ -6463,8 +6465,6 @@ int state_snapshot_scan(struct snapraid_state* state)
 			log_fatal(errno, "Failed to create scan snapshot '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
 			return -1;
 		}
-
-		msg_progress("Created disk %s scan snapshot...\n", disk->name);
 
 		/* setup the snapshot in use */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_SCAN, disk) != 0) {
@@ -6490,6 +6490,8 @@ int state_snapshot_pending(struct snapraid_state* state)
 		if (disk->fss.magic == 0)
 			continue;
 
+		msg_progress("Creating disk %s pending snapshot...\n", disk->name);
+
 		/* delete the pending snapshot only after the content state was saved */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, 0) == 0) {
 			if (fssnapshot_delete(&disk->fss, SNAPSHOT_PENDING) != 0) {
@@ -6505,8 +6507,6 @@ int state_snapshot_pending(struct snapraid_state* state)
 			error = -1;
 			continue;
 		}
-
-		msg_progress("Created disk %s pending snapshot...\n", disk->name);
 
 		/* setup the snapshot in use */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk) != 0) {
@@ -6533,6 +6533,8 @@ int state_snapshot_commit(struct snapraid_state* state)
 		if (disk->fss.magic == 0)
 			continue;
 
+		msg_progress("Committing disk %s stable snapshot...\n", disk->name);
+
 		/* delete a potential previous stable snapshot */
 		if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, 0) == 0) {
 			if (fssnapshot_delete(&disk->fss, SNAPSHOT_STABLE) != 0) {
@@ -6548,8 +6550,6 @@ int state_snapshot_commit(struct snapraid_state* state)
 			error = -1;
 			continue;
 		}
-
-		msg_progress("Committed disk %s stable snapshot...\n", disk->name);
 	}
 
 	return error;
