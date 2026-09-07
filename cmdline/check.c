@@ -278,9 +278,16 @@ struct failed_struct {
 
 /**
  * Check if a block hash matches the specified buffer.
- * Return ==0 if equal
+ *
+ * This function validates hash identity only and deliberately omits the
+ * zero-padding check beyond the logical file size. It is used when testing
+ * candidate identity against a stored hash whose original logical size and
+ * padding provenance may differ from the CURRENT file metadata (such as
+ * during CHG generation inference).
+ *
+ * Return ==0 if equal, -1 if mismatch.
  */
-static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, size_t pos_size, unsigned char* buffer)
+static int block_hash_cmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, size_t pos_size, unsigned char* buffer)
 {
 	unsigned char hash[HASH_MAX];
 
@@ -293,6 +300,29 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 
 	/* compare the hash */
 	if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * Check if block data matches the specified block and is canonical for the current logical size.
+ *
+ * Unlike block_hash_cmp(), this function validates both hash identity and the
+ * canonical zero-padding requirement beyond the CURRENT logical file size.
+ * For legacy hashes (Murmur3/Spooky2), the hash covers only logical bytes, so
+ * trailing garbage or corrupted parity could otherwise pass validation and later
+ * corrupt parity recalculations. For MuseAir, this enforces the canonical RAID
+ * block invariant.
+ *
+ * Use this for all normal CURRENT data validation (e.g. is_hash_matching()).
+ *
+ * Return ==0 if equal and valid, -1 if mismatch.
+ */
+static int block_data_cmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, size_t pos_size, unsigned char* buffer)
+{
+	if (block_hash_cmp(state, rehash, block, pos_size, buffer) != 0) {
 		return -1;
 	}
 
@@ -331,7 +361,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 		) {
 			/* if a hash doesn't match, fail the check */
 			size_t pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state->block_size);
-			if (blockcmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index]) != 0) {
+			if (block_data_cmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index]) != 0) {
 				log_tag("repair_hash_error:%u: Hash mismatch\n", failed_map[j]);
 				return 0;
 			}
@@ -963,14 +993,17 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
 
 				/*
-				 * blockcmp() compares against the stored CHG hash, which identifies
-				 * OLD contents under the recovery invariant.
+				 * The stored CHG hash identifies OLD contents under the recovery invariant.
+				 * Generation detection must compare hash identity only and must not apply the
+				 * CURRENT logical-size padding requirement. With MuseAir the hash covers the
+				 * complete canonical RAID block, so a mismatch proves candidate != OLD and
+				 * therefore identifies this validated RAID solution as CURRENT.
 				 *
-				 * With only OLD and CURRENT generations possible, a mismatch proves
-				 * candidate != OLD and therefore identifies this validated RAID
-				 * solution as CURRENT.
+				 * Legacy hashes still depend on the logical size used to compute the hash.
+				 * The OLD logical size is not available here, so size-changing CHG blocks may
+				 * remain subject to the historical ambiguity with Murmur3/Spooky2.
 				 */
-				if (blockcmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index]) != 0)
+				if (block_hash_cmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index]) != 0)
 					current_generation_proven = 1;
 			}
 		}

@@ -190,7 +190,7 @@ Recovery temporal stores
   immediately.
 
 * After raid_data() reconstructs a candidate, repair_step() immediately validates
-  it. With a trustworthy hash, blockcmp()/memhash_block() reads the recovered
+  it. With a trustworthy hash, block_data_cmp()/memhash_block() reads the recovered
   data. Without such a hash, parity validation regenerates parity from the
   reconstructed data. On successful hash validation, all configured parity is
   regenerated as well.
