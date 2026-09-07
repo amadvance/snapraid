@@ -1839,21 +1839,6 @@ Problemas Conhecidos (Known Issues)
 	Não coloque pontos de montagem aninhados ou montagens bind dentro de discos
 	de dados quando os instantâneos do sistema de arquivos estiverem ativados.
 
-  Links físicos (Hard links)
-	O SnapRAID identifica um link físico como o arquivo original e representa
-	os outros links físicos como referências a ele. Qual link é selecionado
-	como o arquivo original depende da ordem em que as entradas do diretório
-	são verificadas.
-
-	Se essa ordem mudar, por exemplo, após arquivos serem renomeados,
-	restaurados ou diretórios serem recriados, o "diff" poderá relatar aparentes
-	movimentações, atualizações, adições ou remoções, mesmo quando os arquivos
-	vinculados ainda representarem os mesmos dados.
-
-	Isso não indica corrupção de dados, mas as diferenças relatadas podem ser
-	confusas e podem não corresponder diretamente às operações executadas no
-	sistema de arquivos.
-
   Modificações de arquivo no local sem alteração de data/hora
 	O SnapRAID detecta modificações em arquivos comparando tamanhos de arquivo e
 	carimbos de data/hora de modificação (mtime).
@@ -1927,6 +1912,30 @@ Problemas Conhecidos (Known Issues)
 	normalmente após a falha de um `fix` normal. Se um `fix` parcial relatar
 	dados irrecuperáveis, remova ou renomeie os arquivos afetados antes de tentar
 	outra recuperação, ou verifique manualmente seu conteúdo.
+
+  Links físicos no NTFS e caminhos excluídos
+	No NTFS, as entradas de diretório armazenam em cache o tamanho do arquivo
+	e os registros de data/hora de forma independente para cada link físico.
+	Quando um arquivo é modificado por meio de um link, as entradas de diretório
+	de outros links que apontam para o mesmo arquivo podem reter metadados
+	obsoletos até que sejam acessadas.
+
+	O SnapRAID detecta e normaliza automaticamente essa condição sempre que
+	pelo menos dois links físicos para o mesmo arquivo são encontrados durante
+	uma verificação. No entanto, se apenas um link físico for verificado
+	enquanto os outros forem excluídos por filtros ou residirem fora do caminho
+	do disco de dados, o SnapRAID não conseguirá detectar a colisão de inodes e
+	dependerá dos metadados em cache do único link visível.
+
+	Consequentemente, modificações feitas por meio de um link físico excluído
+	ou externo podem passar despercebidas pelo SnapRAID até que os metadados do
+	link incluído sejam atualizados pelo sistema operacional (como quando o
+	arquivo é acessado ou aberto por meio desse caminho).
+
+	Para evitar essa limitação, evite modificar arquivos protegidos por meio
+	de links físicos excluídos do SnapRAID, ou certifique-se de que todos os
+	links físicos de um arquivo sejam incluídos na verificação para que o
+	SnapRAID possa normalizá-los.
 
 Tradução (Translation)
 	Este documento é uma tradução automática do manual em inglês.

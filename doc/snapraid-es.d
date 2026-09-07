@@ -1891,21 +1891,6 @@ Problemas conocidos (Known Issues)
 	No coloque puntos de montaje anidados ni montajes bind dentro de los discos
 	de datos cuando las instantáneas del sistema de archivos estén habilitadas.
 
-  Enlaces duros
-	SnapRAID identifica un enlace duro como el archivo original y representa
-	los demás enlaces duros como referencias a él. El enlace que se selecciona
-	como archivo original depende del orden en que se escanean las entradas del
-	directorio.
-
-	Si este orden cambia, por ejemplo después de renombrar, restaurar archivos o
-	recrear directorios, "diff" puede informar movimientos, actualizaciones,
-	adiciones o eliminaciones aparentes incluso cuando los archivos vinculados
-	siguen representando los mismos datos.
-
-	Esto no indica corrupción de datos, pero las diferencias informadas pueden
-	resultar confusas y no corresponder directamente con las operaciones
-	realizadas en el sistema de archivos.
-
   Modificaciones de archivos in situ sin cambios de marca de tiempo
 	SnapRAID detecta modificaciones de archivos comparando tamaños de archivo y
 	marcas de tiempo de modificación (mtime).
@@ -1980,6 +1965,30 @@ Problemas conocidos (Known Issues)
 	avanzada, típicamente después de que un `fix` normal haya fallado. Si un `fix`
 	parcial informa de datos no recuperables, elimine o renombre los archivos
 	afectados antes de intentar otra recuperación, o verifique su contenido manualmente.
+
+  Enlaces duros en NTFS y rutas excluidas
+	En NTFS, las entradas de directorio almacenan en caché el tamaño del
+	archivo y las marcas de tiempo de forma independiente para cada enlace
+	duro. Cuando un archivo se modifica a través de un enlace, las entradas
+	de directorio de otros enlaces que apuntan al mismo archivo pueden
+	conservar metadatos obsoletos hasta que se accede a ellos.
+
+	SnapRAID detecta y normaliza automáticamente esta condición siempre que
+	se encuentran al menos dos enlaces duros al mismo archivo durante un
+	escaneo. Sin embargo, si solo se escanea un enlace duro mientras los
+	demás están excluidos por filtros o se encuentran fuera de la ruta del
+	disco de datos, SnapRAID no puede detectar la colisión de inodos y confía
+	en los metadatos almacenados en caché del único enlace visible.
+
+	En consecuencia, las modificaciones realizadas a través de un enlace duro
+	excluido o externo pueden pasar desapercibidas para SnapRAID hasta que el
+	sistema operativo actualice los metadatos del enlace incluido (como cuando
+	se accede al archivo o se abre a través de esa ruta).
+
+	Para evitar esta limitación, evite modificar archivos protegidos a través
+	de enlaces duros que estén excluidos de SnapRAID, o asegúrese de que
+	todos los enlaces duros a un archivo se incluyan en el escaneo para que
+	SnapRAID pueda normalizarlos.
 
 Traducción (Translation)
 	Este documento es una traducción automática del manual en inglés.

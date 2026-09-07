@@ -1806,20 +1806,6 @@ Known Issues
 	Do not place nested mount points or bind mounts inside data disks when
 	filesystem snapshots are enabled.
 
-  Hard links
-	SnapRAID identifies one hard link as the original file and represents the
-	other hard links as references to it. Which link is selected as the original
-	file depends on the order in which directory entries are scanned.
-
-	If this order changes, for example after files are renamed, restored, or
-	directories are recreated, "diff" may report apparent moves, updates,
-	additions, or removals even when the hard-linked files still represent the
-	same data.
-
-	This does not indicate data corruption, but the reported differences may be
-	confusing and may not correspond directly to the filesystem operations that
-	were performed.
-
   In-place file modifications without timestamp changes
 	SnapRAID detects file modifications by comparing file sizes and
 	modification timestamps (mtime).
@@ -1891,6 +1877,28 @@ Known Issues
 	typically after a normal `fix` has failed. If a partial `fix` reports
 	unrecoverable data, remove or rename the affected files before attempting
 	another recovery, or verify their contents manually.
+
+  NTFS hard links and excluded paths
+	On NTFS, directory entries cache file size and timestamps independently
+	for each hard link. When a file is modified through one link, the directory
+	entries of other links pointing to the same file may retain stale metadata
+	until they are accessed.
+
+	SnapRAID automatically detects and normalizes this condition whenever at
+	least two hard links to the same file are encountered during a scan.
+	However, if only one hard link is scanned while the others are excluded by
+	filters or reside outside the data disk path, SnapRAID cannot detect the
+	inode collision and relies on the cached metadata of the single visible
+	link.
+
+	Consequently, modifications made through an excluded or external hard link
+	may go unnoticed by SnapRAID until the metadata of the included link is
+	refreshed by the operating system (such as when the file is accessed or
+	opened through that path).
+
+	To avoid this limitation, avoid modifying protected files through hard
+	links that are excluded from SnapRAID, or ensure that all hard links to a
+	file are included in the scan so SnapRAID can normalize them.
 
 Copyright
 	This file is Copyright (C) 2026 Andrea Mazzoleni

@@ -1935,21 +1935,6 @@ Problèmes connus (Known Issues)
 	disques de données lorsque les instantanés du système de fichiers sont
 	activés.
 
-  Liens matériels
-	SnapRAID identifie un lien matériel comme le fichier d'origine et représente
-	les autres liens matériels comme des références à celui-ci. Le lien sélectionné
-	comme fichier d'origine dépend de l'ordre dans lequel les entrées de
-	répertoire sont analysées.
-
-	Si cet ordre change, par exemple après le renommage, la restauration de
-	fichiers ou la recréation de répertoires, "diff" peut signaler des
-	déplacements, mises à jour, ajouts ou suppressions apparents même lorsque
-	les fichiers liés représentent toujours les mêmes données.
-
-	Cela n'indique pas une corruption des données, mais les différences
-	signalées peuvent prêter à confusion et ne pas correspondre directement aux
-	opérations effectuées sur le système de fichiers.
-
   Modifications de fichiers sur place sans changement d'horodatage
 	SnapRAID détecte les modifications de fichiers en comparant la taille des
 	fichiers et les horodatages de modification (mtime).
@@ -2027,6 +2012,30 @@ Problèmes connus (Known Issues)
 	signale des données irrécupérables, supprimez ou renommez les fichiers
 	concernés avant de tenter une nouvelle récupération, ou vérifiez manuellement
 	leur contenu.
+
+  Liens matériels NTFS et chemins exclus
+	Sur NTFS, les entrées de répertoire mettent en cache la taille du fichier
+	et les horodatages indépendamment pour chaque lien matériel. Lorsqu'un
+	fichier est modifié via un lien, les entrées de répertoire des autres liens
+	pointant vers le même fichier peuvent conserver des métadonnées obsolètes
+	jusqu'à ce qu'on y accède.
+
+	SnapRAID détecte et normalise automatiquement cette condition chaque fois
+	qu'au moins deux liens matériels vers le même fichier sont rencontrés lors
+	d'une analyse. Cependant, si un seul lien matériel est analysé alors que
+	les autres sont exclus par des filtres ou résident en dehors du chemin du
+	disque de données, SnapRAID ne peut pas détecter la collision d'inodes et
+	s'appuie sur les métadonnées en cache du seul lien visible.
+
+	Par conséquent, les modifications apportées via un lien matériel exclu ou
+	externe peuvent passer inaperçues pour SnapRAID jusqu'à ce que les
+	métadonnées du lien inclus soient actualisées par le système d'exploitation
+	(par exemple lorsque le fichier est accédé ou ouvert via ce chemin).
+
+	Pour éviter cette limitation, évitez de modifier les fichiers protégés
+	via des liens matériels exclus de SnapRAID, ou assurez-vous que tous les
+	liens matériels vers un fichier sont inclus dans l'analyse afin que
+	SnapRAID puisse les normaliser.
 
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.

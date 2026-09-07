@@ -1941,23 +1941,7 @@ visible.
 Do not place nested mount points or bind mounts inside data disks when
 filesystem snapshots are enabled.
 
-16.3 Hard links
----------------
-
-SnapRAID identifies one hard link as the original file and represents the
-other hard links as references to it. Which link is selected as the original
-file depends on the order in which directory entries are scanned.
-
-If this order changes, for example after files are renamed, restored, or
-directories are recreated, "diff" may report apparent moves, updates,
-additions, or removals even when the hard-linked files still represent the
-same data.
-
-This does not indicate data corruption, but the reported differences may be
-confusing and may not correspond directly to the filesystem operations that
-were performed.
-
-16.4 In-place file modifications without timestamp changes
+16.3 In-place file modifications without timestamp changes
 ----------------------------------------------------------
 
 SnapRAID detects file modifications by comparing file sizes and
@@ -1972,7 +1956,7 @@ modification timestamp (for example, with the "touch" utility).
 Otherwise, the difference will only be detected as a hash mismatch
 during a subsequent "scrub" or "check".
 
-16.5 Windows non-ASCII case matching
+16.4 Windows non-ASCII case matching
 ------------------------------------
 
 SnapRAID uses standard, predictable UTF-8 encoding across all platforms,
@@ -1993,7 +1977,7 @@ filenames and its insistence on case-insensitive aliasing. To prevent
 discrepancies arising from Windows's case folding, always specify the
 exact case for any non-ASCII characters in configuration paths and filters.
 
-16.6 Unrecoverable files suffix
+16.5 Unrecoverable files suffix
 -------------------------------
 
 When `fix` cannot fully recover a damaged file, it quarantines it by
@@ -2015,7 +1999,7 @@ Avoid using the `.unrecoverable` extension for regular files, and ensure
 that `exclude *.unrecoverable` is included in your configuration to
 prevent such files from being tracked in the parity dataset.
 
-16.7 Partial fix recovery
+16.6 Partial fix recovery
 -------------------------
 
 When `fix` is restricted using `-S, --start` or `-B, --count`,
@@ -2036,6 +2020,30 @@ The `-S` and `-B` options are intended only for advanced manual recovery,
 typically after a normal `fix` has failed. If a partial `fix` reports
 unrecoverable data, remove or rename the affected files before attempting
 another recovery, or verify their contents manually.
+
+16.7 NTFS hard links and excluded paths
+---------------------------------------
+
+On NTFS, directory entries cache file size and timestamps independently
+for each hard link. When a file is modified through one link, the directory
+entries of other links pointing to the same file may retain stale metadata
+until they are accessed.
+
+SnapRAID automatically detects and normalizes this condition whenever at
+least two hard links to the same file are encountered during a scan.
+However, if only one hard link is scanned while the others are excluded by
+filters or reside outside the data disk path, SnapRAID cannot detect the
+inode collision and relies on the cached metadata of the single visible
+link.
+
+Consequently, modifications made through an excluded or external hard link
+may go unnoticed by SnapRAID until the metadata of the included link is
+refreshed by the operating system (such as when the file is accessed or
+opened through that path).
+
+To avoid this limitation, avoid modifying protected files through hard
+links that are excluded from SnapRAID, or ensure that all hard links to a
+file are included in the scan so SnapRAID can normalize them.
 
 
 17 COPYRIGHT

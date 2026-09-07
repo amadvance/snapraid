@@ -1924,22 +1924,6 @@ Bekannte Probleme (Known Issues)
 	Platzieren Sie keine verschachtelten Mount-Punkte oder Bind-Mounts innerhalb
 	von Datenfestplatten, wenn Dateisystem-Snapshots aktiviert sind.
 
-  Hardlinks
-	SnapRAID identifiziert einen Hardlink als Originaldatei und stellt die
-	anderen Hardlinks als Verweise darauf dar. Welcher Link als Originaldatei
-	ausgewählt wird, hängt von der Reihenfolge ab, in der Verzeichniseinträge
-	gescannt werden.
-
-	Wenn sich diese Reihenfolge ändert, beispielsweise nach dem Umbenennen,
-	Wiederherstellen von Dateien oder Neuerstellen von Verzeichnissen, meldet
-	"diff" möglicherweise scheinbare Verschiebungen, Aktualisierungen,
-	Hinzufügungen oder Entfernungen, selbst wenn die fest verknüpften Dateien
-	immer noch dieselben Daten darstellen.
-
-	Dies deutet nicht auf eine Datenbeschädigung hin, aber die gemeldeten
-	Unterschiede können verwirrend sein und stimmen möglicherweise nicht direkt
-	mit den ausgeführten Dateisystemoperationen überein.
-
   In-Place-Dateimodifikationen ohne Zeitstempeländerungen
 	SnapRAID erkennt Dateimodifikationen durch den Vergleich von Dateigrößen
 	und Änderungszeitstempeln (mtime).
@@ -2020,6 +2004,31 @@ Bekannte Probleme (Known Issues)
 	fehlgeschlagen ist. Wenn ein partieller `fix` nicht wiederherstellbare Daten
 	meldet, entfernen oder benennen Sie die betroffenen Dateien um, bevor Sie eine
 	weitere Wiederherstellung versuchen, oder überprüfen Sie deren Inhalt manuell.
+
+  NTFS-Hardlinks und ausgeschlossene Pfade
+	Unter NTFS speichern Verzeichniseinträge Dateigröße und Zeitstempel
+	unabhängig für jeden Hardlink zwischen. Wenn eine Datei über einen Link
+	geändert wird, können die Verzeichniseinträge anderer Links, die auf
+	dieselbe Datei verweisen, veraltete Metadaten behalten, bis auf sie
+	zugegriffen wird.
+
+	SnapRAID erkennt und normalisiert diesen Zustand automatisch, sobald
+	während eines Scans mindestens zwei Hardlinks zu derselben Datei gefunden
+	werden. Wenn jedoch nur ein Hardlink gescannt wird, während die anderen
+	durch Filter ausgeschlossen sind oder außerhalb des Datenfestplattenpfads
+	liegen, kann SnapRAID die Inode-Kollision nicht erkennen und verlässt sich
+	auf die zwischengespeicherten Metadaten des einzigen sichtbaren Links.
+
+	Infolgedessen können Änderungen, die über einen ausgeschlossenen oder
+	externen Hardlink vorgenommen wurden, von SnapRAID unbemerkt bleiben,
+	bis die Metadaten des einbezogenen Links durch das Betriebssystem
+	aktualisiert werden (z. B. wenn über diesen Pfad auf die Datei
+	zugegriffen oder sie geöffnet wird).
+
+	Um diese Einschränkung zu vermeiden, sollten geschützte Dateien nicht über
+	Hardlinks geändert werden, die von SnapRAID ausgeschlossen sind, oder es
+	sollte sichergestellt werden, dass alle Hardlinks zu einer Datei im Scan
+	enthalten sind, damit SnapRAID sie normalisieren kann.
 
 Übersetzung (Translation)
 	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.

@@ -1802,20 +1802,6 @@ Znane problemy (Known Issues)
 	Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
 	dysków z danymi, gdy migawki systemu plików są włączone.
 
-  Twarde dowiązania (Hard links)
-	SnapRAID identyfikuje jedno twarde dowiązanie jako plik oryginalny, a
-	pozostałe twarde dowiązania reprezentuje jako odwołania do niego. To, które
-	dowiązanie zostanie wybrane jako plik oryginalny, zależy od kolejności
-	skanowania wpisów w katalogu.
-
-	Jeśli ta kolejność ulegnie zmianie, na przykład po zmianie nazwy,
-	przywróceniu plików lub ponownym utworzeniu katalogów, polecenie "diff"
-	może zgłaszać pozorne przeniesienia, aktualizacje, dodania lub usunięcia,
-	nawet jeśli dowiązane pliki nadal reprezentują te same dane.
-
-	Nie oznacza to uszkodzenia danych, ale zgłaszane różnice mogą być mylące i
-	mogą nie odpowiadać bezpośrednio operacjom wykonanym w systemie plików.
-
   Modyfikacje plików w miejscu bez zmiany znacznika czasu
 	SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
 	znaczniki czasu modyfikacji (mtime).
@@ -1890,6 +1876,31 @@ Znane problemy (Known Issues)
 	zgłosi dane niemożliwe do odzyskania, przed podjęciem kolejnej próby odzyskiwania
 	należy usunąć lub zmienić nazwę plików, których to dotyczy, albo ręcznie zweryfikować
 	ich zawartość.
+
+  Twarde dowiązania NTFS i wykluczone ścieżki
+	W systemie plików NTFS wpisy katalogowe niezależnie buforują rozmiar pliku
+	i znaczniki czasu dla każdego twardego dowiązania. Gdy plik zostanie
+	zmodyfikowany za pośrednictwem jednego dowiązania, wpisy katalogowe innych
+	dowiązań wskazujących ten sam plik mogą zachowywać nieaktualne metadane
+	do momentu uzyskania do nich dostępu.
+
+	SnapRAID automatycznie wykrywa i normalizuje ten stan, gdy podczas skanowania
+	napotka co najmniej dwa twarde dowiązania do tego samego pliku. Jeśli jednak
+	zeskanowane zostanie tylko jedno twarde dowiązanie, podczas gdy pozostałe są
+	wykluczone przez filtry lub znajdują się poza ścieżką dysku danych, SnapRAID
+	nie może wykryć kolizji i-węzłów (inode) i polega na buforowanych metadanych
+	jedynego widocznego dowiązania.
+
+	W konsekwencji modyfikacje dokonane za pośrednictwem wykluczonego lub
+	zewnętrznego twardego dowiązania mogą pozostać niezauważone przez SnapRAID,
+	dopóki metadane uwzględnionego dowiązania nie zostaną odświeżone przez system
+	operacyjny (na przykład po uzyskaniu dostępu do pliku lub otwarciu go
+	przez tę ścieżkę).
+
+	Aby uniknąć tego ograniczenia, należy unikać modyfikowania chronionych plików
+	za pośrednictwem twardych dowiązań wykluczonych ze SnapRAID lub upewnić się,
+	że wszystkie twarde dowiązania do danego pliku są uwzględnione w skanowaniu,
+	aby SnapRAID mógł je znormalizować.
 
 Tłumaczenie (Translation)
 	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.

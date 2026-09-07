@@ -2070,24 +2070,7 @@ Ne placez pas de points de montage imbriqués ou de montages bind dans les
 disques de données lorsque les instantanés du système de fichiers sont
 activés.
 
-16.3 Liens matériels
---------------------
-
-SnapRAID identifie un lien matériel comme le fichier d'origine et représente
-les autres liens matériels comme des références à celui-ci. Le lien sélectionné
-comme fichier d'origine dépend de l'ordre dans lequel les entrées de
-répertoire sont analysées.
-
-Si cet ordre change, par exemple après le renommage, la restauration de
-fichiers ou la recréation de répertoires, "diff" peut signaler des
-déplacements, mises à jour, ajouts ou suppressions apparents même lorsque
-les fichiers liés représentent toujours les mêmes données.
-
-Cela n'indique pas une corruption des données, mais les différences
-signalées peuvent prêter à confusion et ne pas correspondre directement aux
-opérations effectuées sur le système de fichiers.
-
-16.4 Modifications de fichiers sur place sans changement d'horodatage
+16.3 Modifications de fichiers sur place sans changement d'horodatage
 ---------------------------------------------------------------------
 
 SnapRAID détecte les modifications de fichiers en comparant la taille des
@@ -2102,7 +2085,7 @@ l'horodatage de modification du fichier (par exemple avec l'utilitaire
 "touch"). Sinon, la différence ne sera détectée que sous la forme d'une
 non-concordance de hachage lors d'un "scrub" ou "check" ultérieur.
 
-16.5 Correspondance de casse non-ASCII sous Windows
+16.4 Correspondance de casse non-ASCII sous Windows
 ---------------------------------------------------
 
 SnapRAID utilise un encodage UTF-8 standard et prévisible sur toutes les
@@ -2125,7 +2108,7 @@ Pour éviter les écarts causés par le repliement de casse de Windows, spécifi
 toujours la casse exacte de tous les caractères non-ASCII dans les chemins de
 configuration et les filtres.
 
-16.6 Suffixe des fichiers irrécupérables
+16.5 Suffixe des fichiers irrécupérables
 ----------------------------------------
 
 Lorsque `fix` ne peut pas récupérer entièrement un fichier endommagé, il le
@@ -2149,7 +2132,7 @@ assurez-vous que la règle `exclude *.unrecoverable` est incluse dans votre
 configuration afin d'empêcher le suivi de ces fichiers dans le jeu de données
 de parité.
 
-16.7 Récupération avec fix partiel
+16.6 Récupération avec fix partiel
 ----------------------------------
 
 Lorsque `fix` est restreint avec `-S, --start` ou `-B, --count`,
@@ -2172,6 +2155,32 @@ avancée, généralement après l'échec d'un `fix` normal. Si un `fix` partiel
 signale des données irrécupérables, supprimez ou renommez les fichiers
 concernés avant de tenter une nouvelle récupération, ou vérifiez manuellement
 leur contenu.
+
+16.7 Liens matériels NTFS et chemins exclus
+-------------------------------------------
+
+Sur NTFS, les entrées de répertoire mettent en cache la taille du fichier
+et les horodatages indépendamment pour chaque lien matériel. Lorsqu'un
+fichier est modifié via un lien, les entrées de répertoire des autres liens
+pointant vers le même fichier peuvent conserver des métadonnées obsolètes
+jusqu'à ce qu'on y accède.
+
+SnapRAID détecte et normalise automatiquement cette condition chaque fois
+qu'au moins deux liens matériels vers le même fichier sont rencontrés lors
+d'une analyse. Cependant, si un seul lien matériel est analysé alors que
+les autres sont exclus par des filtres ou résident en dehors du chemin du
+disque de données, SnapRAID ne peut pas détecter la collision d'inodes et
+s'appuie sur les métadonnées en cache du seul lien visible.
+
+Par conséquent, les modifications apportées via un lien matériel exclu ou
+externe peuvent passer inaperçues pour SnapRAID jusqu'à ce que les
+métadonnées du lien inclus soient actualisées par le système d'exploitation
+(par exemple lorsque le fichier est accédé ou ouvert via ce chemin).
+
+Pour éviter cette limitation, évitez de modifier les fichiers protégés
+via des liens matériels exclus de SnapRAID, ou assurez-vous que tous les
+liens matériels vers un fichier sont inclus dans l'analyse afin que
+SnapRAID puisse les normaliser.
 
 
 17 TRADUCTION (TRANSLATION)

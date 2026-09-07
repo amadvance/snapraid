@@ -1800,20 +1800,6 @@ Kända problem (Known Issues)
 	Placera inte kapslade monteringspunkter eller bind-monteringar inuti
 	datadiskar när filsystemögonblicksbilder är aktiverade.
 
-  Hårda länkar (Hard links)
-	SnapRAID identifierar en hård länk som originalfilen och representerar de
-	andra hårda länkarna som referenser till den. Vilken länk som väljs som
-	originalfil beror på i vilken ordning katalogposterna skannas.
-
-	Om denna ordning ändras, till exempel efter att filer bytt namn, återställts
-	eller kataloger återskapats, kan "diff" rapportera skenbara flyttar,
-	uppdateringar, tillägg eller borttagningar även när de länkade filerna
-	fortfarande representerar samma data.
-
-	Detta indikerar inte datakorruption, men de rapporterade skillnaderna kan
-	vara förvirrande och kanske inte direkt motsvarar de filsystemsoperationer
-	som utfördes.
-
   Filändringar på plats utan tidsstämpeländringar
 	SnapRAID upptäcker filändringar genom att jämföra filstorlekar och
 	ändringstidsstämplar (mtime).
@@ -1883,6 +1869,28 @@ Kända problem (Known Issues)
 	vanligtvis efter att en normal `fix` har misslyckats. Om en partiell `fix`
 	rapporterar oåterkalleliga data, ta bort eller byt namn på de berörda filerna
 	innan du försöker med en ny återställning, eller verifiera deras innehåll manuellt.
+
+  NTFS hårda länkar och exkluderade sökvägar
+	På NTFS cachelagrar katalogposter filstorlek och tidsstämplar oberoende
+	för varje hård länk. När en fil modifieras via en länk kan katalogposterna
+	för andra länkar som pekar på samma fil behålla inaktuella metadata tills
+	de används.
+
+	SnapRAID upptäcker och normaliserar automatiskt detta tillstånd när minst
+	två hårda länkar till samma fil påträffas under en skanning. Men om endast
+	en hård länk skannas medan de andra exkluderas av filter eller ligger
+	utanför hårddiskens sökväg för data, kan SnapRAID inte upptäcka
+	inodkollisionen och förlitar sig på cachade metadata för den enda synliga
+	länken.
+
+	Följaktligen kan ändringar som görs via en exkluderad eller extern hård länk
+	gå obemärkta förbi för SnapRAID tills metadatan för den inkluderade länken
+	uppdateras av operativsystemet (till exempel när filen nås eller öppnas via
+	den sökvägen).
+
+	För att undvika denna begränsning, undvik att modifiera skyddade filer via
+	hårda länkar som är exkluderade från SnapRAID, eller se till att alla hårda
+	länkar till en fil inkluderas i skanningen så att SnapRAID kan normalisera dem.
 
 Översättning (Translation)
 	Detta dokument är en automatisk översättning av den engelska manualen.

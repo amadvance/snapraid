@@ -16,6 +16,40 @@ static const char* es(int err)
 		return "error";
 }
 
+/**
+ * If the file metadata (size and timestamp) is known to be synchronized with disk.
+ *
+ * Always set on POSIX where stat()/lstat() returns coherent metadata. On Windows NTFS,
+ * directory enumeration may return stale size/mtime for hardlinks until synchronized
+ * via lstat_sync() (GetFileInformationByHandle).
+ */
+#define DISCOVERY_IS_SCAN_SYNCED 0x1
+
+/**
+ * If the file is the canonical representative among hardlinks sharing the same inode.
+ *
+ * During Phase 1, when multiple paths share an inode, one is deterministically chosen
+ * as canonical (via discovery_canonical_better). In Phase 2, canonical files are applied
+ * first to create or preserve the primary snapraid_file, while non-canonical entries
+ * are subsequently applied as hardlink references (snapraid_link).
+ */
+#define DISCOVERY_IS_CANONICAL 0x2
+
+/**
+ * Temporary metadata collected during filesystem discovery.
+ */
+struct snapraid_discovery {
+	data_off_t size; /**< Size discovered on disk. */
+	int64_t mtime_sec; /**< mtime sec discovered on disk. */
+	uint64_t inode; /**< Inode discovered on disk. */
+	uint64_t physical; /**< Physical offset. */
+	tommy_node nodelist; /**< Node for scan->file_discovery_list. */
+	tommy_node nodeset; /**< Node for scan->file_discovery_inodeset. */
+	int mtime_nsec; /**< mtime nsec discovered on disk. */
+	unsigned flag; /**< Transient discovery flags (DISCOVERY_IS_*). */
+	char sub[1]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+};
+
 struct snapraid_scan {
 	struct snapraid_state* state; /**< State used. */
 	struct snapraid_disk* disk; /**< Disk used. */
@@ -36,6 +70,8 @@ struct snapraid_scan {
 	unsigned count_insert; /**< Files new. */
 	unsigned count_remove; /**< Files removed. */
 
+	tommy_list file_discovery_list; /**< Discovered regular files for Apply phase. */
+	tommy_hashdyn file_discovery_inodeset; /**< Inode set for hardlink collision detection during Discovery. */
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
 	tommy_list dir_insert_list; /**< Dirs to insert. */
@@ -45,6 +81,38 @@ struct snapraid_scan {
 	/* nodes for data structures */
 	tommy_node node;
 };
+
+static struct snapraid_discovery* discovery_alloc(const char* sub, struct stat* st)
+{
+	struct snapraid_discovery* disc;
+	size_t sub_len = strlen(sub);
+
+	disc = malloc_nofail(sizeof(struct snapraid_discovery) + sub_len);
+	disc->size = st->st_size;
+	disc->mtime_sec = st->st_mtime;
+	disc->mtime_nsec = STAT_NSEC(st);
+	disc->inode = st->st_ino;
+	disc->physical = FILEPHY_UNREAD_OFFSET;
+	disc->flag = 0;
+	memcpy(disc->sub, sub, sub_len + 1);
+
+#if HAVE_LSTAT_SYNC
+	if (st->st_sync != 0) {
+		disc->flag |= DISCOVERY_IS_SCAN_SYNCED;
+	}
+#else
+	disc->flag |= DISCOVERY_IS_SCAN_SYNCED;
+#endif
+
+	return disc;
+}
+
+static void discovery_free(void* void_disc)
+{
+	struct snapraid_discovery* disc = void_disc;
+
+	free(disc);
+}
 
 static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct snapraid_disk* disk, int is_diff)
 {
@@ -61,6 +129,8 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	scan->count_change = 0;
 	scan->count_remove = 0;
 	scan->count_insert = 0;
+	tommy_list_init(&scan->file_discovery_list);
+	tommy_hashdyn_init(&scan->file_discovery_inodeset);
 	tommy_list_init(&scan->file_insert_list);
 	tommy_list_init(&scan->link_insert_list);
 	tommy_list_init(&scan->dir_insert_list);
@@ -71,39 +141,16 @@ static struct snapraid_scan* scan_alloc(struct snapraid_state* state, struct sna
 	scan->is_diff = is_diff;
 	scan->need_write = 0;
 
-#if HAVE_THREAD
-	thread_mutex_init(&disk->stamp_mutex);
-#endif
-
 	return scan;
 }
 
 static void scan_free(void* void_scan)
 {
 	struct snapraid_scan* scan = void_scan;
-#if HAVE_THREAD
-	thread_mutex_destroy(&scan->disk->stamp_mutex);
-#endif
+	tommy_hashdyn_done(&scan->file_discovery_inodeset);
+	tommy_list_foreach(&scan->file_discovery_list, discovery_free);
 	tommy_list_foreach(&scan->local_filter_list, filter_free);
 	free(scan);
-}
-
-static void stamp_lock(struct snapraid_disk* disk)
-{
-#if HAVE_THREAD
-	thread_mutex_lock(&disk->stamp_mutex);
-#else
-	(void)disk;
-#endif
-}
-
-static void stamp_unlock(struct snapraid_disk* disk)
-{
-#if HAVE_THREAD
-	thread_mutex_unlock(&disk->stamp_mutex);
-#else
-	(void)disk;
-#endif
 }
 
 /**
@@ -411,26 +458,6 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 
 static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
-	struct snapraid_state* state = scan->state;
-	struct snapraid_disk* disk = scan->disk;
-
-	/* if we sort for physical offsets we have to read them for new files */
-	if (state->opt.force_order == SORT_PHYSICAL
-		&& file->physical == FILEPHY_UNREAD_OFFSET
-	) {
-		char path_next[PATH_MAX];
-
-		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, file->sub);
-
-		if (filephy(path_next, file->size, &file->physical) != 0) {
-			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: File physycal offset error. %s.\n", es(errno), 0, disk->name, esc_tag(file->sub), strerror(errno));
-			log_fatal(errno, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
 	/* insert in the delayed allocation list */
 	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
 }
@@ -533,111 +560,18 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 	return 1;
 }
 
-/**
- * Refresh the file info.
- *
- * This is needed by Windows as the normal way to list directories may report not
- * updated info. Only the GetFileInformationByHandle() func, called file-by-file,
- * really ensures to return synced info.
- *
- * If this happens, we read also the physical offset, to avoid to read it later.
- */
-static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struct stat* st, uint64_t* physical)
+static int discovery_inode_compare_to_arg(const void* void_arg, const void* void_data)
 {
-#if HAVE_LSTAT_SYNC
-	struct snapraid_state* state = scan->state;
-	struct snapraid_disk* disk = scan->disk;
+	const uint64_t* arg = void_arg;
+	const struct snapraid_discovery* disc = void_data;
 
-	/* if the st_sync is not set, ensure to get synced info */
-	if (st->st_sync == 0) {
-		char path_next[PATH_MAX];
-		struct stat synced_st;
-
-		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, sub);
-
-		/* if we sort for physical offsets we have to read them for new files */
-		if (state->opt.force_order == SORT_PHYSICAL
-			&& *physical == FILEPHY_UNREAD_OFFSET
-		) {
-			/* do nothing, leave the pointer to read the physical offset */
-		} else {
-			physical = 0; /* set the pointer to 0 to read nothing */
-		}
-
-		if (lstat_sync(path_next, &synced_st, physical) != 0) {
-			/* LCOV_EXCL_START */
-			log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
-			log_fatal(errno, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (st->st_mtime != synced_st.st_mtime
-			|| st->st_mtimensec != synced_st.st_mtimensec
-		) {
-#ifndef _WIN32
-			/*
-			 * In Windows having different metadata is expected with open files
-			 * because the metadata in the directory is updated only when the file
-			 * is closed.
-			 *
-			 * The same happens for hardlinks that duplicate metadata.
-			 * The link metadata is updated only when the link is opened.
-			 * This extends also to st_size and st_nlink.
-			 *
-			 * See also:
-			 * Why is the file size reported incorrectly for files that are still being written to?
-			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
-			 */
-			log_tag("%s:%u:%s:%s: Uncached time change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_error(ESOFT, "WARNING! Detected uncached time change from %" PRIu64 ".%09u to %" PRIu64 ".%09u for file '%s'\n",
-				(uint64_t)st->st_mtime, (uint32_t)st->st_mtimensec, (uint64_t)synced_st.st_mtime, (uint32_t)synced_st.st_mtimensec, sub);
-			log_error(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
-#endif
-			st->st_mtime = synced_st.st_mtime;
-			st->st_mtimensec = synced_st.st_mtimensec;
-		}
-
-		if (st->st_size != synced_st.st_size) {
-#ifndef _WIN32
-			log_tag("%s:%u:%s:%s: Uncached size change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_error(ESOFT, "WARNING! Detected uncached size change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
-				(uint64_t)st->st_size, (uint64_t)synced_st.st_size, sub);
-			log_error(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
-#endif
-			st->st_size = synced_st.st_size;
-		}
-
-		if (st->st_nlink != synced_st.st_nlink) {
-#ifndef _WIN32
-			log_tag("%s:%u:%s:%s: Uncached nlink change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_error(ESOFT, "WARNING! Detected uncached nlink change from %u to %u for file '%s'\n",
-				(uint32_t)st->st_nlink, (uint32_t)synced_st.st_nlink, sub);
-			log_error(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
-#endif
-			st->st_nlink = synced_st.st_nlink;
-		}
-
-		if (st->st_ino != INODE_INVALID && synced_st.st_ino != INODE_INVALID && st->st_ino != synced_st.st_ino) {
-			log_tag("%s:%u:%s:%s: Uncached inode change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
-			log_fatal(ESOFT, "DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
-				(uint64_t)st->st_ino, (uint64_t)synced_st.st_ino, sub);
-			log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
-			/*
-			 * At this point, it's too late to change inode
-			 * and having inconsistent inodes may result to internal failures
-			 * so, it's better to abort
-			 */
-			exit(EXIT_FAILURE);
-		}
-	}
-#else
-	(void)scan;
-	(void)sub;
-	(void)st;
-	(void)physical;
-#endif
+	if (*arg < disc->inode)
+		return -1;
+	if (*arg > disc->inode)
+		return 1;
+	return 0;
 }
+
 
 /**
  * Insert the file in the inode set.
@@ -657,10 +591,8 @@ static void scan_file_stamp_insert(struct snapraid_scan* scan, struct snapraid_f
 {
 	struct snapraid_disk* disk = scan->disk;
 
-	stamp_lock(disk);
 	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
-	stamp_unlock(disk);
 }
 
 /**
@@ -676,10 +608,8 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	if (file->inode != INODE_INVALID)
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 
-	stamp_lock(disk);
 	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
-	stamp_unlock(disk);
 
 	/*
 	 * Keep track of the removed file (that won't be added later)
@@ -699,8 +629,8 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	 * Deallocate the file from the parity.
 	 *
 	 * This is safe to run unlocked because:
-	 * 1. Modified files deallocations are deferred to Phase 2 (mono-threaded phase).
-	 * 2. Invalid parity files deallocated in Phase 1 are never selected by
+	 * 1. Modified files deallocations are deferred to Phase 3 (mono-threaded phase).
+	 * 2. Invalid parity files deallocated in Phase 2 are never selected by
 	 *    file_is_full_hashed_and_stable() during copy-detection (since they lack
 	 *    valid parity blocks).
 	 */
@@ -718,7 +648,7 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
  * This could happen after a failed sync, when some other files are deleted,
  * and then new ones can be moved backward to fill the hole created.
  */
-static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* file)
+static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* file, struct snapraid_discovery* disc)
 {
 	struct snapraid_disk* disk = scan->disk;
 
@@ -728,21 +658,44 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 		struct snapraid_file* copy = file_dup(file);
 		file_flag_set(copy, FILE_IS_REALLOC_NEW);
 
+		/* update physical offset if provided by discovery */
+		if (disc->physical != FILEPHY_UNREAD_OFFSET)
+			copy->physical = disc->physical;
+
 		/* insert in the delayed allocation list */
 		scan_file_delayed_allocate(scan, copy);
 
-		/* mark the file to be removed on Phase 2 */
+		/* mark the file to be removed on Phase 3 */
 		file_flag_set(file, FILE_IS_REALLOC_OLD);
 	}
 }
 
 /**
- * Process a file.
+ * Process and classify a discovered file in Phase 2.
+ *
+ * Invariants maintained during application:
+ * - Equal, moved, or restored files are marked FILE_IS_PRESENT and keep their allocations.
+ * - For every valid inode encountered, disk->inodeset points to the current
+ *   FILE_IS_PRESENT file. Later paths with the same inode are represented as hardlinks.
+ * - Files with INODE_INVALID are never inserted into inodeset. Inode validity
+ *   does not change when their path/stamp insertion is scheduled.
+ * - A new normal file is immediately inserted into all applicable
+ *   inode/path/stamp sets and queued for delayed parity allocation in Phase 4.
+ * - For a modified file, FILE_IS_MODIFIED_OLD has INODE_INVALID and is no
+ *   longer in inodeset, but remains in pathset/stampset and filelist.
+ *   FILE_IS_MODIFIED_NEW is in inodeset only if its inode is valid, has no
+ *   path/stamp entry, and is queued for Phase 4.
+ * - For a reallocated unchanged file, FILE_IS_REALLOC_OLD remains in all its
+ *   original containers. FILE_IS_REALLOC_NEW is only queued for Phase 4 and
+ *   is not inserted into any file container yet.
  */
-static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, struct stat* st, uint64_t physical)
+static void scan_file_apply(void* void_scan, void* void_disc)
 {
+	struct snapraid_scan* scan = void_scan;
+	struct snapraid_discovery* disc = void_disc;
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
+	int is_diff = scan->is_diff;
 	struct snapraid_file* file;
 	tommy_node* i;
 	int is_original_file_size_different_than_zero;
@@ -752,6 +705,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	int file_already_present_mtime_nsec;
 	int is_file_reported;
 	int is_file_modified;
+	const char* sub = disc->sub;
+	uint64_t inode = disc->inode;
+	data_off_t size = disc->size;
+	int64_t mtime_sec = disc->mtime_sec;
+	int mtime_nsec = disc->mtime_nsec;
 	/*
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
 	 * to detect moved files.
@@ -784,7 +742,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	 * Always search with the new inode, in the all new inodes found until now,
 	 * with the eventual presence of also the past inodes
 	 */
-	uint64_t inode = st->st_ino; /* don't know the exact type of st_ino and we cannot pass it by pointer in the search */
 	if (inode != INODE_INVALID)
 		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 	else
@@ -793,20 +750,12 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	/* identify moved files with past inodes and hardlinks with the new inodes */
 	if (file) {
 		/* check if the file is not changed */
-		if (file->size == st->st_size
-			&& file->mtime_sec == st->st_mtime
-			&& file->mtime_nsec == STAT_NSEC(st)
+		if (file->size == size
+			&& file->mtime_sec == mtime_sec
+			&& file->mtime_nsec == mtime_nsec
 		) {
 			/* check if multiple files have the same inode */
 			if (file_flag_has(file, FILE_IS_PRESENT)) {
-				/* if has_volatile_hardlinks is true, the nlink value is not reliable */
-				if (!disk->has_volatile_hardlinks && st->st_nlink == 1) {
-					/* LCOV_EXCL_START */
-					log_fatal(EINTERNAL, "Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
-					os_abort();
-					/* LCOV_EXCL_STOP */
-				}
-
 				/* it's a hardlink */
 				scan_link(scan, is_diff, sub, file->sub, FILE_IS_HARDLINK);
 				return;
@@ -814,6 +763,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
+
+			/* this old file was physically found during Discovery, possibly under a new pathname */
+			file_flag_set(file, FILE_IS_DISCOVERED);
 
 			if (strcmp(file->sub, sub) != 0) {
 				/* if the path is different, it means a moved file with the same inode */
@@ -827,15 +779,8 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* remove from the name set */
 				tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 
-				/*
-				 * Protect the file->sub mutation because other threads may concurrently
-				 * search the stampset and read this file's name string inside
-				 * file_namestamp_compare/file_pathstamp_compare, or when doing
-				 * a pathcpy() during copy detection.
-				 */
-				stamp_lock(disk);
+				/* rename the file (safe without locks in serialized apply) */
 				file_rename(file, sub);
-				stamp_unlock(disk);
 
 				/* reinsert in the name set */
 				tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
@@ -852,7 +797,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			}
 
 			/* mark the file as kept */
-			scan_file_keep(scan, file);
+			scan_file_keep(scan, file, disc);
 
 			/* nothing more to do */
 			return;
@@ -878,18 +823,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		 *   ...both time and size of A and B don't match!
 		 */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
-			/* if has_volatile_hardlinks is true, the nlink value is not reliable */
-			if (!disk->has_volatile_hardlinks && st->st_nlink == 1) {
-				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' with same inode but different attributes: size %" PRIu64 "?%" PRIu64 ", sec %" PRIu64 "?%" PRIu64 ", nsec %d?%d\n",
-					file->inode, disk->dir, sub, disk->dir, file->sub,
-					file->size, (uint64_t)st->st_size,
-					file->mtime_sec, (uint64_t)st->st_mtime,
-					file->mtime_nsec, STAT_NSEC(st));
-				os_abort();
-				/* LCOV_EXCL_STOP */
-			}
-
 			/* LCOV_EXCL_START */
 			/* suppose it's hardlink with not synced metadata */
 			scan_link(scan, is_diff, sub, file->sub, FILE_IS_HARDLINK);
@@ -936,14 +869,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* if the file is without an inode */
 		if (file->inode == INODE_INVALID) {
 			/* set it now */
-			file->inode = st->st_ino;
+			file->inode = inode;
 
 			/* insert in the set if valid */
 			if (file->inode != INODE_INVALID)
 				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 		} else {
 			/* here the inode has to be different, otherwise we would have found it before */
-			if (file->inode == st->st_ino) {
+			if (file->inode == inode) {
 				/* LCOV_EXCL_START */
 				log_fatal(EINTERNAL, "Internal inconsistency in inode '%" PRIu64 "' for file '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
 				os_abort();
@@ -960,15 +893,15 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		}
 
 		/* check if the file is not changed */
-		if (file->size == st->st_size
-			&& file->mtime_sec == st->st_mtime
-			&& file->mtime_nsec == STAT_NSEC(st)
+		if (file->size == size
+			&& file->mtime_sec == mtime_sec
+			&& file->mtime_nsec == mtime_nsec
 		) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
 			/* if when processing the disk we used the past inodes values */
-			if (has_past_inodes && file->inode != INODE_INVALID && st->st_ino != INODE_INVALID) {
+			if (has_past_inodes && file->inode != INODE_INVALID && inode != INODE_INVALID) {
 				/*
 				 * If persistent inodes are supported, we are sure that the inode number
 				 * is now different, because otherwise the file would have been found
@@ -987,7 +920,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 
 				/* save the new inode */
-				file->inode = st->st_ino;
+				file->inode = inode;
 
 				/* reinsert in the inode set */
 				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
@@ -1008,7 +941,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			}
 
 			/* mark the file as kept */
-			scan_file_keep(scan, file);
+			scan_file_keep(scan, file, disc);
 
 			/* nothing more to do */
 			return;
@@ -1030,10 +963,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			file->inode = INODE_INVALID;
 		}
 
-		/* mark it as to be removed in Phase 2 */
+		/* mark it as to be removed in Phase 3 */
 		file_flag_set(file, FILE_IS_MODIFIED_OLD);
 
-		/* flag the modified version to defer path/stamp insertion to Phase 3 */
+		/* flag the modified version to defer path/stamp insertion to Phase 4 */
 		is_file_modified = 1;
 
 		/* and continue to insert it again */
@@ -1043,20 +976,13 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		file_already_present_mtime_nsec = 0;
 	}
 
-	/*
-	 * Refresh the info, to ensure that they are synced,
-	 * note that we refresh only the info of the new or modified files
-	 * because this is slow operation
-	 */
-	scan_file_refresh(scan, sub, st, &physical);
-
 #ifndef _WIN32
 	/*
 	 * Do a safety check to ensure that the common ext4 case of zeroing
 	 * the size of a file after a crash doesn't propagate to the backup
 	 * this check is specific for Linux, so we disable it on Windows
 	 */
-	if (is_original_file_size_different_than_zero && st->st_size == 0) {
+	if (is_original_file_size_different_than_zero && disc->size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
 			log_error(ESOFT, "The file '%s%s' has unexpected zero size!\n", disk->mount_point, sub);
@@ -1075,10 +1001,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 #endif
 
 	/* insert it */
-	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, STAT_NSEC(st), st->st_ino, physical);
+	file = file_alloc(state->block_size, sub, disc->size, disc->mtime_sec, disc->mtime_nsec, disc->inode, disc->physical);
 
-	/* mark it as present */
+	/* mark it as present and physically discovered during Phase 1 */
 	file_flag_set(file, FILE_IS_PRESENT);
+	file_flag_set(file, FILE_IS_DISCOVERED);
 
 	/*
 	 * If copy detection is enabled
@@ -1095,9 +1022,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			struct snapraid_disk* other_disk = i->data;
 			struct snapraid_file* other_file;
 
-			char sub_other[PATH_MAX];
-
-			stamp_lock(other_disk);
 			/*
 			 * If the nanosecond part of the time stamp is valid, search
 			 * for name and stamp, otherwise for path and stamp
@@ -1107,46 +1031,34 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			else
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_pathstamp_compare, file, hash);
 
-			if (other_file) {
-				/* copy sub path safely before unlocking stamp_lock */
-				pathcpy(sub_other, sizeof(sub_other), other_file->sub);
-			}
-			stamp_unlock(other_disk);
-
 			/*
 			 * If found, check stability and copy the hash.
 			 *
-			 * This is safe to execute unlocked because:
-			 * 1. Modified files deallocations are deferred to Phase 2 (mono-threaded phase).
+			 * This is safe to execute without locks because:
+			 * 1. Modified files deallocations are deferred to Phase 3.
 			 * 2. file_is_full_reallocatable_and_stable() only accepts files with complete
 			 *    reallocatable parity, preventing them from being selected by file_is_full_hashed_and_stable().
 			 */
 			if (other_file && file_is_full_hashed_and_stable(scan->state, other_disk, other_file)) {
-				char path_other[PATH_MAX];
-				struct stat other_st;
-
-				stamp_lock(other_disk);
 				file_flag_set(other_file, FILE_IS_RELOCATED);
-				stamp_unlock(other_disk);
 
 				/* assume that the file is a copy, and reuse the hash */
 				file_copy(other_file, file);
 
 				/* check if other file still exists */
-				pathprint(path_other, sizeof(path_other), "%s%s", other_disk->dir, sub_other);
-				if (lstat(path_other, &other_st) == 0) {
+				if (file_flag_has(other_file, FILE_IS_DISCOVERED)) {
 					++scan->count_copy;
 
-					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(sub_other), disk->name, esc_tag(file->sub));
+					log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub), disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("copy %s -> %s\n", fmt_term(other_disk, sub_other), fmt_term(disk, file->sub));
+						msg_info("copy %s -> %s\n", fmt_term(other_disk, other_file->sub), fmt_term(disk, file->sub));
 					}
 				} else {
 					++scan->count_relocate;
 
-					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(sub_other), disk->name, esc_tag(file->sub));
+					log_tag("scan:relocate:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub), disk->name, esc_tag(file->sub));
 					if (is_diff) {
-						msg_info("relocate %s -> %s\n", fmt_term(other_disk, sub_other), fmt_term(disk, file->sub));
+						msg_info("relocate %s -> %s\n", fmt_term(other_disk, other_file->sub), fmt_term(disk, file->sub));
 					}
 				}
 
@@ -1190,9 +1102,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		scan_file_stamp_insert(scan, file);
 	} else {
 		/*
-		 * Insert the new inode before scanning the next path, so paths with the
+		 * Insert the new inode before applying the next file, so paths with the
 		 * same inode are recognized as hardlinks to this file. Keep the old
-		 * path/stamp entries until Phase 2; the new entries are inserted in Phase 3.
+		 * path/stamp entries until Phase 3; the new entries are inserted in Phase 4.
 		 */
 		scan_file_inode_insert(scan, file);
 		file_flag_set(file, FILE_IS_MODIFIED_NEW);
@@ -1200,6 +1112,146 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 	/* insert the file in the delayed allocation list */
 	scan_file_delayed_allocate(scan, file);
+}
+
+/**
+ * Check if candidate discovery is better suited as canonical representative than current.
+ *
+ * Preserves existing canonical files on persistent-inode filesystems,
+ * falling back to deterministic pathcmp() ordering.
+ */
+static int discovery_canonical_better(struct snapraid_scan* scan, struct snapraid_discovery* candidate, struct snapraid_discovery* current)
+{
+	struct snapraid_disk* disk = scan->disk;
+
+	/* on filesystems where previous inodes are reliable, preserve the previous canonical file if still present */
+	if (!disk->has_volatile_inodes && !disk->has_different_uuid && !disk->has_unsupported_uuid) {
+		uint64_t inode = candidate->inode;
+		struct snapraid_file* old_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+		if (old_file) {
+			if (pathcmp(candidate->sub, old_file->sub) == 0)
+				return 1;
+			if (pathcmp(current->sub, old_file->sub) == 0)
+				return 0;
+		}
+	}
+
+	/* deterministic fallback: minimum pathcmp() ordering */
+	return pathcmp(candidate->sub, current->sub) < 0;
+}
+
+static void scan_file_discover(struct snapraid_scan* scan, const char* sub, struct stat* st)
+{
+	struct snapraid_disk* disk = scan->disk;
+	struct snapraid_discovery* disc;
+
+	disc = discovery_alloc(sub, st);
+
+	/* Hardlink collision detection */
+	if (disc->inode != INODE_INVALID) {
+		struct snapraid_discovery* rep = tommy_hashdyn_search(&scan->file_discovery_inodeset, discovery_inode_compare_to_arg, &disc->inode, file_inode_hash(disc->inode));
+		if (!rep) {
+			/* first file seen with this inode: becomes representative */
+			disc->flag |= DISCOVERY_IS_CANONICAL;
+			tommy_hashdyn_insert(&scan->file_discovery_inodeset, &disc->nodeset, disc, file_inode_hash(disc->inode));
+		} else {
+			/* Inode collision detected! */
+#if HAVE_LSTAT_SYNC
+			if (disk->has_volatile_hardlinks && !(rep->flag & DISCOVERY_IS_SCAN_SYNCED)) {
+				char path_next[PATH_MAX];
+				struct stat synced_st;
+
+				pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, sub);
+				if (lstat_sync(path_next, &synced_st, 0) != 0) {
+					/* LCOV_EXCL_START */
+					log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
+					log_fatal(errno, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				if (disc->inode != INODE_INVALID && synced_st.st_ino != INODE_INVALID && disc->inode != synced_st.st_ino) {
+					log_tag("%s:%u:%s:%s: Uncached inode change error.\n", es(ESOFT), 0, disk->name, esc_tag(sub));
+					log_fatal(ESOFT, "DANGER! Detected uncached inode change from %" PRIu64 " to %" PRIu64 " for file '%s'\n",
+						(uint64_t)disc->inode, (uint64_t)synced_st.st_ino, sub);
+					log_fatal(ESOFT, "It's better if you run SnapRAID without other processes running.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				rep->size = synced_st.st_size;
+				rep->mtime_sec = synced_st.st_mtime;
+				rep->mtime_nsec = STAT_NSEC(&synced_st);
+				rep->flag |= DISCOVERY_IS_SCAN_SYNCED;
+
+				disc->size = rep->size;
+				disc->mtime_sec = rep->mtime_sec;
+				disc->mtime_nsec = rep->mtime_nsec;
+				disc->flag |= DISCOVERY_IS_SCAN_SYNCED;
+			} else
+#endif
+			if (rep->flag & DISCOVERY_IS_SCAN_SYNCED) {
+				disc->size = rep->size;
+				disc->mtime_sec = rep->mtime_sec;
+				disc->mtime_nsec = rep->mtime_nsec;
+				disc->flag |= DISCOVERY_IS_SCAN_SYNCED;
+			}
+
+			/* select deterministic canonical representative */
+			if (discovery_canonical_better(scan, disc, rep)) {
+				rep->flag &= ~DISCOVERY_IS_CANONICAL;
+				disc->flag |= DISCOVERY_IS_CANONICAL;
+				tommy_hashdyn_remove_existing(&scan->file_discovery_inodeset, &rep->nodeset);
+				tommy_hashdyn_insert(&scan->file_discovery_inodeset, &disc->nodeset, disc, file_inode_hash(disc->inode));
+			}
+		}
+	}
+
+	/*
+	 * If this file corresponds to an existing file moved under a new pathname,
+	 * match it by inode and normalized metadata on filesystems with persistent inodes.
+	 * Marking it FILE_IS_DISCOVERED in Phase 1 ensures all moved files across all
+	 * disks are flagged before Phase 2 copy detection runs, avoiding any dependency
+	 * on disk processing order in scanlist.
+	 */
+	if (!disk->has_volatile_inodes && !disk->has_different_uuid && !disk->has_unsupported_uuid && disc->inode != INODE_INVALID) {
+		struct snapraid_file* inode_file;
+		uint64_t inode = disc->inode;
+
+		inode_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+		if (inode_file
+			&& inode_file->size == disc->size
+			&& inode_file->mtime_sec == disc->mtime_sec
+			&& inode_file->mtime_nsec == disc->mtime_nsec
+		) {
+			file_flag_set(inode_file, FILE_IS_DISCOVERED);
+		}
+	}
+
+	tommy_list_insert_tail(&scan->file_discovery_list, &disc->nodelist, disc);
+}
+
+static void scan_file_apply_canonical(void* void_scan, void* void_disc)
+{
+	struct snapraid_discovery* disc = void_disc;
+
+	if (disc->inode == INODE_INVALID || (disc->flag & DISCOVERY_IS_CANONICAL) != 0)
+		scan_file_apply(void_scan, void_disc);
+}
+
+static void scan_file_apply_hardlink(void* void_scan, void* void_disc)
+{
+	struct snapraid_discovery* disc = void_disc;
+
+	if (disc->inode != INODE_INVALID && (disc->flag & DISCOVERY_IS_CANONICAL) == 0)
+		scan_file_apply(void_scan, void_disc);
+}
+
+static void scan_apply(struct snapraid_scan* scan)
+{
+	tommy_list_foreach_arg(&scan->file_discovery_list, scan_file_apply_canonical, scan);
+	tommy_list_foreach_arg(&scan->file_discovery_list, scan_file_apply_hardlink, scan);
+	tommy_list_foreach(&scan->file_discovery_list, discovery_free);
+	tommy_list_init(&scan->file_discovery_list);
 }
 
 /**
@@ -1571,17 +1623,17 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				|| (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0
 				&& filter_path(&scan->local_filter_list, &reason, disk->name, sub_next) == 0)) {
 
+				struct snapraid_file* existing;
+
 				/* late stat, if not yet called */
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
 #if HAVE_LSTAT_SYNC
 				/*
-				 * In Windows fast directory enumeration, st_ino and st_nlink may be
-				 * missing (0). If a field is needed, lstat_sync() must be called to
-				 * retrieve it. Here only st_ino is required for file identity and
-				 * hardlink tracking, while st_nlink is not; we call lstat_sync() only
-				 * when st_ino is missing to avoid expensive file opens.
+				 * In Windows fast directory enumeration, st_ino may be missing (0).
+				 * Only st_ino is required for file identity and hardlink tracking;
+				 * we call lstat_sync() only when st_ino is missing to avoid expensive file opens.
 				 */
 				if (st->st_ino == INODE_INVALID) {
 					if (lstat_sync(path_next, st, 0) != 0) {
@@ -1594,7 +1646,11 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				}
 #endif
 
-				scan_file(scan, is_diff, sub_next, st, FILEPHY_UNREAD_OFFSET);
+				existing = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub_next, file_path_hash(sub_next));
+				if (existing)
+					file_flag_set(existing, FILE_IS_DISCOVERED);
+
+				scan_file_discover(scan, sub_next, st);
 				processed = 1;
 			} else {
 				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
@@ -1728,9 +1784,66 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 	return scan_sub(scan, level, is_diff, path_next, sub_next, tmp);
 }
 
+/**
+ * Resolve physical offset for a single discovered regular file entry.
+ *
+ * Hardlink aliases are skipped because they are never allocated in parity and do not
+ * participate in physical ordering.
+ */
+static void scan_discovery_physical_entry(void* void_scan, void* void_disc)
+{
+	struct snapraid_scan* scan = void_scan;
+	struct snapraid_state* state = scan->state;
+	struct snapraid_disk* disk = scan->disk;
+	struct snapraid_discovery* disc = void_disc;
+	struct snapraid_file* existing;
+	char path_next[PATH_MAX];
+
+	/* skip hardlink aliases; only canonical representatives or standalone files need physical offsets */
+	if (disc->inode != INODE_INVALID && (disc->flag & DISCOVERY_IS_CANONICAL) == 0)
+		return;
+
+	/* search existing file by path, or by inode if moved or promoted */
+	existing = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, disc->sub, file_path_hash(disc->sub));
+	if (!existing) {
+		if (!disk->has_volatile_inodes && !disk->has_different_uuid && !disk->has_unsupported_uuid && disc->inode != INODE_INVALID)
+			existing = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &disc->inode, file_inode_hash(disc->inode));
+	}
+
+	/* reuse physical offset if the file exists unchanged and is not being reallocated */
+	if (existing
+		&& existing->size == disc->size
+		&& existing->mtime_sec == disc->mtime_sec
+		&& existing->mtime_nsec == disc->mtime_nsec
+		&& !file_is_full_reallocatable_and_stable(state, disk, existing)
+	) {
+		disc->physical = existing->physical;
+		return;
+	}
+
+	pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, disc->sub);
+
+	if (filephy(path_next, disc->size, &disc->physical) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("%s:%u:%s:%s: File physycal offset error. %s.\n", es(errno), 0, disk->name, esc_tag(disc->sub), strerror(errno));
+		log_fatal(errno, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+/**
+ * Resolve physical offsets for canonical files and standalone regular files in Phase 1B.
+ */
+static void scan_discovery_physical(struct snapraid_scan* scan)
+{
+	tommy_list_foreach_arg(&scan->file_discovery_list, scan_discovery_physical_entry, scan);
+}
+
 static void* scan_disk(void* arg)
 {
 	struct snapraid_scan* scan = arg;
+	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	int ret;
 	int has_persistent_inodes;
@@ -1759,7 +1872,7 @@ static void* scan_disk(void* arg)
 		 * Remove all the inodes from the inode collection
 		 * if they are not persistent, all of them could be changed now
 		 * and we don't want to find false matching ones
-		 * See scan_file() for more details
+		 * See scan_file_apply() for more details
 		 */
 		tommy_node* node = disk->filelist;
 		while (node) {
@@ -1797,6 +1910,9 @@ static void* scan_disk(void* arg)
 
 	scan_dir(scan, 0, scan->is_diff, disk->dir, "");
 
+	if (state->opt.force_order == SORT_PHYSICAL)
+		scan_discovery_physical(scan);
+
 	if (!scan->is_diff)
 		msg_progress("Scanned %s in %" PRIu64 " seconds\n", disk->name, (os_tick_ms() - start) / 1000);
 
@@ -1832,38 +1948,26 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 
 	/*
-	 * We split the search in three phases:
-	 * Phase 1: Parallel scanning of directories, finding new and modified files (without deletions/deallocations).
-	 * Phase 2: Serialized removals (deleted files and old versions of modified files) to free up parity space.
-	 * Phase 3: Serialized insertions and allocations of new files.
+	 * We split the search in four phases:
+	 * Phase 1: Parallel directory Discovery, collecting metadata and normalizing volatile hardlinks.
+	 * Phase 2: Serialized Apply, classifying discovered files, updating counters/logs, and detecting copies.
+	 * Phase 3: Serialized removals (deleted files and old versions of modified files) to free up parity space.
+	 * Phase 4: Serialized insertions and allocations of new files.
 	 *
-	 * We must start Phase 2 (deletions) only when all disks have finished Phase 1 (scanning),
+	 * We must start Phase 3 (deletions) only when all disks have finished Phase 2 (Apply),
 	 * to ensure that copy/relocation detection on any disk can search the stampset of other disks
 	 * before their old files are deleted/deallocated.
 	 */
 
 	/*
-	 * Phase 1: Parallel scanning of directories
+	 * Phase 1: Parallel directory Discovery
 	 *
 	 * Invariants during and after this phase:
-	 * - Each disk is modified only by its scan thread. Cross-disk stampset
-	 *   accesses used by copy/relocate detection are protected by stamp_lock().
-	 * - No old file, link, directory, or parity allocation is removed. This keeps
-	 *   every old stamp available to all scan threads for copy/relocate detection.
-	 * - For every valid inode already encountered in the current scan, inodeset
-	 *   points to the current FILE_IS_PRESENT file. Later paths with the same inode
-	 *   are therefore represented as hardlinks to that single file.
-	 * - Files with INODE_INVALID are never inserted into inodeset. Inode validity
-	 *   does not change when their path/stamp insertion is scheduled.
-	 * - A new normal file is immediately inserted into all applicable
-	 *   inode/path/stamp sets and queued for delayed parity allocation.
-	 * - For a modified file, FILE_IS_MODIFIED_OLD has INODE_INVALID and is no
-	 *   longer in inodeset, but remains in pathset/stampset and filelist.
-	 *   FILE_IS_MODIFIED_NEW is in inodeset only if its inode is valid, has no
-	 *   path/stamp entry, and is queued for Phase 3.
-	 * - For a reallocated unchanged file, FILE_IS_REALLOC_OLD remains in all its
-	 *   original containers. FILE_IS_REALLOC_NEW is only queued for Phase 3 and
-	 *   is not inserted into any file container yet.
+	 * - Each disk is read only by its scan thread, enumerating files and populating
+	 *   file_discovery_list without observable SnapRAID classification side effects.
+	 * - No old file, link, directory, or parity allocation is removed.
+	 * - Inode collisions on volatile-hardlink filesystems trigger selective lstat_sync()
+	 *   to normalize authoritative metadata across hardlink groups before Apply.
 	 */
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
@@ -1889,6 +1993,42 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 #endif
 
+	msg_progress("Applying...\n");
+
+	/*
+	 * Phase 2: Serialized Apply of discovered regular files
+	 *
+	 * Invariants during and after this phase:
+	 * - All Phase 1 Discovery threads have terminated, so file enumeration,
+	 *   authoritative metadata synchronization, and filesystem I/O are complete across all disks.
+	 * - Apply performs purely in-memory operations with zero filesystem calls.
+	 * - Each disk's discovered files are classified against past state (equal,
+	 *   move, restore, update, add, hardlink) and state mutations (counters,
+	 *   log tags, FILE_IS_PRESENT, copy detection) occur here.
+	 * - Serialized execution ensures copy/relocate detection against stampsets
+	 *   of other disks is completely deterministic and free of race conditions.
+	 * - No old file, link, directory, or parity allocation is removed. This keeps
+	 *   every old stamp available to all disks for copy/relocate detection.
+	 * - For every valid inode already encountered in the current scan, inodeset
+	 *   points to the current FILE_IS_PRESENT file. Later paths with the same inode
+	 *   are therefore represented as hardlinks to that single file.
+	 * - Files with INODE_INVALID are never inserted into inodeset. Inode validity
+	 *   does not change when their path/stamp insertion is scheduled.
+	 * - A new normal file is immediately inserted into all applicable
+	 *   inode/path/stamp sets and queued for delayed parity allocation in Phase 4.
+	 * - For a modified file, FILE_IS_MODIFIED_OLD has INODE_INVALID and is no
+	 *   longer in inodeset, but remains in pathset/stampset and filelist.
+	 *   FILE_IS_MODIFIED_NEW is in inodeset only if its inode is valid, has no
+	 *   path/stamp entry, and is queued for Phase 4.
+	 * - For a reallocated unchanged file, FILE_IS_REALLOC_OLD remains in all its
+	 *   original containers. FILE_IS_REALLOC_NEW is only queued for Phase 4 and
+	 *   is not inserted into any file container yet.
+	 */
+	for (i = scanlist; i != 0; i = i->next) {
+		struct snapraid_scan* scan = i->data;
+		scan_apply(scan);
+	}
+
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
 		struct snapraid_disk* disk = scan->disk;
@@ -1898,10 +2038,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		struct snapraid_file* phy_file_last;
 
 		/*
-		 * Phase 2: Removals (deleted files and old versions of modified files)
+		 * Phase 3: Removals (deleted files and old versions of modified files)
 		 *
 		 * Invariants on entry and during this phase:
-		 * - All Phase 1 scan threads have terminated, so removals are serialized and
+		 * - All Phase 1 and Phase 2 operations have terminated, so removals are serialized and
 		 *   no copy/relocate detection can still reference an old stamp or allocation.
 		 * - Existing files not marked FILE_IS_PRESENT are still in their applicable
 		 *   inode/path/stamp sets and filelist, ready for normal removal.
@@ -1915,7 +2055,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		 *   versions are also in file_insert_list, without parity allocation or
 		 *   filelist membership.
 		 * - Every old file/link/directory node is removed at most once. Deallocation
-		 *   happens before any Phase 3 allocation, making the freed parity reusable.
+		 *   happens before any Phase 4 allocation, making the freed parity reusable.
 		 * - On exit, no old path/stamp entry conflicts with a queued modified version;
 		 *   a queued reallocation has no old inode/path/stamp entry left either.
 		 */
@@ -1933,7 +2073,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			} else if (file_flag_has(file, FILE_IS_MODIFIED_OLD)) {
 				scan_file_remove(scan, file, 1);
 			} else if (!file_flag_has(file, FILE_IS_PRESENT)) {
-				/* here we are in mono-thread context, no need to use the stamp_lock() to read FILE_IS_RELOCATED */
+				/* check if the file was relocated to another disk */
 				if (!file_flag_has(file, FILE_IS_RELOCATED)) {
 					++scan->count_remove;
 
@@ -1983,7 +2123,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 
 		/*
-		 * Phase 3: Insertions (new files and new versions of modified files)
+		 * Phase 4: Insertions (new files and new versions of modified files)
 		 *
 		 * Invariants on entry and after each insertion:
 		 * - All removals and deallocations for this disk are complete, and every file
@@ -1991,10 +2131,10 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		 * - A new normal file is already in all applicable inode/path/stamp sets, so
 		 *   it requires no further container insertion.
 		 * - A FILE_IS_MODIFIED_NEW with a valid inode is already in inodeset from
-		 *   Phase 1 for hardlink detection; only its path/stamp nodes are inserted here.
+		 *   Phase 2 for hardlink detection; only its path/stamp nodes are inserted here.
 		 * - FILE_IS_REALLOC_NEW is in no file container; all its applicable
 		 *   inode/path/stamp nodes are inserted here after FILE_IS_REALLOC_OLD was
-		 *   removed in Phase 2.
+		 *   removed in Phase 3.
 		 * - The flags select the insertion path directly. No lookup or idempotent
 		 *   insertion is used, and every TommyDS node is inserted exactly once.
 		 * - Container insertion precedes scan_file_allocate(), which adds the parity
@@ -2059,8 +2199,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			/* insert the delayed containers before allocating the file */
 			if (file_flag_has(file, FILE_IS_MODIFIED_NEW)) {
 				/*
-				 * The inode was already inserted in Phase 1, so later paths with the same
-				 * inode could be recognized as hardlinks. Now that Phase 2 removed the old
+				 * The inode was already inserted in Phase 2, so later paths with the same
+				 * inode could be recognized as hardlinks. Now that Phase 3 removed the old
 				 * version, insert only the new path/stamp entries.
 				 */
 				scan_file_stamp_insert(scan, file);

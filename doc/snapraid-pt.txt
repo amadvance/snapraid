@@ -1974,24 +1974,7 @@ sistema de arquivos ativo pode se tornar visível.
 Não coloque pontos de montagem aninhados ou montagens bind dentro de discos
 de dados quando os instantâneos do sistema de arquivos estiverem ativados.
 
-16.3 Links físicos (Hard links)
--------------------------------
-
-O SnapRAID identifica um link físico como o arquivo original e representa
-os outros links físicos como referências a ele. Qual link é selecionado
-como o arquivo original depende da ordem em que as entradas do diretório
-são verificadas.
-
-Se essa ordem mudar, por exemplo, após arquivos serem renomeados,
-restaurados ou diretórios serem recriados, o "diff" poderá relatar aparentes
-movimentações, atualizações, adições ou remoções, mesmo quando os arquivos
-vinculados ainda representarem os mesmos dados.
-
-Isso não indica corrupção de dados, mas as diferenças relatadas podem ser
-confusas e podem não corresponder diretamente às operações executadas no
-sistema de arquivos.
-
-16.4 Modificações de arquivo no local sem alteração de data/hora
+16.3 Modificações de arquivo no local sem alteração de data/hora
 ----------------------------------------------------------------
 
 O SnapRAID detecta modificações em arquivos comparando tamanhos de arquivo e
@@ -2006,7 +1989,7 @@ de data/hora de modificação do arquivo (por exemplo, com o utilitário "touch"
 Caso contrário, a diferença só será detectada como uma incompatibilidade de
 hash durante um "scrub" ou "check" subsequente.
 
-16.5 Correspondência de maiúsculas/minúsculas não-ASCII no Windows
+16.4 Correspondência de maiúsculas/minúsculas não-ASCII no Windows
 ------------------------------------------------------------------
 
 O SnapRAID utiliza codificação UTF-8 padrão e previsível em todas as plataformas,
@@ -2029,7 +2012,7 @@ maiúsculas/minúsculas. Para evitar discrepâncias decorrentes da conversão do
 Windows, sempre especifique a combinação exata de maiúsculas e minúsculas para
 caracteres não-ASCII em caminhos de configuração e filtros.
 
-16.6 Sufixo de arquivos irrecuperáveis
+16.5 Sufixo de arquivos irrecuperáveis
 --------------------------------------
 
 Quando o `fix` não consegue recuperar totalmente um arquivo danificado, ele o
@@ -2051,7 +2034,7 @@ Evite usar a extensão `.unrecoverable` para arquivos comuns e certifique-se de
 que `exclude *.unrecoverable` esteja incluído na sua configuração para evitar que
 esses arquivos sejam rastreados no conjunto de dados de paridade.
 
-16.7 Recuperação com fix parcial
+16.6 Recuperação com fix parcial
 --------------------------------
 
 Quando o `fix` é restrito usando `-S, --start` ou `-B, --count`,
@@ -2072,6 +2055,32 @@ As opções `-S` e `-B` destinam-se apenas à recuperação manual avançada,
 normalmente após a falha de um `fix` normal. Se um `fix` parcial relatar
 dados irrecuperáveis, remova ou renomeie os arquivos afetados antes de tentar
 outra recuperação, ou verifique manualmente seu conteúdo.
+
+16.7 Links físicos no NTFS e caminhos excluídos
+-----------------------------------------------
+
+No NTFS, as entradas de diretório armazenam em cache o tamanho do arquivo
+e os registros de data/hora de forma independente para cada link físico.
+Quando um arquivo é modificado por meio de um link, as entradas de diretório
+de outros links que apontam para o mesmo arquivo podem reter metadados
+obsoletos até que sejam acessadas.
+
+O SnapRAID detecta e normaliza automaticamente essa condição sempre que
+pelo menos dois links físicos para o mesmo arquivo são encontrados durante
+uma verificação. No entanto, se apenas um link físico for verificado
+enquanto os outros forem excluídos por filtros ou residirem fora do caminho
+do disco de dados, o SnapRAID não conseguirá detectar a colisão de inodes e
+dependerá dos metadados em cache do único link visível.
+
+Consequentemente, modificações feitas por meio de um link físico excluído
+ou externo podem passar despercebidas pelo SnapRAID até que os metadados do
+link incluído sejam atualizados pelo sistema operacional (como quando o
+arquivo é acessado ou aberto por meio desse caminho).
+
+Para evitar essa limitação, evite modificar arquivos protegidos por meio
+de links físicos excluídos do SnapRAID, ou certifique-se de que todos os
+links físicos de um arquivo sejam incluídos na verificação para que o
+SnapRAID possa normalizá-los.
 
 
 17 TRADUçãO (TRANSLATION)

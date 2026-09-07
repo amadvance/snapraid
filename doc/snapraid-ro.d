@@ -1798,20 +1798,6 @@ Probleme Cunoscute (Known Issues)
 	Nu plasați puncte de montare imbricate sau montări bind în interiorul discurilor
 	de date când instantaneele sistemului de fișiere sunt activate.
 
-  Legături dure (Hard links)
-	SnapRAID identifică o legătură dură ca fișier original și reprezintă celelalte
-	legături dure ca referințe la acesta. Care legătură este selectată ca fișier
-	original depinde de ordinea în care sunt scanate intrările din director.
-
-	Dacă această ordine se modifică, de exemplu după redenumirea, restaurarea
-	fișierelor sau recrearea directoarelor, "diff" poate raporta mutări,
-	actualizări, adăugiri sau eliminări aparente chiar și atunci când fișierele
-	legate reprezintă în continuare aceleași date.
-
-	Acest lucru nu indică coruperea datelor, dar diferențele raportate pot fi
-	confuze și s-ar putea să nu corespundă direct operațiunilor efectuate în
-	sistemul de fișiere.
-
   Modificări ale fișierelor pe loc fără schimbarea marcajului temporal
 	SnapRAID detectează modificările fișierelor comparând dimensiunile fișierelor
 	și marcajele temporale de modificare (mtime).
@@ -1886,6 +1872,30 @@ Probleme Cunoscute (Known Issues)
 	de obicei după ce un `fix` normal a eșuat. Dacă un `fix` parțial raportează
 	date nerecuperabile, eliminați sau redenumiți fișierele afectate înainte de a
 	încerca o nouă recuperare, sau verificați manual conținutul acestora.
+
+  Legături dure NTFS și căi excluse
+	Pe NTFS, intrările din director memorează în cache dimensiunea fișierului
+	și marcajele temporale în mod independent pentru fiecare legătură dură.
+	Când un fișier este modificat printr-o legătură, intrările din director ale
+	celorlalte legături care indică spre același fișier pot păstra metadate
+	învechite până când sunt accesate.
+
+	SnapRAID detectează și normalizează automat această stare ori de câte ori
+	întâlnește cel puțin două legături dure către același fișier în timpul unei
+	scanări. Cu toate acestea, dacă este scanată o singură legătură dură în
+	timp ce celelalte sunt excluse prin filtre sau se află în afara căii
+	discului de date, SnapRAID nu poate detecta coliziunea de inoduri și se
+	bazează pe metadatele din cache ale singurei legături vizibile.
+
+	Prin urmare, modificările efectuate printr-o legătură dură exclusă sau
+	externă pot trece neobservate de SnapRAID până când metadatele legăturii
+	incluse sunt reîmprospătate de sistemul de operare (cum ar fi atunci când
+	fișierul este accesat sau deschis prin acea cale).
+
+	Pentru a evita această limitare, evitați modificarea fișierelor protejate
+	prin legături dure care sunt excluse din SnapRAID, sau asigurați-vă că toate
+	legăturile dure către un fișier sunt incluse în scanare, astfel încât
+	SnapRAID să le poată normaliza.
 
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.

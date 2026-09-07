@@ -1935,23 +1935,7 @@ skanning av en ögonblicksbild.
 Placera inte kapslade monteringspunkter eller bind-monteringar inuti
 datadiskar när filsystemögonblicksbilder är aktiverade.
 
-16.3 Hårda länkar (Hard links)
-------------------------------
-
-SnapRAID identifierar en hård länk som originalfilen och representerar de
-andra hårda länkarna som referenser till den. Vilken länk som väljs som
-originalfil beror på i vilken ordning katalogposterna skannas.
-
-Om denna ordning ändras, till exempel efter att filer bytt namn, återställts
-eller kataloger återskapats, kan "diff" rapportera skenbara flyttar,
-uppdateringar, tillägg eller borttagningar även när de länkade filerna
-fortfarande representerar samma data.
-
-Detta indikerar inte datakorruption, men de rapporterade skillnaderna kan
-vara förvirrande och kanske inte direkt motsvarar de filsystemsoperationer
-som utfördes.
-
-16.4 Filändringar på plats utan tidsstämpeländringar
+16.3 Filändringar på plats utan tidsstämpeländringar
 ----------------------------------------------------
 
 SnapRAID upptäcker filändringar genom att jämföra filstorlekar och
@@ -1966,7 +1950,7 @@ filens ändringstidsstämpel (till exempel med verktyget "touch"). Annars
 kommer skillnaden endast att upptäckas som en hash-avvikelse under en
 efterföljande "scrub" eller "check".
 
-16.5 Icke-ASCII skiftlägesmatchning i Windows
+16.4 Icke-ASCII skiftlägesmatchning i Windows
 ---------------------------------------------
 
 SnapRAID använder standardiserad, förutsägbar UTF-8-kodning på alla plattformar
@@ -1985,7 +1969,7 @@ och dess insisterande på skiftlägesokänslig aliasning. För att förhindra
 avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
 skiftläget för eventuella icke-ASCII-tecken i konfigurationssökvägar och filter.
 
-16.6 Suffix för oåterkalleliga filer
+16.5 Suffix för oåterkalleliga filer
 ------------------------------------
 
 När `fix` inte helt kan återställa en skadad fil sätter den filen i karantän
@@ -2007,7 +1991,7 @@ Undvik att använda filändelsen `.unrecoverable` för vanliga filer och se till
 att `exclude *.unrecoverable` ingår i din konfiguration för att förhindra att
 sådana filer spåras i paritetsdatamängden.
 
-16.7 Återställning med partiell fix
+16.6 Återställning med partiell fix
 -----------------------------------
 
 När `fix` begränsas med `-S, --start` eller `-B, --count`,
@@ -2028,6 +2012,30 @@ Alternativen `-S` och `-B` är endast avsedda för avancerad manuell återställ
 vanligtvis efter att en normal `fix` har misslyckats. Om en partiell `fix`
 rapporterar oåterkalleliga data, ta bort eller byt namn på de berörda filerna
 innan du försöker med en ny återställning, eller verifiera deras innehåll manuellt.
+
+16.7 NTFS hårda länkar och exkluderade sökvägar
+-----------------------------------------------
+
+På NTFS cachelagrar katalogposter filstorlek och tidsstämplar oberoende
+för varje hård länk. När en fil modifieras via en länk kan katalogposterna
+för andra länkar som pekar på samma fil behålla inaktuella metadata tills
+de används.
+
+SnapRAID upptäcker och normaliserar automatiskt detta tillstånd när minst
+två hårda länkar till samma fil påträffas under en skanning. Men om endast
+en hård länk skannas medan de andra exkluderas av filter eller ligger
+utanför hårddiskens sökväg för data, kan SnapRAID inte upptäcka
+inodkollisionen och förlitar sig på cachade metadata för den enda synliga
+länken.
+
+Följaktligen kan ändringar som görs via en exkluderad eller extern hård länk
+gå obemärkta förbi för SnapRAID tills metadatan för den inkluderade länken
+uppdateras av operativsystemet (till exempel när filen nås eller öppnas via
+den sökvägen).
+
+För att undvika denna begränsning, undvik att modifiera skyddade filer via
+hårda länkar som är exkluderade från SnapRAID, eller se till att alla hårda
+länkar till en fil inkluderas i skanningen så att SnapRAID kan normalisera dem.
 
 
 17 ÖVERSäTTNING (TRANSLATION)

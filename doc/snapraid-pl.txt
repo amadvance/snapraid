@@ -1937,23 +1937,7 @@ systemie plików może stać się widoczny.
 Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
 dysków z danymi, gdy migawki systemu plików są włączone.
 
-16.3 Twarde dowiązania (Hard links)
------------------------------------
-
-SnapRAID identyfikuje jedno twarde dowiązanie jako plik oryginalny, a
-pozostałe twarde dowiązania reprezentuje jako odwołania do niego. To, które
-dowiązanie zostanie wybrane jako plik oryginalny, zależy od kolejności
-skanowania wpisów w katalogu.
-
-Jeśli ta kolejność ulegnie zmianie, na przykład po zmianie nazwy,
-przywróceniu plików lub ponownym utworzeniu katalogów, polecenie "diff"
-może zgłaszać pozorne przeniesienia, aktualizacje, dodania lub usunięcia,
-nawet jeśli dowiązane pliki nadal reprezentują te same dane.
-
-Nie oznacza to uszkodzenia danych, ale zgłaszane różnice mogą być mylące i
-mogą nie odpowiadać bezpośrednio operacjom wykonanym w systemie plików.
-
-16.4 Modyfikacje plików w miejscu bez zmiany znacznika czasu
+16.3 Modyfikacje plików w miejscu bez zmiany znacznika czasu
 ------------------------------------------------------------
 
 SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
@@ -1968,7 +1952,7 @@ pliku (na przykład za pomocą narzędzia "touch"). W przeciwnym razie różnica
 zostanie wykryta dopiero jako niezgodność skrótu podczas kolejnego "scrub"
 lub "check".
 
-16.5 Dopasowywanie wielkości liter znaków spoza ASCII w systemie Windows
+16.4 Dopasowywanie wielkości liter znaków spoza ASCII w systemie Windows
 ------------------------------------------------------------------------
 
 SnapRAID używa standardowego, przewidywalnego kodowania UTF-8 na wszystkich
@@ -1991,7 +1975,7 @@ liter. Aby zapobiec rozbieżnościom wynikającym ze składania znaków przez
 Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
 w ścieżkach konfiguracyjnych i filtrach.
 
-16.6 Sufiks plików niemożliwych do odzyskania
+16.5 Sufiks plików niemożliwych do odzyskania
 ---------------------------------------------
 
 Gdy `fix` nie może w pełni odzyskać uszkodzonego pliku, poddaje go kwarantannie,
@@ -2013,7 +1997,7 @@ Unikaj używania rozszerzenia `.unrecoverable` dla zwykłych plików i upewnij s
 że w konfiguracji uwzględniono regułę `exclude *.unrecoverable`, aby zapobiec
 śledzeniu takich plików w zbiorze danych parzystości.
 
-16.7 Odzyskiwanie za pomocą częściowego fix
+16.6 Odzyskiwanie za pomocą częściowego fix
 -------------------------------------------
 
 Gdy polecenie `fix` jest ograniczone za pomocą `-S, --start` lub `-B, --count`,
@@ -2035,6 +2019,33 @@ ręcznego, zazwyczaj po niepowodzeniu normalnego `fix`. Jeśli częściowy `fix`
 zgłosi dane niemożliwe do odzyskania, przed podjęciem kolejnej próby odzyskiwania
 należy usunąć lub zmienić nazwę plików, których to dotyczy, albo ręcznie zweryfikować
 ich zawartość.
+
+16.7 Twarde dowiązania NTFS i wykluczone ścieżki
+------------------------------------------------
+
+W systemie plików NTFS wpisy katalogowe niezależnie buforują rozmiar pliku
+i znaczniki czasu dla każdego twardego dowiązania. Gdy plik zostanie
+zmodyfikowany za pośrednictwem jednego dowiązania, wpisy katalogowe innych
+dowiązań wskazujących ten sam plik mogą zachowywać nieaktualne metadane
+do momentu uzyskania do nich dostępu.
+
+SnapRAID automatycznie wykrywa i normalizuje ten stan, gdy podczas skanowania
+napotka co najmniej dwa twarde dowiązania do tego samego pliku. Jeśli jednak
+zeskanowane zostanie tylko jedno twarde dowiązanie, podczas gdy pozostałe są
+wykluczone przez filtry lub znajdują się poza ścieżką dysku danych, SnapRAID
+nie może wykryć kolizji i-węzłów (inode) i polega na buforowanych metadanych
+jedynego widocznego dowiązania.
+
+W konsekwencji modyfikacje dokonane za pośrednictwem wykluczonego lub
+zewnętrznego twardego dowiązania mogą pozostać niezauważone przez SnapRAID,
+dopóki metadane uwzględnionego dowiązania nie zostaną odświeżone przez system
+operacyjny (na przykład po uzyskaniu dostępu do pliku lub otwarciu go
+przez tę ścieżkę).
+
+Aby uniknąć tego ograniczenia, należy unikać modyfikowania chronionych plików
+za pośrednictwem twardych dowiązań wykluczonych ze SnapRAID lub upewnić się,
+że wszystkie twarde dowiązania do danego pliku są uwzględnione w skanowaniu,
+aby SnapRAID mógł je znormalizować.
 
 
 17 TłUMACZENIE (TRANSLATION)

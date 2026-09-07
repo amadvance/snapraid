@@ -1900,20 +1900,6 @@ Problemi noti (Known Issues)
 	Non inserire punti di mount annidati o bind mount all'interno dei dischi dati
 	quando le snapshot del filesystem sono abilitate.
 
-  Hard link
-	SnapRAID identifica un hard link come file originale e rappresenta gli altri
-	hard link come riferimenti ad esso. Quale link viene selezionato come file
-	originale dipende dall'ordine in cui vengono scansionate le voci di directory.
-
-	Se questo ordine cambia, ad esempio dopo che i file vengono rinominati,
-	ripristinati o le directory vengono ricreate, "diff" può segnalare apparenti
-	spostamenti, aggiornamenti, aggiunte o rimozioni anche quando i file collegati
-	rappresentano ancora gli stessi dati.
-
-	Ciò non indica corruzione dei dati, ma le differenze segnalate possono
-	generare confusione e potrebbero non corrispondere direttamente alle
-	operazioni eseguite sul filesystem.
-
   Modifiche ai file sul posto senza variazione di data/ora
 	SnapRAID rileva le modifiche ai file confrontando le dimensioni dei file e
 	i timestamp di modifica (mtime).
@@ -1988,6 +1974,30 @@ Problemi noti (Known Issues)
 	avanzato, tipicamente dopo che un normale `fix` è fallito. Se un `fix`
 	parziale segnala dati irrecuperabili, rimuovere o rinominare i file interessati
 	prima di tentare un altro recupero, oppure verificarne manualmente il contenuto.
+
+  Hard link NTFS e percorsi esclusi
+	Su NTFS, le voci di directory memorizzano nella cache la dimensione del
+	file e i timestamp in modo indipendente per ciascun hard link. Quando un
+	file viene modificato tramite un link, le voci di directory degli altri link
+	che puntano allo stesso file possono mantenere metadati obsoleti finché non
+	vengono consultate.
+
+	SnapRAID rileva e normalizza automaticamente questa condizione ogni volta
+	che incontra almeno due hard link allo stesso file durante una scansione.
+	Tuttavia, se viene scansionato un solo hard link mentre gli altri sono
+	esclusi dai filtri o risiedono all'esterno del percorso del disco dati,
+	SnapRAID non può rilevare la collisione di inode e si affida ai metadati
+	nella cache dell'unico link visibile.
+
+	Di conseguenza, le modifiche apportate tramite un hard link escluso o
+	esterno potrebbero non essere notate da SnapRAID finché i metadati del
+	link incluso non vengono aggiornati dal sistema operativo (ad esempio
+	quando il file viene consultato o aperto tramite tale percorso).
+
+	Per evitare questa limitazione, evitare di modificare i file protetti
+	tramite hard link esclusi da SnapRAID, oppure assicurarsi che tutti gli
+	hard link a un file siano inclusi nella scansione in modo che SnapRAID
+	possa normalizzarli.
 
 Traduzione (Translation)
 	Questo documento è una traduzione automatica del manuale in inglese.
