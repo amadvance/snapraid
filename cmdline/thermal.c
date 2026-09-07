@@ -129,6 +129,9 @@ int state_thermal(struct snapraid_state* state, time_t now)
 	if (state->thermal_temperature_limit == 0)
 		return 0;
 
+	/* reset the current highest temperature to ensure fail-open on measurement failure */
+	state->thermal_highest_temperature = 0;
+
 	state_devmap(state);
 
 	tommy_list_init(&high);
