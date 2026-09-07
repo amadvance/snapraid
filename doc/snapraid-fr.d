@@ -2006,6 +2006,28 @@ Problèmes connus (Known Issues)
 	configuration afin d'empêcher le suivi de ces fichiers dans le jeu de données
 	de parité.
 
+  Récupération avec fix partiel
+	Lorsque `fix` est restreint avec `-S, --start` ou `-B, --count`,
+	SnapRAID opère uniquement sur les blocs sélectionnés et n'effectue
+	pas de finalisation au niveau du fichier ni de mise en quarantaine.
+
+	Si la récupération produit des données au mieux (best-effort) qui ne
+	peuvent pas être certifiées comme représentant le contenu actuel, ces
+	blocs peuvent tout de même être écrits sous le nom de fichier normal.
+	L'incertitude associée à ces blocs récupérés n'est pas conservée après
+	la fin de l'exécution de la commande.
+
+	Par conséquent, un `fix` ultérieur considérera ces blocs lisibles comme des
+	données de fichier valides et ne tentera pas de les récupérer à nouveau.
+	Cela peut conduire une récupération ultérieure à signaler un succès tout en
+	laissant des données incomplètes ou obsolètes dans le fichier.
+
+	Les options `-S` et `-B` ne sont destinées qu'à une récupération manuelle
+	avancée, généralement après l'échec d'un `fix` normal. Si un `fix` partiel
+	signale des données irrécupérables, supprimez ou renommez les fichiers
+	concernés avant de tenter une nouvelle récupération, ou vérifiez manuellement
+	leur contenu.
+
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.
 	Veuillez vous référer au manuel en anglais pour la version officielle.

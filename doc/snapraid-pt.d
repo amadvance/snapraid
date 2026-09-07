@@ -1908,6 +1908,26 @@ Problemas Conhecidos (Known Issues)
 	que `exclude *.unrecoverable` esteja incluído na sua configuração para evitar que
 	esses arquivos sejam rastreados no conjunto de dados de paridade.
 
+  Recuperação com fix parcial
+	Quando o `fix` é restrito usando `-S, --start` ou `-B, --count`,
+	o SnapRAID opera apenas nos blocos selecionados e não realiza a
+	finalização em nível de arquivo nem a quarentena.
+
+	Se a recuperação produzir dados de melhor esforço (best-effort) que não
+	possam ser comprovados como representativos do conteúdo atual, esses
+	blocos ainda poderão ser gravados com o nome de arquivo normal. A incerteza
+	associada a esses blocos recuperados não persiste após o término do comando.
+
+	Como consequência, um `fix` posterior tratará esses blocos legíveis como
+	dados de arquivo válidos e não tentará recuperá-los novamente. Isso pode
+	fazer com que uma recuperação posterior relate sucesso, deixando dados
+	incompletos ou obsoletos no arquivo.
+
+	As opções `-S` e `-B` destinam-se apenas à recuperação manual avançada,
+	normalmente após a falha de um `fix` normal. Se um `fix` parcial relatar
+	dados irrecuperáveis, remova ou renomeie os arquivos afetados antes de tentar
+	outra recuperação, ou verifique manualmente seu conteúdo.
+
 Tradução (Translation)
 	Este documento é uma tradução automática do manual em inglês.
 	Consulte o manual em inglês para a versão oficial.

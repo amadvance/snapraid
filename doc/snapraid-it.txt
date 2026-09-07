@@ -2112,6 +2112,28 @@ Evitare di utilizzare l'estensione `.unrecoverable` per i normali file e
 assicurarsi che la regola `exclude *.unrecoverable` sia inclusa nella
 configurazione per evitare che tali file vengano tracciati nel dataset di parità.
 
+16.7 Recupero con fix parziale
+------------------------------
+
+Quando `fix` viene limitato usando `-S, --start` o `-B, --count`,
+SnapRAID opera solo sui blocchi selezionati e non esegue la
+finalizzazione a livello di file né la quarantena.
+
+Se il recupero produce dati "best-effort" che non possono essere provati
+come rappresentativi del contenuto corrente, tali blocchi potrebbero
+comunque essere scritti con il normale nome di file. L'incertezza associata
+a questi blocchi recuperati non persiste dopo il termine del comando.
+
+Di conseguenza, un successivo `fix` tratterà questi blocchi leggibili come
+dati di file validi e non tenterà di recuperarli nuovamente. Ciò può far sì
+che un recupero successivo segnali il successo pur lasciando nel file dati
+incompleti o obsoleti.
+
+Le opzioni `-S` e `-B` sono destinate esclusivamente al recupero manuale
+avanzato, tipicamente dopo che un normale `fix` è fallito. Se un `fix`
+parziale segnala dati irrecuperabili, rimuovere o rinominare i file interessati
+prima di tentare un altro recupero, oppure verificarne manualmente il contenuto.
+
 
 17 TRADUZIONE (TRANSLATION)
 ===========================

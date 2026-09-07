@@ -1872,6 +1872,26 @@ Known Issues
 	that `exclude *.unrecoverable` is included in your configuration to
 	prevent such files from being tracked in the parity dataset.
 
+  Partial fix recovery
+	When `fix` is restricted using `-S, --start` or `-B, --count`,
+	SnapRAID operates only on the selected blocks and does not perform
+	file-level finalization or quarantine.
+
+	If recovery produces best-effort data that cannot be proven to represent
+	the current contents, such blocks may still be written under the normal
+	filename. The uncertainty associated with these recovered blocks is not
+	persisted after the command terminates.
+
+	As a consequence, a later `fix` will treat these readable blocks as valid
+	file data and will not attempt to recover them again. This can cause a
+	subsequent recovery to report success while leaving incomplete or stale
+	data in the file.
+
+	The `-S` and `-B` options are intended only for advanced manual recovery,
+	typically after a normal `fix` has failed. If a partial `fix` reports
+	unrecoverable data, remove or rename the affected files before attempting
+	another recovery, or verify their contents manually.
+
 Copyright
 	This file is Copyright (C) 2026 Andrea Mazzoleni
 

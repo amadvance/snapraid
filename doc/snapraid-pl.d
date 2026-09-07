@@ -1870,6 +1870,27 @@ Znane problemy (Known Issues)
 	że w konfiguracji uwzględniono regułę `exclude *.unrecoverable`, aby zapobiec
 	śledzeniu takich plików w zbiorze danych parzystości.
 
+  Odzyskiwanie za pomocą częściowego fix
+	Gdy polecenie `fix` jest ograniczone za pomocą `-S, --start` lub `-B, --count`,
+	SnapRAID działa tylko na wybranych blokach i nie przeprowadza finalizacji
+	na poziomie plików ani kwarantanny.
+
+	Jeśli odzyskiwanie da dane typu best-effort, co do których nie można udowodnić,
+	że reprezentują bieżącą zawartość, takie bloki mogą nadal zostać zapisane pod
+	zwykłą nazwą pliku. Niepewność związana z tymi odzyskanymi blokami nie jest
+	zachowywana po zakończeniu polecenia.
+
+	W rezultacie późniejsze wykonanie `fix` potraktuje te czytelne bloki jako
+	prawidłowe dane pliku i nie podejmie ponownej próby ich odzyskania. Może to
+	spowodować, że późniejsze odzyskiwanie zgłosi sukces, pozostawiając w pliku
+	niekompletne lub nieaktualne dane.
+
+	Opcje `-S` i `-B` są przeznaczone wyłącznie do zaawansowanego odzyskiwania
+	ręcznego, zazwyczaj po niepowodzeniu normalnego `fix`. Jeśli częściowy `fix`
+	zgłosi dane niemożliwe do odzyskania, przed podjęciem kolejnej próby odzyskiwania
+	należy usunąć lub zmienić nazwę plików, których to dotyczy, albo ręcznie zweryfikować
+	ich zawartość.
+
 Tłumaczenie (Translation)
 	Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 	Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.

@@ -1867,6 +1867,26 @@ Probleme Cunoscute (Known Issues)
 	asigurați-vă că `exclude *.unrecoverable` este inclus în configurație pentru
 	a preveni urmărirea acestor fișiere în setul de date de paritate.
 
+  Recuperare cu fix parțial
+	Când `fix` este restricționat folosind `-S, --start` sau `-B, --count`,
+	SnapRAID operează doar pe blocurile selectate și nu efectuează finalizarea
+	la nivel de fișier sau carantina.
+
+	Dacă recuperarea produce date de tip „best-effort” despre care nu se poate
+	dovedi că reprezintă conținutul curent, astfel de blocuri pot fi totuși
+	scrise sub numele de fișier normal. Incertitudinea asociată cu aceste blocuri
+	recuperate nu este păstrată după terminarea comenzii.
+
+	În consecință, un `fix` ulterior va trata aceste blocuri lizibile drept date
+	de fișier valide și nu va încerca să le recupereze din nou. Acest lucru poate
+	face ca o recuperare ulterioară să raporteze succes, lăsând în același timp date
+	incomplete sau învechite în fișier.
+
+	Opțiunile `-S` și `-B` sunt destinate exclusiv recuperării manuale avansate,
+	de obicei după ce un `fix` normal a eșuat. Dacă un `fix` parțial raportează
+	date nerecuperabile, eliminați sau redenumiți fișierele afectate înainte de a
+	încerca o nouă recuperare, sau verificați manual conținutul acestora.
+
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.
 	Consultați manualul în limba engleză pentru versiunea oficială.

@@ -1999,6 +1999,28 @@ Bekannte Probleme (Known Issues)
 	Konfiguration enthalten ist, um zu verhindern, dass solche Dateien im
 	Paritätsdatensatz erfasst werden.
 
+  Wiederherstellung mit partiellem Fix
+	Wenn `fix` mit `-S, --start` oder `-B, --count` eingeschränkt wird,
+	arbeitet SnapRAID nur auf den ausgewählten Blöcken und führt weder eine
+	Finalisierung auf Dateiebene noch eine Quarantäne durch.
+
+	Wenn die Wiederherstellung Best-Effort-Daten erzeugt, bei denen nicht
+	nachgewiesen werden kann, dass sie den aktuellen Inhalt darstellen, können
+	solche Blöcke dennoch unter dem normalen Dateinamen geschrieben werden. Die mit
+	diesen wiederhergestellten Blöcken verbundene Ungewissheit bleibt nach Beendigung
+	des Befehls nicht erhalten.
+
+	Infolgedessen behandelt ein späterer `fix` diese lesbaren Blöcke als gültige
+	Dateidaten und versucht nicht, sie erneut wiederherzustellen. Dies kann dazu
+	führen, dass eine spätere Wiederherstellung Erfolg meldet, während die Datei
+	weiterhin unvollständige oder veraltete Daten enthält.
+
+	Die Optionen `-S` und `-B` sind nur für die fortgeschrittene manuelle
+	Wiederherstellung gedacht, typischerweise nachdem ein normaler `fix`
+	fehlgeschlagen ist. Wenn ein partieller `fix` nicht wiederherstellbare Daten
+	meldet, entfernen oder benennen Sie die betroffenen Dateien um, bevor Sie eine
+	weitere Wiederherstellung versuchen, oder überprüfen Sie deren Inhalt manuell.
+
 Übersetzung (Translation)
 	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
 	Die maßgebliche Version finden Sie im englischen Handbuch.

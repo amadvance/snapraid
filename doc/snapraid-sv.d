@@ -1864,6 +1864,26 @@ Kända problem (Known Issues)
 	att `exclude *.unrecoverable` ingår i din konfiguration för att förhindra att
 	sådana filer spåras i paritetsdatamängden.
 
+  Återställning med partiell fix
+	När `fix` begränsas med `-S, --start` eller `-B, --count`,
+	arbetar SnapRAID endast på de markerade blocken och utför varken
+	slutförande på filnivå eller karantän.
+
+	Om återställningen producerar "best-effort"-data som inte kan bevisas
+	representera det aktuella innehållet, kan sådana block ändå skrivas under det
+	normala filnamnet. Osäkerheten förknippad med dessa återställda block bevaras
+	inte efter att kommandot har avslutats.
+
+	Som en konsekvens kommer en senare `fix` att behandla dessa läsbara block som
+	giltiga fildata och inte försöka återställa dem igen. Detta kan leda till att
+	en efterföljande återställning rapporterar framgång samtidigt som ofullständiga
+	eller inaktuella data lämnas kvar i filen.
+
+	Alternativen `-S` och `-B` är endast avsedda för avancerad manuell återställning,
+	vanligtvis efter att en normal `fix` har misslyckats. Om en partiell `fix`
+	rapporterar oåterkalleliga data, ta bort eller byt namn på de berörda filerna
+	innan du försöker med en ny återställning, eller verifiera deras innehåll manuellt.
+
 Översättning (Translation)
 	Detta dokument är en automatisk översättning av den engelska manualen.
 	Se den engelska manualen för den officiella versionen.
