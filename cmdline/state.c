@@ -179,6 +179,7 @@ void state_init(struct snapraid_state* state)
 	state->unsynced_blocks = 0;
 	state->unscrubbed_blocks = 0;
 	state->thermal_stop_gathering = 0;
+	state->thermal_system_temperature = 0;
 	state->thermal_ambient_temperature = 0;
 	state->thermal_highest_temperature = 0;
 	state->thermal_first = 0;

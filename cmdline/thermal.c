@@ -196,21 +196,24 @@ int state_thermal(struct snapraid_state* state, time_t now)
 	/* report new attribute */
 	state_attr(state, &low);
 
-	/* if ambient temperature is not set, set it now with the lowest HD temperature */
+	/* if ambient temperature is not set, get the system temperature or fallback to the lowest HD temperature */
 	if (state->thermal_ambient_temperature == 0) {
-		state->thermal_ambient_temperature = ambient_temperature();
+		state->thermal_system_temperature = ambient_temperature();
+		state->thermal_ambient_temperature = state->thermal_system_temperature;
 
-		for (i = tommy_list_head(&low); i != 0; i = i->next) {
-			devinfo_t* devinfo = i->data;
+		if (state->thermal_ambient_temperature == 0) {
+			for (i = tommy_list_head(&low); i != 0; i = i->next) {
+				devinfo_t* devinfo = i->data;
 
-			int temp = smart_temp(devinfo);
-			if (temp < 0)
-				continue;
+				int temp = smart_temp(devinfo);
+				if (temp < 0)
+					continue;
 
-			log_tag("thermal:system:candidate:%d\n", temp);
+				log_tag("thermal:system:candidate:%d\n", temp);
 
-			if (state->thermal_ambient_temperature == 0 || state->thermal_ambient_temperature > temp)
-				state->thermal_ambient_temperature = temp;
+				if (state->thermal_ambient_temperature == 0 || state->thermal_ambient_temperature > temp)
+					state->thermal_ambient_temperature = temp;
+			}
 		}
 
 		log_tag("thermal:system:final:%d\n", state->thermal_ambient_temperature);
@@ -404,12 +407,12 @@ int state_thermal_begin(struct snapraid_state* state, time_t now)
 	state->thermal_latest = state->thermal_first;
 	state_thermal(state, now);
 
-	if (state->thermal_ambient_temperature != 0) {
-		printf("System temperature is %u degrees\n", state->thermal_ambient_temperature);
+	if (state->thermal_system_temperature != 0) {
+		printf("System temperature is %u degrees\n", state->thermal_system_temperature);
 
-		if (state->thermal_temperature_limit != 0 && state->thermal_temperature_limit <= state->thermal_ambient_temperature) {
+		if (state->thermal_temperature_limit != 0 && state->thermal_temperature_limit <= state->thermal_system_temperature) {
 			/* LCOV_EXCL_START */
-			log_fatal(EENVIRONMENT, "DANGER! System temperature of %d degrees is higher than the temperature limit of %d degrees. Unable to proceed!\n", state->thermal_ambient_temperature, state->thermal_temperature_limit);
+			log_fatal(EENVIRONMENT, "DANGER! System temperature of %d degrees is higher than the temperature limit of %d degrees. Unable to proceed!\n", state->thermal_system_temperature, state->thermal_temperature_limit);
 			log_flush();
 			return 0;
 			/* LCOV_EXCL_STOP */

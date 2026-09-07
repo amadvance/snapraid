@@ -159,7 +159,8 @@ struct snapraid_state {
 	/* Thermal */
 	tommy_list thermallist; /**< List of all thermal state */
 	int thermal_stop_gathering; /**< If thermal data gathering is stopped */
-	int thermal_ambient_temperature; /**< Ambient themperature. 0 if not available */
+	int thermal_system_temperature; /**< System temperature. 0 if not available */
+	int thermal_ambient_temperature; /**< Ambient temperature used as thermal model reference. 0 if not available */
 	int thermal_highest_temperature; /**< Current highest temperature */
 	uint64_t thermal_first; /**< Monotonic time of the first measure */
 	uint64_t thermal_latest; /**< Monotonic time of latest measure */
