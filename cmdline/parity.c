@@ -976,40 +976,60 @@ int parity_sync(struct snapraid_parity_handle* handle)
 }
 
 /*
- * Truncate each split to its current physical_reach_size boundary.
+ * Truncate parity splits from the logical tail backwards.
  *
- * This removes preallocated or otherwise disposable data beyond physical_reach_size.
- * It does not imply that parity blocks retained below physical_reach_size are
- * valid; parity validity is tracked independently per block by the content state.
+ * This removes preallocated or otherwise disposable data beyond the reached extent.
  *
- * Persisting this boundary in physical EOF allows the next open to restore
- * physical_reach_size from st_size.
+ * A split can only be truncated to physical_reach_size if it represents the logical
+ * tail of the parity (i.e. all following splits are empty). Intermediate splits
+ * followed by non-empty splits must maintain their allocated logical boundary
+ * (split->size) so that logical parity offsets in subsequent splits are not shifted,
+ * and physical file lengths match the split boundaries expected on subsequent reopen.
  */
 int parity_truncate(struct snapraid_parity_handle* handle)
 {
 	unsigned s;
 	int f_ret = 0;
+	int following_is_zero = 1;
 
-	for (s = 0; s < handle->split_mac; ++s) {
-		struct snapraid_split_handle* split = &handle->split_map[s];
+	for (s = handle->split_mac; s > 0; --s) {
+		struct snapraid_split_handle* split = &handle->split_map[s - 1];
+		data_off_t trunc_size;
 		int ret;
 
 		/*
-		 * Discard physical space beyond the extent reached by parity writes
-		 * during this operation.
+		 * A split can only be truncated to its physical_reach_size if it is the
+		 * logical tail of the parity file (i.e. all following splits are zero-sized).
 		 *
-		 * The retained region below physical_reach_size is not thereby declared valid
-		 * parity. physical_reach_size is only a physical truncation boundary; parity
-		 * validity is tracked independently per block in the content state.
+		 * Once a following split contains data, any preceding split is an internal
+		 * segment whose allocated boundary must be preserved at split->size.
+		 * Truncating an internal split would shift logical offsets in all subsequent
+		 * splits, invalidating their parity positions, and if split boundaries are not
+		 * yet stored in the content file, subsequent reopenings would infer an incorrect
+		 * layout from physical EOF.
 		 */
-		ret = ftruncate(split->f, split->physical_reach_size);
+		if (following_is_zero) {
+			trunc_size = split->physical_reach_size;
+		} else {
+			trunc_size = split->size;
+		}
+
+		ret = ftruncate(split->f, trunc_size);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal(errno, "Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, split->physical_reach_size, strerror(errno));
+			log_fatal(errno, "Error truncating the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, trunc_size, strerror(errno));
 			f_ret = -1;
-			/* LCOV_EXCL_STOP */
+
+			/*
+			 * On error, assume this split might not be zero-sized physically,
+			 * so preceding splits must preserve their full allocated size.
+			 */
+			following_is_zero = 0;
 
 			/* continue to truncate the others */
+			/* LCOV_EXCL_STOP */
+		} else if (trunc_size != 0) {
+			following_is_zero = 0;
 		}
 	}
 

@@ -137,7 +137,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 int parity_sync(struct snapraid_parity_handle* handle);
 
 /**
- * Truncate each split to its physical physical_reach_size boundary.
+ * Truncate parity splits from the logical tail backwards.
  */
 int parity_truncate(struct snapraid_parity_handle* handle);
 
