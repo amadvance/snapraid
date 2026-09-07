@@ -415,6 +415,9 @@ int filter_content(tommy_list* contentlist, const char* mount_point, size_t moun
 
 	for (i = tommy_list_head(contentlist); i != 0; i = i->next) {
 		struct snapraid_content* content = i->data;
+		const char* content_name;
+		size_t content_name_len;
+		const char* postfix;
 
 		/* if the mount point doesn't match, it's a different disk */
 		if (pathncmp(content->content, mount_point, mount_point_len) != 0)
@@ -424,12 +427,20 @@ int filter_content(tommy_list* contentlist, const char* mount_point, size_t moun
 		if (pathncmp(content->content + mount_point_len, sub, sub_len) != 0)
 			continue;
 
-		/* if the name doesn't match, it's a different name */
-		if (pathncmp(content->content + mount_point_len + sub_len, name, name_len) != 0)
+		/* configured content filename in this directory */
+		content_name = content->content + mount_point_len + sub_len;
+		content_name_len = strlen(content_name);
+
+		/* the scanned name must contain at least the complete configured content filename */
+		if (name_len < content_name_len)
 			continue;
 
-		/* remaining part */
-		const char* postfix = content->content + mount_point_len + sub_len + name_len;
+		/* if the configured content filename doesn't match, it's a different name */
+		if (pathncmp(name, content_name, content_name_len) != 0)
+			continue;
+
+		/* remaining part of the scanned name */
+		postfix = name + content_name_len;
 
 		/* if it's an exact match */
 		if (*postfix == 0)
