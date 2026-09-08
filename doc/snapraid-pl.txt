@@ -2047,6 +2047,37 @@ za pośrednictwem twardych dowiązań wykluczonych ze SnapRAID lub upewnić się
 że wszystkie twarde dowiązania do danego pliku są uwzględnione w skanowaniu,
 aby SnapRAID mógł je znormalizować.
 
+16.8 Odzyskiwanie po przerwanym sync z wieloma parzystościami
+-------------------------------------------------------------
+
+W macierzy z wieloma dyskami parzystości przerwane polecenie `sync` może
+pozostawić różne poziomy parzystości chwilowo niezsynchronizowane ze sobą.
+Na przykład parzystość 1 może już zawierać nowo zaktualizowane dane,
+podczas gdy parzystość 2 nadal zawiera stare dane.
+
+Podczas wykonywania `check` lub `fix` SnapRAID sprawdza różne kombinacje
+parzystości i weryfikuje zrekonstruowane dane z wykorzystaniem znanych
+skrótów bloków (obejmujących cały blok, zazwyczaj 256 KiB).
+
+Jeśli SnapRAID podejmie próbę rekonstrukcji z użyciem niespójnej
+mieszanki starej i nowej parzystości, liniowe równania RAID dadzą
+nieprawidłowe dane. Aby taka niepoprawna kombinacja została omyłkowo
+zaakceptowana, równania musiałyby przypadkowo zrekonstruować co najmniej
+jeden pełny blok 256 KiB tak idealnie, aby jego skrót się zgadzał,
+podczas gdy inne niezsynchronizowane bloki w tym samym pasku zostaną
+zrekonstruowane z błędnymi danymi.
+
+Scenariusz ten nie zależy od kolizji skrótów; wymagałby raczej, aby same
+równania mieszanej parzystości przypadkowo odtworzyły dokładną,
+oryginalną zawartość 256-KiB bloku. Choć jest to matematycznie możliwe
+w przypadku specjalnie spreparowanych lub silnie powtarzalnych danych,
+jest to praktycznie niemożliwe w przypadku rzeczywistych danych.
+
+Jeśli wszystkie dyski są sprawne, dokończenie przerwanego `sync` przed
+wprowadzeniem dalszych zmian usuwa tę niejednoznaczność. Jeśli nastąpiła
+awaria dysku i konieczne jest odzyskanie danych, należy unikać modyfikacji
+dysków danych przed uruchomieniem `check` lub `fix`.
+
 
 17 TłUMACZENIE (TRANSLATION)
 ============================

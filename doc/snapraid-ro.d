@@ -1897,6 +1897,35 @@ Probleme Cunoscute (Known Issues)
 	legăturile dure către un fișier sunt incluse în scanare, astfel încât
 	SnapRAID să le poată normaliza.
 
+  Recuperare după un sync multi-paritate întrerupt
+	Într-o matrice cu mai multe discuri de paritate, un `sync` întrerupt
+	poate lăsa nivelurile de paritate temporar nesincronizate între ele.
+	De exemplu, paritatea 1 ar putea conține deja date nou actualizate,
+	în timp ce paritatea 2 conține încă datele vechi.
+
+	În timpul `check` sau `fix`, SnapRAID încearcă diferite combinații de
+	paritate și validează datele reconstruite pe baza hash-urilor de bloc
+	cunoscute (acoperind blocul complet, de obicei 256 KiB).
+
+	Dacă SnapRAID încearcă o reconstrucție folosind un amestec inconsistent
+	de paritate veche și nouă, ecuațiile liniare RAID vor produce date
+	incorecte. Pentru ca această combinație invalidă să fie acceptată în mod
+	eronat, ecuațiile ar trebui să reconstruiască accidental cel puțin un
+	bloc complet de 256 KiB atât de perfect încât hash-ul său să se
+	potrivească, în timp ce alte blocuri nesincronizate din aceeași bandă
+	sunt reconstruite cu date incorecte.
+
+	Acest scenariu nu depinde de o coliziune de hash; mai degrabă, ecuațiile
+	de paritate mixtă în sine ar trebui să producă din întâmplare conținutul
+	exact al blocului original de 256 KiB. Deși este matematic posibil în
+	cazul datelor special concepute sau extrem de repetitive, este practic
+	imposibil cu date reale.
+
+	Dacă toate discurile sunt integre, finalizarea `sync`-ului întrerupt
+	înainte de a face alte modificări elimină această ambiguitate. Dacă un
+	disc a cedat și este necesară recuperarea, evitați modificarea discurilor
+	de date înainte de a rula `check` sau `fix`.
+
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.
 	Consultați manualul în limba engleză pentru versiunea oficială.

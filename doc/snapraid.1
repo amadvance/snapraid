@@ -2397,6 +2397,33 @@ opened through that path).
 To avoid this limitation, avoid modifying protected files through hard
 links that are excluded from SnapRAID, or ensure that all hard links to a
 file are included in the scan so SnapRAID can normalize them.
+.SS Recovery after an interrupted multi\-parity sync 
+In an array with multiple parity disks, an interrupted \`sync\` can leave
+parity levels temporarily out of sync with each other. For example,
+parity 1 might already contain newly updated data, while parity 2 still
+contains the old data.
+.PP
+During \`check\` or \`fix\`, SnapRAID tries different parity combinations
+and validates reconstructed data against the known block hashes (covering
+the full block, typically 256 KiB).
+.PP
+If SnapRAID attempts a reconstruction using an inconsistent mix of old
+and new parity, the linear RAID equations will produce incorrect data.
+For this invalid combination to be falsely accepted, the equations would
+have to accidentally reconstruct at least one complete 256 KiB block so
+perfectly that its hash matches, while other unsynchronized blocks in the
+same stripe are reconstructed with incorrect data.
+.PP
+This scenario does not depend on a hash collision; rather, the mixed
+parity equations themselves would have to coincidentally yield the exact
+original 256 KiB block contents. While mathematically possible with
+specially crafted or highly repetitive data, it is practically impossible
+with real\-world data.
+.PP
+If all disks are healthy, completing the interrupted \`sync\` before making
+further changes removes this ambiguity. If a disk has failed and recovery
+is required, avoid modifying any data disks before running \`check\` or
+\`fix\`.
 .SH COPYRIGHT 
 This file is Copyright (C) 2026 Andrea Mazzoleni
 .SH SEE ALSO 

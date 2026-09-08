@@ -2144,6 +2144,37 @@ tramite hard link esclusi da SnapRAID, oppure assicurarsi che tutti gli
 hard link a un file siano inclusi nella scansione in modo che SnapRAID
 possa normalizzarli.
 
+16.8 Recupero dopo un sync a parità multipla interrotto
+-------------------------------------------------------
+
+In un array con più dischi di parità, un `sync` interrotto può lasciare
+i livelli di parità temporaneamente disallineati tra loro. Ad esempio,
+la parità 1 potrebbe già contenere i dati appena aggiornati, mentre la
+parità 2 contiene ancora i vecchi dati.
+
+Durante `check` o `fix`, SnapRAID prova diverse combinazioni di parità
+e convalida i dati ricostruiti rispetto agli hash dei blocchi noti
+(che coprono l'intero blocco, tipicamente 256 KiB).
+
+Se SnapRAID tenta una ricostruzione utilizzando una combinazione
+incoerente di parità vecchia e nuova, le equazioni lineari del RAID
+produrranno dati errati. Affinché questa combinazione non valida venga
+accettata erroneamente, le equazioni dovrebbero accidentalmente
+ricostruire almeno un blocco completo da 256 KiB in modo così perfetto
+da far corrispondere il suo hash, mentre altri blocchi non sincronizzati
+nella stessa stripe vengono ricostruiti con dati errati.
+
+Questo scenario non dipende da una collisione di hash; piuttosto, le
+equazioni di parità mista dovrebbero produrre casualmente l'esatto
+contenuto originale del blocco da 256 KiB. Sebbene matematicamente
+possibile con dati appositamente creati o fortemente ripetitivi, è
+praticamente impossibile con dati reali.
+
+Se tutti i dischi sono integri, completare il `sync` interrotto prima
+di apportare ulteriori modifiche rimuove questa ambiguità. Se un disco
+si è guastato ed è necessario il recupero, evitare di modificare i dischi
+dati prima di eseguire `check` o `fix`.
+
 
 17 TRADUZIONE (TRANSLATION)
 ===========================

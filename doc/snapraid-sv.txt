@@ -2037,6 +2037,36 @@ För att undvika denna begränsning, undvik att modifiera skyddade filer via
 hårda länkar som är exkluderade från SnapRAID, eller se till att alla hårda
 länkar till en fil inkluderas i skanningen så att SnapRAID kan normalisera dem.
 
+16.8 Återställning efter ett avbrutet multi-paritets-sync
+---------------------------------------------------------
+
+I en array med flera paritetsdiskar kan ett avbrutet `sync` lämna
+paritetsnivåerna tillfälligt osynkroniserade med varandra. Till exempel
+kan paritet 1 redan innehålla nyligen uppdaterade data, medan paritet 2
+fortfarande innehåller gamla data.
+
+Under `check` eller `fix` provar SnapRAID olika paritetskombinationer och
+validerar rekonstruerade data mot kända blockhashar (som täcker hela
+blocket, vanligtvis 256 KiB).
+
+Om SnapRAID försöker en rekonstruktion med en inkonsekvent blandning av
+gammal och ny paritet ger de linjära RAID-ekvationerna felaktiga data.
+För att en sådan ogiltig kombination felaktigt ska accepteras måste
+ekvationerna av en slump rekonstruera minst ett helt 256 KiB-block så
+perfekt att dess hash matchar, medan andra osynkroniserade block i samma
+stripe rekonstrueras med felaktiga data.
+
+Detta scenario beror inte på en hashkollision; snarare måste ekvationerna
+med blandad paritet i sig råka producera det exakta ursprungliga
+innehållet i 256 KiB-blocket. Även om detta är matematiskt tänkbart med
+specialkonstruerade eller mycket repetitiva data, är det praktiskt taget
+omöjligt med verkliga data.
+
+Om alla diskar är felfria elimineras denna tvetydighet genom att slutföra
+det avbrutna `sync` innan fler ändringar görs. Om en disk har gått sönder
+och återställning krävs bör du undvika att ändra datadiskarna innan du kör
+`check` eller `fix`.
+
 
 17 ÖVERSäTTNING (TRANSLATION)
 =============================

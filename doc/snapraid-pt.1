@@ -2434,6 +2434,34 @@ Para evitar essa limitação, evite modificar arquivos protegidos por meio
 de links físicos excluídos do SnapRAID, ou certifique\-se de que todos os
 links físicos de um arquivo sejam incluídos na verificação para que o
 SnapRAID possa normalizá\-los.
+.SS Recuperação após uma sincronização de multiparidade interrompida 
+Em uma matriz com múltiplos discos de paridade, um \`sync\` interrompido
+pode deixar os níveis de paridade temporariamente fora de sincronia entre
+si. Por exemplo, a paridade 1 já pode conter dados recém\-atualizados,
+enquanto a paridade 2 ainda contém os dados antigos.
+.PP
+Durante \`check\` ou \`fix\`, o SnapRAID testa diferentes combinações de
+paridade e valida os dados reconstruídos em relação aos hashes de bloco
+conhecidos (cobrindo o bloco completo, normalmente 256 KiB).
+.PP
+Se o SnapRAID tentar uma reconstrução usando uma combinação inconsistente
+de paridade antiga e nova, as equações lineares de RAID produzirão dados
+incorretos. Para que essa combinação inválida seja aceita por engano,
+as equações teriam que reconstruir acidentalmente pelo menos um bloco
+completo de 256 KiB de maneira tão perfeita que seu hash corresponda,
+enquanto outros blocos não sincronizados na mesma faixa são reconstruídos
+com dados incorretos.
+.PP
+Esse cenário não depende de uma colisão de hash; em vez disso, as próprias
+equações de paridade mista teriam que gerar coincidentemente o conteúdo
+exato do bloco de 256 KiB original. Embora seja matematicamente concebível
+com dados especialmente preparados ou altamente repetitivos, é
+praticamente impossível com dados reais.
+.PP
+Se todos os discos estiverem íntegros, concluir o \`sync\` interrompido
+antes de fazer novas alterações remove essa ambiguidade. Se um disco tiver
+falhado e a recuperação for necessária, evite modificar os discos de dados
+antes de executar \`check\` ou \`fix\`.
 .SH TRADUçãO (TRANSLATION) 
 Este documento é uma tradução automática do manual em inglês.
 Consulte o manual em inglês para a versão oficial.

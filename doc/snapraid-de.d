@@ -2030,6 +2030,38 @@ Bekannte Probleme (Known Issues)
 	sollte sichergestellt werden, dass alle Hardlinks zu einer Datei im Scan
 	enthalten sind, damit SnapRAID sie normalisieren kann.
 
+  Wiederherstellung nach einem unterbrochenen Multi-Paritäts-Sync
+	In einem Array mit mehreren Paritätsfestplatten kann ein unterbrochener
+	`sync` dazu führen, dass sich verschiedene Paritätsstufen vorübergehend
+	in unterschiedlichen Aktualisierungszuständen befinden. Beispielsweise
+	kann Parität 1 bereits neu aktualisierte Daten enthalten, während
+	Parität 2 noch die alten Daten enthält.
+
+	Während `check` oder `fix` testet SnapRAID verschiedene
+	Paritätskombinationen und validiert die rekonstruierten Daten anhand
+	der bekannten Block-Hashes (die den gesamten Block abdecken, typischerweise
+	256 KiB).
+
+	Wenn SnapRAID eine Rekonstruktion mit einer inkonsistenten Mischung aus
+	alter und neuer Parität versucht, erzeugen die linearen RAID-Gleichungen
+	fehlerhafte Daten. Damit eine solche ungültige Kombination fälschlicherweise
+	akzeptiert wird, müssten die Gleichungen rein zufällig mindestens einen
+	vollständigen 256-KiB-Block so perfekt rekonstruieren, dass sein Hash
+	übereinstimmt, während andere nicht synchronisierte Blöcke desselben
+	Stripes mit fehlerhaften Daten rekonstruiert werden.
+
+	Dieses Szenario beruht nicht auf einer Hash-Kollision; vielmehr müssten
+	die gemischten Paritätsgleichungen selbst zufällig genau den ursprünglichen
+	256-KiB-Blockinhalt erzeugen. Dies ist zwar bei speziell konstruierten oder
+	stark repetitiven Daten mathematisch denkbar, bei realen Daten jedoch
+	praktisch unmöglich.
+
+	Wenn alle Festplatten fehlerfrei sind, beseitigt der Abschluss des
+	unterbrochenen `sync` vor weiteren Änderungen diese Unklarheit. Wenn eine
+	Festplatte ausgefallen ist und eine Wiederherstellung erforderlich ist,
+	sollten vor dem Ausführen von `check` oder `fix` keine Änderungen an den
+	Datenfestplatten vorgenommen werden.
+
 Übersetzung (Translation)
 	Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
 	Die maßgebliche Version finden Sie im englischen Handbuch.

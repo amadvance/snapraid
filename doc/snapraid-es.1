@@ -2487,6 +2487,34 @@ Para evitar esta limitación, evite modificar archivos protegidos a través
 de enlaces duros que estén excluidos de SnapRAID, o asegúrese de que
 todos los enlaces duros a un archivo se incluyan en el escaneo para que
 SnapRAID pueda normalizarlos.
+.SS Recuperación tras una sincronización de multiparidad interrumpida 
+En una matriz con múltiples discos de paridad, un \`sync\` interrumpido
+puede dejar los niveles de paridad temporalmente desincronizados entre sí.
+Por ejemplo, la paridad 1 podría contener datos recién actualizados,
+mientras que la paridad 2 todavía contiene los datos antiguos.
+.PP
+Durante \`check\` o \`fix\`, SnapRAID prueba diferentes combinaciones de
+paridad y valida los datos reconstruidos con respecto a los hashes de
+bloque conocidos (que cubren el bloque completo, normalmente 256 KiB).
+.PP
+Si SnapRAID intenta una reconstrucción utilizando una combinación
+inconsistente de paridad antigua y nueva, las ecuaciones lineales de RAID
+producirán datos incorrectos. Para que esta combinación no válida se
+acepte por error, las ecuaciones tendrían que reconstruir accidentalmente
+al menos un bloque completo de 256 KiB de manera tan perfecta que su hash
+coincida, mientras que otros bloques no sincronizados en la misma banda
+se reconstruyen con datos incorrectos.
+.PP
+Este escenario no depende de una colisión de hashes; más bien, las propias
+ecuaciones de paridad mixta tendrían que generar de forma casual el
+contenido exacto del bloque de 256 KiB original. Si bien es matemáticamente
+concebible con datos especialmente preparados o muy repetitivos, es
+prácticamente imposible con datos reales.
+.PP
+Si todos los discos están sanos, completar el \`sync\` interrumpido antes
+de realizar más cambios elimina esta ambigüedad. Si un disco ha fallado
+y se requiere recuperación, evite modificar los discos de datos antes
+de ejecutar \`check\` o \`fix\`.
 .SH TRADUCCIóN (TRANSLATION) 
 Este documento es una traducción automática del manual en inglés.
 Consulte el manual en inglés para obtener la versión oficial.

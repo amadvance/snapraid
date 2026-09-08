@@ -2037,6 +2037,36 @@ Problèmes connus (Known Issues)
 	liens matériels vers un fichier sont inclus dans l'analyse afin que
 	SnapRAID puisse les normaliser.
 
+  Récupération après un sync multi-parité interrompu
+	Dans une grappe avec plusieurs disques de parité, un `sync` interrompu
+	peut laisser les niveaux de parité temporairement désynchronisés entre
+	eux. Par exemple, la parité 1 peut déjà contenir les données nouvellement
+	mises à jour, tandis que la parité 2 contient encore les anciennes données.
+
+	Lors d'un `check` ou d'un `fix`, SnapRAID teste différentes combinaisons
+	de parités et valide les données reconstruites par rapport aux hachages
+	de bloc connus (qui couvrent l'intégralité du bloc, généralement 256 Kio).
+
+	Si SnapRAID tente une reconstruction en utilisant un mélange incohérent
+	d'ancienne et de nouvelle parité, les équations linéaires du RAID
+	produiront des données incorrectes. Pour qu'une telle combinaison
+	invalide soit acceptée par erreur, il faudrait que les équations
+	reconstruisent accidentellement au moins un bloc complet de 256 Kio
+	de manière si parfaite que son hachage corresponde, tandis que d'autres
+	blocs non synchronisés de la même bande sont reconstruits avec des données
+	erronées.
+
+	Ce scénario ne dépend pas d'une collision de hachage ; il faudrait plutôt
+	que les équations de parité mixte produisent elles-mêmes par coïncidence
+	le contenu exact du bloc original de 256 Kio. Bien que mathématiquement
+	envisageable avec des données spécialement conçues ou très répétitives,
+	c'est pratiquement impossible avec des données réelles.
+
+	Si tous les disques sont sains, achever le `sync` interrompu avant
+	d'apporter d'autres modifications élimine cette ambiguïté. Si un disque
+	est tombé en panne et qu'une récupération est requise, évitez de modifier
+	les disques de données avant d'exécuter `check` ou `fix`.
+
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.
 	Veuillez vous référer au manuel en anglais pour la version officielle.
