@@ -1935,6 +1935,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	block_off_t used_paritymax;
 	data_off_t used_parity_size;
 	data_off_t file_parity_size;
+	unsigned file_parity_level = 0;
 	data_off_t size;
 	int ret;
 	struct snapraid_parity_handle parity_handle[LEV_MAX];
@@ -2020,8 +2021,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 
 		/* keep the smallest physical parity extent */
-		if (l == 0 || file_parity_size > out_size)
+		if (l == 0 || file_parity_size > out_size) {
 			file_parity_size = out_size;
+			file_parity_level = l;
+		}
 	}
 
 	/*
@@ -2040,8 +2043,9 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 				log_fatal(ESOFT, "to force a full rebuild of the parity.\n");
 			} else {
 				log_fatal(ESOFT, "It's possible that the parity disks are not mounted.\n");
-				log_fatal(ESOFT, "If instead you are adding a new parity level, you can 'sync' using\n");
-				log_fatal(ESOFT, "'snapraid --force-full sync' to force a full rebuild of the parity.\n");
+				log_fatal(ESOFT, "If instead you are adding a new %s level, initialize it with\n", lev_name(file_parity_level));
+				log_fatal(ESOFT, "'snapraid -d %s fix', and then run 'snapraid sync'.\n", lev_config_name(file_parity_level));
+				log_fatal(ESOFT, "Alternatively, use 'snapraid --force-full sync' to rebuild all parity levels.\n");
 			}
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
