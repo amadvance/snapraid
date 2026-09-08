@@ -6593,12 +6593,6 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 	if (!state->snapshot)
 		return;
 
-	/* if the filter disk is empty, all disks are potentially written */
-	if (tommy_list_empty(filterlist_disk)) {
-		msg_progress("Using live filesystems...\n");
-		return;
-	}
-
 	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
@@ -6612,37 +6606,35 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 			continue;
 		}
 
-		/* if the disk is filtered in, it could be written, then we cannot use the snapshot */
-		if (filter_path(filterlist_disk, 0, disk->name, 0) == 0) {
+		int writable = tommy_list_empty(filterlist_disk) || filter_path(filterlist_disk, 0, disk->name, 0) == 0;
+
+		if (writable) {
 			msg_progress("Using disk %s live filesystem...\n", disk->name);
-			continue;
+		} else if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk) == 0) {
+			msg_progress("Using disk %s pending snapshot...\n", disk->name);
+		} else if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, disk) == 0) {
+			msg_progress("Using disk %s stable snapshot...\n", disk->name);
+		} else {
+			/* fallback to standard mount point */
+			log_error(EUSER, "WARNING! Disk %s snapshot missing, falling back to live filesystem.\n", disk->name);
+			log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
+			msg_progress("Using disk %s live filesystem...\n", disk->name);
 		}
 
-		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, disk) == 0) {
-			msg_progress("Using disk %s pending snapshot...\n", disk->name);
+		/*
+		 * If sync was interrupted before updating parity, the content file
+		 * already records BLOCK_STATE_DELETED and pending deallocations, while the
+		 * deleted files remain physically present in the stable snapshot. Import them
+		 * into the import index so OLD recovery hypotheses can resolve them without
+		 * consuming RAID equations, even for disks that use the live filesystem for normal I/O.
+		 */
+		if (!tommy_list_empty(&disk->dealloclist) && state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, 0) == 0) {
+			char vol[PATH_MAX];
 
-			/* if there is a dealloc list */
-			if (!tommy_list_empty(&disk->dealloclist)) {
+			msg_progress("Importing disk %s stable snapshot %" PRIu64 " deallocated files...\n", disk->name, (uint64_t)tommy_list_count(&disk->dealloclist));
 
-				/* if there is a previous snapshot */
-				if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, 0) == 0) {
-					msg_progress("Importing disk %s stable snapshot %" PRIu64 " deallocated files...\n", disk->name, (uint64_t)tommy_list_count(&disk->dealloclist));
-
-					/* set where to find deallocated files */
-					char vol[PATH_MAX];
-					if (fssnapshot_path(&disk->fss, SNAPSHOT_STABLE, vol, sizeof(vol)) == 0)
-						state_dealloc(state, vol, &disk->dealloclist);
-				}
-			}
-		} else {
-			if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, disk) == 0) {
-				msg_progress("Using disk %s stable snapshot...\n", disk->name);
-			} else {
-				/* fallback to standard mount point */
-				log_error(EUSER, "WARNING! Disk %s snapshot missing, falling back to live filesystem.\n", disk->name);
-				log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
-				msg_progress("Using disk %s live filesystem...\n", disk->name);
-			}
+			if (fssnapshot_path(&disk->fss, SNAPSHOT_STABLE, vol, sizeof(vol)) == 0)
+				state_dealloc(state, vol, &disk->dealloclist);
 		}
 	}
 }
