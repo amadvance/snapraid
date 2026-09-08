@@ -145,13 +145,16 @@
  * position has not completed a successful scrub and therefore retains its
  * previous scrub age.
  *
- * Only a completely successful position is replaced with:
+ * A successful position records the new last-known-good time and clears bad
+ * and just-synchronized state:
  *
- *   info_make(now, 0, 0, 0)
+ *   info_make(now, 0, rehash, 0)
  *
- * This records the new last-known-good time and clears bad, rehash and
- * just-synchronized state. Consequently, "scrub -p bad" clears a bad position
- * only after the whole position can again be verified successfully.
+ * For a synchronized position (or one not undergoing rehash), rehash is
+ * cleared as well (info_make(now, 0, 0, 0)). If the position is in rehash but
+ * contains unsynchronized blocks, rehash remains pending (info_make(now, 0, 1, 0)).
+ * Consequently, "scrub -p bad" clears a bad position only after the whole
+ * position can again be verified successfully.
  *
  * Scrub writes only content metadata and hashes; it never writes user data or
  * parity. Autosave can therefore persist completed scrub positions
@@ -168,19 +171,26 @@
  *
  * The new hashes are not committed independently for each disk. They are
  * staged until the complete parity position has passed data reads, applicable
- * hash checks, and parity verification. Only then are the staged hashes copied
- * into the block state and the per-position rehash flag cleared.
+ * hash checks, and parity verification, and can only be published if the
+ * complete position is synchronized.
  *
+ * Unsynchronized blocks (such as CHG or DELETED) retain OLD hashes that
+ * recovery in check.c relies on to distinguish OLD and CURRENT generations
+ * after an interrupted sync. Overwriting a CHG hash with the digest of CURRENT
+ * bytes would destroy that provenance, causing valid recovery to be rejected.
+ *
+ * Because the rehash state is position-wide, if any block at the position is
+ * unsynchronized, publication of all staged new hashes for that position is
+ * deferred and the rehash flag remains set. All blocks at that position retain
+ * their previous-generation hashes until a later successful sync resolves the
+ * unsynchronized state and publishes the new hashes.
+ *
+ * Only when a position is fully synchronized and passes scrub are the staged
+ * hashes copied into the block state and the per-position rehash flag cleared.
  * This keeps the hash generation and its info flag consistent across content
  * saves: a persisted rehash flag means the previous algorithm must still be
  * used for that position, while clearing the flag publishes the newly computed
  * hashes at the same successful scrub checkpoint.
- *
- * A CHG block has no current hash to validate. If such a position passes scrub,
- * physical parity has nevertheless been verified against the bytes just read.
- * The newly computed hash can then describe that verified parity baseline
- * using the new algorithm, while the block itself remains CHG and is still
- * conservatively treated as unsynchronized.
  *
  * Live filesystem model
  * ---------------------
@@ -873,33 +883,30 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			 */
 		} else {
 			/*
-			 * Publish staged hashes before clearing the rehash flag. Both changes are then
-			 * persisted by the same content write, so a saved position is interpreted
-			 * consistently with either the previous or the current hash algorithm.
+			 * A completely clean scrub establishes a new last-known-good checkpoint for
+			 * the whole parity position.
 			 *
-			 * For a CHG block there was no current hash to validate directly. Reaching
-			 * this point nevertheless means parity agrees with the current bytes just
-			 * read, so these bytes form the verified parity baseline represented by the
-			 * newly stored digest. The block remains CHG and therefore still conservatively
-			 * requires sync.
+			 * During rehash, staged hashes can be published only if the complete position
+			 * is synchronized. Unsynchronized blocks (such as CHG or DELETED) retain OLD
+			 * hashes that recovery relies on to distinguish generations after an interrupted
+			 * sync.
+			 *
+			 * Rehash state is position-wide, so if any block at this position is unsynced,
+			 * keep all hashes in the previous generation and leave rehash pending. A later
+			 * successful sync will resolve the unsynced state and publish the new hashes.
 			 */
-			if (rehash) {
-				/* store all the new hash already computed */
+			if (rehash && !block_is_unsynced) {
+				/* store all the new hashes already computed */
 				for (j = 0; j < diskmax; ++j) {
 					if (rehandle[j].block)
 						memcpy(rehandle[j].block->hash, rehandle[j].hash, BLOCK_HASH_SIZE);
 				}
+
+				/* complete the rehash */
+				rehash = 0;
 			}
 
-			/*
-			 * A completely clean scrub establishes a new last-known-good checkpoint for
-			 * the whole parity position.
-			 *
-			 * Refresh the time and clear bad, rehash and justsynced together. In
-			 * particular this is the only normal scrub path that clears a previous bad
-			 * mark.
-			 */
-			info_set(&state->infoarr, blockcur, info_make(now, 0, 0, 0));
+			info_set(&state->infoarr, blockcur, info_make(now, 0, rehash, 0));
 		}
 
 		/* mark the state as needing write */
