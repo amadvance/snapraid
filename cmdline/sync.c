@@ -1693,8 +1693,16 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* drop until now */
 			state_usage_waste(state);
 
-			if (os_signal_interrupt())
+			if (os_signal_interrupt()) {
+				/*
+				 * Mark the sync as incomplete on interruption during cooldown.
+				 * Partial progress is flushed and durable (*sync_durable = 1), but
+				 * completed-sync operations (state_commit() and snapshot promotion)
+				 * must not be executed.
+				 */
+				alert = 1;
 				break;
+			}
 		}
 
 		/* autosave */
