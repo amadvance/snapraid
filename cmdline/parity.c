@@ -135,11 +135,11 @@ void parity_physical_reach_size(struct snapraid_parity_handle* handle, data_off_
 	/*
 	 * Compute the physical reach of the logical parity layout across splits.
 	 *
-	 * physical_reach_size represents physical file presence, not parity validity.
-	 * Parity is not necessarily contiguous or valid within this range: blocks
-	 * may be invalid, stale, unwritten, or modified. Correctness is determined
-	 * per-block by the content state and validated independently via data hashes
-	 * and recomputation.
+	 * physical_reach_size represents physical file presence, not parity validity
+	 * or contiguity. Invalid, stale, unwritten, or sparse stripes may exist below
+	 * this boundary, for example when fix cannot recover a stripe but continues
+	 * with later ones. Such holes are allowed and need not be represented in the
+	 * content state.
 	 *
 	 * For split parity, splits concatenate linearly. If an earlier split is
 	 * physically shorter than its logical size, logical offsets beyond that
@@ -218,8 +218,9 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		 * physical_reach_size does NOT imply that parity below this offset is valid.
 		 * Parity may be invalid, stale, unwritten, or sparse in any region below
 		 * this boundary. It only records the physical EOF boundary for I/O and
-		 * truncation. Parity validity is tracked independently per block through
-		 * the content state, data hashes, and recomputation.
+		 * truncation. The physical contents below this boundary are not necessarily
+		 * described by the content state. Recovery correctness is validated
+		 * independently using data hashes and recomputation.
 		 *
 		 * While a handle is open, physical_reach_size can intentionally differ from EOF.
 		 * In particular, preallocation may extend EOF without extending physical_reach_size.
@@ -810,8 +811,9 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		 * physical_reach_size does NOT imply that parity below this offset is valid.
 		 * Parity may be invalid, stale, unwritten, or sparse in any region below
 		 * this boundary. It only records the physical EOF boundary for I/O and
-		 * truncation. Parity validity is tracked independently per block through
-		 * the content state, data hashes, and recomputation.
+		 * truncation. The physical contents below this boundary are not necessarily
+		 * described by the content state. Recovery correctness is validated
+		 * independently using data hashes and recomputation.
 		 *
 		 * While a handle is open, physical_reach_size can intentionally differ from EOF.
 		 * In particular, preallocation may extend EOF without extending physical_reach_size.

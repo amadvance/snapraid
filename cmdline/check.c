@@ -3078,6 +3078,15 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	 */
 	partial = blockstart != 0 || blockcount != 0;
 
+	/*
+	 * Fix is best-effort on each stripe. If a stripe cannot be recovered, it
+	 * is left unfixed and processing continues with the following stripes.
+	 * Consequently, repaired parity is not guaranteed to be contiguous: an
+	 * unrecoverable stripe may remain as a hole between successfully repaired
+	 * stripes. This is intentional, as stopping would prevent recovery of all
+	 * subsequent recoverable stripes.
+	 */
+
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 

@@ -30,10 +30,15 @@ struct snapraid_split_handle {
 	 *
 	 * This is the physical truncation and read limit of the split.
 	 *
-	 * physical_reach_size does NOT indicate that data below this offset is valid parity.
-	 * Parity may be invalid, stale, unwritten, or sparse at any point below this
-	 * boundary. Correctness is tracked independently per block in the content state
-	 * and verified through data hashes and recomputation.
+	 * physical_reach_size does NOT indicate that data below this offset is
+	 * valid or contiguous parity. Parity may be invalid, stale, unwritten,
+	 * or sparse at any point below this boundary. In particular, fix may
+	 * leave an unrecoverable stripe unfixed and continue repairing later
+	 * stripes, intentionally leaving holes inside the physical reach.
+	 *
+	 * Such holes are allowed and are not necessarily represented in the
+	 * content state. Recovery correctness is validated independently using
+	 * the stored data hashes or the available recovery validation.
 	 *
 	 * Data beyond physical_reach_size is disposable/preallocated and discarded by
 	 * parity_truncate(). A completed write advances physical_reach_size to the end of
@@ -118,8 +123,10 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
  * If the physical_reach_size of an earlier split is smaller than its logical size,
  * later splits cannot extend the logical offset past that missing region.
  *
- * Parity within this range is not necessarily valid or synchronized;
- * per-block validity is tracked independently in the content state.
+ * Parity within this range is not necessarily valid, synchronized, or contiguous.
+ * In particular, fix may leave an unrecoverable stripe unfixed and continue with
+ * later stripes, so holes inside this range are allowed and are not necessarily
+ * represented in the content state.
  *
  * For example, with two 100 GiB splits, if the first has physical_reach_size 90 GiB
  * and the second has physical_reach_size 100 GiB, the result is 90 GiB, not 190 GiB.
