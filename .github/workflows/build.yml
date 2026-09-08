@@ -17,7 +17,8 @@ jobs:
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
       - run: cd raid/test && make all test
-      - run: make all dist check     
+      - run: make all -j$(sysctl -n hw.ncpu)
+      - run: make dist check     
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -31,10 +32,10 @@ jobs:
           zfs version
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all
+      - run: make all -j$(nproc)
       - run: make snapcheck_btrfs
       - run: make snapcheck_zfs
-      - run: make distcheck
+      - run: make distcheck -j$(nproc)
   build-arm32:
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +55,7 @@ jobs:
             --build="$(./config.guess)" \
             --host=arm-linux-gnueabihf \
             --enable-warning-as-error
-      - run: make all
+      - run: make all -j$(nproc)
       - run: |
           file snapraid
           arm-linux-gnueabihf-readelf -h snapraid
@@ -78,7 +79,7 @@ jobs:
           install: mingw-w64-x86_64-gcc autoconf automake make
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all
+      - run: make all -j$(nproc)
       - run: make snapcheck_ntfs
       - run: make dist check
   build-freebsd:
@@ -93,7 +94,8 @@ jobs:
           run: |
             autoreconf -i
             ./configure --enable-warning-as-error MAKE=gmake
-            gmake all dist check
+            gmake all -j$(sysctl -n hw.ncpu)
+            gmake dist check
   build-musl:
     runs-on: ubuntu-latest
     container: alpine:latest
@@ -108,4 +110,5 @@ jobs:
             linux-headers
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all dist check
+      - run: make all -j$(nproc)
+      - run: make dist check
