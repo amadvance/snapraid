@@ -355,17 +355,28 @@ if !HAVE_POSIX
 endif # !HAVE_POSIX
 
 # Not included in main check because it requires root permissions
-snapcheck: mktest checker setupcheck
-	sudo $(MAKE) snapcheck_run; \
+snapcheck_btrfs: mktest checker setupcheck
+	sudo $(MAKE) snapcheck_btrfs_run; \
 	status=$$?; \
-	sudo $(MAKE) snapcheck_cleanup; \
+	sudo $(MAKE) snapcheck_btrfs_cleanup; \
+	cleanup_status=$$?; \
+	if test $$cleanup_status -ne 0; then exit $$cleanup_status; fi; \
 	exit $$status
 
-snapcheck_run:
+# Not included in main check because it requires root permissions
+snapcheck_zfs: mktest checker setupcheck
+	sudo $(MAKE) snapcheck_zfs_run; \
+	status=$$?; \
+	sudo $(MAKE) snapcheck_zfs_cleanup; \
+	cleanup_status=$$?; \
+	if test $$cleanup_status -ne 0; then exit $$cleanup_status; fi; \
+	exit $$status
+
+snapcheck_btrfs_run:
 	mkdir bench/snap1
 	mkdir bench/snap2
 	mkdir bench/snap3
-	$(MSG) Create storages
+	$(MSG) Create Btrfs storages
 	dd bs=1048576 count=32 if=/dev/zero of=bench/snap1.img
 	dd bs=1048576 count=32 if=/dev/zero of=bench/snap2.img
 	dd bs=1048576 count=32 if=/dev/zero of=bench/snap3.img
@@ -375,11 +386,39 @@ snapcheck_run:
 	mount -o loop bench/snap1.img bench/snap1
 	mount -o loop bench/snap2.img bench/snap2
 	mount -o loop bench/snap3.img bench/snap3
+	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_btrfs_show
+
+snapcheck_zfs_run:
+	mkdir bench/snap1
+	mkdir bench/snap2
+	mkdir bench/snap3
+	$(MSG) Create ZFS storage
+	echo snapraid_snapcheck_$$$$ > bench/snap-zpool
+	truncate -s 256M bench/snap-zfs.img
+	zpool create -f -o cachefile=none -m none $$(cat bench/snap-zpool) $(CURDIR)/bench/snap-zfs.img
+	zfs create -o mountpoint=$(CURDIR)/bench/snap1 -o snapdir=visible $$(cat bench/snap-zpool)/snap1
+	zfs create -o mountpoint=$(CURDIR)/bench/snap2 -o snapdir=visible $$(cat bench/snap-zpool)/snap2
+	zfs create -o mountpoint=$(CURDIR)/bench/snap3 -o snapdir=visible $$(cat bench/snap-zpool)/snap3
+	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_zfs_show
+
+snapcheck_btrfs_show:
+	@for dir in bench/snap1 bench/snap2 bench/snap3; do \
+		echo "$$dir/.snapraid:"; \
+		if test -d "$$dir/.snapraid"; then ls -la "$$dir/.snapraid"; else echo "  (missing)"; fi; \
+	done
+
+snapcheck_zfs_show:
+	@pool=$$(cat bench/snap-zpool); \
+	zfs list -t snapshot -r "$$pool"
+
+snapcheck_run:
 	$(MSG) Create some files
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 snap 3 $(CHECKCOUNT) $(CHECKSIZE)
 	$(MSG) Basic
 # Setup
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync
+	$(MSG) Snapshots after initial sync
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) scrub -p full
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check -d snap1
 # Recover test
@@ -396,6 +435,8 @@ snapcheck_run:
 	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/snap1/a/* bench/snap1/b/*
 # Sync aborted BEFORE
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-before-sync
+	$(MSG) Snapshots after interrupted sync BEFORE
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) status
 # Destroy disk2
 	rm -rf bench/snap2/a bench/snap2/b
@@ -409,6 +450,8 @@ snapcheck_run:
 	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/snap1/a/* bench/snap1/b/*
 # Sync aborted AFTER
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-after-sync
+	$(MSG) Snapshots after interrupted sync AFTER
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) status
 # Destroy disk2
 	rm -rf bench/snap2/a bench/snap2/b
@@ -422,7 +465,11 @@ snapcheck_run:
 	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/snap1/a/*
 # Sync abort and sync retry
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-after-sync
+	$(MSG) Snapshots before retry after interrupted sync AFTER
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync
+	$(MSG) Snapshots after retry
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
 # Sync recover
 	$(MSG) Sync recover aborted BEFORE
@@ -430,14 +477,31 @@ snapcheck_run:
 	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/snap1/b/*
 # Sync abort and sync retry
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync --test-kill-before-sync
+	$(MSG) Snapshots before retry after interrupted sync BEFORE
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) sync
+	$(MSG) Snapshots after retry
+	@$(MAKE) --no-print-directory $(SNAPCHECK_SHOW)
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS_SNAP) -c $(SNAP) check
 
-snapcheck_cleanup:
-	$(MSG) Unmount storages
-	umount bench/snap1
-	umount bench/snap2
-	umount bench/snap3
+snapcheck_btrfs_cleanup:
+	$(MSG) Cleanup Btrfs storages
+	status=0; \
+	for dir in bench/snap1 bench/snap2 bench/snap3; do \
+		if mountpoint -q $$dir; then umount $$dir || status=1; fi; \
+	done; \
+	if test $$status -ne 0; then exit $$status; fi; \
+	rm -rf bench; \
+	rm -f test.log
+
+snapcheck_zfs_cleanup:
+	$(MSG) Cleanup ZFS storage
+	if test -f bench/snap-zpool; then \
+		pool=$$(cat bench/snap-zpool); \
+		if zpool list -H -o name "$$pool" >/dev/null 2>&1; then zpool destroy -f "$$pool"; fi; \
+	fi
+	rm -rf bench
+	rm -f test.log
 
 check-local: setupcheck
 	mkdir bench/disk1

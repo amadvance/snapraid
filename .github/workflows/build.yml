@@ -22,9 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            linux-modules-extra-$(uname -r) \
+            zfsutils-linux
+          sudo modprobe zfs
+          zfs version
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all snapcheck
+      - run: make all
+      - run: make snapcheck_btrfs
+      - run: make snapcheck_zfs
       - run: make distcheck
   build-arm32:
     runs-on: ubuntu-latest
