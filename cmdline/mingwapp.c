@@ -538,12 +538,34 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 {
 	wchar_t conv_buf_vol[CONV_MAX];
 	char conv_buf_root[CONV_MAX];
+	wchar_t full_path[PATH_MAX];
 	wchar_t volume_root[PATH_MAX];
 	wchar_t volume_name[PATH_MAX];
 	wchar_t fs_name[32];
+	char resolved_dir[PATH_MAX];
 	uint32_t magic;
 	char pending_retiring[PATH_MAX];
 	char stable_retiring[PATH_MAX];
+
+	/*
+	 * Make the configured path absolute without resolving reparse points.
+	 * Unlike realpath(), GetFullPathNameW() preserves volume mount points.
+	 */
+	DWORD full_len = GetFullPathNameW(convert_if_required(conv_buf_vol, dir), PATH_MAX, full_path, 0);
+	if (full_len == 0) {
+		windows_errno(GetLastError());
+		log_error(errno, "Error resolving full path '%s'. %s.\n", dir, strerror(errno));
+		return -1;
+	}
+	if (full_len >= PATH_MAX) {
+		errno = ENAMETOOLONG;
+		log_error(errno, "Resolved path too long '%s'. %s.\n", dir, strerror(errno));
+		return -1;
+	}
+
+	/* use pathimport to convert backslashes to slashes */
+	pathimport(resolved_dir, sizeof(resolved_dir), u16tou8(conv_buf_root, full_path));
+	pathslash(resolved_dir, sizeof(resolved_dir));
 
 	/*
 	 * GetVolumePathNameW() accepts any path: file, directory, or deep
@@ -553,9 +575,9 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	 * Use convert_if_required() to avoid the automatic addition of \\?\
 	 * made by convert() that is propagated in the resulting volume_root
 	 */
-	if (!GetVolumePathNameW(convert_if_required(conv_buf_vol, dir), volume_root, PATH_MAX)) {
+	if (!GetVolumePathNameW(convert_if_required(conv_buf_vol, resolved_dir), volume_root, PATH_MAX)) {
 		windows_errno(GetLastError());
-		log_error(errno, "Error getting VolumeRoot from '%s'. %s.\n", dir, strerror(errno));
+		log_error(errno, "Error getting VolumeRoot from '%s'. %s.\n", resolved_dir, strerror(errno));
 		return -1;
 	}
 
@@ -593,15 +615,15 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	/* use pathimport to convert backslashes to slashes */
 	pathimport(fss->root_dir, sizeof(fss->root_dir), u16tou8(conv_buf_root, volume_root));
 
-	/* the returned root_dir should match the start of the passed dir */
-	if (pathncmp(fss->root_dir, dir, strlen(fss->root_dir)) != 0) {
+	/* the returned root_dir should match the start of the resolved dir */
+	if (pathncmp(fss->root_dir, resolved_dir, strlen(fss->root_dir)) != 0) {
 		errno = EINVAL;
-		log_error(errno, "Not matching VolumeRoot '%s' for '%s'.\n", fss->root_dir, dir);
+		log_error(errno, "Not matching VolumeRoot '%s' for '%s'.\n", fss->root_dir, resolved_dir);
 		return -1;
 	}
 
 	size_t root_len = strlen(fss->root_dir);
-	pathcpy(fss->sub_dir, sizeof(fss->sub_dir), dir + root_len);
+	pathcpy(fss->sub_dir, sizeof(fss->sub_dir), resolved_dir + root_len);
 
 	pathcpy(fss->snapshot_dir, sizeof(fss->snapshot_dir), fss->root_dir);
 	pathcat(fss->snapshot_dir, sizeof(fss->snapshot_dir), SNAPSHOT_CONTAINER "/");

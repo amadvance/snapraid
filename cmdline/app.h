@@ -122,7 +122,7 @@ struct fssnapshot_struct {
 	 * It is empty if the configured data directory is exactly root_dir.
 	 * If non-empty, it ALWAYS terminates with '/'.
 	 * - Unix: relative suffix computed from the realpath() canonical representation
-	 * - Windows: relative suffix computed from the configured path
+	 * - Windows: relative suffix computed from the GetFullPathNameW() absolute representation without resolving reparse points
 	 */
 	char sub_dir[PATH_MAX];
 
@@ -137,7 +137,7 @@ struct fssnapshot_struct {
 /**
  * Initialize snapshot context from an arbitrary path.
  *
- * @param dir Full path inside the filesystem (must end with '/')
+ * @param dir Path inside the filesystem (must end with '/')
  * @param fss Output snapshot context
  * @return 0 on success, 1 if snapshots are unsupported, -1 on failure
  */
