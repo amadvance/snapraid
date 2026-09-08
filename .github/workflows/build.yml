@@ -78,7 +78,9 @@ jobs:
           install: mingw-w64-x86_64-gcc autoconf automake make
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
-      - run: make all dist check
+      - run: make all
+      - run: make snapcheck_ntfs
+      - run: make dist check
   build-freebsd:
     runs-on: ubuntu-latest
     steps:

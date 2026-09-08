@@ -178,6 +178,7 @@ EXTRA_DIST = \
 	$(LIST_MAN) \
 	$(LIST_TXT) \
 	test/test-snap.conf \
+	test/snapcheck-ntfs.ps1 \
 	test/test-par1.conf \
 	test/test-par2.conf \
 	test/test-par3.conf \
@@ -340,6 +341,7 @@ REALLOC_SPLIT2 = $(srcdir)/test/test-realloc-split2.conf
 SNAP = $(srcdir)/test/test-snap.conf
 MSG = @echo =====
 SNAPRAID = ./checker$(EXEEXT)
+SNAPCHECK_NTFS = powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(srcdir)/test/snapcheck-ntfs.ps1"
 
 CLEANFILES += rm.exe mv.exe touch.exe
 
@@ -355,7 +357,7 @@ if !HAVE_POSIX
 endif # !HAVE_POSIX
 
 # Not included in main check because it requires root permissions
-snapcheck_btrfs: mktest checker setupcheck
+snapcheck_btrfs: mktest$(EXEEXT) checker$(EXEEXT) setupcheck
 	sudo $(MAKE) snapcheck_btrfs_run; \
 	status=$$?; \
 	sudo $(MAKE) snapcheck_btrfs_cleanup; \
@@ -364,10 +366,19 @@ snapcheck_btrfs: mktest checker setupcheck
 	exit $$status
 
 # Not included in main check because it requires root permissions
-snapcheck_zfs: mktest checker setupcheck
+snapcheck_zfs: mktest$(EXEEXT) checker$(EXEEXT) setupcheck
 	sudo $(MAKE) snapcheck_zfs_run; \
 	status=$$?; \
 	sudo $(MAKE) snapcheck_zfs_cleanup; \
+	cleanup_status=$$?; \
+	if test $$cleanup_status -ne 0; then exit $$cleanup_status; fi; \
+	exit $$status
+
+# Not included in main check because it requires administrator privileges
+snapcheck_ntfs: mktest$(EXEEXT) checker$(EXEEXT) setupcheck
+	$(MAKE) snapcheck_ntfs_run; \
+	status=$$?; \
+	$(MAKE) snapcheck_ntfs_cleanup; \
 	cleanup_status=$$?; \
 	if test $$cleanup_status -ne 0; then exit $$cleanup_status; fi; \
 	exit $$status
@@ -401,6 +412,11 @@ snapcheck_zfs_run:
 	zfs create -o mountpoint=$(CURDIR)/bench/snap3 -o snapdir=visible $$(cat bench/snap-zpool)/snap3
 	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_zfs_show
 
+snapcheck_ntfs_run:
+	$(MSG) Create NTFS storages
+	$(SNAPCHECK_NTFS) setup
+	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_ntfs_show
+
 snapcheck_btrfs_show:
 	@for dir in bench/snap1 bench/snap2 bench/snap3; do \
 		echo "$$dir/.snapraid:"; \
@@ -410,6 +426,9 @@ snapcheck_btrfs_show:
 snapcheck_zfs_show:
 	@pool=$$(cat bench/snap-zpool); \
 	zfs list -t snapshot -r "$$pool"
+
+snapcheck_ntfs_show:
+	@$(SNAPCHECK_NTFS) show
 
 snapcheck_run:
 	$(MSG) Create some files
@@ -501,6 +520,11 @@ snapcheck_zfs_cleanup:
 		if zpool list -H -o name "$$pool" >/dev/null 2>&1; then zpool destroy -f "$$pool"; fi; \
 	fi
 	rm -rf bench
+	rm -f test.log
+
+snapcheck_ntfs_cleanup:
+	$(MSG) Cleanup NTFS storages
+	$(SNAPCHECK_NTFS) cleanup
 	rm -f test.log
 
 check-local: setupcheck
