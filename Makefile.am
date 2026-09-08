@@ -1320,6 +1320,53 @@ endif # !HAVE_MEMORY_CHECKER
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) locate > /dev/null
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_SPLIT2) check
+	$(MSG) Test adding a parity level after an interrupted normal shrink
+	rm -rf bench/realloc-level
+	mkdir -p bench/realloc-level/disk1
+	mkdir -p bench/realloc-level/disk2
+	mkdir -p bench/realloc-level/disk3
+	mkdir -p bench/realloc-level/disk4
+	mkdir -p bench/realloc-level/disk5
+	mkdir -p bench/realloc-level/disk6
+	dd bs=1024 count=1 if=/dev/urandom of=bench/realloc-level/disk1/data
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL1) sync
+	dd bs=1024 count=1 if=/dev/urandom of=bench/realloc-level/disk1/tail
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL1) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) -d 2-parity fix
+	rm bench/realloc-level/disk1/tail
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL1) --test-kill-after-resize sync
+	cp bench/realloc-level/content bench/realloc-level/content.checkpoint
+	$(MSG) Accept the new level initialized at the old logical size
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) check
+	cp bench/realloc-level/content.checkpoint bench/realloc-level/content
+	$(MSG) Accept the new level initialized at the checkpoint allocation
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) -d 2-parity fix
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) check
+	cp bench/realloc-level/content.checkpoint bench/realloc-level/content
+	$(MSG) Accept the checkpoint allocation after adding files since fix
+	dd bs=1024 count=2 if=/dev/urandom of=bench/realloc-level/disk1/growth
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) check
+	$(MSG) Test fix leaving pending parity shorter than the checkpoint allocation
+	cp -p bench/realloc-level/disk1/data bench/realloc-level/disk2/data
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	cp -p bench/realloc-level/disk1/growth bench/realloc-level/disk1/tail
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL1) --test-kill-after-sync sync
+	rm bench/realloc-level/disk2/data
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL1) fix
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) fix
+	cp bench/realloc-level/content bench/realloc-level/content.checkpoint
+	$(MSG) Resume after removing the pending additions
+	mv bench/realloc-level/disk1/tail bench/realloc-level/tail
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) check
+	$(MSG) Resume with the pending additions still allocated
+	mv bench/realloc-level/tail bench/realloc-level/disk1/tail
+	cp bench/realloc-level/content.checkpoint bench/realloc-level/content
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) sync
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(REALLOC_LEVEL2) check
 	$(MSG) Test interrupted normal shrink after adding a parity split
 	rm -rf bench/realloc-split
 	mkdir -p bench/realloc-split/disk1

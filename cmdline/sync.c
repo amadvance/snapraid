@@ -2031,6 +2031,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	 * A full parity rebuild or reallocation from zero reconstructs truncated
 	 * parity. Tail-only reallocation still relies on the existing prefix, so a
 	 * truncation before parity_tail remains fatal.
+	 *
+	 * New levels need the same physical coverage of valid blocks, not an exact
+	 * match with another level or the allocated extent. After an interrupted
+	 * sync, fix leaves pending parity to sync and may truncate its unwritten
+	 * tail. Sync will resize and regenerate that tail if it is still allocated.
 	 */
 	if (!state->opt.force_full && !(state->opt.force_realloc && state->opt.parity_tail == 0)) {
 		/* if the parities are too small */
