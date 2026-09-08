@@ -742,7 +742,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			if (hash_size < 2) {
+			if (hash_size == 2) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Unsupported 'hashsize 2' specification in '%s' at line %u! The minimum supported hash size is 4.\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			if (hash_size < 4) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Too small 'hashsize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -3184,7 +3190,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (hash_size < 2 || hash_size > HASH_MAX) {
+			if (hash_size == 2) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal(ECONTENT, "Unsupported 'hashsize 2' specification in the content file! The minimum supported hash size is 4.\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (hash_size < 4 || hash_size > HASH_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal(ECONTENT, "Invalid 'hashsize' specification in the content file!\n");
