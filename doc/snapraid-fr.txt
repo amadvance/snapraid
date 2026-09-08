@@ -2070,7 +2070,24 @@ Ne placez pas de points de montage imbriqués ou de montages bind dans les
 disques de données lorsque les instantanés du système de fichiers sont
 activés.
 
-16.3 Modifications de fichiers sur place sans changement d'horodatage
+16.3 Plusieurs configurations avec instantanés du système de fichiers
+---------------------------------------------------------------------
+
+La prise en charge des instantanés ne peut pas être partagée en toute
+sécurité par plusieurs configurations SnapRAID indépendantes utilisant le
+même espace de noms d'instantanés du système de fichiers.
+
+Sur Btrfs et Bcachefs, une seule configuration SnapRAID avec prise en charge
+des instantanés activée peut utiliser des répertoires de données au sein du
+même sous-volume. Sur ZFS, la même restriction s'applique à un dataset, et
+sur NTFS à un volume.
+
+Plusieurs configurations partageant le même espace de noms d'instantanés
+utilisent les mêmes instantanés `stable`, `pending` et `scan`. L'exécution
+d'une configuration peut donc remplacer ou supprimer les instantanés de
+récupération requis par une autre.
+
+16.4 Modifications de fichiers sur place sans changement d'horodatage
 ---------------------------------------------------------------------
 
 SnapRAID détecte les modifications de fichiers en comparant la taille des
@@ -2085,7 +2102,7 @@ l'horodatage de modification du fichier (par exemple avec l'utilitaire
 "touch"). Sinon, la différence ne sera détectée que sous la forme d'une
 non-concordance de hachage lors d'un "scrub" ou "check" ultérieur.
 
-16.4 Correspondance de casse non-ASCII sous Windows
+16.5 Correspondance de casse non-ASCII sous Windows
 ---------------------------------------------------
 
 SnapRAID utilise un encodage UTF-8 standard et prévisible sur toutes les
@@ -2108,7 +2125,7 @@ Pour éviter les écarts causés par le repliement de casse de Windows, spécifi
 toujours la casse exacte de tous les caractères non-ASCII dans les chemins de
 configuration et les filtres.
 
-16.5 Suffixe des fichiers irrécupérables
+16.6 Suffixe des fichiers irrécupérables
 ----------------------------------------
 
 Lorsque `fix` ne peut pas récupérer entièrement un fichier endommagé, il le
@@ -2132,7 +2149,7 @@ assurez-vous que la règle `exclude *.unrecoverable` est incluse dans votre
 configuration afin d'empêcher le suivi de ces fichiers dans le jeu de données
 de parité.
 
-16.6 Récupération avec fix partiel
+16.7 Récupération avec fix partiel
 ----------------------------------
 
 Lorsque `fix` est restreint avec `-S, --start` ou `-B, --count`,
@@ -2156,7 +2173,7 @@ signale des données irrécupérables, supprimez ou renommez les fichiers
 concernés avant de tenter une nouvelle récupération, ou vérifiez manuellement
 leur contenu.
 
-16.7 Liens matériels NTFS et chemins exclus
+16.8 Liens matériels NTFS et chemins exclus
 -------------------------------------------
 
 Sur NTFS, les entrées de répertoire mettent en cache la taille du fichier
@@ -2182,7 +2199,7 @@ via des liens matériels exclus de SnapRAID, ou assurez-vous que tous les
 liens matériels vers un fichier sont inclus dans l'analyse afin que
 SnapRAID puisse les normaliser.
 
-16.8 Récupération après un sync multi-parité interrompu
+16.9 Récupération après un sync multi-parité interrompu
 -------------------------------------------------------
 
 Dans une grappe avec plusieurs disques de parité, un `sync` interrompu

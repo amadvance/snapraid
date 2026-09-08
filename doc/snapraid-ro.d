@@ -1798,6 +1798,21 @@ Probleme Cunoscute (Known Issues)
 	Nu plasați puncte de montare imbricate sau montări bind în interiorul discurilor
 	de date când instantaneele sistemului de fișiere sunt activate.
 
+  Configurații multiple cu instantanee ale sistemului de fișiere
+	Suportul pentru instantanee nu poate fi partajat în siguranță de mai multe
+	configurații independente SnapRAID care utilizează același spațiu de nume
+	pentru instantanee al sistemului de fișiere.
+
+	Pe Btrfs și Bcachefs, o singură configurație SnapRAID cu suportul pentru
+	instantanee activat poate utiliza directoare de date din cadrul aceluiași
+	subvolum. Pe ZFS, aceeași restricție se aplică unui dataset, iar pe NTFS
+	unui volum.
+
+	Configurațiile multiple care partajează același spațiu de nume pentru instantanee
+	folosesc aceleași instantanee `stable`, `pending` și `scan`. Rularea unei
+	configurații poate astfel înlocui sau șterge instantaneele de recuperare
+	necesare alteia.
+
   Modificări ale fișierelor pe loc fără schimbarea marcajului temporal
 	SnapRAID detectează modificările fișierelor comparând dimensiunile fișierelor
 	și marcajele temporale de modificare (mtime).

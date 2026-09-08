@@ -1900,6 +1900,20 @@ Problemi noti (Known Issues)
 	Non inserire punti di mount annidati o bind mount all'interno dei dischi dati
 	quando le snapshot del filesystem sono abilitate.
 
+  Configurazioni multiple con snapshot del filesystem
+	Il supporto per gli snapshot non può essere condiviso in sicurezza da
+	più configurazioni SnapRAID indipendenti che utilizzano lo stesso
+	namespace di snapshot del filesystem.
+
+	Su Btrfs e Bcachefs, una sola configurazione SnapRAID con supporto snapshot
+	abilitato può utilizzare directory dati all'interno dello stesso subvolume.
+	Su ZFS, la stessa restrizione si applica a un dataset, e su NTFS a un volume.
+
+	Le configurazioni multiple che condividono lo stesso namespace di snapshot
+	utilizzano gli stessi snapshot `stable`, `pending` e `scan`. L'esecuzione di
+	una configurazione può quindi sostituire o eliminare gli snapshot di
+	ripristino richiesti da un'altra.
+
   Modifiche ai file sul posto senza variazione di data/ora
 	SnapRAID rileva le modifiche ai file confrontando le dimensioni dei file e
 	i timestamp di modifica (mtime).

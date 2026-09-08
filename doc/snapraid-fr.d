@@ -1935,6 +1935,21 @@ Problèmes connus (Known Issues)
 	disques de données lorsque les instantanés du système de fichiers sont
 	activés.
 
+  Plusieurs configurations avec instantanés du système de fichiers
+	La prise en charge des instantanés ne peut pas être partagée en toute
+	sécurité par plusieurs configurations SnapRAID indépendantes utilisant le
+	même espace de noms d'instantanés du système de fichiers.
+
+	Sur Btrfs et Bcachefs, une seule configuration SnapRAID avec prise en charge
+	des instantanés activée peut utiliser des répertoires de données au sein du
+	même sous-volume. Sur ZFS, la même restriction s'applique à un dataset, et
+	sur NTFS à un volume.
+
+	Plusieurs configurations partageant le même espace de noms d'instantanés
+	utilisent les mêmes instantanés `stable`, `pending` et `scan`. L'exécution
+	d'une configuration peut donc remplacer ou supprimer les instantanés de
+	récupération requis par une autre.
+
   Modifications de fichiers sur place sans changement d'horodatage
 	SnapRAID détecte les modifications de fichiers en comparant la taille des
 	fichiers et les horodatages de modification (mtime).

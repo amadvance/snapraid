@@ -1937,7 +1937,24 @@ systemie plików może stać się widoczny.
 Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
 dysków z danymi, gdy migawki systemu plików są włączone.
 
-16.3 Modyfikacje plików w miejscu bez zmiany znacznika czasu
+16.3 Wiele konfiguracji z migawkami systemu plików
+--------------------------------------------------
+
+Obsługa migawek nie może być bezpiecznie współdzielona przez wiele
+niezależnych konfiguracji SnapRAID korzystających z tej samej przestrzeni
+nazw migawek systemu plików.
+
+W systemach Btrfs i Bcachefs tylko jedna konfiguracja SnapRAID z włączoną
+obsługą migawek może używać katalogów danych w obrębie tego samego
+podwolumenu. W systemie ZFS to samo ograniczenie dotyczy datasetu, a w NTFS
+woluminu.
+
+Wiele konfiguracji współdzielących tę samą przestrzeń nazw migawek używa tych
+samych migawek `stable`, `pending` oraz `scan`. Uruchomienie jednej
+konfiguracji może zatem zastąpić lub usunąć migawki odzyskiwania wymagane
+przez inną.
+
+16.4 Modyfikacje plików w miejscu bez zmiany znacznika czasu
 ------------------------------------------------------------
 
 SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
@@ -1952,7 +1969,7 @@ pliku (na przykład za pomocą narzędzia "touch"). W przeciwnym razie różnica
 zostanie wykryta dopiero jako niezgodność skrótu podczas kolejnego "scrub"
 lub "check".
 
-16.4 Dopasowywanie wielkości liter znaków spoza ASCII w systemie Windows
+16.5 Dopasowywanie wielkości liter znaków spoza ASCII w systemie Windows
 ------------------------------------------------------------------------
 
 SnapRAID używa standardowego, przewidywalnego kodowania UTF-8 na wszystkich
@@ -1975,7 +1992,7 @@ liter. Aby zapobiec rozbieżnościom wynikającym ze składania znaków przez
 Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
 w ścieżkach konfiguracyjnych i filtrach.
 
-16.5 Sufiks plików niemożliwych do odzyskania
+16.6 Sufiks plików niemożliwych do odzyskania
 ---------------------------------------------
 
 Gdy `fix` nie może w pełni odzyskać uszkodzonego pliku, poddaje go kwarantannie,
@@ -1997,7 +2014,7 @@ Unikaj używania rozszerzenia `.unrecoverable` dla zwykłych plików i upewnij s
 że w konfiguracji uwzględniono regułę `exclude *.unrecoverable`, aby zapobiec
 śledzeniu takich plików w zbiorze danych parzystości.
 
-16.6 Odzyskiwanie za pomocą częściowego fix
+16.7 Odzyskiwanie za pomocą częściowego fix
 -------------------------------------------
 
 Gdy polecenie `fix` jest ograniczone za pomocą `-S, --start` lub `-B, --count`,
@@ -2020,7 +2037,7 @@ zgłosi dane niemożliwe do odzyskania, przed podjęciem kolejnej próby odzyski
 należy usunąć lub zmienić nazwę plików, których to dotyczy, albo ręcznie zweryfikować
 ich zawartość.
 
-16.7 Twarde dowiązania NTFS i wykluczone ścieżki
+16.8 Twarde dowiązania NTFS i wykluczone ścieżki
 ------------------------------------------------
 
 W systemie plików NTFS wpisy katalogowe niezależnie buforują rozmiar pliku
@@ -2047,7 +2064,7 @@ za pośrednictwem twardych dowiązań wykluczonych ze SnapRAID lub upewnić się
 że wszystkie twarde dowiązania do danego pliku są uwzględnione w skanowaniu,
 aby SnapRAID mógł je znormalizować.
 
-16.8 Odzyskiwanie po przerwanym sync z wieloma parzystościami
+16.9 Odzyskiwanie po przerwanym sync z wieloma parzystościami
 -------------------------------------------------------------
 
 W macierzy z wieloma dyskami parzystości przerwane polecenie `sync` może

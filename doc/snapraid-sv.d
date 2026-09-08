@@ -1800,6 +1800,20 @@ Kända problem (Known Issues)
 	Placera inte kapslade monteringspunkter eller bind-monteringar inuti
 	datadiskar när filsystemögonblicksbilder är aktiverade.
 
+  Flera konfigurationer med filsystemögonblicksbilder
+	Stöd för ögonblicksbilder kan inte delas säkert mellan flera oberoende
+	SnapRAID-konfigurationer som använder samma namnrymd för
+	filsystemögonblicksbilder.
+
+	På Btrfs och Bcachefs får endast en SnapRAID-konfiguration med stöd för
+	ögonblicksbilder aktiverat använda datakataloger inom samma undervolym.
+	På ZFS gäller samma begränsning för ett dataset, och på NTFS för en volym.
+
+	Flera konfigurationer som delar samma namnrymd för ögonblicksbilder använder
+	samma `stable`-, `pending`- och `scan`-ögonblicksbilder. Att köra en
+	konfiguration kan därför ersätta eller ta bort återställningsögonblicksbilder
+	som krävs av en annan.
+
   Filändringar på plats utan tidsstämpeländringar
 	SnapRAID upptäcker filändringar genom att jämföra filstorlekar och
 	ändringstidsstämplar (mtime).

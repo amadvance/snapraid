@@ -1924,6 +1924,21 @@ Bekannte Probleme (Known Issues)
 	Platzieren Sie keine verschachtelten Mount-Punkte oder Bind-Mounts innerhalb
 	von Datenfestplatten, wenn Dateisystem-Snapshots aktiviert sind.
 
+  Mehrere Konfigurationen mit Dateisystem-Snapshots
+	Die Snapshot-Unterstützung kann nicht sicher von mehreren unabhängigen
+	SnapRAID-Konfigurationen gemeinsam genutzt werden, die denselben
+	Dateisystem-Snapshot-Namespace verwenden.
+
+	Unter Btrfs und Bcachefs darf nur eine SnapRAID-Konfiguration mit aktivierter
+	Snapshot-Unterstützung Datenverzeichnisse innerhalb desselben Subvolumes
+	verwenden. Unter ZFS gilt dieselbe Einschränkung für ein Dataset und unter
+	NTFS für ein Volume.
+
+	Mehrere Konfigurationen, die denselben Snapshot-Namespace teilen, verwenden
+	dieselben Snapshots `stable`, `pending` und `scan`. Das Ausführen einer
+	Konfiguration kann daher Wiederherstellungs-Snapshots ersetzen oder löschen,
+	die von einer anderen benötigt werden.
+
   In-Place-Dateimodifikationen ohne Zeitstempeländerungen
 	SnapRAID erkennt Dateimodifikationen durch den Vergleich von Dateigrößen
 	und Änderungszeitstempeln (mtime).

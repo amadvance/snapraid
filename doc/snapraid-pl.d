@@ -1802,6 +1802,21 @@ Znane problemy (Known Issues)
 	Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
 	dysków z danymi, gdy migawki systemu plików są włączone.
 
+  Wiele konfiguracji z migawkami systemu plików
+	Obsługa migawek nie może być bezpiecznie współdzielona przez wiele
+	niezależnych konfiguracji SnapRAID korzystających z tej samej przestrzeni
+	nazw migawek systemu plików.
+
+	W systemach Btrfs i Bcachefs tylko jedna konfiguracja SnapRAID z włączoną
+	obsługą migawek może używać katalogów danych w obrębie tego samego
+	podwolumenu. W systemie ZFS to samo ograniczenie dotyczy datasetu, a w NTFS
+	woluminu.
+
+	Wiele konfiguracji współdzielących tę samą przestrzeń nazw migawek używa tych
+	samych migawek `stable`, `pending` oraz `scan`. Uruchomienie jednej
+	konfiguracji może zatem zastąpić lub usunąć migawki odzyskiwania wymagane
+	przez inną.
+
   Modyfikacje plików w miejscu bez zmiany znacznika czasu
 	SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
 	znaczniki czasu modyfikacji (mtime).

@@ -1891,6 +1891,21 @@ Problemas conocidos (Known Issues)
 	No coloque puntos de montaje anidados ni montajes bind dentro de los discos
 	de datos cuando las instantáneas del sistema de archivos estén habilitadas.
 
+  Múltiples configuraciones con instantáneas del sistema de archivos
+	El soporte para instantáneas no se puede compartir de forma segura entre
+	múltiples configuraciones independientes de SnapRAID que utilicen el mismo
+	espacio de nombres de instantáneas del sistema de archivos.
+
+	En Btrfs y Bcachefs, solo una configuración de SnapRAID con soporte de
+	instantáneas habilitado puede usar directorios de datos dentro del mismo
+	subvolumen. En ZFS, la misma restricción se aplica a un dataset, y en NTFS
+	a un volumen.
+
+	Las múltiples configuraciones que comparten el mismo espacio de nombres de
+	instantáneas utilizan las mismas instantáneas `stable`, `pending` y `scan`.
+	Por lo tanto, ejecutar una configuración puede reemplazar o eliminar las
+	instantáneas de recuperación requeridas por otra.
+
   Modificaciones de archivos in situ sin cambios de marca de tiempo
 	SnapRAID detecta modificaciones de archivos comparando tamaños de archivo y
 	marcas de tiempo de modificación (mtime).

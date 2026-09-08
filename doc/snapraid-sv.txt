@@ -1935,7 +1935,23 @@ skanning av en ögonblicksbild.
 Placera inte kapslade monteringspunkter eller bind-monteringar inuti
 datadiskar när filsystemögonblicksbilder är aktiverade.
 
-16.3 Filändringar på plats utan tidsstämpeländringar
+16.3 Flera konfigurationer med filsystemögonblicksbilder
+--------------------------------------------------------
+
+Stöd för ögonblicksbilder kan inte delas säkert mellan flera oberoende
+SnapRAID-konfigurationer som använder samma namnrymd för
+filsystemögonblicksbilder.
+
+På Btrfs och Bcachefs får endast en SnapRAID-konfiguration med stöd för
+ögonblicksbilder aktiverat använda datakataloger inom samma undervolym.
+På ZFS gäller samma begränsning för ett dataset, och på NTFS för en volym.
+
+Flera konfigurationer som delar samma namnrymd för ögonblicksbilder använder
+samma `stable`-, `pending`- och `scan`-ögonblicksbilder. Att köra en
+konfiguration kan därför ersätta eller ta bort återställningsögonblicksbilder
+som krävs av en annan.
+
+16.4 Filändringar på plats utan tidsstämpeländringar
 ----------------------------------------------------
 
 SnapRAID upptäcker filändringar genom att jämföra filstorlekar och
@@ -1950,7 +1966,7 @@ filens ändringstidsstämpel (till exempel med verktyget "touch"). Annars
 kommer skillnaden endast att upptäckas som en hash-avvikelse under en
 efterföljande "scrub" eller "check".
 
-16.4 Icke-ASCII skiftlägesmatchning i Windows
+16.5 Icke-ASCII skiftlägesmatchning i Windows
 ---------------------------------------------
 
 SnapRAID använder standardiserad, förutsägbar UTF-8-kodning på alla plattformar
@@ -1969,7 +1985,7 @@ och dess insisterande på skiftlägesokänslig aliasning. För att förhindra
 avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
 skiftläget för eventuella icke-ASCII-tecken i konfigurationssökvägar och filter.
 
-16.5 Suffix för oåterkalleliga filer
+16.6 Suffix för oåterkalleliga filer
 ------------------------------------
 
 När `fix` inte helt kan återställa en skadad fil sätter den filen i karantän
@@ -1991,7 +2007,7 @@ Undvik att använda filändelsen `.unrecoverable` för vanliga filer och se till
 att `exclude *.unrecoverable` ingår i din konfiguration för att förhindra att
 sådana filer spåras i paritetsdatamängden.
 
-16.6 Återställning med partiell fix
+16.7 Återställning med partiell fix
 -----------------------------------
 
 När `fix` begränsas med `-S, --start` eller `-B, --count`,
@@ -2013,7 +2029,7 @@ vanligtvis efter att en normal `fix` har misslyckats. Om en partiell `fix`
 rapporterar oåterkalleliga data, ta bort eller byt namn på de berörda filerna
 innan du försöker med en ny återställning, eller verifiera deras innehåll manuellt.
 
-16.7 NTFS hårda länkar och exkluderade sökvägar
+16.8 NTFS hårda länkar och exkluderade sökvägar
 -----------------------------------------------
 
 På NTFS cachelagrar katalogposter filstorlek och tidsstämplar oberoende
@@ -2037,7 +2053,7 @@ För att undvika denna begränsning, undvik att modifiera skyddade filer via
 hårda länkar som är exkluderade från SnapRAID, eller se till att alla hårda
 länkar till en fil inkluderas i skanningen så att SnapRAID kan normalisera dem.
 
-16.8 Återställning efter ett avbrutet multi-paritets-sync
+16.9 Återställning efter ett avbrutet multi-paritets-sync
 ---------------------------------------------------------
 
 I en array med flera paritetsdiskar kan ett avbrutet `sync` lämna

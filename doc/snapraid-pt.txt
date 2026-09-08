@@ -1974,7 +1974,24 @@ sistema de arquivos ativo pode se tornar visível.
 Não coloque pontos de montagem aninhados ou montagens bind dentro de discos
 de dados quando os instantâneos do sistema de arquivos estiverem ativados.
 
-16.3 Modificações de arquivo no local sem alteração de data/hora
+16.3 Múltiplas configurações com instantâneos do sistema de arquivos
+--------------------------------------------------------------------
+
+O suporte a instantâneos não pode ser compartilhado com segurança por
+múltiplas configurações independentes do SnapRAID que usem o mesmo
+namespace de instantâneos do sistema de arquivos.
+
+No Btrfs e Bcachefs, apenas uma configuração do SnapRAID com suporte a
+instantâneos ativado pode usar diretórios de dados dentro do mesmo
+subvolume. No ZFS, a mesma restrição se aplica a um dataset, e no NTFS
+a um volume.
+
+Múltiplas configurações que compartilham o mesmo namespace de instantâneos
+usam os mesmos instantâneos `stable`, `pending` e `scan`. A execução de uma
+configuração pode, portanto, substituir ou excluir instantâneos de
+recuperação necessários para outra.
+
+16.4 Modificações de arquivo no local sem alteração de data/hora
 ----------------------------------------------------------------
 
 O SnapRAID detecta modificações em arquivos comparando tamanhos de arquivo e
@@ -1989,7 +2006,7 @@ de data/hora de modificação do arquivo (por exemplo, com o utilitário "touch"
 Caso contrário, a diferença só será detectada como uma incompatibilidade de
 hash durante um "scrub" ou "check" subsequente.
 
-16.4 Correspondência de maiúsculas/minúsculas não-ASCII no Windows
+16.5 Correspondência de maiúsculas/minúsculas não-ASCII no Windows
 ------------------------------------------------------------------
 
 O SnapRAID utiliza codificação UTF-8 padrão e previsível em todas as plataformas,
@@ -2012,7 +2029,7 @@ maiúsculas/minúsculas. Para evitar discrepâncias decorrentes da conversão do
 Windows, sempre especifique a combinação exata de maiúsculas e minúsculas para
 caracteres não-ASCII em caminhos de configuração e filtros.
 
-16.5 Sufixo de arquivos irrecuperáveis
+16.6 Sufixo de arquivos irrecuperáveis
 --------------------------------------
 
 Quando o `fix` não consegue recuperar totalmente um arquivo danificado, ele o
@@ -2034,7 +2051,7 @@ Evite usar a extensão `.unrecoverable` para arquivos comuns e certifique-se de
 que `exclude *.unrecoverable` esteja incluído na sua configuração para evitar que
 esses arquivos sejam rastreados no conjunto de dados de paridade.
 
-16.6 Recuperação com fix parcial
+16.7 Recuperação com fix parcial
 --------------------------------
 
 Quando o `fix` é restrito usando `-S, --start` ou `-B, --count`,
@@ -2056,7 +2073,7 @@ normalmente após a falha de um `fix` normal. Se um `fix` parcial relatar
 dados irrecuperáveis, remova ou renomeie os arquivos afetados antes de tentar
 outra recuperação, ou verifique manualmente seu conteúdo.
 
-16.7 Links físicos no NTFS e caminhos excluídos
+16.8 Links físicos no NTFS e caminhos excluídos
 -----------------------------------------------
 
 No NTFS, as entradas de diretório armazenam em cache o tamanho do arquivo
@@ -2082,7 +2099,7 @@ de links físicos excluídos do SnapRAID, ou certifique-se de que todos os
 links físicos de um arquivo sejam incluídos na verificação para que o
 SnapRAID possa normalizá-los.
 
-16.8 Recuperação após uma sincronização de multiparidade interrompida
+16.9 Recuperação após uma sincronização de multiparidade interrompida
 ---------------------------------------------------------------------
 
 Em uma matriz com múltiplos discos de paridade, um `sync` interrompido

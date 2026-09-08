@@ -2059,7 +2059,24 @@ einen Mount-Punkt verdeckt war.
 Platzieren Sie keine verschachtelten Mount-Punkte oder Bind-Mounts innerhalb
 von Datenfestplatten, wenn Dateisystem-Snapshots aktiviert sind.
 
-16.3 In-Place-Dateimodifikationen ohne Zeitstempeländerungen
+16.3 Mehrere Konfigurationen mit Dateisystem-Snapshots
+------------------------------------------------------
+
+Die Snapshot-Unterstützung kann nicht sicher von mehreren unabhängigen
+SnapRAID-Konfigurationen gemeinsam genutzt werden, die denselben
+Dateisystem-Snapshot-Namespace verwenden.
+
+Unter Btrfs und Bcachefs darf nur eine SnapRAID-Konfiguration mit aktivierter
+Snapshot-Unterstützung Datenverzeichnisse innerhalb desselben Subvolumes
+verwenden. Unter ZFS gilt dieselbe Einschränkung für ein Dataset und unter
+NTFS für ein Volume.
+
+Mehrere Konfigurationen, die denselben Snapshot-Namespace teilen, verwenden
+dieselben Snapshots `stable`, `pending` und `scan`. Das Ausführen einer
+Konfiguration kann daher Wiederherstellungs-Snapshots ersetzen oder löschen,
+die von einer anderen benötigt werden.
+
+16.4 In-Place-Dateimodifikationen ohne Zeitstempeländerungen
 ------------------------------------------------------------
 
 SnapRAID erkennt Dateimodifikationen durch den Vergleich von Dateigrößen
@@ -2075,7 +2092,7 @@ Sie den Änderungszeitstempel der Datei (z. B. mit dem Dienstprogramm "touch").
 Andernfalls wird der Unterschied erst bei einem nachfolgenden "scrub" oder
 "check" als Hash-Fehlübereinstimmung erkannt.
 
-16.4 Nicht-ASCII-Groß-/Kleinschreibung unter Windows
+16.5 Nicht-ASCII-Groß-/Kleinschreibung unter Windows
 ----------------------------------------------------
 
 SnapRAID verwendet auf allen Plattformen eine standardmäßige, vorhersehbare
@@ -2098,7 +2115,7 @@ verursacht. Um Abweichungen durch das Case-Folding von Windows zu vermeiden,
 geben Sie für alle Nicht-ASCII-Zeichen in Konfigurationspfaden und Filtern
 stets die exakte Groß-/Kleinschreibung an.
 
-16.5 Dateiendung für nicht wiederherstellbare Dateien
+16.6 Dateiendung für nicht wiederherstellbare Dateien
 -----------------------------------------------------
 
 Wenn `fix` eine beschädigte Datei nicht vollständig wiederherstellen kann,
@@ -2124,7 +2141,7 @@ Dateien und stellen Sie sicher, dass `exclude *.unrecoverable` in Ihrer
 Konfiguration enthalten ist, um zu verhindern, dass solche Dateien im
 Paritätsdatensatz erfasst werden.
 
-16.6 Wiederherstellung mit partiellem Fix
+16.7 Wiederherstellung mit partiellem Fix
 -----------------------------------------
 
 Wenn `fix` mit `-S, --start` oder `-B, --count` eingeschränkt wird,
@@ -2148,7 +2165,7 @@ fehlgeschlagen ist. Wenn ein partieller `fix` nicht wiederherstellbare Daten
 meldet, entfernen oder benennen Sie die betroffenen Dateien um, bevor Sie eine
 weitere Wiederherstellung versuchen, oder überprüfen Sie deren Inhalt manuell.
 
-16.7 NTFS-Hardlinks und ausgeschlossene Pfade
+16.8 NTFS-Hardlinks und ausgeschlossene Pfade
 ---------------------------------------------
 
 Unter NTFS speichern Verzeichniseinträge Dateigröße und Zeitstempel
@@ -2175,7 +2192,7 @@ Hardlinks geändert werden, die von SnapRAID ausgeschlossen sind, oder es
 sollte sichergestellt werden, dass alle Hardlinks zu einer Datei im Scan
 enthalten sind, damit SnapRAID sie normalisieren kann.
 
-16.8 Wiederherstellung nach einem unterbrochenen Multi-Paritäts-Sync
+16.9 Wiederherstellung nach einem unterbrochenen Multi-Paritäts-Sync
 --------------------------------------------------------------------
 
 In einem Array mit mehreren Paritätsfestplatten kann ein unterbrochener

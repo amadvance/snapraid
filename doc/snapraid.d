@@ -1806,6 +1806,18 @@ Known Issues
 	Do not place nested mount points or bind mounts inside data disks when
 	filesystem snapshots are enabled.
 
+  Multiple configurations with filesystem snapshots
+	Snapshot support cannot be safely shared by multiple independent
+	SnapRAID configurations using the same filesystem snapshot namespace.
+
+	On Btrfs and Bcachefs, only one SnapRAID configuration with snapshot
+	support enabled may use data directories within the same subvolume.
+	On ZFS, the same restriction applies to a dataset, and on NTFS to a volume.
+
+	Multiple configurations sharing the same snapshot namespace use the same
+	`stable`, `pending`, and `scan` snapshots. Running one configuration may
+	therefore replace or delete recovery snapshots required by another.
+
   In-place file modifications without timestamp changes
 	SnapRAID detects file modifications by comparing file sizes and
 	modification timestamps (mtime).

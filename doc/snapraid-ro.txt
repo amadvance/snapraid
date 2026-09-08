@@ -1933,7 +1933,24 @@ sistemul de fișiere activ poate deveni vizibil.
 Nu plasați puncte de montare imbricate sau montări bind în interiorul discurilor
 de date când instantaneele sistemului de fișiere sunt activate.
 
-16.3 Modificări ale fișierelor pe loc fără schimbarea marcajului temporal
+16.3 Configurații multiple cu instantanee ale sistemului de fișiere
+-------------------------------------------------------------------
+
+Suportul pentru instantanee nu poate fi partajat în siguranță de mai multe
+configurații independente SnapRAID care utilizează același spațiu de nume
+pentru instantanee al sistemului de fișiere.
+
+Pe Btrfs și Bcachefs, o singură configurație SnapRAID cu suportul pentru
+instantanee activat poate utiliza directoare de date din cadrul aceluiași
+subvolum. Pe ZFS, aceeași restricție se aplică unui dataset, iar pe NTFS
+unui volum.
+
+Configurațiile multiple care partajează același spațiu de nume pentru instantanee
+folosesc aceleași instantanee `stable`, `pending` și `scan`. Rularea unei
+configurații poate astfel înlocui sau șterge instantaneele de recuperare
+necesare alteia.
+
+16.4 Modificări ale fișierelor pe loc fără schimbarea marcajului temporal
 -------------------------------------------------------------------------
 
 SnapRAID detectează modificările fișierelor comparând dimensiunile fișierelor
@@ -1949,7 +1966,7 @@ marcajul temporal de modificare al fișierului (de exemplu, cu utilitarul
 "touch"). În caz contrar, diferența va fi detectată doar ca o neconcordanță
 de hash în timpul unui "scrub" sau "check" ulterior.
 
-16.4 Potrivirea majusculelor/minusculelor non-ASCII în Windows
+16.5 Potrivirea majusculelor/minusculelor non-ASCII în Windows
 --------------------------------------------------------------
 
 SnapRAID utilizează codificarea UTF-8 standard și previzibilă pe toate
@@ -1972,7 +1989,7 @@ distincție între majuscule și minuscule. Pentru a preveni discrepanțele apă
 din conversia efectuată de Windows, specificați întotdeauna forma exactă a
 caracterelor non-ASCII în căile de configurare și filtre.
 
-16.5 Sufixul fișierelor nerecuperabile
+16.6 Sufixul fișierelor nerecuperabile
 --------------------------------------
 
 Când `fix` nu poate recupera complet un fișier deteriorat, îl plasează în
@@ -1994,7 +2011,7 @@ Evitați utilizarea extensiei `.unrecoverable` pentru fișiere obișnuite și
 asigurați-vă că `exclude *.unrecoverable` este inclus în configurație pentru
 a preveni urmărirea acestor fișiere în setul de date de paritate.
 
-16.6 Recuperare cu fix parțial
+16.7 Recuperare cu fix parțial
 ------------------------------
 
 Când `fix` este restricționat folosind `-S, --start` sau `-B, --count`,
@@ -2016,7 +2033,7 @@ de obicei după ce un `fix` normal a eșuat. Dacă un `fix` parțial raportează
 date nerecuperabile, eliminați sau redenumiți fișierele afectate înainte de a
 încerca o nouă recuperare, sau verificați manual conținutul acestora.
 
-16.7 Legături dure NTFS și căi excluse
+16.8 Legături dure NTFS și căi excluse
 --------------------------------------
 
 Pe NTFS, intrările din director memorează în cache dimensiunea fișierului
@@ -2042,7 +2059,7 @@ prin legături dure care sunt excluse din SnapRAID, sau asigurați-vă că toate
 legăturile dure către un fișier sunt incluse în scanare, astfel încât
 SnapRAID să le poată normaliza.
 
-16.8 Recuperare după un sync multi-paritate întrerupt
+16.9 Recuperare după un sync multi-paritate întrerupt
 -----------------------------------------------------
 
 Într-o matrice cu mai multe discuri de paritate, un `sync` întrerupt
