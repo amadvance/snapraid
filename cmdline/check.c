@@ -174,20 +174,19 @@
  * Fix and quarantine model
  * ------------------------
  *
- * failed_struct distinguishes three properties of a recovery entry.
+ * failed_struct distinguishes two properties of a recovery entry.
  *
  * is_bad means that the current file block is missing, unreadable or does not
  * match its expected current hash and therefore needs recovery.
  *
- * is_current means that buffer[index] contains certified CURRENT data, either
- * validated independently through import/search or successfully reconstructed
- * by RAID. Outside repair(), file_recover() writes this data to the original file
- * and reports it as fixed.
+ * recovery tracks the data state of the block in buffer[index]:
  *
- * is_outofdate means that the recovered bytes associated with the entry cannot
- * be proven to represent the required CURRENT data. This is used both for the
- * auxiliary old CHG/REP/DELETED values of the pre-sync recovery strategy and
- * for ambiguous recovered CHG blocks. Outside repair(), an out-of-date candidate
+ *   RECOVERY_NONE        not recovered (no valid replacement data available)
+ *   RECOVERY_CURRENT     certified CURRENT data (via import/search or RAID)
+ *   RECOVERY_OUTOFDATE   recovered candidate that cannot be certified CURRENT
+ *
+ * Outside repair(), file_recover() writes RECOVERY_CURRENT data to the original
+ * file and reports it as fixed. An out-of-date candidate (RECOVERY_OUTOFDATE)
  * is written as best-effort data, but the containing file remains marked damaged
  * and is quarantined under the .unrecoverable name.
  *
@@ -226,6 +225,10 @@ static const char* es(int err)
 		return "error";
 }
 
+#define RECOVERY_NONE 0 /**< Not recovered (no valid candidate available) */
+#define RECOVERY_CURRENT 1 /**< Recovered and certified CURRENT (via import/search or RAID) */
+#define RECOVERY_OUTOFDATE 2 /**< Recovered candidate that cannot be certified CURRENT (best-effort / OLD / ambiguous) */
+
 /**
  * A block participating in recovery.
  *
@@ -247,64 +250,31 @@ struct failed_struct {
 	int is_bad;
 
 	/**
-	 * If the data associated with this entry cannot be proven to represent the
-	 * required CURRENT contents.
+	 * Data state of the buffer associated with this entry:
 	 *
-	 * This does not mean that the data is known to be wrong or actually old.
-	 * In particular, for a CHG block the stored hash describes the OLD contents,
-	 * but the block itself may not have changed even if the file was detected as
-	 * modified. Therefore data matching the OLD state may also be perfectly valid
-	 * CURRENT data.
+	 * RECOVERY_NONE:
+	 *   The block is not recovered or does not contain valid replacement data.
 	 *
-	 * In the pre-sync parity strategy this is set on CHG, REP and DELETED entries
-	 * because their OLD contribution is being used or reconstructed as auxiliary
-	 * recovery state. Such data cannot be assumed to represent the required
-	 * CURRENT contents, even though in some cases OLD and CURRENT may actually be
-	 * identical.
+	 * RECOVERY_CURRENT:
+	 *   buffer[index] contains certified CURRENT data.
+	 *   During repair() strategy construction, this marks blocks obtained
+	 *   and validated independently through import/search, making them reusable
+	 *   as known inputs across strategies whose data generation is unchanged
+	 *   (such as BLK and REBUILD).
+	 *   Upon successful recovery, repair() marks all recovered non-outofdate blocks
+	 *   with RECOVERY_CURRENT.
+	 *   Outside repair(), file_recover() writes this data to the original file
+	 *   and marks it FIXED.
 	 *
-	 * This provenance exists only for the current check/fix run. It is not encoded
-	 * in the recovered file itself, which is why a later fix cannot safely infer
-	 * that a readable CHG from a previous .unrecoverable file represents CURRENT
-	 * data.
-	 *
-	 * Out-of-date entries are excluded from hash validation. If an out-of-date
-	 * block is also is_bad, fix may still preserve the recovered bytes as the best
-	 * available copy, but the containing file remains damaged and quarantined as
-	 * .unrecoverable.
-	 *
-	 * is_outofdate and is_current are not boolean opposites:
-	 *
-	 *   is_outofdate == 0 && is_current == 0   not recovered / not certified CURRENT
-	 *   is_outofdate == 0 && is_current == 1   certified CURRENT data (via import/search or RAID)
-	 *   is_outofdate == 1 && is_current == 0   recovered candidate that cannot be certified CURRENT
-	 *
-	 * is_outofdate == 1 && is_current == 1 is inconsistent and must never occur.
+	 * RECOVERY_OUTOFDATE:
+	 *   buffer[index] contains a recovered candidate that cannot be proven to
+	 *   represent the required CURRENT contents (e.g. reconstructed under the
+	 *   pre-sync parity strategy, or ambiguous CHG).
+	 *   If an out-of-date block is also is_bad, fix may still preserve the recovered
+	 *   bytes as the best available copy, but the containing file remains damaged
+	 *   and quarantined as .unrecoverable.
 	 */
-	int is_outofdate;
-
-	/**
-	 * If buffer[index] contains certified CURRENT data.
-	 *
-	 * During repair() strategy construction, is_current marks blocks obtained
-	 * and validated independently through import/search, making them reusable as
-	 * known inputs across strategies whose data generation is unchanged (such as
-	 * BLK and REBUILD).
-	 *
-	 * Upon successful recovery, repair() marks all recovered non-outofdate blocks
-	 * with is_current == 1.
-	 *
-	 * Outside repair(), file_recover() uses is_current == 1 to identify certified
-	 * CURRENT blocks to write back to the original file and mark as FIXED.
-	 *
-	 * This is independent from is_bad. A block obtained through import/search may
-	 * have is_bad == 1 because the original file still needs to be repaired while
-	 * is_current == 1 because buffer[index] already contains its validated CURRENT
-	 * contents.
-	 *
-	 * A value of zero means the buffer is not certified CURRENT; if is_outofdate
-	 * is also zero, the block was not recovered.
-	 */
-	int is_current;
+	int recovery;
 
 	unsigned index; /**< Index of the failed block. */
 	struct snapraid_block* block; /**< The failed block */
@@ -381,9 +351,30 @@ static int block_data_cmp(struct snapraid_state* state, int rehash, struct snapr
 }
 
 /**
+ * Check if the specified block has a trustworthy CURRENT hash under the given strategy.
+ *
+ * In the OLD recovery strategy, physical parity reflects the pre-sync state,
+ * so RAID reconstructs the OLD content of this block. However, for a REP
+ * block, block->hash describes the NEW (post-replace) data. Comparing the
+ * reconstructed OLD bytes against the NEW hash would falsely fail validation.
+ */
+static int block_has_recovery_hash(const struct snapraid_block* block, int is_old_strategy)
+{
+	unsigned state = block_state_get(block);
+
+	if (!block_has_updated_hash(block))
+		return 0;
+
+	if (is_old_strategy && state == BLOCK_STATE_REP)
+		return 0;
+
+	return 1;
+}
+
+/**
  * Check if the hash of all the failed blocks we are expecting to recover are now matching.
  */
-static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer)
+static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, int is_old_strategy)
 {
 	unsigned j;
 	int hash_checked;
@@ -392,11 +383,8 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 
 	/* check if the recovered blocks are OK */
 	for (j = 0; j < failed_count; ++j) {
-		/* if we are expected to recover this block */
-		if (!failed[failed_map[j]].is_outofdate
-		        /* if the block has a hash to check */
-			&& block_has_updated_hash(failed[failed_map[j]].block)
-		) {
+		/* if the block has a hash to check in this strategy */
+		if (block_has_recovery_hash(failed[failed_map[j]].block, is_old_strategy)) {
 			/* if a hash doesn't match, fail the check */
 			size_t pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state->block_size);
 			if (block_data_cmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index]) != 0) {
@@ -457,7 +445,7 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
  *
  * On success all parity levels are recomputed in buffer.
  */
-static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov)
+static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, int is_old_strategy)
 {
 	unsigned i, n;
 	int error;
@@ -496,6 +484,18 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 	 * can provide independent validation. Otherwise one additional parity equation
 	 * is reserved exclusively for checking the candidate result.
 	 *
+	 * Which block states provide a trustworthy hash depends on the strategy:
+	 *
+	 *   - CURRENT strategy (is_old_strategy == 0): BLK, REP, and REBUILD have
+	 *     trustworthy CURRENT hashes. CHG blocks do not (their stored hash describes
+	 *     pre-sync OLD data).
+	 *
+	 *   - OLD strategy (is_old_strategy == 1): only BLK and REBUILD provide trustworthy
+	 *     hashes (BLK represents synchronized data covered by pre-sync parity; REBUILD
+	 *     data is always CURRENT). REP is excluded because its stored hash describes
+	 *     NEW data while RAID reconstructs its pre-sync OLD contribution. CHG and DELETED
+	 *     have no updated hash.
+	 *
 	 * The additional parity is an independent RAID equation, not an independent
 	 * hash of the recovered data. The candidate is accepted only if the complete
 	 * reconstructed block set satisfies this extra equation for the whole block.
@@ -506,11 +506,7 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 	 */
 	has_hash = 0;
 	for (i = 0; i < failed_count; ++i) {
-		/* if we are expected to recover this block */
-		if (!failed[failed_map[i]].is_outofdate
-		        /* if the block has a hash to check */
-			&& block_has_updated_hash(failed[failed_map[i]].block)
-		)
+		if (block_has_recovery_hash(failed[failed_map[i]].block, is_old_strategy))
 			has_hash = 1;
 	}
 
@@ -583,7 +579,7 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
 			raid_data(r, id, ip, diskmax, state->block_size, buffer);
 
 			/* use the hash to check the result */
-			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer))
+			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, is_old_strategy))
 				return 0;
 
 			/* log */
@@ -661,7 +657,7 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
  *      OLD and CURRENT contents happen to be identical.
  *
  *      If no recovered CHG distinguishes the solution from OLD, all recovered
- *      CHGs remain is_outofdate. This does not mean that their contents are
+ *      CHGs remain RECOVERY_OUTOFDATE. This does not mean that their contents are
  *      necessarily wrong or actually old, only that CURRENT cannot be proven.
  *
  *   2. OLD strategy.
@@ -673,7 +669,7 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
  *      contribution when possible, or reconstructed as auxiliary RAID unknowns.
  *      This strategy is useful only when there is bad BLK/REBUILD data to
  *      recover. Any bad CHG/REP reconstructed under this strategy remains
- *      is_outofdate because it cannot be certified as the required CURRENT data.
+ *      RECOVERY_OUTOFDATE because it cannot be certified as the required CURRENT data.
  *
  * REBUILD is orthogonal to the OLD/CURRENT sync-history distinction. Its data
  * and stored hash are always CURRENT, while its physical parity is untrusted
@@ -721,9 +717,9 @@ static int repair_step(struct snapraid_state* state, int rehash, block_off_t pos
  * Return value:
  *
  *   0   A RAID solution was successfully validated under one of the two history
- *       hypotheses. Some originally bad CHG/REP entries may still have
- *       is_outofdate set, meaning that their required CURRENT contents could not
- *       be proven. The caller must inspect is_outofdate before considering such
+ *       hypotheses. Some originally bad CHG/REP entries may still be marked
+ *       RECOVERY_OUTOFDATE, meaning that their required CURRENT contents could not
+ *       be proven. The caller must inspect the recovery status before considering such
  *       blocks successfully recovered.
  *
  *  >0   One or more recovery candidates were attempted but failed independent
@@ -753,7 +749,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	error = 0;
 
 	for (j = 0; j < failed_count; ++j)
-		failed[j].is_current = 0;
+		failed[j].recovery = RECOVERY_NONE;
 
 	/*
 	 * Nothing is missing or damaged.
@@ -886,10 +882,10 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * consumes a RAID recovery equation.
 				 *
 				 * Keep is_bad set because the file block still needs to be
-				 * written back. is_current records that buffer[index] already
+				 * written back. RECOVERY_CURRENT records that buffer[index] already
 				 * contains certified CURRENT data.
 				 */
-				failed[j].is_current = 1;
+				failed[j].recovery = RECOVERY_CURRENT;
 				log_tag("repair_hash_import:%u: Fixed by import\n", j);
 			} else {
 				/*
@@ -930,7 +926,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	 * only OLD and CURRENT generations, allowing their generation to be inferred
 	 * after the RAID solution itself has been validated.
 	 */
-	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov);
+	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, 0);
 
 	if (ret == 0) {
 		int has_recovered_chg;
@@ -994,7 +990,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 		 *
 		 * If no recovered CHG distinguishes the solution from OLD, the RAID solution
 		 * remains valid but its generation is ambiguous. In that case all recovered
-		 * CHGs are marked is_outofdate together.
+		 * CHGs are marked RECOVERY_OUTOFDATE together.
 		 */
 		for (j = 0; j < failed_count; ++j) {
 			unsigned block_state;
@@ -1074,51 +1070,52 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 		}
 
 		if (has_recovered_chg) {
-			if (current_generation_proven) {
-				/*
-				 * At least one recovered CHG distinguishes this validated
-				 * RAID solution from OLD.
-				 *
-				 * Under the recovery invariant this proves that the solution
-				 * is CURRENT. The CURRENT classification therefore applies to
-				 * every CHG reconstructed by the same solution, including CHGs
-				 * with an INVALID OLD hash or with OLD == CURRENT contents.
-				 */
-				for (j = 0; j < failed_count; ++j) {
-					if (failed[j].is_bad && block_state_get(failed[j].block) == BLOCK_STATE_CHG)
-						failed[j].is_outofdate = 0;
-				}
-
+			if (current_generation_proven)
 				log_tag("repair_generation_current:%" PRIu64 ": Recovered CHG proves CURRENT generation\n", pos);
-			} else {
-				/*
-				 * The RAID solution itself was successfully validated,
-				 * but none of its recovered CHGs distinguishes CURRENT
-				 * from OLD.
-				 *
-				 * This does not prove that the bytes are actually old or
-				 * wrong. It only means that CURRENT cannot be proven.
-				 *
-				 * Preserve all recovered CHGs as best-effort data but
-				 * mark them out-of-date so the caller does not report
-				 * them as successfully recovered CURRENT contents.
-				 */
-				for (j = 0; j < failed_count; ++j) {
-					if (failed[j].is_bad && block_state_get(failed[j].block) == BLOCK_STATE_CHG) {
-						/* out-of-date entries cannot be certified CURRENT */
-						failed[j].is_current = 0;
-						failed[j].is_outofdate = 1;
-					}
-				}
-
+			else
 				log_tag("repair_generation_unknown:%" PRIu64 ": Recovered CHG generation is ambiguous\n", pos);
-			}
 		}
 
-		/* mark all recovered non-outofdate blocks as current */
+		/* mark all recovered blocks according to their proven generation */
 		for (j = 0; j < failed_count; ++j) {
-			if (failed[j].is_bad && !failed[j].is_outofdate)
-				failed[j].is_current = 1;
+			unsigned block_state;
+
+			if (!failed[j].is_bad)
+				continue;
+
+			block_state = block_state_get(failed[j].block);
+
+			if (block_state == BLOCK_STATE_CHG) {
+				if (current_generation_proven) {
+					/*
+					 * At least one recovered CHG distinguishes this validated
+					 * RAID solution from OLD.
+					 *
+					 * Under the recovery invariant this proves that the solution
+					 * is CURRENT. The CURRENT classification therefore applies to
+					 * every CHG reconstructed by the same solution, including CHGs
+					 * with an INVALID OLD hash or with OLD == CURRENT contents.
+					 */
+					failed[j].recovery = RECOVERY_CURRENT;
+				} else {
+					/*
+					 * The RAID solution itself was successfully validated,
+					 * but none of its recovered CHGs distinguishes CURRENT
+					 * from OLD.
+					 *
+					 * This does not prove that the bytes are actually old or
+					 * wrong. It only means that CURRENT cannot be proven.
+					 *
+					 * Preserve all recovered CHGs as best-effort data but
+					 * mark them out-of-date so the caller does not report
+					 * them as successfully recovered CURRENT contents.
+					 */
+					failed[j].recovery = RECOVERY_OUTOFDATE;
+				}
+			} else {
+				/* BLK, REP and REBUILD have trustworthy CURRENT hashes */
+				failed[j].recovery = RECOVERY_CURRENT;
+			}
 		}
 
 		return 0;
@@ -1244,7 +1241,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * swap it with a preallocated scratch buffer so that the OLD reconstruction
 				 * is solved into scratch without overwriting the certified CURRENT bytes.
 				 */
-				if (block_state == BLOCK_STATE_REP && failed[j].is_bad && failed[j].is_current) {
+				if (block_state == BLOCK_STATE_REP && failed[j].is_bad && failed[j].recovery == RECOVERY_CURRENT) {
 					assert(scratch_count < state->level);
 					rep_saved[scratch_count].j = j;
 					rep_saved[scratch_count].buffer = buffer[failed[j].index];
@@ -1267,23 +1264,6 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * state for recovering a BLK/REBUILD block.
 				 */
 			}
-
-			/*
-			 * Data associated with this entry is being interpreted as OLD.
-			 *
-			 * A readable entry has is_bad == 0 and therefore won't be
-			 * written back.
-			 *
-			 * If the entry itself was bad, this value may still be saved
-			 * as best-effort data, but it cannot be certified CURRENT.
-			 *
-			 * If buffer[index] was marked CURRENT in the first strategy
-			 * (e.g. an imported REP), clear is_current: during this strategy
-			 * the block is solved as an auxiliary OLD input. If the OLD
-			 * strategy succeeds, its proven CURRENT bytes will be restored.
-			 */
-			failed[j].is_current = 0;
-			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
 			/*
 			 * All generation-dependent unsynchronized states were handled
@@ -1308,7 +1288,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 			 */
 			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REBUILD);
 
-			if (!failed[j].is_current) {
+			if (failed[j].recovery != RECOVERY_CURRENT) {
 				if (n >= state->level) {
 					too_many_unknowns = 1;
 					break;
@@ -1337,7 +1317,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	 * or would just repeat the same recovery equations already attempted.
 	 */
 	if (!too_many_unknowns && something_to_recover && something_unsynced) {
-		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov);
+		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, 1);
 
 		if (ret == 0) {
 			/*
@@ -1359,39 +1339,38 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				unsigned idx = rep_saved[k].j;
 
 				buffer[failed[idx].index] = rep_saved[k].buffer;
-				failed[idx].is_current = 1;
-				failed[idx].is_outofdate = 0;
+				failed[idx].recovery = RECOVERY_CURRENT;
 				log_tag("repair_hash_import:%u: Restored CURRENT data after OLD retry\n", idx);
 			}
 			scratch_count = 0;
 
 			/*
+			 * Mark all recovered blocks according to their proven generation.
 			 * Any bad CHG/REP reconstructed here without validated CURRENT data is
 			 * OLD-compatible auxiliary data and cannot be certified as CURRENT.
+			 * Bad BLK and REBUILD blocks are certified CURRENT by their hash.
 			 */
 			for (j = 0; j < failed_count; ++j) {
-				if (failed[j].is_bad) {
-					unsigned block_state = block_state_get(failed[j].block);
+				unsigned block_state;
 
-					if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_REP) && !failed[j].is_current) {
-						/* out-of-date entries cannot be certified CURRENT */
-						failed[j].is_current = 0;
-						failed[j].is_outofdate = 1;
-						log_tag("repair_hash_unknown:%u: Surely old data\n", j);
-					}
+				/*
+				 * Skip blocks that do not need recovery, or blocks already validated as
+				 * CURRENT via import/search (including imported REPs restored above from
+				 * scratch buffers) to prevent demoting them to RECOVERY_OUTOFDATE.
+				 */
+				if (!failed[j].is_bad || failed[j].recovery == RECOVERY_CURRENT)
+					continue;
+
+				block_state = block_state_get(failed[j].block);
+
+				if (block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_REP) {
+					/* out-of-date entries cannot be certified CURRENT */
+					failed[j].recovery = RECOVERY_OUTOFDATE;
+					log_tag("repair_hash_unknown:%u: Surely old data\n", j);
+				} else {
+					/* BLK and REBUILD have trustworthy CURRENT hashes */
+					failed[j].recovery = RECOVERY_CURRENT;
 				}
-			}
-
-			/*
-			 * Returning success means that the RAID solution was validated.
-			 *
-			 * is_outofdate still tells the caller which originally bad
-			 * entries could not be proven to contain required CURRENT data.
-			 */
-			/* mark all recovered non-outofdate blocks as current */
-			for (j = 0; j < failed_count; ++j) {
-				if (failed[j].is_bad && !failed[j].is_outofdate)
-					failed[j].is_current = 1;
 			}
 
 			return 0;
@@ -1416,21 +1395,8 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 		unsigned idx = rep_saved[k].j;
 
 		buffer[failed[idx].index] = rep_saved[k].buffer;
-		failed[idx].is_current = 1;
-		failed[idx].is_outofdate = 0;
+		failed[idx].recovery = RECOVERY_CURRENT;
 	}
-
-	/*
-	 * No recovery strategy succeeded, so no out-of-date RAID candidate was
-	 * accepted. is_outofdate is also used temporarily while preparing the
-	 * OLD-history strategy, but that temporary classification must not escape
-	 * repair() on failure because the caller may interpret it as writable
-	 * best-effort recovered data.
-	 *
-	 * Independently validated CURRENT data remains identified by is_current.
-	 */
-	for (j = 0; j < failed_count; ++j)
-		failed[j].is_outofdate = 0;
 
 	/*
 	 * Neither history hypothesis produced a usable RAID solution.
@@ -1770,7 +1736,7 @@ static int file_recover(struct snapraid_state* state, int fix, int partial, bloc
 			continue;
 
 		/* nothing to do if it could not be recovered */
-		if (!failed[j].is_current && !failed[j].is_outofdate)
+		if (failed[j].recovery == RECOVERY_NONE)
 			continue;
 
 		if (!fix) {
@@ -1779,11 +1745,11 @@ static int file_recover(struct snapraid_state* state, int fix, int partial, bloc
 			 * recovered contents can be certified as the required CURRENT data.
 			 *
 			 * repair() may return success after validating the RAID solution while
-			 * leaving an unsynchronized bad block marked is_outofdate. Such a block
+			 * leaving an unsynchronized bad block marked RECOVERY_OUTOFDATE. Such a block
 			 * is still unrecoverable as CURRENT data and must make the containing
 			 * file DAMAGED rather than FIXED.
 			 */
-			if (failed[j].is_outofdate)
+			if (failed[j].recovery == RECOVERY_OUTOFDATE)
 				file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 			else
 				file_flag_set(failed[j].file, FILE_IS_FIXED);
@@ -1805,7 +1771,7 @@ static int file_recover(struct snapraid_state* state, int fix, int partial, bloc
 		 * so that a SIGKILL cannot leave unproven recovered data
 		 * under the normal filename.
 		 */
-		if (failed[j].is_outofdate) {
+		if (failed[j].recovery == RECOVERY_OUTOFDATE) {
 			file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 
 			/*
@@ -1857,7 +1823,7 @@ static int file_recover(struct snapraid_state* state, int fix, int partial, bloc
 		}
 
 		/* if we are not sure that the recovered content is uptodate */
-		if (failed[j].is_outofdate)
+		if (failed[j].recovery == RECOVERY_OUTOFDATE)
 			continue;
 
 		/*
@@ -2040,7 +2006,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				 * pre-sync recovery hypothesis.
 				 */
 				failed[failed_count].is_bad = 0;
-				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].recovery = RECOVERY_NONE;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
 				failed[failed_count].disk = disk;
@@ -2118,7 +2084,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
-						failed[failed_count].is_outofdate = 0;
+						failed[failed_count].recovery = RECOVERY_NONE;
 						failed[failed_count].index = j;
 						failed[failed_count].block = block;
 						failed[failed_count].disk = disk;
@@ -2216,7 +2182,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */
-				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].recovery = RECOVERY_NONE;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
 				failed[failed_count].disk = disk;
@@ -2265,7 +2231,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				 * bytes alone.
 				 */
 				failed[failed_count].is_bad = 0; /* we assume the CHG block correct */
-				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].recovery = RECOVERY_NONE;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
 				failed[failed_count].disk = disk;
@@ -2291,7 +2257,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because the hash doesn't match */
-				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].recovery = RECOVERY_NONE;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
 				failed[failed_count].disk = disk;
@@ -2316,7 +2282,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			 */
 			if (block_state == BLOCK_STATE_REP) {
 				failed[failed_count].is_bad = 0; /* it's not bad */
-				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].recovery = RECOVERY_NONE;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
 				failed[failed_count].disk = disk;
@@ -2376,7 +2342,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* print a list of all unrecoverable errors in files */
 				for (j = 0; j < failed_count; ++j) {
-					if (failed[j].is_bad && !failed[j].is_current)
+					if (failed[j].is_bad && failed[j].recovery != RECOVERY_CURRENT)
 						log_tag("unrecoverable:%" PRIu64 ":%s:%s: Unrecoverable error at position %" PRIu64 "\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 				}
 
@@ -2388,7 +2354,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* keep track of damaged files for blocks that could not be recovered */
 				for (j = 0; j < failed_count; ++j) {
-					if (!failed[j].is_bad || failed[j].is_current)
+					if (!failed[j].is_bad || failed[j].recovery == RECOVERY_CURRENT)
 						continue;
 
 					file_flag_set(failed[j].file, FILE_IS_DAMAGED);
@@ -2422,14 +2388,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				 * one of the parity-history hypotheses. It does not necessarily mean that
 				 * every bad unsynced block was recovered to its CURRENT version.
 				 *
-				 * A bad block marked is_outofdate is therefore still an unrecoverable current
+				 * A bad block marked RECOVERY_OUTOFDATE is therefore still an unrecoverable current
 				 * data error even though the stripe-level RAID recovery succeeded.
 				 */
 				int partial_recover_error = 0;
 
 				/* print a list of all the errors in files */
 				for (j = 0; j < failed_count; ++j) {
-					if (failed[j].is_bad && failed[j].is_outofdate) {
+					if (failed[j].is_bad && failed[j].recovery == RECOVERY_OUTOFDATE) {
 						++partial_recover_error;
 						log_tag("unrecoverable:%" PRIu64 ":%s:%s: Unrecoverable unsynced error at position %" PRIu64 "\n", i, failed[j].disk->name, esc_tag(failed[j].file->sub), failed[j].file_pos);
 					}
