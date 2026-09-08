@@ -485,6 +485,55 @@ static int windows_delete_link(const struct fssnapshot_struct* fss, const char* 
 	return 0;
 }
 
+static void fssnapshot_retiring_name(const char* name, char* retiring_name, size_t retiring_name_size)
+{
+	pathcpy(retiring_name, retiring_name_size, name);
+	pathcat(retiring_name, retiring_name_size, SNAPSHOT_RETIRING_SUFFIX);
+}
+
+static int fssnapshot_exists(struct fssnapshot_struct* fss, const char* name)
+{
+	struct stat st;
+
+	if (fssnapshot_stat(fss, name, &st) == 0)
+		return 1;
+
+	if (errno == ENOENT)
+		return 0;
+
+	return -1;
+}
+
+/**
+ * Recover an interrupted snapshot replacement.
+ *
+ * The .retiring snapshot is the previous destination and must remain available until the new destination is published. If the destination exists, publication completed and the retiring snapshot is deleted. Otherwise the previous destination is restored.
+ *
+ * Any failure is propagated to fssnapshot_mount(). Callers may then fall back to the live filesystem with an explicit warning when snapshots are used only as a read source, while snapshot-modifying operations fail.
+ */
+static int fssnapshot_recover_replace(struct fssnapshot_struct* fss, const char* name)
+{
+	char retiring_name[PATH_MAX];
+
+	fssnapshot_retiring_name(name, retiring_name, sizeof(retiring_name));
+
+	int retiring = fssnapshot_exists(fss, retiring_name);
+	if (retiring <= 0)
+		return retiring;
+
+	int current = fssnapshot_exists(fss, name);
+	if (current < 0)
+		return -1;
+
+	if (current != 0) {
+		/* the new destination was published, so the previous one can now be retired */
+		return fssnapshot_delete(fss, retiring_name);
+	}
+
+	/* the new destination was not published, so restore the previous one */
+	return fssnapshot_rename(fss, retiring_name, name);
+}
+
 int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 {
 	wchar_t conv_buf_vol[CONV_MAX];
@@ -493,6 +542,8 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	wchar_t volume_name[PATH_MAX];
 	wchar_t fs_name[32];
 	uint32_t magic;
+	char pending_retiring[PATH_MAX];
+	char stable_retiring[PATH_MAX];
 
 	/*
 	 * GetVolumePathNameW() accepts any path: file, directory, or deep
@@ -560,18 +611,31 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 		return -1;
 	}
 
-	/* refresh the links, after reboots they gets invalidated */
-	if (windows_rebuild_link(fss, SNAPSHOT_PENDING) != 0) {
-		return -1;
-	}
+	fssnapshot_retiring_name(SNAPSHOT_PENDING, pending_retiring, sizeof(pending_retiring));
+	fssnapshot_retiring_name(SNAPSHOT_STABLE, stable_retiring, sizeof(stable_retiring));
 
-	if (windows_rebuild_link(fss, SNAPSHOT_STABLE) != 0) {
+	/* refresh the links, after reboots their DeviceObject paths are invalidated */
+	if (windows_rebuild_link(fss, SNAPSHOT_PENDING) != 0)
 		return -1;
-	}
 
-	if (windows_rebuild_link(fss, SNAPSHOT_SCAN) != 0) {
+	if (windows_rebuild_link(fss, SNAPSHOT_STABLE) != 0)
 		return -1;
-	}
+
+	if (windows_rebuild_link(fss, SNAPSHOT_SCAN) != 0)
+		return -1;
+
+	if (windows_rebuild_link(fss, pending_retiring) != 0)
+		return -1;
+
+	if (windows_rebuild_link(fss, stable_retiring) != 0)
+		return -1;
+
+	/* never expose an interrupted replacement to the state layer */
+	if (fssnapshot_recover_replace(fss, SNAPSHOT_PENDING) != 0)
+		return -1;
+
+	if (fssnapshot_recover_replace(fss, SNAPSHOT_STABLE) != 0)
+		return -1;
 
 	fss->magic = magic;
 
@@ -591,8 +655,10 @@ int fssnapshot_stat(struct fssnapshot_struct* fss, const char* name, struct stat
 		return -1;
 
 	/* it must be a link to a directory */
-	if (!S_ISLNKDIR(st->st_mode))
+	if (!S_ISLNKDIR(st->st_mode)) {
+		errno = ENOTDIR;
 		return -1;
+	}
 
 	return 0;
 }
@@ -760,6 +826,35 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 	return 0;
 }
 
+int fssnapshot_replace(struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
+{
+	char retiring_name[PATH_MAX];
+
+	fssnapshot_retiring_name(new_name, retiring_name, sizeof(retiring_name));
+
+	/* resolve a replacement interrupted by an earlier invocation before starting another one */
+	if (fssnapshot_recover_replace(fss, new_name) != 0)
+		return -1;
+
+	int current = fssnapshot_exists(fss, new_name);
+	if (current < 0)
+		return -1;
+
+	if (current == 0)
+		return fssnapshot_rename(fss, old_name, new_name);
+
+	/* keep the previous destination recoverable until the source is published under the final name */
+	if (fssnapshot_rename(fss, new_name, retiring_name) != 0)
+		return -1;
+
+	/* on failure leave .retiring in place; fssnapshot_mount() will restore or complete the transition */
+	if (fssnapshot_rename(fss, old_name, new_name) != 0)
+		return -1;
+
+	/* the new destination is now published, so the previous destination is no longer required */
+	return fssnapshot_delete(fss, retiring_name);
+}
+
 int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char* path, size_t path_size)
 {
 	pathcpy(path, path_size, fss->snapshot_dir);
@@ -772,6 +867,9 @@ int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char*
 
 void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 {
+	char pending_retiring[PATH_MAX];
+	char stable_retiring[PATH_MAX];
+
 	/*
 	 * Remove symlinks on exit to prevent "Dangling Links."
 	 * Since \Device\HarddiskVolumeShadowCopyN paths are reassigned by the kernel
@@ -781,9 +879,14 @@ void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 	 * Deleting the link ensures system hygiene and prevents users from seeing
 	 * "Location not available" errors or incorrect data after a reboot.
 	 */
+	fssnapshot_retiring_name(SNAPSHOT_PENDING, pending_retiring, sizeof(pending_retiring));
+	fssnapshot_retiring_name(SNAPSHOT_STABLE, stable_retiring, sizeof(stable_retiring));
+
 	windows_delete_link(fss, SNAPSHOT_PENDING);
 	windows_delete_link(fss, SNAPSHOT_STABLE);
 	windows_delete_link(fss, SNAPSHOT_SCAN);
+	windows_delete_link(fss, pending_retiring);
+	windows_delete_link(fss, stable_retiring);
 }
 
 /****************************************************************************/

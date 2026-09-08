@@ -2377,10 +2377,69 @@ static int fssnapshot_zfs(const char* dir, uint32_t magic, struct fssnapshot_str
 }
 #endif
 
+static void fssnapshot_retiring_name(const char* name, char* retiring_name, size_t retiring_name_size)
+{
+	pathcpy(retiring_name, retiring_name_size, name);
+	pathcat(retiring_name, retiring_name_size, SNAPSHOT_RETIRING_SUFFIX);
+}
+
+static int fssnapshot_exists(struct fssnapshot_struct* fss, const char* name)
+{
+	struct stat st;
+
+	if (fssnapshot_stat(fss, name, &st) == 0)
+		return 1;
+
+	if (errno == ENOENT)
+		return 0;
+
+	return -1;
+}
+
+/**
+ * Recover an interrupted snapshot replacement.
+ *
+ * The .retiring snapshot is the previous destination and must remain available until the new destination is published. If the destination exists, publication completed and the retiring snapshot is deleted. Otherwise the previous destination is restored.
+ *
+ * Any failure is propagated to fssnapshot_mount(). Callers may then fall back to the live filesystem with an explicit warning when snapshots are used only as a read source, while snapshot-modifying operations fail.
+ */
+static int fssnapshot_recover_replace(struct fssnapshot_struct* fss, const char* name)
+{
+	char retiring_name[PATH_MAX];
+
+	fssnapshot_retiring_name(name, retiring_name, sizeof(retiring_name));
+
+	int retiring = fssnapshot_exists(fss, retiring_name);
+	if (retiring <= 0)
+		return retiring;
+
+	int current = fssnapshot_exists(fss, name);
+	if (current < 0)
+		return -1;
+
+	if (current != 0) {
+		/* the new destination was published, so the previous one can now be retired */
+		if (fssnapshot_delete(fss, retiring_name) != 0) {
+			log_error(errno, "Failed to delete retiring snapshot '%s'. %s.\n", retiring_name, strerror(errno));
+			return -1;
+		}
+		return 0;
+	}
+
+	/* the new destination was not published, so restore the previous one */
+	if (fssnapshot_rename(fss, retiring_name, name) != 0) {
+		log_error(errno, "Failed to restore retiring snapshot '%s' as '%s'. %s.\n", retiring_name, name, strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
 int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 {
 #if HAVE_LINUX_DEVICE
 	struct statfs sfs;
+	int ret;
 
 	if (statfs(path, &sfs) != 0) {
 		/* LCOV_EXCL_START */
@@ -2393,15 +2452,27 @@ int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 
 	if (statfs_type(&sfs) == BTRFS_SUPER_MAGIC) {
 		/* btrfs reserved inode 256 for subvolume roots */
-		return fssnapshot_inode(path, BTRFS_SUPER_MAGIC, 256, fss);
+		ret = fssnapshot_inode(path, BTRFS_SUPER_MAGIC, 256, fss);
 	} else if (statfs_type(&sfs) == BCACHEFS_SUPER_MAGIC) {
 		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
-		return fssnapshot_inode(path, BCACHEFS_SUPER_MAGIC, 4096, fss);
+		ret = fssnapshot_inode(path, BCACHEFS_SUPER_MAGIC, 4096, fss);
 	} else if (statfs_type(&sfs) == ZFS_SUPER_MAGIC) {
-		return fssnapshot_zfs(path, ZFS_SUPER_MAGIC, fss);
+		ret = fssnapshot_zfs(path, ZFS_SUPER_MAGIC, fss);
 	} else {
 		return 1;
 	}
+
+	if (ret != 0)
+		return ret;
+
+	/* never expose an interrupted replacement to the state layer */
+	if (fssnapshot_recover_replace(fss, SNAPSHOT_PENDING) != 0)
+		return -1;
+
+	if (fssnapshot_recover_replace(fss, SNAPSHOT_STABLE) != 0)
+		return -1;
+
+	return 0;
 #else
 	(void)path;
 	(void)fss;
@@ -2421,8 +2492,10 @@ static int fssnapshot_stat_fs(const struct fssnapshot_struct* fss, const char* n
 		return -1;
 
 	/* it must be a directory */
-	if (!S_ISDIR(st->st_mode))
+	if (!S_ISDIR(st->st_mode)) {
+		errno = ENOTDIR;
 		return -1;
+	}
 
 	return 0;
 }
@@ -2458,8 +2531,10 @@ static int fssnapshot_stat_zfs(const struct fssnapshot_struct* fss, const char* 
 		return -1;
 
 	/* it must be a directory */
-	if (!S_ISDIR(st->st_mode))
+	if (!S_ISDIR(st->st_mode)) {
+		errno = ENOTDIR;
 		return -1;
+	}
 
 	/**
 	 * When verifying if a ZFS snapshot has been successfully deleted, a direct
@@ -2492,18 +2567,26 @@ static int fssnapshot_stat_zfs(const struct fssnapshot_struct* fss, const char* 
 	}
 
 	while (1) {
+		errno = 0;
 		struct dirent* entry = readdir(d);
-		if (!entry)
-			break;
+		if (!entry) {
+			int error = errno;
+			closedir(d);
+
+			if (error != 0) {
+				errno = error;
+				return -1;
+			}
+
+			errno = ENOENT;
+			return -1;
+		}
 
 		if (strcmp(entry->d_name, native_name) == 0) {
 			closedir(d);
 			return 0;
 		}
 	}
-
-	closedir(d);
-	return -1;
 }
 #endif
 
@@ -2878,6 +2961,35 @@ int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name,
 	(void)new_name;
 	return -1;
 #endif
+}
+
+int fssnapshot_replace(struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
+{
+	char retiring_name[PATH_MAX];
+
+	fssnapshot_retiring_name(new_name, retiring_name, sizeof(retiring_name));
+
+	/* resolve a replacement interrupted by an earlier invocation before starting another one */
+	if (fssnapshot_recover_replace(fss, new_name) != 0)
+		return -1;
+
+	int current = fssnapshot_exists(fss, new_name);
+	if (current < 0)
+		return -1;
+
+	if (current == 0)
+		return fssnapshot_rename(fss, old_name, new_name);
+
+	/* keep the previous destination recoverable until the source is published under the final name */
+	if (fssnapshot_rename(fss, new_name, retiring_name) != 0)
+		return -1;
+
+	/* on failure leave .retiring in place; fssnapshot_mount() will restore or complete the transition */
+	if (fssnapshot_rename(fss, old_name, new_name) != 0)
+		return -1;
+
+	/* the new destination is now published, so the previous destination is no longer required */
+	return fssnapshot_delete(fss, retiring_name);
 }
 
 int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char* path, size_t path_size)

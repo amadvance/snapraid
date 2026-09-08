@@ -6506,18 +6506,9 @@ int state_snapshot_pending(struct snapraid_state* state)
 
 		msg_progress("Creating disk %s pending snapshot...\n", disk->name);
 
-		/* delete the pending snapshot only after the content state was saved */
-		if (state_snapshot_dir(&disk->fss, SNAPSHOT_PENDING, 0) == 0) {
-			if (fssnapshot_delete(&disk->fss, SNAPSHOT_PENDING) != 0) {
-				log_fatal(errno, "Failed to delete pending snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-				error = -1;
-				continue;
-			}
-		}
-
-		/* make the scan snapshot available for recovery */
-		if (fssnapshot_rename(&disk->fss, SNAPSHOT_SCAN, SNAPSHOT_PENDING) != 0) {
-			log_fatal(errno, "Failed to rename scan snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+		/* publish the scan snapshot without dropping the previous recovery source first */
+		if (fssnapshot_replace(&disk->fss, SNAPSHOT_SCAN, SNAPSHOT_PENDING) != 0) {
+			log_fatal(errno, "Failed to replace pending snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
 			error = -1;
 			continue;
 		}
@@ -6549,18 +6540,9 @@ int state_snapshot_commit(struct snapraid_state* state)
 
 		msg_progress("Committing disk %s stable snapshot...\n", disk->name);
 
-		/* delete a potential previous stable snapshot */
-		if (state_snapshot_dir(&disk->fss, SNAPSHOT_STABLE, 0) == 0) {
-			if (fssnapshot_delete(&disk->fss, SNAPSHOT_STABLE) != 0) {
-				log_fatal(errno, "Failed to delete stable snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
-				error = -1;
-				continue;
-			}
-		}
-
-		/* rename pending to stable */
-		if (fssnapshot_rename(&disk->fss, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
-			log_fatal(errno, "Failed to rename snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
+		/* publish pending without dropping the previous stable deallocation source first */
+		if (fssnapshot_replace(&disk->fss, SNAPSHOT_PENDING, SNAPSHOT_STABLE) != 0) {
+			log_fatal(errno, "Failed to replace stable snapshot in '%s'. %s.\n", disk->fss.snapshot_dir, strerror(errno));
 			error = -1;
 			continue;
 		}
@@ -6582,7 +6564,7 @@ void state_snapshot_read(struct snapraid_state* state)
 		if (res > 0)
 			continue;
 		if (res < 0) {
-			log_error(EUSER, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem.\n", disk->name);
+			log_error(EUSER, "WARNING! Disk %s snapshot setup or recovery failed, falling back to live filesystem.\n", disk->name);
 			log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
 			continue;
 		}
@@ -6615,7 +6597,7 @@ void state_snapshot_write(struct snapraid_state* state, tommy_list* filterlist_d
 		if (res > 0)
 			continue;
 		if (res < 0) {
-			log_error(EUSER, "WARNING! Disk %s snapshot mount failed, falling back to live filesystem.\n", disk->name);
+			log_error(EUSER, "WARNING! Disk %s snapshot setup or recovery failed, falling back to live filesystem.\n", disk->name);
 			log_error(EUSER, "Recovery capability may be reduced if files have changed since the last successful sync.\n");
 			continue;
 		}

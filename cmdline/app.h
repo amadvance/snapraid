@@ -85,6 +85,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 #define SNAPSHOT_PENDING "pending"
 #define SNAPSHOT_STABLE "stable"
 #define SNAPSHOT_SCAN "scan"
+#define SNAPSHOT_RETIRING_SUFFIX ".retiring"
 
 /*
  * Snapshots context
@@ -138,7 +139,7 @@ struct fssnapshot_struct {
  *
  * @param dir Full path inside the filesystem (must end with '/')
  * @param fss Output snapshot context
- * @return 0 on success, -1 on failure
+ * @return 0 on success, 1 if snapshots are unsupported, -1 on failure
  */
 int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss);
 
@@ -188,6 +189,18 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name);
  * @return 0 on success, -1 on failure
  */
 int fssnapshot_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name);
+
+/**
+ * Replace a snapshot while preserving the previous destination until the new one is published.
+ *
+ * An interrupted replacement is recovered automatically by fssnapshot_mount().
+ *
+ * @param fss Snapshot context
+ * @param old_name Existing source snapshot name
+ * @param new_name Destination snapshot name
+ * @return 0 on success, -1 on failure
+ */
+int fssnapshot_replace(struct fssnapshot_struct* fss, const char* old_name, const char* new_name);
 
 /**
  * Get the path where a logical snapshot is accessible.
