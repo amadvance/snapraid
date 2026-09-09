@@ -2360,6 +2360,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	int has_hash;
 	int has_prevhash;
 	int has_info;
+	int has_invalid_parity;
 	char buffer[PATH_MAX];
 	int ret;
 	tommy_array disk_mapping;
@@ -2382,6 +2383,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	has_hash = 0;
 	has_prevhash = 0;
 	has_info = 0;
+	has_invalid_parity = 0;
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
@@ -2634,6 +2636,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
+				/* all file block states except BLK require a parity update */
+				if (v_state != BLOCK_STATE_BLK)
+					has_invalid_parity = 1;
+
 				v_file_pos = v_idx;
 				ret = state_read_block_run(f, file, v_file_pos, v_count, v_state, hash_mode);
 				if (ret < 0) {
@@ -2770,9 +2776,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* insert the info in the array */
 						info_set(&state->infoarr, v_pos, info);
 
-						if (fs_is_block_unsynced(state, v_pos))
-							++count_unsynced;
-
 						/* go to next block */
 						++v_pos;
 						--v_count;
@@ -2788,14 +2791,21 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							/* LCOV_EXCL_STOP */
 						}
 
-						if (fs_is_block_unsynced(state, v_pos))
-							++count_unsynced;
-
 						/* go to next block */
 						++v_pos;
 						--v_count;
 					}
 				}
+			}
+
+			/*
+			 * A synchronized content has no invalid block state, so its unsynced
+			 * count is certainly zero. Scan the extent maps only when needed.
+			 */
+			if (has_invalid_parity) {
+				for (v_pos = 0; v_pos < blockmax; ++v_pos)
+					if (fs_is_block_unsynced(state, v_pos))
+						++count_unsynced;
 			}
 		} else if (c == 'h') {
 			/* hole */
@@ -2848,6 +2858,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				switch (c) {
 				case 'o' :
 					/* if it's a run of deleted blocks */
+					has_invalid_parity = 1;
 
 					/* ensure the converted byte size fits in signed data_off_t without overflow */
 					if (v_count > INT64_MAX / (uint64_t)state->block_size) {
