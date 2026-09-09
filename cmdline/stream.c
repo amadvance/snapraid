@@ -68,7 +68,6 @@ STREAM* sopen_read(const char* file, int flags)
 	s->offset_uncached = 0;
 	s->crc = 0;
 	s->crc_uncached = 0;
-	s->crc_stream = CRC_IV;
 
 	return s;
 }
@@ -100,7 +99,6 @@ STREAM* sopen_multi_write(unsigned count, int flags)
 	s->offset_uncached = 0;
 	s->crc = 0;
 	s->crc_uncached = 0;
-	s->crc_stream = CRC_IV;
 
 	return s;
 }
@@ -387,12 +385,6 @@ uint32_t scrc(STREAM* s)
 {
 	assert(s->flags & STREAM_FLAGS_CRC);
 	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer);
-}
-
-uint32_t scrc_stream(STREAM* s)
-{
-	assert(s->flags & STREAM_FLAGS_CRC);
-	return s->crc_stream ^ CRC_IV;
 }
 
 int sgetc_uncached(STREAM* s)
@@ -734,10 +726,6 @@ int swrite_uncached(const void* void_data, size_t size, STREAM* f)
 		available = (size_t)(f->end - f->pos);
 		if (available > size)
 			available = size;
-
-		/* compute the independent CRC before copying to detect buffer corruption */
-		if (f->flags & STREAM_FLAGS_CRC)
-			f->crc_stream = crc32c_plain(f->crc_stream, data, available);
 
 		memcpy(f->pos, data, available);
 		f->pos += available;

@@ -65,26 +65,6 @@ struct stream {
 	 */
 	uint32_t crc_uncached;
 
-	/**
-	 * CRC of the data written to the stream.
-	 *
-	 * This is an extra check of the data that is written to
-	 * file to ensure that it's consistent even in case
-	 * of memory errors.
-	 *
-	 * This extra check takes about 2 seconds for each GB of
-	 * content file with the Intel CRC instruction,
-	 * and about 4 seconds without it.
-	 * But usually this doesn't slow down the write process,
-	 * as the disk is the bottle-neck.
-	 *
-	 * Note that this CRC doesn't have the IV processing.
-	 *
-	 * Not used in reading.
-	 * In writing, it's all the data wrote calling sput() functions.
-	 */
-	uint32_t crc_stream;
-
 	struct advise_struct* advise; /**< Cache advice state for each handle. */
 };
 
@@ -146,11 +126,6 @@ int64_t stell(STREAM* s);
  * Get the CRC of the processed data.
  */
 uint32_t scrc(STREAM* s);
-
-/**
- * Get the CRC of the processed data in put.
- */
-uint32_t scrc_stream(STREAM* s);
 
 /**
  * Check if the buffer has enough data loaded.
@@ -369,16 +344,6 @@ static inline int sputc(int c, STREAM* s)
 			return -1;
 	}
 
-	/**
-	 * Update the crc *before* writing the data in the buffer
-	 *
-	 * This must be done before the memory write,
-	 * to be able to detect memory errors on the buffer,
-	 * happening before we write it on the file.
-	 */
-	if (s->flags & STREAM_FLAGS_CRC)
-		s->crc_stream = crc32c_plain_char(s->crc_stream, c);
-
 	*s->pos++ = c;
 
 	return 0;
@@ -411,10 +376,6 @@ static __always_inline int swrite(const void* data, size_t size, STREAM* f)
 {
 	if (tommy_unlikely(!sptrlookup(f, size)))
 		return swrite_uncached(data, size, f);
-
-	/* compute the independent CRC before copying to detect buffer corruption */
-	if (f->flags & STREAM_FLAGS_CRC)
-		f->crc_stream = crc32c_plain(f->crc_stream, data, size);
 
 	memcpy(f->pos, data, size);
 	f->pos += size;

@@ -20,7 +20,6 @@ void test(int advise_mode)
 	uint32_t u32 = -1L;
 	uint64_t u64 = -1LL;
 	uint32_t put_crc_stored;
-	uint32_t put_crc_computed;
 
 	crc32c_init();
 
@@ -79,13 +78,6 @@ void test(int advise_mode)
 	}
 
 	put_crc_stored = scrc(s);
-	put_crc_computed = scrc_stream(s);
-
-	if (put_crc_stored != put_crc_computed) {
-		/* LCOV_EXCL_START */
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
 
 	if (sputble32(put_crc_stored, s) != 0) {
 		/* LCOV_EXCL_START */

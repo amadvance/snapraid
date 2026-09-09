@@ -3855,23 +3855,18 @@ struct state_write_thread_context {
  * Write all hashes in a contiguous run of file blocks.
  *
  * The source hashes are separated by the block state byte, so they cannot be
- * copied with a single memcpy(). Keep the stream pointer and the independent
- * CRC local while filling each buffered group to avoid the per-block stream
- * call and field updates. The CRC is still computed before each hash is copied,
- * preserving the memory-corruption check performed by swrite().
+ * copied with a single memcpy(). Keep the stream pointer local while filling
+ * each buffered group to avoid the per-block stream call and field updates.
  */
 static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
 {
 	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
 	size_t block_stride = block_sizeof();
 
-	assert(f->flags & STREAM_FLAGS_CRC);
-
 	while (count) {
 		size_t available = (size_t)(f->end - f->pos);
 		block_off_t cached_count = available / BLOCK_HASH_SIZE;
 		unsigned char* output;
-		uint32_t crc;
 
 		if (cached_count > count)
 			cached_count = count;
@@ -3888,18 +3883,15 @@ static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_of
 		}
 
 		output = f->pos;
-		crc = f->crc_stream;
 		for (block_off_t i = 0; i < cached_count; ++i) {
 			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
 
-			crc = crc32c_plain(crc, block->hash, BLOCK_HASH_SIZE);
 			hash_copy(output, block->hash);
 
 			output += BLOCK_HASH_SIZE;
 			block_ptr += block_stride;
 		}
 
-		f->crc_stream = crc;
 		f->pos = output;
 		count -= cached_count;
 	}
@@ -4472,19 +4464,6 @@ static void* state_write_thread(void* arg)
 
 	/* get the file crc */
 	crc = scrc(f);
-
-	/*
-	 * Compare the crc of the data written to file
-	 * with the one of the data written to the stream
-	 */
-	if (crc != scrc_stream(f)) {
-		/* LCOV_EXCL_START */
-		log_fatal(ECONTENT, "CRC mismatch while writing the content stream.\n");
-		log_fatal(ECONTENT, "DANGER! Your RAM memory is faulty! DO NOT PROCEED UNTIL FIXED!\n");
-		log_fatal(ECONTENT, "Try running a memory test like http://www.memtest86.com/\n");
-		goto bail;
-		/* LCOV_EXCL_STOP */
-	}
 
 	sputble32(crc, f);
 	if (serror(f)) {

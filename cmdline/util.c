@@ -398,8 +398,88 @@ uint32_t CRC32C_3[256] = {
 	0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842
 };
 
-#if CONFIG_X86
-int crc_x86;
+#ifdef CONFIG_X86_64
+uint32_t CRC32C_X86_64_SKIP[6][8][16];
+#endif
+
+#if CONFIG_ARM_CRC
+uint32_t CRC32C_ARM64_SKIP[6][8][16];
+#endif
+
+#if defined(CONFIG_X86_64) || CONFIG_ARM_CRC
+static uint32_t crc32c_shift_table[sizeof(size_t) * 8][32];
+
+static uint32_t crc32c_matrix_times(const uint32_t* matrix, uint32_t vector)
+{
+	uint32_t value = 0;
+
+	while (vector) {
+		if (vector & 1)
+			value ^= *matrix;
+		vector >>= 1;
+		++matrix;
+	}
+
+	return value;
+}
+
+static void crc32c_matrix_square(uint32_t* square, const uint32_t* matrix)
+{
+	unsigned i;
+
+	for (i = 0; i < 32; ++i)
+		square[i] = crc32c_matrix_times(matrix, matrix[i]);
+}
+
+static void crc32c_shift_init(void)
+{
+	uint32_t matrix[32];
+	uint32_t square[32];
+	uint32_t row;
+	unsigned i;
+
+	/* reflected Castagnoli polynomial, represented as one zero-bit operator. */
+	matrix[0] = 0x82f63b78;
+	row = 1;
+	for (i = 1; i < 32; ++i) {
+		matrix[i] = row;
+		row <<= 1;
+	}
+
+	/* square three times to obtain the operator for one zero byte. */
+	crc32c_matrix_square(square, matrix);
+	crc32c_matrix_square(matrix, square);
+	crc32c_matrix_square(crc32c_shift_table[0], matrix);
+
+	for (i = 1; i < sizeof(size_t) * 8; ++i)
+		crc32c_matrix_square(crc32c_shift_table[i], crc32c_shift_table[i - 1]);
+}
+
+uint32_t crc32c_shift(uint32_t crc, size_t size)
+{
+	unsigned i = 0;
+
+	while (size) {
+		if (size & 1)
+			crc = crc32c_matrix_times(crc32c_shift_table[i], crc);
+		size >>= 1;
+		++i;
+	}
+
+	return crc;
+}
+
+static void crc32c_skip_init(uint32_t table[8][16], size_t size)
+{
+	unsigned i;
+	unsigned j;
+
+	/* Collapse each fixed-size shift into eight nibble table lookups. */
+	for (i = 0; i < 8; ++i) {
+		for (j = 0; j < 16; ++j)
+			table[i][j] = crc32c_shift((uint32_t)j << (4 * i), size);
+	}
+}
 #endif
 
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, size_t size)
@@ -446,9 +526,27 @@ void crc32c_init(void)
 	crc32c = crc32c_gen;
 #if CONFIG_X86
 	if (raid_cpu_has_crc32()) {
-		crc_x86 = 1;
+#ifdef CONFIG_X86_64
+		crc32c_shift_init();
+		crc32c_skip_init(CRC32C_X86_64_SKIP[0], CRC32C_X86_64_BLOCK0_SIZE);
+		crc32c_skip_init(CRC32C_X86_64_SKIP[1], CRC32C_X86_64_BLOCK1_SIZE);
+		crc32c_skip_init(CRC32C_X86_64_SKIP[2], CRC32C_X86_64_BLOCK2_SIZE);
+		crc32c_skip_init(CRC32C_X86_64_SKIP[3], CRC32C_X86_64_BLOCK3_SIZE);
+		crc32c_skip_init(CRC32C_X86_64_SKIP[4], CRC32C_X86_64_BLOCK4_SIZE);
+		crc32c_skip_init(CRC32C_X86_64_SKIP[5], CRC32C_X86_64_BLOCK5_SIZE);
+#endif
 		crc32c = crc32c_x86;
 	}
+#endif
+#if CONFIG_ARM_CRC
+	crc32c_shift_init();
+	crc32c_skip_init(CRC32C_ARM64_SKIP[0], CRC32C_ARM64_BLOCK0_SIZE);
+	crc32c_skip_init(CRC32C_ARM64_SKIP[1], CRC32C_ARM64_BLOCK1_SIZE);
+	crc32c_skip_init(CRC32C_ARM64_SKIP[2], CRC32C_ARM64_BLOCK2_SIZE);
+	crc32c_skip_init(CRC32C_ARM64_SKIP[3], CRC32C_ARM64_BLOCK3_SIZE);
+	crc32c_skip_init(CRC32C_ARM64_SKIP[4], CRC32C_ARM64_BLOCK4_SIZE);
+	crc32c_skip_init(CRC32C_ARM64_SKIP[5], CRC32C_ARM64_BLOCK5_SIZE);
+	crc32c = crc32c_arm64;
 #endif
 }
 

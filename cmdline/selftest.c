@@ -267,6 +267,7 @@ static struct crc_test_vector TEST_CRC32C[] = {
 	{ "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff", 32, 0x62a8ab43 },
 	{ "\x1f\x1e\x1d\x1c\x1b\x1a\x19\x18\x17\x16\x15\x14\x13\x12\x11\x10\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\x07\x06\x05\x04\x03\x02\x01\x00", 32, 0x113fdb5c },
 	{ "\x01\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x14\x00\x00\x00\x18\x28\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00", 48, 0xd9963a56 },
+	{ "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f", 16, 0xd9c908eb },
 	{ "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f", 32, 0x46dd794e },
 	{ "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28", 40, 0x0e2c157f },
 	{ "\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50", 40, 0xe980ebf6 },
@@ -295,6 +296,74 @@ static void test_crc32c(void)
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+	}
+
+	{
+		unsigned char data[65536 + 7];
+		static const size_t size[] = {
+			CRC32C_X86_64_BLOCK5_SIZE * 3 - 1,
+			CRC32C_X86_64_BLOCK5_SIZE * 3,
+			CRC32C_X86_64_BLOCK5_SIZE * 3 + 1,
+			CRC32C_X86_64_BLOCK4_SIZE * 3 - 1,
+			CRC32C_X86_64_BLOCK4_SIZE * 3,
+			CRC32C_X86_64_BLOCK4_SIZE * 3 + 1,
+			CRC32C_X86_64_BLOCK3_SIZE * 3 - 1,
+			CRC32C_X86_64_BLOCK3_SIZE * 3,
+			CRC32C_X86_64_BLOCK3_SIZE * 3 + 1,
+			CRC32C_X86_64_BLOCK2_SIZE * 3 - 1,
+			CRC32C_X86_64_BLOCK2_SIZE * 3,
+			CRC32C_X86_64_BLOCK2_SIZE * 3 + 1,
+			CRC32C_X86_64_BLOCK1_SIZE * 3 - 1,
+			CRC32C_X86_64_BLOCK1_SIZE * 3,
+			CRC32C_X86_64_BLOCK1_SIZE * 3 + 1,
+			CRC32C_X86_64_BLOCK0_SIZE * 3 - 1,
+			CRC32C_X86_64_BLOCK0_SIZE * 3,
+			CRC32C_X86_64_BLOCK0_SIZE * 3 + 1,
+			3 * (CRC32C_X86_64_BLOCK0_SIZE + CRC32C_X86_64_BLOCK1_SIZE + CRC32C_X86_64_BLOCK2_SIZE + CRC32C_X86_64_BLOCK3_SIZE + CRC32C_X86_64_BLOCK4_SIZE + CRC32C_X86_64_BLOCK5_SIZE) + 255,
+
+			CRC32C_ARM64_BLOCK4_SIZE * 2 - 1,
+			CRC32C_ARM64_BLOCK4_SIZE * 2,
+			CRC32C_ARM64_BLOCK4_SIZE * 2 + 1,
+			CRC32C_ARM64_BLOCK5_SIZE * 2 - 1,
+			CRC32C_ARM64_BLOCK5_SIZE * 2,
+			CRC32C_ARM64_BLOCK5_SIZE * 2 + 1,
+			CRC32C_ARM64_BLOCK3_SIZE * 2 - 1,
+			CRC32C_ARM64_BLOCK3_SIZE * 2,
+			CRC32C_ARM64_BLOCK3_SIZE * 2 + 1,
+			CRC32C_ARM64_BLOCK2_SIZE * 2 - 1,
+			CRC32C_ARM64_BLOCK2_SIZE * 2,
+			CRC32C_ARM64_BLOCK2_SIZE * 2 + 1,
+			CRC32C_ARM64_BLOCK1_SIZE * 2 - 1,
+			CRC32C_ARM64_BLOCK1_SIZE * 2,
+			CRC32C_ARM64_BLOCK1_SIZE * 2 + 1,
+			CRC32C_ARM64_BLOCK0_SIZE * 2 - 1,
+			CRC32C_ARM64_BLOCK0_SIZE * 2,
+			CRC32C_ARM64_BLOCK0_SIZE * 2 + 1,
+			2 * (CRC32C_ARM64_BLOCK0_SIZE + CRC32C_ARM64_BLOCK1_SIZE + CRC32C_ARM64_BLOCK2_SIZE + CRC32C_ARM64_BLOCK3_SIZE + CRC32C_ARM64_BLOCK4_SIZE + CRC32C_ARM64_BLOCK5_SIZE) + 255,
+			65536
+		};
+		static const unsigned offset[] = { 0, 1, 3, 7 };
+		unsigned j;
+		unsigned k;
+
+		for (i = 0; i < sizeof(data); ++i)
+			data[i] = (unsigned char)(i * 29 + i / 7);
+
+		for (j = 0; j < sizeof(size) / sizeof(size[0]); ++j) {
+			for (k = 0; k < sizeof(offset) / sizeof(offset[0]); ++k) {
+				uint32_t seed = 0x12345678;
+				uint32_t digest = crc32c(seed, data + offset[k], size[j]);
+				uint32_t digest_gen = crc32c_gen(seed, data + offset[k], size[j]);
+
+				if (digest != digest_gen) {
+					/* LCOV_EXCL_START */
+					log_fatal(EINTERNAL, "Failed CRC32C large buffer test\n");
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			}
+		}
+
 	}
 }
 

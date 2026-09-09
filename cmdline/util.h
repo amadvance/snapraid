@@ -91,31 +91,33 @@ extern uint32_t CRC32C_1[256];
 extern uint32_t CRC32C_2[256];
 extern uint32_t CRC32C_3[256];
 
-/**
- * If the CPU support the CRC instructions.
- */
-#if CONFIG_X86
-extern int crc_x86;
+#define CRC32C_X86_64_BLOCK0_SIZE 5456
+#define CRC32C_X86_64_BLOCK1_SIZE 2720
+#define CRC32C_X86_64_BLOCK2_SIZE 1360
+#define CRC32C_X86_64_BLOCK3_SIZE 672
+#define CRC32C_X86_64_BLOCK4_SIZE 336
+#define CRC32C_X86_64_BLOCK5_SIZE 160
+#ifdef CONFIG_X86_64
+extern uint32_t CRC32C_X86_64_SKIP[6][8][16];
+#endif
+
+#define CRC32C_ARM64_BLOCK0_SIZE 8192
+#define CRC32C_ARM64_BLOCK1_SIZE 4096
+#define CRC32C_ARM64_BLOCK2_SIZE 2048
+#define CRC32C_ARM64_BLOCK3_SIZE 1024
+#define CRC32C_ARM64_BLOCK4_SIZE 512
+#define CRC32C_ARM64_BLOCK5_SIZE 256
+#if CONFIG_ARM_CRC
+extern uint32_t CRC32C_ARM64_SKIP[6][8][16];
 #endif
 
 /**
- * Compute CRC-32 (Castagnoli) for a single byte without the IV.
+ * Advance a raw CRC-32C by a number of zero bytes.
+ * Used to combine independent hardware CRC lanes.
  */
-static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)
-{
-#if CONFIG_X86
-	if (tommy_likely(crc_x86)) {
-		asm ("crc32b %1, %0\n" : "+r" (crc) : "m" (c));
-		return crc;
-	}
+#if defined(CONFIG_X86_64) || CONFIG_ARM_CRC
+uint32_t crc32c_shift(uint32_t crc, size_t size);
 #endif
-#if CONFIG_ARM_CRC
-	asm ("crc32cb %w0, %w0, %w1\n" : "+r" (crc) : "r" (c));
-	return crc;
-#else
-	return CRC32C_0[(crc ^ c) & 0xff] ^ (crc >> 8);
-#endif
-}
 
 /**
  * Compute the CRC-32 (Castagnoli) without the IV.
@@ -142,27 +144,128 @@ static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, 
  * Compute the CRC-32 (Castagnoli) without the IV.
  */
 #if CONFIG_X86
-static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, size_t size)
+#ifdef CONFIG_X86_64
+static __always_inline uint32_t crc32c_x86_64_skip(uint32_t crc, const uint32_t table[8][16])
+{
+	return table[0][crc & 0xf]
+	       ^ table[1][(crc >> 4) & 0xf]
+	       ^ table[2][(crc >> 8) & 0xf]
+	       ^ table[3][(crc >> 12) & 0xf]
+	       ^ table[4][(crc >> 16) & 0xf]
+	       ^ table[5][(crc >> 20) & 0xf]
+	       ^ table[6][(crc >> 24) & 0xf]
+	       ^ table[7][crc >> 28];
+}
+
+static __always_inline uint32_t crc32c_x86_64_3lane(uint32_t crc, const unsigned char* ptr, size_t lane_size, const uint32_t table[8][16])
+{
+	const unsigned char* ptr0 = ptr;
+	const unsigned char* ptr1 = ptr + lane_size;
+	const unsigned char* ptr2 = ptr1 + lane_size;
+	const unsigned char* end = ptr1;
+	uint64_t crc0 = crc;
+	uint64_t crc1 = 0;
+	uint64_t crc2 = 0;
+
+	/*
+	 * Keep three dependency chains in flight to hide the CRC32 latency.
+	 * Lane sizes are multiples of 16 to avoid a separate tail loop.
+	 */
+	while (ptr0 < end) {
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc0) : "m" (*(const uint64_t*)ptr0));
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc1) : "m" (*(const uint64_t*)ptr1));
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc2) : "m" (*(const uint64_t*)ptr2));
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc0) : "m" (*(const uint64_t*)(ptr0 + 8)));
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc1) : "m" (*(const uint64_t*)(ptr1 + 8)));
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc2) : "m" (*(const uint64_t*)(ptr2 + 8)));
+		ptr0 += 16;
+		ptr1 += 16;
+		ptr2 += 16;
+	}
+
+	crc = crc32c_x86_64_skip((uint32_t)crc0, table) ^ (uint32_t)crc1;
+
+	return crc32c_x86_64_skip(crc, table) ^ (uint32_t)crc2;
+}
+#endif
+
+static __always_inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 #ifdef CONFIG_X86_64
 	uint64_t crc64 = crc;
-	while (size >= 8) {
-		asm ("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
+
+	if (size >= 3 * CRC32C_X86_64_BLOCK5_SIZE) {
+		while (size >= 3 * CRC32C_X86_64_BLOCK0_SIZE) {
+			crc64 = crc32c_x86_64_3lane((uint32_t)crc64, ptr, CRC32C_X86_64_BLOCK0_SIZE, CRC32C_X86_64_SKIP[0]);
+			ptr += 3 * CRC32C_X86_64_BLOCK0_SIZE;
+			size -= 3 * CRC32C_X86_64_BLOCK0_SIZE;
+		}
+		while (size >= 3 * CRC32C_X86_64_BLOCK1_SIZE) {
+			crc64 = crc32c_x86_64_3lane((uint32_t)crc64, ptr, CRC32C_X86_64_BLOCK1_SIZE, CRC32C_X86_64_SKIP[1]);
+			ptr += 3 * CRC32C_X86_64_BLOCK1_SIZE;
+			size -= 3 * CRC32C_X86_64_BLOCK1_SIZE;
+		}
+		while (size >= 3 * CRC32C_X86_64_BLOCK2_SIZE) {
+			crc64 = crc32c_x86_64_3lane((uint32_t)crc64, ptr, CRC32C_X86_64_BLOCK2_SIZE, CRC32C_X86_64_SKIP[2]);
+			ptr += 3 * CRC32C_X86_64_BLOCK2_SIZE;
+			size -= 3 * CRC32C_X86_64_BLOCK2_SIZE;
+		}
+		while (size >= 3 * CRC32C_X86_64_BLOCK3_SIZE) {
+			crc64 = crc32c_x86_64_3lane((uint32_t)crc64, ptr, CRC32C_X86_64_BLOCK3_SIZE, CRC32C_X86_64_SKIP[3]);
+			ptr += 3 * CRC32C_X86_64_BLOCK3_SIZE;
+			size -= 3 * CRC32C_X86_64_BLOCK3_SIZE;
+		}
+		while (size >= 3 * CRC32C_X86_64_BLOCK4_SIZE) {
+			crc64 = crc32c_x86_64_3lane((uint32_t)crc64, ptr, CRC32C_X86_64_BLOCK4_SIZE, CRC32C_X86_64_SKIP[4]);
+			ptr += 3 * CRC32C_X86_64_BLOCK4_SIZE;
+			size -= 3 * CRC32C_X86_64_BLOCK4_SIZE;
+		}
+		while (size >= 3 * CRC32C_X86_64_BLOCK5_SIZE) {
+			crc64 = crc32c_x86_64_3lane((uint32_t)crc64, ptr, CRC32C_X86_64_BLOCK5_SIZE, CRC32C_X86_64_SKIP[5]);
+			ptr += 3 * CRC32C_X86_64_BLOCK5_SIZE;
+			size -= 3 * CRC32C_X86_64_BLOCK5_SIZE;
+		}
+	}
+	while (size >= 16) {
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)(ptr + 8)));
+		ptr += 16;
+		size -= 16;
+	}
+	if (size >= 8) {
+		asm volatile ("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
 		ptr += 8;
 		size -= 8;
 	}
 	crc = (uint32_t)crc64;
 #else
-	while (size >= 4) {
-		asm ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
+	while (size >= 16) {
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)(ptr + 4)));
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)(ptr + 8)));
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)(ptr + 12)));
+		ptr += 16;
+		size -= 16;
+	}
+	if (size >= 8) {
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)(ptr + 4)));
+		ptr += 8;
+		size -= 8;
+	}
+#endif
+	if (size >= 4) {
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
 		ptr += 4;
 		size -= 4;
 	}
-#endif
-	while (size) {
-		asm ("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
-		++ptr;
-		--size;
+	if (size >= 2) {
+		asm volatile ("crc32w %1, %0\n" : "+r" (crc) : "m" (*(const uint16_t*)ptr));
+		ptr += 2;
+		size -= 2;
+	}
+	if (size) {
+		asm volatile ("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
 	}
 
 	return crc;
@@ -170,24 +273,113 @@ static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, 
 #endif
 
 #if CONFIG_ARM_CRC
-static inline uint32_t crc32c_arm64_plain(uint32_t crc, const unsigned char* ptr, size_t size)
+static __always_inline uint32_t crc32c_arm64_skip(uint32_t crc, const uint32_t table[8][16])
 {
+	return table[0][crc & 0xf]
+	       ^ table[1][(crc >> 4) & 0xf]
+	       ^ table[2][(crc >> 8) & 0xf]
+	       ^ table[3][(crc >> 12) & 0xf]
+	       ^ table[4][(crc >> 16) & 0xf]
+	       ^ table[5][(crc >> 20) & 0xf]
+	       ^ table[6][(crc >> 24) & 0xf]
+	       ^ table[7][crc >> 28];
+}
+
+static __always_inline uint32_t crc32c_arm64_2lane(uint32_t crc, const unsigned char* ptr, size_t lane_size, const uint32_t table[8][16])
+{
+	const unsigned char* ptr0 = ptr;
+	const unsigned char* ptr1 = ptr + lane_size;
+	const unsigned char* end = ptr1;
+	uint32_t crc0 = crc;
+	uint32_t crc1 = 0;
+
+	/*
+	 * Keep two dependency chains in flight to hide the CRC32 latency.
+	 */
+	while (ptr0 < end) {
+		uint64_t val00;
+		uint64_t val01;
+		uint64_t val02;
+		uint64_t val03;
+		uint64_t val10;
+		uint64_t val11;
+		uint64_t val12;
+		uint64_t val13;
+
+		__builtin_memcpy(&val00, ptr0, 8);
+		__builtin_memcpy(&val10, ptr1, 8);
+		__builtin_memcpy(&val01, ptr0 + 8, 8);
+		__builtin_memcpy(&val11, ptr1 + 8, 8);
+		__builtin_memcpy(&val02, ptr0 + 16, 8);
+		__builtin_memcpy(&val12, ptr1 + 16, 8);
+		__builtin_memcpy(&val03, ptr0 + 24, 8);
+		__builtin_memcpy(&val13, ptr1 + 24, 8);
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc0) : "r" (val00));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc1) : "r" (val10));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc0) : "r" (val01));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc1) : "r" (val11));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc0) : "r" (val02));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc1) : "r" (val12));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc0) : "r" (val03));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc1) : "r" (val13));
+		ptr0 += 32;
+		ptr1 += 32;
+	}
+
+	return crc32c_arm64_skip(crc0, table) ^ crc1;
+}
+
+static __always_inline uint32_t crc32c_arm64_plain(uint32_t crc, const unsigned char* ptr, size_t size)
+{
+	if (size >= 2 * CRC32C_ARM64_BLOCK5_SIZE) {
+		while (size >= 2 * CRC32C_ARM64_BLOCK0_SIZE) {
+			crc = crc32c_arm64_2lane(crc, ptr, CRC32C_ARM64_BLOCK0_SIZE, CRC32C_ARM64_SKIP[0]);
+			ptr += 2 * CRC32C_ARM64_BLOCK0_SIZE;
+			size -= 2 * CRC32C_ARM64_BLOCK0_SIZE;
+		}
+		while (size >= 2 * CRC32C_ARM64_BLOCK1_SIZE) {
+			crc = crc32c_arm64_2lane(crc, ptr, CRC32C_ARM64_BLOCK1_SIZE, CRC32C_ARM64_SKIP[1]);
+			ptr += 2 * CRC32C_ARM64_BLOCK1_SIZE;
+			size -= 2 * CRC32C_ARM64_BLOCK1_SIZE;
+		}
+		while (size >= 2 * CRC32C_ARM64_BLOCK2_SIZE) {
+			crc = crc32c_arm64_2lane(crc, ptr, CRC32C_ARM64_BLOCK2_SIZE, CRC32C_ARM64_SKIP[2]);
+			ptr += 2 * CRC32C_ARM64_BLOCK2_SIZE;
+			size -= 2 * CRC32C_ARM64_BLOCK2_SIZE;
+		}
+		while (size >= 2 * CRC32C_ARM64_BLOCK3_SIZE) {
+			crc = crc32c_arm64_2lane(crc, ptr, CRC32C_ARM64_BLOCK3_SIZE, CRC32C_ARM64_SKIP[3]);
+			ptr += 2 * CRC32C_ARM64_BLOCK3_SIZE;
+			size -= 2 * CRC32C_ARM64_BLOCK3_SIZE;
+		}
+		while (size >= 2 * CRC32C_ARM64_BLOCK4_SIZE) {
+			crc = crc32c_arm64_2lane(crc, ptr, CRC32C_ARM64_BLOCK4_SIZE, CRC32C_ARM64_SKIP[4]);
+			ptr += 2 * CRC32C_ARM64_BLOCK4_SIZE;
+			size -= 2 * CRC32C_ARM64_BLOCK4_SIZE;
+		}
+		while (size >= 2 * CRC32C_ARM64_BLOCK5_SIZE) {
+			crc = crc32c_arm64_2lane(crc, ptr, CRC32C_ARM64_BLOCK5_SIZE, CRC32C_ARM64_SKIP[5]);
+			ptr += 2 * CRC32C_ARM64_BLOCK5_SIZE;
+			size -= 2 * CRC32C_ARM64_BLOCK5_SIZE;
+		}
+	}
+
 	while (size >= 8) {
 		uint64_t val;
 		__builtin_memcpy(&val, ptr, 8);
-		asm ("crc32cx %w0, %w0, %x1\n" : "+r" (crc) : "r" (val));
+		asm volatile ("crc32cx %w0, %w0, %x1\n" : "+r" (crc) : "r" (val));
 		ptr += 8;
 		size -= 8;
 	}
 	if (size >= 4) {
 		uint32_t val;
 		__builtin_memcpy(&val, ptr, 4);
-		asm ("crc32cw %w0, %w0, %w1\n" : "+r" (crc) : "r" (val));
+		asm volatile ("crc32cw %w0, %w0, %w1\n" : "+r" (crc) : "r" (val));
 		ptr += 4;
 		size -= 4;
 	}
 	while (size) {
-		asm ("crc32cb %w0, %w0, %w1\n" : "+r" (crc) : "r" (*ptr));
+		asm volatile ("crc32cb %w0, %w0, %w1\n" : "+r" (crc) : "r" (*ptr));
 		++ptr;
 		--size;
 	}
@@ -195,23 +387,6 @@ static inline uint32_t crc32c_arm64_plain(uint32_t crc, const unsigned char* ptr
 	return crc;
 }
 #endif
-
-/**
- * Compute CRC-32 (Castagnoli) without the IV.
- */
-static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, size_t size)
-{
-#if CONFIG_X86
-	if (tommy_likely(crc_x86)) {
-		return crc32c_x86_plain(crc, ptr, size);
-	}
-#endif
-#if CONFIG_ARM_CRC
-	return crc32c_arm64_plain(crc, ptr, size);
-#else
-	return crc32c_gen_plain(crc, ptr, size);
-#endif
-}
 
 /**
  * Compute the CRC-32 (Castagnoli)
