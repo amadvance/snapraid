@@ -26,31 +26,6 @@ struct snapraid_split_handle {
 	data_off_t size;
 
 	/**
-	 * High-water mark size of the parity split.
-	 *
-	 * This is the physical truncation and read limit of the split.
-	 *
-	 * physical_reach_size does NOT indicate that data below this offset is
-	 * valid or contiguous parity. Parity may be invalid, stale, unwritten,
-	 * or sparse at any point below this boundary. In particular, fix may
-	 * leave an unrecoverable stripe unfixed and continue repairing later
-	 * stripes, intentionally leaving holes inside the physical reach.
-	 *
-	 * Such holes are allowed and are not necessarily represented in the
-	 * content state. Recovery correctness is validated independently using
-	 * the stored data hashes or the available recovery validation.
-	 *
-	 * Data beyond physical_reach_size is disposable/preallocated and discarded by
-	 * parity_truncate(). A completed write advances physical_reach_size to the end of
-	 * the written block so it is not truncated away.
-	 *
-	 * Before closing writable parity handles during fix operations, parity_truncate()
-	 * persists this boundary into the physical EOF. On the next open, physical_reach_size can
-	 * therefore be initialized from st_size.
-	 */
-	data_off_t physical_reach_size;
-
-	/**
 	 * Artificial size limit for testing.
 	 * 0 means unlimited.
 	 */
@@ -99,15 +74,22 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 /**
  * Change the parity size.
  *
- * If allow_split_realloc is nonzero, an elastic split that cannot reach the
- * requested size may keep the size actually allocated and leave the remaining
- * space to following splits.
- *
- * If allow_split_realloc is zero, a partial allocation must fail instead of
- * moving a logical split boundary. This is required by callers that cannot
- * persist a changed split layout.
+ * An elastic split that cannot reach the requested size may keep the size
+ * actually allocated and leave the remaining space to following splits.
+ * The resulting split layout is returned in parity.
  */
-int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder, int allow_split_realloc);
+int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder);
+
+/**
+ * Restore the parity split layout already stored in the handle, limited to size.
+ *
+ * Persisted split boundaries are preserved. If size ends inside the persisted
+ * layout, only its logical tail is removed: the containing split is shortened
+ * and all following splits are truncated to zero. If a split is physically
+ * non-empty, all preceding splits are restored to their exact logical size.
+ * The remaining physical tail is grown lazily by parity_write().
+ */
+int parity_restore(struct snapraid_parity_handle* handle, data_off_t size, uint32_t block_size, int skip_fallocate);
 
 /**
  * Get the size of the parity.
@@ -117,21 +99,16 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
- * Get the physical reach of the logical parity file across splits.
+ * Get the physical size of the logical parity file across splits.
  *
- * This composes the physical_reach_size boundaries of consecutive splits.
- * If the physical_reach_size of an earlier split is smaller than its logical size,
+ * This composes the physical EOF of consecutive splits within their logical
+ * boundaries. If an earlier split is physically shorter than its logical size,
  * later splits cannot extend the logical offset past that missing region.
  *
- * Parity within this range is not necessarily valid, synchronized, or contiguous.
- * In particular, fix may leave an unrecoverable stripe unfixed and continue with
- * later stripes, so holes inside this range are allowed and are not necessarily
- * represented in the content state.
- *
- * For example, with two 100 GiB splits, if the first has physical_reach_size 90 GiB
- * and the second has physical_reach_size 100 GiB, the result is 90 GiB, not 190 GiB.
+ * Physical presence does not imply parity validity. Parity may be invalid,
+ * stale, unwritten, sparse, or contain holes independently of its physical EOF.
  */
-void parity_physical_reach_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
+void parity_physical_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
  * Open an already existing parity file.
@@ -142,11 +119,6 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
  * Flush the parity file in the disk.
  */
 int parity_sync(struct snapraid_parity_handle* handle);
-
-/**
- * Truncate parity splits from the logical tail backwards.
- */
-int parity_truncate(struct snapraid_parity_handle* handle);
 
 /**
  * Close the parity file.
@@ -161,7 +133,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 /**
  * Write a block in the parity file.
  */
-int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, int skip_fallocate);
 
 /**
  * Complete all pending I/O and sync the parity files.

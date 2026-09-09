@@ -129,9 +129,6 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* get the size of the existing data */
-	handle->physical_reach_size = handle->st.st_size;
-
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
@@ -259,8 +256,8 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* adjust the size to the truncated size */
-	handle->physical_reach_size = file->size;
+	/* keep the cached EOF current; the other stat fields remain the open snapshot */
+	handle->st.st_size = file->size;
 
 	return 0;
 }
@@ -318,9 +315,6 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* get the size of the existing data */
-	handle->physical_reach_size = handle->st.st_size;
-
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
@@ -349,7 +343,6 @@ int handle_close(struct snapraid_handle* handle)
 			/* invalidate for error */
 			handle->file = 0;
 			handle->f = -1;
-			handle->physical_reach_size = 0;
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -358,7 +351,6 @@ int handle_close(struct snapraid_handle* handle)
 	/* reset the descriptor */
 	handle->file = 0;
 	handle->f = -1;
-	handle->physical_reach_size = 0;
 	handle->readonly_errno = 0;
 
 	return 0;
@@ -378,9 +370,9 @@ ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsign
 		out_missing = log_error;
 
 	/* check if we are going to read only not initialized data */
-	if (offset >= handle->physical_reach_size) {
+	if (offset >= handle->st.st_size) {
 		/* if the file is missing, it's at 0 size, or it's rebuilt while reading */
-		if (offset == handle->physical_reach_size || handle->physical_reach_size == 0) {
+		if (offset == handle->st.st_size || handle->st.st_size == 0) {
 			errno = ENOENT;
 			if (offset == 0) {
 				out_missing(errno, "Missing file '%s'.\n", handle->path);
@@ -482,10 +474,9 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 		count += write_ret;
 	} while (count < write_size);
 
-	/* adjust the size of the written/retained data */
-	if (handle->physical_reach_size < offset + write_size) {
-		handle->physical_reach_size = offset + write_size;
-	}
+	/* keep the cached EOF current; the other stat fields remain the open snapshot */
+	if (handle->st.st_size < offset + write_size)
+		handle->st.st_size = offset + write_size;
 
 	ret = advise_write(&handle->advise, handle->f, offset, block_size);
 	if (ret != 0) {
@@ -551,7 +542,6 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		handle[j].disk = 0;
 		handle[j].file = 0;
 		handle[j].f = -1;
-		handle[j].physical_reach_size = 0;
 		handle[j].readonly_errno = 0;
 		handle[j].bw = 0;
 	}

@@ -2442,9 +2442,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					 * If you check/fix after a partial sync, you do not want to fix parity
 					 * for blocks that are going to have it computed in the sync completion.
 					 *
-					 * For unused parity there is no need to write it, because when fixing
-					 * we already have allocated space for it on parity file creation,
-					 * and its content doesn't matter.
+					 * For unused parity there is no need to write or allocate it because no live
+					 * file depends on that position and its physical contents do not matter.
 					 */
 					if (used_parity && valid_parity) {
 						/* update the parity */
@@ -2456,7 +2455,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							        /* and the parity is not excluded */
 								&& !state->parity[l].is_excluded_by_filter
 							) {
-								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
+								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size, state->opt.skip_fallocate);
 								if (ret == -1) {
 									/* LCOV_EXCL_START */
 									log_tag("%s:%" PRIu64 ":%s: Write error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
@@ -3148,17 +3147,21 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				}
 
 				/*
-				 * Fix must preserve the split layout stored in the content file.
+				 * Fix restores the physical state described by the content file.
 				 *
-				 * Unlike sync, fix does not persist parity split boundary changes. Allowing a
-				 * partially restored elastic split to become shorter would move the remaining
-				 * logical parity into following splits, and repaired parity could then be
-				 * written using a transient mapping that is lost on the next invocation.
+				 * For an existing parity level, preserve every persisted split boundary
+				 * while limiting the physical layout to the parity extent actually required
+				 * by the content. Preceding splits needed to reach an existing later split
+				 * are restored immediately; the remaining tail grows lazily as repaired
+				 * parity blocks are written.
 				 *
-				 * An exception is made for new parity levels not yet present in the content
-				 * file (PARITY_SIZE_INVALID), which are being created from scratch.
+				 * A new parity level has no persisted layout yet (PARITY_SIZE_INVALID), so
+				 * its split layout must instead be allocated from scratch.
 				 */
-				ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder, state->parity[l].split_map[0].size == PARITY_SIZE_INVALID);
+				if (state->parity[l].split_map[0].size == PARITY_SIZE_INVALID)
+					ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
+				else
+					ret = parity_restore(parity_ptr[l], size, state->block_size, state->opt.skip_fallocate);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					log_tag("parity_%s:%u:%s: Create error. %s.\n", es(errno), 0, lev_config_name(l), strerror(errno));
@@ -3211,20 +3214,6 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	/* try to close only if opened */
 	for (l = 0; l < state->level; ++l) {
 		if (parity_ptr[l]) {
-			/* if fixing and not excluded, truncate parity to physical_reach_size */
-			if (fix && !state->parity[l].is_excluded_by_filter) {
-				ret = parity_truncate(parity_ptr[l]);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					log_tag("parity_%s:%" PRIu64 ":%s: Truncate error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
-					log_fatal_errno(errno, lev_config_name(l));
-
-					++process_error;
-					/* continue, as we are already exiting */
-					/* LCOV_EXCL_STOP */
-				}
-			}
-
 			ret = parity_close(parity_ptr[l]);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */

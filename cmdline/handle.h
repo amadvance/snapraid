@@ -16,19 +16,8 @@ struct snapraid_handle {
 	struct snapraid_disk* disk; /**< Disk of the file. */
 	struct snapraid_file* file; /**< File opened. When the file is closed, it's set to 0. */
 	int f; /**< Handle of the file. */
-	struct stat st; /**< Stat info of the opened file. */
+	struct stat st; /**< Stat info of the opened file. st_size tracks the current EOF after recovery writes. */
 	struct advise_struct advise; /**< Advise information. */
-
-	/**
-	 * High-water mark size of the written/retained data.
-	 *
-	 * High-water size does not indicate that data below this offset is valid;
-	 * it only marks the physical boundary beyond which data is known to be invalid
-	 * and can be discarded upon truncation. Data within the physical_reach_size may
-	 * or may not be valid. Final verification is determined independently by
-	 * block states and hashes.
-	 */
-	data_off_t physical_reach_size;
 	int created; /**< If the file was created, otherwise it was already existing. */
 	int readonly_errno; /**< Non-zero if opened read-only as fallback. */
 	struct snapraid_bw* bw; /**< Context for bandwidth limiting. */
