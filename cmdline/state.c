@@ -2059,18 +2059,19 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 
 /**
  * Analyze if the position is REQUIRED, if parity is unsynced, and if it has
- * DELETED blocks that can be discharged when the position is unused.
+ * DELETED or REBUILD blocks.
  *
  * A DELETED block makes parity invalid, but it counts as unsynced only when at
  * least one disk still has a file at the same position. This is the same logic
  * used by "status" to detect an incomplete sync.
  */
-static int fs_position_analyze(struct snapraid_state* state, block_off_t pos, int* is_unsynced, int* has_deleted)
+static int fs_position_analyze(struct snapraid_state* state, block_off_t pos, int* is_unsynced, int* has_deleted, int* has_rebuild)
 {
 	tommy_node* i;
 	int one_file = 0;
 	int one_invalid = 0;
 	int one_deleted = 0;
+	int one_rebuild = 0;
 
 	/* check for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -2084,10 +2085,13 @@ static int fs_position_analyze(struct snapraid_state* state, block_off_t pos, in
 			one_invalid = 1;
 		if (block_state == BLOCK_STATE_DELETED)
 			one_deleted = 1;
+		if (block_state == BLOCK_STATE_REBUILD)
+			one_rebuild = 1;
 	}
 
 	*is_unsynced = one_file && one_invalid;
 	*has_deleted = one_deleted;
+	*has_rebuild = one_rebuild;
 
 	return one_file;
 }
@@ -3812,30 +3816,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	tommy_hashdyn_done(&bucket_hash);
 }
 
-static int state_has_rbuild(struct snapraid_state* state)
-{
-	tommy_node* i;
-
-	for (i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		tommy_node* j;
-
-		for (j = disk->filelist; j != 0; j = j->next) {
-			struct snapraid_file* file = j->data;
-			block_off_t f;
-
-			for (f = 0; f < file->blockmax; ++f) {
-				struct snapraid_block* block = fs_file2block_get(file, f);
-
-				if (block_state_get(block) == BLOCK_STATE_REBUILD)
-					return 1;
-			}
-		}
-	}
-
-	return 0;
-}
-
 struct state_write_thread_context {
 	struct snapraid_state* state;
 #if HAVE_MT_WRITE
@@ -4562,6 +4542,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	time_t info_now;
 	time_t content_mtime;
 	int info_has_rehash;
+	int state_has_rebuild;
 	int mapping_idx;
 	block_off_t idx;
 	uint32_t crc;
@@ -4590,14 +4571,19 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	info_oldest = 0; /* oldest time in info */
 	info_now = time(0); /* get the present time */
 	info_has_rehash = 0; /* if there is a rehash info */
+	state_has_rebuild = 0;
 	count_unsynced = 0;
 	for (idx = 0; idx < blockmax; ++idx) {
 		int is_unsynced;
 		int has_deleted;
+		int has_rebuild;
 
 		/* if the position is used */
-		if (fs_position_analyze(state, idx, &is_unsynced, &has_deleted)) {
+		if (fs_position_analyze(state, idx, &is_unsynced, &has_deleted, &has_rebuild)) {
 			snapraid_info info = info_get(&state->infoarr, idx);
+
+			if (has_rebuild)
+				state_has_rebuild = 1;
 
 			if (is_unsynced)
 				++count_unsynced;
@@ -4661,7 +4647,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	 * Force at least version 3 as we want to always store the parity size.
 	 * If there is a REBUILD block or a dealloc list, force version 4.
 	 */
-	if (state_has_rbuild(state)) {
+	if (state_has_rebuild) {
 		content_version = 4;
 	} else {
 		for (i = state->disklist; i != 0; i = i->next) {
