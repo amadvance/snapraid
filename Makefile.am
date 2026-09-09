@@ -366,6 +366,15 @@ snapcheck_btrfs: mktest$(EXEEXT) checker$(EXEEXT) setupcheck
 	exit $$status
 
 # Not included in main check because it requires root permissions
+snapcheck_bcachefs: mktest$(EXEEXT) checker$(EXEEXT) setupcheck
+	sudo $(MAKE) snapcheck_bcachefs_run; \
+	status=$$?; \
+	sudo $(MAKE) snapcheck_bcachefs_cleanup; \
+	cleanup_status=$$?; \
+	if test $$cleanup_status -ne 0; then exit $$cleanup_status; fi; \
+	exit $$status
+
+# Not included in main check because it requires root permissions
 snapcheck_zfs: mktest$(EXEEXT) checker$(EXEEXT) setupcheck
 	sudo $(MAKE) snapcheck_zfs_run; \
 	status=$$?; \
@@ -399,6 +408,25 @@ snapcheck_btrfs_run:
 	mount -o loop bench/snap3.img bench/snap3
 	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_btrfs_show
 
+snapcheck_bcachefs_run:
+	mkdir bench/snap1
+	mkdir bench/snap2
+	mkdir bench/snap3
+	$(MSG) Create Bcachefs storages
+	truncate -s 1G bench/snap1.img
+	truncate -s 1G bench/snap2.img
+	truncate -s 1G bench/snap3.img
+	losetup --find --show bench/snap1.img > bench/snap1.loop
+	losetup --find --show bench/snap2.img > bench/snap2.loop
+	losetup --find --show bench/snap3.img > bench/snap3.loop
+	bcachefs format -f $$(cat bench/snap1.loop)
+	bcachefs format -f $$(cat bench/snap2.loop)
+	bcachefs format -f $$(cat bench/snap3.loop)
+	mount -t bcachefs $$(cat bench/snap1.loop) bench/snap1
+	mount -t bcachefs $$(cat bench/snap2.loop) bench/snap2
+	mount -t bcachefs $$(cat bench/snap3.loop) bench/snap3
+	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_bcachefs_show
+
 snapcheck_zfs_run:
 	mkdir bench/snap1
 	mkdir bench/snap2
@@ -418,6 +446,12 @@ snapcheck_ntfs_run:
 	$(MAKE) snapcheck_run SNAPCHECK_SHOW=snapcheck_ntfs_show
 
 snapcheck_btrfs_show:
+	@for dir in bench/snap1 bench/snap2 bench/snap3; do \
+		echo "$$dir/.snapraid:"; \
+		if test -d "$$dir/.snapraid"; then ls -la "$$dir/.snapraid"; else echo "  (missing)"; fi; \
+	done
+
+snapcheck_bcachefs_show:
 	@for dir in bench/snap1 bench/snap2 bench/snap3; do \
 		echo "$$dir/.snapraid:"; \
 		if test -d "$$dir/.snapraid"; then ls -la "$$dir/.snapraid"; else echo "  (missing)"; fi; \
@@ -508,6 +542,22 @@ snapcheck_btrfs_cleanup:
 	status=0; \
 	for dir in bench/snap1 bench/snap2 bench/snap3; do \
 		if mountpoint -q $$dir; then umount $$dir || status=1; fi; \
+	done; \
+	if test $$status -ne 0; then exit $$status; fi; \
+	rm -rf bench; \
+	rm -f test.log
+
+snapcheck_bcachefs_cleanup:
+	$(MSG) Cleanup Bcachefs storages
+	status=0; \
+	for dir in bench/snap1 bench/snap2 bench/snap3; do \
+		if mountpoint -q $$dir; then umount $$dir || status=1; fi; \
+	done; \
+	for loopfile in bench/snap1.loop bench/snap2.loop bench/snap3.loop; do \
+		if test -f $$loopfile; then \
+			dev=$$(cat $$loopfile); \
+			if losetup $$dev >/dev/null 2>&1; then losetup -d $$dev || status=1; fi; \
+		fi; \
 	done; \
 	if test $$status -ne 0; then exit $$status; fi; \
 	rm -rf bench; \
