@@ -435,32 +435,20 @@ ssize_t sgettok(STREAM* f, char* str, int size)
 	return i - str;
 }
 
-int sread(STREAM* f, void* void_data, size_t size)
+int sread_uncached(STREAM* f, void* void_data, size_t size)
 {
 	unsigned char* data = void_data;
 
-	/* if there is enough space in memory */
-	if (sptrlookup(f, size)) {
-		/* optimized version with all the data in memory */
-		unsigned char* pos = sptrget(f);
-
-		/* copy it */
-		while (size--)
-			*data++ = *pos++;
-
-		sptrset(f, pos);
-	} else {
-		/* standard version using sgetc() */
-		while (size--) {
-			int c = sgetc(f);
-			if (c == EOF) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			*data++ = c;
+	/* standard version using sgetc() */
+	while (size--) {
+		int c = sgetc(f);
+		if (c == EOF) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
 		}
+
+		*data++ = c;
 	}
 
 	return 0;

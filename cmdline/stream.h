@@ -246,10 +246,25 @@ static inline void sungetc(int c, STREAM* s)
 }
 
 /**
+ * \internal Used by sread() when the requested data crosses the buffered range.
+ * \note Don't call this directly, but use sread().
+ */
+int sread_uncached(STREAM* f, void* void_data, size_t size);
+
+/**
  * Read a fixed amount of chars.
  * Return 0 on success, or -1 on error.
  */
-int sread(STREAM* f, void* void_data, size_t size);
+static inline int sread(STREAM* f, void* void_data, size_t size)
+{
+	if (tommy_unlikely(!sptrlookup(f, size)))
+		return sread_uncached(f, void_data, size);
+
+	memcpy(void_data, f->pos, size);
+	f->pos += size;
+
+	return 0;
+}
 
 /**
  * Get a char from a stream, ignoring one '\r'.
