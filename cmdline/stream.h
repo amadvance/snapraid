@@ -395,10 +395,29 @@ static inline int sputeol(STREAM* s)
 }
 
 /**
- * Write a sized string.
+ * \internal Used by swrite() when the data crosses the buffered range.
+ * \note Don't call this directly, but use swrite().
+ */
+int swrite_uncached(const void* data, size_t size, STREAM* f);
+
+/**
+ * Write a sized buffer.
  * Return 0 on success or -1 on error.
  */
-int swrite(const void* data, size_t size, STREAM* f);
+static __always_inline int swrite(const void* data, size_t size, STREAM* f)
+{
+	if (tommy_unlikely(!sptrlookup(f, size)))
+		return swrite_uncached(data, size, f);
+
+	/* compute the independent CRC before copying to detect buffer corruption */
+	if (f->flags & STREAM_FLAGS_CRC)
+		f->crc_stream = crc32c_plain(f->crc_stream, data, size);
+
+	memcpy(f->pos, data, size);
+	f->pos += size;
+
+	return 0;
+}
 
 /****************************************************************************/
 /* binary put */

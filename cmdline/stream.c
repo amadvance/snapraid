@@ -711,40 +711,33 @@ int sgetbs(STREAM* f, char* str, size_t size)
 	return sread(f, str, len);
 }
 
-int swrite(const void* void_data, size_t size, STREAM* f)
+int swrite_uncached(const void* void_data, size_t size, STREAM* f)
 {
 	const unsigned char* data = void_data;
 
-	/* if there is enough space in memory */
-	if (sptrlookup(f, size)) {
-		/* optimized version with all the data in memory */
-		unsigned char* pos = sptrget(f);
+	while (size) {
+		size_t available;
 
-		/**
-		 * Update the crc *before* writing the data in the buffer
-		 *
-		 * This must be done before the memory write,
-		 * to be able to detect memory errors on the buffer,
-		 * happening before we write it on the file.
-		 */
-		if (f->flags & STREAM_FLAGS_CRC) {
-			f->crc_stream = crc32c_plain(f->crc_stream, data, size);
-		}
-
-		/* copy it */
-		while (size--)
-			*pos++ = *data++;
-
-		sptrset(f, pos);
-	} else {
-		/* standard version using sputc() */
-		while (size--) {
-			if (sputc(*data++, f) != 0) {
+		if (f->pos == f->end) {
+			if (sflush(f) != 0) {
 				/* LCOV_EXCL_START */
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
 		}
+
+		available = (size_t)(f->end - f->pos);
+		if (available > size)
+			available = size;
+
+		/* compute the independent CRC before copying to detect buffer corruption */
+		if (f->flags & STREAM_FLAGS_CRC)
+			f->crc_stream = crc32c_plain(f->crc_stream, data, available);
+
+		memcpy(f->pos, data, available);
+		f->pos += available;
+		data += available;
+		size -= available;
 	}
 
 	return 0;
