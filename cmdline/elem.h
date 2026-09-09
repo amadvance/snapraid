@@ -1154,14 +1154,14 @@ int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
 int fs_check(struct snapraid_disk* disk);
 
 /**
- * Allocate a parity position for the specified file position.
+ * Allocate a run of parity positions for the specified file positions.
  *
  * After this call you can use the par2file/par2block operations
  * to query the relation.
  *
  * \note This function is NOT thread-safe as it uses the disk cache. +
  */
-void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
+void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count);
 
 /**
  * Deallocate the parity position.

@@ -2440,6 +2440,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			while (v_idx < file->blockmax) {
 				block_off_t v_pos;
 				block_off_t v_count;
+				block_off_t v_file_pos;
+				block_off_t v_end;
 
 				/* get the "subcommand */
 				c = sgetc(f);
@@ -2460,7 +2462,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (v_count > file->blockmax || v_idx > file->blockmax - v_count) {
+				if (v_count == 0 || v_count > file->blockmax || v_idx > file->blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal(EINTERNAL, "Internal inconsistency: Block number out of range\n");
@@ -2476,8 +2478,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
+				v_file_pos = v_idx;
+				v_end = v_idx + v_count;
+
 				/* fill the blocks in the run */
-				while (v_count) {
+				while (v_idx < v_end) {
 					struct snapraid_block* block = fs_file2block_get(file, v_idx);
 
 					switch (c) {
@@ -2532,14 +2537,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						block_state_set(block, BLOCK_STATE_CHG);
 					}
 
-					/* set the parity association */
-					fs_allocate(disk, v_pos, file, v_idx);
-
 					/* go to the next block */
 					++v_idx;
-					++v_pos;
-					--v_count;
 				}
+
+				/* set the parity association for the whole run */
+				fs_allocate(disk, v_pos, file, v_file_pos, v_count);
 			}
 
 			/* stat */
@@ -2729,7 +2732,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (v_count > blockmax || v_pos > blockmax - v_count) {
+				if (v_count == 0 || v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal(EINTERNAL, "Internal inconsistency: Hole size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
@@ -2767,7 +2770,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 					/* process all blocks */
 					v_idx = 0;
-					while (v_count) {
+					while (v_idx < v_count) {
 						struct snapraid_block* block = fs_file2block_get(deleted, v_idx);
 
 						/* set the block as deleted */
@@ -2782,14 +2785,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							/* LCOV_EXCL_STOP */
 						}
 
-						/* insert the block in the block array */
-						fs_allocate(disk, v_pos, deleted, v_idx);
-
 						/* go to next block */
-						++v_pos;
 						++v_idx;
-						--v_count;
 					}
+
+					/* insert the whole deleted run in the extent map */
+					fs_allocate(disk, v_pos, deleted, 0, v_count);
+					v_pos += v_count;
 					break;
 				case 'O' :
 					/* go to the next run */

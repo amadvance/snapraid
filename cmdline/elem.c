@@ -1495,32 +1495,38 @@ block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* f
 }
 
 /**
- * Allocate a file block mapping it to a parity position.
+ * Allocate a run of file blocks mapping it to a run of parity positions.
  *
  * If the block is contiguous with the previous block of the file and follows
  * the current extent in parity space, the existing extent is extended in-place.
  * Otherwise, a new extent is created and inserted into the parity and file trees.
  *
  * Callers ensure allocations are sequential and do not overwrite live blocks.
- * To keep per-block allocation fast, full overlap checks across all existing
+ * To keep run allocation fast, full overlap checks across all existing
  * extents are omitted here; global non-overlap and complete coverage invariants
  * are verified in batch by fs_check() at major checkpoints (after read/scan,
  * before write).
  */
-void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
+void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
 {
 	struct snapraid_extent* extent;
 	struct snapraid_extent* parity_extent;
 	struct snapraid_extent* file_extent;
 
-	if (parity_pos >= BLOCK_MAX) {
+	if (count > BLOCK_MAX || parity_pos > BLOCK_MAX - count) {
 		/* LCOV_EXCL_START */
 #if SIZE_MAX == UINT32_MAX
-		log_fatal(ESOFT, "Parity position %" PRIu64 " is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", parity_pos);
+		log_fatal(ESOFT, "Parity range %" PRIu64 ":%" PRIu64 " is too large for a 32-bit build. Use a 64-bit build or increase the block size.\n", parity_pos, count);
 #else
-		log_fatal(ESOFT, "Parity position %" PRIu64 " is too large. Increase the block size.\n", parity_pos);
+		log_fatal(ESOFT, "Parity range %" PRIu64 ":%" PRIu64 " is too large. Increase the block size.\n", parity_pos, count);
 #endif
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (count > file->blockmax || file_pos > file->blockmax - count) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Internal inconsistency: Allocating file '%s' at position '%" PRIu64 ":%" PRIu64 "/%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, count, file->blockmax, disk->name);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1531,14 +1537,6 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 		extent = fs_file2extent_get_unlock(disk, &disk->fs_last, file, file_pos - 1);
 
 		if (extent != 0 && parity_pos == extent->parity_pos + extent->count) {
-			/* check if the position will go outside the limit */
-			if (extent->parity_pos + extent->count == POS_NULL) {
-				/* LCOV_EXCL_START */
-				log_fatal(EINTERNAL, "Internal inconsistency: Parity position overflow allocating file '%s' at position '%" PRIu64 "/%" PRIu64 "' with count '%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->count, disk->name);
-				os_abort();
-				/* LCOV_EXCL_STOP */
-			}
-
 			/* ensure that we are extending the extent at the end */
 			if (file_pos != extent->file_pos + extent->count) {
 				/* LCOV_EXCL_START */
@@ -1547,8 +1545,8 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* extend the existing extent */
-			++extent->count;
+			/* extend the existing extent with the whole run */
+			extent->count += count;
 
 			fs_unlock(disk);
 			return;
@@ -1556,7 +1554,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	}
 
 	/* a extent doesn't exist, and we have to create a new one */
-	extent = extent_alloc(parity_pos, file, file_pos, 1);
+	extent = extent_alloc(parity_pos, file, file_pos, count);
 
 	/* insert the extent in the trees */
 	parity_extent = tommy_tree_insert(&disk->fs_parity, &extent->parity_node, extent);

@@ -346,7 +346,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 		}
 
 		/* store in the disk map, after invalidating all the other blocks */
-		fs_allocate(disk, parity_pos, file, i);
+		fs_allocate(disk, parity_pos, file, i, 1);
 
 		/* set the new free position */
 		disk->first_free_block = parity_pos + 1;
