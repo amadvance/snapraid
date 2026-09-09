@@ -1852,6 +1852,42 @@ static void test_stream(void)
 	}
 }
 
+static void test_extent_run(void)
+{
+	struct snapraid_disk* disk;
+	struct snapraid_file* file;
+	block_off_t parity_pos;
+	block_off_t count;
+
+	disk = disk_alloc("test", "", 0, "", 0);
+	file = file_alloc(4096, "file", 6 * 4096, 0, 0, 0);
+
+	fs_allocate(disk, 10, file, 0, 3);
+	fs_allocate(disk, 20, file, 3, 2);
+	fs_allocate(disk, 22, file, 5, 1);
+
+	parity_pos = fs_file2par_get_run(disk, file, 0, &count);
+	if (parity_pos != 10 || count != 3) {
+		log_fatal(EINTERNAL, "test_extent_run: first extent failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	parity_pos = fs_file2par_get_run(disk, file, 1, &count);
+	if (parity_pos != 11 || count != 2) {
+		log_fatal(EINTERNAL, "test_extent_run: extent remainder failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	parity_pos = fs_file2par_get_run(disk, file, 3, &count);
+	if (parity_pos != 20 || count != 3) {
+		log_fatal(EINTERNAL, "test_extent_run: extended extent failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	disk_free(disk);
+	file_free(file);
+}
+
 static void test_raid(void)
 {
 	/* vandermonde raid parity generation with 32 data disks */
@@ -2550,6 +2586,9 @@ void test(int argc, char* argv[])
 
 	/* buffered streaming i/o and crc verification */
 	test_stream();
+
+	/* extent-aware file-to-parity run lookup */
+	test_extent_run();
 
 	/* wildcard and path pattern matching */
 	test_wnmatch();

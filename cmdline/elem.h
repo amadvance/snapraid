@@ -1209,13 +1209,21 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
 
 /**
- * Get the parity position from the file position.
+ * Get the parity position from the file position. If count is specified, return
+ * the number of blocks remaining in the same extent, including the current one.
+ * Return POS_NULL if no parity is allocated.
  */
-static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+block_off_t fs_file2par_find_run(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos, block_off_t* count);
+
+/**
+ * Get the parity position and the number of blocks remaining in the same extent,
+ * including the current one, from the file position.
+ */
+static inline block_off_t fs_file2par_get_run(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos, block_off_t* count)
 {
 	block_off_t ret;
 
-	ret = fs_file2par_find(disk, file, file_pos);
+	ret = fs_file2par_find_run(disk, file, file_pos, count);
 	if (ret == POS_NULL) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Internal inconsistency: Resolving file '%s' at position '%" PRIu64 "/%" PRIu64 "' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
@@ -1224,6 +1232,14 @@ static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct sna
 	}
 
 	return ret;
+}
+
+/**
+ * Get the parity position from the file position.
+ */
+static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	return fs_file2par_get_run(disk, file, file_pos, 0);
 }
 
 /**

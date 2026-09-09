@@ -4161,7 +4161,9 @@ static void* state_write_thread(void* arg)
 				struct snapraid_block* block = file_block(file, begin);
 				unsigned char* end_block_ptr = (unsigned char*)block + block_stride;
 				unsigned v_state = block_state_get(block);
-				block_off_t v_pos = fs_file2par_get(disk, file, begin);
+				block_off_t extent_count;
+				block_off_t v_pos = fs_file2par_get_run(disk, file, begin, &extent_count);
+				block_off_t extent_end = begin + extent_count;
 				block_off_t v_count;
 
 				block_off_t end;
@@ -4172,8 +4174,18 @@ static void* state_write_thread(void* arg)
 					block = (struct snapraid_block*)end_block_ptr;
 					if (v_state != block_state_get(block))
 						break;
-					if (v_pos + (end - begin) != fs_file2par_get(disk, file, end))
-						break;
+
+					/* Resolve the mapping only when crossing an extent boundary. */
+					if (end == extent_end) {
+						block_off_t next_count;
+						block_off_t next_pos = fs_file2par_get_run(disk, file, end, &next_count);
+
+						if (v_pos + (end - begin) != next_pos)
+							break;
+
+						extent_end += next_count;
+					}
+
 					end_block_ptr += block_stride;
 					++end;
 				}

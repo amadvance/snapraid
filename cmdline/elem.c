@@ -1475,7 +1475,7 @@ struct snapraid_file* fs_par2file_find(struct snapraid_disk* disk, block_off_t p
 	return file;
 }
 
-block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+block_off_t fs_file2par_find_run(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos, block_off_t* count)
 {
 	struct snapraid_extent* extent;
 	block_off_t ret;
@@ -1488,10 +1488,18 @@ block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* f
 		return POS_NULL;
 	}
 
+	if (count)
+		*count = extent->count - (file_pos - extent->file_pos);
+
 	ret = extent->parity_pos + (file_pos - extent->file_pos);
 
 	fs_unlock(disk);
 	return ret;
+}
+
+block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	return fs_file2par_find_run(disk, file, file_pos, 0);
 }
 
 /**
