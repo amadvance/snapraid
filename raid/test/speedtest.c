@@ -10,11 +10,16 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <limits.h>
 
 /*
  * Size of the blocks to test.
  */
+#ifdef COVERAGE
+#define TEST_SIZE (4 * 1024)
+#else
 #define TEST_SIZE (256 * 1024)
+#endif
 
 /*
  * Number of data blocks to test.
@@ -34,52 +39,47 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 	return d;
 }
 
-/**
- * Test period.
- */
-#ifdef COVERAGE
-#define TEST_PERIOD 100000LL
-#define TEST_DELTA 1
-#else
-#define TEST_PERIOD 1000000LL
-#define TEST_DELTA 10
-#endif
-
-/**
- * Start time measurement.
- */
 #define SPEED_START \
-	count = 0; \
-	gettimeofday(&start, 0); \
+	{ \
+	int speed_delta_ = delta; \
+	int64_t elapsed_ = 0; \
+	int64_t best_dt_ = INT64_MAX; \
 	do { \
-		for (i = 0; i < delta; ++i)
+	struct timeval start; \
+	struct timeval stop; \
+	gettimeofday(&start, 0); \
+	for (int i_ = 0; i_ < speed_delta_; ++i_)
 
-/**
- * Stop time measurement.
- */
 #define SPEED_STOP \
-	count += delta; \
 	gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < period); \
-	ds = size * (int64_t)count * nd; \
-	dt = diffgettimeofday(&start, &stop);
+	dt = diffgettimeofday(&start, &stop); \
+	if (dt < 1000 && speed_delta_ <= INT_MAX / 2) { \
+		speed_delta_ *= 2; \
+		elapsed_ = 0; \
+		best_dt_ = INT64_MAX; \
+		continue; \
+	} \
+	elapsed_ += dt; \
+	if (dt < best_dt_) \
+	best_dt_ = dt; \
+	} while (elapsed_ < period * 1000LL); \
+	ds = size * (int64_t)speed_delta_ * nd; \
+	dt = best_dt_; \
+	}
 
 void speed_mem(int nd, void **v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i, j;
-	int count;
+	int i;
 
 	printf("Memory write speed using the C memset() function:\n");
 	printf("%8s", "memset");
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memset(v[j], j, size);
+		for (i = 0; i < nd; ++i)
+			memset(v[i], i, size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -89,12 +89,8 @@ void speed_mem(int nd, void **v, int size, int delta, int period)
 
 void speed_gen(int nd, void **v, int size, int delta, int period, const char *msg)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i;
-	int count;
 	int mode = raid_mode(RAID_MODE_GET);
 
 	/* RAID table */
@@ -972,12 +968,8 @@ void speed_gen(int nd, void **v, int size, int delta, int period, const char *ms
 
 void speed_genz(int nd, void **v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i;
-	int count;
 
 	/* Vandermonde table */
 	printf("Vandermonde functions used for computing the parity:\n");
@@ -1095,14 +1087,11 @@ void speed_genz(int nd, void **v, int size, int delta, int period)
 
 void speed_rec(int nd, void **v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
 	int i;
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
-	int count;
 
 	/* basic disks and parity mapping */
 	for (i = 0; i < RAID_PARITY_MAX; ++i) {
@@ -2138,8 +2127,8 @@ void speed(void)
 	void **v;
 	int i;
 	int size = TEST_SIZE;
-	int delta = TEST_DELTA;
-	int period = TEST_PERIOD;
+	int period = 250;
+	int delta = 1; /* auto increased in SPEED_START */
 
 	nv = nd + RAID_PARITY_MAX;
 

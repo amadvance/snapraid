@@ -24,28 +24,33 @@ static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
 	return d;
 }
 
-/**
- * Start time measurement.
- */
-/* INDENT-OFF */
 #define SPEED_START \
-	count = 0; \
-	gettimeofday(&start, 0); \
-	do { \
-		for (i = 0; i < delta; ++i)
-/* INDENT-ON */
+	{ \
+		int speed_delta_ = delta; \
+		int64_t elapsed_ = 0; \
+		int64_t best_dt_ = INT64_MAX; \
+		do { \
+			struct timeval start; \
+			struct timeval stop; \
+			gettimeofday(&start, 0); \
+			for (int i_ = 0; i_ < speed_delta_; ++i_)
 
-/**
- * Stop time measurement.
- */
-/* INDENT-OFF */
 #define SPEED_STOP \
-	count += delta; \
 	gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < period * 1000LL); \
-	ds = size * (int64_t)count * nd; \
-	dt = diffgettimeofday(&start, &stop);
-/* INDENT-ON */
+	dt = diffgettimeofday(&start, &stop); \
+	if (dt < 1000 && speed_delta_ <= INT_MAX / 2) { \
+		speed_delta_ *= 2; \
+		elapsed_ = 0; \
+		best_dt_ = INT64_MAX; \
+		continue; \
+	} \
+	elapsed_ += dt; \
+	if (dt < best_dt_) \
+	best_dt_ = dt; \
+	} while (elapsed_ < period * 1000LL); \
+	ds = size * (int64_t)speed_delta_ * nd; \
+	dt = best_dt_; \
+	}
 
 /**
  * Global variable used to propagate side effects.
@@ -57,20 +62,17 @@ unsigned side_effect;
 
 void speed_mem(int nd, void** v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i, j;
-	int count;
+	int i;
 
 	printf("Memory write speed using the C memset() function:\n");
 	printf("%8s", "memset");
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memset(v[j], j, size);
+		for (i = 0; i < nd; ++i)
+			memset(v[i], i, size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -80,12 +82,9 @@ void speed_mem(int nd, void** v, int size, int delta, int period)
 
 void speed_crc(int nd, void** v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i, j;
-	int count;
+	int i;
 
 	/* crc table */
 	printf("CRC used to check the content file integrity:\n");
@@ -94,8 +93,8 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			side_effect += crc32c_gen(0, v[j], size);
+		for (i = 0; i < nd; ++i)
+			side_effect += crc32c_gen(0, v[i], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -107,8 +106,8 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 		fflush(stdout);
 
 		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				side_effect += crc32c_x86(0, v[j], size);
+			for (i = 0; i < nd; ++i)
+				side_effect += crc32c_x86(0, v[i], size);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
@@ -121,8 +120,8 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			side_effect += crc32c_arm64(0, v[j], size);
+		for (i = 0; i < nd; ++i)
+			side_effect += crc32c_arm64(0, v[i], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -134,12 +133,9 @@ void speed_crc(int nd, void** v, int size, int delta, int period)
 
 void speed_hash(int nd, void** v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i, j;
-	int count;
+	int i;
 	unsigned char digest[HASH_MAX];
 	unsigned char seed[HASH_MAX];
 
@@ -162,24 +158,24 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memhash(HASH_MURMUR3, seed, digest, v[j], size);
+		for (i = 0; i < nd; ++i)
+			memhash(HASH_MURMUR3, seed, digest, v[i], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memhash(HASH_SPOOKY2, seed, digest, v[j], size);
+		for (i = 0; i < nd; ++i)
+			memhash(HASH_SPOOKY2, seed, digest, v[i], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memhash(HASH_MUSEAIR, seed, digest, v[j], size);
+		for (i = 0; i < nd; ++i)
+			memhash(HASH_MUSEAIR, seed, digest, v[i], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -189,12 +185,8 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 
 void speed_gen(int nd, void** v, int size, int delta, int period, const char* msg)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i;
-	int count;
 	int mode = raid_mode(RAID_MODE_GET);
 
 	/* RAID table */
@@ -1076,12 +1068,8 @@ void speed_gen(int nd, void** v, int size, int delta, int period, const char* ms
 
 void speed_genz(int nd, void** v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
-	int i;
-	int count;
 
 	/* Vandermonde table */
 	printf("Vandermonde functions used for computing parity with 'sync':\n");
@@ -1199,12 +1187,9 @@ void speed_genz(int nd, void** v, int size, int delta, int period)
 
 void speed_rec(int nd, void** v, int size, int delta, int period)
 {
-	struct timeval start;
-	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
 	int i;
-	int count;
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 
@@ -2358,9 +2343,8 @@ void speed(int period, int nd, int size)
 	else
 		size *= KIBI;
 	if (period < 1)
-		period = 1000;
-
-	delta = period >= 1000 ? 10 : 1;
+		period = 250;
+	delta = 1; /* auto increased in SPEED_START */
 
 	nv = nd + RAID_PARITY_MAX;
 
