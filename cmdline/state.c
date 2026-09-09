@@ -2214,6 +2214,87 @@ static void decoding_error(const char* path, STREAM* f)
 	}
 }
 
+enum state_block_hash_mode {
+	STATE_BLOCK_HASH_READ,
+	STATE_BLOCK_HASH_ZERO,
+	STATE_BLOCK_HASH_DISCARD
+};
+
+/**
+ * Read and initialize a complete run of file blocks.
+ *
+ * CRC is computed when the stream buffer is filled. Advancing the stream
+ * pointer directly over cached hashes therefore preserves the same integrity
+ * check performed by sread().
+ */
+static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count, unsigned state, enum state_block_hash_mode hash_mode)
+{
+	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
+	size_t block_stride = block_sizeof();
+	unsigned char discard_hash[HASH_MAX];
+
+	if (hash_mode == STATE_BLOCK_HASH_ZERO) {
+		while (count) {
+			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+
+			block_state_set(block, state);
+			hash_zero_set(block->hash);
+
+			block_ptr += block_stride;
+			--count;
+		}
+
+		return 0;
+	}
+
+	while (count) {
+		size_t available = (size_t)(f->end - f->pos);
+		block_off_t cached_count = available / BLOCK_HASH_SIZE;
+		unsigned char* input;
+
+		if (cached_count > count)
+			cached_count = count;
+
+		if (cached_count == 0) {
+			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+			int ret;
+
+			block_state_set(block, state);
+			if (hash_mode == STATE_BLOCK_HASH_DISCARD) {
+				ret = sread(f, discard_hash, BLOCK_HASH_SIZE);
+				hash_invalid_set(block->hash);
+			} else {
+				ret = sread(f, block->hash, BLOCK_HASH_SIZE);
+			}
+			if (ret < 0)
+				return -1;
+
+			block_ptr += block_stride;
+			--count;
+			continue;
+		}
+
+		input = f->pos;
+		for (block_off_t i = 0; i < cached_count; ++i) {
+			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+
+			block_state_set(block, state);
+			if (hash_mode == STATE_BLOCK_HASH_DISCARD)
+				hash_invalid_set(block->hash);
+			else
+				memcpy(block->hash, input, BLOCK_HASH_SIZE);
+
+			input += BLOCK_HASH_SIZE;
+			block_ptr += block_stride;
+		}
+
+		f->pos = input;
+		count -= cached_count;
+	}
+
+	return 0;
+}
+
 static void state_read_content(struct snapraid_state* state, const char* path, STREAM* f)
 {
 	block_off_t blockmax;
@@ -2441,7 +2522,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				block_off_t v_pos;
 				block_off_t v_count;
 				block_off_t v_file_pos;
-				block_off_t v_end;
+				unsigned v_state;
+				enum state_block_hash_mode hash_mode;
 
 				/* get the "subcommand */
 				c = sgetc(f);
@@ -2478,68 +2560,48 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				v_file_pos = v_idx;
-				v_end = v_idx + v_count;
-
-				/* fill the blocks in the run */
-				while (v_idx < v_end) {
-					struct snapraid_block* block = fs_file2block_get(file, v_idx);
-
-					switch (c) {
-					case 'b' :
-						block_state_set(block, BLOCK_STATE_BLK);
-						break;
-					case 'r' :
-						block_state_set(block, BLOCK_STATE_REBUILD);
-						break;
-					case 'n' :
-						/* deprecated NEW blocks are converted to CHG ones */
-						block_state_set(block, BLOCK_STATE_CHG);
-						break;
-					case 'g' :
-						block_state_set(block, BLOCK_STATE_CHG);
-						break;
-					case 'p' :
-						block_state_set(block, BLOCK_STATE_REP);
-						break;
-					default :
-						/* LCOV_EXCL_START */
-						decoding_error(path, f);
-						log_fatal(ECONTENT, "Invalid block type!\n");
-						os_abort();
-						/* LCOV_EXCL_STOP */
-					}
-
-					/* read the hash only for 'blk/chg/rep', and not for 'new' */
-					if (c != 'n') {
-						ret = sread(f, block->hash, BLOCK_HASH_SIZE);
-						if (ret < 0) {
-							/* LCOV_EXCL_START */
-							decoding_error(path, f);
-							os_abort();
-							/* LCOV_EXCL_STOP */
-						}
+				hash_mode = STATE_BLOCK_HASH_READ;
+				switch (c) {
+				case 'b' :
+					v_state = BLOCK_STATE_BLK;
+					break;
+				case 'r' :
+					v_state = BLOCK_STATE_REBUILD;
+					break;
+				case 'n' :
+					/* deprecated NEW blocks are converted to CHG ones with a ZERO hash */
+					v_state = BLOCK_STATE_CHG;
+					hash_mode = STATE_BLOCK_HASH_ZERO;
+					break;
+				case 'g' :
+					v_state = BLOCK_STATE_CHG;
+					break;
+				case 'p' :
+					if (state->opt.force_nocopy) {
+						/* discard stored copy hashes and convert REP blocks to CHG */
+						v_state = BLOCK_STATE_CHG;
+						hash_mode = STATE_BLOCK_HASH_DISCARD;
 					} else {
-						/* set the ZERO hash for deprecated NEW blocks */
-						hash_zero_set(block->hash);
+						v_state = BLOCK_STATE_REP;
 					}
-
-					/*
-					 * If we are disabling the copy optimization
-					 * we want also to clear any already previously stored information
-					 * in other sync commands
-					 */
-					if (state->opt.force_nocopy && block_state_get(block) == BLOCK_STATE_REP) {
-						/* set the hash value to INVALID */
-						hash_invalid_set(block->hash);
-
-						/* convert from REP to CHG block */
-						block_state_set(block, BLOCK_STATE_CHG);
-					}
-
-					/* go to the next block */
-					++v_idx;
+					break;
+				default :
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Invalid block type!\n");
+					os_abort();
+					/* LCOV_EXCL_STOP */
 				}
+
+				v_file_pos = v_idx;
+				ret = state_read_block_run(f, file, v_file_pos, v_count, v_state, hash_mode);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+				v_idx += v_count;
 
 				/* set the parity association for the whole run */
 				fs_allocate(disk, v_pos, file, v_file_pos, v_count);
@@ -2720,7 +2782,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 			v_pos = 0;
 			while (v_pos < blockmax) {
-				block_off_t v_idx;
 				block_off_t v_count;
 				struct snapraid_file* deleted;
 
@@ -2768,25 +2829,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* insert it in the list of deleted files */
 					tommy_list_insert_tail(&disk->deletedlist, &deleted->nodelist, deleted);
 
-					/* process all blocks */
-					v_idx = 0;
-					while (v_idx < v_count) {
-						struct snapraid_block* block = fs_file2block_get(deleted, v_idx);
-
-						/* set the block as deleted */
-						block_state_set(block, BLOCK_STATE_DELETED);
-
-						/* read the hash */
-						ret = sread(f, block->hash, BLOCK_HASH_SIZE);
-						if (ret < 0) {
-							/* LCOV_EXCL_START */
-							decoding_error(path, f);
-							os_abort();
-							/* LCOV_EXCL_STOP */
-						}
-
-						/* go to next block */
-						++v_idx;
+					/* read all blocks in the deleted run */
+					ret = state_read_block_run(f, deleted, 0, v_count, BLOCK_STATE_DELETED, STATE_BLOCK_HASH_READ);
+					if (ret < 0) {
+						/* LCOV_EXCL_START */
+						decoding_error(path, f);
+						os_abort();
+						/* LCOV_EXCL_STOP */
 					}
 
 					/* insert the whole deleted run in the extent map */
