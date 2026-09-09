@@ -3831,6 +3831,62 @@ struct state_write_thread_context {
 	uint64_t count_unscrubbed;
 };
 
+/**
+ * Write all hashes in a contiguous run of file blocks.
+ *
+ * The source hashes are separated by the block state byte, so they cannot be
+ * copied with a single memcpy(). Keep the stream pointer and the independent
+ * CRC local while filling each buffered group to avoid the per-block stream
+ * call and field updates. The CRC is still computed before each hash is copied,
+ * preserving the memory-corruption check performed by swrite().
+ */
+static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
+{
+	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
+	size_t block_stride = block_sizeof();
+
+	assert(f->flags & STREAM_FLAGS_CRC);
+
+	while (count) {
+		size_t available = (size_t)(f->end - f->pos);
+		block_off_t cached_count = available / BLOCK_HASH_SIZE;
+		unsigned char* output;
+		uint32_t crc;
+
+		if (cached_count > count)
+			cached_count = count;
+
+		if (cached_count == 0) {
+			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+
+			if (swrite(block->hash, BLOCK_HASH_SIZE, f) != 0)
+				return -1;
+
+			block_ptr += block_stride;
+			--count;
+			continue;
+		}
+
+		output = f->pos;
+		crc = f->crc_stream;
+		for (block_off_t i = 0; i < cached_count; ++i) {
+			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+
+			crc = crc32c_plain(crc, block->hash, BLOCK_HASH_SIZE);
+			memcpy(output, block->hash, BLOCK_HASH_SIZE);
+
+			output += BLOCK_HASH_SIZE;
+			block_ptr += block_stride;
+		}
+
+		f->crc_stream = crc;
+		f->pos = output;
+		count -= cached_count;
+	}
+
+	return 0;
+}
+
 static void* state_write_thread(void* arg)
 {
 	struct state_write_thread_context* context = arg;
@@ -3851,7 +3907,6 @@ static void* state_write_thread(void* arg)
 	uint64_t count_unsynced;
 	uint64_t count_unscrubbed;
 	tommy_node* i;
-	block_off_t idx;
 	block_off_t begin;
 	unsigned l, s;
 	tommy_hashdyn bucket_hash;
@@ -4051,6 +4106,7 @@ static void* state_write_thread(void* arg)
 		/* for each file */
 		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
+			size_t block_stride = block_sizeof();
 			uint64_t size;
 			uint64_t mtime_sec;
 			int32_t mtime_nsec;
@@ -4082,7 +4138,9 @@ static void* state_write_thread(void* arg)
 			/* for all the blocks of the file */
 			begin = 0;
 			while (begin < file->blockmax) {
-				unsigned v_state = block_state_get(fs_file2block_get(file, begin));
+				struct snapraid_block* block = file_block(file, begin);
+				unsigned char* end_block_ptr = (unsigned char*)block + block_stride;
+				unsigned v_state = block_state_get(block);
 				block_off_t v_pos = fs_file2par_get(disk, file, begin);
 				block_off_t v_count;
 
@@ -4091,10 +4149,12 @@ static void* state_write_thread(void* arg)
 				/* find the end of run of blocks */
 				end = begin + 1;
 				while (end < file->blockmax) {
-					if (v_state != block_state_get(fs_file2block_get(file, end)))
+					block = (struct snapraid_block*)end_block_ptr;
+					if (v_state != block_state_get(block))
 						break;
 					if (v_pos + (end - begin) != fs_file2par_get(disk, file, end))
 						break;
+					end_block_ptr += block_stride;
 					++end;
 				}
 
@@ -4123,11 +4183,12 @@ static void* state_write_thread(void* arg)
 				v_count = end - begin;
 				sputb64(v_count, f);
 
-				/* write hashes */
-				for (idx = begin; idx < end; ++idx) {
-					struct snapraid_block* block = fs_file2block_get(file, idx);
-
-					swrite(block->hash, BLOCK_HASH_SIZE, f);
+				/* write all hashes in the run */
+				if (state_write_block_run(f, file, begin, v_count) != 0) {
+					/* LCOV_EXCL_START */
+					log_fatal(errno, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				if (serror(f)) {
@@ -4269,12 +4330,8 @@ static void* state_write_thread(void* arg)
 
 				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
-				/* write all hashes */
-				for (block_off_t k = 0; k < dealloc->blockmax; ++k) {
-					unsigned char* hash = dealloc->blockhash + k * BLOCK_HASH_SIZE;
-
-					swrite(hash, BLOCK_HASH_SIZE, f);
-				}
+				/* deallocated hashes are already contiguous in memory */
+				swrite(dealloc->blockhash, (size_t)dealloc->blockmax * BLOCK_HASH_SIZE, f);
 			}
 
 			if (serror(f)) {
