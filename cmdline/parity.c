@@ -1001,23 +1001,35 @@ int parity_close(struct snapraid_parity_handle* handle)
 {
 	unsigned s;
 	int f_ret = 0;
+	int f_errno = 0;
 
 	for (s = 0; s < handle->split_mac; ++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
-		int ret;
 
-		advise_close(&split->advise, split->f);
+		int ret = advise_close(&split->advise, split->f);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			if (f_ret == 0) {
+				f_ret = -1;
+				f_errno = errno;
+			}
+			log_fatal(errno, "Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+			/* LCOV_EXCL_STOP */
+		}
 
 		ret = close(split->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
+			if (f_ret == 0) {
+				f_ret = -1;
+				f_errno = errno;
+			}
 			/*
 			 * This is a serious error, as it may be the result of a failed write
 			 * identified at later time.
 			 * In a normal file-system (not NFS) it should never happen
 			 */
 			log_fatal(errno, "Error closing parity file '%s'. %s.\n", split->path, strerror(errno));
-			f_ret = -1;
 			/* LCOV_EXCL_STOP */
 
 			/* continue to close the others */
@@ -1026,6 +1038,9 @@ int parity_close(struct snapraid_parity_handle* handle)
 		/* reset the descriptor */
 		split->f = -1;
 	}
+
+	if (f_ret != 0)
+		errno = f_errno;
 
 	return f_ret;
 }
@@ -1217,3 +1232,4 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 
 	return block_size;
 }
+

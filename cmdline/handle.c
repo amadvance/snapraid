@@ -329,21 +329,29 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 
 int handle_close(struct snapraid_handle* handle)
 {
-	int ret;
+	int f_ret = 0;
+	int f_errno = 0;
 
 	/* close if open */
 	if (handle->f != -1) {
-		advise_close(&handle->advise, handle->f);
+		int ret = advise_close(&handle->advise, handle->f);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			f_ret = -1;
+			f_errno = errno;
+			log_fatal(errno, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+			/* LCOV_EXCL_STOP */
+		}
 
 		ret = close(handle->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
+			if (f_ret == 0) {
+				f_ret = -1;
+				f_errno = errno;
+			}
 			log_fatal(errno, "Error closing file '%s'. %s.\n", handle->path, strerror(errno));
 
-			/* invalidate for error */
-			handle->file = 0;
-			handle->f = -1;
-			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 	}
@@ -353,7 +361,10 @@ int handle_close(struct snapraid_handle* handle)
 	handle->f = -1;
 	handle->readonly_errno = 0;
 
-	return 0;
+	if (f_ret != 0)
+		errno = f_errno;
+
+	return f_ret;
 }
 
 ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, log_ptr* out_missing)
@@ -572,3 +583,4 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 	*handlemax = size;
 	return handle;
 }
+

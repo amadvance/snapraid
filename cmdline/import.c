@@ -47,6 +47,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	ssize_t ret;
 	int f;
 	int flags;
+	int advise_errno;
 	unsigned block_size = state->block_size;
 	struct advise_struct advise;
 	block_off_t blockmax;
@@ -149,9 +150,19 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		size -= read_size;
 	}
 
-	advise_close(&advise, f);
+	ret = advise_close(&advise, f);
+	advise_errno = ret != 0 ? errno : 0;
 
 	ret = close(f);
+
+	if (advise_errno != 0) {
+		/* LCOV_EXCL_START */
+		errno = advise_errno;
+		log_fatal(errno, "Error advising file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));

@@ -1802,7 +1802,7 @@ int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off
 	return 0;
 }
 
-void advise_close(struct advise_struct* advise, int f)
+int advise_close(struct advise_struct* advise, int f)
 {
 	data_off_t flush_offset;
 	data_off_t flush_size;
@@ -1835,8 +1835,15 @@ void advise_close(struct advise_struct* advise, int f)
 
 #if HAVE_SYNC_FILE_RANGE
 	if (flush_size != 0) {
+		int ret;
+
 		/* start writing immediately */
-		sync_file_range(f, flush_offset, flush_size, SYNC_FILE_RANGE_WRITE);
+		ret = sync_file_range(f, flush_offset, flush_size, SYNC_FILE_RANGE_WRITE);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 #endif
 
@@ -1848,17 +1855,29 @@ void advise_close(struct advise_struct* advise, int f)
 		ret = sync_file_range(f, discard_offset, discard_size, SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			return;
+			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 
 		/* flush the data from the cache */
-		posix_fadvise_wrapper(f, discard_offset, discard_size, POSIX_FADV_DONTNEED);
+		ret = posix_fadvise_wrapper(f, discard_offset, discard_size, POSIX_FADV_DONTNEED);
+		if (ret == ENOSYS) {
+			/* call is not supported */
+			ret = 0;
+		}
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			errno = ret; /* posix_fadvise return the error code */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 #endif
 
 	advise->dirty_begin = 0;
 	advise->dirty_end = 0;
+
+	return 0;
 }
 
 /****************************************************************************/
