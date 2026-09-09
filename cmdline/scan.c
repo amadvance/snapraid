@@ -341,7 +341,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 				 */
 
 				/* copy the past hash of the block */
-				memcpy(block->hash, over_block->hash, BLOCK_HASH_SIZE);
+				hash_copy(block->hash, over_block->hash);
 			}
 		}
 

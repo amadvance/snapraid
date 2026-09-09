@@ -528,7 +528,7 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 		struct snapraid_block* block = file_block(file, i);
 		struct snapraid_block* copy_block = file_block(copy, i);
 		block->state = copy_block->state;
-		memcpy(block->hash, copy_block->hash, BLOCK_HASH_SIZE);
+		hash_copy(block->hash, copy_block->hash);
 	}
 
 	return file;
@@ -581,7 +581,7 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 		block_state_set(file_block(dst_file, i), BLOCK_STATE_REP);
 
 		/* copy the hash */
-		memcpy(file_block(dst_file, i)->hash, file_block(src_file, i)->hash, BLOCK_HASH_SIZE);
+		hash_copy(file_block(dst_file, i)->hash, file_block(src_file, i)->hash);
 	}
 
 	file_flag_set(dst_file, FILE_IS_COPY);
@@ -898,7 +898,7 @@ void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file
 		case BLOCK_STATE_BLK :
 		case BLOCK_STATE_REP :
 		case BLOCK_STATE_REBUILD :
-			memcpy(hash, block->hash, BLOCK_HASH_SIZE);
+			hash_copy(hash, block->hash);
 			break;
 		case BLOCK_STATE_CHG :
 			hash_invalid_set(hash);

@@ -52,7 +52,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = fs_file2block_get(file, i);
 
-		memcpy(buf + i * hash_size, block->hash, hash_size);
+		hash_copy(buf + i * hash_size, block->hash);
 
 		if (!block_has_updated_hash(block)) {
 			free(buf);

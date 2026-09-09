@@ -547,7 +547,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				 */
 
 				/* copy the hash in the block */
-				memcpy(block->hash, hash, BLOCK_HASH_SIZE);
+				hash_copy(block->hash, hash);
 
 				/* and mark the block as hashed */
 				block_state_set(block, BLOCK_STATE_REP);
@@ -1353,7 +1353,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				 * During rehash this uses the previous hash algorithm and is
 				 * overwritten with the new hash below when rehash is committed.
 				 */
-				memcpy(rehandle[diskcur].sync_hash, hash, BLOCK_HASH_SIZE);
+				hash_copy(rehandle[diskcur].sync_hash, hash);
 			}
 		}
 
@@ -1574,7 +1574,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				 * was handled above. Publish the staged hash atomically with CHG -> BLK.
 				 */
 				if (block_state_get(block) == BLOCK_STATE_CHG)
-					memcpy(block->hash, rehandle[j].sync_hash, BLOCK_HASH_SIZE);
+					hash_copy(block->hash, rehandle[j].sync_hash);
 
 				/* now all the blocks have the hash and the parity computed */
 				block_state_set(block, BLOCK_STATE_BLK);
@@ -1595,7 +1595,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* store all the new hash already computed */
 					for (j = 0; j < diskmax; ++j) {
 						if (rehandle[j].block)
-							memcpy(rehandle[j].block->hash, rehandle[j].new_hash, BLOCK_HASH_SIZE);
+							hash_copy(rehandle[j].block->hash, rehandle[j].new_hash);
 					}
 				}
 

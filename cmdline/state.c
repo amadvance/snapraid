@@ -2311,7 +2311,7 @@ static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off
 			if (hash_mode == STATE_BLOCK_HASH_DISCARD)
 				hash_invalid_set(block->hash);
 			else
-				memcpy(block->hash, input, BLOCK_HASH_SIZE);
+				hash_copy(block->hash, input);
 
 			input += BLOCK_HASH_SIZE;
 			block_ptr += block_stride;
@@ -3887,7 +3887,7 @@ static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_of
 			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
 
 			crc = crc32c_plain(crc, block->hash, BLOCK_HASH_SIZE);
-			memcpy(output, block->hash, BLOCK_HASH_SIZE);
+			hash_copy(output, block->hash);
 
 			output += BLOCK_HASH_SIZE;
 			block_ptr += block_stride;

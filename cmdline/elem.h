@@ -693,6 +693,20 @@ int filter_content(tommy_list* contentlist, const char* mount_point, size_t moun
 int filter_snapshot(int enable, const char* sub, const char* name);
 
 /**
+ * Copy a block hash using the configured hash size.
+ *
+ * Keep the common full-size case explicit so the compiler can inline a fixed
+ * 16-byte copy instead of emitting a call to memcpy() with a runtime size.
+ */
+static __always_inline void* hash_copy(void* dst, const void* src)
+{
+	if (BLOCK_HASH_SIZE == HASH_MAX)
+		return memcpy(dst, src, HASH_MAX);
+	else
+		return memcpy(dst, src, BLOCK_HASH_SIZE);
+}
+
+/**
  * Check if the specified hash is invalid.
  *
  * An invalid hash is represented with all bytes at 0x00.
@@ -707,7 +721,7 @@ static inline int hash_is_invalid(const unsigned char* hash)
 	if (BLOCK_HASH_SIZE != HASH_MAX)
 		return 0;
 
-	for (i = 0; i < BLOCK_HASH_SIZE; ++i)
+	for (i = 0; i < HASH_MAX; ++i)
 		if (hash[i] != 0x00)
 			return 0;
 

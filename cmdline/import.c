@@ -224,7 +224,7 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 		block->offset = offset;
 		block->size = read_size;
 
-		memcpy(block->hash, dealloc->blockhash + i * BLOCK_HASH_SIZE, BLOCK_HASH_SIZE);
+		hash_copy(block->hash, dealloc->blockhash + i * BLOCK_HASH_SIZE);
 
 		/* do not insert invalid hashes */
 		if (!hash_is_invalid(block->hash)) {
@@ -244,7 +244,7 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 				 * a new-hash block, or vice-versa) will miss in hash lookup and fall
 				 * back to parity reconstruction. Only same-generation matches will succeed.
 				 */
-				memcpy(block->prevhash, block->hash, BLOCK_HASH_SIZE);
+				hash_copy(block->prevhash, block->hash);
 				tommy_hashdyn_insert(&state->previmportset, &block->prevnodeset, block, import_block_hash(block->prevhash));
 			} else {
 				hash_invalid_set(block->prevhash);

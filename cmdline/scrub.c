@@ -909,7 +909,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* store all the new hashes already computed */
 				for (j = 0; j < diskmax; ++j) {
 					if (rehandle[j].block)
-						memcpy(rehandle[j].block->hash, rehandle[j].hash, BLOCK_HASH_SIZE);
+						hash_copy(rehandle[j].block->hash, rehandle[j].hash);
 				}
 
 				/* complete the rehash */
