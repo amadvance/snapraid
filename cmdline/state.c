@@ -3818,6 +3818,9 @@ struct state_write_thread_context {
 	int info_has_rehash;
 	STREAM* f;
 	int first;
+#if HAVE_MT_WRITE
+	const char* content;
+#endif
 
 	/* output (required to postpone the output to the terminal after the latest write) */
 	uint32_t crc;
@@ -3910,6 +3913,11 @@ static void* state_write_thread(void* arg)
 	block_off_t begin;
 	unsigned l, s;
 	tommy_hashdyn bucket_hash;
+#if HAVE_MT_WRITE
+	uint64_t start;
+
+	start = os_tick_ms();
+#endif
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -4313,7 +4321,8 @@ static void* state_write_thread(void* arg)
 			block_off_t v_count = tommy_list_count(&disk->dealloclist);
 
 			sputb64(v_count, f);
-			log_tag("content_info:dealloc:%s:%" PRIu64 "\n", esc_tag(disk->name), v_count);
+			if (context->first)
+				log_tag("content_info:dealloc:%s:%" PRIu64 "\n", esc_tag(disk->name), v_count);
 
 			/* for each file */
 			for (j = tommy_list_head(&disk->dealloclist); j != 0; j = j->next) {
@@ -4328,7 +4337,8 @@ static void* state_write_thread(void* arg)
 				else
 					sputb32(dealloc->mtime_nsec + 1, f);
 
-				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
+				if (context->first)
+					log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
 				/* deallocated hashes are already contiguous in memory */
 				swrite(dealloc->blockhash, (size_t)dealloc->blockmax * BLOCK_HASH_SIZE, f);
@@ -4341,7 +4351,8 @@ static void* state_write_thread(void* arg)
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
-			log_tag("content_info:dealloc:%s:0\n", esc_tag(disk->name));
+			if (context->first)
+				log_tag("content_info:dealloc:%s:0\n", esc_tag(disk->name));
 		}
 	}
 
@@ -4488,6 +4499,9 @@ static void* state_write_thread(void* arg)
 	 */
 
 	tommy_hashdyn_done(&bucket_hash);
+#if HAVE_MT_WRITE
+	msg_progress("Saved %s in %" PRIu64 " ms\n", context->content, os_tick_ms() - start);
+#endif
 	return 0;
 
 bail:
@@ -4660,6 +4674,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		context->info_has_rehash = info_has_rehash;
 		context->f = f;
 		context->first = first;
+		context->content = content->content;
 		first = 0;
 
 		thread_create(&context->thread, state_write_thread, context);
