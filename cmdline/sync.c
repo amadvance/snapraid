@@ -1142,13 +1142,17 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			 */
 			if (block_has_invalid_parity(block)) {
 				/*
-				 * Store it in the failed set, because
-				 * the parity may be still computed with the previous content
+				 * CHG, REP and DELETED may differ from the data represented by
+				 * physical parity, so treat them as erasures during recovery.
+				 * REBUILD instead has a trusted CURRENT hash and can remain a known
+				 * input when it matches. Add it only below if that hash check fails.
 				 */
-				failed[failed_count].index = diskcur;
-				failed[failed_count].size = state->block_size;
-				failed[failed_count].block = block;
-				++failed_count;
+				if (block_state != BLOCK_STATE_REBUILD) {
+					failed[failed_count].index = diskcur;
+					failed[failed_count].size = state->block_size;
+					failed[failed_count].block = block;
+					++failed_count;
+				}
 
 				/*
 				 * If the block has invalid parity, we have to update the parity
@@ -1248,8 +1252,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
-					/* if the file has invalid parity, it's a REP changed during the sync */
-					if (block_has_invalid_parity(block)) {
+					if (block_state == BLOCK_STATE_REP) {
 						log_tag("error:%" PRIu64 ":%s:%s: Unexpected data change\n", blockcur, disk->name, esc_tag(file->sub));
 						log_error(ESOFT, "Data change at file '%s' at position '%" PRIu64 "'\n", task->path, file_pos);
 						log_error(ESOFT, "WARNING! Unexpected data modification of a file without parity!\n");
@@ -1264,28 +1267,25 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						}
 
 						++soft_error;
-
-						/*
-						 * If the file is changed, it means that it was modified during sync
-						 * this isn't a serious error, so we skip this block, and continue with others
-						 */
 						error_on_this_block = 1;
 						continue;
-					} else { /* otherwise it's a BLK with silent error */
+					} else {
 						unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 						log_tag("error_data:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", blockcur, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 						log_error(EDATA, "Data error in file '%s' at position '%" PRIu64 "', diff hash bits %u/%zu\n", task->path, file_pos, diff, BLOCK_HASH_SIZE * 8);
 
-						/* save the failed block for the fix */
+						assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REBUILD);
+
+						/* recover only data that failed its trusted CURRENT hash */
 						failed[failed_count].index = diskcur;
 						failed[failed_count].size = read_size;
 						failed[failed_count].block = block;
 						++failed_count;
 
 						/*
-						 * Silent errors are very rare, and are not a signal that a disk
-						 * is going to fail. So, we just continue marking the block as bad
-						 * just like in scrub
+						 * BLK and REBUILD contain trusted CURRENT hashes. When recovery is
+						 * attempted, accept either reconstructed buffer only after validating
+						 * it against that hash below.
 						 */
 						++silent_error;
 						silent_error_on_this_block = 1;
@@ -1297,7 +1297,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				if (!parity_needs_to_be_updated) {
 					/*
 					 * For sure it's a CHG block, because EMPTY are processed before with "continue"
-					 * and BLK and REP have "block_has_updated_hash()" as 1, and all the others
+					 * and BLK, REP and REBUILD have "block_has_updated_hash()" as 1, and all the others
 					 * have "parity_needs_to_be_updated" already at 1
 					 */
 					assert(block_state_get(block) == BLOCK_STATE_CHG);
@@ -1362,9 +1362,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		 * new parity with bad data. Repaired data is kept in memory only.
 		 *
 		 * Recovery reconstructs the state represented by on-disk parity. For
-		 * CHG/REP/DELETED blocks, current buffers may differ from on-disk parity,
-		 * especially after an interrupted sync. Treating them as erasures prevents
-		 * raid_rec() from trusting their current contents to recover a bad BLK.
+		 * CHG/REP/DELETED blocks, current buffers cannot be assumed to represent
+		 * the state encoded by physical parity, especially after an interrupted
+		 * sync. Treating them as erasures prevents raid_rec() from trusting their
+		 * current contents to recover a bad BLK. A REBUILD is an erasure only when
+		 * its trusted CURRENT hash check failed.
 		 *
 		 * CHG blocks with known ZERO old values supply zero directly without
 		 * consuming a parity equation. If an interrupted sync had already moved
@@ -1372,7 +1374,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		 * discarded.
 		 *
 		 * After recovery, current buffers are restored for CHG/REP/DELETED:
-		 * reconstructed old values must not roll back pending filesystem changes.
+		 * reconstructed parity-history values must not replace current filesystem data.
+		 * Recovered BLK and REBUILD buffers are instead accepted only after their
+		 * trusted CURRENT hash is validated below.
 		 */
 		if (!error_on_this_block && !io_error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
@@ -1488,7 +1492,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						unsigned char* block_copy = copy[failed[j].index];
 						unsigned block_state = block_state_get(failed[j].block);
 
-						if (block_state == BLOCK_STATE_BLK) {
+						if (block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REBUILD) {
 							size_t size = failed[j].size;
 
 							/* compute the hash of the recovered block */
@@ -1512,9 +1516,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 								memset(block_buffer + size, 0, state->block_size - size);
 						} else {
 							/*
-							 * Otherwise restore the content
-							 * because we are not interested in the old state
-							 * that it's recovered for CHG, REP and DELETED blocks
+							 * CHG, REP and DELETED are not direct recovery targets. Restore
+							 * current filesystem data after using the buffer only as an
+							 * intermediate parity-history recovery input.
 							 */
 							memcpy(block_buffer, block_copy, state->block_size);
 						}

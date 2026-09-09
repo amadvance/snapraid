@@ -39,9 +39,10 @@
  *   CHG        yes      OLD                not hash checked     unsynced
  *   REP        yes      NEW                hash checked         unsynced
  *   DELETED    no       OLD/INVALID        zero input           unsynced
+ *   REBUILD    yes      CURRENT            hash checked         unsynced
  *
- * BLK and REP have a hash describing their current file data and can therefore
- * be checked directly.
+ * BLK, REP and REBUILD have a hash describing their current file data and can
+ * therefore be checked directly.
  *
  * CHG is deliberately different. Its stored hash describes the OLD data, so
  * comparing the current file contents against block->hash would not validate
@@ -65,18 +66,25 @@
  * Error classification model
  * --------------------------
  *
- * A hash or parity mismatch is a silent data error only when the corresponding
- * data and parity position are expected to be synchronized.
+ * A current-data hash mismatch is a silent data error for BLK and REBUILD when
+ * the file metadata still matches the content state. REBUILD retains the
+ * trusted CURRENT hash inherited from BLK even though its physical parity is
+ * untrusted.
  *
- * If the file metadata differs from the content state, or any block at the
- * position is CHG, REP or DELETED, a mismatch can be the normal consequence
- * of an unsynchronized array. It is therefore reported as a soft error rather
- * than as silent corruption.
+ * REP mismatches remain soft errors because REP represents a pending
+ * unsynchronized state. If the file metadata differs from the content state,
+ * a current-data hash mismatch may likewise be the normal consequence of a
+ * legitimate file change and is therefore reported as a soft error.
  *
- * The unsynced classification is conservative and affects only the meaning of
- * a mismatch. It does not make the position fail automatically. If the data
- * that can be checked is correct and physical parity already agrees with the
- * current logical inputs, the scrub of that position can still complete.
+ * A parity mismatch is a silent parity error only when the complete position is
+ * expected to be synchronized. CHG, REP, DELETED and REBUILD make physical
+ * parity untrusted, so a parity mismatch at such a position is reported as a
+ * soft synchronization error.
+ *
+ * These classifications affect only the meaning of a mismatch. They do not
+ * make the position fail automatically. If the data that can be checked is
+ * correct and physical parity already agrees with the current logical inputs,
+ * the scrub of that position can still complete.
  *
  * I/O errors are tracked separately from logical or hash mismatches. A
  * recoverable per-position I/O failure marks the position bad; errors severe
@@ -633,14 +641,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/*
 			 * Do this before skipping blocks without a current file.
 			 *
-			 * DELETED has no file contribution but still has invalid parity: physical
-			 * parity may contain its OLD data. It must therefore make the whole position
-			 * unsynced so a later parity mismatch is not reported as silent corruption.
+			 * Invalid parity makes the whole position unsynced for parity comparison.
+			 * It also makes data mismatches soft for pending states such as REP, except
+			 * for REBUILD whose stored hash is the trusted CURRENT hash inherited from
+			 * the synchronized BLK state.
 			 */
 			if (block_has_invalid_parity(block)) {
-				/* report that the block and the file are not synced */
+				/* report that the parity position is not synced */
 				block_is_unsynced = 1;
-				file_is_unsynced = 1;
+				if (block_state_get(block) != BLOCK_STATE_REBUILD)
+					file_is_unsynced = 1;
 				/* follow */
 			}
 
@@ -724,7 +734,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			state_usage_hash(state);
 
 			/*
-			 * Only BLK and REP contain a hash for the current file data.
+			 * BLK, REP and REBUILD contain a hash for the current file data.
 			 *
 			 * CHG deliberately skips this comparison because block->hash describes its
 			 * OLD parity contribution. A CHG can still participate in the parity check
