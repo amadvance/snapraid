@@ -798,9 +798,10 @@ Pliki o innym rozmiarze lub znaczniku czasu, co oznacza, że
 zostały zmodyfikowane.
 .HP 4
 .I moved
-Pliki przeniesione do innego katalogu na tym samym dysku.
-Są one identyfikowane przez tę samą nazwę, rozmiar, znacznik czasu
-i inode, ale inny katalog.
+Pliki przeniesione lub o zmienionej nazwie na tym samym dysku
+z zachowaniem tego samego i\-węzła (inode). Są identyfikowane przez
+ten sam inode, rozmiar i znacznik czasu, ale inną ścieżkę. Nazwa
+pliku może być również inna.
 .HP 4
 .I copied
 Pliki skopiowane na ten sam lub inny dysk, gdzie
@@ -812,14 +813,13 @@ musi być zgodna, aby plik został zidentyfikowany, a nie
 tylko nazwa.
 .HP 4
 .I relocated
-Pliki przeniesione na ten sam lub inny dysk, gdzie
-oryginał zniknął.
-Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
-i znacznika czasu.
-Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
-musi być zgodna, aby plik został zidentyfikowany.
-W przeciwieństwie do plików przeniesionych (\'moved\') na tym samym dysku, pliki
-relokowane mają inny inode.
+Pliki przeniesione do innego katalogu lub na inny dysk,
+gdzie oryginalny plik zniknął, a inode nie został zachowany.
+Są identyfikowane przez posiadanie tej samej nazwy, rozmiaru i
+znacznika czasu. Jeśli podsekundowy znacznik czasu wynosi zero,
+pełna ścieżka musi być zgodna, aby plik został zidentyfikowany.
+W przeciwieństwie do plików \'moved\', pliki relokowane wymagają,
+aby nazwa pliku pozostała taka sama.
 .HP 4
 .I restored
 Pliki o innym inode, ale pasującym katalogu,

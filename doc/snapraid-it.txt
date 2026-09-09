@@ -568,24 +568,23 @@ riepilogo delle modifiche, raggruppate per:
     removed - File rimossi.
     updated - File con dimensioni o timestamp diversi, il che
         significa che sono stati modificati.
-    moved - File spostati in una directory diversa sullo stesso
-        disco. Sono identificati dall'avere lo stesso nome,
-        dimensioni, timestamp e inode, ma una directory diversa.
+    moved - File spostati o rinominati sullo stesso disco mantenendo
+        lo stesso inode. Sono identificati dall'avere lo stesso inode,
+        dimensione e timestamp, ma un percorso diverso. Anche il nome
+        del file può essere diverso.
     copied - File copiati sullo stesso disco o su un disco diverso dove il
         file originale esiste ancora.
         Sono identificati dall'avere lo stesso nome, dimensione e timestamp.
         Se il timestamp al sottomultiplo del secondo è zero,
         il percorso completo deve corrispondere per essere
         identificato, non solo il nome.
-    relocated - File spostati sullo stesso disco o su un disco
-        diverso dove l'originale è scomparso.
-        Sono identificati dall'avere lo stesso nome, dimensione
-        e timestamp.
-        Se il timestamp al sottomultiplo del secondo è zero,
-        il percorso completo deve corrispondere per essere
-        identificato.
-        A differenza dei file 'moved' sullo stesso disco,
-        i file ricollocati hanno un inode diverso.
+    relocated - File spostati in una directory diversa o su un altro disco
+        dove il file originale è scomparso e l'inode non è mantenuto.
+        Sono identificati dall'avere lo stesso nome, dimensione e timestamp.
+        Se il timestamp al sottomultiplo del secondo è zero, il percorso
+        completo deve corrispondere per essere identificato. A differenza
+        dei file 'moved', i file ricollocati richiedono che il nome del
+        file rimanga identico.
     restored - File con un inode diverso ma directory,
         nome, dimensione e timestamp corrispondenti.
         Questi sono solitamente file ripristinati dopo essere

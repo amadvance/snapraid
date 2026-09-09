@@ -544,9 +544,10 @@ podsumowanie zmian, pogrupowane według:
     removed - Pliki usunięte.
     updated - Pliki o innym rozmiarze lub znaczniku czasu, co oznacza, że
         zostały zmodyfikowane.
-    moved - Pliki przeniesione do innego katalogu na tym samym dysku.
-        Są one identyfikowane przez tę samą nazwę, rozmiar, znacznik czasu
-        i inode, ale inny katalog.
+    moved - Pliki przeniesione lub o zmienionej nazwie na tym samym dysku
+        z zachowaniem tego samego i-węzła (inode). Są identyfikowane przez
+        ten sam inode, rozmiar i znacznik czasu, ale inną ścieżkę. Nazwa
+        pliku może być również inna.
     copied - Pliki skopiowane na ten sam lub inny dysk, gdzie
         oryginalny plik nadal istnieje.
         Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
@@ -554,14 +555,13 @@ podsumowanie zmian, pogrupowane według:
         Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
         musi być zgodna, aby plik został zidentyfikowany, a nie
         tylko nazwa.
-    relocated - Pliki przeniesione na ten sam lub inny dysk, gdzie
-        oryginał zniknął.
-        Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
-        i znacznika czasu.
-        Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
-        musi być zgodna, aby plik został zidentyfikowany.
-        W przeciwieństwie do plików przeniesionych ('moved') na tym samym dysku, pliki
-        relokowane mają inny inode.
+    relocated - Pliki przeniesione do innego katalogu lub na inny dysk,
+        gdzie oryginalny plik zniknął, a inode nie został zachowany.
+        Są identyfikowane przez posiadanie tej samej nazwy, rozmiaru i
+        znacznika czasu. Jeśli podsekundowy znacznik czasu wynosi zero,
+        pełna ścieżka musi być zgodna, aby plik został zidentyfikowany.
+        W przeciwieństwie do plików 'moved', pliki relokowane wymagają,
+        aby nazwa pliku pozostała taka sama.
     restored - Pliki o innym inode, ale pasującym katalogu,
         nazwie, rozmiarze i znaczniku czasu.
         Są to zazwyczaj pliki przywrócone po ich usunięciu.

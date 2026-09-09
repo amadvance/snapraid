@@ -580,24 +580,23 @@ modifications est présenté, regroupé par :
     removed - Fichiers supprimés.
     updated - Fichiers avec une taille ou un horodatage différent,
         signifiant qu'ils ont été modifiés.
-    moved - Fichiers déplacés vers un répertoire différent sur le
-        même disque. Ils sont identifiés par le même nom, la
-        même taille, le même horodatage et le même inode, mais
-        un répertoire différent.
+    moved - Fichiers déplacés ou renommés sur le même disque tout en
+        conservant le même inode. Ils sont identifiés par le fait d'avoir
+        le même inode, la même taille et le même horodatage, mais un
+        chemin différent. Le nom du fichier peut également être différent.
     copied - Fichiers copiés sur le même disque ou sur un disque
         différent où le fichier original existe toujours.
         Ils sont identifiés par le fait qu'ils ont le même nom, la même
         taille et le même horodatage.
         Si l'horodatage à la sous-seconde est nul, le chemin complet
         doit correspondre pour être identifié, pas seulement le nom.
-    relocated - Fichiers déplacés sur le même disque ou sur un disque
-        différent où l'original a disparu.
-        Ils sont identifiés par le fait qu'ils ont le même nom, la même
-        taille et le même horodatage.
-        Si l'horodatage à la sous-seconde est nul, le chemin complet
-        doit correspondre pour être identifié.
-        Contrairement aux fichiers 'moved' sur le même disque, les
-        fichiers relocalisés ont un inode différent.
+    relocated - Fichiers déplacés vers un répertoire différent ou un autre
+        disque où le fichier original a disparu et l'inode n'est pas conservé.
+        Ils sont identifiés par le fait d'avoir le même nom, la même taille
+        et le même horodatage. Si l'horodatage à la sous-seconde est nul, le
+        chemin complet doit correspondre pour être identifié. Contrairement aux
+        fichiers 'moved', les fichiers relocalisés nécessitent que le nom du
+        fichier reste le même.
     restored - Fichiers avec un inode différent mais dont le
         répertoire, le nom, la taille et l'horodatage correspondent.
         Il s'agit généralement de fichiers restaurés après avoir été

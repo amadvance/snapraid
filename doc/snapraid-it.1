@@ -822,9 +822,10 @@ File con dimensioni o timestamp diversi, il che
 significa che sono stati modificati.
 .HP 4
 .I moved
-File spostati in una directory diversa sullo stesso
-disco. Sono identificati dall\'avere lo stesso nome,
-dimensioni, timestamp e inode, ma una directory diversa.
+File spostati o rinominati sullo stesso disco mantenendo
+lo stesso inode. Sono identificati dall\'avere lo stesso inode,
+dimensione e timestamp, ma un percorso diverso. Anche il nome
+del file può essere diverso.
 .HP 4
 .I copied
 File copiati sullo stesso disco o su un disco diverso dove il
@@ -835,15 +836,13 @@ il percorso completo deve corrispondere per essere
 identificato, non solo il nome.
 .HP 4
 .I relocated
-File spostati sullo stesso disco o su un disco
-diverso dove l\'originale è scomparso.
-Sono identificati dall\'avere lo stesso nome, dimensione
-e timestamp.
-Se il timestamp al sottomultiplo del secondo è zero,
-il percorso completo deve corrispondere per essere
-identificato.
-A differenza dei file \'moved\' sullo stesso disco,
-i file ricollocati hanno un inode diverso.
+File spostati in una directory diversa o su un altro disco
+dove il file originale è scomparso e l\'inode non è mantenuto.
+Sono identificati dall\'avere lo stesso nome, dimensione e timestamp.
+Se il timestamp al sottomultiplo del secondo è zero, il percorso
+completo deve corrispondere per essere identificato. A differenza
+dei file \'moved\', i file ricollocati richiedono che il nome del
+file rimanga identico.
 .HP 4
 .I restored
 File con un inode diverso ma directory,

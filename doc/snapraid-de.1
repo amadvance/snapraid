@@ -844,10 +844,11 @@ Dateien mit einer anderen Größe oder einem anderen
 Zeitstempel, was bedeutet, dass sie geändert wurden.
 .HP 4
 .I moved
-Auf derselben Festplatte in ein anderes Verzeichnis
-verschobene Dateien. Sie werden durch denselben Namen,
-dieselbe Größe, denselben Zeitstempel und dieselbe Inode,
-aber ein anderes Verzeichnis identifiziert.
+Dateien, die auf derselben Festplatte verschoben oder
+umbenannt wurden, wobei dieselbe Inode beibehalten wird.
+Sie werden durch dieselbe Inode, dieselbe Größe und denselben
+Zeitstempel, aber einen anderen Pfad identifiziert. Der
+Dateiname kann auch unterschiedlich sein.
 .HP 4
 .I copied
 Dateien, die auf dieselbe oder eine andere Festplatte
@@ -859,14 +860,13 @@ Pfad übereinstimmen, um identifiziert zu werden, nicht nur
 der Name.
 .HP 4
 .I relocated
-Dateien, die auf dieselbe oder eine andere Festplatte
-verschoben wurden, wobei das Original verschwunden ist.
-Sie werden dadurch identifiziert, dass sie denselben Namen,
-dieselbe Größe und denselben Zeitstempel haben.
-Wenn der Subsekunden\-Zeitstempel Null ist, muss der vollständige
-Pfad übereinstimmen, um identifiziert zu werden.
-Im Gegensatz zu \'moved\' Dateien auf derselben Festplatte haben
-verschobene Dateien einen anderen Inode.
+Dateien, die in ein anderes Verzeichnis oder auf eine andere
+Festplatte verschoben wurden, wobei die Originaldatei verschwunden ist
+und die Inode nicht beibehalten wird. Sie werden dadurch identifiziert,
+dass sie denselben Namen, dieselbe Größe und denselben Zeitstempel haben.
+Wenn der Subsekunden\-Zeitstempel Null ist, muss der vollständige Pfad
+übereinstimmen, um identifiziert zu werden. Im Gegensatz zu \'moved\'
+Dateien erfordern umgesiedelte Dateien, dass der Dateiname gleich bleibt.
 .HP 4
 .I restored
 Dateien mit einem anderen Inode, aber passendem

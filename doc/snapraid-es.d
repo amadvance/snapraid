@@ -529,23 +529,23 @@ Comandos (Commands)
 		removed - Archivos eliminados.
 		updated - Archivos con un tamaño o marca de tiempo diferente,
 			lo que significa que fueron modificados.
-		moved - Archivos movidos a un directorio diferente en el mismo
-			disco. Se identifican por tener el mismo nombre, tamaño,
-			marca de tiempo e inodo, pero un directorio diferente.
+		moved - Archivos movidos o renombrados en el mismo disco manteniendo
+			el mismo inodo. Se identifican por tener el mismo inodo,
+			tamaño y marca de tiempo, pero una ruta diferente. El nombre
+			del archivo también puede ser diferente.
 		copied - Archivos copiados en el mismo disco o en uno diferente
 			donde el archivo original todavía existe.
 			Se identifican por tener el mismo nombre, tamaño y
 			marca de tiempo.
 			Si la marca de tiempo de subsegundo es cero, la ruta
 			completa debe coincidir para ser identificado, no solo el nombre.
-		relocated - Archivos movidos en el mismo disco o en uno
-			diferente donde el original ha desaparecido.
-			Se identifican por tener el mismo nombre, tamaño y
-			marca de tiempo.
-			Si la marca de tiempo de subsegundo es cero, la ruta
-			completa debe coincidir para ser identificado.
-			A diferencia de los archivos `moved` en el mismo disco,
-			los archivos reubicados tienen un inodo diferente.
+		relocated - Archivos movidos a un directorio o disco diferente donde
+			el archivo original ha desaparecido y el inodo no se conserva.
+			Se identifican por tener el mismo nombre, tamaño y marca de tiempo.
+			Si la marca de tiempo de subsegundo es cero, la ruta completa
+			debe coincidir para ser identificado. A diferencia de los archivos
+			'moved', los archivos reubicados requieren que el nombre del
+			archivo siga siendo el mismo.
 		restored - Archivos con un inodo diferente pero con directorio,
 			nombre, tamaño y marca de tiempo coincidentes.
 			Estos son usualmente archivos restaurados después de

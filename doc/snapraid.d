@@ -512,20 +512,21 @@ Commands
 		removed - Files removed.
 		updated - Files with a different size or timestamp, meaning they
 			were modified.
-		moved - Files moved to a different directory on the same disk.
-			They are identified by having the same name, size, timestamp,
-			and inode, but a different directory.
+		moved - Files moved or renamed on the same disk while retaining
+			the same inode. They are identified by having the same inode,
+			size, and timestamp, but a different path. The file name may
+			also be different.
 		copied - Files copied on the same or a different disk where the
 			original file still exists. They are identified by having
 			the same name, size, and timestamp. If the sub-second
 			timestamp is zero, the full path must match to be
 			identified, not just the name.
-		relocated - Files moved on the same or a different disk where
-			the original has disappeared. They are identified by
-			having the same name, size, and timestamp. If the
-			sub-second timestamp is zero, the full path must match
-			to be identified. Unlike 'moved' files on the same disk,
-			relocated files have a different inode.
+		relocated - Files moved to a different directory or disk where the
+			original file has disappeared and the inode is not retained.
+			They are identified by having the same name, size, and timestamp.
+			If the sub-second timestamp is zero, the full path must match to
+			be identified. Unlike 'moved' files, relocated files require the
+			file name to remain the same.
 		restored - Files with a different inode but matching directory,
 			name, size, and timestamp.
 			These are usually files restored after being deleted.

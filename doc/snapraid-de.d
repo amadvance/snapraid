@@ -554,10 +554,11 @@ Befehle (Commands)
 		removed - Entfernte Dateien.
 		updated - Dateien mit einer anderen Größe oder einem anderen
 			Zeitstempel, was bedeutet, dass sie geändert wurden.
-		moved - Auf derselben Festplatte in ein anderes Verzeichnis
-			verschobene Dateien. Sie werden durch denselben Namen,
-			dieselbe Größe, denselben Zeitstempel und dieselbe Inode,
-			aber ein anderes Verzeichnis identifiziert.
+		moved - Dateien, die auf derselben Festplatte verschoben oder
+			umbenannt wurden, wobei dieselbe Inode beibehalten wird.
+			Sie werden durch dieselbe Inode, dieselbe Größe und denselben
+			Zeitstempel, aber einen anderen Pfad identifiziert. Der
+			Dateiname kann auch unterschiedlich sein.
 		copied - Dateien, die auf dieselbe oder eine andere Festplatte
 			kopiert wurden, wobei die Originaldatei noch vorhanden ist.
 			Sie werden dadurch identifiziert, dass sie denselben Namen,
@@ -565,14 +566,13 @@ Befehle (Commands)
 			Wenn der Subsekunden-Zeitstempel Null ist, muss der vollständige
 			Pfad übereinstimmen, um identifiziert zu werden, nicht nur
 			der Name.
-		relocated - Dateien, die auf dieselbe oder eine andere Festplatte
-			verschoben wurden, wobei das Original verschwunden ist.
-			Sie werden dadurch identifiziert, dass sie denselben Namen,
-			dieselbe Größe und denselben Zeitstempel haben.
-			Wenn der Subsekunden-Zeitstempel Null ist, muss der vollständige
-			Pfad übereinstimmen, um identifiziert zu werden.
-			Im Gegensatz zu 'moved' Dateien auf derselben Festplatte haben
-			verschobene Dateien einen anderen Inode.
+		relocated - Dateien, die in ein anderes Verzeichnis oder auf eine andere
+			Festplatte verschoben wurden, wobei die Originaldatei verschwunden ist
+			und die Inode nicht beibehalten wird. Sie werden dadurch identifiziert,
+			dass sie denselben Namen, dieselbe Größe und denselben Zeitstempel haben.
+			Wenn der Subsekunden-Zeitstempel Null ist, muss der vollständige Pfad
+			übereinstimmen, um identifiziert zu werden. Im Gegensatz zu 'moved'
+			Dateien erfordern umgesiedelte Dateien, dass der Dateiname gleich bleibt.
 		restored - Dateien mit einem anderen Inode, aber passendem
 			Verzeichnis, Namen, Größe und Zeitstempel.
 			Dies sind in der Regel Dateien, die nach dem Löschen

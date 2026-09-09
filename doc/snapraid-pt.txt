@@ -554,9 +554,10 @@ apresentado, agrupado por:
     removed - Arquivos removidos.
     updated - Arquivos com tamanho ou carimbo de data/hora diferente,
         o que significa que foram modificados.
-    moved - Arquivos movidos para um diretório diferente no mesmo disco.
-        Eles são identificados por terem o mesmo nome, tamanho,
-        carimbo de data/hora e inode, mas um diretório diferente.
+    moved - Arquivos movidos ou renomeados no mesmo disco, mantendo
+        o mesmo inode. Eles são identificados por terem o mesmo inode,
+        tamanho e carimbo de data/hora, mas um caminho diferente. O nome
+        do arquivo também pode ser diferente.
     copied - Arquivos copiados no mesmo disco ou em um disco
         diferente onde o arquivo original ainda existe.
         Eles são identificados por terem o mesmo nome, tamanho e
@@ -564,14 +565,13 @@ apresentado, agrupado por:
         Se o carimbo de data/hora de subsegundos for zero, o caminho
         completo deve corresponder para ser identificado, não apenas
         o nome.
-    relocated - Arquivos movidos no mesmo disco ou em um disco
-        diferente onde o original desapareceu.
-        Eles são identificados por terem o mesmo nome, tamanho e
-        carimbo de data/hora.
-        Se o carimbo de data/hora de subsegundos for zero, o caminho
-        completo deve corresponder para ser identificado.
-        Ao contrário dos arquivos 'moved' no mesmo disco, os arquivos
-        relocados têm um inode diferente.
+    relocated - Arquivos movidos para um diretório ou disco diferente onde
+        o arquivo original desapareceu e o inode não é mantido.
+        Eles são identificados por terem o mesmo nome, tamanho e carimbo
+        de data/hora. Se o carimbo de data/hora de subsegundos for zero, o
+        caminho completo deve corresponder para ser identificado. Ao
+        contrário dos arquivos 'moved', os arquivos relocados exigem que
+        o nome do arquivo permaneça o mesmo.
     restored - Arquivos com um inode diferente, mas com diretório,
         nome, tamanho e carimbo de data/hora correspondentes.
         Geralmente são arquivos restaurados após serem excluídos.

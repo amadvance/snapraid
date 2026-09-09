@@ -802,9 +802,10 @@ Files with a different size or timestamp, meaning they
 were modified.
 .HP 4
 .I moved
-Files moved to a different directory on the same disk.
-They are identified by having the same name, size, timestamp,
-and inode, but a different directory.
+Files moved or renamed on the same disk while retaining
+the same inode. They are identified by having the same inode,
+size, and timestamp, but a different path. The file name may
+also be different.
 .HP 4
 .I copied
 Files copied on the same or a different disk where the
@@ -814,12 +815,12 @@ timestamp is zero, the full path must match to be
 identified, not just the name.
 .HP 4
 .I relocated
-Files moved on the same or a different disk where
-the original has disappeared. They are identified by
-having the same name, size, and timestamp. If the
-sub\-second timestamp is zero, the full path must match
-to be identified. Unlike \'moved\' files on the same disk,
-relocated files have a different inode.
+Files moved to a different directory or disk where the
+original file has disappeared and the inode is not retained.
+They are identified by having the same name, size, and timestamp.
+If the sub\-second timestamp is zero, the full path must match to
+be identified. Unlike \'moved\' files, relocated files require the
+file name to remain the same.
 .HP 4
 .I restored
 Files with a different inode but matching directory,

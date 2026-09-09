@@ -808,9 +808,10 @@ Arquivos com tamanho ou carimbo de data/hora diferente,
 o que significa que foram modificados.
 .HP 4
 .I moved
-Arquivos movidos para um diretório diferente no mesmo disco.
-Eles são identificados por terem o mesmo nome, tamanho,
-carimbo de data/hora e inode, mas um diretório diferente.
+Arquivos movidos ou renomeados no mesmo disco, mantendo
+o mesmo inode. Eles são identificados por terem o mesmo inode,
+tamanho e carimbo de data/hora, mas um caminho diferente. O nome
+do arquivo também pode ser diferente.
 .HP 4
 .I copied
 Arquivos copiados no mesmo disco ou em um disco
@@ -822,14 +823,13 @@ completo deve corresponder para ser identificado, não apenas
 o nome.
 .HP 4
 .I relocated
-Arquivos movidos no mesmo disco ou em um disco
-diferente onde o original desapareceu.
-Eles são identificados por terem o mesmo nome, tamanho e
-carimbo de data/hora.
-Se o carimbo de data/hora de subsegundos for zero, o caminho
-completo deve corresponder para ser identificado.
-Ao contrário dos arquivos \'moved\' no mesmo disco, os arquivos
-relocados têm um inode diferente.
+Arquivos movidos para um diretório ou disco diferente onde
+o arquivo original desapareceu e o inode não é mantido.
+Eles são identificados por terem o mesmo nome, tamanho e carimbo
+de data/hora. Se o carimbo de data/hora de subsegundos for zero, o
+caminho completo deve corresponder para ser identificado. Ao
+contrário dos arquivos \'moved\', os arquivos relocados exigem que
+o nome do arquivo permaneça o mesmo.
 .HP 4
 .I restored
 Arquivos com um inode diferente, mas com diretório,

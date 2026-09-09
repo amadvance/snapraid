@@ -801,9 +801,9 @@ Filer med en annan storlek eller tidsstämpel, vilket innebär att de
 modifierades.
 .HP 4
 .I moved
-Filer flyttade till en annan katalog på samma disk.
-De identifieras genom att ha samma namn, storlek, tidsstämpel
-och inode, men en annan katalog.
+Filer som flyttats eller bytt namn på samma disk med bibehållen
+inode. De identifieras genom att ha samma inode, storlek och
+tidsstämpel, men en annan sökväg. Filnamnet kan också vara annorlunda.
 .HP 4
 .I copied
 Filer som kopierats på samma eller en annan disk där
@@ -814,14 +814,12 @@ Om tidsstämpeln för undersekunder är noll måste hela sökvägen
 matcha för att identifieras, inte bara namnet.
 .HP 4
 .I relocated
-Filer som flyttats på samma eller en annan disk där
-originalet har försvunnit.
-De identifieras genom att ha samma namn, storlek och
-tidsstämpel.
+Filer som flyttats till en annan katalog eller disk där
+originalfilen har försvunnit och inoden inte bibehålls.
+De identifieras genom att ha samma namn, storlek och tidsstämpel.
 Om tidsstämpeln för undersekunder är noll måste hela sökvägen
-matcha för att identifieras.
-Till skillnad från \'moved\' filer på samma disk har omlokaliserade
-filer en annan inode.
+matcha för att identifieras. Till skillnad från \'moved\'\-filer kräver
+omlokaliserade filer att filnamnet förblir detsamma.
 .HP 4
 .I restored
 Filer med en annan inode men matchande katalog, namn,

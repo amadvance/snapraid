@@ -794,9 +794,10 @@ Fișiere cu o dimensiune sau marcă temporală diferită, ceea ce înseamnă că
 fost modificate.
 .HP 4
 .I moved
-Fișiere mutate într\-un director diferit pe același disc.
-Sunt identificate având același nume, dimensiune, marcă temporală
-și inod, dar un director diferit.
+Fișiere mutate sau redenumite pe același disc, păstrând
+același inod. Sunt identificate prin faptul că au același inod,
+dimensiune și marcă temporală, dar o cale diferită. Numele
+fișierului poate fi, de asemenea, diferit.
 .HP 4
 .I copied
 Fișiere copiate pe același disc sau pe un disc diferit
@@ -808,14 +809,13 @@ trebuie să se potrivească pentru a fi identificate, nu doar
 numele.
 .HP 4
 .I relocated
-Fișiere mutate pe același disc sau pe un disc diferit
-unde originalul a dispărut.
-Acestea sunt identificate prin faptul că au același nume,
-dimensiune și marcă temporală.
-Dacă marca temporală sub\-secundă este zero, calea completă
-trebuie să se potrivească pentru a fi identificate.
-Spre deosebire de fișierele \'moved\' de pe același disc, fișierele
-relocate au un inod diferit.
+Fișiere mutate într\-un director sau pe un disc diferit,
+unde fișierul original a dispărut și inodul nu este păstrat.
+Sunt identificate prin faptul că au același nume, dimensiune și
+marcă temporală. Dacă marca temporală sub\-secundă este zero,
+calea completă trebuie să se potrivească pentru a fi identificate.
+Spre deosebire de fișierele \'moved\', fișierele relocate necesită
+ca numele fișierului să rămână neschimbat.
 .HP 4
 .I restored
 Fișiere cu un inod diferit, dar care se potrivesc ca

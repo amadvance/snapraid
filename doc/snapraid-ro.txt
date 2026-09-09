@@ -540,9 +540,10 @@ grupate după:
     removed - Fișiere eliminate.
     updated - Fișiere cu o dimensiune sau marcă temporală diferită, ceea ce înseamnă că au
         fost modificate.
-    moved - Fișiere mutate într-un director diferit pe același disc.
-        Sunt identificate având același nume, dimensiune, marcă temporală
-        și inod, dar un director diferit.
+    moved - Fișiere mutate sau redenumite pe același disc, păstrând
+        același inod. Sunt identificate prin faptul că au același inod,
+        dimensiune și marcă temporală, dar o cale diferită. Numele
+        fișierului poate fi, de asemenea, diferit.
     copied - Fișiere copiate pe același disc sau pe un disc diferit
         unde fișierul original încă există.
         Acestea sunt identificate prin faptul că au același nume,
@@ -550,14 +551,13 @@ grupate după:
         Dacă marca temporală sub-secundă este zero, calea completă
         trebuie să se potrivească pentru a fi identificate, nu doar
         numele.
-    relocated - Fișiere mutate pe același disc sau pe un disc diferit
-        unde originalul a dispărut.
-        Acestea sunt identificate prin faptul că au același nume,
-        dimensiune și marcă temporală.
-        Dacă marca temporală sub-secundă este zero, calea completă
-        trebuie să se potrivească pentru a fi identificate.
-        Spre deosebire de fișierele 'moved' de pe același disc, fișierele
-        relocate au un inod diferit.
+    relocated - Fișiere mutate într-un director sau pe un disc diferit,
+        unde fișierul original a dispărut și inodul nu este păstrat.
+        Sunt identificate prin faptul că au același nume, dimensiune și
+        marcă temporală. Dacă marca temporală sub-secundă este zero,
+        calea completă trebuie să se potrivească pentru a fi identificate.
+        Spre deosebire de fișierele 'moved', fișierele relocate necesită
+        ca numele fișierului să rămână neschimbat.
     restored - Fișiere cu un inod diferit, dar care se potrivesc ca
         director, nume, dimensiune și marcă temporală.
         Acestea sunt de obicei fișiere restaurate după ce au fost șterse.
