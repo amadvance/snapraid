@@ -4878,7 +4878,23 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	context->f = f;
 	context->first = 1;
 
+#if HAVE_THREAD
+	/* this non-MT path is the only user of the extent trees until serialization completes. */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		disk->single_thread = 1;
+	}
+#endif
+
 	retval = state_write_thread(context);
+
+#if HAVE_THREAD
+	/* restore locking before any later phase can start worker threads. */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		disk->single_thread = 0;
+	}
+#endif
 
 	/* abort on failure */
 	if (retval) {
