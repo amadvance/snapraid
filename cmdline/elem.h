@@ -883,7 +883,7 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 }
 
 /**
- * Allocate a file.
+ * Allocate a file without initializing its blocks.
  */
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode);
 

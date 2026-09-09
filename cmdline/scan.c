@@ -691,6 +691,7 @@ static void scan_file_apply(void* void_scan, void* void_disc)
 	struct snapraid_disk* disk = scan->disk;
 	int is_diff = scan->is_diff;
 	struct snapraid_file* file;
+	block_off_t block_pos;
 	tommy_node* i;
 	int is_original_file_size_different_than_zero;
 	int is_file_already_present;
@@ -996,6 +997,18 @@ static void scan_file_apply(void* void_scan, void* void_disc)
 
 	/* insert it */
 	file = file_alloc(state->block_size, sub, disc->size, disc->mtime_sec, disc->mtime_nsec, disc->inode);
+
+	/*
+	 * Copy detection recognizes reused hashes from REP blocks before parity
+	 * allocation. Initialize new scan blocks to CHG so uninitialized state can
+	 * never be mistaken for a reusable hash.
+	 */
+	for (block_pos = 0; block_pos < file->blockmax; ++block_pos) {
+		struct snapraid_block* block = fs_file2block_get(file, block_pos);
+
+		block_state_set(block, BLOCK_STATE_CHG);
+		hash_invalid_set(block->hash);
+	}
 
 	/* mark it as present and physically discovered during Phase 1 */
 	file_flag_set(file, FILE_IS_PRESENT);

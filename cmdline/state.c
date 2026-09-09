@@ -2422,7 +2422,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* allocate the file */
+			/*
+			 * Allocate without initializing blocks. The runs below cover the whole
+			 * file and set every state and hash before exposing the loaded state.
+			 */
 			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
 
 			/* insert the file in the file containers */
@@ -2750,7 +2753,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* LCOV_EXCL_STOP */
 					}
 
-					/* allocate a fake deleted file */
+					/*
+					 * Allocate without initializing blocks. This deleted run sets every
+					 * state and hash before the file is inserted in the extent map.
+					 */
 					deleted = file_alloc(state->block_size, "<deleted>", v_count * (data_off_t)state->block_size, 0, 0, 0);
 
 					/* mark the file as deleted */

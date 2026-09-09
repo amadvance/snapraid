@@ -472,7 +472,6 @@ int filter_snapshot(int enable, const char* sub, const char* name)
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
 {
 	struct snapraid_file* file;
-	block_off_t i;
 	block_off_t blockmax;
 
 	blockmax = size / block_size;
@@ -497,12 +496,6 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->inode = inode;
 	file->flag = 0;
 	file->blockvec = nalloc_nofail((size_t)file->blockmax, block_sizeof());
-
-	for (i = 0; i < file->blockmax; ++i) {
-		struct snapraid_block* block = file_block(file, i);
-		block_state_set(block, BLOCK_STATE_CHG);
-		hash_invalid_set(block->hash);
-	}
 
 	return file;
 }
