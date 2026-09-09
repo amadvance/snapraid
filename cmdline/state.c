@@ -2145,7 +2145,7 @@ static void fs_position_clear_deleted(struct snapraid_state* state, block_off_t 
 /**
  * Check if a block position in a disk is deleted.
  */
-static int fs_is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
+static inline int fs_is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 {
 	struct snapraid_block* block = fs_par2block_find(disk, pos);
 
@@ -4286,52 +4286,56 @@ static void* state_write_thread(void* arg)
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
+
 		begin = 0;
-		while (begin < blockmax) {
-			int is_deleted;
-			block_off_t end;
-
-			is_deleted = fs_is_block_deleted(disk, begin);
-
-			/* find the end of run of blocks */
-			end = begin + 1;
-			while (end < blockmax
-				&& is_deleted == fs_is_block_deleted(disk, end)
-			) {
-				++end;
-			}
-
-			sputb64(end - begin, f);
-
-			if (is_deleted) {
-				/* write the run of deleted blocks with hash */
-				sputc('o', f);
-
-				/* write all the hash */
-				while (begin < end) {
-					struct snapraid_block* block = fs_par2block_get(disk, begin);
-
-					swrite(block->hash, BLOCK_HASH_SIZE, f);
-
-					++begin;
-				}
-			} else {
-				/*
-				 * Write the run of blocks without hash
-				 * they can be either used or empty blocks
-				 */
+		if (tommy_list_empty(&disk->deletedlist)) {
+			/* the common case needs only one non-deleted run */
+			if (blockmax) {
+				sputb64(blockmax, f);
 				sputc('O', f);
-
-				/* next begin position */
-				begin = end;
 			}
+		} else {
+			while (begin < blockmax) {
+				int is_deleted;
+				block_off_t end;
 
-			if (serror(f)) {
-				/* LCOV_EXCL_START */
-				log_fatal(errno, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				goto bail;
-				/* LCOV_EXCL_STOP */
+				is_deleted = fs_is_block_deleted(disk, begin);
+
+				/* find the end of run of blocks */
+				end = begin + 1;
+				while (end < blockmax
+					&& is_deleted == fs_is_block_deleted(disk, end)
+				) {
+					++end;
+				}
+
+				sputb64(end - begin, f);
+
+				if (is_deleted) {
+					/* write the run of deleted blocks with hash */
+					sputc('o', f);
+
+					/* write all the hashes */
+					while (begin < end) {
+						struct snapraid_block* block = fs_par2block_get(disk, begin);
+
+						swrite(block->hash, BLOCK_HASH_SIZE, f);
+
+						++begin;
+					}
+				} else {
+					/* used and empty blocks don't have a hash in this section */
+					sputc('O', f);
+					begin = end;
+				}
 			}
+		}
+
+		if (serror(f)) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* deallocated files of the disk */
