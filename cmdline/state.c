@@ -32,6 +32,18 @@
 #define HAVE_MT_VERIFY 1
 #endif
 
+/*
+ * Start content-file writeback in bounded windows to avoid dirty-page
+ * throttling; the subsequent fsync() remains responsible for durability.
+ *
+ * Best test-rewrite serialization/write times with four 4 GB content files:
+ *   ADVISE_SEQUENTIAL:       128s
+ *   ADVISE_FLUSH:             86s
+ *   ADVISE_DISCARD_WINDOW:    73s
+ *   ADVISE_FLUSH_WINDOW:      61s
+ */
+#define CONTENT_WRITE_ADVISE ADVISE_FLUSH_WINDOW
+
 const char* lev_name(unsigned l)
 {
 	switch (l) {
@@ -4653,7 +4665,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 			}
 		}
 
-		f = sopen_write(tmp, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
+		f = sopen_write(tmp, CONTENT_WRITE_ADVISE | STREAM_FLAGS_CRC);
 		if (f == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error opening the temporary content file '%s'. %s.\n", tmp, strerror(errno));
@@ -4805,7 +4817,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	}
 
 	/* open all the content files */
-	f = sopen_multi_write(count_content, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
+	f = sopen_multi_write(count_content, CONTENT_WRITE_ADVISE | STREAM_FLAGS_CRC);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error opening the content files.\n");
@@ -5001,7 +5013,7 @@ void state_read(struct snapraid_state* state)
 
 		msg_progress("Loading state from %s...\n", path);
 
-		f = sopen_read(path, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
+		f = sopen_read(path, ADVISE_SEQUENTIAL | STREAM_FLAGS_CRC);
 		if (f != 0) {
 			/* if found stop the search */
 			break;
@@ -5214,7 +5226,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		STREAM* f;
 
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		f = sopen_read(tmp, STREAM_FLAGS_SEQUENTIAL | STREAM_FLAGS_CRC);
+		f = sopen_read(tmp, ADVISE_SEQUENTIAL | STREAM_FLAGS_CRC);
 		if (f == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error reopening the temporary content file '%s'. %s.\n", tmp, strerror(errno));

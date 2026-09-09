@@ -10,7 +10,7 @@
 #define BUFFER_MAX 64
 #define STR_MAX 128
 
-void test(void)
+void test(int advise_mode)
 {
 	struct stream* s;
 	char file[32];
@@ -24,7 +24,7 @@ void test(void)
 
 	crc32c_init();
 
-	s = sopen_multi_write(STREAM_MAX, STREAM_FLAGS_CRC);
+	s = sopen_multi_write(STREAM_MAX, advise_mode | STREAM_FLAGS_CRC);
 	for (i = 0; i < STREAM_MAX; ++i) {
 		snprintf(file, sizeof(file), "stream%u.bin", i);
 		remove(file);
@@ -104,7 +104,7 @@ void test(void)
 		uint32_t get_crc_computed;
 		snprintf(file, sizeof(file), "stream%u.bin", i);
 
-		s = sopen_read(file, STREAM_FLAGS_CRC);
+		s = sopen_read(file, advise_mode | STREAM_FLAGS_CRC);
 		if (s == 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -193,7 +193,7 @@ void test(void)
 		unsigned char buf[4];
 		snprintf(file, sizeof(file), "stream%u.bin", i);
 
-		s = sopen_read(file, STREAM_FLAGS_CRC);
+		s = sopen_read(file, advise_mode | STREAM_FLAGS_CRC);
 		if (s == 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -248,7 +248,13 @@ int main(void)
 
 		printf("Test stream buffer size %u\n", i);
 
-		test();
+		test(ADVISE_DEFAULT);
+	}
+
+	STREAM_SIZE = 64 * 1024;
+	for (i = ADVISE_SEQUENTIAL; i <= ADVISE_DISCARD_WINDOW; ++i) {
+		printf("Test stream advise mode %u\n", i);
+		test(i);
 	}
 
 	return 0;

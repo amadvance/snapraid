@@ -14,23 +14,22 @@ unsigned STREAM_SIZE = 64 * 1024;
 
 STREAM* sopen_read(const char* file, int flags)
 {
-#if HAVE_POSIX_FADVISE
-	int ret;
-#endif
 	STREAM* s = malloc_nofail(sizeof(STREAM));
 	struct stat st;
+	int ret;
 
 	s->handle_size = 1;
 	s->handle = malloc_nofail(sizeof(struct stream_handle));
+	s->advise = malloc_nofail(sizeof(struct advise_struct));
 	s->flags = flags;
+	advise_init(&s->advise[0], s->flags & STREAM_FLAGS_ADVISE_MASK);
 
-	int open_flags = O_RDONLY | O_BINARY;
-	if (s->flags & STREAM_FLAGS_SEQUENTIAL)
-		open_flags |= O_SEQUENTIAL;
+	int open_flags = O_RDONLY | O_BINARY | advise_flags(&s->advise[0]);
 
 	pathcpy(s->handle[0].path, sizeof(s->handle[0].path), file);
 	s->handle[0].f = open(file, open_flags);
 	if (s->handle[0].f == -1) {
+		free(s->advise);
 		free(s->handle);
 		free(s);
 		return 0;
@@ -39,33 +38,23 @@ STREAM* sopen_read(const char* file, int flags)
 	/* get file info */
 	if (fstat(s->handle[0].f, &st) != 0) {
 		close(s->handle[0].f);
+		free(s->advise);
 		free(s->handle);
 		free(s);
 		return 0;
 	}
 
 	s->size = st.st_size;
-
-#if HAVE_POSIX_FADVISE
-	if (s->flags & STREAM_FLAGS_SEQUENTIAL) {
-		/* advise sequential access */
-		ret = posix_fadvise_wrapper(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
-		if (ret == ENOSYS) {
-			log_error(errno, "WARNING! fadvise() is not supported in this platform. Performance may not be optimal!\n");
-			/* call is not supported, like in armhf, see posix_fadvise manpage */
-			ret = 0;
-		}
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			close(s->handle[0].f);
-			free(s->handle);
-			free(s);
-			errno = ret; /* posix_fadvise return the error code */
-			return 0;
-			/* LCOV_EXCL_STOP */
-		}
+	ret = advise_open(&s->advise[0], s->handle[0].f);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		close(s->handle[0].f);
+		free(s->advise);
+		free(s->handle);
+		free(s);
+		return 0;
+		/* LCOV_EXCL_STOP */
 	}
-#endif
 
 	s->buffer_size = STREAM_SIZE;
 	if (s->buffer_size > s->size)
@@ -92,10 +81,13 @@ STREAM* sopen_multi_write(unsigned count, int flags)
 
 	s->handle_size = count;
 	s->handle = nalloc_nofail(count, sizeof(struct stream_handle));
+	s->advise = nalloc_nofail(count, sizeof(struct advise_struct));
 	s->flags = flags;
 
-	for (i = 0; i < count; ++i)
+	for (i = 0; i < count; ++i) {
 		s->handle[i].f = -1;
+		advise_init(&s->advise[i], s->flags & STREAM_FLAGS_ADVISE_MASK);
+	}
 
 	s->buffer_size = STREAM_SIZE;
 	s->buffer = malloc_nofail_test(s->buffer_size);
@@ -115,16 +107,11 @@ STREAM* sopen_multi_write(unsigned count, int flags)
 
 int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 {
-#if HAVE_POSIX_FADVISE
-	int ret;
-#endif
 	int f;
 
 	pathcpy(s->handle[i].path, sizeof(s->handle[i].path), file);
 
-	int open_flags = O_WRONLY | O_CREAT | O_EXCL | O_BINARY;
-	if (s->flags & STREAM_FLAGS_SEQUENTIAL)
-		open_flags |= O_SEQUENTIAL; ;
+	int open_flags = O_WRONLY | O_CREAT | O_EXCL | O_BINARY | advise_flags(&s->advise[i]);
 
 	/* O_EXCL to be resilient ensure to always create a new file and not use a stale link to the original file */
 	f = open(file, open_flags, 0600);
@@ -134,23 +121,17 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 		/* LCOV_EXCL_STOP */
 	}
 
-#if HAVE_POSIX_FADVISE
-	if (s->flags & STREAM_FLAGS_SEQUENTIAL) {
-		/* advise sequential access */
-		ret = posix_fadvise_wrapper(f, 0, 0, POSIX_FADV_SEQUENTIAL);
-		if (ret == ENOSYS) {
-			/* call is not supported, like in armhf, see posix_fadvise manpage */
-			ret = 0;
-		}
+	{
+		int ret;
+
+		ret = advise_open(&s->advise[i], f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			close(f);
-			errno = ret; /* posix_fadvise return the error code */
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 	}
-#endif
 
 	s->handle[i].f = f;
 
@@ -185,6 +166,11 @@ int sclose(STREAM* s)
 	for (i = 0; i < s->handle_size; ++i) {
 		/* if open failed, there is nothing to close */
 		if (s->handle[i].f != -1) {
+			if (advise_close(&s->advise[i], s->handle[i].f) != 0) {
+				/* LCOV_EXCL_START */
+				fail = 1;
+				/* LCOV_EXCL_STOP */
+			}
 			if (close(s->handle[i].f) != 0) {
 				/* LCOV_EXCL_START */
 				fail = 1;
@@ -193,6 +179,7 @@ int sclose(STREAM* s)
 		}
 	}
 
+	free(s->advise);
 	free(s->handle);
 	free(s->buffer);
 	free(s);
@@ -251,6 +238,13 @@ static int sfill(STREAM* s)
 		return EOF;
 	}
 	/* assume that it can be a shorter read, so ret < s->buffer_size doesn't mean that we reached EOF */
+
+	if (advise_read(&s->advise[0], s->handle[0].f, s->offset, ret) != 0) {
+		/* LCOV_EXCL_START */
+		s->state = STREAM_STATE_ERROR;
+		return EOF;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* update the crc */
 	if (s->flags & STREAM_FLAGS_CRC) {
@@ -350,6 +344,17 @@ int sflush(STREAM* s)
 
 			count += ret;
 		} while (count < size);
+	}
+
+	for (i = 0; i < s->handle_size; ++i) {
+		/* ADVISE_DISCARD modes only discard ranges after waiting for writeback. */
+		if (advise_write(&s->advise[i], s->handle[i].f, s->offset, size) != 0) {
+			/* LCOV_EXCL_START */
+			s->state = STREAM_STATE_ERROR;
+			s->state_index = i;
+			return EOF;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	/*

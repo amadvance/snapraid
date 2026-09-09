@@ -4,13 +4,14 @@
 #ifndef __STREAM_H
 #define __STREAM_H
 
+#include "support.h"
 #include "util.h"
 
 /****************************************************************************/
 /* stream */
 
-#define STREAM_FLAGS_SEQUENTIAL 1 /**< Advise a squential read. */
-#define STREAM_FLAGS_CRC 2 /**< Enable the CRC computation. */
+#define STREAM_FLAGS_ADVISE_MASK 0xFF /**< Low bits containing one of ADVISE_*. */
+#define STREAM_FLAGS_CRC 0x100 /**< Enable the CRC computation. */
 
 /**
  * Size of the buffer of the stream.
@@ -83,6 +84,8 @@ struct stream {
 	 * In writing, it's all the data wrote calling sput() functions.
 	 */
 	uint32_t crc_stream;
+
+	struct advise_struct* advise; /**< Cache advice state for each handle. */
 };
 
 /**
