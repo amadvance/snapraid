@@ -2058,25 +2058,38 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 }
 
 /**
- * Check if the position is REQUIRED, or we can completely clear it from the state.
+ * Analyze if the position is REQUIRED, if parity is unsynced, and if it has
+ * DELETED blocks that can be discharged when the position is unused.
  *
- * Note that position with only DELETED blocks are discharged.
+ * A DELETED block makes parity invalid, but it counts as unsynced only when at
+ * least one disk still has a file at the same position. This is the same logic
+ * used by "status" to detect an incomplete sync.
  */
-static int fs_position_is_required(struct snapraid_state* state, block_off_t pos)
+static int fs_position_analyze(struct snapraid_state* state, block_off_t pos, int* is_unsynced, int* has_deleted)
 {
 	tommy_node* i;
+	int one_file = 0;
+	int one_invalid = 0;
+	int one_deleted = 0;
 
 	/* check for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_block* block = fs_par2block_find(disk, pos);
+		unsigned block_state = block_state_get(block);
 
-		/* if we have at least one file, the position is needed */
 		if (block_has_file(block))
-			return 1;
+			one_file = 1;
+		if (block_has_invalid_parity(block))
+			one_invalid = 1;
+		if (block_state == BLOCK_STATE_DELETED)
+			one_deleted = 1;
 	}
 
-	return 0;
+	*is_unsynced = one_file && one_invalid;
+	*has_deleted = one_deleted;
+
+	return one_file;
 }
 
 /**
@@ -2307,6 +2320,24 @@ static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off
 	return 0;
 }
 
+/**
+ * Enable or disable lock-free access to the extent trees of all disks.
+ * Callers must use this helper in matched, local pairs around operations that
+ * are known to be the only extent-tree users.
+ */
+static void fs_single_thread(struct snapraid_state* state, int single_thread)
+{
+#if HAVE_THREAD
+	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		disk->single_thread = single_thread;
+	}
+#else
+	(void)state;
+	(void)single_thread;
+#endif
+}
+
 static void state_read_content(struct snapraid_state* state, const char* path, STREAM* f)
 {
 	block_off_t blockmax;
@@ -2350,12 +2381,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	mapping_max = 0;
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
-
-	/* mark all disks as single threads */
-	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		disk->single_thread = 1;
-	}
 
 	ret = sread(f, buffer, 12);
 	if (ret < 0) {
@@ -3717,12 +3742,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		}
 	}
 
-	/* mark all disks as multi threads */
-	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		disk->single_thread = 0;
-	}
-
 	tommy_array_done(&disk_mapping);
 
 	if (serror(f)) {
@@ -3828,6 +3847,7 @@ struct state_write_thread_context {
 	time_t info_oldest;
 	time_t info_now;
 	int info_has_rehash;
+	uint64_t count_unsynced;
 	STREAM* f;
 	int first;
 #if HAVE_MT_WRITE
@@ -3842,7 +3862,6 @@ struct state_write_thread_context {
 	uint64_t count_dir;
 	uint64_t count_bad;
 	uint64_t count_rehash;
-	uint64_t count_unsynced;
 	uint64_t count_unscrubbed;
 };
 
@@ -3919,7 +3938,6 @@ static void* state_write_thread(void* arg)
 	uint64_t count_dir;
 	uint64_t count_bad;
 	uint64_t count_rehash;
-	uint64_t count_unsynced;
 	uint64_t count_unscrubbed;
 	tommy_node* i;
 	block_off_t begin;
@@ -3937,7 +3955,6 @@ static void* state_write_thread(void* arg)
 	count_dir = 0;
 	count_bad = 0;
 	count_rehash = 0;
-	count_unsynced = 0;
 	count_unscrubbed = 0;
 	tommy_hashdyn_init(&bucket_hash);
 
@@ -4395,17 +4412,11 @@ static void* state_write_thread(void* arg)
 
 		info = info_get(&state->infoarr, begin);
 
-		/* avoid this slow operation if not needed */
-		if (context->first && fs_is_block_unsynced(state, begin))
-			++count_unsynced;
-
 		/* find the end of run of blocks */
 		end = begin + 1;
 		while (end < blockmax
 			&& info == info_get(&state->infoarr, end)
 		) {
-			if (context->first && fs_is_block_unsynced(state, end))
-				++count_unsynced;
 			++end;
 		}
 
@@ -4509,7 +4520,6 @@ static void* state_write_thread(void* arg)
 	context->count_dir = count_dir;
 	context->count_bad = count_bad;
 	context->count_rehash = count_rehash;
-	context->count_unsynced = count_unsynced;
 	context->count_unscrubbed = count_unscrubbed;
 
 	/* store the bucket info list */
@@ -4567,6 +4577,9 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
 
+	/* preparation is the only extent-tree user until serialization starts */
+	fs_single_thread(state, 1);
+
 	/* check the file-system on all disks */
 	state_fscheck(state, "before write");
 
@@ -4577,10 +4590,17 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	info_oldest = 0; /* oldest time in info */
 	info_now = time(0); /* get the present time */
 	info_has_rehash = 0; /* if there is a rehash info */
+	count_unsynced = 0;
 	for (idx = 0; idx < blockmax; ++idx) {
+		int is_unsynced;
+		int has_deleted;
+
 		/* if the position is used */
-		if (fs_position_is_required(state, idx)) {
+		if (fs_position_analyze(state, idx, &is_unsynced, &has_deleted)) {
 			snapraid_info info = info_get(&state->infoarr, idx);
+
+			if (is_unsynced)
+				++count_unsynced;
 
 			/* only if there is some info to store */
 			if (info) {
@@ -4596,8 +4616,9 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 			/* clear any previous info */
 			info_set(&state->infoarr, idx, 0);
 
-			/* and clear any deleted blocks */
-			fs_position_clear_deleted(state, idx);
+			/* and clear any deleted blocks, avoiding another scan in the common case */
+			if (has_deleted)
+				fs_position_clear_deleted(state, idx);
 		}
 	}
 
@@ -4652,6 +4673,8 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		}
 	}
 
+	fs_single_thread(state, 0);
+
 #if HAVE_MT_WRITE
 	/* start all writing threads */
 	first = 1;
@@ -4696,6 +4719,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		context->info_oldest = info_oldest;
 		context->info_now = info_now;
 		context->info_has_rehash = info_has_rehash;
+		context->count_unsynced = count_unsynced;
 		context->f = f;
 		context->first = first;
 		context->content = content->content;
@@ -4747,7 +4771,6 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	count_dir = 0;
 	count_bad = 0;
 	count_rehash = 0;
-	count_unsynced = 0;
 	count_unscrubbed = 0;
 
 	/* make all temporary content files durable only after all writers have terminated */
@@ -4875,26 +4898,14 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	context->info_oldest = info_oldest;
 	context->info_now = info_now;
 	context->info_has_rehash = info_has_rehash;
+	context->count_unsynced = count_unsynced;
 	context->f = f;
 	context->first = 1;
 
-#if HAVE_THREAD
-	/* this non-MT path is the only user of the extent trees until serialization completes. */
-	for (i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		disk->single_thread = 1;
-	}
-#endif
-
+	/* this serializer is the only extent-tree user until it completes */
+	fs_single_thread(state, 1);
 	retval = state_write_thread(context);
-
-#if HAVE_THREAD
-	/* restore locking before any later phase can start worker threads. */
-	for (i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		disk->single_thread = 0;
-	}
-#endif
+	fs_single_thread(state, 0);
 
 	/* abort on failure */
 	if (retval) {
@@ -5145,7 +5156,10 @@ void state_read(struct snapraid_state* state)
 
 	/* guess the file type from the first char */
 	if (c == 'S') {
+		/* parsing is the only user of the extent trees until the content is loaded */
+		fs_single_thread(state, 1);
 		state_read_content(state, path, f);
+		fs_single_thread(state, 0);
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "From SnapRAID v9.0 the text content file is not supported anymore.\n");
