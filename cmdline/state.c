@@ -2772,14 +2772,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 					bucket_insert(&bucket_hash, t64 + v_oldest, v_count, justsynced);
 
-					while (v_count) {
-						/* insert the info in the array */
-						info_set(&state->infoarr, v_pos, info);
-
-						/* go to next block */
-						++v_pos;
-						--v_count;
-					}
+					/* insert the complete run in the info array */
+					info_set_run(&state->infoarr, v_pos, v_count, info);
+					v_pos += v_count;
 				} else {
 					while (v_count) {
 						/* ensure that an info is present only for used positions */
@@ -4405,17 +4400,9 @@ static void* state_write_thread(void* arg)
 		time_t t;
 		unsigned flag;
 
-		info = info_get(&state->infoarr, begin);
-
-		/* find the end of run of blocks */
-		end = begin + 1;
-		while (end < blockmax
-			&& info == info_get(&state->infoarr, end)
-		) {
-			++end;
-		}
-
-		count = end - begin;
+		/* find the complete run without resolving each array position */
+		count = info_get_run(&state->infoarr, begin, blockmax - begin, &info);
+		end = begin + count;
 		sputb64(count, f);
 
 		/* if there is info */

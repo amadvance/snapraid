@@ -600,6 +600,50 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
+static void test_info_run(void)
+{
+	tommy_arrayblkof array;
+	const block_off_t start = TOMMY_ARRAYBLKOF_SIZE - 2;
+	const block_off_t count = TOMMY_ARRAYBLKOF_SIZE + 4;
+	const snapraid_info first = 0x100;
+	const snapraid_info second = 0x200;
+	snapraid_info info;
+
+	tommy_arrayblkof_init(&array, sizeof(snapraid_info));
+
+	/* check an entirely unallocated zero run */
+	if (info_get_run(&array, 0, count, &info) != count || info != 0)
+		goto bail;
+
+	/* cross two internal array block boundaries */
+	info_set_run(&array, start, count, first);
+	if (info_get_run(&array, 0, start + count, &info) != start || info != 0)
+		goto bail;
+	if (info_get_run(&array, start, count + 1, &info) != count || info != first)
+		goto bail;
+	if (info_get_run(&array, start + count, count, &info) != count || info != 0)
+		goto bail;
+
+	/* split the first run without changing the allocated size */
+	info_set_run(&array, start + 100, 10, second);
+	if (info_get_run(&array, start, count, &info) != 100 || info != first)
+		goto bail;
+	if (info_get_run(&array, start + 100, count, &info) != 10 || info != second)
+		goto bail;
+	if (info_get_run(&array, start + 110, count, &info) != count - 110 || info != first)
+		goto bail;
+
+	tommy_arrayblkof_done(&array);
+	return;
+
+bail:
+	/* LCOV_EXCL_START */
+	tommy_arrayblkof_done(&array);
+	log_fatal(EINTERNAL, "Failed info run test\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
+
 struct {
 	const char* pattern;
 	const char* text;
@@ -2492,6 +2536,7 @@ void selftest(void)
 
 	/* tommyds data structures (hash tables, lists, search, sort) */
 	test_tommy();
+	test_info_run();
 
 	/* cauchy raid module self-test */
 	raid_mode(RAID_MODE_CAUCHY_RAID);

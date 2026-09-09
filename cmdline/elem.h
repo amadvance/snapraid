@@ -1395,6 +1395,80 @@ static inline snapraid_info info_get(tommy_arrayblkof* array, block_off_t pos)
 	return info;
 }
 
+/**
+ * Set a run of info values.
+ *
+ * Grow the array once and process each internal block directly, avoiding the
+ * per-position grow and lookup performed by info_set().
+ */
+static inline void info_set_run(tommy_arrayblkof* array, block_off_t pos, block_off_t count, snapraid_info info)
+{
+	tommy_arrayblkof_grow(array, pos + count);
+
+	while (count) {
+		block_off_t offset = pos % TOMMY_ARRAYBLKOF_SIZE;
+		block_off_t run = TOMMY_ARRAYBLKOF_SIZE - offset;
+		snapraid_info* data;
+		block_off_t i;
+
+		if (run > count)
+			run = count;
+
+		data = tommy_arrayblkof_ref(array, pos);
+		for (i = 0; i < run; ++i)
+			data[i] = info;
+
+		pos += run;
+		count -= run;
+	}
+}
+
+/**
+ * Get the value and length of an info run, up to count positions.
+ *
+ * Unallocated positions have the same zero value returned by info_get().
+ * Process allocated storage a block at a time to avoid resolving every array
+ * position independently.
+ */
+static inline block_off_t info_get_run(tommy_arrayblkof* array, block_off_t pos, block_off_t count, snapraid_info* info)
+{
+	block_off_t size = tommy_arrayblkof_size(array);
+	block_off_t total = 0;
+
+	if (pos >= size) {
+		*info = 0;
+		return count;
+	}
+
+	memcpy(info, tommy_arrayblkof_ref(array, pos), sizeof(snapraid_info));
+
+	while (total < count && pos + total < size) {
+		block_off_t current = pos + total;
+		block_off_t offset = current % TOMMY_ARRAYBLKOF_SIZE;
+		block_off_t run = TOMMY_ARRAYBLKOF_SIZE - offset;
+		snapraid_info* data;
+		block_off_t i;
+
+		if (run > count - total)
+			run = count - total;
+		if (run > size - current)
+			run = size - current;
+
+		data = tommy_arrayblkof_ref(array, current);
+		for (i = 0; i < run; ++i)
+			if (data[i] != *info)
+				return total + i;
+
+		total += run;
+	}
+
+	/* info_get() returns zero for the whole unallocated tail */
+	if (total < count && *info == 0)
+		return count;
+
+	return total;
+}
+
 /****************************************************************************/
 /* bucket */
 
