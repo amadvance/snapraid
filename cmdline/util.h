@@ -39,34 +39,25 @@ void** malloc_nofail_vector_direct(int n, size_t size, void** freeptr);
 void mtest_vector(int n, size_t size, void** vv);
 
 /**
- * Return !=0 if the memory region is completely filled with zeros.
+ * Compare memory against a repeated byte value.
+ *
+ * Return <0 if ptr is less than value, 0 if equal, >0 if greater.
  */
-static inline int mem_is_zero(const void* ptr, size_t size)
+static __always_inline int membcmp(const void* ptr, uint8_t value, size_t size)
 {
-	const unsigned char* p = ptr;
+	const uint8_t* p = ptr;
 
-	while (size != 0 && ((uintptr_t)p % sizeof(size_t)) != 0) {
-		if (*p != 0)
-			return 0;
-		++p;
-		--size;
-	}
+	if (size == 0)
+		return 0;
+	if (p[0] != value)
+		return (int)p[0] - (int)value;
 
-	while (size >= sizeof(size_t)) {
-		if (*(const size_t*)p != 0)
-			return 0;
-		p += sizeof(size_t);
-		size -= sizeof(size_t);
-	}
-
-	while (size != 0) {
-		if (*p != 0)
-			return 0;
-		++p;
-		--size;
-	}
-
-	return 1;
+	/*
+	 * If the buffer contains value up to index k-1, then at offset k-1
+	 * memcmp compares (p + 1)[k - 1] = p[k] against p[k - 1] = value.
+	 * The first differing adjacent pair yields the exact sign (p[k] - value).
+	 */
+	return memcmp(p + 1, p, size - 1);
 }
 
 /****************************************************************************/

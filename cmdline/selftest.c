@@ -2192,18 +2192,35 @@ static void test_misc(int argc, char* argv[])
 		unsigned zi, zj;
 
 		memset(zbuf, 0, sizeof(zbuf));
-		assert(mem_is_zero(zbuf, 0) != 0);
+		assert(membcmp(zbuf, 0, 0) == 0);
 
 		for (zi = 0; zi < sizeof(zbuf); ++zi) {
 			for (zj = zi; zj <= sizeof(zbuf); ++zj) {
-				assert(mem_is_zero(zbuf + zi, zj - zi) != 0);
+				assert(membcmp(zbuf + zi, 0, zj - zi) == 0);
 			}
 		}
 
 		for (zi = 0; zi < sizeof(zbuf); ++zi) {
 			zbuf[zi] = 1;
-			assert(mem_is_zero(zbuf, sizeof(zbuf)) == 0);
+			assert(membcmp(zbuf, 0, sizeof(zbuf)) > 0);
 			zbuf[zi] = 0;
+		}
+
+		memset(zbuf, 1, sizeof(zbuf));
+		assert(membcmp(zbuf, 1, 0) == 0);
+
+		for (zi = 0; zi < sizeof(zbuf); ++zi) {
+			for (zj = zi; zj <= sizeof(zbuf); ++zj) {
+				assert(membcmp(zbuf + zi, 1, zj - zi) == 0);
+			}
+		}
+
+		for (zi = 0; zi < sizeof(zbuf); ++zi) {
+			zbuf[zi] = 0;
+			assert(membcmp(zbuf, 1, sizeof(zbuf)) < 0);
+			zbuf[zi] = 2;
+			assert(membcmp(zbuf, 1, sizeof(zbuf)) > 0);
+			zbuf[zi] = 1;
 		}
 	}
 

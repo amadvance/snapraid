@@ -342,7 +342,7 @@ static int block_data_cmp(struct snapraid_state* state, int rehash, struct snapr
 	 * but also makes the canonical-block invariant explicit.
 	 */
 	if (pos_size < state->block_size) {
-		if (!mem_is_zero(buffer + pos_size, state->block_size - pos_size)) {
+		if (membcmp(buffer + pos_size, 0, state->block_size - pos_size) != 0) {
 			return -1;
 		}
 	}
@@ -1036,7 +1036,7 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 				 * A zero candidate is ambiguous because OLD and CURRENT
 				 * may legitimately contain the same zero block.
 				 */
-				if (!mem_is_zero(buffer[failed[j].index], state->block_size))
+				if (membcmp(buffer[failed[j].index], 0, state->block_size) != 0)
 					current_generation_proven = 1;
 			} else {
 				unsigned hash_kind;
