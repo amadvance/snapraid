@@ -59,7 +59,8 @@ STREAM* sopen_read(const char* file, int flags)
 	s->buffer_size = STREAM_SIZE;
 	if (s->buffer_size > s->size)
 		s->buffer_size = s->size; /* allocate only what is necessary */
-	s->buffer = malloc_nofail_test(s->buffer_size);
+	s->buffer = malloc_nofail(s->buffer_size);
+	mtest_vector(1, s->buffer_size, (void**)&s->buffer);
 	s->pos = s->buffer;
 	s->end = s->buffer;
 	s->state = STREAM_STATE_READ;
@@ -89,7 +90,8 @@ STREAM* sopen_multi_write(unsigned count, int flags)
 	}
 
 	s->buffer_size = STREAM_SIZE;
-	s->buffer = malloc_nofail_test(s->buffer_size);
+	s->buffer = malloc_nofail(s->buffer_size);
+	mtest_vector(1, s->buffer_size, (void**)&s->buffer);
 	s->pos = s->buffer;
 	s->end = s->buffer + s->buffer_size;
 	s->state = STREAM_STATE_WRITE;

@@ -2,6 +2,7 @@
 // Copyright (C) 2013 Andrea Mazzoleni
 
 #include "internal.h"
+#include "cpu.h"
 #include "memory.h"
 
 void *raid_malloc_align(size_t size, size_t align_size, void **freeptr)
@@ -184,50 +185,205 @@ void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
 		}
 }
 
+void raid_mcache_flush(void *ptr, size_t size)
+{
+#ifdef CONFIG_X86
+	uint8_t *p = ptr;
+	size_t cache_line_size;
+	size_t offset;
+	int has_clflushopt;
+
+	/* MFENCE is used to complete CLFLUSHOPT before the caller reads again. */
+	if (size == 0 || !raid_cpu_has_sse2() || !raid_cpu_has_clflush())
+		return;
+
+	cache_line_size = raid_cpu_clflush_size();
+	if (cache_line_size == 0)
+		return;
+
+	has_clflushopt = raid_cpu_has_clflushopt();
+	if (has_clflushopt) {
+		for (offset = 0; offset < size; offset += cache_line_size)
+			asm volatile ("clflushopt %0" : "+m" (*(volatile uint8_t *)(p + offset)));
+		asm volatile ("clflushopt %0" : "+m" (*(volatile uint8_t *)(p + size - 1)));
+	} else {
+		for (offset = 0; offset < size; offset += cache_line_size)
+			asm volatile ("clflush %0" : "+m" (*(volatile uint8_t *)(p + offset)));
+		asm volatile ("clflush %0" : "+m" (*(volatile uint8_t *)(p + size - 1)));
+	}
+
+	/* Cache invalidation must be globally visible before returning. */
+	asm volatile ("mfence" : : : "memory");
+#else
+	(void)ptr;
+	(void)size;
+#endif
+}
+
+static uintptr_t raid_mtest_address_pattern(const void *ptr)
+{
+	uintptr_t value = (uintptr_t)ptr;
+
+	/* Mix every address bit while retaining a one-to-one word mapping. */
+#if UINTPTR_MAX > 0xffffffffU
+	value ^= value >> 33;
+	value *= (uintptr_t)0xff51afd7ed558ccdULL;
+	value ^= value >> 33;
+	value *= (uintptr_t)0xc4ceb9fe1a85ec53ULL;
+	value ^= value >> 33;
+#else
+	value ^= value >> 17;
+	value *= (uintptr_t)0xed5ad4bbU;
+	value ^= value >> 11;
+	value *= (uintptr_t)0xac4c1b51U;
+	value ^= value >> 15;
+#endif
+
+	return value;
+}
+
+/**
+ * Compare memory against a repeated byte value.
+ *
+ * Return <0 if ptr is less than value, 0 if equal, >0 if greater.
+ */
+static __always_inline int raid_membcmp(const void *ptr, uint8_t value, size_t size)
+{
+	const uint8_t *p = ptr;
+
+	if (size == 0)
+		return 0;
+	if (p[0] != value)
+		return (int)p[0] - (int)value;
+
+	/*
+	 * If the buffer contains value up to index k-1, then at offset k-1
+	 * memcmp compares (p + 1)[k - 1] = p[k] against p[k - 1] = value.
+	 * The first differing adjacent pair yields the exact sign (p[k] - value).
+	 */
+	return memcmp(p + 1, p, size - 1);
+}
+
 int raid_mtest_vector(int n, size_t size, void **vv)
 {
+	static const uint8_t pattern[] = {
+		0x00, 0xff, /* solid bits: minimum vs maximum cell charge and VDD droop */
+		0x55, 0xaa, /* 1-bit alternate: worst-case crosstalk between adjacent lines */
+		0x33, 0xcc, /* 2-bit alternate: coupling across line pairs (00110011 / 11001100) */
+		0x0f, 0xf0  /* 4-bit alternate: coupling across nibbles */
+	};
 	uint8_t **v = (uint8_t **)vv;
-	int i;
-	size_t j;
-	unsigned k;
-	uint8_t d;
-	uint8_t p;
+	size_t remainder = size % sizeof(uintptr_t);
+	size_t aligned_size = size - remainder;
 
-	/* fill with 0 */
-	d = 0;
-	for (i = 0; i < n; ++i)
-		for (j = 0; j < size; ++j)
-			v[i][j] = d;
+	/*
+	 * Complementary pairs exercise minimum/maximum cell charge and
+	 * alternating bit coupling across 1-bit, 2-bit, and 4-bit pin strides.
+	 */
+	for (size_t k = 0; k < sizeof(pattern) / sizeof(pattern[0]); ++k) {
+		uint8_t d = pattern[k];
 
-	/* test with all the byte patterns */
-	for (k = 1; k < 256; ++k) {
-		p = d;
-		d = k;
+		for (int i = 0; i < n; ++i)
+			memset(v[i], d, size);
 
-		/* forward fill */
-		for (i = 0; i < n; ++i) {
-			for (j = 0; j < size; ++j) {
-				if (v[i][j] != p) {
-					/* LCOV_EXCL_START */
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-				v[i][j] = d;
+		for (int i = 0; i < n; ++i)
+			raid_mcache_flush(v[i], size);
+
+		for (int i = 0; i < n; ++i) {
+			if (raid_membcmp(v[i], d, size) != 0) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
 			}
 		}
+	}
 
-		p = d;
-		d = ~p;
-		/* backward fill with complement */
-		for (i = 0; i < n; ++i) {
-			for (j = size; j > 0; --j) {
-				if (v[i][j - 1] != p) {
-					/* LCOV_EXCL_START */
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
-				v[i][j - 1] = d;
+	/*
+	 * Equal byte patterns cannot reveal two memory locations aliasing each
+	 * other. Give every word a value derived from its address, then repeat
+	 * the verification with the complement to exercise both bit values.
+	 */
+	for (int i = 0; i < n; ++i) {
+		uint8_t *p = v[i];
+		uint8_t *limit = p + aligned_size;
+		while (p < limit) {
+			uintptr_t value = raid_mtest_address_pattern(p);
+			memcpy(p, &value, sizeof(uintptr_t));
+			p += sizeof(uintptr_t);
+		}
+		if (remainder) {
+			uintptr_t value = raid_mtest_address_pattern(p);
+			memcpy(p, &value, remainder);
+		}
+
+		raid_mcache_flush(v[i], size);
+	}
+
+	/*
+	 * Verify forward pass: confirm that the initial address patterns are
+	 * intact across all buffers, proving no cross-buffer aliasing occurred.
+	 * Replace each word with its bitwise complement in-place to test bit
+	 * transition faults (0 -> 1 and 1 -> 0) and catch stuck-at bits.
+	 */
+	for (int i = 0; i < n; ++i) {
+		uint8_t *p = v[i];
+		uint8_t *limit = p + aligned_size;
+		while (p < limit) {
+			uintptr_t value = raid_mtest_address_pattern(p);
+			uintptr_t actual;
+			memcpy(&actual, p, sizeof(uintptr_t));
+			if (actual != value) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
 			}
+			value = ~value;
+			memcpy(p, &value, sizeof(uintptr_t));
+			p += sizeof(uintptr_t);
+		}
+		if (remainder) {
+			uintptr_t value = raid_mtest_address_pattern(p);
+			if (memcmp(p, &value, remainder) != 0) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+			value = ~value;
+			memcpy(p, &value, remainder);
+		}
+
+		raid_mcache_flush(v[i], size);
+	}
+
+	/*
+	 * Verify backward pass: traverse memory and buffers in strictly descending
+	 * order to detect directional coupling faults and address-line bridging.
+	 * Confirm that the inverted patterns survived the cache flush, then
+	 * restore the zero-filled state required by callers.
+	 */
+	for (int i = n - 1; i >= 0; --i) {
+		uint8_t *p = v[i] + aligned_size;
+		uint8_t *limit = v[i];
+		if (remainder) {
+			uintptr_t value = ~raid_mtest_address_pattern(p);
+			if (memcmp(p, &value, remainder) != 0) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+			memset(p, 0, remainder);
+		}
+		while (p > limit) {
+			p -= sizeof(uintptr_t);
+			uintptr_t value = ~raid_mtest_address_pattern(p);
+			uintptr_t actual;
+			memcpy(&actual, p, sizeof(uintptr_t));
+			if (actual != value) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+			memset(p, 0, sizeof(uintptr_t));
 		}
 	}
 

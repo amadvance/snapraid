@@ -33,11 +33,6 @@ void** malloc_nofail_vector_align(int n, size_t size, void** freeptr);
 void** malloc_nofail_vector_direct(int n, size_t size, void** freeptr);
 
 /**
- * Safe allocation with memory test.
- */
-void* malloc_nofail_test(size_t size);
-
-/**
  * Test the memory vector for RAM problems.
  * If a problem is found, it crashes.
  */

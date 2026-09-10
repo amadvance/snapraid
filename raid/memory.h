@@ -116,8 +116,22 @@ void **raid_malloc_vector_align(int n, size_t size, size_t align_size, size_t di
 void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv);
 
 /**
+ * Writes back and invalidates the CPU cache lines covering the memory range.
+ *
+ * This operation is best effort. It does nothing on architectures without a
+ * safe user-space cache invalidation instruction.
+ */
+void raid_mcache_flush(void *ptr, size_t size);
+
+/**
  * Tests the memory vector for RAM problems.
- * If a problem is found, it crashes.
+ *
+ * This test is destructive and overwrites the existing buffer contents.
+ * On success, all buffers are guaranteed to be zero-filled.
+ * If a memory error is detected, the function returns immediately and
+ * buffers may be left partially modified.
+ *
+ * Returns 0 on success, or -1 if a memory problem is found.
  */
 int raid_mtest_vector(int n, size_t size, void **vv);
 

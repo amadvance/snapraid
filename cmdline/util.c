@@ -75,50 +75,9 @@ void** malloc_nofail_vector_direct(int n, size_t size, void** freeptr)
 	return ptr;
 }
 
-void* malloc_nofail_test(size_t size)
-{
-	void* ptr;
-
-	ptr = malloc_nofail(size);
-
-	mtest_vector(1, size, &ptr);
-
-	return ptr;
-}
-
-/**
- * Fast memory test.
- *
- * It's similar at raid_mtest_vector() but faster because
- * we have a lot of buffers to verify.
- */
-static int fast_mtest_vector(int n, size_t size, void** vv)
-{
-	int i, j;
-
-	/* test with all the bits */
-	for (i = 0; i < 8; ++i) {
-		unsigned char value = 1 << i;
-
-		/* fill first */
-		memset(vv[0], value, size);
-
-		/* copy to the next */
-		for (j = 1; j < n; ++j)
-			memcpy(vv[j], vv[j - 1], size);
-
-		/* compare with the previous */
-		for (j = 1; j <= n; ++j)
-			if (memcmp(vv[j % n], vv[j - 1], size) != 0)
-				return -1;
-	}
-
-	return 0;
-}
-
 void mtest_vector(int n, size_t size, void** vv)
 {
-	if (fast_mtest_vector(n, size, vv) != 0) {
+	if (raid_mtest_vector(n, size, vv) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
 		log_fatal(EINTERNAL, "Try running a memory test like http://www.memtest86.com/\n");

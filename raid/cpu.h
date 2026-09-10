@@ -133,6 +133,58 @@ static inline int raid_cpu_has_sse2(void)
 	return raid_cpu_match_sse(0, leaf_1_edx);
 }
 
+static inline int raid_cpu_has_clflush(void)
+{
+	/*
+	 * Intel 64 and IA-32 Architectures Software Developer's Manual
+	 * CPUID - CPU Identification
+	 *
+	 * Check that the processor supports CLFLUSH (true if CPUID.01H:EDX.CLFSH[bit 19] = 1).
+	 */
+	uint32_t leaf_1_edx = 1 << 19; /* CLFLUSH */
+
+	return raid_cpu_match_sse(0, leaf_1_edx);
+}
+
+static inline int raid_cpu_has_clflushopt(void)
+{
+	/*
+	 * Intel 64 and IA-32 Architectures Software Developer's Manual
+	 * CPUID - CPU Identification
+	 *
+	 * Check that the processor supports CLFLUSHOPT (true if CPUID.07H.00H:EBX.CLFLUSHOPT[bit 23] = 1).
+	 */
+	uint32_t reg[4];
+	uint32_t leaf_7_ebx = 1 << 23; /* CLFLUSHOPT */
+
+	/* check that leaf 7 is supported */
+	raid_cpuid(0, 0, reg);
+	if (reg[0] < 7)
+		return 0;
+
+	raid_cpuid(7, 0, reg);
+	if ((reg[1] & leaf_7_ebx) != leaf_7_ebx)
+		return 0;
+
+	return 1;
+}
+
+static inline unsigned raid_cpu_clflush_size(void)
+{
+	/*
+	 * Intel 64 and IA-32 Architectures Software Developer's Manual
+	 * CPUID - CPU Identification
+	 *
+	 * CPUID.01H:EBX.CLFLUSH[bits 15:8] reports the CLFLUSH cache-line
+	 * size in units of 8 bytes.
+	 */
+	uint32_t reg[4];
+
+	raid_cpuid(1, 0, reg);
+
+	return ((reg[1] >> 8) & 0xff) * 8;
+}
+
 static inline int raid_cpu_has_ssse3(void)
 {
 	/*
