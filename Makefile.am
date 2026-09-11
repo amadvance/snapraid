@@ -156,6 +156,69 @@ checker_SOURCES = $(snapraid_SOURCES:cmdline/snapraid.c=cmdline/checker.c)
 checker_LDFLAGS = $(snapraid_LDFLAGS)
 checker_LDADD = $(snapraid_LDADD)
 
+# Basic dependencies
+CLI_PREFIX = cmdline/
+CLI_INCLUDES = \
+	config.h \
+	$(srcdir)/cmdline/app.h \
+	$(srcdir)/cmdline/bw.h \
+	$(srcdir)/cmdline/elem.h \
+	$(srcdir)/cmdline/handle.h \
+	$(srcdir)/cmdline/import.h \
+	$(srcdir)/cmdline/io.h \
+	$(srcdir)/cmdline/locate.h \
+	$(srcdir)/cmdline/memory.h \
+	$(srcdir)/cmdline/parity.h \
+	$(srcdir)/cmdline/search.h \
+	$(srcdir)/cmdline/snapraid.h \
+	$(srcdir)/cmdline/state.h \
+	$(srcdir)/cmdline/str.h \
+	$(srcdir)/cmdline/stream.h \
+	$(srcdir)/cmdline/support.h \
+	$(srcdir)/cmdline/thermal.h \
+	$(srcdir)/cmdline/util.h \
+	$(srcdir)/os/mingw.h \
+	$(srcdir)/os/os.h \
+	$(srcdir)/os/portable.h \
+	$(srcdir)/os/unix.h
+
+$(CLI_PREFIX)bw.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)check.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)checker.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)device.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)dry.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)dup.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)elem.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)handle.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)import.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)io.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)list.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)locate.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)main.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)memory.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)mingwapp.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)mkstream.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)mktest.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)parity.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)pool.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)rehash.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)scan.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)scrub.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)search.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)selftest.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)snapraid.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)speed.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)state.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)status.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)str.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)stream.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)support.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)sync.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)thermal.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)touch.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)unixapp.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)util.$(OBJEXT): $(CLI_INCLUDES)
+
 # Add the .version file in the distribution
 dist-hook:
 	$(srcdir)/autover.sh > $(distdir)/.version
