@@ -4535,6 +4535,9 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	block_off_t count_rehash;
 	block_off_t count_unsynced;
 	block_off_t count_unscrubbed;
+#if !HAVE_MT_WRITE
+	uint64_t start;
+#endif
 
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
@@ -4641,6 +4644,10 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	}
 
 	fs_single_thread(state, 0);
+
+#if !HAVE_MT_WRITE
+	start = os_tick_ms();
+#endif
 
 #if HAVE_MT_WRITE
 	/* start all writing threads */
@@ -4920,6 +4927,15 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		log_fatal(errno, "Error closing the content file. %s.\n", strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
+	}
+
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+
+		msg_progress("Saved %s in %" PRIu64 " seconds\n", content->content, (os_tick_ms() - start) / 1000);
+
+		i = i->next;
 	}
 
 	crc = context->crc;
