@@ -89,3 +89,4 @@ int handle_utime(struct snapraid_handle* handle);
 struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* diskmax);
 
 #endif
+

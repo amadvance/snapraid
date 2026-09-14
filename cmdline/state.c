@@ -343,8 +343,6 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				}
 			}
 
-
-
 			if (!state->opt.skip_parity_access) {
 				for (l = 0; l < state->level; ++l) {
 					for (s = 0; s < state->parity[l].split_mac; ++s) {
@@ -2020,7 +2018,6 @@ void state_refresh(struct snapraid_state* state)
 
 		log_tag("fsinfo_extra:%s:%" PRIu64 ":%" PRIu64 "\n", esc_tag(extra->name), total_space, free_space);
 	}
-
 
 	/*
 	 * Note what we don't set need_write = 1, because we don't want
@@ -6476,7 +6473,6 @@ void generate_configuration(const char* path)
 
 	state_done(&state);
 }
-
 
 /**
  * Establish a durable I/O barrier: drain asynchronous writes, collect their

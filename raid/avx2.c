@@ -952,7 +952,6 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 }
 #endif
 
-
 /*
  * Recover one data failure using selected parity with AVX2.
  *

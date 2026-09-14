@@ -145,7 +145,6 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 	{ 0, 0, { 0 }, { 0 } }
 };
 
-
 /**
  * Test vectors for MuseAirLoong
  */
@@ -203,7 +202,6 @@ static void test_hash(void)
 		}
 	}
 
-
 	for (i = 0; TEST_MURMUR3[i].data; ++i) {
 		unsigned char digest[HASH_MAX];
 		memcpy(buffer_aligned, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
@@ -229,7 +227,6 @@ static void test_hash(void)
 			/* LCOV_EXCL_STOP */
 		}
 	}
-
 
 	for (i = 0; TEST_MUSEAIR[i].data; ++i) {
 		unsigned char digest[HASH_MAX];

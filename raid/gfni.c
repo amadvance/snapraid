@@ -1443,7 +1443,6 @@ static __always_inline void raid_genX_avx512gfni_aes(int nd, size_t size, void *
 	raid_avx_end(streaming);
 }
 
-
 /*
  * Recover multiple data failures using selected parity blocks with AVX2 GFNI.
  *

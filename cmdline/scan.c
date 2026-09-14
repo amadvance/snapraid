@@ -570,7 +570,6 @@ static int discovery_inode_compare_to_arg(const void* void_arg, const void* void
 	return 0;
 }
 
-
 /**
  * Insert the file in the inode set.
  */

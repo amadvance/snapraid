@@ -1229,7 +1229,6 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 
 #endif
 
-
 /*
  * Recover failure of one data block using selected parity with SSSE3, optimized for one failure.
  *

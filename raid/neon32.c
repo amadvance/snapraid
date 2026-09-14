@@ -23,7 +23,6 @@ static __always_inline void raid_gen1_neon32_gen(int nd, size_t size, void **vv)
 
 	raid_neon32_begin();
 
-
 	for (i = 0; i < size; i += 64) {
 		asm volatile (
 			"vld1.8 {q0}, %0\n"

@@ -215,8 +215,6 @@
  * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
-
-
 /**
  * Inverts the square matrix M of size nxn into V.
  *

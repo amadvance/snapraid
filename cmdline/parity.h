@@ -144,6 +144,5 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
  */
 int state_barrier(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur);
 
-
 #endif
 

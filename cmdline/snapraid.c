@@ -258,7 +258,6 @@ void log_close(const char* file)
 #define OPT_TEST_KILL_BEFORE_SYNC 310
 #define OPT_TEST_KILL_AFTER_RESIZE 311
 
-
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
@@ -297,7 +296,6 @@ static struct option long_options[] = {
 	{ "quiet", 0, 0, 'q' },
 	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
-
 
 	{ "no-warnings", 0, 0, OPT_NO_WARNINGS }, /* disable annoying warnings */
 	{ "gui", 0, 0, OPT_GUI }, /* undocumented GUI interface option (it was also 'G' in the past) */

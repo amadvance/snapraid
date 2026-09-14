@@ -1038,7 +1038,6 @@ void extra_free(void* void_extra)
 	free(extra);
 }
 
-
 static inline void fs_lock(struct snapraid_disk* disk)
 {
 #if HAVE_THREAD

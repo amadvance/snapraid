@@ -1298,7 +1298,6 @@ static int devresolve(uint64_t device, char* path, size_t path_size)
 }
 #endif
 
-
 /****************************************************************************/
 /* uuid */
 
@@ -1585,7 +1584,6 @@ static int devlabel_ioctl(const char* path, char* label, size_t label_size)
 }
 #endif
 
-
 #ifdef __APPLE__
 static int devuuid_darwin(const char* path, char* uuid, size_t uuid_size)
 {
@@ -1824,7 +1822,6 @@ int devuuid(uint64_t device_id, const char* device_path, char* uuid, size_t uuid
 #else
 	log_tag("uuid:by-uuid:%u:%u: by-uuid not supported\n", major(device_id), minor(device_id));
 #endif
-
 
 	log_tag("uuid:notfound:%u:%u:\n", major(device_id), minor(device_id));
 
@@ -3008,7 +3005,6 @@ void fssnapshot_unmount(const struct fssnapshot_struct* fss)
 {
 	(void)fss;
 }
-
 
 /****************************************************************************/
 /* dev */
