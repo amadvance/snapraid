@@ -116,33 +116,56 @@ int os_pclose(OS_FILE* stream);
 
 /**
  * Spawn a new process with the specified argument vector, optionally capturing stdout and/or stderr.
+ *
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
+ *
+ * Process Reference Slots (pid_slot):
+ * If pid_slot is not NULL, process creation and the resulting process reference are published through it
+ * to enable safe, race-free process tracking and termination (os_term, os_kill) across concurrent threads.
+ * If os_kill() was called on pid_slot, process creation is rejected immediately and this function
+ * returns -1 with errno set to ECANCELED without spawning a child process. In contrast, os_term() on an
+ * idle slot is a no-op and does not prevent subsequent process creation.
+ * The same pid_slot pointer should be passed to os_wait() to unpublish it when the process terminates.
+ *
  * \param argv Array of command line arguments.
  * \param stdout_read_fd Pointer to store file descriptor for stdout, or NULL to redirect to /dev/null.
  * \param stderr_read_fd Pointer to store file descriptor for stderr, or NULL to redirect to /dev/null.
  * \param run_as_user User to run script as (NULL for current user).
+ * \param pid_slot Optional pointer used to publish the process reference, or NULL if concurrent termination is not required.
  * \return Process reference of spawned process, or -1 on failure.
  */
-pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char* run_as_user);
+pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char* run_as_user, pid_t* pid_slot);
 
 /**
- * Get the operating system process ID suitable for display.
+ * Get the operating system process ID suitable for display or logging.
+ * This function is intended for display purposes only and not as a process reference.
  * On Unix the process reference is already the PID.
  * On Windows the process reference is a HANDLE and the actual PID is obtained with GetProcessId().
  * \param pid Process reference returned by os_spawn().
  * \return Operating system process ID, or 0 if unavailable.
  */
-uint64_t os_display_pid(pid_t pid);
+uint64_t os_pid(pid_t pid);
+
+/**
+ * Get the operating system process ID of a published process slot suitable for display or logging.
+ * This function is intended for display purposes only and not as a process reference.
+ * Internal synchronization states (including creation in progress or persistent kill) always return 0.
+ * \param pid_slot Pointer to a published process reference slot.
+ * \return Operating system process ID, or 0 if no process is currently published.
+ */
+uint64_t os_slot_pid(const pid_t* pid_slot);
 
 /**
  * Wait for the child process to terminate.
+ * If pid_slot is not NULL, the process reference is unpublished before this function returns.
  * This function does not release the process reference returned by os_spawn().
  * The caller must eventually call os_dispose().
  * \param pid Process reference returned by os_spawn().
  * \param status Pointer to store the exit status.
+ * \param pid_slot Optional pointer previously passed to os_spawn(), or NULL if the process was not published.
  * \return Child process reference on success, -1 on failure.
  */
-pid_t os_wait(pid_t pid, int* status);
+pid_t os_wait(pid_t pid, int* status, pid_t* pid_slot);
 
 /**
  * Release the process reference returned by os_spawn().
@@ -152,20 +175,36 @@ pid_t os_wait(pid_t pid, int* status);
 void os_dispose(pid_t pid);
 
 /**
- * Terminate gracefully a process. Intended for daemon/service processes controlling child processes.
- * The caller retains ownership and must eventually call both os_wait() and os_dispose() as appropriate.
- * \param pid Process reference of the process to terminate.
- * \return 0 on success, -1 on failure.
+ * Gracefully terminate a published process reference.
+ *
+ * If a process is currently running in the slot, it is gracefully requested to terminate.
+ * If process creation is in progress, the termination request is recorded and applied when the process is published.
+ * If no process is active (slot is 0/idle), there is nothing to terminate: this function is a harmless no-op,
+ * returning 0 without modifying the slot state or preventing subsequent process creation.
+ *
+ * The caller retains ownership for spawned processes and must eventually call both os_wait() and os_dispose()
+ * as appropriate.
+ * \param pid_slot Pointer to the published process reference slot.
+ * \return 0 on success or if no process is active, -1 on failure.
  */
-int os_term(pid_t pid);
+int os_term(pid_t* pid_slot);
 
 /**
- * Forcibly terminate a process.
- * The caller retains ownership and must eventually call both os_wait() and os_dispose() as appropriate.
- * \param pid Process reference of the process to kill.
- * \return 0 on success, -1 on failure.
+ * Forcibly terminate a published process reference.
+ *
+ * If a process is currently running in the slot, it is terminated immediately.
+ * If process creation is in progress, the kill request is recorded and the child is killed upon publication.
+ * If no process is active (slot is idle), the kill request is recorded persistently in the slot so that
+ * any future process creation attempted with this slot is rejected immediately without spawning.
+ *
+ * The slot retains the persistent kill state until explicitly reset by the caller (e.g. *pid_slot = 0).
+ * The caller retains ownership for spawned processes and must eventually call both os_wait() and os_dispose()
+ * as appropriate.
+ *
+ * \param pid_slot Pointer to the published process reference slot.
+ * \return 0 on success or if recorded in the slot, -1 on failure.
  */
-int os_kill(pid_t pid);
+int os_kill(pid_t* pid_slot);
 
 /**
  * Fork and execute a verified executable, discarding all I/O.
@@ -188,22 +227,30 @@ int os_spawn_and_wait(const char** argv);
 /**
  * Execute a system command with optional user context and input.
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
+ * If pid_slot is not NULL, the child process is published for concurrent termination while blocked.
+ * If os_kill() was called on pid_slot, process creation is rejected immediately and this function
+ * returns -1 with errno set to ECANCELED without executing the command.
  * \param command Command to execute.
  * \param run_as_user User to run command as (NULL for current user).
  * \param stdin_text Text to provide as stdin (NULL for no input).
- * \return Exit status of command.
+ * \param pid_slot Optional pointer to publish the process reference while active, or NULL.
+ * \return Exit status of command, or -1 on failure.
  */
-int os_command(const char* command, const char* run_as_user, const char* stdin_text);
+int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot);
 
 /**
  * Execute a script file with specified user context.
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
+ * If pid_slot is not NULL, the child process is published for concurrent termination while blocked.
+ * If os_kill() was called on pid_slot, process creation is rejected immediately and this function
+ * returns -1 with errno set to ECANCELED without executing the script.
  * \param argv Array of command line arguments.
  * \param envp Environment variables (NULL-terminated list of strings).
  * \param run_as_user User to run script as (NULL for current user).
- * \return Exit status of script.
+ * \param pid_slot Optional pointer to publish the process reference while active, or NULL.
+ * \return Exit status of script, or -1 on failure.
  */
-int os_script(char** argv, char** envp, const char* run_as_user);
+int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot);
 
 /**
  * Validates a string for exec.

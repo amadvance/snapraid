@@ -876,11 +876,148 @@ bail:
 #endif
 }
 
+#define PID_NONE ((pid_t)0) /**< No process is active. */
+#define PID_SPAWN ((pid_t)-1) /**< Process creation is in progress. */
+#define PID_TERM ((pid_t)-2) /**< Process termination was requested while creation is in progress. */
+#define PID_KILL ((pid_t)-3) /**< Process kill was requested; rejects future spawns or terminates in-progress/active processes. */
+
+static pthread_mutex_t exec_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * Acquire the process execution mutex.
+ */
+static void exec_lock(void)
+{
+	pthread_mutex_lock(&exec_mutex);
+}
+
+/**
+ * Release the process execution mutex.
+ */
+static void exec_unlock(void)
+{
+	pthread_mutex_unlock(&exec_mutex);
+}
+
+/**
+ * Forcibly terminate the specified raw process reference.
+ */
+static int pid_kill(pid_t pid)
+{
+	if (pid <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* Send SIGKILL signal to the negative PID to target the entire Process Group */
+	int ret = kill(-pid, SIGKILL);
+
+	/*
+	 * If setpgid(0, 0) has not yet executed in the child, process group -pid
+	 * does not exist and kill() returns ESRCH. Fallback to targeting the process directly.
+	 */
+	if (ret < 0 && errno == ESRCH) {
+		ret = kill(pid, SIGKILL);
+	}
+
+	return ret;
+}
+
+/**
+ * Gracefully terminate the specified raw process reference.
+ */
+static int pid_term(pid_t pid)
+{
+	if (pid <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/*
+	 * Send signal to the negative PID to target the entire Process Group.
+	 * This ensures that SnapRAID and any programs it may have spawned are
+	 * terminated together, preventing orphaned worker processes.
+	 */
+	int ret = kill(-pid, SIGTERM);
+
+	/*
+	 * If setpgid(0, 0) has not yet executed in the child, process group -pid
+	 * does not exist and kill() returns ESRCH. Fallback to targeting the process directly.
+	 */
+	if (ret < 0 && errno == ESRCH) {
+		ret = kill(pid, SIGTERM);
+	}
+
+	return ret;
+}
+
+/**
+ * Mark the start of process creation in a process-reference slot.
+ */
+static int pid_spawn_begin(pid_t* pid_slot)
+{
+	if (pid_slot == 0)
+		return 0;
+
+	exec_lock();
+	if (*pid_slot == PID_KILL) {
+		exec_unlock();
+		errno = ECANCELED;
+		return -1;
+	}
+	*pid_slot = PID_SPAWN;
+	exec_unlock();
+	return 0;
+}
+
+/**
+ * Publish a newly created process reference, or terminate it immediately if canceled during spawn.
+ */
+static void pid_publish(pid_t* pid_slot, pid_t pid)
+{
+	if (pid_slot == 0)
+		return;
+
+	exec_lock();
+	if (pid <= 0) {
+		if (*pid_slot != PID_KILL)
+			*pid_slot = PID_NONE;
+	} else {
+		pid_t prev = *pid_slot;
+		if (prev == PID_KILL) {
+			*pid_slot = PID_KILL;
+			pid_kill(pid);
+		} else {
+			*pid_slot = pid;
+
+			if (prev == PID_TERM)
+				pid_term(pid);
+		}
+	}
+	exec_unlock();
+}
+
+/**
+ * Unpublish a process reference from a slot.
+ */
+static void pid_unpublish(pid_t* pid_slot, pid_t pid)
+{
+	if (pid_slot == 0)
+		return;
+
+	exec_lock();
+	if (*pid_slot == pid || (*pid_slot < 0 && *pid_slot != PID_KILL))
+		*pid_slot = PID_NONE;
+	exec_unlock();
+}
+
 /**
  * Waits for a process with a timeout, killing the entire process group if exceeded.
+ * Observes process termination without reaping (via waitid WNOWAIT), leaving the process
+ * as a zombie until the caller unpublishes the process slot and performs the final reap.
  * Optionally delivers input to input_fd using non-blocking writes.
  */
-static pid_t waitpid_timeout_group(pid_t pid, int* status, int64_t start, int input_fd, const char* input, int* timed_out, int* input_error)
+static pid_t waitpid_timeout_group(pid_t pid, int64_t start, int input_fd, const char* input, int* timed_out, int* input_error)
 {
 	size_t input_len = input != 0 ? strlen(input) : 0;
 	size_t input_pos = 0;
@@ -892,15 +1029,23 @@ static pid_t waitpid_timeout_group(pid_t pid, int* status, int64_t start, int in
 		*input_error = 0;
 
 	while (1) {
-		ret = waitpid(pid, status, WNOHANG);
+		/*
+		 * Poll child termination with WNOWAIT so the terminated child remains
+		 * in zombie state with its PID reserved in the kernel until unpublished.
+		 * POSIX specifies that with WNOHANG, waitid() returns 0 and sets
+		 * si_pid to 0 if the child state has not changed.
+		 */
+		siginfo_t info;
+		memset(&info, 0, sizeof(info));
+		int wret = waitid(P_PID, (id_t)pid, &info, WEXITED | WNOHANG | WNOWAIT);
 
-		if (ret == pid) {
+		if (wret == 0 && info.si_pid == pid) {
 			if (input_fd != -1)
 				close(input_fd);
-			return ret;
+			return pid;
 		}
 
-		if (ret < 0) {
+		if (wret < 0) {
 			if (errno == EINTR)
 				continue;
 
@@ -959,15 +1104,22 @@ static pid_t waitpid_timeout_group(pid_t pid, int* status, int64_t start, int in
 				input_fd = -1;
 			}
 
-			if (os_kill(pid) != 0 && errno != ESRCH)
+			if (pid_kill(pid) != 0 && errno != ESRCH)
 				return -1;
 
-			/* reap the process-group leader */
+			/*
+			 * Wait for the process-group leader to terminate after SIGKILL.
+			 * Use WNOWAIT so the child remains a zombie until slot unpublication.
+			 */
 			do {
-				ret = waitpid(pid, status, 0);
+				memset(&info, 0, sizeof(info));
+				ret = waitid(P_PID, (id_t)pid, &info, WEXITED | WNOWAIT);
 			} while (ret < 0 && errno == EINTR);
 
-			return ret;
+			if (ret < 0)
+				return -1;
+
+			return pid;
 		}
 
 		os_usleep(100000);
@@ -977,7 +1129,7 @@ static pid_t waitpid_timeout_group(pid_t pid, int* status, int64_t start, int in
 /**
  * Executes a script directly via its file descriptor.
  */
-int os_script(char** argv, char** envp, const char* run_as_user)
+int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot)
 {
 	char resolved_path[PATH_MAX];
 	pid_t pid;
@@ -1008,9 +1160,15 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	pid_t ppid = getpid();
 #endif
 
+	if (pid_spawn_begin(pid_slot) != 0) {
+		close(fd);
+		return -1;
+	}
+
 	pid = fork();
 	if (pid < 0) {
 		os_syslog(OS_LVL_INFO, "failed to fork script=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		close(fd);
 		return -1;
 	}
@@ -1114,7 +1272,24 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	/* parent process */
 	close(fd);
 
-	ret = waitpid_timeout_group(pid, &status, start, -1, 0, &timed_out, 0);
+	pid_publish(pid_slot, pid);
+
+	ret = waitpid_timeout_group(pid, start, -1, 0, &timed_out, 0);
+
+	/*
+	 * Unpublish the PID slot before reaping the zombie process.
+	 * While the child is a zombie, the OS kernel keeps the PID reserved,
+	 * preventing any new process from reusing it. Unpublishing the slot first
+	 * guarantees that concurrent os_term()/os_kill() calls will not target
+	 * a recycled PID once waitpid() finally reaps the process.
+	 */
+	pid_unpublish(pid_slot, pid);
+
+	if (ret != -1) {
+		do {
+			ret = waitpid(pid, &status, 0);
+		} while (ret == -1 && errno == EINTR);
+	}
 
 	if (ret == -1) {
 		os_syslog(OS_LVL_INFO, "failed to wait for script, path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
@@ -1153,7 +1328,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	}
 }
 
-int os_command(const char* command, const char* run_as_user, const char* stdin_text)
+int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot)
 {
 	pid_t pid;
 	int ret;
@@ -1195,9 +1370,18 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	pid_t ppid = getpid();
 #endif
 
+	if (pid_spawn_begin(pid_slot) != 0) {
+		if (pipe_fds[0] != -1) {
+			close(pipe_fds[0]);
+			close(pipe_fds[1]);
+		}
+		return -1;
+	}
+
 	pid = fork();
 	if (pid < 0) {
 		os_syslog(OS_LVL_INFO, "failed to fork command=%s, errno=%s(%d)", command, strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		if (pipe_fds[0] != -1) {
 			close(pipe_fds[0]);
 			close(pipe_fds[1]);
@@ -1279,11 +1463,28 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	if (pipe_fds[0] != -1)
 		close(pipe_fds[0]); /* close unused read end */
 
-	ret = waitpid_timeout_group(pid, &status, start, pipe_fds[1], stdin_text, &timed_out, &input_error);
+	pid_publish(pid_slot, pid);
+
+	ret = waitpid_timeout_group(pid, start, pipe_fds[1], stdin_text, &timed_out, &input_error);
 	pipe_fds[1] = -1;
+
+	/*
+	 * Unpublish the PID slot before reaping the zombie process.
+	 * While the child is a zombie, the OS kernel keeps the PID reserved,
+	 * preventing any new process from reusing it. Unpublishing the slot first
+	 * guarantees that concurrent os_term()/os_kill() calls will not target
+	 * a recycled PID once waitpid() finally reaps the process.
+	 */
+	pid_unpublish(pid_slot, pid);
 
 	if (input_error != 0)
 		os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(input_error), input_error);
+
+	if (ret != -1) {
+		do {
+			ret = waitpid(pid, &status, 0);
+		} while (ret == -1 && errno == EINTR);
+	}
 
 	if (ret == -1) {
 		os_syslog(OS_LVL_INFO, "failed to wait for command, command=%s, errno=%s(%d)", command, strerror(errno), errno);
@@ -1333,7 +1534,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
  *
  * Returns the child PID on success, or -1 on failure.
  */
-pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char* run_as_user)
+pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char* run_as_user, pid_t* pid_slot)
 {
 	char resolved_path[PATH_MAX];
 	int out_pipe[2];
@@ -1385,9 +1586,23 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 	pid_t ppid = getpid();
 #endif
 
+	if (pid_spawn_begin(pid_slot) != 0) {
+		if (has_out) {
+			close(out_pipe[0]);
+			close(out_pipe[1]);
+		}
+		if (has_err) {
+			close(err_pipe[0]);
+			close(err_pipe[1]);
+		}
+		close(fd);
+		return -1;
+	}
+
 	pid = fork();
 	if (pid < 0) {
 		os_syslog(OS_LVL_INFO, "failed to fork path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		if (has_out) {
 			close(out_pipe[0]);
 			close(out_pipe[1]);
@@ -1484,6 +1699,8 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 	/* parent */
 	close(fd);
 
+	pid_publish(pid_slot, pid);
+
 	if (has_out) {
 #ifdef F_SETPIPE_SZ
 		if (fcntl(out_pipe[0], F_SETPIPE_SZ, 4096) == -1) {
@@ -1507,7 +1724,11 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 	return pid;
 }
 
-uint64_t os_display_pid(pid_t pid)
+/**
+ * Get the operating system process ID suitable for display or logging.
+ * This function is intended for display purposes only and not as a process reference.
+ */
+uint64_t os_pid(pid_t pid)
 {
 	if (pid <= 0)
 		return 0;
@@ -1515,9 +1736,50 @@ uint64_t os_display_pid(pid_t pid)
 	return (uint64_t)pid;
 }
 
-pid_t os_wait(pid_t pid, int* status)
+/**
+ * Get the operating system process ID of a published process slot suitable for display or logging.
+ * This function is intended for display purposes only and not as a process reference.
+ */
+uint64_t os_slot_pid(const pid_t* pid_slot)
+{
+	if (pid_slot == 0)
+		return 0;
+
+	exec_lock();
+	uint64_t pid = os_pid(*pid_slot);
+	exec_unlock();
+
+	return pid;
+}
+
+/**
+ * Wait for the child process to terminate.
+ */
+pid_t os_wait(pid_t pid, int* status, pid_t* pid_slot)
 {
 	pid_t ret;
+
+	/*
+	 * If published in a slot, first wait for termination without reaping (WNOWAIT).
+	 * The child enters zombie state, holding its PID reserved in the kernel so
+	 * no newly created process can receive the same PID. We then unpublish
+	 * the slot before the final waitpid() reap, ensuring concurrent termination
+	 * requests (os_term/os_kill) never signal a recycled PID.
+	 */
+	if (pid_slot != 0) {
+		siginfo_t info;
+		int wret;
+
+		do {
+			memset(&info, 0, sizeof(info));
+			wret = waitid(P_PID, (id_t)pid, &info, WEXITED | WNOWAIT);
+		} while (wret == -1 && errno == EINTR);
+
+		if (wret == -1)
+			os_syslog(OS_LVL_INFO, "failed to waitid, errno=%s(%d)", strerror(errno), errno);
+
+		pid_unpublish(pid_slot, pid);
+	}
 
 	do {
 		ret = waitpid(pid, status, 0);
@@ -1530,60 +1792,70 @@ pid_t os_wait(pid_t pid, int* status)
 	return ret;
 }
 
+/**
+ * Release the process reference returned by os_spawn().
+ */
 void os_dispose(pid_t pid)
 {
 	(void)pid;
 }
 
-int os_term(pid_t pid)
+/**
+ * Gracefully terminate a published process.
+ */
+int os_term(pid_t* pid_slot)
 {
-	if (pid <= 0) {
+	if (pid_slot == 0) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	/*
-	 * Send signal to the negative PID to target the entire Process Group.
-	 * This ensures that SnapRAID and any programs it may have spawned are
-	 * terminated together, preventing orphaned worker processes.
-	 */
-	int ret = kill(-pid, SIGTERM);
-
-	/*
-	 * If setpgid(0, 0) has not yet executed in the child, process group -pid
-	 * does not exist and kill() returns ESRCH. Fallback to targeting the process directly.
-	 */
-	if (ret < 0 && errno == ESRCH) {
-		ret = kill(pid, SIGTERM);
+	exec_lock();
+	pid_t pid = *pid_slot;
+	if (pid == PID_SPAWN) {
+		*pid_slot = PID_TERM;
+		exec_unlock();
+		return 0;
 	}
-
+	if (pid == PID_NONE || pid == PID_TERM || pid == PID_KILL) {
+		exec_unlock();
+		return 0;
+	}
+	int ret = pid_term(pid);
+	exec_unlock();
 	return ret;
 }
 
-int os_kill(pid_t pid)
+/**
+ * Forcibly terminate a published process.
+ */
+int os_kill(pid_t* pid_slot)
 {
-	if (pid <= 0) {
+	if (pid_slot == 0) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	/* Send SIGKILL signal to the negative PID to target the entire Process Group */
-	int ret = kill(-pid, SIGKILL);
-
-	/*
-	 * If setpgid(0, 0) has not yet executed in the child, process group -pid
-	 * does not exist and kill() returns ESRCH. Fallback to targeting the process directly.
-	 */
-	if (ret < 0 && errno == ESRCH) {
-		ret = kill(pid, SIGKILL);
+	exec_lock();
+	pid_t pid = *pid_slot;
+	if (pid == PID_NONE || pid == PID_SPAWN || pid == PID_TERM) {
+		*pid_slot = PID_KILL;
+		exec_unlock();
+		return 0;
 	}
-
+	if (pid == PID_KILL) {
+		exec_unlock();
+		return 0;
+	}
+	*pid_slot = PID_KILL;
+	int ret = pid_kill(pid);
+	exec_unlock();
 	return ret;
 }
 
 int os_spawn_and_wait(const char** argv)
 {
-	pid_t pid = os_spawn((char**)argv, 0, 0, 0);
+	pid_t pid = os_spawn((char**)argv, 0, 0, 0, 0);
 	if (pid < 0) {
 		/* LCOV_EXCL_START */
 		return -1;
@@ -1591,7 +1863,7 @@ int os_spawn_and_wait(const char** argv)
 	}
 
 	int status;
-	int ret = os_wait(pid, &status);
+	int ret = os_wait(pid, &status, 0);
 	os_dispose(pid);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
@@ -1615,7 +1887,7 @@ OS_FILE* os_popen(const char** argv)
 	if (!os_file)
 		return 0;
 
-	pid_t pid = os_spawn((char**)argv, &stdout_fd, 0, 0);
+	pid_t pid = os_spawn((char**)argv, &stdout_fd, 0, 0, 0);
 	if (pid < 0) {
 		free(os_file);
 		return 0;
@@ -1627,7 +1899,7 @@ OS_FILE* os_popen(const char** argv)
 		int saved_errno = errno;
 		close(stdout_fd);
 		int status;
-		os_wait(pid, &status);
+		os_wait(pid, &status, 0);
 		os_dispose(pid);
 		errno = saved_errno;
 		free(os_file);
@@ -1657,7 +1929,7 @@ int os_pclose(OS_FILE* stream)
 	fclose(fp);
 
 	int status = 0;
-	int ret = os_wait(pid, &status);
+	int ret = os_wait(pid, &status, 0);
 	os_dispose(pid);
 	if (ret < 0) {
 		return -1;

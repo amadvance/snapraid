@@ -309,7 +309,7 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 		0
 	};
 
-	pid = os_spawn(argv, &stdout_fd, 0, 0);
+	pid = os_spawn(argv, &stdout_fd, 0, 0, 0);
 	if (pid < 0) {
 		log_error(errno, "Failed to run PowerShell command '%s' (from os_spawn).\n", ps_command);
 		return -1;
@@ -337,7 +337,7 @@ static int windows_ps(const char* ps_command, char* out, size_t out_size)
 	close(stdout_fd);
 
 	status = 0;
-	pid_t pid_ret = os_wait(pid, &status);
+	pid_t pid_ret = os_wait(pid, &status, 0);
 	os_dispose(pid);
 	if (pid_ret < 0) {
 		log_error(errno, "Failed to wait for PowerShell command '%s' (from os_wait).\n", ps_command);

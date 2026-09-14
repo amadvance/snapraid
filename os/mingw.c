@@ -66,6 +66,207 @@ static windows_mutex_t tick_lock;
 static uint64_t tick_last;
 
 /**
+ * Mutex for process reference publication, termination, and unpublication.
+ */
+static windows_mutex_t exec_mutex;
+
+#define PID_NONE ((pid_t)0) /**< No process is active. */
+#define PID_SPAWN ((pid_t)-1) /**< Process creation is in progress. */
+#define PID_TERM ((pid_t)-2) /**< Process termination was requested while creation is in progress. */
+#define PID_KILL ((pid_t)-3) /**< Process kill was requested; rejects future spawns or terminates in-progress/active processes. */
+
+/**
+ * Acquire the process execution mutex.
+ */
+static void exec_lock(void)
+{
+	windows_mutex_lock(&exec_mutex);
+}
+
+/**
+ * Release the process execution mutex.
+ */
+static void exec_unlock(void)
+{
+	windows_mutex_unlock(&exec_mutex);
+}
+
+/**
+ * Mark the start of process creation in a process-reference slot.
+ */
+static int pid_spawn_begin(pid_t* pid_slot)
+{
+	if (pid_slot == 0)
+		return 0;
+
+	exec_lock();
+	if (*pid_slot == PID_KILL) {
+		exec_unlock();
+		errno = ECANCELED;
+		return -1;
+	}
+	*pid_slot = PID_SPAWN;
+	exec_unlock();
+	return 0;
+}
+
+/**
+ * Forcibly terminate the specified raw process reference.
+ */
+static int pid_kill(pid_t pid)
+{
+	if (pid <= 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	HANDLE h = (void*)pid;
+
+	if (!TerminateProcess(h, 1)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * Gracefully terminate a process created by os_spawn() on Windows.
+ *
+ * os_spawn() creates console applications with both CREATE_NO_WINDOW and
+ * CREATE_NEW_PROCESS_GROUP.
+ *
+ * CREATE_NO_WINDOW does not mean that the child is created as a detached
+ * process with no console support. For a console application it provides a
+ * windowless console, so the process can still receive console control events.
+ *
+ * Note that the Microsoft documentation is somewhat ambiguous here: it says
+ * that with CREATE_NO_WINDOW "the console handle for the application is not
+ * set", which can be misread as meaning that the process has no console at all.
+ * In practice, CREATE_NO_WINDOW creates a console session without a visible
+ * console window, and is distinct from DETACHED_PROCESS, which creates a
+ * process with no attached console.
+ *
+ * This behavior is documented and experimentally verified here:
+ * https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
+ * https://github.com/rprichard/win32-console-docs
+ *
+ * CREATE_NEW_PROCESS_GROUP creates a new process group whose identifier is
+ * the process ID of the child created by CreateProcess(). This allows
+ * CTRL_BREAK_EVENT to be directed specifically to the child's process group:
+ *
+ *     CREATE_NO_WINDOW
+ *         -> child has a windowless console
+ *
+ *     CREATE_NEW_PROCESS_GROUP
+ *         -> child PID is also the process-group ID
+ *
+ * GenerateConsoleCtrlEvent() can signal only processes sharing the console
+ * of the caller. Therefore, this function first detaches the calling process
+ * from its current console, if any, temporarily attaches it to the child's
+ * console using AttachConsole(child_pid), and then sends:
+ *
+ *     GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, child_pid)
+ *
+ * The child process group then receives CTRL_BREAK_EVENT and can perform an
+ * orderly shutdown instead of being forcibly terminated.
+ *
+ * This works particularly well when called by a Windows Service. Services
+ * normally have no console of their own, so the sequence is simply:
+ *
+ *     Service without a console
+ *         -> AttachConsole(child_pid)
+ *         -> GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, child_pid)
+ *         -> child receives CTRL_BREAK_EVENT
+ *         -> FreeConsole()
+ *         -> Service is console-less again
+ *
+ * Note that console attachment is process-wide. If the calling process was
+ * already attached to a console, the initial FreeConsole() detaches it and
+ * that previous console is not restored on return. FreeConsole() and
+ * AttachConsole() also reset the process console control-handler table.
+ * For this reason, this function is best suited to callers that normally
+ * have no console, such as Windows Services.
+ *
+ * If attaching to the child's console fails, fall back to TerminateProcess().
+ */
+static int pid_term(pid_t pid)
+{
+	HANDLE h = (void*)pid;
+	DWORD id = GetProcessId(h);
+
+	if (id == 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* detach from current console (if any; background service has no console) */
+	FreeConsole();
+
+	/* attach to the child's invisible console host */
+	if (!AttachConsole(id)) {
+		/* fallback: terminate process forcibly if console attachment fails */
+		if (!TerminateProcess(h, 1)) {
+			windows_errno(GetLastError());
+			return -1;
+		}
+		return 0;
+	}
+
+	/* disable Ctrl-C for the PARENT so we don't kill ourselves */
+	SetConsoleCtrlHandler(0, TRUE);
+
+	/* this will now reach the child's SetConsoleCtrlHandler */
+	GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, id);
+
+	/* detach from child console, returning calling service process to its console-less state */
+	FreeConsole();
+
+	return 0;
+}
+
+/**
+ * Publish a newly created process reference, or terminate it immediately if canceled during spawn.
+ */
+static void pid_publish(pid_t* pid_slot, pid_t pid)
+{
+	if (pid_slot == 0)
+		return;
+
+	exec_lock();
+	if (pid <= 0) {
+		if (*pid_slot != PID_KILL)
+			*pid_slot = PID_NONE;
+	} else {
+		pid_t prev = *pid_slot;
+		if (prev == PID_KILL) {
+			*pid_slot = PID_KILL;
+			pid_kill(pid);
+		} else {
+			*pid_slot = pid;
+
+			if (prev == PID_TERM)
+				pid_term(pid);
+		}
+	}
+	exec_unlock();
+}
+
+/**
+ * Unpublish a process reference from a slot.
+ */
+static void pid_unpublish(pid_t* pid_slot, pid_t pid)
+{
+	if (pid_slot == 0)
+		return;
+
+	exec_lock();
+	if (*pid_slot == pid || (*pid_slot < 0 && *pid_slot != PID_KILL))
+		*pid_slot = PID_NONE;
+	exec_unlock();
+}
+
+/**
  * If we are running in Wine.
  */
 static int is_wine;
@@ -2846,7 +3047,7 @@ static int process_startup_init(struct process_startup* startup, HANDLE stdin_ha
 	return 0;
 }
 
-pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const char* run_as_user)
+pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const char* run_as_user, pid_t* pid_slot)
 {
 	wchar_t conv[CONV_MAX];
 	HANDLE stdout_write_handle = INVALID_HANDLE_VALUE;
@@ -2996,6 +3197,20 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	 */
 	const wchar_t* cwd = L"C:\\";
 
+	if (pid_spawn_begin(pid_slot) != 0) {
+		CloseHandle(nul_handle);
+		if (has_out) {
+			CloseHandle(stdout_write_handle);
+			close(out_f);
+		}
+		if (has_err) {
+			CloseHandle(stderr_write_handle);
+			close(err_f);
+		}
+		process_startup_done(&startup);
+		return -1;
+	}
+
 	/* create the child process */
 	if (run_as_user == 0 || run_as_user[0] == 0) {
 		ret = CreateProcessW(
@@ -3016,6 +3231,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* Validate that the requested user is actually a supported Service Account before attempting logon */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(nul_handle);
 			if (has_out) {
@@ -3032,6 +3248,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(nul_handle);
 			if (has_out) {
@@ -3050,6 +3267,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			CloseHandle(h_token);
 			process_startup_done(&startup);
 			CloseHandle(nul_handle);
@@ -3085,6 +3303,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	if (!ret) {
 		windows_errno(create_error);
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		CloseHandle(nul_handle);
 		if (has_out) {
 			CloseHandle(stdout_write_handle);
@@ -3108,6 +3327,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to assign process to job object, errno=%s(%d)", strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			TerminateProcess(pi.hProcess, 1);
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
@@ -3127,6 +3347,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	if (ResumeThread(pi.hThread) == (DWORD)-1) {
 		windows_errno(GetLastError());
 		os_syslog(OS_LVL_INFO, "failed to resume thread for spawn, errno=%s(%d)", strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
@@ -3159,10 +3380,17 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		*stderr_read_int = err_f;
 	}
 
-	return (intptr_t)pi.hProcess;
+	pid_t pid = (intptr_t)pi.hProcess;
+	pid_publish(pid_slot, pid);
+
+	return pid;
 }
 
-uint64_t os_display_pid(pid_t pid)
+/**
+ * Get the operating system process ID suitable for display or logging.
+ * This function is intended for display purposes only and not as a process reference.
+ */
+uint64_t os_pid(pid_t pid)
 {
 	if (pid <= 0)
 		return 0;
@@ -3171,7 +3399,26 @@ uint64_t os_display_pid(pid_t pid)
 	return (uint64_t)GetProcessId(h);
 }
 
-pid_t os_wait(pid_t pid, int* status)
+/**
+ * Get the operating system process ID of a published process slot suitable for display or logging.
+ * This function is intended for display purposes only and not as a process reference.
+ */
+uint64_t os_slot_pid(const pid_t* pid_slot)
+{
+	if (pid_slot == 0)
+		return 0;
+
+	exec_lock();
+	uint64_t pid = os_pid(*pid_slot);
+	exec_unlock();
+
+	return pid;
+}
+
+/**
+ * Wait for the child process to terminate.
+ */
+pid_t os_wait(pid_t pid, int* status, pid_t* pid_slot)
 {
 	HANDLE h = (void*)pid;
 	DWORD exit_code;
@@ -3180,13 +3427,20 @@ pid_t os_wait(pid_t pid, int* status)
 
 	if (GetExitCodeProcess(h, &exit_code)) {
 		*status = exit_code;
+		if (pid_slot != 0)
+			pid_unpublish(pid_slot, pid);
 		return pid;
 	} else {
 		windows_errno(GetLastError());
+		if (pid_slot != 0)
+			pid_unpublish(pid_slot, pid);
 		return -1;
 	}
 }
 
+/**
+ * Release the process reference returned by os_spawn().
+ */
 void os_dispose(pid_t pid)
 {
 	if (pid > 0)
@@ -3194,118 +3448,62 @@ void os_dispose(pid_t pid)
 }
 
 /**
- * Gracefully terminate a process created by os_spawn() on Windows.
- *
- * os_spawn() creates console applications with both CREATE_NO_WINDOW and
- * CREATE_NEW_PROCESS_GROUP.
- *
- * CREATE_NO_WINDOW does not mean that the child is created as a detached
- * process with no console support. For a console application it provides a
- * windowless console, so the process can still receive console control events.
- *
- * Note that the Microsoft documentation is somewhat ambiguous here: it says
- * that with CREATE_NO_WINDOW "the console handle for the application is not
- * set", which can be misread as meaning that the process has no console at all.
- * In practice, CREATE_NO_WINDOW creates a console session without a visible
- * console window, and is distinct from DETACHED_PROCESS, which creates a
- * process with no attached console.
- *
- * This behavior is documented and experimentally verified here:
- * https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
- * https://github.com/rprichard/win32-console-docs
- *
- * CREATE_NEW_PROCESS_GROUP creates a new process group whose identifier is
- * the process ID of the child created by CreateProcess(). This allows
- * CTRL_BREAK_EVENT to be directed specifically to the child's process group:
- *
- *     CREATE_NO_WINDOW
- *         -> child has a windowless console
- *
- *     CREATE_NEW_PROCESS_GROUP
- *         -> child PID is also the process-group ID
- *
- * GenerateConsoleCtrlEvent() can signal only processes sharing the console
- * of the caller. Therefore, this function first detaches the calling process
- * from its current console, if any, temporarily attaches it to the child's
- * console using AttachConsole(child_pid), and then sends:
- *
- *     GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, child_pid)
- *
- * The child process group then receives CTRL_BREAK_EVENT and can perform an
- * orderly shutdown instead of being forcibly terminated.
- *
- * This works particularly well when called by a Windows Service. Services
- * normally have no console of their own, so the sequence is simply:
- *
- *     Service without a console
- *         -> AttachConsole(child_pid)
- *         -> GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, child_pid)
- *         -> child receives CTRL_BREAK_EVENT
- *         -> FreeConsole()
- *         -> Service is console-less again
- *
- * Note that console attachment is process-wide. If the calling process was
- * already attached to a console, the initial FreeConsole() detaches it and
- * that previous console is not restored on return. FreeConsole() and
- * AttachConsole() also reset the process console control-handler table.
- * For this reason, this function is best suited to callers that normally
- * have no console, such as Windows Services.
- *
- * If attaching to the child's console fails, fall back to TerminateProcess().
+ * Gracefully terminate a published process.
  */
-int os_term(pid_t pid)
+int os_term(pid_t* pid_slot)
 {
-	HANDLE h = (void*)pid;
-	DWORD id = GetProcessId(h);
-
-	if (id == 0) {
+	if (pid_slot == 0) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	/* detach from current console (if any; background service has no console) */
-	FreeConsole();
-
-	/* attach to the child's invisible console host */
-	if (!AttachConsole(id)) {
-		/* fallback: terminate process forcibly if console attachment fails */
-		if (!TerminateProcess(h, 1)) {
-			windows_errno(GetLastError());
-			return -1;
-		}
+	exec_lock();
+	pid_t pid = *pid_slot;
+	if (pid == PID_SPAWN) {
+		*pid_slot = PID_TERM;
+		exec_unlock();
 		return 0;
 	}
-
-	/* disable Ctrl-C for the PARENT so we don't kill ourselves */
-	SetConsoleCtrlHandler(0, TRUE);
-
-	/* this will now reach the child's SetConsoleCtrlHandler */
-	GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, id);
-
-	/* detach from child console, returning calling service process to its console-less state */
-	FreeConsole();
-
-	return 0;
+	if (pid == PID_NONE || pid == PID_TERM || pid == PID_KILL) {
+		exec_unlock();
+		return 0;
+	}
+	int ret = pid_term(pid);
+	exec_unlock();
+	return ret;
 }
 
-int os_kill(pid_t pid)
+/**
+ * Forcibly terminate a published process.
+ */
+int os_kill(pid_t* pid_slot)
 {
-	if (pid <= 0) {
+	if (pid_slot == 0) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	HANDLE h = (void*)pid;
-
-	if (!TerminateProcess(h, 1)) {
-		windows_errno(GetLastError());
-		return -1;
+	exec_lock();
+	pid_t pid = *pid_slot;
+	if (pid == PID_NONE || pid == PID_SPAWN || pid == PID_TERM) {
+		*pid_slot = PID_KILL;
+		exec_unlock();
+		return 0;
 	}
-
-	return 0;
+	if (pid == PID_KILL) {
+		exec_unlock();
+		return 0;
+	}
+	*pid_slot = PID_KILL;
+	int ret = pid_kill(pid);
+	exec_unlock();
+	return ret;
 }
 
-int os_command(const char* command, const char* run_as_user, const char* stdin_text)
+/**
+ * Execute a shell command synchronously and wait for termination.
+ */
+int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot)
 {
 	wchar_t conv[CONV_MAX];
 	HANDLE stdin_read_handle;
@@ -3371,6 +3569,14 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	 */
 	const wchar_t* cwd = L"C:\\";
 
+	if (pid_spawn_begin(pid_slot) != 0) {
+		CloseHandle(stdin_read_handle);
+		CloseHandle(stdin_write_handle);
+		CloseHandle(nul);
+		process_startup_done(&startup);
+		return -1;
+	}
+
 	/*
 	 * No drop of privilege requested
 	 * Run exactly as the parent daemon
@@ -3400,6 +3606,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		 */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
 			CloseHandle(stdin_write_handle);
@@ -3410,6 +3617,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
 			CloseHandle(stdin_write_handle);
@@ -3424,6 +3632,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
 			CloseHandle(stdin_write_handle);
@@ -3453,6 +3662,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	if (!ret) {
 		windows_errno(create_error);
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for command, errno=%s(%d)", command, strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
 		CloseHandle(nul);
@@ -3470,6 +3680,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to assign command process to job object, errno=%s(%d)", strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			TerminateProcess(pi.hProcess, 1);
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
@@ -3482,12 +3693,16 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	if (ResumeThread(pi.hThread) == (DWORD)-1) {
 		windows_errno(GetLastError());
 		os_syslog(OS_LVL_INFO, "failed to resume thread for command, errno=%s(%d)", strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 		CloseHandle(stdin_write_handle);
 		return -1;
 	}
+
+	pid_t pid = (intptr_t)pi.hProcess;
+	pid_publish(pid_slot, pid);
 
 	/* write the string to the child's STDIN */
 	if (stdin_text != 0) {
@@ -3515,6 +3730,8 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	DWORD status;
 	GetExitCodeProcess(pi.hProcess, &status);
+
+	pid_unpublish(pid_slot, pid);
 
 	CloseHandle(pi.hThread);
 	CloseHandle(pi.hProcess);
@@ -3673,7 +3890,10 @@ bail:
 	return new_env;
 }
 
-int os_script(char** argv, char** envp, const char* run_as_user)
+/**
+ * Execute an external script synchronously and wait for termination.
+ */
+int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot)
 {
 	wchar_t conv[CONV_MAX];
 	PROCESS_INFORMATION pi;
@@ -3738,6 +3958,10 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	 */
 	const wchar_t* cwd = L"C:\\";
 
+	if (pid_spawn_begin(pid_slot) != 0) {
+		return -1;
+	}
+
 	/*
 	 * No drop of privilege requested
 	 * Run exactly as the parent daemon
@@ -3752,6 +3976,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 			if (!base_env) {
 				windows_errno(GetLastError());
 				os_syslog(OS_LVL_INFO, "failed to get environment strings, errno=%s(%d)", strerror(errno), errno);
+				pid_unpublish(pid_slot, 0);
 				return -1;
 			}
 			combined_env = env_combine(base_env, envp);
@@ -3759,6 +3984,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 			if (!combined_env) {
 				errno = ENOMEM;
 				os_syslog(OS_LVL_INFO, "failed to combine environment strings (out of memory)");
+				pid_unpublish(pid_slot, 0);
 				return -1;
 			}
 			creation_flags |= CREATE_UNICODE_ENVIRONMENT;
@@ -3789,12 +4015,14 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		 */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			pid_unpublish(pid_slot, 0);
 			return -1;
 		}
 
 		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			return -1;
 		}
 
@@ -3805,6 +4033,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			CloseHandle(h_token);
 			return -1;
 		}
@@ -3815,6 +4044,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 			if (!combined_env) {
 				errno = ENOMEM;
 				os_syslog(OS_LVL_INFO, "failed to combine environment strings (out of memory)");
+				pid_unpublish(pid_slot, 0);
 				DestroyEnvironmentBlock(env);
 				CloseHandle(h_token);
 				return -1;
@@ -3841,6 +4071,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	if (!ret) {
 		windows_errno(GetLastError());
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for script, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		return -1;
 	}
 
@@ -3849,6 +4080,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to assign script process to job object, errno=%s(%d)", strerror(errno), errno);
+			pid_unpublish(pid_slot, 0);
 			TerminateProcess(pi.hProcess, 1);
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
@@ -3860,16 +4092,22 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	if (ResumeThread(pi.hThread) == (DWORD)-1) {
 		windows_errno(GetLastError());
 		os_syslog(OS_LVL_INFO, "failed to resume thread for script, errno=%s(%d)", strerror(errno), errno);
+		pid_unpublish(pid_slot, 0);
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 		return -1;
 	}
 
+	pid_t pid = (intptr_t)pi.hProcess;
+	pid_publish(pid_slot, pid);
+
 	WaitForSingleObject(pi.hProcess, INFINITE);
 
 	DWORD status;
 	GetExitCodeProcess(pi.hProcess, &status);
+
+	pid_unpublish(pid_slot, pid);
 
 	CloseHandle(pi.hThread);
 	CloseHandle(pi.hProcess);
@@ -4093,6 +4331,11 @@ void os_init(unsigned opt)
 		os_exit();
 	}
 
+	if (windows_mutex_init(&exec_mutex, 0) != 0) {
+		os_syslog(OS_LVL_CRITICAL, "error calling windows_mutex_init()");
+		os_exit();
+	}
+
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
 		os_syslog(OS_LVL_CRITICAL, "error loading the NTDLL module");
@@ -4161,6 +4404,7 @@ void os_done(void)
 	/* delete the thread local storage for strerror() */
 	windows_key_delete(last_error);
 
+	windows_mutex_destroy(&exec_mutex);
 	windows_mutex_destroy(&tick_lock);
 
 	/* restore the normal execution level */

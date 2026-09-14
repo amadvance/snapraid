@@ -461,19 +461,40 @@ int main(int argc, char* argv[])
 			/* unblock signals in parent */
 			sigprocmask(SIG_SETMASK, &oldset, NULL);
 
+			/*
+			 * First wait for child termination without reaping (WNOWAIT).
+			 * The child enters zombie state, holding its PID reserved in the kernel
+			 * so no newly created process can receive the same PID. We clear
+			 * child_pid before the final waitpid() reap so the signal forwarder
+			 * never sends signals to a recycled PID.
+			 */
+			siginfo_t info;
+			int wret;
 			do {
-				ret = waitpid(pid, &status, 0);
-			} while (ret == -1 && errno == EINTR); /* retry if interrupted by signal */
+				memset(&info, 0, sizeof(info));
+				wret = waitid(P_PID, (id_t)pid, &info, WEXITED | WNOWAIT);
+			} while (wret == -1 && errno == EINTR);
 
-			if (ret == -1) {
+			if (wret == -1) {
 				/* LCOV_EXCL_START */
 				perror("Failed to wait for SnapRAID");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* clear child PID */
+			/* clear child PID while PID is still reserved in zombie state */
 			child_pid = 0;
+
+			do {
+				ret = waitpid(pid, &status, 0);
+			} while (ret == -1 && errno == EINTR); /* retry if interrupted by signal */
+
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				perror("Failed to reap SnapRAID");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 
 			/* restore default signal handlers */
 			signal(SIGINT, SIG_DFL);
