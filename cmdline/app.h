@@ -336,6 +336,11 @@ extern int exit_sync_needed;
 #define SMART_MAX 128
 
 /**
+ * Max smartctl custom option length.
+ */
+#define SMARTCTL_MAX 512
+
+/**
  * Smart ignore structure.
  */
 struct smartignore_struct {
@@ -379,8 +384,8 @@ struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
 	char name[PATH_MAX]; /**< Name of the disk combined with the split index if any */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
-	char smartctl[SMART_MAX]; /**< Custom option for smartctl. Empty means auto. */
-	char smartctl_info[SMART_MAX]; /* Info options for smartctl. Empty means -a. */
+	char smartctl[SMARTCTL_MAX]; /**< Custom option for smartctl. Empty means auto. */
+	char smartctl_info[SMARTCTL_MAX]; /* Info options for smartctl. Empty means -a. */
 	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Attributes to ignore */
 	char file[PATH_MAX]; /**< File device. */
 #ifdef _WIN32

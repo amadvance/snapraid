@@ -4150,9 +4150,88 @@ int os_randomize(void* void_ptr, size_t size)
 	return -1;
 }
 
+OS_FILE* os_popen(const char** argv)
+{
+	int stdout_fd = -1;
+	int saved_errno;
+	int status;
+	pid_t pid;
+	FILE* fp;
+	OS_FILE* os_file;
+
+	os_file = malloc(sizeof(OS_FILE));
+	if (!os_file)
+		return 0;
+
+	/* os_spawn() only reads argv and its strings, so dropping const here does not allow the callee to modify them. */
+	pid = os_spawn((char**)argv, &stdout_fd, 0, 0, 0);
+	if (pid < 0) {
+		free(os_file);
+		return 0;
+	}
+
+	/* os_spawn() exposes Windows pipes as binary CRT descriptors; restore the text semantics previously provided by _wpopen(..., L"rt"). */
+	if (_setmode(stdout_fd, O_TEXT) == -1)
+		goto fail_child;
+
+	fp = fdopen(stdout_fd, "r");
+	if (!fp)
+		goto fail_child;
+
+	os_file->fp = fp;
+	os_file->pid = pid;
+
+	return os_file;
+
+fail_child:
+	saved_errno = errno;
+	close(stdout_fd);
+	/* Terminate and reap the child immediately so no process or handle is leaked on stream creation failure. */
+	pid_kill(pid);
+	status = 0;
+	os_wait(pid, &status, 0);
+	os_dispose(pid);
+	free(os_file);
+	errno = saved_errno;
+	return 0;
+}
+
 char* os_fgets(char* s, int size, OS_FILE* stream)
 {
-	return fgets(s, size, stream);
+	return fgets(s, size, stream->fp);
+}
+
+int os_pclose(OS_FILE* stream)
+{
+	FILE* fp = stream->fp;
+	pid_t pid = stream->pid;
+	int status = 0;
+	int saved_errno = 0;
+	int close_ret;
+	pid_t wait_ret;
+
+	/* Keep the owned resources locally so the OS_FILE container can be released immediately. */
+	free(stream);
+
+	/* Closing the stream also closes the CRT descriptor and the underlying stdout pipe handle. */
+	close_ret = fclose(fp);
+	if (close_ret != 0)
+		saved_errno = errno;
+
+	/* Always reap the child even if closing the stream failed. */
+	wait_ret = os_wait(pid, &status, 0);
+	if (wait_ret < 0 && saved_errno == 0)
+		saved_errno = errno;
+
+	/* os_wait() does not release the Windows process HANDLE. */
+	os_dispose(pid);
+
+	if (close_ret != 0 || wait_ret < 0) {
+		errno = saved_errno != 0 ? saved_errno : EIO;
+		return -1;
+	}
+
+	return status;
 }
 
 void os_clear(void)

@@ -248,7 +248,11 @@ static int base64_encode(const unsigned char* in, size_t in_len, char* out, size
  *
  * Runs a PowerShell one-liner via os_spawn() and captures the first line
  * of stdout into `out` as UTF-8.
- * `out` may be NULL when output is not needed.
+ * `out` may be 0 when output is not needed.
+ *
+ * Because os_spawn() captures stdout as a raw binary file descriptor without
+ * CRLF translation, callers must handle Windows \r\n explicitly. Here, \r\n
+ * is stripped using strpbrk() and strtrim().
  *
  * The command is executed using -EncodedCommand (Base64 UTF-16LE) to safely
  * handle any shell metacharacters or quotes in paths and volume names.
@@ -1117,61 +1121,145 @@ static int devstat(uint64_t device, const char* name, const char* wfile, uint64_
 	return 0;
 }
 
+#define ARGS_MAX 64
+
+/**
+ * Build the absolute path to smartctl.exe located in the application directory.
+ */
+static int smartctl_executable(char* path, size_t size)
+{
+	char conv_buf[CONV_MAX];
+	const wchar_t* dir = windows_exedir();
+	int ret;
+
+	if (!dir || dir[0] == 0) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	ret = snprintf(path, size, "%ssmartctl.exe", u16tou8(conv_buf, dir));
+	if (ret < 0 || (size_t)ret >= size) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+
+	return 0;
+}
+
 /**
  * Get SMART attributes.
  */
 static int devsmart(uint64_t device, const char* name, const char* smartctl, const char* smartctl_info, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* inter)
 {
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + SMART_MAX];
+	char smartctl_path[CONV_MAX];
+	char info_buf[SMARTCTL_MAX];
+	char extra_args[PATH_MAX];
+	char extra_split[PATH_MAX];
+	const char* argv[ARGS_MAX];
 	char file[128];
-	FILE* f;
+	unsigned argc;
+	OS_FILE* f;
 	int ret;
 	int count;
+
+	if (smartctl_executable(smartctl_path, sizeof(smartctl_path)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Failed to build smartctl executable path.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	const char* info_opts = smartctl_info[0] ? smartctl_info : "-a";
 
-	/* if there is a custom smartctl command */
-	if (smartctl[0]) {
-		char option[SMART_MAX];
-		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, option);
-	} else {
-		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" %s %s", windows_exedir(), info_opts, file);
-	}
-
 	count = 0;
 
 retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
+	argc = 0;
+	argv[argc++] = smartctl_path;
 
-	f = _wpopen(cmd, L"rt");
+	pathcpy(info_buf, sizeof(info_buf), info_opts);
+	argc += argsplit(argv + argc, ARGS_MAX - argc, info_buf);
+	if (argc >= ARGS_MAX) {
+		/* LCOV_EXCL_START */
+		log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (count != 0) {
+		if (argc >= ARGS_MAX - 3) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		argv[argc++] = "-d";
+		argv[argc++] = "sat";
+	}
+
+	if (smartctl[0] && count == 0) {
+		pathprint(extra_args, sizeof(extra_args), smartctl, file);
+		pathcpy(extra_split, sizeof(extra_split), extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_split);
+		if (argc >= ARGS_MAX) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		log_tag("smartctl:%s:%s:run: %s [info: %s] %s\n", file, name, smartctl_path, info_opts, extra_args);
+	} else {
+		if (argc >= ARGS_MAX - 1) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		argv[argc++] = file;
+		if (count != 0)
+			log_tag("smartctl:%s:%s:run: %s [info: %s] -d sat %s\n", file, name, smartctl_path, info_opts, file);
+		else
+			log_tag("smartctl:%s:%s:run: %s [info: %s] %s\n", file, name, smartctl_path, info_opts, file);
+	}
+	argv[argc++] = 0;
+
+	f = os_popen(argv);
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_tag("device:%s:%s:spawn\n", file, name);
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s'.\n", smartctl_path, info_opts, extra_args);
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] -d sat %s'.\n", smartctl_path, info_opts, file);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s'.\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, inter) != 0) {
 		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
+		os_pclose(f);
+		log_tag("device:%s:%s:spawn\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pclose(f);
+	ret = os_pclose(f);
 
 	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
-	if (ret == -1) {
+	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_tag("device:%s:%s:abort\n", file, name);
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s' (not exited).\n", smartctl_path, info_opts, extra_args);
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] -d sat %s' (not exited).\n", smartctl_path, info_opts, file);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s' (not exited).\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1189,21 +1277,18 @@ retry:
 		 *
 		 * Note that getting error 4 is instead very common, even with full info gathering.
 		 */
-		if ((ret == 0 || ret == 2)
+		if ((WEXITSTATUS(ret) == 0 || WEXITSTATUS(ret) == 2)
 			&& smart[SMART_POWER_ON_HOURS].raw == SMART_UNASSIGNED
 			&& info[INFO_SIZE] == SMART_UNASSIGNED
 			&& info[INFO_ROTATION_RATE] == SMART_UNASSIGNED
 		) {
-			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" %s -d sat %s", windows_exedir(), info_opts, file);
-
 			++count;
 			goto retry;
 		}
 	}
 
 	/* store the smartctl return value */
-	smart[SMART_FLAGS].raw = ret;
+	smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
 
 	return 0;
 }
@@ -1495,56 +1580,117 @@ static int devpower(uint64_t device, const char* name, const char* wfile)
  */
 static int devprobe(uint64_t device, const char* name, const char* smartctl, const char* smartctl_info, int* power, struct smart_attr* smart, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + SMART_MAX];
+	char smartctl_path[CONV_MAX];
+	char info_buf[SMARTCTL_MAX];
+	char extra_args[PATH_MAX];
+	char extra_split[PATH_MAX];
+	const char* argv[ARGS_MAX];
 	char file[128];
-	FILE* f;
+	unsigned argc;
+	OS_FILE* f;
 	int ret;
 	int count;
+
+	if (smartctl_executable(smartctl_path, sizeof(smartctl_path)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Failed to build smartctl executable path.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	const char* info_opts = smartctl_info[0] ? smartctl_info : "-a";
 
-	/* if there is a custom smartctl command */
-	if (smartctl[0]) {
-		char option[SMART_MAX];
-		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, option);
-	} else {
-		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -n standby,3 %s %s", windows_exedir(), info_opts, file);
-	}
-
 	count = 0;
 
 retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
+	argc = 0;
+	argv[argc++] = smartctl_path;
+	argv[argc++] = "-n";
+	argv[argc++] = "standby,3";
 
-	f = _wpopen(cmd, L"rt");
+	pathcpy(info_buf, sizeof(info_buf), info_opts);
+	argc += argsplit(argv + argc, ARGS_MAX - argc, info_buf);
+	if (argc >= ARGS_MAX) {
+		/* LCOV_EXCL_START */
+		log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (count != 0) {
+		if (argc >= ARGS_MAX - 3) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		argv[argc++] = "-d";
+		argv[argc++] = "sat";
+	}
+
+	if (smartctl[0] && count == 0) {
+		pathprint(extra_args, sizeof(extra_args), smartctl, file);
+		pathcpy(extra_split, sizeof(extra_split), extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_split);
+		if (argc >= ARGS_MAX) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] %s\n", file, name, smartctl_path, info_opts, extra_args);
+	} else {
+		if (argc >= ARGS_MAX - 1) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		argv[argc++] = file;
+		if (count != 0)
+			log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] -d sat %s\n", file, name, smartctl_path, info_opts, file);
+		else
+			log_tag("smartctl:%s:%s:run: %s -n standby,3 [info: %s] %s\n", file, name, smartctl_path, info_opts, file);
+	}
+	argv[argc++] = 0;
+
+	f = os_popen(argv);
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_tag("device:%s:%s:spawn\n", file, name);
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", smartctl_path, info_opts, extra_args);
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s -d sat %s'.\n", smartctl_path, info_opts, file);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (smartctl_attribute(f, file, name, smart, info, serial, family, model, interf) != 0) {
 		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
+		os_pclose(f);
+		log_tag("device:%s:%s:spawn\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pclose(f);
+	ret = os_pclose(f);
 
 	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
-	if (ret == -1) {
+	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_tag("device:%s:%s:abort\n", file, name);
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", smartctl_path, info_opts, extra_args);
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s -d sat %s' (not exited).\n", smartctl_path, info_opts, file);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1559,16 +1705,13 @@ retry:
 		 *
 		 * In such conditions we retry using the "sat" type, that often allows to proceed.
 		 */
-		if (ret == 2) {
-			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -n standby,3 %s -d sat %s", windows_exedir(), info_opts, file);
-
+		if (WEXITSTATUS(ret) == 2) {
 			++count;
 			goto retry;
 		}
 	}
 
-	if (ret == 3) {
+	if (WEXITSTATUS(ret) == 3) {
 		log_tag("attr:%s:%s:power:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
@@ -1577,7 +1720,7 @@ retry:
 
 		/* store the smartctl return value */
 		if (smart)
-			smart[SMART_FLAGS].raw = ret;
+			smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
 	}
 
 	return 0;
@@ -1588,54 +1731,105 @@ retry:
  */
 static int devdown(uint64_t device, const char* name, const char* smartctl)
 {
-	char conv_buf[CONV_MAX];
-	WCHAR cmd[PATH_MAX + SMART_MAX];
+	char smartctl_path[CONV_MAX];
+	char extra_args[PATH_MAX];
+	char extra_split[PATH_MAX];
+	const char* argv[ARGS_MAX];
 	char file[128];
-	FILE* f;
+	unsigned argc;
+	OS_FILE* f;
 	int ret;
 	int count;
 
-	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
-
-	/* if there is a custom smartctl command */
-	if (smartctl[0]) {
-		char option[SMART_MAX];
-		snprintf(option, sizeof(option), smartctl, file);
-		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), option);
-	} else {
-		snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -s standby,now %s", windows_exedir(), file);
+	if (smartctl_executable(smartctl_path, sizeof(smartctl_path)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Failed to build smartctl executable path.\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
 	}
+
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	count = 0;
 
 retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
+	argc = 0;
+	argv[argc++] = smartctl_path;
+	argv[argc++] = "-s";
+	argv[argc++] = "standby,now";
 
-	f = _wpopen(cmd, L"rt");
+	if (count != 0) {
+		if (argc >= ARGS_MAX - 3) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		argv[argc++] = "-d";
+		argv[argc++] = "sat";
+	}
+
+	if (smartctl[0] && count == 0) {
+		pathprint(extra_args, sizeof(extra_args), smartctl, file);
+		pathcpy(extra_split, sizeof(extra_split), extra_args);
+		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_split);
+		if (argc >= ARGS_MAX) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		log_tag("smartctl:%s:%s:run: %s -s standby,now %s\n", file, name, smartctl_path, extra_args);
+	} else {
+		if (argc >= ARGS_MAX - 1) {
+			/* LCOV_EXCL_START */
+			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		argv[argc++] = file;
+		if (count != 0)
+			log_tag("smartctl:%s:%s:run: %s -s standby,now -d sat %s\n", file, name, smartctl_path, file);
+		else
+			log_tag("smartctl:%s:%s:run: %s -s standby,now %s\n", file, name, smartctl_path, file);
+	}
+	argv[argc++] = 0;
+
+	f = os_popen(argv);
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
+		log_tag("device:%s:%s:spawn\n", file, name);
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", smartctl_path, extra_args);
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s'.\n", smartctl_path, file);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", smartctl_path, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (smartctl_flush(f, file, name) != 0) {
 		/* LCOV_EXCL_START */
-		pclose(f);
-		log_tag("device:%s:%s:shell\n", file, name);
+		os_pclose(f);
+		log_tag("device:%s:%s:spawn\n", file, name);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = pclose(f);
+	ret = os_pclose(f);
 
 	log_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
-	if (ret == -1) {
+	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:shell\n", file, name);
-		log_fatal(errno, "Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
+		log_tag("device:%s:%s:abort\n", file, name);
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", smartctl_path, extra_args);
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s' (not exited).\n", smartctl_path, file);
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", smartctl_path, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1650,19 +1844,21 @@ retry:
 		 *
 		 * In such conditions we retry using the "sat" type, that often allows to proceed.
 		 */
-		if (ret == 2) {
-			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd) / sizeof(cmd[0]), L"\"%lssmartctl.exe\" -s standby,now -d sat %s", windows_exedir(), file);
-
+		if (WEXITSTATUS(ret) == 2) {
 			++count;
 			goto retry;
 		}
 	}
 
-	if (ret != 0) {
+	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
-		log_tag("device:%s:%s:exit:%d\n", file, name, ret);
-		log_fatal(errno, "Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
+		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
+		if (smartctl[0] && count == 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", smartctl_path, extra_args, WEXITSTATUS(ret));
+		else if (count != 0)
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s' with return code %xh.\n", smartctl_path, file, WEXITSTATUS(ret));
+		else
+			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", smartctl_path, file, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}

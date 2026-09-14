@@ -59,14 +59,10 @@ int os_signal_interrupt(void);
  * This structure encapsulates a standard buffered I/O stream tied to the
  * redirected standard output of a child process spawned via os_popen().
  */
-#ifdef __MINGW32__
-#define OS_FILE FILE
-#else
 typedef struct OS_FILE {
 	FILE* fp; /**< Standard I/O buffered stream wrapper. */
-	pid_t pid; /**< Process ID of the child process. */
+	pid_t pid; /**< Process reference of the child process. PID on Unix, process HANDLE on Windows. */
 } OS_FILE;
-#endif
 
 /**
  * Spawns a child process and opens a buffered stream to read its stdout.
@@ -74,15 +70,19 @@ typedef struct OS_FILE {
  * This function acts as a safer alternative to standard popen(), accepting an
  * explicit argument vector rather than evaluating a shell command string.
  *
- * The child process is completely isolated in its own process group (via setpgid)
- * with its stdin and stderr redirected to /dev/null. The underlying pipe is
- * created with O_CLOEXEC set to prevent leakage across concurrent forks.
+ * Standard input and standard error are discarded. Standard output is connected
+ * to a pipe exposed through the returned buffered stream. Process creation and
+ * argument serialization are delegated to the platform os_spawn() implementation.
+ *
+ * The stream is opened in text mode on all platforms (setting O_TEXT on Windows),
+ * ensuring that CRLF (\r\n) line endings emitted by Windows processes are automatically
+ * translated to LF (\n). Callers reading with os_fgets() can assume \n across platforms.
  *
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
  *
- * \param argv A NULL-terminated array of strings representing the argument vector.
+ * \param argv A 0-terminated array of strings representing the argument vector.
  *             argv[0] must contain the absolute path to the verified executable.
- * \return A pointer to an initialized OS_FILE structure on success, or NULL on failure.
+ * \return A pointer to an initialized OS_FILE structure on success, or 0 on failure.
  */
 OS_FILE* os_popen(const char** argv);
 
@@ -94,11 +94,15 @@ OS_FILE* os_popen(const char** argv);
  * or an end-of-file (EOF) condition is encountered. A terminating null
  * character is appended.
  *
+ * Because os_popen() configures the stream in text mode, lines are uniformly
+ * terminated with \n (or end at EOF) without trailing \r carriage returns,
+ * even on Windows.
+ *
  * \param s Pointer to an array of chars where the string read is stored.
  * \param size Maximum number of characters to be read (including the null character).
  * \param stream Pointer to the OS_FILE tracking context.
  * \return On success, returns the buffer pointer s. If EOF is reached or a read
- *         error occurs before any characters are read, returns NULL.
+ *         error occurs before any characters are read, returns 0.
  */
 char* os_fgets(char* s, int size, OS_FILE* stream);
 
@@ -106,8 +110,8 @@ char* os_fgets(char* s, int size, OS_FILE* stream);
  * Closes an execution stream and reaps the associated child process.
  *
  * Closes the underlying buffered standard I/O stream, releases the allocated
- * tracking context container, and blocks until the associated child process
- * terminates to prevent the creation of zombie processes.
+ * tracking context container, and waits until the associated child process
+ * terminates to collect its exit status and release its process resources.
  *
  * \param stream Pointer to the active OS_FILE context to close and free.
  * \return The termination status of the child process on success, or -1 on failure.
@@ -119,8 +123,14 @@ int os_pclose(OS_FILE* stream);
  *
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
  *
+ * Line Ending Semantics:
+ * When stdout_read_fd or stderr_read_fd are captured, the resulting file descriptors are opened in raw
+ * binary mode (O_BINARY on Windows) without CRLF-to-LF translation. Callers that read directly from
+ * these descriptors must explicitly handle \r\n line terminators on Windows (or switch mode via _setmode()).
+ * For automatic \r\n to \n translation, use os_popen() and os_fgets().
+ *
  * Process Reference Slots (pid_slot):
- * If pid_slot is not NULL, process creation and the resulting process reference are published through it
+ * If pid_slot is not 0, process creation and the resulting process reference are published through it
  * to enable safe, race-free process tracking and termination (os_term, os_kill) across concurrent threads.
  * If os_kill() was called on pid_slot, process creation is rejected immediately and this function
  * returns -1 with errno set to ECANCELED without spawning a child process. In contrast, os_term() on an
@@ -128,10 +138,10 @@ int os_pclose(OS_FILE* stream);
  * The same pid_slot pointer should be passed to os_wait() to unpublish it when the process terminates.
  *
  * \param argv Array of command line arguments.
- * \param stdout_read_fd Pointer to store file descriptor for stdout, or NULL to redirect to /dev/null.
- * \param stderr_read_fd Pointer to store file descriptor for stderr, or NULL to redirect to /dev/null.
- * \param run_as_user User to run script as (NULL for current user).
- * \param pid_slot Optional pointer used to publish the process reference, or NULL if concurrent termination is not required.
+ * \param stdout_read_fd Pointer to store file descriptor for stdout, or 0 to redirect to /dev/null.
+ * \param stderr_read_fd Pointer to store file descriptor for stderr, or 0 to redirect to /dev/null.
+ * \param run_as_user User to run script as (0 for current user).
+ * \param pid_slot Optional pointer used to publish the process reference, or 0 if concurrent termination is not required.
  * \return Process reference of spawned process, or -1 on failure.
  */
 pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char* run_as_user, pid_t* pid_slot);
@@ -157,12 +167,12 @@ uint64_t os_slot_pid(const pid_t* pid_slot);
 
 /**
  * Wait for the child process to terminate.
- * If pid_slot is not NULL, the process reference is unpublished before this function returns.
+ * If pid_slot is not 0, the process reference is unpublished before this function returns.
  * This function does not release the process reference returned by os_spawn().
  * The caller must eventually call os_dispose().
  * \param pid Process reference returned by os_spawn().
  * \param status Pointer to store the exit status.
- * \param pid_slot Optional pointer previously passed to os_spawn(), or NULL if the process was not published.
+ * \param pid_slot Optional pointer previously passed to os_spawn(), or 0 if the process was not published.
  * \return Child process reference on success, -1 on failure.
  */
 pid_t os_wait(pid_t pid, int* status, pid_t* pid_slot);
@@ -209,16 +219,17 @@ int os_kill(pid_t* pid_slot);
 /**
  * Fork and execute a verified executable, discarding all I/O.
  *
- * Spawns @argv[0] in a new process with stdin, stdout and stderr all
+ * Spawns @argv[0] via os_spawn() in a new process with stdin, stdout and stderr all
  * redirected to /dev/null. Use this for fire-and-forget tasks where the
- * child's output is not needed.
+ * child's output is not needed. Because all I/O streams are discarded, no stream
+ * or line-ending translation is performed.
  *
  * The child is placed in its own process group (setpgid) to isolate it
  * from signals sent to the daemon's process group.
  *
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
  *
- * \param argv NULL-terminated argument vector. argv[0] must be the absolute path
+ * \param argv 0-terminated argument vector. argv[0] must be the absolute path
  *             to the executable.
  * \return The child exit status on success, or -1 on failure.
  */
@@ -227,13 +238,13 @@ int os_spawn_and_wait(const char** argv);
 /**
  * Execute a system command with optional user context and input.
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
- * If pid_slot is not NULL, the child process is published for concurrent termination while blocked.
+ * If pid_slot is not 0, the child process is published for concurrent termination while blocked.
  * If os_kill() was called on pid_slot, process creation is rejected immediately and this function
  * returns -1 with errno set to ECANCELED without executing the command.
  * \param command Command to execute.
- * \param run_as_user User to run command as (NULL for current user).
- * \param stdin_text Text to provide as stdin (NULL for no input).
- * \param pid_slot Optional pointer to publish the process reference while active, or NULL.
+ * \param run_as_user User to run command as (0 for current user).
+ * \param stdin_text Text to provide as stdin (0 for no input).
+ * \param pid_slot Optional pointer to publish the process reference while active, or 0.
  * \return Exit status of command, or -1 on failure.
  */
 int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot);
@@ -241,13 +252,13 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 /**
  * Execute a script file with specified user context.
  * The caller is expected to call os_privileges_acquire() before this operation if permission is needed.
- * If pid_slot is not NULL, the child process is published for concurrent termination while blocked.
+ * If pid_slot is not 0, the child process is published for concurrent termination while blocked.
  * If os_kill() was called on pid_slot, process creation is rejected immediately and this function
  * returns -1 with errno set to ECANCELED without executing the script.
  * \param argv Array of command line arguments.
- * \param envp Environment variables (NULL-terminated list of strings).
- * \param run_as_user User to run script as (NULL for current user).
- * \param pid_slot Optional pointer to publish the process reference while active, or NULL.
+ * \param envp Environment variables (0-terminated list of strings).
+ * \param run_as_user User to run script as (0 for current user).
+ * \param pid_slot Optional pointer to publish the process reference while active, or 0.
  * \return Exit status of script, or -1 on failure.
  */
 int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot);

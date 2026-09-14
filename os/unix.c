@@ -1524,10 +1524,12 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 /**
  * os_spawn() - Fork and execute a verified executable, capturing stdout and/or stderr.
  *
- * Spawns @argv[0] in a new process. If @stdout_read_fd is not NULL, stdout is connected
- * to a pipe whose read end is returned in @stdout_read_fd. If @stderr_read_fd is not NULL,
+ * Spawns @argv[0] in a new process. If @stdout_read_fd is not 0, stdout is connected
+ * to a pipe whose read end is returned in @stdout_read_fd. If @stderr_read_fd is not 0,
  * stderr is connected to a pipe whose read end is returned in @stderr_read_fd.
  * Otherwise, they are redirected to /dev/null. stdin is always redirected to /dev/null.
+ *
+ * The captured descriptors are raw binary file descriptors without CRLF translation.
  *
  * The child is placed in its own process group (setpgid) to isolate it from signals
  * sent to the daemon's process group.

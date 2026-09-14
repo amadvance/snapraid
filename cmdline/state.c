@@ -1202,8 +1202,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			tommy_list_insert_tail(&state->extralist, &extra->node, extra);
 		} else if (strcmp(tag, "smartctl") == 0) {
 			char custom[PATH_MAX];
-			char parsed_smartctl[SMART_MAX];
-			char parsed_smartctl_info[SMART_MAX];
+			char parsed_smartctl[SMARTCTL_MAX];
+			char parsed_smartctl_info[SMARTCTL_MAX];
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
