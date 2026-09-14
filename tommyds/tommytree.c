@@ -3,262 +3,359 @@
 
 #include "tommytree.h"
 
-#include <assert.h> /* for assert */
-
 /******************************************************************************/
-/* tree */
 
-TOMMY_API void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp)
+/**
+ * The parent pointer and the AVL balance factor share the index field.
+ * tommy_tree_node is pointer aligned, leaving its two least significant bits
+ * available for the balance factor.
+ */
+#define TOMMY_TREE_BALANCE_MASK ((tommy_size_t)3)
+#define TOMMY_TREE_BALANCE_LEFT ((tommy_size_t)1)
+#define TOMMY_TREE_BALANCE_RIGHT ((tommy_size_t)2)
+
+tommy_inline int tommy_tree_balance_get(tommy_tree_node* node)
 {
-	tree->root = 0;
-	tree->count = 0;
-	tree->cmp = cmp;
+	tommy_size_t balance = node->index & TOMMY_TREE_BALANCE_MASK;
+
+	if (balance == TOMMY_TREE_BALANCE_LEFT)
+		return -1;
+	if (balance == TOMMY_TREE_BALANCE_RIGHT)
+		return 1;
+	return 0;
 }
 
-static tommy_ssize_t tommy_tree_delta(tommy_tree_node* root)
+tommy_inline void tommy_tree_balance_set(tommy_tree_node* node, int balance)
 {
-	tommy_ssize_t left_height = root->prev ? root->prev->index : 0;
-	tommy_ssize_t right_height = root->next ? root->next->index : 0;
+	tommy_size_t value = 0;
 
-	return left_height - right_height;
+	if (balance < 0)
+		value = TOMMY_TREE_BALANCE_LEFT;
+	else if (balance > 0)
+		value = TOMMY_TREE_BALANCE_RIGHT;
+
+	node->index = (node->index & ~TOMMY_TREE_BALANCE_MASK) | value;
 }
 
-/* AVL tree operations */
-static tommy_tree_node* tommy_tree_balance(tommy_tree_node*);
+tommy_inline void tommy_tree_parent_set(tommy_tree_node* node, tommy_tree_node* parent)
+{
+	node->index = (tommy_size_t)(tommy_uintptr_t)parent | (node->index & TOMMY_TREE_BALANCE_MASK);
+}
 
-static tommy_tree_node* tommy_tree_rotate_left(tommy_tree_node* root)
+tommy_inline void tommy_tree_replace(tommy_tree* tree, tommy_tree_node* root, tommy_tree_node* node)
+{
+	tommy_tree_node* parent = tommy_tree_parent(root);
+
+	if (!parent)
+		tree->root = node;
+	else if (parent->prev == root)
+		parent->prev = node;
+	else {
+		parent->next = node;
+	}
+
+	if (node)
+		tommy_tree_parent_set(node, parent);
+}
+
+tommy_inline tommy_tree_node* tommy_tree_rotate_left(tommy_tree* tree, tommy_tree_node* root)
 {
 	tommy_tree_node* next = root->next;
 
+	tommy_tree_replace(tree, root, next);
 	root->next = next->prev;
+	if (root->next)
+		tommy_tree_parent_set(root->next, root);
 
-	next->prev = tommy_tree_balance(root);
+	next->prev = root;
+	tommy_tree_parent_set(root, next);
 
-	return tommy_tree_balance(next);
+	return next;
 }
 
-static tommy_tree_node* tommy_tree_rotate_right(tommy_tree_node* root)
+tommy_inline tommy_tree_node* tommy_tree_rotate_right(tommy_tree* tree, tommy_tree_node* root)
 {
 	tommy_tree_node* prev = root->prev;
 
+	tommy_tree_replace(tree, root, prev);
 	root->prev = prev->next;
+	if (root->prev)
+		tommy_tree_parent_set(root->prev, root);
 
-	prev->next = tommy_tree_balance(root);
+	prev->next = root;
+	tommy_tree_parent_set(root, prev);
 
-	return tommy_tree_balance(prev);
+	return prev;
 }
 
-static tommy_tree_node* tommy_tree_move_right(tommy_tree_node* root, tommy_tree_node* node)
+tommy_inline void tommy_tree_insert_balance(tommy_tree* tree, tommy_tree_node* node)
 {
-	if (!root)
-		return node;
+	tommy_tree_node* parent = tommy_tree_parent(node);
 
-	root->next = tommy_tree_move_right(root->next, node);
+	while (parent) {
+		int balance = tommy_tree_balance_get(parent);
 
-	return tommy_tree_balance(root);
-}
+		if (node == parent->prev)
+			--balance;
+		else {
+			++balance;
+		}
 
-static tommy_tree_node* tommy_tree_balance(tommy_tree_node* root)
-{
-	tommy_ssize_t delta = tommy_tree_delta(root);
+		if (balance == 0) {
+			tommy_tree_balance_set(parent, balance);
+			return;
+		}
 
-	if (delta < -1) {
-		if (tommy_tree_delta(root->next) > 0)
-			root->next = tommy_tree_rotate_right(root->next);
-		return tommy_tree_rotate_left(root);
+		if (balance >= -1 && balance <= 1) {
+			tommy_tree_balance_set(parent, balance);
+			node = parent;
+			parent = tommy_tree_parent(parent);
+			continue;
+		}
+
+		if (balance == -2) {
+			tommy_tree_node* left = parent->prev;
+			int left_balance = tommy_tree_balance_get(left);
+
+			if (left_balance < 0) {
+				tommy_tree_rotate_right(tree, parent);
+				tommy_tree_balance_set(parent, 0);
+				tommy_tree_balance_set(left, 0);
+			} else {
+				tommy_tree_node* middle = left->next;
+				int middle_balance = tommy_tree_balance_get(middle);
+
+				tommy_tree_rotate_left(tree, left);
+				tommy_tree_rotate_right(tree, parent);
+				tommy_tree_balance_set(parent, middle_balance < 0 ? 1 : 0);
+				tommy_tree_balance_set(left, middle_balance > 0 ? -1 : 0);
+				tommy_tree_balance_set(middle, 0);
+			}
+		} else {
+			tommy_tree_node* right = parent->next;
+			int right_balance = tommy_tree_balance_get(right);
+
+			if (right_balance > 0) {
+				tommy_tree_rotate_left(tree, parent);
+				tommy_tree_balance_set(parent, 0);
+				tommy_tree_balance_set(right, 0);
+			} else {
+				tommy_tree_node* middle = right->prev;
+				int middle_balance = tommy_tree_balance_get(middle);
+
+				tommy_tree_rotate_right(tree, right);
+				tommy_tree_rotate_left(tree, parent);
+				tommy_tree_balance_set(parent, middle_balance > 0 ? -1 : 0);
+				tommy_tree_balance_set(right, middle_balance < 0 ? 1 : 0);
+				tommy_tree_balance_set(middle, 0);
+			}
+		}
+
+		return;
 	}
-
-	if (delta > 1) {
-		if (tommy_tree_delta(root->prev) < 0)
-			root->prev = tommy_tree_rotate_left(root->prev);
-		return tommy_tree_rotate_right(root);
-	}
-
-	/* recompute key */
-	root->index = 0;
-
-	if (root->prev && root->prev->index > root->index)
-		root->index = root->prev->index;
-
-	if (root->next && root->next->index > root->index)
-		root->index = root->next->index;
-
-	/* count itself */
-	root->index += 1;
-
-	return root;
-}
-
-static tommy_tree_node* tommy_tree_insert_node(tommy_compare_func* cmp, tommy_tree_node* root, tommy_tree_node** let)
-{
-	int c;
-
-	if (!root)
-		return *let;
-
-	c = cmp((*let)->data, root->data);
-
-	if (c < 0) {
-		root->prev = tommy_tree_insert_node(cmp, root->prev, let);
-		return tommy_tree_balance(root);
-	}
-
-	if (c > 0) {
-		root->next = tommy_tree_insert_node(cmp, root->next, let);
-		return tommy_tree_balance(root);
-	}
-
-	/* already present, set the return pointer */
-	*let = root;
-
-	return root;
 }
 
 TOMMY_API void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)
 {
-	tommy_tree_node* insert = node;
+	tommy_tree_node* parent = 0;
+	tommy_tree_node** link = &tree->root;
 
-	insert->data = data;
-	insert->prev = 0;
-	insert->next = 0;
-	insert->index = 0;
+	node->data = data;
+	node->prev = 0;
+	node->next = 0;
+	node->index = 0;
 
-	tree->root = tommy_tree_insert_node(tree->cmp, tree->root, &insert);
+	while (*link) {
+		int cmp = tree->cmp(data, (*link)->data);
 
-	if (insert == node)
-		++tree->count;
-
-	return insert->data;
-}
-
-static tommy_tree_node* tommy_tree_remove_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data, tommy_tree_node** let)
-{
-	int c;
-
-	if (!root)
-		return 0;
-
-	c = cmp(data, root->data);
-
-	if (c < 0) {
-		root->prev = tommy_tree_remove_node(cmp, root->prev, data, let);
-		return tommy_tree_balance(root);
+		parent = *link;
+		if (cmp < 0)
+			link = &parent->prev;
+		else if (cmp > 0)
+			link = &parent->next;
+		else
+			return parent->data;
 	}
 
-	if (c > 0) {
-		root->next = tommy_tree_remove_node(cmp, root->next, data, let);
-		return tommy_tree_balance(root);
+	node->index = (tommy_size_t)(tommy_uintptr_t)parent;
+	*link = node;
+	++tree->count;
+
+	tommy_tree_insert_balance(tree, node);
+
+	return node->data;
+}
+
+tommy_inline void tommy_tree_remove_balance(tommy_tree* tree, tommy_tree_node* node, tommy_bool_t left_shrunk)
+{
+	while (node) {
+		int balance = tommy_tree_balance_get(node);
+
+		if (left_shrunk)
+			++balance;
+		else
+			--balance;
+
+		if (balance == -1 || balance == 1) {
+			tommy_tree_balance_set(node, balance);
+			return;
+		}
+
+		if (balance == 0) {
+			tommy_tree_node* parent;
+
+			tommy_tree_balance_set(node, balance);
+			parent = tommy_tree_parent(node);
+			if (!parent)
+				return;
+			left_shrunk = node == parent->prev;
+			node = parent;
+			continue;
+		}
+
+		if (balance == -2) {
+			tommy_tree_node* left = node->prev;
+			int left_balance = tommy_tree_balance_get(left);
+			tommy_tree_node* root;
+
+			if (left_balance <= 0) {
+				root = tommy_tree_rotate_right(tree, node);
+				if (left_balance == 0) {
+					tommy_tree_balance_set(node, -1);
+					tommy_tree_balance_set(left, 1);
+					return;
+				}
+				tommy_tree_balance_set(node, 0);
+				tommy_tree_balance_set(left, 0);
+			} else {
+				tommy_tree_node* middle = left->next;
+				int middle_balance = tommy_tree_balance_get(middle);
+
+				tommy_tree_rotate_left(tree, left);
+				root = tommy_tree_rotate_right(tree, node);
+				tommy_tree_balance_set(node, middle_balance < 0 ? 1 : 0);
+				tommy_tree_balance_set(left, middle_balance > 0 ? -1 : 0);
+				tommy_tree_balance_set(middle, 0);
+			}
+
+			node = tommy_tree_parent(root);
+			if (!node)
+				return;
+			left_shrunk = root == node->prev;
+			continue;
+		}
+
+		{
+			tommy_tree_node* right = node->next;
+			int right_balance = tommy_tree_balance_get(right);
+			tommy_tree_node* root;
+
+			if (right_balance >= 0) {
+				root = tommy_tree_rotate_left(tree, node);
+				if (right_balance == 0) {
+					tommy_tree_balance_set(node, 1);
+					tommy_tree_balance_set(right, -1);
+					return;
+				}
+				tommy_tree_balance_set(node, 0);
+				tommy_tree_balance_set(right, 0);
+			} else {
+				tommy_tree_node* middle = right->prev;
+				int middle_balance = tommy_tree_balance_get(middle);
+
+				tommy_tree_rotate_right(tree, right);
+				root = tommy_tree_rotate_left(tree, node);
+				tommy_tree_balance_set(node, middle_balance > 0 ? -1 : 0);
+				tommy_tree_balance_set(right, middle_balance < 0 ? 1 : 0);
+				tommy_tree_balance_set(middle, 0);
+			}
+
+			node = tommy_tree_parent(root);
+			if (!node)
+				return;
+			left_shrunk = root == node->prev;
+		}
 	}
-
-	/* found */
-	*let = root;
-
-	return tommy_tree_move_right(root->prev, root->next);
-}
-
-TOMMY_API void* tommy_tree_remove(tommy_tree* tree, void* data)
-{
-	tommy_tree_node* node = 0;
-
-	tree->root = tommy_tree_remove_node(tree->cmp, tree->root, data, &node);
-
-	if (!node)
-		return 0;
-
-	--tree->count;
-
-	return node->data;
-}
-
-static tommy_tree_node* tommy_tree_search_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data)
-{
-	int c;
-
-	if (!root)
-		return 0;
-
-	c = cmp(data, root->data);
-
-	if (c < 0)
-		return tommy_tree_search_node(cmp, root->prev, data);
-
-	if (c > 0)
-		return tommy_tree_search_node(cmp, root->next, data);
-
-	return root;
-}
-
-TOMMY_API void* tommy_tree_search(tommy_tree* tree, void* data)
-{
-	tommy_tree_node* node = tommy_tree_search_node(tree->cmp, tree->root, data);
-
-	if (!node)
-		return 0;
-
-	return node->data;
-}
-
-TOMMY_API void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg)
-{
-	tommy_tree_node* node = tommy_tree_search_node(cmp, tree->root, cmp_arg);
-
-	if (!node)
-		return 0;
-
-	return node->data;
 }
 
 TOMMY_API void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node)
 {
-	void* data = tommy_tree_remove(tree, node->data);
+	tommy_tree_node* parent;
+	tommy_bool_t left_shrunk;
+	void* data = node->data;
 
-	assert(data != 0);
+	if (!node->prev || !node->next) {
+		tommy_tree_node* child = node->prev ? node->prev : node->next;
+
+		parent = tommy_tree_parent(node);
+		left_shrunk = parent && node == parent->prev;
+		tommy_tree_replace(tree, node, child);
+	} else {
+		tommy_tree_node* next = node->next;
+
+		while (next->prev)
+			next = next->prev;
+
+		parent = tommy_tree_parent(next);
+		if (parent == node) {
+			tommy_tree_replace(tree, node, next);
+			next->prev = node->prev;
+			tommy_tree_parent_set(next->prev, next);
+			tommy_tree_balance_set(next, tommy_tree_balance_get(node));
+			parent = next;
+			left_shrunk = 0;
+		} else {
+			parent->prev = next->next;
+			if (parent->prev)
+				tommy_tree_parent_set(parent->prev, parent);
+
+			tommy_tree_replace(tree, node, next);
+			next->prev = node->prev;
+			next->next = node->next;
+			tommy_tree_parent_set(next->prev, next);
+			tommy_tree_parent_set(next->next, next);
+			tommy_tree_balance_set(next, tommy_tree_balance_get(node));
+			left_shrunk = 1;
+		}
+	}
+
+	--tree->count;
+	if (parent)
+		tommy_tree_remove_balance(tree, parent, left_shrunk);
 
 	return data;
 }
 
-static void tommy_tree_foreach_node(tommy_tree_node* root, tommy_foreach_func* func)
+TOMMY_API void tommy_tree_foreach_node(tommy_tree_node* root, tommy_foreach_func* func)
 {
-	tommy_tree_node* next;
+	while (root) {
+		tommy_tree_node* next;
 
-	if (!root)
-		return;
+		tommy_tree_foreach_node(root->prev, func);
 
-	tommy_tree_foreach_node(root->prev, func);
+		/* make a copy in case func is free() */
+		next = root->next;
 
-	/* make a copy in case func is free() */
-	next = root->next;
+		func(root->data);
 
-	func(root->data);
-
-	tommy_tree_foreach_node(next, func);
+		root = next;
+	}
 }
 
-TOMMY_API void tommy_tree_foreach(tommy_tree* tree, tommy_foreach_func* func)
+TOMMY_API void tommy_tree_foreach_arg_node(tommy_tree_node* root, tommy_foreach_arg_func* func, void* arg)
 {
-	tommy_tree_foreach_node(tree->root, func);
-}
+	while (root) {
+		tommy_tree_node* next;
 
-static void tommy_tree_foreach_arg_node(tommy_tree_node* root, tommy_foreach_arg_func* func, void* arg)
-{
-	tommy_tree_node* next;
+		tommy_tree_foreach_arg_node(root->prev, func, arg);
 
-	if (!root)
-		return;
+		/* make a copy in case func is free() */
+		next = root->next;
 
-	tommy_tree_foreach_arg_node(root->prev, func, arg);
+		func(arg, root->data);
 
-	/* make a copy in case func is free() */
-	next = root->next;
-
-	func(arg, root->data);
-
-	tommy_tree_foreach_arg_node(next, func, arg);
-}
-
-TOMMY_API void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void* arg)
-{
-	tommy_tree_foreach_arg_node(tree->root, func, arg);
+		root = next;
+	}
 }
 
 TOMMY_API tommy_size_t tommy_tree_memory_usage(tommy_tree* tree)
