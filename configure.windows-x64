@@ -1,4 +1,35 @@
+#!/bin/bash
+
+# Identify the original source directory
 DIR=$(dirname "$0")
-"$DIR/configure" --host=x86_64-w64-mingw32.static --build=$("$DIR/config.guess") "$@"
+# Resolve the absolute path of the source directory to prevent path ambiguity
+SRC_DIR=$(cd "$DIR" && pwd)
 
+# List of critical Autotools files to hide temporarily
+FILES_TO_HIDE=("config.status" "Makefile" "config.log")
+HIDDEN_FILES=()
 
+# Function to restore original files when the script finishes or exits
+restore_files() {
+    for file in "${HIDDEN_FILES[@]}"; do
+        if [ -f "$SRC_DIR/${file}.bak" ]; then
+            mv "$SRC_DIR/${file}.bak" "$SRC_DIR/$file"
+        fi
+    done
+}
+
+# Ensure files are restored under any exit condition (success, error, or interruption like Ctrl+C)
+trap restore_files EXIT INT TERM
+
+# 1. Mask the files in the original source directory
+for file in "${FILES_TO_HIDE[@]}"; do
+    if [ -f "$SRC_DIR/$file" ]; then
+        mv "$SRC_DIR/$file" "$SRC_DIR/${file}.bak"
+        HIDDEN_FILES+=("$file") # Keep track of files that were actually renamed
+    fi
+done
+
+# 2. Run the original configure command
+"$SRC_DIR/configure" --host=x86_64-w64-mingw32.static --build=$("$SRC_DIR/config.guess") "$@"
+
+# Note: The 'restore_files' function will automatically trigger here via the trap hook.
