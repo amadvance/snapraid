@@ -5076,12 +5076,6 @@ void state_read(struct snapraid_state* state)
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (!state->no_conf) {
-		log_tag("content:%s\n", esc_tag(path));
-		log_tag("content_info:read_unixtime:%" PRId64 "\n", (int64_t)st.st_mtime);
-		log_flush();
-	}
-
 	/* go further to check other content files */
 	while (node) {
 		char other_path[PATH_MAX];
@@ -5167,6 +5161,12 @@ void state_read(struct snapraid_state* state)
 	state_map(state);
 
 	state_content_check(state, path);
+
+	if (!state->no_conf) {
+		log_tag("content:%s\n", esc_tag(path));
+		log_tag("content_info:read_unixtime:%" PRId64 "\n", (int64_t)st.st_mtime);
+		log_flush();
+	}
 
 	/* mark that we read the content file, and it passed all the checks */
 	state->checked_read = 1;
