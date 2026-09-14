@@ -3382,7 +3382,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			u8tou16(conv, command),
 			NULL, NULL,
 			TRUE, /* inherit handles from the explicit list */
-			CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
+			CREATE_SUSPENDED | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
 			NULL, cwd,
 			&startup.si.StartupInfo, &pi
 		);
@@ -3438,7 +3438,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			u8tou16(conv, command),
 			NULL, NULL,
 			TRUE, /* inherit handles from the explicit list */
-			CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT,
+			CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT,
 			env, cwd,
 			&startup.si.StartupInfo, &pi
 		);
@@ -3464,6 +3464,30 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	/* close the read end in the parent immediately */
 	CloseHandle(stdin_read_handle);
+
+	/* assign the process to the global job object before allowing it to run */
+	if (os_job_handle != 0) {
+		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to assign command process to job object, errno=%s(%d)", strerror(errno), errno);
+			TerminateProcess(pi.hProcess, 1);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			CloseHandle(stdin_write_handle);
+			return -1;
+		}
+	}
+
+	/* resume the primary thread now that the process is assigned to the job object */
+	if (ResumeThread(pi.hThread) == (DWORD)-1) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to resume thread for command, errno=%s(%d)", strerror(errno), errno);
+		TerminateProcess(pi.hProcess, 1);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		CloseHandle(stdin_write_handle);
+		return -1;
+	}
 
 	/* write the string to the child's STDIN */
 	if (stdin_text != 0) {
@@ -3721,7 +3745,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	if (run_as_user == 0 || run_as_user[0] == 0) {
 		WCHAR* base_env = NULL;
 		WCHAR* combined_env = NULL;
-		DWORD creation_flags = CREATE_NO_WINDOW;
+		DWORD creation_flags = CREATE_SUSPENDED | CREATE_NO_WINDOW;
 
 		if (envp != NULL) {
 			base_env = GetEnvironmentStringsW();
@@ -3803,7 +3827,7 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 			cmd_buffer,
 			NULL, NULL,
 			FALSE, /* no need to inherit handles */
-			CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+			CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
 			combined_env ? combined_env : env, cwd,
 			&si, &pi
 		);
@@ -3817,6 +3841,28 @@ int os_script(char** argv, char** envp, const char* run_as_user)
 	if (!ret) {
 		windows_errno(GetLastError());
 		os_syslog(OS_LVL_INFO, "failed to create process '%s' for script, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		return -1;
+	}
+
+	/* assign the process to the global job object before allowing it to run */
+	if (os_job_handle != 0) {
+		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_INFO, "failed to assign script process to job object, errno=%s(%d)", strerror(errno), errno);
+			TerminateProcess(pi.hProcess, 1);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			return -1;
+		}
+	}
+
+	/* resume the primary thread now that the process is assigned to the job object */
+	if (ResumeThread(pi.hThread) == (DWORD)-1) {
+		windows_errno(GetLastError());
+		os_syslog(OS_LVL_INFO, "failed to resume thread for script, errno=%s(%d)", strerror(errno), errno);
+		TerminateProcess(pi.hProcess, 1);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
 		return -1;
 	}
 
