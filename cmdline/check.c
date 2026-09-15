@@ -2266,7 +2266,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
+				log_tag("error_data:%" PRIu64 ":%s:%s: Data error at position %" PRIu64 ", diff hash bits %u/%zu\n", i, disk->name, esc_tag(file->sub), file_pos, diff, BLOCK_HASH_SIZE * 8);
 				++silent_error;
 				continue;
 			}
@@ -2423,7 +2423,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* mark that the read parity is wrong, setting ptr to 0 */
 							buffer_recov[l] = 0;
 
-							log_tag("parity_error:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
+							log_tag("parity_error_data:%" PRIu64 ":%s: Data error, diff parity bits %u/%u\n", i, lev_config_name(l), diff, state->block_size * 8);
 							++silent_error;
 						}
 					}
@@ -2458,7 +2458,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size, state->opt.skip_fallocate);
 								if (ret == -1) {
 									/* LCOV_EXCL_START */
-									log_tag("%s:%" PRIu64 ":%s: Write error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
+									log_tag("parity_%s:%" PRIu64 ":%s: Write error. %s.\n", es(errno), i, lev_config_name(l), strerror(errno));
 									log_fatal_errno(errno, lev_config_name(l));
 									log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
@@ -2597,7 +2597,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%" PRIu64 ":%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%s:%s: Create ancestor error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2614,7 +2614,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%" PRIu64 ":%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%s:%s: Create error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2628,7 +2628,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error timing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%" PRIu64 ":%s:%s: Time error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%s:%s: Time error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2644,7 +2644,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error closing '%s%s'. %s.\n", disk->dir, file->sub, strerror(errno));
-					log_tag("empty_%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+					log_tag("empty_%s:%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2787,7 +2787,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
-					log_tag("%slink_%s:%" PRIu64 ":%s:%s: Create ancestor error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+					log_tag("%slink_%s:%s:%s: Create ancestor error. %s.\n", link, es(errno), disk->name, esc_tag(slink->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2801,7 +2801,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0 && errno != ENOENT) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error removing '%s%s'. %s.\n", disk->dir, slink->sub, strerror(errno));
-					log_tag("%slink_%s:%" PRIu64 ":%s:%s: Remove error. %s.\n", link, es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+					log_tag("%slink_%s:%s:%s: Remove error. %s.\n", link, es(errno), disk->name, esc_tag(slink->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2816,7 +2816,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
-						log_tag("hardlink_%s:%" PRIu64 ":%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+						log_tag("hardlink_%s:%s:%s: Hardlink error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping\n");
 
@@ -2832,7 +2832,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error writing symlink '%s' to '%s'. %s.\n", path, slink->linkto, strerror(errno));
-						log_tag("symlink_%s:%" PRIu64 ":%s:%s: Hardlink error. %s.\n", es(errno), i, disk->name, esc_tag(slink->sub), strerror(errno));
+						log_tag("symlink_%s:%s:%s: Hardlink error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), strerror(errno));
 						log_fatal_errno(errno, disk->name);
 						log_fatal(errno, "Stopping\n");
 
@@ -2894,7 +2894,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating ancestor '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
-					log_tag("dir_%s:%" PRIu64 ":%s:%s: Create ancestor error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
+					log_tag("dir_%s:%s:%s: Create ancestor error. %s.\n", es(errno), disk->name, esc_tag(dir->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 
@@ -2908,7 +2908,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0 && errno != EEXIST) {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error creating directory '%s%s'. %s.\n", disk->dir, dir->sub, strerror(errno));
-					log_tag("dir_%s:%" PRIu64 ":%s:%s: Create directory error. %s.\n", es(errno), i, disk->name, esc_tag(dir->sub), strerror(errno));
+					log_tag("dir_%s:%s:%s: Create directory error. %s.\n", es(errno), disk->name, esc_tag(dir->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping\n");
 

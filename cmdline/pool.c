@@ -457,7 +457,7 @@ void state_pool(struct snapraid_state* state)
 	else
 		msg_status("No link\n");
 
-	log_tag("summary:link_count::%u\n", count);
+	log_tag("summary:link_count:%u\n", count);
 	log_tag("summary:exit:ok\n");
 	log_flush();
 }

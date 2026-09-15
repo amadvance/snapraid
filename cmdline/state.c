@@ -1608,7 +1608,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	log_tag("blocksize:%u\n", state->block_size);
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		log_tag("data:%s:%s:%s\n", esc_tag(disk->name), esc_tag(disk->mount_point), disk->uuid);
+		log_tag("data:%s:%s:%s\n", disk->name, esc_tag(disk->mount_point), disk->uuid);
 	}
 	for (i = state->extralist; i != 0; i = i->next) {
 		struct snapraid_extra* extra = i->data;
@@ -1947,8 +1947,8 @@ void state_refresh(struct snapraid_state* state)
 		disk->total_blocks = map->total_blocks;
 		disk->free_blocks = map->free_blocks;
 
-		log_tag("fsinfo_data_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", esc_tag(disk->name), disk->total_blocks * bs, disk->free_blocks * bs, disk->fstype, disk->fslabel);
-		log_tag("fsinfo_data:%s:%" PRIu64 ":%" PRIu64 "\n", esc_tag(disk->name), disk->total_blocks * bs, disk->free_blocks * bs);
+		log_tag("fsinfo_data_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", disk->name, disk->total_blocks * bs, disk->free_blocks * bs, disk->fstype, esc_tag(disk->fslabel));
+		log_tag("fsinfo_data:%s:%" PRIu64 ":%" PRIu64 "\n", disk->name, disk->total_blocks * bs, disk->free_blocks * bs);
 	}
 
 	/* for all parities */
@@ -1993,9 +1993,9 @@ void state_refresh(struct snapraid_state* state)
 			state->parity[l].free_blocks += split_free_blocks;
 
 			if (s == 0)
-				log_tag("fsinfo_parity_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", lev_config_name(l), split_total_blocks * bs, split_free_blocks * bs, split->fstype, split->fslabel);
+				log_tag("fsinfo_parity_split:%s:%" PRIu64 ":%" PRIu64 ":%s:%s\n", lev_config_name(l), split_total_blocks * bs, split_free_blocks * bs, split->fstype, esc_tag(split->fslabel));
 			else
-				log_tag("fsinfo_parity_split:%s/%u:%" PRIu64 ":%" PRIu64 ":%s:%s\n", lev_config_name(l), s, split_total_blocks * bs, split_free_blocks * bs, split->fstype, split->fslabel);
+				log_tag("fsinfo_parity_split:%s/%u:%" PRIu64 ":%" PRIu64 ":%s:%s\n", lev_config_name(l), s, split_total_blocks * bs, split_free_blocks * bs, split->fstype, esc_tag(split->fslabel));
 		}
 
 		log_tag("fsinfo_parity:%s:%" PRIu64 ":%" PRIu64 "\n", lev_config_name(l), state->parity[l].total_blocks * bs, state->parity[l].free_blocks * bs);
@@ -2923,7 +2923,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			log_tag("content_info:dealloc:%s:%" PRIu64 "\n", esc_tag(disk->name), v_count);
+			log_tag("content_info:dealloc:%s:%" PRIu64 "\n", disk->name, v_count);
 
 			for (v_pos = 0; v_pos < v_count; ++v_pos) {
 				char sub[PATH_MAX];
@@ -2988,7 +2988,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* allocate the file */
 				struct snapraid_dealloc* dealloc = dealloc_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec);
 
-				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
+				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", disk->name, esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
 				/* read all hashes */
 				for (block_off_t k = 0; k < dealloc->blockmax; ++k) {
@@ -4342,7 +4342,7 @@ static void* state_write_thread(void* arg)
 
 			sputb64(v_count, f);
 			if (context->first)
-				log_tag("content_info:dealloc:%s:%" PRIu64 "\n", esc_tag(disk->name), v_count);
+				log_tag("content_info:dealloc:%s:%" PRIu64 "\n", disk->name, v_count);
 
 			/* for each file */
 			for (j = tommy_list_head(&disk->dealloclist); j != 0; j = j->next) {
@@ -4358,7 +4358,7 @@ static void* state_write_thread(void* arg)
 					sputb32(dealloc->mtime_nsec + 1, f);
 
 				if (context->first)
-					log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", esc_tag(disk->name), esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
+					log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", disk->name, esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
 				/* deallocated hashes are already contiguous in memory */
 				swrite(dealloc->blockhash, (size_t)dealloc->blockmax * BLOCK_HASH_SIZE, f);
@@ -4372,7 +4372,7 @@ static void* state_write_thread(void* arg)
 			}
 		} else {
 			if (context->first)
-				log_tag("content_info:dealloc:%s:0\n", esc_tag(disk->name));
+				log_tag("content_info:dealloc:%s:0\n", disk->name);
 		}
 	}
 
