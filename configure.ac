@@ -423,4 +423,7 @@ AC_CONFIG_FILES([makerpm.sh], [chmod a+x makerpm.sh])
 AC_CONFIG_FILES([makearch.sh], [chmod a+x makearch.sh])
 AC_CONFIG_FILES([makearchdist.sh], [chmod a+x makearchdist.sh])
 
+# Ensure object subdirectories exist for out-of-tree builds without depcomp
+AC_CONFIG_COMMANDS([mkdir-obj], [$MKDIR_P cmdline raid os tommyds])
+
 AC_OUTPUT
