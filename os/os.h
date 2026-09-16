@@ -274,6 +274,18 @@ int os_validate_exec_input(const char* str);
 /* fs */
 
 /**
+ * Make a pathname absolute using the current working directory.
+ *
+ * The pathname is not required to exist and symbolic links are not resolved.
+ * The resolved_path buffer must be at least PATH_MAX bytes and must not overlap path.
+ *
+ * \param path Input pathname.
+ * \param resolved_path Destination buffer.
+ * \return resolved_path on success, 0 on failure with errno set.
+ */
+char* absolutepath(const char* restrict path, char* restrict resolved_path);
+
+/**
  * Invalid inode number.
  *
  * Value 0 is used to represent an invalid or unavailable inode number.

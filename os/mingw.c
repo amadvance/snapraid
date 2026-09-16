@@ -2408,6 +2408,40 @@ char* windows_realpath(const char* path, char* resolved_path)
 /****************************************************************************/
 /* fs */
 
+char* absolutepath(const char* restrict path, char* restrict resolved_path)
+{
+	if (path == 0 || path[0] == 0 || resolved_path == 0) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	wchar_t wpath[CONV_MAX];
+	wchar_t wfull[CONV_MAX];
+
+	if (!u8tou16_mayfail(wpath, CONV_MAX, path, strlen(path) + 1, 0)) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	DWORD len = GetFullPathNameW(wpath, CONV_MAX, wfull, 0);
+	if (len == 0) {
+		windows_errno(GetLastError());
+		return 0;
+	}
+
+	if (len >= CONV_MAX) {
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+
+	if (!u16tou8_mayfail(resolved_path, CONV_MAX, wfull, len + 1, 0)) {
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+
+	return resolved_path;
+}
+
 static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
 {
 	STARTING_VCN_INPUT_BUFFER svib;

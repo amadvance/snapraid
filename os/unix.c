@@ -122,6 +122,42 @@ const char* os_signal_name(int sig)
 /****************************************************************************/
 /* fs */
 
+char* absolutepath(const char* restrict path, char* restrict resolved_path)
+{
+	if (path == 0 || path[0] == 0 || resolved_path == 0) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	size_t path_len = strlen(path);
+	if (path_len >= PATH_MAX) {
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+
+	if (path[0] == '/') {
+		memcpy(resolved_path, path, path_len + 1);
+		return resolved_path;
+	}
+
+	if (getcwd(resolved_path, PATH_MAX) == 0)
+		return 0;
+
+	size_t resolved_len = strlen(resolved_path);
+	int separator = resolved_len != 0 && resolved_path[resolved_len - 1] != '/';
+
+	if (resolved_len + separator + path_len + 1 > PATH_MAX) {
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+
+	if (separator)
+		resolved_path[resolved_len++] = '/';
+	memcpy(resolved_path + resolved_len, path, path_len + 1);
+
+	return resolved_path;
+}
+
 #if !HAVE_EACCESS
 int eaccess(const char* pathname, int mode)
 {
