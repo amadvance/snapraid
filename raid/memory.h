@@ -92,10 +92,16 @@ void *raid_malloc(size_t size, void **freeptr);
 void *raid_malloc_align(size_t size, size_t align_size, void **freeptr);
 
 /**
- * Aligned vector allocation.
+ * Cache-displaced vector allocation.
  *
  * Allocates an array of @n pointers, each one pointing to a block of
  * the specified @size with optimal L1 displacement and stride perturbation.
+ *
+ * The first block is aligned to RAID_MALLOC_ALIGN. If @size is a multiple of
+ * 64, every block is aligned to at least 64 bytes because the displacement and
+ * stride perturbation are also multiples of 64. Later blocks are deliberately
+ * not realigned to RAID_MALLOC_ALIGN, as that would alter their cache-set
+ * displacement.
  *
  * Freeing requires two calls: free(*freeptr) for the data buffer,
  * and free(v) for the pointer vector.
@@ -103,12 +109,26 @@ void *raid_malloc_align(size_t size, size_t align_size, void **freeptr);
 void **raid_malloc_vector(int n, size_t size, void **freeptr);
 
 /**
- * Arbitrary aligned vector allocation.
+ * Base-aligned vector allocation with caller-defined spacing.
+ *
+ * Allocates an array of @n pointers. The first block, which is the base of the
+ * usable data area, is aligned to @base_align_size bytes. Subsequent block
+ * addresses are obtained by adding @size, @displacement_size, and an integer
+ * multiple of @wrap_size; they are not individually realigned.
+ *
+ * All blocks retain @base_align_size alignment if:
+ *
+ *   (@size + @displacement_size) % @base_align_size == 0
+ *   @wrap_size % @base_align_size == 0
+ *
+ * @base_align_size must be greater than 0. Callers requiring a specific
+ * alignment for every block must select spacing values that satisfy these
+ * conditions.
  *
  * Freeing requires two calls: free(*freeptr) for the data buffer,
  * and free(v) for the pointer vector.
  */
-void **raid_malloc_vector_align(int n, size_t size, size_t align_size, size_t displacement_size, size_t wrap_size, void **freeptr);
+void **raid_malloc_vector_align(int n, size_t size, size_t base_align_size, size_t displacement_size, size_t wrap_size, void **freeptr);
 
 /**
  * Fills the memory vector with pseudo-random data based on the specified seed.

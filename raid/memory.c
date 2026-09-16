@@ -120,7 +120,7 @@ static const unsigned STRIDE_NOISE[16] = {
 	1, 4, 0, 7, 3, 6, 2, 5
 };
 
-void **raid_malloc_vector_align(int n, size_t size, size_t align_size, size_t displacement_size, size_t wrap_size, void **freeptr)
+void **raid_malloc_vector_align(int n, size_t size, size_t base_align_size, size_t displacement_size, size_t wrap_size, void **freeptr)
 {
 	void **v;
 	uint8_t *va;
@@ -138,10 +138,10 @@ void **raid_malloc_vector_align(int n, size_t size, size_t align_size, size_t di
 	/*
 	 * The allocated buffer must safely hold the disk chunks, the L1 fixed displacement,
 	 * and the variable STRIDE_NOISE. Because the maximum noise multiplier in the array
-	 * is 7, reserving 8 * RAID_WRAP_SIZE per disk guarantees the pointer will never overflow
+	 * is 7, reserving 8 * wrap_size per disk guarantees the pointer will never overflow
 	 * the allocated memory block.
 	 */
-	va = raid_malloc_align(n * (size + displacement_size + 8 * wrap_size), align_size, freeptr);
+	va = raid_malloc_align(n * (size + displacement_size + 8 * wrap_size), base_align_size, freeptr);
 	if (!va) {
 		/* LCOV_EXCL_START */
 		free(v);
