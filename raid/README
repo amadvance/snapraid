@@ -37,29 +37,33 @@ library startup before normal RAID operations.
     Computes 'np' parity blocks from 'nd' data blocks. Vector 'v' contains
     'nd + np' block pointers (data blocks v[0..nd-1], parity blocks
     v[nd..nd+np-1]). Each block must be aligned to a 64-byte boundary.
-    Data blocks are read-only; parity blocks are written. 'streaming' must be
-    either 0 or 1. If it is 1, non-temporal streaming stores are used where
-    supported to avoid polluting the CPU cache when parity is written directly
-    to disk. If it is 0, normal cached stores are used.
+    Data entries are used only for reading and may reference read-only memory.
+    Parity entries are outputs and must reference writable memory.
+    'streaming' must be either 0 or 1. If it is 1, non-temporal streaming stores
+    are used where supported to avoid polluting the CPU cache when parity is
+    written directly to disk. If it is 0, normal cached stores are used.
 
   void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
     Recovers 'nr' failed blocks (data or parity) listed in sorted index array
     'ir'. Indexes start at 0 (data 0..nd-1, parity nd..nd+np-1). Each block
     pointed to by 'v' must be aligned to a 64-byte boundary. Pointers in 'v'
     for good blocks are read; pointers for bad blocks are target destinations.
-    Requires nr <= np.
+    Requires nr <= np. If nr is 0, 'ir' may be null; 'v' must be non-null but
+    no block pointers are accessed.
 
   void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
     Recovers 'nr' failed data blocks listed in sorted array 'id', using
     parities listed in sorted array 'ip'. Each block pointed to by 'v' must
     be aligned to a 64-byte boundary. Parity blocks in 'v' are unmodified.
-    Requires nr <= nd and nr <= RAID_PARITY_MAX.
+    Requires nr <= nd and nr <= RAID_PARITY_MAX. If nr is 0, 'id' and 'ip'
+    may be null; 'v' must be non-null but no block pointers are accessed.
 
   int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
     Validates whether candidate failed block set 'ir' matches available parity
     redundancy. Each block pointed to by 'v' must be aligned to a 64-byte
     boundary. Returns 0 if candidate set matches, or -1 if invalid. Requires
-    nr < np. Does not modify data or parity blocks.
+    nr < np. If nr is 0, 'ir' may be null. Does not modify data or parity
+    blocks. Returns -1 if size is 0.
 
   int raid_scan(int *ir, int nd, int np, size_t size, void **v)
     Searches for up to 'np - 1' failed blocks using available redundancy.
@@ -69,6 +73,7 @@ library startup before normal RAID operations.
     checking uniqueness. Each block pointed to by 'v' must be aligned to a
     64-byte boundary. Fills 'ir' with the matching block indexes and returns
     their number (0 if no error), or -1 if no compatible combination is found.
+    Returns -1 if size is 0.
 
   int raid_selftest(void)
     Runs startup verification tests for parity generation, recovery, and
@@ -88,18 +93,23 @@ Memory, Alignment and Aliasing Requirements
       v[nd ... nd+np-1]   -> Parity blocks (PAR1, PAR2, ..., PAR6)
 
   - Block Size: Parameter 'size' MUST be a multiple of 64 bytes
-    (size % 64 == 0).
+    (size % 64 == 0). A zero size makes generation and recovery empty
+    operations; validation and scanning return -1 because no redundancy data
+    is available.
 
   - Memory Alignment: All data and parity blocks pointed to by 'v[]'
     MUST be aligned to a 64-byte boundary. This requirement applies to each
     individual block buffer, not to the pointer array 'v' itself.
 
-  - Buffer Aliasing: Entries in 'v[]' MAY point to the same block buffer.
-    Blocks are processed from lower to higher offsets. For each processed
-    byte or vector chunk, all required inputs are read before outputs are
-    written. Parity outputs are written in increasing parity order.
-    Consequently, when multiple parity outputs point to the same block,
-    later parity outputs overwrite earlier ones.
+  - Buffer Aliasing: In raid_gen(), entries in 'v[]' MAY point to the same
+    block buffer. Blocks are processed from lower to higher offsets. For each
+    processed byte or vector chunk, all required inputs are read before outputs
+    are written. Parity outputs are written in increasing parity order. When
+    multiple parity outputs point to the same block, later parity outputs
+    overwrite earlier ones.
+
+    In raid_rec() and raid_data(), each block being recovered MUST have a
+    distinct destination buffer that does not alias any other block in 'v[]'.
 
     This guarantee applies to block aliasing (identical block pointers);
     arbitrary partial overlap between distinct block ranges is not supported.
