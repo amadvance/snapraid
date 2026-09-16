@@ -160,11 +160,11 @@ MOVNT / non-temporal stores vs cached generation
 --------------------------------------------------
 
 * raid_gen(..., streaming) allows the caller to select between non-temporal
-  streaming stores (streaming != 0, using MOVNTDQ/VMOVNTDQ + sfence on x86) and
+  streaming stores (streaming == 1, using MOVNTDQ/VMOVNTDQ + sfence on x86) and
   normal temporal/cached stores (streaming == 0, using MOVDQA/VMOVDQA without sfence).
 
 * Generation backends select MOVNTDQ / VMOVNTDQ for parity output when
-  streaming != 0 is requested.
+  streaming == 1 is requested. Values other than 0 and 1 are invalid.
 
 * The synthetic speedtest naturally favors non-temporal stores because generated
   parity is not consumed afterwards. This benchmark therefore measures producer

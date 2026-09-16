@@ -200,9 +200,10 @@ int raid_selftest(void);
  *   data, following with the parity blocks.
  *   Data entries are used as inputs and parity entries as outputs.
  *   Entries may point to the same block buffer.
- * @streaming Store policy hint: nonzero for streaming / non-temporal stores
+ * @streaming Store policy hint: 1 for streaming / non-temporal stores
  *   (bypassing cache) where supported, or 0 for normal cached / temporal stores.
- *   Use nonzero when generated output will not be read immediately by the CPU
+ *   No other values are valid.
+ *   Use 1 when generated output will not be read immediately by the CPU
  *   (e.g., parity queued for disk writes during sync), avoiding cache pollution.
  *   Use 0 when output will be consumed immediately by the CPU (e.g., in-memory
  *   parity verification or single-disk data recovery).

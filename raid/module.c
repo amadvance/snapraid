@@ -88,7 +88,7 @@ void raid_gen(int nd, int np, size_t size, void **v, int streaming)
 	/* enforce valid vector */
 	BUG_ON(v == 0);
 
-	/* enforce valid streaming flag */
+	/* enforce the documented 0/1 store policy */
 	BUG_ON(streaming != 0 && streaming != 1);
 
 	BUG_ON(raid_gen_ptr[np - 1] == 0);

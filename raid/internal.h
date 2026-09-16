@@ -278,7 +278,8 @@ void raid_rec6_neon32(int nr, int *id, int *ip, int nd, size_t size, void **vv);
  *   It has (@nd + #parities) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
  *   Each block has @size bytes.
- * @streaming Nonzero for streaming/non-temporal stores where supported, 0 for cached stores.
+ * @streaming 1 for streaming/non-temporal stores where supported, 0 for cached stores.
+ *   No other values are valid.
  */
 typedef void (raid_gen_fn)(int nd, size_t size, void **vv, int streaming);
 
