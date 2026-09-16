@@ -94,8 +94,8 @@ Recovery:
 * Specialized P+Q rec2of2 recovery reduces 4 GF multiplications to 2 GF
   multiplications and 1 XOR; AVX512BW, GFNI, AVX2, and AArch64 NEON handle this
   directly inside the 1-pass fused kernel. SSSE3 and SSSE3ext use dedicated
-  1-pass Horner rec2of2 helpers, AArch32 NEON uses a dedicated delta-based
-  helper, and scalar int8 handles it via has_p in raid_rec2_int8.
+  1-pass Horner rec2of2 helpers. AArch32 NEON and scalar int8 handle it through
+  the has_p path in their unified fused RECX kernels.
 
 * When P is among the selected parity blocks, optimized SIMD and scalar RECX
   paths reconstruct only nr - 1 missing blocks through the inverse matrix and
@@ -697,15 +697,17 @@ For generic REC1, used when P is unavailable:
   Horner kernels for Q and fused selected-syndrome kernels for the other
   parity rows.
 
-* Scalar uses its delta-based REC1 kernel.
+* Scalar int8 uses raid_recX_int8(), its fused selected-syndrome kernel, for
+  every non-P REC1 case.
 
 REC1 status:
 
 * For the current large-block SnapRAID workload and implemented backends,
   raid_rec1of1() achieves optimal memory saturation for rec1of1/P.
 
-* Generic non-P REC1 is selected per parity count and backend, so single-pass
-  SIMD and delta-based scalar implementations are benchmarked independently.
+* Generic non-P REC1 is selected per parity count and backend. All current
+  implementations use a single-pass path, with backend-specific Horner or
+  fused selected-syndrome kernels.
 
 * No major REC1 algorithmic optimization is currently expected.
 
@@ -713,15 +715,17 @@ REC1 status:
 REC2 optimizations
 ------------------
 
-REC2 has both fused and delta-based implementations.
+REC2 uses single-pass recovery across all current backends.
 
 * AVX2, AVX512BW, GFNI, and AArch64 NEON use fused syndrome generation for every
   selected parity pair, including P+Q. SSSE3 and SSSE3 extended use fused
   selected-syndrome recovery for generic REC2 and dedicated 1-pass Horner
-  kernels for P+Q. AArch32 NEON uses fused recovery for every pair except P+Q.
+  kernels for P+Q. AArch32 NEON uses its fused raid_recX_neon32_123() kernel for
+  every pair, including P+Q.
 
-* Scalar int8 uses delta-based REC2. AArch32 NEON retains a delta-based
-  specialized P+Q helper.
+* Scalar int8 uses its fused raid_recX_int8() kernel for every pair. When P is
+  selected, both scalar int8 and AArch32 NEON pass has_p = 1 so P is accumulated
+  with XOR and the final missing block is derived from the raw P delta.
 
 Important portability result:
 
@@ -733,13 +737,12 @@ Important portability result:
 
 REC2 status:
 
-* Generic REC2 uses the fused path across AVX2, AVX512BW, GFNI, SSSE3,
-  SSSE3ext, and NEON.
+* Generic REC2 uses the fused path across scalar int8, AVX2, AVX512BW, GFNI,
+  SSSE3, SSSE3ext, AArch64 NEON, and AArch32 NEON.
 
-* AVX2, AVX512BW, GFNI, and AArch64 NEON handle P+Q recovery directly inside the
-  1-pass fused kernel. SSSE3 and SSSE3ext use dedicated 1-pass Horner rec2of2
-  helpers, AArch32 NEON uses its dedicated delta-based rec2of2 helper, and
-  scalar int8 handles it via has_p.
+* AVX2, AVX512BW, GFNI, AArch64 NEON, AArch32 NEON, and scalar int8 handle P+Q
+  recovery directly inside their 1-pass fused kernels. SSSE3 and SSSE3ext use
+  dedicated 1-pass Horner rec2of2 helpers.
 
 
 Specialized rec2of2 P+Q
@@ -760,10 +763,10 @@ Backends implement this specialization as follows:
   derivation directly into the unified 1-pass fused kernel (P is accumulated via
   XOR, Q via GF multiplication, Dy is solved with inverse coefficients, and Dx
   derived by XOR with Pdelta).
-* Scalar int8 (has_p branch in raid_rec2_int8)
+* Scalar int8 uses the has_p path in raid_recX_int8().
 * SSSE3 and SSSE3 ext use dedicated 1-pass Horner kernels
-  (raid_rec2of2_ssse3, raid_rec2of2_ssse3ext)
-* AArch32 NEON uses the delta-based raid_rec2of2_neon32 helper
+  (raid_rec2of2_ssse3, raid_rec2of2_ssse3ext).
+* AArch32 NEON uses the has_p path in raid_recX_neon32_123().
 
 The rec2of2 benchmark row directly measures this specialized P+Q fast path.
 
@@ -771,8 +774,8 @@ REC2OF3 and REC2OF4 remain useful control rows because they do not match
 ip = { 0, 1 } and therefore continue to exercise the generic REC2 paths.
 
 
-RECX delta handling
--------------------
+RECX syndrome handling
+-----------------------
 
 RECX computes the selected syndromes directly from stored parity and one scan of
 the surviving data for each SIMD chunk.
