@@ -203,10 +203,12 @@ void log_close(const char* file)
 #define OPT_GUI_TOUCH_BEFORE 504
 #define OPT_GUI_THRESHOLD_REMOVES 505
 #define OPT_GUI_THRESHOLD_UPDATES 506
+#define OPT_LOCK_OPTIONS 507
 
 /**
  * Test options
  */
+#define OPT_TEST_FIRST 256
 #define OPT_TEST_SKIP_SELF 256
 #define OPT_TEST_KILL_AFTER_SYNC 257
 #define OPT_TEST_EXPECT_UNRECOVERABLE 258
@@ -257,6 +259,7 @@ void log_close(const char* file)
 #define OPT_TEST_SPEED_BLOCKS_SIZE 309
 #define OPT_TEST_KILL_BEFORE_SYNC 310
 #define OPT_TEST_KILL_AFTER_RESIZE 311
+#define OPT_TEST_LAST 311
 
 #if HAVE_GETOPT_LONG
 static struct option long_options[] = {
@@ -298,6 +301,7 @@ static struct option long_options[] = {
 	{ "version", 0, 0, 'V' },
 
 	{ "no-warnings", 0, 0, OPT_NO_WARNINGS }, /* disable annoying warnings */
+	{ "lock-options", 0, 0, OPT_LOCK_OPTIONS }, /* lock options to avoid unintended injection */
 	{ "gui", 0, 0, OPT_GUI }, /* undocumented GUI interface option (it was also 'G' in the past) */
 	{ "gui-verbose", 0, 0, OPT_GUI_VERBOSE }, /* undocumented GUI interface option */
 	{ "gui-rescan-after", 0, 0, OPT_GUI_RESCAN_AFTER }, /* undocumented GUI, force a rescan after the command to log differences */
@@ -458,6 +462,24 @@ static struct option long_options[] = {
  */
 #define OPTIONS "t:c:f:d:mebp:o:S:B:L:i:l:AZEUDNFRW:ahTC:vqHVw:"
 
+static int option_locked(int c)
+{
+	if (c >= OPT_TEST_FIRST && c <= OPT_TEST_LAST)
+		return 1;
+
+	switch (c) {
+	case 'c' : /* --conf */
+	case 'C' : /* --gen-conf */
+	case 'l' : /* --log */
+	case 'H' : /* --help */
+	case 'V' : /* --version */
+	case 'T' : /* --speed-test */
+		return 1;
+	}
+
+	return 0;
+}
+
 static int parse_option_size(const char* arg, uint64_t* out_size)
 {
 	char* e;
@@ -544,6 +566,7 @@ int snapraid_main(int argc, char* argv[])
 	const char* import_content;
 	const char* log_file;
 	int lock;
+	int lock_options;
 	const char* gen_conf;
 #if HAVE_CHECKER
 	const char* run;
@@ -584,6 +607,7 @@ int snapraid_main(int argc, char* argv[])
 	import_content = 0;
 	log_file = 0;
 	lock = 0;
+	lock_options = 0;
 	gen_conf = 0;
 	speedtest = 0;
 #if HAVE_CHECKER
@@ -598,6 +622,11 @@ int snapraid_main(int argc, char* argv[])
 		getopt(argc, argv, OPTIONS))
 #endif
 		!= EOF) {
+		if (lock_options && option_locked(c)) {
+			log_fatal(EUSER, "Option not allowed after --lock-options.\n");
+			exit(EXIT_FAILURE);
+		}
+
 		switch (c) {
 		case 'c' :
 			pathimport(conf, sizeof(conf), optarg);
@@ -804,6 +833,13 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case OPT_NO_WARNINGS :
 			opt.no_warnings = 1;
+			break;
+		case OPT_LOCK_OPTIONS :
+			if (strcmp(argv[optind - 1], "--lock-options") != 0) {
+				log_fatal(EUSER, "Option '--lock-options' cannot be abbreviated.\n");
+				exit(EXIT_FAILURE);
+			}
+			lock_options = 1;
 			break;
 		case OPT_GUI :
 			opt.gui = 1;

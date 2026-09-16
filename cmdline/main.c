@@ -213,6 +213,7 @@ int main(int argc, char* argv[])
 	int i;
 	int pos;
 	int mode;
+	int lock_options;
 	int ret;
 
 	(void)argc;
@@ -246,7 +247,11 @@ int main(int argc, char* argv[])
 	utf8_argc = 1;
 
 	mode = MODE_DEFAULT;
+	lock_options = 0;
 	for (i = 1; i < wide_argc; i++) {
+		if (wcscmp(wide_argv[i], L"--lock-options") == 0)
+			lock_options = 1;
+
 		if (wcscmp(wide_argv[i], L"-s") == 0 || wcscmp(wide_argv[i], L"--spin-down-on-error") == 0) {
 			mode = MODE_SPINDOWN;
 		} else {
@@ -263,6 +268,11 @@ int main(int argc, char* argv[])
 	}
 	utf8_argv[utf8_argc] = 0;
 	cmd_buffer[pos] = 0;
+
+	if (mode == MODE_SPINDOWN && lock_options) {
+		fprintf(stderr, "The --spin-down-on-error option cannot be used with --lock-options.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	LocalFree(wide_argv);
 
@@ -370,12 +380,17 @@ static void forward_signal(int sig)
 int main(int argc, char* argv[])
 {
 	int mode;
+	int lock_options;
 	int i, j;
 	int ret;
 
 	mode = MODE_DEFAULT;
+	lock_options = 0;
 	j = 1;
 	for (i = 1; i < argc; ++i) {
+		if (strcmp(argv[i], "--lock-options") == 0)
+			lock_options = 1;
+
 		if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--spin-down-on-error") == 0) {
 			mode = MODE_SPINDOWN;
 		} else {
@@ -385,6 +400,11 @@ int main(int argc, char* argv[])
 	}
 	argc = j;
 	argv[argc] = 0;
+
+	if (mode == MODE_SPINDOWN && lock_options) {
+		fprintf(stderr, "The --spin-down-on-error option cannot be used with --lock-options.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	if (mode == MODE_DEFAULT) {
 		ret = snapraid_main(argc, argv);
