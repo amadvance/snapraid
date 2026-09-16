@@ -90,6 +90,11 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 
 ## Code Style Guidelines
 
+#### Design Simplicity
+
+- **Simplicity First**: Always prefer the simplest and cleanest implementation that fully satisfies the demonstrated requirements. Do not introduce extra state, abstractions, conditions, or defensive handling unless a concrete requirement or verified failure mode needs them. When replacing existing logic, preserve its narrow established semantics instead of broadening it through inferred state from unrelated subsystems.
+- **Smallest Necessary Change** Harmless existing behavior or artifacts do not justify refactoring. Always make the smallest change necessary to satisfy the requirement.
+
 #### Code Style
 
 - **Language**: The codebase uses **C99 standard** (not C11/C++)
@@ -103,7 +108,6 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 - **Preferences**: Use prefix ++variable and --variable instead of postfix variable++ and variable-- where both are equivalent
 - **Safety Checks**: Avoid adding safety checks for conditions that never happen
 - **Type Casts**: Avoid type casts unless strictly necessary for compilation with -Werror and unavoidable by other mean
-- **Simplicity First**: Always choose the simplest design with the minimal number of state variables, branches, and lines of code.
 - **Stack Over Heap**: Prefer stack-allocated fixed-size buffers over dynamic memory allocation (`malloc`/`free`) whenever the upper bound is small, fixed, and known at compile time.
 - **Commit Messages**: Every time a change is done, a single line commit description should be provided for that change
 - **Git Commits**: Never commit changes to git.
