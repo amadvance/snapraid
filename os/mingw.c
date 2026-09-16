@@ -291,14 +291,42 @@ static WCHAR exedir[PATH_MAX];
 /****************************************************************************/
 /* signal */
 
+static void (*windows_handler_term)(int sig);
+
+static BOOL WINAPI windows_ctrl_handler(DWORD ctrl_type)
+{
+	if (ctrl_type != CTRL_BREAK_EVENT)
+		return FALSE;
+
+	/*
+	 * Treat Ctrl+Break exactly like Ctrl+C.
+	 *
+	 * CTRL_BREAK_EVENT can be targeted to a specific process group by
+	 * GenerateConsoleCtrlEvent(), while CTRL_C_EVENT cannot. This allows
+	 * external supervisors to request a graceful SnapRAID interruption.
+	 */
+	if (windows_handler_term != 0)
+		windows_handler_term(SIGINT);
+
+	return TRUE;
+}
+
 void os_signal_init(void (*handler_term)(int sig), void (*handler_hup)(int sig))
 {
-	{
-		(void)handler_hup;
+	(void)handler_hup;
 
-		signal(SIGTERM, handler_term);
-		signal(SIGINT, handler_term);
-	}
+	signal(SIGTERM, handler_term);
+	signal(SIGINT, handler_term);
+
+	windows_handler_term = handler_term;
+
+	/*
+	 * Register a console control handler to catch CTRL_BREAK_EVENT.
+	 * Unlike CTRL_C_EVENT, Windows does not map Ctrl+Break to SIGINT via signal(),
+	 * and by default it terminates the process abruptly. This handler translates
+	 * Ctrl+Break into a graceful SIGINT interruption.
+	 */
+	SetConsoleCtrlHandler(windows_ctrl_handler, TRUE);
 }
 
 const char* os_signal_name(int sig)
@@ -4353,7 +4381,6 @@ int os_usleep(uint64_t usec)
 
 	return 0;
 }
-
 
 void os_privileges_acquire(void)
 {
