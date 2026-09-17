@@ -2200,7 +2200,13 @@ ssize_t windows_read(int fd, void* buffer, size_t size)
 	}
 
 	if (!ReadFile(h, buffer, size, &count, 0)) {
-		windows_errno(GetLastError());
+		DWORD error = GetLastError();
+
+		/* A closed Windows pipe has the same read semantics as a POSIX pipe at EOF. */
+		if (error == ERROR_BROKEN_PIPE)
+			return 0;
+
+		windows_errno(error);
 		return -1;
 	}
 
