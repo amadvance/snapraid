@@ -1883,6 +1883,62 @@ static void test_smart_ignore(void)
 	}
 }
 
+static void test_disk_name(void)
+{
+	char name_127[128];
+	char name_128[129];
+
+	/* valid normal names */
+	assert(disk_name_invalid_reason("d1") == 0);
+	assert(disk_name_invalid_reason("data_01") == 0);
+	assert(disk_name_invalid_reason("disk-A") == 0);
+
+	/* 127-byte name is valid */
+	memset(name_127, 'a', 127);
+	name_127[127] = 0;
+	assert(disk_name_invalid_reason(name_127) == 0);
+
+	/* 128-byte name is rejected */
+	memset(name_128, 'a', 128);
+	name_128[128] = 0;
+	assert(disk_name_invalid_reason(name_128) != 0);
+
+	/* slash delimiter rejected */
+	assert(disk_name_invalid_reason("data/1") != 0);
+	assert(disk_name_invalid_reason("/disk") != 0);
+	assert(disk_name_invalid_reason("disk/") != 0);
+
+	/* backslash delimiter rejected */
+	assert(disk_name_invalid_reason("data\\1") != 0);
+	assert(disk_name_invalid_reason("\\disk") != 0);
+	assert(disk_name_invalid_reason("disk\\") != 0);
+
+	/* colon delimiter rejected */
+	assert(disk_name_invalid_reason("data:1") != 0);
+	assert(disk_name_invalid_reason(":disk") != 0);
+	assert(disk_name_invalid_reason("disk:") != 0);
+
+	/* reserved parity names and aliases rejected */
+	assert(disk_name_invalid_reason("parity") != 0);
+	assert(disk_name_invalid_reason("1-parity") != 0);
+	assert(disk_name_invalid_reason("2-parity") != 0);
+	assert(disk_name_invalid_reason("3-parity") != 0);
+	assert(disk_name_invalid_reason("4-parity") != 0);
+	assert(disk_name_invalid_reason("5-parity") != 0);
+	assert(disk_name_invalid_reason("6-parity") != 0);
+	assert(disk_name_invalid_reason("q-parity") != 0);
+	assert(disk_name_invalid_reason("r-parity") != 0);
+	assert(disk_name_invalid_reason("z-parity") != 0);
+
+	/* valid names containing parity as substring */
+	assert(disk_name_invalid_reason("parity1") == 0);
+	assert(disk_name_invalid_reason("parity_data") == 0);
+	assert(disk_name_invalid_reason("my_parity") == 0);
+	assert(disk_name_invalid_reason("disparity") == 0);
+	assert(disk_name_invalid_reason("2-parity-extra") == 0);
+	assert(disk_name_invalid_reason("q-parity-disk") == 0);
+}
+
 static void test_stream(void)
 {
 	STREAM f;
@@ -2732,6 +2788,9 @@ void test(int argc, char* argv[])
 
 	/* smart attribute ignore rules */
 	test_smart_ignore();
+
+	/* logical disk name validation */
+	test_disk_name();
 
 	t_selftest_start = os_tick_ms();
 	selftest();

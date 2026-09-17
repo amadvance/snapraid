@@ -114,6 +114,24 @@ static int lev_config_scan(const char* s, unsigned* level, unsigned* mode)
 	return -1;
 }
 
+const char* disk_name_invalid_reason(const char* name)
+{
+	unsigned dummy_level;
+
+	if (strlen(name) > DISK_NAME_MAX)
+		return "Name is too long (maximum 127 bytes)";
+	if (strchr(name, '/') != 0)
+		return "Name contains '/'";
+	if (strchr(name, '\\') != 0)
+		return "Name contains '\\'";
+	if (strchr(name, ':') != 0)
+		return "Name contains ':'";
+	if (lev_config_scan(name, &dummy_level, 0) == 0)
+		return "Name is a reserved parity name";
+
+	return 0;
+}
+
 const char* lev_raid_name(unsigned mode, unsigned n)
 {
 	switch (n) {
@@ -1032,6 +1050,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
+			const char* reason = disk_name_invalid_reason(buffer);
+			if (reason) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid 'data' name '%s' in '%s' at line %u. %s.\n", buffer, path, line, reason);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			sgetspace(f);
 
 			ret = sgetlasttok(f, dir, sizeof(dir));
@@ -1061,6 +1087,18 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (i) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Duplicate 'data' name '%s' at line %u\n", buffer, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			for (i = state->extralist; i != 0; i = i->next) {
+				struct snapraid_extra* found_extra = i->data;
+				if (strcmp(found_extra->name, buffer) == 0)
+					break;
+			}
+			if (i) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Duplicate 'data' name '%s' already used in 'extra' at line %u\n", buffer, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1134,6 +1172,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
+			const char* reason = disk_name_invalid_reason(buffer);
+			if (reason) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Invalid 'extra' name '%s' in '%s' at line %u. %s.\n", buffer, path, line, reason);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			sgetspace(f);
 
 			ret = sgetlasttok(f, dir, sizeof(dir));
@@ -1163,6 +1209,18 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (i) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Duplicate 'extra' name '%s' at line %u\n", buffer, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			for (i = state->disklist; i != 0; i = i->next) {
+				struct snapraid_disk* found_disk = i->data;
+				if (strcmp(found_disk->name, buffer) == 0)
+					break;
+			}
+			if (i) {
+				/* LCOV_EXCL_START */
+				log_fatal(EUSER, "Duplicate 'extra' name '%s' already used in 'data' at line %u\n", buffer, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}

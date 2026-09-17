@@ -27,6 +27,18 @@ const char* lev_name(unsigned level);
  */
 const char* lev_config_name(unsigned level);
 
+/**
+ * Maximum byte length of a logical disk name.
+ */
+#define DISK_NAME_MAX 127
+
+/**
+ * Validate a logical disk name.
+ *
+ * Returns 0 if valid, or a static string error reason if invalid.
+ */
+const char* disk_name_invalid_reason(const char* name);
+
 /****************************************************************************/
 /* state */
 
