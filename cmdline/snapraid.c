@@ -178,16 +178,18 @@ void log_open(const char* file)
 
 void log_close(const char* file)
 {
-	if (stdlog != stdout && stdlog != stderr && stdlog != 0) {
-		if (fclose(stdlog) != 0) {
+	FILE* log = stdlog;
+
+	/* fclose() invalidates the stream even on error, so fatal reporting must use stderr. */
+	stdlog = 0;
+	if (log != stdout && log != stderr && log != 0) {
+		if (fclose(log) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error closing the log file '%s'. %s.\n", file, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 	}
-
-	stdlog = 0;
 }
 
 /****************************************************************************/
@@ -1064,6 +1066,8 @@ int snapraid_main(int argc, char* argv[])
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	msg_fatal_stderr = !opt.gui;
 
 	os_init(OS_INIT_OPT_AVOID_SLEEP | (opt.force_scan_winfind ? OS_INIT_OPT_WINFIND : 0));
 	app_init();

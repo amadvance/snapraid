@@ -92,7 +92,8 @@ typedef void log_ptr(int err, const char* format, ...) __attribute__((format(att
  *
  * Messages printed before an early termination.
  *
- * These messages go in the log file and in stderr unconditionally.
+ * These messages go in the log file and in stderr, except in GUI mode
+ * when the tagged log message is emitted successfully.
  */
 void vlog_fatal(int err, const char* format, va_list ap, const char* post);
 void log_fatal(int err, const char* format, ...) __attribute__((format(attribute_printf, 2, 3)));
@@ -175,6 +176,11 @@ typedef void msg_ptr(const char* format, ...) __attribute__((format(attribute_pr
  * Selected message level.
  */
 extern int msg_level;
+
+/**
+ * Emit fatal messages on stderr also when a log is configured.
+ */
+extern int msg_fatal_stderr;
 
 /**
  * State messages.

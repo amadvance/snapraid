@@ -293,6 +293,7 @@ void log_error_errno(int err, const char* name)
 /* print */
 
 int msg_level = 0;
+int msg_fatal_stderr = 1;
 FILE* stdlog = 0;
 int msg_line_prev = 0; /**< Previous line width on stdout */
 int msg_line_curr = 0; /**< Current line width on stdout */
@@ -374,34 +375,41 @@ static void msg(FILE* out, const char* format, ...)
 
 void vlog_fatal(int err, const char* format, va_list ap, const char* post)
 {
+	int log_failed = 0;
+
 	lock_msg();
 
 	if (stdlog) {
 		if (is_hw(err))
-			fprintf(stdlog, "msg:fatal_hardware: ");
+			log_failed = fprintf(stdlog, "msg:fatal_hardware: ") < 0;
 		else
-			fprintf(stdlog, "msg:fatal: ");
+			log_failed = fprintf(stdlog, "msg:fatal: ") < 0;
 
 		va_list ap_copy;
 		va_copy(ap_copy, ap);
-		vfprintf(stdlog, format, ap_copy);
+		if (vfprintf(stdlog, format, ap_copy) < 0)
+			log_failed = 1;
 		va_end(ap_copy);
 
-		if (post)
-			fprintf(stdlog, "%s", post);
+		if (post && fprintf(stdlog, "%s", post) < 0)
+			log_failed = 1;
 
-		fflush(stdlog);
+		if (fflush(stdlog) != 0)
+			log_failed = 1;
 	}
 
-	va_list ap_copy2;
-	va_copy(ap_copy2, ap);
-	vmsg(stderr, format, ap_copy2);
-	va_end(ap_copy2);
+	/* A failed tagged write must retain stderr as the only usable fatal diagnostic. */
+	if (!stdlog || log_failed || msg_fatal_stderr) {
+		va_list ap_copy2;
+		va_copy(ap_copy2, ap);
+		vmsg(stderr, format, ap_copy2);
+		va_end(ap_copy2);
 
-	if (post)
-		msg(stderr, "%s", post);
+		if (post)
+			msg(stderr, "%s", post);
 
-	fflush(stderr);
+		fflush(stderr);
+	}
 
 	unlock_msg();
 }

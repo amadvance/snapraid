@@ -54,6 +54,11 @@ The following characters are escaped into sequences:
 Some tags are output only when the `--gui` or `--gui-verbose` option
 is used. They provide extra verbose state and runtime progress only
 useful for a GUI interface.
+In GUI mode, the structured log is intended to be consumed by the GUI.
+Fatal errors are therefore not duplicated to standard error when they
+are successfully written to the log. If the log is unavailable or
+writing it fails, the fatal error is printed to standard error as a
+fallback.
 
 Integer values are marked as `uint` when they are unsigned and as `int`
 when they are signed. However, for practical purposes you can treat
