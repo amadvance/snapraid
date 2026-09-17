@@ -2211,7 +2211,7 @@ int devmap(void)
 		CloseHandle(h);
 	}
 
-	log_tag("map_end\n");
+	log_tag("map_end:\n");
 	return 0;
 }
 

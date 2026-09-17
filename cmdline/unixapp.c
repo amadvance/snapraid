@@ -4184,7 +4184,7 @@ int devmap(void)
 
 	closedir(d);
 #endif
-	log_tag("map_end\n");
+	log_tag("map_end:\n");
 	return 0;
 }
 
