@@ -4926,14 +4926,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		/* LCOV_EXCL_STOP */
 	}
 
-	i = tommy_list_head(&state->contentlist);
-	while (i) {
-		struct snapraid_content* content = i->data;
-
-		msg_progress("Saved %s in %" PRIu64 " seconds\n", content->content, (os_tick_ms() - start) / 1000);
-
-		i = i->next;
-	}
+	msg_progress("Saved state in %" PRIu64 " seconds\n", (os_tick_ms() - start) / 1000);
 
 	crc = context->crc;
 	count_file = context->count_file;
@@ -5014,6 +5007,9 @@ void state_read(struct snapraid_state* state)
 	tommy_node* node;
 	int ret;
 	int c;
+	uint64_t start;
+
+	start = os_tick_ms();
 
 	/*
 	 * Iterate over all the available content files and load the first one present.
@@ -5153,6 +5149,8 @@ void state_read(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	msg_progress("Loaded state in %" PRIu64 " seconds\n", (os_tick_ms() - start) / 1000);
 
 	if (state->unsynced_blocks)
 		msg_progress("WARNING! The latest sync was interrupted!\n");
