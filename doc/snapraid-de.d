@@ -1901,6 +1901,9 @@ Exit-Code (Exit Code)
 	0 - Alles OK.
 	1 - Der Befehl ist auf Fehler gestoßen.
 	2 - Der Befehl `diff` hat festgestellt, dass alles OK ist, aber ein `sync` erforderlich ist.
+	3 - Ein Festplattenbefehl (`probe`, `smart`, `devices`, `up`, `down`) wurde
+		abgeschlossen, aber mindestens ein Dateisystem läuft im degradierten
+		Modus mit fehlenden Geräten.
 
 Bekannte Probleme (Known Issues)
   Dateisystemgrenzen

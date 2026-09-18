@@ -1867,6 +1867,9 @@ Código de salida (Exit Code)
 	0 - Todo bien.
 	1 - El comando encontró algunos errores.
 	2 - El comando `diff` determinó que todo está bien, pero se necesita un `sync`.
+	3 - Un comando de dispositivo de disco (`probe`, `smart`, `devices`, `up`,
+		`down`) se completó, pero al menos un sistema de archivos está funcionando
+		en modo degradado con dispositivos faltantes.
 
 Problemas conocidos (Known Issues)
   Límites del sistema de archivos

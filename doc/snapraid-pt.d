@@ -1816,6 +1816,9 @@ Código de Saída (Exit Code)
 	0 - Tudo OK.
 	1 - O comando encontrou alguns erros.
 	2 - O comando `diff` determinou que tudo está OK, mas é necessário um `sync`.
+	3 - Um comando de dispositivo de disco (`probe`, `smart`, `devices`, `up`,
+		`down`) foi concluído, mas pelo menos um sistema de arquivos está operando
+		em modo degradado com dispositivo(s) ausente(s).
 
 Problemas Conhecidos (Known Issues)
   Limites do sistema de arquivos

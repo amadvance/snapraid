@@ -1776,6 +1776,9 @@ Slutkod (Exit Code)
 	0 - Allt OK.
 	1 - Kommandot stötte på fel.
 	2 - Kommandot `diff` fann att allt är OK, men en `sync` behövs.
+	3 - Ett diskenhetskommando (`probe`, `smart`, `devices`, `up`, `down`)
+		slutfördes, men minst ett filsystem körs i degraderat läge med
+		saknade enheter.
 
 Kända problem (Known Issues)
   Filsystemgränser

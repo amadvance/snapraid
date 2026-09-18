@@ -1785,6 +1785,9 @@ Exit Code
 	1 - The command encountered some errors.
 	2 - The `diff` command found everything is OK, but a `sync` is
 		needed.
+	3 - A disk device command (`probe`, `smart`, `devices`, `up`,
+		`down`) completed, but at least one filesystem is running in
+		degraded mode with missing device(s).
 
 Known Issues
   Filesystem boundaries

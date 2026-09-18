@@ -228,11 +228,13 @@ extern FILE* stdlog;
 extern int exit_success;
 extern int exit_failure;
 extern int exit_sync_needed;
+extern int exit_degraded;
 #undef EXIT_SUCCESS
 #undef EXIT_FAILURE
 #define EXIT_SUCCESS exit_success
 #define EXIT_FAILURE exit_failure
 #define EXIT_SYNC_NEEDED exit_sync_needed
+#define EXIT_DEGRADED exit_degraded
 
 /**
  * Standard SMART attributes.

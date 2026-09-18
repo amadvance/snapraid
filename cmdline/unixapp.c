@@ -18,6 +18,7 @@
 int exit_success = 0;
 int exit_failure = 1;
 int exit_sync_needed = 2;
+int exit_degraded = 3;
 
 /****************************************************************************/
 /* signal */
@@ -728,6 +729,8 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 		/* LCOV_EXCL_STOP */
 	}
 
+	int degraded = 0;
+
 	for (__u64 i = 1; i <= fs_info.max_id; ++i) {
 		struct btrfs_ioctl_dev_info_args dev_info;
 		memset(&dev_info, 0, sizeof(dev_info));
@@ -743,10 +746,20 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 			/* LCOV_EXCL_STOP */
 		}
 
+		/* missing devices in degraded btrfs have empty path */
+		if (dev_info.path[0] == 0) {
+			degraded = 1;
+			continue;
+		}
+
 		/* get major:minor, use stat on the path returned */
 		struct stat st;
 		if (stat((char*)dev_info.path, &st) != 0) {
 			/* LCOV_EXCL_START */
+			if (errno == ENOENT) {
+				degraded = 1;
+				continue;
+			}
 			log_error(errno, "Failed stat %s. %s.", dev_info.path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -770,7 +783,7 @@ static int devdereference_btrfs(uint64_t device, const char* dir, int fd, tommy_
 	if (tommy_list_empty(devlist))
 		goto bail;
 
-	return 0;
+	return degraded ? 1 : 0;
 
 bail:
 	tommy_list_foreach(devlist, free);
@@ -4013,6 +4026,7 @@ void devsync(tommy_list* high)
 
 int devquery(tommy_list* high, tommy_list* low)
 {
+	int degraded = 0;
 #if HAVE_LINUX_DEVICE
 	tommy_node* i;
 	struct stat st;
@@ -4034,11 +4048,17 @@ int devquery(tommy_list* high, tommy_list* low)
 		tommy_list_init(&devlist);
 
 		/* obtain the real devices */
-		if (devdereference(device, devinfo->mount, &devlist) != 0) {
+		int ret = devdereference(device, devinfo->mount, &devlist);
+		if (ret < 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(EEXTERNAL, "Failed to dereference device '%u:%u' at '%s'.\n", major(device), minor(device), devinfo->mount);
 			return -1;
 			/* LCOV_EXCL_STOP */
+		}
+		if (ret > 0) {
+			log_fatal(ENXIO, "DANGER! Disk '%s' is degraded due to missing device(s).\n", devinfo->name);
+			log_tag("degraded:%s\n", esc_tag(devinfo->name));
+			degraded = 1;
 		}
 
 		devinfo->file[0] = 0;
@@ -4085,7 +4105,7 @@ int devquery(tommy_list* high, tommy_list* low)
 	(void)low;
 #endif
 
-	return 0;
+	return degraded ? 1 : 0;
 }
 
 int devrun(tommy_list* low, int operation)

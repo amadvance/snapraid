@@ -1908,6 +1908,9 @@ Code de sortie (Exit Code)
 	0 - Tout est OK.
 	1 - La commande a rencontré des erreurs.
 	2 - La commande `diff` a trouvé que tout est OK, mais un `sync` est requis.
+	3 - Une commande de disque (`probe`, `smart`, `devices`, `up`, `down`) s'est
+		terminée, mais au moins un système de fichiers fonctionne en mode dégradé
+		avec des périphériques manquants.
 
 Problèmes connus (Known Issues)
   Limites du système de fichiers

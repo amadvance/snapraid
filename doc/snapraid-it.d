@@ -1877,6 +1877,9 @@ Codice di uscita (Exit Code)
 	0 - Tutto OK.
 	1 - Il comando ha riscontrato alcuni errori.
 	2 - Il comando `diff` ha rilevato che tutto è OK, ma è necessario un `sync`.
+	3 - Un comando di gestione dischi (`probe`, `smart`, `devices`, `up`,
+		`down`) è stato completato, ma almeno un filesystem è in modalità
+		degradata con dispositivi mancanti.
 
 Problemi noti (Known Issues)
   Limiti del filesystem

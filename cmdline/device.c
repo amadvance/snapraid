@@ -1198,6 +1198,8 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 	if (state->opt.gui)
 		log_tag("unixtime:%" PRIi64 "\n", (int64_t)now);
 
+	int degraded = 0;
+
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
 	} else {
@@ -1206,6 +1208,10 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 			devsync(&high);
 
 		ret = devquery(&high, &low);
+		if (ret > 0) {
+			degraded = 1;
+			ret = 0;
+		}
 	}
 
 	/* if the list is empty, it's not supported in this platform */
@@ -1250,6 +1256,9 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 bail:
 	tommy_list_foreach(&high, free);
 	tommy_list_foreach(&low, free);
+
+	if (ret == 0 && degraded)
+		ret = 1;
 
 	return ret;
 }

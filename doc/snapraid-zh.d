@@ -1557,6 +1557,8 @@ Name{number}
 	0 - 一切正常。
 	1 - 命令遇到一些错误。
 	2 - `diff` 命令发现一切正常，但需要进行 `sync`。
+	3 - 磁盘设备命令（`probe`、`smart`、`devices`、`up`、`down`）已完成，
+		但至少有一个文件系统因缺少设备而以降级（degraded）模式运行。
 
 已知问题 (Known Issues)
   文件系统边界

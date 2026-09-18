@@ -1776,6 +1776,9 @@ Cod de ieșire (Exit Code)
 	0 - Totul este OK.
 	1 - Comanda a întâmpinat unele erori.
 	2 - Comanda `diff` a constatat că totul este OK, dar este necesar un `sync`.
+	3 - O comandă de dispozitiv de disc (`probe`, `smart`, `devices`, `up`,
+		`down`) s-a finalizat, dar cel puțin un sistem de fișiere funcționează
+		în mod degradat cu dispozitive lipsă.
 
 Probleme Cunoscute (Known Issues)
   Limitele sistemului de fișiere

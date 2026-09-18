@@ -1804,6 +1804,8 @@ int snapraid_main(int argc, char* argv[])
 	/* abort if required */
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
+		if (ret == 1)
+			exit(EXIT_DEGRADED);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

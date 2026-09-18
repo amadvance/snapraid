@@ -1780,6 +1780,9 @@ Kod wyjścia (Exit Code)
 	0 - Wszystko w porządku.
 	1 - Polecenie napotkało błędy.
 	2 - Polecenie `diff` wykazało, że wszystko jest w porządku, ale wymagane jest `sync`.
+	3 - Polecenie urządzenia dyskowego (`probe`, `smart`, `devices`, `up`,
+		`down`) zostało zakończone, ale co najmniej jeden system plików działa
+		w trybie zdegradowanym z brakującymi urządzeniami.
 
 Znane problemy (Known Issues)
   Granice systemu plików
