@@ -1930,6 +1930,24 @@ static void test_disk_name(void)
 	assert(disk_name_invalid_reason("r-parity") != 0);
 	assert(disk_name_invalid_reason("z-parity") != 0);
 
+#ifdef _WIN32
+	/* case-insensitive parity names rejected on Windows */
+	assert(disk_name_invalid_reason("PARITY") != 0);
+	assert(disk_name_invalid_reason("Parity") != 0);
+	assert(disk_name_invalid_reason("1-PARITY") != 0);
+	assert(disk_name_invalid_reason("2-PARITY") != 0);
+	assert(disk_name_invalid_reason("Q-PARITY") != 0);
+	assert(disk_name_invalid_reason("Z-PARITY") != 0);
+#else
+	/* case-sensitive on Unix: uppercase variants are distinct from reserved lowercase parity names */
+	assert(disk_name_invalid_reason("PARITY") == 0);
+	assert(disk_name_invalid_reason("Parity") == 0);
+	assert(disk_name_invalid_reason("1-PARITY") == 0);
+	assert(disk_name_invalid_reason("2-PARITY") == 0);
+	assert(disk_name_invalid_reason("Q-PARITY") == 0);
+	assert(disk_name_invalid_reason("Z-PARITY") == 0);
+#endif
+
 	/* valid names containing parity as substring */
 	assert(disk_name_invalid_reason("parity1") == 0);
 	assert(disk_name_invalid_reason("parity_data") == 0);

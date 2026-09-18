@@ -117,6 +117,9 @@ static int lev_config_scan(const char* s, unsigned* level, unsigned* mode)
 const char* disk_name_invalid_reason(const char* name)
 {
 	unsigned dummy_level;
+#ifdef _WIN32
+	char lower[DISK_NAME_MAX + 1];
+#endif
 
 	if (strlen(name) > DISK_NAME_MAX)
 		return "Name is too long (maximum 127 bytes)";
@@ -126,8 +129,16 @@ const char* disk_name_invalid_reason(const char* name)
 		return "Name contains '\\'";
 	if (strchr(name, ':') != 0)
 		return "Name contains ':'";
+
+#ifdef _WIN32
+	pathcpy(lower, sizeof(lower), name);
+	strlwr(lower);
+	if (lev_config_scan(lower, &dummy_level, 0) == 0)
+		return "Name is a reserved parity name";
+#else
 	if (lev_config_scan(name, &dummy_level, 0) == 0)
 		return "Name is a reserved parity name";
+#endif
 
 	return 0;
 }
@@ -1081,7 +1092,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			/* check if the disk name already exists */
 			for (i = state->disklist; i != 0; i = i->next) {
 				disk = i->data;
-				if (strcmp(disk->name, buffer) == 0)
+				if (pathcmp(disk->name, buffer) == 0)
 					break;
 			}
 			if (i) {
@@ -1093,7 +1104,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			for (i = state->extralist; i != 0; i = i->next) {
 				struct snapraid_extra* found_extra = i->data;
-				if (strcmp(found_extra->name, buffer) == 0)
+				if (pathcmp(found_extra->name, buffer) == 0)
 					break;
 			}
 			if (i) {
@@ -1203,7 +1214,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			/* check if the disk name already exists */
 			for (i = state->extralist; i != 0; i = i->next) {
 				extra = i->data;
-				if (strcmp(extra->name, buffer) == 0)
+				if (pathcmp(extra->name, buffer) == 0)
 					break;
 			}
 			if (i) {
@@ -1215,7 +1226,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			for (i = state->disklist; i != 0; i = i->next) {
 				struct snapraid_disk* found_disk = i->data;
-				if (strcmp(found_disk->name, buffer) == 0)
+				if (pathcmp(found_disk->name, buffer) == 0)
 					break;
 			}
 			if (i) {
@@ -1316,7 +1327,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				struct snapraid_disk* found_disk = 0;
 				for (i = state->disklist; i != 0; i = i->next) {
 					struct snapraid_disk* disk = i->data;
-					if (strcmp(disk->name, buffer) == 0) {
+					if (pathcmp(disk->name, buffer) == 0) {
 						found_disk = disk;
 						break;
 					}
@@ -1324,7 +1335,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				struct snapraid_extra* found_extra = 0;
 				for (i = state->extralist; i != 0; i = i->next) {
 					struct snapraid_extra* extra = i->data;
-					if (strcmp(extra->name, buffer) == 0) {
+					if (pathcmp(extra->name, buffer) == 0) {
 						found_extra = extra;
 						break;
 					}
@@ -1385,7 +1396,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				struct snapraid_disk* found_disk = 0;
 				for (i = state->disklist; i != 0; i = i->next) {
 					struct snapraid_disk* disk = i->data;
-					if (strcmp(disk->name, buffer) == 0) {
+					if (pathcmp(disk->name, buffer) == 0) {
 						found_disk = disk;
 						break;
 					}
@@ -1393,7 +1404,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				struct snapraid_extra* found_extra = 0;
 				for (i = state->extralist; i != 0; i = i->next) {
 					struct snapraid_extra* extra = i->data;
-					if (strcmp(extra->name, buffer) == 0) {
+					if (pathcmp(extra->name, buffer) == 0) {
 						found_extra = extra;
 						break;
 					}
@@ -1705,7 +1716,7 @@ static struct snapraid_disk* find_disk_by_name(struct snapraid_state* state, con
 
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		if (strcmp(disk->name, name) == 0)
+		if (pathcmp(disk->name, name) == 0)
 			return disk;
 	}
 
@@ -1804,7 +1815,7 @@ static void state_map(struct snapraid_state* state)
 		/* check if the disk is already mapped */
 		for (j = state->maplist; j != 0; j = j->next) {
 			map = j->data;
-			if (strcmp(disk->name, map->name) == 0) {
+			if (pathcmp(disk->name, map->name) == 0) {
 				/* mapping found */
 				break;
 			}
@@ -2096,7 +2107,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 		tommy_node* j;
 		for (j = i->next; j != 0; j = j->next) {
 			struct snapraid_map* other = j->data;
-			if (strcmp(map->name, other->name) == 0) {
+			if (pathcmp(map->name, other->name) == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(ECONTENT, "Conflicting 'map' disk specification in '%s'\n", path);
 				exit(EXIT_FAILURE);

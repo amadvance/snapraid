@@ -567,7 +567,7 @@ struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* h
 		map = 0;
 		for (k = state->maplist; k != 0; k = k->next) {
 			map = k->data;
-			if (strcmp(disk->name, map->name) == 0)
+			if (pathcmp(disk->name, map->name) == 0)
 				break;
 		}
 		if (!map) {
