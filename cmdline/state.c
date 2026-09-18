@@ -4571,7 +4571,20 @@ bail:
 	return context;
 }
 
-static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
+struct state_write_info {
+	uint32_t crc;
+	block_off_t blockmax;
+	block_off_t count_file;
+	block_off_t count_hardlink;
+	block_off_t count_symlink;
+	block_off_t count_dir;
+	block_off_t count_bad;
+	block_off_t count_rehash;
+	block_off_t count_unsynced;
+	block_off_t count_unscrubbed;
+};
+
+static void state_write_content(struct snapraid_state* state, struct state_write_info* out_info)
 {
 #if HAVE_MT_WRITE
 	int fail;
@@ -5010,29 +5023,16 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	free(context);
 #endif
 
-	msg_verbose("%8" PRIu64 " files\n", count_file);
-	msg_verbose("%8" PRIu64 " hardlinks\n", count_hardlink);
-	msg_verbose("%8" PRIu64 " symlinks\n", count_symlink);
-	msg_verbose("%8" PRIu64 " empty dirs\n", count_dir);
-
-	log_tag("content_info:file:%" PRIu64 "\n", count_file);
-	log_tag("content_info:hardlink:%" PRIu64 "\n", count_hardlink);
-	log_tag("content_info:symlink:%" PRIu64 "\n", count_symlink);
-	log_tag("content_info:dir_empty:%" PRIu64 "\n", count_dir);
-
-	log_tag("content_info:block:%" PRIu64 "\n", blockmax);
-	log_tag("content_info:block_bad:%" PRIu64 "\n", count_bad);
-	log_tag("content_info:block_rehash:%" PRIu64 "\n", count_rehash);
-	log_tag("content_info:block_unsynced:%" PRIu64 "\n", count_unsynced);
-	log_tag("content_info:block_unscrubbed:%" PRIu64 "\n", count_unscrubbed);
-
-	/* store the blocks counters */
-	state->rehash_blocks = count_rehash;
-	state->bad_blocks = count_bad;
-	state->unsynced_blocks = count_unsynced;
-	state->unscrubbed_blocks = count_unscrubbed;
-
-	*out_crc = crc;
+	out_info->crc = crc;
+	out_info->blockmax = blockmax;
+	out_info->count_file = count_file;
+	out_info->count_hardlink = count_hardlink;
+	out_info->count_symlink = count_symlink;
+	out_info->count_dir = count_dir;
+	out_info->count_bad = count_bad;
+	out_info->count_rehash = count_rehash;
+	out_info->count_unsynced = count_unsynced;
+	out_info->count_unscrubbed = count_unscrubbed;
 }
 
 void state_probe(struct snapraid_state* state)
@@ -5611,20 +5611,47 @@ static void state_write_check(struct snapraid_state* state)
 
 void state_write(struct snapraid_state* state)
 {
-	uint32_t crc;
+	struct state_write_info info;
 	time_t now;
 
 	/* verify that all persistent values are serializable */
 	state_write_check(state);
 
 	/* write all the content files */
-	state_write_content(state, &crc);
+	state_write_content(state, &info);
 
 	/* verify the just written files */
-	state_verify_content(state, crc);
+	state_verify_content(state, info.crc);
 
 	/* rename the new files, over the old ones */
 	state_rename_content(state);
+
+	/*
+	 * Print verbose information, structured tags, and update block counters
+	 * only after state_rename_content() succeeds, ensuring that the new content
+	 * file is durable on disk before reporting or committing it.
+	 */
+	msg_verbose("%8" PRIu64 " files\n", info.count_file);
+	msg_verbose("%8" PRIu64 " hardlinks\n", info.count_hardlink);
+	msg_verbose("%8" PRIu64 " symlinks\n", info.count_symlink);
+	msg_verbose("%8" PRIu64 " empty dirs\n", info.count_dir);
+
+	log_tag("content_info:file:%" PRIu64 "\n", info.count_file);
+	log_tag("content_info:hardlink:%" PRIu64 "\n", info.count_hardlink);
+	log_tag("content_info:symlink:%" PRIu64 "\n", info.count_symlink);
+	log_tag("content_info:dir_empty:%" PRIu64 "\n", info.count_dir);
+
+	log_tag("content_info:block:%" PRIu64 "\n", info.blockmax);
+	log_tag("content_info:block_bad:%" PRIu64 "\n", info.count_bad);
+	log_tag("content_info:block_rehash:%" PRIu64 "\n", info.count_rehash);
+	log_tag("content_info:block_unsynced:%" PRIu64 "\n", info.count_unsynced);
+	log_tag("content_info:block_unscrubbed:%" PRIu64 "\n", info.count_unscrubbed);
+
+	/* store the blocks counters */
+	state->rehash_blocks = info.count_rehash;
+	state->bad_blocks = info.count_bad;
+	state->unsynced_blocks = info.count_unsynced;
+	state->unscrubbed_blocks = info.count_unscrubbed;
 
 	/* log the write time of the content file */
 	now = time(0);
