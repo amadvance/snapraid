@@ -840,18 +840,26 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 	}
 
 	/*
-	 * mountinfo format
-	 * 0 - mount ID
-	 * 1 - parent ID
-	 * 2 - major:minor
-	 * 3 - root
-	 * 4 - mount point
-	 * 5 - options
-	 * 6 - "-" (separator)
-	 * 7 - fs
-	 * 8 - mount source - /dev/device
+	 * Example of /proc/self/mountinfo entry for bcachefs:
+	 *
+	 * 36 35 0:34 / /mnt/bcachefs rw,noatime shared:1 - bcachefs /dev/sda:/dev/sdb rw,degraded,metadata_replicas=2
+	 *
+	 * Before " - " (id_map):
+	 *   id_map[0] = mount ID (36)
+	 *   id_map[1] = parent ID (35)
+	 *   id_map[2] = major:minor (0:34)
+	 *   id_map[3] = root (/)
+	 *   id_map[4] = mount point (/mnt/bcachefs)
+	 *   id_map[5] = mount options (rw,noatime)
+	 *
+	 * After " - " (fs_map):
+	 *   fs_map[0] = filesystem type (bcachefs)
+	 *   fs_map[1] = mount source (/dev/sda:/dev/sdb, member devices separated by ':')
+	 *   fs_map[2] = super options (rw,degraded,metadata_replicas=2)
 	 */
 	size_t best_len = 0;
+	int degraded = 0;
+
 	while (1) {
 		char buf[PATH_MAX * 2 + 64];
 		char* id_map[8];
@@ -901,6 +909,14 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 			best_len = mp_len;
 			unescape_mount(fs_map[1]);
 			pathcpy(device_list, sizeof(device_list), fs_map[1]);
+
+			/* check if mounted degraded */
+			if ((fs_mac >= 3 && strstr(fs_map[2], "degraded") != 0)
+				|| (id_mac >= 6 && strstr(id_map[5], "degraded") != 0)) {
+				degraded = 1;
+			} else {
+				degraded = 0;
+			}
 		}
 	}
 
@@ -920,6 +936,10 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 		struct stat st;
 		if (stat(dev_map[i], &st) != 0) {
 			/* LCOV_EXCL_START */
+			if (errno == ENOENT) {
+				degraded = 1;
+				continue;
+			}
 			log_error(errno, "Failed stat %s. %s.", dev_map[i], strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -943,7 +963,7 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 	if (tommy_list_empty(devlist))
 		goto bail;
 
-	return 0;
+	return degraded ? 1 : 0;
 
 bail:
 	tommy_list_foreach(devlist, free);
@@ -3132,14 +3152,44 @@ static dev_t devread(const char* path)
 #endif
 
 /**
+ * Check if an MD RAID array is running in degraded mode by inspecting the
+ * sysfs degraded attribute. Returns 1 if degraded, 0 if healthy or not an MD array.
+ */
+#if HAVE_LINUX_DEVICE
+static int devtree_md_degraded(const char* path)
+{
+	char buf[32];
+	ssize_t len = sysread(path, buf, sizeof(buf) - 1);
+	if (len <= 0)
+		return 0;
+
+	buf[len] = 0;
+	int val = strtoi(buf, 0, 10);
+	if (val > 0)
+		return 1;
+
+	return 0;
+}
+#endif
+
+/**
  * Read a device tree filling the specified list of disk_t entries.
  */
 #if HAVE_LINUX_DEVICE
-static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
+static int devtree(devinfo_t* parent, dev_t device, tommy_list* list, int* degraded)
 {
 	char path[PATH_MAX];
 	DIR* d;
 	int slaves = 0;
+
+	/* check if this device or parent partition is a degraded MD array */
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/md/degraded", major(device), minor(device));
+	if (devtree_md_degraded(path))
+		*degraded = 1;
+
+	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/../md/degraded", major(device), minor(device));
+	if (devtree_md_degraded(path))
+		*degraded = 1;
 
 	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/slaves", major(device), minor(device));
 
@@ -3163,7 +3213,7 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list)
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(parent, subdev, list) != 0) {
+				if (devtree(parent, subdev, list, degraded) != 0) {
 					/* LCOV_EXCL_START */
 					closedir(d);
 					return -1;
@@ -4095,11 +4145,8 @@ int devquery(tommy_list* high, tommy_list* low)
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
-		if (ret > 0) {
-			log_fatal(ENXIO, "DANGER! Disk '%s' is degraded due to missing device(s).\n", devinfo->name);
-			log_tag("degraded:%s\n", esc_tag(devinfo->name));
-			degraded = 1;
-		}
+
+		int disk_degraded = ret > 0;
 
 		devinfo->file[0] = 0;
 		for (tommy_node* j = tommy_list_head(&devlist); j != 0; j = j->next) {
@@ -4130,12 +4177,18 @@ int devquery(tommy_list* high, tommy_list* low)
 			pathcat(devinfo->file, sizeof(devinfo->file), file);
 
 			/* expand the tree of devices */
-			if (devtree(devinfo, dev->device, low) != 0) {
+			if (devtree(devinfo, dev->device, low, &disk_degraded) != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal(EEXTERNAL, "Failed to expand device '%u:%u'.\n", major(dev->device), minor(dev->device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
+		}
+
+		if (disk_degraded) {
+			log_fatal(ENXIO, "DANGER! Disk '%s' is degraded due to missing device(s).\n", devinfo->name);
+			log_tag("degraded:%s\n", esc_tag(devinfo->name));
+			degraded = 1;
 		}
 
 		tommy_list_foreach(&devlist, free);
