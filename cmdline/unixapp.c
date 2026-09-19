@@ -1070,6 +1070,25 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		/* LCOV_EXCL_STOP */
 	}
 
+	/*
+	 * Example of 'zpool status -P' output:
+	 *
+	 *   pool: tank
+	 *  state: DEGRADED
+	 * config:
+	 *
+	 * 	NAME                      STATE     READ WRITE CKSUM
+	 * 	tank                      DEGRADED     0     0     0
+	 * 	  raidz1-0                DEGRADED     0     0     0
+	 * 	    /dev/sda1             ONLINE       0     0     0
+	 * 	    15123456789012345678  UNAVAIL      0     0     0  was /dev/sdb1
+	 *
+	 * The state is in map[1] ("ONLINE", "DEGRADED", ...) when map[0] is
+	 * "state:" (header) or the vdev/device name in the config table.
+	 * Only block devices starting with "/dev/" in map[0] are added to devlist.
+	 */
+	int degraded = 0;
+
 	while (1) {
 		char buf[PATH_MAX * 2 + 64];
 
@@ -1077,18 +1096,39 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		if (s == 0)
 			break;
 
-		char* file = strstr(s, "/dev/");
-		if (!file)
+		char* map[8];
+		unsigned mac = strsplit(map, 8, s, " \t\r\n", 0, 1);
+		if (mac < 2)
 			continue;
 
-		size_t i = 0;
-		while (file[i] != 0 && file[i] != ' ' && file[i] != '\t' && file[i] != '\n')
-			++i;
-		file[i] = 0;
+		/* check pool state */
+		if (strcmp(map[0], "state:") == 0) {
+			if (strcmp(map[1], "ONLINE") != 0)
+				degraded = 1;
+			continue;
+		}
 
+		/* check device or vdev state */
+		if (strcmp(map[1], "DEGRADED") == 0
+			|| strcmp(map[1], "FAULTED") == 0
+			|| strcmp(map[1], "UNAVAIL") == 0
+			|| strcmp(map[1], "OFFLINE") == 0
+			|| strcmp(map[1], "REMOVED") == 0) {
+			degraded = 1;
+		}
+
+		/* only block devices under /dev/ are processed */
+		if (strncmp(map[0], "/dev/", 5) != 0)
+			continue;
+
+		const char* file = map[0];
 		struct stat st;
 		if (stat(file, &st) != 0) {
 			/* LCOV_EXCL_START */
+			if (errno == ENOENT) {
+				degraded = 1;
+				continue;
+			}
 			log_error(errno, "Failed stat %s. %s.", file, strerror(errno));
 			os_pclose(fp);
 			goto bail;
@@ -1115,7 +1155,7 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 	if (tommy_list_empty(devlist))
 		goto bail;
 
-	return 0;
+	return degraded ? 1 : 0;
 
 bail:
 	tommy_list_foreach(devlist, free);
