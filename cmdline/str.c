@@ -22,27 +22,42 @@ char* strpolish(char* s)
 	return s;
 }
 
-unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* delimiters)
+unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* delimiters, const char* trim, int trim_empty)
 {
 	unsigned mac = 0;
 
-	/* skip initial delimiters */
-	str += strspn(str, delimiters);
+	if (*str == 0)
+		return 0;
 
-	while (*str != 0 && mac < split_max) {
-		/* start of the token */
-		split_map[mac] = str;
-		++mac;
+	while (mac < split_max) {
+		char* begin = str;
 
-		/* find the first delimiter or the end of the string */
 		str += strcspn(str, delimiters);
 
-		/* put the final terminator if missing */
-		if (*str != 0)
-			*str++ = 0;
+		char* end = str;
 
-		/* skip trailing delimiters */
-		str += strspn(str, delimiters);
+		int has_next = *str != 0;
+		if (has_next) {
+			*str = 0;
+			++str;
+		}
+
+		if (trim != 0) {
+			begin += strspn(begin, trim);
+
+			while (end > begin && strchr(trim, end[-1]) != 0) {
+				--end;
+				*end = 0;
+			}
+		}
+
+		if (!trim_empty || *begin != 0) {
+			split_map[mac] = begin;
+			++mac;
+		}
+
+		if (!has_next)
+			break;
 	}
 
 	return mac;

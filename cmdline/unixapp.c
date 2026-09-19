@@ -873,8 +873,8 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 		separator += 3;
 
 		/* split the line */
-		id_mac = strsplit(id_map, 8, s, " \t\n");
-		fs_mac = strsplit(fs_map, 8, separator, " \t\n");
+		id_mac = strsplit(id_map, 8, s, " \t\r\n", 0, 1);
+		fs_mac = strsplit(fs_map, 8, separator, " \t\r\n", 0, 1);
 
 		/* if too short, it's the wrong line */
 		if (id_mac < 5)
@@ -914,7 +914,7 @@ static int devdereference_bcachefs(uint64_t device, const char* dir, tommy_list*
 
 	/* split the device list */
 	char* dev_map[64];
-	unsigned dev_mac = strsplit(dev_map, 64, device_list, ":");
+	unsigned dev_mac = strsplit(dev_map, 64, device_list, ":", 0, 0);
 	for (unsigned i = 0; i < dev_mac; ++i) {
 		/* get major:minor, use stat on the path returned */
 		struct stat st;
@@ -998,7 +998,7 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 			break;
 
 		/* split the line */
-		mac = strsplit(map, 3, s, "\t\n");
+		mac = strsplit(map, 3, s, "\t\r\n", 0, 1);
 
 		if (mac < 3)
 			continue;

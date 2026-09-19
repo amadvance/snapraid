@@ -1063,6 +1063,125 @@ static void test_wnmatch(void)
 	}
 }
 
+static void test_strsplit(void)
+{
+	char buf[64];
+	char* map[8];
+	unsigned n;
+
+	/* empty string */
+	strcpy(buf, "");
+	n = strsplit(map, 8, buf, ",", " ", 1);
+	if (n != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit empty string test with trim_empty=1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	strcpy(buf, "");
+	n = strsplit(map, 8, buf, ",", " ", 0);
+	if (n != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit empty string test with trim_empty=0\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* trim_empty = 1 with delimiters only */
+	strcpy(buf, ",,,");
+	n = strsplit(map, 8, buf, ",", " ", 1);
+	if (n != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit consecutive delimiters with trim_empty=1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* trim_empty = 0 with delimiters only */
+	strcpy(buf, ",,,");
+	n = strsplit(map, 8, buf, ",", " ", 0);
+	if (n != 4 || strcmp(map[0], "") != 0 || strcmp(map[1], "") != 0 || strcmp(map[2], "") != 0 || strcmp(map[3], "") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit consecutive delimiters with trim_empty=0\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* trim_empty = 1 with mixed spaces and commas */
+	strcpy(buf, "  one, two,, , three  ");
+	n = strsplit(map, 8, buf, ",", " ", 1);
+	if (n != 3 || strcmp(map[0], "one") != 0 || strcmp(map[1], "two") != 0 || strcmp(map[2], "three") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit mixed test with trim_empty=1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* trim_empty = 0 with mixed spaces and commas */
+	strcpy(buf, "  one, two,, , three  ");
+	n = strsplit(map, 8, buf, ",", " ", 0);
+	if (n != 5 || strcmp(map[0], "one") != 0 || strcmp(map[1], "two") != 0 || strcmp(map[2], "") != 0 || strcmp(map[3], "") != 0 || strcmp(map[4], "three") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit mixed test with trim_empty=0\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* trailing delimiter */
+	strcpy(buf, "a,");
+	n = strsplit(map, 8, buf, ",", 0, 1);
+	if (n != 1 || strcmp(map[0], "a") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit trailing delimiter with trim_empty=1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	strcpy(buf, "a,");
+	n = strsplit(map, 8, buf, ",", 0, 0);
+	if (n != 2 || strcmp(map[0], "a") != 0 || strcmp(map[1], "") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit trailing delimiter with trim_empty=0\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* leading delimiter */
+	strcpy(buf, ",a");
+	n = strsplit(map, 8, buf, ",", 0, 1);
+	if (n != 1 || strcmp(map[0], "a") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit leading delimiter with trim_empty=1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	strcpy(buf, ",a");
+	n = strsplit(map, 8, buf, ",", 0, 0);
+	if (n != 2 || strcmp(map[0], "") != 0 || strcmp(map[1], "a") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit leading delimiter with trim_empty=0\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* capacity limit (split_max) */
+	strcpy(buf, "a,b,c");
+	n = strsplit(map, 2, buf, ",", 0, 1);
+	if (n != 2 || strcmp(map[0], "a") != 0 || strcmp(map[1], "b") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit split_max test with trim_empty=1\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	strcpy(buf, "a,b,c");
+	n = strsplit(map, 2, buf, ",", 0, 0);
+	if (n != 2 || strcmp(map[0], "a") != 0 || strcmp(map[1], "b") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "Failed strsplit split_max test with trim_empty=0\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
 static void test_path(void)
 {
 	char dst[PATH_MAX];
@@ -2800,6 +2919,9 @@ void test(int argc, char* argv[])
 
 	/* pathname import and export */
 	test_path();
+
+	/* string split */
+	test_strsplit();
 
 	/* smartctl output parsing */
 	test_parse_smartctl();
