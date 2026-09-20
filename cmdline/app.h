@@ -13,8 +13,8 @@
 
 #define STATIC_ASSERT(name, cond) typedef char static_assert_ ## name[(cond) ? 1 : -1]
 
+#define EDATA (-1) /**< Silent data corruption. */
 #define EINTERNAL EFAULT /**< Internal assertion failed. */
-#define EDATA EIO /**< Silent data corruption. */
 #define ESOFT EINVAL /**< Software error, like permission denied. */
 #define EUSER EINVAL /**< Invalid value specified by the user. */
 #define EEXTERNAL EINVAL /**< Invalid external interface behaviour. */

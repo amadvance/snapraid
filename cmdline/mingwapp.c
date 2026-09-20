@@ -1165,7 +1165,7 @@ static int devsmart(uint64_t device, const char* name, const char* smartctl, con
 
 	if (smartctl_executable(smartctl_path, sizeof(smartctl_path)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to build smartctl executable path.\n");
+		log_error(errno, "Failed to build smartctl executable path.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1184,7 +1184,7 @@ retry:
 	argc += argsplit(argv + argc, ARGS_MAX - argc, info_buf);
 	if (argc >= ARGS_MAX) {
 		/* LCOV_EXCL_START */
-		log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+		log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1192,7 +1192,7 @@ retry:
 	if (count != 0) {
 		if (argc >= ARGS_MAX - 3) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1206,7 +1206,7 @@ retry:
 		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_split);
 		if (argc >= ARGS_MAX) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1214,7 +1214,7 @@ retry:
 	} else {
 		if (argc >= ARGS_MAX - 1) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1231,11 +1231,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:spawn\n", file, name);
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s'.\n", smartctl_path, info_opts, extra_args);
+			log_error(EEXTERNAL, "Failed to run '%s [info: %s] %s'.\n", smartctl_path, info_opts, extra_args);
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] -d sat %s'.\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s [info: %s] -d sat %s'.\n", smartctl_path, info_opts, file);
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s'.\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s [info: %s] %s'.\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1256,11 +1256,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s' (not exited).\n", smartctl_path, info_opts, extra_args);
+			log_error(EEXTERNAL, "Failed to run '%s [info: %s] %s' (not exited).\n", smartctl_path, info_opts, extra_args);
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] -d sat %s' (not exited).\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s [info: %s] -d sat %s' (not exited).\n", smartctl_path, info_opts, file);
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s [info: %s] %s' (not exited).\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s [info: %s] %s' (not exited).\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1594,7 +1594,7 @@ static int devprobe(uint64_t device, const char* name, const char* smartctl, con
 
 	if (smartctl_executable(smartctl_path, sizeof(smartctl_path)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to build smartctl executable path.\n");
+		log_error(errno, "Failed to build smartctl executable path.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1615,7 +1615,7 @@ retry:
 	argc += argsplit(argv + argc, ARGS_MAX - argc, info_buf);
 	if (argc >= ARGS_MAX) {
 		/* LCOV_EXCL_START */
-		log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+		log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1623,7 +1623,7 @@ retry:
 	if (count != 0) {
 		if (argc >= ARGS_MAX - 3) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1637,7 +1637,7 @@ retry:
 		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_split);
 		if (argc >= ARGS_MAX) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1645,7 +1645,7 @@ retry:
 	} else {
 		if (argc >= ARGS_MAX - 1) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1662,11 +1662,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:spawn\n", file, name);
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", smartctl_path, info_opts, extra_args);
+			log_error(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", smartctl_path, info_opts, extra_args);
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s -d sat %s'.\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s -n standby,3 %s -d sat %s'.\n", smartctl_path, info_opts, file);
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s'.\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1687,11 +1687,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", smartctl_path, info_opts, extra_args);
+			log_error(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", smartctl_path, info_opts, extra_args);
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s -d sat %s' (not exited).\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s -n standby,3 %s -d sat %s' (not exited).\n", smartctl_path, info_opts, file);
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", smartctl_path, info_opts, file);
+			log_error(EEXTERNAL, "Failed to run '%s -n standby,3 %s %s' (not exited).\n", smartctl_path, info_opts, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1744,7 +1744,7 @@ static int devdown(uint64_t device, const char* name, const char* smartctl)
 
 	if (smartctl_executable(smartctl_path, sizeof(smartctl_path)) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal(errno, "Failed to build smartctl executable path.\n");
+		log_error(errno, "Failed to build smartctl executable path.\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1762,7 +1762,7 @@ retry:
 	if (count != 0) {
 		if (argc >= ARGS_MAX - 3) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1776,7 +1776,7 @@ retry:
 		argc += argsplit(argv + argc, ARGS_MAX - argc, extra_split);
 		if (argc >= ARGS_MAX) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1784,7 +1784,7 @@ retry:
 	} else {
 		if (argc >= ARGS_MAX - 1) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Too many smartctl arguments.\n");
+			log_error(EEXTERNAL, "Too many smartctl arguments.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1801,11 +1801,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:spawn\n", file, name);
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", smartctl_path, extra_args);
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", smartctl_path, extra_args);
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s'.\n", smartctl_path, file);
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s'.\n", smartctl_path, file);
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", smartctl_path, file);
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now %s'.\n", smartctl_path, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1826,11 +1826,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:abort\n", file, name);
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", smartctl_path, extra_args);
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", smartctl_path, extra_args);
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s' (not exited).\n", smartctl_path, file);
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s' (not exited).\n", smartctl_path, file);
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", smartctl_path, file);
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now %s' (not exited).\n", smartctl_path, file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1855,11 +1855,11 @@ retry:
 		/* LCOV_EXCL_START */
 		log_tag("device:%s:%s:exit:%d\n", file, name, WEXITSTATUS(ret));
 		if (smartctl[0] && count == 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", smartctl_path, extra_args, WEXITSTATUS(ret));
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", smartctl_path, extra_args, WEXITSTATUS(ret));
 		else if (count != 0)
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s' with return code %xh.\n", smartctl_path, file, WEXITSTATUS(ret));
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now -d sat %s' with return code %xh.\n", smartctl_path, file, WEXITSTATUS(ret));
 		else
-			log_fatal(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", smartctl_path, file, WEXITSTATUS(ret));
+			log_error(EEXTERNAL, "Failed to run '%s -s standby,now %s' with return code %xh.\n", smartctl_path, file, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2141,7 +2141,7 @@ int devquery(tommy_list* high, tommy_list* low)
 
 		if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to resolve path '%s'.\n", devinfo->mount);
+			log_error(EEXTERNAL, "Failed to resolve path '%s'.\n", devinfo->mount);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -2158,7 +2158,7 @@ int devquery(tommy_list* high, tommy_list* low)
 		/* expand the tree of devices */
 		if (devtree(devinfo, low) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal(EEXTERNAL, "Failed to expand device '%s'.\n", devinfo->file);
+			log_error(EEXTERNAL, "Failed to expand device '%s'.\n", devinfo->file);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

@@ -297,6 +297,18 @@ int msg_fatal_stderr = 1;
 FILE* stdlog = 0;
 int msg_line_prev = 0; /**< Previous line width on stdout */
 int msg_line_curr = 0; /**< Current line width on stdout */
+static unsigned log_hardware_error_count = 0;
+
+unsigned log_hardware_errors(void)
+{
+	unsigned count;
+
+	lock_msg();
+	count = log_hardware_error_count;
+	unlock_msg();
+
+	return count;
+}
 
 /*
  * Note that in the following functions we always flush both
@@ -379,12 +391,14 @@ void vlog_fatal(int err, const char* format, va_list ap, const char* post)
 
 	lock_msg();
 
+	if (is_hw(err))
+		++log_hardware_error_count;
+
 	if (stdlog) {
 		if (is_hw(err))
 			log_failed = fprintf(stdlog, "msg:fatal_hardware: ") < 0;
 		else
 			log_failed = fprintf(stdlog, "msg:fatal: ") < 0;
-
 		va_list ap_copy;
 		va_copy(ap_copy, ap);
 		if (vfprintf(stdlog, format, ap_copy) < 0)
@@ -426,6 +440,9 @@ void log_fatal(int err, const char* format, ...)
 void vlog_error(int err, const char* format, va_list ap, const char* post)
 {
 	lock_msg();
+
+	if (is_hw(err))
+		++log_hardware_error_count;
 
 	if (stdlog) {
 		if (is_hw(err))
@@ -469,6 +486,9 @@ void log_error(int err, const char* format, ...)
 void vlog_info(int err, const char* format, va_list ap, const char* post)
 {
 	lock_msg();
+
+	if (is_hw(err))
+		++log_hardware_error_count;
 
 	if (stdlog) {
 		if (is_hw(err))
@@ -535,6 +555,9 @@ void log_expected(int err, const char* format, ...)
 	va_list ap;
 
 	lock_msg();
+
+	if (is_hw(err))
+		++log_hardware_error_count;
 
 	if (stdlog) {
 		if (is_hw(err))

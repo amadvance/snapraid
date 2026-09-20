@@ -1264,6 +1264,11 @@ int state_scrub(struct snapraid_state* state, int plan100, int olderthan)
 	if (process_error != 0)
 		return -1;
 
+	if (log_hardware_errors() != 0) {
+		msg_status("Everything done, but hardware errors were encountered in the process\n");
+		return -1;
+	}
+
 	msg_status("Everything OK\n");
 
 	return 0;

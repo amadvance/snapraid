@@ -1503,11 +1503,15 @@ int snapraid_main(int argc, char* argv[])
 			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
 
 		if (opt.gui_touch_before) {
-			state_touch(&state);
+			ret = state_touch(&state);
 
 			/* save the new state if required */
 			if (state.need_write)
 				state_write(&state);
+
+			if (ret != 0) {
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		ret = state_snapshot_scan(&state);
@@ -1652,7 +1656,7 @@ int snapraid_main(int argc, char* argv[])
 
 		memory();
 
-		state_touch(&state);
+		ret = state_touch(&state);
 
 		/*
 		 * Intercept signals while operating
@@ -1778,6 +1782,10 @@ int snapraid_main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* force failure if hardware errors were encountered */
+	if (ret == 0 && log_hardware_errors() != 0)
+		ret = -1;
 
 	/* close log file */
 	log_close(log_file);

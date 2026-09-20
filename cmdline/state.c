@@ -353,7 +353,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						 * because we want to use these disks
 						 */
 						if (!state->opt.no_warnings)
-							log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
+							log_error(EUSER, "DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal(ESOFT, "Disks '%s' and '%s' are on the same device.\n", disk->mount_point, other->mount_point);
@@ -383,7 +383,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 								 * because we want to use these disks
 								 */
 								if (!state->opt.no_warnings)
-									log_fatal(EUSER, "DANGER! Ignoring that disks '%s' and %s '%s' are on the same device\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
+									log_error(EUSER, "DANGER! Ignoring that disks '%s' and %s '%s' are on the same device\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
 							} else {
 								/* LCOV_EXCL_START */
 								log_fatal(ESOFT, "Disk '%s' and %s '%s' are on the same device.\n", disk->mount_point, lev_name(l), state->parity[l].split_map[s].path);
@@ -446,7 +446,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 								 * because we want to use these disks
 								 */
 								if (!state->opt.no_warnings)
-									log_fatal(EUSER, "DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
+									log_error(EUSER, "DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
 							} else {
 								/* LCOV_EXCL_START */
 								log_fatal(ESOFT, "Parity '%s' and '%s' are on the same device.\n", state->parity[l].split_map[s].path, state->parity[j].split_map[t].path);
@@ -875,7 +875,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 							dev = 0;
 							*uuid = 0;
 							skip_access = 1;
-							log_fatal(errno, "DANGER! Skipping inaccessible parity disk '%s'...\n", tag);
+							log_error(errno, "DANGER! Skipping inaccessible parity disk '%s'...\n", tag);
 						} else {
 							/* LCOV_EXCL_START */
 							log_fatal(errno, "Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
@@ -1019,7 +1019,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				if (state->opt.skip_content_access) {
 					/* use a fake device */
 					dev = 0;
-					log_fatal(errno, "WARNING! Skipping inaccessible content file '%s'...\n", buffer);
+					log_error(errno, "WARNING! Skipping inaccessible content file '%s'...\n", buffer);
 				} else {
 					/* LCOV_EXCL_START */
 					log_fatal(errno, "Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
@@ -1139,7 +1139,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						dev = 0;
 						*uuid = 0;
 						skip_access = 1;
-						log_fatal(errno, "DANGER! Skipping inaccessible data disk '%s'...\n", buffer);
+						log_error(errno, "DANGER! Skipping inaccessible data disk '%s'...\n", buffer);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal(errno, "Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
@@ -6387,7 +6387,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			msg_bar("\n");
 			msg_flush();
 		}
-		log_fatal(EUSER, "Stopping for interruption at block %" PRIu64 "\n", blockpos);
+		log_error(EUSER, "Stopping for interruption at block %" PRIu64 "\n", blockpos);
 		log_tag("sigint:%" PRIu64 ": SIGINT received\n", blockpos);
 		log_flush();
 		return 1;

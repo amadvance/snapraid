@@ -1767,7 +1767,7 @@ end:
 	*sync_durable = 1;
 
 	if (state->opt.kill_after_sync) {
-		log_fatal(EUSER, "WARNING! Killing due --test-kill-after-sync option.\n");
+		log_error(EUSER, "WARNING! Killing due --test-kill-after-sync option.\n");
 		exit(EXIT_SUCCESS);
 	}
 
@@ -2029,7 +2029,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 		/* if the file is too small */
 		if (out_size < used_parity_size) {
-			log_fatal(ESOFT, "WARNING! The %s parity has only %" PRIu64 " blocks instead of %" PRIu64 ".\n", lev_name(l), parityblocks, used_paritymax);
+			log_error(ESOFT, "WARNING! The %s parity has only %" PRIu64 " blocks instead of %" PRIu64 ".\n", lev_name(l), parityblocks, used_paritymax);
 		}
 
 		/* keep the smallest physical parity extent */
@@ -2152,7 +2152,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 
 		if (state->opt.kill_after_resize) {
-			log_fatal(EUSER, "WARNING! Killing due --test-kill-after-resize option.\n");
+			log_error(EUSER, "WARNING! Killing due --test-kill-after-resize option.\n");
 			exit(EXIT_SUCCESS);
 		}
 
@@ -2183,7 +2183,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			if (state->need_write)
 				state_write(state);
 		} else {
-			log_fatal(EUSER, "WARNING! Skipped state write for --test-skip-content-write option.\n");
+			log_error(EUSER, "WARNING! Skipped state write for --test-skip-content-write option.\n");
 		}
 
 		/* make the scanned state available for recovery before changing parity */
@@ -2193,7 +2193,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
 		} else if (state->opt.kill_before_sync) {
-			log_fatal(EUSER, "WARNING! Killing due --test-kill-before-sync option.\n");
+			log_error(EUSER, "WARNING! Killing due --test-kill-before-sync option.\n");
 			exit(EXIT_SUCCESS);
 		} else if (blockstart < blockmax) {
 			ret = state_sync_process(state, parity_handle, blockstart, blockmax, &sync_durable);
@@ -2272,12 +2272,17 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		if (sync_durable) {
 			state_write(state);
 		} else {
-			log_fatal(EUSER, "WARNING! Skipping saving the content file because the sync was not durable.\n");
+			log_error(EUSER, "WARNING! Skipping saving the content file because the sync was not durable.\n");
 		}
 	}
 
 	if (process_error != 0)
 		return -1;
+
+	if (log_hardware_errors() != 0) {
+		msg_status("Everything done, but hardware errors were encountered in the process\n");
+		return -1;
+	}
 
 	msg_status("Everything OK\n");
 

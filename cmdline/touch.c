@@ -8,10 +8,11 @@
 #include "state.h"
 #include "handle.h"
 
-void state_touch(struct snapraid_state* state)
+int state_touch(struct snapraid_state* state)
 {
 	tommy_node* i;
 	unsigned counter = 0;
+	int error = 0;
 
 	msg_progress("Setting sub-second timestamps...\n");
 
@@ -80,6 +81,7 @@ void state_touch(struct snapraid_state* state)
 								f = open(path, flags);
 								if (windows_set_file_attributes(path, attributes) != 0) {
 									log_error(errno, "Error restoring read-only attribute for '%s'. %s.\n", path, strerror(errno));
+									++error;
 								}
 							}
 						}
@@ -90,6 +92,7 @@ void state_touch(struct snapraid_state* state)
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					log_error(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
+					++error;
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -103,6 +106,7 @@ void state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_START */
 					close(f);
 					log_error(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
+					++error;
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -113,6 +117,7 @@ void state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_START */
 					close(f);
 					log_error(errno, "Error timing file '%s'. %s.\n", path, strerror(errno));
+					++error;
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -127,6 +132,7 @@ void state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_START */
 					close(f);
 					log_error(errno, "Error accessing file '%s'. %s.\n", path, strerror(errno));
+					++error;
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -136,6 +142,7 @@ void state_touch(struct snapraid_state* state)
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_error(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));
+					++error;
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -161,5 +168,9 @@ void state_touch(struct snapraid_state* state)
 
 	msg_status("\n");
 	msg_status("%8u touched files\n", counter);
+
+	if (error != 0)
+		return -1;
+	return 0;
 }
 

@@ -430,8 +430,14 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 
 		/* note that in Windows ftruncate is really allocating space */
 		if (ftruncate(spaceholder_f, WINDOWS_SPACEHOLDER_SIZE) != 0) {
-			log_fatal(errno, "WARNING Failed to resize the space holder file '%s' to %u bytes.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE);
-			log_fatal(errno, "Assuming that no more space is available.\n");
+			if (is_hw(errno)) {
+				log_fatal(errno, "Hardware error while resizing space holder file '%s'. %s.\n", spaceholder_path, strerror(errno));
+				close(spaceholder_f);
+				remove(spaceholder_path);
+				return -1;
+			}
+			log_info(0, "WARNING Failed to resize the space holder file '%s' to %u bytes. %s.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE, strerror(errno));
+			log_info(0, "Assuming that no more space is available.\n");
 			close(spaceholder_f);
 			remove(spaceholder_path);
 			return 0;
@@ -505,8 +511,11 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 #ifdef _WIN32
 	/* now delete the spaceholder file */
 	if (remove(spaceholder_path) != 0) {
-		log_error(errno, "WARNING Failed to remove the space holder file '%s'.\n", spaceholder_path);
-		log_error(errno, "Continuing anyway.\n");
+		if (is_hw(errno)) {
+			log_fatal(errno, "DANGER! Failed to remove the space holder file '%s'. %s.\n", spaceholder_path, strerror(errno));
+			return -1;
+		}
+		log_error(errno, "WARNING! Failed to remove the space holder file '%s', continuing anyway. %s.\n", spaceholder_path, strerror(errno));
 	}
 #endif
 

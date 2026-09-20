@@ -1228,7 +1228,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 		case DEVICE_PROBE : ope = "Probe"; break;
 		case DEVICE_DOWNIFUP : ope = "Spindown"; break;
 		}
-		log_fatal(ESOFT, "%s is unsupported in this platform.\n", ope);
+		log_error(ESOFT, "%s is unsupported in this platform.\n", ope);
 	} else {
 		state_stat(state, &high);
 

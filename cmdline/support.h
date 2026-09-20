@@ -74,6 +74,11 @@ uint64_t random_u64(void);
 int is_hw(int err);
 
 /**
+ * Return the number of hardware errors logged so far.
+ */
+unsigned log_hardware_errors(void);
+
+/**
  * Log errors with standard messages
  */
 void log_fatal_errno(int err, const char* name);

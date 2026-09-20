@@ -124,6 +124,9 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
   Or use callback iteration helpers: `tommy_list_foreach()`, `tommy_list_foreach_arg()`, `tommy_hashdyn_foreach()`, etc.
 - **Cleanup**: Use `goto` pattern for cleanup in complex functions when appropriate
 - **Fatal paths**: Use `exit(EXIT_FAILURE)` for unrecoverable errors; `os_abort()` for internal inconsistencies
+- **Exit Code & Logging Invariants**:
+  - `log_fatal()`: Any invocation of `log_fatal()` represents an unrecoverable failure and must force a non-zero exit code upon termination.
+  - `log_error()`: Whenever `log_error()` is called with a hardware error (`is_hw(err)`), it must force a non-zero exit code upon termination.
 
 #### Threading
 
