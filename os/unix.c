@@ -353,11 +353,6 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 /****************************************************************************/
 /* exec */
 
-/**
- * Maximum execution time for helper scripts and commands, in seconds.
- */
-#define OS_EXEC_TIMEOUT_SEC 300
-
 /*
  * Scrubbed environment
  * Only provide the bare essentials.
@@ -1053,7 +1048,7 @@ static void pid_unpublish(pid_t* pid_slot, pid_t pid)
  * as a zombie until the caller unpublishes the process slot and performs the final reap.
  * Optionally delivers input to input_fd using non-blocking writes.
  */
-static pid_t waitpid_timeout_group(pid_t pid, int64_t start, int input_fd, const char* input, int* timed_out, int* input_error)
+static pid_t waitpid_timeout_group(pid_t pid, int64_t start, int input_fd, const char* input, uint64_t timeout_sec, int* timed_out, int* input_error)
 {
 	size_t input_len = input != 0 ? strlen(input) : 0;
 	size_t input_pos = 0;
@@ -1132,7 +1127,7 @@ static pid_t waitpid_timeout_group(pid_t pid, int64_t start, int input_fd, const
 			}
 		}
 
-		if (os_tick_sec() - start >= OS_EXEC_TIMEOUT_SEC) {
+		if (timeout_sec != 0 && os_tick_sec() - start >= timeout_sec) {
 			*timed_out = 1;
 
 			if (input_fd != -1) {
@@ -1165,7 +1160,7 @@ static pid_t waitpid_timeout_group(pid_t pid, int64_t start, int input_fd, const
 /**
  * Executes a script directly via its file descriptor.
  */
-int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot)
+int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeout_sec, pid_t* pid_slot)
 {
 	char resolved_path[PATH_MAX];
 	pid_t pid;
@@ -1310,7 +1305,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot
 
 	pid_publish(pid_slot, pid);
 
-	ret = waitpid_timeout_group(pid, start, -1, 0, &timed_out, 0);
+	ret = waitpid_timeout_group(pid, start, -1, 0, timeout_sec, &timed_out, 0);
 
 	/*
 	 * Unpublish the PID slot before reaping the zombie process.
@@ -1364,7 +1359,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot
 	}
 }
 
-int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot)
+int os_command(const char* command, const char* run_as_user, const char* stdin_text, uint64_t timeout_sec, pid_t* pid_slot)
 {
 	pid_t pid;
 	int ret;
@@ -1501,7 +1496,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	pid_publish(pid_slot, pid);
 
-	ret = waitpid_timeout_group(pid, start, pipe_fds[1], stdin_text, &timed_out, &input_error);
+	ret = waitpid_timeout_group(pid, start, pipe_fds[1], stdin_text, timeout_sec, &timed_out, &input_error);
 	pipe_fds[1] = -1;
 
 	/*
@@ -1989,7 +1984,7 @@ static int groups_dropped = 0;
 static gid_t* privileged_groups = 0;
 static int privileged_group_count = 0;
 
-void os_privileges_drop(void)
+int os_privileges_drop(void)
 {
 	/*
 	 * Detect if running as root
@@ -2000,80 +1995,61 @@ void os_privileges_drop(void)
 	if (getuid() == 0 || geteuid() == 0) {
 		/* find the unprivileged user "nobody" */
 		struct passwd* pw = getpwnam("nobody");
-		if (pw) {
-			unpriv_uid = pw->pw_uid;
-			unpriv_gid = pw->pw_gid;
-
-			/*
-			 * Save the supplementary groups before dropping them.
-			 * They must be restored by os_privileges_acquire() because
-			 * spawned user scripts may depend on them.
-			 */
-			privileged_group_count = getgroups(0, 0);
-			if (privileged_group_count < 0) {
-				os_syslog(OS_LVL_INFO, "failed to get supplementary group count, errno=%s(%d)", strerror(errno), errno);
-				os_abort();
-			}
-
-			if (privileged_group_count != 0) {
-				privileged_groups = malloc(privileged_group_count * sizeof(gid_t));
-				if (!privileged_groups) {
-					os_syslog(OS_LVL_CRITICAL, "failed to allocate supplementary group list");
-					os_abort();
-				}
-
-				if (getgroups(privileged_group_count, privileged_groups) != privileged_group_count) {
-					os_syslog(OS_LVL_INFO, "failed to get supplementary groups, errno=%s(%d)", strerror(errno), errno);
-					os_abort();
-				}
-
-				if (setgroups(0, 0) != 0) {
-					if (errno == EPERM) {
-						/*
-						 * If EPERM, process lacks permission to switch
-						 * supplementary groups. Continue with them active.
-						 */
-						os_syslog(OS_LVL_INFO, "permission denied to release supplementary group privileges, continuing with active privileges");
-					} else {
-						os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
-						os_abort();
-					}
-				} else {
-					groups_dropped = 1;
-				}
-			}
-
-			if (setegid(unpriv_gid) != 0) {
-				if (errno == EPERM) {
-					/*
-					 * If EPERM, process lacks permission to switch privileges
-					 * (e.g. dropped capabilities); continue with active privileges.
-					 */
-					os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
-				} else {
-					os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
-					os_abort();
-				}
-			} else {
-				gid_dropped = 1;
-			}
-
-			if (seteuid(unpriv_uid) != 0) {
-				if (errno == EPERM) {
-					/*
-					 * If EPERM, process lacks permission to switch privileges
-					 * (e.g. dropped capabilities); continue with active privileges.
-					 */
-					os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
-				} else {
-					os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
-					os_abort();
-				}
-			} else {
-				uid_dropped = 1;
-			}
+		if (!pw) {
+			os_syslog(OS_LVL_INFO, "unprivileged user 'nobody' not found");
+			return -1;
 		}
+
+		unpriv_uid = pw->pw_uid;
+		unpriv_gid = pw->pw_gid;
+
+		/*
+		 * Save the supplementary groups before dropping them.
+		 * They must be restored by os_privileges_acquire() because
+		 * spawned user scripts may depend on them.
+		 */
+		privileged_group_count = getgroups(0, 0);
+		if (privileged_group_count < 0) {
+			os_syslog(OS_LVL_INFO, "failed to get supplementary group count, errno=%s(%d)", strerror(errno), errno);
+			return -1;
+		}
+
+		if (privileged_group_count != 0) {
+			privileged_groups = malloc(privileged_group_count * sizeof(gid_t));
+			if (!privileged_groups) {
+				os_syslog(OS_LVL_CRITICAL, "failed to allocate supplementary group list");
+				return -1;
+			}
+
+			if (getgroups(privileged_group_count, privileged_groups) != privileged_group_count) {
+				os_syslog(OS_LVL_INFO, "failed to get supplementary groups, errno=%s(%d)", strerror(errno), errno);
+				return -1;
+			}
+
+			if (setgroups(0, 0) != 0) {
+				os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				return -1;
+			}
+
+			groups_dropped = 1;
+		}
+
+		if (setegid(unpriv_gid) != 0) {
+			os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+			return -1;
+		}
+
+		gid_dropped = 1;
+
+		if (seteuid(unpriv_uid) != 0) {
+			os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+			return -1;
+		}
+
+		uid_dropped = 1;
 	}
+
+	return 0;
 }
 
 void os_privileges_acquire(void)

@@ -244,10 +244,11 @@ int os_spawn_and_wait(const char** argv);
  * \param command Command to execute.
  * \param run_as_user User to run command as (0 for current user).
  * \param stdin_text Text to provide as stdin (0 for no input).
+ * \param timeout_sec Execution timeout in seconds (0 for no timeout).
  * \param pid_slot Optional pointer to publish the process reference while active, or 0.
  * \return Exit status of command, or -1 on failure.
  */
-int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot);
+int os_command(const char* command, const char* run_as_user, const char* stdin_text, uint64_t timeout_sec, pid_t* pid_slot);
 
 /**
  * Execute a script file with specified user context.
@@ -258,10 +259,11 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
  * \param argv Array of command line arguments.
  * \param envp Environment variables (0-terminated list of strings).
  * \param run_as_user User to run script as (0 for current user).
+ * \param timeout_sec Execution timeout in seconds (0 for no timeout).
  * \param pid_slot Optional pointer to publish the process reference while active, or 0.
  * \return Exit status of script, or -1 on failure.
  */
-int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot);
+int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeout_sec, pid_t* pid_slot);
 
 /**
  * Validates a string for exec.
@@ -351,11 +353,17 @@ void os_privileges_acquire(void);
 void os_privileges_release(void);
 
 /**
- * Drop effective privileges permanently to an unprivileged user (e.g., "nobody").
+ * Drop effective privileges permanently to an unprivileged user
+ * (e.g., "nobody").
  * Called after startup/initialization is complete to transition the daemon into
  * the Bracketed Privileges execution mode.
+ *
+ * On failure the process credentials may have been partially changed and the
+ * caller must terminate the process.
+ *
+ * \return 0 on success, -1 on failure.
  */
-void os_privileges_drop(void);
+int os_privileges_drop(void);
 
 /****************************************************************************/
 /* os */
@@ -403,7 +411,6 @@ uint64_t os_tick_sec(void);
  * \return 0 on success, -1 on error.
  */
 int os_usleep(uint64_t usec);
-
 
 /**
  * Abort the process with a stacktrace.

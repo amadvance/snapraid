@@ -3569,9 +3569,33 @@ int os_kill(pid_t* pid_slot)
 }
 
 /**
+ * Waits for a process with an optional timeout, terminating it if exceeded.
+ */
+static void wait_process_timeout(HANDLE process, uint64_t timeout_sec, int* timed_out)
+{
+	DWORD wait_ms = INFINITE;
+
+	if (timeout_sec != 0) {
+		if (timeout_sec > 0xFFFFFFFE / 1000)
+			wait_ms = 0xFFFFFFFE;
+		else
+			wait_ms = (DWORD)(timeout_sec * 1000);
+	}
+
+	*timed_out = 0;
+
+	DWORD wait_res = WaitForSingleObject(process, wait_ms);
+	if (wait_res == WAIT_TIMEOUT) {
+		*timed_out = 1;
+		TerminateProcess(process, 1);
+		WaitForSingleObject(process, INFINITE);
+	}
+}
+
+/**
  * Execute a shell command synchronously and wait for termination.
  */
-int os_command(const char* command, const char* run_as_user, const char* stdin_text, pid_t* pid_slot)
+int os_command(const char* command, const char* run_as_user, const char* stdin_text, uint64_t timeout_sec, pid_t* pid_slot)
 {
 	wchar_t conv[CONV_MAX];
 	HANDLE stdin_read_handle;
@@ -3794,7 +3818,8 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	CloseHandle(stdin_write_handle);
 
 	/* wait for completion and get exit code */
-	WaitForSingleObject(pi.hProcess, INFINITE);
+	int timed_out;
+	wait_process_timeout(pi.hProcess, timeout_sec, &timed_out);
 
 	DWORD status;
 	GetExitCodeProcess(pi.hProcess, &status);
@@ -3806,6 +3831,12 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	stop = os_tick_sec();
 	int64_t execution_time = stop - start;
+
+	if (timed_out) {
+		os_syslog(OS_LVL_INFO, "command %s timeout after %" PRId64 " seconds", command, execution_time);
+		return -1;
+	}
+
 	if (execution_time > 30)
 		os_syslog(OS_LVL_WARNING, "command %s ran for %" PRId64 " seconds that is unexpectedly long", command, execution_time);
 
@@ -3961,7 +3992,7 @@ bail:
 /**
  * Execute an external script synchronously and wait for termination.
  */
-int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot)
+int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeout_sec, pid_t* pid_slot)
 {
 	wchar_t conv[CONV_MAX];
 	PROCESS_INFORMATION pi;
@@ -4170,7 +4201,9 @@ int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot
 	pid_t pid = (intptr_t)pi.hProcess;
 	pid_publish(pid_slot, pid);
 
-	WaitForSingleObject(pi.hProcess, INFINITE);
+	/* wait for completion and get exit code */
+	int timed_out;
+	wait_process_timeout(pi.hProcess, timeout_sec, &timed_out);
 
 	DWORD status;
 	GetExitCodeProcess(pi.hProcess, &status);
@@ -4182,6 +4215,12 @@ int os_script(char** argv, char** envp, const char* run_as_user, pid_t* pid_slot
 
 	stop = os_tick_sec();
 	int64_t execution_time = stop - start;
+
+	if (timed_out) {
+		os_syslog(OS_LVL_INFO, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
+		return -1;
+	}
+
 	if (execution_time > 30)
 		os_syslog(OS_LVL_WARNING, "script %s took %" PRId64 " seconds", resolved_path, execution_time);
 
@@ -4396,8 +4435,9 @@ void os_privileges_release(void)
 {
 }
 
-void os_privileges_drop(void)
+int os_privileges_drop(void)
 {
+	return 0;
 }
 
 void os_abort(void)
