@@ -4080,15 +4080,6 @@ static void* state_write_thread(void* arg)
 			}
 			sputbs(uuid, f);
 
-			if (context->first) {
-				log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
-					esc_tag(map->name),
-					map->total_blocks * (uint64_t)state->block_size,
-					map->free_blocks * (uint64_t)state->block_size);
-				log_tag("content_data_split:%s:%s\n",
-					esc_tag(map->name),
-					uuid);
-			}
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal(errno, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -4104,15 +4095,8 @@ static void* state_write_thread(void* arg)
 		sputb32(l, f);
 		sputb64(state->parity[l].total_blocks, f);
 		sputb64(state->parity[l].free_blocks, f);
-		if (context->first) {
-			log_tag("content_parity:%s:%" PRIi64 ":%" PRIi64 "\n",
-				lev_config_name(l),
-				state->parity[l].total_blocks * (uint64_t)state->block_size,
-				state->parity[l].free_blocks * (uint64_t)state->block_size);
-		}
 		sputb32(state->parity[l].split_mac, f);
 		for (s = 0; s < state->parity[l].split_mac; ++s) {
-			char parity_name[64];
 			const char* uuid;
 			sputbs(state->parity[l].split_map[s].path, f);
 
@@ -4130,17 +4114,6 @@ static void* state_write_thread(void* arg)
 			sputbs(uuid, f);
 
 			sputb64(state->parity[l].split_map[s].size, f);
-			if (s == 0)
-				pathcpy(parity_name, sizeof(parity_name), lev_config_name(l));
-			else
-				pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(l), s);
-			if (context->first) {
-				log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
-					parity_name,
-					uuid,
-					esc_tag(state->parity[l].split_map[s].path),
-					state->parity[l].split_map[s].size);
-			}
 		}
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
@@ -5640,6 +5613,83 @@ static void state_write_check(struct snapraid_state* state)
 	}
 }
 
+/*
+ * Emit structured mapping tags for data disks and parity splits after
+ * content files have been durably published.
+ */
+static void state_write_log_mappings(struct snapraid_state* state)
+{
+	tommy_node* i;
+	unsigned l, s;
+
+	/* for each data disk mapping */
+	for (i = state->maplist; i != 0; i = i->next) {
+		struct snapraid_map* map = i->data;
+		struct snapraid_disk* disk;
+		const char* uuid;
+
+		/* find the disk for this mapping */
+		disk = find_disk_by_name(state, map->name);
+		if (!disk || disk->mapping_idx == -1)
+			continue;
+
+		/*
+		 * If the probed uuid is empty, but disk access was skipped (globally
+		 * or individually), log the last known uuid. Otherwise, log the
+		 * probed uuid.
+		 */
+		if (disk->uuid[0] == 0 && (state->opt.skip_disk_access || disk->skip_access)) {
+			uuid = map->content_uuid;
+		} else {
+			uuid = disk->uuid;
+		}
+
+		log_tag("content_data:%s:%" PRIi64 ":%" PRIi64 "\n",
+			esc_tag(map->name),
+			map->total_blocks * (uint64_t)state->block_size,
+			map->free_blocks * (uint64_t)state->block_size);
+		log_tag("content_data_split:%s:%s\n",
+			esc_tag(map->name),
+			uuid);
+	}
+
+	/* for each parity */
+	for (l = 0; l < state->level; ++l) {
+		log_tag("content_parity:%s:%" PRIi64 ":%" PRIi64 "\n",
+			lev_config_name(l),
+			state->parity[l].total_blocks * (uint64_t)state->block_size,
+			state->parity[l].free_blocks * (uint64_t)state->block_size);
+
+		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			char parity_name[64];
+			const char* uuid;
+
+			/*
+			 * If the probed uuid is not empty, log it. Otherwise, if parity access was
+			 * skipped (globally or individually), log the last known uuid read from the
+			 * content file. Otherwise, log the empty probed uuid.
+			 */
+			if (state->parity[l].split_map[s].uuid[0] == 0
+				&& (state->opt.skip_parity_access || state->parity[l].skip_access)) {
+				uuid = state->parity[l].split_map[s].content_uuid;
+			} else {
+				uuid = state->parity[l].split_map[s].uuid;
+			}
+
+			if (s == 0)
+				pathcpy(parity_name, sizeof(parity_name), lev_config_name(l));
+			else
+				pathprint(parity_name, sizeof(parity_name), "%s/%u", lev_config_name(l), s);
+
+			log_tag("content_parity_split:%s:%s:%s:%" PRIi64 "\n",
+				parity_name,
+				uuid,
+				esc_tag(state->parity[l].split_map[s].path),
+				state->parity[l].split_map[s].size);
+		}
+	}
+}
+
 void state_write(struct snapraid_state* state)
 {
 	struct state_write_info info;
@@ -5666,6 +5716,8 @@ void state_write(struct snapraid_state* state)
 	msg_verbose("%8" PRIu64 " hardlinks\n", info.count_hardlink);
 	msg_verbose("%8" PRIu64 " symlinks\n", info.count_symlink);
 	msg_verbose("%8" PRIu64 " empty dirs\n", info.count_dir);
+
+	state_write_log_mappings(state);
 
 	log_tag("content_info:file:%" PRIu64 "\n", info.count_file);
 	log_tag("content_info:hardlink:%" PRIu64 "\n", info.count_hardlink);
