@@ -662,7 +662,7 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 		if (len > serial_pad)
 			serial_pad = len;
 
-		if (devinfo->parent && devinfo->parent->is_array)
+		if (devinfo->is_array)
 			have_array = 1;
 	}
 
@@ -756,10 +756,8 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 				/* this happens only if no data */
 				printf("    -");
 			} else {
-				int is_array = devinfo->parent && devinfo->parent->is_array;
-
 				/* compute failure rate only for array disks (or fallback to all disks if none are array members) */
-				if (is_array || !have_array)
+				if (devinfo->is_array || !have_array)
 					array_failure_rate += afr;
 
 				printf("%4.0f%%", poisson_prob_at_least_one_failure(afr) * 100);
@@ -1032,6 +1030,7 @@ int devtest(tommy_list* high, tommy_list* low, int operation)
 
 		/* fake device number */
 		entry->device = tommy_strhash_u32(0, devinfo->name);
+		entry->is_array = devinfo->is_array;
 
 		tommy_list_insert_tail(low, &entry->node, entry);
 
@@ -1162,36 +1161,25 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 		}
 	}
 
-	/* extra disks are never spundown or spunup */
-	int include_extra = 1;
-	switch (operation) {
-	case DEVICE_UP :
-	case DEVICE_DOWN :
-	case DEVICE_DOWNIFUP :
-		include_extra = 0;
-		break;
-	}
-	if (include_extra) {
-		/* for all extra disks */
-		for (i = state->extralist; i != 0; i = i->next) {
-			struct snapraid_extra* extra = i->data;
-			devinfo_t* entry;
+	/* for all extra disks */
+	for (i = state->extralist; i != 0; i = i->next) {
+		struct snapraid_extra* extra = i->data;
+		devinfo_t* entry;
 
-			if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, extra->name, 0) != 0)
-				continue;
+		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, extra->name, 0) != 0)
+			continue;
 
-			entry = calloc_nofail(1, sizeof(devinfo_t));
+		entry = calloc_nofail(1, sizeof(devinfo_t));
 
-			entry->device = extra->device;
-			device_name_set(entry, extra->name, 0);
-			entry->is_array = 0;
-			pathcpy(entry->mount, sizeof(entry->mount), extra->dir);
-			pathcpy(entry->smartctl, sizeof(entry->smartctl), extra->smartctl);
-			pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), extra->smartctl_info);
-			memcpy(entry->smartignore, extra->smartignore, sizeof(entry->smartignore));
+		entry->device = extra->device;
+		device_name_set(entry, extra->name, 0);
+		entry->is_array = 0;
+		pathcpy(entry->mount, sizeof(entry->mount), extra->dir);
+		pathcpy(entry->smartctl, sizeof(entry->smartctl), extra->smartctl);
+		pathcpy(entry->smartctl_info, sizeof(entry->smartctl_info), extra->smartctl_info);
+		memcpy(entry->smartignore, extra->smartignore, sizeof(entry->smartignore));
 
-			tommy_list_insert_tail(&high, &entry->node, entry);
-		}
+		tommy_list_insert_tail(&high, &entry->node, entry);
 	}
 
 	/* with a GUI always gives time reference */
@@ -1199,6 +1187,7 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 		log_tag("unixtime:%" PRIi64 "\n", (int64_t)now);
 
 	int degraded = 0;
+	int query_failed = 0;
 
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
@@ -1210,6 +1199,10 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 		ret = devquery(&high, &low);
 		if (ret > 0) {
 			degraded = 1;
+			ret = 0;
+		} else if (ret < 0 && !tommy_list_empty(&low)) {
+			/* keep operating on devices resolved before or after a failed disk */
+			query_failed = 1;
 			ret = 0;
 		}
 	}
@@ -1259,6 +1252,8 @@ bail:
 
 	if (ret == 0 && degraded)
 		ret = 1;
+	if (ret == 0 && query_failed)
+		ret = -1;
 
 	return ret;
 }

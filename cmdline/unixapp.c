@@ -3181,6 +3181,7 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list, int* degra
 	char path[PATH_MAX];
 	DIR* d;
 	int slaves = 0;
+	int failed = 0;
 
 	/* check if this device or parent partition is a degraded MD array */
 	pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/md/degraded", major(device), minor(device));
@@ -3201,6 +3202,7 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list, int* degra
 		while ((dd = readdir(d)) != 0) {
 			if (dd->d_name[0] != '.') {
 				dev_t subdev;
+				++slaves;
 
 				/* for each slave, expand the full potential tree */
 				pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/slaves/%s/dev", major(device), minor(device), dd->d_name);
@@ -3208,19 +3210,17 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list, int* degra
 				subdev = devread(path);
 				if (!subdev) {
 					/* LCOV_EXCL_START */
-					closedir(d);
-					return -1;
+					failed = 1;
+					continue;
 					/* LCOV_EXCL_STOP */
 				}
 
 				if (devtree(parent, subdev, list, degraded) != 0) {
 					/* LCOV_EXCL_START */
-					closedir(d);
-					return -1;
+					failed = 1;
+					continue;
 					/* LCOV_EXCL_STOP */
 				}
-
-				++slaves;
 			}
 		}
 
@@ -3263,12 +3263,14 @@ static int devtree(devinfo_t* parent, dev_t device, tommy_list* list, int* degra
 		memcpy(devinfo->smartignore, parent->smartignore, sizeof(devinfo->smartignore));
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
 		devinfo->parent = parent;
+		devinfo->is_array = parent->is_array;
 
 		/* insert in the list */
 		tommy_list_insert_tail(list, &devinfo->node, devinfo);
 	}
 
-	return 0;
+	/* retain resolved siblings even when another branch failed */
+	return failed ? -1 : 0;
 }
 #endif
 
@@ -3896,27 +3898,34 @@ static void* thread_spinup(void* arg)
 {
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
-	uint64_t start;
+	int ret;
 
-	/* skip not rotational devices */
-	if (devpower(devinfo->device) == 0)
-		return 0;
+	/* only for members of the array and rotational devices */
+	if (devinfo->is_array && devpower(devinfo->device) != 0) {
+		uint64_t start = os_tick_ms();
 
-	start = os_tick_ms();
+		if (devup(devinfo->device, devinfo->name) != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 
-	if (devup(devinfo->device, devinfo->name) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
+		msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
-	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
-
-	/* after the spin up, get SMART info */
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
+		ret = devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
+	} else {
+		/* just probe others */
+		ret = devprobe(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	/*
@@ -3941,21 +3950,19 @@ static void* thread_spindown(void* arg)
 {
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
-	uint64_t start;
 
-	/* skip not rotational devices */
-	if (devpower(devinfo->device) == 0)
-		return 0;
+	/* only for members of the array and rotational devices */
+	if (devinfo->is_array && devpower(devinfo->device) != 0) {
+		uint64_t start = os_tick_ms();
 
-	start = os_tick_ms();
+		if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 
-	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
+		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 	}
-
-	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 #else
@@ -3971,23 +3978,21 @@ static void* thread_spindownifup(void* arg)
 {
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
-	uint64_t start;
-	int power;
 
-	/* skip not rotational devices */
-	if (devpower(devinfo->device) == 0)
-		return 0;
+	/* only for members of the array and rotational devices */
+	if (devinfo->is_array && devpower(devinfo->device) != 0) {
+		uint64_t start = os_tick_ms();
+		int power;
 
-	start = os_tick_ms();
+		if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &power) != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 
-	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &power) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
+		if (power == POWER_ACTIVE)
+			msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 	}
-
-	if (power == POWER_ACTIVE)
-		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 #else
@@ -4103,6 +4108,10 @@ void devsync(tommy_list* high)
 		devinfo_t* devinfo = i->data;
 		int f;
 
+		/* only for members of the array */
+		if (!devinfo->is_array)
+			continue;
+
 		f = open(devinfo->mount, O_RDONLY);
 		if (f >= 0) {
 			syncfs(f);
@@ -4117,6 +4126,7 @@ void devsync(tommy_list* high)
 int devquery(tommy_list* high, tommy_list* low)
 {
 	int degraded = 0;
+	int failed = 0;
 #if HAVE_LINUX_DEVICE
 	tommy_node* i;
 	struct stat st;
@@ -4142,7 +4152,8 @@ int devquery(tommy_list* high, tommy_list* low)
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
 			log_error(EEXTERNAL, "Failed to dereference device '%u:%u' at '%s'.\n", major(device), minor(device), devinfo->mount);
-			return -1;
+			failed = 1;
+			continue;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -4167,7 +4178,8 @@ int devquery(tommy_list* high, tommy_list* low)
 			if (devresolve(dev->device, file, sizeof(file)) != 0) {
 				/* LCOV_EXCL_START */
 				log_error(EEXTERNAL, "Failed to resolve device '%u:%u'.\n", major(dev->device), minor(dev->device));
-				return -1;
+				failed = 1;
+				continue;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -4180,7 +4192,8 @@ int devquery(tommy_list* high, tommy_list* low)
 			if (devtree(devinfo, dev->device, low, &disk_degraded) != 0) {
 				/* LCOV_EXCL_START */
 				log_error(EEXTERNAL, "Failed to expand device '%u:%u'.\n", major(dev->device), minor(dev->device));
-				return -1;
+				failed = 1;
+				continue;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -4198,7 +4211,7 @@ int devquery(tommy_list* high, tommy_list* low)
 	(void)low;
 #endif
 
-	return degraded ? 1 : 0;
+	return failed ? -1 : degraded ? 1 : 0;
 }
 
 int devrun(tommy_list* low, int operation)

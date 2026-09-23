@@ -1049,6 +1049,7 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 		pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
 		pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
 		devinfo->parent = parent;
+		devinfo->is_array = parent->is_array;
 
 		/* insert in the list */
 		tommy_list_insert_tail(list, &devinfo->node, devinfo);
@@ -1959,27 +1960,34 @@ static int devup(uint64_t device, const char* name, const char* wfile)
 static void* thread_spinup(void* arg)
 {
 	devinfo_t* devinfo = arg;
-	uint64_t start;
+	int ret;
 
-	/* skip not rotational devices */
-	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
-		return 0;
+	/* only for members of the array and rotational devices */
+	if (devinfo->is_array && devpower(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+		uint64_t start = os_tick_ms();
 
-	start = os_tick_ms();
+		if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 
-	if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
+		msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
-	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
-
-	/* after the spin up, get SMART info */
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
+		ret = devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
+	} else {
+		/* just probe others */
+		ret = devprobe(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &devinfo->power, devinfo->smart, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	/*
@@ -1999,21 +2007,19 @@ static void* thread_spinup(void* arg)
 static void* thread_spindown(void* arg)
 {
 	devinfo_t* devinfo = arg;
-	uint64_t start;
 
-	/* skip not rotational devices */
-	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
-		return 0;
+	/* only for members of the array and rotational devices */
+	if (devinfo->is_array && devpower(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+		uint64_t start = os_tick_ms();
 
-	start = os_tick_ms();
+		if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 
-	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
+		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 	}
-
-	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 }
@@ -2024,23 +2030,21 @@ static void* thread_spindown(void* arg)
 static void* thread_spindownifup(void* arg)
 {
 	devinfo_t* devinfo = arg;
-	uint64_t start;
-	int power;
 
-	/* skip not rotational devices */
-	if (devpower(devinfo->device, devinfo->name, devinfo->wfile) == 0)
-		return 0;
+	/* only for members of the array and rotational devices */
+	if (devinfo->is_array && devpower(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+		uint64_t start = os_tick_ms();
+		int power;
 
-	start = os_tick_ms();
+		if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &power) != 0) {
+			/* LCOV_EXCL_START */
+			return (void*)-1;
+			/* LCOV_EXCL_STOP */
+		}
 
-	if (devdownifup(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smartctl_info, &power) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
+		if (power == POWER_ACTIVE)
+			msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 	}
-
-	if (power == POWER_ACTIVE)
-		msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 
 	return 0;
 }
@@ -2133,6 +2137,7 @@ void devsync(tommy_list* high)
 int devquery(tommy_list* high, tommy_list* low)
 {
 	tommy_node* i;
+	int failed = 0;
 
 	/* for each device */
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
@@ -2142,7 +2147,8 @@ int devquery(tommy_list* high, tommy_list* low)
 		if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 			/* LCOV_EXCL_START */
 			log_error(EEXTERNAL, "Failed to resolve path '%s'.\n", devinfo->mount);
-			return -1;
+			failed = 1;
+			continue;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -2159,12 +2165,13 @@ int devquery(tommy_list* high, tommy_list* low)
 		if (devtree(devinfo, low) != 0) {
 			/* LCOV_EXCL_START */
 			log_error(EEXTERNAL, "Failed to expand device '%s'.\n", devinfo->file);
-			return -1;
+			failed = 1;
+			continue;
 			/* LCOV_EXCL_STOP */
 		}
 	}
 
-	return 0;
+	return failed ? -1 : 0;
 }
 
 int devrun(tommy_list* low, int operation)
