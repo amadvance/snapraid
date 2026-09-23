@@ -1516,7 +1516,7 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 				ret = handle_close(&handle[j]);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
+					log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -1580,7 +1580,7 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+				log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 				log_fatal_errno(errno, disk->name);
 				return -1;
 				/* LCOV_EXCL_STOP */
@@ -1635,7 +1635,7 @@ close_and_continue:
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+				log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 				log_fatal_errno(errno, disk->name);
 				return -1;
 				/* LCOV_EXCL_STOP */
@@ -2041,7 +2041,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), i, disk->name, esc_tag(report->sub), strerror(errno));
+					log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
@@ -2941,7 +2941,7 @@ bail:
 			 * If handle_close fails, the handle was open (f != -1), which
 			 * guarantees that both file and disk pointers are valid.
 			 */
-			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(file->sub), strerror(errno));
+			log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			++unrecoverable_error;
@@ -3126,7 +3126,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				 */
 				ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 				if (ret == -1) {
-					log_tag("parity_%s:%" PRIu64 ":%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+					log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), 0, lev_config_name(l), strerror(errno));
 					if (is_hw(errno)) {
 						log_fatal_errno(errno, lev_config_name(l));
 						exit(EXIT_FAILURE);
@@ -3180,7 +3180,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			parity_ptr[l] = &parity[l];
 			ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 			if (ret == -1) {
-				log_tag("parity_%s:%" PRIu64 ":%s: Open error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+				log_tag("parity_%s:%u:%s: Open error. %s.\n", es(errno), 0, lev_config_name(l), strerror(errno));
 				if (is_hw(errno)) {
 					log_fatal_errno(errno, lev_config_name(l));
 					exit(EXIT_FAILURE);
@@ -3217,7 +3217,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			ret = parity_close(parity_ptr[l]);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
-				log_tag("parity_%s:%" PRIu64 ":%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+				log_tag("parity_%s::%s: Close error. %s.\n", es(errno), lev_config_name(l), strerror(errno));
 				log_fatal_errno(errno, lev_config_name(l));
 
 				++process_error;

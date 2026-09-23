@@ -272,6 +272,47 @@
  * both file size and modification time, may not be detected by a later scan.
  * This is a general limitation of metadata-based change detection, not a
  * special property of modifications occurring during sync.
+ *
+ * Structured error log model
+ * --------------------------
+ *
+ * Errors affecting data files are reported as:
+ *
+ *   error:<block>:<disk>:<file>:<msg>
+ *   error_io:<block>:<disk>:<file>:<msg>
+ *   error_data:<block>:<disk>:<file>:<msg>
+ *
+ * Errors affecting parity are reported as:
+ *
+ *   parity_error:<block>:<level>:<msg>
+ *   parity_error_io:<block>:<level>:<msg>
+ *   parity_error_data:<block>:<level>:<msg>
+ *
+ * "error" reports a soft or logical error that is not classified as a hardware
+ * I/O failure. "error_io" reports an I/O failure classified by is_hw().
+ * "error_data" reports data that was successfully read but did not match the
+ * expected hash or parity.
+ *
+ * The block field identifies the SnapRAID parity position associated with the
+ * error. It identifies the logical position affected by the failed operation,
+ * not necessarily the physical sector that caused the failure.
+ *
+ * Data file open/create errors occurring while processing a position report
+ * the current block, because that position could not be processed and may be
+ * marked bad for a later retry. Read/write and data errors report the position
+ * directly involved in the operation.
+ *
+ * Parity open/create errors report block 0. This is a retry marker rather than
+ * an indication that parity block 0 is bad: parity will be opened or created
+ * again by a subsequent command.
+ *
+ * The block field is empty when the error cannot be associated with a specific
+ * position. In particular, close errors use an empty block because an error
+ * reported by close() may originate from an earlier operation and cannot be
+ * reliably attributed to any previously processed block.
+ *
+ * Error classification and block localization are independent: for example,
+ * both error and error_io may have an empty block when reporting a close error.
  */
 
 /****************************************************************************/
@@ -400,7 +441,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					 * This one is really an unexpected error, because we are only reading
 					 * and closing a descriptor should never fail
 					 */
-					log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
+					log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(report->sub), strerror(errno));
 					log_fatal_errno(errno, disk->name);
 					log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 
@@ -580,7 +621,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				 * This one is really an unexpected error, because we are only reading
 				 * and closing a descriptor should never fail
 				 */
-				log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockmax, disk->name, esc_tag(report->sub), strerror(errno));
+				log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(report->sub), strerror(errno));
 				log_fatal_errno(errno, disk->name);
 				log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockmax);
 
@@ -634,7 +675,7 @@ bail:
 			 * If handle_close fails, the handle was open (f != -1), which
 			 * guarantees that both file and disk pointers are valid.
 			 */
-			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
+			log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			if (is_hw(errno)) {
@@ -802,7 +843,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 			 * This one is really an unexpected error, because we are only reading
 			 * and closing a descriptor should never fail
 			 */
-			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(report->sub), strerror(errno));
+			log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(report->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 
@@ -1843,7 +1884,7 @@ bail_abort:
 			 * If handle_close fails, the handle was open (f != -1), which
 			 * guarantees that both file and disk pointers are valid.
 			 */
-			log_tag("%s:%" PRIu64 ":%s:%s: Close error. %s.\n", es(errno), blockcur, disk->name, esc_tag(file->sub), strerror(errno));
+			log_tag("%s::%s:%s: Close error. %s.\n", es(errno), disk->name, esc_tag(file->sub), strerror(errno));
 			log_fatal_errno(errno, disk->name);
 
 			if (is_hw(errno)) {
@@ -2234,7 +2275,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		ret = parity_close(&parity_handle[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("parity_%s:%" PRIu64 ":%s: Close error. %s.\n", es(errno), blockmax, lev_config_name(l), strerror(errno));
+			log_tag("parity_%s::%s: Close error. %s.\n", es(errno), lev_config_name(l), strerror(errno));
 			log_fatal_errno(errno, lev_config_name(l));
 
 			++process_error;

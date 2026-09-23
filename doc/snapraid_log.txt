@@ -1282,16 +1282,23 @@ These tags report specific errors that occur on data disks during the
 commands that access files and parities.
 
     error[_io|_data]:<block>:<disk_name>:<file>:<msg>
-        Logs file access errors (open, read, file changed) during the
-        data disk read operation for parity calculation or verification.
+        Logs errors affecting data files.
 
-    _io - Indicates a physical Input/Output error.
-        The disk was unable to read or write a specific block,
-        typically signaling a failing sector or cable issue.
-    _data - Indicates the data was read successfully but failed
-        the checksum/hash verification. This signals `silent`
+    With no suffix, `error` indicates a soft or logical error not
+    classified as a hardware I/O or silent data error.
+
+    _io - Indicates a physical Input/Output error, typically
+        signaling a failing sector, device, or cable issue.
+    _data - Indicates data that was read successfully but failed
+        the checksum/hash verification, signaling `silent`
         corruption or an unsuccessful parity match.
-    <block> - The zero-based index of the block where the error occurred (uint).
+    <block> - The zero-based SnapRAID parity position associated with
+        the error (uint). It identifies the logical position affected
+        by the failed operation, not necessarily the physical sector
+        that caused the failure. Data file open/create errors occurring
+        while processing a position report the current block. The field
+        is empty when the error cannot be associated with a specific
+        position, such as for close errors.
     <disk_name> - The name of the data disk.
     <file> - The path (relative to the disk mount point) of the
         file containing the block (escaped).
@@ -1300,19 +1307,25 @@ commands that access files and parities.
         `Data error at position <pos>, diff bits <diff>/<bits>`).
 
     parity_error[_io|_data]:<block>:<level>:<msg>
-        Logs errors during parity disk read or write operations.
+        Logs errors affecting parity.
 
-    _io - Indicates a physical Input/Output error.
-        The disk was unable to read or write a specific block,
-        typically signaling a failing sector or cable issue.
-    _data - Indicates the data was read successfully but failed
-        the checksum/hash verification. This signals `silent`
-        corruption or an unsuccessful parity match.
-    <block> - The zero-based index of the block where the error occurred (uint).
+    With no suffix, `parity_error` indicates a soft or logical error
+    not classified as a hardware I/O or silent data error.
+
+    _io - Indicates a physical Input/Output error, typically
+        signaling a failing sector, device, or cable issue.
+    _data - Indicates data that was read successfully but failed
+        the parity verification, signaling `silent` corruption.
+    <block> - The zero-based SnapRAID parity position associated with
+        the error (uint). Parity open/create errors report block 0 as
+        a retry marker; this does not mean that parity block 0 is bad.
+        Parity access is attempted again by subsequent commands. The
+        field is empty when the error cannot be associated with a
+        specific position, such as for close errors.
     <level> - The configuration name of the parity level (e.g.,
         `parity`, `2-parity`).
     <msg> - A descriptive message indicating the nature of the
-        error (e.g., `Read/Write error`,
+        error (e.g., `Open/Read/Write error`,
         `Data error, diff bits <diff>/<bits>`).
 
     hardlink_error[_io]:<disk_name>:<link_path>:<target_path>:<msg>
