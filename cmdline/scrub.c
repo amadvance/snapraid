@@ -333,6 +333,10 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	block_off_t blockcur = task->position;
 	unsigned char* buffer = task->buffer;
 	int ret;
+
+	/* tasks are reused, so a previous close failure must not affect this position */
+	task->unrelated_error = 0;
+
 	/* if the disk position is not used */
 	if (!disk) {
 		/* use an empty block */
@@ -370,6 +374,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 
+			task->unrelated_error = 1;
 			if (is_hw(errno)) {
 				task->state = TASK_STATE_IOERROR;
 			} else {
@@ -676,6 +681,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (task->state == TASK_STATE_IOERROR) {
 				/* LCOV_EXCL_START */
 				++io_error;
+				/* closing the previous file says nothing about this parity position */
+				if (!task->unrelated_error) {
+					info_set(&state->infoarr, blockcur, info_set_bad(info));
+					state->need_write = 1;
+				}
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}

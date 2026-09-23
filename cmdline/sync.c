@@ -762,6 +762,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	block_off_t blockcur = task->position;
 	unsigned char* buffer = task->buffer;
 	int ret;
+
+	/* tasks are reused, so a previous close failure must not affect this position */
+	task->unrelated_error = 0;
+
 	/* if the disk position is not used */
 	if (!disk) {
 		/* use an empty block */
@@ -802,6 +806,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 			log_fatal_errno(errno, disk->name);
 			log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
 
+			task->unrelated_error = 1;
 			if (is_hw(errno)) {
 				task->state = TASK_STATE_IOERROR;
 			} else {
@@ -1192,9 +1197,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (task->state == TASK_STATE_IOERROR) {
 				/* LCOV_EXCL_START */
 				++io_error;
-				/* preserve the failing stripe before publishing partial sync progress */
-				info_set(&state->infoarr, blockcur, info_set_bad(info));
-				state->need_write = 1;
+				/* only errors in the current file identify this stripe as bad */
+				if (!task->unrelated_error) {
+					/* preserve the failing stripe before publishing partial sync progress */
+					info_set(&state->infoarr, blockcur, info_set_bad(info));
+					state->need_write = 1;
+				}
 				goto bail_durable;
 				/* LCOV_EXCL_STOP */
 			}

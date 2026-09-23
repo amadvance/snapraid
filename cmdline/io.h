@@ -66,6 +66,7 @@ struct snapraid_task {
 	block_off_t file_pos;
 	ssize_t read_size; /**< Size of the data read. */
 	int is_timestamp_different; /**< Report if file has a changed timestamp. */
+	int unrelated_error; /**< Error unrelated to the current parity position. */
 };
 
 /**
